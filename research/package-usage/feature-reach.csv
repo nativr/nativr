@@ -1,0 +1,26 @@
+rank,priority,feature_id,feature,nativr_status,packages,package_reach_percent,download_weighted_reach_percent
+1,P0,extraction,Element/member extraction [[ and $,parsed,66,68.0,69.1
+2,P0,sequences-repetition,Sequences and repetition,unsupported,63,64.9,69.0
+3,P1,subsetting,Vector/list subsetting [,parsed,56,57.7,62.4
+4,P1,lists,Lists,unsupported,57,58.8,61.4
+5,P1,namespaces,Namespace access,parsed,55,56.7,61.0
+6,P1,conditionals,if / else,parsed,46,47.4,50.6
+7,P1,random-numbers,Random numbers and sampling,unsupported,40,41.2,44.4
+8,P1,string-helpers,String helpers,unsupported,39,40.2,44.0
+9,P1,comparisons,Comparison operators,unsupported,39,40.2,43.1
+10,P1,matrices-arrays,"Matrices, arrays, and dimensions",unsupported,40,41.2,42.8
+11,P2,names-attributes,Names and attributes,unsupported,37,38.1,39.8
+12,P2,statistics,Descriptive statistics,partial,30,30.9,33.7
+13,P2,logical-operators,Logical operators,partial,28,28.9,32.2
+14,P2,data-frames,Data frames,unsupported,27,27.8,30.8
+15,P2,replacement,Replacement assignment,unsupported,24,24.7,29.1
+16,P2,dates-times,Dates and times,unsupported,23,23.7,26.8
+17,P2,apply-family,Apply/map family,unsupported,24,24.7,26.1
+18,P2,ellipsis,Ellipsis arguments,unsupported,21,21.6,24.8
+19,P2,factors,Factors,unsupported,20,20.6,23.6
+20,P2,loops,for / while / repeat,parsed,19,19.6,21.8
+21,P2,formulas,Formulas,parsed,19,19.6,20.7
+22,P3,sorting-matching,Sorting and matching,unsupported,12,12.4,13.4
+23,P3,pipes,Native and magrittr pipes,parsed,11,11.3,13.3
+24,P3,return,return,parsed,10,10.3,12.7
+25,P3,object-systems,S3/S4/R6/S7 object systems,unsupported,8,8.2,10.6
