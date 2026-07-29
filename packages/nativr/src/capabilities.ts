@@ -4,7 +4,7 @@ import type { CapabilityManifest } from "@nativr/protocol";
 
 /** Frozen capability manifest for the initial vertical slice. */
 export const CAPABILITIES = Object.freeze({
-  nativrVersion: "0.0.0",
+  nativrVersion: "0.1.0",
   protocolVersion: PROTOCOL_VERSION,
   languageSubsetVersion: "0.1.0",
   syntax: {
