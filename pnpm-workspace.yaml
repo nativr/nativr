@@ -3,6 +3,7 @@ packages:
   - "apps/*"
 
 verifyDepsBeforeRun: false
+nodeLinker: hoisted
 
 allowBuilds:
   "@davisvaughan/tree-sitter-r": false

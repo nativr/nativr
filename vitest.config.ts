@@ -17,7 +17,7 @@ export default defineConfig({
       "@nativr/runtime": `${root}packages/runtime/src/index.ts`,
       "@nativr/base": `${root}packages/base/src/index.ts`,
       "@nativr/protocol": `${root}packages/protocol/src/index.ts`,
-      nativr: `${root}packages/nativr/src/index.ts`,
+      "@nativr/nativr": `${root}packages/nativr/src/index.ts`,
     },
   },
   test: {

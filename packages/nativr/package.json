@@ -1,5 +1,5 @@
 {
-  "name": "nativr",
+  "name": "@nativr/nativr",
   "version": "0.0.0",
   "description": "Experimental browser-native R-compatible runtime",
   "type": "module",

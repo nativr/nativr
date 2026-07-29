@@ -15,8 +15,8 @@ source -> Tree-sitter R Wasm -> normalized @nativr/ast
 
 `@nativr/ast` has no dependencies. `@nativr/parser` and `@nativr/runtime` independently depend on
 the AST. `@nativr/base` supplies builtins and operators to the runtime. `@nativr/protocol` owns
-wire-only schemas. `nativr` is the only composition root and public import; the playground imports
-only it. `scripts/check-boundaries.mjs` enforces this graph.
+wire-only schemas. `@nativr/nativr` is the only composition root and public import; the playground
+imports only it. `scripts/check-boundaries.mjs` enforces this graph.
 
 The default session owns a module Worker and a global environment. Requests are serialized. Inline
 mode dynamically loads the same semantic host and exists for tests and constrained environments; it

@@ -64,7 +64,7 @@ importers:
 
   apps/playground:
     dependencies:
-      nativr:
+      "@nativr/nativr":
         specifier: workspace:*
         version: link:../../packages/nativr
     devDependencies:

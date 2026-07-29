@@ -1,5 +1,5 @@
-import { createR, isNA } from "nativr";
-import type { NativRSession, PublicRWarning } from "nativr";
+import { createR, isNA } from "@nativr/nativr";
+import type { NativRSession, PublicRWarning } from "@nativr/nativr";
 
 import "./styles.css";
 

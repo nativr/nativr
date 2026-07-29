@@ -17,10 +17,12 @@ pnpm install --frozen-lockfile
 The helper uses the operating system's local cache directory and creates only a Git-ignored
 directory link in the repository. Set `NATIVR_LOCAL_DEPS_DIR` to an absolute path to select a
 different machine-local target. The pnpm content-addressable store and Playwright browser cache also
-remain machine-local by default. CI should use a normal ephemeral `node_modules` directory and does
-not need this helper. Local Vitest coverage, Playwright reports, browser traces, screenshots, and
-package-smoke workspaces are written to the operating system's temporary directory; CI keeps its
-normal repository-relative artifact paths for upload.
+remain machine-local by default. The workspace uses pnpm's hoisted node linker so the directory link
+also works on Windows without package symlinks resolving back into the synchronized checkout. CI
+should use a normal ephemeral `node_modules` directory and does not need this helper. Local Vitest
+coverage, Playwright reports, browser traces, screenshots, and package-smoke workspaces are written
+to the operating system's temporary directory; CI keeps its normal repository-relative artifact
+paths for upload.
 
 ## Verification
 

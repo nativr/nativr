@@ -10,8 +10,12 @@ supported R source with Tree-sitter, normalizes that syntax into a NativR-owned 
 it locally with explicit vector semantics. The default public API runs in a Web Worker and performs
 no network access during evaluation.
 
+```sh
+pnpm add @nativr/nativr
+```
+
 ```ts
-import { createR } from "nativr";
+import { createR } from "@nativr/nativr";
 
 const r = await createR();
 const result = await r.eval(`
@@ -54,7 +58,7 @@ R source -> @nativr/parser -> normalized @nativr/ast
                   @nativr/runtime <- @nativr/base
                                   |
                                   v
-                       nativr Worker API -> playground
+                  @nativr/nativr Worker API -> playground
 ```
 
 NativR intentionally does not implement package installation, data frames, graphics, S3/S4, dynamic

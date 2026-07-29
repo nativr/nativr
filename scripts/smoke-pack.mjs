@@ -23,7 +23,7 @@ try {
     [
       "--config.verify-deps-before-run=false",
       "--filter",
-      "nativr",
+      "@nativr/nativr",
       "pack",
       "--pack-destination",
       packRoot,
@@ -43,7 +43,7 @@ try {
         private: true,
         type: "module",
         packageManager: "pnpm@11.17.0",
-        dependencies: { nativr: `file:${tarballPath.replaceAll("\\", "/")}` },
+        dependencies: { "@nativr/nativr": `file:${tarballPath.replaceAll("\\", "/")}` },
         devDependencies: { vite: "6.4.3" },
         scripts: { build: "vite build" },
       },
@@ -62,7 +62,7 @@ try {
   await writeFile(
     path.join(consumerRoot, "src", "main.ts"),
     [
-      'import { createR } from "nativr";',
+      'import { createR } from "@nativr/nativr";',
       "async function main() {",
       "  const runtime = await createR();",
       '  document.querySelector("#app").textContent = String(await runtime.eval("1 + 1"));',

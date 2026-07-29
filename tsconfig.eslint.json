@@ -13,7 +13,7 @@
       "@nativr/parser": ["./packages/parser/src/index.ts"],
       "@nativr/protocol": ["./packages/protocol/src/index.ts"],
       "@nativr/runtime": ["./packages/runtime/src/index.ts"],
-      "nativr": ["./packages/nativr/src/index.ts"]
+      "@nativr/nativr": ["./packages/nativr/src/index.ts"]
     }
   },
   "include": ["apps/**/*.ts", "packages/**/*.ts", "tests/**/*.ts", "*.config.ts"]

@@ -21,6 +21,7 @@ const rules = new Map([
   ],
 ]);
 const failures = [];
+const publicPackage = "@nativr/nativr";
 
 for (const [packageName, allowed] of rules) {
   const files = await sourceFiles(path.join(root, "packages", packageName, "src"));
@@ -32,17 +33,17 @@ for (const [packageName, allowed] of rules) {
         failures.push(`${path.relative(root, file)} imports prohibited dependency ${dependency}`);
       }
     }
-    if (packageName !== "nativr" && /(?:from\s+|import\s*\()(["'])nativr\1/gu.test(source)) {
-      failures.push(`${path.relative(root, file)} imports the public nativr package`);
-    }
   }
 }
 
 const playgroundFiles = await sourceFiles(path.join(root, "apps", "playground", "src"));
 for (const file of playgroundFiles) {
   const source = await readFile(file, "utf8");
-  if (/@nativr\//u.test(source)) {
-    failures.push(`${path.relative(root, file)} bypasses the public nativr package`);
+  for (const match of source.matchAll(/(?:from\s+|import\s*\()(["'])(@nativr\/[^"']+)\1/gu)) {
+    const dependency = match[2];
+    if (dependency !== undefined && dependency !== publicPackage) {
+      failures.push(`${path.relative(root, file)} bypasses the public package via ${dependency}`);
+    }
   }
 }
 

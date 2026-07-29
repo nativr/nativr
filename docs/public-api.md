@@ -1,7 +1,7 @@
 # Public API
 
 ```ts
-import { createR, NA, isNA } from "nativr";
+import { createR, NA, isNA } from "@nativr/nativr";
 
 const r = await createR(); // Worker by default
 await r.assign("x", new Float64Array([1, 2, 3, 4]));
