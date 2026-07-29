@@ -1,17 +1,18 @@
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
 import { createR, isNA, NA, RRuntimeDisposedError } from "../src/index.js";
 
-const assetRoot = fileURLToPath(new URL("../../parser/assets/", import.meta.url));
+const assetRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../parser/assets");
 
 async function session() {
   return createR({
     execution: "inline",
     assets: {
-      treeSitterRuntimeWasm: `${assetRoot}/web-tree-sitter.wasm`,
-      rGrammarWasm: `${assetRoot}/tree-sitter-r.wasm`,
+      treeSitterRuntimeWasm: path.join(assetRoot, "web-tree-sitter.wasm"),
+      rGrammarWasm: path.join(assetRoot, "tree-sitter-r.wasm"),
     },
   });
 }
@@ -91,8 +92,8 @@ describe("complete inline source-to-result vertical slice", () => {
     const runtime = await createR({
       execution: "inline",
       assets: {
-        treeSitterRuntimeWasm: `${assetRoot}/web-tree-sitter.wasm`,
-        rGrammarWasm: `${assetRoot}/tree-sitter-r.wasm`,
+        treeSitterRuntimeWasm: path.join(assetRoot, "web-tree-sitter.wasm"),
+        rGrammarWasm: path.join(assetRoot, "tree-sitter-r.wasm"),
       },
       limits: { maxOutputBytes: 4 },
     });
