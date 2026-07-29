@@ -11,6 +11,7 @@ with:
 - [Clean-room policy](clean-room.md)
 - [Security model](security-model.md)
 - [Development](development.md)
+- [Evidence-based feature priorities](feature-priorities.md)
 - [Roadmap](roadmap.md)
 - [Implementation status](implementation-status.md)
 
