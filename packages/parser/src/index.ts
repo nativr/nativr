@@ -24,6 +24,12 @@ export interface NativRParser {
 
 let initializedRuntime: Promise<void> | undefined;
 
+// web-tree-sitter's runtime accepts URL objects through both fetch and Node's
+// fs.readFile implementation, but its current declaration only lists strings.
+const languageLoader = Language as unknown as {
+  load(input: string | URL): Promise<Language>;
+};
+
 /**
  * Load the pinned parser runtime and grammar Wasm, validating their ABI through setLanguage.
  */
@@ -40,7 +46,7 @@ export async function createParser(assets: ParserAssets): Promise<NativRParser> 
 
   let language: Language;
   try {
-    language = await Language.load(String(assets.rGrammarWasm));
+    language = await languageLoader.load(normalizeGrammarAsset(assets.rGrammarWasm));
   } catch (cause) {
     throw parserAssetError("NRP1102", "Unable to load the Tree-sitter R grammar asset.", cause);
   }
@@ -80,6 +86,10 @@ export async function createParser(assets: ParserAssets): Promise<NativRParser> 
       }
     },
   };
+}
+
+function normalizeGrammarAsset(asset: string | URL): string | URL {
+  return typeof asset === "string" && asset.startsWith("file:") ? new URL(asset) : asset;
 }
 
 function parserAssetError(code: string, message: string, cause?: unknown): Error {

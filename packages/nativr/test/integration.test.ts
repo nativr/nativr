@@ -1,19 +1,16 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
 import { describe, expect, it } from "vitest";
 
 import { createR, isNA, NA, RRuntimeDisposedError } from "../src/index.js";
 
-const assetRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../parser/assets");
+const assets = {
+  treeSitterRuntimeWasm: new URL("../../parser/assets/web-tree-sitter.wasm", import.meta.url),
+  rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+};
 
 async function session() {
   return createR({
     execution: "inline",
-    assets: {
-      treeSitterRuntimeWasm: path.join(assetRoot, "web-tree-sitter.wasm"),
-      rGrammarWasm: path.join(assetRoot, "tree-sitter-r.wasm"),
-    },
+    assets,
   });
 }
 
@@ -91,10 +88,7 @@ describe("complete inline source-to-result vertical slice", () => {
   it("enforces configured output limits", async () => {
     const runtime = await createR({
       execution: "inline",
-      assets: {
-        treeSitterRuntimeWasm: path.join(assetRoot, "web-tree-sitter.wasm"),
-        rGrammarWasm: path.join(assetRoot, "tree-sitter-r.wasm"),
-      },
+      assets,
       limits: { maxOutputBytes: 4 },
     });
     await expect(runtime.eval("c(1, 2)")).rejects.toMatchObject({ code: "NRL4007" });

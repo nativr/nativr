@@ -1,18 +1,14 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createParser, Utf8SourceMap } from "../src/index.js";
 import type { NativRParser } from "../src/index.js";
 
-const assetRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../assets");
 let parser: NativRParser;
 
 beforeAll(async () => {
   parser = await createParser({
-    treeSitterRuntimeWasm: path.join(assetRoot, "web-tree-sitter.wasm"),
-    rGrammarWasm: path.join(assetRoot, "tree-sitter-r.wasm"),
+    treeSitterRuntimeWasm: new URL("../assets/web-tree-sitter.wasm", import.meta.url),
+    rGrammarWasm: new URL("../assets/tree-sitter-r.wasm", import.meta.url).href,
   });
 });
 
