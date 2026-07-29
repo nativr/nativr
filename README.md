@@ -40,10 +40,6 @@ without a long-lived registry token; see the
 
 Use Node 24 and pnpm 11.
 
-If the checkout is inside Dropbox, OneDrive, or another synchronized folder, first follow the
-[machine-local dependency setup](https://github.com/nativr/nativr/blob/main/docs/development.md#keep-dependencies-outside-a-synchronized-source-folder)
-so Git synchronizes source while dependencies and test artifacts remain outside the project tree.
-
 ```text
 pnpm install
 pnpm grammar:build
