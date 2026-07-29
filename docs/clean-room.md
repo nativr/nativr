@@ -1,0 +1,25 @@
+# Clean-room policy
+
+NativR is an independent Apache-2.0 implementation. It does not incorporate, translate, link, or
+derive implementation code from GNU R, webR, or R packages merely to reproduce their behavior.
+
+Permitted evidence:
+
+- public language and package documentation;
+- published mathematical or statistical definitions;
+- public APIs and specifications;
+- black-box input/output observations from a separately installed R runtime;
+- permissively licensed dependencies after license review.
+
+Prohibited without explicit legal and maintainer review:
+
+- copying or mechanically translating GNU R or GPL package source;
+- using webR or GNU R as a shipped implementation dependency;
+- copying tests when their license is incompatible or provenance is unclear;
+- implying affiliation or using official R branding.
+
+Semantic contributions must identify their behavioral sources, add independently written tests and
+conformance cases, and update the compatibility contract. The optional R oracle records canonical
+type/value/warning observations only; it never copies implementation source. Reviewers must reject
+unexplained large translations or suspiciously source-shaped changes and escalate uncertain
+provenance before merging.

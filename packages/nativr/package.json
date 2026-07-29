@@ -1,0 +1,52 @@
+{
+  "name": "nativr",
+  "version": "0.0.0",
+  "description": "Experimental browser-native R-compatible runtime",
+  "type": "module",
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "keywords": [
+    "r",
+    "javascript",
+    "webassembly",
+    "browser",
+    "runtime",
+    "data-science",
+    "statistics"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nativr/nativr.git",
+    "directory": "packages/nativr"
+  },
+  "homepage": "https://github.com/nativr/nativr#readme",
+  "bugs": {
+    "url": "https://github.com/nativr/nativr/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "devDependencies": {
+    "@nativr/ast": "workspace:*",
+    "@nativr/base": "workspace:*",
+    "@nativr/parser": "workspace:*",
+    "@nativr/protocol": "workspace:*",
+    "@nativr/runtime": "workspace:*",
+    "web-tree-sitter": "0.26.11"
+  },
+  "scripts": {
+    "bundle": "vite build"
+  }
+}

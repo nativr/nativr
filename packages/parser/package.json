@@ -1,0 +1,21 @@
+{
+  "name": "@nativr/parser",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "assets"
+  ],
+  "dependencies": {
+    "@nativr/ast": "workspace:*",
+    "web-tree-sitter": "0.26.11"
+  }
+}

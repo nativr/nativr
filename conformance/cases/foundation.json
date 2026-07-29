@@ -1,0 +1,59 @@
+[
+  {
+    "id": "scalar-addition",
+    "code": "1 + 1",
+    "expected": 2,
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "base-mean",
+    "code": "x <- c(1, 2, 3, 4, 5)\nmean(x)",
+    "expected": 3,
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "base-mean-na",
+    "code": "x <- c(1, NA, 3)\nmean(x)",
+    "expected": { "__nativr__": "NA" },
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "base-mean-na-rm",
+    "code": "x <- c(1, NA, 3)\nmean(x, na.rm = TRUE)",
+    "expected": 2,
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "closure-square",
+    "code": "f <- function(x) x ^ 2\nf(4)",
+    "expected": 16,
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "scalar-recycling",
+    "code": "c(1, 2, 3) + 10",
+    "expected": [11, 12, 13],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "exact-recycling",
+    "code": "c(1, 2, 3, 4) + c(10, 20)",
+    "expected": [11, 22, 13, 24],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "non-multiple-recycling",
+    "code": "c(1, 2, 3) + c(10, 20)",
+    "expected": [11, 22, 13],
+    "expectedWarning": true,
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  }
+]

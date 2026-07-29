@@ -1,0 +1,12 @@
+node_modules/
+**/node_modules/
+**/dist/
+coverage/
+playwright-report/
+test-results/
+.vite/
+.pnpm-store/
+pnpm-lock.yaml
+packages/parser/assets/
+packages/nativr/src/assets/
+apps/playground/public/assets/

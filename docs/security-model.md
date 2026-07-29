@@ -1,0 +1,20 @@
+# Security model
+
+Evaluated R source can access only installed runtime values and builtins. It has no binding for
+`window`, `document`, `globalThis`, fetch, storage, filesystem APIs, environment variables, module
+loading, arbitrary host functions, or network sockets. The bootstrap runtime emits no telemetry and
+performs no evaluation-time network request.
+
+NativR interprets normalized AST nodes. It does not generate JavaScript or call
+`eval`/`new Function`. A build-time CSP guard removes generic Emscripten EM_ASM/EM_JS dynamic-code
+fallbacks from the pinned web-tree-sitter browser bundle and the browser audit rejects their
+reappearance. Inline Node tests use the upstream module, but the dormant fallback is not reached by
+the pinned grammar.
+
+Internal names live in `Map`; public output uses arrays and typed snapshots. No untrusted name is
+assigned to an ordinary JavaScript prototype-bearing record. Resource limits and Worker termination
+reduce accidental hangs. NativR does not claim a formally verified hostile-code sandbox; host
+applications should retain origin isolation and browser security controls.
+
+Dependencies are locked, build scripts are explicitly approved in `pnpm-workspace.yaml`, browser
+bundles are audited for Node built-ins/dynamic code, and CI includes CodeQL and Dependabot.

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Local playground for the experimental NativR browser runtime."
+    />
+    <title>NativR Playground</title>
+  </head>
+  <body>
+    <main>
+      <header class="masthead">
+        <div>
+          <a class="wordmark" href="/" aria-label="NativR playground home">Nativ<span>R</span></a>
+          <p class="tagline">Write R. Run JavaScript.</p>
+        </div>
+        <div class="runtime-chip">
+          <span class="status-dot" id="status-dot" aria-hidden="true"></span>
+          <span id="runtime-status" role="status" aria-live="polite">Initializing runtime…</span>
+        </div>
+      </header>
+
+      <section class="notice" aria-label="Experimental status">
+        <strong>Foundation preview.</strong>
+        This playground executes a deliberately small R-compatible subset inside your browser. It
+        does not embed GNU R or install R packages.
+      </section>
+
+      <section class="workspace">
+        <aside class="examples" aria-labelledby="examples-title">
+          <div class="section-heading">
+            <p class="eyebrow">Recipes</p>
+            <h1 id="examples-title">Try the vertical slice</h1>
+          </div>
+          <div id="example-list" class="example-list"></div>
+          <div class="local-note">
+            <span aria-hidden="true">↳</span>
+            <p>
+              Evaluation stays local. After parser assets load, NativR makes no network requests.
+            </p>
+          </div>
+        </aside>
+
+        <section class="editor-card" aria-labelledby="editor-title">
+          <div class="card-header">
+            <div>
+              <p class="eyebrow">Source</p>
+              <h2 id="editor-title">R input</h2>
+            </div>
+            <span class="language-pill">R subset · 0.1</span>
+          </div>
+          <label class="visually-hidden" for="source">R source code</label>
+          <textarea id="source" spellcheck="false" autocomplete="off"></textarea>
+          <div class="toolbar">
+            <div class="primary-actions">
+              <button id="run" class="button button-primary" type="button" disabled>
+                <span>Run</span><kbd>Ctrl ↵</kbd>
+              </button>
+              <button id="interrupt" class="button" type="button" disabled>Interrupt</button>
+            </div>
+            <button id="reset" class="button button-quiet" type="button" disabled>
+              Reset session
+            </button>
+          </div>
+        </section>
+
+        <section class="output-stack" aria-label="Evaluation output">
+          <article class="output-card result-card">
+            <div class="card-header">
+              <div>
+                <p class="eyebrow">Value</p>
+                <h2>Result</h2>
+              </div>
+              <span id="elapsed" class="metric">—</span>
+            </div>
+            <pre id="result" tabindex="0" aria-live="polite">Waiting for evaluation.</pre>
+          </article>
+
+          <article class="output-card">
+            <div class="card-header compact">
+              <h2>Warnings</h2>
+              <span id="warning-count" class="count">0</span>
+            </div>
+            <div id="warnings" class="message-list" aria-live="polite">
+              <p class="empty">No warnings.</p>
+            </div>
+          </article>
+
+          <article class="output-card">
+            <div class="card-header compact">
+              <h2>Diagnostics</h2>
+              <span id="error-count" class="count">0</span>
+            </div>
+            <div id="errors" class="message-list" aria-live="assertive">
+              <p class="empty">No errors.</p>
+            </div>
+          </article>
+        </section>
+      </section>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

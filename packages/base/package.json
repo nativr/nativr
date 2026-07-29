@@ -1,0 +1,20 @@
+{
+  "name": "@nativr/base",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@nativr/ast": "workspace:*",
+    "@nativr/runtime": "workspace:*"
+  }
+}

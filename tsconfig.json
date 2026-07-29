@@ -1,0 +1,11 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/ast/tsconfig.json" },
+    { "path": "./packages/parser/tsconfig.json" },
+    { "path": "./packages/runtime/tsconfig.json" },
+    { "path": "./packages/base/tsconfig.json" },
+    { "path": "./packages/protocol/tsconfig.json" },
+    { "path": "./packages/nativr/tsconfig.json" }
+  ]
+}

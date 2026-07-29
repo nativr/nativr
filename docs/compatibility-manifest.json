@@ -1,0 +1,31 @@
+{
+  "nativrVersion": "0.0.0",
+  "protocolVersion": 1,
+  "languageSubsetVersion": "0.1.0",
+  "syntax": {
+    "literals": "supported",
+    "assignment": "supported",
+    "arithmetic": "supported",
+    "calls": "supported",
+    "functions": "supported",
+    "if": "parsed",
+    "loops": "parsed",
+    "return": "parsed",
+    "subset": "parsed",
+    "namespace": "parsed",
+    "formula": "parsed",
+    "pipe": "parsed",
+    "dynamicEvaluation": "unsupported"
+  },
+  "baseFunctions": {
+    "c": "behavioral",
+    "length": "behavioral",
+    "sum": "numeric",
+    "mean": "behavioral",
+    "sqrt": "numeric",
+    "abs": "numeric",
+    "is.na": "behavioral",
+    "is.nan": "behavioral"
+  },
+  "backends": ["js"]
+}

@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/.tsbuildinfo",
+    "lib": ["ES2022", "DOM", "WebWorker"]
+  },
+  "include": ["src/**/*.ts"],
+  "references": [
+    { "path": "../ast/tsconfig.json" },
+    { "path": "../parser/tsconfig.json" },
+    { "path": "../runtime/tsconfig.json" },
+    { "path": "../base/tsconfig.json" },
+    { "path": "../protocol/tsconfig.json" }
+  ]
+}

@@ -1,0 +1,32 @@
+name: Compatibility proposal
+description: Propose one evidence-backed language or API behavior.
+title: "[compat] "
+labels: ["compatibility"]
+body:
+  - type: textarea
+    id: scope
+    attributes:
+      label: Narrow scope
+      description: Name the syntax/function, arguments, result shape, and edge cases.
+    validations:
+      required: true
+  - type: dropdown
+    id: level
+    attributes:
+      label: Proposed evidence level
+      options: [Parse, API, Result shape, Numeric, Behavioral]
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Clean-room sources
+      description: Public documentation, mathematical references, or black-box observations only.
+    validations:
+      required: true
+  - type: textarea
+    id: cases
+    attributes:
+      label: Candidate conformance cases
+    validations:
+      required: true

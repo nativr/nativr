@@ -1,0 +1,11 @@
+packages:
+  - "packages/*"
+  - "apps/*"
+
+verifyDepsBeforeRun: false
+
+allowBuilds:
+  "@davisvaughan/tree-sitter-r": false
+  "@parcel/watcher": true
+  esbuild: true
+  tree-sitter-cli: true
