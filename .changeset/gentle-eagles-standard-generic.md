@@ -1,5 +1,5 @@
 ---
-"nativr": minor
+"@nativr/nativr": minor
 ---
 
 Add the usage-ranked `standardGeneric()` definition shape to the session-local S4 subset, including
