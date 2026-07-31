@@ -1,5 +1,5 @@
 ---
-"nativr": minor
+"@nativr/nativr": minor
 ---
 
 Add usage-ranked `stats::approx()` interpolation for numeric and Date-like coordinates with linear
