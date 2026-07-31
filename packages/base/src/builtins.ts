@@ -998,6 +998,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   definePackageBuiltin("stats", "frequency", ["x", "..."], "behavioral", builtinFrequency),
   definePackageBuiltin("stats", "deltat", ["x", "..."], "behavioral", builtinDeltaTime),
   definePackageBuiltin("stats", "cycle", ["x", "..."], "behavioral", builtinCycle),
+  definePackageBuiltin("stats", "embed", ["x", "dimension"], "behavioral", builtinEmbed),
   definePackageBuiltin(
     "stats",
     "window",
@@ -17807,6 +17808,98 @@ async function builtinDeltaTime(invocation: BuiltinInvocation): Promise<RValue> 
   const rows = dimensions?.[0] ?? input.length;
   const frequency = validatedTimeSeries(input, rows, "deltat", false).frequency;
   return doubleVector([1 / frequency]);
+}
+
+async function builtinEmbed(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = matchLazyArguments(invocation, ["x", "dimension"]);
+  const inputArgument = matched.get("x");
+  if (inputArgument === undefined || inputArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in embed().");
+  }
+  const input = await invocation.force(inputArgument.promise);
+  if (!isVector(input)) {
+    throw new RTypeMismatchError("NRT3346", "'x' is not a vector or matrix in embed().");
+  }
+  const dimensions = vectorDimensions(input);
+  const inputIsList = input.type === "list";
+  const inputIsDataFrame = isDataFrame(input);
+  const inputIsFactor = isFactor(input);
+  const classes = vectorClasses(input);
+  if (
+    inputIsDataFrame ||
+    (inputIsFactor && dimensions === undefined) ||
+    (classes !== undefined && dimensions === undefined && !classes.includes("ts"))
+  ) {
+    throw new RTypeMismatchError("NRT3346", "'x' is not a vector or matrix in embed().");
+  }
+  if (dimensions !== undefined && dimensions.length !== 2) {
+    throw new RTypeMismatchError("NRT3346", "'x' is not a vector or matrix in embed().");
+  }
+  if (dimensions !== undefined && (inputIsList || input.type === "raw")) {
+    throw new RTypeMismatchError("NRT3346", "'x' is not a vector or matrix in embed().");
+  }
+  const rows = dimensions?.[0] ?? input.length;
+  const series = dimensions?.[1] ?? 1;
+  const dimensionArgument = matched.get("dimension");
+  const requestedDimension =
+    dimensionArgument === undefined || dimensionArgument.promise.missing
+      ? 1
+      : embedDimension(await invocation.force(dimensionArgument.promise));
+  if (requestedDimension < 1 || requestedDimension > rows) {
+    throw new RTypeMismatchError("NRT3346", "wrong embedding dimension");
+  }
+  if (dimensions !== undefined && series > 0 && !Number.isInteger(requestedDimension)) {
+    throw new RTypeMismatchError(
+      "NRT3346",
+      "embed() requires an integer dimension for a nonempty matrix.",
+    );
+  }
+  const dimension = Math.trunc(requestedDimension);
+  const outputRows = Math.trunc(rows - requestedDimension + 1);
+  const outputLength = outputRows * series * dimension;
+  if (!Number.isSafeInteger(outputLength)) {
+    throw new RResourceLimitError("NRL4002", "embed() result exceeds the vector-length limit.");
+  }
+  invocation.context.allocate(outputLength);
+  const indices: number[] = [];
+  for (let lag = 0; lag < dimension; lag += 1) {
+    for (let column = 0; column < series; column += 1) {
+      for (let row = 0; row < outputRows; row += 1) {
+        invocation.context.checkpoint();
+        indices.push(column * rows + dimension - lag + row);
+      }
+    }
+  }
+  let source: RVector = input;
+  if (inputIsFactor && dimensions !== undefined) {
+    invocation.context.allocate(input.length);
+    const levels = factorLevels(input);
+    source = characterVector(
+      Array.from({ length: input.length }, (_, index) => {
+        invocation.context.checkpoint();
+        return isMissing(input, index) ? "" : (levels[(input.values[index] ?? 0) - 1] ?? "");
+      }),
+      input.missing,
+    );
+  }
+  const selected = subsetVector(source, integerVector(indices), invocation.context);
+  const normalized =
+    dimensions !== undefined && (selected.type === "logical" || selected.type === "integer")
+      ? doubleVector(selected.values, selected.missing)
+      : selected;
+  return withDimensions({ ...normalized, attributes: new Map() }, [outputRows, series * dimension]);
+}
+
+function embedDimension(value: RValue): number {
+  if (
+    (value.type !== "logical" && value.type !== "integer" && value.type !== "double") ||
+    value.length !== 1 ||
+    isMissing(value, 0) ||
+    !Number.isFinite(value.values[0])
+  ) {
+    throw new RTypeMismatchError("NRT3346", "embed(dimension=) requires one finite numeric value.");
+  }
+  return value.values[0] ?? 0;
 }
 
 async function builtinCycle(invocation: BuiltinInvocation): Promise<RValue> {

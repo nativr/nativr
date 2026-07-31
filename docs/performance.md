@@ -350,3 +350,7 @@ complete production Worker measures 292.8 KiB gzip against the 308 KiB limit.
 Language subset 0.180 adds rank 451's `stats::deltat()` S3 generic and validated sampling-interval
 default without raising the ceiling. The complete production Worker remains 292.8 KiB gzip against
 the 308 KiB limit.
+
+Language subset 0.181 adds rank 452's `stats::embed()` column-major lag-matrix construction,
+fractional-vector compatibility, attribute normalization, and result-length accounting without
+raising the ceiling. The first production Worker measures 293.3 KiB gzip against the 308 KiB limit.

@@ -352,6 +352,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
     `tsp` frequency, with lazy dots, namespace access, visibility, ordinary container shapes, and
     malformed-metadata guards. Zoo's irregular index inference and methods remain package-loader
     work.
+98. Frequency-ranked lagged windows: `stats::embed` runs zoo's measured `embed(1:5, 3)` dependency
+    with current-to-past column-major output for supported vectors and multivariate matrices, vector
+    storage preservation, GNU R matrix coercions, attribute removal, measured fractional-vector
+    behavior, zero-column matrices, namespace access, and pre-allocation result limits. Factor
+    vectors, data frames, expression vectors, raw/list matrices, higher arrays, and fractional
+    dimensions on nonempty matrices remain explicit boundaries.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

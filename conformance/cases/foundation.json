@@ -6772,5 +6772,59 @@
     "expected": ["measured", "4", "dot", "1", "double", "1", "TRUE", "TRUE"],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "embed-zoo-observed-lagged-window",
+    "code": "y <- stats::embed(setNames(1:5, letters[1:5]), 3)\nc(dim(y), y, is.null(dimnames(y)), is.null(names(y)), typeof(y), class(y))",
+    "expected": [
+      "3",
+      "3",
+      "3",
+      "4",
+      "5",
+      "2",
+      "3",
+      "4",
+      "1",
+      "2",
+      "3",
+      "TRUE",
+      "TRUE",
+      "integer",
+      "matrix",
+      "array"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "embed-matrix-series-attributes-and-boundaries",
+    "code": "x <- matrix(1:12, 4, 3, dimnames = list(paste0(\"r\", 1:4), paste0(\"c\", 1:3)))\ny <- embed(x, 2)\nz <- embed(ts(1:5, start = c(2000, 2), frequency = 4), 3)\nc(dim(y), y, is.null(dimnames(y)), is.null(attr(z, \"tsp\")), is.null(attr(z, \"class\")), dim(embed(1:5, 2.9)), dim(embed(matrix(integer(), 3, 0))))",
+    "expected": [
+      3, 6, 2, 3, 4, 6, 7, 8, 10, 11, 12, 1, 2, 3, 5, 6, 7, 9, 10, 11, 1, 1, 1, 3, 2, 3, 0
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "embed-vector-storage-and-matrix-coercion",
+    "code": "factorMatrix <- structure(factor(c(\"a\", \"b\", \"a\", \"b\")), dim = c(2, 2))\ny <- embed(factorMatrix, 1)\nc(typeof(embed(c(TRUE, FALSE, NA), 2)), typeof(embed(c(1, NA, NaN), 2)), typeof(embed(c(1 + 2i, 3 + 4i), 1)), typeof(embed(as.raw(1:3), 2)), typeof(embed(c(\"a\", \"b\"), 1)), typeof(embed(matrix(1:4, 2), 1)), typeof(embed(matrix(c(TRUE, FALSE), 2), 1)), y, typeof(y), is.null(attr(y, \"class\")))",
+    "expected": [
+      "logical",
+      "double",
+      "complex",
+      "raw",
+      "character",
+      "double",
+      "double",
+      "a",
+      "b",
+      "a",
+      "b",
+      "character",
+      "TRUE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

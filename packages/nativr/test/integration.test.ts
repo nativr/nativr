@@ -2400,6 +2400,131 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("embeds zoo's usage-ranked lagged windows in GNU R column-major order", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        y <- stats::embed(setNames(1:5, letters[1:5]), 3)
+        c(dim(y), y, is.null(dimnames(y)), is.null(names(y)), typeof(y), class(y))
+      `),
+    ).resolves.toEqual([
+      "3",
+      "3",
+      "3",
+      "4",
+      "5",
+      "2",
+      "3",
+      "4",
+      "1",
+      "2",
+      "3",
+      "TRUE",
+      "TRUE",
+      "integer",
+      "matrix",
+      "array",
+    ]);
+
+    const matrix = await runtime.evalDetailed(`
+      x <- matrix(
+        1:12,
+        4,
+        3,
+        dimnames = list(paste0("r", 1:4), paste0("c", 1:3))
+      )
+      embed(x, 2)
+    `);
+    expect(matrix.value).toEqual([2, 3, 4, 6, 7, 8, 10, 11, 12, 1, 2, 3, 5, 6, 7, 9, 10, 11]);
+    expect(matrix.raw).toMatchObject({ type: "double", dim: [3, 6] });
+    await expect(runtime.eval("is.null(dimnames(embed(matrix(1:12, 4), 2)))")).resolves.toBe(true);
+
+    await expect(
+      runtime.eval(`
+        c(
+          typeof(embed(c(TRUE, FALSE, NA), 2)),
+          typeof(embed(c(1, NA, NaN), 2)),
+          typeof(embed(c(1 + 2i, 3 + 4i), 1)),
+          typeof(embed(as.raw(1:3), 2)),
+          typeof(embed(c("a", "b"), 1)),
+          typeof(embed(matrix(c(TRUE, FALSE), 2), 1))
+        )
+      `),
+    ).resolves.toEqual(["logical", "double", "complex", "raw", "character", "double"]);
+    await expect(
+      runtime.eval(`
+        y <- embed(c(1, NA, NaN, 4), 2)
+        c(is.na(y), is.nan(y))
+      `),
+    ).resolves.toEqual([
+      true,
+      true,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+    ]);
+    await expect(
+      runtime.eval(`
+        f <- structure(factor(c("a", "b", "a", "b")), dim = c(2, 2))
+        y <- embed(f, 1)
+        c(y, typeof(y), is.null(attr(y, "class")))
+      `),
+    ).resolves.toEqual(["a", "b", "a", "b", "character", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        y <- embed(list(1L, "x", TRUE), 2)
+        c(dim(y), unlist(y), typeof(y))
+      `),
+    ).resolves.toEqual(["2", "2", "x", "TRUE", "1", "x", "list"]);
+    await expect(
+      runtime.eval(`
+        y <- embed(ts(1:5, start = c(2000, 2), frequency = 4), 3)
+        c(is.null(attr(y, "tsp")), is.null(attr(y, "class")), dim(y))
+      `),
+    ).resolves.toEqual([1, 1, 3, 3]);
+    await expect(runtime.eval("dim(embed(1:5))")).resolves.toEqual([5, 1]);
+    await expect(runtime.eval("dim(embed(1:5, 2.9))")).resolves.toEqual([3, 2]);
+    await expect(runtime.eval("dim(embed(1:5, TRUE))")).resolves.toEqual([5, 1]);
+    await expect(runtime.eval("dim(embed(matrix(integer(), 3, 0)))")).resolves.toEqual([3, 0]);
+
+    for (const source of [
+      "embed()",
+      "embed(integer())",
+      "embed(1:3, 0)",
+      "embed(1:3, 4)",
+      "embed(1:3, numeric())",
+      "embed(1:3, NA_real_)",
+      "embed(1:3, Inf)",
+      "embed(matrix(1:6, 3), 1.9)",
+      "embed(factor(c('a', 'b')))",
+      "embed(data.frame(x = 1:3))",
+      "embed(structure(1:3, class = 'probe'))",
+      "embed(expression(a, b))",
+      "embed(matrix(as.raw(1:4), 2))",
+      "embed(matrix(list(1, 2, 3, 4), 2))",
+    ]) {
+      await expect(runtime.eval(source), source).rejects.toMatchObject({
+        code: source === "embed()" ? "NRE2103" : "NRT3346",
+      });
+    }
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 12 },
+    });
+    await expect(limited.eval("embed(1:10, 3)")).rejects.toMatchObject({ code: "NRL4002" });
+    await limited.dispose();
+  });
+
   it("extracts usage-ranked regular windows and exposes package-owned S3 seams", async () => {
     const runtime = await session();
     await expect(
@@ -5163,7 +5288,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.180.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.181.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

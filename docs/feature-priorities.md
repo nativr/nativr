@@ -11,8 +11,8 @@ sampled packages, and arbitrary R package installation remains out of scope.
 
 ![Top 20 CRAN package downloads in the sampled window](figures/package-downloads.svg)
 
-The 100-package sample represents 126,305,580 downloads from the RStudio CRAN mirror. Ninety-seven
-CRAN reference manuals contained analyzable `Examples` sections, covering 122,530,254 downloads, or
+The 100-package sample represents 127,485,250 downloads from the RStudio CRAN mirror. Ninety-seven
+CRAN reference manuals contained analyzable `Examples` sections, covering 123,672,820 downloads, or
 97.0% of the sampled total. Counts include direct installs, dependency installs, automation, and
 repeat installs; they are not unique-user counts.
 
@@ -773,8 +773,14 @@ annotation/axes, and device-identical layout remain explicit boundaries. Rank 45
 complete for zoo's measured regular-series sampling-interval call, representing 731,390 downloads,
 one measured call, and 0.6% weighted reach. The generic forwards lazy dots to package methods such
 as `deltat.zoo`; its owned default returns one or the reciprocal of validated `tsp` frequency. Zoo's
-irregular-series inference and package methods remain package-owned. Rank 452 `embed` is the next
-unresolved callable candidate.
+irregular-series inference and package methods remain package-owned. Rank 452 `embed` is now
+complete for zoo's measured lagged-window dependency, representing 731,390 downloads, one measured
+call, and 0.6% weighted reach. The owned path produces current-to-past column-major windows for
+supported vectors and multivariate matrices with source-type preservation, attribute removal,
+fractional-vector behavior, GNU R matrix coercions, and pre-allocation result limits. Factor
+vectors, data frames, expression vectors, raw/list matrices, and fractional nonempty-matrix
+dimensions remain explicit boundaries. Rank 453 `findInterval` is the next unresolved callable
+candidate.
 
 ## Completed implementation order
 

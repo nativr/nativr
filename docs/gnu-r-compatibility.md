@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           468 |
-| Overlapping callable names        |           453 |
-| Missing GNU R callable names      |         2,069 |
-| Name overlap                      |      17.9619% |
+| NativR registered names           |           469 |
+| Overlapping callable names        |           454 |
+| Missing GNU R callable names      |         2,068 |
+| Name overlap                      |      18.0016% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -270,6 +270,15 @@ dots; its default returns an unnamed visible double equal to one for ordinary in
 reciprocal of validated `tsp` frequency. Vectors, matrices, expressions, closures, namespace access,
 visibility, and malformed metadata have adjacent coverage. Zoo's irregular index inference and
 methods remain package-owned, and loading zoo still depends on the planned pure-R package layer.
+
+The rank-452 increment adds GNU R differential evidence for zoo's documented `embed(1:5, 3)`
+rolling-window dependency. Supported atomic/list vectors preserve storage, while matrices apply GNU
+R's integer/logical-to-double and factor-to-character coercions; both produce current-to-past lag
+columns with column-major ordering and only result dimensions retained. Multivariate inputs, regular
+`ts` attribute removal, zero-column matrices, integer/logical and measured fractional-vector
+dimensions, namespace access, errors, and allocation limits have coverage. Factor vectors, data
+frames, expression vectors, raw/list matrices, higher arrays, fractional nonempty-matrix dimensions,
+and exact undocumented diagnostics remain explicitly incomplete.
 
 ## Completion evidence
 
