@@ -11,7 +11,7 @@ Date: 2026-07-31
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 513 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 522 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Vector/list selection and replacement, recursive `[[`, arbitrary-dimensional column-major array
@@ -47,9 +47,10 @@ Date: 2026-07-31
   dependency/version-checked isolated namespaces, imports/exports, `::`/`:::`, S3 registration,
   lifecycle hooks, attachment, reset/reload, and matching inline/Worker execution. Immutable
   DESCRIPTION/NAMESPACE/R-source/resource paths are exposed by `system.file()` and readable through
-  bounded `readLines()` or read-only file connections. Native code, package data/lazy data, broader
-  NAMESPACE directives, binary resource formats, and universal package execution remain explicit
-  boundaries.
+  bounded `readLines()` or read-only file connections. `utils::data()` discovers and executes
+  package `data/*.R` scripts or imports `.csv`/`.tab`/`.txt` resources into a selected environment.
+  Native code, GNU R binary/lazy data, broader NAMESPACE directives, binary resource formats, and
+  universal package execution remain explicit boundaries.
 - Browser-owned text I/O through `readLines()`/`writeLines()` covers same-session temporary files,
   immutable package text, GNU R line endings, separators, NUL/incomplete-line behavior, byte limits,
   and stdout events without host filesystem access. Session-owned `file()` handles add implicit and
@@ -57,6 +58,12 @@ Date: 2026-07-31
   `isOpen()`, `summary()`, invalid-handle rejection, `tempdir()`, and `file.exists()`. `Sys.sleep()`
   adds interruptible asynchronous waits for package retry/polling code without blocking the Worker
   event loop.
+- Browser-memory tabular I/O includes `utils::read.table`, `read.csv`, `read.csv2`, `read.delim`,
+  `read.delim2`, `write.table`, `write.csv`, and `write.csv2`. The bounded parser handles
+  separators, quoted fields (including doubled quotes and embedded newlines), headers, row/column
+  names, fill/skip/comment controls, missing strings, syntactic name repair, and deterministic
+  logical/integer/double/complex/factor conversion. Host files, compressed inputs, URLs, arbitrary
+  encodings, and the complete scan/column-class surface remain explicit boundaries.
 - Browser-safe `print()` and `cat()` output with invisible return semantics, ordered inline/Worker
   events, `evalDetailed` retention, output-budget accounting, and Playground console rendering.
   `utils::capture.output()` adds nested in-memory stdout/message capture, visible-result printing,
@@ -533,11 +540,11 @@ Date: 2026-07-31
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 10 files and 354 tests; aggregate V8 coverage is 84.65% statements, 72.19%
-  branches, 92.49% functions, and 85.91% lines.
+- Vitest currently passes 10 files and 360 tests; aggregate V8 coverage is 84.77% statements, 72.42%
+  branches, 92.41% functions, and 86.05% lines.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 697/697 cases. The optional black-box R oracle passes all 662
+- Checked-in conformance passes 699/699 cases. The optional black-box R oracle passes all 664
   eligible cases and explicitly skips 35 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,

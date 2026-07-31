@@ -397,6 +397,16 @@ compression, URLs, sockets, raw/binary I/O, encoding conversion on writes, indep
 positions, positions beyond end of file, and the broader connection/filesystem stack are not
 claimed.
 
+`utils::read.table`, `read.csv`, `read.csv2`, `read.delim`, and `read.delim2` have behavioral
+differential evidence for bounded browser-memory text, headers, quoted separators and doubled
+quotes, missing strings, syntactic names, row names, and logical/integer/double conversion.
+`write.table`, `write.csv`, and `write.csv2` have evidence for data-frame rows, headers, row-name
+conventions, quoted character fields, missing values, invisible returns, and session-file
+roundtrips. Existing readable/writable text connections are accepted with GNU R-style
+operation-scoped destruction when initially closed. `colClasses`, escape processing, compression,
+URLs, host paths, arbitrary encodings, locale-dependent formatting, and the full scanner/writer
+surface are not claimed.
+
 `base::Sys.sleep` accepts GNU R's non-negative scalar-coercible interval shape, permits `Inf`,
 returns invisible `NULL`, and cooperatively checks cancellation between short asynchronous timer
 slices. Missing, `NaN`, empty, and negative times fail. Exact scheduler resolution is host-dependent
@@ -1749,10 +1759,11 @@ license metadata, and emits deterministic SHA-256 artifacts plus a dependency lo
 runtime remains network-free. `pkgconfig 2.0.3` has an opt-in executable external test for the full
 repository-to-namespace path.
 
-Package admission is not universal execution compatibility. Depends-style attachment, package data
-loading, lazy data, broader NAMESPACE and S4 registration, bytecode, compiled code, arbitrary
-connections and binary resource decoders, license-policy decisions, and R CMD check behavior remain
-outside this slice.
+Package admission is not universal execution compatibility. Package `data/*.R`, `.csv`, `.tab`, and
+`.txt` discovery/loading is supported through `utils::data`, including explicit target environments
+and overwrite protection. Depends-style attachment, GNU R binary/lazy data, data indexes/aliases,
+broader NAMESPACE and S4 registration, bytecode, compiled code, arbitrary connections and binary
+resource decoders, license-policy decisions, and R CMD check behavior remain outside this slice.
 
 Deliberate current exclusions include GNU R/webR embedding, browser-time package installation,
 universal package execution, generated JavaScript execution, the complete graphics-device/base-

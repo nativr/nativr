@@ -441,3 +441,9 @@ existing line I/O, `cat()`, and `capture.output()` through it. The implementatio
 dependency, host filesystem adapter, network path, or execution backend. The measured Worker is
 317.7 KiB gzip, so the ceiling rises narrowly to 318 KiB. Client and parser-Wasm budgets remain
 unchanged.
+
+Language subset 0.201 adds package-data enumeration/execution plus one bounded delimited-table
+scanner/writer shared by `data()`, the `read.table`/CSV/delimited family, and the matching writers.
+It reuses owned vectors, data frames, type conversion, virtual files, and connections without a host
+CSV dependency or another execution backend. The measured Worker is 323.3 KiB gzip, so the ceiling
+rises to 324 KiB. Client and parser-Wasm budgets remain unchanged.

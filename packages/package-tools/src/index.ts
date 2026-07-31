@@ -227,14 +227,6 @@ function inspectInstallSurface(
         "GNU R binary data is preserved but not yet decoded by NativR.",
         file.path,
       );
-    } else if (/^data\/.*\.[Rr]$/u.test(file.path)) {
-      addIssue(
-        issues,
-        "NRPKG1006",
-        "warning",
-        "Data scripts are preserved but data() installation is not yet implemented.",
-        file.path,
-      );
     }
   }
   if (fields.get("NeedsCompilation")?.trim().toLowerCase() === "yes") {

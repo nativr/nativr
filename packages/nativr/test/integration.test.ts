@@ -50,6 +50,13 @@ hidden_helper <- function(x) x + 100
     { path: "extdata/nul.txt", data: "YQBiCg==" },
     { path: "extdata/latin1.txt", data: "6Qo=" },
     { path: "extdata/invalid-utf8.txt", data: "/w==" },
+    {
+      path: "data/example.R",
+      data: "ZXhhbXBsZSA8LSBkYXRhLmZyYW1lKGxhYmVsID0gYygiYSIsICJiIiksIHZhbHVlID0gYygxTCwgMkwpKQpzZWNvbmRhcnkgPC0gOTlMCg==",
+    },
+    { path: "data/csvset.csv", data: "bmFtZTt2YWx1ZQphbHBoYTsxCmJldGE7Mgo=" },
+    { path: "data/derived.R", data: "ZGVyaXZlZCA8LSByZWFkLmNzdigicmF3L3Jhdy5jc3YiKQo=" },
+    { path: "data/raw/raw.csv", data: "bGFiZWwsdmFsdWUKeCwxMAp5LDIwCg==" },
   ],
 };
 
@@ -59,6 +66,20 @@ Version: 0.2.0
 Imports: nativrfixture (>= 0.1.0)`,
   namespace: `importFrom(nativrfixture, square)\nexport(quad)`,
   rSources: [{ path: "R/quad.R", source: "quad <- function(x) square(square(x))" }],
+};
+
+const pureRLatinDataFixture: PureRPackageBundle = {
+  description: "Package: nativrlatindata\nVersion: 0.1.0\nEncoding: latin1\nNeedsCompilation: no",
+  namespace: "",
+  rSources: [],
+  resources: [{ path: "data/latin.R", data: "bGF0aW5fbGFiZWwgPC0gImNhZukiCg==" }],
+};
+
+const pureRBinaryDataFixture: PureRPackageBundle = {
+  description: "Package: nativrbinarydata\nVersion: 0.1.0\nNeedsCompilation: no",
+  namespace: "",
+  rSources: [],
+  resources: [{ path: "data/blob.rda", data: "AA==" }],
 };
 
 const failingS3Package: PureRPackageBundle = {
@@ -1863,6 +1884,369 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(runtime.eval("versionconsumer::use_square(2)")).rejects.toMatchObject({
       code: "NRE2235",
     });
+    await runtime.dispose();
+  });
+
+  it("discovers and loads package data scripts and text datasets without rewriting package code", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [pureRFixture, pureRLatinDataFixture, pureRBinaryDataFixture],
+    });
+
+    await expect(
+      runtime.eval(`
+        index <- data(package = "nativrfixture")
+        c(class(index), nrow(index$results), index$results[, "Item"])
+      `),
+    ).resolves.toEqual(["packageIQR", "3", "csvset", "derived", "example"]);
+
+    const loaded = await runtime.evalDetailed(`
+      result <- withVisible(data(example, package = "nativrfixture"))
+      c(
+        result$value,
+        result$visible,
+        class(example),
+        names(example),
+        example$label,
+        example$value,
+        secondary
+      )
+    `);
+    expect(loaded.value).toEqual([
+      "example",
+      "FALSE",
+      "data.frame",
+      "label",
+      "value",
+      "a",
+      "b",
+      "1",
+      "2",
+      "99",
+    ]);
+
+    const protectedData = await runtime.evalDetailed(`
+        target <- new.env()
+        target$example <- 7L
+        loaded <- data("example", package = "nativrfixture", envir = target, overwrite = FALSE)
+        c(loaded, target$example, target$secondary)
+      `);
+    expect(protectedData.value).toEqual(["example", "7", "99"]);
+    expect(protectedData.warnings).toEqual([
+      {
+        code: "NRW1120",
+        message: "an object named 'example' already exists and will not be overwritten",
+      },
+    ]);
+
+    await expect(
+      runtime.eval(`
+        data("csvset", package = "nativrfixture")
+        c(class(csvset), names(csvset), csvset$name, csvset$value)
+      `),
+    ).resolves.toEqual(["data.frame", "name", "value", "alpha", "beta", "1", "2"]);
+    await expect(
+      runtime.eval('data("latin", package = "nativrlatindata"); latin_label'),
+    ).resolves.toBe("café");
+    await expect(
+      runtime.eval(`
+        data("derived", package = "nativrfixture")
+        c(derived$label, derived$value)
+      `),
+    ).resolves.toEqual(["x", "y", "10", "20"]);
+    await expect(runtime.eval('read.csv("raw/raw.csv")')).rejects.toMatchObject({
+      code: "NRU6169",
+    });
+    await expect(
+      runtime.eval(`
+        rm(example, secondary)
+        library(nativrfixture)
+        data(example)
+        first <- c(example$value, secondary)
+        rm(example, secondary)
+        data(example, package = NULL)
+        c(first, example$value, secondary)
+      `),
+    ).resolves.toEqual([1, 2, 99, 1, 2, 99]);
+    await expect(runtime.eval('data("blob", package = "nativrbinarydata")')).rejects.toMatchObject({
+      code: "NRU6185",
+    });
+    await runtime.dispose();
+  });
+
+  it("round-trips common CSV and delimited table data through browser-memory files", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        path <- tempfile(fileext = ".csv")
+        original <- data.frame(
+          name = c("alpha", "a,b", "q\\"r"),
+          count = c(1L, NA_integer_, 3L),
+          flag = c(TRUE, FALSE, NA)
+        )
+        written <- withVisible(write.csv(original, path, row.names = FALSE))
+        restored <- read.csv(path)
+        c(
+          written$visible,
+          readLines(path),
+          names(restored),
+          typeof(restored$count),
+          restored$name,
+          restored$count,
+          restored$flag,
+          unlink(path)
+        )
+      `),
+    ).resolves.toEqual([
+      "FALSE",
+      '"name","count","flag"',
+      '"alpha",1,TRUE',
+      '"a,b",NA,FALSE',
+      '"q""r",3,NA',
+      "name",
+      "count",
+      "flag",
+      "integer",
+      "alpha",
+      "a,b",
+      'q"r',
+      "1",
+      NA,
+      "3",
+      "TRUE",
+      "FALSE",
+      NA,
+      "0",
+    ]);
+    await expect(
+      runtime.eval(`
+        d <- read.delim(text = "label\\tvalue\\na\\t1.5\\nb\\t2.5")
+        c(names(d), d$label, typeof(d$value), d$value)
+      `),
+    ).resolves.toEqual(["label", "value", "a", "b", "double", "1.5", "2.5"]);
+    await expect(
+      runtime.eval(`
+        source <- tempfile()
+        writeLines(c("x,y", "1,a", "2,b"), source)
+        closed <- file(source)
+        d <- read.csv(closed)
+        destroyed <- inherits(try(isOpen(closed), silent = TRUE), "try-error")
+        target <- tempfile()
+        opened <- file(target, "w")
+        write.csv(d, opened, row.names = FALSE)
+        remains_open <- isOpen(opened, "write")
+        close(opened)
+        c(d$x, d$y, destroyed, remains_open, readLines(target), unlink(c(source, target)))
+      `),
+    ).resolves.toEqual(["1", "2", "a", "b", "TRUE", "TRUE", '"x","y"', '1,"a"', '2,"b"', "0"]);
+    await runtime.dispose();
+  });
+
+  it("supports table dialects, row-name conventions, and bounded parsing controls", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        csv2 <- read.csv2(text = "amount;label\\r\\n1,5;\\"a;b\\"\\r\\n2,5;\\"q\\"\\"r\\"")
+        tab <- read.table(
+          text = "id value flag\\nr1 1 TRUE # trailing comment\\n\\nr2 2 FALSE",
+          header = TRUE,
+          row.names = "id",
+          strip.white = TRUE,
+          check.names = FALSE
+        )
+        filled <- read.table(
+          text = "1 a\\n2\\n3 c",
+          fill = TRUE,
+          col.names = c("number", "label")
+        )
+        limited <- read.csv(
+          text = "drop\\na\\nb\\nc",
+          skip = 1,
+          nrows = 1,
+          header = FALSE,
+          col.names = "picked"
+        )
+        named_rows <- read.csv(text = "x,y\\n1,a\\n2,b", row.names = c("left", "right"))
+        implicit <- read.csv(text = "value\\nr1,10\\nr2,20")
+        no_implicit <- read.csv(text = "value\\nr1,10", row.names = NULL)
+        c(
+          names(csv2), typeof(csv2$amount), csv2$amount, csv2$label,
+          names(tab), rownames(tab), tab$value, tab$flag,
+          names(filled), filled$number, filled$label,
+          names(limited), limited$picked,
+          rownames(named_rows), named_rows$x,
+          rownames(implicit), implicit$value,
+          names(no_implicit), no_implicit[[1]], no_implicit[[2]]
+        )
+      `),
+    ).resolves.toEqual([
+      "amount",
+      "label",
+      "double",
+      "1.5",
+      "2.5",
+      "a;b",
+      'q"r',
+      "value",
+      "flag",
+      "r1",
+      "r2",
+      "1",
+      "2",
+      "TRUE",
+      "FALSE",
+      "number",
+      "label",
+      "1",
+      "2",
+      "3",
+      "a",
+      "",
+      "c",
+      "picked",
+      "a",
+      "left",
+      "right",
+      "1",
+      "2",
+      "r1",
+      "r2",
+      "10",
+      "20",
+      "value",
+      "V2",
+      "r1",
+      "10",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("writes table shapes, CSV2 decimals, quoting modes, and connection lifetimes", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        matrix_path <- tempfile()
+        x <- matrix(
+          c("a\\"b", "c", "d", "e"),
+          nrow = 2,
+          dimnames = list(c("r1", "r2"), c("a", "b"))
+        )
+        write.table(
+          x,
+          matrix_path,
+          sep = ";",
+          row.names = c("left", "right"),
+          col.names = c("A", "B"),
+          quote = 1L,
+          qmethod = "double"
+        )
+        vector_path <- tempfile()
+        write.table(
+          c("x", "y"),
+          vector_path,
+          eol = "|",
+          row.names = FALSE,
+          col.names = FALSE,
+          quote = FALSE
+        )
+        list_path <- tempfile()
+        write.table(
+          list(a = 1:2, b = c("x", "y")),
+          list_path,
+          row.names = FALSE,
+          col.names = NA,
+          quote = FALSE
+        )
+        csv2_path <- tempfile()
+        write.csv2(
+          data.frame(group = factor(c("a", "b")), value = c(1.5, NA)),
+          csv2_path,
+          row.names = FALSE
+        )
+        closed_path <- tempfile()
+        closed <- file(closed_path)
+        write.csv(data.frame(x = 1L), closed, row.names = FALSE)
+        destroyed <- inherits(try(isOpen(closed), silent = TRUE), "try-error")
+        c(
+          readLines(matrix_path),
+          readLines(vector_path),
+          readLines(list_path),
+          readLines(csv2_path),
+          destroyed,
+          readLines(closed_path),
+          unlink(c(matrix_path, vector_path, list_path, csv2_path, closed_path))
+        )
+      `),
+    ).resolves.toEqual([
+      '"A";"B"',
+      '"left";"a""b";d',
+      '"right";"c";e',
+      "x|y|",
+      "a b",
+      "1 x",
+      "2 y",
+      '"group";"value"',
+      '"a";1,5',
+      '"b";NA',
+      "TRUE",
+      '"x"',
+      "1",
+      "0",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("reports package-data and table boundaries with stable diagnostics", async () => {
+    const runtime = await createR({ execution: "inline", assets, packages: [pureRFixture] });
+    const verbose = await runtime.evalDetailed(
+      'data(list = c("csvset", "absent"), package = "nativrfixture", verbose = TRUE)',
+    );
+    expect(verbose.value).toEqual(["csvset", "absent"]);
+    expect(verbose.output).toContainEqual({
+      stream: "stdout",
+      text: "name=csvset:\t package=nativrfixture\n",
+    });
+    expect(verbose.warnings).toMatchObject([{ code: "NRW1119" }]);
+    await expect(
+      runtime.eval(
+        "index <- data(list = NULL, package = character()); c(class(index), nrow(index$results))",
+      ),
+    ).resolves.toEqual(["packageIQR", "0"]);
+
+    const rejected: readonly [string, string][] = [
+      ['data("example", package = "nativrfixture", lib.loc = "host")', "NRU6184"],
+      ['data("example", package = "nativrfixture", envir = 1)', "NRT3357"],
+      ['data(list = 1, package = "nativrfixture")', "NRT3357"],
+      ['data(list = "a/b", package = "nativrfixture")', "NRT3357"],
+      ["read.table()", "NRE2103"],
+      ['read.table(file = "unused", text = "x")', "NRE2241"],
+      ["read.table(text = 1)", "NRT3358"],
+      ['read.table(text = "a", sep = "::")', "NRT3358"],
+      ['read.table(text = "a", dec = "..")', "NRT3358"],
+      ['read.table(text = "a", comment.char = "##")', "NRT3358"],
+      ['read.table(text = "a", colClasses = "character")', "NRU6186"],
+      ['read.table(text = "a", allowEscapes = TRUE)', "NRU6187"],
+      ['read.table(text = "a", flush = TRUE)', "NRU6187"],
+      ['read.table(text = "a", encoding = "UTF-16")', "NRU6188"],
+      ['read.table(text = "\\"unfinished")', "NRE2242"],
+      ['read.table(text = "")', "NRE2245"],
+      ['read.table(text = "1 2\\n3")', "NRE2243"],
+      ['read.csv(text = "x\\na\\nb", row.names = c("same", "same"))', "NRE2244"],
+      ['read.csv(text = "x,y\\n1,a\\n2,b", row.names = "absent")', "NRE2244"],
+      ["write.table()", "NRE2103"],
+      ["write.table(new.env(), tempfile())", "NRT3359"],
+      ["write.table(list(a = 1:2, b = 1), tempfile())", "NRT3359"],
+      ["write.table(list(a = list(1)), tempfile())", "NRU6189"],
+      ['write.table(1:2, tempfile(), row.names = "one")', "NRT3359"],
+      ['write.table(1:2, tempfile(), quote = "yes")', "NRT3359"],
+      ['write.table(1:2, tempfile(), qmethod = "invalid")', "NRT3359"],
+      ['write.table(1:2, tempfile(), col.names = c("a", "b"))', "NRT3359"],
+      ['write.table(1:2, tempfile(), fileEncoding = "UTF-16")', "NRU6188"],
+    ];
+    for (const [source, code] of rejected) {
+      await expect(runtime.eval(source)).rejects.toMatchObject({ code });
+    }
     await runtime.dispose();
   });
 
@@ -7229,6 +7613,22 @@ describe("complete inline source-to-result vertical slice", () => {
       "-Inf",
       "0",
     ]);
+    await expect(
+      runtime.eval(`
+        input <- tempfile()
+        writeLines(c("a;b", "1;2"), input)
+        parsed <- read.csv(input, header = TRUE, ";")
+        output <- tempfile()
+        write.table(
+          file = output,
+          data.frame(label = "a b", value = 1L),
+          sep = ",",
+          quote = FALSE,
+          row.names = FALSE
+        )
+        c(parsed$a, parsed$b, readLines(output), unlink(c(input, output)))
+      `),
+    ).resolves.toEqual(["1", "2", "label,value", "a b,1", "0"]);
     await runtime.dispose();
   });
 
@@ -7403,7 +7803,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.200.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.201.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

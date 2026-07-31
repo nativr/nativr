@@ -20,6 +20,11 @@ The generated package set exposes `bundles`, which can be supplied directly to
 `createR({ packages: packageSet.bundles })`. Packaging is a build-time operation; the browser
 runtime remains network-free and does not execute host installation scripts.
 
+The artifact preserves `inst/`, `data/`, demo, and license resources. At runtime, `utils::data()`
+can discover and load package `data/*.R`, `.csv`, `.tab`, and `.txt` entries through the normalized
+evaluator and browser-memory table layer. GNU R binary/lazy-data formats remain an explicit
+compatibility boundary.
+
 `install` resolves `Depends` and `Imports` from a CRAN-like source repository and emits an
 integrity-locked package set. `pack` accepts only an install surface that can be represented safely.
 It rejects native code, JVM code, symbolic links, installation hooks, unsafe archive paths,

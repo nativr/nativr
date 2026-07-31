@@ -25,6 +25,7 @@ export function compilePureRPackages(
     const description = parseDescription(bundle.description);
     const name = requiredDescriptionField(description, "Package");
     const version = requiredDescriptionField(description, "Version");
+    const resourceTextEncoding = packageTextEncoding(description.get("Encoding"), name);
     if (!PACKAGE_NAME.test(name)) {
       throw new REvaluationError("NRE2227", `Invalid package name '${name}' in DESCRIPTION.`);
     }
@@ -105,6 +106,7 @@ export function compilePureRPackages(
     return {
       name,
       version,
+      resourceTextEncoding,
       dependencies,
       imports: namespace.imports,
       exports: namespace.exports,
@@ -114,6 +116,15 @@ export function compilePureRPackages(
       resources: Object.freeze(resources),
     };
   });
+}
+
+function packageTextEncoding(value: string | undefined, packageName: string): "utf8" | "latin1" {
+  if (value === undefined || /^utf-?8$/iu.test(value.trim())) return "utf8";
+  if (/^latin-?1$/iu.test(value.trim())) return "latin1";
+  throw new RUnsupportedFeatureError(
+    "NRU6190",
+    `Package '${packageName}' declares unsupported text encoding '${value}'.`,
+  );
 }
 
 function isCanonicalBase64(value: string): boolean {

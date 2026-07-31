@@ -135,6 +135,7 @@ export interface RuntimePackageTextResource {
 export interface RuntimePackageDefinition {
   readonly name: string;
   readonly version: string;
+  readonly resourceTextEncoding: "utf8" | "latin1";
   readonly dependencies: readonly RuntimePackageDependency[];
   readonly imports: readonly RuntimePackageImport[];
   readonly exports: readonly string[];
@@ -357,9 +358,15 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
     new Set([
       "as.roman",
       "capture.output",
+      "data",
       "demo",
       "glob2rx",
       "packageName",
+      "read.csv",
+      "read.csv2",
+      "read.delim",
+      "read.delim2",
+      "read.table",
       "sessionInfo",
       "type.convert",
       "type.convert.data.frame",
@@ -367,6 +374,9 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "type.convert.list",
       "URLdecode",
       "View",
+      "write.csv",
+      "write.csv2",
+      "write.table",
     ]),
   ],
   ["R6", new Set(["R6Class"])],
@@ -1664,6 +1674,11 @@ export class Evaluator {
           ]),
         namespaceExports: async (name) => this.#namespaceExports(name, context),
         packageResourcePath: (name, path) => this.#packageResourcePath(name, path),
+        packageResourcePaths: (name, prefix) => {
+          const paths = this.#packageResourcePaths(name, prefix);
+          if (paths !== undefined) context.allocate(paths.length);
+          return paths;
+        },
         packageFile: (path) => this.#packageFile(path),
         packageName: (environment) => this.#packageName(environment),
         globalEnvironment: () => this.#globalEnvironment,
@@ -2073,6 +2088,7 @@ export class Evaluator {
             definition: {
               name,
               version: "4.6.0",
+              resourceTextEncoding: "utf8",
               dependencies: [],
               imports: [],
               exports: await this.#namespaceExports(name, context),
@@ -2267,9 +2283,32 @@ export class Evaluator {
     return encodedPath.length === 0 ? root : `${root}/${encodedPath}`;
   }
 
-  #packageFile(
-    path: string,
-  ): { readonly encoding: "text" | "base64"; readonly data: string } | undefined {
+  #packageResourcePaths(name: string, prefix: string): readonly string[] | undefined {
+    const normalizedPrefix = prefix.replace(/^\/+|\/+$/gu, "");
+    if (REGISTERED_NAMESPACE_EXPORTS.has(name)) return Object.freeze([]);
+    const record = this.#packages.get(name);
+    if (record === undefined) return undefined;
+    const paths = [
+      ...record.definition.textResources.map((resource) => resource.path),
+      ...record.definition.resources.map((resource) => resource.path),
+    ]
+      .filter(
+        (path) =>
+          normalizedPrefix.length === 0 ||
+          path === normalizedPrefix ||
+          path.startsWith(`${normalizedPrefix}/`),
+      )
+      .sort();
+    return Object.freeze(paths);
+  }
+
+  #packageFile(path: string):
+    | {
+        readonly encoding: "text" | "base64";
+        readonly data: string;
+        readonly textEncoding: "utf8" | "latin1";
+      }
+    | undefined {
     const resolved = parsePackageVirtualPath(path);
     if (resolved === undefined || resolved.resourcePath.length === 0) return undefined;
     const record = this.#packages.get(resolved.name);
@@ -2277,11 +2316,19 @@ export class Evaluator {
     const text = record.definition.textResources.find(
       (resource) => resource.path === resolved.resourcePath,
     );
-    if (text !== undefined) return { encoding: "text", data: text.text };
+    if (text !== undefined) {
+      return { encoding: "text", data: text.text, textEncoding: "utf8" };
+    }
     const binary = record.definition.resources.find(
       (resource) => resource.path === resolved.resourcePath,
     );
-    return binary === undefined ? undefined : { encoding: "base64", data: binary.data };
+    return binary === undefined
+      ? undefined
+      : {
+          encoding: "base64",
+          data: binary.data,
+          textEncoding: record.definition.resourceTextEncoding,
+        };
   }
 
   #packageName(environment: REnvironment): string | undefined {

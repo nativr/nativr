@@ -473,6 +473,11 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      modes, cursors, summaries, destruction, connection-aware line I/O, `cat`, and
      `utils::capture.output` have GNU R differential evidence. Host files, compression, URLs,
      sockets, raw/binary I/O, and the full filesystem remain later layers.
+119. Package data and delimited tables: usage-ranked `utils::data`, `write.csv`, and `read.csv`,
+     together with `read.table`/`read.csv2`/`read.delim*` and `write.table`/`write.csv2`, discover
+     and execute package `data/*.R`, import package text datasets, and round-trip quoted data frames
+     over bounded browser-memory paths/connections. GNU R binary/lazy data, compressed input,
+     aliases, host paths, URLs, arbitrary encodings, and the complete scanner remain later layers.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

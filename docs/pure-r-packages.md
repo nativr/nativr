@@ -81,7 +81,11 @@ normalized AST. The runtime then provides:
 8. bounded immutable resource lookup through `system.file()` and text access through `readLines()`
    or session-owned file connections;
 9. browser-memory `tempdir()`/`tempfile()` paths, `file.exists()`, stateful text connections, and
-   connection-aware `readLines()`, `writeLines()`, `cat()`, and `capture.output()`.
+   connection-aware `readLines()`, `writeLines()`, `cat()`, and `capture.output()`;
+10. `utils::data()` discovery and loading for package `data/*.R`, `.csv`, `.tab`, and `.txt`
+    resources, including target environments and overwrite protection;
+11. bounded `read.table()`/`read.csv()`/`read.delim()` and `write.table()`/`write.csv()` text-table
+    paths over package files, session files, connections, or inline `text=` input.
 
 Package source, metadata, resource counts, and encoded bytes are bounded before parsing. Package
 evaluation then consumes the ordinary step, call-depth, allocation, and output budgets.
@@ -133,8 +137,10 @@ the package itself was not patched or translated.
   `isOpen()`, `flush()`, bounded `seek()`, and `summary()`. Compressed connections, URLs, sockets,
   host paths, raw/binary I/O, separate read/write seek positions, and the broader file API remain
   separate work.
-- `data/*.R` and binary datasets are preserved with diagnostics; `data()` installation, `.rda`,
-  `.RData`, `.rds`, `R/sysdata.rda`, and full lazy-data behavior are not yet implemented.
+- Package `data/*.R` scripts execute through the same parser and normalized AST as package source;
+  `.csv`, `.tab`, and `.txt` datasets load into owned data frames. GNU R `.rda`, `.RData`, `.rds`,
+  `R/sysdata.rda`, compressed data files, data indexes/aliases, and full lazy-data behavior remain
+  unimplemented.
 - Bytecode is not loaded. Original R source is parsed into the owned AST.
 - The packager defaults to the deterministic `unix` source variant. Packages with platform-specific
   `R/` code can select `--source-platform windows`; the chosen variant is recorded in the artifact.

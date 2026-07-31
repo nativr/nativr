@@ -30,6 +30,13 @@ integers cannot forge a live handle. `dget()` can parse only text previously pro
 session's bounded serializer. `readLines()` and read-only connections may additionally decode
 reviewed package-bundle bytes; package writes and host paths are rejected before lookup.
 
+`utils::data()` can enumerate only immutable resources already admitted to the session package
+catalog. Package `.R` data scripts pass through Tree-sitter and the normalized evaluator under the
+same call, step, allocation, and output budgets as all other R code. Delimited table readers and
+writers use an owned bounded scanner over inline text or those same virtual paths/connections; they
+do not call browser CSV libraries, resolve URLs, or acquire filesystem capabilities. Initially
+closed connection handles are destroyed after a table operation, preventing leaked implicit state.
+
 `utils::demo()` does not probe installed R libraries, execute package scripts, start servers, or
 perform network access. Its current empty catalog does not yet discover or execute the validated
 resources available through the separate browser-safe package layer.

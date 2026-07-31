@@ -322,6 +322,113 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   definePackageBuiltin(
     "utils",
+    "data",
+    ["...", "list", "package", "lib.loc", "verbose", "envir", "overwrite"],
+    "behavioral",
+    builtinData,
+  ),
+  definePackageBuiltin(
+    "utils",
+    "read.table",
+    [
+      "file",
+      "header",
+      "sep",
+      "quote",
+      "dec",
+      "numerals",
+      "row.names",
+      "col.names",
+      "as.is",
+      "tryLogical",
+      "na.strings",
+      "colClasses",
+      "nrows",
+      "skip",
+      "check.names",
+      "fill",
+      "strip.white",
+      "blank.lines.skip",
+      "comment.char",
+      "allowEscapes",
+      "flush",
+      "stringsAsFactors",
+      "fileEncoding",
+      "encoding",
+      "text",
+      "skipNul",
+      "...",
+    ],
+    "behavioral",
+    (invocation) => builtinReadTable(invocation, "table"),
+  ),
+  definePackageBuiltin(
+    "utils",
+    "read.csv",
+    ["file", "header", "sep", "quote", "dec", "fill", "comment.char", "..."],
+    "behavioral",
+    (invocation) => builtinReadTable(invocation, "csv"),
+  ),
+  definePackageBuiltin(
+    "utils",
+    "read.csv2",
+    ["file", "header", "sep", "quote", "dec", "fill", "comment.char", "..."],
+    "behavioral",
+    (invocation) => builtinReadTable(invocation, "csv2"),
+  ),
+  definePackageBuiltin(
+    "utils",
+    "read.delim",
+    ["file", "header", "sep", "quote", "dec", "fill", "comment.char", "..."],
+    "behavioral",
+    (invocation) => builtinReadTable(invocation, "delim"),
+  ),
+  definePackageBuiltin(
+    "utils",
+    "read.delim2",
+    ["file", "header", "sep", "quote", "dec", "fill", "comment.char", "..."],
+    "behavioral",
+    (invocation) => builtinReadTable(invocation, "delim2"),
+  ),
+  definePackageBuiltin(
+    "utils",
+    "write.table",
+    [
+      "x",
+      "file",
+      "append",
+      "quote",
+      "sep",
+      "eol",
+      "na",
+      "dec",
+      "row.names",
+      "col.names",
+      "qmethod",
+      "fileEncoding",
+    ],
+    "behavioral",
+    (invocation) => builtinWriteTable(invocation, "table"),
+    "invisible",
+  ),
+  definePackageBuiltin(
+    "utils",
+    "write.csv",
+    ["x", "file", "..."],
+    "behavioral",
+    (invocation) => builtinWriteTable(invocation, "csv"),
+    "invisible",
+  ),
+  definePackageBuiltin(
+    "utils",
+    "write.csv2",
+    ["x", "file", "..."],
+    "behavioral",
+    (invocation) => builtinWriteTable(invocation, "csv2"),
+    "invisible",
+  ),
+  definePackageBuiltin(
+    "utils",
     "demo",
     ["topic", "package", "lib.loc", "character.only", "verbose", "type", "echo", "ask", "encoding"],
     "shape",
@@ -1616,6 +1723,7 @@ const S4_METHODS_STATE_KEY = "base.s4.methods";
 const S4_COERCIONS_STATE_KEY = "base.s4.coercions";
 const GRAPHICS_STATE_KEY = "graphics.device";
 const VIRTUAL_TEXT_FILES_STATE_KEY = "base.virtualTextFiles";
+const PACKAGE_DATA_DIRECTORY_STATE_KEY = "utils.packageDataDirectory";
 const VIRTUAL_TEMP_ROOT = "nativr://session-temp";
 const VIRTUAL_WORKSPACE_HEADER = "# nativr-workspace-v1\n";
 
@@ -2846,7 +2954,10 @@ async function builtinFile(invocation: BuiltinInvocation): Promise<RIntegerVecto
     throw new RResourceLimitError("NRL4002", "Virtual connection identifier limit exceeded.");
   }
 
-  const path = description === "" ? nextVirtualTempPath(state, "connection-", ".txt") : description;
+  const path =
+    description === ""
+      ? nextVirtualTempPath(state, "connection-", ".txt")
+      : resolvePackageDataRelativePath(invocation, description);
   const packageFile = path.startsWith("nativr://package/");
   if (!packageFile) requireVirtualTextPath(path, "file");
   const id = state.nextConnectionId;
@@ -2916,8 +3027,7 @@ async function builtinClose(invocation: BuiltinInvocation): Promise<RValue> {
     }
   }
   const state = virtualTextFileState(invocation);
-  state.connections.delete(connection.id);
-  if (connection.privateFile) deleteVirtualTextFile(state, connection.path);
+  destroyVirtualTextConnection(state, connection);
   return connection.open ? integerVector([0]) : R_NULL;
 }
 
@@ -2990,9 +3100,10 @@ async function builtinFileExists(invocation: BuiltinInvocation): Promise<RLogica
         values.push(false);
         continue;
       }
-      const path = isFactor(input)
+      const suppliedPath = isFactor(input)
         ? (factorLevels(input)[(input.values[index] ?? 0) - 1] ?? "")
         : stringAt(input, index);
+      const path = resolvePackageDataRelativePath(invocation, suppliedPath);
       values.push(
         path === VIRTUAL_TEMP_ROOT ||
           state.files.has(path) ||
@@ -3379,7 +3490,7 @@ function writeVirtualTextTarget(
   target: RValue,
   source: string,
   append: boolean,
-  call: "cat" | "capture.output",
+  call: string,
 ): VirtualTextConnection | undefined {
   if (isVirtualTextConnectionHandle(target)) {
     const connection = requireVirtualTextConnection(invocation, target);
@@ -3436,8 +3547,9 @@ function packageVirtualPathExists(invocation: BuiltinInvocation, path: string): 
 function readVirtualTextFile(
   invocation: BuiltinInvocation,
   path: string,
-  encoding: VirtualTextEncoding,
+  encoding: VirtualTextEncoding | "package",
 ): string {
+  path = resolvePackageDataRelativePath(invocation, path);
   if (path.startsWith(`${VIRTUAL_TEMP_ROOT}/`)) {
     const source = virtualTextFileState(invocation).files.get(path);
     if (source === undefined) {
@@ -3455,7 +3567,9 @@ function readVirtualTextFile(
   }
   if (packageFile.encoding === "text") return packageFile.data;
   const bytes = decodeBase64Resource(packageFile.data, invocation);
-  if (encoding === "latin1") return decodeLatin1Bytes(bytes);
+  if (encoding === "latin1" || (encoding === "package" && packageFile.textEncoding === "latin1")) {
+    return decodeLatin1Bytes(bytes);
+  }
   try {
     const Decoder = (
       globalThis as unknown as {
@@ -3469,6 +3583,15 @@ function readVirtualTextFile(
   } catch {
     throw new REvaluationError("NRE2237", `Package file '${path}' is not valid UTF-8 text.`);
   }
+}
+
+function resolvePackageDataRelativePath(invocation: BuiltinInvocation, path: string): string {
+  if (path.includes("://") || path.startsWith("/") || /^[A-Za-z]:[\\/]/u.test(path)) return path;
+  const root = invocation.state.get(PACKAGE_DATA_DIRECTORY_STATE_KEY);
+  if (typeof root !== "string" || path.length === 0 || path.includes("\\")) return path;
+  const parts = path.split("/");
+  if (parts.some((part) => part.length === 0 || part === "." || part === "..")) return path;
+  return `${root}/${parts.map((part) => encodeURIComponent(part)).join("/")}`;
 }
 
 function decodeLatin1Bytes(bytes: Uint8Array): string {
@@ -3878,20 +4001,7 @@ function virtualTextFileState(invocation: BuiltinInvocation): VirtualTextFileSta
   return created;
 }
 
-function requireVirtualTextPath(
-  path: string,
-  call:
-    | "capture.output"
-    | "cat"
-    | "dget"
-    | "dput"
-    | "file"
-    | "load"
-    | "readLines"
-    | "save"
-    | "unlink"
-    | "writeLines",
-): void {
+function requireVirtualTextPath(path: string, call: string): void {
   if (path.startsWith(`${VIRTUAL_TEMP_ROOT}/`) && path.length > VIRTUAL_TEMP_ROOT.length + 1)
     return;
   throw new RUnsupportedFeatureError(
@@ -3929,6 +4039,14 @@ function deleteVirtualTextFile(state: VirtualTextFileState, path: string): void 
   if (previous === undefined) return;
   state.files.delete(path);
   state.bytes -= virtualTextByteLength(previous);
+}
+
+function destroyVirtualTextConnection(
+  state: VirtualTextFileState,
+  connection: VirtualTextConnection,
+): void {
+  state.connections.delete(connection.id);
+  if (connection.privateFile) deleteVirtualTextFile(state, connection.path);
 }
 
 function validateDputControl(value: RValue | undefined): void {
@@ -13957,7 +14075,7 @@ async function builtinCaptureOutput(invocation: BuiltinInvocation): Promise<RVal
       "capture.output",
     );
     if (targetConnection !== undefined && !targetConnectionWasOpen) {
-      virtualTextFileState(invocation).connections.delete(targetConnection.id);
+      destroyVirtualTextConnection(virtualTextFileState(invocation), targetConnection);
     }
     invocation.setResultVisibility("invisible");
     return R_NULL;
@@ -13987,6 +14105,1061 @@ function capturedOutputLines(output: readonly { readonly text: string }[]): read
   const lines = text.split("\n");
   if (text.endsWith("\n")) lines.pop();
   return lines;
+}
+
+const DATA_CONTROL_NAMES = new Set(["list", "package", "lib.loc", "verbose", "envir", "overwrite"]);
+const DATA_FILE_EXTENSIONS = [
+  ".R",
+  ".r",
+  ".RData",
+  ".rdata",
+  ".rda",
+  ".tab",
+  ".txt",
+  ".TXT",
+  ".csv",
+  ".CSV",
+] as const;
+
+async function builtinData(invocation: BuiltinInvocation): Promise<RValue> {
+  const controls = new Map<string, BuiltinCallArgument>();
+  const requestedArguments: BuiltinCallArgument[] = [];
+  for (const argument of invocation.arguments) {
+    if (argument.name !== undefined && DATA_CONTROL_NAMES.has(argument.name)) {
+      if (controls.has(argument.name)) {
+        throw new REvaluationError(
+          "NRE2102",
+          `Argument '${argument.name}' matched more than once.`,
+        );
+      }
+      controls.set(argument.name, argument);
+    } else {
+      requestedArguments.push(argument);
+    }
+  }
+
+  const requested: string[] = [];
+  for (const argument of requestedArguments) {
+    requested.push(...(await dataArgumentNames(invocation, argument)));
+  }
+  const listArgument = controls.get("list");
+  if (listArgument !== undefined && !listArgument.promise.missing) {
+    requested.push(...dataCharacterNames(await invocation.force(listArgument.promise), "list"));
+  }
+
+  const packageArgument = controls.get("package");
+  const searchedPackages = invocation
+    .searchPath()
+    .flatMap((entry) => (entry.startsWith("package:") ? [entry.slice("package:".length)] : []));
+  const packageValue =
+    packageArgument === undefined || packageArgument.promise.missing
+      ? undefined
+      : await invocation.force(packageArgument.promise);
+  const packages =
+    packageValue === undefined || packageValue.type === "null"
+      ? searchedPackages
+      : dataPackageNames(packageValue);
+  const libraryArgument = controls.get("lib.loc");
+  if (libraryArgument !== undefined && !libraryArgument.promise.missing) {
+    const library = await invocation.force(libraryArgument.promise);
+    if (library.type !== "null") {
+      throw new RUnsupportedFeatureError(
+        "NRU6184",
+        "data(lib.loc=) cannot inspect host R libraries in the browser runtime.",
+      );
+    }
+  }
+  const verboseArgument = controls.get("verbose");
+  const verbose =
+    verboseArgument === undefined || verboseArgument.promise.missing
+      ? false
+      : logicalFlag(await invocation.force(verboseArgument.promise), false, "verbose");
+  const environmentArgument = controls.get("envir");
+  const target =
+    environmentArgument === undefined || environmentArgument.promise.missing
+      ? invocation.globalEnvironment()
+      : await invocation.force(environmentArgument.promise);
+  if (target.type !== "environment") {
+    throw new RTypeMismatchError("NRT3357", "data(envir=) requires an environment.");
+  }
+  const overwriteArgument = controls.get("overwrite");
+  const overwrite =
+    overwriteArgument === undefined || overwriteArgument.promise.missing
+      ? true
+      : logicalFlag(await invocation.force(overwriteArgument.promise), true, "overwrite");
+
+  if (requested.length === 0) return dataIndex(invocation, packages);
+  invocation.setResultVisibility("invisible");
+  for (const dataset of requested) {
+    invocation.context.checkpoint();
+    const located = findPackageDataset(invocation, packages, dataset);
+    if (located === undefined) {
+      invocation.context.warn({ code: "NRW1119", message: `data set '${dataset}' not found` });
+      continue;
+    }
+    if (verbose) {
+      invocation.context.writeOutput({
+        stream: "stdout",
+        text: `name=${dataset}:\t package=${located.package}\n`,
+      });
+    }
+    await loadPackageDataset(invocation, located, dataset, target, overwrite);
+  }
+  invocation.context.allocate(requested.length);
+  return characterVector(requested);
+}
+
+async function dataArgumentNames(
+  invocation: BuiltinInvocation,
+  argument: BuiltinCallArgument,
+): Promise<readonly string[]> {
+  if (argument.promise.missing) {
+    throw new REvaluationError("NRE2103", "A data() data-set argument is missing.");
+  }
+  const expression = argument.promise.expression;
+  if (expression?.kind === "Identifier") return [expression.name];
+  if (expression?.kind === "StringLiteral") return [expression.value];
+  return dataCharacterNames(await invocation.force(argument.promise), "...");
+}
+
+function dataCharacterNames(value: RValue, argument: "..." | "list"): readonly string[] {
+  if (value.type === "null") return [];
+  if (value.type !== "character" || value.missing !== undefined) {
+    throw new RTypeMismatchError(
+      "NRT3357",
+      `data(${argument}=) requires non-missing character data-set names.`,
+    );
+  }
+  if (value.values.some((name) => name.length === 0 || name.includes("/") || name.includes("\\"))) {
+    throw new RTypeMismatchError("NRT3357", "data() data-set names must be non-empty basenames.");
+  }
+  return value.values;
+}
+
+function dataPackageNames(value: RValue): readonly string[] {
+  if (value.type === "null") return [];
+  if (value.type !== "character" || value.missing !== undefined) {
+    throw new RTypeMismatchError("NRT3357", "data(package=) requires package names.");
+  }
+  return value.values;
+}
+
+interface LocatedPackageDataset {
+  readonly package: string;
+  readonly path: string;
+  readonly virtualPath: string;
+}
+
+function findPackageDataset(
+  invocation: BuiltinInvocation,
+  packages: readonly string[],
+  dataset: string,
+): LocatedPackageDataset | undefined {
+  for (const packageName of packages) {
+    const paths = invocation.packageResourcePaths(packageName, "data");
+    if (paths === undefined) continue;
+    for (const extension of DATA_FILE_EXTENSIONS) {
+      const expected = `data/${dataset}${extension}`;
+      if (!paths.includes(expected)) continue;
+      const virtualPath = invocation.packageResourcePath(packageName, expected);
+      if (virtualPath !== undefined) return { package: packageName, path: expected, virtualPath };
+    }
+  }
+  return undefined;
+}
+
+async function loadPackageDataset(
+  invocation: BuiltinInvocation,
+  located: LocatedPackageDataset,
+  dataset: string,
+  target: REnvironment,
+  overwrite: boolean,
+): Promise<void> {
+  const lower = located.path.toLowerCase();
+  const source = readVirtualTextFile(invocation, located.virtualPath, "package");
+  if (lower.endsWith(".r")) {
+    const previous = new Map(target.bindings);
+    const program = invocation.parse(source);
+    const previousDirectory = invocation.state.get(PACKAGE_DATA_DIRECTORY_STATE_KEY);
+    const directory = invocation.packageResourcePath(located.package, "data");
+    if (directory !== undefined) invocation.state.set(PACKAGE_DATA_DIRECTORY_STATE_KEY, directory);
+    try {
+      await invocation.evaluate(
+        { type: "expression", values: Object.freeze([...program.body]) },
+        target,
+      );
+    } finally {
+      if (previousDirectory === undefined)
+        invocation.state.delete(PACKAGE_DATA_DIRECTORY_STATE_KEY);
+      else invocation.state.set(PACKAGE_DATA_DIRECTORY_STATE_KEY, previousDirectory);
+    }
+    if (!overwrite) restoreDataBindings(invocation, target, previous);
+    return;
+  }
+  if (lower.endsWith(".rda") || lower.endsWith(".rdata")) {
+    throw new RUnsupportedFeatureError(
+      "NRU6185",
+      `data() cannot yet decode GNU R binary dataset '${located.path}'.`,
+    );
+  }
+  const variant = lower.endsWith(".csv") ? "data-csv" : "data-table";
+  const frame = readTableSource(invocation, source, tableDefaults(variant), new Map());
+  const previous = target.bindings.get(dataset);
+  if (previous !== undefined && !overwrite) {
+    invocation.context.warn({
+      code: "NRW1120",
+      message: `an object named '${dataset}' already exists and will not be overwritten`,
+    });
+    return;
+  }
+  setBinding(target, dataset, frame);
+}
+
+function restoreDataBindings(
+  invocation: BuiltinInvocation,
+  target: REnvironment,
+  previous: ReadonlyMap<string, RBinding>,
+): void {
+  for (const [name, binding] of previous) {
+    if (target.bindings.get(name) === binding) continue;
+    setBinding(target, name, binding);
+    invocation.context.warn({
+      code: "NRW1120",
+      message: `an object named '${name}' already exists and will not be overwritten`,
+    });
+  }
+}
+
+function dataIndex(invocation: BuiltinInvocation, packages: readonly string[]): RValue {
+  const rows: { readonly package: string; readonly root: string; readonly item: string }[] = [];
+  for (const packageName of packages) {
+    const paths = invocation.packageResourcePaths(packageName, "data");
+    if (paths === undefined) continue;
+    const root = invocation.packageResourcePath(packageName, "") ?? "";
+    const seen = new Set<string>();
+    for (const path of paths) {
+      const file = path.slice("data/".length);
+      const extension = DATA_FILE_EXTENSIONS.find((candidate) => file.endsWith(candidate));
+      if (extension === undefined) continue;
+      const item = file.slice(0, -extension.length);
+      if (item.length === 0 || item.includes("/") || seen.has(item)) continue;
+      seen.add(item);
+      rows.push({ package: packageName, root, item });
+    }
+  }
+  rows.sort((left, right) =>
+    left.package === right.package
+      ? left.item.localeCompare(right.item)
+      : left.package.localeCompare(right.package),
+  );
+  invocation.context.allocate(rows.length * 4 + 8);
+  const results = withAttribute(
+    withDimensions(
+      characterVector([
+        ...rows.map((row) => row.package),
+        ...rows.map((row) => row.root),
+        ...rows.map((row) => row.item),
+        ...rows.map(() => ""),
+      ]),
+      [rows.length, 4],
+    ),
+    "dimnames",
+    listValue([R_NULL, characterVector(["Package", "LibPath", "Item", "Title"])]),
+  );
+  return withClasses(
+    listValue(
+      [characterVector(["Data sets"]), R_NULL, results, R_NULL],
+      ["title", "header", "results", "footer"],
+    ),
+    ["packageIQR"],
+  );
+}
+
+type ReadTableVariant = "table" | "csv" | "csv2" | "delim" | "delim2" | "data-csv" | "data-table";
+
+interface ReadTableDefaults {
+  readonly header: boolean;
+  readonly separator: string;
+  readonly quotes: string;
+  readonly decimal: string;
+  readonly fill: boolean;
+  readonly comment: string;
+}
+
+function tableDefaults(variant: ReadTableVariant): ReadTableDefaults {
+  switch (variant) {
+    case "csv":
+      return { header: true, separator: ",", quotes: '"', decimal: ".", fill: true, comment: "" };
+    case "csv2":
+      return { header: true, separator: ";", quotes: '"', decimal: ",", fill: true, comment: "" };
+    case "delim":
+      return { header: true, separator: "\t", quotes: '"', decimal: ".", fill: true, comment: "" };
+    case "delim2":
+      return { header: true, separator: "\t", quotes: '"', decimal: ",", fill: true, comment: "" };
+    case "data-csv":
+      return { header: true, separator: ";", quotes: '"', decimal: ".", fill: true, comment: "" };
+    case "data-table":
+      return {
+        header: true,
+        separator: "",
+        quotes: "\"'",
+        decimal: ".",
+        fill: false,
+        comment: "#",
+      };
+    case "table":
+      return {
+        header: false,
+        separator: "",
+        quotes: "\"'",
+        decimal: ".",
+        fill: false,
+        comment: "#",
+      };
+    default:
+      return assertNever(variant);
+  }
+}
+
+const READ_TABLE_FORMALS = [
+  "file",
+  "header",
+  "sep",
+  "quote",
+  "dec",
+  "numerals",
+  "row.names",
+  "col.names",
+  "as.is",
+  "tryLogical",
+  "na.strings",
+  "colClasses",
+  "nrows",
+  "skip",
+  "check.names",
+  "fill",
+  "strip.white",
+  "blank.lines.skip",
+  "comment.char",
+  "allowEscapes",
+  "flush",
+  "stringsAsFactors",
+  "fileEncoding",
+  "encoding",
+  "text",
+  "skipNul",
+] as const;
+
+async function builtinReadTable(
+  invocation: BuiltinInvocation,
+  variant: Exclude<ReadTableVariant, "data-csv" | "data-table">,
+): Promise<RValue> {
+  const leading =
+    variant === "table"
+      ? READ_TABLE_FORMALS
+      : (["file", "header", "sep", "quote", "dec", "fill", "comment.char"] as const);
+  const controls = await forceNamedControls(invocation, leading, READ_TABLE_FORMALS, "read.table");
+  rejectUnsupportedReadTableControls(controls);
+  const defaults = tableDefaults(variant);
+  const text = controls.get("text");
+  let source: string;
+  let connectionToDestroy: VirtualTextConnection | undefined;
+  if (text !== undefined) {
+    if (controls.has("file")) {
+      throw new REvaluationError("NRE2241", "read.table() cannot use both 'file' and 'text'.");
+    }
+    if (text.type !== "character") {
+      throw new RTypeMismatchError("NRT3358", "read.table(text=) requires character input.");
+    }
+    source = Array.from({ length: text.length }, (_, index) =>
+      isMissing(text, index) ? "NA" : (text.values[index] ?? ""),
+    ).join("\n");
+  } else {
+    const file = controls.get("file");
+    if (file === undefined) {
+      throw new REvaluationError("NRE2103", "Argument 'file' is missing in read.table().");
+    }
+    const read = readTableInput(invocation, file, controls.get("fileEncoding"));
+    source = read.source;
+    connectionToDestroy = read.connectionToDestroy;
+  }
+  if (logicalFlag(controls.get("skipNul"), false, "skipNul")) source = source.replaceAll("\0", "");
+  try {
+    return readTableSource(invocation, source, defaults, controls);
+  } finally {
+    if (connectionToDestroy !== undefined) {
+      destroyVirtualTextConnection(virtualTextFileState(invocation), connectionToDestroy);
+    }
+  }
+}
+
+async function forceNamedControls(
+  invocation: BuiltinInvocation,
+  positional: readonly string[],
+  allowed: readonly string[],
+  call: string,
+): Promise<Map<string, RValue>> {
+  const allowedNames = new Set<string>(allowed);
+  const controls = new Map<string, RValue>();
+  let position = 0;
+  for (const argument of invocation.arguments) {
+    while (argument.name === undefined && controls.has(positional[position] ?? "")) position += 1;
+    const suppliedName = argument.name ?? positional[position++];
+    const name =
+      suppliedName === undefined
+        ? undefined
+        : allowedNames.has(suppliedName)
+          ? suppliedName
+          : uniquePartialControlName(suppliedName, allowed);
+    if (name === undefined) {
+      throw new REvaluationError(
+        "NRE2101",
+        argument.name === undefined
+          ? `Too many positional arguments in ${call}().`
+          : `Unused argument '${argument.name}' in ${call}().`,
+      );
+    }
+    if (controls.has(name)) {
+      throw new REvaluationError("NRE2102", `Argument '${name}' matched more than once.`);
+    }
+    if (!argument.promise.missing) controls.set(name, await invocation.force(argument.promise));
+  }
+  return controls;
+}
+
+function uniquePartialControlName(
+  supplied: string,
+  allowed: readonly string[],
+): string | undefined {
+  if (supplied.length === 0) return undefined;
+  const matches = allowed.filter((name) => name.startsWith(supplied));
+  return matches.length === 1 ? matches[0] : undefined;
+}
+
+function rejectUnsupportedReadTableControls(controls: ReadonlyMap<string, RValue>): void {
+  const colClasses = controls.get("colClasses");
+  if (colClasses !== undefined && colClasses.type !== "null") {
+    throw new RUnsupportedFeatureError(
+      "NRU6186",
+      "read.table(colClasses=) is not yet supported; columns are converted with type.convert().",
+    );
+  }
+  for (const name of ["allowEscapes", "flush"] as const) {
+    if (logicalFlag(controls.get(name), false, name)) {
+      throw new RUnsupportedFeatureError(
+        "NRU6187",
+        `read.table(${name}=TRUE) is not yet supported.`,
+      );
+    }
+  }
+  const encoding = controls.get("encoding");
+  if (encoding !== undefined) tableEncoding(encoding, "encoding");
+}
+
+function readTableInput(
+  invocation: BuiltinInvocation,
+  value: RValue,
+  encodingValue: RValue | undefined,
+): { readonly source: string; readonly connectionToDestroy?: VirtualTextConnection } {
+  if (isVirtualTextConnectionHandle(value)) {
+    const connection = requireVirtualTextConnection(invocation, value);
+    if (connection.open && !virtualConnectionCanRead(connection.mode)) {
+      throw new REvaluationError("NRE2240", "cannot read from this connection");
+    }
+    const start = connection.open ? connection.cursor : 0;
+    const source = readVirtualTextFile(invocation, connection.path, connection.encoding);
+    if (connection.open) {
+      connection.cursor = source.length;
+      return { source: source.slice(start) };
+    }
+    return { source, connectionToDestroy: connection };
+  }
+  const path = filePathScalar(value, "read.table");
+  const encoding =
+    encodingValue === undefined ? "utf8" : tableEncoding(encodingValue, "fileEncoding");
+  return { source: readVirtualTextFile(invocation, path, encoding) };
+}
+
+function tableEncoding(value: RValue, name: string): VirtualTextEncoding {
+  const requested = characterScalar(value, name).toLowerCase().replaceAll("-", "");
+  if (requested === "" || requested === "unknown" || requested === "utf8") return "utf8";
+  if (requested === "latin1") return "latin1";
+  throw new RUnsupportedFeatureError(
+    "NRU6188",
+    `read.table(${name}=) supports only UTF-8 and latin1 text.`,
+  );
+}
+
+interface ParsedTableField {
+  readonly text: string;
+  readonly quoted: boolean;
+}
+
+function parseTableRecords(
+  invocation: BuiltinInvocation,
+  source: string,
+  separator: string,
+  quotes: string,
+  comment: string,
+  stripWhite: boolean,
+  blankLinesSkip: boolean,
+): readonly (readonly ParsedTableField[])[] {
+  const records: ParsedTableField[][] = [];
+  let row: ParsedTableField[] = [];
+  let field = "";
+  let quote: string | undefined;
+  let quoted = false;
+  let index = 0;
+  const whitespace = separator === "";
+  const pushField = () => {
+    row.push({ text: stripWhite && !quoted ? field.trim() : field, quoted });
+    field = "";
+    quoted = false;
+  };
+  const pushRow = () => {
+    if (!whitespace || field.length > 0 || quoted || row.length === 0) pushField();
+    if (!blankLinesSkip || row.some((entry) => entry.text.length > 0 || entry.quoted)) {
+      records.push(row);
+    }
+    row = [];
+  };
+  while (index < source.length) {
+    invocation.context.checkpoint();
+    const character = source[index] ?? "";
+    if (quote !== undefined) {
+      if (character === quote) {
+        if (source[index + 1] === quote) {
+          field += quote;
+          index += 2;
+          continue;
+        }
+        quote = undefined;
+        index += 1;
+        continue;
+      }
+      field += character;
+      index += 1;
+      continue;
+    }
+    if (quotes.includes(character)) {
+      quote = character;
+      quoted = true;
+      index += 1;
+      continue;
+    }
+    if (comment.length > 0 && character === comment) {
+      while (index < source.length && source[index] !== "\n" && source[index] !== "\r") index += 1;
+      continue;
+    }
+    if (character === "\n" || character === "\r") {
+      if (character === "\r" && source[index + 1] === "\n") index += 1;
+      pushRow();
+      index += 1;
+      continue;
+    }
+    if (whitespace ? character === " " || character === "\t" : character === separator) {
+      if (whitespace) {
+        if (field.length > 0 || quoted) pushField();
+        while (source[index + 1] === " " || source[index + 1] === "\t") index += 1;
+      } else {
+        pushField();
+      }
+      index += 1;
+      continue;
+    }
+    field += character;
+    index += 1;
+  }
+  if (quote !== undefined)
+    throw new REvaluationError("NRE2242", "incomplete quoted field in table input");
+  if (field.length > 0 || quoted || row.length > 0) pushRow();
+  invocation.context.allocate(records.reduce((count, record) => count + record.length, 0));
+  return records;
+}
+
+function readTableSource(
+  invocation: BuiltinInvocation,
+  source: string,
+  defaults: ReadTableDefaults,
+  controls: ReadonlyMap<string, RValue>,
+): RList {
+  const header = logicalFlag(controls.get("header"), defaults.header, "header");
+  const separator = controls.has("sep")
+    ? characterScalar(controls.get("sep") as RValue, "sep")
+    : defaults.separator;
+  if ([...separator].length > 1) {
+    throw new RTypeMismatchError("NRT3358", "read.table(sep=) must be one character or empty.");
+  }
+  const quotes = controls.has("quote")
+    ? characterScalar(controls.get("quote") as RValue, "quote")
+    : defaults.quotes;
+  const decimal = controls.has("dec")
+    ? characterScalar(controls.get("dec") as RValue, "dec")
+    : defaults.decimal;
+  if ([...decimal].length !== 1) {
+    throw new RTypeMismatchError("NRT3358", "read.table(dec=) must be one character.");
+  }
+  const comment = controls.has("comment.char")
+    ? characterScalar(controls.get("comment.char") as RValue, "comment.char")
+    : defaults.comment;
+  if ([...comment].length > 1) {
+    throw new RTypeMismatchError(
+      "NRT3358",
+      "read.table(comment.char=) must be one character or empty.",
+    );
+  }
+  const stripWhite = logicalFlag(controls.get("strip.white"), false, "strip.white");
+  const blankLinesSkip = logicalFlag(controls.get("blank.lines.skip"), true, "blank.lines.skip");
+  const fill = logicalFlag(controls.get("fill"), defaults.fill, "fill");
+  const skip = tableCount(controls.get("skip"), 0, "skip");
+  const nrows = tableCount(controls.get("nrows"), -1, "nrows");
+  let records = parseTableRecords(
+    invocation,
+    source,
+    separator,
+    quotes,
+    comment,
+    stripWhite,
+    blankLinesSkip,
+  ).slice(skip);
+  if (records.length === 0 && !controls.has("col.names")) {
+    throw new REvaluationError("NRE2245", "no lines available in input");
+  }
+  let headerFields: readonly ParsedTableField[] | undefined;
+  if (header) headerFields = records.shift();
+  if (nrows >= 0) records = records.slice(0, nrows);
+
+  const suppliedNames = tableCharacterVector(controls.get("col.names"), "col.names");
+  const maximumWidth = Math.max(
+    suppliedNames?.length ?? 0,
+    headerFields?.length ?? 0,
+    ...records.map((record) => record.length),
+    0,
+  );
+  const implicitRowNames =
+    headerFields !== undefined &&
+    headerFields.length > 0 &&
+    records.some((record) => record.length === headerFields.length + 1);
+  const dataWidth = Math.max(0, maximumWidth - (implicitRowNames ? 1 : 0));
+  if (!fill && records.some((record) => record.length !== maximumWidth)) {
+    throw new REvaluationError("NRE2243", "line did not have the expected number of elements");
+  }
+  const normalized = records.map((record) => {
+    if (record.length > maximumWidth) {
+      throw new REvaluationError("NRE2243", "line had more elements than the expected width");
+    }
+    return [
+      ...record,
+      ...Array.from({ length: maximumWidth - record.length }, () => ({ text: "", quoted: false })),
+    ];
+  });
+
+  let names = suppliedNames ?? headerFields?.map((field) => field.text) ?? [];
+  if (implicitRowNames && names.length === maximumWidth - 1) {
+    // The header intentionally omits a name for the first, row-name column.
+  } else if (names.length === maximumWidth) {
+    // One name per physical column.
+  } else if (names.length === 0) {
+    names = Array.from({ length: dataWidth }, (_, index) => `V${index + 1}`);
+  } else if (names.length !== dataWidth) {
+    throw new REvaluationError("NRE2243", "more columns than column names");
+  }
+
+  const explicitRowNames = controls.get("row.names");
+  let rowNameColumn = implicitRowNames ? 0 : undefined;
+  let rowNames: readonly string[] | undefined;
+  if (explicitRowNames?.type === "null") rowNameColumn = undefined;
+  else if (explicitRowNames !== undefined) {
+    if (explicitRowNames.type === "character" && explicitRowNames.length === normalized.length) {
+      rowNames = explicitRowNames.values;
+      rowNameColumn = undefined;
+    } else {
+      rowNameColumn = tableRowNameColumn(explicitRowNames, names, maximumWidth);
+    }
+  }
+  if (rowNameColumn !== undefined) {
+    rowNames = normalized.map((record) => record[rowNameColumn]?.text ?? "");
+    if (!implicitRowNames || rowNameColumn !== 0)
+      names = names.filter((_name, index) => index !== rowNameColumn);
+  }
+  rowNames ??= Array.from({ length: normalized.length }, (_, index) => String(index + 1));
+  if (new Set(rowNames).size !== rowNames.length || rowNames.some((name) => name.length === 0)) {
+    throw new REvaluationError("NRE2244", "duplicate or missing 'row.names' are not allowed");
+  }
+
+  const physicalColumns = Array.from({ length: maximumWidth }, (_, column) =>
+    normalized.map((record) => record[column]?.text ?? ""),
+  );
+  const selectedColumns = physicalColumns.filter((_column, index) => index !== rowNameColumn);
+  if (names.length !== selectedColumns.length) {
+    names = Array.from(
+      { length: selectedColumns.length },
+      (_, index) => names[index] ?? `V${index + 1}`,
+    );
+  }
+  if (logicalFlag(controls.get("check.names"), true, "check.names")) {
+    const original = [...names];
+    names = makeSyntacticNamesUnique(
+      original,
+      original.map((name) => syntacticName(name, true)),
+    );
+  }
+  const stringsAsFactors = logicalFlag(controls.get("stringsAsFactors"), false, "stringsAsFactors");
+  const asIs = controls.get("as.is") ?? logicalVector([stringsAsFactors ? 0 : 1]);
+  const conversionValues = new Map<string, RValue>([
+    ["as.is", asIs],
+    ["tryLogical", controls.get("tryLogical") ?? logicalVector([1])],
+    ["na.strings", controls.get("na.strings") ?? characterVector(["NA"])],
+    ["dec", characterVector([decimal])],
+  ]);
+  if (controls.has("numerals"))
+    conversionValues.set("numerals", controls.get("numerals") as RValue);
+  const conversion = typeConvertControls(conversionValues, invocation);
+  const columns = selectedColumns.map((column) =>
+    typeConvertValue(characterVector(column), conversion, invocation),
+  );
+  if (!columns.every((column) => isAtomic(column))) {
+    throw new Error("Internal read.table column invariant failed.");
+  }
+  invocation.context.allocate(columns.length + rowNames.length);
+  return dataFrameValue(columns, names, rowNames, true);
+}
+
+function tableCount(value: RValue | undefined, fallback: number, _name: string): number {
+  if (value === undefined) return fallback;
+  if (!isAtomic(value) || value.length === 0 || isMissing(value, 0)) return fallback;
+  const parsed = Number(stringAt(value, 0));
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(-1, Math.trunc(parsed));
+}
+
+function tableCharacterVector(
+  value: RValue | undefined,
+  name: string,
+): readonly string[] | undefined {
+  if (value === undefined || value.type === "null") return undefined;
+  if (value.type !== "character" || value.missing !== undefined) {
+    throw new RTypeMismatchError("NRT3358", `read.table(${name}=) requires character names.`);
+  }
+  return value.values;
+}
+
+function tableRowNameColumn(value: RValue, names: readonly string[], width: number): number {
+  if (!isAtomic(value) || value.length !== 1 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3358", "invalid 'row.names' specification");
+  }
+  if (value.type === "character") {
+    const index = names.indexOf(value.values[0] ?? "");
+    if (index < 0) throw new REvaluationError("NRE2244", "invalid 'row.names' specification");
+    return index;
+  }
+  const index = Math.trunc(numberAt(value, 0)) - 1;
+  if (index < 0 || index >= width) {
+    throw new REvaluationError("NRE2244", "invalid 'row.names' specification");
+  }
+  return index;
+}
+
+type WriteTableVariant = "table" | "csv" | "csv2";
+
+const WRITE_TABLE_FORMALS = [
+  "x",
+  "file",
+  "append",
+  "quote",
+  "sep",
+  "eol",
+  "na",
+  "dec",
+  "row.names",
+  "col.names",
+  "qmethod",
+  "fileEncoding",
+] as const;
+
+async function builtinWriteTable(
+  invocation: BuiltinInvocation,
+  variant: WriteTableVariant,
+): Promise<RValue> {
+  const leading = variant === "table" ? WRITE_TABLE_FORMALS : (["x", "file"] as const);
+  const controls = await forceNamedControls(
+    invocation,
+    leading,
+    WRITE_TABLE_FORMALS,
+    "write.table",
+  );
+  const input = controls.get("x");
+  if (input === undefined)
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in write.table().");
+  const table = tabularValue(input, invocation);
+  const csv = variant !== "table";
+  const separator = csv
+    ? variant === "csv"
+      ? ","
+      : ";"
+    : controls.has("sep")
+      ? characterScalar(controls.get("sep") as RValue, "sep")
+      : " ";
+  const decimal = csv
+    ? variant === "csv"
+      ? "."
+      : ","
+    : controls.has("dec")
+      ? characterScalar(controls.get("dec") as RValue, "dec")
+      : ".";
+  const endOfLine = controls.has("eol")
+    ? characterScalar(controls.get("eol") as RValue, "eol")
+    : "\n";
+  const missing = controls.has("na") ? characterScalar(controls.get("na") as RValue, "na") : "NA";
+  const rowNamesControl = controls.get("row.names");
+  const rowNames = writeTableRowNames(rowNamesControl, table.rowNames, table.rowCount);
+  const quoteColumns = writeTableQuoteColumns(controls.get("quote"), table.columns.length);
+  const quoteNames = writeTableQuoteNames(controls.get("quote"));
+  const qmethod = csv ? "double" : writeTableQMethod(controls.get("qmethod"));
+  const includeColumnNames = csv
+    ? { names: table.names, blankRowName: rowNames !== undefined }
+    : writeTableColumnNames(controls.get("col.names"), table.names, rowNames !== undefined, false);
+  if (csv) warnIgnoredCsvControls(invocation, controls, variant);
+  const lines: string[] = [];
+  if (includeColumnNames !== undefined) {
+    const fields = [
+      ...(includeColumnNames.blankRowName ? [""] : []),
+      ...includeColumnNames.names,
+    ].map((field) => (quoteNames ? quoteTableField(field, qmethod) : field));
+    lines.push(fields.join(separator));
+  }
+  for (let row = 0; row < table.rowCount; row += 1) {
+    invocation.context.checkpoint();
+    const fields: string[] = [];
+    if (rowNames !== undefined) {
+      const rowName = rowNames[row] ?? "";
+      fields.push(quoteNames ? quoteTableField(rowName, qmethod) : rowName);
+    }
+    for (let column = 0; column < table.columns.length; column += 1) {
+      const value = table.columns[column];
+      if (value === undefined) continue;
+      const field = writeTableValue(value, row, missing, decimal);
+      fields.push(
+        field.missing || !quoteColumns.has(column) || !field.character
+          ? field.text
+          : quoteTableField(field.text, qmethod),
+      );
+    }
+    lines.push(fields.join(separator));
+  }
+  const output = lines.length === 0 ? "" : `${lines.join(endOfLine)}${endOfLine}`;
+  const fileEncoding = controls.get("fileEncoding");
+  if (fileEncoding !== undefined) tableEncoding(fileEncoding, "fileEncoding");
+  const file = controls.get("file") ?? characterVector([""]);
+  const append = csv ? false : logicalFlag(controls.get("append"), false, "append");
+  let closedConnection: VirtualTextConnection | undefined;
+  if (isVirtualTextConnectionHandle(file)) {
+    const connection = requireVirtualTextConnection(invocation, file);
+    if (!connection.open) closedConnection = connection;
+  }
+  try {
+    if (file.type === "character" && characterScalar(file, "file") === "") {
+      if (output.length > 0) invocation.context.writeOutput({ stream: "stdout", text: output });
+    } else {
+      writeVirtualTextTarget(
+        invocation,
+        file,
+        output,
+        append,
+        variant === "table" ? "write.table" : variant,
+      );
+    }
+  } finally {
+    if (closedConnection !== undefined) {
+      destroyVirtualTextConnection(virtualTextFileState(invocation), closedConnection);
+    }
+  }
+  return R_NULL;
+}
+
+interface TabularValue {
+  readonly columns: readonly AtomicVector[];
+  readonly names: readonly string[];
+  readonly rowNames: readonly string[];
+  readonly rowCount: number;
+}
+
+function tabularValue(value: RValue, invocation: BuiltinInvocation): TabularValue {
+  if (value.type === "list") {
+    const columns = value.values;
+    if (!columns.every((column) => isAtomic(column))) {
+      throw new RUnsupportedFeatureError(
+        "NRU6189",
+        "write.table() list-columns are not yet supported.",
+      );
+    }
+    const rowCount = isDataFrame(value)
+      ? dataFrameRowCount(value)
+      : columns.reduce((maximum, column) => Math.max(maximum, column.length), 0);
+    if (columns.some((column) => column.length !== rowCount)) {
+      throw new RTypeMismatchError("NRT3359", "write.table() columns have unequal lengths.");
+    }
+    return {
+      columns,
+      names: vectorNames(value) ?? columns.map((_column, index) => `X${index + 1}`),
+      rowNames: isDataFrame(value)
+        ? writeTableStoredRowNames(value, rowCount)
+        : Array.from({ length: rowCount }, (_unused, index) => String(index + 1)),
+      rowCount,
+    };
+  }
+  if (isAtomic(value)) {
+    const dimensions = vectorDimensions(value);
+    if (dimensions?.length === 2) {
+      const rows = dimensions[0] ?? 0;
+      const columnCount = dimensions[1] ?? 0;
+      const columns = Array.from({ length: columnCount }, (_, column) => {
+        const indices = integerVector(
+          Array.from({ length: rows }, (_unused, row) => row + column * rows + 1),
+        );
+        const result = subsetVector(value, indices, invocation.context);
+        if (!isAtomic(result)) throw new Error("Internal matrix column invariant failed.");
+        return result;
+      });
+      const dimnames = value.attributes.get("dimnames");
+      const rowNames =
+        dimnames?.type === "list" && dimnames.values[0]?.type === "character"
+          ? dimnames.values[0].values
+          : Array.from({ length: rows }, (_unused, index) => String(index + 1));
+      const names =
+        dimnames?.type === "list" && dimnames.values[1]?.type === "character"
+          ? dimnames.values[1].values
+          : Array.from({ length: columnCount }, (_unused, index) => `V${index + 1}`);
+      return { columns, names, rowNames, rowCount: rows };
+    }
+    return {
+      columns: [value],
+      names: ["x"],
+      rowNames: Array.from({ length: value.length }, (_unused, index) => String(index + 1)),
+      rowCount: value.length,
+    };
+  }
+  throw new RTypeMismatchError(
+    "NRT3359",
+    "write.table() requires a data frame, matrix, or atomic vector.",
+  );
+}
+
+function writeTableStoredRowNames(value: RList, rowCount: number): readonly string[] {
+  const rowNames = value.attributes.get("row.names");
+  return rowNames?.type === "character" && rowNames.length === rowCount
+    ? rowNames.values
+    : Array.from({ length: rowCount }, (_unused, index) => String(index + 1));
+}
+
+function writeTableRowNames(
+  control: RValue | undefined,
+  stored: readonly string[],
+  rowCount: number,
+): readonly string[] | undefined {
+  if (control === undefined) return stored;
+  if (control.type === "logical") {
+    return logicalFlag(control, true, "row.names") ? stored : undefined;
+  }
+  if (
+    control.type !== "character" ||
+    control.missing !== undefined ||
+    control.length !== rowCount
+  ) {
+    throw new RTypeMismatchError("NRT3359", "invalid 'row.names' specification");
+  }
+  return control.values;
+}
+
+function writeTableQuoteColumns(value: RValue | undefined, width: number): ReadonlySet<number> {
+  if (value === undefined) return new Set(Array.from({ length: width }, (_unused, index) => index));
+  if (value.type === "logical") {
+    return logicalFlag(value, true, "quote")
+      ? new Set(Array.from({ length: width }, (_unused, index) => index))
+      : new Set();
+  }
+  if (value.type !== "integer" && value.type !== "double") {
+    throw new RTypeMismatchError("NRT3359", "invalid 'quote' specification");
+  }
+  const result = new Set<number>();
+  for (let index = 0; index < value.length; index += 1) {
+    if (isMissing(value, index)) continue;
+    const column = Math.trunc(value.values[index] ?? 0) - 1;
+    if (column >= 0 && column < width) result.add(column);
+  }
+  return result;
+}
+
+function writeTableQuoteNames(value: RValue | undefined): boolean {
+  if (value === undefined) return true;
+  return value.type === "logical" ? logicalFlag(value, true, "quote") : true;
+}
+
+function writeTableQMethod(value: RValue | undefined): "escape" | "double" {
+  if (value === undefined) return "escape";
+  const requested = characterScalar(value, "qmethod");
+  const matches = ["escape", "double"].filter((choice) => choice.startsWith(requested));
+  if (matches.length !== 1)
+    throw new RTypeMismatchError("NRT3359", "invalid 'qmethod' specification");
+  return matches[0] as "escape" | "double";
+}
+
+function writeTableColumnNames(
+  control: RValue | undefined,
+  names: readonly string[],
+  hasRowNames: boolean,
+  csv: boolean,
+): { readonly names: readonly string[]; readonly blankRowName: boolean } | undefined {
+  if (control?.type === "character") {
+    if (control.missing !== undefined || control.length !== names.length) {
+      throw new RTypeMismatchError("NRT3359", "invalid 'col.names' specification");
+    }
+    return { names: control.values, blankRowName: false };
+  }
+  if (control?.type === "logical" && isMissing(control, 0)) {
+    return { names, blankRowName: hasRowNames };
+  }
+  const enabled = logicalFlag(control, true, "col.names");
+  return enabled ? { names, blankRowName: csv && hasRowNames } : undefined;
+}
+
+function writeTableValue(
+  value: AtomicVector,
+  index: number,
+  missing: string,
+  decimal: string,
+): { readonly text: string; readonly missing: boolean; readonly character: boolean } {
+  if (isMissing(value, index)) return { text: missing, missing: true, character: false };
+  if (isFactor(value)) {
+    return {
+      text: factorLevels(value)[(value.values[index] ?? 0) - 1] ?? "",
+      missing: false,
+      character: true,
+    };
+  }
+  const character = value.type === "character";
+  let text = stringAt(value, index);
+  if (!character && decimal !== ".") text = text.replaceAll(".", decimal);
+  return { text, missing: false, character };
+}
+
+function quoteTableField(value: string, method: "escape" | "double"): string {
+  const escaped = method === "double" ? value.replaceAll('"', '""') : value.replaceAll('"', '\\"');
+  return `"${escaped}"`;
+}
+
+function warnIgnoredCsvControls(
+  invocation: BuiltinInvocation,
+  controls: ReadonlyMap<string, RValue>,
+  variant: "csv" | "csv2",
+): void {
+  for (const name of ["append", "col.names", "sep", "dec", "qmethod"] as const) {
+    if (!controls.has(name)) continue;
+    invocation.context.warn({
+      code: "NRW1121",
+      message: `attempt to set '${name}' ignored by ${variant}()`,
+    });
+  }
 }
 
 async function builtinDemo(invocation: BuiltinInvocation): Promise<RValue> {

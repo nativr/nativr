@@ -209,9 +209,14 @@ export interface BuiltinInvocation {
   loadedNamespaces(): readonly string[];
   namespaceExports(name: string): Promise<readonly string[]>;
   packageResourcePath(name: string, path: string): string | undefined;
-  packageFile(
-    path: string,
-  ): { readonly encoding: "text" | "base64"; readonly data: string } | undefined;
+  packageResourcePaths(name: string, prefix: string): readonly string[] | undefined;
+  packageFile(path: string):
+    | {
+        readonly encoding: "text" | "base64";
+        readonly data: string;
+        readonly textEncoding: "utf8" | "latin1";
+      }
+    | undefined;
   packageName(environment: REnvironment): string | undefined;
   globalEnvironment(): REnvironment;
   baseEnvironment(): REnvironment;
