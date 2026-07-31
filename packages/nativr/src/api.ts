@@ -5,6 +5,7 @@ import type {
   PublicGraphicsEvent,
   PublicOutputEvent,
   PublicRWarning,
+  PureRPackageBundle,
   RValueSnapshot,
   WireEvaluationResult,
   WorkerRequest,
@@ -25,6 +26,7 @@ import type { JsInputValue, JsValue } from "./conversion.js";
 import type { RuntimeHost } from "./runtime-host.js";
 
 export type { PublicDataViewEvent, PublicGraphicsEvent, PublicOutputEvent } from "@nativr/protocol";
+export type { PureRPackageBundle } from "@nativr/protocol";
 
 /** Optional asset overrides for CDNs, unusual bundlers, or tests. */
 export interface CreateRAssets {
@@ -39,6 +41,8 @@ export interface CreateROptions {
   readonly execution?: "worker" | "inline";
   readonly assets?: CreateRAssets;
   readonly limits?: Partial<RuntimeLimits>;
+  /** Audited source-only package bundles available to this isolated session. */
+  readonly packages?: readonly PureRPackageBundle[];
   readonly timeoutMs?: number;
   readonly debug?: boolean;
   readonly onWarning?: (warning: PublicRWarning) => void;
@@ -93,16 +97,21 @@ interface ResolvedAssets {
 /** Create one inline or Worker-first NativR session. */
 export async function createR(options: CreateROptions = {}): Promise<NativRSession> {
   const assets = resolveAssets(options.assets);
-  if (options.execution === "inline") {
+  const sessionOptions: CreateROptions =
+    options.packages === undefined
+      ? options
+      : { ...options, packages: snapshotPackageBundles(options.packages) };
+  if (sessionOptions.execution === "inline") {
     const { RuntimeHost: InlineRuntimeHost } = await import("./runtime-host.js");
     const host = await InlineRuntimeHost.create(
       {
         treeSitterRuntimeWasm: assets.treeSitterRuntimeWasm,
         rGrammarWasm: assets.rGrammarWasm,
       },
-      options.limits,
+      sessionOptions.limits,
+      sessionOptions.packages,
     );
-    return new InlineSession(host, options);
+    return new InlineSession(host, sessionOptions);
   }
   if (typeof Worker === "undefined") {
     throw new NativRError(
@@ -110,7 +119,70 @@ export async function createR(options: CreateROptions = {}): Promise<NativRSessi
       "Worker execution is unavailable in this host; use execution: 'inline' explicitly.",
     );
   }
-  return WorkerSession.create(assets, options);
+  return WorkerSession.create(assets, sessionOptions);
+}
+
+function snapshotPackageBundles(
+  packages: readonly PureRPackageBundle[],
+): readonly PureRPackageBundle[] {
+  const packageInputs = asUnknownArray(packages);
+  if (packageInputs === undefined) {
+    throw new NativRError("NRS5003", "createR(packages=) requires an array of package bundles.");
+  }
+  return Object.freeze(
+    packageInputs.map((bundle, bundleIndex) => {
+      if (!isUnknownRecord(bundle)) {
+        throw new NativRError(
+          "NRS5003",
+          `Package bundle at index ${bundleIndex} has an invalid shape.`,
+        );
+      }
+      const description = bundle["description"];
+      const namespace = bundle["namespace"];
+      const sourceInputs = asUnknownArray(bundle["rSources"]);
+      if (
+        typeof description !== "string" ||
+        typeof namespace !== "string" ||
+        sourceInputs === undefined
+      ) {
+        throw new NativRError(
+          "NRS5003",
+          `Package bundle at index ${bundleIndex} has an invalid shape.`,
+        );
+      }
+      return Object.freeze({
+        description,
+        namespace,
+        rSources: Object.freeze(
+          sourceInputs.map((entry, sourceIndex) => {
+            if (!isUnknownRecord(entry)) {
+              throw new NativRError(
+                "NRS5003",
+                `Package source at index ${bundleIndex}:${sourceIndex} has an invalid shape.`,
+              );
+            }
+            const path = entry["path"];
+            const source = entry["source"];
+            if (typeof path !== "string" || typeof source !== "string") {
+              throw new NativRError(
+                "NRS5003",
+                `Package source at index ${bundleIndex}:${sourceIndex} has an invalid shape.`,
+              );
+            }
+            return Object.freeze({ path, source });
+          }),
+        ),
+      });
+    }),
+  );
+}
+
+function asUnknownArray(value: unknown): readonly unknown[] | undefined {
+  return Array.isArray(value) ? (value as readonly unknown[]) : undefined;
+}
+
+function isUnknownRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+  return typeof value === "object" && value !== null;
 }
 
 class InlineSession implements NativRSession {
@@ -360,6 +432,7 @@ class WorkerSession implements NativRSession {
           rGrammarWasm: String(this.#assets.rGrammarWasm),
         },
         ...(this.#options.limits === undefined ? {} : { limits: this.#options.limits }),
+        ...(this.#options.packages === undefined ? {} : { packages: this.#options.packages }),
         debug: this.#options.debug === true,
       },
       [],

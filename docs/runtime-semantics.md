@@ -361,6 +361,22 @@ filesystem or connection implementation. Non-session paths, external file text, 
 serialization controls, functions/environments, cyclic graphs, binary formats, and persistence
 outside one runtime session remain unsupported.
 
+`save(..., list, file, envir)` selects bindings without evaluating direct object names, forces their
+promises by default, serializes a named list through the same canonical-source encoder, and writes a
+versioned workspace header to the session text map. `load(file, envir, verbose)` validates and
+evaluates that archive, then installs its named entries in order. Duplicate names are preserved in
+the invisible return vector while the last binding wins in the target environment. Compression and
+version arguments are validated metadata only; no GNU R binary stream or compressor is embedded.
+
+Application-supplied pure-R bundles are compiled at session initialization. DESCRIPTION and
+NAMESPACE parsing produces parser-independent runtime package definitions; package sources then use
+the same normalized AST as interactive code. Each namespace receives an imports parent and its own
+bindings, dependencies load recursively, closures retain the namespace, S3 methods register without
+attachment, and exported bindings enter the attached-package search environment only after
+`library()`. Reset clears namespaces, hooks, attachment state, S3 registrations, and search entries
+but retains the immutable bundle catalog for deterministic reload. Source size, source count,
+dependency cycles, imports, exports, and lifecycle evaluation all remain resource-checked.
+
 `graphics::polygon()` accepts the same owned coordinate containers but does not dispatch: paired
 vectors, two-column matrices/data frames, complex coordinates, and named `list(x, y)` become
 device-independent closed paths. Missing or non-finite pairs split separate polygons. Fill/border
@@ -1065,7 +1081,7 @@ complete connection stack are outside this increment.
 `utils::demo()` constructs the empty `packageIQR` catalog entirely from owned values when
 `package = character()` and no library location is supplied. It does not scan an operating-system R
 library or fetch package resources. Topics, nonempty package selections, and host library locations
-therefore fail explicitly until browser package namespaces and virtual resources are available.
+therefore fail explicitly until virtual package resources and demo-script discovery are available.
 
 The QR object stores the weighted upper-triangular factor needed to recover coefficient covariance.
 `vcov()` combines its inverse crossproduct with weighted residual variance, `confint()` applies the

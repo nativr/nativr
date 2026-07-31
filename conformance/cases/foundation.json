@@ -7325,5 +7325,27 @@
     "expectedCompatibility": "behavioral",
     "rOracle": false,
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "save-load-bit64-observed-workspace-roundtrip",
+    "code": "d <- data.frame(x = structure(c(1, 2), class = \"integer64\"), label = c(\"a\", \"b\"))\ne <- d[,]\npath <- tempfile(fileext = \".RData\")\nsaved <- withVisible(save(e, file = path))\nrm(e)\nloaded <- withVisible(load(file = path))\nc(is.null(saved$value), saved$visible, loaded$value, loaded$visible, identical(d, e), identical(class(e$x), \"integer64\"), unlink(path))",
+    "expected": ["TRUE", "FALSE", "e", "FALSE", "TRUE", "TRUE", "0"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "save-load-list-duplicates-environment-and-verbose",
+    "code": "x <- 11L\ny <- c(a = \"text\", b = NA_character_)\npath <- tempfile()\nsave(x, list = c(\"y\", \"x\"), file = path, version = 3L, compress = \"gzip\")\nrm(x, y)\ntarget <- new.env()\ntrace <- capture.output(restored <- load(path, envir = target, verbose = TRUE))\nc(restored, target$x, target$y, trace, unlink(path))",
+    "expected": ["y", "x", "x", "11", "text", "NA", "Loading objects:", "  y", "  x", "  x", "0"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "save-load-browser-memory-boundaries",
+    "code": "path <- tempfile()\ndput(1, path)\nc(inherits(try(save(1, file = path), silent = TRUE), \"try-error\"), inherits(try(load(path), silent = TRUE), \"try-error\"), inherits(try(save(missing_object, file = tempfile()), silent = TRUE), \"try-error\"), inherits(try(save(function(x) x, file = tempfile()), silent = TRUE), \"try-error\"), inherits(try(save(1, file = \"host.RData\"), silent = TRUE), \"try-error\"), inherits(try(load(\"host.RData\"), silent = TRUE), \"try-error\"))",
+    "expected": [true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracle": false,
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 308 KiB gzip;
+- Worker JavaScript: 312 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -417,3 +417,9 @@ Language subset 0.195 adds rank 471's `base::dget()` path with `dput()`, `tempfi
 `unlink()` over an evaluator-owned browser-memory text map. Reconstruction reuses the existing
 parser and evaluator, while stored UTF-8 text shares the configured output-size ceiling. The
 measured Worker size is 306.1 KiB gzip against the unchanged 308 KiB limit.
+
+Language subset 0.196 adds usage-ranked `save()`/`load()` workspace round-trips and the first
+source-only R package bundle loader. Package DESCRIPTION, NAMESPACE, source-file count, and total
+source text are validated before parsing; dependency loading and evaluation continue to use the
+existing call, step, allocation, and output budgets. This executable package namespace/import/S3
+vertical slice raises the Worker ceiling narrowly to 312 KiB; the measured Worker is 310.8 KiB gzip.

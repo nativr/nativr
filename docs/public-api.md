@@ -34,11 +34,26 @@ targets are rejected because the browser runtime exposes no filesystem.
 R code can use `tempfile()` with `dput()`/`dget()`/`unlink()` for bounded, same-session text
 serialization. Those opaque `nativr://session-temp/...` paths never leave the evaluator and are
 cleared by `reset()` or `dispose()`; they are not host files and cannot be passed through the public
-JavaScript API.
+JavaScript API. `save()`/`load()` use the same resource seam for supported workspace values; their
+archive is NativR canonical source rather than a GNU R `.RData` binary.
+
+`createR({ packages })` accepts source-only `PureRPackageBundle` objects containing DCF
+`DESCRIPTION`, `NAMESPACE`, and package-relative `R/*.R` source strings. The same bundle is
+structured-cloned during Worker initialization, parsed into the owned AST, and registered in the
+session's isolated package catalog. `pkg::name` loads a namespace without attaching it;
+`library(pkg)` attaches its exports. Imports, dependencies, S3 registrations, `.onLoad()`, and
+`.onAttach()` use the runtime's environment and closure model. `reset()` unloads and detaches
+packages while retaining the immutable supplied catalog so later namespace access can load them
+again. See [`examples/pure-r-package.ts`](../examples/pure-r-package.ts).
+
+The bundle API is deliberately not a package installer. It rejects native compilation, `LinkingTo`,
+`useDynLib`, unsupported NAMESPACE directives, and non-`R/*.R` source paths; it never searches a
+host library or fetches CRAN resources. Compatibility still depends on the package and all
+dependencies staying within the documented NativR subset.
 
 `utils::demo(package = character())` exposes the empty GNU R catalog shape without host I/O.
-External package/topic selection is rejected until a package loader can provide browser-safe demo
-resources; the public API never searches a system R library.
+External package/topic selection is rejected until bundles can provide browser-safe demo resources;
+the public API never searches a system R library.
 
 `utils::View()` emits character-formatted tables in `evalDetailed().dataViews` and returns invisible
 `NULL`. Each event contains a title, named columns, and optional non-default row names.

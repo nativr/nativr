@@ -108,6 +108,13 @@ describe("Worker protocol guards", () => {
       id: "init",
       kind: "init",
       assets: { treeSitterRuntimeWasm: "runtime.wasm", rGrammarWasm: "r.wasm" },
+      packages: [
+        {
+          description: "Package: fixture\nVersion: 1.0.0",
+          namespace: "export(square)",
+          rSources: [{ path: "R/square.R", source: "square <- function(x) x ^ 2" }],
+        },
+      ],
       debug: false,
     },
     {
@@ -137,6 +144,16 @@ describe("Worker protocol guards", () => {
     expect(isWorkerRequest({ protocolVersion: 1, id: "", kind: "reset" })).toBe(false);
     expect(isWorkerRequest({ protocolVersion: 1, id: "x", kind: "unknown" })).toBe(false);
     expect(isWorkerRequest({ protocolVersion: 1, id: "x", kind: "init", assets: {} })).toBe(false);
+    expect(
+      isWorkerRequest({
+        protocolVersion: 1,
+        id: "x",
+        kind: "init",
+        assets: { treeSitterRuntimeWasm: "runtime.wasm", rGrammarWasm: "r.wasm" },
+        packages: [{ description: "bad", namespace: "", rSources: [{ path: 1, source: "" }] }],
+        debug: false,
+      }),
+    ).toBe(false);
     expect(isWorkerRequest({ protocolVersion: 1, id: "x", kind: "eval", code: 1 })).toBe(false);
     expect(isWorkerRequest({ protocolVersion: 1, id: "x", kind: "assign", name: "x" })).toBe(false);
     expect(isWorkerRequest({ protocolVersion: 1, id: "x", kind: "get", name: 1 })).toBe(false);

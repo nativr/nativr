@@ -13,7 +13,7 @@ with:
 - [Security model](security-model.md)
 - [Development](development.md)
 - [Evidence-based feature priorities](feature-priorities.md)
-- [Pure-R package loading design](pure-r-packages.md)
+- [Pure-R package loading contract](pure-r-packages.md)
 - [Roadmap](roadmap.md)
 - [Implementation status](implementation-status.md)
 

@@ -16,5 +16,11 @@
       "@nativr/nativr": ["./packages/nativr/src/index.ts"]
     }
   },
-  "include": ["apps/**/*.ts", "packages/**/*.ts", "tests/**/*.ts", "*.config.ts"]
+  "include": [
+    "apps/**/*.ts",
+    "examples/**/*.ts",
+    "packages/**/*.ts",
+    "tests/**/*.ts",
+    "*.config.ts"
+  ]
 }
