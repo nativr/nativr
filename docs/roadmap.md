@@ -307,6 +307,10 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
     catalog shape without reading a host library. Topic lookup, external package discovery, and demo
     script execution fail explicitly pending package namespaces, resources, and source loading; no
     httpuv server demo compatibility is claimed.
+88. Frequency-ranked RNG-version defaults: `RNGversion` runs zoo's measured R-3.5 reproducibility
+    setup with prior-kind return values, historical Rounding warnings, and current defaults from R
+    3.6 onward. Pre-R-1.7 uniform and normal generator families remain explicit unsupported
+    boundaries.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

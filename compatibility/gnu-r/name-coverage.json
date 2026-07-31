@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 454,
-    "overlappingNames": 439,
-    "missingReferenceNames": 2083,
+    "nativrRegisteredNames": 455,
+    "overlappingNames": 440,
+    "missingReferenceNames": 2082,
     "nativrExtensionNames": 15,
-    "nameCoverage": 0.174068
+    "nameCoverage": 0.174465
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 340, "nameCoverage": 0.24872 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 341, "nameCoverage": 0.249451 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 61, "nameCoverage": 0.131466 },
     { "package": "methods", "callableNames": 209, "overlappingNames": 9, "nameCoverage": 0.043062 },
     { "package": "utils", "callableNames": 262, "overlappingNames": 11, "nameCoverage": 0.041985 },
@@ -55,6 +55,7 @@
     "Mod",
     "NextMethod",
     "RNGkind",
+    "RNGversion",
     "Re",
     "Reduce",
     "Sys.Date",
@@ -679,7 +680,6 @@
     "Quote",
     "R.Version",
     "R.home",
-    "RNGversion",
     "RShowDoc",
     "RSiteSearch",
     "R_compiled_by",

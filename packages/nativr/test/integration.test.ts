@@ -4356,7 +4356,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.170.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.171.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -4804,6 +4804,45 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(runtime.eval("set.seed(NA_integer_)")).rejects.toMatchObject({
       code: "NRT3117",
     });
+    await runtime.dispose();
+  });
+
+  it("selects versioned RNG defaults for zoo's reproducible pre-3.6 examples", async () => {
+    const runtime = await session();
+    const historical = await runtime.evalDetailed(
+      "old <- suppressWarnings(RNGversion('3.5.0'))\nset.seed(1)\nc(old, RNGkind(), round(rnorm(3), 12))",
+    );
+    expect(historical.value).toEqual([
+      "Mersenne-Twister",
+      "Inversion",
+      "Rejection",
+      "Mersenne-Twister",
+      "Inversion",
+      "Rounding",
+      "-0.626453810742",
+      "0.183643324222",
+      "-0.83562861241",
+    ]);
+    expect(historical.warnings).toEqual([]);
+
+    const current = await runtime.evalDetailed(
+      "old <- suppressWarnings(RNGversion(3.5))\nprevious <- RNGversion('99.0.0')\nc(old, previous, RNGkind())",
+    );
+    expect(current.value).toEqual([
+      "Mersenne-Twister",
+      "Inversion",
+      "Rounding",
+      "Mersenne-Twister",
+      "Inversion",
+      "Rounding",
+      "Mersenne-Twister",
+      "Inversion",
+      "Rejection",
+    ]);
+    expect(current.visible).toBe(true);
+    await expect(runtime.eval("RNGversion('garbage')")).rejects.toMatchObject({ code: "NRT3274" });
+    await expect(runtime.eval("RNGversion('1.6.2')")).rejects.toMatchObject({ code: "NRU6158" });
+    await expect(runtime.eval("RNGversion()")).rejects.toMatchObject({ code: "NRE2103" });
     await runtime.dispose();
   });
 
