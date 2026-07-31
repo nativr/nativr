@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           455 |
-| Overlapping callable names        |           440 |
-| Missing GNU R callable names      |         2,082 |
-| Name overlap                      |      17.4465% |
+| NativR registered names           |           459 |
+| Overlapping callable names        |           444 |
+| Missing GNU R callable names      |         2,078 |
+| Name overlap                      |      17.6051% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -203,6 +203,15 @@ R-3.5 reproducibility setup. It covers version parsing, prior-kind return and in
 warnings, the R-3.6 Rejection transition, and the fixed-seed normal sequence used after the measured
 call. Defaults before R 1.7 require historical uniform and normal engines and remain an explicit
 unsupported boundary.
+
+The ranks 439-443 increment adds GNU R differential evidence for the regular time-series chain
+needed beneath zoo's measured calls. `stats::ts` covers vector and matrix construction, calendar
+coordinates, endpoint-driven recycling, names, classes, and `tsp`; `as.ts` and `frequency` cover
+default behavior plus S3 forwarding; and `stats::window` covers aligned subsetting, integral
+downsampling, extension padding, clamping warnings, and package-method forwarding. The S3 seam is
+tested with an independently declared `window.zoo` equivalent, not zoo implementation code.
+Irregular indexes, zoo constructors/methods, replacement windows, data-frame coercion, and arbitrary
+resampling remain incomplete and depend in part on the planned package loader.
 
 ## Completion evidence
 

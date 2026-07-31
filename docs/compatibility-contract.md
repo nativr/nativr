@@ -744,9 +744,27 @@ calls to package-owned S3 methods without reproducing zoo index storage. The def
 nonempty vectors and matrix row counts, positive regular `tsp` metadata including frequencies below
 one, fractional `offset`, configurable `ts.eps` snapping near integer years, unchanged result `tsp`,
 and `ts` result class. Empty values, data frames, malformed series metadata, and non-finite controls
-produce bounded errors. Zoo's replacement generic `time<-`, irregular indexes, the `ts` constructor,
-namespace-registered hidden methods, and the wider `cycle`/`frequency`/`deltat` family remain
-outside this increment.
+produce bounded errors. Zoo's replacement generic `time<-`, irregular indexes, namespace-registered
+hidden methods, and the wider `cycle`/`deltat` family remain outside this increment.
+
+`stats::ts` constructs nonempty vector or two-dimensional matrix time series. One- or two-number
+calendar `start`/`end` coordinates, positive `frequency` or `deltat`, configurable `ts.eps`,
+endpoint-driven row recycling/truncation, vector names, matrix series names, `tsp`, default
+`ts`/`mts` classes, and explicit class overrides have executable GNU R differential evidence.
+`as.ts` dispatches package-owned S3 methods before its default path, which retains a valid existing
+`tsp` interval or creates the row-based interval `(1, NROW, 1)`. `frequency` likewise dispatches
+first and otherwise returns the validated `tsp` frequency or one. Data-frame-to-numeric-matrix
+coercion, zero-row series, higher-rank arrays, long-vector storage, language-specific printing,
+aligned time-series arithmetic, and exhaustive floating-point endpoint diagnostics are not claimed.
+
+`stats::window` dispatches package-owned methods before its regular-series default. The owned path
+aligns scalar or calendar-pair boundaries to the next/previous observation, preserves vector or
+matrix shape, selects integral lower-frequency samples, warns and retains the source frequency when
+resampling is incompatible, clamps out-of-range boundaries by default, and pads extension rows with
+typed `NA` when `extend = TRUE`. GNU R differential evidence covers the measured zoo-facing generic
+seam through an independently registered `window.zoo` method; it does not claim zoo's irregular
+index implementation. Replacement `window<-`, interpolation or upsampling, hidden namespace method
+tables, package index classes, and exact legacy diagnostics remain incomplete.
 
 `na.omit` runs all eight measured calls across data.table and zoo by forwarding classed values and
 lazy dots to package-owned S3 methods; NativR does not reproduce either package's implementation.

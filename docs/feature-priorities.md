@@ -726,8 +726,14 @@ zoo's repeated `suppressWarnings(RNGversion("3.5.0")); set.seed(1)` example setu
 Mersenne-Twister/Inversion/Rounding for R versions from 1.7 through 3.5, emits the historical
 Rounding warning, returns the prior kind vector invisibly, and restores Rejection for R 3.6 or
 newer. The Wichmann-Hill/Marsaglia and Buggy Kinderman-Ramage defaults needed before R 1.7 fail
-explicitly rather than silently using the wrong generator. Rank 439 `window` is the next unresolved
-callable candidate.
+explicitly rather than silently using the wrong generator. Ranks 439 `window`, 440 `as.ts`, 442
+`frequency`, and 443 `ts` are now complete as one dependency-ordered regular time-series foundation,
+representing zoo's 731,390 downloads, respectively 14, 7, 6, and 5 measured calls, and 0.6% weighted
+reach. GNU R differential evidence covers vector/matrix construction, calendar coordinates, endpoint
+recycling, coercion, frequency lookup, regular windows, integral downsampling, extension with typed
+missing values, warnings, namespace access, and independently registered package methods. Zoo's own
+irregular index constructors and methods remain package-owned and are not claimed until the pure-R
+package loader can provide them. Rank 444 `legend` is the next unresolved callable candidate.
 
 ## Completed implementation order
 

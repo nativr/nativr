@@ -311,6 +311,11 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
     setup with prior-kind return values, historical Rounding warnings, and current defaults from R
     3.6 onward. Pre-R-1.7 uniform and normal generator families remain explicit unsupported
     boundaries.
+89. Frequency-ranked regular time-series foundation: `stats::ts`, `as.ts`, `frequency`, and
+    `stats::window` cover ranks 439, 440, 442, and 443 with vector/matrix metadata, calendar
+    coordinates, endpoint recycling, integral downsampling, extension padding, and independent S3
+    package-method seams. Zoo's package-owned irregular indexes and methods remain package-loader
+    work rather than embedded runtime code.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

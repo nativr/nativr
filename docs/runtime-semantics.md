@@ -131,6 +131,20 @@ Ordinary vectors and matrices use `1:NROW`; regular series advance by `1 / frequ
 unshifted `tsp` triple and class `ts` when the input belongs to that class. Custom methods receive
 the original lazy arguments before this default path, providing the package boundary used by zoo.
 
+`stats::ts()` creates an owned equispaced-series value rather than a host object. It converts one-
+or two-number calendar coordinates into a decimal start, derives or validates the observation count,
+recycles or truncates each series by rows when an explicit end is supplied, and attaches `tsp` plus
+the requested/default `ts` or `mts` class. Matrix columns remain independent series and receive
+stable series names. `as.ts()` and `frequency()` perform S3 dispatch first; their defaults respect
+validated existing `tsp` metadata and otherwise use row coordinates with frequency one.
+
+`stats::window()` also dispatches before its owned default. For regular vector or matrix series it
+aligns boundaries to source observations, samples only integral divisors of the source frequency,
+preserves series classes and column names, and computes a new exact `tsp`. Incompatible frequency
+requests retain the source frequency with a warning. Boundaries outside the source interval clamp
+with warnings unless `extend = TRUE`, in which case missing rows use the source vector's typed
+missing representation.
+
 `na.omit()` performs S3 dispatch before its owned default path. Atomic vectors remove missing
 elements, while matrices and data frames remove any row containing an explicit `NA` or ordinary
 `NaN`; factors retain levels and class, and rectangular results retain adjusted dimensions,

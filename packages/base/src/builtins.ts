@@ -939,6 +939,22 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     builtinTimeSeriesEndpoint(invocation, "end"),
   ),
   defineBuiltin("time", ["x", "..."], "behavioral", builtinSamplingTimes),
+  definePackageBuiltin(
+    "stats",
+    "ts",
+    ["data", "start", "end", "frequency", "deltat", "ts.eps", "class", "names"],
+    "behavioral",
+    builtinTimeSeries,
+  ),
+  definePackageBuiltin("stats", "as.ts", ["x", "..."], "behavioral", builtinAsTimeSeries),
+  definePackageBuiltin("stats", "frequency", ["x", "..."], "behavioral", builtinFrequency),
+  definePackageBuiltin(
+    "stats",
+    "window",
+    ["x", "start", "end", "frequency", "deltat", "extend", "ts.eps", "..."],
+    "behavioral",
+    builtinTimeSeriesWindow,
+  ),
   defineBuiltin("na.omit", ["object", "..."], "behavioral", builtinNaOmit),
   defineBuiltin("diff", ["x", "lag", "differences", "..."], "behavioral", builtinDifference),
   defineBuiltin("range", ["...", "na.rm"], "numeric", builtinRange),
@@ -16005,6 +16021,476 @@ async function builtinSamplingTimes(invocation: BuiltinInvocation): Promise<RVal
     result = withClasses(result, ["ts"]);
   }
   return result;
+}
+
+async function builtinTimeSeries(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = matchLazyArguments(invocation, [
+    "data",
+    "start",
+    "end",
+    "frequency",
+    "deltat",
+    "ts.eps",
+    "class",
+    "names",
+  ]);
+  const dataArgument = matched.get("data");
+  const data =
+    dataArgument === undefined
+      ? logicalVector([0], [1])
+      : dataArgument.promise.missing
+        ? (() => {
+            throw new REvaluationError("NRE2103", "Argument 'data' is missing in ts().");
+          })()
+        : await invocation.force(dataArgument.promise);
+  const shape = timeSeriesDataShape(data, "ts");
+  const tolerance = timeSeriesTolerance(
+    await forceTimeSeriesArgument(matched, "ts.eps", invocation),
+    invocation,
+    "ts",
+  );
+  const frequencyArgument = await forceTimeSeriesArgument(matched, "frequency", invocation);
+  const deltaArgument = await forceTimeSeriesArgument(matched, "deltat", invocation);
+  const frequency =
+    frequencyArgument !== undefined
+      ? timeSeriesPositiveScalar(frequencyArgument, "frequency", "ts")
+      : deltaArgument === undefined
+        ? 1
+        : 1 / timeSeriesPositiveScalar(deltaArgument, "deltat", "ts");
+  const startArgument = await forceTimeSeriesArgument(matched, "start", invocation);
+  const start =
+    startArgument === undefined ? 1 : timeSeriesCoordinate(startArgument, frequency, "start", "ts");
+  const endArgument = await forceTimeSeriesArgument(matched, "end", invocation);
+  const end =
+    endArgument === undefined || (isAtomic(endArgument) && endArgument.length === 0)
+      ? undefined
+      : timeSeriesCoordinate(endArgument, frequency, "end", "ts");
+  let rows = shape.rows;
+  if (end !== undefined) {
+    const cycles = (end - start) * frequency;
+    const roundedCycles = Math.round(cycles);
+    if (
+      !Number.isFinite(cycles) ||
+      roundedCycles < 0 ||
+      Math.abs(cycles - roundedCycles) > tolerance * Math.max(Math.abs(cycles), 1)
+    ) {
+      throw new RTypeMismatchError(
+        "NRT3284",
+        "ts() 'end' must be a whole number of cycles at or after 'start'.",
+      );
+    }
+    rows = roundedCycles + 1;
+  }
+  const classes = timeSeriesClasses(
+    await forceTimeSeriesArgument(matched, "class", invocation),
+    shape.series,
+  );
+  const seriesNames = timeSeriesNames(
+    await forceTimeSeriesArgument(matched, "names", invocation),
+    shape.data,
+    shape.series,
+    "ts",
+  );
+  invocation.context.allocate(rows);
+  return shapeTimeSeries(
+    shape.data,
+    shape,
+    Array.from({ length: rows }, (_, row) => row % shape.rows),
+    start,
+    frequency,
+    classes,
+    seriesNames,
+    invocation,
+  );
+}
+
+async function builtinAsTimeSeries(invocation: BuiltinInvocation): Promise<RValue> {
+  const lazy = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const inputArgument = lazy.matched.get("x");
+  if (inputArgument === undefined || inputArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in as.ts().");
+  }
+  const input = await invocation.force(inputArgument.promise);
+  const dispatchArguments = [
+    inputArgument,
+    ...invocation.arguments.filter((argument) => argument !== inputArgument),
+  ];
+  const dispatched = await invocation.dispatchS3IfPresent("as.ts", input, dispatchArguments);
+  if (dispatched !== undefined) return dispatched;
+
+  const shape = timeSeriesDataShape(input, "as.ts");
+  const series = validatedTimeSeries(shape.data, shape.rows, "as.ts", true);
+  return shapeTimeSeries(
+    shape.data,
+    shape,
+    Array.from({ length: shape.rows }, (_, row) => row),
+    series.start,
+    series.frequency,
+    timeSeriesClasses(undefined, shape.series),
+    timeSeriesNames(undefined, shape.data, shape.series, "as.ts"),
+    invocation,
+  );
+}
+
+async function builtinFrequency(invocation: BuiltinInvocation): Promise<RValue> {
+  const lazy = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const inputArgument = lazy.matched.get("x");
+  if (inputArgument === undefined || inputArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in frequency().");
+  }
+  const input = await invocation.force(inputArgument.promise);
+  const dispatchArguments = [
+    inputArgument,
+    ...invocation.arguments.filter((argument) => argument !== inputArgument),
+  ];
+  const dispatched = await invocation.dispatchS3IfPresent("frequency", input, dispatchArguments);
+  if (dispatched !== undefined) return dispatched;
+  if (!isVector(input) || input.attributes.get("tsp") === undefined) return doubleVector([1]);
+  const dimensions = vectorDimensions(input);
+  const rows = dimensions?.[0] ?? input.length;
+  return doubleVector([validatedTimeSeries(input, rows, "frequency", false).frequency]);
+}
+
+async function builtinTimeSeriesWindow(invocation: BuiltinInvocation): Promise<RValue> {
+  const lazy = matchLazyArgumentsWithDots(invocation, [
+    "x",
+    "start",
+    "end",
+    "frequency",
+    "deltat",
+    "extend",
+    "ts.eps",
+  ]);
+  const inputArgument = lazy.matched.get("x");
+  if (inputArgument === undefined || inputArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in window().");
+  }
+  const input = await invocation.force(inputArgument.promise);
+  const dispatchArguments = [
+    inputArgument,
+    ...invocation.arguments.filter((argument) => argument !== inputArgument),
+  ];
+  const dispatched = await invocation.dispatchS3IfPresent("window", input, dispatchArguments);
+  if (dispatched !== undefined) return dispatched;
+
+  const shape = timeSeriesDataShape(input, "window");
+  const source = validatedTimeSeries(shape.data, shape.rows, "window", true);
+  const tolerance = timeSeriesTolerance(
+    await forceTimeSeriesArgument(lazy.matched, "ts.eps", invocation),
+    invocation,
+    "window",
+  );
+  const frequencyArgument = await forceTimeSeriesArgument(lazy.matched, "frequency", invocation);
+  const deltaArgument = await forceTimeSeriesArgument(lazy.matched, "deltat", invocation);
+  let frequency =
+    frequencyArgument !== undefined
+      ? timeSeriesPositiveScalar(frequencyArgument, "frequency", "window")
+      : deltaArgument === undefined
+        ? source.frequency
+        : 1 / timeSeriesPositiveScalar(deltaArgument, "deltat", "window");
+  const stride = source.frequency / frequency;
+  if (
+    frequency > source.frequency + tolerance ||
+    Math.abs(stride - Math.round(stride)) > tolerance
+  ) {
+    invocation.context.warn({ code: "NRW1025", message: "'frequency' not changed" });
+    frequency = source.frequency;
+  }
+  const sourceStride = Math.max(1, Math.round(source.frequency / frequency));
+  const startArgument = await forceTimeSeriesArgument(lazy.matched, "start", invocation);
+  const endArgument = await forceTimeSeriesArgument(lazy.matched, "end", invocation);
+  let requestedStart =
+    startArgument === undefined
+      ? source.start
+      : timeSeriesCoordinate(startArgument, source.frequency, "start", "window");
+  let requestedEnd =
+    endArgument === undefined
+      ? source.end
+      : timeSeriesCoordinate(endArgument, source.frequency, "end", "window");
+  const extend = logicalFlag(
+    await forceTimeSeriesArgument(lazy.matched, "extend", invocation),
+    false,
+    "extend",
+  );
+  if (!extend && requestedStart < source.start - tolerance / source.frequency) {
+    invocation.context.warn({ code: "NRW1026", message: "'start' value not changed" });
+    requestedStart = source.start;
+  }
+  if (!extend && requestedEnd > source.end + tolerance / source.frequency) {
+    invocation.context.warn({ code: "NRW1027", message: "'end' value not changed" });
+    requestedEnd = source.end;
+  }
+  if (requestedEnd < requestedStart - tolerance / source.frequency) {
+    throw new RTypeMismatchError("NRT3284", "window() 'start' cannot be after 'end'.");
+  }
+  const firstSourceRow = Math.ceil(
+    (requestedStart - source.start) * source.frequency - tolerance / Math.max(source.frequency, 1),
+  );
+  const lastSourceRow = Math.floor(
+    (requestedEnd - source.start) * source.frequency + tolerance / Math.max(source.frequency, 1),
+  );
+  if (!extend && (firstSourceRow >= shape.rows || lastSourceRow < 0)) {
+    throw new RTypeMismatchError("NRT3284", "window() selects no observations.");
+  }
+  const selectedRows = Math.floor((lastSourceRow - firstSourceRow) / sourceStride) + 1;
+  invocation.context.allocate(selectedRows);
+  const rowOffsets: (number | undefined)[] = [];
+  for (let row = firstSourceRow; row <= lastSourceRow; row += sourceStride) {
+    invocation.context.checkpoint();
+    rowOffsets.push(row >= 0 && row < shape.rows ? row : undefined);
+  }
+  if (rowOffsets.length === 0) {
+    throw new RTypeMismatchError("NRT3284", "window() selects no observations.");
+  }
+  const outputStart = source.start + firstSourceRow / source.frequency;
+  return shapeTimeSeries(
+    shape.data,
+    shape,
+    rowOffsets,
+    outputStart,
+    frequency,
+    vectorClasses(shape.data) ?? [],
+    timeSeriesNames(undefined, shape.data, shape.series, "window"),
+    invocation,
+  );
+}
+
+async function forceTimeSeriesArgument(
+  matched: ReadonlyMap<string, BuiltinCallArgument>,
+  name: string,
+  invocation: BuiltinInvocation,
+): Promise<RValue | undefined> {
+  const argument = matched.get(name);
+  if (argument === undefined) return undefined;
+  if (argument.promise.missing) {
+    throw new REvaluationError("NRE2103", `Argument '${name}' is missing.`);
+  }
+  return invocation.force(argument.promise);
+}
+
+function timeSeriesDataShape(
+  value: RValue,
+  call: "ts" | "as.ts" | "window",
+): { readonly data: RVector; readonly rows: number; readonly series: number } {
+  if (!isVector(value) || isDataFrame(value)) {
+    throw new RTypeMismatchError(
+      "NRT3284",
+      `${call}() currently requires a vector or matrix; data-frame coercion is not yet supported.`,
+    );
+  }
+  const dimensions = vectorDimensions(value);
+  if (dimensions !== undefined && dimensions.length !== 2) {
+    throw new RTypeMismatchError(
+      "NRT3284",
+      `${call}() requires a vector or two-dimensional matrix.`,
+    );
+  }
+  const rows = dimensions?.[0] ?? value.length;
+  const series = dimensions?.[1] ?? 1;
+  if (rows < 1 || series < 1) {
+    throw new RTypeMismatchError(
+      "NRT3284",
+      `${call}() time series must have one or more observations.`,
+    );
+  }
+  return { data: value, rows, series };
+}
+
+function timeSeriesPositiveScalar(value: RValue, name: string, call: string): number {
+  if (
+    (value.type !== "logical" && value.type !== "integer" && value.type !== "double") ||
+    isFactor(value) ||
+    value.length !== 1 ||
+    isMissing(value, 0) ||
+    !Number.isFinite(value.values[0]) ||
+    (value.values[0] ?? 0) <= 0
+  ) {
+    throw new RTypeMismatchError(
+      "NRT3284",
+      `${call}() '${name}' must be one positive finite number.`,
+    );
+  }
+  return value.values[0] ?? 1;
+}
+
+function timeSeriesTolerance(
+  value: RValue | undefined,
+  invocation: BuiltinInvocation,
+  call: string,
+): number {
+  const candidate =
+    value ?? optionsState(invocation).get("ts.eps") ?? doubleVector([Math.sqrt(Number.EPSILON)]);
+  if (
+    (candidate.type !== "logical" && candidate.type !== "integer" && candidate.type !== "double") ||
+    candidate.length !== 1 ||
+    isMissing(candidate, 0) ||
+    !Number.isFinite(candidate.values[0]) ||
+    (candidate.values[0] ?? -1) < 0
+  ) {
+    throw new RTypeMismatchError(
+      "NRT3284",
+      `${call}() 'ts.eps' must be one non-negative finite number.`,
+    );
+  }
+  return candidate.values[0] ?? 0;
+}
+
+function timeSeriesCoordinate(
+  value: RValue,
+  frequency: number,
+  name: "start" | "end",
+  call: string,
+): number {
+  if (
+    (value.type !== "logical" && value.type !== "integer" && value.type !== "double") ||
+    isFactor(value) ||
+    (value.length !== 1 && value.length !== 2) ||
+    Array.from({ length: value.length }, (_, index) => index).some(
+      (index) => isMissing(value, index) || !Number.isFinite(value.values[index]),
+    )
+  ) {
+    throw new RTypeMismatchError(
+      "NRT3284",
+      `${call}() '${name}' must contain one or two finite numbers.`,
+    );
+  }
+  const unit = value.values[0] ?? 0;
+  if (value.length === 1) return unit;
+  const cycle = value.values[1] ?? 1;
+  if (!Number.isInteger(cycle)) {
+    throw new RTypeMismatchError("NRT3284", `${call}() '${name}' cycle must be a whole number.`);
+  }
+  return unit + (cycle - 1) / frequency;
+}
+
+function timeSeriesClasses(value: RValue | undefined, series: number): readonly string[] {
+  if (value === undefined) {
+    return series > 1 ? ["mts", "ts", "matrix", "array"] : ["ts"];
+  }
+  if (value.type === "null") return [];
+  if (value.type !== "character" || value.missing !== undefined) {
+    throw new RTypeMismatchError("NRT3284", "ts() 'class' must be NULL or character.");
+  }
+  if (value.length === 1 && value.values[0] === "none") return [];
+  if (value.values.some((className) => className.length === 0)) {
+    throw new RTypeMismatchError("NRT3284", "ts() class names must be non-empty.");
+  }
+  return value.values;
+}
+
+function timeSeriesNames(
+  value: RValue | undefined,
+  data: RVector,
+  series: number,
+  call: string,
+): readonly string[] | undefined {
+  if (series === 1) return undefined;
+  if (value !== undefined) {
+    if (value.type !== "character" || value.missing !== undefined || value.length !== series) {
+      throw new RTypeMismatchError(
+        "NRT3284",
+        `${call}() 'names' must be a complete character vector matching the series count.`,
+      );
+    }
+    return value.values;
+  }
+  const dimNames = data.attributes.get("dimnames");
+  if (dimNames?.type === "list") {
+    const columns = dimNames.values[1];
+    if (
+      columns?.type === "character" &&
+      columns.missing === undefined &&
+      columns.length === series
+    ) {
+      return columns.values;
+    }
+  }
+  return Array.from({ length: series }, (_, index) => `Series ${index + 1}`);
+}
+
+function validatedTimeSeries(
+  value: RVector,
+  rows: number,
+  call: string,
+  allowDefault: boolean,
+): { readonly start: number; readonly end: number; readonly frequency: number } {
+  const attribute = value.attributes.get("tsp");
+  if (attribute === undefined) {
+    if (allowDefault) return { start: 1, end: rows, frequency: 1 };
+    throw new RTypeMismatchError("NRT3284", `${call}() requires valid 'tsp' metadata.`);
+  }
+  if (
+    (attribute.type !== "integer" && attribute.type !== "double") ||
+    attribute.length !== 3 ||
+    attribute.missing !== undefined
+  ) {
+    throw new RTypeMismatchError(
+      "NRT3284",
+      `${call}() requires numeric 'tsp' metadata of length three.`,
+    );
+  }
+  const start = attribute.values[0] ?? Number.NaN;
+  const end = attribute.values[1] ?? Number.NaN;
+  const frequency = attribute.values[2] ?? Number.NaN;
+  if (
+    !Number.isFinite(start) ||
+    !Number.isFinite(end) ||
+    !Number.isFinite(frequency) ||
+    frequency <= 0 ||
+    Math.abs(start + (rows - 1) / frequency - end) > Math.sqrt(Number.EPSILON)
+  ) {
+    throw new RTypeMismatchError("NRT3284", `${call}() found invalid time-series parameters.`);
+  }
+  return { start, end, frequency };
+}
+
+function shapeTimeSeries(
+  data: RVector,
+  shape: { readonly rows: number; readonly series: number },
+  rows: readonly (number | undefined)[],
+  start: number,
+  frequency: number,
+  classes: readonly string[],
+  seriesNames: readonly string[] | undefined,
+  invocation: BuiltinInvocation,
+): RVector {
+  const outputLength = rows.length * shape.series;
+  invocation.context.allocate(outputLength);
+  const indices: number[] = [];
+  const missing: number[] = [];
+  for (let series = 0; series < shape.series; series += 1) {
+    for (const row of rows) {
+      invocation.context.checkpoint();
+      if (row === undefined) {
+        indices.push(1);
+        missing.push(1);
+      } else {
+        indices.push(row + series * shape.rows + 1);
+        missing.push(0);
+      }
+    }
+  }
+  let output = subsetVector(
+    data,
+    integerVector(indices, missing.some((flag) => flag !== 0) ? missing : undefined),
+    invocation.context,
+  );
+  if (shape.series > 1) {
+    output = withDimensions(output, [rows.length, shape.series]);
+    output = withAttribute(
+      output,
+      "dimnames",
+      listValue([R_NULL, seriesNames === undefined ? R_NULL : characterVector(seriesNames)]),
+    );
+  }
+  output = withoutClasses(output);
+  if (classes.length > 0) output = withClasses(output, classes);
+  invocation.context.allocate(3);
+  return withAttribute(
+    output,
+    "tsp",
+    doubleVector([start, start + (rows.length - 1) / frequency, frequency]),
+  );
 }
 
 async function builtinNaOmit(invocation: BuiltinInvocation): Promise<RValue> {
