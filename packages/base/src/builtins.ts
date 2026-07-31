@@ -899,6 +899,13 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   definePackageBuiltin(
     "graphics",
+    "axTicks",
+    ["side", "axp", "usr", "log", "nintLog"],
+    "behavioral",
+    builtinAxisTicks,
+  ),
+  definePackageBuiltin(
+    "graphics",
     "rasterImage",
     ["image", "xleft", "ybottom", "xright", "ytop", "angle", "interpolate", "..."],
     "shape",
@@ -13849,6 +13856,112 @@ async function builtinPlotWindow(invocation: BuiltinInvocation): Promise<RValue>
   state.ylim = ylim;
   writeGraphics(invocation, state, { kind: "window", xlim, ylim });
   return R_NULL;
+}
+
+async function builtinAxisTicks(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = matchLazyArguments(invocation, ["side", "axp", "usr", "log", "nintLog"]);
+  const sideArgument = matched.get("side");
+  if (sideArgument === undefined || sideArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'side' is missing in axTicks().");
+  }
+  const sideValue = await invocation.force(sideArgument.promise);
+  if (!isAtomic(sideValue) || sideValue.length !== 1) {
+    throw new RTypeMismatchError("NRT3335", "axTicks() 'side' must be one coercible integer.");
+  }
+  const sideInteger = coerceAtomicToInteger(sideValue, invocation);
+  if (
+    sideInteger.length !== 1 ||
+    isMissing(sideInteger, 0) ||
+    (sideInteger.values[0] ?? 0) < 1 ||
+    (sideInteger.values[0] ?? 0) > 4
+  ) {
+    throw new RTypeMismatchError("NRT3335", "axTicks() 'side' must be in {1:4}.");
+  }
+  const side = sideInteger.values[0] ?? 1;
+
+  const state = activeGraphicsState(invocation);
+  const logArgument = matched.get("log");
+  let logarithmic: boolean;
+  if (logArgument === undefined || logArgument.promise.missing) {
+    if (state === undefined) {
+      throw new REvaluationError(
+        "NRE2190",
+        "axTicks() requires plot.new() first unless 'axp' and 'log' are supplied.",
+      );
+    }
+    logarithmic = false;
+  } else {
+    const logValue = await invocation.force(logArgument.promise);
+    if (logValue.type !== "logical" || logValue.length !== 1 || isMissing(logValue, 0)) {
+      throw new RTypeMismatchError("NRT3335", "axTicks() has an invalid 'log' value.");
+    }
+    logarithmic = logValue.values[0] === 1;
+  }
+  if (logarithmic) {
+    throw new RUnsupportedFeatureError(
+      "NRU6159",
+      "axTicks(log = TRUE) awaits logarithmic graphics-axis state and axisTicks semantics.",
+    );
+  }
+
+  const axpArgument = matched.get("axp");
+  let parameters: readonly [number, number, number];
+  if (axpArgument === undefined || axpArgument.promise.missing) {
+    if (state === undefined) {
+      throw new REvaluationError(
+        "NRE2190",
+        "axTicks() requires plot.new() first unless 'axp' and 'log' are supplied.",
+      );
+    }
+    parameters = linearAxisParameters(side === 1 || side === 3 ? state.xlim : state.ylim);
+  } else {
+    const axpValue = await invocation.force(axpArgument.promise);
+    const numbers = axisParameterNumbers(axpValue);
+    parameters = [numbers[0] ?? 0, numbers[1] ?? 0, numbers[2] ?? 0];
+  }
+
+  const intervals = Math.floor(Math.abs(parameters[2]) + 0.25);
+  const length = intervals + 1;
+  invocation.context.allocate(length);
+  if (intervals === 0) return doubleVector([parameters[0]]);
+  const step = (parameters[1] - parameters[0]) / intervals;
+  const ticks = new Float64Array(length);
+  for (let index = 0; index <= intervals; index += 1) {
+    invocation.context.checkpoint();
+    ticks[index] =
+      index === intervals ? parameters[1] : Number((parameters[0] + step * index).toPrecision(15));
+  }
+  return doubleVector(ticks);
+}
+
+function axisParameterNumbers(value: RValue): readonly [number, number, number] {
+  const numbers = graphicsNumbers(value, "axp");
+  if (numbers.length !== 3) {
+    throw new RTypeMismatchError("NRT3335", "axTicks() requires 'axp' to have length three.");
+  }
+  return [numbers[0] ?? 0, numbers[1] ?? 0, numbers[2] ?? 0];
+}
+
+function linearAxisParameters(
+  limits: readonly [number, number],
+): readonly [number, number, number] {
+  const reversed = limits[0] > limits[1];
+  const lowerLimit = Math.min(limits[0], limits[1]);
+  const upperLimit = Math.max(limits[0], limits[1]);
+  const span = upperLimit - lowerLimit;
+  const rawStep = span / 5;
+  const exponent = Math.floor(Math.log10(rawStep));
+  const magnitude = 10 ** exponent;
+  const fraction = rawStep / magnitude;
+  const multiple = fraction < 1.5 ? 1 : fraction < 2.75 ? 2 : fraction < 7.5 ? 5 : 10;
+  const step = multiple * magnitude;
+  const tolerance = Math.abs(step) * 1e-12;
+  const roundedLower = roundNumber(Math.ceil((lowerLimit - tolerance) / step) * step, -exponent);
+  const roundedUpper = roundNumber(Math.floor((upperLimit + tolerance) / step) * step, -exponent);
+  const lower = roundedLower === 0 ? 0 : roundedLower;
+  const upper = roundedUpper === 0 ? 0 : roundedUpper;
+  const intervals = Math.max(0, Math.round((upper - lower) / step));
+  return reversed ? [upper, lower, intervals] : [lower, upper, intervals];
 }
 
 async function builtinRasterImage(invocation: BuiltinInvocation): Promise<RValue> {

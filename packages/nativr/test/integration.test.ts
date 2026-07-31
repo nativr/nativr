@@ -2701,6 +2701,62 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("computes zoo's usage-ranked linear graphics ticks", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        explicit <- graphics::axTicks(
+          si = "1",
+          ax = c(0, 1, 3),
+          usr = stop("linear usr stays lazy"),
+          log = FALSE,
+          nintLog = stop("linear nintLog stays lazy")
+        )
+        c(
+          explicit,
+          axTicks(2, axp = c(6, 0, -3.9), log = FALSE),
+          axTicks(1, axp = c(0, 1, .74), log = FALSE),
+          axTicks(1, axp = c(0, 1, .75), log = FALSE)
+        )
+      `),
+    ).resolves.toEqual([0, 0.333333333333333, 0.666666666666667, 1, 6, 4.5, 3, 1.5, 0, 0, 0, 1]);
+
+    await runtime.eval("plot.new()\nplot.window(c(1, 10), c(0, 130))");
+    await expect(runtime.eval("c(axTicks(1), axTicks(4), graphics::axTicks(4))")).resolves.toEqual([
+      2, 4, 6, 8, 10, 0, 20, 40, 60, 80, 100, 120, 0, 20, 40, 60, 80, 100, 120,
+    ]);
+
+    await runtime.eval("plot.window(c(10, 0), c(17, -3))");
+    await expect(runtime.eval("c(axTicks(1), axTicks(2))")).resolves.toEqual([
+      10, 8, 6, 4, 2, 0, 15, 10, 5, 0,
+    ]);
+    await expect(runtime.eval("axTicks(1, axp = c(0, 1, 0), log = FALSE)")).resolves.toBe(0);
+    await expect(runtime.eval("axTicks(5, axp = c(0, 1, 5), log = FALSE)")).rejects.toMatchObject({
+      code: "NRT3335",
+    });
+    await expect(runtime.eval("axTicks(1, axp = c(0, 1), log = FALSE)")).rejects.toMatchObject({
+      code: "NRT3335",
+    });
+    await expect(runtime.eval("axTicks(1, axp = c(0, 1, 5), log = TRUE)")).rejects.toMatchObject({
+      code: "NRU6159",
+    });
+    await runtime.dispose();
+
+    const fresh = await session();
+    await expect(fresh.eval("axTicks(1)")).rejects.toMatchObject({ code: "NRE2190" });
+    await fresh.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 3 },
+    });
+    await expect(limited.eval("axTicks(1, axp = c(0, 1, 4), log = FALSE)")).rejects.toMatchObject({
+      code: "NRL4002",
+    });
+    await limited.dispose();
+  });
+
   it("emits browser-native raster graphics for usage-ranked package patterns", async () => {
     const observed: unknown[] = [];
     const runtime = await createR({
@@ -4743,7 +4799,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.176.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.177.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -4767,6 +4823,7 @@ describe("complete inline source-to-result vertical slice", () => {
     expect(capabilities.packages.find((entry) => entry.name === "graphics")?.functions).toEqual([
       { name: "plot.new", compatibility: "behavioral" },
       { name: "plot.window", compatibility: "shape" },
+      { name: "axTicks", compatibility: "behavioral" },
       { name: "rasterImage", compatibility: "shape" },
       { name: "segments", compatibility: "shape" },
       { name: "legend", compatibility: "shape" },

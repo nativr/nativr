@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           464 |
-| Overlapping callable names        |           449 |
-| Missing GNU R callable names      |         2,073 |
-| Name overlap                      |      17.8033% |
+| NativR registered names           |           465 |
+| Overlapping callable names        |           450 |
+| Missing GNU R callable names      |         2,072 |
+| Name overlap                      |      17.8430% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -239,6 +239,13 @@ calculations. Real and complex vectors, decimal ties-to-even, recycled and clamp
 missing and non-finite values, signed zero, attributes, direct/Math S3 dispatch, errors, and
 allocation limits are covered. This is a bounded browser-number implementation, not a claim of
 bit-for-bit identity for every platform decimal conversion or complete S4 Math2 behavior.
+
+The rank-448 increment adds GNU R differential evidence for zoo's measured `axTicks(4)` call and the
+adjacent linear-axis shapes. State-derived x/y ticks, explicit `axp`, ascending and descending axes,
+side coercion, the observed `floor(abs(intervals) + 0.25)` conversion, lazy linear-only arguments,
+namespace access, errors, and allocation limits are covered. The independently authored spacing path
+targets the measured 1/2/5-power-of-ten ranges. Logarithmic axes, complete `pretty` boundary
+identity, `par()` access, and actual axis drawing remain explicit incomplete graphics work.
 
 ## Completion evidence
 
