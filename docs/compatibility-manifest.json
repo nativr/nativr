@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.175.0",
+  "languageSubsetVersion": "0.176.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -213,6 +213,7 @@
         { "name": "sqrt", "compatibility": "numeric" },
         { "name": "abs", "compatibility": "numeric" },
         { "name": "round", "compatibility": "numeric" },
+        { "name": "signif", "compatibility": "behavioral" },
         { "name": "floor", "compatibility": "behavioral" },
         { "name": "ceiling", "compatibility": "behavioral" },
         { "name": "trunc", "compatibility": "behavioral" },

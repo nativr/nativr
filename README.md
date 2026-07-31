@@ -69,7 +69,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 463 registered functions, including resettable
+an initial condition/handler slice. It exposes 464 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
 preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
@@ -315,6 +315,10 @@ Rank 446 `stats::cycle` now runs zoo's two measured regular-series call shapes t
 R-compatible default and an S3 extension seam. It derives observation cycles from validated `tsp`
 metadata for vectors and matrix rows, including fractional frequencies, while leaving zoo's
 irregular-series method and index model package-owned.
+
+Rank 447 `signif` now runs zoo's two measured plot-limit calculations. Real and complex vectors use
+1–22 rounded significant digits with decimal ties-to-even behavior, recycled controls, retained
+metadata, and direct or Math-group S3 extension seams.
 
 Development priority is based on a reproducible analysis of documented usage in popular CRAN
 packages. The committed

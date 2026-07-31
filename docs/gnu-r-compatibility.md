@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           463 |
-| Overlapping callable names        |           448 |
-| Missing GNU R callable names      |         2,074 |
-| Name overlap                      |      17.7637% |
+| NativR registered names           |           464 |
+| Overlapping callable names        |           449 |
+| Missing GNU R callable names      |         2,073 |
+| Name overlap                      |      17.8033% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -233,6 +233,12 @@ Regular vector and matrix-row series, default frequency-one inputs, calendar sta
 frequencies, `tsp`/`ts` metadata, namespace access, lazy dots, errors, and allocation limits are
 covered. An independently declared `cycle.zoo` method verifies the S3 package seam without copying
 or claiming zoo's irregular-series implementation, index storage, or package loading.
+
+The rank-447 increment adds GNU R differential evidence for zoo's two measured `signif` plot-limit
+calculations. Real and complex vectors, decimal ties-to-even, recycled and clamped digit controls,
+missing and non-finite values, signed zero, attributes, direct/Math S3 dispatch, errors, and
+allocation limits are covered. This is a bounded browser-number implementation, not a claim of
+bit-for-bit identity for every platform decimal conversion or complete S4 Math2 behavior.
 
 ## Completion evidence
 

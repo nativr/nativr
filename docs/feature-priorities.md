@@ -749,8 +749,13 @@ complete for zoo's two measured calls, representing 731,390 downloads and 0.6% w
 owned default derives observation numbers from validated regular `tsp` metadata for vectors and
 matrix rows, including calendar starts and fractional frequencies, while the S3 generic forwards
 lazy dots to independently supplied methods such as `cycle.zoo`. Zoo's irregular-series method,
-index storage, and package loading remain package-owned. Rank 447 `signif` is the next unresolved
-callable candidate.
+index storage, and package loading remain package-owned. Rank 447 `signif` is now complete for zoo's
+two measured calls, again representing 731,390 downloads and 0.6% weighted reach. The observed
+maxima are rounded to two significant digits before sizing a primary/secondary plot axis.
+Differential evidence covers real and complex vectors, decimal ties-to-even, recycled and clamped
+1–22 digit controls, missing and non-finite values, metadata retention, allocation limits, and
+direct/Math-group S3 methods. Exact identity for every platform decimal-to-binary boundary remains
+outside the claim. Rank 448 `axTicks` is the next unresolved callable candidate.
 
 ## Completed implementation order
 

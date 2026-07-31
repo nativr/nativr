@@ -330,3 +330,7 @@ against the 308 KiB limit.
 Language subset 0.175 adds rank 446's `stats::cycle()` generic, regular-series coordinate default,
 and package-method S3 seam without raising the ceiling. The complete production Worker measures
 288.3 KiB gzip against the 308 KiB limit.
+
+Language subset 0.176 adds rank 447's `signif()` real/complex significant-digit rounding and S3
+dispatch seams without raising the ceiling. The complete production Worker measures 288.9 KiB gzip
+against the 308 KiB limit.
