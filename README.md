@@ -547,6 +547,12 @@ and display-list replay reuse the existing graphics path. Complete axes/tick lab
 fixed-aspect layouts, formula/function/time-series/raster methods, clipping/margins, and
 device-identical output remain explicit boundaries.
 
+Rank 127 `system.time()` now covers 95 measured calls across six packages through one lazy
+single-evaluation path. It returns GNU R-shaped `proc_time` values, uses a monotonic browser elapsed
+clock, preserves side effects, validates `gcFirst`, and emits timed-error output before propagating
+the original condition. The adjacent `proc.time()` exposes the same named/classed shape. Browser-
+unavailable CPU and child-process counters remain explicit platform boundaries.
+
 Development priority is based on a reproducible analysis of documented usage in popular CRAN
 packages. The committed
 [priority report and figures](https://github.com/nativr/nativr/blob/main/docs/feature-priorities.md)

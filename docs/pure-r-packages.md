@@ -163,6 +163,8 @@ The same rule applies to later packages: a missing callable is prioritized by me
 and implemented as reusable runtime behavior. For example, the rank-80 `dev.off()` gap led to one
 browser-device lifecycle shared by every package, including current/list queries, held-command
 flush, close, reset, and reopen semantics. Package-specific shims are not the compatibility model.
+Rank-127 `system.time()` similarly became one lazy monotonic timing primitive, plus `proc.time()`,
+for all 95 measured calls across six packages rather than six package-specific substitutes.
 
 ## Explicit boundaries
 

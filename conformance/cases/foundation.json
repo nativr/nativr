@@ -7588,5 +7588,28 @@
     "expected": [2, 2, 2, 1, 1, 1, 1],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "system-time-lazy-proc-time-shape-and-monotonic-clock",
+    "code": "tracker <- 0L\ntimed <- withVisible(system.time({ Sys.sleep(0.01); tracker <- tracker + 1L; invisible(42L) }, gcFirst = FALSE))\nbefore <- proc.time()\nSys.sleep(0.005)\nafter <- proc.time()\nc(tracker, timed$visible, inherits(timed$value, \"proc_time\"), names(timed$value), typeof(timed$value), length(timed$value), all(timed$value[1:3] >= 0), timed$value[[\"elapsed\"]] >= 0.005, all(is.na(timed$value[4:5])), inherits(before, \"proc_time\"), after[[\"elapsed\"]] >= before[[\"elapsed\"]])",
+    "expected": [
+      "1",
+      "TRUE",
+      "TRUE",
+      "user.self",
+      "sys.self",
+      "elapsed",
+      "user.child",
+      "sys.child",
+      "double",
+      "5",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

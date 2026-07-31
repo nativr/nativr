@@ -428,6 +428,16 @@ returns invisible `NULL`, and cooperatively checks cancellation between short as
 slices. Missing, `NaN`, empty, and negative times fail. Exact scheduler resolution is host-dependent
 and is not claimed.
 
+`base::system.time` evaluates its lazy `expr` exactly once after validating the closure-like
+`gcFirst` control and returns a visible five-element double vector with GNU R's `proc_time` class,
+names, missing child-process fields, and elapsed wall time. Expression errors emit a bounded
+`Timing stopped at:` stderr event before the original catchable condition continues. The adjacent
+`proc.time()` exposes a nondecreasing session-relative elapsed clock with the same result shape.
+Browsers expose neither process CPU accounting nor child processes, so `user.self` and `sys.self`
+are truthfully zero and both child fields are `NA`; `gcFirst = TRUE` cannot request host garbage
+collection and is a validated no-op. Exact scheduler resolution, CPU accounting, child-process
+accounting, and GNU R's class-specific print/summary formatting are not claimed.
+
 `base::save` and `load` extend the same session-owned resource seam with behavioral differential
 evidence for bit64's observed workspace roundtrip. `save` selects direct object expressions and/or
 character names supplied by `list`, looks them up in `envir`, forces promises by default, preserves

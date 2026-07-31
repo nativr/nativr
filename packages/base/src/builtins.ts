@@ -258,6 +258,17 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("Sys.setlocale", ["category", "locale"], "behavioral", builtinSystemSetLocale),
   defineBuiltin("Sys.localeconv", [], "behavioral", builtinSystemLocaleConv),
   defineBuiltin("Sys.sleep", ["time"], "behavioral", builtinSystemSleep, "regular", "invisible"),
+  defineBuiltin("proc.time", [], "behavioral", builtinProcessTime),
+  withBuiltinFormals(
+    defineBuiltin("system.time", ["expr", "gcFirst"], "behavioral", builtinSystemTiming),
+    [
+      { name: "expr" },
+      {
+        name: "gcFirst",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
   defineBuiltin("R.home", ["component"], "shape", builtinRHome),
   defineBuiltin("path.expand", ["path"], "shape", builtinPathExpand),
   defineBuiltin("basename", ["path"], "behavioral", builtinBaseName),
@@ -1862,6 +1873,7 @@ const S4_COERCIONS_STATE_KEY = "base.s4.coercions";
 const GRAPHICS_STATE_KEY = "graphics.device";
 const GRAPHICS_PARAMETERS_STATE_KEY = "graphics.parameters";
 const GC_TORTURE_STATE_KEY = "base.gctorture2";
+const PROCESS_TIME_STATE_KEY = "base.processTime";
 const HOOKS_STATE_KEY = "base.hooks";
 const VIRTUAL_TEXT_FILES_STATE_KEY = "base.virtualTextFiles";
 const PACKAGE_DATA_DIRECTORY_STATE_KEY = "utils.packageDataDirectory";
@@ -1914,6 +1926,11 @@ interface GraphicsState {
   pendingBytes: number;
   displayList: RGraphicsEvent[];
   displayListBytes: number;
+}
+
+interface ProcessTimeState {
+  readonly originMilliseconds: number;
+  elapsedSeconds: number;
 }
 
 interface S4ClassDefinition {
@@ -3234,6 +3251,112 @@ async function builtinSystemSleep(invocation: BuiltinInvocation): Promise<RValue
     invocation.context.checkpoint(0);
   }
   return R_NULL;
+}
+
+async function builtinProcessTime(invocation: BuiltinInvocation): Promise<RValue> {
+  await matchExact(invocation, []);
+  const now = monotonicMilliseconds();
+  const existing = invocation.state.get(PROCESS_TIME_STATE_KEY);
+  const state: ProcessTimeState =
+    typeof existing === "object" &&
+    existing !== null &&
+    "originMilliseconds" in existing &&
+    typeof existing.originMilliseconds === "number" &&
+    "elapsedSeconds" in existing &&
+    typeof existing.elapsedSeconds === "number"
+      ? (existing as ProcessTimeState)
+      : { originMilliseconds: now, elapsedSeconds: 0 };
+  state.elapsedSeconds = Math.max(
+    state.elapsedSeconds,
+    elapsedSeconds(state.originMilliseconds, now),
+  );
+  invocation.state.set(PROCESS_TIME_STATE_KEY, state);
+  return processTimeValue(state.elapsedSeconds, invocation);
+}
+
+async function builtinSystemTiming(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = matchLazyArguments(invocation, ["expr", "gcFirst"]);
+  const expression = matched.get("expr");
+  if (expression === undefined || expression.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'expr' is missing in system.time().");
+  }
+  const gcFirst = matched.get("gcFirst");
+  if (gcFirst !== undefined) {
+    systemTimeGcFirst(await invocation.force(gcFirst.promise));
+  }
+
+  const start = monotonicMilliseconds();
+  try {
+    await invocation.force(expression.promise);
+  } catch (error) {
+    if (isCatchableCondition(error)) {
+      const elapsed = elapsedSeconds(start, monotonicMilliseconds());
+      invocation.context.writeOutput({
+        stream: "stderr",
+        text: `Timing stopped at: 0 0 ${formatRNumber(elapsed)}\n`,
+      });
+    }
+    throw error;
+  }
+  return processTimeValue(elapsedSeconds(start, monotonicMilliseconds()), invocation);
+}
+
+function systemTimeGcFirst(value: RValue): boolean {
+  if (value.type === "null" || (isAtomic(value) && value.length === 0)) {
+    throw new RTypeMismatchError("NRT3399", "argument is of length zero");
+  }
+  if (!isAtomic(value)) {
+    throw new RTypeMismatchError("NRT3399", "argument is not interpretable as logical");
+  }
+  if (value.length > 1) {
+    throw new RTypeMismatchError("NRT3399", "the condition has length > 1");
+  }
+  if (isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3399", "missing value where TRUE/FALSE needed");
+  }
+  if (value.type === "character") {
+    const parsed = parseRLogical(value.values[0] ?? "");
+    if (parsed === undefined) {
+      throw new RTypeMismatchError("NRT3399", "argument is not interpretable as logical");
+    }
+    return parsed;
+  }
+  if (value.type === "complex") {
+    return (value.real[0] ?? 0) !== 0 || (value.imaginary[0] ?? 0) !== 0;
+  }
+  const scalar = value.values[0] ?? 0;
+  if (typeof scalar === "number" && Number.isNaN(scalar)) {
+    throw new RTypeMismatchError("NRT3399", "argument is not interpretable as logical");
+  }
+  return scalar !== 0;
+}
+
+function processTimeValue(elapsed: number, invocation: BuiltinInvocation): RDoubleVector {
+  invocation.context.allocate(5);
+  return withClasses(
+    withNames(doubleVector([0, 0, elapsed, 0, 0], new Uint8Array([0, 0, 0, 1, 1])), [
+      "user.self",
+      "sys.self",
+      "elapsed",
+      "user.child",
+      "sys.child",
+    ]),
+    ["proc_time"],
+  );
+}
+
+function monotonicMilliseconds(): number {
+  const clock = (
+    globalThis as unknown as {
+      readonly performance?: { readonly now?: () => number };
+    }
+  ).performance;
+  const value = clock?.now?.call(clock);
+  return typeof value === "number" && Number.isFinite(value) ? value : Date.now();
+}
+
+function elapsedSeconds(startMilliseconds: number, endMilliseconds: number): number {
+  return Math.max(0, Math.round(endMilliseconds - startMilliseconds) / 1_000);
 }
 
 function waitForBrowserTimer(milliseconds: number): Promise<void> {

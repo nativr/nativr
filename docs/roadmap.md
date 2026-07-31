@@ -506,6 +506,11 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      null/current values, close visibility, held-command flushing, graphical-parameter reset, and
      deterministic reopen behavior. Multiple simultaneous devices, selection among devices, and
      file-format devices remain later graphics architecture.
+124. Browser-safe timing: rank-127 `base::system.time` and adjacent `proc.time` now provide lazy
+     single evaluation, closure-like formals, validated `gcFirst`, GNU R-shaped `proc_time`
+     names/class/missingness, monotonic elapsed time, timed-error output, and reset behavior for all
+     95 measured calls across six packages. Process CPU, child-process accounting, forced host GC,
+     and class-specific printing remain explicit platform/runtime work.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           550 |
-| Overlapping callable names        |           535 |
-| Missing GNU R callable names      |         1,987 |
-| Name overlap                      |       21.213% |
+| NativR registered names           |           552 |
+| Overlapping callable names        |           537 |
+| Missing GNU R callable names      |         1,985 |
+| Name overlap                      |       21.293% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -471,6 +471,14 @@ raising current name overlap to 535 of 2,522. One session-owned device reports d
 falls back to GNU R's named null device 1, flushes held journal commands on close, resets its
 `par()` state, and can be reopened by the next plot. Multiple active devices, device switching, file
 devices such as `png`, and cross-device equivalence remain explicit incomplete work.
+
+The browser-timing increment adds the usage-ranked `system.time` and adjacent `proc.time`, raising
+current name overlap to 537 of 2,522. Differential evidence covers one lazy evaluation, side
+effects, visible five-field `proc_time` shape, names/class/missingness, monotonic elapsed time, and
+session-relative process-time queries. NativR reports zero process CPU and missing child-process
+fields because browsers expose neither counter; `gcFirst` is validated but cannot force host GC.
+Exact timing resolution, CPU/child accounting, and `print.proc_time`/`summary.proc_time` remain
+incomplete.
 
 The rank-22 plot increment adds GNU R differential shape evidence for the highest-reach previously
 absent core name. `base::plot` dispatches user and registered package S3 methods before the owned

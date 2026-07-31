@@ -125,7 +125,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 124,sort,true,5,withr|scales|StanHeaders|data.table|bit64,13,5.2,5.4
 125,file.exists,true,5,withr|cpp11|knitr|shiny|rprojroot,8,5.2,5.4
 126,read.csv,true,6,magrittr|curl|data.table|shiny|promises|bit64,11,6.2,5.3
-127,system.time,false,6,sass|processx|memoise|matrixStats|data.table|bit64,95,6.2,5.3
+127,system.time,true,6,sass|processx|memoise|matrixStats|data.table|bit64,95,6.2,5.3
 128,unique,true,5,ggplot2|StanHeaders|stringi|data.table|bit64,22,5.2,5.1
 129,dir.create,true,4,withr|cpp11|dplyr|rstudioapi,6,4.1,5.1
 130,parent.frame,true,5,rlang|testthat|htmlwidgets|shiny|zoo,9,5.2,5.1
@@ -248,7 +248,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 247,logical,true,1,vctrs,4,1.0,1.9
 248,rle,true,1,vctrs,1,1.0,1.9
 249,which.min,true,3,data.table|zoo|bit64,4,3.1,1.9
-250,proc.time,false,2,ps|data.table,2,2.1,1.8
+250,proc.time,true,2,ps|data.table,2,2.1,1.8
 251,vapply,true,2,ps|distributional,2,2.1,1.8
 252,rainbow,false,2,farver|zoo,5,2.1,1.8
 253,rect,false,2,sass|zoo,3,2.1,1.8
