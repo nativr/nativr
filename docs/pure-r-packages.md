@@ -62,9 +62,9 @@ clone so later JavaScript mutation cannot alter a Worker session.
 
 Resources use base64 only as a transport encoding. `system.file(..., package =)` exposes matching
 entries as opaque `nativr://package/<package>/...` paths. Those paths identify immutable files in
-the browser package store; they are not host filesystem paths. `readLines()` can consume UTF-8 or
-Latin-1 text from those paths, including `DESCRIPTION`, `NAMESPACE`, retained `R/*.R` source, and
-packaged resources. Package files remain immutable.
+the browser package store; they are not host filesystem paths. `readLines()` or a read-only `file()`
+connection can consume UTF-8 or Latin-1 text from those paths, including `DESCRIPTION`, `NAMESPACE`,
+retained `R/*.R` source, and packaged resources. Package files remain immutable.
 
 ## Loader behavior
 
@@ -78,7 +78,10 @@ normalized AST. The runtime then provides:
 5. `.onLoad()` and `.onAttach()` lifecycle hooks;
 6. `library`, `require`, `requireNamespace`, namespace queries, attachment search paths, and reset;
 7. package identity lookup through documented `utils::packageName()` semantics;
-8. bounded immutable resource lookup through `system.file()` and text access through `readLines()`.
+8. bounded immutable resource lookup through `system.file()` and text access through `readLines()`
+   or session-owned file connections;
+9. browser-memory `tempdir()`/`tempfile()` paths, `file.exists()`, stateful text connections, and
+   connection-aware `readLines()`, `writeLines()`, `cat()`, and `capture.output()`.
 
 Package source, metadata, resource counts, and encoded bytes are bounded before parsing. Package
 evaluation then consumes the ordinary step, call-depth, allocation, and output budgets.
@@ -125,9 +128,11 @@ the package itself was not patched or translated.
 - `configure`, `configure.win`, `cleanup`, and `cleanup.win` are not executed.
 - The current NAMESPACE parser supports `export`, `import`, `importFrom`, and `S3method`. S4
   registration, `exportPattern`, conditional declarations, and other directives remain blockers.
-- `readLines()` and `writeLines()` currently cover package files and same-session browser-memory
-  paths. General connection objects, compressed connections, URLs, host paths, seek state, and the
-  broader file API remain separate work.
+- `file()` connections currently cover bounded text/binary-mode handles over immutable package files
+  and same-session browser-memory paths, including implicit open/close, explicit `open()`/`close()`,
+  `isOpen()`, `flush()`, bounded `seek()`, and `summary()`. Compressed connections, URLs, sockets,
+  host paths, raw/binary I/O, separate read/write seek positions, and the broader file API remain
+  separate work.
 - `data/*.R` and binary datasets are preserved with diagnostics; `data()` installation, `.rda`,
   `.RData`, `.rds`, `R/sysdata.rda`, and full lazy-data behavior are not yet implemented.
 - Bytecode is not loaded. Original R source is parsed into the owned AST.

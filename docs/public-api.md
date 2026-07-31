@@ -28,11 +28,14 @@ deterministic inspection. `print()` returns its input invisibly and `cat()` retu
 `NULL`, exposed through the result's `visible` flag. Text counts toward `maxOutputBytes`.
 `utils::capture.output()` diverts selected events into an in-memory character result, so captured
 events are absent from `evalDetailed().output` and `onOutput`; `split = TRUE` duplicates stdout back
-to both destinations. Captured bytes remain bounded by `maxOutputBytes`. File paths and connection
-targets are rejected because the browser runtime exposes no filesystem.
+to both destinations. Captured bytes remain bounded by `maxOutputBytes`. A supported session path or
+file connection stores captured text inside the evaluator; host paths remain unavailable.
 
-R code can use `tempfile()` with `readLines()`/`writeLines()`, `dput()`/`dget()`/`unlink()`, or
-`save()`/`load()` for bounded, same-session text and supported workspace serialization. Those opaque
+R code can use `tempdir()`/`tempfile()` with `file()`, `file.exists()`,
+`readLines()`/`writeLines()`, connection-aware `cat()`/`capture.output()`,
+`dput()`/`dget()`/`unlink()`, or `save()`/`load()` for bounded, same-session text and supported
+workspace serialization. `open()`/`close()` expose read/write/append modes, `seek()` controls the
+supported shared text cursor, and `isOpen()` or `summary()` reports state. Those opaque
 `nativr://session-temp/...` paths never leave the evaluator and are cleared by `reset()` or
 `dispose()`; they are not host files and cannot be passed through the public JavaScript API. The
 workspace archive is NativR canonical source rather than a GNU R `.RData` binary.
@@ -44,9 +47,9 @@ into the owned AST, and registered in the session's isolated package catalog. `p
 namespace without attaching it; `library(pkg)` attaches its exports. Imports, dependency version
 constraints, S3 registrations, `.onLoad()`, and `.onAttach()` use the runtime's environment and
 closure model. `system.file()` returns opaque `nativr://package/...` paths for immutable package
-metadata, retained R source, and packaged resources; `readLines()` can read their text without
-granting host-filesystem access. `reset()` unloads and detaches packages while retaining the
-supplied catalog so later namespace access can load it again.
+metadata, retained R source, and packaged resources; `readLines()` and read-only `file()`
+connections can read their text without granting host-filesystem access. `reset()` unloads and
+detaches packages while retaining the supplied catalog so later namespace access can load it again.
 
 `@nativr/package-tools` is the build-time installer for standard source directories, `.tar.gz`
 archives, and CRAN-like repositories. It resolves required dependencies and emits integrity-locked

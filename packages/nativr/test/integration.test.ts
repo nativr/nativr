@@ -1434,6 +1434,137 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("keeps GNU R-style file connections stateful, bounded, and unforgeable", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        path <- tempfile(fileext = ".txt")
+        con <- file(path)
+        before <- summary(con)
+        writeLines(c("alpha", "beta"), con)
+        closed_first <- readLines(con, n = 1)
+        closed_again <- readLines(con, n = 1)
+        open(con, "r")
+        first <- readLines(con, n = 1)
+        second <- readLines(con, n = 1)
+        opened <- summary(con)
+        closed <- withVisible(close(con))
+        c(
+          typeof(con), class(con), before$mode, before$opened,
+          closed_first, closed_again, first, second,
+          opened$mode, opened$opened, opened[["can read"]], opened[["can write"]],
+          is.integer(closed$value), closed$value, closed$visible,
+          inherits(try(isOpen(con), silent = TRUE), "try-error"),
+          file.exists(path), file.exists(tempdir()), unlink(path)
+        )
+      `),
+    ).resolves.toEqual([
+      "integer",
+      "file",
+      "connection",
+      "r",
+      "closed",
+      "alpha",
+      "alpha",
+      "alpha",
+      "beta",
+      "r",
+      "opened",
+      "yes",
+      "no",
+      "TRUE",
+      "0",
+      "FALSE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "0",
+    ]);
+
+    await expect(
+      runtime.eval(`
+        path <- tempfile()
+        con <- file(path, "w+")
+        writeLines(c("abc", "def"), con)
+        at_end <- seek(con)
+        old <- seek(con, 0, origin = "start")
+        initial <- readLines(con)
+        close(con)
+        appended <- file(path, "a+")
+        writeLines("tail", appended)
+        seek(appended, 0)
+        final <- readLines(appended)
+        flushed <- withVisible(flush(appended))
+        close(appended)
+        c(at_end, old, initial, final, is.null(flushed$value), flushed$visible, unlink(path))
+      `),
+    ).resolves.toEqual(["8", "8", "abc", "def", "abc", "def", "tail", "TRUE", "FALSE", "0"]);
+
+    await expect(
+      runtime.eval(`
+        private <- file()
+        writeLines("private", private)
+        seek(private, 0)
+        value <- readLines(private)
+        details <- summary(private)
+        fake <- structure(as.integer(private), class = c("file", "connection"))
+        rejected <- inherits(try(isOpen(fake), silent = TRUE), "try-error")
+        close(private)
+        c(value, details$description, details$mode, rejected)
+      `),
+    ).resolves.toEqual(["private", "", "w+", "TRUE"]);
+
+    await expect(runtime.eval("file('host.txt')")).rejects.toMatchObject({ code: "NRU6169" });
+    await expect(runtime.eval("file(raw = TRUE)")).rejects.toMatchObject({ code: "NRU6183" });
+    await expect(
+      runtime.eval("path <- tempfile(); con <- file(path, 'w'); readLines(con)"),
+    ).rejects.toMatchObject({ code: "NRE2240" });
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 1 },
+    });
+    await limited.eval("limited_connection <- file()");
+    await expect(limited.eval("file()")).rejects.toMatchObject({ code: "NRL4002" });
+    await limited.eval("close(limited_connection); replacement_connection <- file()");
+    await limited.eval("close(replacement_connection)");
+    await limited.dispose();
+  });
+
+  it("routes cat() and capture.output() through virtual file connections", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        path <- tempfile()
+        cat("a", file = path)
+        cat("b", file = path, append = TRUE)
+        con <- file(path, "a")
+        cat("c", file = con)
+        close(con)
+        direct <- suppressWarnings(readLines(path))
+
+        closed <- file(path)
+        captured <- withVisible(capture.output({ cat("d"); print(1) }, file = closed))
+        invalidated <- inherits(try(isOpen(closed), silent = TRUE), "try-error")
+        captured_lines <- readLines(path)
+
+        opened <- file(path, "w")
+        capture.output(print(2), file = opened)
+        remains_open <- isOpen(opened, "write")
+        close(opened)
+        opened_lines <- readLines(path)
+        c(
+          direct,
+          is.null(captured$value), captured$visible, invalidated, captured_lines,
+          remains_open, opened_lines, unlink(path)
+        )
+      `),
+    ).resolves.toEqual(["abc", "TRUE", "FALSE", "TRUE", "d[1] 1", "TRUE", "[1] 2", "0"]);
+    await runtime.dispose();
+  });
+
   it("suspends cooperatively with GNU R-compatible Sys.sleep() validation and visibility", async () => {
     const runtime = await session();
     const slept = await runtime.evalDetailed("Sys.sleep(0.01)");
@@ -1574,6 +1705,41 @@ describe("complete inline source-to-result vertical slice", () => {
       runtime.eval("readLines(system.file('DESCRIPTION', package = 'nativrfixture'), n = 1)"),
     ).resolves.toBe("Package: nativrfixture");
     await expect(
+      runtime.eval(`
+        resource_connection <- file(
+          system.file("DESCRIPTION", package = "nativrfixture"),
+          "rb"
+        )
+        first <- readLines(resource_connection, n = 1)
+        details <- summary(resource_connection)
+        open_state <- isOpen(resource_connection, "read")
+        closed <- withVisible(close(resource_connection))
+        c(
+          first,
+          details$mode,
+          details$text,
+          open_state,
+          is.integer(closed$value),
+          closed$value,
+          closed$visible,
+          file.exists(system.file(package = "nativrfixture")),
+          file.exists(system.file("R", package = "nativrfixture")),
+          file.exists(system.file("DESCRIPTION", package = "nativrfixture"))
+        )
+      `),
+    ).resolves.toEqual([
+      "Package: nativrfixture",
+      "rb",
+      "binary",
+      "TRUE",
+      "TRUE",
+      "0",
+      "FALSE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    await expect(
       runtime.eval("readLines(system.file('NAMESPACE', package = 'nativrfixture'), n = 1)"),
     ).resolves.toBe("");
     await expect(
@@ -1583,6 +1749,9 @@ describe("complete inline source-to-result vertical slice", () => {
     ).resolves.toBe(true);
     await expect(
       runtime.eval("writeLines('changed', system.file('DESCRIPTION', package = 'nativrfixture'))"),
+    ).rejects.toMatchObject({ code: "NRU6181" });
+    await expect(
+      runtime.eval("file(system.file('DESCRIPTION', package = 'nativrfixture'), 'w')"),
     ).rejects.toMatchObject({ code: "NRU6181" });
     await expect(
       runtime.eval(
@@ -7234,7 +7403,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.199.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.200.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

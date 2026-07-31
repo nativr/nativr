@@ -7408,6 +7408,51 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "file-connection-implicit-open-explicit-cursor-close",
+    "code": "path <- tempfile()\ncon <- file(path)\nwriteLines(c(\"alpha\", \"beta\"), con)\nbefore <- c(readLines(con, n = 1), readLines(con, n = 1), isOpen(con))\nopen(con, \"r\")\nafter <- c(readLines(con, n = 1), readLines(con, n = 1), isOpen(con, \"read\"), isOpen(con, \"write\"))\ndetails <- summary(con)\nclosed <- withVisible(close(con))\nc(before, after, details$mode, details$opened, details[[\"can read\"]], details[[\"can write\"]], is.integer(closed$value), closed$value, closed$visible, inherits(try(isOpen(con), silent = TRUE), \"try-error\"), unlink(path))",
+    "expected": [
+      "alpha",
+      "alpha",
+      "FALSE",
+      "alpha",
+      "beta",
+      "TRUE",
+      "FALSE",
+      "r",
+      "opened",
+      "yes",
+      "no",
+      "TRUE",
+      "0",
+      "FALSE",
+      "TRUE",
+      "0"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "file-connection-read-write-append-seek",
+    "code": "path <- tempfile()\ncon <- file(path, \"w+\")\nwriteLines(c(\"abc\", \"def\"), con)\nseek(con, 0)\ninitial <- readLines(con)\nclose(con)\ncon <- file(path, \"a+\")\nwriteLines(\"tail\", con)\nseek(con, 0)\nfinal <- readLines(con)\nflushed <- withVisible(flush(con))\nclose(con)\nc(initial, final, is.null(flushed$value), flushed$visible, file.exists(path), file.exists(tempdir()), unlink(path))",
+    "expected": ["abc", "def", "abc", "def", "tail", "TRUE", "FALSE", "TRUE", "TRUE", "0"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "file-empty-description-private-connection",
+    "code": "con <- file()\nwriteLines(\"private\", con)\nseek(con, 0)\nvalue <- readLines(con)\ndetails <- summary(con)\nclosed <- withVisible(close(con))\nc(value, details$description, details$mode, details$text, details$opened, is.integer(closed$value), closed$value, closed$visible)",
+    "expected": ["private", "", "w+", "text", "opened", "TRUE", "0", "FALSE"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "cat-and-capture-output-file-connections",
+    "code": "path <- tempfile()\ncat(\"a\", file = path)\ncat(\"b\", file = path, append = TRUE)\ncon <- file(path, \"a\")\ncat(\"c\", file = con)\nclose(con)\ndirect <- suppressWarnings(readLines(path))\nclosed <- file(path)\ncaptured <- withVisible(capture.output({ cat(\"d\"); print(1) }, file = closed))\ninvalidated <- inherits(try(isOpen(closed), silent = TRUE), \"try-error\")\ncaptured_lines <- readLines(path)\nopened <- file(path, \"w\")\ncapture.output(print(2), file = opened)\nremains_open <- isOpen(opened, \"write\")\nclose(opened)\nopened_lines <- readLines(path)\nc(direct, is.null(captured$value), captured$visible, invalidated, captured_lines, remains_open, opened_lines, unlink(path))",
+    "expected": ["abc", "TRUE", "FALSE", "TRUE", "d[1] 1", "TRUE", "[1] 2", "0"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "sys-sleep-zero-visibility-and-invalid-time",
     "code": "result <- withVisible(Sys.sleep(0))\nc(is.null(result$value), result$visible, inherits(try(Sys.sleep(-1), silent = TRUE), \"try-error\"), inherits(try(Sys.sleep(NA_real_), silent = TRUE), \"try-error\"))",
     "expected": [true, false, true, true],

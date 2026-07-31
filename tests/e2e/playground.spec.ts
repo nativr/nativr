@@ -29,6 +29,19 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("7");
 
+  await page.locator("#source").fill(`
+    path <- tempfile()
+    con <- file(path, "w+")
+    writeLines("worker", con)
+    seek(con, 0)
+    value <- readLines(con)
+    open_state <- isOpen(con, "read")
+    closed <- close(con)
+    c(value, open_state, closed)
+  `);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText('["worker", "TRUE", "0"]');
+
   await page.getByRole("button", { name: "Numeric R plot" }).click();
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("null");

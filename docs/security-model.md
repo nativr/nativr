@@ -17,15 +17,18 @@ reduce accidental hangs. NativR does not claim a formally verified hostile-code 
 applications should retain origin isolation and browser security controls.
 
 Nested `capture.output()` frames retain selected textual events only in evaluator-owned memory and
-enforce the same byte ceiling before constructing the result vector. Its `file` and connection forms
-are explicit unsupported errors, so capture cannot become an implicit filesystem escape.
+enforce the same byte ceiling before constructing a result vector or writing a supported virtual
+target. File-connection targets resolve only through the evaluator's opaque session map, so capture
+cannot become an implicit filesystem escape.
 
-`tempfile()`, `readLines()`, `writeLines()`, `dput()`, `dget()`, and `unlink()` expose only opaque
-session-memory or immutable package paths. The mutable map is owned by the evaluator, cleared on
-reset/disposal, limited by the output-byte and vector budgets, and never resolves a path through
-browser or operating-system APIs. `dget()` can parse only text previously produced by the same
-session's bounded serializer. `readLines()` may additionally decode reviewed package-bundle bytes;
-package writes, host paths, and general connections are rejected before lookup.
+`tempdir()`, `tempfile()`, `file()`, `file.exists()`, line I/O, `cat()`, `capture.output()`,
+`dput()`, `dget()`, and `unlink()` expose only opaque session-memory or immutable package paths. The
+mutable file/connection maps are owned by the evaluator, cleared on reset/disposal, limited by
+output-byte and vector budgets, and never resolve a path through browser or operating-system APIs.
+Connection records use object identity as well as an integer slot, so user-constructed classed
+integers cannot forge a live handle. `dget()` can parse only text previously produced by the same
+session's bounded serializer. `readLines()` and read-only connections may additionally decode
+reviewed package-bundle bytes; package writes and host paths are rejected before lookup.
 
 `utils::demo()` does not probe installed R libraries, execute package scripts, start servers, or
 perform network access. Its current empty catalog does not yet discover or execute the validated
