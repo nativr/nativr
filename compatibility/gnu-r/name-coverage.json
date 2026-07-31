@@ -4,15 +4,15 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 468,
-    "overlappingNames": 453,
-    "missingReferenceNames": 2069,
+    "nativrRegisteredNames": 469,
+    "overlappingNames": 454,
+    "missingReferenceNames": 2068,
     "nativrExtensionNames": 15,
-    "nameCoverage": 0.179619
+    "nameCoverage": 0.180016
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 344, "nameCoverage": 0.251646 },
-    { "package": "stats", "callableNames": 464, "overlappingNames": 67, "nameCoverage": 0.144397 },
+    { "package": "stats", "callableNames": 464, "overlappingNames": 68, "nameCoverage": 0.146552 },
     { "package": "methods", "callableNames": 209, "overlappingNames": 9, "nameCoverage": 0.043062 },
     { "package": "utils", "callableNames": 262, "overlappingNames": 11, "nameCoverage": 0.041985 },
     {
@@ -189,6 +189,7 @@
     "droplevels",
     "duplicated",
     "eigen",
+    "embed",
     "emptyenv",
     "end",
     "environment",
@@ -1297,7 +1298,6 @@
     "elNamed",
     "elNamed<-",
     "emacs",
-    "embed",
     "embedFonts",
     "embedGlyphs",
     "empty.dump",

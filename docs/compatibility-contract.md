@@ -829,6 +829,16 @@ plus matrices, expressions, closures, namespace access, visibility, and malforme
 irregular index inference and methods, namespace-hidden methods, and exhaustive floating-point
 boundaries remain package or future compatibility work.
 
+`stats::embed` constructs the documented lagged-observation matrix for supported atomic/list vectors
+and atomic two-dimensional matrices. Differential evidence covers zoo's observed `embed(1:5, 3)`
+rolling-window dependency, multivariate column-major ordering, integer/logical dimensions, measured
+fractional-vector row truncation, zero-column matrices, namespace access, attribute removal, vector
+storage, integer/logical-to-double and factor-to-character matrix coercion, and result-allocation
+limits. The result columns contain current observations before older lags. Factor vectors, data
+frames, arbitrary classed vectors other than `ts`, expression vectors, higher-rank arrays, raw/list
+matrices, and fractional dimensions on nonempty matrices are rejected; long-vector storage and
+undocumented edge diagnostics are not claimed.
+
 `stats::cycle` dispatches package-owned S3 methods before its regular-series default. The default
 returns one observation cycle per vector element or matrix row, derives the initial cycle from
 validated `tsp` start/frequency metadata with ties-to-even rounding, retains the `tsp` interval, and

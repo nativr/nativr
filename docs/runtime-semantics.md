@@ -142,6 +142,17 @@ inputs without that metadata; unused default-method dots remain lazy. `cycle()` 
 observation number per vector element or matrix row, retaining the validated interval and explicit
 `ts` class while supporting fractional frequencies.
 
+`stats::embed(x, dimension)` converts a supported vector or two-dimensional matrix into a
+column-major lag matrix. Output columns are ordered by current observations first and progressively
+older observations after them; each source matrix column remains adjacent within a lag. The result
+retains the source vector storage type (including ordinary list vectors), removes names, dimensions,
+classes, `tsp`, and other source attributes, then installs only the result dimensions. Integer and
+logical matrices use GNU R's double result storage, and factor matrices use character labels;
+double, complex, and character matrix storage remains unchanged. Fractional dimensions reproduce the
+measured GNU R vector behavior; nonempty matrices require an integer dimension. Invalid, empty,
+classed non-`ts` vectors, factor vectors, data frames, expression vectors, higher arrays, raw/list
+matrices, and the complete result length fail or are limited before allocation.
+
 `stats::window()` also dispatches before its owned default. For regular vector or matrix series it
 aligns boundaries to source observations, samples only integral divisors of the source frequency,
 preserves series classes and column names, and computes a new exact `tsp`. Incompatible frequency
