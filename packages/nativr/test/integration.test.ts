@@ -3564,6 +3564,108 @@ describe("complete inline source-to-result vertical slice", () => {
     await limited.dispose();
   });
 
+  it("projects zoo's usage-ranked perspective surface through the browser graphics journal", async () => {
+    const observed: unknown[] = [];
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      onGraphics: (event) => observed.push(event),
+    });
+    const precise = await runtime.evalDetailed(`
+      z <- structure(matrix(1:4, 2, 2), class = c("zoo", "matrix", "array"))
+      fit <- withVisible(graphics::persp(1:2, 3:4, z))
+      c(fit$value, dim(fit$value), fit$visible)
+    `);
+    const expected = [
+      2, 0, 0, -3, 0, 0.517638090205042, 0.643950550859379, -3.42160969286609, 0, -1.93185165257814,
+      0.172546030068347, 3.59806490128373, 0, 1.93185165257814, -0.172546030068347,
+      -2.59806490128373, 4, 4, 0,
+    ];
+    expect(precise.value).toHaveLength(expected.length);
+    for (const [index, value] of expected.entries()) {
+      expect((precise.value as readonly number[])[index]).toBeCloseTo(value, 12);
+    }
+    expect(precise.graphics.slice(0, 2)).toEqual([
+      { kind: "new-page" },
+      expect.objectContaining({ kind: "window" }),
+    ]);
+    expect(precise.graphics[2]).toMatchObject({ kind: "segments" });
+    if (precise.graphics[2]?.kind === "segments") {
+      expect(precise.graphics[2].segments).toHaveLength(16);
+      expect(precise.graphics[2].segments.every((segment) => segment.color === "#000000FF")).toBe(
+        true,
+      );
+    }
+    expect(observed).toEqual(precise.graphics);
+
+    await runtime.eval("recorded <- recordPlot()");
+    const replayed = await runtime.evalDetailed("replayPlot(recorded)");
+    expect(replayed.graphics).toEqual(precise.graphics);
+
+    const measured = await runtime.evalDetailed(`
+      nC <- 10
+      nO <- 100
+      dataM <- matrix(seq_len(nC * nO), nrow = nO, ncol = nC)
+      zz <- structure(dataM, class = c("zoo", "matrix", "array"))
+      pmat <- persp(1:nO, 1:nC, zz)
+      c(dim(pmat), typeof(pmat))
+    `);
+    expect(measured.value).toEqual(["4", "4", "double"]);
+    expect(measured.graphics[2]).toMatchObject({ kind: "segments" });
+    if (measured.graphics[2]?.kind === "segments") {
+      expect(measured.graphics[2].segments).toHaveLength(1902);
+    }
+
+    const missingCell = await runtime.evalDetailed(
+      "persp(1:2, 1:2, matrix(c(1, NA, 3, 4), 2, 2), box = FALSE)",
+    );
+    expect(missingCell.graphics[2]).toMatchObject({ kind: "segments" });
+    if (missingCell.graphics[2]?.kind === "segments") {
+      expect(missingCell.graphics[2].segments).toHaveLength(2);
+    }
+
+    await expect(
+      runtime.eval(`
+        persp.probe <- function(x, ..., marker = "default") {
+          c(class(x), marker, list(...)$extra)
+        }
+        custom <- withVisible(
+          persp(structure(1:3, class = "probe"), marker = "custom", extra = 7)
+        )
+        c(custom$value, custom$visible)
+      `),
+    ).resolves.toEqual(["probe", "custom", "7", "TRUE"]);
+    await expect(runtime.eval("persp(2:1, 1:2, matrix(1:4, 2, 2))")).rejects.toMatchObject({
+      code: "NRT3346",
+    });
+    await expect(runtime.eval("persp(1:3, 1:2, matrix(1:4, 2, 2))")).rejects.toMatchObject({
+      code: "NRT3346",
+    });
+    await expect(runtime.eval("persp(1:2, 1:2, matrix(1, 2, 2))")).rejects.toMatchObject({
+      code: "NRT3346",
+    });
+    await expect(
+      runtime.eval("persp(1:2, 1:2, matrix(1:4, 2, 2), col = 'red')"),
+    ).rejects.toMatchObject({ code: "NRU6163" });
+    await expect(
+      runtime.eval("persp(1:2, 1:2, matrix(1:4, 2, 2), shade = 0.5)"),
+    ).rejects.toMatchObject({ code: "NRU6163" });
+    await expect(
+      runtime.eval("persp(1:2, 1:2, matrix(1:4, 2, 2), ticktype = 'detailed')"),
+    ).rejects.toMatchObject({ code: "NRU6163" });
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 10 },
+    });
+    await expect(limited.eval("persp(1:2, 1:2, matrix(1:4, 2, 2))")).rejects.toMatchObject({
+      code: "NRL4002",
+    });
+    await limited.dispose();
+  });
+
   it("emits browser-native raster graphics for usage-ranked package patterns", async () => {
     const observed: unknown[] = [];
     const runtime = await createR({
@@ -5606,7 +5708,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.184.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.185.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -5636,6 +5738,7 @@ describe("complete inline source-to-result vertical slice", () => {
       { name: "rasterImage", compatibility: "shape" },
       { name: "segments", compatibility: "shape" },
       { name: "legend", compatibility: "shape" },
+      { name: "persp", compatibility: "shape" },
       { name: "pairs", compatibility: "shape" },
     ]);
     await runtime.reset();

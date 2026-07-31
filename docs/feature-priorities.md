@@ -803,8 +803,16 @@ owned [documented wrapper](https://stat.ethz.ch/R-manual/R-devel/library/base/ht
 reuses the existing `ISOdate` calendar path with required clock components, ordinary recycling,
 fractional seconds, UTC/GMT controls, calendar validation, and POSIXct metadata. Empty `tz` uses
 deterministic UTC arithmetic while retaining its empty label; regional zones/DST, platform-specific
-invalid-time normalization, and broad character coercion remain boundaries. Rank 457 `persp` is the
-next unresolved callable candidate.
+invalid-time normalization, and broad character coercion remain boundaries. Rank 457 `persp` is now
+complete for [zoo's](https://cran.r-project.org/web/packages/zoo/refman/zoo.html) measured
+`persp(1:nO, 1:nC, zz)` call over a classed `100 × 10` numeric matrix, representing 731,390
+downloads, one measured call, and 0.6% weighted reach. The owned
+[documented perspective path](https://stat.ethz.ch/R-manual/R-devel/library/graphics/html/persp.html)
+preserves S3 forwarding, computes scaled or aspect-preserving homogeneous view matrices, omits
+missing grid edges, and emits a bounded default wireframe/box through Worker-safe line commands.
+Facet colors, lighting, axis arrows/ticks/text, hidden-line equivalence, hooks, `trans3d`, and
+arbitrary graphical controls remain boundaries. Rank 458 `points` is the next unresolved callable
+candidate.
 
 ## Completed implementation order
 
@@ -1149,6 +1157,10 @@ ties:
      through the shared `ISOdate` path with required clock fields, component recycling, fractional
      seconds, UTC/GMT/empty labels, deterministic browser UTC defaults, invalid-calendar
      missingness, namespace access, metadata, and allocation guards.
+123. Perspective surfaces: `graphics::persp()` runs zoo's measured classed-matrix call through
+     S3-first dispatch, exact scaled/aspect-preserving `4 × 4` view matrices, missing-cell omission,
+     bounded projected wireframe/box line commands, namespace access, Worker rendering, output
+     accounting, and display-list replay.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

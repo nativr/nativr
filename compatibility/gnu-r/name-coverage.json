@@ -4,11 +4,11 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 475,
-    "overlappingNames": 460,
-    "missingReferenceNames": 2062,
+    "nativrRegisteredNames": 476,
+    "overlappingNames": 461,
+    "missingReferenceNames": 2061,
     "nativrExtensionNames": 15,
-    "nameCoverage": 0.182395
+    "nameCoverage": 0.182791
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 346, "nameCoverage": 0.253109 },
@@ -21,7 +21,12 @@
       "overlappingNames": 17,
       "nameCoverage": 0.125926
     },
-    { "package": "graphics", "callableNames": 88, "overlappingNames": 9, "nameCoverage": 0.102273 },
+    {
+      "package": "graphics",
+      "callableNames": 88,
+      "overlappingNames": 10,
+      "nameCoverage": 0.113636
+    },
     { "package": "datasets", "callableNames": 0, "overlappingNames": 0, "nameCoverage": 1 }
   ],
   "matched": [
@@ -338,6 +343,7 @@
     "paste",
     "paste0",
     "path.expand",
+    "persp",
     "plot.new",
     "plot.window",
     "pmin",
@@ -1893,7 +1899,6 @@
     "pdfFonts",
     "person",
     "personList",
-    "persp",
     "pexp",
     "pf",
     "pgamma",

@@ -375,6 +375,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      recycling, fractional seconds, UTC/GMT and empty-zone labels, deterministic browser UTC
      defaults, invalid-calendar missingness, namespace access, metadata, and allocation guards.
      Regional zones/DST and platform-specific invalid-time normalization remain explicit boundaries.
+102. Frequency-ranked perspective surfaces: `graphics::persp` runs zoo's measured classed-matrix
+     call through an S3-first default with ascending grids, exact scaled/aspect-preserving `4 × 4`
+     view matrices, missing-cell omission, bounded projected wireframe/box segments, namespace
+     access, Worker/Canvas transport, and display-list replay. Facet fills, lighting, detailed
+     axes/text, hidden-line equivalence, hooks, `trans3d`, and arbitrary graphical controls remain
+     explicit boundaries.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means
