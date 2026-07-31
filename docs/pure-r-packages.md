@@ -6,6 +6,28 @@ successful install does not by itself promise successful execution: the package 
 dependency closure must stay inside NativR's supported language, namespace, data, resource, I/O, and
 core API contracts.
 
+The scalable unit is the package's R source, not a TypeScript rewrite of each function. NativR
+builds one deterministic artifact from the unchanged source package, creates its namespace in the
+browser, evaluates its `R/*.R` files through the normalized AST runtime, and reuses the resulting R
+closures normally. When execution stops on a missing base/stats/utils primitive, that primitive is
+implemented once for every package that needs it.
+
+```text
+CRAN-like source package
+  -> bounded archive + license inspection
+  -> DESCRIPTION/NAMESPACE/dependency resolution
+  -> ordered R source + immutable resources
+  -> namespace + imports + sysdata
+  -> ordinary NativR closure evaluation
+```
+
+Source packages are the primary installation input because they retain portable R code. An already
+installed GNU R library commonly replaces that source with lazy-load `.rdx`/`.rdb` databases and
+possibly bytecode. Those databases are a separate future compatibility layer; applications do not
+need them when the corresponding source tarball is available. Supporting their documented external
+format later can improve installed-library import, but it does not replace the runtime semantics a
+package's code calls.
+
 ## Build-time installation
 
 Browser evaluation remains network-free. Repository access, archive unpacking, compatibility
@@ -83,9 +105,12 @@ normalized AST. The runtime then provides:
 9. browser-memory `tempdir()`/`tempfile()` paths, `file.exists()`, stateful text connections, and
    connection-aware `readLines()`, `writeLines()`, `cat()`, and `capture.output()`;
 10. `utils::data()` discovery and loading for package `data/*.R`, `.csv`, `.tab`, and `.txt`
-    resources, including target environments and overwrite protection;
+    resources plus GNU R XDR/gzip `.rda`/`.RData` workspaces, including target environments and
+    overwrite protection;
 11. bounded `read.table()`/`read.csv()`/`read.delim()` and `write.table()`/`write.csv()` text-table
     paths over package files, session files, connections, or inline `text=` input.
+12. bounded GNU R XDR version-2/version-3 and gzip decoding for `R/sysdata.rda`, loaded into the
+    package namespace before its R source is evaluated.
 
 Package source, metadata, resource counts, and encoded bytes are bounded before parsing. Package
 evaluation then consumes the ordinary step, call-depth, allocation, and output budgets.
@@ -143,9 +168,11 @@ the package itself was not patched or translated.
   trees are virtual NativR identifiers; they do not reveal or depend on an operating-system
   installation.
 - Package `data/*.R` scripts execute through the same parser and normalized AST as package source;
-  `.csv`, `.tab`, and `.txt` datasets load into owned data frames. GNU R `.rda`, `.RData`, `.rds`,
-  `R/sysdata.rda`, compressed data files, data indexes/aliases, and full lazy-data behavior remain
-  unimplemented.
+  `.csv`, `.tab`, and `.txt` datasets load into owned data frames. XDR v2/v3 `.rda`/`.RData` and
+  gzip wrappers use the independent bounded serialization decoder, and `R/sysdata.rda` enters the
+  namespace before source evaluation. bzip2/xz/zstd wrappers, serialized closures/language objects,
+  data indexes/aliases, installed-package `.rdx`/`.rdb` lazy-load databases, and full lazy-data
+  behavior remain explicit boundaries.
 - Bytecode is not loaded. Original R source is parsed into the owned AST.
 - The packager defaults to the deterministic `unix` source variant. Packages with platform-specific
   `R/` code can select `--source-platform windows`; the chosen variant is recorded in the artifact.

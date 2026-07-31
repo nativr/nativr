@@ -425,12 +425,13 @@ and is not claimed.
 `base::save` and `load` extend the same session-owned resource seam with behavioral differential
 evidence for bit64's observed workspace roundtrip. `save` selects direct object expressions and/or
 character names supplied by `list`, looks them up in `envir`, forces promises by default, preserves
-duplicate names, and writes a versioned canonical-source archive. `load` validates that archive,
-restores bindings into the selected environment, optionally emits bounded verbose output, and
-returns loaded names invisibly; `save` returns invisible `NULL`. Versions 2 and 3 and validated
-compression controls are accepted as archive metadata, but the stored representation is not GNU R
-binary serialization or actual compression. Host paths, connections, externally produced `.RData`,
-cross-session persistence, `eval.promises = FALSE`, and `precheck = FALSE` are rejected.
+duplicate names, and writes an XDR version-2/version-3 `RDX2`/`RDX3` archive. `load` validates that
+archive, restores bindings into the selected environment, optionally emits bounded verbose output,
+and returns loaded names invisibly; `save` returns invisible `NULL`. The same bounded GNU R codec
+serves `serialize`/`unserialize` and `saveRDS`/`readRDS`/`infoRDS`, and browser-standard streams
+provide gzip. Exact black-box GNU R bytes and external package workspaces are evidence. Host paths,
+ASCII/native-endian streams, unsupported graph types/compressors, cross-session persistence,
+`eval.promises = FALSE`, and `precheck = FALSE` are rejected.
 
 `graphics::polygon` has differential evidence for zoo's measured filled-area panel helper. Its
 default accepts paired real coordinates, one-/two-column data frames, two-column matrices, complex
@@ -1769,11 +1770,13 @@ license metadata, and emits deterministic SHA-256 artifacts plus a dependency lo
 runtime remains network-free. `pkgconfig 2.0.3` has an opt-in executable external test for the full
 repository-to-namespace path.
 
-Package admission is not universal execution compatibility. Package `data/*.R`, `.csv`, `.tab`, and
-`.txt` discovery/loading is supported through `utils::data`, including explicit target environments
-and overwrite protection. Depends-style attachment, GNU R binary/lazy data, data indexes/aliases,
-broader NAMESPACE and S4 registration, bytecode, compiled code, arbitrary connections and binary
-resource decoders, license-policy decisions, and R CMD check behavior remain outside this slice.
+Package admission is not universal execution compatibility. Package `data/*.R`, `.csv`, `.tab`,
+`.txt`, and XDR/gzip `.rda`/`.RData` discovery/loading is supported through `utils::data`, including
+explicit target environments and overwrite protection. `R/sysdata.rda` initializes the namespace
+before package source. Depends-style attachment, installed `.rdx`/`.rdb` lazy-load databases, data
+indexes/aliases, broader NAMESPACE and S4 registration, bytecode, compiled code, arbitrary
+connections, unsupported serialized types/compressors, license-policy decisions, and R CMD check
+behavior remain outside this slice.
 
 Deliberate current exclusions include GNU R/webR embedding, browser-time package installation,
 universal package execution, generated JavaScript execution, the complete graphics-device/base-

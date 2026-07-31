@@ -83,13 +83,13 @@ console.log(await r.eval('readLines(system.file("DESCRIPTION", package = "demo")
 
 The loader supports isolated namespaces, dependency/import loading and version checks, package
 metadata/source/resources through virtual `system.file()` paths, bounded `readLines()`, and
-read-only `file()` connections, package `data/*.R`/text-dataset loading through `data()`, plus
-exports, `pkg::name`, `pkg:::name`, S3 registrations, `.onLoad()`, `.onAttach()`, `library()`,
-`require()`, and `requireNamespace()` in inline and Worker execution. Arbitrary pure-R source
-packages can enter this pipeline, but that is not a claim that every package already executes: all
-dependencies, data formats, namespace directives, and R features it uses must also be supported. The
-unchanged public `pkgconfig 2.0.3` source package is the first pinned end-to-end external proof. See
-the [complete bundle example](examples/pure-r-package.ts) and
+read-only `file()` connections, package `data/*.R`/text/`.rda` loading through `data()`, and
+`R/sysdata.rda` namespace initialization, plus exports, `pkg::name`, `pkg:::name`, S3 registrations,
+`.onLoad()`, `.onAttach()`, `library()`, `require()`, and `requireNamespace()` in inline and Worker
+execution. Arbitrary pure-R source packages can enter this pipeline, but that is not a claim that
+every package already executes: all dependencies, data formats, namespace directives, and R features
+it uses must also be supported. The unchanged public `pkgconfig 2.0.3` source package is the first
+pinned end-to-end external proof. See the [complete bundle example](examples/pure-r-package.ts) and
 [package-loading contract](docs/pure-r-packages.md).
 
 ### One-file browser example
@@ -514,11 +514,13 @@ have differential coverage. Host paths and connections, arbitrary `dput` control
 closures/environments, cyclic values, binary serialization, and cross-session persistence remain
 explicit boundaries.
 
-The same browser-memory resource seam now supports `save()`/`load()` workspace round-trips for owned
-values. The bit64-observed `save(e, file); rm(e); load(file)` shape, explicit object lists, target
-environments, duplicate names, verbose output, return visibility, and format rejection have
-executable coverage. The archive is NativR-owned canonical source, not a GNU R `.RData` binary or a
-host file.
+The browser-memory resource seam now supports portable GNU R XDR v2/v3 serialization and gzip for
+owned atomic vectors, lists, pairlists, names, and ordinary attributes.
+`serialize()`/`unserialize()`, `saveRDS()`/`readRDS()`/`infoRDS()`, and `save()`/`load()` share the
+bounded codec. Real package `data/*.rda` and `R/sysdata.rda` resources can therefore load without
+translating the package's R code. Ordinary environments, closures, language objects, more ALTREP
+classes, bzip2/xz/zstd, and installed-package `.rdx`/`.rdb` lazy-load databases remain explicit
+boundaries.
 
 The usage-ranked `file`, `close`, `tempdir`, and `file.exists` foundation now exposes bounded,
 session-owned connection handles over that same browser-memory store and immutable package files.
@@ -528,8 +530,9 @@ unchanged package code. Package resources can be enumerated or selected as a rea
 directory, while session directories can be created and removed recursively. Implicit and explicit
 connection opening, read/write/append modes, persistent cursors, `seek`, `flush`, `isOpen`,
 `summary`, destruction, and connection-aware `readLines`, `writeLines`, `cat`, and `capture.output`
-have executable coverage. Compressed, URL, socket, absolute host-file, symlink, and raw binary
-connections remain explicit boundaries.
+have executable coverage. URL, socket, absolute host-file, symlink, and general raw/binary
+connection operations remain explicit boundaries; serialization builtins use bounded binary-mode
+handles directly.
 
 Measured rank 22 `plot()` now supplies the high-reach S3 extension point used by package-defined
 `plot.<class>` methods and a bounded browser-native numeric default. One-argument vectors and paired

@@ -175,6 +175,14 @@ destroys records on `close()` or session reset. `readLines()`, `writeLines()`, `
 read-only. This preserves the normal pure-R connection protocol without adding Node built-ins, DOM
 objects, filesystem resolution, network access, or a second execution backend.
 
+GNU R serialization is an independent runtime codec layered over the same byte store. It reads and
+writes documented XDR v2/v3 streams, recognizes `RDX2`/`RDX3` workspaces, and uses browser-standard
+compression streams for gzip. The codec translates supported serialized values directly into
+NativR-owned values; Tree-sitter nodes, GNU R objects, and implementation internals never cross the
+boundary. Package `data/*.rda` uses the workspace decoder, while `R/sysdata.rda` is installed into a
+namespace before its ordered R sources execute. Installed-package `.rdx`/`.rdb` databases will be a
+separate lazy object-store adapter rather than a change to evaluator semantics.
+
 Package data and delimited tables reuse these seams rather than introducing a package-specific
 interpreter. The evaluator exposes bounded package-resource enumeration to base builtins;
 `utils::data()` resolves a direct `data/` entry, decodes the package's declared portable encoding,

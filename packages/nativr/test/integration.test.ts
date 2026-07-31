@@ -51,6 +51,10 @@ hidden_helper <- function(x) x + 100
     { path: "extdata/latin1.txt", data: "6Qo=" },
     { path: "extdata/invalid-utf8.txt", data: "/w==" },
     {
+      path: "extdata/value.rds",
+      data: "H4sIAAAAAAAABovgYmBgYGJgYQOSzCCmMJjPwMALpRkbGMBAAKKOgRMkVsHA0ABiMB1eycDAAlYGlWLNS8xNLUZXnwhjJAGJfwBKuY0SdAAAAA==",
+    },
+    {
       path: "data/example.R",
       data: "ZXhhbXBsZSA8LSBkYXRhLmZyYW1lKGxhYmVsID0gYygiYSIsICJiIiksIHZhbHVlID0gYygxTCwgMkwpKQpzZWNvbmRhcnkgPC0gOTlMCg==",
     },
@@ -79,7 +83,36 @@ const pureRBinaryDataFixture: PureRPackageBundle = {
   description: "Package: nativrbinarydata\nVersion: 0.1.0\nNeedsCompilation: no",
   namespace: "",
   rSources: [],
-  resources: [{ path: "data/blob.rda", data: "AA==" }],
+  resources: [
+    {
+      path: "data/blob.rda",
+      data: "H4sIAAAAAAAABgtyiTDiiuBiYGBgYmBhA5LMQCYLE5BgZGBh4ATS7KkVibkFOakMDMzCYGUMDAIQ5WBpxkQYIwlI8EJVMEJoFINY8xJzU4vRtLPmJCal5sA4ZYk5pano2pJzEoth2mCCXCmJJYl6aUVAE9GUcxbll+vBbAI7pwFI/P///x+QAmMAY4tevfMAAAA=",
+    },
+  ],
+};
+
+const pureRInvalidBinaryDataFixture: PureRPackageBundle = {
+  description: "Package: nativrinvalidbinary\nVersion: 0.1.0\nNeedsCompilation: no",
+  namespace: "",
+  rSources: [],
+  resources: [{ path: "data/broken.rda", data: "AA==" }],
+};
+
+const pureRSysdataFixture: PureRPackageBundle = {
+  description: "Package: nativrsysdata\nVersion: 0.1.0\nNeedsCompilation: no",
+  namespace: "export(sysdata_total)",
+  rSources: [
+    {
+      path: "R/use-sysdata.R",
+      source: "sysdata_total <- function() sum(example$value)",
+    },
+  ],
+  resources: [
+    {
+      path: "R/sysdata.rda",
+      data: "H4sIAAAAAAAABgtyiTDiiuBiYGBgYmBhA5LMQCYLE5BgZGBh4ATS7KkVibkFOakMDMzCYGUMDAIQ5WBpxkQYIwlI8EJVMEJoFINY8xJzU4vRtLPmJCal5sA4ZYk5pano2pJzEoth2mCCXCmJJYl6aUVAE9GUcxbll+vBbAI7pwFI/P///x+QAmMAY4tevfMAAAA=",
+    },
+  ],
 };
 
 const failingS3Package: PureRPackageBundle = {
@@ -2065,6 +2098,63 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("loads GNU R sysdata workspaces into pure-R package namespaces", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [pureRSysdataFixture],
+    });
+    await expect(runtime.eval("nativrsysdata::sysdata_total()")).resolves.toBe(3);
+    await expect(
+      runtime.eval('file.exists(system.file("R", "sysdata.rda", package = "nativrsysdata"))'),
+    ).resolves.toBe(true);
+    await runtime.dispose();
+  });
+
+  it("reads GNU R RDS resources and unserializes raw XDR values", async () => {
+    const runtime = await createR({ execution: "inline", assets, packages: [pureRFixture] });
+    await expect(
+      runtime.eval(`
+        path <- system.file("extdata", "value.rds", package = "nativrfixture")
+        restored <- readRDS(path)
+        info <- infoRDS(path)
+        raw_value <- as.raw(c(
+          88, 10, 0, 0, 0, 2, 0, 4, 6, 0, 0, 2, 3, 0, 0, 0, 0,
+          13, 0, 0, 0, 3, 0, 0, 0, 1, 255, 255, 255, 254, 128, 0, 0, 0
+        ))
+        decoded <- unserialize(raw_value)
+        c(
+          names(restored), restored$a, restored$b,
+          info$version, info$writer_version, info$min_reader_version, info$format,
+          decoded
+        )
+      `),
+    ).resolves.toEqual(["a", "b", "1", NA, "x", "é", "2", "4.6.0", "2.3.0", "xdr", "1", "-2", NA]);
+    await runtime.dispose();
+  });
+
+  it("round-trips portable serialize/saveRDS output through browser-owned binary files", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        value <- list(numbers = c(a = 1L, b = NA_integer_), label = "portable")
+        bytes <- serialize(value, NULL, version = 2L)
+        path <- tempfile(fileext = ".rds")
+        saved <- withVisible(saveRDS(value, path, version = 3L, compress = TRUE))
+        restored <- readRDS(path)
+        info <- infoRDS(path)
+        c(
+          typeof(bytes), length(bytes) > 0L,
+          identical(unserialize(bytes), value),
+          is.null(saved$value), saved$visible,
+          identical(restored, value), info$version, info$format,
+          unlink(path)
+        )
+      `),
+    ).resolves.toEqual(["raw", "TRUE", "TRUE", "TRUE", "FALSE", "TRUE", "3", "xdr", "0"]);
+    await runtime.dispose();
+  });
+
   it("discovers and loads package data scripts and text datasets without rewriting package code", async () => {
     const runtime = await createR({
       execution: "inline",
@@ -2177,9 +2267,13 @@ describe("complete inline source-to-result vertical slice", () => {
         c(first, example$value, secondary)
       `),
     ).resolves.toEqual([1, 2, 99, 1, 2, 99]);
-    await expect(runtime.eval('data("blob", package = "nativrbinarydata")')).rejects.toMatchObject({
-      code: "NRU6185",
-    });
+    await expect(
+      runtime.eval(`
+        target <- new.env()
+        loaded <- data("blob", package = "nativrbinarydata", envir = target)
+        c(loaded, class(target$example), target$example$label, target$example$value)
+      `),
+    ).resolves.toEqual(["blob", "data.frame", "a", "b", "1", "2"]);
     await runtime.dispose();
   });
 
@@ -2402,11 +2496,17 @@ describe("complete inline source-to-result vertical slice", () => {
       "1",
       "0",
     ]);
+    await expect(runtime.eval('serialize(1, "path")')).rejects.toMatchObject({ code: "NRE2238" });
+    await expect(runtime.eval('unserialize("path")')).rejects.toMatchObject({ code: "NRT3362" });
     await runtime.dispose();
   });
 
   it("reports package-data and table boundaries with stable diagnostics", async () => {
-    const runtime = await createR({ execution: "inline", assets, packages: [pureRFixture] });
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [pureRFixture, pureRInvalidBinaryDataFixture],
+    });
     const verbose = await runtime.evalDetailed(
       'data(list = c("csvset", "absent"), package = "nativrfixture", verbose = TRUE)',
     );
@@ -2427,6 +2527,7 @@ describe("complete inline source-to-result vertical slice", () => {
       ['data("example", package = "nativrfixture", envir = 1)', "NRT3357"],
       ['data(list = 1, package = "nativrfixture")', "NRT3357"],
       ['data(list = "a/b", package = "nativrfixture")', "NRT3357"],
+      ['data("broken", package = "nativrinvalidbinary")', "NRE2247"],
       ["read.table()", "NRE2103"],
       ['read.table(file = "unused", text = "x")', "NRE2241"],
       ["read.table(text = 1)", "NRT3358"],
@@ -8011,7 +8112,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.202.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.203.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

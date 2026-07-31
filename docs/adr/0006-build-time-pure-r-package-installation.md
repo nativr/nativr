@@ -35,7 +35,14 @@ paths, links, native/JVM code, host install hooks, `LinkingTo`, `useDynLib`, and
 loader cannot yet represent. It preserves package-owned source, license metadata, data, and `inst/`
 resources in a JSON-serializable artifact with SHA-256 integrity. Packaging records a deterministic
 source-platform variant, applies standard Collate ordering, and decodes portable UTF-8 or Latin-1
-metadata and R sources.
+metadata and R sources. XDR/gzip `data/*.rda` and `R/sysdata.rda` remain unchanged package assets;
+the independent runtime decoder loads them into data targets or the package namespace.
+
+Source packages remain the canonical input. Already-installed package trees often contain
+`.rdx`/`.rdb` lazy-load databases and bytecode instead of the portable R sources. A future
+installed-library importer may decode that documented object-store surface, but it is not required
+to avoid per-function rewrites when a source tarball is available, and it cannot bypass missing
+runtime language or core API semantics.
 
 The resolver follows required `Depends` and `Imports`, treats `Suggests` as optional by default,
 checks package-version constraints, produces dependency-first bundles and a lock, and leaves the
@@ -51,6 +58,7 @@ package-specific executable tests pass.
 Pure-R package functions can execute without TypeScript rewrites when their language and core API
 requirements are supported. Package compatibility failures become concrete diagnostics that feed
 feature prioritization. Package `data/*.R` and delimited text resources now load through the normal
-runtime parser and table layer. Binary/lazy data conversion, broader NAMESPACE/S4 support, package
-tests, and native Wasm adapters remain explicit later layers rather than hidden installer side
-effects.
+runtime parser and table layer; XDR/gzip `.rda` data and `R/sysdata.rda` use the bounded GNU R
+serialization codec. Installed `.rdx`/`.rdb` lazy databases, broader serialized object types,
+broader NAMESPACE/S4 support, package tests, and native Wasm adapters remain explicit later layers
+rather than hidden installer side effects.

@@ -475,9 +475,11 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      sockets, raw/binary I/O, and the full filesystem remain later layers.
 119. Package data and delimited tables: usage-ranked `utils::data`, `write.csv`, and `read.csv`,
      together with `read.table`/`read.csv2`/`read.delim*` and `write.table`/`write.csv2`, discover
-     and execute package `data/*.R`, import package text datasets, and round-trip quoted data frames
-     over bounded browser-memory paths/connections. GNU R binary/lazy data, compressed input,
-     aliases, host paths, URLs, arbitrary encodings, and the complete scanner remain later layers.
+     and execute package `data/*.R`, import package text datasets, decode XDR v2/v3 gzip
+     `.rda`/`.RData` and `R/sysdata.rda`, and round-trip quoted data frames over bounded
+     browser-memory paths/connections. Installed `.rdx`/`.rdb` lazy data, unsupported serialized
+     object types/compressors, aliases, host paths, URLs, arbitrary encodings, and the complete
+     scanner remain later layers.
 120. Browser-owned directories and relative paths: usage-ranked `R.home`, `dir.create`, and
      `list.files`, together with `dir.exists`, `dir`, `list.dirs`, `getwd`, `setwd`,
      `normalizePath`, `basename`, and `dirname`, provide bounded session/package/runtime directory
@@ -485,6 +487,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      read-only package working directories, recursive session creation/removal, root-escape checks,
      and reset behavior have executable evidence. Host files, links, permissions, metadata, mounts,
      and platform-specific path behavior remain later layers.
+121. Portable package serialization: usage-ranked `serialize`, `unserialize`, `saveRDS`, and
+     `readRDS`, together with `infoRDS` and the existing `save`/`load`, share an independently
+     implemented GNU R XDR v2/v3 codec with bounded gzip. Package `data/*.rda` and `R/sysdata.rda`
+     now enter ordinary environments/namespaces without source translation. Broader serialized
+     graphs and ALTREP classes, bzip2/xz/zstd, and installed-package `.rdx`/`.rdb` lazy-load
+     databases remain later layers.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

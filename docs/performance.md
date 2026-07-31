@@ -452,3 +452,8 @@ Language subset 0.202 adds one evaluator-owned directory index, current-director
 relative-path normalization for the existing text, table, serialization, package-resource, and
 connection seams. It adds no dependency or host filesystem capability. The measured Worker is 326.0
 KiB gzip, so the ceiling rises narrowly to 328 KiB. Client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.203 adds one independently implemented GNU R XDR v2/v3 reader/writer shared by raw
+serialization, RDS, workspaces, package data, and namespace sysdata. Gzip uses browser-standard
+streams and no new dependency or host capability. The measured Worker is 331.4 KiB gzip, so the
+ceiling rises narrowly to 333 KiB. Client and parser-Wasm budgets remain unchanged.

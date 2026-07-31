@@ -62,10 +62,12 @@ closure model. `system.file()` returns opaque `nativr://package/...` paths for i
 metadata, retained R source, and packaged resources; `readLines()` and read-only `file()`
 connections can read their text without granting host-filesystem access. `reset()` unloads and
 detaches packages while retaining the supplied catalog so later namespace access can load it again.
-`utils::data()` discovers direct package `data/*.R`, `.csv`, `.tab`, and `.txt` resources and loads
-them into the requested R environment. `.R` scripts use the package's declared UTF-8/Latin-1
-encoding and the ordinary normalized-AST evaluator; GNU R binary and lazy-data formats remain
-unsupported.
+`utils::data()` discovers direct package `data/*.R`, `.csv`, `.tab`, `.txt`, `.rda`, and `.RData`
+resources and loads them into the requested R environment. `.R` scripts use the package's declared
+UTF-8/Latin-1 encoding and the ordinary normalized-AST evaluator; binary workspaces use the bounded
+GNU R XDR v2/v3 and gzip decoder. A packaged `R/sysdata.rda` is loaded into its namespace before R
+source evaluation. Installed `.rdx`/`.rdb` lazy-load databases and unsupported serialized object
+types/compressors remain explicit boundaries.
 
 `@nativr/package-tools` is the build-time installer for standard source directories, `.tar.gz`
 archives, and CRAN-like repositories. It resolves required dependencies and emits integrity-locked

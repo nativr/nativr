@@ -49,9 +49,11 @@ Date: 2026-07-31
   DESCRIPTION/NAMESPACE/R-source/resource paths are exposed by `system.file()`, enumerable through
   `list.files()`/`list.dirs()`, selectable as a read-only working directory, and readable through
   bounded `readLines()` or read-only file connections. `utils::data()` discovers and executes
-  package `data/*.R` scripts or imports `.csv`/`.tab`/`.txt` resources into a selected environment.
-  Native code, GNU R binary/lazy data, broader NAMESPACE directives, binary resource formats, and
-  universal package execution remain explicit boundaries.
+  package `data/*.R` scripts, imports `.csv`/`.tab`/`.txt`, or decodes XDR v2/v3 gzip
+  `.rda`/`.RData` workspaces into a selected environment. Packaged `R/sysdata.rda` is decoded into
+  the namespace before source evaluation. Native code, installed `.rdx`/`.rdb` lazy-load databases,
+  unsupported serialized object types/compressors, broader NAMESPACE directives, and universal
+  package execution remain explicit boundaries.
 - Browser-owned text I/O through `readLines()`/`writeLines()` covers same-session temporary files,
   immutable package text, GNU R line endings, separators, NUL/incomplete-line behavior, byte limits,
   and stdout events without host filesystem access. Session-owned `file()` handles add implicit and
@@ -174,11 +176,13 @@ Date: 2026-07-31
   visibility, missing files, and resource limits have coverage. Absolute host paths/connections,
   nondefault controls, closures/environments, cycles, binary serialization, and persistence remain
   explicit boundaries.
-- Usage-ranked `base::save`/`load` for bit64's observed workspace roundtrip, including direct and
-  `list=` object selection, duplicates, target environments, promise forcing, verbose output,
-  invisible save/load returns, version/compression validation, missing-object failures, and reset
-  cleanup. The archive is bounded NativR-owned canonical source in the session text store, not GNU R
-  binary serialization, a host `.RData` file, or a cross-session interchange format.
+- GNU R-compatible XDR version-2/version-3 serialization for owned atomic vectors, lists, pairlists,
+  names, and ordinary attributes. `serialize`/`unserialize`, `saveRDS`/`readRDS`/`infoRDS`, and
+  `save`/`load` share one bounded codec; browser-standard gzip streams provide the default file
+  wrapper. Exact black-box GNU R bytes, package `.rda`, `R/sysdata.rda`, raw-vector roundtrips,
+  return visibility, malformed input, and resource limits have executable coverage.
+  ASCII/native-endian formats, ordinary environments, closures/language objects, more ALTREP
+  classes, bzip2/xz/zstd, host files, and installed lazy-load databases remain explicit boundaries.
 - Usage-ranked `graphics::polygon` for zoo's measured filled-area panel helper, including paired
   vector/matrix/data-frame/list/complex coordinates, missing-coordinate polygon splitting, recycled
   fill/border colors and line types/widths, solid/no-fill density, even-odd rules, invisible

@@ -215,8 +215,8 @@ function inspectInstallSurface(
       addIssue(
         issues,
         "NRPKG1004",
-        "error",
-        "Internal lazy-data archives require a future audited data converter.",
+        "warning",
+        "Internal sysdata uses the browser runtime's bounded GNU R serialization decoder; unsupported serialized value types still fail explicitly.",
         file.path,
       );
     } else if (/^(?:data|demo)\/.*\.(?:rda|rdata|rds)$/iu.test(file.path)) {
@@ -224,7 +224,7 @@ function inspectInstallSurface(
         issues,
         "NRPKG1005",
         "warning",
-        "GNU R binary data is preserved but not yet decoded by NativR.",
+        "GNU R binary data uses the bounded XDR/gzip decoder; unsupported compression or value types still fail explicitly.",
         file.path,
       );
     }
@@ -436,6 +436,7 @@ function compareCPath(left: string, right: string): number {
 
 function installedResourcePath(sourcePath: string): string | undefined {
   if (sourcePath.startsWith("inst/")) return sourcePath.slice("inst/".length);
+  if (/^R\/(?:.*\/)?sysdata\.(?:rda|rdata)$/iu.test(sourcePath)) return sourcePath;
   if (
     sourcePath.startsWith("data/") ||
     sourcePath.startsWith("demo/") ||

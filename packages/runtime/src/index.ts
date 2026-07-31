@@ -32,6 +32,21 @@ export type {
 } from "./evaluator.js";
 export { deparseAst } from "./language.js";
 export {
+  decodeRBase64Resource,
+  decodeRSerialization,
+  decodeRSerializationFile,
+  decodeRWorkspaceFile,
+  encodeRSerialization,
+  encodeRSerializationFile,
+} from "./serialization.js";
+export type {
+  RDecodedSerialization,
+  RSerializationEnvironments,
+  RSerializationMetadata,
+  RSerializationWriteOptions,
+  RWorkspaceEntry,
+} from "./serialization.js";
+export {
   characterVector,
   complexVector,
   dataFrameRowCount,
