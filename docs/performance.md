@@ -412,3 +412,8 @@ Language subset 0.194 adds rank 470's `base::aperm()`/`aperm.default()` array-ax
 S3 extension seam. The column-major reorder reuses owned vector subsetting and dimension metadata
 without another execution backend. The measured Worker size is 304.7 KiB gzip against the unchanged
 308 KiB limit.
+
+Language subset 0.195 adds rank 471's `base::dget()` path with `dput()`, `tempfile()`, and
+`unlink()` over an evaluator-owned browser-memory text map. Reconstruction reuses the existing
+parser and evaluator, while stored UTF-8 text shares the configured output-size ceiling. The
+measured Worker size is 306.1 KiB gzip against the unchanged 308 KiB limit.

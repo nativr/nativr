@@ -11,7 +11,7 @@ Date: 2026-07-30
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 486 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 490 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Vector/list selection and replacement, recursive `[[`, arbitrary-dimensional column-major array
@@ -134,6 +134,13 @@ Date: 2026-07-30
   resized dimensions/dimnames, fixed-shape output, atomic/list arrays, lazy S3 dots, inherited
   dispatch, `NextMethod`, namespace access, attribute cleanup, and resource bounds. `aperm.table`,
   malformed low-level attributes, exact diagnostics, and long vectors remain explicit boundaries.
+- Usage-ranked `base::dget`/`dput` plus the measured `tempfile`/`unlink` prerequisites for bit64's
+  classed-data-frame roundtrip, backed by bounded evaluator-owned `nativr://session-temp/...` text
+  storage and the existing parser/normalized-AST/evaluator path. Atomic vectors, list/pairlist
+  nesting, ordinary attributes, missing/NaN/infinite values, complex/raw storage, Unicode,
+  visibility, missing files, and resource limits have coverage. Host paths/connections, nondefault
+  controls, closures/environments, cycles, binary serialization, and persistence remain explicit
+  boundaries.
 - Usage-ranked `graphics::polygon` for zoo's measured filled-area panel helper, including paired
   vector/matrix/data-frame/list/complex coordinates, missing-coordinate polygon splitting, recycled
   fill/border colors and line types/widths, solid/no-fill density, even-odd rules, invisible

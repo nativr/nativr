@@ -223,6 +223,24 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("Sys.localeconv", [], "behavioral", builtinSystemLocaleConv),
   defineBuiltin("path.expand", ["path"], "shape", builtinPathExpand),
   defineBuiltin("file.path", ["...", "fsep"], "behavioral", builtinFilePath),
+  defineBuiltin("tempfile", ["pattern", "tmpdir", "fileext"], "shape", builtinTempFile),
+  defineBuiltin(
+    "unlink",
+    ["x", "recursive", "force", "expand"],
+    "behavioral",
+    builtinUnlink,
+    "regular",
+    "invisible",
+  ),
+  defineBuiltin(
+    "dput",
+    ["x", "file", "control"],
+    "behavioral",
+    builtinDput,
+    "regular",
+    "invisible",
+  ),
+  defineBuiltin("dget", ["file", "keep.source"], "behavioral", builtinDget),
   definePackageBuiltin("utils", "sessionInfo", ["package"], "shape", builtinSessionInfo),
   definePackageBuiltin(
     "utils",
@@ -1457,6 +1475,14 @@ const S4_GENERICS_STATE_KEY = "base.s4.generics";
 const S4_METHODS_STATE_KEY = "base.s4.methods";
 const S4_COERCIONS_STATE_KEY = "base.s4.coercions";
 const GRAPHICS_STATE_KEY = "graphics.device";
+const VIRTUAL_TEXT_FILES_STATE_KEY = "base.virtualTextFiles";
+const VIRTUAL_TEMP_ROOT = "nativr://session-temp";
+
+interface VirtualTextFileState {
+  readonly files: Map<string, string>;
+  nextId: number;
+  bytes: number;
+}
 
 interface GraphicsState {
   active: boolean;
@@ -2451,6 +2477,296 @@ function filePathCharacters(input: RValue): string[] {
     return input.values.map(globListElementText);
   }
   throw new RTypeMismatchError("NRT3340", "file.path() components must be coercible to character.");
+}
+
+async function builtinTempFile(invocation: BuiltinInvocation): Promise<RCharacterVector> {
+  const matched = await matchExact(invocation, ["pattern", "tmpdir", "fileext"]);
+  const patterns = virtualPathParts(matched.get("pattern"), ["file"], "pattern");
+  const directories = virtualPathParts(matched.get("tmpdir"), [VIRTUAL_TEMP_ROOT], "tmpdir");
+  const extensions = virtualPathParts(matched.get("fileext"), [""], "fileext");
+  if (patterns.length === 0 || directories.length === 0 || extensions.length === 0) {
+    return characterVector([]);
+  }
+  for (const directory of directories) {
+    if (directory.replace(/\/+$/u, "") !== VIRTUAL_TEMP_ROOT) {
+      throw new RUnsupportedFeatureError(
+        "NRU6168",
+        "tempfile(tmpdir=) supports only the current session's browser-memory temp directory.",
+      );
+    }
+  }
+
+  const length = Math.max(patterns.length, directories.length, extensions.length);
+  invocation.context.allocate(length);
+  const state = virtualTextFileState(invocation);
+  const paths = Array.from({ length }, (_, index) => {
+    invocation.context.checkpoint();
+    if (!Number.isSafeInteger(state.nextId)) {
+      throw new RResourceLimitError("NRL4002", "Virtual temporary-file identifier limit exceeded.");
+    }
+    const pattern = patterns[index % patterns.length] ?? "file";
+    const extension = extensions[index % extensions.length] ?? "";
+    const identifier = state.nextId.toString(16).padStart(8, "0");
+    state.nextId += 1;
+    return `${VIRTUAL_TEMP_ROOT}/${encodeURIComponent(pattern)}${identifier}${encodeURIComponent(
+      extension,
+    )}`;
+  });
+  return characterVector(paths);
+}
+
+async function builtinUnlink(invocation: BuiltinInvocation): Promise<RIntegerVector> {
+  const matched = await matchExact(invocation, ["x", "recursive", "force", "expand"]);
+  logicalFlag(matched.get("recursive"), false, "recursive");
+  logicalFlag(matched.get("force"), false, "force");
+  logicalFlag(matched.get("expand"), true, "expand");
+  const paths = required(matched, "x", "unlink");
+  if (paths.type !== "character" || paths.missing !== undefined) {
+    throw new RTypeMismatchError(
+      "NRT3352",
+      "unlink(x=) requires non-missing virtual path strings.",
+    );
+  }
+  const state = virtualTextFileState(invocation);
+  for (const path of paths.values) {
+    invocation.context.checkpoint();
+    requireVirtualTextPath(path, "unlink");
+    const previous = state.files.get(path);
+    if (previous === undefined) continue;
+    state.files.delete(path);
+    state.bytes -= virtualTextByteLength(previous);
+  }
+  return integerVector([0]);
+}
+
+async function builtinDput(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["x", "file", "control"]);
+  const input = required(matched, "x", "dput");
+  validateDputControl(matched.get("control"));
+  const source = `${serializeDputValue(input, invocation)}\n`;
+  const file = matched.get("file");
+  const path = file === undefined ? "" : characterScalar(file, "file");
+  if (path.length === 0) {
+    invocation.context.writeOutput({ stream: "stdout", text: source });
+    return input;
+  }
+  requireVirtualTextPath(path, "dput");
+  writeVirtualTextFile(invocation, path, source);
+  return input;
+}
+
+async function builtinDget(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["file", "keep.source"]);
+  const path = characterScalar(required(matched, "file", "dget"), "file");
+  logicalFlag(matched.get("keep.source"), false, "keep.source");
+  requireVirtualTextPath(path, "dget");
+  const source = virtualTextFileState(invocation).files.get(path);
+  if (source === undefined) {
+    throw new REvaluationError("NRE2195", `Cannot open virtual text file '${path}'.`);
+  }
+  const program = invocation.parse(source);
+  if (program.body.length === 0) {
+    throw new REvaluationError("NRE2195", `Virtual text file '${path}' is empty.`);
+  }
+  invocation.context.allocate(program.body.length);
+  return invocation.evaluate(
+    { type: "expression", values: Object.freeze([...program.body]) },
+    invocation.currentEnvironment(),
+  );
+}
+
+function virtualPathParts(
+  value: RValue | undefined,
+  fallback: readonly string[],
+  name: string,
+): readonly string[] {
+  if (value === undefined) return fallback;
+  if (value.type !== "character" || value.missing !== undefined) {
+    throw new RTypeMismatchError(
+      "NRT3352",
+      `tempfile(${name}=) requires non-missing character values.`,
+    );
+  }
+  return value.values;
+}
+
+function virtualTextFileState(invocation: BuiltinInvocation): VirtualTextFileState {
+  const existing = invocation.state.get(VIRTUAL_TEXT_FILES_STATE_KEY);
+  if (
+    typeof existing === "object" &&
+    existing !== null &&
+    "files" in existing &&
+    existing.files instanceof Map &&
+    "nextId" in existing &&
+    typeof existing.nextId === "number" &&
+    "bytes" in existing &&
+    typeof existing.bytes === "number"
+  ) {
+    return existing as VirtualTextFileState;
+  }
+  const created: VirtualTextFileState = { files: new Map(), nextId: 1, bytes: 0 };
+  invocation.state.set(VIRTUAL_TEXT_FILES_STATE_KEY, created);
+  return created;
+}
+
+function requireVirtualTextPath(path: string, call: "dget" | "dput" | "unlink"): void {
+  if (path.startsWith(`${VIRTUAL_TEMP_ROOT}/`) && path.length > VIRTUAL_TEMP_ROOT.length + 1)
+    return;
+  throw new RUnsupportedFeatureError(
+    "NRU6169",
+    `${call}() host-filesystem and connection paths are unavailable; use tempfile() session-memory paths.`,
+  );
+}
+
+function writeVirtualTextFile(invocation: BuiltinInvocation, path: string, source: string): void {
+  const state = virtualTextFileState(invocation);
+  const previous = state.files.get(path);
+  if (previous === undefined && state.files.size >= invocation.context.limits.maxVectorLength) {
+    throw new RResourceLimitError("NRL4002", "Virtual text-file count limit exceeded.", {
+      details: {
+        maxVectorLength: invocation.context.limits.maxVectorLength,
+        requested: state.files.size + 1,
+      },
+    });
+  }
+  const bytes =
+    state.bytes -
+    (previous === undefined ? 0 : virtualTextByteLength(previous)) +
+    virtualTextByteLength(source);
+  if (bytes > invocation.context.limits.maxOutputBytes) {
+    throw new RResourceLimitError("NRL4007", "Virtual text-file storage limit exceeded.", {
+      details: { maxOutputBytes: invocation.context.limits.maxOutputBytes, outputBytes: bytes },
+    });
+  }
+  state.files.set(path, source);
+  state.bytes = bytes;
+}
+
+function validateDputControl(value: RValue | undefined): void {
+  if (value === undefined) return;
+  if (value.type !== "character" || value.missing !== undefined) {
+    throw new RTypeMismatchError(
+      "NRT3352",
+      "dput(control=) requires non-missing character values.",
+    );
+  }
+  const defaults = new Set(["keepNA", "keepInteger", "niceNames", "showAttributes"]);
+  if (value.length !== defaults.size || value.values.some((entry) => !defaults.delete(entry))) {
+    throw new RUnsupportedFeatureError(
+      "NRU6170",
+      "dput(control=) currently supports only the documented default reconstruction controls.",
+    );
+  }
+}
+
+function serializeDputValue(
+  value: RValue,
+  invocation: BuiltinInvocation,
+  active: Set<RValue> = new Set(),
+  depth = 0,
+): string {
+  invocation.context.checkpoint();
+  if (depth > invocation.context.limits.maxCallDepth) {
+    throw new RResourceLimitError("NRL4004", "Maximum dput() serialization depth exceeded.");
+  }
+  if (active.has(value)) {
+    throw new RUnsupportedFeatureError("NRU6171", "dput() cyclic values are not implemented.");
+  }
+  active.add(value);
+  try {
+    const source = serializeDputBaseValue(value, invocation, active, depth);
+    if (!isAttributedSequence(value) || value.attributes.size === 0) return source;
+    invocation.context.allocate(value.attributes.size);
+    const attributes = [...value.attributes].map(([name, attribute]) => {
+      invocation.context.checkpoint();
+      return `${serializeDputArgumentName(name)} = ${serializeDputValue(
+        attribute,
+        invocation,
+        active,
+        depth + 1,
+      )}`;
+    });
+    return `structure(${source}, ${attributes.join(", ")})`;
+  } finally {
+    active.delete(value);
+  }
+}
+
+function serializeDputBaseValue(
+  value: RValue,
+  invocation: BuiltinInvocation,
+  active: Set<RValue>,
+  depth: number,
+): string {
+  if (value.type === "null") return "NULL";
+  if (isAtomic(value)) return serializeDputAtomic(value, invocation);
+  if (value.type === "list" || value.type === "pairlist") {
+    invocation.context.allocate(value.length);
+    const entries = value.values.map((entry) =>
+      serializeDputValue(entry, invocation, active, depth + 1),
+    );
+    return `${value.type}(${entries.join(", ")})`;
+  }
+  if (value.type === "symbol") return `as.name(${JSON.stringify(value.name)})`;
+  if (value.type === "language") return `quote(${deparseAst(value.expression)})`;
+  if (value.type === "expression") {
+    invocation.context.allocate(value.values.length);
+    return `expression(${value.values.map(deparseAst).join(", ")})`;
+  }
+  throw new RUnsupportedFeatureError(
+    "NRU6172",
+    `dput() values of type '${value.type}' are not serializable in the browser-memory subset.`,
+  );
+}
+
+function serializeDputAtomic(value: AtomicVector, invocation: BuiltinInvocation): string {
+  invocation.context.allocate(value.length);
+  if (value.length === 0) {
+    if (value.type === "complex") return "complex(length.out = 0L)";
+    return `${value.type}(length = 0L)`;
+  }
+  if (value.type === "raw") {
+    return `as.raw(c(${Array.from(value.values, (entry) => `${String(entry)}L`).join(", ")}))`;
+  }
+  if (value.type === "complex") {
+    const real = Array.from({ length: value.length }, (_, index) =>
+      isMissing(value, index) ? "NA_real_" : formatRNumber(value.real[index] ?? 0),
+    );
+    const imaginary = Array.from({ length: value.length }, (_, index) =>
+      isMissing(value, index) ? "NA_real_" : formatRNumber(value.imaginary[index] ?? 0),
+    );
+    return `complex(real = c(${real.join(", ")}), imaginary = c(${imaginary.join(", ")}))`;
+  }
+  const entries = Array.from({ length: value.length }, (_, index) => {
+    invocation.context.checkpoint();
+    if (isMissing(value, index)) {
+      if (value.type === "logical") return "NA";
+      return `NA_${value.type === "double" ? "real" : value.type}_`;
+    }
+    switch (value.type) {
+      case "logical":
+        return value.values[index] === 1 ? "TRUE" : "FALSE";
+      case "integer":
+        return `${String(value.values[index] ?? 0)}L`;
+      case "double":
+        return formatRNumber(value.values[index] ?? 0);
+      case "character":
+        return JSON.stringify(value.values[index] ?? "");
+      default:
+        return assertNever(value);
+    }
+  });
+  return `c(${entries.join(", ")})`;
+}
+
+function serializeDputArgumentName(name: string): string {
+  return `\`${name.replace(/([\\`])/gu, "\\$1")}\``;
+}
+
+function virtualTextByteLength(value: string): number {
+  let bytes = 0;
+  for (const character of value) bytes += utf8ByteLength(character.codePointAt(0) ?? 0);
+  return bytes;
 }
 
 async function builtinSessionInfo(invocation: BuiltinInvocation): Promise<RValue> {

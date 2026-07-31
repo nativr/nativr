@@ -69,7 +69,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 486 registered functions, including resettable
+an initial condition/handler slice. It exposes 490 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
 preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
@@ -440,6 +440,15 @@ axis permutations, reverse-axis defaults, dimension/dimname resizing, `resize = 
 list arrays, lazy dots, inherited dispatch, and `NextMethod`. Table-specific methods, invalid
 low-level attribute shapes, exact diagnostics, and long-vector storage remain explicit boundaries.
 
+Rank 471 `base::dget` now runs bit64's measured `dput`/`dget` serialization roundtrip together with
+the higher-reach `tempfile` and `unlink` prerequisites. Temporary paths use a bounded, session-local
+`nativr://session-temp/...` text store: no host files are read or written. The independent
+serializer round-trips owned atomic vectors, lists, pairlists, names and ordinary attributes,
+including bit64's classed double column; `NA`, `NaN`, infinities, complex, raw, and Unicode values
+have differential coverage. Host paths and connections, arbitrary `dput` controls,
+closures/environments, cyclic values, binary serialization, and cross-session persistence remain
+explicit boundaries.
+
 Development priority is based on a reproducible analysis of documented usage in popular CRAN
 packages. The committed
 [priority report and figures](https://github.com/nativr/nativr/blob/main/docs/feature-priorities.md)
@@ -480,8 +489,8 @@ R source -> @nativr/parser -> normalized @nativr/ast
 ```
 
 NativR intentionally does not yet implement arbitrary package installation, complete GNU R/package
-semantics, the complete graphics-device/base-graphics stack, filesystem access, or runtime network
-access. Semantic limits and planned directions are documented in the
+semantics, the complete graphics-device/base-graphics stack, host-filesystem access, or runtime
+network access. Semantic limits and planned directions are documented in the
 [roadmap](https://github.com/nativr/nativr/blob/main/docs/roadmap.md).
 
 This Apache-2.0 project follows an independent clean-room policy. It is not affiliated with or
