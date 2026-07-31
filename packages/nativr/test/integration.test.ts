@@ -3666,6 +3666,176 @@ describe("complete inline source-to-result vertical slice", () => {
     await limited.dispose();
   });
 
+  it("draws zoo's usage-ranked point generic through the Worker graphics protocol", async () => {
+    const observed: unknown[] = [];
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      onGraphics: (event) => observed.push(event),
+    });
+    const drawn = await runtime.evalDetailed(`
+      plot.new()
+      plot.window(c(0, 5), c(0, 7))
+      visible <- withVisible(graphics::points(
+        1:5,
+        2:6,
+        pch = c(1, 19, 21, NA, 26),
+        col = c("red", "blue", "green", "black", "black"),
+        bg = c("transparent", "transparent", "yellow"),
+        cex = c(1, 2, 1),
+        lwd = c(1, 2)
+      ))
+      c(is.null(visible$value), visible$visible)
+    `);
+    expect(drawn.value).toEqual([true, false]);
+    expect(drawn.graphics).toEqual([
+      { kind: "new-page" },
+      { kind: "window", xlim: [0, 5], ylim: [0, 7] },
+      {
+        kind: "points",
+        points: [
+          {
+            x: 1,
+            y: 2,
+            symbol: 1,
+            color: "#FF0000FF",
+            fill: "#FFFFFF00",
+            size: 1,
+            lineWidth: 1,
+          },
+          {
+            x: 2,
+            y: 3,
+            symbol: 19,
+            color: "#0000FFFF",
+            fill: "#FFFFFF00",
+            size: 2,
+            lineWidth: 2,
+          },
+          {
+            x: 3,
+            y: 4,
+            symbol: 21,
+            color: "#00FF00FF",
+            fill: "#FFFF00FF",
+            size: 1,
+            lineWidth: 1,
+          },
+        ],
+      },
+    ]);
+    expect(observed).toEqual(drawn.graphics);
+
+    const character = await runtime.evalDetailed(
+      "points(list(x = c(1, NA), y = c(6, 5)), pch = c('A', 'B'), col = 'purple')",
+    );
+    expect(character.graphics).toEqual([
+      {
+        kind: "points",
+        points: [
+          {
+            x: 1,
+            y: 6,
+            symbol: "A",
+            color: "#A020F0FF",
+            fill: "#FFFFFF00",
+            size: 1,
+            lineWidth: 1,
+          },
+        ],
+      },
+    ]);
+    const filled = await runtime.evalDetailed(
+      "points(4, 5, pch = 21, col = 'transparent', bg = 'magenta')",
+    );
+    expect(filled.graphics).toEqual([
+      {
+        kind: "points",
+        points: [
+          {
+            x: 4,
+            y: 5,
+            symbol: 21,
+            color: "#FFFFFF00",
+            fill: "#FF00FFFF",
+            size: 1,
+            lineWidth: 1,
+          },
+        ],
+      },
+    ]);
+    const matrix = await runtime.evalDetailed("points(matrix(1:6, ncol = 2))");
+    expect(matrix.graphics[0]).toMatchObject({ kind: "points" });
+    if (matrix.graphics[0]?.kind === "points") {
+      expect(matrix.graphics[0].points).toHaveLength(3);
+    }
+    await expect(runtime.evalDetailed("points(1:3, 4:6, type = 'n')")).resolves.toMatchObject({
+      value: null,
+      visible: false,
+      graphics: [],
+    });
+    await expect(runtime.eval("points(numeric(), numeric())")).resolves.toBeNull();
+
+    await runtime.eval("recorded <- recordPlot()\ndev.hold()");
+    const replayed = await runtime.evalDetailed("replayPlot(recorded)\ndev.flush()");
+    expect(replayed.graphics.filter((event) => event.kind === "points")).toHaveLength(4);
+    expect(replayed.graphics.at(-1)).toEqual(matrix.graphics[0]);
+    await expect(
+      runtime.eval(`
+        replayPlot(structure(
+          list(
+            list(list(
+              kind = "points",
+              points = list(list(
+                x = 1,
+                y = 2,
+                pch = 99,
+                col = "#000000FF",
+                bg = "#FFFFFF00",
+                cex = 1,
+                lwd = 1
+              ))
+            )),
+            NULL
+          ),
+          class = "recordedplot"
+        ))
+      `),
+    ).rejects.toMatchObject({ code: "NRT3333" });
+
+    await expect(
+      runtime.eval(`
+        points.probe <- function(x, y = NULL, type = "p", ..., marker = "default") {
+          c(class(x), marker, list(...)$extra)
+        }
+        custom <- withVisible(
+          points(structure(1:3, class = "probe"), marker = "custom", extra = 7)
+        )
+        c(custom$value, custom$visible)
+      `),
+    ).resolves.toEqual(["probe", "custom", "7", "TRUE"]);
+    await expect(runtime.eval("points(1:3, 4:5)")).rejects.toMatchObject({ code: "NRT3347" });
+    await expect(runtime.eval("points(1:3, 4:6, type = 'l')")).rejects.toMatchObject({
+      code: "NRU6164",
+    });
+    await expect(runtime.eval("points(1:3, 4:6, pch = 'AB')")).rejects.toMatchObject({
+      code: "NRU6164",
+    });
+    await runtime.reset();
+    await expect(runtime.eval("points(1, 2)")).rejects.toMatchObject({ code: "NRE2190" });
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 10 },
+    });
+    await expect(limited.eval("plot.new()\npoints(1:2, 2:3)")).rejects.toMatchObject({
+      code: "NRL4002",
+    });
+    await limited.dispose();
+  });
+
   it("emits browser-native raster graphics for usage-ranked package patterns", async () => {
     const observed: unknown[] = [];
     const runtime = await createR({
@@ -5708,7 +5878,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.185.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.186.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -5737,6 +5907,7 @@ describe("complete inline source-to-result vertical slice", () => {
       { name: "boxplot", compatibility: "shape" },
       { name: "rasterImage", compatibility: "shape" },
       { name: "segments", compatibility: "shape" },
+      { name: "points", compatibility: "shape" },
       { name: "legend", compatibility: "shape" },
       { name: "persp", compatibility: "shape" },
       { name: "pairs", compatibility: "shape" },

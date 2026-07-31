@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           476 |
-| Overlapping callable names        |           461 |
-| Missing GNU R callable names      |         2,061 |
-| Name overlap                      |      18.2791% |
+| NativR registered names           |           477 |
+| Overlapping callable names        |           462 |
+| Missing GNU R callable names      |         2,060 |
+| Name overlap                      |      18.3188% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -315,6 +315,17 @@ and box through resolved segment commands. Colored facets, shading, detailed tic
 equivalence, hooks, arbitrary graphical parameters, `trans3d`, exact diagnostics, and cross-device
 pixel identity remain incomplete. The `axes` flag is validated, but axis arrows, ticks, and text
 remain unsupported.
+
+The rank-458 increment adds GNU R differential evidence for zoo's documented
+`points.zoo(x, y = NULL, type = "p", ...)` extension point and adjacent default calls. S3
+package-method forwarding, invisible default results, paired/vector/matrix/data-frame/list/complex
+coordinates, equal-length validation, numeric symbols 0:25, printable-ASCII/negative-Unicode and
+literal characters, recycled colors/fills/sizes/widths, missing/non-finite/style omission, namespace
+access, Worker protocol output, Canvas pixels, same-session replay, malformed-record rejection,
+errors, and allocation/output limits have coverage. Line/path types, locale-dependent glyph codes,
+character coordinate coercion, broader coordinate classes, clipping/log axes, exact device
+font/symbol sizing, arbitrary graphical parameters, exact diagnostics, and cross-device pixel
+identity remain incomplete.
 
 ## Completion evidence
 

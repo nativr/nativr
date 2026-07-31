@@ -295,6 +295,45 @@ test("runs the required Worker examples without evaluation network traffic", asy
 
   await page.locator("#source").fill(`
     plot.new()
+    plot.window(c(0, 4), c(0, 4))
+    points(
+      c(1, 2, 3),
+      c(1, 2, 3),
+      pch = c(16, 21, 65),
+      col = c("red", "blue", "green"),
+      bg = "yellow",
+      cex = 2
+    )
+  `);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("null");
+  await expect(page.locator("#graphics-count")).toHaveText("3");
+  const pointPixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
+    const context = canvas.getContext("2d");
+    if (context === null) return { centers: [], green: 0 };
+    const centers = [
+      ...context.getImageData(160, 300, 1, 1).data,
+      ...context.getImageData(320, 200, 1, 1).data,
+    ];
+    const glyph = context.getImageData(468, 84, 24, 32).data;
+    let green = 0;
+    for (let index = 0; index < glyph.length; index += 4) {
+      if (
+        (glyph[index] ?? 0) < 80 &&
+        (glyph[index + 1] ?? 0) > 80 &&
+        (glyph[index + 2] ?? 0) < 80 &&
+        (glyph[index + 3] ?? 0) > 0
+      ) {
+        green += 1;
+      }
+    }
+    return { centers, green };
+  });
+  expect(pointPixels.centers).toEqual([255, 0, 0, 255, 255, 255, 0, 255]);
+  expect(pointPixels.green).toBeGreaterThan(0);
+
+  await page.locator("#source").fill(`
+    plot.new()
     plot.window(c(0, 1), c(0, 1))
     box(bty = "c", col = "red", lwd = 6)
   `);

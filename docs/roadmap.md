@@ -381,6 +381,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      access, Worker/Canvas transport, and display-list replay. Facet fills, lighting, detailed
      axes/text, hidden-line equivalence, hooks, `trans3d`, and arbitrary graphical controls remain
      explicit boundaries.
+103. Frequency-ranked point graphics: `graphics::points` runs zoo's documented S3 method extension
+     point and an owned default for paired/vector/matrix/data-frame/list/complex coordinates,
+     plotting symbols 0:25 and literal characters, recycled colors/fills/sizes/widths, missing-point
+     omission, namespace access, bounded Worker/Canvas rendering, and display-list replay. Line/path
+     types, locale-dependent glyphs, broader coordinate classes, clipping/log axes, device font
+     identity, and arbitrary graphical controls remain explicit boundaries.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

@@ -285,6 +285,21 @@ export interface RGraphicsSegment {
   readonly lineWidth: number;
 }
 
+/** One resolved point symbol sent to a browser graphics host. */
+export interface RGraphicsPoint {
+  readonly x: number;
+  readonly y: number;
+  /** An R plotting-symbol code or one literal Unicode character. */
+  readonly symbol: number | string;
+  /** CSS-compatible #RRGGBBAA border/text color resolved before crossing the host boundary. */
+  readonly color: string;
+  /** CSS-compatible #RRGGBBAA fill color for symbols 21 through 25. */
+  readonly fill: string;
+  /** Device-independent `cex` multiplier interpreted by the browser renderer. */
+  readonly size: number;
+  readonly lineWidth: number;
+}
+
 /** One resolved box-and-whisker group sent to a browser graphics host. */
 export interface RGraphicsBoxplotGroup {
   readonly label: string;
@@ -350,6 +365,10 @@ export type RGraphicsEvent =
   | {
       readonly kind: "segments";
       readonly segments: readonly RGraphicsSegment[];
+    }
+  | {
+      readonly kind: "points";
+      readonly points: readonly RGraphicsPoint[];
     }
   | {
       readonly kind: "box";

@@ -7053,5 +7053,26 @@
     "expected": ["probe", "custom", "7", "TRUE", "TRUE", "TRUE", "TRUE"],
     "expectedCompatibility": "shape",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "points-zoo-documented-method-seam-and-visibility",
+    "code": "points.zoo <- function(x, y = NULL, type = \"p\", ..., marker = \"default\") c(class(x), marker, list(...)$extra)\nresult <- withVisible(graphics::points(structure(1:3, class = \"zoo\"), marker = \"custom\", extra = 7))\nc(result$value, result$visible)",
+    "expected": ["zoo", "custom", "7", "TRUE"],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "points-default-coordinate-shapes-and-visibility",
+    "code": "plot.new()\nplot.window(c(0, 6), c(0, 7))\na <- withVisible(points(1:3, 4:6, pch = c(1, 19, 21), col = c(\"red\", \"blue\", \"green\"), bg = \"yellow\"))\nb <- withVisible(points(matrix(1:6, ncol = 2), type = \"n\"))\nd <- withVisible(points(list(x = c(1, NA), y = c(2, 3)), pch = c(\"A\", \"B\")))\nc(is.null(a$value), a$visible, is.null(b$value), b$visible, is.null(d$value), d$visible)",
+    "expected": [true, false, true, false, true, false],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "points-empty-omission-and-input-boundaries",
+    "code": "before <- inherits(try(points(1, 2), silent = TRUE), \"try-error\")\nplot.new()\nplot.window(c(0, 6), c(0, 7))\nempty <- withVisible(points(numeric(), numeric()))\nnone <- withVisible(points(1:3, 4:6, type = \"n\"))\nomitted <- withVisible(points(c(1, NA, Inf), 1:3, pch = c(1, NA, 26), col = c(\"black\", NA, \"red\")))\nc(before, is.null(empty$value), empty$visible, is.null(none$value), none$visible, is.null(omitted$value), omitted$visible, inherits(try(points(1:3, 4:5), silent = TRUE), \"try-error\"), inherits(try(points(), silent = TRUE), \"try-error\"))",
+    "expected": [true, true, false, true, false, true, false, true, true],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

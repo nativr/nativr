@@ -89,6 +89,7 @@ export type {
   RGraphicsBoxplotGroup,
   RGraphicsLegendEntry,
   RGraphicsLegendPosition,
+  RGraphicsPoint,
   RGraphicsSegment,
   RIntegerVector,
   RList,

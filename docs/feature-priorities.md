@@ -811,7 +811,16 @@ downloads, one measured call, and 0.6% weighted reach. The owned
 preserves S3 forwarding, computes scaled or aspect-preserving homogeneous view matrices, omits
 missing grid edges, and emits a bounded default wireframe/box through Worker-safe line commands.
 Facet colors, lighting, axis arrows/ticks/text, hidden-line equivalence, hooks, `trans3d`, and
-arbitrary graphical controls remain boundaries. Rank 458 `points` is the next unresolved callable
+arbitrary graphical controls remain boundaries. Rank 458 `points` is now complete for
+[zoo's](https://cran.r-project.org/web/packages/zoo/refman/zoo.html) documented
+`points.zoo(x, y = NULL, type = "p", ...)` package extension point, representing 731,390 downloads,
+one measured occurrence, and 0.6% weighted reach. The owned
+[documented default](https://stat.ethz.ch/R-manual/R-devel/library/graphics/html/points.html)
+preserves S3 forwarding and resolves vector/matrix/data-frame/list/complex coordinates plus recycled
+plotting symbols, colors, fills, sizes, and widths into a bounded Worker point command. Missing
+drawing entries are omitted; display-list replay and Canvas pixels share that command. Line/path
+types, locale-dependent glyph codes, coordinate classes, clipping/log axes, font identity, and
+arbitrary graphical controls remain boundaries. Rank 459 `polygon` is the next unresolved callable
 candidate.
 
 ## Completed implementation order
@@ -1161,6 +1170,10 @@ ties:
      S3-first dispatch, exact scaled/aspect-preserving `4 × 4` view matrices, missing-cell omission,
      bounded projected wireframe/box line commands, namespace access, Worker rendering, output
      accounting, and display-list replay.
+124. Point graphics: `graphics::points()` runs zoo's documented S3 extension point and an owned
+     numeric default with paired/vector/matrix/data-frame/list/complex coordinates, numeric and
+     character plotting symbols, recycled colors/fills/sizes/widths, missing-point omission,
+     namespace access, bounded Worker/Canvas rendering, and display-list replay.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

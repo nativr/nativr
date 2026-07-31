@@ -61,6 +61,7 @@ import type {
   RGraphicsEvent,
   RGraphicsLegendEntry,
   RGraphicsLegendPosition,
+  RGraphicsPoint,
   RGraphicsSegment,
   RIntegerVector,
   RLanguage,
@@ -946,6 +947,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     builtinSegments,
     "invisible",
   ),
+  definePackageBuiltin("graphics", "points", ["x", "..."], "shape", builtinPoints),
   definePackageBuiltin(
     "graphics",
     "legend",
@@ -15394,6 +15396,294 @@ async function builtinRasterImage(invocation: BuiltinInvocation): Promise<RValue
   return R_NULL;
 }
 
+async function builtinPoints(invocation: BuiltinInvocation): Promise<RValue> {
+  const generic = matchBuiltinArguments(invocation, ["x", "..."]);
+  const genericX = generic.matched.get("x");
+  if (genericX === undefined || genericX.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in points().");
+  }
+  const input = await invocation.force(genericX.promise);
+  const dispatched = await invocation.dispatchS3IfPresent("points", input, invocation.arguments);
+  if (dispatched !== undefined) return dispatched;
+
+  const { matched, dots } = matchLazyArgumentsWithDots(invocation, ["x", "y", "type"]);
+  const values = new Map<string, RValue>([["x", input]]);
+  for (const [name, argument] of matched) {
+    if (name === "x") continue;
+    if (argument.promise.missing) {
+      throw new REvaluationError("NRE2103", `Argument '${name}' is missing in points().`);
+    }
+    values.set(name, await invocation.force(argument.promise));
+  }
+  const controls = new Map<string, RValue>();
+  const supportedControls = new Set(["pch", "col", "bg", "cex", "lwd"]);
+  for (const argument of dots) {
+    if (
+      argument.name === undefined ||
+      !supportedControls.has(argument.name) ||
+      controls.has(argument.name)
+    ) {
+      if (!argument.promise.missing) await invocation.force(argument.promise);
+      if (argument.name !== undefined && controls.has(argument.name)) {
+        throw new REvaluationError(
+          "NRE2102",
+          `Argument '${argument.name}' matched more than once.`,
+        );
+      }
+      throw new RUnsupportedFeatureError(
+        "NRU6164",
+        `points() graphical control '${argument.name ?? "<unnamed>"}' is outside the current browser point subset.`,
+      );
+    }
+    if (argument.promise.missing) {
+      throw new REvaluationError("NRE2103", `Argument '${argument.name}' is missing in points().`);
+    }
+    controls.set(argument.name, await invocation.force(argument.promise));
+  }
+
+  const typeValue = values.get("type");
+  const type = typeValue === undefined ? "p" : characterScalar(typeValue, "points(type=)");
+  if (type !== "p" && type !== "n") {
+    throw new RUnsupportedFeatureError(
+      "NRU6164",
+      `points(type = "${type}") awaits browser line/path drawing.`,
+    );
+  }
+  const coordinates = graphicsPointCoordinates(input, values.get("y"), invocation);
+  const state = graphicsState(invocation, "points");
+  invocation.setResultVisibility("invisible");
+  if (type === "n" || coordinates.x.length === 0) return R_NULL;
+
+  const symbols = graphicsPointSymbols(controls.get("pch"));
+  const colors = graphicsPointColours(controls.get("col"), [0, 0, 0, 255], invocation, true);
+  const fills = graphicsPointColours(controls.get("bg"), [255, 255, 255, 0], invocation, false);
+  const sizes = graphicsPointSizes(controls.get("cex"));
+  const lineWidths = graphicsPointLineWidths(controls.get("lwd"));
+  const points: RGraphicsPoint[] = [];
+  invocation.context.allocate(coordinates.x.length * 7);
+  for (let index = 0; index < coordinates.x.length; index += 1) {
+    invocation.context.checkpoint();
+    const x = graphicsPointCoordinate(coordinates.x, index);
+    const y = graphicsPointCoordinate(coordinates.y, index);
+    const symbol = symbols[index % symbols.length];
+    const color = colors[index % colors.length];
+    const fill = fills[index % fills.length];
+    const size = sizes[index % sizes.length];
+    const lineWidth = lineWidths[index % lineWidths.length];
+    if (
+      x === undefined ||
+      y === undefined ||
+      symbol === undefined ||
+      color === undefined ||
+      fill === undefined ||
+      size === undefined ||
+      lineWidth === undefined
+    ) {
+      continue;
+    }
+    points.push({
+      x,
+      y,
+      symbol,
+      color: graphicsCssColour(color),
+      fill: graphicsCssColour(fill),
+      size,
+      lineWidth,
+    });
+  }
+  if (points.length > 0) writeGraphics(invocation, state, { kind: "points", points });
+  return R_NULL;
+}
+
+function graphicsPointCoordinates(
+  input: RValue,
+  suppliedY: RValue | undefined,
+  invocation: BuiltinInvocation,
+): { readonly x: RDoubleVector; readonly y: RDoubleVector } {
+  if (suppliedY !== undefined && suppliedY.type !== "null") {
+    const x = graphicsPointAtomicCoordinates(input, "x", invocation);
+    const y = graphicsPointAtomicCoordinates(suppliedY, "y", invocation);
+    if (x.length !== y.length) {
+      throw new RTypeMismatchError("NRT3347", "'x' and 'y' lengths differ in points().");
+    }
+    return { x, y };
+  }
+  if (input.type === "null") return { x: doubleVector([]), y: doubleVector([]) };
+  if (input.type === "list") {
+    const values = input.values;
+    if (isDataFrame(input)) {
+      if (input.length === 0) {
+        return { x: doubleVector([]), y: doubleVector([]) };
+      }
+      const rows = dataFrameRowCount(input);
+      const first = graphicsPointAtomicCoordinates(values[0] ?? R_NULL, "x", invocation);
+      if (input.length === 1) {
+        return {
+          x: doubleVector(Array.from({ length: rows }, (_, index) => index + 1)),
+          y: first,
+        };
+      }
+      const second = graphicsPointAtomicCoordinates(values[1] ?? R_NULL, "y", invocation);
+      if (first.length !== second.length) {
+        throw new RTypeMismatchError("NRT3347", "'x' and 'y' lengths differ in points().");
+      }
+      return { x: first, y: second };
+    }
+    const names = vectorNames(input);
+    const xIndex = names?.indexOf("x") ?? -1;
+    const yIndex = names?.indexOf("y") ?? -1;
+    if (xIndex < 0 || yIndex < 0) {
+      throw new RTypeMismatchError(
+        "NRT3347",
+        "points() list input requires named 'x' and 'y' components.",
+      );
+    }
+    const x = graphicsPointAtomicCoordinates(values[xIndex] ?? R_NULL, "x", invocation);
+    const y = graphicsPointAtomicCoordinates(values[yIndex] ?? R_NULL, "y", invocation);
+    if (x.length !== y.length) {
+      throw new RTypeMismatchError("NRT3347", "'x' and 'y' lengths differ in points().");
+    }
+    return { x, y };
+  }
+  if (!isAtomic(input)) {
+    throw new RTypeMismatchError(
+      "NRT3347",
+      "points() requires atomic coordinates, a matrix, a data frame, or an x/y list.",
+    );
+  }
+  const dimensions = vectorDimensions(input);
+  if (dimensions?.length === 2) {
+    const rows = dimensions[0] ?? 0;
+    const columns = dimensions[1] ?? 0;
+    if (columns < 2) {
+      throw new RTypeMismatchError("NRT3347", "points() matrix input requires two columns.");
+    }
+    const numeric = graphicsPointAtomicCoordinates(input, "x", invocation);
+    return {
+      x: sliceConvexHullCoordinates(numeric, 0, rows),
+      y: sliceConvexHullCoordinates(numeric, rows, rows),
+    };
+  }
+  if (input.type === "complex") {
+    invocation.context.allocate(input.length * 2);
+    return {
+      x: doubleVector(input.real, input.missing),
+      y: doubleVector(input.imaginary, input.missing),
+    };
+  }
+  const y = graphicsPointAtomicCoordinates(input, "x", invocation);
+  return {
+    x: doubleVector(Array.from({ length: y.length }, (_, index) => index + 1)),
+    y,
+  };
+}
+
+function graphicsPointAtomicCoordinates(
+  value: RValue,
+  name: "x" | "y",
+  invocation: BuiltinInvocation,
+): RDoubleVector {
+  if (!isAtomic(value) || value.type === "character" || value.type === "complex") {
+    throw new RTypeMismatchError("NRT3347", `points() '${name}' coordinates must be real numeric.`);
+  }
+  return coerceAtomicToDouble(value, invocation);
+}
+
+function graphicsPointCoordinate(value: RDoubleVector, index: number): number | undefined {
+  if (isMissing(value, index)) return undefined;
+  const coordinate = value.values[index] ?? Number.NaN;
+  return Number.isFinite(coordinate) ? coordinate : undefined;
+}
+
+function graphicsPointSymbols(value: RValue | undefined): readonly (number | string | undefined)[] {
+  if (value === undefined || value.type === "null") return [1];
+  if (
+    (value.type !== "logical" &&
+      value.type !== "integer" &&
+      value.type !== "double" &&
+      value.type !== "raw" &&
+      value.type !== "character") ||
+    isFactor(value)
+  ) {
+    throw new RTypeMismatchError("NRT3347", "points(pch=) requires numeric or character symbols.");
+  }
+  if (value.length === 0) return [1];
+  if (value.type === "character") {
+    return Array.from({ length: value.length }, (_, index) => {
+      if (isMissing(value, index)) return undefined;
+      const characters = [...(value.values[index] ?? "")];
+      if (characters.length === 0) return undefined;
+      if (characters.length !== 1) {
+        throw new RUnsupportedFeatureError(
+          "NRU6164",
+          "points(pch=) currently requires one Unicode character per value.",
+        );
+      }
+      return characters[0];
+    });
+  }
+  return Array.from({ length: value.length }, (_, index) => {
+    if (isMissing(value, index)) return undefined;
+    const source = value.values[index] ?? Number.NaN;
+    if (!Number.isFinite(source)) return undefined;
+    const symbol = Math.trunc(source);
+    if (symbol >= 0 && symbol <= 25) return symbol;
+    if (symbol >= 26 && symbol <= 31) return undefined;
+    if (symbol >= 32 && symbol <= 126) return String.fromCodePoint(symbol);
+    if (symbol < 0 && -symbol <= 0x10ffff && !(-symbol >= 0xd800 && -symbol <= 0xdfff)) {
+      return String.fromCodePoint(-symbol);
+    }
+    throw new RUnsupportedFeatureError(
+      "NRU6164",
+      `points(pch = ${symbol}) awaits locale-dependent browser glyph handling.`,
+    );
+  });
+}
+
+function graphicsPointColours(
+  value: RValue | undefined,
+  fallback: RColour,
+  invocation: BuiltinInvocation,
+  omitMissing: boolean,
+): readonly (RColour | undefined)[] {
+  if (value === undefined || value.type === "null") return [fallback];
+  if (isVector(value) && value.length === 0) return [fallback];
+  const colors = graphicsSegmentColours(value, invocation);
+  if (!isAtomic(value)) return colors;
+  return colors.map((color, index) =>
+    isMissing(value, index) ? (omitMissing ? undefined : ([255, 255, 255, 0] as const)) : color,
+  );
+}
+
+function graphicsPointSizes(value: RValue | undefined): readonly (number | undefined)[] {
+  if (value === undefined || value.type === "null") return [1];
+  if (
+    (value.type !== "logical" &&
+      value.type !== "integer" &&
+      value.type !== "double" &&
+      value.type !== "raw") ||
+    isFactor(value)
+  ) {
+    throw new RTypeMismatchError("NRT3347", "points(cex=) requires a numeric vector.");
+  }
+  if (value.length === 0) return [1];
+  return Array.from({ length: value.length }, (_, index) => {
+    if (isMissing(value, index)) return undefined;
+    const size = value.values[index] ?? Number.NaN;
+    if (Number.isNaN(size) || size <= 0) return undefined;
+    if (!Number.isFinite(size)) {
+      throw new RTypeMismatchError("NRT3347", "points(cex=) must contain finite values.");
+    }
+    return size;
+  });
+}
+
+function graphicsPointLineWidths(value: RValue | undefined): readonly (number | undefined)[] {
+  if (value === undefined || value.type === "null") return [1];
+  if (isVector(value) && value.length === 0) return [1];
+  return graphicsSegmentLineWidths(value);
+}
+
 async function builtinSegments(invocation: BuiltinInvocation): Promise<RValue> {
   const { matched, dots } = matchLazyArgumentsWithDots(invocation, [
     "x0",
@@ -15980,6 +16270,32 @@ function graphicsEventValue(event: RGraphicsEvent): RList {
       ["kind", "x0", "y0", "x1", "y1", "col", "lty", "lwd"],
     );
   }
+  if (event.kind === "points") {
+    return listValue(
+      [
+        characterVector(["points"]),
+        listValue(
+          event.points.map((point) =>
+            listValue(
+              [
+                doubleVector([point.x]),
+                doubleVector([point.y]),
+                typeof point.symbol === "number"
+                  ? doubleVector([point.symbol])
+                  : characterVector([point.symbol]),
+                characterVector([point.color]),
+                characterVector([point.fill]),
+                doubleVector([point.size]),
+                doubleVector([point.lineWidth]),
+              ],
+              ["x", "y", "pch", "col", "bg", "cex", "lwd"],
+            ),
+          ),
+        ),
+      ],
+      ["kind", "points"],
+    );
+  }
   if (event.kind === "box") {
     return listValue(
       [
@@ -16159,6 +16475,15 @@ function graphicsEventFromValue(value: RValue, invocation: BuiltinInvocation): R
       })),
     };
   }
+  if (kind.values[0] === "points") {
+    const pointsValue = field("points");
+    if (pointsValue?.type !== "list" || pointsValue.length === 0) {
+      throw new RTypeMismatchError("NRT3333", "A recorded points command is malformed.");
+    }
+    const points = pointsValue.values.map(recordedGraphicsPoint);
+    invocation.context.allocate(points.length * 7);
+    return { kind: "points", points };
+  }
   if (kind.values[0] === "box") {
     const edges = recordedPlotCharacters(field("edges"), "edges");
     const color = recordedPlotCharacter(field("col"), "col");
@@ -16264,6 +16589,44 @@ function graphicsEventFromValue(value: RValue, invocation: BuiltinInvocation): R
     ytop: recordedPlotNumber(field("ytop"), "ytop"),
     angle: recordedPlotNumber(field("angle"), "angle"),
     interpolate: recordedPlotLogical(field("interpolate"), "interpolate"),
+  };
+}
+
+function recordedGraphicsPoint(value: RValue): RGraphicsPoint {
+  if (value.type !== "list") {
+    throw new RTypeMismatchError("NRT3333", "A recorded point is malformed.");
+  }
+  const names = vectorNames(value);
+  const field = (name: string): RValue | undefined => {
+    const index = names?.indexOf(name) ?? -1;
+    return index < 0 ? undefined : value.values[index];
+  };
+  const symbolValue = field("pch");
+  let symbol: number | string;
+  if (symbolValue?.type === "character") {
+    symbol = recordedPlotCharacter(symbolValue, "pch");
+    if ([...symbol].length !== 1) {
+      throw new RTypeMismatchError("NRT3333", "A recorded point symbol is malformed.");
+    }
+  } else {
+    symbol = recordedPlotNumber(symbolValue, "pch");
+    if (!Number.isSafeInteger(symbol) || symbol < 0 || symbol > 25) {
+      throw new RTypeMismatchError("NRT3333", "A recorded point symbol is malformed.");
+    }
+  }
+  const size = recordedPlotNumber(field("cex"), "cex");
+  const lineWidth = recordedPlotNumber(field("lwd"), "lwd");
+  if (!(size > 0) || !(lineWidth > 0)) {
+    throw new RTypeMismatchError("NRT3333", "A recorded point style is malformed.");
+  }
+  return {
+    x: recordedPlotNumber(field("x"), "x"),
+    y: recordedPlotNumber(field("y"), "y"),
+    symbol,
+    color: recordedLegendColour(field("col"), "col"),
+    fill: recordedLegendColour(field("bg"), "bg"),
+    size,
+    lineWidth,
   };
 }
 
@@ -16780,6 +17143,17 @@ function writeGraphics(
 function graphicsEventByteLength(event: RGraphicsEvent): number {
   if (event.kind === "raster") return event.rgba.byteLength;
   if (event.kind === "segments") return event.segments.length * 64;
+  if (event.kind === "points") {
+    return event.points.reduce(
+      (bytes, point) =>
+        bytes +
+        96 +
+        (typeof point.symbol === "string" ? graphicsTextByteLength(point.symbol) : 8) +
+        graphicsTextByteLength(point.color) +
+        graphicsTextByteLength(point.fill),
+      32,
+    );
+  }
   if (event.kind === "box") {
     return (
       64 +
