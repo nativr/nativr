@@ -272,7 +272,7 @@ conversion and can run without an active device when `log = FALSE`. Linear `usr`
 remain lazy, unique partial argument matching and namespace access are covered, and result
 allocation is bounded. Complete `pretty` equivalence for every floating-point boundary,
 `par("xaxp"/"yaxp")`, logarithmic axes and `grDevices::axisTicks`, axis drawing, and device-specific
-graphical parameters are not claimed.
+graphical parameters beyond the documented session subset are not claimed.
 
 `graphics::box` has differential return/visibility evidence for zoo's measured `box()` redraw and
 browser-host evidence for the resulting frame. `which = "plot"` accepts its documented unique
@@ -280,9 +280,13 @@ prefix, and `bty` resolves `o`, `l`, `7`, `c`, `u`, `]`, and `n` into explicit e
 non-missing `col` takes precedence over `fg`, with black as the current owned-device default; named,
 numeric, and hexadecimal line types are normalized, widths must be positive, and blank, transparent,
 or no-frame styles emit no command. The command crosses inline/Worker APIs, is charged against
-`maxOutputBytes`, renders on Canvas, and round-trips through the bounded display list. Figure,
-inner, and outer regions, session `par()` state, arbitrary graphical parameters, exact device dash
-metrics, and cross-device pixel identity are not claimed.
+`maxOutputBytes`, renders on Canvas, and round-trips through the bounded display list. Figure, inner
+and outer regions, graphical parameters beyond the documented `par()` subset, exact device dash
+metrics, and cross-device pixel identity are not claimed. `graphics::par()` itself owns a
+session-local set of common annotation, color, font, line, margin, layout, clipping, and axis
+parameters. It supports scalar/vector queries, named updates, named-list restoration, invisible old
+values, closure-like formals, validation, and unknown-parameter warnings without requiring an active
+device.
 
 `graphics::boxplot` has differential evidence for zoo's measured grouped-series call and adjacent
 default shapes. Its S3 generic forwards classed inputs before the independently authored default
@@ -1169,18 +1173,20 @@ two-dimensional matrices in column-major order, swaps matrix dimension-name axes
 atomic-column data frames to a common matrix shape. Arbitrary-dimensional arrays, custom methods,
 and recursive/mixed data-frame columns remain outside this increment.
 
-`formals` returns an owned pairlist for NativR closures, preserving parameter names, missing-default
-symbols, literal defaults, and normalized default-language values without exposing parser nodes. It
-returns NULL for registered primitive/special builtins and character inputs and warns for other
-non-functions. Function lookup from character names, `formals<-`, bytecode, and source-reference
-metadata are outside this increment. `replicate` reevaluates its captured expression lazily for each
-iteration, truncates finite non-negative counts, returns lists when `simplify = FALSE`, performs
-ordinary atomic/matrix simplification, and appends an iteration axis for equal-dimensional results
-under `"array"` simplification. `simplify2array` separately has differential evidence for stringi's
-equal- and unequal-length list examples, scalar and vector promotion, outer/inner names,
-equal-dimensional higher arrays, list matrices, zero-length exception controls, atomic identity, and
-invalid `higher` inputs. Method/class-specific coercion, long vectors, arbitrary recursive objects,
-and exhaustive diagnostic wording are not claimed.
+`formals` returns an owned pairlist for NativR closures and registered closure-like builtins,
+preserving parameter names, missing-default symbols, literal defaults, and normalized
+default-language values without exposing parser nodes. `formals<-` replaces closure parameters,
+including call-rooted nested replacement such as `formals(f)[["x"]] <- value`; `environment<-`
+replaces a closure enclosure. Primitive/special builtins and character inputs return NULL, while
+other non-functions warn. Bytecode and source-reference metadata remain outside this increment.
+`replicate` reevaluates its captured expression lazily for each iteration, truncates finite
+non-negative counts, returns lists when `simplify = FALSE`, performs ordinary atomic/matrix
+simplification, and appends an iteration axis for equal-dimensional results under `"array"`
+simplification. `simplify2array` separately has differential evidence for stringi's equal- and
+unequal-length list examples, scalar and vector promotion, outer/inner names, equal-dimensional
+higher arrays, list matrices, zero-length exception controls, atomic identity, and invalid `higher`
+inputs. Method/class-specific coercion, long vectors, arbitrary recursive objects, and exhaustive
+diagnostic wording are not claimed.
 
 `str2expression` and `str2lang` have differential evidence for the source strings measured in
 backports, character-vector line joining, comments and blank input, expression/call/symbol/constant
@@ -1767,8 +1773,10 @@ archives, or resolves required `Depends`/`Imports` from a CRAN-like `PACKAGES` i
 archive/file/byte/package limits, rejects links, native/JVM code, install hooks, `LinkingTo`,
 `useDynLib`, invalid paths, and unsupported NAMESPACE directives, preserves package resources and
 license metadata, and emits deterministic SHA-256 artifacts plus a dependency lock. The browser
-runtime remains network-free. `pkgconfig 2.0.3` has an opt-in executable external test for the full
-repository-to-namespace path.
+runtime remains network-free. Digest-pinned opt-in executable tests cover unchanged
+`pkgconfig 2.0.3`, `generics 0.1.4`, and `withr 3.0.3` sources. They prove the
+repository-to-namespace path, package-owned S3 dispatch, and generated state-restoring wrappers
+through `with_options()` without package patches.
 
 Package admission is not universal execution compatibility. Package `data/*.R`, `.csv`, `.tab`,
 `.txt`, and XDR/gzip `.rda`/`.RData` discovery/loading is supported through `utils::data`, including

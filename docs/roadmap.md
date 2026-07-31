@@ -459,9 +459,10 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      constraints; applies Collate/platform source selection and portable encodings; verifies
      repository digests; writes deterministic SHA-256 artifacts and locks; and feeds dependency-
      first bundles directly to `createR`. Runtime `system.file` exposes immutable package resources.
-     The unchanged public `pkgconfig 2.0.3` source package passes an opt-in
-     repository/install/load/export/call test. Binary/lazy data, broader NAMESPACE/S4 forms, package
-     test orchestration, and audited native Wasm adapters remain later layers.
+     Unchanged `pkgconfig 2.0.3`, `generics 0.1.4`, and `withr 3.0.3` source packages pass opt-in
+     digest-pinned repository/install/load/execution tests, including S3 dispatch and state
+     restoration. Binary/lazy data, broader NAMESPACE/S4 forms, package test orchestration, and
+     audited native Wasm adapters remain later layers.
 117. Package text and cooperative waits: `base::readLines` reads same-session temporary text plus
      immutable DESCRIPTION, NAMESPACE, retained R source, and UTF-8/Latin-1 package resources;
      `writeLines` supplies bounded temporary-file and stdout writes; and `Sys.sleep` yields in short
@@ -493,6 +494,13 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      now enter ordinary environments/namespaces without source translation. Broader serialized
      graphs and ALTREP classes, bzip2/xz/zstd, and installed-package `.rdx`/`.rdb` lazy-load
      databases remain later layers.
+122. Pure-R metaprogramming wrappers: call-rooted nested replacement, `formals<-`, `environment<-`,
+     mixed language/list `c()`, `bquote()` `.()` substitution, list-backed environments, true
+     dynamic caller frames, session hooks, closure-like builtin formal metadata, and common
+     `graphics::par()` state now let unchanged `withr 3.0.3` load and execute `with_options()`. This
+     is reusable runtime support, not a package-specific translation; broader hook delivery,
+     complete builtin signatures, arbitrary `bquote` splicing, and the remaining graphical
+     parameters stay in progress.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means
@@ -507,9 +515,10 @@ the measured surface is runnable, not that NativR implements all R semantics or 
 2. Complete indexing, arrays, frames, conditions, dates/times, object systems, I/O, serialization,
    numeric algorithms, statistics, and graphics behind browser-safe host interfaces.
 3. Implement the full inventoried core namespace surface with per-callable differential evidence.
-4. Expand the executable package installer from the pinned `pkgconfig` proof to the measured pure-R
-   package corpus, binary/text data adapters, broader namespace/object-system declarations, package
-   test orchestration, and R CMD check scenarios without embedding GNU R or webR.
+4. Expand the executable package installer from the pinned `pkgconfig`/`generics`/`withr` proofs to
+   the measured pure-R package corpus, binary/text data adapters, broader namespace/object-system
+   declarations, package test orchestration, and R CMD check scenarios without embedding GNU R or
+   webR.
 5. Verify platform, browser, locale, time-zone, graphics, numeric, and performance behavior against
    the completion criteria in the GNU R compatibility ledger.
 6. Continue refreshing package-usage snapshots so high-reach gaps determine implementation order

@@ -8112,7 +8112,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.203.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.204.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -8134,6 +8134,7 @@ describe("complete inline source-to-result vertical slice", () => {
       s3MethodDispatch: "supported",
     });
     expect(capabilities.packages.find((entry) => entry.name === "graphics")?.functions).toEqual([
+      { name: "par", compatibility: "behavioral" },
       { name: "plot.default", compatibility: "shape" },
       { name: "plot.new", compatibility: "behavioral" },
       { name: "plot.window", compatibility: "shape" },
@@ -8463,7 +8464,7 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(runtime.eval("sum(1, na.rm = TRUE, na.rm = FALSE)")).rejects.toMatchObject({
       code: "NRE2102",
     });
-    await expect(runtime.eval("c(list(1))")).rejects.toMatchObject({ code: "NRU6101" });
+    await expect(runtime.eval("c(list(1))")).resolves.toEqual([1]);
     await runtime.dispose();
   });
 
@@ -10950,6 +10951,100 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("rebuilds call-rooted nested replacements through their replacement function", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        f <- function(x = 1L, y = x + 1L) c(x, y)
+        changed <- withVisible(formals(f)[["x"]] <- 10L)
+        first <- f()
+        formals(f) <- alist(x = 3L, y = x + 1L)
+        c(changed$value, changed$visible, first, f())
+      `),
+    ).resolves.toEqual([10, 0, 10, 11, 3, 4]);
+    await expect(runtime.eval("formals(1)[['x']] <- 2")).rejects.toMatchObject({
+      code: "NRT3306",
+    });
+    await expect(
+      runtime.eval(
+        "dots_missing <- function(...) missing(...); c(dots_missing(), dots_missing(1))",
+      ),
+    ).resolves.toEqual([true, false]);
+    await expect(
+      runtime.eval(`
+        add_one <- function(x) x + 1L
+        constructed <- as.call(c(as.name("add_one"), list(x = 2L)))
+        namespaced <- as.call(c(quote(base::identity), list(3L)))
+        c(typeof(c(as.name("f"), list(x = as.name("x")))), eval(constructed), eval(namespaced))
+      `),
+    ).resolves.toEqual(["list", "3", "3"]);
+    await expect(
+      runtime.eval(`
+        quoted_value <- 2L
+        quoted_fun <- function(a, y) a + y
+        eval(bquote(quoted_fun(.(quoted_value), y = .(quoted_value + 1L))))
+      `),
+    ).resolves.toBe(5);
+    await expect(
+      runtime.eval(`
+        enclosure <- new.env()
+        enclosure$answer <- 42L
+        enclosed <- function() answer
+        environment(enclosed) <- enclosure
+        c(enclosed(), identical(environment(enclosed), enclosure))
+      `),
+    ).resolves.toEqual([42, 1]);
+    await runtime.dispose();
+  });
+
+  it("exposes closure-like builtin formals and session-scoped graphics parameters", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        fmls <- formals(graphics::par)
+        c(names(fmls), identical(fmls[["no.readonly"]], FALSE))
+      `),
+    ).resolves.toEqual(["...", "no.readonly", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        before <- graphics::par("mar")
+        changed <- withVisible(graphics::par(mar = c(1, 2, 3, 4), mfrow = c(2L, 3L)))
+        during <- c(graphics::par("mar"), graphics::par("mfrow"))
+        graphics::par(changed$value)
+        c(before, during, graphics::par("mar"), changed$visible)
+      `),
+    ).resolves.toEqual([5.1, 4.1, 4.1, 2.1, 1, 2, 3, 4, 2, 3, 5.1, 4.1, 4.1, 2.1, 0]);
+    const unknown = await runtime.evalDetailed('graphics::par("not-a-par")');
+    expect(unknown.value).toBeNull();
+    expect(unknown.warnings).toEqual([
+      { code: "NRW1128", message: '"not-a-par" is not a graphical parameter' },
+    ]);
+    await runtime.dispose();
+  });
+
+  it("preserves dynamic caller frames and the base hook registry", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        probe <- function() get("marker", envir = parent.frame())
+        caller <- function() { marker <- 42L; probe() }
+        env <- as.environment(list(answer = 7L))
+        hook_name <- packageEvent("probe", "onLoad")
+        hook <- function() 1L
+        setHook(hook_name, hook)
+        c(
+          caller(),
+          env$answer,
+          length(getHook(hook_name)),
+          identical(getHook(hook_name)[[1L]], hook),
+          names(formals(gctorture2)),
+          identical(formals(gctorture2)[["wait"]], quote(step))
+        )
+      `),
+    ).resolves.toEqual(["42", "7", "1", "TRUE", "step", "wait", "inhibit_release", "TRUE"]);
+    await runtime.dispose();
+  });
+
   it("queries and replaces zoo's usage-ranked comment attribute", async () => {
     const runtime = await session();
     await expect(
@@ -12528,8 +12623,9 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(runtime.eval("call(1)")).rejects.toMatchObject({ code: "NRT3208" });
     await expect(runtime.eval('eval(call("*", 1))')).rejects.toMatchObject({ code: "NRE2140" });
     await expect(runtime.eval("as.call(list())")).rejects.toMatchObject({ code: "NRT3208" });
-    await expect(runtime.eval("as.call(expression(1, 2))")).rejects.toMatchObject({
-      code: "NRT3208",
+    await expect(runtime.eval("as.call(expression(1, 2))")).resolves.toEqual({
+      __nativr__: "language",
+      source: "1(2)",
     });
     await expect(runtime.eval("deparse(function(x) x)")).rejects.toMatchObject({
       code: "NRT3209",

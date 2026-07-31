@@ -88,8 +88,10 @@ read-only `file()` connections, package `data/*.R`/text/`.rda` loading through `
 `.onLoad()`, `.onAttach()`, `library()`, `require()`, and `requireNamespace()` in inline and Worker
 execution. Arbitrary pure-R source packages can enter this pipeline, but that is not a claim that
 every package already executes: all dependencies, data formats, namespace directives, and R features
-it uses must also be supported. The unchanged public `pkgconfig 2.0.3` source package is the first
-pinned end-to-end external proof. See the [complete bundle example](examples/pure-r-package.ts) and
+it uses must also be supported. Unchanged, digest-pinned `pkgconfig 2.0.3`, `generics 0.1.4`, and
+`withr 3.0.3` source packages now provide end-to-end external proofs: package resources,
+package-owned S3 dispatch, and generated state-restoring wrappers all execute without patching the
+packages. See the [complete bundle example](examples/pure-r-package.ts) and
 [package-loading contract](docs/pure-r-packages.md).
 
 ### One-file browser example

@@ -425,20 +425,28 @@ bindings, dependencies load recursively, closures retain the namespace, S3 metho
 attachment, and exported bindings enter the attached-package search environment only after
 `library()`. Reset clears namespaces, hooks, attachment state, S3 registrations, and search entries
 but retains the immutable bundle catalog for deterministic reload. Source size, source count,
-dependency cycles, imports, exports, and lifecycle evaluation all remain resource-checked.
-DESCRIPTION, NAMESPACE, retained `R/*.R` text, and base64 package resources share one immutable
-package-file lookup seam. UTF-8 uses the browser-standard fatal decoder, Latin-1 uses deterministic
-byte mapping, and both paths are bounded; package paths cannot be written through `writeLines()`.
-One packaged `R/sysdata.rda` workspace is decoded into the namespace before R source evaluation.
-`utils::data()` enumerates direct `data/` resources in attached or explicitly named packages. An
-`.R` dataset is decoded according to the package encoding, parsed to the normalized AST, and
-evaluated in the selected environment; overwrite protection restores pre-existing direct bindings.
-`.csv`, `.tab`, and `.txt` datasets use the owned table reader and bind one frame under the
-requested dataset name. `.rda`/`.RData` entries use the same XDR/gzip workspace decoder and install
-every named binding. The return vector and `packageIQR` listing shape follow GNU R's
-visible/invisible contract. Installed-package `.rdx`/`.rdb` lazy-load databases, aliases/index
-metadata, unsupported serialized types/compressors, and temporary working-directory changes remain
-explicit boundaries.
+dependency cycles, imports, exports, and lifecycle evaluation all remain resource-checked. Unchanged
+external packages can construct wrapper closures from package-owned source: nested replacement
+rebuilds call roots through `formals<-`, closure enclosures can be replaced through `environment<-`,
+mixed language/list `c()` inputs feed `as.call()`, and `bquote()` substitutes `.()` expressions
+against explicit environments or list-backed masks. Dynamic `parent.frame()` uses the actual
+call-site environment, while `packageEvent()` plus `setHook()`/`getHook()` provide a session
+registry. These semantics are executable through the pinned `withr 3.0.3` `with_options()` proof
+rather than inferred from successful parsing. `gctorture2()` exposes only its documented
+argument/formal and previous-state API for wrapper construction; it does not and cannot force a
+browser JavaScript engine's garbage collector. DESCRIPTION, NAMESPACE, retained `R/*.R` text, and
+base64 package resources share one immutable package-file lookup seam. UTF-8 uses the
+browser-standard fatal decoder, Latin-1 uses deterministic byte mapping, and both paths are bounded;
+package paths cannot be written through `writeLines()`. One packaged `R/sysdata.rda` workspace is
+decoded into the namespace before R source evaluation. `utils::data()` enumerates direct `data/`
+resources in attached or explicitly named packages. An `.R` dataset is decoded according to the
+package encoding, parsed to the normalized AST, and evaluated in the selected environment; overwrite
+protection restores pre-existing direct bindings. `.csv`, `.tab`, and `.txt` datasets use the owned
+table reader and bind one frame under the requested dataset name. `.rda`/`.RData` entries use the
+same XDR/gzip workspace decoder and install every named binding. The return vector and `packageIQR`
+listing shape follow GNU R's visible/invisible contract. Installed-package `.rdx`/`.rdb` lazy-load
+databases, aliases/index metadata, unsupported serialized types/compressors, and temporary
+working-directory changes remain explicit boundaries.
 
 `Sys.sleep(time)` uses short asynchronous timer slices, returns invisible `NULL`, and checks the
 active cancellation token without consuming evaluation steps. Non-negative finite intervals and

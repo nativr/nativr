@@ -136,7 +136,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 135,list.files,true,4,cpp11|dplyr|xfun|tinytex,6,4.1,4.8
 136,levels,true,4,ggplot2|S7|xfun|data.table,9,4.1,4.7
 137,substring,true,4,cli|jsonlite|crayon|zoo,10,4.1,4.7
-138,par,false,5,withr|sass|shiny|zoo|bit64,23,5.2,4.6
+138,par,true,5,withr|sass|shiny|zoo|bit64,23,5.2,4.6
 139,missing,true,3,rlang|R6|data.table,3,3.1,4.6
 140,toupper,true,3,rlang|ggplot2|shiny,5,3.1,4.6
 141,gl,true,4,ggplot2|RcppEigen|loo|zoo,7,4.1,4.6

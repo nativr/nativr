@@ -7560,5 +7560,26 @@
     "expected": ["TRUE", "FALSE", "TRUE", "3", "xdr", "0"],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "call-rooted-formals-environment-and-language-replacement",
+    "code": "f <- function(x = 1L, y = x + 1L) c(x, y)\nformals(f)[[\"x\"]] <- 10L\nfirst <- f()\nformals(f) <- alist(x = 3L, y = x + 1L)\nenclosure <- new.env()\nenclosure$answer <- 42L\nenclosed <- function() answer\nenvironment(enclosed) <- enclosure\nconstructed <- as.call(c(as.name(\"identity\"), list(3L)))\nnamespaced <- as.call(c(quote(base::identity), list(3L)))\nc(first, f(), enclosed(), eval(constructed), eval(namespaced), identical(eval(bquote(.(2L) + .(3L))), 5L))",
+    "expected": [10, 11, 3, 4, 42, 3, 3, 1],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "dynamic-parent-frame-list-environment-and-hooks",
+    "code": "probe <- function() get(\"marker\", envir = parent.frame())\ncaller <- function() { marker <- 42L; probe() }\nenv <- as.environment(list(answer = 7L))\nhook_name <- packageEvent(\"nativr-probe\", \"onLoad\")\nhook <- function() 1L\nsetHook(hook_name, hook, \"replace\")\nc(caller(), env[[\"answer\"]], length(getHook(hook_name)), identical(getHook(hook_name)[[1L]], hook), names(formals(gctorture2)), identical(formals(gctorture2)[[\"wait\"]], quote(step)))",
+    "expected": ["42", "7", "1", "TRUE", "step", "wait", "inhibit_release", "TRUE"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "graphics-par-query-update-and-restore",
+    "code": "before <- par(\"mar\")\nold <- par(mar = c(1, 2, 3, 4), mfrow = c(2L, 3L))\nduring <- c(par(\"mar\"), par(\"mfrow\"))\npar(old)\nafter <- par(\"mar\")\nif (\"dev.off\" %in% getNamespaceExports(\"grDevices\")) grDevices::dev.off()\nunlink(\"Rplots.pdf\")\nc(before, during, after)",
+    "expected": [5.1, 4.1, 4.1, 2.1, 1, 2, 3, 4, 2, 3, 5.1, 4.1, 4.1, 2.1],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

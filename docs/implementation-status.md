@@ -54,6 +54,10 @@ Date: 2026-07-31
   the namespace before source evaluation. Native code, installed `.rdx`/`.rdb` lazy-load databases,
   unsupported serialized object types/compressors, broader NAMESPACE directives, and universal
   package execution remain explicit boundaries.
+- Unchanged external-package execution is pinned for `pkgconfig 2.0.3`, `generics 0.1.4`, and
+  `withr 3.0.3`. The latest proof covers package-owned S3 dispatch and a generated `with_options()`
+  wrapper using call/formal/environment replacement, `bquote`, dynamic caller frames, hooks, and
+  state restoration without translating or patching package code.
 - Browser-owned text I/O through `readLines()`/`writeLines()` covers same-session temporary files,
   immutable package text, GNU R line endings, separators, NUL/incomplete-line behavior, byte limits,
   and stdout events without host filesystem access. Session-owned `file()` handles add implicit and
