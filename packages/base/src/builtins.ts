@@ -1277,6 +1277,12 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("weekdays.Date", ["x", "abbreviate"], "behavioral", builtinWeekdaysDate),
   defineBuiltin("weekdays.POSIXt", ["x", "abbreviate"], "behavioral", builtinWeekdaysPosix),
   defineBuiltin(
+    "ISOdatetime",
+    ["year", "month", "day", "hour", "min", "sec", "tz"],
+    "behavioral",
+    builtinIsoDateTime,
+  ),
+  defineBuiltin(
     "ISOdate",
     ["year", "month", "day", "hour", "min", "sec", "tz"],
     "behavioral",
@@ -24120,6 +24126,17 @@ function posixLtLength(value: RList): number {
 }
 
 async function builtinIsoDate(invocation: BuiltinInvocation): Promise<RValue> {
+  return buildIsoDateTime(invocation, "ISOdate");
+}
+
+async function builtinIsoDateTime(invocation: BuiltinInvocation): Promise<RValue> {
+  return buildIsoDateTime(invocation, "ISOdatetime");
+}
+
+async function buildIsoDateTime(
+  invocation: BuiltinInvocation,
+  call: "ISOdate" | "ISOdatetime",
+): Promise<RValue> {
   const matched = await matchExact(invocation, [
     "year",
     "month",
@@ -24129,16 +24146,38 @@ async function builtinIsoDate(invocation: BuiltinInvocation): Promise<RValue> {
     "sec",
     "tz",
   ]);
-  const year = requireIsoDateComponent(required(matched, "year", "ISOdate"), "year");
-  const month = requireIsoDateComponent(required(matched, "month", "ISOdate"), "month");
-  const day = requireIsoDateComponent(required(matched, "day", "ISOdate"), "day");
-  const hour = requireIsoDateComponent(matched.get("hour") ?? doubleVector([12]), "hour");
-  const minute = requireIsoDateComponent(matched.get("min") ?? doubleVector([0]), "min");
-  const second = requireIsoDateComponent(matched.get("sec") ?? doubleVector([0]), "sec");
-  const timezone =
-    matched.get("tz") === undefined ? "GMT" : characterScalar(matched.get("tz") as RValue, "tz");
+  const year = requireIsoDateComponent(required(matched, "year", call), "year", call);
+  const month = requireIsoDateComponent(required(matched, "month", call), "month", call);
+  const day = requireIsoDateComponent(required(matched, "day", call), "day", call);
+  const hour = requireIsoDateComponent(
+    call === "ISOdate"
+      ? (matched.get("hour") ?? doubleVector([12]))
+      : required(matched, "hour", call),
+    "hour",
+    call,
+  );
+  const minute = requireIsoDateComponent(
+    call === "ISOdate" ? (matched.get("min") ?? doubleVector([0])) : required(matched, "min", call),
+    "min",
+    call,
+  );
+  const second = requireIsoDateComponent(
+    call === "ISOdate" ? (matched.get("sec") ?? doubleVector([0])) : required(matched, "sec", call),
+    "sec",
+    call,
+  );
+  const timezoneLabel =
+    matched.get("tz") === undefined
+      ? call === "ISOdate"
+        ? "GMT"
+        : ""
+      : characterScalar(matched.get("tz") as RValue, "tz");
+  const timezone = timezoneLabel === "" ? "UTC" : timezoneLabel;
   if (timezone !== "UTC" && timezone !== "GMT") {
-    throw new RUnsupportedFeatureError("NRU6141", "ISOdate() currently supports UTC/GMT only.");
+    throw new RUnsupportedFeatureError(
+      "NRU6141",
+      `${call}() currently supports UTC/GMT only; an empty timezone uses deterministic UTC.`,
+    );
   }
   const components = [year, month, day, hour, minute, second];
   const length = Math.max(...components.map((component) => component.length));
@@ -24146,7 +24185,7 @@ async function builtinIsoDate(invocation: BuiltinInvocation): Promise<RValue> {
     return withAttribute(
       withClasses(integerVector([]), ["POSIXct", "POSIXt"]),
       "tzone",
-      characterVector([timezone]),
+      characterVector([timezoneLabel]),
     );
   }
 
@@ -24167,16 +24206,24 @@ async function builtinIsoDate(invocation: BuiltinInvocation): Promise<RValue> {
     const componentValues = components.map(
       (component, componentIndex) => component.values[positions[componentIndex] ?? 0] ?? 0,
     );
-    if (componentValues.some((value) => !Number.isFinite(value))) {
+    if (
+      componentValues.some((value) => !Number.isFinite(value)) ||
+      componentValues.slice(0, 5).some((value) => !Number.isInteger(value))
+    ) {
+      missing[index] = 1;
+      continue;
+    }
+    const calendarYear = componentValues[0] ?? 0;
+    if (calendarYear < 0 || calendarYear > 9_999) {
       missing[index] = 1;
       continue;
     }
     const value = utcDateTimeSeconds(
-      Math.trunc(componentValues[0] ?? 0),
-      Math.trunc(componentValues[1] ?? 0),
-      Math.trunc(componentValues[2] ?? 0),
-      Math.trunc(componentValues[3] ?? 0),
-      Math.trunc(componentValues[4] ?? 0),
+      calendarYear,
+      componentValues[1] ?? 0,
+      componentValues[2] ?? 0,
+      componentValues[3] ?? 0,
+      componentValues[4] ?? 0,
       componentValues[5] ?? 0,
     );
     if (value === undefined) missing[index] = 1;
@@ -24185,13 +24232,14 @@ async function builtinIsoDate(invocation: BuiltinInvocation): Promise<RValue> {
   return withAttribute(
     withClasses(doubleVector(values, compactMask(missing)), ["POSIXct", "POSIXt"]),
     "tzone",
-    characterVector([timezone]),
+    characterVector([timezoneLabel]),
   );
 }
 
 function requireIsoDateComponent(
   value: RValue,
   name: string,
+  call: "ISOdate" | "ISOdatetime",
 ): RLogicalVector | RIntegerVector | RDoubleVector {
   if (
     (value.type !== "logical" && value.type !== "integer" && value.type !== "double") ||
@@ -24199,7 +24247,7 @@ function requireIsoDateComponent(
   ) {
     throw new RTypeMismatchError(
       "NRT3240",
-      `ISOdate(${name}=) currently requires a real numeric or logical vector.`,
+      `${call}(${name}=) currently requires a real numeric or logical vector.`,
     );
   }
   return value;

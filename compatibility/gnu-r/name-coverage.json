@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 474,
-    "overlappingNames": 459,
-    "missingReferenceNames": 2063,
+    "nativrRegisteredNames": 475,
+    "overlappingNames": 460,
+    "missingReferenceNames": 2062,
     "nativrExtensionNames": 15,
-    "nameCoverage": 0.181998
+    "nameCoverage": 0.182395
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 345, "nameCoverage": 0.252377 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 346, "nameCoverage": 0.253109 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 68, "nameCoverage": 0.146552 },
     { "package": "methods", "callableNames": 209, "overlappingNames": 9, "nameCoverage": 0.043062 },
     { "package": "utils", "callableNames": 262, "overlappingNames": 11, "nameCoverage": 0.041985 },
@@ -50,6 +50,7 @@
     "I",
     "IQR",
     "ISOdate",
+    "ISOdatetime",
     "Im",
     "Map",
     "Mod",
@@ -658,7 +659,6 @@
     "Find",
     "Gamma",
     "HoltWinters",
-    "ISOdatetime",
     "KalmanForecast",
     "KalmanLike",
     "KalmanRun",

@@ -1265,17 +1265,19 @@ callable or one function name, and replaces each group with a nonempty atomic sc
 result using ordinary recycling and promotion. Forwarding extra arguments to its function,
 class-specific method dispatch, and all simplification or grouping corner cases are not claimed.
 
-Date conversion accepts strict ISO dates and UTC/GMT date-times. `ISOdate` recycles real component
-vectors, defaults to GMT noon, retains POSIXct/POSIXt and `tzone` metadata, and maps missing,
-non-finite, or invalid components to missing results. `as.POSIXlt` exposes the owned 11-component
-calendar representation, with POSIXlt-specific `length`/`names` behavior and zero-based month/year
-day fields. `strptime` accepts the documented UTC parsing subset. `strftime` recycles values and
-formats, preserves input names, converts through custom `as.POSIXlt` methods, distinguishes missing
-from non-finite seconds, and formats bounded calendar, clock, week, epoch, timezone, and
-fractional-second tokens in deterministic C/UTC or C/GMT form. Named time zones, daylight-saving
-databases, leap-second tables, locale parsing/formatting, alternate digits/eras, ISO week-year
-tokens, and unbounded output are outside the current subset. `Sys.Date` and `Sys.time` deliberately
-expose the host clock.
+Date conversion accepts strict ISO dates and UTC/GMT date-times. `ISOdate` and `ISOdatetime` recycle
+real component vectors, preserve fractional seconds and POSIXct/POSIXt `tzone` metadata, and map
+missing, non-finite, non-integral calendar, out-of-range year, or invalid date/time components to
+missing results. `ISOdate` defaults to GMT noon; `ISOdatetime` requires clock components and maps
+its documented empty current-zone label to deterministic UTC arithmetic in the browser while
+preserving `tzone = ""`. `as.POSIXlt` exposes the owned 11-component calendar representation, with
+POSIXlt-specific `length`/`names` behavior and zero-based month/year day fields. `strptime` accepts
+the documented UTC parsing subset. `strftime` recycles values and formats, preserves input names,
+converts through custom `as.POSIXlt` methods, distinguishes missing from non-finite seconds, and
+formats bounded calendar, clock, week, epoch, timezone, and fractional-second tokens in
+deterministic C/UTC or C/GMT form. Named time zones, daylight-saving databases, leap-second tables,
+locale parsing/formatting, alternate digits/eras, ISO week-year tokens, and unbounded output are
+outside the current subset. `Sys.Date` and `Sys.time` deliberately expose the host clock.
 
 `weekdays` has differential coverage for the corresponding data.table IDate grouping-label calls,
 explicit Date inheritance, custom S3 forwarding, Date/POSIXct/POSIXlt and direct-method inputs,

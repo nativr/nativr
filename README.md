@@ -69,7 +69,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 474 registered functions, including resettable
+an initial condition/handler slice. It exposes 475 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
 preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
@@ -360,6 +360,12 @@ Ranks 454-455 add the shared `grDevices` gray-color surface used by zoo:
 aliases now produce deterministic uppercase RGB(A) bytes, including gamma-corrected palettes, alpha
 recycling, reversal, descending endpoints, and bounded output. General color spaces, device
 profiles, and the remaining palette families stay separate.
+
+Rank 456 `base::ISOdatetime` now runs zoo's five-value POSIXct index constructor with ordinary
+component recycling, fractional seconds, explicit UTC/GMT labels, class metadata, invalid-calendar
+missingness, and pre-allocation limits. Its documented default `tz = ""` is computed as
+deterministic UTC in the browser while retaining the empty `tzone` label; regional time zones and
+daylight-saving databases remain explicit future work.
 
 Development priority is based on a reproducible analysis of documented usage in popular CRAN
 packages. The committed

@@ -370,6 +370,11 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      endpoints, aliases, namespace access, attribute removal, errors, and allocation limits.
      Vector-valued palette controls, device profiles, and other palette families remain explicit
      boundaries.
+101. Frequency-ranked POSIXct construction: `base::ISOdatetime` runs zoo's measured five-date
+     POSIXct index through the shared `ISOdate` calendar path with required clock fields, component
+     recycling, fractional seconds, UTC/GMT and empty-zone labels, deterministic browser UTC
+     defaults, invalid-calendar missingness, namespace access, metadata, and allocation guards.
+     Regional zones/DST and platform-specific invalid-time normalization remain explicit boundaries.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means
