@@ -853,7 +853,14 @@ measured occurrence, and 0.6% weighted reach. The owned
 preserves factor-level dimensions and names, omits missing groups, forwards callback arguments,
 supports scalar/default simplification and list-array results, and exposes `FUN = NULL` group codes.
 Formula indexes, custom split methods, broader class-specific simplification, and long vectors
-remain boundaries. Rank 463 `graphics::text` is the next unresolved callable candidate.
+remain boundaries. Rank 463 `graphics::text` is now complete for
+[zoo's](https://cran.r-project.org/web/packages/zoo/refman/zoo.html) measured rotated series-label
+call, representing 731,390 downloads, one measured occurrence, and 0.6% weighted reach. The owned
+[documented text path](https://stat.ethz.ch/R-manual/R-devel/library/graphics/html/text.html)
+carries recycled coordinates, labels, colors, sizes, font faces, positions, adjustment, offset,
+rotation, and family through bounded Worker/Canvas and display-list paths. Plotmath, Hershey fonts,
+class-specific label coercion, clipping/log axes, and device-identical metrics remain boundaries.
+Rank 464 `update` is the next unresolved callable candidate.
 
 ## Completed implementation order
 
@@ -1222,6 +1229,9 @@ ties:
      factor-level dimensions/dimnames, missing-group omission, scalar atomic/default simplification,
      unsimplified list arrays, forwarded arguments, function-name resolution, `FUN = NULL` group
      codes, errors, and resource bounds.
+129. Plot text: `graphics::text()` runs zoo's measured rotated outside-label call with S3 dispatch,
+     coordinate/label recycling, truncation warnings, missing omission, resolved browser text
+     styles, Worker/Canvas rendering, display-list replay, namespace access, and resource bounds.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

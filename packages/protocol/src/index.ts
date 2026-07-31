@@ -151,6 +151,28 @@ export type PublicGraphicsEvent =
       }[];
     }
   | {
+      readonly kind: "text";
+      readonly labels: readonly {
+        readonly x: number;
+        readonly y: number;
+        readonly label: string;
+        /** CSS-compatible #RRGGBBAA color. */
+        readonly color: string;
+        /** Device-independent `cex` multiplier. */
+        readonly size: number;
+        /** R's plain, bold, italic, or bold-italic font face code. */
+        readonly font: 1 | 2 | 3 | 4;
+        readonly family: string;
+        /** Counter-clockwise rotation in degrees. */
+        readonly rotation: number;
+        readonly horizontalAdjustment: number;
+        readonly verticalAdjustment: number;
+        readonly position?: 1 | 2 | 3 | 4;
+        /** Character-width offset used when `position` is present. */
+        readonly offset: number;
+      }[];
+    }
+  | {
       readonly kind: "polygon";
       readonly polygons: readonly {
         readonly x: readonly number[];

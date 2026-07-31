@@ -335,6 +335,33 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.locator("#source").fill(`
     plot.new()
     plot.window(c(0, 4), c(0, 4))
+    text(2, 2, "R", col = "blue", cex = 4, font = 2, srt = -90, xpd = TRUE)
+  `);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("null");
+  await expect(page.locator("#graphics-count")).toHaveText("3");
+  const textPixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
+    const context = canvas.getContext("2d");
+    if (context === null) return 0;
+    const glyph = context.getImageData(280, 150, 80, 100).data;
+    let blue = 0;
+    for (let index = 0; index < glyph.length; index += 4) {
+      if (
+        (glyph[index] ?? 0) < 80 &&
+        (glyph[index + 1] ?? 0) < 80 &&
+        (glyph[index + 2] ?? 0) > 120 &&
+        (glyph[index + 3] ?? 0) > 0
+      ) {
+        blue += 1;
+      }
+    }
+    return blue;
+  });
+  expect(textPixels).toBeGreaterThan(0);
+
+  await page.locator("#source").fill(`
+    plot.new()
+    plot.window(c(0, 4), c(0, 4))
     polygon(c(1, 3, 3, 1), c(1, 1, 3, 3), col = "orange", border = "blue", lwd = 4)
   `);
   await page.getByRole("button", { name: /^Run/u }).click();

@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           481 |
-| Overlapping callable names        |           466 |
-| Missing GNU R callable names      |         2,056 |
-| Name overlap                      |      18.4774% |
+| NativR registered names           |           482 |
+| Overlapping callable names        |           467 |
+| Missing GNU R callable names      |         2,055 |
+| Name overlap                      |      18.5170% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -360,6 +360,14 @@ simplification, typed defaults, unsimplified list arrays, forwarded callback arg
 names, `FUN = NULL` group codes, list-array extraction, errors, and allocation limits have coverage.
 Formula indexes, custom split methods, raw/list-scalar coercion corners, class-specific
 simplification, exact diagnostics, and long vectors remain incomplete.
+
+The rank-463 increment adds GNU R differential shape evidence for zoo's measured rotated
+`graphics::text` series label. S3 dispatch, paired and container coordinates, unequal x/y recycling,
+label coercion/recycling/truncation, missing omission, colors, size, four font faces,
+position/adjustment/offset, rotation, family, `xpd`, invisible return, namespace access, Worker and
+Canvas transport, recording/replay, malformed records, errors, and resource limits have coverage.
+Plotmath, Hershey fonts, class-specific label coercion, clipping/log axes, arbitrary graphical
+parameters, exact diagnostics, long vectors, and device-identical metrics remain incomplete.
 
 ## Completion evidence
 

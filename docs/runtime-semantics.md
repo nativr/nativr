@@ -314,6 +314,16 @@ bounded point event; missing/non-finite coordinates and non-drawing style entrie
 Line/path types, locale-dependent codes, character coordinate coercion, broader coordinate classes,
 clipping/log axes, and device-identical font metrics remain unsupported.
 
+`graphics::text()` dispatches classed first arguments before device access. Its owned default
+accepts the point-coordinate containers above while recycling unequal x/y lengths. Atomic labels
+coerce to character, shorter labels recycle and longer labels warn before truncation; missing or
+non-finite coordinates and missing labels omit entries. Colors, character sizes, four browser font
+faces, positions, adjustment, offset, scalar rotation, family, and `xpd` are resolved into a bounded
+host-neutral text event. Calls return invisible `NULL`, and Worker transport, Canvas rendering, held
+journals, and same-session record/replay share the existing graphics path. Plotmath expressions,
+Hershey fonts, class-specific label coercion, plot-region clipping, logarithmic axes, and
+device-identical text metrics remain unsupported.
+
 `graphics::polygon()` accepts the same owned coordinate containers but does not dispatch: paired
 vectors, two-column matrices/data frames, complex coordinates, and named `list(x, y)` become
 device-independent closed paths. Missing or non-finite pairs split separate polygons. Fill/border
@@ -326,16 +336,16 @@ unsupported.
 `graphics::legend()` resolves positional or named labels, keyword/coordinate placement, insets, line
 and point keys, palette/text colors, box/background, size, columns, horizontal layout, and title
 into a device-independent event. It returns an invisible `rect`/`text` geometry list; `plot = FALSE`
-returns geometry without emission. Raster bytes and bounded segment/point/polygon/box/boxplot/legend
-payloads share `maxOutputBytes` with text and returned values. `dev.hold(level)` and
-`dev.flush(level)` maintain a session-local, nonnegative nested hold level for the active owned
-device. While held, page/window/raster/segments/points/polygon/box/boxplot/legend commands remain in
-an ordered journal across evaluation boundaries; the flush that reaches zero emits all pending
-commands through the current result and callback. Pending graphics bytes are bounded by
-`maxOutputBytes`, pending command count is bounded by `maxVectorLength`, and reset/dispose clears
-them. Calls without an active device return zero. The runtime and base packages contain no DOM or
-Canvas dependency; the Worker transfers commands to the public API and the Playground owns the
-reference Canvas renderer.
+returns geometry without emission. Raster bytes and bounded
+segment/point/text/polygon/box/boxplot/legend payloads share `maxOutputBytes` with text and returned
+values. `dev.hold(level)` and `dev.flush(level)` maintain a session-local, nonnegative nested hold
+level for the active owned device. While held,
+page/window/raster/segments/points/text/polygon/box/boxplot/legend commands remain in an ordered
+journal across evaluation boundaries; the flush that reaches zero emits all pending commands through
+the current result and callback. Pending graphics bytes are bounded by `maxOutputBytes`, pending
+command count is bounded by `maxVectorLength`, and reset/dispose clears them. Calls without an
+active device return zero. The runtime and base packages contain no DOM or Canvas dependency; the
+Worker transfers commands to the public API and the Playground owns the reference Canvas renderer.
 
 `graphics::persp()` dispatches classed first arguments before its owned matrix default. The default
 requires increasing finite x/y coordinates and a two-dimensional real z grid, derives missing grids
@@ -350,7 +360,7 @@ Filled facets, shading/light angles, axis arrows/ticks/text, hidden-line removal
 and arbitrary graphical parameters are rejected explicitly.
 
 The active owned device also records a bounded display list. `recordPlot(load, attach)` snapshots
-the current page/window/raster/segments/points/polygon/box/boxplot/legend commands into an
+the current page/window/raster/segments/points/text/polygon/box/boxplot/legend commands into an
 independently owned, classed `"recordedplot"` value and preserves the optional package metadata
 without loading packages. `replayPlot(x, reloadPkgs = FALSE)` accepts only that NativR-owned format,
 replaces the active display list, and routes the recorded commands through the same immediate or

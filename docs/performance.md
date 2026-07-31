@@ -394,3 +394,7 @@ KiB limit.
 Language subset 0.190 adds rank 462's `base::tapply()` grouping, factor-level result arrays,
 callback dispatch, and the list-array extraction path required by zoo. The first production Worker
 measures 300.9 KiB gzip against the 308 KiB limit.
+
+Language subset 0.191 adds rank 463's `graphics::text()` S3-first coordinate path, resolved
+host-neutral text protocol/display-list command, style recycling, missing-label omission, and Canvas
+rendering. The first production Worker measures 302.3 KiB gzip against the unchanged 308 KiB limit.

@@ -209,6 +209,17 @@ function graphicsEventByteLength(event: RGraphicsEvent): number {
       32,
     );
   }
+  if (event.kind === "text") {
+    return event.labels.reduce(
+      (bytes, label) =>
+        bytes +
+        128 +
+        utf8ByteLength(label.label) +
+        utf8ByteLength(label.color) +
+        utf8ByteLength(label.family),
+      32,
+    );
+  }
   if (event.kind === "polygon") {
     return event.polygons.reduce(
       (bytes, polygon) =>

@@ -304,6 +304,17 @@ same-session record/replay have coverage. Line/path types, locale-dependent glyp
 character-coordinate coercion, coordinate classes beyond owned numeric storage, clipping/log axes,
 device font/size identity, and arbitrary graphical `...` remain unsupported.
 
+`graphics::text` has differential shape evidence for zoo's measured rotated, outside-region series
+label. Classed first arguments dispatch before device access. The owned default accepts the same
+numeric coordinate containers as points while recycling unequal x/y lengths; atomic labels coerce to
+character, shorter labels recycle, longer labels warn and truncate, and missing coordinates or
+labels are omitted. Recycled canonical colors, sizes, four font faces, positions, adjustment,
+offset, scalar rotation, family, and `xpd` cross the Worker protocol as resolved host-neutral
+labels. Invisible return, namespace access, Canvas pixels, output/resource accounting, held
+journals, malformed-record rejection, and same-session record/replay have coverage. Plotmath,
+Hershey fonts, class-specific label coercion, clipping/log axes, arbitrary graphical controls, exact
+diagnostics, and device-identical metrics remain unsupported.
+
 `graphics::polygon` has differential evidence for zoo's measured filled-area panel helper. Its
 default accepts paired real coordinates, one-/two-column data frames, two-column matrices, complex
 coordinates, and named `list(x, y)` inputs; separate x/y vectors must have equal lengths. Missing or
@@ -366,29 +377,29 @@ arbitrary external classes, and complete legacy diagnostics are not claimed.
 paired `dev.hold` supplies the documented nested-level protocol on NativR's owned browser device.
 Positive levels increase or decrease the session-local hold count; negative levels clamp to zero;
 the flush that reaches zero releases pending
-page/window/raster/segments/points/polygon/box/boxplot/legend commands in original order through the
-current `evalDetailed.graphics` result and host callback. Pending graphics storage remains subject
-to `maxOutputBytes`, pending command count remains subject to `maxVectorLength`, state survives
-ordinary evaluation boundaries, and reset/dispose clears it. Without an active owned device both
-calls return integer zero. Level coercion, missing-state preservation, namespace access, and nested
-returns have executable coverage. GNU R 4.6.0 currently returns these integer levels visibly even
-though its help page describes them as invisible; NativR follows the pinned executable oracle. The
-ragg device itself, WebP animation encoding, general device registration, cursors, and arbitrary
-third-party device callbacks are not included.
+page/window/raster/segments/points/text/polygon/box/boxplot/legend commands in original order
+through the current `evalDetailed.graphics` result and host callback. Pending graphics storage
+remains subject to `maxOutputBytes`, pending command count remains subject to `maxVectorLength`,
+state survives ordinary evaluation boundaries, and reset/dispose clears it. Without an active owned
+device both calls return integer zero. Level coercion, missing-state preservation, namespace access,
+and nested returns have executable coverage. GNU R 4.6.0 currently returns these integer levels
+visibly even though its help page describes them as invisible; NativR follows the pinned executable
+oracle. The ragg device itself, WebP animation encoding, general device registration, cursors, and
+arbitrary third-party device callbacks are not included.
 
 `grDevices::recordPlot` covers ragg's measured capture/record/replay sequence after drawing on the
 owned browser device. It returns a visible classed list with the GNU R-observed public
 type/mode/class/length/no-names shape while storing an independently authored NativR command format.
 Optional `load` and `attach` character metadata is retained. `grDevices::replayPlot` validates only
-that format, restores page/window state, and re-emits raster, segment, point, polygon, box, boxplot,
-and legend commands through the immediate or held graphics journal before returning invisible
-`NULL`. Display-list and recorded command counts are bounded by `maxVectorLength`; display-list
-graphics payloads and replay output by `maxOutputBytes`. Malformed values, absent record devices,
-reset cleanup, namespace access, and held replay have executable evidence. `reloadPkgs = TRUE` with
-stored package metadata is explicitly unsupported until namespace loading exists. GNU R's private or
-serialized recorded-plot representation, cross-version/cross-device replay, package reload/attach
-side effects, `print.recordedplot`, snapshots of arbitrary external devices, and general
-display-list editing are not claimed.
+that format, restores page/window state, and re-emits raster, segment, point, text, polygon, box,
+boxplot, and legend commands through the immediate or held graphics journal before returning
+invisible `NULL`. Display-list and recorded command counts are bounded by `maxVectorLength`;
+display-list graphics payloads and replay output by `maxOutputBytes`. Malformed values, absent
+record devices, reset cleanup, namespace access, and held replay have executable evidence.
+`reloadPkgs = TRUE` with stored package metadata is explicitly unsupported until namespace loading
+exists. GNU R's private or serialized recorded-plot representation, cross-version/cross-device
+replay, package reload/attach side effects, `print.recordedplot`, snapshots of arbitrary external
+devices, and general display-list editing are not claimed.
 
 `graphics::pairs` supplies the S3 generic used by rstan's measured `pairs.stanfit` call.
 Differential evidence covers the original classed dispatch value, lazy dots, labels/panels,
