@@ -404,6 +404,11 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      fixed-seed evidence, scalar/vector count rules, recycled log-scale parameters, zero-deviation
      point masses, missing/domain warnings, namespace access, and resource bounds. Alternative
      normal generators and the remaining log-normal distribution family remain explicit boundaries.
+107. Frequency-ranked ragged-array grouping: `base::tapply` runs zoo's measured screen-range
+     callback with factor-level dimensions/dimnames, missing-group omission, scalar/default
+     simplification, list-array results and extraction, forwarded arguments, function names,
+     `FUN = NULL` group codes, errors, and resource bounds. Formula indexes, custom split methods,
+     broader class-specific simplification, and long vectors remain explicit boundaries.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

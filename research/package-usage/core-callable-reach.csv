@@ -460,7 +460,7 @@ rank,callable,nativr_registered,packages,occurrences,package_reach_percent,downl
 459,polygon,true,1,1,1.0,0.6
 460,replace,true,1,1,1.0,0.6
 461,rlnorm,true,1,1,1.0,0.6
-462,tapply,false,1,1,1.0,0.6
+462,tapply,true,1,1,1.0,0.6
 463,text,false,1,1,1.0,0.6
 464,update,false,1,1,1.0,0.6
 465,matplot,false,1,6,1.0,0.6

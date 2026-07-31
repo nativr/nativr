@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           480 |
-| Overlapping callable names        |           465 |
-| Missing GNU R callable names      |         2,057 |
-| Name overlap                      |      18.4377% |
+| NativR registered names           |           481 |
+| Overlapping callable names        |           466 |
+| Missing GNU R callable names      |         2,056 |
+| Name overlap                      |      18.4774% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -352,6 +352,14 @@ RNG advancement, empty parameters, missing/NaN and non-finite/domain behavior, o
 warning, namespace access, errors, and allocation limits have coverage. Alternative normal
 generators, bit identity outside the Inversion path, exact platform diagnostics, long vectors, and
 the `dlnorm`/`plnorm`/`qlnorm` family remain incomplete.
+
+The rank-462 increment adds GNU R differential evidence for zoo's measured
+`tapply(1:ncol(x), screens, f)` screen-range grouping path. One and multiple atomic grouping
+vectors, factor-level order, missing-group omission, dimensions/dimnames, scalar atomic
+simplification, typed defaults, unsimplified list arrays, forwarded callback arguments, function
+names, `FUN = NULL` group codes, list-array extraction, errors, and allocation limits have coverage.
+Formula indexes, custom split methods, raw/list-scalar coercion corners, class-specific
+simplification, exact diagnostics, and long vectors remain incomplete.
 
 ## Completion evidence
 

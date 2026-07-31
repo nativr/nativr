@@ -1318,12 +1318,20 @@ primitive-binding failures under an `emptyenv()`-terminated evaluation chain, fu
 attributes/indexing, and numeric call-frame evaluation selectors remain outside this increment.
 
 The apply/map surface comprises `apply`, `lapply`, `sapply`, `vapply`, `mapply`, `Map`, `Reduce`,
-`Filter`, `by`, `aggregate`, and `ave`. Current implementations target atomic vectors, lists,
-matrices, and the documented grouping shapes. `ave` partitions an atomic input by zero or more
-same-length atomic grouping vectors, leaves missing-group positions unchanged, resolves a direct
-callable or one function name, and replaces each group with a nonempty atomic scalar or vector
-result using ordinary recycling and promotion. Forwarding extra arguments to its function,
+`Filter`, `by`, `aggregate`, `ave`, and `tapply`. Current implementations target atomic vectors,
+lists, matrices, and the documented grouping shapes. `ave` partitions an atomic input by zero or
+more same-length atomic grouping vectors, leaves missing-group positions unchanged, resolves a
+direct callable or one function name, and replaces each group with a nonempty atomic scalar or
+vector result using ordinary recycling and promotion. Forwarding extra arguments to its function,
 class-specific method dispatch, and all simplification or grouping corner cases are not claimed.
+
+`base::tapply` has differential behavioral evidence for zoo's measured
+`tapply(1:ncol(x), screens, f)` screen-range path. Single and multiple grouping vectors,
+factor-level order, missing-group omission, named dimensions, scalar atomic simplification, typed
+empty-cell defaults, unsimplified list arrays, forwarded arguments, function-name resolution,
+`FUN = NULL` group codes, list-array `[[` extraction, length errors, empty indexes, and allocation
+bounds have coverage. Formula indexes, custom split methods, raw/list-scalar coercion corners, long
+vectors, and arbitrary class-specific simplification remain unsupported.
 
 Date conversion accepts strict ISO dates and UTC/GMT date-times. `ISOdate` and `ISOdatetime` recycle
 real component vectors, preserve fractional seconds and POSIXct/POSIXt `tzone` metadata, and map

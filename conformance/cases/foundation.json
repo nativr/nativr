@@ -7187,5 +7187,26 @@
     "expected": [1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "tapply-zoo-observed-screen-range-shape",
+    "code": "screens <- factor(c(1, 1, 2, 2, 3, 3))\nf <- function(idx) as.numeric(range(idx))\nranges <- tapply(1:6, screens, f)\nc(length(ranges), dim(ranges), unlist(ranges), identical(unname(dimnames(ranges)[[1]]), c(\"1\", \"2\", \"3\")), is.null(names(dimnames(ranges))))",
+    "expected": [3, 3, 1, 2, 3, 4, 5, 6, 1, 1],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "tapply-multi-factor-scalar-default-and-dimnames",
+    "code": "a <- factor(c(\"a\", \"a\", \"b\", \"b\", \"a\", \"a\", \"b\", \"b\"), levels = c(\"a\", \"b\"))\nb <- factor(c(\"x\", \"y\", \"x\", \"y\", \"x\", \"y\", \"x\", \"y\"), levels = c(\"x\", \"y\", \"z\"))\ngrouped <- tapply(1:8, list(row = a, col = b), sum)\ng <- factor(c(\"b\", \"a\", \"b\", \"a\"), levels = c(\"a\", \"b\", \"c\"))\nfilled <- tapply(1:4, g, mean, default = 0)\nc(grouped[1:4], is.na(grouped[5:6]), dim(grouped), identical(unname(dimnames(grouped)), list(c(\"a\", \"b\"), c(\"x\", \"y\", \"z\"))), identical(names(dimnames(grouped)), c(\"row\", \"col\")), filled)",
+    "expected": [6, 10, 8, 12, 1, 1, 2, 3, 1, 1, 3, 2, 0],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "tapply-fun-null-simplify-dots-and-boundaries",
+    "code": "g <- factor(c(\"b\", \"a\", \"b\", \"a\"), levels = c(\"a\", \"b\", \"c\"))\nunsimplified <- tapply(1:4, g, range, simplify = FALSE)\nids <- tapply(1:5, factor(c(\"b\", \"a\", NA, \"b\", \"c\"), levels = c(\"a\", \"b\", \"c\", \"d\")), FUN = NULL)\nmeans <- tapply(c(1, NA, 3, 4), c(\"a\", \"a\", \"b\", \"b\"), \"mean\", na.rm = TRUE)\nc(unlist(unsimplified[1:2]), is.null(unsimplified[[3]]), ids[c(1, 2, 4, 5)], is.na(ids[3]), means, inherits(try(tapply(1:3, c(\"a\", \"b\"), sum), silent = TRUE), \"try-error\"), inherits(try(tapply(integer(), list(), sum), silent = TRUE), \"try-error\"), inherits(try(tapply(1:2, factor(c(\"a\", \"b\")), sum, default = 8:9), silent = TRUE), \"try-error\"))",
+    "expected": [2, 4, 1, 3, 1, 2, 1, 2, 3, 1, 1, 3.5, 1, 1, 1],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

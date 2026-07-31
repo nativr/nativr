@@ -25,7 +25,10 @@ can block its calling thread.
 High-level helpers reuse semantic runtime primitives instead of maintaining parallel behavior.
 `base::replace`, for example, delegates to the same immutable one-dimensional subset-replacement
 engine used by direct `x[index] <- value` evaluation, so coercion, recycling, attributes, extension,
-warnings, checkpoints, and allocation accounting stay on one path.
+warnings, checkpoints, and allocation accounting stay on one path. `base::tapply` likewise reuses
+owned split grouping, subsetting, function invocation, atomic promotion, array attributes, and
+allocation limits. Ragged groups and their result arrays never cross into a host dataframe,
+statistics service, or package implementation.
 
 The core deliberately has no external table, package, file, network, native statistics, or host
 graphics engine. Its initial graphics seam is a deterministic command journal: base builtins emit
