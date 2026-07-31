@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1070" viewBox="0 0 1200 1070" role="img" aria-labelledby="title description">
-<title id="title">Data-backed NativR feature priorities</title>
-<desc id="description">The fifteen highest-reach R feature gaps found in CRAN reference-manual examples, ranked by download-weighted package reach, with unweighted package reach as a secondary measure.</desc>
+<title id="title">Data-backed R feature reach and NativR implementation status</title>
+<desc id="description">The fifteen highest-reach measured R feature groups found in CRAN reference-manual examples, ranked by download-weighted package reach, with NativR implementation status and unweighted package reach.</desc>
 <rect width="1200" height="1070" fill="#ffffff"/>
 <style>
   text { font-family: Inter, "Segoe UI", Arial, sans-serif; fill: #0f172a; }
@@ -13,8 +13,8 @@
   .note { font-size: 14px; fill: #475569; }
 </style>
 
-<text x="60" y="60" class="title">R feature-gap priority by documented usage</text>
-<text x="60" y="94" class="subtitle">97 analyzable manuals among the top 100 downloads; 2026-06-28 through 2026-07-27</text>
+<text x="60" y="60" class="title">R feature reach and NativR support</text>
+<text x="60" y="94" class="subtitle">97 analyzable manuals among the top 100 downloads; 2026-06-30 through 2026-07-29</text>
 <rect x="60" y="121" width="18" height="12" rx="2" fill="#2563eb"/><text x="88" y="132" class="legend">Download-weighted package reach</text>
 <rect x="355" y="123" width="18" height="8" rx="2" fill="#f59e0b"/><text x="383" y="132" class="legend">Unweighted package reach</text>
 <line x1="310" y1="172" x2="310" y2="984" stroke="#e2e8f0"/><text x="310" y="162" text-anchor="middle" class="tick">0.0%</text>
@@ -22,80 +22,80 @@
 <line x1="687.5" y1="172" x2="687.5" y2="984" stroke="#e2e8f0"/><text x="687.5" y="162" text-anchor="middle" class="tick">50.0%</text>
 <line x1="876.25" y1="172" x2="876.25" y2="984" stroke="#e2e8f0"/><text x="876.25" y="162" text-anchor="middle" class="tick">75.0%</text>
 <line x1="1065" y1="172" x2="1065" y2="984" stroke="#e2e8f0"/><text x="1065" y="162" text-anchor="middle" class="tick">100.0%</text>
-<text x="292" y="205" text-anchor="end" class="label">Element/member extraction [[ and $</text>
-<text x="292" y="224" text-anchor="end" class="meta">P0 · parsed</text>
-<rect x="310" y="190" width="522.1" height="14" rx="2" fill="#2563eb"/>
-<rect x="310" y="210" width="513.7" height="9" rx="2" fill="#f59e0b"/>
-<text x="840.1" y="202" class="value">69.1%</text>
-<text x="292" y="259" text-anchor="end" class="label">Sequences and repetition</text>
-<text x="292" y="278" text-anchor="end" class="meta">P0 · unsupported</text>
-<rect x="310" y="244" width="521.0" height="14" rx="2" fill="#2563eb"/>
-<rect x="310" y="264" width="490.4" height="9" rx="2" fill="#f59e0b"/>
-<text x="839.0" y="256" class="value">69.0%</text>
+<text x="292" y="205" text-anchor="end" class="label">Sequences and repetition</text>
+<text x="292" y="224" text-anchor="end" class="meta">P0 - supported</text>
+<rect x="310" y="190" width="521.5" height="14" rx="2" fill="#2563eb"/>
+<rect x="310" y="210" width="490.4" height="9" rx="2" fill="#f59e0b"/>
+<text x="839.5" y="202" class="value">69.1%</text>
+<text x="292" y="259" text-anchor="end" class="label">Element/member extraction [[ and $</text>
+<text x="292" y="278" text-anchor="end" class="meta">P0 - supported</text>
+<rect x="310" y="244" width="521.4" height="14" rx="2" fill="#2563eb"/>
+<rect x="310" y="264" width="513.7" height="9" rx="2" fill="#f59e0b"/>
+<text x="839.4" y="256" class="value">69.1%</text>
 <text x="292" y="313" text-anchor="end" class="label">Vector/list subsetting [</text>
-<text x="292" y="332" text-anchor="end" class="meta">P1 · parsed</text>
-<rect x="310" y="298" width="470.8" height="14" rx="2" fill="#2563eb"/>
+<text x="292" y="332" text-anchor="end" class="meta">P1 - supported</text>
+<rect x="310" y="298" width="470.6" height="14" rx="2" fill="#2563eb"/>
 <rect x="310" y="318" width="435.9" height="9" rx="2" fill="#f59e0b"/>
-<text x="788.8" y="310" class="value">62.4%</text>
-<text x="292" y="367" text-anchor="end" class="label">Lists</text>
-<text x="292" y="386" text-anchor="end" class="meta">P1 · unsupported</text>
-<rect x="310" y="352" width="463.6" height="14" rx="2" fill="#2563eb"/>
-<rect x="310" y="372" width="443.7" height="9" rx="2" fill="#f59e0b"/>
-<text x="781.6" y="364" class="value">61.4%</text>
-<text x="292" y="421" text-anchor="end" class="label">Namespace access</text>
-<text x="292" y="440" text-anchor="end" class="meta">P1 · parsed</text>
-<rect x="310" y="406" width="460.3" height="14" rx="2" fill="#2563eb"/>
-<rect x="310" y="426" width="428.1" height="9" rx="2" fill="#f59e0b"/>
-<text x="778.3" y="418" class="value">61.0%</text>
+<text x="788.6" y="310" class="value">62.3%</text>
+<text x="292" y="367" text-anchor="end" class="label">Namespace access</text>
+<text x="292" y="386" text-anchor="end" class="meta">P1 - supported</text>
+<rect x="310" y="352" width="465.4" height="14" rx="2" fill="#2563eb"/>
+<rect x="310" y="372" width="435.9" height="9" rx="2" fill="#f59e0b"/>
+<text x="783.4" y="364" class="value">61.6%</text>
+<text x="292" y="421" text-anchor="end" class="label">Lists</text>
+<text x="292" y="440" text-anchor="end" class="meta">P1 - supported</text>
+<rect x="310" y="406" width="463.8" height="14" rx="2" fill="#2563eb"/>
+<rect x="310" y="426" width="443.7" height="9" rx="2" fill="#f59e0b"/>
+<text x="781.8" y="418" class="value">61.4%</text>
 <text x="292" y="475" text-anchor="end" class="label">if / else</text>
-<text x="292" y="494" text-anchor="end" class="meta">P1 · parsed</text>
-<rect x="310" y="460" width="381.7" height="14" rx="2" fill="#2563eb"/>
+<text x="292" y="494" text-anchor="end" class="meta">P1 - supported</text>
+<rect x="310" y="460" width="382.0" height="14" rx="2" fill="#2563eb"/>
 <rect x="310" y="480" width="358.0" height="9" rx="2" fill="#f59e0b"/>
-<text x="699.7" y="472" class="value">50.6%</text>
-<text x="292" y="529" text-anchor="end" class="label">Random numbers and sampling</text>
-<text x="292" y="548" text-anchor="end" class="meta">P1 · unsupported</text>
-<rect x="310" y="514" width="335.5" height="14" rx="2" fill="#2563eb"/>
+<text x="700.0" y="472" class="value">50.6%</text>
+<text x="292" y="529" text-anchor="end" class="label">String helpers</text>
+<text x="292" y="548" text-anchor="end" class="meta">P1 - supported</text>
+<rect x="310" y="514" width="336.5" height="14" rx="2" fill="#2563eb"/>
 <rect x="310" y="534" width="311.3" height="9" rx="2" fill="#f59e0b"/>
-<text x="653.5" y="526" class="value">44.4%</text>
-<text x="292" y="583" text-anchor="end" class="label">String helpers</text>
-<text x="292" y="602" text-anchor="end" class="meta">P1 · unsupported</text>
-<rect x="310" y="568" width="331.9" height="14" rx="2" fill="#2563eb"/>
-<rect x="310" y="588" width="303.6" height="9" rx="2" fill="#f59e0b"/>
-<text x="649.9" y="580" class="value">44.0%</text>
+<text x="654.5" y="526" class="value">44.6%</text>
+<text x="292" y="583" text-anchor="end" class="label">Random numbers and sampling</text>
+<text x="292" y="602" text-anchor="end" class="meta">P1 - supported</text>
+<rect x="310" y="568" width="335.2" height="14" rx="2" fill="#2563eb"/>
+<rect x="310" y="588" width="311.3" height="9" rx="2" fill="#f59e0b"/>
+<text x="653.2" y="580" class="value">44.4%</text>
 <text x="292" y="637" text-anchor="end" class="label">Comparison operators</text>
-<text x="292" y="656" text-anchor="end" class="meta">P1 · unsupported</text>
-<rect x="310" y="622" width="325.5" height="14" rx="2" fill="#2563eb"/>
-<rect x="310" y="642" width="303.6" height="9" rx="2" fill="#f59e0b"/>
-<text x="643.5" y="634" class="value">43.1%</text>
+<text x="292" y="656" text-anchor="end" class="meta">P1 - supported</text>
+<rect x="310" y="622" width="330.3" height="14" rx="2" fill="#2563eb"/>
+<rect x="310" y="642" width="311.3" height="9" rx="2" fill="#f59e0b"/>
+<text x="648.3" y="634" class="value">43.8%</text>
 <text x="292" y="691" text-anchor="end" class="label">Matrices, arrays, and dimensions</text>
-<text x="292" y="710" text-anchor="end" class="meta">P1 · unsupported</text>
-<rect x="310" y="676" width="323.5" height="14" rx="2" fill="#2563eb"/>
+<text x="292" y="710" text-anchor="end" class="meta">P1 - supported</text>
+<rect x="310" y="676" width="322.7" height="14" rx="2" fill="#2563eb"/>
 <rect x="310" y="696" width="311.3" height="9" rx="2" fill="#f59e0b"/>
-<text x="641.5" y="688" class="value">42.8%</text>
+<text x="640.7" y="688" class="value">42.7%</text>
 <text x="292" y="745" text-anchor="end" class="label">Names and attributes</text>
-<text x="292" y="764" text-anchor="end" class="meta">P2 · unsupported</text>
-<rect x="310" y="730" width="300.8" height="14" rx="2" fill="#2563eb"/>
-<rect x="310" y="750" width="288.0" height="9" rx="2" fill="#f59e0b"/>
-<text x="618.8" y="742" class="value">39.8%</text>
+<text x="292" y="764" text-anchor="end" class="meta">P1 - supported</text>
+<rect x="310" y="730" width="304.6" height="14" rx="2" fill="#2563eb"/>
+<rect x="310" y="750" width="295.8" height="9" rx="2" fill="#f59e0b"/>
+<text x="622.6" y="742" class="value">40.3%</text>
 <text x="292" y="799" text-anchor="end" class="label">Descriptive statistics</text>
-<text x="292" y="818" text-anchor="end" class="meta">P2 · partial</text>
-<rect x="310" y="784" width="254.1" height="14" rx="2" fill="#2563eb"/>
-<rect x="310" y="804" width="233.5" height="9" rx="2" fill="#f59e0b"/>
-<text x="572.1" y="796" class="value">33.7%</text>
+<text x="292" y="818" text-anchor="end" class="meta">P2 - supported</text>
+<rect x="310" y="784" width="257.5" height="14" rx="2" fill="#2563eb"/>
+<rect x="310" y="804" width="241.3" height="9" rx="2" fill="#f59e0b"/>
+<text x="575.5" y="796" class="value">34.1%</text>
 <text x="292" y="853" text-anchor="end" class="label">Logical operators</text>
-<text x="292" y="872" text-anchor="end" class="meta">P2 · partial</text>
-<rect x="310" y="838" width="242.7" height="14" rx="2" fill="#2563eb"/>
-<rect x="310" y="858" width="217.9" height="9" rx="2" fill="#f59e0b"/>
-<text x="560.7" y="850" class="value">32.2%</text>
+<text x="292" y="872" text-anchor="end" class="meta">P2 - supported</text>
+<rect x="310" y="838" width="247.5" height="14" rx="2" fill="#2563eb"/>
+<rect x="310" y="858" width="225.7" height="9" rx="2" fill="#f59e0b"/>
+<text x="565.5" y="850" class="value">32.8%</text>
 <text x="292" y="907" text-anchor="end" class="label">Data frames</text>
-<text x="292" y="926" text-anchor="end" class="meta">P2 · unsupported</text>
-<rect x="310" y="892" width="232.5" height="14" rx="2" fill="#2563eb"/>
-<rect x="310" y="912" width="210.2" height="9" rx="2" fill="#f59e0b"/>
-<text x="550.5" y="904" class="value">30.8%</text>
+<text x="292" y="926" text-anchor="end" class="meta">P2 - supported</text>
+<rect x="310" y="892" width="236.8" height="14" rx="2" fill="#2563eb"/>
+<rect x="310" y="912" width="217.9" height="9" rx="2" fill="#f59e0b"/>
+<text x="554.8" y="904" class="value">31.4%</text>
 <text x="292" y="961" text-anchor="end" class="label">Replacement assignment</text>
-<text x="292" y="980" text-anchor="end" class="meta">P2 · unsupported</text>
-<rect x="310" y="946" width="219.8" height="14" rx="2" fill="#2563eb"/>
-<rect x="310" y="966" width="186.8" height="9" rx="2" fill="#f59e0b"/>
-<text x="537.8" y="958" class="value">29.1%</text>
-<text x="60" y="1016" class="note">P0 ≥ 65%, P1 ≥ 40%, P2 ≥ 20%, P3 &lt; 20% weighted reach. Frequency guides sequencing; architecture and prerequisites still constrain implementation order.</text>
+<text x="292" y="980" text-anchor="end" class="meta">P2 - supported</text>
+<rect x="310" y="946" width="225.0" height="14" rx="2" fill="#2563eb"/>
+<rect x="310" y="966" width="194.6" height="9" rx="2" fill="#f59e0b"/>
+<text x="543.0" y="958" class="value">29.8%</text>
+<text x="60" y="1016" class="note">P0 &gt;= 65%, P1 &gt;= 40%, P2 &gt;= 20%, P3 &lt; 20% weighted reach. Frequency guides sequencing; architecture and prerequisites still constrain implementation order.</text>
 </svg>

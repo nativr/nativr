@@ -59,6 +59,12 @@ export interface DoubleLiteralNode extends AstNodeBase {
   readonly value: number;
 }
 
+/** A purely imaginary numeric literal such as 2i. */
+export interface ComplexLiteralNode extends AstNodeBase {
+  readonly kind: "ComplexLiteral";
+  readonly imaginary: number;
+}
+
 /** An R integer literal with the L suffix. */
 export interface IntegerLiteralNode extends AstNodeBase {
   readonly kind: "IntegerLiteral";
@@ -103,11 +109,19 @@ export interface BinaryExpressionNode extends AstNodeBase {
   readonly right: AstNode;
 }
 
-/** A supported local assignment. */
+/** A direct identifier assignment in either direction, optionally non-local. */
 export interface AssignmentExpressionNode extends AstNodeBase {
   readonly kind: "AssignmentExpression";
-  readonly operator: "<-" | "=";
+  readonly operator: "<-" | "=" | "<<-" | "->" | "->>";
   readonly target: IdentifierNode;
+  readonly value: AstNode;
+}
+
+/** A direct-binding replacement assignment such as x[i] <- value or names(x) <- value. */
+export interface ReplacementExpressionNode extends AstNodeBase {
+  readonly kind: "ReplacementExpression";
+  readonly operator: "<-" | "=" | "<<-" | "->" | "->>";
+  readonly target: SubsetExpressionNode | CallExpressionNode;
   readonly value: AstNode;
 }
 
@@ -162,6 +176,22 @@ export interface WhileExpressionNode extends AstNodeBase {
   readonly body: AstNode;
 }
 
+/** A parsed repeat expression. */
+export interface RepeatExpressionNode extends AstNodeBase {
+  readonly kind: "RepeatExpression";
+  readonly body: AstNode;
+}
+
+/** A loop-local break expression. */
+export interface BreakExpressionNode extends AstNodeBase {
+  readonly kind: "BreakExpression";
+}
+
+/** A loop-local next expression. */
+export interface NextExpressionNode extends AstNodeBase {
+  readonly kind: "NextExpression";
+}
+
 /** A parsed return call represented as a language form. */
 export interface ReturnExpressionNode extends AstNodeBase {
   readonly kind: "ReturnExpression";
@@ -194,6 +224,7 @@ export interface FormulaExpressionNode extends AstNodeBase {
 /** A parsed native pipe expression. */
 export interface PipeExpressionNode extends AstNodeBase {
   readonly kind: "PipeExpression";
+  readonly operator: "|>" | "%>%";
   readonly left: AstNode;
   readonly right: AstNode;
 }
@@ -210,6 +241,7 @@ export type AstNode =
   | BlockNode
   | IdentifierNode
   | DoubleLiteralNode
+  | ComplexLiteralNode
   | IntegerLiteralNode
   | StringLiteralNode
   | LogicalLiteralNode
@@ -218,11 +250,15 @@ export type AstNode =
   | UnaryExpressionNode
   | BinaryExpressionNode
   | AssignmentExpressionNode
+  | ReplacementExpressionNode
   | CallExpressionNode
   | FunctionExpressionNode
   | IfExpressionNode
   | ForExpressionNode
   | WhileExpressionNode
+  | RepeatExpressionNode
+  | BreakExpressionNode
+  | NextExpressionNode
   | ReturnExpressionNode
   | SubsetExpressionNode
   | NamespaceExpressionNode

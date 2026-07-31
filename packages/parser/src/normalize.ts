@@ -20,11 +20,9 @@ export function normalizeProgram(
   const diagnostics = collectSyntaxDiagnostics(root, mapper, source.length);
   const body: AstNode[] = [];
 
-  if (!root.hasError) {
-    for (const child of root.namedChildren) {
-      if (child.type !== "comment") {
-        body.push(normalizeNode(child, mapper));
-      }
+  for (const child of root.namedChildren) {
+    if (child.type !== "comment" && !child.hasError && !child.isError && !child.isMissing) {
+      body.push(normalizeNode(child, mapper));
     }
   }
 
@@ -47,6 +45,12 @@ function normalizeNode(node: Node, mapper: Utf8SourceMap): AstNode {
       return { kind: "DoubleLiteral", value: Number.POSITIVE_INFINITY, span };
     case "nan":
       return { kind: "DoubleLiteral", value: Number.NaN, span };
+    case "complex":
+      return {
+        kind: "ComplexLiteral",
+        imaginary: Number(node.text.slice(0, -1)),
+        span,
+      };
     case "true":
       return { kind: "LogicalLiteral", value: true, span };
     case "false":
@@ -60,7 +64,7 @@ function normalizeNode(node: Node, mapper: Utf8SourceMap): AstNode {
         span,
       };
     case "identifier":
-      return { kind: "Identifier", name: node.text, span };
+      return { kind: "Identifier", name: decodeRIdentifier(node.text), span };
     case "string":
       return { kind: "StringLiteral", value: decodeRString(node.text), span };
     case "parenthesized_expression":
@@ -96,6 +100,16 @@ function normalizeNode(node: Node, mapper: Utf8SourceMap): AstNode {
         body: normalizeNode(requiredField(node, "body"), mapper),
         span,
       };
+    case "repeat_statement":
+      return {
+        kind: "RepeatExpression",
+        body: normalizeNode(requiredField(node, "body"), mapper),
+        span,
+      };
+    case "break":
+      return { kind: "BreakExpression", span };
+    case "next":
+      return { kind: "NextExpression", span };
     case "subset":
     case "subset2":
       return {
@@ -131,10 +145,6 @@ function normalizeNode(node: Node, mapper: Utf8SourceMap): AstNode {
       };
     case "dots":
     case "dot_dot_i":
-    case "complex":
-    case "repeat_statement":
-    case "break":
-    case "next":
       return { kind: "UnsupportedExpression", feature: node.type, span };
     default:
       return { kind: "UnsupportedExpression", feature: node.type, span };
@@ -155,16 +165,46 @@ function normalizeBinary(node: Node, mapper: Utf8SourceMap, span: SourceSpan): A
   const left = normalizeNode(requiredField(node, "lhs"), mapper);
   const right = normalizeNode(requiredField(node, "rhs"), mapper);
 
-  if ((operator === "<-" || operator === "=") && left.kind === "Identifier") {
+  if ((operator === "<-" || operator === "=" || operator === "<<-") && left.kind === "Identifier") {
     return { kind: "AssignmentExpression", operator, target: left, value: right, span };
   }
-  if (operator === "|>") {
-    return { kind: "PipeExpression", left, right, span };
+  if (
+    (operator === "<-" || operator === "=" || operator === "<<-") &&
+    (left.kind === "SubsetExpression" || left.kind === "CallExpression")
+  ) {
+    return { kind: "ReplacementExpression", operator, target: left, value: right, span };
+  }
+  if ((operator === "->" || operator === "->>") && right.kind === "Identifier") {
+    return { kind: "AssignmentExpression", operator, target: right, value: left, span };
+  }
+  if (
+    (operator === "->" || operator === "->>") &&
+    (right.kind === "SubsetExpression" || right.kind === "CallExpression")
+  ) {
+    return { kind: "ReplacementExpression", operator, target: right, value: left, span };
+  }
+  if (operator === "|>" || operator === "%>%") {
+    return { kind: "PipeExpression", operator, left, right, span };
   }
   if (operator === "~") {
     return { kind: "FormulaExpression", left, right, span };
   }
-  if (["->", "->>", "<<-", ":="].includes(operator)) {
+  if (
+    operator.startsWith("%") &&
+    operator.endsWith("%") &&
+    !["%%", "%/%", "%in%"].includes(operator)
+  ) {
+    return {
+      kind: "CallExpression",
+      callee: { kind: "Identifier", name: operator, span },
+      arguments: [
+        { value: left, span: left.span },
+        { value: right, span: right.span },
+      ],
+      span,
+    };
+  }
+  if (operator === ":=") {
     return { kind: "UnsupportedExpression", feature: `assignment operator ${operator}`, span };
   }
   return { kind: "BinaryExpression", operator, left, right, span };
@@ -183,20 +223,53 @@ function normalizeCall(node: Node, mapper: Utf8SourceMap, span: SourceSpan): Ast
 }
 
 function normalizeArguments(node: Node, mapper: Utf8SourceMap): readonly CallArgument[] {
-  return node.childrenForFieldName("argument").map((argument) => {
+  const separators = node.children
+    .filter((child) => child.type === "comma")
+    .map((child) => child.startIndex);
+  const argumentNodes = node.childrenForFieldName("argument");
+  const arguments_ = argumentNodes.map((argument): CallArgument => {
     const name = argument.childForFieldName("name");
     const value = argument.childForFieldName("value");
     const span = mapper.span(argument.startIndex, argument.endIndex);
     if (value === null) {
-      return {
-        value: { kind: "UnsupportedExpression", feature: "missing argument", span },
+      const missing: AstNode = {
+        kind: "UnsupportedExpression",
+        feature: "missing argument",
         span,
       };
+      return name === null
+        ? { value: missing, span }
+        : { name: decodeRIdentifier(name.text), value: missing, span };
     }
     const normalized = normalizeNode(value, mapper);
     return name === null
       ? { value: normalized, span }
-      : { name: name.text, value: normalized, span };
+      : { name: decodeRIdentifier(name.text), value: normalized, span };
+  });
+  if (separators.length === 0) return arguments_;
+  const slots: (CallArgument | undefined)[] = Array.from(
+    { length: separators.length + 1 },
+    () => undefined,
+  );
+  for (let argumentIndex = 0; argumentIndex < arguments_.length; argumentIndex += 1) {
+    const argument = arguments_[argumentIndex] as CallArgument;
+    const startIndex = argumentNodes[argumentIndex]?.startIndex ?? node.startIndex;
+    const slot = separators.filter((separator) => separator < startIndex).length;
+    slots[slot] = argument;
+  }
+  return slots.map((argument, index): CallArgument => {
+    if (argument !== undefined) return argument;
+    const offset =
+      index === 0
+        ? (separators[0] ?? node.startIndex)
+        : (separators[index - 1] ?? node.endIndex) + 1;
+    const span = mapper.span(offset, offset);
+    const value: AstNode = {
+      kind: "UnsupportedExpression",
+      feature: "missing argument",
+      span,
+    };
+    return { value, span };
   });
 }
 
@@ -298,6 +371,11 @@ function decodeRString(text: string): string {
     result += escaped;
   }
   return result;
+}
+
+function decodeRIdentifier(text: string): string {
+  if (!text.startsWith("`") || !text.endsWith("`")) return text;
+  return text.slice(1, -1).replace(/\\([\\`])/gu, "$1");
 }
 
 function collectSyntaxDiagnostics(

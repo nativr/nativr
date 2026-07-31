@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { format } from "prettier";
 
@@ -13,67 +13,85 @@ const figureDirectory = path.join(root, "docs", "figures");
 const snapshotPath = path.join(researchDirectory, "snapshot.json");
 const packageCsvPath = path.join(researchDirectory, "package-downloads.csv");
 const featureCsvPath = path.join(researchDirectory, "feature-reach.csv");
+const callableCsvPath = path.join(researchDirectory, "core-callable-reach.csv");
 const packageFigurePath = path.join(figureDirectory, "package-downloads.svg");
 const featureFigurePath = path.join(figureDirectory, "feature-priority.svg");
+const callableFigurePath = path.join(figureDirectory, "core-callable-priority.svg");
+const compatibilityManifestPath = path.join(root, "docs", "compatibility-manifest.json");
+const gnuSurfacePath = path.join(root, "compatibility", "gnu-r", "surface.json");
 
 const TOP_PACKAGES_URL = "https://cranlogs.r-pkg.org/top/last-month/100";
 const MANUAL_URL = (packageName) =>
   `https://cran.r-project.org/web/packages/${encodeURIComponent(packageName)}/refman/${encodeURIComponent(packageName)}.html`;
 const USER_AGENT = "NativR package-usage research (https://github.com/nativr/nativr)";
+const CALL_PATTERN = /(?<![A-Za-z0-9._$@])([A-Za-z.][A-Za-z0-9._]*)(?=\s*\()/gu;
+const LOCAL_FUNCTION_PATTERN =
+  /(?<![A-Za-z0-9._])([A-Za-z.][A-Za-z0-9._]*)\s*(?:<-|=)\s*function\s*\(/gu;
+const NON_CALL_KEYWORDS = new Set(["for", "function", "if", "while"]);
 
-const FEATURES = [
+export const FEATURES = [
   {
     id: "comparisons",
     label: "Comparison operators",
-    status: "unsupported",
+    surface: "< <= > >= == !=",
+    status: "supported",
     patterns: [/<=|>=|==|!=|(?<!<)<(?![-<=])|(?<![-|%>])>(?![=>])/u],
   },
   {
     id: "logical-operators",
     label: "Logical operators",
-    status: "partial",
+    surface: "! & | && ||",
+    status: "supported",
     patterns: [/&&|\|\||(?<![|])\|(?![|>])|(?<!&)&(?!&)|!(?!=)/u],
   },
   {
     id: "subsetting",
     label: "Vector/list subsetting [",
-    status: "parsed",
+    surface: "[",
+    status: "supported",
     patterns: [/[A-Za-z0-9_.)\]]\s*\[(?!\[)/u],
   },
   {
     id: "extraction",
     label: "Element/member extraction [[ and $",
-    status: "parsed",
+    surface: "[[ $",
+    status: "supported",
     patterns: [/\[\[|\$(?:[A-Za-z._]|`)/u],
   },
   {
     id: "conditionals",
     label: "if / else",
-    status: "parsed",
+    surface: "if else",
+    status: "supported",
     patterns: [/\bif\s*\(|\belse\b/u],
   },
   {
     id: "return",
     label: "return",
-    status: "parsed",
+    surface: "return",
+    status: "supported",
     patterns: [/\breturn\s*\(/u],
   },
   {
     id: "loops",
     label: "for / while / repeat",
-    status: "parsed",
+    surface: "for while repeat break next",
+    status: "supported",
     patterns: [/\b(?:for|while)\s*\(|\brepeat\b/u],
   },
   {
     id: "lists",
     label: "Lists",
-    status: "unsupported",
+    surface: "list as.list pairlist",
+    status: "supported",
     patterns: [/\b(?:list|as\.list|pairlist)\s*\(/u],
   },
   {
     id: "names-attributes",
     label: "Names and attributes",
-    status: "unsupported",
+    surface:
+      "names setNames unname attr attributes structure class unclass rownames colnames dimnames",
+    status: "supported",
     patterns: [
       /\b(?:names|setNames|unname|attr|attributes|structure|class|unclass|rownames|colnames|dimnames)\s*\(/u,
     ],
@@ -81,43 +99,51 @@ const FEATURES = [
   {
     id: "sequences-repetition",
     label: "Sequences and repetition",
-    status: "unsupported",
+    surface: ": seq seq_along seq_len rep rep_len",
+    status: "supported",
     patterns: [/\b(?:seq|seq_along|seq_len|rep|rep_len)\s*\(/u, /(?<!:):(?!:)/u],
   },
   {
     id: "pipes",
     label: "Native and magrittr pipes",
-    status: "parsed",
+    surface: "|> %>%",
+    status: "supported",
     patterns: [/\|>|%>%/u],
   },
   {
     id: "formulas",
     label: "Formulas",
-    status: "parsed",
+    surface: "~ formula all.vars",
+    status: "supported",
     patterns: [/(?<![%~])~(?![%~])/u],
   },
   {
     id: "data-frames",
     label: "Data frames",
-    status: "unsupported",
+    surface: "data.frame as.data.frame tibble tribble",
+    status: "supported",
     patterns: [/\b(?:data\.frame|as\.data\.frame|tibble|tribble)\s*\(/u],
   },
   {
     id: "matrices-arrays",
     label: "Matrices, arrays, and dimensions",
-    status: "unsupported",
+    surface: "matrix array as.matrix dim nrow ncol rbind cbind",
+    status: "supported",
     patterns: [/\b(?:matrix|array|as\.matrix|dim|nrow|ncol|rbind|cbind)\s*\(/u],
   },
   {
     id: "factors",
     label: "Factors",
-    status: "unsupported",
+    surface: "factor ordered levels droplevels",
+    status: "supported",
     patterns: [/\b(?:factor|ordered|levels|droplevels)\s*\(/u],
   },
   {
     id: "string-helpers",
     label: "String helpers",
-    status: "unsupported",
+    surface:
+      "paste paste0 sprintf format grep grepl gsub sub strsplit substring substr nchar tolower toupper chartr",
+    status: "supported",
     patterns: [
       /\b(?:paste|paste0|sprintf|format|grep|grepl|gsub|sub|strsplit|substring|substr|nchar|tolower|toupper|chartr)\s*\(/u,
     ],
@@ -125,19 +151,22 @@ const FEATURES = [
   {
     id: "sorting-matching",
     label: "Sorting and matching",
-    status: "unsupported",
+    surface: "sort order rank unique duplicated match which which.max which.min",
+    status: "supported",
     patterns: [/\b(?:sort|order|rank|unique|duplicated|match|which|which\.max|which\.min)\s*\(/u],
   },
   {
     id: "apply-family",
     label: "Apply/map family",
-    status: "unsupported",
+    surface: "apply lapply sapply vapply mapply Map Reduce Filter by aggregate",
+    status: "supported",
     patterns: [/\b(?:apply|lapply|sapply|vapply|mapply|Map|Reduce|Filter|by|aggregate)\s*\(/u],
   },
   {
     id: "statistics",
     label: "Descriptive statistics",
-    status: "partial",
+    surface: "mean sum sd var median quantile cor cov min max range summary table prop.table",
+    status: "supported",
     patterns: [
       /\b(?:mean|sum|sd|var|median|quantile|cor|cov|min|max|range|summary|table|prop\.table)\s*\(/u,
     ],
@@ -145,87 +174,105 @@ const FEATURES = [
   {
     id: "random-numbers",
     label: "Random numbers and sampling",
-    status: "unsupported",
+    surface: "set.seed sample runif rnorm rbinom rpois rchisq rt rexp",
+    status: "supported",
     patterns: [/\b(?:set\.seed|sample|runif|rnorm|rbinom|rpois|rchisq|rt|rexp)\s*\(/u],
   },
   {
     id: "dates-times",
     label: "Dates and times",
-    status: "unsupported",
-    patterns: [/\b(?:as\.Date|as\.POSIXct|strptime|difftime|Sys\.Date|Sys\.time)\s*\(/u],
+    surface: "as.Date as.POSIXct strptime strftime difftime Sys.Date Sys.time",
+    status: "supported",
+    patterns: [/\b(?:as\.Date|as\.POSIXct|strptime|strftime|difftime|Sys\.Date|Sys\.time)\s*\(/u],
   },
   {
     id: "namespaces",
     label: "Namespace access",
-    status: "parsed",
+    surface: ":: :::",
+    status: "supported",
     patterns: [/:::{0,1}/u],
   },
   {
     id: "ellipsis",
     label: "Ellipsis arguments",
-    status: "unsupported",
+    surface: "... before and after named formals",
+    status: "supported",
     patterns: [/\.\.\./u],
   },
   {
     id: "replacement",
     label: "Replacement assignment",
-    status: "unsupported",
+    surface: "[<- [[<- $<-",
+    status: "supported",
     patterns: [/(?:\[[^\n\]]+\]|\$[A-Za-z._][\w.]*)\s*<-/u],
   },
   {
     id: "object-systems",
     label: "S3/S4/R6/S7 object systems",
-    status: "unsupported",
+    surface: "UseMethod NextMethod setClass setGeneric setMethod R6Class new_class new_vctr",
+    status: "supported",
     patterns: [
       /\b(?:UseMethod|NextMethod|setClass|setGeneric|setMethod|R6Class|new_class|new_vctr)\s*\(/u,
     ],
   },
 ];
 
-const arguments_ = new Set(process.argv.slice(2));
-const collect = arguments_.size === 0 || arguments_.has("--collect");
-const render = arguments_.size === 0 || arguments_.has("--render");
-const check = arguments_.has("--check");
+export async function main(arguments_ = new Set(process.argv.slice(2))) {
+  const collect = arguments_.size === 0 || arguments_.has("--collect");
+  const render = arguments_.size === 0 || arguments_.has("--render");
+  const check = arguments_.has("--check");
 
-verifyFeatureDetector();
+  verifyFeatureDetector();
 
-if (collect) {
-  const snapshot = await collectSnapshot();
-  await mkdir(researchDirectory, { recursive: true });
-  const snapshotJson = await format(JSON.stringify(snapshot), {
-    ...prettierOptions,
-    filepath: snapshotPath,
-  });
-  await writeFile(snapshotPath, snapshotJson);
-  console.log(
-    `Collected ${snapshot.sample.analyzedPackageCount}/${snapshot.sample.packageCount} package manuals for ${snapshot.sample.start} through ${snapshot.sample.end}.`,
-  );
+  if (collect) {
+    const snapshot = await collectSnapshot();
+    await mkdir(researchDirectory, { recursive: true });
+    const snapshotJson = await format(JSON.stringify(snapshot), {
+      ...prettierOptions,
+      filepath: snapshotPath,
+    });
+    await writeFile(snapshotPath, snapshotJson);
+    console.log(
+      `Collected ${snapshot.sample.analyzedPackageCount}/${snapshot.sample.packageCount} package manuals for ${snapshot.sample.start} through ${snapshot.sample.end}.`,
+    );
+  }
+
+  if (render || check) {
+    const snapshot = JSON.parse(await readFile(snapshotPath, "utf8"));
+    validateSnapshot(snapshot);
+    const registeredNames = await loadRegisteredNames();
+    const artifacts = [
+      [packageCsvPath, renderPackageCsv(snapshot)],
+      [featureCsvPath, renderFeatureCsv(snapshot)],
+      [callableCsvPath, renderCallableCsv(snapshot, registeredNames)],
+      [packageFigurePath, renderPackageFigure(snapshot)],
+      [featureFigurePath, renderFeatureFigure(snapshot)],
+      [callableFigurePath, renderCallableFigure(snapshot, registeredNames)],
+    ];
+    if (render) {
+      await Promise.all([
+        mkdir(researchDirectory, { recursive: true }),
+        mkdir(figureDirectory, { recursive: true }),
+      ]);
+      await Promise.all(artifacts.map(([file, contents]) => writeFile(file, contents)));
+      console.log("Rendered package-usage CSV and SVG artifacts from the committed snapshot.");
+    }
+    if (check) {
+      await Promise.all(artifacts.map(([file, contents]) => checkArtifact(file, contents)));
+      console.log("Package-usage CSV and SVG artifacts match the committed snapshot.");
+    }
+  }
 }
 
-if (render || check) {
-  const snapshot = JSON.parse(await readFile(snapshotPath, "utf8"));
-  validateSnapshot(snapshot);
-  const artifacts = [
-    [packageCsvPath, renderPackageCsv(snapshot)],
-    [featureCsvPath, renderFeatureCsv(snapshot)],
-    [packageFigurePath, renderPackageFigure(snapshot)],
-    [featureFigurePath, renderFeatureFigure(snapshot)],
-  ];
-  if (render) {
-    await Promise.all([
-      mkdir(researchDirectory, { recursive: true }),
-      mkdir(figureDirectory, { recursive: true }),
-    ]);
-    await Promise.all(artifacts.map(([file, contents]) => writeFile(file, contents)));
-    console.log("Rendered package-usage CSV and SVG artifacts from the committed snapshot.");
-  }
-  if (check) {
-    await Promise.all(artifacts.map(([file, contents]) => checkArtifact(file, contents)));
-    console.log("Package-usage CSV and SVG artifacts match the committed snapshot.");
-  }
+if (
+  process.argv[1] !== undefined &&
+  import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href
+) {
+  await main();
 }
 
 async function collectSnapshot() {
+  const coreCallableNames = await loadCoreCallableNames();
   const top = await fetchJson(TOP_PACKAGES_URL);
   if (
     typeof top !== "object" ||
@@ -261,6 +308,7 @@ async function collectSnapshot() {
           exampleBlockCount: 0,
           exampleCharacters: 0,
           featureIds: [],
+          callCounts: {},
         };
       }
       const examples = exampleBlocks.join("\n");
@@ -270,6 +318,7 @@ async function collectSnapshot() {
         exampleBlockCount: exampleBlocks.length,
         exampleCharacters: examples.length,
         featureIds: detectFeatures(examples),
+        callCounts: mergeCallCounts(exampleBlocks),
       };
     } catch (error) {
       console.warn(
@@ -281,6 +330,7 @@ async function collectSnapshot() {
         exampleBlockCount: 0,
         exampleCharacters: 0,
         featureIds: [],
+        callCounts: {},
       };
     }
   });
@@ -311,9 +361,15 @@ async function collectSnapshot() {
       right.packageReach - left.packageReach ||
       left.label.localeCompare(right.label),
   );
+  const calls = aggregateCallableReach(analyzedPackages, coreCallableNames);
+  const snapshotPackages = packages.map((entry) => {
+    const snapshotEntry = { ...entry };
+    delete snapshotEntry.callCounts;
+    return snapshotEntry;
+  });
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     detectorFingerprint: featureDetectorFingerprint(),
     collectedAt: new Date().toISOString(),
     sample: {
@@ -328,10 +384,11 @@ async function collectSnapshot() {
       totalDownloads,
       analyzedDownloads,
       method:
-        "Download-weighted package reach across language features detected in CRAN-generated reference-manual example blocks.",
+        "Download-weighted package reach across language features and GNU R core callable names detected in CRAN-generated reference-manual example blocks.",
     },
-    packages,
+    packages: snapshotPackages,
     features,
+    calls,
   };
 }
 
@@ -353,6 +410,103 @@ function detectFeatures(source) {
   );
 }
 
+function detectCallCounts(source) {
+  const code = stripCommentsAndStrings(source);
+  const localDefinitions = [...code.matchAll(LOCAL_FUNCTION_PATTERN)].map((match) => ({
+    name: match[1],
+    index: match.index,
+  }));
+  const counts = new Map();
+  for (const match of code.matchAll(CALL_PATTERN)) {
+    const name = match[1];
+    if (name === undefined || NON_CALL_KEYWORDS.has(name)) continue;
+    if (
+      localDefinitions.some(
+        (definition) => definition.name === name && definition.index < match.index,
+      )
+    ) {
+      continue;
+    }
+    counts.set(name, (counts.get(name) ?? 0) + 1);
+  }
+  return Object.fromEntries([...counts].sort(([left], [right]) => left.localeCompare(right)));
+}
+
+function mergeCallCounts(exampleBlocks) {
+  const counts = new Map();
+  for (const block of exampleBlocks) {
+    for (const [name, occurrences] of Object.entries(detectCallCounts(block))) {
+      counts.set(name, (counts.get(name) ?? 0) + occurrences);
+    }
+  }
+  return Object.fromEntries([...counts].sort(([left], [right]) => left.localeCompare(right)));
+}
+
+function aggregateCallableReach(packages, coreCallableNames) {
+  const calls = new Map();
+  for (const packageEntry of packages) {
+    for (const [name, occurrenceCount] of Object.entries(packageEntry.callCounts)) {
+      if (!coreCallableNames.has(name)) continue;
+      const current = calls.get(name) ?? {
+        name,
+        packageCount: 0,
+        downloadCount: 0,
+        occurrenceCount: 0,
+      };
+      current.packageCount += 1;
+      current.downloadCount += packageEntry.downloads;
+      current.occurrenceCount += occurrenceCount;
+      calls.set(name, current);
+    }
+  }
+  const analyzedDownloads = sum(packages.map((entry) => entry.downloads));
+  return [...calls.values()]
+    .map((entry) => ({
+      ...entry,
+      packageReach: round(entry.packageCount / packages.length, 6),
+      downloadReach: round(entry.downloadCount / analyzedDownloads, 6),
+    }))
+    .sort(
+      (left, right) =>
+        right.downloadReach - left.downloadReach ||
+        right.packageCount - left.packageCount ||
+        right.occurrenceCount - left.occurrenceCount ||
+        left.name.localeCompare(right.name),
+    );
+}
+
+async function loadCoreCallableNames() {
+  const surface = JSON.parse(await readFile(gnuSurfacePath, "utf8"));
+  if (!Array.isArray(surface.packages)) {
+    throw new Error(`Invalid GNU R callable inventory at ${gnuSurfacePath}.`);
+  }
+  return new Set(
+    surface.packages.flatMap((packageEntry) =>
+      Array.isArray(packageEntry.exports)
+        ? packageEntry.exports
+            .filter((entry) => entry.callable === true && typeof entry.name === "string")
+            .map((entry) => entry.name)
+        : [],
+    ),
+  );
+}
+
+async function loadRegisteredNames() {
+  const manifest = JSON.parse(await readFile(compatibilityManifestPath, "utf8"));
+  if (!Array.isArray(manifest.packages)) {
+    throw new Error(`Invalid NativR capability manifest at ${compatibilityManifestPath}.`);
+  }
+  return new Set(
+    manifest.packages.flatMap((packageEntry) =>
+      Array.isArray(packageEntry.functions)
+        ? packageEntry.functions
+            .filter((entry) => typeof entry.name === "string")
+            .map((entry) => entry.name)
+        : [],
+    ),
+  );
+}
+
 function verifyFeatureDetector() {
   const assignmentFeatures = detectFeatures(
     "assigned <- value\nvalue |> transform()\nvalue %>% next()",
@@ -371,6 +525,23 @@ function verifyFeatureDetector() {
   const ignoredFeatures = detectFeatures('# if (x > 1) y[1]\n"list(x) |> transform()"');
   if (ignoredFeatures.length !== 0) {
     throw new Error("Feature detector invariant failed to ignore comments and strings.");
+  }
+
+  const calls = detectCallCounts(
+    'mean(x)\nmean(y)\nstats::median(x)\ntagQ$find("a")\nobject@show()\nif (ok) print("ignored text()")\nfunction(x) x\nlocal <- function(x) x\nlocal(1)',
+  );
+  if (
+    calls.mean !== 2 ||
+    calls.median !== 1 ||
+    calls.print !== 1 ||
+    calls.if !== undefined ||
+    calls.function !== undefined ||
+    calls.local !== undefined ||
+    calls.text !== undefined ||
+    calls.find !== undefined ||
+    calls.show !== undefined
+  ) {
+    throw new Error("Core callable detector invariant failed.");
   }
 }
 
@@ -506,6 +677,30 @@ function renderFeatureCsv(snapshot) {
   return `${rows.map((row) => row.map(csvCell).join(",")).join("\n")}\n`;
 }
 
+function renderCallableCsv(snapshot, registeredNames) {
+  const rows = [
+    [
+      "rank",
+      "callable",
+      "nativr_registered",
+      "packages",
+      "occurrences",
+      "package_reach_percent",
+      "download_weighted_reach_percent",
+    ],
+    ...snapshot.calls.map((entry, index) => [
+      index + 1,
+      entry.name,
+      registeredNames.has(entry.name),
+      entry.packageCount,
+      entry.occurrenceCount,
+      formatPercent(entry.packageReach),
+      formatPercent(entry.downloadReach),
+    ]),
+  ];
+  return `${rows.map((row) => row.map(csvCell).join(",")).join("\n")}\n`;
+}
+
 function renderPackageFigure(snapshot) {
   const entries = snapshot.packages.slice(0, 20);
   const width = 1200;
@@ -543,7 +738,7 @@ ${bars}
 }
 
 function renderFeatureFigure(snapshot) {
-  const entries = snapshot.features.filter((entry) => entry.status !== "supported").slice(0, 15);
+  const entries = snapshot.features.slice(0, 15);
   const width = 1200;
   const height = 1070;
   const left = 310;
@@ -565,7 +760,7 @@ function renderFeatureFigure(snapshot) {
       const packageWidth = entry.packageReach * plotWidth;
       return [
         `<text x="${left - 18}" y="${y + 15}" text-anchor="end" class="label">${escapeXml(entry.label)}</text>`,
-        `<text x="${left - 18}" y="${y + 34}" text-anchor="end" class="meta">${entry.priority} · ${entry.status}</text>`,
+        `<text x="${left - 18}" y="${y + 34}" text-anchor="end" class="meta">${entry.priority} - ${entry.status}</text>`,
         `<rect x="${left}" y="${y}" width="${downloadWidth.toFixed(1)}" height="14" rx="2" fill="#2563eb"/>`,
         `<rect x="${left}" y="${y + 20}" width="${packageWidth.toFixed(1)}" height="9" rx="2" fill="#f59e0b"/>`,
         `<text x="${Math.min(left + downloadWidth + 8, width - right + 4).toFixed(1)}" y="${y + 12}" class="value">${formatPercent(entry.downloadReach)}%</text>`,
@@ -576,17 +771,63 @@ function renderFeatureFigure(snapshot) {
   return svgDocument({
     width,
     height,
-    title: "Data-backed NativR feature priorities",
+    title: "Data-backed R feature reach and NativR implementation status",
     description:
-      "The fifteen highest-reach R feature gaps found in CRAN reference-manual examples, ranked by download-weighted package reach, with unweighted package reach as a secondary measure.",
+      "The fifteen highest-reach measured R feature groups found in CRAN reference-manual examples, ranked by download-weighted package reach, with NativR implementation status and unweighted package reach.",
     body: `
-<text x="60" y="60" class="title">R feature-gap priority by documented usage</text>
+<text x="60" y="60" class="title">R feature reach and NativR support</text>
 <text x="60" y="94" class="subtitle">${snapshot.sample.analyzedPackageCount} analyzable manuals among the top ${snapshot.sample.packageCount} downloads; ${snapshot.sample.start} through ${snapshot.sample.end}</text>
 <rect x="60" y="121" width="18" height="12" rx="2" fill="#2563eb"/><text x="88" y="132" class="legend">Download-weighted package reach</text>
 <rect x="355" y="123" width="18" height="8" rx="2" fill="#f59e0b"/><text x="383" y="132" class="legend">Unweighted package reach</text>
 ${grid}
 ${bars}
-<text x="60" y="${height - 54}" class="note">P0 ≥ 65%, P1 ≥ 40%, P2 ≥ 20%, P3 &lt; 20% weighted reach. Frequency guides sequencing; architecture and prerequisites still constrain implementation order.</text>`,
+<text x="60" y="${height - 54}" class="note">P0 &gt;= 65%, P1 &gt;= 40%, P2 &gt;= 20%, P3 &lt; 20% weighted reach. Frequency guides sequencing; architecture and prerequisites still constrain implementation order.</text>`,
+  });
+}
+
+function renderCallableFigure(snapshot, registeredNames) {
+  const entries = snapshot.calls.filter((entry) => !registeredNames.has(entry.name)).slice(0, 20);
+  const width = 1200;
+  const height = 1120;
+  const left = 250;
+  const right = 155;
+  const top = 170;
+  const rowHeight = 43;
+  const plotWidth = width - left - right;
+  const maximum = Math.max(...entries.map((entry) => entry.downloadReach), 0.01);
+  const ticks = [0, 0.25, 0.5, 0.75, 1];
+  const grid = ticks
+    .map((tick) => {
+      const x = left + tick * plotWidth;
+      return `<line x1="${x}" y1="${top - 18}" x2="${x}" y2="${top + entries.length * rowHeight - 12}" stroke="#e2e8f0"/><text x="${x}" y="${top - 28}" text-anchor="middle" class="tick">${formatPercent(tick * maximum)}%</text>`;
+    })
+    .join("\n");
+  const bars = entries
+    .map((entry, index) => {
+      const y = top + index * rowHeight;
+      const barWidth = (entry.downloadReach / maximum) * plotWidth;
+      return [
+        `<text x="${left - 16}" y="${y + 16}" text-anchor="end" class="label">${escapeXml(entry.name)}</text>`,
+        `<rect x="${left}" y="${y}" width="${barWidth.toFixed(1)}" height="20" rx="3" fill="#dc2626"/>`,
+        `<text x="${Math.min(left + barWidth + 8, width - right + 4).toFixed(1)}" y="${y + 15}" class="value">${formatPercent(entry.downloadReach)}%</text>`,
+        `<text x="${left}" y="${y + 36}" class="meta">${entry.packageCount} packages; ${entry.occurrenceCount} observed calls</text>`,
+      ].join("\n");
+    })
+    .join("\n");
+
+  return svgDocument({
+    width,
+    height,
+    title: "Highest-reach GNU R core callables not registered by NativR",
+    description:
+      "The twenty highest download-weighted GNU R core callable names detected in CRAN reference-manual examples that are not present in the NativR builtin registry.",
+    body: `
+<text x="60" y="60" class="title">Highest-reach missing GNU R callables</text>
+<text x="60" y="94" class="subtitle">${snapshot.sample.analyzedPackageCount} analyzable manuals; ranked by download-weighted package reach</text>
+<text x="60" y="122" class="legend">Red means the name is absent from NativR's generated builtin registry; behavioral completeness is stricter than registration.</text>
+${grid}
+${bars}
+<text x="60" y="${height - 48}" class="note">Named-call syntax only; operators and indirect calls are measured elsewhere. Counts are aggregate observations, and no example source is retained.</text>`,
   });
 }
 
@@ -612,10 +853,11 @@ ${body}
 
 function validateSnapshot(snapshot) {
   if (
-    snapshot?.schemaVersion !== 1 ||
+    snapshot?.schemaVersion !== 2 ||
     snapshot.detectorFingerprint !== featureDetectorFingerprint() ||
     !Array.isArray(snapshot.packages) ||
-    !Array.isArray(snapshot.features)
+    !Array.isArray(snapshot.features) ||
+    !Array.isArray(snapshot.calls)
   ) {
     throw new Error(
       `Unsupported, invalid, or detector-stale package-usage snapshot at ${snapshotPath}. Run "pnpm research:usage".`,
@@ -624,12 +866,18 @@ function validateSnapshot(snapshot) {
 }
 
 function featureDetectorFingerprint() {
-  const serialized = FEATURES.map(({ id, label, status, patterns }) => ({
-    id,
-    label,
-    status,
-    patterns: patterns.map((pattern) => pattern.toString()),
-  }));
+  const serialized = {
+    features: FEATURES.map(({ id, label, surface, status, patterns }) => ({
+      id,
+      label,
+      surface,
+      status,
+      patterns: patterns.map((pattern) => pattern.toString()),
+    })),
+    callPattern: CALL_PATTERN.toString(),
+    localFunctionPattern: LOCAL_FUNCTION_PATTERN.toString(),
+    nonCallKeywords: [...NON_CALL_KEYWORDS].sort(),
+  };
   return createHash("sha256").update(JSON.stringify(serialized)).digest("hex");
 }
 

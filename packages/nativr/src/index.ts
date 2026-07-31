@@ -5,11 +5,23 @@ export type {
   CreateROptions,
   EvalOptions,
   NativRSession,
+  PublicDataViewEvent,
   PublicEvaluationResult,
+  PublicGraphicsEvent,
   PublicOutputEvent,
 } from "./api.js";
-export { isNA, NA } from "./conversion.js";
-export type { JsInputValue, JsValue, NativRNAValue } from "./conversion.js";
+export { isComplex, isExpression, isLanguage, isNA, isRaw, isSymbol, NA } from "./conversion.js";
+export type {
+  JsInputValue,
+  JsValue,
+  NativRComplexValue,
+  NativRExpressionValue,
+  NativRFormulaValue,
+  NativRLanguageValue,
+  NativRNAValue,
+  NativRRawValue,
+  NativRSymbolValue,
+} from "./conversion.js";
 export type { CapabilityManifest, PublicRWarning, RValueSnapshot } from "@nativr/protocol";
 export {
   NativRError,

@@ -333,6 +333,70 @@ main {
   word-break: break-word;
 }
 
+.graphics-stage {
+  position: relative;
+  min-height: 180px;
+  padding: 14px;
+  background: #e7e7e1;
+}
+
+#graphics {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  background: white;
+}
+
+.graphics-stage > .empty {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.data-views {
+  min-height: 84px;
+  padding: 14px;
+}
+
+.data-view + .data-view {
+  margin-top: 16px;
+}
+
+.data-view h3 {
+  margin: 0 0 9px;
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+
+.data-view-scroll {
+  overflow: auto;
+  border: 1px solid var(--line);
+}
+
+.data-view table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  font-family: "Cascadia Mono", "SFMono-Regular", ui-monospace, monospace;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.data-view th,
+.data-view td {
+  padding: 7px 9px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.data-view th {
+  background: #eef0eb;
+  font-weight: 650;
+}
+
 .count {
   min-width: 24px;
   padding: 3px 7px;

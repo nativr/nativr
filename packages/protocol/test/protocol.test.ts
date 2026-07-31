@@ -31,6 +31,71 @@ describe("Worker protocol guards", () => {
     ).toBe(false);
   });
 
+  it("validates parallel complex snapshot storage", () => {
+    expect(
+      isRValueSnapshot({
+        version: 1,
+        type: "complex",
+        real: new Float64Array([1, 2]),
+        imaginary: new Float64Array([3, 4]),
+        missing: new Uint8Array([0, 1]),
+      }),
+    ).toBe(true);
+    expect(
+      isRValueSnapshot({
+        version: 1,
+        type: "complex",
+        real: new Float64Array([1, 2]),
+        imaginary: new Float64Array([3]),
+      }),
+    ).toBe(false);
+  });
+
+  it("validates raw snapshot bytes and dimensions", () => {
+    expect(
+      isRValueSnapshot({
+        version: 1,
+        type: "raw",
+        values: new Uint8Array([1, 2]),
+        dim: [1, 2],
+      }),
+    ).toBe(true);
+    expect(
+      isRValueSnapshot({
+        version: 1,
+        type: "raw",
+        values: new Int32Array([1, 2]),
+      }),
+    ).toBe(false);
+  });
+
+  it("validates exact vector-name lengths and element types", () => {
+    expect(
+      isRValueSnapshot({
+        version: 1,
+        type: "double",
+        values: new Float64Array([1, 2]),
+        names: ["a", "b"],
+      }),
+    ).toBe(true);
+    expect(
+      isRValueSnapshot({
+        version: 1,
+        type: "double",
+        values: new Float64Array([1, 2]),
+        names: ["a"],
+      }),
+    ).toBe(false);
+    expect(
+      isRValueSnapshot({
+        version: 1,
+        type: "list",
+        values: [{ version: 1, type: "null" }],
+        names: [1],
+      }),
+    ).toBe(false);
+  });
+
   it("rejects out-of-contract responses", () => {
     expect(isWorkerResponse({ protocolVersion: 1, id: "x", kind: "success", payload: {} })).toBe(
       false,
@@ -131,6 +196,24 @@ describe("Worker protocol guards", () => {
       type: "list",
       values: [{ version: 1, type: "null" }],
     },
+    {
+      version: 1,
+      type: "pairlist",
+      values: [{ version: 1, type: "double", values: new Float64Array([1]) }],
+      names: ["x"],
+      dim: [1],
+    },
+    {
+      version: 1,
+      type: "formula",
+      response: "y",
+      terms: ["x", "z"],
+      variables: ["y", "x", "z"],
+      intercept: true,
+    },
+    { version: 1, type: "symbol", name: "alpha" },
+    { version: 1, type: "language", source: "(1 + alpha)" },
+    { version: 1, type: "expression", sources: ["alpha", "(1 + beta)"] },
   ])("accepts snapshot type $type", (snapshot) => {
     expect(isRValueSnapshot(snapshot)).toBe(true);
   });
@@ -145,6 +228,52 @@ describe("Worker protocol guards", () => {
     expect(isRValueSnapshot({ version: 1, type: "double", values: [1] })).toBe(false);
     expect(isRValueSnapshot({ version: 1, type: "character", values: [1] })).toBe(false);
     expect(isRValueSnapshot({ version: 1, type: "list", values: [{}] })).toBe(false);
+    expect(isRValueSnapshot({ version: 1, type: "pairlist", values: [{}] })).toBe(false);
+    expect(
+      isRValueSnapshot({
+        version: 1,
+        type: "pairlist",
+        values: [{ version: 1, type: "null" }],
+        dim: [2],
+      }),
+    ).toBe(false);
+    expect(
+      isRValueSnapshot({
+        version: 1,
+        type: "formula",
+        terms: ["x", "x"],
+        variables: ["x"],
+        intercept: true,
+      }),
+    ).toBe(false);
+    expect(
+      isRValueSnapshot({
+        version: 1,
+        type: "formula",
+        terms: ["x"],
+        variables: ["x"],
+        intercept: "yes",
+      }),
+    ).toBe(false);
     expect(isRValueSnapshot({ version: 1, type: "unknown" })).toBe(false);
+    expect(
+      isRValueSnapshot({
+        version: 1,
+        type: "double",
+        values: new Float64Array([1, 2, 3, 4]),
+        dim: [2, 3],
+      }),
+    ).toBe(false);
+    expect(
+      isRValueSnapshot({
+        version: 1,
+        type: "double",
+        values: new Float64Array([1, 2, 3, 4]),
+        dim: [2, 2],
+      }),
+    ).toBe(true);
+    expect(isRValueSnapshot({ version: 1, type: "symbol", name: "" })).toBe(false);
+    expect(isRValueSnapshot({ version: 1, type: "language", source: 1 })).toBe(false);
+    expect(isRValueSnapshot({ version: 1, type: "expression", sources: ["x", 1] })).toBe(false);
   });
 });

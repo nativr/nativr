@@ -9,11 +9,18 @@ const cases = JSON.parse(
 const modulePath = path.join(root, "packages", "nativr", "dist", "index.js");
 const { createR, isNA } = await import(pathToFileURL(modulePath).href);
 const assetRoot = path.join(root, "packages", "nativr", "dist", "assets");
+const runtimeWasm = await readFile(path.join(assetRoot, "web-tree-sitter.wasm"));
+const grammarWasm = await readFile(path.join(assetRoot, "tree-sitter-r.wasm"));
+const bundledEntry = (await readFile(modulePath, "utf8")).includes("./chunks/");
 const runtime = await createR({
   execution: "inline",
   assets: {
-    treeSitterRuntimeWasm: await wasmDataUrl(path.join(assetRoot, "web-tree-sitter.wasm")),
-    rGrammarWasm: await wasmDataUrl(path.join(assetRoot, "tree-sitter-r.wasm")),
+    treeSitterRuntimeWasm: bundledEntry
+      ? new URL(`data:application/wasm;base64,${runtimeWasm.toString("base64")}`)
+      : pathToFileURL(path.join(assetRoot, "web-tree-sitter.wasm")),
+    rGrammarWasm: bundledEntry
+      ? new URL(`data:application/wasm;base64,${grammarWasm.toString("base64")}`)
+      : pathToFileURL(path.join(assetRoot, "tree-sitter-r.wasm")),
   },
 });
 let failures = 0;
@@ -27,10 +34,15 @@ for (const testCase of cases) {
     const warningMatches =
       testCase.expectedWarning === undefined ||
       testCase.expectedWarning === result.warnings.length > 0;
-    if (!deepEqual(actual, expected) || !warningMatches) {
+    const output = result.output.map((event) => event.text).join("");
+    const outputMatches =
+      testCase.expectedOutput === undefined || testCase.expectedOutput === output;
+    const visibilityMatches =
+      testCase.expectedVisible === undefined || testCase.expectedVisible === result.visible;
+    if (!deepEqual(actual, expected) || !warningMatches || !outputMatches || !visibilityMatches) {
       failures += 1;
       console.error(
-        `FAIL ${testCase.id}: expected ${JSON.stringify(expected)}, received ${JSON.stringify(actual)}`,
+        `FAIL ${testCase.id}: expected ${JSON.stringify(expected)}, received ${JSON.stringify(actual)}; output ${JSON.stringify(output)}; visible ${String(result.visible)}`,
       );
     } else {
       console.log(`PASS ${testCase.id}`);
@@ -54,9 +66,4 @@ function canonical(value, markerTest) {
 
 function deepEqual(left, right) {
   return JSON.stringify(left) === JSON.stringify(right);
-}
-
-async function wasmDataUrl(file) {
-  const contents = await readFile(file);
-  return `data:application/wasm;base64,${contents.toString("base64")}`;
 }

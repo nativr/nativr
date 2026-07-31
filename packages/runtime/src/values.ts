@@ -1,4 +1,4 @@
-import type { AstNode, FunctionParameter } from "@nativr/ast";
+import type { AstNode, FunctionParameter, ProgramNode } from "@nativr/ast";
 
 import { RTypeMismatchError } from "./errors.js";
 
@@ -33,6 +33,20 @@ export interface RDoubleVector extends RVectorBase {
   readonly missing?: Uint8Array;
 }
 
+/** A complex vector stored as parallel real and imaginary double arrays. */
+export interface RComplexVector extends RVectorBase {
+  readonly type: "complex";
+  readonly real: Float64Array;
+  readonly imaginary: Float64Array;
+  readonly missing?: Uint8Array;
+}
+
+/** A byte vector. Raw values never carry R missing values. */
+export interface RRawVector extends RVectorBase {
+  readonly type: "raw";
+  readonly values: Uint8Array;
+}
+
 /** A character vector with an independent missing mask. */
 export interface RCharacterVector extends RVectorBase {
   readonly type: "character";
@@ -49,13 +63,33 @@ export interface RNull {
 export interface RList extends RVectorBase {
   readonly type: "list";
   readonly values: readonly RValue[];
+  /** Internal distinction matching R's compact automatic data-frame row names. */
+  readonly automaticRowNames?: boolean;
 }
+
+/** A dotted-pair sequence kept distinct from ordinary vector/list storage. */
+export interface RPairlist extends RVectorBase {
+  readonly type: "pairlist";
+  readonly values: readonly RValue[];
+}
+
+/** Any indexable one-dimensional R value supported by the runtime. */
+export type RVector =
+  | RLogicalVector
+  | RIntegerVector
+  | RDoubleVector
+  | RComplexVector
+  | RRawVector
+  | RCharacterVector
+  | RList;
 
 /** A lexical environment with mutable bindings and an immutable parent link. */
 export interface REnvironment {
   readonly type: "environment";
   readonly id: number;
   readonly parent: REnvironment | null;
+  /** Whether unordered binding enumeration follows hashed-environment insertion order. */
+  readonly hashed: boolean;
   readonly bindings: Map<string, RBinding>;
 }
 
@@ -67,13 +101,49 @@ export interface RClosure {
   readonly environment: REnvironment;
 }
 
+/** A normalized, intentionally small formula value independent of parser internals. */
+export interface RFormula {
+  readonly type: "formula";
+  readonly response?: string;
+  readonly terms: readonly string[];
+  readonly variables: readonly string[];
+  readonly intercept: boolean;
+  readonly environment: REnvironment | null;
+}
+
+/** An interned-style R name represented independently from JavaScript identifiers. */
+export interface RSymbol {
+  readonly type: "symbol";
+  readonly name: string;
+}
+
+/** A quoted normalized NativR expression. */
+export interface RLanguage {
+  readonly type: "language";
+  readonly expression: AstNode;
+}
+
+/** An R expression vector containing unevaluated normalized syntax. */
+export interface RExpression {
+  readonly type: "expression";
+  readonly values: readonly AstNode[];
+}
+
 /** A lazily evaluated, memoized argument. */
 export interface RPromise {
   readonly type: "promise";
   readonly expression: AstNode | null;
   readonly environment: REnvironment;
+  /** Whether this promise originated from an omitted actual argument. */
+  readonly missing: boolean;
   state: "unforced" | "forcing" | "forced";
   value: RValue | undefined;
+}
+
+/** Lazily forwarded ellipsis arguments inside one closure frame. */
+export interface RDots {
+  readonly type: "dots";
+  readonly arguments: readonly BuiltinCallArgument[];
 }
 
 /** One call argument passed to a registered builtin. */
@@ -99,7 +169,51 @@ export type BuiltinKind = "regular" | "special" | "primitive";
 export interface BuiltinInvocation {
   readonly arguments: readonly BuiltinCallArgument[];
   readonly context: OperatorContext;
+  readonly state: Map<string, unknown>;
+  setResultVisibility(visibility: "visible" | "invisible"): void;
   force(promise: RPromise): Promise<RValue>;
+  forceDetailed(promise: RPromise): Promise<{ readonly value: RValue; readonly visible: boolean }>;
+  invoke(
+    callable: RValue,
+    arguments_: readonly { readonly name?: string; readonly value: RValue }[],
+  ): Promise<RValue>;
+  invokeDetailed(
+    callable: RValue,
+    arguments_: readonly { readonly name?: string; readonly value: RValue }[],
+  ): Promise<{ readonly value: RValue; readonly visible: boolean }>;
+  invokeLazy(callable: RValue, arguments_: readonly BuiltinCallArgument[]): Promise<RValue>;
+  parse(source: string, maxExpressions?: number): ProgramNode;
+  evaluate(value: RValue, environment: REnvironment): Promise<RValue>;
+  evaluateDetailed(
+    value: RValue,
+    environment: REnvironment,
+  ): Promise<{ readonly value: RValue; readonly visible: boolean }>;
+  signalCondition(classes: readonly string[], condition: RValue): Promise<void>;
+  configureOnExit(
+    expression: AstNode | null,
+    environment: REnvironment,
+    add: boolean,
+    after: boolean,
+  ): void;
+  isGlobalEnvironment(environment: REnvironment): boolean;
+  currentEnvironment(): REnvironment;
+  parentFrame(offset: number): REnvironment;
+  currentCall(): RLanguage | RNull;
+  systemCall(which: number): RLanguage | RNull;
+  searchPath(): readonly string[];
+  globalEnvironment(): REnvironment;
+  baseEnvironment(): REnvironment;
+  emptyEnvironment(): REnvironment;
+  matchCall(expandDots: boolean): RLanguage;
+  callerFormalDefault(name: string): Promise<RValue | undefined>;
+  define(name: string, value: RValue): void;
+  dispatchS3(generic: string, object?: RValue): Promise<RValue>;
+  dispatchS3IfPresent(
+    generic: string,
+    object: RValue,
+    arguments_: readonly BuiltinCallArgument[],
+  ): Promise<RValue | undefined>;
+  nextMethod(generic?: string): Promise<RValue>;
 }
 
 /** One independently registered base-language builtin. */
@@ -107,6 +221,7 @@ export interface BuiltinDefinition {
   readonly package: string;
   readonly name: string;
   readonly kind: BuiltinKind;
+  readonly resultVisibility?: "visible" | "invisible";
   readonly metadata: BuiltinMetadata;
   implementation(invocation: BuiltinInvocation): RValue | Promise<RValue>;
 }
@@ -138,14 +253,85 @@ export interface RWarning {
   readonly call?: string;
 }
 
+/** Text emitted by an evaluation without depending on a host console. */
+export interface ROutput {
+  readonly stream: "stdout" | "stderr" | "message";
+  readonly text: string;
+}
+
+/** One character-formatted column sent to a host data viewer. */
+export interface RDataViewColumn {
+  readonly name: string;
+  readonly values: readonly string[];
+}
+
+/** Spreadsheet-style data emitted without depending on a DOM or desktop viewer. */
+export interface RDataViewEvent {
+  readonly title: string;
+  readonly columns: readonly RDataViewColumn[];
+  readonly rowNames?: readonly string[];
+}
+
+/** One resolved, device-independent line segment. */
+export interface RGraphicsSegment {
+  readonly x0: number;
+  readonly y0: number;
+  readonly x1: number;
+  readonly y1: number;
+  /** CSS-compatible #RRGGBBAA color resolved before crossing the host boundary. */
+  readonly color: string;
+  /** A normalized R line-type pattern: solid or an even-length hexadecimal dash sequence. */
+  readonly lineType: string;
+  readonly lineWidth: number;
+}
+
+/** Device-independent graphics commands collected for a browser host. */
+export type RGraphicsEvent =
+  | { readonly kind: "new-page" }
+  | {
+      readonly kind: "window";
+      readonly xlim: readonly [number, number];
+      readonly ylim: readonly [number, number];
+    }
+  | {
+      readonly kind: "raster";
+      readonly rgba: Uint8Array;
+      readonly width: number;
+      readonly height: number;
+      readonly xleft: number;
+      readonly ybottom: number;
+      readonly xright: number;
+      readonly ytop: number;
+      readonly angle: number;
+      readonly interpolate: boolean;
+    }
+  | {
+      readonly kind: "segments";
+      readonly segments: readonly RGraphicsSegment[];
+    };
+
 /** Context exposed to deterministic computational operators. */
 export interface OperatorContext {
   readonly limits: RuntimeLimits;
   readonly cancellation: CancellationToken;
   warn(warning: RWarning): void;
+  writeOutput(output: ROutput): void;
+  beginOutputCapture(streams: readonly ROutput["stream"][]): void;
+  endOutputCapture(): readonly ROutput[];
+  writeDataView(event: RDataViewEvent): void;
+  writeGraphics(event: RGraphicsEvent): void;
+  pushWarningSuppression(): void;
+  popWarningSuppression(): void;
+  isWarningSuppressed(): boolean;
+  pushOutputSuppression(stream: ROutput["stream"]): void;
+  popOutputSuppression(stream: ROutput["stream"]): void;
+  isOutputSuppressed(stream: ROutput["stream"]): boolean;
   checkpoint(cost?: number): void;
   allocate(elements: number): void;
 }
+
+/** Session-state slot shared by the evaluator and the base condition builtins. */
+export const GLOBAL_CALLING_HANDLERS_STATE_KEY = "runtime.globalCallingHandlers";
 
 /** Replaceable arithmetic seam implemented by the JavaScript reference backend. */
 export interface RuntimeOperators {
@@ -159,10 +345,18 @@ export type RValue =
   | RLogicalVector
   | RIntegerVector
   | RDoubleVector
+  | RComplexVector
+  | RRawVector
   | RCharacterVector
   | RList
+  | RPairlist
+  | RFormula
+  | RSymbol
+  | RLanguage
+  | RExpression
   | REnvironment
   | RClosure
+  | RDots
   | RBuiltin;
 
 /** An environment binding is either an ordinary value or a lazy promise. */
@@ -200,6 +394,34 @@ export function doubleVector(
   return withMask({ type: "double", values: storage, length: storage.length }, missing);
 }
 
+/** Construct and validate an immutable complex vector. */
+export function complexVector(
+  real: ArrayLike<number>,
+  imaginary: ArrayLike<number>,
+  missing?: ArrayLike<number>,
+): RComplexVector {
+  const realStorage = Float64Array.from(real);
+  const imaginaryStorage = Float64Array.from(imaginary);
+  if (realStorage.length !== imaginaryStorage.length) {
+    throw new RTypeMismatchError("NRT3012", "Complex real and imaginary arrays must match.");
+  }
+  return withMask(
+    {
+      type: "complex",
+      real: realStorage,
+      imaginary: imaginaryStorage,
+      length: realStorage.length,
+    },
+    missing,
+  );
+}
+
+/** Construct an immutable raw byte vector. */
+export function rawVector(values: ArrayLike<number>): RRawVector {
+  const storage = Uint8Array.from(values);
+  return { type: "raw", values: storage, length: storage.length, attributes: EMPTY_ATTRIBUTES };
+}
+
 /** Construct and validate an immutable character vector. */
 export function characterVector(
   values: readonly string[],
@@ -209,14 +431,54 @@ export function characterVector(
   return withMask({ type: "character", values: storage, length: storage.length }, missing);
 }
 
-/** Construct an immutable R list. */
-export function listValue(values: readonly RValue[]): RList {
-  return {
+/** Construct an immutable R list with optional exact element names. */
+export function listValue(values: readonly RValue[], names?: readonly string[]): RList {
+  const list: RList = {
     type: "list",
     values: Object.freeze([...values]),
     length: values.length,
     attributes: EMPTY_ATTRIBUTES,
   };
+  return names === undefined ? list : withNames(list, names);
+}
+
+/** Construct an immutable pairlist with optional exact tag names. */
+export function pairlistValue(values: readonly RValue[], names?: readonly string[]): RPairlist {
+  const pairlist: RPairlist = {
+    type: "pairlist",
+    values: Object.freeze([...values]),
+    length: values.length,
+    attributes: EMPTY_ATTRIBUTES,
+  };
+  return names === undefined ? pairlist : withNames(pairlist, names);
+}
+
+/** Construct the documented data-frame subset as a named list of equal-length columns. */
+export function dataFrameValue(
+  columns: readonly RVector[],
+  names: readonly string[],
+  rowNames: readonly string[],
+  automaticRowNames = false,
+): RList {
+  const list = listValue(columns, names);
+  const attributes = new Map(list.attributes);
+  attributes.set("class", characterVector(["data.frame"]));
+  attributes.set("row.names", characterVector(rowNames));
+  return { ...list, attributes, automaticRowNames };
+}
+
+/** Construct an integer factor with exact levels and optional ordering. */
+export function factorValue(
+  codes: ArrayLike<number>,
+  levels: readonly string[],
+  missing?: ArrayLike<number>,
+  ordered = false,
+): RIntegerVector {
+  const value = integerVector(codes, missing);
+  const attributes = new Map(value.attributes);
+  attributes.set("levels", characterVector(levels));
+  attributes.set("class", characterVector(ordered ? ["ordered", "factor"] : ["factor"]));
+  return { ...value, attributes };
 }
 
 /** Return true when a vector element is an explicit R missing value. */
@@ -227,19 +489,189 @@ export function isMissing(value: RVectorBase, index: number): boolean {
 /** Return true for atomic vector values. */
 export function isAtomic(
   value: RValue,
-): value is RLogicalVector | RIntegerVector | RDoubleVector | RCharacterVector {
+): value is
+  RLogicalVector | RIntegerVector | RDoubleVector | RComplexVector | RRawVector | RCharacterVector {
   return (
     value.type === "logical" ||
     value.type === "integer" ||
     value.type === "double" ||
+    value.type === "complex" ||
+    value.type === "raw" ||
     value.type === "character"
   );
 }
 
+/** Return true for an atomic vector or list. */
+export function isVector(value: RValue): value is RVector {
+  return isAtomic(value) || value.type === "list";
+}
+
+/** Return true for values created by the NativR data-frame constructor. */
+export function isDataFrame(value: RValue): value is RList {
+  if (value.type !== "list") return false;
+  const classes = value.attributes.get("class");
+  const rowNames = value.attributes.get("row.names");
+  return (
+    classes?.type === "character" &&
+    classes.values.includes("data.frame") &&
+    rowNames?.type === "character" &&
+    rowNames.missing === undefined
+  );
+}
+
+/** Return true for integer vectors carrying the factor class and levels. */
+export function isFactor(value: RValue): value is RIntegerVector {
+  if (value.type !== "integer") return false;
+  const classes = value.attributes.get("class");
+  const levels = value.attributes.get("levels");
+  return (
+    classes?.type === "character" &&
+    classes.values.includes("factor") &&
+    levels?.type === "character" &&
+    levels.missing === undefined
+  );
+}
+
+/** Read exact factor levels. */
+export function factorLevels(value: RIntegerVector): readonly string[] {
+  if (!isFactor(value)) {
+    throw new RTypeMismatchError("NRT3008", "The value is not a factor.");
+  }
+  const levels = value.attributes.get("levels");
+  return levels?.type === "character" ? levels.values : [];
+}
+
+/** Read the validated row count of a NativR data frame. */
+export function dataFrameRowCount(value: RList): number {
+  if (!isDataFrame(value)) {
+    throw new RTypeMismatchError("NRT3007", "The value is not a data frame.");
+  }
+  const rowNames = value.attributes.get("row.names");
+  return rowNames?.type === "character" ? rowNames.length : 0;
+}
+
+/** Read an exact, non-missing names attribute when present. */
+export function vectorNames(value: RVector | RPairlist): readonly string[] | undefined {
+  const names = value.attributes.get("names");
+  if (names === undefined) return undefined;
+  if (names.type !== "character" || names.length !== value.length || names.missing !== undefined) {
+    throw new RTypeMismatchError("NRT3003", "The names attribute is malformed.", {
+      details: { valueLength: value.length },
+    });
+  }
+  return names.values;
+}
+
+/** Read validated dimensions from a vector when present. */
+export function vectorDimensions(value: RVector | RPairlist): readonly number[] | undefined {
+  const dimensions = value.attributes.get("dim");
+  if (dimensions === undefined) return undefined;
+  if (dimensions.type !== "integer" || dimensions.missing !== undefined) {
+    throw new RTypeMismatchError("NRT3005", "The dim attribute is malformed.");
+  }
+  const values = [...dimensions.values];
+  if (
+    values.some((dimension) => dimension < 0) ||
+    values.reduce((product, dimension) => product * dimension, 1) !== value.length
+  ) {
+    throw new RTypeMismatchError("NRT3005", "Dimensions must be non-negative and match length.", {
+      details: { valueLength: value.length, dimensions: values },
+    });
+  }
+  return values;
+}
+
+/** Read exact class names from a vector when present. */
+export function vectorClasses(value: RVector | RPairlist): readonly string[] | undefined {
+  const classes = value.attributes.get("class");
+  if (classes === undefined) return undefined;
+  if (classes.type !== "character" || classes.missing !== undefined) {
+    throw new RTypeMismatchError("NRT3009", "The class attribute is malformed.");
+  }
+  return classes.values;
+}
+
+/** Return an immutable vector clone with an exact names attribute. */
+export function withNames<T extends RVector | RPairlist>(value: T, names: readonly string[]): T {
+  if (names.length !== value.length) {
+    throw new RTypeMismatchError("NRT3004", "Names must match vector length.", {
+      details: { valueLength: value.length, namesLength: names.length },
+    });
+  }
+  const attributes = new Map(value.attributes);
+  attributes.set("names", characterVector(names));
+  return { ...value, attributes };
+}
+
+/** Return an immutable vector clone with validated dimensions. */
+export function withDimensions<T extends RVector | RPairlist>(
+  value: T,
+  dimensions: readonly number[],
+): T {
+  if (
+    dimensions.length === 0 ||
+    dimensions.some((dimension) => !Number.isInteger(dimension) || dimension < 0) ||
+    dimensions.reduce((product, dimension) => product * dimension, 1) !== value.length
+  ) {
+    throw new RTypeMismatchError(
+      "NRT3006",
+      "Dimensions must be non-negative integers matching length.",
+      { details: { valueLength: value.length, dimensions } },
+    );
+  }
+  const attributes = new Map(value.attributes);
+  attributes.set("dim", integerVector(dimensions));
+  return { ...value, attributes };
+}
+
+/** Return an immutable vector clone with exact class names. */
+export function withClasses<T extends RVector | RPairlist>(
+  value: T,
+  classes: readonly string[],
+): T {
+  if (classes.length === 0 || classes.some((className) => className === "")) {
+    throw new RTypeMismatchError("NRT3010", "Class names must be non-empty.");
+  }
+  const attributes = new Map(value.attributes);
+  attributes.set("class", characterVector(classes));
+  return { ...value, attributes };
+}
+
+/** Return an immutable vector clone with one validated runtime attribute. */
+export function withAttribute<T extends RVector | RPairlist>(
+  value: T,
+  name: string,
+  attribute: RValue,
+): T {
+  if (name.length === 0) {
+    throw new RTypeMismatchError("NRT3011", "Attribute names must be non-empty.");
+  }
+  const attributes = new Map(value.attributes);
+  attributes.set(name, attribute);
+  return {
+    ...value,
+    attributes,
+    ...(value.type === "list" && name === "row.names" ? { automaticRowNames: false } : {}),
+  };
+}
+
+/** Return an immutable vector clone without one named runtime attribute. */
+export function withoutAttribute<T extends RVector | RPairlist>(value: T, name: string): T {
+  if (!value.attributes.has(name)) return value;
+  const attributes = new Map(value.attributes);
+  attributes.delete(name);
+  return { ...value, attributes };
+}
+
+/** Return an immutable vector clone without an explicit class attribute. */
+export function withoutClasses<T extends RVector | RPairlist>(value: T): T {
+  return withoutAttribute(value, "class");
+}
+
 /** Create a typed length-one missing vector. */
 export function missingValue(
-  type: "logical" | "integer" | "double" | "character" = "logical",
-): RLogicalVector | RIntegerVector | RDoubleVector | RCharacterVector {
+  type: "logical" | "integer" | "double" | "complex" | "character" = "logical",
+): RLogicalVector | RIntegerVector | RDoubleVector | RComplexVector | RCharacterVector {
   switch (type) {
     case "logical":
       return logicalVector([0], [1]);
@@ -247,6 +679,8 @@ export function missingValue(
       return integerVector([0], [1]);
     case "double":
       return doubleVector([0], [1]);
+    case "complex":
+      return complexVector([0], [0], [1]);
     case "character":
       return characterVector([""], [1]);
   }
@@ -257,6 +691,8 @@ function withMask<
     | Omit<RLogicalVector, "attributes" | "missing">
     | Omit<RIntegerVector, "attributes" | "missing">
     | Omit<RDoubleVector, "attributes" | "missing">
+    | Omit<RComplexVector, "attributes" | "missing">
+    | Omit<RRawVector, "attributes" | "missing">
     | Omit<RCharacterVector, "attributes" | "missing">,
 >(
   vector: T,

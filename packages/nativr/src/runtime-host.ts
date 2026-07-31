@@ -3,6 +3,7 @@ import { createParser } from "@nativr/parser";
 import type { NativRParser, ParserAssets } from "@nativr/parser";
 import { Evaluator, RParseError } from "@nativr/runtime";
 import type { DetailedEvaluationResult, RuntimeLimits, RValue } from "@nativr/runtime";
+import type { ProgramNode } from "@nativr/ast";
 
 import { CAPABILITIES } from "./capabilities.js";
 import { snapshotToValue } from "./conversion.js";
@@ -26,24 +27,20 @@ export class RuntimeHost {
     const parser = await createParser(assets);
     const evaluator = new Evaluator(jsReferenceOperators, baseBuiltins, {
       ...(limits === undefined ? {} : { limits }),
+      parseSource: (source, maxExpressions) => parseProgram(parser, source, maxExpressions),
     });
     return new RuntimeHost(parser, evaluator);
   }
 
   public async eval(code: string): Promise<DetailedEvaluationResult> {
-    const parsed = this.#parser.parse(code);
-    const diagnostic = parsed.diagnostics.find((item) => item.severity === "error");
-    if (diagnostic !== undefined) {
-      throw new RParseError(diagnostic.code, diagnostic.message, {
-        ...(diagnostic.span === undefined ? {} : { span: diagnostic.span }),
-        details: { hint: diagnostic.hint ?? "" },
-      });
-    }
-    return this.#evaluator.evaluate(parsed.ast);
+    return this.#evaluator.evaluate(parseProgram(this.#parser, code));
   }
 
   public assign(name: string, snapshot: RValueSnapshot): void {
-    this.#evaluator.assign(name, snapshotToValue(snapshot));
+    this.#evaluator.assign(
+      name,
+      snapshotToValue(snapshot, (source) => parseProgram(this.#parser, source)),
+    );
   }
 
   public get(name: string): Promise<RValue> {
@@ -51,7 +48,10 @@ export class RuntimeHost {
   }
 
   public call(name: string, values: readonly RValueSnapshot[]): Promise<RValue> {
-    return this.#evaluator.call(name, values.map(snapshotToValue));
+    return this.#evaluator.call(
+      name,
+      values.map((value) => snapshotToValue(value, (source) => parseProgram(this.#parser, source))),
+    );
   }
 
   public capabilities(): CapabilityManifest {
@@ -70,4 +70,40 @@ export class RuntimeHost {
     this.#evaluator.dispose();
     this.#parser.dispose();
   }
+}
+
+function parseProgram(parser: NativRParser, source: string, maxExpressions?: number): ProgramNode {
+  if (maxExpressions === 0) return parser.parse("").ast;
+
+  const parsed = parser.parse(source);
+  const diagnostics = parsed.diagnostics.filter((item) => item.severity === "error");
+  const firstDiagnostic = diagnostics.sort(
+    (left, right) => (left.span?.start.offset ?? 0) - (right.span?.start.offset ?? 0),
+  )[0];
+  if (firstDiagnostic !== undefined) {
+    const selected = maxExpressions === undefined ? [] : parsed.ast.body.slice(0, maxExpressions);
+    const selectedEnd = selected.at(-1)?.span.end.offset;
+    const diagnosticStart = firstDiagnostic.span?.start.offset;
+    const canStopBeforeError =
+      maxExpressions !== undefined &&
+      maxExpressions > 0 &&
+      selected.length === maxExpressions &&
+      selectedEnd !== undefined &&
+      diagnosticStart !== undefined &&
+      selectedEnd <= diagnosticStart;
+    if (!canStopBeforeError) {
+      throw new RParseError(firstDiagnostic.code, firstDiagnostic.message, {
+        ...(firstDiagnostic.span === undefined ? {} : { span: firstDiagnostic.span }),
+        details: { hint: firstDiagnostic.hint ?? "" },
+      });
+    }
+  }
+
+  if (maxExpressions === undefined || parsed.ast.body.length <= maxExpressions) {
+    return parsed.ast;
+  }
+  return {
+    ...parsed.ast,
+    body: Object.freeze(parsed.ast.body.slice(0, maxExpressions)),
+  };
 }

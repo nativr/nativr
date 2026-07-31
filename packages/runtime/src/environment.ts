@@ -5,11 +5,12 @@ import type { RBinding, REnvironment, RPromise, RValue } from "./values.js";
 let nextEnvironmentId = 1;
 
 /** Create one mutable lexical environment. */
-export function createEnvironment(parent: REnvironment | null): REnvironment {
+export function createEnvironment(parent: REnvironment | null, hashed = false): REnvironment {
   return {
     type: "environment",
     id: nextEnvironmentId++,
     parent,
+    hashed,
     bindings: new Map(),
   };
 }
@@ -30,14 +31,44 @@ export function lookupBinding(environment: REnvironment, name: string): RBinding
   return undefined;
 }
 
-/** Construct an unforced lazy promise. */
-export function createPromise(expression: AstNode, environment: REnvironment): RPromise {
-  return { type: "promise", expression, environment, state: "unforced", value: undefined };
+/** Construct an unforced lazy promise, optionally recording an omitted defaulted argument. */
+export function createPromise(
+  expression: AstNode,
+  environment: REnvironment,
+  missing = false,
+): RPromise {
+  return {
+    type: "promise",
+    expression,
+    environment,
+    missing,
+    state: "unforced",
+    value: undefined,
+  };
+}
+
+/** Construct an omitted argument with no default expression. */
+export function createMissingPromise(environment: REnvironment): RPromise {
+  return {
+    type: "promise",
+    expression: null,
+    environment,
+    missing: true,
+    state: "unforced",
+    value: undefined,
+  };
 }
 
 /** Construct a promise that already contains a JavaScript-assigned runtime value. */
 export function createForcedPromise(value: RValue, environment: REnvironment): RPromise {
-  return { type: "promise", expression: null, environment, state: "forced", value };
+  return {
+    type: "promise",
+    expression: null,
+    environment,
+    missing: false,
+    state: "forced",
+    value,
+  };
 }
 
 /**
@@ -57,7 +88,7 @@ export async function forcePromise(
     throw new REvaluationError("NRE2010", "Promise is already under evaluation.");
   }
   if (promise.expression === null) {
-    throw new REvaluationError("NRE2011", "An unforced promise has no expression.");
+    throw new REvaluationError("NRE2006", "Argument is missing, with no default.");
   }
 
   promise.state = "forcing";

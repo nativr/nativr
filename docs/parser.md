@@ -15,8 +15,14 @@ NativR AST with source spans and structured `NRP` diagnostics. The web-tree-sitt
 callback currently reports UTF-16 indices; `Utf8SourceMap` also implements byte-to-UTF-16 conversion
 for byte-oriented callbacks and has a Unicode test.
 
-Subset, namespace, formula, pipe, loop, if, and return syntax is normalized but rejected later with
-an evaluator-level unsupported-feature error. Grammar recovery errors remain parse diagnostics.
+Complete top-level expressions before a trailing grammar error remain available in the normalized
+program so `parse(text=, n=)` can stop at the requested boundary. Ordinary source evaluation still
+rejects any error diagnostic. Recovery nodes and Tree-sitter objects never cross the parser facade.
+
+Ordinary user-defined `%name%` infix syntax normalizes to an owned call expression, allowing
+bindings such as `%o%` and user closures to use normal callable lookup. The built-in `%%`, `%/%`,
+and `%in%` operators retain their explicit normalized binary forms, and pipe forms retain their
+separate rewrite path.
 
 The browser bundle applies a reviewed build-time patch to two generic Emscripten EM_ASM/EM_JS
 fallbacks in web-tree-sitter. NativR's pinned R grammar exports neither facility, so the runtime

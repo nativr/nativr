@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NativR browser REPL</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: system-ui, sans-serif;
+      }
+
+      body {
+        box-sizing: border-box;
+        margin: 0 auto;
+        max-width: 880px;
+        padding: 2rem;
+      }
+
+      textarea,
+      pre {
+        box-sizing: border-box;
+        font:
+          15px/1.5 ui-monospace,
+          monospace;
+        width: 100%;
+      }
+
+      textarea {
+        min-height: 13rem;
+        padding: 1rem;
+      }
+
+      button {
+        margin: 0.75rem 0;
+        padding: 0.6rem 1rem;
+      }
+
+      pre {
+        border: 1px solid #8888;
+        min-height: 8rem;
+        overflow: auto;
+        padding: 1rem;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>NativR browser REPL</h1>
+    <p>Run with the button or <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Enter</kbd>.</p>
+    <textarea id="source" spellcheck="false">
+x <- c(1, 2, 3, 4, 5)
+mean(x)</textarea>
+    <button id="run" type="button" disabled>Loading NativR…</button>
+    <pre id="output" aria-live="polite">Loading the runtime and R grammar…</pre>
+
+    <script type="module">
+      import { createR } from "https://cdn.jsdelivr.net/npm/@nativr/nativr@0.1.1/dist/index.js";
+
+      const cdn = "https://cdn.jsdelivr.net/npm/@nativr/nativr@0.1.1/dist/";
+      const source = document.querySelector("#source");
+      const run = document.querySelector("#run");
+      const output = document.querySelector("#output");
+      const r = await createR({
+        execution: "inline",
+        assets: {
+          treeSitterRuntimeWasm: new URL("web-tree-sitter.wasm", cdn),
+          rGrammarWasm: new URL("tree-sitter-r.wasm", cdn),
+        },
+      });
+
+      run.disabled = false;
+      run.textContent = "Run R";
+      output.textContent = "Ready.";
+
+      async function evaluate() {
+        run.disabled = true;
+        output.textContent = "Running…";
+        try {
+          const result = await r.evalDetailed(source.value);
+          const text = result.output.map((event) => event.text).join("");
+          const warnings = result.warnings
+            .map((warning) => `Warning: ${warning.message}\n`)
+            .join("");
+          const value = result.visible ? `${JSON.stringify(result.value, null, 2)}\n` : "";
+          output.textContent = `${text}${warnings}${value}` || "(invisible result)";
+        } catch (error) {
+          output.textContent = `${error.name}: ${error.message}`;
+        } finally {
+          run.disabled = false;
+        }
+      }
+
+      run.addEventListener("click", evaluate);
+      source.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+          event.preventDefault();
+          evaluate();
+        }
+      });
+    </script>
+  </body>
+</html>

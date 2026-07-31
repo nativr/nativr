@@ -3,6 +3,7 @@
 import { PROTOCOL_VERSION, isWorkerRequest } from "@nativr/protocol";
 import type {
   ErrorResponse,
+  OutputEvent,
   SuccessResponse,
   WarningEvent,
   WorkerRequest,
@@ -51,6 +52,16 @@ async function handleRequest(request: WorkerRequest): Promise<void> {
           };
           workerScope.postMessage(event);
         }
+        for (const output of result.output) {
+          const event: OutputEvent = {
+            protocolVersion: PROTOCOL_VERSION,
+            id: request.id,
+            kind: "output",
+            stream: output.stream,
+            text: output.text,
+          };
+          workerScope.postMessage(event);
+        }
         const raw = valueToSnapshot(result.value);
         postSuccess(
           request.id,
@@ -60,11 +71,19 @@ async function handleRequest(request: WorkerRequest): Promise<void> {
               raw,
               visible: result.visible,
               warnings: result.warnings,
+              output: result.output,
+              dataViews: result.dataViews,
+              graphics: result.graphics,
               elapsedMs: result.elapsedMs,
               runtimeReset: false,
             },
           },
-          snapshotTransferables(raw),
+          [
+            ...snapshotTransferables(raw),
+            ...result.graphics.flatMap((event) =>
+              event.kind === "raster" ? [event.rgba.buffer as ArrayBuffer] : [],
+            ),
+          ],
         );
         return;
       }

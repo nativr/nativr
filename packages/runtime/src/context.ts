@@ -1,5 +1,13 @@
 import { RResourceLimitError } from "./errors.js";
-import type { CancellationToken, OperatorContext, RWarning, RuntimeLimits } from "./values.js";
+import type {
+  CancellationToken,
+  OperatorContext,
+  RDataViewEvent,
+  RGraphicsEvent,
+  ROutput,
+  RWarning,
+  RuntimeLimits,
+} from "./values.js";
 
 /** Safe default limits for interactive browser evaluation. */
 export const DEFAULT_RUNTIME_LIMITS: RuntimeLimits = Object.freeze({
@@ -14,9 +22,20 @@ export class EvaluationContext implements OperatorContext {
   public readonly limits: RuntimeLimits;
   public readonly cancellation: CancellationToken;
   public readonly warnings: RWarning[] = [];
+  public readonly output: ROutput[] = [];
+  public readonly dataViews: RDataViewEvent[] = [];
+  public readonly graphics: RGraphicsEvent[] = [];
   public steps = 0;
   public allocatedElements = 0;
   public callDepth = 0;
+  public outputBytes = 0;
+  #warningSuppressionDepth = 0;
+  readonly #outputSuppressionDepth = new Map<ROutput["stream"], number>();
+  readonly #outputCaptures: {
+    readonly streams: ReadonlySet<ROutput["stream"]>;
+    readonly output: ROutput[];
+    bytes: number;
+  }[] = [];
 
   public constructor(limits: RuntimeLimits, cancellation: CancellationToken) {
     this.limits = limits;
@@ -51,7 +70,110 @@ export class EvaluationContext implements OperatorContext {
   }
 
   public warn(warning: RWarning): void {
+    if (this.#warningSuppressionDepth > 0) return;
     this.warnings.push(warning);
+  }
+
+  public writeOutput(output: ROutput): void {
+    if ((this.#outputSuppressionDepth.get(output.stream) ?? 0) > 0) return;
+    const bytes = utf8ByteLength(output.text);
+    for (let index = this.#outputCaptures.length - 1; index >= 0; index -= 1) {
+      const capture = this.#outputCaptures[index];
+      if (capture === undefined || !capture.streams.has(output.stream)) continue;
+      const outputBytes = capture.bytes + bytes;
+      if (outputBytes > this.limits.maxOutputBytes) {
+        throw new RResourceLimitError("NRL4007", "Evaluation output size limit exceeded.", {
+          details: { maxOutputBytes: this.limits.maxOutputBytes, outputBytes },
+        });
+      }
+      capture.bytes = outputBytes;
+      capture.output.push(output);
+      return;
+    }
+    const outputBytes = this.outputBytes + bytes;
+    if (outputBytes > this.limits.maxOutputBytes) {
+      throw new RResourceLimitError("NRL4007", "Evaluation output size limit exceeded.", {
+        details: { maxOutputBytes: this.limits.maxOutputBytes, outputBytes },
+      });
+    }
+    this.outputBytes = outputBytes;
+    this.output.push(output);
+  }
+
+  public beginOutputCapture(streams: readonly ROutput["stream"][]): void {
+    this.#outputCaptures.push({
+      streams: new Set(streams),
+      output: [],
+      bytes: 0,
+    });
+  }
+
+  public endOutputCapture(): readonly ROutput[] {
+    return this.#outputCaptures.pop()?.output ?? [];
+  }
+
+  public writeDataView(event: RDataViewEvent): void {
+    const bytes =
+      utf8ByteLength(event.title) +
+      (event.rowNames ?? []).reduce((total, value) => total + utf8ByteLength(value), 0) +
+      event.columns.reduce(
+        (total, column) =>
+          total +
+          utf8ByteLength(column.name) +
+          column.values.reduce((sum, value) => sum + utf8ByteLength(value), 0),
+        0,
+      );
+    const outputBytes = this.outputBytes + bytes;
+    if (outputBytes > this.limits.maxOutputBytes) {
+      throw new RResourceLimitError("NRL4007", "Evaluation output size limit exceeded.", {
+        details: { maxOutputBytes: this.limits.maxOutputBytes, outputBytes },
+      });
+    }
+    this.outputBytes = outputBytes;
+    this.dataViews.push(event);
+  }
+
+  public writeGraphics(event: RGraphicsEvent): void {
+    const bytes =
+      event.kind === "raster"
+        ? event.rgba.byteLength
+        : event.kind === "segments"
+          ? event.segments.length * 64
+          : 0;
+    const outputBytes = this.outputBytes + bytes;
+    if (outputBytes > this.limits.maxOutputBytes) {
+      throw new RResourceLimitError("NRL4007", "Evaluation output size limit exceeded.", {
+        details: { maxOutputBytes: this.limits.maxOutputBytes, outputBytes },
+      });
+    }
+    this.outputBytes = outputBytes;
+    this.graphics.push(event);
+  }
+
+  public pushWarningSuppression(): void {
+    this.#warningSuppressionDepth += 1;
+  }
+
+  public popWarningSuppression(): void {
+    this.#warningSuppressionDepth = Math.max(0, this.#warningSuppressionDepth - 1);
+  }
+
+  public isWarningSuppressed(): boolean {
+    return this.#warningSuppressionDepth > 0;
+  }
+
+  public pushOutputSuppression(stream: ROutput["stream"]): void {
+    this.#outputSuppressionDepth.set(stream, (this.#outputSuppressionDepth.get(stream) ?? 0) + 1);
+  }
+
+  public popOutputSuppression(stream: ROutput["stream"]): void {
+    const depth = Math.max(0, (this.#outputSuppressionDepth.get(stream) ?? 0) - 1);
+    if (depth === 0) this.#outputSuppressionDepth.delete(stream);
+    else this.#outputSuppressionDepth.set(stream, depth);
+  }
+
+  public isOutputSuppressed(stream: ROutput["stream"]): boolean {
+    return (this.#outputSuppressionDepth.get(stream) ?? 0) > 0;
   }
 
   public enterCall(): void {
@@ -67,4 +189,13 @@ export class EvaluationContext implements OperatorContext {
   public leaveCall(): void {
     this.callDepth = Math.max(0, this.callDepth - 1);
   }
+}
+
+function utf8ByteLength(value: string): number {
+  let bytes = 0;
+  for (const character of value) {
+    const point = character.codePointAt(0) ?? 0;
+    bytes += point <= 0x7f ? 1 : point <= 0x7ff ? 2 : point <= 0xffff ? 3 : 4;
+  }
+  return bytes;
 }

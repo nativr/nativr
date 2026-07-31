@@ -3,11 +3,15 @@ import {
   RTypeMismatchError,
   R_NULL,
   characterVector,
+  complexVector,
   createEnvironment,
   doubleVector,
   integerVector,
   listValue,
   logicalVector,
+  pairlistValue,
+  withDimensions,
+  withNames,
 } from "@nativr/runtime";
 import { describe, expect, it } from "vitest";
 
@@ -15,7 +19,12 @@ import {
   NA,
   deserializeError,
   inputToSnapshot,
+  isComplex,
+  isExpression,
+  isLanguage,
   isNA,
+  isRaw,
+  isSymbol,
   serializeError,
   snapshotToJs,
   snapshotToValue,
@@ -29,6 +38,37 @@ describe("public value conversion boundary", () => {
     expect(isNA({ __nativr__: "NA" })).toBe(true);
     expect(isNA({ __nativr__: "other" })).toBe(false);
     expect(isNA(null)).toBe(false);
+  });
+
+  it("recognizes, encodes, and decodes complex scalar values", () => {
+    const value = { __nativr__: "complex" as const, real: 2, imaginary: -3 };
+    expect(isComplex(value)).toBe(true);
+    const snapshot = inputToSnapshot(value);
+    expect(snapshot).toMatchObject({
+      type: "complex",
+      real: new Float64Array([2]),
+      imaginary: new Float64Array([-3]),
+    });
+    expect(snapshotToJs(snapshot)).toEqual(value);
+    expect(
+      inputToSnapshot([value, NA, { __nativr__: "complex", real: -1, imaginary: 4 }]),
+    ).toMatchObject({
+      type: "complex",
+      real: new Float64Array([2, 0, -1]),
+      imaginary: new Float64Array([-3, 0, 4]),
+      missing: new Uint8Array([0, 1, 0]),
+    });
+    expectErrorCode(() => inputToSnapshot([value, 2] as never), "NRT3204");
+  });
+
+  it("recognizes, encodes, decodes, and transfers raw vectors", () => {
+    const value = { __nativr__: "raw" as const, bytes: new Uint8Array([0, 1, 255]) };
+    expect(isRaw(value)).toBe(true);
+    const snapshot = inputToSnapshot(value);
+    expect(snapshot).toMatchObject({ type: "raw", values: new Uint8Array([0, 1, 255]) });
+    expect(snapshotToJs(snapshot)).toEqual(value);
+    if (snapshot.type !== "raw") throw new Error("Expected a raw snapshot.");
+    expect(snapshotTransferables(snapshot)).toEqual([snapshot.values.buffer]);
   });
 
   it("encodes scalar JavaScript inputs", () => {
@@ -113,8 +153,10 @@ describe("public value conversion boundary", () => {
       logicalVector([1, 0]),
       integerVector([1, 2]),
       doubleVector([1, Number.NaN], [0, 1]),
+      complexVector([1, 2], [3, 4], [0, 1]),
       characterVector(["one", ""], [0, 1]),
       listValue([integerVector([1]), characterVector(["two"])]),
+      pairlistValue([integerVector([1]), characterVector(["two"])], ["first", "second"]),
     ] as const;
     for (const value of values) {
       expect(valueToSnapshot(snapshotToValue(valueToSnapshot(value)))).toEqual(
@@ -122,6 +164,106 @@ describe("public value conversion boundary", () => {
       );
     }
     expectErrorCode(() => valueToSnapshot(createEnvironment(null)), "NRT3201");
+  });
+
+  it("round-trips exact names on atomic vectors and lists", () => {
+    const atomic = withNames(doubleVector([10, 20]), ["a", "b"]);
+    const list = listValue([atomic, integerVector([3])], ["values", "count"]);
+    const pairlist = pairlistValue([integerVector([1]), integerVector([2])], ["first", "second"]);
+    expect(valueToSnapshot(atomic)).toMatchObject({ names: ["a", "b"] });
+    expect(valueToSnapshot(list)).toMatchObject({ names: ["values", "count"] });
+    expect(valueToSnapshot(pairlist)).toMatchObject({
+      type: "pairlist",
+      names: ["first", "second"],
+    });
+    expect(snapshotToJs(valueToSnapshot(pairlist))).toEqual([1, 2]);
+    expect(valueToSnapshot(snapshotToValue(valueToSnapshot(list)))).toEqual(valueToSnapshot(list));
+  });
+
+  it("round-trips validated dimensions without changing friendly values", () => {
+    const matrix = withDimensions(doubleVector([1, 2, 3, 4]), [2, 2]);
+    const snapshot = valueToSnapshot(matrix);
+    expect(snapshot).toMatchObject({ dim: [2, 2] });
+    expect(valueToSnapshot(snapshotToValue(snapshot))).toEqual(snapshot);
+    expect(snapshotToJs(snapshot)).toEqual([1, 2, 3, 4]);
+
+    const pairlistMatrix = withDimensions(
+      pairlistValue(
+        [integerVector([1]), integerVector([2]), integerVector([3]), integerVector([4])],
+        ["a", "b", "c", "d"],
+      ),
+      [2, 2],
+    );
+    const pairlistSnapshot = valueToSnapshot(pairlistMatrix);
+    expect(pairlistSnapshot).toMatchObject({ type: "pairlist", dim: [2, 2] });
+    expect(valueToSnapshot(snapshotToValue(pairlistSnapshot))).toEqual(pairlistSnapshot);
+    expect(snapshotToJs(pairlistSnapshot)).toEqual([1, 2, 3, 4]);
+  });
+
+  it("round-trips normalized formulas without parser implementation details", () => {
+    const formula = {
+      type: "formula" as const,
+      response: "y",
+      terms: ["x", "z"],
+      variables: ["y", "x", "z"],
+      intercept: false,
+      environment: null,
+    };
+    const snapshot = valueToSnapshot(formula);
+    expect(snapshot).toEqual({
+      version: 1,
+      type: "formula",
+      response: "y",
+      terms: ["x", "z"],
+      variables: ["y", "x", "z"],
+      intercept: false,
+    });
+    expect(valueToSnapshot(snapshotToValue(snapshot))).toEqual(snapshot);
+    expect(snapshotToJs(snapshot)).toEqual({
+      __nativr__: "formula",
+      response: "y",
+      terms: ["x", "z"],
+      variables: ["y", "x", "z"],
+      intercept: false,
+    });
+    expect(snapshotTransferables(snapshot)).toEqual([]);
+  });
+
+  it("transports symbols and quoted language without exposing normalized AST nodes", () => {
+    const symbol = { version: 1, type: "symbol" as const, name: "alpha" };
+    const language = { version: 1, type: "language" as const, source: "(1 + alpha)" };
+    const symbolValue = snapshotToJs(symbol);
+    const languageValue = snapshotToJs(language);
+    expect(symbolValue).toEqual({ __nativr__: "symbol", name: "alpha" });
+    expect(languageValue).toEqual({ __nativr__: "language", source: "(1 + alpha)" });
+    expect(isSymbol(symbolValue)).toBe(true);
+    expect(isLanguage(languageValue)).toBe(true);
+    expect(isSymbol(languageValue)).toBe(false);
+    expect(isLanguage(symbolValue)).toBe(false);
+    expect(inputToSnapshot(symbolValue)).toEqual(symbol);
+    expect(inputToSnapshot(languageValue)).toEqual(language);
+    expect(valueToSnapshot(snapshotToValue(symbol))).toEqual(symbol);
+    expectErrorCode(() => snapshotToValue(language), "NRT3206");
+    expect(snapshotTransferables(symbol)).toEqual([]);
+    expect(snapshotTransferables(language)).toEqual([]);
+  });
+
+  it("transports expression vectors as immutable diagnostic source arrays", () => {
+    const snapshot = {
+      version: 1,
+      type: "expression" as const,
+      sources: ["x", "(1 + y)"],
+    };
+    const value = snapshotToJs(snapshot);
+    expect(value).toEqual({
+      __nativr__: "expression",
+      sources: ["x", "(1 + y)"],
+    });
+    expect(isExpression(value)).toBe(true);
+    expect(isExpression({ __nativr__: "expression", sources: ["x", 1] })).toBe(false);
+    expect(inputToSnapshot(value)).toEqual(snapshot);
+    expectErrorCode(() => snapshotToValue(snapshot), "NRT3206");
+    expect(snapshotTransferables(snapshot)).toEqual([]);
   });
 
   it("decodes friendly scalar, vector, list, logical, and missing values", () => {
@@ -171,6 +313,16 @@ describe("public value conversion boundary", () => {
         values: [{ version: 1, type: "double", values }],
       }),
     ).toEqual([values.buffer]);
+    const real = new Float64Array([1]);
+    const imaginary = new Float64Array([2]);
+    expect(
+      snapshotTransferables({
+        version: 1,
+        type: "complex",
+        real,
+        imaginary,
+      }),
+    ).toEqual([real.buffer, imaginary.buffer]);
   });
 
   it("serializes stable errors with opt-in debug stacks", () => {
