@@ -50,5 +50,7 @@ package-specific executable tests pass.
 
 Pure-R package functions can execute without TypeScript rewrites when their language and core API
 requirements are supported. Package compatibility failures become concrete diagnostics that feed
-feature prioritization. Binary data conversion, broader NAMESPACE/S4 support, package tests, and
-native Wasm adapters remain explicit later layers rather than hidden installer side effects.
+feature prioritization. Package `data/*.R` and delimited text resources now load through the normal
+runtime parser and table layer. Binary/lazy data conversion, broader NAMESPACE/S4 support, package
+tests, and native Wasm adapters remain explicit later layers rather than hidden installer side
+effects.

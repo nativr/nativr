@@ -83,12 +83,13 @@ console.log(await r.eval('readLines(system.file("DESCRIPTION", package = "demo")
 
 The loader supports isolated namespaces, dependency/import loading and version checks, package
 metadata/source/resources through virtual `system.file()` paths, bounded `readLines()`, and
-read-only `file()` connections, plus exports, `pkg::name`, `pkg:::name`, S3 registrations,
-`.onLoad()`, `.onAttach()`, `library()`, `require()`, and `requireNamespace()` in inline and Worker
-execution. Arbitrary pure-R source packages can enter this pipeline, but that is not a claim that
-every package already executes: all dependencies, data formats, namespace directives, and R features
-it uses must also be supported. The unchanged public `pkgconfig 2.0.3` source package is the first
-pinned end-to-end external proof. See the [complete bundle example](examples/pure-r-package.ts) and
+read-only `file()` connections, package `data/*.R`/text-dataset loading through `data()`, plus
+exports, `pkg::name`, `pkg:::name`, S3 registrations, `.onLoad()`, `.onAttach()`, `library()`,
+`require()`, and `requireNamespace()` in inline and Worker execution. Arbitrary pure-R source
+packages can enter this pipeline, but that is not a claim that every package already executes: all
+dependencies, data formats, namespace directives, and R features it uses must also be supported. The
+unchanged public `pkgconfig 2.0.3` source package is the first pinned end-to-end external proof. See
+the [complete bundle example](examples/pure-r-package.ts) and
 [package-loading contract](docs/pure-r-packages.md).
 
 ### One-file browser example
@@ -130,51 +131,53 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 513 registered functions, including resettable
+an initial condition/handler slice. It exposes 522 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
-plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
-preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
-`ifelse` provides lazy vectorized branch selection. Missing-aware `any`/`all` logical summaries
-cover atomic and list inputs, while `subset` provides lazy vector/list/matrix/data-frame selection
-expressions. Environment removal, core value reversal, cumulative numeric summaries, function-exit
-cleanup, `AsIs` class marking, closure-body inspection, and recursive list flattening extend the
-frequency-ranked surface. Closure `formals` inspection and lazy repeated evaluation through
-`replicate`, real-vector `floor`, grouped `split`, factor-pattern generation through `gl`, and
-bounded data-frame joins through `merge` follow the same measured priority data. List/data-frame
-mutation through `within` and vectorized real/complex `sin` continue that frequency-ranked sequence.
-Numeric-order factor coercion through `as.factor` and grouped transformation through `ave` are the
-next completed entries from the same ranking. Vectorized UTC/GMT construction through `ISOdate` and
-Cartesian data-frame generation through `expand.grid` are the next completed pair. Type-promoting
-insertion through `append` and vectorized real/complex `cos` follow, with stable `intersect`,
-`setdiff`, and `union` completing the next measured family and parallel minimum selection through
-`pmin` following it. The frequency-ranked model path now includes `lm`, `aov`, treatment-coded model
-matrices, prediction and accessors, while `IQR` and all nine `quantile` algorithms cover the next
-isolated descriptive-statistics entry. Central Student-t probabilities and quantiles now support
-weighted QR covariance, `vcov`, `confint`, and residual degrees of freedom for that model path.
-Usage-ranked `kmeans` adds an independently implemented browser-native clustering path with explicit
-or session-random initial centers and the documented Hartigan-Wong, Lloyd/Forgy, and MacQueen
-algorithm choices. Circular, open, and filtering convolution now follows the same ranking through an
-owned complex radix-2/Bluestein Fourier backend. Usage-ranked hexadecimal integer modes add
-validated numeric/character construction, signed 32-bit formatting, class-preserving subsetting,
-printing, and bitwise operations. Environment-to-list conversion now follows the same usage ranking
-with local binding enumeration, hidden-name and ordering controls, lazy-promise forcing, and S3
-dispatch. Browser host-capability reporting follows with GNU R's named selection shape and
-deterministic `FALSE` values for unavailable graphics, profiling, network, and native facilities.
-Usage-ranked `kappa` adds owned QR-based estimates, exact 2-norm condition numbers, direct
-one-/infinity-norm paths, triangular controls, and `qr`/`lm` S3 methods without a host
-linear-algebra dependency. The next measured callable, `xtabs`, now cross-tabulates formula-selected
-factor, character, and numeric axes with weighted or matrix responses, subsets, missing-value
-controls, and GNU R-shaped table metadata. Usage-ranked `RNGkind` now covers the sampled kind-query
-surface, default Mersenne-Twister/Inversion selection, and both discrete samplers; the fixed-seed
-uniform sequence has black-box GNU R evidence. Rank-296 `sample.int` then adds the exact fixed-seed
-integer-sampling path used by `withr`, including `.Machine$integer.max`, replacement,
-no-replacement, hash, weighted, and large-population modes. The next usage-ranked locale slice adds
-session-local `Sys.getlocale`, `Sys.setlocale`, and `Sys.localeconv` behavior for the deterministic
-C profile and the `it_IT`/`en_US` monetary profiles observed in `withr`, without reading host locale
-state. Rank-303 `tan` then runs the expressions observed in `testthat` and `data.table`, backed by
-the base `pi` constant and vectorized real/complex, missing-value, metadata, and non-finite warning
-semantics. Rank-304 `make.names` now runs tibble's measured formula-based custom name repair with
-GNU R-compatible C-locale syntax, reserved-word, underscore, missing-name, and uniqueness rules.
+plus real/complex logarithm and exponential semantics. Browser-memory `read.table`/`read.csv`/
+`read.delim` and `write.table`/`write.csv` paths provide quoted text-table interchange without host
+filesystem access. Data-mask and local-environment evaluation preserve result visibility, while
+`all.equal` provides bounded tolerant recursive comparison and `ifelse` provides lazy vectorized
+branch selection. Missing-aware `any`/`all` logical summaries cover atomic and list inputs, while
+`subset` provides lazy vector/list/matrix/data-frame selection expressions. Environment removal,
+core value reversal, cumulative numeric summaries, function-exit cleanup, `AsIs` class marking,
+closure-body inspection, and recursive list flattening extend the frequency-ranked surface. Closure
+`formals` inspection and lazy repeated evaluation through `replicate`, real-vector `floor`, grouped
+`split`, factor-pattern generation through `gl`, and bounded data-frame joins through `merge` follow
+the same measured priority data. List/data-frame mutation through `within` and vectorized
+real/complex `sin` continue that frequency-ranked sequence. Numeric-order factor coercion through
+`as.factor` and grouped transformation through `ave` are the next completed entries from the same
+ranking. Vectorized UTC/GMT construction through `ISOdate` and Cartesian data-frame generation
+through `expand.grid` are the next completed pair. Type-promoting insertion through `append` and
+vectorized real/complex `cos` follow, with stable `intersect`, `setdiff`, and `union` completing the
+next measured family and parallel minimum selection through `pmin` following it. The
+frequency-ranked model path now includes `lm`, `aov`, treatment-coded model matrices, prediction and
+accessors, while `IQR` and all nine `quantile` algorithms cover the next isolated
+descriptive-statistics entry. Central Student-t probabilities and quantiles now support weighted QR
+covariance, `vcov`, `confint`, and residual degrees of freedom for that model path. Usage-ranked
+`kmeans` adds an independently implemented browser-native clustering path with explicit or
+session-random initial centers and the documented Hartigan-Wong, Lloyd/Forgy, and MacQueen algorithm
+choices. Circular, open, and filtering convolution now follows the same ranking through an owned
+complex radix-2/Bluestein Fourier backend. Usage-ranked hexadecimal integer modes add validated
+numeric/character construction, signed 32-bit formatting, class-preserving subsetting, printing, and
+bitwise operations. Environment-to-list conversion now follows the same usage ranking with local
+binding enumeration, hidden-name and ordering controls, lazy-promise forcing, and S3 dispatch.
+Browser host-capability reporting follows with GNU R's named selection shape and deterministic
+`FALSE` values for unavailable graphics, profiling, network, and native facilities. Usage-ranked
+`kappa` adds owned QR-based estimates, exact 2-norm condition numbers, direct one-/infinity-norm
+paths, triangular controls, and `qr`/`lm` S3 methods without a host linear-algebra dependency. The
+next measured callable, `xtabs`, now cross-tabulates formula-selected factor, character, and numeric
+axes with weighted or matrix responses, subsets, missing-value controls, and GNU R-shaped table
+metadata. Usage-ranked `RNGkind` now covers the sampled kind-query surface, default
+Mersenne-Twister/Inversion selection, and both discrete samplers; the fixed-seed uniform sequence
+has black-box GNU R evidence. Rank-296 `sample.int` then adds the exact fixed-seed integer-sampling
+path used by `withr`, including `.Machine$integer.max`, replacement, no-replacement, hash, weighted,
+and large-population modes. The next usage-ranked locale slice adds session-local `Sys.getlocale`,
+`Sys.setlocale`, and `Sys.localeconv` behavior for the deterministic C profile and the
+`it_IT`/`en_US` monetary profiles observed in `withr`, without reading host locale state. Rank-303
+`tan` then runs the expressions observed in `testthat` and `data.table`, backed by the base `pi`
+constant and vectorized real/complex, missing-value, metadata, and non-finite warning semantics.
+Rank-304 `make.names` now runs tibble's measured formula-based custom name repair with GNU
+R-compatible C-locale syntax, reserved-word, underscore, missing-name, and uniqueness rules.
 Rank-305 `start` adds row-based and regular-time-series origin coordinates, `ts.eps` grid
 recognition, negative periods, decimal fallbacks, and package-defined S3 method dispatch. Rank-307
 `as.roman` runs pillar's measured `utils::as.roman(seq_len(nrow(x)))` row-identifier path with

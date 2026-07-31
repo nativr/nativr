@@ -7453,6 +7453,40 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "write-csv-read-csv-browser-memory-roundtrip",
+    "code": "path <- tempfile(fileext = \".csv\")\noriginal <- data.frame(name = c(\"alpha\", \"a,b\", \"q\\\"r\"), count = c(1L, NA_integer_, 3L), flag = c(TRUE, FALSE, NA))\nwritten <- withVisible(write.csv(original, path, row.names = FALSE))\nrestored <- read.csv(path)\nc(written$visible, readLines(path), names(restored), typeof(restored$count), restored$name, restored$count, restored$flag, unlink(path))",
+    "expected": [
+      "FALSE",
+      "\"name\",\"count\",\"flag\"",
+      "\"alpha\",1,TRUE",
+      "\"a,b\",NA,FALSE",
+      "\"q\"\"r\",3,NA",
+      "name",
+      "count",
+      "flag",
+      "integer",
+      "alpha",
+      "a,b",
+      "q\"r",
+      "1",
+      { "__nativr__": "NA" },
+      "3",
+      "TRUE",
+      "FALSE",
+      { "__nativr__": "NA" },
+      "0"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "read-delim-inline-type-conversion",
+    "code": "d <- read.delim(text = \"label\\tvalue\\na\\t1.5\\nb\\t2.5\")\nc(names(d), d$label, typeof(d$value), d$value)",
+    "expected": ["label", "value", "a", "b", "double", "1.5", "2.5"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "sys-sleep-zero-visibility-and-invalid-time",
     "code": "result <- withVisible(Sys.sleep(0))\nc(is.null(result$value), result$visible, inherits(try(Sys.sleep(-1), silent = TRUE), \"try-error\"), inherits(try(Sys.sleep(NA_real_), silent = TRUE), \"try-error\"))",
     "expected": [true, false, true, true],

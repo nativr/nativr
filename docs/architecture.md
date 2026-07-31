@@ -168,3 +168,11 @@ destroys records on `close()` or session reset. `readLines()`, `writeLines()`, `
 `capture.output()` route through one connection writer/reader, while package-backed records are
 read-only. This preserves the normal pure-R connection protocol without adding Node built-ins, DOM
 objects, filesystem resolution, network access, or a second execution backend.
+
+Package data and delimited tables reuse these seams rather than introducing a package-specific
+interpreter. The evaluator exposes bounded package-resource enumeration to base builtins;
+`utils::data()` resolves a direct `data/` entry, decodes the package's declared portable encoding,
+and sends `.R` content through the existing parser/normalized-AST evaluator in the selected
+environment. Text datasets and `read.table`/`write.table` variants use one owned record/field codec
+over inline text, immutable package bytes, or session connections. No package code, table content,
+or path is converted to JavaScript source or delegated to a host filesystem/parser.

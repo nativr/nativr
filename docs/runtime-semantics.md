@@ -373,8 +373,19 @@ also consume the normal resource limits.
 character element; missing strings render as `NA`. With no connection argument it emits the same
 bounded stdout events as other textual output. `readLines(path)` recognizes LF, CRLF, and CR,
 supports bounded `n`, `ok`, incomplete-final-line and embedded-NUL warnings, and `skipNul`. It reads
-either session text or immutable package files resolved through `system.file()`. General connection
-objects and host paths are rejected before any host API can be reached.
+either session text or immutable package files resolved through `system.file()`. Session-owned
+`file()` connections provide operation-scoped or persistent cursor access; host paths and other
+connection classes are rejected before any host API can be reached.
+
+`utils::read.table` and its CSV/delimited variants consume that same text layer or inline `text=`.
+The owned bounded scanner recognizes LF/CRLF/CR records, explicit or whitespace separators, quoted
+fields, doubled quotes, embedded quoted newlines, comments, skipped/blank lines, filling, headers,
+row/column names, missing strings, and syntactic name repair. Columns pass through the same
+deterministic `utils::type.convert` ladder used by package code. `write.table` and its CSV variants
+serialize owned atomic matrices, lists, and data frames with explicit row/header conventions,
+missing markers, decimal separators, and escape/double quote modes. Files remain evaluator memory;
+compressed streams, host paths, URLs, arbitrary encodings, `colClasses`, and the complete GNU R
+scanner are outside this slice.
 
 The serializer preserves atomic storage types, explicit missing masks versus ordinary `NaN`,
 infinities, complex components, raw bytes, strings, list/pairlist nesting, and ordinary vector
@@ -401,6 +412,13 @@ dependency cycles, imports, exports, and lifecycle evaluation all remain resourc
 DESCRIPTION, NAMESPACE, retained `R/*.R` text, and base64 package resources share one immutable
 package-file lookup seam. UTF-8 uses the browser-standard fatal decoder, Latin-1 uses deterministic
 byte mapping, and both paths are bounded; package paths cannot be written through `writeLines()`.
+`utils::data()` enumerates direct `data/` resources in attached or explicitly named packages. An
+`.R` dataset is decoded according to the package encoding, parsed to the normalized AST, and
+evaluated in the selected environment; overwrite protection restores pre-existing direct bindings.
+`.csv`, `.tab`, and `.txt` datasets use the owned table reader and bind one frame under the
+requested dataset name. The return vector and `packageIQR` listing shape follow GNU R's
+visible/invisible contract. Binary `.rda`/`.RData`, lazy-data databases, aliases/index metadata,
+compressed data, and temporary working-directory changes remain explicit boundaries.
 
 `Sys.sleep(time)` uses short asynchronous timer slices, returns invisible `NULL`, and checks the
 active cancellation token without consuming evaluation steps. Non-negative finite intervals and

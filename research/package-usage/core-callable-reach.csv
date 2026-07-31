@@ -84,7 +84,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 83,as.matrix,true,8,viridisLite|rstan|StanHeaders|RColorBrewer|purrr|loo|data.table|zoo,16,8.2,7.7
 84,unname,true,7,vctrs|dplyr|curl|purrr|xfun|zoo|bit64,10,7.2,7.7
 85,as.POSIXct,true,6,vctrs|ggplot2|pillar|scales|data.table|zoo,26,6.2,7.7
-86,data,false,8,ggplot2|RcppEigen|labeling|loo|data.table|shiny|zoo|bit64,16,8.2,7.7
+86,data,true,8,ggplot2|RcppEigen|labeling|loo|data.table|shiny|zoo|bit64,16,8.2,7.7
 87,rev,true,8,rlang|S7|testthat|abind|data.table|waldo|zoo|bit64,17,8.2,7.6
 88,any,true,8,vctrs|dplyr|purrr|matrixStats|data.table|diffobj|zoo|bit64,13,8.2,7.6
 89,log,true,8,RcppEigen|dplyr|StanHeaders|matrixStats|data.table|posterior|distributional|zoo,17,8.2,7.5
@@ -95,7 +95,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 94,exp,true,7,ggplot2|rstan|StanHeaders|stringi|matrixStats|numDeriv|loo,31,7.2,7.2
 95,attr,true,7,cli|rstan|xfun|yaml|systemfonts|data.table|posterior,17,7.2,7.2
 96,dimnames,true,7,vctrs|gtable|rstan|abind|posterior|distributional|bit64,18,7.2,7.1
-97,write.csv,false,7,withr|fs|dplyr|data.table|shiny|diffobj|bit64,15,7.2,7.0
+97,write.csv,true,7,withr|fs|dplyr|data.table|shiny|diffobj|bit64,15,7.2,7.0
 98,I,true,7,ggplot2|pillar|jsonlite|data.table|shiny|zoo|bit64,14,7.2,7.0
 99,array,true,7,vctrs|rstan|purrr|checkmate|abind|posterior|zoo,28,7.2,7.0
 100,cumsum,true,6,vctrs|ggplot2|dplyr|data.table|zoo|bit64,16,6.2,6.8
@@ -124,7 +124,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 123,coef,true,5,ggplot2|dplyr|purrr|data.table|zoo,7,5.2,5.4
 124,sort,true,5,withr|scales|StanHeaders|data.table|bit64,13,5.2,5.4
 125,file.exists,true,5,withr|cpp11|knitr|shiny|rprojroot,8,5.2,5.4
-126,read.csv,false,6,magrittr|curl|data.table|shiny|promises|bit64,11,6.2,5.3
+126,read.csv,true,6,magrittr|curl|data.table|shiny|promises|bit64,11,6.2,5.3
 127,system.time,false,6,sass|processx|memoise|matrixStats|data.table|bit64,95,6.2,5.3
 128,unique,true,5,ggplot2|StanHeaders|stringi|data.table|bit64,22,5.2,5.1
 129,dir.create,false,4,withr|cpp11|dplyr|rstudioapi,6,4.1,5.1
@@ -318,7 +318,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 317,time,true,2,data.table|zoo,43,2.1,1.3
 318,na.omit,true,2,data.table|zoo,9,2.1,1.3
 319,ceiling,true,2,data.table|zoo,4,2.1,1.3
-320,read.table,false,2,data.table|zoo,3,2.1,1.3
+320,read.table,true,2,data.table|zoo,3,2.1,1.3
 321,approx,true,2,data.table|zoo,2,2.1,1.3
 322,mapply,true,2,data.table|zoo,2,2.1,1.3
 323,as.double,true,2,data.table|bit64,7,2.1,1.3
@@ -392,7 +392,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 391,saveRDS,false,1,data.table,2,1.0,0.7
 392,tracemem,false,1,data.table,2,1.0,0.7
 393,weekdays,true,1,data.table,2,1.0,0.7
-394,write.table,false,1,data.table,2,1.0,0.7
+394,write.table,true,1,data.table,2,1.0,0.7
 395,anyDuplicated,true,1,data.table,1,1.0,0.7
 396,Im,true,1,data.table,1,1.0,0.7
 397,new,true,1,data.table,1,1.0,0.7

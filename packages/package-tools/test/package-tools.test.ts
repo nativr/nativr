@@ -6,6 +6,7 @@ import { gzipSync } from "node:zlib";
 
 import { c as createTar } from "tar";
 import { afterEach, describe, expect, it } from "vitest";
+import { createR } from "@nativr/nativr";
 
 import {
   PackageCompatibilityError,
@@ -49,8 +50,8 @@ describe("pure-R package packager", () => {
       "extdata/config.json",
       "LICENSE",
     ]);
-    expect(first.compatibility.issues).toContainEqual(
-      expect.objectContaining({ code: "NRPKG1006", severity: "warning", path: "data/example.R" }),
+    expect(first.compatibility.issues).not.toContainEqual(
+      expect.objectContaining({ path: "data/example.R" }),
     );
     expect(verifyPackageArtifact(first)).toBe(true);
     expect(
@@ -59,6 +60,25 @@ describe("pure-R package packager", () => {
         package: { ...first.package, version: "9.9.9" },
       }),
     ).toBe(false);
+  });
+
+  it("loads an unchanged packaged data script through the runtime data seam", async () => {
+    const artifact = await packPackage(await fixturePackage());
+    const runtime = await createR({
+      execution: "inline",
+      assets: {
+        treeSitterRuntimeWasm: new URL("../../parser/assets/web-tree-sitter.wasm", import.meta.url),
+        rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+      },
+      packages: [artifact.bundle],
+    });
+    try {
+      await expect(runtime.eval('data("example", package = "demopkg"); example')).resolves.toEqual([
+        1, 2, 3,
+      ]);
+    } finally {
+      await runtime.dispose();
+    }
   });
 
   it("reads the canonical one-directory source tarball shape without extracting links", async () => {
