@@ -569,6 +569,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("sqrt", ["x"], "numeric", (invocation) => builtinMath(invocation, "sqrt")),
   defineBuiltin("abs", ["x"], "numeric", (invocation) => builtinMath(invocation, "abs")),
   defineBuiltin("round", ["x", "digits"], "numeric", builtinRound),
+  defineBuiltin("signif", ["x", "digits"], "behavioral", builtinSignif),
   defineBuiltin("floor", ["x"], "behavioral", builtinFloor),
   defineBuiltin("ceiling", ["x"], "behavioral", builtinCeiling),
   defineBuiltin("trunc", ["x", "..."], "behavioral", builtinTrunc),
@@ -7604,6 +7605,75 @@ async function builtinRound(invocation: BuiltinInvocation): Promise<RValue> {
     : result;
 }
 
+async function builtinSignif(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = matchLazyArguments(invocation, ["x", "digits"]);
+  const inputArgument = matched.get("x");
+  if (inputArgument === undefined || inputArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "signif requires x.");
+  }
+  const value = await invocation.force(inputArgument.promise);
+  const dispatched = await invocation.dispatchS3IfPresent("signif", value, invocation.arguments);
+  if (dispatched !== undefined) return dispatched;
+  const groupDispatched = await invocation.dispatchS3IfPresent("Math", value, invocation.arguments);
+  if (groupDispatched !== undefined) return groupDispatched;
+  if (isFactor(value)) {
+    throw new RTypeMismatchError("NRT3330", "'signif' not meaningful for factors.");
+  }
+  const input = requireNumeric(value, "signif");
+  const digitsArgument = matched.get("digits");
+  const digitsValue =
+    digitsArgument === undefined || digitsArgument.promise.missing
+      ? doubleVector([6])
+      : await invocation.force(digitsArgument.promise);
+  if (
+    digitsValue.type !== "logical" &&
+    digitsValue.type !== "integer" &&
+    digitsValue.type !== "double"
+  ) {
+    throw new RTypeMismatchError(
+      "NRT3330",
+      "signif() requires 'digits' to be a real numeric or logical vector.",
+      { details: { type: digitsValue.type } },
+    );
+  }
+  if (digitsValue.length === 0) {
+    throw new RTypeMismatchError("NRT3330", "signif() requires a non-empty 'digits' vector.");
+  }
+
+  const outputLength = input.length === 0 ? 0 : Math.max(input.length, digitsValue.length);
+  invocation.context.allocate(outputLength);
+  const missing = new Uint8Array(outputLength);
+  const real = new Float64Array(outputLength);
+  const imaginary = input.type === "complex" ? new Float64Array(outputLength) : undefined;
+  for (let index = 0; index < outputLength; index += 1) {
+    invocation.context.checkpoint();
+    const inputIndex = index % input.length;
+    const digitsIndex = index % digitsValue.length;
+    if (isMissing(input, inputIndex) || isMissing(digitsValue, digitsIndex)) {
+      missing[index] = 1;
+      continue;
+    }
+    const requestedDigits = digitsValue.values[digitsIndex] ?? Number.NaN;
+    if (input.type === "complex") {
+      const inputReal = input.real[inputIndex] ?? 0;
+      const inputImaginary = input.imaginary[inputIndex] ?? 0;
+      const rounded = roundComplexSignificant(inputReal, inputImaginary, requestedDigits);
+      real[index] = rounded.real;
+      imaginary![index] = rounded.imaginary;
+    } else {
+      real[index] = roundSignificantNumber(numberAt(input, inputIndex), requestedDigits);
+    }
+  }
+
+  const result =
+    imaginary === undefined
+      ? doubleVector(real, compactMask(missing))
+      : complexVector(real, imaginary, compactMask(missing));
+  return outputLength === input.length
+    ? { ...result, attributes: new Map(input.attributes) }
+    : result;
+}
+
 async function builtinFloor(invocation: BuiltinInvocation): Promise<RValue> {
   return builtinIntegralRounding(
     required(await matchExact(invocation, ["x"]), "x", "floor"),
@@ -7881,6 +7951,72 @@ function roundNumber(value: number, requestedDigits: number): number {
   const decimalExponent = decimal.length - 1 - digits;
   const result = Number(`${decimal[0]}${fractionText}e${decimalExponent}`);
   return negative ? -result : result;
+}
+
+function normalizedSignificantDigits(requestedDigits: number): number {
+  if (Number.isNaN(requestedDigits)) return Number.NaN;
+  if (requestedDigits === Number.POSITIVE_INFINITY) return 22;
+  if (requestedDigits === Number.NEGATIVE_INFINITY) return 1;
+  return Math.max(1, Math.min(22, Math.floor(requestedDigits + 0.5)));
+}
+
+function roundSignificantNumber(value: number, requestedDigits: number): number {
+  const digits = normalizedSignificantDigits(requestedDigits);
+  if (Number.isNaN(digits)) return Number.NaN;
+  if (!Number.isFinite(value) || value === 0) return value;
+
+  const negative = value < 0;
+  const [coefficient = "", exponentText = "0"] = Math.abs(value).toExponential().split("e");
+  const decimalDigits = coefficient.replace(".", "");
+  if (decimalDigits.length <= digits) return value;
+
+  const discarded = decimalDigits.slice(digits);
+  let retained = BigInt(decimalDigits.slice(0, digits));
+  const firstDiscarded = discarded.charCodeAt(0) - 48;
+  const greaterThanHalf =
+    firstDiscarded > 5 || (firstDiscarded === 5 && /[1-9]/u.test(discarded.slice(1)));
+  const exactlyHalf = firstDiscarded === 5 && !/[1-9]/u.test(discarded.slice(1));
+  if (greaterThanHalf || (exactlyHalf && (retained & 1n) === 1n)) retained += 1n;
+
+  let exponent = Number(exponentText);
+  let retainedText = retained.toString();
+  if (retainedText.length > digits) {
+    exponent += 1;
+    retainedText = retainedText.slice(0, digits);
+  }
+  const fractionText = retainedText.length === 1 ? "" : `.${retainedText.slice(1)}`;
+  const result = Number(`${retainedText[0]}${fractionText}e${exponent}`);
+  return negative ? -result : result;
+}
+
+function roundComplexSignificant(
+  real: number,
+  imaginary: number,
+  requestedDigits: number,
+): { readonly real: number; readonly imaginary: number } {
+  const digits = normalizedSignificantDigits(requestedDigits);
+  if (Number.isNaN(digits)) return { real: Number.NaN, imaginary: Number.NaN };
+  const magnitude = Math.max(Math.abs(real), Math.abs(imaginary));
+  if (!Number.isFinite(magnitude) || magnitude === 0) return { real, imaginary };
+  const decimalDigits = digits - Math.ceil(Math.log10(magnitude));
+  const unit = 10 ** -decimalDigits;
+  if (!Number.isFinite(unit) || unit === 0) {
+    return {
+      real: roundNumber(real, decimalDigits),
+      imaginary: roundNumber(imaginary, decimalDigits),
+    };
+  }
+  return {
+    real: roundedScaledDecimal(real, unit, decimalDigits),
+    imaginary: roundedScaledDecimal(imaginary, unit, decimalDigits),
+  };
+}
+
+function roundedScaledDecimal(value: number, unit: number, decimalDigits: number): number {
+  const scaled = roundNumber(value / unit, 0);
+  if (!Number.isFinite(scaled) || scaled === 0) return scaled;
+  const [coefficient = "0", exponentText = "0"] = scaled.toExponential().split("e");
+  return Number(`${coefficient}e${Number(exponentText) - decimalDigits}`);
 }
 
 type LogOperation = "natural" | "base10" | "base2" | "onePlus";

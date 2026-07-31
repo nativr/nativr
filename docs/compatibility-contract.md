@@ -399,6 +399,13 @@ ties-to-even from exact binary inputs, real and complex values, `NA`/`NaN`/infin
 and attribute retention when the result length is unchanged. S3 Math2 dispatch, factor-specific
 behavior, and every platform-specific extreme floating-point edge are not claimed.
 
+`signif` has differential behavioral evidence for zoo's two measured plot-limit calls and for
+vectorized real/complex inputs. Requested digits recycle, round to the nearest integer, clamp to the
+documented 1–22 range, and distinguish missing from numeric NaN. Decimal ties-to-even, signed zero,
+infinities, output type, unchanged-length attributes, allocation limits, direct S3 methods, and the
+S3 Math-group fallback are covered. Dynamic `.Generic`/`.Group` method bindings, S4 Math2 dispatch,
+and bit-for-bit identity across every browser decimal-conversion edge remain incomplete.
+
 Natural, base-10, base-2, and one-plus logarithms plus `exp`/`expm1` have differential coverage for
 real and complex vectors, recycled `log` bases, stable near-zero real calculations, missing and
 non-finite values, domain warnings, and attribute retention. Math/Math2 S3 dispatch, class-specific

@@ -393,6 +393,14 @@ numeric NaN, preserves `NA`/`NaN`/infinities and signed zero, and retains input 
 result length does not change. Decimal scaling is implemented with bounded integer arithmetic rather
 than host-locale formatting. Math2 S3 dispatch and class-specific methods remain outside this slice.
 
+`signif()` vectorizes over `x` and `digits`, rounds finite real values to 1–22 significant decimal
+digits with ties-to-even, and uses a shared component scale for complex values. Fractional digit
+controls round to the nearest integer before clamping; missing digits produce `NA`, numeric `NaN`
+remains `NaN`, and non-finite values and signed zero are preserved. Unchanged-length results retain
+the input attribute map. Direct `signif.<class>` methods take precedence over `Math.<class>` group
+methods; dynamic `.Generic`/`.Group` bindings and exhaustive platform conversion identity remain
+outside this slice.
+
 `ceiling()` returns double storage for real logical, integer, and double inputs, applies upward
 rounding element-wise, preserves the complete owned attribute map, and keeps explicit `NA`, ordinary
 `NaN`, signed zero, and infinities distinct. Direct `ceiling.<class>` methods take precedence over

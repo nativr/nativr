@@ -4743,7 +4743,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.175.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.176.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -4791,6 +4791,84 @@ describe("complete inline source-to-result vertical slice", () => {
     });
     await expect(runtime.eval("c(1, 2)")).rejects.toMatchObject({ code: "NRL4007" });
     await runtime.dispose();
+  });
+
+  it("rounds zoo's usage-ranked plot limits to significant digits", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        z1 <- c(38.2, 18.1, 83.2, 42.7, 22.8, 48.1, 81.8, 129.6, 52.0, 110.3, NA)
+        c(signif(max(na.omit(z1)), 2), signif(max(na.omit(z1) * 1.05), 2))
+      `),
+    ).resolves.toEqual([130, 140]);
+    await expect(
+      runtime.eval(`
+        x <- structure(c(9.95, 9.85, 99.5, 98.5, .0995, .0985), marker = "kept")
+        y <- signif(x, 2)
+        c(y, attr(y, "marker"), typeof(signif(1:3)), signif(c(1.2345, 12.345), c(2.6, 4.2)))
+      `),
+    ).resolves.toEqual([
+      "10",
+      "9.8",
+      "100",
+      "98",
+      "0.1",
+      "0.098",
+      "kept",
+      "double",
+      "1.23",
+      "12.34",
+    ]);
+    await expect(
+      runtime.eval(`
+        x <- signif(rep(1.23456789, 8), c(1.49, 1.5, 2.49, 2.5, 3.5, 21.5, 22.5, -1.5))
+        c(x, signif(c(1.2345, 12.345), c(-Inf, 0, .4, .5, 22.4, 22.5, 23, Inf)))
+      `),
+    ).resolves.toEqual([
+      1, 1.2, 1.2, 1.23, 1.235, 1.23456789, 1.23456789, 1, 1, 10, 1, 10, 1.2345, 12.345, 1.2345,
+      12.345,
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          identical(signif(-0, 3), -0),
+          signif(Inf, 3) == Inf,
+          is.nan(signif(1, NaN)),
+          is.na(signif(1, NA_real_)),
+          signif(1.23456789)
+        )
+      `),
+    ).resolves.toEqual([1, 1, 1, 1, 1.23457]);
+    await expect(
+      runtime.eval(`
+        z <- signif(c(9.95 + 0i, 1.25 + 9.95i, .995 + .0995i, Inf + 1i, NaN + 2i), 2)
+        c(Re(z), Im(z))
+      `),
+    ).resolves.toEqual([9.9, 1.2, 1, Infinity, NaN, 0, 9.9, 0.1, 1, 2]);
+    await runtime.eval(`
+      signif.direct <- function(x, digits = 6) c(42, digits)
+      Math.grouped <- function(x, ...) c(99, list(...)[[1]])
+      NULL
+    `);
+    await expect(
+      runtime.eval(
+        "c(signif(structure(1, class = 'direct'), 3), signif(structure(1, class = 'grouped'), 4))",
+      ),
+    ).resolves.toEqual([42, 3, 99, 4]);
+    await expect(runtime.eval("signif(factor(c('a', 'b')), 2)")).rejects.toMatchObject({
+      code: "NRT3330",
+    });
+    await expect(runtime.eval("signif(1, numeric())")).rejects.toMatchObject({ code: "NRT3330" });
+    await expect(runtime.eval("signif(list(1), 2)")).rejects.toMatchObject({ code: "NRT3102" });
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 8 },
+    });
+    await expect(limited.eval("signif(1:10, 2)")).rejects.toMatchObject({ code: "NRL4002" });
+    await limited.dispose();
   });
 
   it("covers the supported base builtin surface", async () => {

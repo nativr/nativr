@@ -329,6 +329,9 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
     through a validated vector/matrix-row default and an S3 extension seam, including calendar
     starts, fractional frequencies, `tsp` metadata, lazy dots, and package-owned `cycle.zoo`
     forwarding without embedding zoo.
+93. Frequency-ranked significant-digit rounding: `signif` runs zoo's two plot-limit calculations and
+    covers decimal ties-to-even, real/complex vectors, recycled/clamped digit controls, metadata,
+    missing and non-finite values, resource limits, and direct/Math S3 dispatch.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

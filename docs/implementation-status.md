@@ -11,7 +11,7 @@ Date: 2026-07-30
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 463 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 464 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Vector/list selection and replacement, recursive `[[`, arbitrary-dimensional column-major array
@@ -95,6 +95,9 @@ Date: 2026-07-30
 - Deterministic browser/Worker host-mode detection through non-interactive `interactive()`.
 - Exact binary-input, ties-to-even `round()` with vectorized digits, complex values, missingness,
   signed zero, and attribute retention.
+- Usage-ranked `signif()` with zoo's measured plot-limit calculations, decimal significant-digit
+  ties-to-even rounding, real/complex vector controls, metadata retention, and direct/Math S3
+  dispatch.
 - Real/complex `log`, `log10`, `log2`, `log1p`, `exp`, and `expm1` with recycled bases,
   near-zero-stable paths, domain warnings, and metadata retention.
 - Lazy `with` data masks, isolated/supplied `local` environments, and visibility-preserving dynamic
