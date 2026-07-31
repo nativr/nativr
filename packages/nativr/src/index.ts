@@ -9,6 +9,7 @@ export type {
   PublicEvaluationResult,
   PublicGraphicsEvent,
   PublicOutputEvent,
+  PureRPackageBundle,
 } from "./api.js";
 export { isComplex, isExpression, isLanguage, isNA, isRaw, isSymbol, NA } from "./conversion.js";
 export type {

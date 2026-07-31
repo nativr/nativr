@@ -19,7 +19,14 @@ export {
 } from "./errors.js";
 export type { NativRErrorOptions } from "./errors.js";
 export { Evaluator } from "./evaluator.js";
-export type { DetailedEvaluationResult, EvaluationResult, EvaluatorOptions } from "./evaluator.js";
+export type {
+  DetailedEvaluationResult,
+  EvaluationResult,
+  EvaluatorOptions,
+  RuntimePackageDefinition,
+  RuntimePackageImport,
+  RuntimeS3Method,
+} from "./evaluator.js";
 export { deparseAst } from "./language.js";
 export {
   characterVector,

@@ -76,6 +76,19 @@ export interface ProtocolRuntimeLimits {
   readonly maxOutputBytes: number;
 }
 
+/** One browser-supplied, source-only R package archive. */
+export interface PureRPackageBundle {
+  /** Original package DESCRIPTION in DCF syntax. */
+  readonly description: string;
+  /** Original package NAMESPACE declarations. */
+  readonly namespace: string;
+  /** Audited R source files in deterministic package-relative order. */
+  readonly rSources: readonly {
+    readonly path: string;
+    readonly source: string;
+  }[];
+}
+
 /** A structured warning crossing the Worker boundary. */
 export interface PublicRWarning {
   readonly code: string;
@@ -303,6 +316,7 @@ export interface InitRequest extends ProtocolEnvelope {
     readonly rGrammarWasm: string;
   };
   readonly limits?: Partial<ProtocolRuntimeLimits>;
+  readonly packages?: readonly PureRPackageBundle[];
   readonly debug: boolean;
 }
 
@@ -413,6 +427,8 @@ export function isWorkerRequest(value: unknown): value is WorkerRequest {
         isRecord(value.assets) &&
         typeof value.assets.treeSitterRuntimeWasm === "string" &&
         typeof value.assets.rGrammarWasm === "string" &&
+        (value.packages === undefined ||
+          (Array.isArray(value.packages) && value.packages.every(isPureRPackageBundle))) &&
         typeof value.debug === "boolean"
       );
     case "eval":
@@ -561,6 +577,19 @@ function isEnvelope(value: unknown): value is Record<string, unknown> & Protocol
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
+}
+
+function isPureRPackageBundle(value: unknown): value is PureRPackageBundle {
+  return (
+    isRecord(value) &&
+    typeof value.description === "string" &&
+    typeof value.namespace === "string" &&
+    Array.isArray(value.rSources) &&
+    value.rSources.every(
+      (entry) =>
+        isRecord(entry) && typeof entry.path === "string" && typeof entry.source === "string",
+    )
+  );
 }
 
 function validMask(value: unknown, length: number): boolean {

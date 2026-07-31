@@ -1,13 +1,14 @@
 import { baseBuiltins, jsReferenceOperators } from "@nativr/base";
 import { createParser } from "@nativr/parser";
 import type { NativRParser, ParserAssets } from "@nativr/parser";
-import { Evaluator, RParseError } from "@nativr/runtime";
+import { DEFAULT_RUNTIME_LIMITS, Evaluator, RParseError } from "@nativr/runtime";
 import type { DetailedEvaluationResult, RuntimeLimits, RValue } from "@nativr/runtime";
 import type { ProgramNode } from "@nativr/ast";
 
 import { CAPABILITIES } from "./capabilities.js";
 import { snapshotToValue } from "./conversion.js";
-import type { CapabilityManifest, RValueSnapshot } from "@nativr/protocol";
+import { compilePureRPackages } from "./pure-r-package.js";
+import type { CapabilityManifest, PureRPackageBundle, RValueSnapshot } from "@nativr/protocol";
 
 /** Shared semantic host used unchanged by inline and Worker execution modes. */
 export class RuntimeHost {
@@ -23,13 +24,26 @@ export class RuntimeHost {
   public static async create(
     assets: ParserAssets,
     limits?: Partial<RuntimeLimits>,
+    packages: readonly PureRPackageBundle[] = [],
   ): Promise<RuntimeHost> {
     const parser = await createParser(assets);
-    const evaluator = new Evaluator(jsReferenceOperators, baseBuiltins, {
-      ...(limits === undefined ? {} : { limits }),
-      parseSource: (source, maxExpressions) => parseProgram(parser, source, maxExpressions),
-    });
-    return new RuntimeHost(parser, evaluator);
+    try {
+      const effectiveLimits = { ...DEFAULT_RUNTIME_LIMITS, ...limits };
+      const packageDefinitions = compilePureRPackages(
+        packages,
+        (source) => parseProgram(parser, source),
+        effectiveLimits,
+      );
+      const evaluator = new Evaluator(jsReferenceOperators, baseBuiltins, {
+        limits: effectiveLimits,
+        parseSource: (source, maxExpressions) => parseProgram(parser, source, maxExpressions),
+        packages: packageDefinitions,
+      });
+      return new RuntimeHost(parser, evaluator);
+    } catch (error) {
+      parser.dispose();
+      throw error;
+    }
   }
 
   public async eval(code: string): Promise<DetailedEvaluationResult> {

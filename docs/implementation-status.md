@@ -1,6 +1,6 @@
 # Implementation status
 
-Date: 2026-07-30
+Date: 2026-07-31
 
 ## Implemented
 
@@ -11,7 +11,7 @@ Date: 2026-07-30
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 490 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 498 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Vector/list selection and replacement, recursive `[[`, arbitrary-dimensional column-major array
@@ -42,13 +42,19 @@ Date: 2026-07-30
   parser-validated public symbol/language/expression input records.
 - Backtick-delimited names normalize to their underlying R binding names, including operator names.
 - Worker-first and inline public APIs, versioned snapshots/protocol, and a runnable Vite playground.
+- Application-supplied source-only R package bundles with validated DESCRIPTION/NAMESPACE metadata,
+  bounded source input, normalized-AST parsing, dependency-ordered isolated namespaces,
+  `import`/`importFrom`, exports, `::`/`:::`, S3 registration, `.onLoad`/`.onAttach`, attachment,
+  namespace queries, reset/reload behavior, and matching inline/Worker execution. Native code,
+  arbitrary installation, package resources/data, dependency-version constraints, and the wider
+  NAMESPACE/install protocol remain explicit boundaries.
 - Browser-safe `print()` and `cat()` output with invisible return semantics, ordered inline/Worker
   events, `evalDetailed` retention, output-budget accounting, and Playground console rendering.
   `utils::capture.output()` adds nested in-memory stdout/message capture, visible-result printing,
   partial-line preservation, split output, and an explicit no-filesystem boundary.
 - `utils::demo()` returns GNU R's empty `packageIQR` catalog shape when no package library is
-  selected. External package demo discovery and execution remain an explicit package-loader and
-  host-resource boundary.
+  selected. External package demo discovery and execution remain an explicit package-resource
+  boundary.
 - `RNGversion()` selects the Mersenne-Twister/Inversion/Rounding defaults used by zoo's measured
   R-3.5 examples and restores current Rejection defaults for R 3.6 or newer. Historical pre-R-1.7
   uniform and normal generators remain explicit unsupported boundaries.
@@ -141,6 +147,11 @@ Date: 2026-07-30
   visibility, missing files, and resource limits have coverage. Host paths/connections, nondefault
   controls, closures/environments, cycles, binary serialization, and persistence remain explicit
   boundaries.
+- Usage-ranked `base::save`/`load` for bit64's observed workspace roundtrip, including direct and
+  `list=` object selection, duplicates, target environments, promise forcing, verbose output,
+  invisible save/load returns, version/compression validation, missing-object failures, and reset
+  cleanup. The archive is bounded NativR-owned canonical source in the session text store, not GNU R
+  binary serialization, a host `.RData` file, or a cross-session interchange format.
 - Usage-ranked `graphics::polygon` for zoo's measured filled-area panel helper, including paired
   vector/matrix/data-frame/list/complex coordinates, missing-coordinate polygon splitting, recycled
   fill/border colors and line types/widths, solid/no-fill density, even-odd rules, invisible
@@ -506,14 +517,15 @@ Date: 2026-07-30
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 9 files and 329 tests.
+- Vitest currently passes 9 files and 337 tests; aggregate V8 coverage is 85.00% statements, 72.44%
+  branches, 92.19% functions, and 86.14% lines.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 664/664 cases. The optional black-box R oracle passes all 634
-  eligible cases and explicitly skips 30 NativR-owned
+- Checked-in conformance passes 683/683 cases. The optional black-box R oracle passes all 650
+  eligible cases and explicitly skips 33 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
-- Chromium Worker/playground coverage passes 2/2 tests, including the expanded matrix, weighted
-  sampling, S3, and R6 paths with no evaluation-time network requests.
+- Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,
+  expanded matrix, weighted sampling, S3, and R6 paths with no evaluation-time network requests.
 - Package and playground production builds, browser audit, bundle budgets, and the packed clean
   consumer build pass.
 

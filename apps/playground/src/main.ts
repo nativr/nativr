@@ -7,6 +7,7 @@ import type {
   PublicRWarning,
 } from "@nativr/nativr";
 
+import { playgroundPackage } from "./package-example.js";
 import "./styles.css";
 
 interface Example {
@@ -45,6 +46,11 @@ const examples: readonly Example[] = [
     setup: async (runtime) => {
       await runtime.assign("x", new Float64Array([1, 2, 3, 4]));
     },
+  },
+  {
+    id: "package",
+    label: "Pure-R package bundle",
+    code: "library(nativrdemo)\ntwice_mean(c(1, 2, 6))",
   },
   {
     id: "output",
@@ -108,7 +114,7 @@ source.addEventListener("keydown", (event) => {
 async function initialize(): Promise<void> {
   setStatus("loading", "Loading parser + Worker…");
   try {
-    runtime = await createR();
+    runtime = await createR({ packages: [playgroundPackage] });
     enableControls(true);
     setStatus("ready", "Runtime ready");
   } catch (error) {

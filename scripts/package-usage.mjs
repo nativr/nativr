@@ -23,11 +23,16 @@ const gnuSurfacePath = path.join(root, "compatibility", "gnu-r", "surface.json")
 const TOP_PACKAGES_URL = "https://cranlogs.r-pkg.org/top/last-month/100";
 const MANUAL_URL = (packageName) =>
   `https://cran.r-project.org/web/packages/${encodeURIComponent(packageName)}/refman/${encodeURIComponent(packageName)}.html`;
+const NAMESPACE_URL = (packageName) =>
+  `https://cran.r-project.org/web/packages/${encodeURIComponent(packageName)}/NAMESPACE`;
 const USER_AGENT = "NativR package-usage research (https://github.com/nativr/nativr)";
-const CALL_PATTERN = /(?<![A-Za-z0-9._$@])([A-Za-z.][A-Za-z0-9._]*)(?=\s*\()/gu;
+const CALL_PATTERN =
+  /(?<![A-Za-z0-9._$@])(?:(?<namespace>[A-Za-z.][A-Za-z0-9._]*)\s*:::{0,1}\s*)?(?<name>[A-Za-z.][A-Za-z0-9._]*)(?=\s*\()/gu;
 const LOCAL_FUNCTION_PATTERN =
   /(?<![A-Za-z0-9._])([A-Za-z.][A-Za-z0-9._]*)\s*(?:<-|=)\s*function\s*\(/gu;
+const NAMESPACE_EXPORT_PATTERN = /(?<![A-Za-z0-9.])export\s*\(([^)]*)\)/gu;
 const NON_CALL_KEYWORDS = new Set(["for", "function", "if", "while"]);
+const LANGUAGE_CALLABLE_NAMES = new Set(["return"]);
 
 export const FEATURES = [
   {
@@ -240,14 +245,14 @@ export async function main(arguments_ = new Set(process.argv.slice(2))) {
   if (render || check) {
     const snapshot = JSON.parse(await readFile(snapshotPath, "utf8"));
     validateSnapshot(snapshot);
-    const registeredNames = await loadRegisteredNames();
+    const availableNames = await loadAvailableNames();
     const artifacts = [
       [packageCsvPath, renderPackageCsv(snapshot)],
       [featureCsvPath, renderFeatureCsv(snapshot)],
-      [callableCsvPath, renderCallableCsv(snapshot, registeredNames)],
+      [callableCsvPath, renderCallableCsv(snapshot, availableNames)],
       [packageFigurePath, renderPackageFigure(snapshot)],
       [featureFigurePath, renderFeatureFigure(snapshot)],
-      [callableFigurePath, renderCallableFigure(snapshot, registeredNames)],
+      [callableFigurePath, renderCallableFigure(snapshot, availableNames)],
     ];
     if (render) {
       await Promise.all([
@@ -272,7 +277,8 @@ if (
 }
 
 async function collectSnapshot() {
-  const coreCallableNames = await loadCoreCallableNames();
+  const { packageNames: corePackageNames, callableNames: coreCallableNames } =
+    await loadCoreSurface();
   const top = await fetchJson(TOP_PACKAGES_URL);
   if (
     typeof top !== "object" ||
@@ -294,31 +300,55 @@ async function collectSnapshot() {
       package: entry.package,
       downloads,
       manualUrl: MANUAL_URL(entry.package),
+      namespaceUrl: NAMESPACE_URL(entry.package),
     };
   });
 
   const packages = await mapLimit(rankedPackages, 4, async (entry) => {
     try {
       const manual = await fetchText(entry.manualUrl);
+      let namespaceStatus = "analyzed";
+      let packageExports = new Set();
+      try {
+        packageExports = extractNamespaceExports(await fetchText(entry.namespaceUrl));
+      } catch (error) {
+        namespaceStatus = "unavailable";
+        console.warn(
+          `Could not attribute ${entry.package} exports: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
       const exampleBlocks = extractExamples(manual);
       if (exampleBlocks.length === 0) {
         return {
           ...entry,
           manualStatus: "no-examples",
+          namespaceStatus,
           exampleBlockCount: 0,
           exampleCharacters: 0,
+          exportedNameCount: packageExports.size,
+          excludedPackageCallCount: 0,
+          excludedPackageCallables: [],
           featureIds: [],
           callCounts: {},
         };
       }
       const examples = exampleBlocks.join("\n");
+      const calls = mergeCallCounts(exampleBlocks, packageExports, corePackageNames);
       return {
         ...entry,
         manualStatus: "analyzed",
+        namespaceStatus,
         exampleBlockCount: exampleBlocks.length,
         exampleCharacters: examples.length,
+        exportedNameCount: packageExports.size,
+        excludedPackageCallCount: sum(Object.values(calls.packageOwned)),
+        excludedPackageCallables: Object.entries(calls.packageOwned).map(
+          ([name, occurrenceCount]) => ({ name, occurrenceCount }),
+        ),
         featureIds: detectFeatures(examples),
-        callCounts: mergeCallCounts(exampleBlocks),
+        callCounts: calls.core,
       };
     } catch (error) {
       console.warn(
@@ -327,8 +357,12 @@ async function collectSnapshot() {
       return {
         ...entry,
         manualStatus: "unavailable",
+        namespaceStatus: "not-requested",
         exampleBlockCount: 0,
         exampleCharacters: 0,
+        exportedNameCount: 0,
+        excludedPackageCallCount: 0,
+        excludedPackageCallables: [],
         featureIds: [],
         callCounts: {},
       };
@@ -369,13 +403,14 @@ async function collectSnapshot() {
   });
 
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     detectorFingerprint: featureDetectorFingerprint(),
     collectedAt: new Date().toISOString(),
     sample: {
       source: TOP_PACKAGES_URL,
       manualSourceTemplate:
         "https://cran.r-project.org/web/packages/{package}/refman/{package}.html",
+      namespaceSourceTemplate: "https://cran.r-project.org/web/packages/{package}/NAMESPACE",
       start: top.start.slice(0, 10),
       end: top.end.slice(0, 10),
       requestedPackageCount: 100,
@@ -384,7 +419,7 @@ async function collectSnapshot() {
       totalDownloads,
       analyzedDownloads,
       method:
-        "Download-weighted package reach across language features and GNU R core callable names detected in CRAN-generated reference-manual example blocks.",
+        "Download-weighted package reach across language features and GNU R core callable names detected in CRAN-generated reference-manual example blocks, excluding exact package exports declared by CRAN NAMESPACE files and non-core namespace-qualified calls.",
     },
     packages: snapshotPackages,
     features,
@@ -403,6 +438,23 @@ function extractExamples(html) {
   return blocks;
 }
 
+function extractNamespaceExports(source) {
+  const names = new Set();
+  const uncommented = source
+    .split(/\r?\n/u)
+    .map((line) => line.replace(/#.*$/u, ""))
+    .join("\n");
+  for (const directive of uncommented.matchAll(NAMESPACE_EXPORT_PATTERN)) {
+    const arguments_ = directive[1];
+    if (arguments_ === undefined) continue;
+    for (const argument of arguments_.split(",")) {
+      const name = argument.trim().replace(/^(["'`])([\s\S]*)\1$/u, "$2");
+      if (name.length > 0) names.add(name);
+    }
+  }
+  return names;
+}
+
 function detectFeatures(source) {
   const code = stripCommentsAndStrings(source);
   return FEATURES.filter((feature) => feature.patterns.some((pattern) => pattern.test(code))).map(
@@ -410,15 +462,17 @@ function detectFeatures(source) {
   );
 }
 
-function detectCallCounts(source) {
+function detectCallCounts(source, packageCallables = new Set(), corePackageNames = new Set()) {
   const code = stripCommentsAndStrings(source);
   const localDefinitions = [...code.matchAll(LOCAL_FUNCTION_PATTERN)].map((match) => ({
     name: match[1],
     index: match.index,
   }));
-  const counts = new Map();
+  const core = new Map();
+  const packageOwned = new Map();
   for (const match of code.matchAll(CALL_PATTERN)) {
-    const name = match[1];
+    const name = match.groups?.name;
+    const namespace = match.groups?.namespace;
     if (name === undefined || NON_CALL_KEYWORDS.has(name)) continue;
     if (
       localDefinitions.some(
@@ -427,19 +481,36 @@ function detectCallCounts(source) {
     ) {
       continue;
     }
-    counts.set(name, (counts.get(name) ?? 0) + 1);
+    if (namespace !== undefined && !corePackageNames.has(namespace)) continue;
+    const target = namespace === undefined && packageCallables.has(name) ? packageOwned : core;
+    target.set(name, (target.get(name) ?? 0) + 1);
   }
-  return Object.fromEntries([...counts].sort(([left], [right]) => left.localeCompare(right)));
+  return {
+    core: Object.fromEntries([...core].sort(([left], [right]) => left.localeCompare(right))),
+    packageOwned: Object.fromEntries(
+      [...packageOwned].sort(([left], [right]) => left.localeCompare(right)),
+    ),
+  };
 }
 
-function mergeCallCounts(exampleBlocks) {
-  const counts = new Map();
+function mergeCallCounts(exampleBlocks, packageCallables, corePackageNames) {
+  const core = new Map();
+  const packageOwned = new Map();
   for (const block of exampleBlocks) {
-    for (const [name, occurrences] of Object.entries(detectCallCounts(block))) {
-      counts.set(name, (counts.get(name) ?? 0) + occurrences);
+    const blockCounts = detectCallCounts(block, packageCallables, corePackageNames);
+    for (const [name, occurrences] of Object.entries(blockCounts.core)) {
+      core.set(name, (core.get(name) ?? 0) + occurrences);
+    }
+    for (const [name, occurrences] of Object.entries(blockCounts.packageOwned)) {
+      packageOwned.set(name, (packageOwned.get(name) ?? 0) + occurrences);
     }
   }
-  return Object.fromEntries([...counts].sort(([left], [right]) => left.localeCompare(right)));
+  return {
+    core: Object.fromEntries([...core].sort(([left], [right]) => left.localeCompare(right))),
+    packageOwned: Object.fromEntries(
+      [...packageOwned].sort(([left], [right]) => left.localeCompare(right)),
+    ),
+  };
 }
 
 function aggregateCallableReach(packages, coreCallableNames) {
@@ -450,10 +521,12 @@ function aggregateCallableReach(packages, coreCallableNames) {
       const current = calls.get(name) ?? {
         name,
         packageCount: 0,
+        packageNames: [],
         downloadCount: 0,
         occurrenceCount: 0,
       };
       current.packageCount += 1;
+      current.packageNames.push(packageEntry.package);
       current.downloadCount += packageEntry.downloads;
       current.occurrenceCount += occurrenceCount;
       calls.set(name, current);
@@ -475,36 +548,40 @@ function aggregateCallableReach(packages, coreCallableNames) {
     );
 }
 
-async function loadCoreCallableNames() {
+async function loadCoreSurface() {
   const surface = JSON.parse(await readFile(gnuSurfacePath, "utf8"));
   if (!Array.isArray(surface.packages)) {
     throw new Error(`Invalid GNU R callable inventory at ${gnuSurfacePath}.`);
   }
-  return new Set(
-    surface.packages.flatMap((packageEntry) =>
-      Array.isArray(packageEntry.exports)
-        ? packageEntry.exports
-            .filter((entry) => entry.callable === true && typeof entry.name === "string")
-            .map((entry) => entry.name)
-        : [],
+  return {
+    packageNames: new Set(surface.packages.map((packageEntry) => packageEntry.name)),
+    callableNames: new Set(
+      surface.packages.flatMap((packageEntry) =>
+        Array.isArray(packageEntry.exports)
+          ? packageEntry.exports
+              .filter((entry) => entry.callable === true && typeof entry.name === "string")
+              .map((entry) => entry.name)
+          : [],
+      ),
     ),
-  );
+  };
 }
 
-async function loadRegisteredNames() {
+async function loadAvailableNames() {
   const manifest = JSON.parse(await readFile(compatibilityManifestPath, "utf8"));
   if (!Array.isArray(manifest.packages)) {
     throw new Error(`Invalid NativR capability manifest at ${compatibilityManifestPath}.`);
   }
-  return new Set(
-    manifest.packages.flatMap((packageEntry) =>
+  return new Set([
+    ...LANGUAGE_CALLABLE_NAMES,
+    ...manifest.packages.flatMap((packageEntry) =>
       Array.isArray(packageEntry.functions)
         ? packageEntry.functions
             .filter((entry) => typeof entry.name === "string")
             .map((entry) => entry.name)
         : [],
     ),
-  );
+  ]);
 }
 
 function verifyFeatureDetector() {
@@ -527,21 +604,48 @@ function verifyFeatureDetector() {
     throw new Error("Feature detector invariant failed to ignore comments and strings.");
   }
 
-  const calls = detectCallCounts(
-    'mean(x)\nmean(y)\nstats::median(x)\ntagQ$find("a")\nobject@show()\nif (ok) print("ignored text()")\nfunction(x) x\nlocal <- function(x) x\nlocal(1)',
+  const packageExports = extractNamespaceExports(
+    '# generated\nS3method(aperm, integer64)\nexport(hashtab, "is.element")\nexport(`%in%`)',
   );
   if (
-    calls.mean !== 2 ||
-    calls.median !== 1 ||
-    calls.print !== 1 ||
-    calls.if !== undefined ||
-    calls.function !== undefined ||
-    calls.local !== undefined ||
-    calls.text !== undefined ||
-    calls.find !== undefined ||
-    calls.show !== undefined
+    !packageExports.has("hashtab") ||
+    !packageExports.has("is.element") ||
+    !packageExports.has("%in%") ||
+    packageExports.has("aperm")
+  ) {
+    throw new Error("NAMESPACE export detector invariant failed.");
+  }
+
+  const calls = detectCallCounts(
+    'mean(x)\nmean(y)\nstats::median(x)\ntagQ$find("a")\nobject@show()\nif (ok) print("ignored text()")\nfunction(x) x\nlocal <- function(x) x\nlocal(1)',
+    new Set(),
+    new Set(["stats"]),
+  );
+  if (
+    calls.core.mean !== 2 ||
+    calls.core.median !== 1 ||
+    calls.core.print !== 1 ||
+    calls.core.if !== undefined ||
+    calls.core.function !== undefined ||
+    calls.core.local !== undefined ||
+    calls.core.text !== undefined ||
+    calls.core.find !== undefined ||
+    calls.core.show !== undefined
   ) {
     throw new Error("Core callable detector invariant failed.");
+  }
+
+  const attributedCalls = detectCallCounts(
+    "hashtab(cache)\nmean(x)\nbase::mean(x)\nexternal::mean(x)",
+    packageExports,
+    new Set(["base"]),
+  );
+  if (
+    attributedCalls.packageOwned.hashtab !== 1 ||
+    attributedCalls.core.mean !== 2 ||
+    Object.keys(attributedCalls.core).length !== 1
+  ) {
+    throw new Error("Callable ownership detector invariant failed.");
   }
 }
 
@@ -638,13 +742,26 @@ async function mapLimit(items, limit, task) {
 
 function renderPackageCsv(snapshot) {
   const rows = [
-    ["rank", "package", "downloads", "manual_status", "example_blocks", "features_detected"],
+    [
+      "rank",
+      "package",
+      "downloads",
+      "manual_status",
+      "namespace_status",
+      "example_blocks",
+      "exported_names",
+      "excluded_package_owned_calls",
+      "features_detected",
+    ],
     ...snapshot.packages.map((entry) => [
       entry.rank,
       entry.package,
       entry.downloads,
       entry.manualStatus,
+      entry.namespaceStatus,
       entry.exampleBlockCount,
+      entry.exportedNameCount,
+      entry.excludedPackageCallCount,
       entry.featureIds.join("|"),
     ]),
   ];
@@ -677,13 +794,14 @@ function renderFeatureCsv(snapshot) {
   return `${rows.map((row) => row.map(csvCell).join(",")).join("\n")}\n`;
 }
 
-function renderCallableCsv(snapshot, registeredNames) {
+function renderCallableCsv(snapshot, availableNames) {
   const rows = [
     [
       "rank",
       "callable",
-      "nativr_registered",
+      "nativr_available",
       "packages",
+      "source_packages",
       "occurrences",
       "package_reach_percent",
       "download_weighted_reach_percent",
@@ -691,8 +809,9 @@ function renderCallableCsv(snapshot, registeredNames) {
     ...snapshot.calls.map((entry, index) => [
       index + 1,
       entry.name,
-      registeredNames.has(entry.name),
+      availableNames.has(entry.name),
       entry.packageCount,
+      entry.packageNames.join("|"),
       entry.occurrenceCount,
       formatPercent(entry.packageReach),
       formatPercent(entry.downloadReach),
@@ -785,8 +904,8 @@ ${bars}
   });
 }
 
-function renderCallableFigure(snapshot, registeredNames) {
-  const entries = snapshot.calls.filter((entry) => !registeredNames.has(entry.name)).slice(0, 20);
+function renderCallableFigure(snapshot, availableNames) {
+  const entries = snapshot.calls.filter((entry) => !availableNames.has(entry.name)).slice(0, 20);
   const width = 1200;
   const height = 1120;
   const left = 250;
@@ -818,13 +937,13 @@ function renderCallableFigure(snapshot, registeredNames) {
   return svgDocument({
     width,
     height,
-    title: "Highest-reach GNU R core callables not registered by NativR",
+    title: "Highest-reach GNU R core callables not available in NativR",
     description:
-      "The twenty highest download-weighted GNU R core callable names detected in CRAN reference-manual examples that are not present in the NativR builtin registry.",
+      "The twenty highest download-weighted GNU R core callable names detected in CRAN reference-manual examples that are not present as NativR builtins or evaluator-native callable language forms.",
     body: `
 <text x="60" y="60" class="title">Highest-reach missing GNU R callables</text>
 <text x="60" y="94" class="subtitle">${snapshot.sample.analyzedPackageCount} analyzable manuals; ranked by download-weighted package reach</text>
-<text x="60" y="122" class="legend">Red means the name is absent from NativR's generated builtin registry; behavioral completeness is stricter than registration.</text>
+<text x="60" y="122" class="legend">Red means the callable is absent from NativR builtins and evaluator-native callable language forms; behavioral completeness is stricter than availability.</text>
 ${grid}
 ${bars}
 <text x="60" y="${height - 48}" class="note">Named-call syntax only; operators and indirect calls are measured elsewhere. Counts are aggregate observations, and no example source is retained.</text>`,
@@ -853,7 +972,7 @@ ${body}
 
 function validateSnapshot(snapshot) {
   if (
-    snapshot?.schemaVersion !== 2 ||
+    snapshot?.schemaVersion !== 3 ||
     snapshot.detectorFingerprint !== featureDetectorFingerprint() ||
     !Array.isArray(snapshot.packages) ||
     !Array.isArray(snapshot.features) ||
@@ -876,6 +995,7 @@ function featureDetectorFingerprint() {
     })),
     callPattern: CALL_PATTERN.toString(),
     localFunctionPattern: LOCAL_FUNCTION_PATTERN.toString(),
+    namespaceExportPattern: NAMESPACE_EXPORT_PATTERN.toString(),
     nonCallKeywords: [...NON_CALL_KEYWORDS].sort(),
   };
   return createHash("sha256").update(JSON.stringify(serialized)).digest("hex");

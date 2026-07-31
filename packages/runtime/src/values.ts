@@ -201,6 +201,13 @@ export interface BuiltinInvocation {
   currentCall(): RLanguage | RNull;
   systemCall(which: number): RLanguage | RNull;
   searchPath(): readonly string[];
+  loadPackage(
+    name: string,
+    attach: boolean,
+  ): Promise<{ readonly name: string; readonly version: string }>;
+  isNamespaceLoaded(name: string): boolean;
+  loadedNamespaces(): readonly string[];
+  namespaceExports(name: string): Promise<readonly string[]>;
   globalEnvironment(): REnvironment;
   baseEnvironment(): REnvironment;
   emptyEnvironment(): REnvironment;

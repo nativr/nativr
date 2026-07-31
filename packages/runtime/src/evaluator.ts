@@ -93,6 +93,39 @@ export interface DetailedEvaluationResult extends EvaluationResult {
 export interface EvaluatorOptions {
   readonly limits?: Partial<RuntimeLimits>;
   readonly parseSource?: (source: string, maxExpressions?: number) => ProgramNode;
+  readonly packages?: readonly RuntimePackageDefinition[];
+}
+
+/** One dependency imported by a normalized source-only package. */
+export interface RuntimePackageImport {
+  readonly package: string;
+  /** Undefined imports the dependency's complete exported surface. */
+  readonly names?: readonly string[];
+}
+
+/** One S3 registration parsed independently from NAMESPACE. */
+export interface RuntimeS3Method {
+  readonly generic: string;
+  readonly class: string;
+  readonly method: string;
+}
+
+/** Parser-independent package input accepted by the runtime. */
+export interface RuntimePackageDefinition {
+  readonly name: string;
+  readonly version: string;
+  readonly dependencies: readonly string[];
+  readonly imports: readonly RuntimePackageImport[];
+  readonly exports: readonly string[];
+  readonly s3Methods: readonly RuntimeS3Method[];
+  readonly programs: readonly ProgramNode[];
+}
+
+interface RuntimePackageRecord {
+  readonly definition: RuntimePackageDefinition;
+  namespace: REnvironment | undefined;
+  loading: boolean;
+  attached: boolean;
 }
 
 const DEFAULT_SEARCH_PATH = Object.freeze([
@@ -319,12 +352,15 @@ export class Evaluator {
   readonly #parseSource: EvaluatorOptions["parseSource"];
   #emptyEnvironment: REnvironment;
   #baseEnvironment: REnvironment;
+  #attachedPackagesEnvironment: REnvironment;
   #globalEnvironment: REnvironment;
   readonly #controlFrames: ControlFrame[] = [];
   readonly #closureCallFrames: ClosureCallFrame[] = [];
   readonly #s3DispatchFrames: S3DispatchFrame[] = [];
   readonly #builtinState = new Map<string, unknown>();
   readonly #activeGlobalCallingHandlers = new Set<RValue>();
+  readonly #packages = new Map<string, RuntimePackageRecord>();
+  readonly #packageS3Methods = new Map<string, RBinding>();
   #searchPath = [...DEFAULT_SEARCH_PATH];
   #disposed = false;
   #activeCancellation: { cancelled: boolean } | undefined;
@@ -340,8 +376,26 @@ export class Evaluator {
     this.#parseSource = options.parseSource;
     this.#emptyEnvironment = createEnvironment(null, true);
     this.#baseEnvironment = createEnvironment(this.#emptyEnvironment, true);
-    this.#globalEnvironment = createEnvironment(this.#baseEnvironment, true);
+    this.#attachedPackagesEnvironment = createEnvironment(this.#baseEnvironment, true);
+    this.#globalEnvironment = createEnvironment(this.#attachedPackagesEnvironment, true);
     this.#installBuiltins();
+    for (const definition of options.packages ?? []) {
+      if (
+        this.#packages.has(definition.name) ||
+        REGISTERED_NAMESPACE_EXPORTS.has(definition.name)
+      ) {
+        throw new REvaluationError(
+          "NRE2220",
+          `Package namespace '${definition.name}' is already registered.`,
+        );
+      }
+      this.#packages.set(definition.name, {
+        definition,
+        namespace: undefined,
+        loading: false,
+        attached: false,
+      });
+    }
   }
 
   /** Evaluate a normalized program in the session global environment. */
@@ -441,8 +495,16 @@ export class Evaluator {
   /** Replace user state with a fresh global environment while retaining base builtins. */
   public reset(): void {
     this.#ensureActive();
-    this.#globalEnvironment = createEnvironment(this.#baseEnvironment, true);
+    this.#attachedPackagesEnvironment = createEnvironment(this.#baseEnvironment, true);
+    this.#globalEnvironment = createEnvironment(this.#attachedPackagesEnvironment, true);
     this.#builtinState.clear();
+    this.#packageS3Methods.clear();
+    for (const record of this.#packages.values()) {
+      record.namespace?.bindings.clear();
+      record.namespace = undefined;
+      record.loading = false;
+      record.attached = false;
+    }
     this.#searchPath = [...DEFAULT_SEARCH_PATH];
   }
 
@@ -452,9 +514,13 @@ export class Evaluator {
       this.interrupt();
       this.#disposed = true;
       this.#globalEnvironment.bindings.clear();
+      this.#attachedPackagesEnvironment.bindings.clear();
       this.#baseEnvironment.bindings.clear();
       this.#emptyEnvironment.bindings.clear();
       this.#builtinState.clear();
+      this.#packageS3Methods.clear();
+      for (const record of this.#packages.values()) record.namespace?.bindings.clear();
+      this.#packages.clear();
     }
   }
 
@@ -883,14 +949,31 @@ export class Evaluator {
         const namespace = staticName(node.namespace, "namespace");
         const member = staticName(node.member, "namespace member");
         const exports = REGISTERED_NAMESPACE_EXPORTS.get(namespace);
-        if (exports === undefined) {
+        if (exports !== undefined) {
+          const binding = lookupBinding(this.#baseEnvironment, member);
+          if (binding === undefined || (exports !== "all" && !exports.has(member))) {
+            throw new REvaluationError(
+              "NRE2211",
+              `'${member}' is not a registered ${node.operator === ":::" ? "internal" : "exported"} binding in namespace '${namespace}'.`,
+              { span: node.member.span, details: { namespace, member } },
+            );
+          }
+          return { value: await this.#force(binding, context), visible: true };
+        }
+        const record = this.#packages.get(namespace);
+        if (record === undefined) {
           throw new REvaluationError("NRE2210", `Namespace '${namespace}' is not registered.`, {
             span: node.namespace.span,
             details: { namespace },
           });
         }
-        const binding = lookupBinding(this.#baseEnvironment, member);
-        if (binding === undefined || (exports !== "all" && !exports.has(member))) {
+        const loaded = await this.#loadPackage(namespace, false, context);
+        const exported = loaded.record.definition.exports.includes(member);
+        const binding =
+          node.operator === "::" && exported
+            ? lookupBinding(loaded.namespace, member)
+            : loaded.namespace.bindings.get(member);
+        if (binding === undefined || (node.operator === "::" && !exported)) {
           throw new REvaluationError(
             "NRE2211",
             `'${member}' is not a registered ${node.operator === ":::" ? "internal" : "exported"} binding in namespace '${namespace}'.`,
@@ -1517,6 +1600,18 @@ export class Evaluator {
         currentCall: () => (call === undefined ? R_NULL : { type: "language", expression: call }),
         systemCall: (which) => this.#systemCall(which),
         searchPath: () => Object.freeze([...this.#searchPath]),
+        loadPackage: async (name, attach) => this.#loadPackage(name, attach, context),
+        isNamespaceLoaded: (name) =>
+          REGISTERED_NAMESPACE_EXPORTS.has(name) ||
+          this.#packages.get(name)?.namespace !== undefined,
+        loadedNamespaces: () =>
+          Object.freeze([
+            ...REGISTERED_NAMESPACE_EXPORTS.keys(),
+            ...[...this.#packages]
+              .filter(([, record]) => record.namespace !== undefined)
+              .map(([name]) => name),
+          ]),
+        namespaceExports: async (name) => this.#namespaceExports(name, context),
         globalEnvironment: () => this.#globalEnvironment,
         baseEnvironment: () => this.#baseEnvironment,
         emptyEnvironment: () => this.#emptyEnvironment,
@@ -1903,6 +1998,178 @@ export class Evaluator {
     return this.#invokeS3Method(generic, runtimeClassNames(dispatchObject), 0, arguments_, context);
   }
 
+  async #loadPackage(
+    name: string,
+    attach: boolean,
+    context: EvaluationContext,
+  ): Promise<{
+    readonly name: string;
+    readonly version: string;
+    readonly namespace: REnvironment;
+    readonly record: RuntimePackageRecord;
+  }> {
+    const record = this.#packages.get(name);
+    if (record === undefined) {
+      if (REGISTERED_NAMESPACE_EXPORTS.has(name)) {
+        return {
+          name,
+          version: "4.6.0",
+          namespace: this.#baseEnvironment,
+          record: {
+            definition: {
+              name,
+              version: "4.6.0",
+              dependencies: [],
+              imports: [],
+              exports: await this.#namespaceExports(name, context),
+              s3Methods: [],
+              programs: [],
+            },
+            namespace: this.#baseEnvironment,
+            loading: false,
+            attached: true,
+          },
+        };
+      }
+      throw new REvaluationError("NRE2221", `There is no installed package called '${name}'.`, {
+        details: { package: name },
+      });
+    }
+    if (record.loading) {
+      throw new REvaluationError("NRE2222", `Package dependency cycle while loading '${name}'.`, {
+        details: { package: name },
+      });
+    }
+    if (record.namespace === undefined) {
+      record.loading = true;
+      const replacedMethods = new Map<string, RBinding | undefined>();
+      try {
+        for (const dependency of record.definition.dependencies) {
+          context.checkpoint();
+          await this.#loadPackage(dependency, false, context);
+        }
+        const importsEnvironment = createEnvironment(this.#baseEnvironment, true);
+        for (const import_ of record.definition.imports) {
+          context.checkpoint();
+          const dependency = await this.#loadPackage(import_.package, false, context);
+          const names = import_.names ?? (await this.#namespaceExports(import_.package, context));
+          context.allocate(names.length);
+          for (const importedName of names) {
+            const binding = lookupBinding(dependency.namespace, importedName);
+            if (binding === undefined) {
+              throw new REvaluationError(
+                "NRE2223",
+                `Package '${name}' imports missing binding '${importedName}' from '${import_.package}'.`,
+              );
+            }
+            setBinding(importsEnvironment, importedName, binding);
+          }
+        }
+        const namespace = createEnvironment(importsEnvironment, true);
+        record.namespace = namespace;
+        for (const program of record.definition.programs) {
+          await this.#evaluateNode(program, namespace, context);
+        }
+        for (const exportedName of record.definition.exports) {
+          if (lookupBinding(namespace, exportedName) === undefined) {
+            throw new REvaluationError(
+              "NRE2224",
+              `Package '${name}' exports missing binding '${exportedName}'.`,
+            );
+          }
+        }
+        for (const method of record.definition.s3Methods) {
+          const binding = lookupBinding(namespace, method.method);
+          if (binding === undefined) {
+            throw new REvaluationError(
+              "NRE2225",
+              `Package '${name}' registers missing S3 method '${method.method}'.`,
+            );
+          }
+          const key = `${method.generic}.${method.class}`;
+          if (!replacedMethods.has(key)) {
+            replacedMethods.set(key, this.#packageS3Methods.get(key));
+          }
+          this.#packageS3Methods.set(key, binding);
+        }
+        await this.#invokePackageHook(record, ".onLoad", context);
+      } catch (error) {
+        for (const [key, previous] of replacedMethods) {
+          if (previous === undefined) this.#packageS3Methods.delete(key);
+          else this.#packageS3Methods.set(key, previous);
+        }
+        record.namespace?.bindings.clear();
+        record.namespace = undefined;
+        throw error;
+      } finally {
+        record.loading = false;
+      }
+    }
+    const namespace = record.namespace;
+    if (namespace === undefined) {
+      throw new REvaluationError("NRE2226", `Package '${name}' did not create a namespace.`);
+    }
+    if (attach && !record.attached) {
+      await this.#invokePackageHook(record, ".onAttach", context);
+      context.allocate(record.definition.exports.length);
+      for (const exportedName of record.definition.exports) {
+        const binding = lookupBinding(namespace, exportedName);
+        if (binding !== undefined)
+          setBinding(this.#attachedPackagesEnvironment, exportedName, binding);
+      }
+      this.#searchPath = [
+        this.#searchPath[0] ?? ".GlobalEnv",
+        `package:${name}`,
+        ...this.#searchPath.slice(1).filter((entry) => entry !== `package:${name}`),
+      ];
+      record.attached = true;
+    }
+    return { name, version: record.definition.version, namespace, record };
+  }
+
+  async #invokePackageHook(
+    record: RuntimePackageRecord,
+    hookName: ".onLoad" | ".onAttach",
+    context: EvaluationContext,
+  ): Promise<void> {
+    const namespace = record.namespace;
+    const binding = namespace?.bindings.get(hookName);
+    if (binding === undefined) return;
+    const callable = await this.#force(binding, context);
+    await this.#invokeCallable(
+      callable,
+      [
+        { promise: createForcedPromise(characterVector([""]), this.#globalEnvironment) },
+        {
+          promise: createForcedPromise(
+            characterVector([record.definition.name]),
+            this.#globalEnvironment,
+          ),
+        },
+      ],
+      context,
+    );
+  }
+
+  async #namespaceExports(name: string, context: EvaluationContext): Promise<readonly string[]> {
+    const staticExports = REGISTERED_NAMESPACE_EXPORTS.get(name);
+    if (staticExports !== undefined) {
+      const names =
+        staticExports === "all" ? [...this.#baseEnvironment.bindings.keys()] : [...staticExports];
+      context.allocate(names.length);
+      return Object.freeze(names.sort());
+    }
+    const record = this.#packages.get(name);
+    if (record === undefined) {
+      throw new REvaluationError("NRE2221", `There is no installed package called '${name}'.`);
+    }
+    if (record.namespace === undefined && !record.loading) {
+      await this.#loadPackage(name, false, context);
+    }
+    context.allocate(record.definition.exports.length);
+    return Object.freeze([...record.definition.exports]);
+  }
+
   async #dispatchS3IfPresent(
     generic: string,
     object: RValue,
@@ -1980,7 +2247,9 @@ export class Evaluator {
     for (let index = startIndex; index <= classes.length; index += 1) {
       const className = classes[index];
       const methodName = className === undefined ? `${generic}.default` : `${generic}.${className}`;
-      const binding = lookupBinding(this.#globalEnvironment, methodName);
+      const binding =
+        lookupBinding(this.#globalEnvironment, methodName) ??
+        this.#packageS3Methods.get(methodName);
       if (binding === undefined) continue;
       const callable = await this.#force(binding, context);
       const dispatchFrame: S3DispatchFrame = {

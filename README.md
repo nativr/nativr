@@ -30,6 +30,38 @@ console.log(result); // 3
 await r.dispose();
 ```
 
+### Load a source-only R package
+
+Pure-R functions do not need TypeScript rewrites. Supply an audited package bundle containing its
+`DESCRIPTION`, `NAMESPACE`, and `R/*.R` sources when the session is created:
+
+```ts
+const r = await createR({
+  packages: [
+    {
+      description: "Package: demo\nVersion: 0.1.0\nNeedsCompilation: no",
+      namespace: "export(twice_mean)",
+      rSources: [
+        {
+          path: "R/twice-mean.R",
+          source: "twice_mean <- function(x) 2 * mean(x)",
+        },
+      ],
+    },
+  ],
+});
+
+await r.eval("library(demo)");
+console.log(await r.eval("twice_mean(c(1, 2, 6))")); // 6
+```
+
+The initial loader supports isolated namespaces, dependency/import loading, exports, `pkg::name`,
+`pkg:::name`, S3 registrations, `.onLoad()`, `.onAttach()`, `library()`, `require()`, and
+`requireNamespace()` in inline and Worker execution. It does not make every pure-R package
+compatible: all dependencies and R features used by the package must also be supported. See the
+[complete example](examples/pure-r-package.ts) and
+[package-loading contract](docs/pure-r-packages.md).
+
 ### One-file browser example
 
 Save this as `index.html` and serve it from any static web server. This CDN example uses inline
@@ -69,7 +101,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 490 registered functions, including resettable
+an initial condition/handler slice. It exposes 498 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
 preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
@@ -194,8 +226,8 @@ measured list-shape examples, with scalar/vector simplification, common-type pro
 matrices, retained names and higher-dimensional array metadata, and explicit exception controls.
 Ranks 376/377 `str2expression` and `str2lang` now parse backports' measured source strings through
 the owned Tree-sitter/normalized-AST path into NativR expression, language, symbol, and atomic
-values. The package's preceding private-namespace lookup remains explicitly deferred until NativR
-has a general package namespace loader. Rank-378 `utils::URLdecode` now runs backports' direct
+values. The source-bundle loader now supplies private-namespace lookup, although backports itself is
+not yet a verified compatible package. Rank-378 `utils::URLdecode` now runs backports' direct
 percent-decoding example with vectorized ASCII and UTF-8 byte decoding, deterministic missing/empty
 handling, and explicit browser-string boundaries for malformed byte input. Rank-379
 `warningCondition` now runs backports' measured custom-condition construction and covers owned
@@ -225,8 +257,8 @@ integer/double result selection, S3 `seq` dispatch, and finite allocation guards
 `methods::as` now runs data.table's measured IDate and ITime conversion checks through a
 session-local `setAs` registry. Explicit source-class inheritance, identity coercions, core
 `as.<Class>` constructor fallback, namespace access, invisible registration, and bounded errors are
-covered. NativR supplies the package-extension mechanism; it does not claim to bundle data.table's
-classes, methods, or package loader. Rank-402 `weekdays` then runs data.table's two measured IDate
+covered. NativR supplies the package-extension mechanism; it does not claim to bundle or support
+data.table's classes and methods. Rank-402 `weekdays` then runs data.table's two measured IDate
 labeling calls through the inherited `Date` method, with deterministic C-locale names, recycled
 abbreviation controls, UTC/GMT POSIXt support, custom S3 dispatch, names, missing/non-finite values,
 and explicit invalid-input boundaries. Rank-403 `write.table` remains deferred pending a
@@ -292,13 +324,13 @@ method lookup, method-result visibility, and bounded default text output. Rank-4
 resource-bounded in-memory output capture, with visible-result printing, partial-line handling,
 message selection, and split output; browser filesystem and connection targets remain explicit
 boundaries. Rank-437 `utils::demo` reproduces the empty package-demo catalog shape while making
-external package demo discovery and execution an explicit package-loader boundary. Rank-438
+external package demo discovery and execution an explicit package-resource boundary. Rank-438
 `RNGversion` runs zoo's measured R-3.5 reproducibility setup by selecting the historical Rounding
 sampler before `set.seed`; pre-R-1.7 generator families remain explicit boundaries. Ranks 439-443
 add the regular time-series foundation: `ts()` constructs vector or matrix series, `as.ts()` and
 `frequency()` expose their sampling metadata, and `window()` slices, downsamples, or explicitly
 extends them. These generics also forward to independently supplied methods such as `window.zoo`;
-NativR does not claim that zoo itself is bundled or loadable yet. Rank 444 `graphics::legend` now
+NativR does not claim that zoo itself is bundled or compatible yet. Rank 444 `graphics::legend` now
 runs zoo's three measured line/point legend shapes through a bounded Worker graphics event and the
 Playground Canvas renderer, including keyword/coordinate placement, colors, columns, titles,
 invisible geometry results, and same-session record/replay. General base graphics, arbitrary
@@ -340,7 +372,7 @@ and device-identical layout remain explicit boundaries.
 Rank 451 `stats::deltat` now runs zoo's measured regular-series sampling-interval call. The generic
 forwards classed values and lazy dots to package methods, while its owned default returns the
 reciprocal of validated `tsp` frequency or one for ordinary inputs. Zoo's irregular index, `zooreg`
-construction, and package-owned methods remain package-loader work.
+construction, and package-owned methods require an audited bundle plus additional runtime support.
 
 Rank 452 `stats::embed` now runs zoo's documented lagged-window building block `embed(1:5, 3)`. It
 returns column-major current-to-past windows for supported vectors and multivariate matrices,
@@ -449,17 +481,22 @@ have differential coverage. Host paths and connections, arbitrary `dput` control
 closures/environments, cyclic values, binary serialization, and cross-session persistence remain
 explicit boundaries.
 
+The same browser-memory resource seam now supports `save()`/`load()` workspace round-trips for owned
+values. The bit64-observed `save(e, file); rm(e); load(file)` shape, explicit object lists, target
+environments, duplicate names, verbose output, return visibility, and format rejection have
+executable coverage. The archive is NativR-owned canonical source, not a GNU R `.RData` binary or a
+host file.
+
 Development priority is based on a reproducible analysis of documented usage in popular CRAN
 packages. The committed
 [priority report and figures](https://github.com/nativr/nativr/blob/main/docs/feature-priorities.md)
 show the data, method, limitations, and current status of all 25 measured feature groups.
 
-Pure-R packages are a planned compatibility layer, not a current blanket claim. Once source loading,
-package namespaces, `DESCRIPTION`/`NAMESPACE`, imports/exports, registration, datasets, and
-dependency resolution are complete, packages written entirely in supported R can run without
-rewriting their R functions. Packages still work only when every dependency and R feature they use
-is supported; compiled/native packages need separately built Wasm or host adapters. See the
-[pure-R package loading design](docs/pure-r-packages.md).
+Pure-R package loading now has an initial executable vertical slice; it is not a blanket CRAN
+compatibility claim. Source-only bundles can reuse supported R code without TypeScript rewrites, but
+a package still works only when every dependency and R feature it uses is supported. Compiled/native
+packages need separately audited Wasm or host adapters. See the
+[pure-R package loading contract](docs/pure-r-packages.md).
 
 Source releases are managed with Changesets. npm publication uses GitHub Actions trusted publishing
 without a long-lived registry token; see the

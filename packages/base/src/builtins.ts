@@ -241,6 +241,33 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "invisible",
   ),
   defineBuiltin("dget", ["file", "keep.source"], "behavioral", builtinDget),
+  defineBuiltin(
+    "save",
+    [
+      "...",
+      "list",
+      "file",
+      "ascii",
+      "version",
+      "envir",
+      "compress",
+      "compression_level",
+      "eval.promises",
+      "precheck",
+    ],
+    "behavioral",
+    builtinSave,
+    "regular",
+    "invisible",
+  ),
+  defineBuiltin(
+    "load",
+    ["file", "envir", "verbose"],
+    "behavioral",
+    builtinLoad,
+    "regular",
+    "invisible",
+  ),
   definePackageBuiltin("utils", "sessionInfo", ["package"], "shape", builtinSessionInfo),
   definePackageBuiltin(
     "utils",
@@ -453,6 +480,47 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("parent.env", ["env"], "behavioral", builtinParentEnvironment),
   defineBuiltin("parent.frame", ["n"], "behavioral", builtinParentFrame),
   defineBuiltin("search", [], "behavioral", builtinSearch),
+  defineBuiltin(
+    "library",
+    [
+      "package",
+      "help",
+      "pos",
+      "lib.loc",
+      "character.only",
+      "logical.return",
+      "warn.conflicts",
+      "quietly",
+      "verbose",
+      "mask.ok",
+      "exclude",
+      "include.only",
+      "attach.required",
+    ],
+    "behavioral",
+    builtinLibrary,
+    "regular",
+    "invisible",
+  ),
+  defineBuiltin(
+    "require",
+    ["package", "lib.loc", "quietly", "warn.conflicts", "character.only"],
+    "behavioral",
+    builtinRequire,
+    "regular",
+    "invisible",
+  ),
+  defineBuiltin(
+    "requireNamespace",
+    ["package", "...", "quietly"],
+    "behavioral",
+    builtinRequireNamespace,
+    "regular",
+    "invisible",
+  ),
+  defineBuiltin("isNamespaceLoaded", ["name"], "behavioral", builtinIsNamespaceLoaded),
+  defineBuiltin("loadedNamespaces", [], "behavioral", builtinLoadedNamespaces),
+  defineBuiltin("getNamespaceExports", ["ns"], "behavioral", builtinGetNamespaceExports),
   defineBuiltin("sys.call", ["which"], "behavioral", builtinSystemCall),
   defineBuiltin("get", ["x", "pos", "envir", "mode", "inherits"], "behavioral", builtinGet),
   defineBuiltin(
@@ -1477,6 +1545,7 @@ const S4_COERCIONS_STATE_KEY = "base.s4.coercions";
 const GRAPHICS_STATE_KEY = "graphics.device";
 const VIRTUAL_TEXT_FILES_STATE_KEY = "base.virtualTextFiles";
 const VIRTUAL_TEMP_ROOT = "nativr://session-temp";
+const VIRTUAL_WORKSPACE_HEADER = "# nativr-workspace-v1\n";
 
 interface VirtualTextFileState {
   readonly files: Map<string, string>;
@@ -2575,6 +2644,232 @@ async function builtinDget(invocation: BuiltinInvocation): Promise<RValue> {
   );
 }
 
+async function builtinSave(invocation: BuiltinInvocation): Promise<RValue> {
+  const controlNames = new Set([
+    "list",
+    "file",
+    "ascii",
+    "version",
+    "envir",
+    "compress",
+    "compression_level",
+    "eval.promises",
+    "precheck",
+  ]);
+  const controls = new Map<string, BuiltinCallArgument>();
+  const objects: BuiltinCallArgument[] = [];
+  for (const argument of invocation.arguments) {
+    if (argument.name !== undefined && controlNames.has(argument.name)) {
+      if (controls.has(argument.name)) {
+        throw new REvaluationError(
+          "NRE2102",
+          `Argument '${argument.name}' matched more than once in save().`,
+        );
+      }
+      controls.set(argument.name, argument);
+    } else {
+      objects.push(argument);
+    }
+  }
+
+  const fileArgument = controls.get("file");
+  if (fileArgument === undefined || fileArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'file' is missing in save().");
+  }
+  const path = characterScalar(await invocation.force(fileArgument.promise), "file");
+  requireVirtualTextPath(path, "save");
+
+  const environment = await saveEnvironment(invocation, controls.get("envir"));
+  await validateSaveControls(invocation, controls);
+  const names: string[] = [];
+  const listArgument = controls.get("list");
+  if (listArgument !== undefined && !listArgument.promise.missing) {
+    names.push(...saveObjectNames(await invocation.force(listArgument.promise), "list"));
+  }
+  for (const argument of objects) {
+    const expression = argument.promise.expression;
+    if (expression?.kind === "Identifier") {
+      names.push(expression.name);
+    } else if (expression?.kind === "StringLiteral") {
+      names.push(expression.value);
+    } else {
+      names.push(...saveObjectNames(await invocation.force(argument.promise), "..."));
+    }
+  }
+  invocation.context.allocate(names.length);
+
+  const values: RValue[] = [];
+  for (const name of names) {
+    invocation.context.checkpoint();
+    const binding = lookupBinding(environment, name);
+    if (binding === undefined) {
+      throw new REvaluationError("NRE2001", `Object '${name}' not found.`);
+    }
+    if (binding.type === "dots") {
+      throw new RUnsupportedFeatureError(
+        "NRU6173",
+        "save() cannot persist an active ellipsis binding.",
+      );
+    }
+    values.push(binding.type === "promise" ? await invocation.force(binding) : binding);
+  }
+
+  const archive = listValue(values, names);
+  const source = `${VIRTUAL_WORKSPACE_HEADER}${serializeDputValue(archive, invocation)}\n`;
+  writeVirtualTextFile(invocation, path, source);
+  return R_NULL;
+}
+
+async function builtinLoad(invocation: BuiltinInvocation): Promise<RCharacterVector> {
+  const matched = await matchExact(invocation, ["file", "envir", "verbose"]);
+  const path = characterScalar(required(matched, "file", "load"), "file");
+  requireVirtualTextPath(path, "load");
+  const target = matched.get("envir") ?? invocation.currentEnvironment();
+  if (target.type !== "environment") {
+    throw new RTypeMismatchError("NRT3227", "load(envir=) requires an environment.");
+  }
+  const verbose = loadVerbose(matched.get("verbose"));
+  const source = virtualTextFileState(invocation).files.get(path);
+  if (source === undefined) {
+    throw new REvaluationError("NRE2195", `Cannot open virtual workspace file '${path}'.`);
+  }
+  if (!source.startsWith(VIRTUAL_WORKSPACE_HEADER)) {
+    throw new REvaluationError("NRE2196", `Virtual file '${path}' is not a saved workspace.`);
+  }
+  const program = invocation.parse(source.slice(VIRTUAL_WORKSPACE_HEADER.length));
+  if (program.body.length !== 1) {
+    throw new REvaluationError("NRE2196", `Virtual workspace file '${path}' is malformed.`);
+  }
+  const archive = await invocation.evaluate(
+    { type: "expression", values: Object.freeze([...program.body]) },
+    invocation.currentEnvironment(),
+  );
+  const names = archive.type === "list" ? vectorNames(archive) : undefined;
+  if (
+    archive.type !== "list" ||
+    names === undefined ||
+    names.length !== archive.length ||
+    names.some((name) => name.length === 0)
+  ) {
+    throw new REvaluationError("NRE2196", `Virtual workspace file '${path}' is malformed.`);
+  }
+  invocation.context.allocate(names.length);
+  for (let index = 0; index < names.length; index += 1) {
+    invocation.context.checkpoint();
+    setBinding(target, names[index] ?? "", archive.values[index] ?? R_NULL);
+  }
+  if (verbose && names.length > 0) {
+    invocation.context.writeOutput({
+      stream: "stdout",
+      text: `Loading objects:\n${names.map((name) => `  ${name}\n`).join("")}`,
+    });
+  }
+  return characterVector(names);
+}
+
+async function saveEnvironment(
+  invocation: BuiltinInvocation,
+  argument: BuiltinCallArgument | undefined,
+): Promise<REnvironment> {
+  if (argument === undefined) return invocation.currentEnvironment();
+  const value = await invocation.force(argument.promise);
+  if (value.type !== "environment") {
+    throw new RTypeMismatchError("NRT3227", "save(envir=) requires an environment.");
+  }
+  return value;
+}
+
+function saveObjectNames(value: RValue, argument: "..." | "list"): readonly string[] {
+  if (value.type === "null") return [];
+  if (value.type !== "character" || value.missing !== undefined) {
+    throw new RTypeMismatchError(
+      "NRT3352",
+      `save(${argument}=) requires non-missing character object names.`,
+    );
+  }
+  if (value.values.some((name) => name.length === 0)) {
+    throw new RTypeMismatchError("NRT3352", "save() object names must be non-empty.");
+  }
+  return value.values;
+}
+
+async function validateSaveControls(
+  invocation: BuiltinInvocation,
+  controls: ReadonlyMap<string, BuiltinCallArgument>,
+): Promise<void> {
+  const ascii = controls.get("ascii");
+  if (ascii !== undefined) logicalFlag(await invocation.force(ascii.promise), false, "ascii");
+  const version = controls.get("version");
+  if (version !== undefined) {
+    const value = await invocation.force(version.promise);
+    if (value.type !== "null") {
+      const selected = numericScalar(value, "version");
+      if (selected !== 2 && selected !== 3) {
+        throw new RTypeMismatchError("NRT3352", "save(version=) must be NULL, 2, or 3.");
+      }
+    }
+  }
+  const compress = controls.get("compress");
+  if (compress !== undefined) {
+    const value = await invocation.force(compress.promise);
+    if (value.type === "logical") {
+      logicalFlag(value, true, "compress");
+    } else if (
+      value.type !== "character" ||
+      value.length !== 1 ||
+      isMissing(value, 0) ||
+      !["gzip", "bzip2", "xz", "zstd"].includes(value.values[0] ?? "")
+    ) {
+      throw new RTypeMismatchError("NRT3352", "save(compress=) has an invalid value.");
+    }
+  }
+  const compressionLevel = controls.get("compression_level");
+  if (compressionLevel !== undefined) {
+    const level = numericScalar(
+      await invocation.force(compressionLevel.promise),
+      "compression_level",
+    );
+    if (!Number.isSafeInteger(level) || level < 1 || level > 9) {
+      throw new RTypeMismatchError(
+        "NRT3352",
+        "save(compression_level=) must be an integer from 1 through 9.",
+      );
+    }
+  }
+  const evaluatePromises = controls.get("eval.promises");
+  if (
+    evaluatePromises !== undefined &&
+    !logicalFlag(await invocation.force(evaluatePromises.promise), true, "eval.promises")
+  ) {
+    throw new RUnsupportedFeatureError(
+      "NRU6174",
+      "save(eval.promises = FALSE) promise-graph persistence is not implemented.",
+    );
+  }
+  const precheck = controls.get("precheck");
+  if (
+    precheck !== undefined &&
+    !logicalFlag(await invocation.force(precheck.promise), true, "precheck")
+  ) {
+    throw new RUnsupportedFeatureError(
+      "NRU6175",
+      "save(precheck = FALSE) partial archive writes are not implemented.",
+    );
+  }
+}
+
+function loadVerbose(value: RValue | undefined): boolean {
+  if (value === undefined) return false;
+  if (
+    (value.type !== "logical" && value.type !== "integer" && value.type !== "double") ||
+    value.length !== 1 ||
+    isMissing(value, 0)
+  ) {
+    throw new RTypeMismatchError("NRT3352", "load(verbose=) must be one non-missing number.");
+  }
+  return (value.values[0] ?? 0) !== 0;
+}
+
 function virtualPathParts(
   value: RValue | undefined,
   fallback: readonly string[],
@@ -2609,7 +2904,10 @@ function virtualTextFileState(invocation: BuiltinInvocation): VirtualTextFileSta
   return created;
 }
 
-function requireVirtualTextPath(path: string, call: "dget" | "dput" | "unlink"): void {
+function requireVirtualTextPath(
+  path: string,
+  call: "dget" | "dput" | "load" | "save" | "unlink",
+): void {
   if (path.startsWith(`${VIRTUAL_TEMP_ROOT}/`) && path.length > VIRTUAL_TEMP_ROOT.length + 1)
     return;
   throw new RUnsupportedFeatureError(
@@ -5899,6 +6197,175 @@ function builtinSearch(invocation: BuiltinInvocation): RValue {
   const path = invocation.searchPath();
   invocation.context.allocate(path.length);
   return characterVector(path);
+}
+
+async function builtinLibrary(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = matchLazyArguments(invocation, [
+    "package",
+    "help",
+    "pos",
+    "lib.loc",
+    "character.only",
+    "logical.return",
+    "warn.conflicts",
+    "quietly",
+    "verbose",
+    "mask.ok",
+    "exclude",
+    "include.only",
+    "attach.required",
+  ]);
+  const packageName = await packageArgumentName(invocation, matched, "library");
+  await validatePackageAttachControls(invocation, matched, "library");
+  await invocation.loadPackage(packageName, true);
+  const packages = invocation
+    .searchPath()
+    .flatMap((entry) => (entry.startsWith("package:") ? [entry.slice("package:".length)] : []));
+  invocation.context.allocate(packages.length);
+  return characterVector(packages);
+}
+
+async function builtinRequire(invocation: BuiltinInvocation): Promise<RLogicalVector> {
+  const matched = matchLazyArguments(invocation, [
+    "package",
+    "lib.loc",
+    "quietly",
+    "warn.conflicts",
+    "character.only",
+  ]);
+  const packageName = await packageArgumentName(invocation, matched, "require");
+  const quietly = await lazyLogicalFlag(invocation, matched.get("quietly"), false, "quietly");
+  await validatePackageAttachControls(invocation, matched, "require");
+  try {
+    await invocation.loadPackage(packageName, true);
+    invocation.context.allocate(1);
+    return logicalVector([true]);
+  } catch (error) {
+    if (!(error instanceof NativRError) || error.code !== "NRE2221") throw error;
+    if (!quietly) {
+      invocation.context.warn({
+        code: "NRW1115",
+        message: `there is no package called '${packageName}'`,
+      });
+    }
+    invocation.context.allocate(1);
+    return logicalVector([false]);
+  }
+}
+
+async function builtinRequireNamespace(invocation: BuiltinInvocation): Promise<RLogicalVector> {
+  const { matched, dots } = matchLazyArgumentsWithDots(invocation, ["package", "quietly"]);
+  if (dots.length > 0) {
+    throw new RUnsupportedFeatureError(
+      "NRU6178",
+      "requireNamespace(...) version checks are not implemented in the source-bundle slice.",
+    );
+  }
+  const packageArgument = matched.get("package");
+  if (packageArgument === undefined || packageArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'package' is missing in requireNamespace().");
+  }
+  const packageName = characterScalar(await invocation.force(packageArgument.promise), "package");
+  const quietly = await lazyLogicalFlag(invocation, matched.get("quietly"), false, "quietly");
+  try {
+    await invocation.loadPackage(packageName, false);
+    invocation.context.allocate(1);
+    return logicalVector([true]);
+  } catch (error) {
+    if (!(error instanceof NativRError) || error.code !== "NRE2221") throw error;
+    if (!quietly) {
+      invocation.context.warn({
+        code: "NRW1115",
+        message: `there is no package called '${packageName}'`,
+      });
+    }
+    invocation.context.allocate(1);
+    return logicalVector([false]);
+  }
+}
+
+async function builtinIsNamespaceLoaded(invocation: BuiltinInvocation): Promise<RLogicalVector> {
+  const matched = await matchExact(invocation, ["name"]);
+  const name = characterScalar(required(matched, "name", "isNamespaceLoaded"), "name");
+  invocation.context.allocate(1);
+  return logicalVector([invocation.isNamespaceLoaded(name)]);
+}
+
+function builtinLoadedNamespaces(invocation: BuiltinInvocation): RCharacterVector {
+  if (invocation.arguments.length !== 0) {
+    throw new REvaluationError("NRE2101", "loadedNamespaces() does not accept arguments.");
+  }
+  const names = invocation.loadedNamespaces();
+  invocation.context.allocate(names.length);
+  return characterVector(names);
+}
+
+async function builtinGetNamespaceExports(
+  invocation: BuiltinInvocation,
+): Promise<RCharacterVector> {
+  const matched = await matchExact(invocation, ["ns"]);
+  const name = characterScalar(required(matched, "ns", "getNamespaceExports"), "ns");
+  const exports = await invocation.namespaceExports(name);
+  invocation.context.allocate(exports.length);
+  return characterVector(exports);
+}
+
+async function packageArgumentName(
+  invocation: BuiltinInvocation,
+  matched: ReadonlyMap<string, BuiltinCallArgument>,
+  call: "library" | "require",
+): Promise<string> {
+  const argument = matched.get("package");
+  if (argument === undefined || argument.promise.missing) {
+    throw new REvaluationError("NRE2103", `Argument 'package' is missing in ${call}().`);
+  }
+  const characterOnly = await lazyLogicalFlag(
+    invocation,
+    matched.get("character.only"),
+    false,
+    "character.only",
+  );
+  const expression = argument.promise.expression;
+  if (!characterOnly && expression?.kind === "Identifier") return expression.name;
+  return characterScalar(await invocation.force(argument.promise), "package");
+}
+
+async function validatePackageAttachControls(
+  invocation: BuiltinInvocation,
+  matched: ReadonlyMap<string, BuiltinCallArgument>,
+  call: "library" | "require",
+): Promise<void> {
+  const libraryLocation = matched.get("lib.loc");
+  if (libraryLocation !== undefined) {
+    const value = await invocation.force(libraryLocation.promise);
+    if (value.type !== "null") {
+      throw new RUnsupportedFeatureError(
+        "NRU6179",
+        `${call}(lib.loc=) cannot inspect a host package library; supply bundles to createR().`,
+      );
+    }
+  }
+  for (const name of [
+    "logical.return",
+    "warn.conflicts",
+    "quietly",
+    "verbose",
+    "mask.ok",
+    "attach.required",
+  ]) {
+    const argument = matched.get(name);
+    if (argument !== undefined) {
+      await lazyLogicalFlag(invocation, argument, false, name);
+    }
+  }
+  for (const name of ["help", "pos", "exclude", "include.only"]) {
+    if (matched.has(name)) {
+      throw new RUnsupportedFeatureError(
+        "NRU6178",
+        `${call}(${name}=) is not implemented in the source-bundle slice.`,
+      );
+    }
+  }
 }
 
 async function builtinSystemCall(invocation: BuiltinInvocation): Promise<RValue> {

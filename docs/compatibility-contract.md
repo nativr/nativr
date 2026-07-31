@@ -361,6 +361,16 @@ reconstructing wrappers and have NativR-only executable evidence; GNU R's own te
 instead evaluate some nested language objects, so no strict differential claim is made for those
 values.
 
+`base::save` and `load` extend the same session-owned resource seam with behavioral differential
+evidence for bit64's observed workspace roundtrip. `save` selects direct object expressions and/or
+character names supplied by `list`, looks them up in `envir`, forces promises by default, preserves
+duplicate names, and writes a versioned canonical-source archive. `load` validates that archive,
+restores bindings into the selected environment, optionally emits bounded verbose output, and
+returns loaded names invisibly; `save` returns invisible `NULL`. Versions 2 and 3 and validated
+compression controls are accepted as archive metadata, but the stored representation is not GNU R
+binary serialization or actual compression. Host paths, connections, externally produced `.RData`,
+cross-session persistence, `eval.promises = FALSE`, and `precheck = FALSE` are rejected.
+
 `graphics::polygon` has differential evidence for zoo's measured filled-area panel helper. Its
 default accepts paired real coordinates, one-/two-column data frames, two-column matrices, complex
 coordinates, and named `list(x, y)` inputs; separate x/y vectors must have equal lengths. Missing or
@@ -893,9 +903,9 @@ compare recursively; and NULL agrees with other empty set inputs. The usage-rank
 independently compares row sets across compatible reordered columns, which runs dplyr's two measured
 examples without copying package source. Single-column tibble rectangular selection remains a tibble
 rather than dropping to a vector, and selected data frames retain their class chain. The data-frame
-behavior is an explicit package-usage extension while general package namespace loading is absent;
-arbitrary dplyr methods, grouped/remote tables, dots, pairlists, locale-specific encodings, and
-exhaustive recursive identity corners are not claimed.
+behavior is an explicit package-usage extension; the source-bundle namespace loader does not imply
+general dplyr compatibility; arbitrary dplyr methods, grouped/remote tables, dots, pairlists,
+locale-specific encodings, and exhaustive recursive identity corners are not claimed.
 
 `pmin` computes recycled elementwise minima across logical, integer, double, character, factor, and
 NULL inputs. Nonempty logical results use integer storage, mixed inputs follow the ordinary
@@ -1681,6 +1691,17 @@ package registration, method caching, primitive/group generics, and the full met
 are not claimed. `R6Class` supplies a generator with `$new` and public-field defaults, but not
 mutable `self`, private/active bindings, or reference semantics. `new_class` and `new_vctr` provide
 vctrs-compatible class construction shapes, not the complete vctrs or S7 packages.
+
+Applications may provide `PureRPackageBundle` records at `createR()` initialization. DESCRIPTION and
+NAMESPACE metadata plus package-relative `R/*.R` source are validated and bounded before the Worker
+parses source into normalized ASTs. The initial loader provides dependency-ordered isolated
+namespaces, `import`/`importFrom`, explicit exports and internals, `S3method`, `.onLoad`,
+`.onAttach`, `library`, `require`, `requireNamespace`, namespace queries, attachment search-path
+entries, and reset/reload behavior. It rejects native compilation, `LinkingTo`, `useDynLib`, invalid
+source paths, and unsupported NAMESPACE directives before treating the bundle as loadable. This is
+an application asset interface, not arbitrary CRAN installation: dependency-version constraints,
+Depends-style attachment, package data/resources, lazy loading, install hooks, S4 registration,
+bytecode, compiled code, license resolution, and R CMD check behavior remain outside the slice.
 
 Deliberate current exclusions include GNU R/webR embedding, arbitrary package installation,
 generated JavaScript execution, the complete graphics-device/base-graphics stack, filesystem access,

@@ -1,10 +1,67 @@
 import { describe, expect, it } from "vitest";
 
 import { createR, isComplex, isNA, isRaw, NA, RRuntimeDisposedError } from "../src/index.js";
+import type { PureRPackageBundle } from "../src/index.js";
 
 const assets = {
   treeSitterRuntimeWasm: new URL("../../parser/assets/web-tree-sitter.wasm", import.meta.url),
   rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+};
+
+const pureRFixture: PureRPackageBundle = {
+  description: `Package: nativrfixture
+Version: 0.1.0
+Imports: stats
+NeedsCompilation: no`,
+  namespace: `
+importFrom(stats, median)
+export(square, centered, new_score, describe, package_state)
+S3method(describe, score)
+`,
+  rSources: [
+    {
+      path: "R/00-generics.R",
+      source: `
+.package_state <- "cold"
+.onLoad <- function(libname, pkgname) .package_state <<- paste0("loaded:", pkgname)
+.onAttach <- function(libname, pkgname) .package_state <<- paste0("attached:", pkgname)
+describe <- function(x, ...) UseMethod("describe")
+`,
+    },
+    {
+      path: "R/functions.R",
+      source: `
+square <- function(x) x ^ 2
+centered <- function(x) x - median(x)
+new_score <- function(x) structure(x, class = c("score", "numeric"))
+describe.score <- function(x, ...) paste0(.package_state, ":", sum(x))
+package_state <- function() .package_state
+hidden_helper <- function(x) x + 100
+`,
+    },
+  ],
+};
+
+const pureRConsumer: PureRPackageBundle = {
+  description: `Package: nativrconsumer
+Version: 0.2.0
+Imports: nativrfixture`,
+  namespace: `importFrom(nativrfixture, square)\nexport(quad)`,
+  rSources: [{ path: "R/quad.R", source: "quad <- function(x) square(square(x))" }],
+};
+
+const failingS3Package: PureRPackageBundle = {
+  description: "Package: nativrfailing\nVersion: 0.1.0",
+  namespace: "S3method(describe, score)",
+  rSources: [
+    {
+      path: "R/failing.R",
+      source: `
+describe.score <- function(x, ...) "wrong method"
+.onLoad <- function(libname, pkgname) stop("intentional load failure")
+`,
+    },
+  ],
 };
 
 async function session() {
@@ -1328,6 +1385,185 @@ describe("complete inline source-to-result vertical slice", () => {
       code: "NRL4007",
     });
     await limited.dispose();
+  });
+
+  it("restores bit64's usage-ranked save/load workspace through session memory", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        d <- data.frame(
+          x = structure(c(1, 2), class = "integer64"),
+          label = c("a", "b")
+        )
+        e <- d[,]
+        fi64 <- tempfile(fileext = ".RData")
+        saved <- withVisible(save(e, file = fi64))
+        rm(e)
+        loaded <- withVisible(load(file = fi64))
+        c(
+          is.null(saved$value),
+          saved$visible,
+          loaded$value,
+          loaded$visible,
+          identical(d, e),
+          identical(class(e$x), "integer64"),
+          unlink(fi64)
+        )
+      `),
+    ).resolves.toEqual(["TRUE", "FALSE", "e", "FALSE", "TRUE", "TRUE", "0"]);
+
+    await expect(
+      runtime.eval(`
+        x <- 11L
+        y <- c(a = "text", b = NA_character_)
+        archive <- tempfile()
+        save(x, list = c("y", "x"), file = archive, version = 3L, compress = "gzip")
+        rm(x, y)
+        target <- new.env()
+        trace <- capture.output(restored <- load(archive, envir = target, verbose = TRUE))
+        c(restored, target$x, target$y, trace, unlink(archive))
+      `),
+    ).resolves.toEqual([
+      "y",
+      "x",
+      "x",
+      "11",
+      "text",
+      NA,
+      "Loading objects:",
+      "  y",
+      "  x",
+      "  x",
+      "0",
+    ]);
+
+    await expect(runtime.eval("save(x, file = 'host.RData')")).rejects.toMatchObject({
+      code: "NRU6169",
+    });
+    await expect(runtime.eval("load('host.RData')")).rejects.toMatchObject({
+      code: "NRU6169",
+    });
+    await expect(
+      runtime.eval("path <- tempfile(); dput(1, path); load(path)"),
+    ).rejects.toMatchObject({ code: "NRE2196" });
+    await expect(runtime.eval("save(missing_object, file = tempfile())")).rejects.toMatchObject({
+      code: "NRE2001",
+    });
+    await expect(
+      runtime.eval(
+        "delayedAssign('later', 1); save(later, file = tempfile(), eval.promises = FALSE)",
+      ),
+    ).rejects.toMatchObject({ code: "NRU6174" });
+    await runtime.dispose();
+  });
+
+  it("loads source-only R package bundles with namespaces, imports, hooks, and S3 methods", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [pureRFixture, pureRConsumer, failingS3Package],
+    });
+    await expect(runtime.eval('isNamespaceLoaded("nativrfixture")')).resolves.toBe(false);
+    await expect(runtime.eval('requireNamespace("nativrconsumer", quietly = TRUE)')).resolves.toBe(
+      true,
+    );
+    await expect(runtime.eval("nativrconsumer::quad(2)")).resolves.toBe(16);
+    await expect(
+      runtime.eval(
+        'c(isNamespaceLoaded("nativrfixture"), isNamespaceLoaded("nativrconsumer"), "package:nativrfixture" %in% search())',
+      ),
+    ).resolves.toEqual([true, true, false]);
+    await expect(runtime.eval("nativrfixture::centered(c(1, 4, 10))")).resolves.toEqual([-3, 0, 6]);
+    await expect(runtime.eval("nativrfixture:::hidden_helper(1)")).resolves.toBe(101);
+    await expect(runtime.eval("nativrfixture::hidden_helper(1)")).rejects.toMatchObject({
+      code: "NRE2211",
+    });
+
+    const attached = await runtime.evalDetailed("library(nativrfixture)");
+    expect(attached.visible).toBe(false);
+    expect(attached.value).toEqual([
+      "nativrfixture",
+      "stats",
+      "graphics",
+      "grDevices",
+      "utils",
+      "datasets",
+      "methods",
+      "base",
+    ]);
+    await expect(runtime.eval("square(5)")).resolves.toBe(25);
+    await expect(runtime.eval("package_state()")).resolves.toBe("attached:nativrfixture");
+    await expect(runtime.eval("describe(new_score(1:3))")).resolves.toBe(
+      "attached:nativrfixture:6",
+    );
+    await expect(runtime.eval('sort(getNamespaceExports("nativrfixture"))')).resolves.toEqual([
+      "centered",
+      "describe",
+      "new_score",
+      "package_state",
+      "square",
+    ]);
+    await expect(runtime.eval('requireNamespace("does.not.exist", quietly = TRUE)')).resolves.toBe(
+      false,
+    );
+
+    await runtime.reset();
+    await expect(runtime.eval('isNamespaceLoaded("nativrfixture")')).resolves.toBe(false);
+    await expect(runtime.eval("nativrconsumer::quad(3)")).resolves.toBe(81);
+    await expect(runtime.eval('"package:nativrfixture" %in% search()')).resolves.toBe(false);
+    await expect(
+      runtime.eval(`
+        before <- nativrfixture::describe(nativrfixture::new_score(1:3))
+        failed <- inherits(try(nativrfailing:::describe.score(1), silent = TRUE), "try-error")
+        after <- nativrfixture::describe(nativrfixture::new_score(1:3))
+        c(before, failed, after)
+      `),
+    ).resolves.toEqual(["loaded:nativrfixture:6", "TRUE", "loaded:nativrfixture:6"]);
+    await runtime.dispose();
+  });
+
+  it("rejects native and malformed package bundles before evaluation", async () => {
+    await expect(
+      createR({
+        execution: "inline",
+        assets,
+        packages: [{ description: "", namespace: "", rSources: null } as never],
+      }),
+    ).rejects.toMatchObject({ code: "NRS5003" });
+    await expect(
+      createR({
+        execution: "inline",
+        assets,
+        packages: [
+          {
+            description: "Package: nativefixture\nVersion: 1.0.0\nNeedsCompilation: yes",
+            namespace: "useDynLib(nativefixture)",
+            rSources: [],
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({ code: "NRU6176" });
+    await expect(
+      createR({
+        execution: "inline",
+        assets,
+        packages: [
+          {
+            description: "Package: malformed\nVersion: 1.0.0",
+            namespace: "export(missing)",
+            rSources: [{ path: "src/native.c", source: "missing <- 1" }],
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({ code: "NRE2228" });
+    await expect(
+      createR({
+        execution: "inline",
+        assets,
+        limits: { maxVectorLength: 32 },
+        packages: [pureRFixture],
+      }),
+    ).rejects.toMatchObject({ code: "NRL4002" });
   });
 
   it("generates the frequency-ranked grDevices heat palette", async () => {
@@ -6654,7 +6890,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.195.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.196.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

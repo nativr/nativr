@@ -314,8 +314,8 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
 89. Frequency-ranked regular time-series foundation: `stats::ts`, `as.ts`, `frequency`, and
     `stats::window` cover ranks 439, 440, 442, and 443 with vector/matrix metadata, calendar
     coordinates, endpoint recycling, integral downsampling, extension padding, and independent S3
-    package-method seams. Zoo's package-owned irregular indexes and methods remain package-loader
-    work rather than embedded runtime code.
+    package-method seams. Zoo's package-owned irregular indexes and methods remain audited-bundle
+    and runtime-compatibility work rather than embedded runtime code.
 90. Frequency-ranked browser legend: `graphics::legend` covers zoo's three measured line/point call
     shapes with keyword and coordinate placement, recycled styles, optional boxes/titles/columns,
     invisible geometry results, Worker transport, Canvas rendering, bounded journals, and
@@ -437,6 +437,16 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      returns through the existing parser, normalized AST, and evaluator. Host paths and connections,
      external file content, nondefault controls, functions/environments, cycles, binary formats, and
      persistence remain separate I/O and serialization work.
+113. Frequency-ranked workspaces: `base::save` and `load` run bit64's observed save/remove/load flow
+     through the same browser-memory seam, including object lists, environments, promise forcing,
+     duplicate names, verbose output, format controls, visibility, and invalid archives. GNU R
+     `.RData` binary interchange, host files, true compression, and persistence remain separate.
+114. Source-only package foundation: application-supplied bundles now validate DESCRIPTION,
+     NAMESPACE, and bounded `R/*.R` inputs; load dependency-ordered isolated namespaces; resolve
+     imports/exports and `::`/`:::`; register S3 methods; run lifecycle hooks; attach through
+     `library`; and execute in both inline and Worker sessions. A build-time packager, dependency
+     version solving, data/resources, broader NAMESPACE directives, independently published package
+     evidence, and R CMD check remain the next package-compatibility layers.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means
@@ -451,8 +461,9 @@ the measured surface is runnable, not that NativR implements all R semantics or 
 2. Complete indexing, arrays, frames, conditions, dates/times, object systems, I/O, serialization,
    numeric algorithms, statistics, and graphics behind browser-safe host interfaces.
 3. Implement the full inventoried core namespace surface with per-callable differential evidence.
-4. Run independently authored package fixtures and R CMD check scenarios, then expand toward package
-   namespace/loading compatibility without embedding GNU R or webR.
+4. Build on the executable source-bundle namespace loader with independently published pure-R
+   packages, build-time packaging, dependency/version/resource handling, and R CMD check scenarios
+   without embedding GNU R or webR.
 5. Verify platform, browser, locale, time-zone, graphics, numeric, and performance behavior against
    the completion criteria in the GNU R compatibility ledger.
 6. Continue refreshing package-usage snapshots so high-reach gaps determine implementation order

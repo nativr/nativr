@@ -35,7 +35,7 @@ async function handleRequest(request: WorkerRequest): Promise<void> {
     if (request.kind === "init") {
       host?.dispose();
       debug = request.debug;
-      host = await RuntimeHost.create(request.assets, request.limits);
+      host = await RuntimeHost.create(request.assets, request.limits, request.packages);
       postSuccess(request.id, { kind: "ready" });
       return;
     }
