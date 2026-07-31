@@ -7369,5 +7369,27 @@
     "expectedCompatibility": "behavioral",
     "rOracle": false,
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "system-file-virtual-package-root-and-missing-boundary",
+    "code": "c(system.file(package = \"base\"), system.file(\"missing\", package = \"base\"), inherits(try(system.file(\"missing\", package = \"base\", mustWork = TRUE), silent = TRUE), \"try-error\"))",
+    "expected": ["nativr://package/base", "", "TRUE"],
+    "expectedCompatibility": "shape",
+    "rOracle": false,
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "system-file-exact-trailing-arguments-and-package-coercion",
+    "code": "c(system.file(pack = \"stats\") == \"\", system.file(must = TRUE) == \"\", inherits(try(system.file(package = NULL), silent = TRUE), \"try-error\"), system.file(package = factor(\"base\")) != \"\")",
+    "expected": [true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "utils-package-name-global-boundary",
+    "code": "is.null(utils::packageName())",
+    "expected": true,
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

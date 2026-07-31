@@ -37,19 +37,27 @@ cleared by `reset()` or `dispose()`; they are not host files and cannot be passe
 JavaScript API. `save()`/`load()` use the same resource seam for supported workspace values; their
 archive is NativR canonical source rather than a GNU R `.RData` binary.
 
-`createR({ packages })` accepts source-only `PureRPackageBundle` objects containing DCF
-`DESCRIPTION`, `NAMESPACE`, and package-relative `R/*.R` source strings. The same bundle is
-structured-cloned during Worker initialization, parsed into the owned AST, and registered in the
-session's isolated package catalog. `pkg::name` loads a namespace without attaching it;
-`library(pkg)` attaches its exports. Imports, dependencies, S3 registrations, `.onLoad()`, and
-`.onAttach()` use the runtime's environment and closure model. `reset()` unloads and detaches
-packages while retaining the immutable supplied catalog so later namespace access can load them
-again. See [`examples/pure-r-package.ts`](../examples/pure-r-package.ts).
+`createR({ packages })` accepts `PureRPackageBundle` objects containing DCF `DESCRIPTION`,
+`NAMESPACE`, deterministic package-relative `R/*.R` source strings, and optional base64 package
+resources. The bundle is deep-snapshotted, structured-cloned during Worker initialization, parsed
+into the owned AST, and registered in the session's isolated package catalog. `pkg::name` loads a
+namespace without attaching it; `library(pkg)` attaches its exports. Imports, dependency version
+constraints, S3 registrations, `.onLoad()`, and `.onAttach()` use the runtime's environment and
+closure model. `system.file()` returns opaque `nativr://package/...` paths for immutable packaged
+resources. `reset()` unloads and detaches packages while retaining the supplied catalog so later
+namespace access can load it again.
 
-The bundle API is deliberately not a package installer. It rejects native compilation, `LinkingTo`,
-`useDynLib`, unsupported NAMESPACE directives, and non-`R/*.R` source paths; it never searches a
-host library or fetches CRAN resources. Compatibility still depends on the package and all
-dependencies staying within the documented NativR subset.
+`@nativr/package-tools` is the build-time installer for standard source directories, `.tar.gz`
+archives, and CRAN-like repositories. It resolves required dependencies and emits integrity-locked
+JSON whose `bundles` field can be passed directly to `createR()`. Repository access and archive
+inspection never run inside the browser evaluator. See
+[`examples/pure-r-package.ts`](../examples/pure-r-package.ts) and
+[`pure-r-packages.md`](pure-r-packages.md).
+
+The tool rejects native compilation, JVM code, symbolic links, unsafe archive paths, installation
+hooks, `LinkingTo`, `useDynLib`, and unsupported NAMESPACE directives. Successful packaging remains
+distinct from execution compatibility: every dependency and R feature exercised by the package must
+still be in the documented NativR subset.
 
 `utils::demo(package = character())` exposes the empty GNU R catalog shape without host I/O.
 External package/topic selection is rejected until bundles can provide browser-safe demo resources;

@@ -32,8 +32,32 @@ await r.dispose();
 
 ### Load a source-only R package
 
-Pure-R functions do not need TypeScript rewrites. Supply an audited package bundle containing its
-`DESCRIPTION`, `NAMESPACE`, and `R/*.R` sources when the session is created:
+Pure-R functions do not need TypeScript rewrites. Install the build-time package tool, then turn a
+standard source directory or CRAN-like source package into a deterministic browser artifact:
+
+```sh
+pnpm add -D @nativr/package-tools
+pnpm exec nativr-package install pkgconfig --output packages.json
+```
+
+```ts
+import { createR } from "@nativr/nativr";
+import packageSet from "./packages.json" with { type: "json" };
+
+const r = await createR({ packages: packageSet.bundles });
+await r.eval("library(pkgconfig)");
+console.log(await r.eval('pkgconfig::get_config("unset", 42L)')); // 42
+```
+
+`install` reads the repository's source `PACKAGES` index, downloads the required `Depends`/`Imports`
+closure, rejects unsafe or non-pure install surfaces, checks version constraints, and writes an
+integrity-locked package set. To package a local source directory or `.tar.gz`:
+
+```sh
+pnpm exec nativr-package pack ./demo --output demo.nativr.json
+```
+
+Applications can also supply an audited bundle directly when the session is created:
 
 ```ts
 const r = await createR({
@@ -55,11 +79,14 @@ await r.eval("library(demo)");
 console.log(await r.eval("twice_mean(c(1, 2, 6))")); // 6
 ```
 
-The initial loader supports isolated namespaces, dependency/import loading, exports, `pkg::name`,
-`pkg:::name`, S3 registrations, `.onLoad()`, `.onAttach()`, `library()`, `require()`, and
-`requireNamespace()` in inline and Worker execution. It does not make every pure-R package
-compatible: all dependencies and R features used by the package must also be supported. See the
-[complete example](examples/pure-r-package.ts) and
+The loader supports isolated namespaces, dependency/import loading and version checks, package
+resources through virtual `system.file()` paths, exports, `pkg::name`, `pkg:::name`, S3
+registrations, `.onLoad()`, `.onAttach()`, `library()`, `require()`, and `requireNamespace()` in
+inline and Worker execution. Arbitrary pure-R source packages can enter this pipeline, but that is
+not a claim that every package already executes: all dependencies, data formats, namespace
+directives, and R features it uses must also be supported. The unchanged public `pkgconfig 2.0.3`
+source package is the first pinned end-to-end external proof. See the
+[complete bundle example](examples/pure-r-package.ts) and
 [package-loading contract](docs/pure-r-packages.md).
 
 ### One-file browser example
@@ -101,7 +128,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 500 registered functions, including resettable
+an initial condition/handler slice. It exposes 502 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
 preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
@@ -533,10 +560,10 @@ R source -> @nativr/parser -> normalized @nativr/ast
                   @nativr/nativr Worker API -> playground
 ```
 
-NativR intentionally does not yet implement arbitrary package installation, complete GNU R/package
-semantics, the complete graphics-device/base-graphics stack, host-filesystem access, or runtime
-network access. Semantic limits and planned directions are documented in the
-[roadmap](https://github.com/nativr/nativr/blob/main/docs/roadmap.md).
+NativR intentionally does not perform package installation inside the browser and does not yet
+implement complete GNU R/package semantics, the complete graphics-device/base-graphics stack,
+host-filesystem access, or runtime network access. Semantic limits and planned directions are
+documented in the [roadmap](https://github.com/nativr/nativr/blob/main/docs/roadmap.md).
 
 This Apache-2.0 project follows an independent clean-room policy. It is not affiliated with or
 endorsed by the R Foundation, Posit, OpenAI, or R package authors. No official R branding is used.

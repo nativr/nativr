@@ -27,3 +27,9 @@ conformance cases, and update the compatibility contract. The optional R oracle 
 type/value/warning observations only; it never copies implementation source. Reviewers must reject
 unexplained large translations or suspiciously source-shaped changes and escalate uncertain
 provenance before merging.
+
+Unmodified third-party source packages may be downloaded transiently in opt-in external execution
+tests to prove that the package loader works without package-specific rewrites. Those sources are
+test inputs under their own licenses: they are not copied into this repository, translated into the
+runtime, or treated as implementation evidence. A package artifact used by an application likewise
+retains the package's license independently of NativR's Apache-2.0 runtime.

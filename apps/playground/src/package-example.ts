@@ -12,4 +12,5 @@ NeedsCompilation: no`,
       source: "twice_mean <- function(x) 2 * mean(x)",
     },
   ],
+  resources: [{ path: "extdata/demo.json", data: "eyJkZW1vIjp0cnVlfQo=" }],
 };

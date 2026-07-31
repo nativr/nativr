@@ -154,6 +154,23 @@ describe("Worker protocol guards", () => {
         debug: false,
       }),
     ).toBe(false);
+    expect(
+      isWorkerRequest({
+        protocolVersion: 1,
+        id: "x",
+        kind: "init",
+        assets: { treeSitterRuntimeWasm: "runtime.wasm", rGrammarWasm: "r.wasm" },
+        packages: [
+          {
+            description: "Package: demo\nVersion: 1.0.0",
+            namespace: "",
+            rSources: [],
+            resources: [{ path: "extdata/a.txt", data: 1 }],
+          },
+        ],
+        debug: false,
+      }),
+    ).toBe(false);
     expect(isWorkerRequest({ protocolVersion: 1, id: "x", kind: "eval", code: 1 })).toBe(false);
     expect(isWorkerRequest({ protocolVersion: 1, id: "x", kind: "assign", name: "x" })).toBe(false);
     expect(isWorkerRequest({ protocolVersion: 1, id: "x", kind: "get", name: 1 })).toBe(false);

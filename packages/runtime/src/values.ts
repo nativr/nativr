@@ -208,6 +208,8 @@ export interface BuiltinInvocation {
   isNamespaceLoaded(name: string): boolean;
   loadedNamespaces(): readonly string[];
   namespaceExports(name: string): Promise<readonly string[]>;
+  packageResourcePath(name: string, path: string): string | undefined;
+  packageName(environment: REnvironment): string | undefined;
   globalEnvironment(): REnvironment;
   baseEnvironment(): REnvironment;
   emptyEnvironment(): REnvironment;

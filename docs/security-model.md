@@ -35,5 +35,13 @@ code. Raster RGBA bytes share the evaluation output budget and are transferred o
 legend labels remain inert strings rather than HTML, segment and legend payloads share the same
 budget, and the runtime cannot read pixels back from the host renderer.
 
+`@nativr/package-tools` is a Node-only build tool and is not reachable from evaluated R. It bounds
+repository responses, archive entries, path depth, file counts, per-file bytes, total bytes, and
+dependency count; rejects links, special files, traversal paths, native code, and install hooks;
+checks repository-provided source-package digests when present; and emits its own SHA-256 artifact
+digest. Package archives are extracted only into a fresh temporary directory and removed after
+inspection. Applications should retain the generated package set as a reviewed build artifact; the
+browser runtime neither downloads nor unpacks source packages.
+
 Dependencies are locked, build scripts are explicitly approved in `pnpm-workspace.yaml`, browser
 bundles are audited for Node built-ins/dynamic code, and CI includes CodeQL and Dependabot.

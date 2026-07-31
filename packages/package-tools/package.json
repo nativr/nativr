@@ -1,0 +1,50 @@
+{
+  "name": "@nativr/package-tools",
+  "version": "0.0.0",
+  "description": "Build-time packager and compatibility inspector for pure-R NativR packages",
+  "type": "module",
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "keywords": [
+    "r",
+    "package",
+    "browser",
+    "runtime"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nativr/nativr.git",
+    "directory": "packages/package-tools"
+  },
+  "homepage": "https://github.com/nativr/nativr#readme",
+  "bugs": {
+    "url": "https://github.com/nativr/nativr/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "bin": {
+    "nativr-package": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts",
+    "dist/**/*.d.ts.map",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "dependencies": {
+    "tar": "7.5.22"
+  }
+}
