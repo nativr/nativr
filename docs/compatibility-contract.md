@@ -808,8 +808,8 @@ calls to package-owned S3 methods without reproducing zoo index storage. The def
 nonempty vectors and matrix row counts, positive regular `tsp` metadata including frequencies below
 one, fractional `offset`, configurable `ts.eps` snapping near integer years, unchanged result `tsp`,
 and `ts` result class. Empty values, data frames, malformed series metadata, and non-finite controls
-produce bounded errors. Zoo's replacement generic `time<-`, irregular indexes, namespace-registered
-hidden methods, and the wider `deltat` family remain outside this increment.
+produce bounded errors. Zoo's replacement generic `time<-`, irregular indexes, and
+namespace-registered hidden methods remain outside this increment.
 
 `stats::ts` constructs nonempty vector or two-dimensional matrix time series. One- or two-number
 calendar `start`/`end` coordinates, positive `frequency` or `deltat`, configurable `ts.eps`,
@@ -820,6 +820,14 @@ endpoint-driven row recycling/truncation, vector names, matrix series names, `ts
 first and otherwise returns the validated `tsp` frequency or one. Data-frame-to-numeric-matrix
 coercion, zero-row series, higher-rank arrays, long-vector storage, language-specific printing,
 aligned time-series arithmetic, and exhaustive floating-point endpoint diagnostics are not claimed.
+
+`stats::deltat` dispatches package-owned S3 methods before its default. The default returns one for
+ordinary values and the reciprocal of a vector or matrix's validated `tsp` frequency, yielding one
+unnamed visible double while leaving unused dots lazy. Differential evidence covers zoo's measured
+regular-series call through ordinary `ts` values and an independently declared `deltat.zoo` seam,
+plus matrices, expressions, closures, namespace access, visibility, and malformed metadata. Zoo's
+irregular index inference and methods, namespace-hidden methods, and exhaustive floating-point
+boundaries remain package or future compatibility work.
 
 `stats::cycle` dispatches package-owned S3 methods before its regular-series default. The default
 returns one observation cycle per vector element or matrix row, derives the initial cycle from

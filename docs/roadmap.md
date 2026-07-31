@@ -347,6 +347,11 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
     Worker/Canvas rendering, and same-session record/replay. Formula/data-frame methods, logarithmic
     axes, arbitrary `pars`, complete annotation/axes, and device-identical layout remain separate
     work.
+97. Frequency-ranked sampling intervals: `stats::deltat` runs zoo's measured regular-series call
+    through an S3 package-method seam and an owned default returning one or reciprocal validated
+    `tsp` frequency, with lazy dots, namespace access, visibility, ordinary container shapes, and
+    malformed-metadata guards. Zoo's irregular index inference and methods remain package-loader
+    work.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

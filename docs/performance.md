@@ -346,3 +346,7 @@ measures 290.4 KiB gzip against the 308 KiB limit.
 Language subset 0.179 adds rank 450's `graphics::boxplot()` Tukey-statistics path, grouped graphics
 event, Worker transport, Canvas renderer, and display-list codec without raising the ceiling. The
 complete production Worker measures 292.8 KiB gzip against the 308 KiB limit.
+
+Language subset 0.180 adds rank 451's `stats::deltat()` S3 generic and validated sampling-interval
+default without raising the ceiling. The complete production Worker remains 292.8 KiB gzip against
+the 308 KiB limit.

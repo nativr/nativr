@@ -6758,5 +6758,19 @@
     ],
     "expectedCompatibility": "shape",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "deltat-zoo-observed-regular-series-interval",
+    "code": "c(stats::deltat(1:3), deltat(matrix(1:6, 2)), deltat(NULL), deltat(expression(a, b)), deltat(ts(1:5, start = c(2000, 2), frequency = 4)), deltat(structure(1:3, tsp = c(2, 3, 2))))",
+    "expected": [1, 1, 1, 1, 0.25, 0.5],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "deltat-default-laziness-visibility-and-package-method-seam",
+    "code": "deltat.zoo <- function(x, ..., marker = \"default\") c(marker, attr(x, \"frequency\"), list(...)$extra)\nz <- structure(1:3, class = \"zoo\", frequency = 4)\ninterval <- deltat(ts(1:3, frequency = 4))\nvisible <- withVisible(deltat(ts(1:3)))\nc(deltat(z, marker = \"measured\", extra = \"dot\"), deltat(1:3, stop(\"dots stay lazy\")), typeof(interval), length(interval), is.null(names(interval)), visible$visible)",
+    "expected": ["measured", "4", "dot", "1", "double", "1", "TRUE", "TRUE"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

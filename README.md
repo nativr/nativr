@@ -69,7 +69,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 467 registered functions, including resettable
+an initial condition/handler slice. It exposes 468 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
 preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
@@ -336,6 +336,11 @@ columns; returns GNU R-shaped statistics invisibly; forwards classed inputs thro
 resolved boxplot commands through the Worker, Canvas renderer, output budget, and display-list
 record/replay path. Formula/data-frame methods, logarithmic axes, arbitrary `pars`, axis annotation,
 and device-identical layout remain explicit boundaries.
+
+Rank 451 `stats::deltat` now runs zoo's measured regular-series sampling-interval call. The generic
+forwards classed values and lazy dots to package methods, while its owned default returns the
+reciprocal of validated `tsp` frequency or one for ordinary inputs. Zoo's irregular index, `zooreg`
+construction, and package-owned methods remain package-loader work.
 
 Development priority is based on a reproducible analysis of documented usage in popular CRAN
 packages. The committed

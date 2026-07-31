@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.179.0",
+  "languageSubsetVersion": "0.180.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -483,6 +483,7 @@
         { "name": "ts", "compatibility": "behavioral" },
         { "name": "as.ts", "compatibility": "behavioral" },
         { "name": "frequency", "compatibility": "behavioral" },
+        { "name": "deltat", "compatibility": "behavioral" },
         { "name": "cycle", "compatibility": "behavioral" },
         { "name": "window", "compatibility": "behavioral" },
         { "name": "mad", "compatibility": "numeric" },
