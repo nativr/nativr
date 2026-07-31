@@ -235,6 +235,7 @@ function renderGraphics(events: readonly PublicGraphicsEvent[]): void {
     }
     if (event.kind === "raster") drawRaster(event);
     else if (event.kind === "segments") drawSegments(event);
+    else if (event.kind === "points") drawPoints(event);
     else if (event.kind === "box") drawBox(event);
     else if (event.kind === "boxplot") drawBoxplot(event);
     else drawLegend(event);
@@ -364,6 +365,221 @@ function drawSegments(event: Extract<PublicGraphicsEvent, { readonly kind: "segm
     graphicsContext.stroke();
   }
   graphicsContext.restore();
+}
+
+function drawPoints(event: Extract<PublicGraphicsEvent, { readonly kind: "points" }>): void {
+  if (graphicsContext === null) return;
+  const xScale = graphics.width / (graphicsWindow.xlim[1] - graphicsWindow.xlim[0]);
+  const yScale = graphics.height / (graphicsWindow.ylim[1] - graphicsWindow.ylim[0]);
+  const context = graphicsContext;
+  const polygon = (
+    centerX: number,
+    centerY: number,
+    vertices: readonly (readonly [number, number])[],
+  ): void => {
+    const first = vertices[0];
+    if (first === undefined) return;
+    context.beginPath();
+    context.moveTo(centerX + first[0], centerY + first[1]);
+    for (const vertex of vertices.slice(1)) {
+      context.lineTo(centerX + vertex[0], centerY + vertex[1]);
+    }
+    context.closePath();
+  };
+  const square = (x: number, y: number, radius: number): void =>
+    polygon(x, y, [
+      [-radius, -radius],
+      [radius, -radius],
+      [radius, radius],
+      [-radius, radius],
+    ]);
+  const diamond = (x: number, y: number, radius: number): void =>
+    polygon(x, y, [
+      [0, -radius],
+      [radius, 0],
+      [0, radius],
+      [-radius, 0],
+    ]);
+  const triangle = (x: number, y: number, radius: number, upward: boolean): void => {
+    const direction = upward ? 1 : -1;
+    polygon(x, y, [
+      [0, -direction * radius],
+      [radius, direction * radius],
+      [-radius, direction * radius],
+    ]);
+  };
+  const circle = (x: number, y: number, radius: number): void => {
+    context.beginPath();
+    context.arc(x, y, radius, 0, Math.PI * 2);
+  };
+  const plus = (x: number, y: number, radius: number): void => {
+    context.beginPath();
+    context.moveTo(x - radius, y);
+    context.lineTo(x + radius, y);
+    context.moveTo(x, y - radius);
+    context.lineTo(x, y + radius);
+    context.stroke();
+  };
+  const cross = (x: number, y: number, radius: number): void => {
+    context.beginPath();
+    context.moveTo(x - radius, y - radius);
+    context.lineTo(x + radius, y + radius);
+    context.moveTo(x - radius, y + radius);
+    context.lineTo(x + radius, y - radius);
+    context.stroke();
+  };
+
+  context.save();
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  for (const point of event.points) {
+    const x = (point.x - graphicsWindow.xlim[0]) * xScale;
+    const y = graphics.height - (point.y - graphicsWindow.ylim[0]) * yScale;
+    const radius = Math.max(1, 4 * point.size);
+    context.strokeStyle = point.color;
+    context.fillStyle = point.fill;
+    context.lineWidth = point.lineWidth;
+    if (typeof point.symbol === "string") {
+      if (point.symbol === ".") {
+        context.fillStyle = point.color;
+        const side = Math.max(1, point.size);
+        context.fillRect(x - side / 2, y - side / 2, side, side);
+      } else {
+        context.fillStyle = point.color;
+        context.font = `${Math.max(1, 12 * point.size)}px sans-serif`;
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        context.fillText(point.symbol, x, y);
+      }
+      continue;
+    }
+    switch (point.symbol) {
+      case 0:
+        square(x, y, radius);
+        context.stroke();
+        break;
+      case 1:
+        circle(x, y, radius);
+        context.stroke();
+        break;
+      case 2:
+        triangle(x, y, radius, true);
+        context.stroke();
+        break;
+      case 3:
+        plus(x, y, radius);
+        break;
+      case 4:
+        cross(x, y, radius);
+        break;
+      case 5:
+        diamond(x, y, radius);
+        context.stroke();
+        break;
+      case 6:
+        triangle(x, y, radius, false);
+        context.stroke();
+        break;
+      case 7:
+        square(x, y, radius);
+        context.stroke();
+        cross(x, y, radius);
+        break;
+      case 8:
+        plus(x, y, radius);
+        cross(x, y, radius);
+        break;
+      case 9:
+        diamond(x, y, radius);
+        context.stroke();
+        plus(x, y, radius);
+        break;
+      case 10:
+        circle(x, y, radius);
+        context.stroke();
+        plus(x, y, radius);
+        break;
+      case 11:
+        triangle(x, y, radius, true);
+        context.stroke();
+        triangle(x, y, radius, false);
+        context.stroke();
+        break;
+      case 12:
+        square(x, y, radius);
+        context.stroke();
+        plus(x, y, radius);
+        break;
+      case 13:
+        circle(x, y, radius);
+        context.stroke();
+        cross(x, y, radius);
+        break;
+      case 14:
+        square(x, y, radius);
+        context.stroke();
+        triangle(x, y, radius, false);
+        context.stroke();
+        break;
+      case 15:
+        context.fillStyle = point.color;
+        square(x, y, radius);
+        context.fill();
+        break;
+      case 16:
+        context.fillStyle = point.color;
+        circle(x, y, radius);
+        context.fill();
+        break;
+      case 17:
+        context.fillStyle = point.color;
+        triangle(x, y, radius, true);
+        context.fill();
+        break;
+      case 18:
+        context.fillStyle = point.color;
+        diamond(x, y, radius);
+        context.fill();
+        break;
+      case 19:
+        context.fillStyle = point.color;
+        circle(x, y, radius);
+        context.fill();
+        context.stroke();
+        break;
+      case 20:
+        context.fillStyle = point.color;
+        circle(x, y, (radius * 2) / 3);
+        context.fill();
+        break;
+      case 21:
+        circle(x, y, radius);
+        context.fill();
+        context.stroke();
+        break;
+      case 22:
+        square(x, y, radius);
+        context.fill();
+        context.stroke();
+        break;
+      case 23:
+        diamond(x, y, radius);
+        context.fill();
+        context.stroke();
+        break;
+      case 24:
+        triangle(x, y, radius, true);
+        context.fill();
+        context.stroke();
+        break;
+      case 25:
+        triangle(x, y, radius, false);
+        context.fill();
+        context.stroke();
+        break;
+    }
+  }
+  context.restore();
 }
 
 function drawBox(event: Extract<PublicGraphicsEvent, { readonly kind: "box" }>): void {

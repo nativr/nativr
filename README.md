@@ -69,7 +69,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 476 registered functions, including resettable
+an initial condition/handler slice. It exposes 477 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
 preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
@@ -373,6 +373,14 @@ the documented invisible `4 × 4` view transform for scaled or aspect-preserving
 the default white/black wireframe plus bounding box into bounded Worker-safe line events rendered by
 the Playground. Filled facets, lighting, detailed ticks/text, hidden-line equivalence, and arbitrary
 graphical parameters remain explicit graphics-depth work.
+
+Rank 458 `graphics::points` now supplies zoo's documented S3 plotting extension point and an owned
+default for real coordinate vectors, two-column matrices, data frames, complex coordinates, and
+`list(x, y)` inputs. Numeric plotting symbols 0:25, ASCII/Unicode characters, recycled
+`pch`/`col`/`bg`/`cex`/`lwd`, missing-point omission, invisible results, bounded display-list
+replay, Worker transfer, and Canvas rendering share one host-neutral point command. Line/path
+`type`s, coordinate classes beyond owned numeric storage, clipping/log axes, font identity, and
+arbitrary graphical parameters remain explicit boundaries.
 
 Development priority is based on a reproducible analysis of documented usage in popular CRAN
 packages. The committed

@@ -371,3 +371,8 @@ seconds without raising the ceiling. The first production Worker measures 294.9 
 Language subset 0.185 adds rank 457's `graphics::persp()` S3-first matrix path, homogeneous view
 transform, projected default wireframe/box output, and bounded graphics accounting without raising
 the ceiling. The first production Worker measures 297.2 KiB gzip against the 308 KiB limit.
+
+Language subset 0.186 adds rank 458's `graphics::points()` S3-first coordinate path, resolved point
+protocol/display-list command, plotting-symbol and style recycling, missing-point omission, and
+bounded graphics accounting without raising the ceiling. The first production Worker measures 298.7
+KiB gzip against the 308 KiB limit.

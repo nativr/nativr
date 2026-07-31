@@ -135,6 +135,22 @@ export type PublicGraphicsEvent =
       }[];
     }
   | {
+      readonly kind: "points";
+      readonly points: readonly {
+        readonly x: number;
+        readonly y: number;
+        /** An R plotting-symbol code or one literal Unicode character. */
+        readonly symbol: number | string;
+        /** CSS-compatible #RRGGBBAA border/text color. */
+        readonly color: string;
+        /** CSS-compatible #RRGGBBAA fill color for symbols 21 through 25. */
+        readonly fill: string;
+        /** Device-independent `cex` multiplier. */
+        readonly size: number;
+        readonly lineWidth: number;
+      }[];
+    }
+  | {
       readonly kind: "box";
       readonly edges: readonly ("top" | "right" | "bottom" | "left")[];
       /** CSS-compatible #RRGGBBAA color. */

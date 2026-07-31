@@ -198,6 +198,17 @@ function utf8ByteLength(value: string): number {
 function graphicsEventByteLength(event: RGraphicsEvent): number {
   if (event.kind === "raster") return event.rgba.byteLength;
   if (event.kind === "segments") return event.segments.length * 64;
+  if (event.kind === "points") {
+    return event.points.reduce(
+      (bytes, point) =>
+        bytes +
+        96 +
+        (typeof point.symbol === "string" ? utf8ByteLength(point.symbol) : 8) +
+        utf8ByteLength(point.color) +
+        utf8ByteLength(point.fill),
+      32,
+    );
+  }
   if (event.kind === "box") {
     return (
       64 + event.edges.length * 8 + utf8ByteLength(event.color) + utf8ByteLength(event.lineType)
