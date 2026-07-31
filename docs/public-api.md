@@ -31,6 +31,11 @@ events are absent from `evalDetailed().output` and `onOutput`; `split = TRUE` du
 to both destinations. Captured bytes remain bounded by `maxOutputBytes`. File paths and connection
 targets are rejected because the browser runtime exposes no filesystem.
 
+R code can use `tempfile()` with `dput()`/`dget()`/`unlink()` for bounded, same-session text
+serialization. Those opaque `nativr://session-temp/...` paths never leave the evaluator and are
+cleared by `reset()` or `dispose()`; they are not host files and cannot be passed through the public
+JavaScript API.
+
 `utils::demo(package = character())` exposes the empty GNU R catalog shape without host I/O.
 External package/topic selection is rejected until a package loader can provide browser-safe demo
 resources; the public API never searches a system R library.

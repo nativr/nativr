@@ -1241,6 +1241,95 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("round-trips bit64's usage-ranked dput/dget path through session-memory files", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        d <- data.frame(
+          x = structure(c(1, 2), class = "integer64"),
+          label = c("a", "b")
+        )
+        fi64 <- tempfile(fileext = ".R")
+        returned <- dput(d, fi64)
+        e <- dget(fi64)
+        c(
+          identical(d$x, e$x),
+          identical(returned$x, d$x),
+          identical(class(e$x), "integer64"),
+          identical(e$label, c("a", "b")),
+          unlink(fi64)
+        )
+      `),
+    ).resolves.toEqual([1, 1, 1, 1, 0]);
+
+    await runtime.eval(`
+      values <- list(
+        logical = c(TRUE, FALSE, NA),
+        integer = c(1L, NA_integer_, -2L),
+        double = c(1, NA_real_, NaN, Inf, -Inf),
+        complex = complex(
+          real = c(1, NA_real_, NaN),
+          imaginary = c(2, NA_real_, 3)
+        ),
+        raw = as.raw(c(0, 15, 255)),
+        character = c("a\\nb", NA_character_, "\u00e9"),
+        nested = structure(list(1L, "x", NULL), names = c("a b", "", "tail")),
+        symbol = as.name("a b"),
+        call = quote(mean(x, na.rm = TRUE)),
+        expressions = expression(x + 1, y <- 2)
+      )
+      value_path <- tempfile(pattern = "values-", fileext = ".R")
+      dput(values, value_path)
+      restored <- dget(value_path, keep.source = TRUE)
+    `);
+    await expect(runtime.eval("identical(values, restored)")).resolves.toBe(true);
+    await expect(runtime.eval("unlink(value_path)")).resolves.toBe(0);
+    await expect(runtime.eval("unlink(value_path)")).resolves.toBe(0);
+    await expect(runtime.eval("dget(value_path)")).rejects.toMatchObject({ code: "NRE2195" });
+
+    const displayed = await runtime.evalDetailed("dput(c(1L, NA_integer_))");
+    expect(displayed.value).toEqual([1, NA]);
+    expect(displayed.visible).toBe(false);
+    expect(displayed.output).toEqual([{ stream: "stdout", text: "c(1L, NA_integer_)\n" }]);
+    const removed = await runtime.evalDetailed("unlink(tempfile())");
+    expect(removed).toMatchObject({ value: 0, visible: false });
+
+    await expect(runtime.eval("dput(1, 'host-file.R')")).rejects.toMatchObject({
+      code: "NRU6169",
+    });
+    await expect(runtime.eval("dget('host-file.R')")).rejects.toMatchObject({
+      code: "NRU6169",
+    });
+    await expect(runtime.eval("unlink('host-file.R')")).rejects.toMatchObject({
+      code: "NRU6169",
+    });
+    await expect(runtime.eval("dput(function(x) x, tempfile())")).rejects.toMatchObject({
+      code: "NRU6172",
+    });
+    await expect(runtime.eval("dput(1, tempfile(), control = 'all')")).rejects.toMatchObject({
+      code: "NRU6170",
+    });
+    const resetPath = await runtime.eval(
+      "reset_path <- tempfile(); dput(1, reset_path); reset_path",
+    );
+    expect(resetPath).toBeTypeOf("string");
+    await runtime.reset();
+    await expect(runtime.eval(`dget(${JSON.stringify(resetPath)})`)).rejects.toMatchObject({
+      code: "NRE2195",
+    });
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxOutputBytes: 64 },
+    });
+    await expect(limited.eval("dput(rep('abcdefghij', 8), tempfile())")).rejects.toMatchObject({
+      code: "NRL4007",
+    });
+    await limited.dispose();
+  });
+
   it("generates the frequency-ranked grDevices heat palette", async () => {
     const runtime = await session();
     await expect(runtime.eval("grDevices::heat.colors(5)")).resolves.toEqual([
@@ -6565,7 +6654,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.194.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.195.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

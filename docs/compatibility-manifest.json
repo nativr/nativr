@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.194.0",
+  "languageSubsetVersion": "0.195.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -105,6 +105,10 @@
         { "name": "Sys.localeconv", "compatibility": "behavioral" },
         { "name": "path.expand", "compatibility": "shape" },
         { "name": "file.path", "compatibility": "behavioral" },
+        { "name": "tempfile", "compatibility": "shape" },
+        { "name": "unlink", "compatibility": "behavioral" },
+        { "name": "dput", "compatibility": "behavioral" },
+        { "name": "dget", "compatibility": "behavioral" },
         { "name": "try", "compatibility": "behavioral" },
         { "name": "tryCatch", "compatibility": "behavioral" },
         { "name": "globalCallingHandlers", "compatibility": "behavioral" },

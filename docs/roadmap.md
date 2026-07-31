@@ -431,6 +431,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      permuted dimnames, owned atomic/list storage, lazy S3 dots, inherited dispatch, `NextMethod`,
      namespace access, and resource bounds. Table methods, malformed low-level attributes, exact
      diagnostics, and long-vector storage remain separate compatibility work.
+112. Frequency-ranked text serialization: `base::dget`, `dput`, `tempfile`, and `unlink` run bit64's
+     measured classed-data-frame roundtrip through bounded session-local browser-memory text.
+     Canonical source preserves owned atomic/list/pairlist values and ordinary attributes, then
+     returns through the existing parser, normalized AST, and evaluator. Host paths and connections,
+     external file content, nondefault controls, functions/environments, cycles, binary formats, and
+     persistence remain separate I/O and serialization work.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

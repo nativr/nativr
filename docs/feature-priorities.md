@@ -883,7 +883,17 @@ reach. The owned
 adds `aperm`/`aperm.default` S3 dispatch, `NextMethod`, numeric/character axis permutations, reverse
 defaults, resized or fixed dimensions, dimnames, atomic/list arrays, lazy dots, and bounded
 column-major storage reordering. Table methods, malformed low-level attributes, exact diagnostics,
-and long vectors remain boundaries. Rank 471 `base::dget` is the next unresolved callable candidate.
+and long vectors remain boundaries. Rank 471 `base::dget` is now complete for
+[bit64's](https://cran.r-project.org/web/packages/bit64/refman/bit64.html) measured `dput`/`dget`
+roundtrip, representing 722,206 downloads, one measured occurrence, and 0.6% weighted reach. The
+owned
+[documented text-serialization path](https://stat.ethz.ch/R-manual/R-devel/library/base/html/dput.html)
+also closes the higher-reach `tempfile` and `unlink` prerequisites through bounded
+`nativr://session-temp/...` browser-memory paths. Atomic vectors, nested lists/pairlists, names,
+ordinary attributes, data-frame metadata, bit64's classed double column, missing/NaN/infinite
+values, complex/raw storage, and Unicode have roundtrip coverage. Host paths and connections,
+nondefault controls, function/environment graphs, cycles, binary serialization, and cross-session
+persistence remain boundaries. Rank 472 `base::hashtab` is the next unresolved callable candidate.
 
 ## Completed implementation order
 
@@ -1266,6 +1276,12 @@ ties:
      swap with numeric/character permutations, reverse defaults, dimension/dimname resizing,
      fixed-shape output, atomic/list arrays, lazy S3 dots, inherited dispatch, `NextMethod`,
      namespace access, attribute cleanup, and resource limits.
+133. Text serialization: `base::dget`, `dput`, `tempfile`, and `unlink` run bit64's measured
+     classed-data-frame roundtrip through a bounded session-local browser-memory text store. The
+     independently authored serializer preserves owned atomic/list/pairlist values, ordinary
+     attributes, missingness, complex/raw values, and Unicode before reparsing through the
+     normalized-AST evaluator. Host paths/connections, nondefault controls, functions/environments,
+     cycles, binary formats, and persistence remain separate I/O and serialization work.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

@@ -341,6 +341,26 @@ extents, lazy unused dots, invalid permutations, coercible resize flags, and all
 have coverage. `aperm.table`, malformed attributes created below the public constructors, exact
 legacy diagnostics, and long vectors are not claimed.
 
+`base::dget`, `dput`, `tempfile`, and `unlink` have behavioral differential evidence for bit64's
+measured classed-data-frame serialization roundtrip. `tempfile` returns unique vectorized
+`nativr://session-temp/...` paths, and `dput` stores canonical R source in an evaluator-owned
+session map or writes it to ordinary captured stdout when `file = ""`. `dget` reparses stored source
+through the owned Tree-sitter/normalized-AST/evaluator path in the caller environment. Atomic
+logical, integer, double, complex, raw, and character vectors; lists; pairlists; names; dimensions;
+classes; data-frame metadata; custom attributes; `NA`; `NaN`; infinities; and Unicode strings have
+differential roundtrip coverage. `dput` and `unlink` return invisibly, missing virtual files fail
+deterministically, and file count, stored UTF-8 bytes, serialization depth, allocation, and
+evaluation steps are bounded.
+
+This is a browser-memory compatibility slice, not host filesystem emulation. Paths outside the
+session-temp namespace and R connections are rejected. Only the default `dput(control=)` set is
+accepted; environments, closures, formulas, builtins, cyclic graphs, promise/source-reference
+retention, arbitrary externally written source, binary serialization, compression, and cross-session
+persistence are not claimed. Owned symbols, calls, and expression vectors use explicit
+reconstructing wrappers and have NativR-only executable evidence; GNU R's own text roundtrip can
+instead evaluate some nested language objects, so no strict differential claim is made for those
+values.
+
 `graphics::polygon` has differential evidence for zoo's measured filled-area panel helper. Its
 default accepts paired real coordinates, one-/two-column data frames, two-column matrices, complex
 coordinates, and named `list(x, y)` inputs; separate x/y vectors must have equal lengths. Missing or

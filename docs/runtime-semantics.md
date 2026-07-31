@@ -346,6 +346,21 @@ JavaScript. Numeric axes are integer-coerced and character axes use dimension-ax
 fixed-size output restores the original dimensions and drops dimnames. Only result shape attributes
 survive. Storage and iteration remain bounded by the shared allocation and step budgets.
 
+`base::tempfile()` allocates unique opaque paths under `nativr://session-temp/`; it does not create
+a host file. `dput(x, path)` independently serializes supported owned values to canonical R source
+and stores that UTF-8 text in evaluator session state. `dget(path)` sends the stored text back
+through the normal Tree-sitter R parser, normalized AST, and evaluator in the calling environment.
+`unlink(path)` removes the entry. Runtime reset or disposal drops the complete map. The aggregate
+stored-byte budget is `maxOutputBytes`; entry counts, traversal, recursion, and reconstructed values
+also consume the normal resource limits.
+
+The serializer preserves atomic storage types, explicit missing masks versus ordinary `NaN`,
+infinities, complex components, raw bytes, strings, list/pairlist nesting, and ordinary vector
+attributes. This is deliberately a text-serialization seam for browser-safe package data, not an OS
+filesystem or connection implementation. Non-session paths, external file text, nondefault
+serialization controls, functions/environments, cyclic graphs, binary formats, and persistence
+outside one runtime session remain unsupported.
+
 `graphics::polygon()` accepts the same owned coordinate containers but does not dispatch: paired
 vectors, two-column matrices/data frames, complex coordinates, and named `list(x, y)` become
 device-independent closed paths. Missing or non-finite pairs split separate polygons. Fill/border

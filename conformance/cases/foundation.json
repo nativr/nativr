@@ -7295,5 +7295,35 @@
     "expected": [7, 1, 3, 5, 2, 4, 6, 3, 2, 1, 1, 1, 1, 1],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "dget-bit64-observed-dput-roundtrip",
+    "code": "d <- data.frame(x = structure(c(1, 2), class = \"integer64\"), label = c(\"a\", \"b\"))\nfi64 <- tempfile(fileext = \".R\")\nreturned <- withVisible(dput(d, fi64))\ne <- dget(fi64)\nremoved <- withVisible(unlink(fi64))\nc(identical(d$x, e$x), identical(returned$value$x, d$x), identical(class(e$x), \"integer64\"), returned$visible, removed$value, removed$visible)",
+    "expected": [1, 1, 1, 0, 0, 0],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "dput-dget-atomic-list-attribute-roundtrip",
+    "code": "values <- list(logical = c(TRUE, FALSE, NA), integer = c(1L, NA_integer_, -2L), double = c(1, NA_real_, NaN, Inf, -Inf), complex = complex(real = c(1, NA_real_, NaN), imaginary = c(2, NA_real_, 3)), raw = as.raw(c(0, 15, 255)), character = c(\"a\\nb\", NA_character_, \"é\"), nested = structure(list(1L, \"x\", NULL), names = c(\"a b\", \"\", \"tail\")))\npath <- tempfile(pattern = \"values-\", fileext = \".R\")\ndput(values, path)\nrestored <- dget(path, keep.source = TRUE)\nc(isTRUE(all.equal(values, restored)), unlink(path))",
+    "expected": [1, 0],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "dput-dget-owned-language-roundtrip",
+    "code": "values <- list(symbol = as.name(\"a b\"), call = quote(mean(x, na.rm = TRUE)), expressions = expression(x + 1, y <- 2))\npath <- tempfile()\ndput(values, path)\nrestored <- dget(path)\nc(identical(values, restored), unlink(path))",
+    "expected": [1, 0],
+    "expectedCompatibility": "behavioral",
+    "rOracle": false,
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "virtual-text-file-boundaries",
+    "code": "path <- tempfile()\ndput(1, path)\nunlink(path)\nc(inherits(try(dget(path), silent = TRUE), \"try-error\"), inherits(try(dput(1, \"host-file.R\"), silent = TRUE), \"try-error\"), inherits(try(dget(\"host-file.R\"), silent = TRUE), \"try-error\"), inherits(try(unlink(\"host-file.R\"), silent = TRUE), \"try-error\"), inherits(try(dput(function(x) x, tempfile()), silent = TRUE), \"try-error\"), inherits(try(dput(1, tempfile(), control = \"all\"), silent = TRUE), \"try-error\"))",
+    "expected": [true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracle": false,
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

@@ -43,6 +43,13 @@ into NativR's independently implemented `aperm.default` storage operation. The p
 does not need a TypeScript rewrite. A general package loader is still required to discover,
 register, and isolate that method from `NAMESPACE` metadata.
 
+The usage-ranked `dput`/`dget` increment adds the first browser-safe virtual text-resource seam:
+supported owned values can round-trip through session-local paths without host filesystem access.
+That is useful foundation for package data and build artifacts, but it is not yet a package
+filesystem. The loader still needs externally supplied bundle resources, read-only connection
+interfaces, namespaces, lifecycle hooks, dependency checks, and versioned serialization before a
+third-party package can be loaded reliably.
+
 ## Boundaries
 
 - A pure-R package can load only when every core R feature and dependency it exercises is supported.
