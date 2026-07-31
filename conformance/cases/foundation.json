@@ -7164,5 +7164,28 @@
     ],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "rlnorm-zoo-observed-flow-shape-and-historical-sequence",
+    "code": "suppressWarnings(RNGversion(\"3.5.0\"))\nset.seed(0)\nflow <- stats::rlnorm(200, mean = 1)\nc(length(flow), round(head(flow, 3), 12), all(flow > 0))",
+    "expected": [200, 9.611442203053, 1.961612108081, 10.27587857616, 1],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 1e-12, "relative": 1e-12 }
+  },
+  {
+    "id": "rlnorm-vectorized-parameters-count-shape-and-zero-deviation-rng",
+    "code": "set.seed(123)\nx <- rlnorm(c(10, 20, 30), meanlog = c(0, 1), sdlog = c(0, 0.5))\nset.seed(42)\nbaseline <- runif(1)\nset.seed(42)\nconstant <- rlnorm(3, 1, 0)\nafter <- runif(1)\nc(round(x, 12), length(rlnorm(2.9)), length(rlnorm(c(NA, NA, NA))), constant, baseline == after, is.null(names(rlnorm(c(a = 1, b = 2)))))",
+    "expected": [
+      1, 2.053944676702, 1, 2, 3, 2.718281828459045, 2.718281828459045, 2.718281828459045, 1, 1
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 1e-12, "relative": 1e-12 }
+  },
+  {
+    "id": "rlnorm-missing-domain-empty-and-input-boundaries",
+    "code": "bad <- suppressWarnings(rlnorm(7, meanlog = c(NA, NaN, 0, Inf, -Inf, 0, 0), sdlog = c(1, 1, -1, 0, 0, Inf, 0)))\nempty <- suppressWarnings(rlnorm(3, numeric()))\nc(is.nan(bad[1:3]), bad[4] == Inf, bad[5], is.nan(bad[6]), bad[7], all(is.na(empty) & !is.nan(empty)), length(rlnorm(numeric())), inherits(try(rlnorm(-1), silent = TRUE), \"try-error\"), inherits(try(rlnorm(1, factor(\"a\")), silent = TRUE), \"try-error\"), inherits(try(rlnorm(), silent = TRUE), \"try-error\"))",
+    "expected": [1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

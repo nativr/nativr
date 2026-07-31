@@ -399,6 +399,11 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      lists, pairlists, owned data frames, `NULL` paths, namespace access, and resource bounds.
      Expression vectors, arbitrary class-specific `[<-` methods, exact legacy diagnostics, and long
      vectors remain explicit boundaries.
+106. Frequency-ranked log-normal generation: `stats::rlnorm` runs zoo's measured 200-value flow
+     generator through the evaluator-owned Mersenne-Twister/Inversion stream with historical
+     fixed-seed evidence, scalar/vector count rules, recycled log-scale parameters, zero-deviation
+     point masses, missing/domain warnings, namespace access, and resource bounds. Alternative
+     normal generators and the remaining log-normal distribution family remain explicit boundaries.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

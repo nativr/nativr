@@ -680,6 +680,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("jitter", ["x", "factor", "amount"], "behavioral", builtinJitter),
   defineBuiltin("runif", ["n", "min", "max"], "shape", builtinRunif),
   defineBuiltin("rnorm", ["n", "mean", "sd"], "shape", builtinRnorm),
+  definePackageBuiltin("stats", "rlnorm", ["n", "meanlog", "sdlog"], "behavioral", builtinRlnorm),
   defineBuiltin("rbeta", ["n", "shape1", "shape2", "ncp"], "shape", builtinRbeta),
   definePackageBuiltin("stats", "rgamma", ["n", "shape", "rate", "scale"], "shape", builtinRgamma),
   defineBuiltin("rbinom", ["n", "size", "prob"], "shape", builtinRbinom),
@@ -10799,6 +10800,59 @@ async function builtinRnorm(invocation: BuiltinInvocation): Promise<RValue> {
       return mean + standardDeviation * nextNormal(random);
     }),
   );
+}
+
+async function builtinRlnorm(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["n", "meanlog", "sdlog"]);
+  const count = required(matched, "n", "rlnorm");
+  if (isFactor(count)) {
+    throw new RTypeMismatchError("NRT3309", "rlnorm() n must be real numeric.");
+  }
+  const length = randomResultLength(count, "rlnorm");
+  const means = logNormalArgument(matched.get("meanlog") ?? doubleVector([0]), "meanlog");
+  const deviations = logNormalArgument(matched.get("sdlog") ?? doubleVector([1]), "sdlog");
+  invocation.context.allocate(length);
+  if (length === 0) return doubleVector([]);
+  if (means.length === 0 || deviations.length === 0) {
+    invocation.context.warn({ code: "NRW1003", message: "NAs produced" });
+    return doubleVector(new Float64Array(length), new Uint8Array(length).fill(1));
+  }
+
+  const random = randomState(invocation);
+  const output = new Float64Array(length);
+  let producedNaN = false;
+  for (let index = 0; index < length; index += 1) {
+    invocation.context.checkpoint();
+    const meanIndex = index % means.length;
+    const deviationIndex = index % deviations.length;
+    const mean = isMissing(means, meanIndex) ? Number.NaN : numberAt(means, meanIndex);
+    const deviation = isMissing(deviations, deviationIndex)
+      ? Number.NaN
+      : numberAt(deviations, deviationIndex);
+    if (
+      Number.isNaN(mean) ||
+      Number.isNaN(deviation) ||
+      deviation < 0 ||
+      !Number.isFinite(deviation)
+    ) {
+      output[index] = Number.NaN;
+      producedNaN = true;
+      continue;
+    }
+    output[index] = Math.exp(mean + (deviation === 0 ? 0 : deviation * nextNormal(random)));
+  }
+  if (producedNaN) {
+    invocation.context.warn({ code: "NRW1003", message: "NAs produced" });
+  }
+  return doubleVector(output);
+}
+
+function logNormalArgument(value: RValue, name: string): RealDistributionArgument {
+  const argument = randomDistributionArgument(value, "rlnorm", name);
+  if (isFactor(argument)) {
+    throw new RTypeMismatchError("NRT3309", `rlnorm() ${name} must be real numeric.`);
+  }
+  return argument;
 }
 
 async function builtinRbeta(invocation: BuiltinInvocation): Promise<RValue> {

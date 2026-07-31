@@ -385,3 +385,8 @@ KiB gzip against the 308 KiB limit.
 Language subset 0.188 adds rank 460's `base::replace()` wrapper over the existing immutable subset
 replacement engine, including `NULL` target materialization and no parallel replacement algorithm.
 The first production Worker measures 299.9 KiB gzip against the 308 KiB limit.
+
+Language subset 0.189 adds rank 461's `stats::rlnorm()` adapter over the session-owned Inversion
+normal stream, vectorized log-scale validation, point-mass short-circuits, and bounded output
+without a second random engine. The first production Worker measures 300.2 KiB gzip against the 308
+KiB limit.

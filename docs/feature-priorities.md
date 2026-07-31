@@ -837,8 +837,16 @@ occurrence, and 0.6% weighted reach. The owned
 NativR's immutable subset-replacement engine for numeric/logical/character subscripts, recycling,
 names/extension, atomic promotion, matrices, factors, lists, pairlists, owned data frames, and
 `NULL` materialization/deletion. Expression vectors, arbitrary class-specific `[<-` methods, exact
-legacy diagnostics, and long vectors remain boundaries. Rank 461 `rlnorm` is the next unresolved
-callable candidate.
+legacy diagnostics, and long vectors remain boundaries. Rank 461 `rlnorm` is now complete for
+[zoo's](https://cran.r-project.org/web/packages/zoo/refman/zoo.html) measured
+`rlnorm(200, mean = 1)` flow generator, representing 731,390 downloads, one measured occurrence, and
+0.6% weighted reach. The owned
+[documented distribution path](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/Lognormal.html)
+uses the session Mersenne-Twister/Inversion stream, matches the pinned historical fixed-seed
+sequence, follows scalar/vector `n`, recycles `meanlog`/`sdlog`, handles zero-deviation point
+masses, missing/domain warnings, and allocation limits. Alternative normal generators, bit identity
+beyond the Inversion path, and `dlnorm`/`plnorm`/`qlnorm` remain boundaries. Rank 462 `tapply` is
+the next unresolved callable candidate.
 
 ## Completed implementation order
 
@@ -1199,6 +1207,10 @@ ties:
      the shared one-dimensional subset-replacement path with input immutability, subscript forms,
      recycling, promotion, names/extension, matrices, factors, lists, pairlists, owned data frames,
      `NULL` paths, namespace access, warnings, errors, and resource bounds.
+127. Log-normal random generation: `stats::rlnorm()` runs zoo's measured flow generator through the
+     evaluator-owned Mersenne-Twister/Inversion stream with historical fixed-seed evidence,
+     scalar/vector count rules, recycled log-scale parameters, zero-deviation point masses,
+     missing/domain warnings, namespace access, and resource bounds.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

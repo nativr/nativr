@@ -69,7 +69,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 479 registered functions, including resettable
+an initial condition/handler slice. It exposes 480 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
 preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
@@ -396,6 +396,13 @@ recycling, names and extension, atomic type promotion, matrices, factors, lists,
 data frames, `NULL` materialization/deletion, partial argument matching, input immutability, and
 resource limits. Expression vectors, arbitrary class-specific `[<-` methods, and exact legacy
 diagnostic wording remain explicit boundaries.
+
+Rank 461 `stats::rlnorm` now runs zoo's measured 200-value log-normal flow generator. It uses the
+session-owned Mersenne-Twister/Inversion stream, matches the pinned historical fixed-seed sequence,
+follows scalar-or-vector `n` sizing, recycles vectorized `meanlog`/`sdlog`, preserves zero-deviation
+point masses without advancing the RNG, drops input metadata, and emits one bounded missing/domain
+warning. Alternative normal generators, bit identity beyond the documented Inversion path, and the
+rest of the log-normal density/CDF/quantile family remain explicit boundaries.
 
 Development priority is based on a reproducible analysis of documented usage in popular CRAN
 packages. The committed

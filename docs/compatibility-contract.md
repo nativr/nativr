@@ -153,6 +153,15 @@ access have executable evidence. Exact GNU R Ahrens-Dieter stream identity, ever
 underflow, long vectors, class-specific inputs, and the density/CDF/quantile gamma family are not
 claimed.
 
+`stats::rlnorm` has differential behavioral evidence for zoo's measured `rlnorm(200, mean = 1)` flow
+generator. The scalar-or-vector `n` rule, vectorized recycled `meanlog`/`sdlog`, exact pinned
+Mersenne-Twister/Inversion historical sequences, strictly positive finite draws, zero-deviation
+point masses without RNG advancement, empty parameters, missing/NaN, negative/infinite deviations,
+infinite means, one aggregate `NAs produced` warning, attribute-free results, partial argument
+matching, namespace access, and resource bounds have coverage. Alternative normal generators, bit
+identity outside the documented Inversion path, long vectors, exact platform diagnostics, and the
+`dlnorm`/`plnorm`/`qlnorm` family remain unsupported.
+
 `stats::dbinom` has differential numeric evidence for loo's measured
 `dbinom(data_i$y, size = data_i$K, prob = draws, log = TRUE)` likelihood shape. The vectorized path
 recycles real quantiles, sizes, and probabilities; preserves the longest input's metadata; handles
