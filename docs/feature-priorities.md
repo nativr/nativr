@@ -846,7 +846,14 @@ uses the session Mersenne-Twister/Inversion stream, matches the pinned historica
 sequence, follows scalar/vector `n`, recycles `meanlog`/`sdlog`, handles zero-deviation point
 masses, missing/domain warnings, and allocation limits. Alternative normal generators, bit identity
 beyond the Inversion path, and `dlnorm`/`plnorm`/`qlnorm` remain boundaries. Rank 462 `tapply` is
-the next unresolved callable candidate.
+now complete for [zoo's](https://cran.r-project.org/web/packages/zoo/refman/zoo.html) measured
+`tapply(1:ncol(x), screens, f)` screen-range grouping path, representing 731,390 downloads, one
+measured occurrence, and 0.6% weighted reach. The owned
+[documented ragged-array path](https://stat.ethz.ch/R-manual/R-devel/library/base/html/tapply.html)
+preserves factor-level dimensions and names, omits missing groups, forwards callback arguments,
+supports scalar/default simplification and list-array results, and exposes `FUN = NULL` group codes.
+Formula indexes, custom split methods, broader class-specific simplification, and long vectors
+remain boundaries. Rank 463 `graphics::text` is the next unresolved callable candidate.
 
 ## Completed implementation order
 
@@ -1211,6 +1218,10 @@ ties:
      evaluator-owned Mersenne-Twister/Inversion stream with historical fixed-seed evidence,
      scalar/vector count rules, recycled log-scale parameters, zero-deviation point masses,
      missing/domain warnings, namespace access, and resource bounds.
+128. Ragged-array grouping: `base::tapply()` runs zoo's measured screen-range callback with
+     factor-level dimensions/dimnames, missing-group omission, scalar atomic/default simplification,
+     unsimplified list arrays, forwarded arguments, function-name resolution, `FUN = NULL` group
+     codes, errors, and resource bounds.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

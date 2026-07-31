@@ -115,6 +115,7 @@ export function subsetDimensions(
   drop: boolean,
   context: OperatorContext,
 ): RVector {
+  const listLike = target.type === "list" || target.type === "pairlist";
   if (isDataFrame(target)) {
     if (indices.length !== 2) {
       throw new RTypeMismatchError("NRT3310", "A data frame requires two subscripts.");
@@ -134,15 +135,14 @@ export function subsetDimensions(
   );
   const positions = arrayPositions(selectedAxes, dimensions);
   context.allocate(positions.length);
-  let output: RVector =
-    target.type === "pairlist"
-      ? listValue(
-          positions.map((position) =>
-            position === undefined ? R_NULL : (target.values[position] ?? R_NULL),
-          ),
-        )
-      : subsetAtomic(target, positions, undefined, context);
-  if (target.type === "pairlist") {
+  let output: RVector = listLike
+    ? listValue(
+        positions.map((position) =>
+          position === undefined ? R_NULL : (target.values[position] ?? R_NULL),
+        ),
+      )
+    : subsetAtomic(target, positions, undefined, context);
+  if (listLike) {
     for (let index = 0; index < positions.length; index += 1) context.checkpoint();
   }
   const retainedAxes = selectedAxes.flatMap((selected, axis) =>

@@ -688,6 +688,14 @@ Sorting is stable. Matching and distinctness use type-aware keys that distinguis
 numeric NaN. The apply/map family invokes closures and builtins through the evaluator so normal
 resource accounting remains active.
 
+`base::tapply()` partitions an owned vector-like input by one or more same-length atomic grouping
+vectors. Factor levels determine column-major array extents and dimnames; non-factor groupings use
+the existing deterministic split ordering, and missing group positions are omitted. `FUN = NULL`
+returns integer cell codes without array attributes. Otherwise, callbacks receive named subsets and
+forwarded arguments: single atomic results simplify with a typed `default`, while vector, recursive,
+or explicitly unsimplified results remain indexable list arrays. Formula indexes, custom split
+methods, and arbitrary class-specific simplification are not implemented.
+
 `setequal()` uses those same type-aware keys for atomic sets, recursively compares list elements,
 and treats order and duplicates as irrelevant. Owned data frames take an independent row-set path
 with column-name alignment; this supplies the two measured dplyr call shapes while package loading

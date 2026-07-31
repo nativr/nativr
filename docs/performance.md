@@ -390,3 +390,7 @@ Language subset 0.189 adds rank 461's `stats::rlnorm()` adapter over the session
 normal stream, vectorized log-scale validation, point-mass short-circuits, and bounded output
 without a second random engine. The first production Worker measures 300.2 KiB gzip against the 308
 KiB limit.
+
+Language subset 0.190 adds rank 462's `base::tapply()` grouping, factor-level result arrays,
+callback dispatch, and the list-array extraction path required by zoo. The first production Worker
+measures 300.9 KiB gzip against the 308 KiB limit.

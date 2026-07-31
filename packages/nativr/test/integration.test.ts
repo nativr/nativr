@@ -6107,7 +6107,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.189.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.190.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -10123,6 +10123,84 @@ describe("complete inline source-to-result vertical slice", () => {
       runtime.eval('aggregate(1:4, list(c("a", "a", "b", "b")), mean)$x'),
     ).resolves.toEqual([1.5, 3.5]);
     await runtime.dispose();
+  });
+
+  it("applies zoo's usage-ranked ragged-array grouping path", async () => {
+    const runtime = await session();
+    await runtime.eval(`
+      x <- 1:6
+      screens <- factor(c(1, 1, 2, 2, 3, 3))
+      f <- function(idx) range(idx)
+      ranges <- tapply(x, screens, f)
+    `);
+    await expect(runtime.eval("unlist(ranges)")).resolves.toEqual([1, 2, 3, 4, 5, 6]);
+    await expect(runtime.eval("c(dim(ranges), unlist(dimnames(ranges)))")).resolves.toEqual([
+      "3",
+      "1",
+      "2",
+      "3",
+    ]);
+
+    await expect(
+      runtime.eval(`
+        a <- factor(c("a", "a", "b", "b", "a", "a", "b", "b"), levels = c("a", "b"))
+        b <- factor(c("x", "y", "x", "y", "x", "y", "x", "y"), levels = c("x", "y", "z"))
+        grouped <- tapply(1:8, list(row = a, col = b), sum)
+        c(grouped, dim(grouped), unlist(dimnames(grouped)), names(dimnames(grouped)))
+      `),
+    ).resolves.toEqual([
+      "6",
+      "10",
+      "8",
+      "12",
+      NA,
+      NA,
+      "2",
+      "3",
+      "a",
+      "b",
+      "x",
+      "y",
+      "z",
+      "row",
+      "col",
+    ]);
+    await expect(
+      runtime.eval(`
+        g <- factor(c("b", "a", "b", "a"), levels = c("a", "b", "c"))
+        c(tapply(1:4, g, mean, default = "x"),
+          unlist(tapply(1:4, g, range, simplify = FALSE)),
+          is.null(tapply(1:4, g, range, simplify = FALSE)[[3]]))
+      `),
+    ).resolves.toEqual(["3", "2", "x", "2", "4", "1", "3", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        ids <- tapply(1:5, factor(c("b", "a", NA, "b", "c"),
+          levels = c("a", "b", "c", "d")), FUN = NULL)
+        means <- tapply(c(1, NA, 3, 4), c("a", "a", "b", "b"), "mean", na.rm = TRUE)
+        c(ids, means)
+      `),
+    ).resolves.toEqual([2, 1, NA, 2, 3, 1, 3.5]);
+    await expect(runtime.eval("tapply(1:3, c('a', 'b'), sum)")).rejects.toMatchObject({
+      code: "NRE2144",
+    });
+    await expect(runtime.eval("tapply(integer(), list(), sum)")).rejects.toMatchObject({
+      code: "NRE2143",
+    });
+    await expect(
+      runtime.eval("tapply(1:2, factor(c('a', 'b')), sum, default = 8:9)"),
+    ).rejects.toMatchObject({ code: "NRT3338" });
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 32 },
+    });
+    await expect(
+      limited.eval("tapply(1, list(factor(1, levels = 1:8), factor(1, levels = 1:8)), sum)"),
+    ).rejects.toMatchObject({ code: "NRL4002" });
+    await limited.dispose();
   });
 
   it("parses explicit UTC date-time formats with strptime", async () => {

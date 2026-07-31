@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 480,
-    "overlappingNames": 465,
-    "missingReferenceNames": 2057,
+    "nativrRegisteredNames": 481,
+    "overlappingNames": 466,
+    "missingReferenceNames": 2056,
     "nativrExtensionNames": 15,
-    "nameCoverage": 0.184377
+    "nameCoverage": 0.184774
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 347, "nameCoverage": 0.253841 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 348, "nameCoverage": 0.254572 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 69, "nameCoverage": 0.148707 },
     { "package": "methods", "callableNames": 209, "overlappingNames": 9, "nameCoverage": 0.043062 },
     { "package": "utils", "callableNames": 262, "overlappingNames": 11, "nameCoverage": 0.041985 },
@@ -458,6 +458,7 @@
     "table",
     "tail",
     "tan",
+    "tapply",
     "time",
     "tolower",
     "toupper",
@@ -2385,7 +2386,6 @@
     "tail.matrix",
     "tanh",
     "tanpi",
-    "tapply",
     "tar",
     "taskCallbackManager",
     "tcrossprod",

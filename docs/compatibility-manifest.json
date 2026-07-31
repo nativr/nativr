@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.189.0",
+  "languageSubsetVersion": "0.190.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -424,6 +424,7 @@
         { "name": "Reduce", "compatibility": "behavioral" },
         { "name": "Filter", "compatibility": "behavioral" },
         { "name": "apply", "compatibility": "behavioral" },
+        { "name": "tapply", "compatibility": "behavioral" },
         { "name": "by", "compatibility": "behavioral" },
         { "name": "ave", "compatibility": "behavioral" },
         { "name": "aggregate", "compatibility": "behavioral" },

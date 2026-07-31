@@ -69,7 +69,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 480 registered functions, including resettable
+an initial condition/handler slice. It exposes 481 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
 preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
@@ -403,6 +403,13 @@ follows scalar-or-vector `n` sizing, recycles vectorized `meanlog`/`sdlog`, pres
 point masses without advancing the RNG, drops input metadata, and emits one bounded missing/domain
 warning. Alternative normal generators, bit identity beyond the documented Inversion path, and the
 rest of the log-normal density/CDF/quantile family remain explicit boundaries.
+
+Rank 462 `base::tapply` now runs zoo's measured screen-range grouping path. It accepts one or more
+same-length atomic grouping vectors, preserves factor levels as array dimensions and dimnames, omits
+missing groups, forwards `...`, resolves functions or function names, returns group codes for
+`FUN = NULL`, simplifies scalar atomic results with a typed `default`, and otherwise returns
+indexable list arrays. Formula indexes, custom split methods, and broader class-specific
+simplification remain explicit boundaries.
 
 Development priority is based on a reproducible analysis of documented usage in popular CRAN
 packages. The committed

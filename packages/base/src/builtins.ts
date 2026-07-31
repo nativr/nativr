@@ -1281,6 +1281,12 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("Reduce", ["f", "x", "init", "right", "accumulate"], "behavioral", builtinReduce),
   defineBuiltin("Filter", ["f", "x"], "behavioral", builtinFilter),
   defineBuiltin("apply", ["X", "MARGIN", "FUN", "..."], "behavioral", builtinApply),
+  defineBuiltin(
+    "tapply",
+    ["X", "INDEX", "FUN", "...", "default", "simplify"],
+    "behavioral",
+    builtinTapply,
+  ),
   defineBuiltin("by", ["data", "INDICES", "FUN", "..."], "behavioral", builtinBy),
   defineBuiltin("ave", ["x", "...", "FUN"], "behavioral", builtinAve),
   defineBuiltin("aggregate", ["x", "by", "FUN", "..."], "behavioral", builtinAggregate),
@@ -24548,6 +24554,180 @@ async function builtinApply(invocation: BuiltinInvocation): Promise<RValue> {
     results.push(await invocation.invoke(parsed.callable, [{ value }, ...parsed.forwarded]));
   }
   return simplifyResults(results, undefined, invocation);
+}
+
+async function builtinTapply(invocation: BuiltinInvocation): Promise<RValue> {
+  const lazy = matchBuiltinArguments(invocation, ["X", "INDEX", "FUN", "..."]);
+  const inputArgument = lazy.matched.get("X");
+  const indexArgument = lazy.matched.get("INDEX");
+  if (
+    inputArgument === undefined ||
+    inputArgument.promise.missing ||
+    indexArgument === undefined ||
+    indexArgument.promise.missing
+  ) {
+    throw new REvaluationError("NRE2103", "tapply() requires X and INDEX.");
+  }
+
+  const controls = new Map<string, BuiltinCallArgument>();
+  const forwarded: BuiltinCallArgument[] = [];
+  for (const argument of lazy.dots) {
+    if (argument.name === "default" || argument.name === "simplify") {
+      if (controls.has(argument.name)) {
+        throw new REvaluationError(
+          "NRE2102",
+          `Argument '${argument.name}' matched more than once.`,
+        );
+      }
+      controls.set(argument.name, argument);
+    } else {
+      forwarded.push(argument);
+    }
+  }
+
+  const input = await invocation.force(inputArgument.promise);
+  const indexValue = await invocation.force(indexArgument.promise);
+  const inputLength = splitDataLength(input);
+  const indexValues =
+    indexValue.type === "list" || indexValue.type === "pairlist" ? indexValue.values : [indexValue];
+  if (indexValues.length === 0) {
+    throw new REvaluationError("NRE2143", "tapply() INDEX is of length zero.");
+  }
+  const groupings = indexValues.map(splitGrouping);
+  if (groupings.some((grouping) => grouping.values.length !== inputLength)) {
+    throw new REvaluationError("NRE2144", "tapply() arguments must have the same length.");
+  }
+
+  const functionArgument = lazy.matched.get("FUN");
+  if (functionArgument === undefined || functionArgument.promise.missing) {
+    return tapplyGroupCodes(groupings, inputLength, invocation);
+  }
+  const suppliedFunction = await invocation.force(functionArgument.promise);
+  if (suppliedFunction.type === "null") {
+    return tapplyGroupCodes(groupings, inputLength, invocation);
+  }
+  const callable = await aveCallable(
+    invocation,
+    functionArgument.promise.environment,
+    suppliedFunction,
+  );
+
+  const simplifyArgument = controls.get("simplify");
+  const simplify =
+    simplifyArgument === undefined
+      ? true
+      : logicalFlag(await invocation.force(simplifyArgument.promise), true, "simplify");
+  const dimensions = groupings.map((grouping) => grouping.levels.length);
+  const cellCount = dimensions.reduce((product, dimension) => product * dimension, 1);
+  invocation.context.allocate(cellCount);
+  const selected = Array.from({ length: cellCount }, () => [] as number[]);
+  for (let index = 0; index < inputLength; index += 1) {
+    invocation.context.checkpoint();
+    let cell = 0;
+    let stride = 1;
+    let complete = true;
+    for (const grouping of groupings) {
+      const label = grouping.values[index];
+      if (label === undefined) {
+        complete = false;
+        break;
+      }
+      const level = grouping.levels.indexOf(label);
+      if (level < 0) {
+        complete = false;
+        break;
+      }
+      cell += level * stride;
+      stride *= grouping.levels.length;
+    }
+    if (complete) selected[cell]?.push(index);
+  }
+
+  const fixed = await forceForwarded(invocation, forwarded);
+  const results: (RValue | undefined)[] = Array.from({ length: cellCount });
+  for (let cell = 0; cell < cellCount; cell += 1) {
+    const indices = selected[cell] ?? [];
+    if (indices.length === 0) continue;
+    results[cell] = await invocation.invoke(callable, [
+      { value: splitSubset(input, indices, invocation) },
+      ...fixed,
+    ]);
+  }
+
+  const groupingNames =
+    indexValue.type === "list" || indexValue.type === "pairlist"
+      ? vectorNames(indexValue)
+      : undefined;
+  if (
+    simplify &&
+    results.every((result) => result === undefined || (isAtomic(result) && result.length === 1))
+  ) {
+    const defaultArgument = controls.get("default");
+    const defaultValue =
+      defaultArgument === undefined
+        ? logicalVector([0], [1])
+        : await invocation.force(defaultArgument.promise);
+    if (!isAtomic(defaultValue) || defaultValue.length !== 1) {
+      throw new RTypeMismatchError(
+        "NRT3338",
+        "tapply() default must be one atomic value when results simplify.",
+      );
+    }
+    const cells = results.map((result) => ({
+      vector: result === undefined ? defaultValue : (result as AtomicVector),
+      index: 0,
+    }));
+    return tapplyArray(atomicCells(cells, invocation), dimensions, groupings, groupingNames);
+  }
+
+  return tapplyArray(
+    listValue(results.map((result) => result ?? R_NULL)),
+    dimensions,
+    groupings,
+    groupingNames,
+  );
+}
+
+function tapplyGroupCodes(
+  groupings: readonly SplitGrouping[],
+  length: number,
+  invocation: BuiltinInvocation,
+): RIntegerVector {
+  invocation.context.allocate(length);
+  const output = new Int32Array(length);
+  const missing = new Uint8Array(length);
+  for (let index = 0; index < length; index += 1) {
+    invocation.context.checkpoint();
+    let code = 1;
+    let stride = 1;
+    for (const grouping of groupings) {
+      const label = grouping.values[index];
+      const level = label === undefined ? -1 : grouping.levels.indexOf(label);
+      if (level < 0) {
+        missing[index] = 1;
+        break;
+      }
+      code += level * stride;
+      stride *= grouping.levels.length;
+    }
+    output[index] = code;
+  }
+  return integerVector(output, compactMask(missing));
+}
+
+function tapplyArray<T extends RVector>(
+  value: T,
+  dimensions: readonly number[],
+  groupings: readonly SplitGrouping[],
+  groupingNames: readonly string[] | undefined,
+): T {
+  let output = withDimensions(value, dimensions);
+  const dimensionNames = listValue(
+    groupings.map((grouping) => characterVector(grouping.levels)),
+    groupingNames,
+  );
+  output = withAttribute(output, "dimnames", dimensionNames);
+  return output;
 }
 
 async function builtinBy(invocation: BuiltinInvocation): Promise<RValue> {
