@@ -592,6 +592,12 @@ and normal names remain queryable but are explicit unsupported selection boundar
 the documented distribution constructors consume the selected state in order. Weighted sampling
 validates finite, non-negative probabilities.
 
+`RNGversion(vstr)` parses the first atomic version value and chooses the documented default-kind
+triple. R 1.7 through 3.5 selects Mersenne-Twister, Inversion, and Rounding; R 3.6 and future
+versions select Mersenne-Twister, Inversion, and Rejection. The previous triple is returned
+invisibly. Pre-R-1.7 defaults are rejected because their historical uniform and normal engines are
+not yet implemented.
+
 `quantile()` implements the nine documented sample-quantile algorithms directly over the owned
 vector model. `IQR()` computes the 0.25/0.75 spread through the selected type, with explicit
 missingness and coercion rules rather than delegating to a host statistics library.

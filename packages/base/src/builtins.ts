@@ -659,6 +659,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("append", ["x", "values", "after"], "behavioral", builtinAppend),
   defineBuiltin("rev", ["x"], "behavioral", builtinRev),
   defineBuiltin("RNGkind", ["kind", "normal.kind", "sample.kind"], "behavioral", builtinRandomKind),
+  defineBuiltin("RNGversion", ["vstr"], "behavioral", builtinRandomVersion, "regular", "invisible"),
   defineBuiltin(
     "set.seed",
     ["seed", "kind", "normal.kind", "sample.kind"],
@@ -10102,6 +10103,29 @@ async function builtinRandomKind(invocation: BuiltinInvocation): Promise<RValue>
   return previous;
 }
 
+async function builtinRandomVersion(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["vstr"]);
+  const versionValue = required(matched, "vstr", "RNGversion");
+  const version = randomVersionParts(versionValue, invocation);
+  const state = randomState(invocation);
+  const previous = characterVector([state.uniformKind, state.normalKind, state.sampleKind]);
+  if (compareRandomVersion(version, [1, 7, 0]) < 0) {
+    throw new RUnsupportedFeatureError(
+      "NRU6158",
+      "RNGversion() before R 1.7.0 requires historical uniform and normal generators that are not implemented.",
+    );
+  }
+  const selection: RandomKindSelection = {
+    uniformKind: DEFAULT_UNIFORM_RANDOM_KIND,
+    normalKind: DEFAULT_NORMAL_RANDOM_KIND,
+    sampleKind:
+      compareRandomVersion(version, [3, 6, 0]) < 0 ? "Rounding" : DEFAULT_SAMPLE_RANDOM_KIND,
+  };
+  warnRandomKindSelection(invocation, selection);
+  configureRandomState(state, selection);
+  return previous;
+}
+
 async function builtinSetSeed(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["seed", "kind", "normal.kind", "sample.kind"]);
   const seedValue = required(matched, "seed", "set.seed");
@@ -10115,6 +10139,30 @@ async function builtinSetSeed(invocation: BuiltinInvocation): Promise<RValue> {
     seedValue.type === "null" ? Date.now() : randomSeedScalar(seedValue, invocation),
   );
   return R_NULL;
+}
+
+function randomVersionParts(value: RValue, invocation: BuiltinInvocation): readonly number[] {
+  if (!isAtomic(value) || value.length === 0 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3274", "malformed version string");
+  }
+  const text = coerceAtomicToCharacter(value, invocation).values[0] ?? "";
+  if (!/^\d+(?:[.-]\d+)*$/u.test(text)) {
+    throw new RTypeMismatchError("NRT3274", "malformed version string");
+  }
+  const parts = text.split(/[.-]/u).map(Number);
+  if (parts.some((part) => !Number.isSafeInteger(part) || part < 0)) {
+    throw new RTypeMismatchError("NRT3274", "malformed version string");
+  }
+  return parts;
+}
+
+function compareRandomVersion(left: readonly number[], right: readonly number[]): number {
+  const length = Math.max(left.length, right.length);
+  for (let index = 0; index < length; index += 1) {
+    const difference = (left[index] ?? 0) - (right[index] ?? 0);
+    if (difference !== 0) return Math.sign(difference);
+  }
+  return 0;
 }
 
 function resolveRandomKindSelection(matched: ReadonlyMap<string, RValue>): RandomKindSelection {

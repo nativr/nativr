@@ -6394,5 +6394,48 @@
     "expectedCompatibility": "api",
     "rOracle": false,
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "rng-version-zoo-pre-36-defaults",
+    "code": "old <- suppressWarnings(RNGversion(\"3.5.0\"))\nc(old, RNGkind())",
+    "expected": [
+      "Mersenne-Twister",
+      "Inversion",
+      "Rejection",
+      "Mersenne-Twister",
+      "Inversion",
+      "Rounding"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "rng-version-zoo-normal-sequence",
+    "code": "suppressWarnings(RNGversion(\"3.5.0\"))\nset.seed(1)\nround(rnorm(3), 12)",
+    "expected": [-0.626453810742, 0.183643324222, -0.83562861241],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 1e-12, "relative": 1e-12 }
+  },
+  {
+    "id": "rng-version-future-defaults-and-return",
+    "code": "suppressWarnings(RNGversion(3.5))\nold <- RNGversion(\"99.0.0\")\nc(old, RNGkind())",
+    "expected": [
+      "Mersenne-Twister",
+      "Inversion",
+      "Rounding",
+      "Mersenne-Twister",
+      "Inversion",
+      "Rejection"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "rng-version-historical-generator-boundary",
+    "code": "c(inherits(try(RNGversion(\"1.6.2\"), silent = TRUE), \"try-error\"), inherits(try(RNGversion(\"garbage\"), silent = TRUE), \"try-error\"), inherits(try(RNGversion(), silent = TRUE), \"try-error\"))",
+    "expected": [true, true, true],
+    "expectedCompatibility": "api",
+    "rOracle": false,
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

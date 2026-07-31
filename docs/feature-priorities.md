@@ -720,8 +720,14 @@ stack semantics are not claimed. Rank 437 `demo` is now complete for the documen
 weighted reach. NativR reproduces GNU R's empty `packageIQR` catalog shape without consulting an
 installed R library, while topic lookup, external package demo discovery, and script execution fail
 explicitly until package loading and virtual package resources exist. It does not claim that the
-httpuv demo—or any external package demo—currently runs. Rank 438 `RNGversion` is the next
-unresolved callable candidate.
+httpuv demo—or any external package demo—currently runs. Rank 438 `RNGversion` is now complete for
+zoo's repeated `suppressWarnings(RNGversion("3.5.0")); set.seed(1)` example setup, representing
+731,390 downloads, 17 measured calls, and 0.6% weighted reach. It selects
+Mersenne-Twister/Inversion/Rounding for R versions from 1.7 through 3.5, emits the historical
+Rounding warning, returns the prior kind vector invisibly, and restores Rejection for R 3.6 or
+newer. The Wichmann-Hill/Marsaglia and Buggy Kinderman-Ramage defaults needed before R 1.7 fail
+explicitly rather than silently using the wrong generator. Rank 439 `window` is the next unresolved
+callable candidate.
 
 ## Completed implementation order
 

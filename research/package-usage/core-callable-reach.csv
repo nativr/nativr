@@ -436,7 +436,7 @@ rank,callable,nativr_registered,packages,occurrences,package_reach_percent,downl
 435,show,true,1,1,1.0,0.6
 436,capture.output,true,1,1,1.0,0.6
 437,demo,true,1,1,1.0,0.6
-438,RNGversion,false,1,17,1.0,0.6
+438,RNGversion,true,1,17,1.0,0.6
 439,window,false,1,14,1.0,0.6
 440,as.ts,false,1,7,1.0,0.6
 441,end,true,1,7,1.0,0.6

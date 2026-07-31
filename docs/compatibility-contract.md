@@ -95,11 +95,16 @@ session-local uniform, normal, and discrete-sampling kinds with prior-state retu
 invisibility, unique-prefix/default matching, and documented warnings. The independently implemented
 default Mersenne-Twister engine has fixed-seed `set.seed`/`runif` differential sequence evidence.
 Inversion normal generation plus Rounding and Rejection discrete sampling are selectable.
-Wichmann-Hill, Marsaglia-Multicarry, Super-Duper, Knuth-TAOCP, Knuth-TAOCP-2002, L'Ecuyer-CMRG,
-user-supplied uniform engines, Box-Muller, user-supplied normal engines, Ahrens-Dieter, Buggy
-Kinderman-Ramage, and Kinderman-Ramage are explicit unsupported boundaries rather than aliases.
-Generator transitions without a subsequent `set.seed`, exhaustive tail-level normal identity, and
-all discrete-sampler sequences are not yet claimed.
+`RNGversion` selects Mersenne-Twister/Inversion/Rounding for version strings from R 1.7 through 3.5
+and Mersenne-Twister/Inversion/Rejection from R 3.6 onward. It returns the prior three-kind vector
+invisibly and emits the ordinary Rounding warning, which makes zoo's measured
+`suppressWarnings(RNGversion("3.5.0")); set.seed(1)` setup executable. Versions before R 1.7 require
+historical uniform and normal engines and are rejected explicitly. Wichmann-Hill,
+Marsaglia-Multicarry, Super-Duper, Knuth-TAOCP, Knuth-TAOCP-2002, L'Ecuyer-CMRG, user-supplied
+uniform engines, Box-Muller, user-supplied normal engines, Ahrens-Dieter, Buggy Kinderman-Ramage,
+and Kinderman-Ramage are explicit unsupported boundaries rather than aliases. Generator transitions
+without a subsequent `set.seed`, exhaustive tail-level normal identity, and all discrete-sampler
+sequences are not yet claimed.
 
 `set.seed`, `sample`, `sample.int`, `runif`, `rnorm`, `rbeta`, `rbinom`, `rpois`, `rchisq`, `rt`,
 and `rexp` use independently implemented algorithms. `sample.int` covers default size, replacement

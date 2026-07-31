@@ -311,3 +311,6 @@ measures 307.5 KiB gzip.
 Language subset 0.170 adds the rank-437 `utils::demo()` empty-catalog shape and explicit external
 package-resource boundary without raising the ceiling. After the Vite 8/Oxc build migration, the
 complete production Worker measures 283.7 KiB gzip against the 308 KiB limit.
+
+Language subset 0.171 adds the rank-438 `RNGversion()` selector and version parser without raising
+the ceiling. The complete production Worker measures 284.0 KiB gzip against the 308 KiB limit.

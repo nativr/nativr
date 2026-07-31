@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           454 |
-| Overlapping callable names        |           439 |
-| Missing GNU R callable names      |         2,083 |
-| Name overlap                      |      17.4068% |
+| NativR registered names           |           455 |
+| Overlapping callable names        |           440 |
+| Missing GNU R callable names      |         2,082 |
+| Name overlap                      |      17.4465% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -197,6 +197,12 @@ The rank-437 increment adds GNU R differential evidence for the empty `utils::de
 catalog's `packageIQR` structure and an explicit browser boundary for external package demo scripts.
 NativR does not inspect an installed R library or claim execution of httpuv's `echo` demo. That path
 depends on the future package loader, virtual package resources, and browser-safe host adapters.
+
+The rank-438 increment adds GNU R differential evidence for `RNGversion` through zoo's repeated
+R-3.5 reproducibility setup. It covers version parsing, prior-kind return and invisibility, Rounding
+warnings, the R-3.6 Rejection transition, and the fixed-seed normal sequence used after the measured
+call. Defaults before R 1.7 require historical uniform and normal engines and remain an explicit
+unsupported boundary.
 
 ## Completion evidence
 
