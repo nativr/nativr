@@ -316,6 +316,11 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
     coordinates, endpoint recycling, integral downsampling, extension padding, and independent S3
     package-method seams. Zoo's package-owned irregular indexes and methods remain package-loader
     work rather than embedded runtime code.
+90. Frequency-ranked browser legend: `graphics::legend` covers zoo's three measured line/point call
+    shapes with keyword and coordinate placement, recycled styles, optional boxes/titles/columns,
+    invisible geometry results, Worker transport, Canvas rendering, bounded journals, and
+    same-session record/replay. Complete base graphics and device-identical layout remain separate
+    work.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

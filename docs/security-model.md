@@ -26,7 +26,8 @@ be validated and loaded through an explicit browser-safe package layer.
 
 Graphics use typed, device-independent records rather than exposing a DOM or Canvas object to R
 code. Raster RGBA bytes share the evaluation output budget and are transferred out of the Worker;
-the runtime cannot read pixels back from the host renderer.
+legend labels remain inert strings rather than HTML, segment and legend payloads share the same
+budget, and the runtime cannot read pixels back from the host renderer.
 
 Dependencies are locked, build scripts are explicitly approved in `pnpm-workspace.yaml`, browser
 bundles are audited for Node built-ins/dynamic code, and CI includes CodeQL and Dependabot.

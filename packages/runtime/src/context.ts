@@ -134,12 +134,7 @@ export class EvaluationContext implements OperatorContext {
   }
 
   public writeGraphics(event: RGraphicsEvent): void {
-    const bytes =
-      event.kind === "raster"
-        ? event.rgba.byteLength
-        : event.kind === "segments"
-          ? event.segments.length * 64
-          : 0;
+    const bytes = graphicsEventByteLength(event);
     const outputBytes = this.outputBytes + bytes;
     if (outputBytes > this.limits.maxOutputBytes) {
       throw new RResourceLimitError("NRL4007", "Evaluation output size limit exceeded.", {
@@ -198,4 +193,25 @@ function utf8ByteLength(value: string): number {
     bytes += point <= 0x7f ? 1 : point <= 0x7ff ? 2 : point <= 0xffff ? 3 : 4;
   }
   return bytes;
+}
+
+function graphicsEventByteLength(event: RGraphicsEvent): number {
+  if (event.kind === "raster") return event.rgba.byteLength;
+  if (event.kind === "segments") return event.segments.length * 64;
+  if (event.kind !== "legend") return 0;
+  return (
+    64 +
+    (event.title === undefined ? 0 : utf8ByteLength(event.title)) +
+    event.entries.reduce(
+      (bytes, entry) =>
+        bytes +
+        96 +
+        utf8ByteLength(entry.label) +
+        utf8ByteLength(entry.textColor) +
+        utf8ByteLength(entry.color) +
+        (entry.lineType === undefined ? 0 : utf8ByteLength(entry.lineType)) +
+        (entry.pointSymbol === undefined ? 0 : utf8ByteLength(entry.pointSymbol)),
+      0,
+    )
+  );
 }

@@ -2824,6 +2824,140 @@ describe("complete inline source-to-result vertical slice", () => {
     await limited.dispose();
   });
 
+  it("draws zoo's usage-ranked legends through the graphics journal", async () => {
+    const observed: unknown[] = [];
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      onGraphics: (event) => observed.push(event),
+    });
+    const result = await runtime.evalDetailed(`
+      plot.new()
+      plot.window(c(0, 10), c(0, 10))
+      visible <- withVisible(graphics::legend(
+        "bottomleft",
+        legend = c("alpha", "beta"),
+        lty = 1,
+        pch = 1:2,
+        col = 1:2,
+        text.col = c("blue", "red"),
+        inset = 0.05,
+        title = "Groups"
+      ))
+      c(
+        names(visible$value),
+        names(visible$value$rect),
+        names(visible$value$text),
+        visible$visible
+      )
+    `);
+    expect(result.value).toEqual(["rect", "text", "w", "h", "left", "top", "x", "y", "FALSE"]);
+    expect(result.visible).toBe(true);
+    expect(result.graphics).toHaveLength(3);
+    expect(result.graphics[2]).toEqual({
+      kind: "legend",
+      position: { kind: "keyword", value: "bottomleft", inset: [0.05, 0.05] },
+      entries: [
+        {
+          label: "alpha",
+          textColor: "#0000FFFF",
+          color: "#000000FF",
+          lineType: "solid",
+          lineWidth: 1,
+          pointSymbol: "1",
+        },
+        {
+          label: "beta",
+          textColor: "#FF0000FF",
+          color: "#DF536BFF",
+          lineType: "solid",
+          lineWidth: 1,
+          pointSymbol: "2",
+        },
+      ],
+      box: true,
+      background: "#FFFFFFFF",
+      columns: 1,
+      cex: 1,
+      title: "Groups",
+    });
+    expect(observed).toEqual(result.graphics);
+
+    const zooShapes = await runtime.evalDetailed(`
+      sites <- c("site 1", "site 2", "site 3")
+      first <- withVisible(legend(
+        "bottomleft",
+        legend = sites,
+        lty = 1,
+        pch = 1:3,
+        col = 1:3
+      ))
+      second <- withVisible(legend("bottomright", sites, lty = 1, col = 1:2))
+      third <- withVisible(legend(
+        x = "topleft",
+        bty = "n",
+        lty = c(1, 1),
+        col = c("black", "blue"),
+        legend = paste(sites[1:2], c("(left scale)", "(right scale)"))
+      ))
+      coordinate <- withVisible(legend(
+        8,
+        9,
+        c("x", "y"),
+        pch = c("x", "y"),
+        horiz = TRUE,
+        plot = FALSE
+      ))
+      c(
+        first$visible,
+        second$visible,
+        third$visible,
+        coordinate$visible,
+        names(coordinate$value)
+      )
+    `);
+    expect(zooShapes.value).toEqual(["FALSE", "FALSE", "FALSE", "FALSE", "rect", "text"]);
+    expect(zooShapes.graphics).toHaveLength(3);
+    expect(zooShapes.graphics[1]).toMatchObject({
+      kind: "legend",
+      position: { kind: "keyword", value: "bottomright" },
+      columns: 1,
+    });
+    expect(zooShapes.graphics[2]).toMatchObject({
+      kind: "legend",
+      position: { kind: "keyword", value: "topleft" },
+      box: false,
+    });
+
+    await runtime.eval("recorded <- recordPlot()\ndev.hold()");
+    const replayed = await runtime.evalDetailed("replayPlot(recorded)\ndev.flush()");
+    expect(replayed.graphics.filter((event) => event.kind === "legend")).toHaveLength(4);
+    expect(replayed.graphics.at(-1)).toEqual(zooShapes.graphics.at(-1));
+
+    await expect(runtime.eval("legend('middle', 'x')")).rejects.toMatchObject({
+      code: "NRT3334",
+    });
+    await expect(runtime.eval("legend(1, legend = 'x')")).rejects.toMatchObject({
+      code: "NRE2193",
+    });
+    await expect(runtime.eval("legend('top', 'x', fill = 'red')")).rejects.toMatchObject({
+      code: "NRU6159",
+    });
+    await runtime.reset();
+    await expect(runtime.eval("legend('top', 'x')")).rejects.toMatchObject({ code: "NRE2190" });
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxOutputBytes: 100 },
+    });
+    await expect(
+      limited.eval("plot.new()\nlegend('top', c('alpha', 'beta'), pch = 1:2)"),
+    ).rejects.toMatchObject({ code: "NRL4007" });
+    await limited.dispose();
+  });
+
   it("buffers usage-ranked graphics across evaluations with dev.hold and dev.flush", async () => {
     const observed: unknown[] = [];
     const runtime = await createR({
@@ -4502,7 +4636,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.172.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.173.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -4528,6 +4662,7 @@ describe("complete inline source-to-result vertical slice", () => {
       { name: "plot.window", compatibility: "shape" },
       { name: "rasterImage", compatibility: "shape" },
       { name: "segments", compatibility: "shape" },
+      { name: "legend", compatibility: "shape" },
       { name: "pairs", compatibility: "shape" },
     ]);
     await runtime.reset();

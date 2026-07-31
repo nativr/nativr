@@ -208,19 +208,20 @@ Both inline and Worker APIs retain the output in `evalDetailed` and charge it ag
 output budget. S3 print-method dispatch, global print options, line filling, labels, connections,
 and filesystem output are not claimed.
 
-`plot.new`, bounded `plot.window`, `rasterImage`, and `segments` provide the first browser-native
-graphics slice. Evaluation owns page and linear coordinate-window state, converts two-dimensional
-grayscale or character colors, three-/four-channel numeric/raw arrays, and packed `nativeRaster`
-integers to row-major RGBA, and emits commands for recycled raster placements and styled line
-segments. Commands preserve raster angle/interpolation or finite segment endpoints, resolved colors,
-normalized line patterns, and line widths. They cross the Worker boundary, remain available in
+`plot.new`, bounded `plot.window`, `rasterImage`, `segments`, and `legend` provide the first
+browser-native graphics slice. Evaluation owns page and linear coordinate-window state, converts
+two-dimensional grayscale or character colors, three-/four-channel numeric/raw arrays, and packed
+`nativeRaster` integers to row-major RGBA, and emits commands for recycled raster placements, styled
+line segments, and resolved legend entries. Commands preserve raster angle/interpolation, finite
+segment endpoints, canonical colors, normalized line patterns, line widths, text labels, point
+symbols, placement, and layout controls. They cross the Worker boundary, remain available in
 `evalDetailed.graphics`, and count toward the configured output budget. Inline and Worker callbacks
 receive the same command shapes, and the Playground renders them to Canvas. Evidence covers the
-measured systemfonts glyph-raster, httr PNG-array, and posterior interval-segment patterns. The
-owned device also supports nested `dev.hold`/`dev.flush` levels, ordered cross-evaluation command
-buffering, and bounded same-session `recordPlot`/`replayPlot` over its own
-page/window/raster/segments display list. General `plot`, device selection, axes, complete
-clipping/margins, graphical parameters beyond the documented segment controls, external display-list
+measured systemfonts glyph-raster, httr PNG-array, posterior interval-segment, and zoo legend
+patterns. The owned device also supports nested `dev.hold`/`dev.flush` levels, ordered
+cross-evaluation command buffering, and bounded same-session `recordPlot`/`replayPlot` over its own
+page/window/raster/segments/legend display list. General `plot`, device selection, axes, complete
+clipping/margins, graphical parameters beyond the documented controls, external display-list
 formats, and pixel equivalence across GNU R devices are not claimed.
 
 `graphics::segments` has differential evidence for posterior's measured
@@ -237,6 +238,18 @@ list payloads are bounded by `maxOutputBytes`. Canvas pixel tests and same-sessi
 log axes, `lend`/`ljoin`/`lmitre`, `xpd`, device-specific dash metrics, and pixel identity with
 every GNU R graphics device are not claimed.
 
+`graphics::legend` has differential evidence for zoo's three measured line/point legend calls.
+Labels may be supplied through the positional `y` slot or named `legend`; keyword anchors support
+documented unique partial matching and optional one-/two-value inset, while finite `x`/`y`
+coordinates select explicit placement. Colors, text colors, line types, line widths, and point
+symbols recycle across entries; `bty`, `bg`, `cex`, `ncol`, `horiz`, `title`, and `plot` have
+bounded shape coverage. The call returns an invisible list with named `rect` and `text` geometry,
+and `plot = FALSE` computes that shape without emitting an event. Entry count is bounded by
+`maxVectorLength`, event/display-list bytes by `maxOutputBytes`, and record/replay decoding
+validates the owned command shape. GNU R-exact font metrics and geometry values, expression labels,
+fill/density keys, merged-line controls, arbitrary graphical `...`, margins/clipping, log axes, and
+device-identical rendering are not claimed.
+
 `grDevices::as.raster` has differential coverage for ragg's measured captured-color-matrix call, the
 row-first `"raster"` storage contract, character matrices/vectors, logical/numeric/raw grayscale
 conversion, numeric/raw RGB and RGBA planes, missing grayscale pixels, `max` scaling, vector
@@ -249,8 +262,8 @@ arbitrary external classes, and complete legacy diagnostics are not claimed.
 `grDevices::dev.flush` covers ragg's measured zero-argument animation-device call shape, and its
 paired `dev.hold` supplies the documented nested-level protocol on NativR's owned browser device.
 Positive levels increase or decrease the session-local hold count; negative levels clamp to zero;
-the flush that reaches zero releases pending page/window/raster/segments commands in original order
-through the current `evalDetailed.graphics` result and host callback. Pending graphics storage
+the flush that reaches zero releases pending page/window/raster/segments/legend commands in original
+order through the current `evalDetailed.graphics` result and host callback. Pending graphics storage
 remains subject to `maxOutputBytes`, pending command count remains subject to `maxVectorLength`,
 state survives ordinary evaluation boundaries, and reset/dispose clears it. Without an active owned
 device both calls return integer zero. Level coercion, missing-state preservation, namespace access,
@@ -263,8 +276,8 @@ arbitrary third-party device callbacks are not included.
 owned browser device. It returns a visible classed list with the GNU R-observed public
 type/mode/class/length/no-names shape while storing an independently authored NativR command format.
 Optional `load` and `attach` character metadata is retained. `grDevices::replayPlot` validates only
-that format, restores page/window state, and re-emits raster and segment commands through the
-immediate or held graphics journal before returning invisible `NULL`. Display-list and recorded
+that format, restores page/window state, and re-emits raster, segment, and legend commands through
+the immediate or held graphics journal before returning invisible `NULL`. Display-list and recorded
 command counts are bounded by `maxVectorLength`; display-list graphics payloads and replay output by
 `maxOutputBytes`. Malformed values, absent record devices, reset cleanup, namespace access, and held
 replay have executable evidence. `reloadPkgs = TRUE` with stored package metadata is explicitly

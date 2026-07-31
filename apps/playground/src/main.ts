@@ -234,7 +234,8 @@ function renderGraphics(events: readonly PublicGraphicsEvent[]): void {
       continue;
     }
     if (event.kind === "raster") drawRaster(event);
-    else drawSegments(event);
+    else if (event.kind === "segments") drawSegments(event);
+    else drawLegend(event);
   }
 }
 
@@ -361,6 +362,143 @@ function drawSegments(event: Extract<PublicGraphicsEvent, { readonly kind: "segm
     graphicsContext.stroke();
   }
   graphicsContext.restore();
+}
+
+function drawLegend(event: Extract<PublicGraphicsEvent, { readonly kind: "legend" }>): void {
+  if (graphicsContext === null) return;
+  const fontSize = Math.max(8, 13 * event.cex);
+  const rowHeight = fontSize * 1.5;
+  const symbolWidth = fontSize * 2.4;
+  const padding = fontSize * 0.55;
+  const rows = Math.ceil(event.entries.length / event.columns);
+  graphicsContext.save();
+  graphicsContext.font = `${fontSize}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
+  graphicsContext.textBaseline = "middle";
+  const maximumTextWidth = Math.max(
+    1,
+    ...event.entries.map((entry) => graphicsContext?.measureText(entry.label).width ?? 0),
+    event.title === undefined ? 0 : graphicsContext.measureText(event.title).width,
+  );
+  const columnWidth = symbolWidth + maximumTextWidth + padding;
+  const width = event.columns * columnWidth + padding * 2;
+  const height = (rows + (event.title === undefined ? 0 : 1)) * rowHeight + padding * 2;
+  const [left, top] = legendCanvasTopLeft(event, width, height);
+
+  if (event.box) {
+    graphicsContext.fillStyle = event.background;
+    graphicsContext.fillRect(left, top, width, height);
+    graphicsContext.strokeStyle = "#000000FF";
+    graphicsContext.lineWidth = 1;
+    graphicsContext.setLineDash([]);
+    graphicsContext.strokeRect(left, top, width, height);
+  }
+  if (event.title !== undefined) {
+    graphicsContext.fillStyle = event.entries[0]?.textColor ?? "#000000FF";
+    graphicsContext.textAlign = "center";
+    graphicsContext.fillText(event.title, left + width / 2, top + padding + rowHeight / 2);
+  }
+  graphicsContext.textAlign = "left";
+  const titleRows = event.title === undefined ? 0 : 1;
+  for (let index = 0; index < event.entries.length; index += 1) {
+    const entry = event.entries[index];
+    if (entry === undefined) continue;
+    const column = Math.floor(index / rows);
+    const row = index % rows;
+    const x = left + padding + column * columnWidth;
+    const y = top + padding + (titleRows + row + 0.5) * rowHeight;
+    if (entry.lineType !== undefined && entry.lineWidth !== undefined) {
+      graphicsContext.beginPath();
+      graphicsContext.strokeStyle = entry.color;
+      graphicsContext.lineWidth = entry.lineWidth;
+      graphicsContext.setLineDash(legendLineDashes(entry.lineType, entry.lineWidth));
+      graphicsContext.moveTo(x, y);
+      graphicsContext.lineTo(x + symbolWidth * 0.72, y);
+      graphicsContext.stroke();
+    }
+    if (entry.pointSymbol !== undefined) {
+      drawLegendPoint(x + symbolWidth * 0.36, y, entry.pointSymbol, entry.color, fontSize);
+    }
+    graphicsContext.fillStyle = entry.textColor;
+    graphicsContext.fillText(entry.label, x + symbolWidth, y);
+  }
+  graphicsContext.restore();
+}
+
+function legendCanvasTopLeft(
+  event: Extract<PublicGraphicsEvent, { readonly kind: "legend" }>,
+  width: number,
+  height: number,
+): readonly [number, number] {
+  if (event.position.kind === "coordinates") {
+    const xScale = graphics.width / (graphicsWindow.xlim[1] - graphicsWindow.xlim[0]);
+    const yScale = graphics.height / (graphicsWindow.ylim[1] - graphicsWindow.ylim[0]);
+    return [
+      (event.position.x - graphicsWindow.xlim[0]) * xScale,
+      graphics.height - (event.position.y - graphicsWindow.ylim[0]) * yScale,
+    ];
+  }
+  const insetX = event.position.inset[0] * graphics.width;
+  const insetY = event.position.inset[1] * graphics.height;
+  const left = event.position.value.endsWith("left")
+    ? insetX
+    : event.position.value.endsWith("right")
+      ? graphics.width - insetX - width
+      : (graphics.width - width) / 2;
+  const top = event.position.value.startsWith("bottom")
+    ? graphics.height - insetY - height
+    : event.position.value.startsWith("top")
+      ? insetY
+      : (graphics.height - height) / 2;
+  return [left, top];
+}
+
+function legendLineDashes(lineType: string, lineWidth: number): readonly number[] {
+  if (lineType === "solid") return [];
+  const scale = Math.max(1, lineWidth);
+  return [...lineType].map((digit) => Number.parseInt(digit, 16) * scale);
+}
+
+function drawLegendPoint(x: number, y: number, symbol: string, color: string, size: number): void {
+  if (graphicsContext === null) return;
+  graphicsContext.strokeStyle = color;
+  graphicsContext.fillStyle = color;
+  graphicsContext.lineWidth = Math.max(1, size / 12);
+  graphicsContext.setLineDash([]);
+  const radius = size * 0.28;
+  graphicsContext.beginPath();
+  if (symbol === "1") {
+    graphicsContext.arc(x, y, radius, 0, Math.PI * 2);
+    graphicsContext.stroke();
+    return;
+  }
+  if (symbol === "2") {
+    graphicsContext.moveTo(x, y - radius);
+    graphicsContext.lineTo(x - radius, y + radius);
+    graphicsContext.lineTo(x + radius, y + radius);
+    graphicsContext.closePath();
+    graphicsContext.stroke();
+    return;
+  }
+  if (symbol === "3" || symbol === "4") {
+    const diagonal = symbol === "4";
+    const offset = diagonal ? radius / Math.sqrt(2) : radius;
+    graphicsContext.moveTo(x - offset, y - (diagonal ? offset : 0));
+    graphicsContext.lineTo(x + offset, y + (diagonal ? offset : 0));
+    graphicsContext.moveTo(x - (diagonal ? offset : 0), y + offset);
+    graphicsContext.lineTo(x + (diagonal ? offset : 0), y - offset);
+    graphicsContext.stroke();
+    return;
+  }
+  if (/^\d+$/u.test(symbol)) {
+    graphicsContext.arc(x, y, radius, 0, Math.PI * 2);
+    graphicsContext.fill();
+    return;
+  }
+  graphicsContext.font = `${size}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
+  graphicsContext.textAlign = "center";
+  graphicsContext.textBaseline = "middle";
+  graphicsContext.fillText(symbol, x, y);
+  graphicsContext.textAlign = "left";
 }
 
 function resetGraphics(): void {

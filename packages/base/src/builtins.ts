@@ -58,6 +58,8 @@ import type {
   RExpression,
   RFormula,
   RGraphicsEvent,
+  RGraphicsLegendEntry,
+  RGraphicsLegendPosition,
   RGraphicsSegment,
   RIntegerVector,
   RLanguage,
@@ -906,6 +908,32 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     ["x0", "y0", "x1", "y1", "col", "lty", "lwd", "..."],
     "shape",
     builtinSegments,
+    "invisible",
+  ),
+  definePackageBuiltin(
+    "graphics",
+    "legend",
+    [
+      "x",
+      "y",
+      "legend",
+      "col",
+      "lty",
+      "lwd",
+      "pch",
+      "bty",
+      "bg",
+      "cex",
+      "ncol",
+      "horiz",
+      "title",
+      "inset",
+      "plot",
+      "text.col",
+      "...",
+    ],
+    "shape",
+    builtinLegend,
     "invisible",
   ),
   definePackageBuiltin("graphics", "pairs", ["x", "..."], "shape", builtinPairs),
@@ -13781,6 +13809,344 @@ async function builtinSegments(invocation: BuiltinInvocation): Promise<RValue> {
   return R_NULL;
 }
 
+async function builtinLegend(invocation: BuiltinInvocation): Promise<RValue> {
+  const lazy = matchLazyArgumentsWithDots(invocation, [
+    "x",
+    "y",
+    "legend",
+    "col",
+    "lty",
+    "lwd",
+    "pch",
+    "bty",
+    "bg",
+    "cex",
+    "ncol",
+    "horiz",
+    "title",
+    "inset",
+    "plot",
+    "text.col",
+  ]);
+  const state = graphicsState(invocation, "legend");
+  const values = new Map<string, RValue>();
+  for (const [name, argument] of lazy.matched) {
+    if (!argument.promise.missing) values.set(name, await invocation.force(argument.promise));
+  }
+  if (lazy.dots.length > 0) {
+    for (const argument of lazy.dots) await invocation.force(argument.promise);
+    throw new RUnsupportedFeatureError(
+      "NRU6159",
+      "legend() received graphical controls outside the current browser legend subset.",
+    );
+  }
+  const x = required(values, "x", "legend");
+  const suppliedLegend = values.get("legend");
+  const labels = legendLabels(suppliedLegend ?? required(values, "y", "legend"), invocation);
+  if (labels.length === 0) {
+    throw new RTypeMismatchError("NRT3334", "legend() requires at least one label.");
+  }
+  const y = suppliedLegend === undefined ? undefined : values.get("y");
+  const position = legendPosition(x, y, values.get("inset"));
+  const cex = legendPositiveScalar(values.get("cex"), 1, "cex");
+  const horizontal = logicalFlag(values.get("horiz"), false, "horiz");
+  const columns = horizontal ? labels.length : legendPositiveInteger(values.get("ncol"), 1, "ncol");
+  const plot = logicalFlag(values.get("plot"), true, "plot");
+  const box = legendBox(values.get("bty"));
+  const background = legendColour(values.get("bg"), "#FFFFFFFF", invocation);
+  const colors = legendColours(values.get("col"), invocation);
+  const textColors = legendColours(values.get("text.col"), invocation);
+  const hasLines = values.has("lty") || values.has("lwd");
+  const lineTypes = hasLines ? graphicsSegmentLineTypes(values.get("lty")) : [];
+  const lineWidths = hasLines ? graphicsSegmentLineWidths(values.get("lwd")) : [];
+  const pointSymbols = legendPointSymbols(values.get("pch"), invocation);
+  const title = legendTitle(values.get("title"), invocation);
+  invocation.context.allocate(labels.length);
+  const entries: RGraphicsLegendEntry[] = labels.map((label, index) => {
+    invocation.context.checkpoint();
+    const lineType = lineTypes.length === 0 ? undefined : lineTypes[index % lineTypes.length];
+    const lineWidth = lineWidths.length === 0 ? undefined : lineWidths[index % lineWidths.length];
+    const pointSymbol =
+      pointSymbols.length === 0 ? undefined : pointSymbols[index % pointSymbols.length];
+    return {
+      label,
+      textColor: textColors[index % textColors.length] ?? "#000000FF",
+      color: colors[index % colors.length] ?? "#000000FF",
+      ...(lineType === undefined || lineType === "blank" || lineWidth === undefined
+        ? {}
+        : { lineType, lineWidth }),
+      ...(pointSymbol === undefined ? {} : { pointSymbol }),
+    };
+  });
+  const event: Extract<RGraphicsEvent, { readonly kind: "legend" }> = {
+    kind: "legend",
+    position,
+    entries,
+    box,
+    background,
+    columns,
+    cex,
+    ...(title === undefined ? {} : { title }),
+  };
+  if (plot) writeGraphics(invocation, state, event);
+  return legendGeometry(state, event);
+}
+
+function legendLabels(value: RValue, invocation: BuiltinInvocation): readonly string[] {
+  if (!isAtomic(value) || value.type === "complex" || value.type === "raw") {
+    throw new RTypeMismatchError(
+      "NRT3334",
+      "legend() labels currently require an atomic logical, numeric, factor, or character vector.",
+    );
+  }
+  const characters =
+    value.type === "character" ? value : coerceAtomicToCharacter(value, invocation);
+  return Array.from({ length: characters.length }, (_, index) =>
+    isMissing(characters, index) ? "NA" : (characters.values[index] ?? ""),
+  );
+}
+
+function legendPosition(
+  x: RValue,
+  y: RValue | undefined,
+  insetValue: RValue | undefined,
+): RGraphicsLegendPosition {
+  const normalizedY = y?.type === "null" ? undefined : y;
+  if (x.type === "character" && x.length === 1 && !isMissing(x, 0) && normalizedY === undefined) {
+    const keywords = [
+      "bottomright",
+      "bottom",
+      "bottomleft",
+      "left",
+      "topleft",
+      "top",
+      "topright",
+      "right",
+      "center",
+    ] as const;
+    const source = x.values[0] ?? "";
+    const exact = keywords.find((keyword) => keyword === source);
+    const matches =
+      exact === undefined ? keywords.filter((keyword) => keyword.startsWith(source)) : [exact];
+    if (matches.length !== 1) {
+      throw new RTypeMismatchError("NRT3334", `Invalid legend position '${source}'.`);
+    }
+    const match = matches[0];
+    if (match === undefined) {
+      throw new RTypeMismatchError("NRT3334", `Invalid legend position '${source}'.`);
+    }
+    return { kind: "keyword", value: match, inset: legendInset(insetValue) };
+  }
+  const xCoordinate = legendCoordinate(x, "x");
+  if (normalizedY === undefined) {
+    throw new REvaluationError(
+      "NRE2193",
+      "legend() coordinate placement requires both 'x' and 'y'.",
+    );
+  }
+  return {
+    kind: "coordinates",
+    x: xCoordinate,
+    y: legendCoordinate(normalizedY, "y"),
+  };
+}
+
+function legendCoordinate(value: RValue, name: "x" | "y"): number {
+  if (
+    (value.type !== "logical" && value.type !== "integer" && value.type !== "double") ||
+    isFactor(value) ||
+    value.length !== 1 ||
+    isMissing(value, 0) ||
+    !Number.isFinite(value.values[0])
+  ) {
+    throw new RTypeMismatchError(
+      "NRT3334",
+      `legend() '${name}' coordinate must be one finite real number.`,
+    );
+  }
+  return value.values[0] ?? 0;
+}
+
+function legendInset(value: RValue | undefined): readonly [number, number] {
+  if (value === undefined) return [0, 0];
+  if (
+    (value.type !== "logical" && value.type !== "integer" && value.type !== "double") ||
+    isFactor(value) ||
+    (value.length !== 1 && value.length !== 2) ||
+    value.missing !== undefined ||
+    !Number.isFinite(value.values[0]) ||
+    (value.length === 2 && !Number.isFinite(value.values[1]))
+  ) {
+    throw new RTypeMismatchError(
+      "NRT3334",
+      "legend() 'inset' must contain one or two finite real numbers.",
+    );
+  }
+  const x = value.values[0] ?? 0;
+  return [x, value.length === 1 ? x : (value.values[1] ?? 0)];
+}
+
+function legendPositiveScalar(value: RValue | undefined, fallback: number, name: string): number {
+  if (value === undefined) return fallback;
+  if (
+    (value.type !== "logical" && value.type !== "integer" && value.type !== "double") ||
+    isFactor(value) ||
+    value.length !== 1 ||
+    isMissing(value, 0) ||
+    !Number.isFinite(value.values[0]) ||
+    (value.values[0] ?? 0) <= 0
+  ) {
+    throw new RTypeMismatchError(
+      "NRT3334",
+      `legend() '${name}' must be one positive finite number.`,
+    );
+  }
+  return value.values[0] ?? fallback;
+}
+
+function legendPositiveInteger(value: RValue | undefined, fallback: number, name: string): number {
+  const result = legendPositiveScalar(value, fallback, name);
+  if (!Number.isSafeInteger(result)) {
+    throw new RTypeMismatchError("NRT3334", `legend() '${name}' must be a positive integer.`);
+  }
+  return result;
+}
+
+function legendBox(value: RValue | undefined): boolean {
+  if (value === undefined) return true;
+  if (value.type !== "character" || value.length !== 1 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3334", "legend() 'bty' must be 'o' or 'n'.");
+  }
+  const boxType = value.values[0];
+  if (boxType !== "o" && boxType !== "n") {
+    throw new RTypeMismatchError("NRT3334", "legend() 'bty' must be 'o' or 'n'.");
+  }
+  return boxType === "o";
+}
+
+function legendColours(
+  value: RValue | undefined,
+  invocation: BuiltinInvocation,
+): readonly string[] {
+  const colours = graphicsSegmentColours(value, invocation);
+  return colours.length === 0 ? ["#00000000"] : colours.map(graphicsCssColour);
+}
+
+function legendColour(
+  value: RValue | undefined,
+  fallback: string,
+  invocation: BuiltinInvocation,
+): string {
+  if (value === undefined) return fallback;
+  return legendColours(value, invocation)[0] ?? fallback;
+}
+
+function legendPointSymbols(
+  value: RValue | undefined,
+  invocation: BuiltinInvocation,
+): readonly (string | undefined)[] {
+  if (value === undefined || value.type === "null") return [];
+  if (!isAtomic(value) || value.type === "complex" || isFactor(value)) {
+    throw new RTypeMismatchError(
+      "NRT3334",
+      "legend() 'pch' must be a numeric or character vector.",
+    );
+  }
+  if (value.type === "character") {
+    return Array.from({ length: value.length }, (_, index) => {
+      if (isMissing(value, index) || (value.values[index] ?? "") === "") return undefined;
+      return [...(value.values[index] ?? "")][0];
+    });
+  }
+  const numeric = value.type === "raw" ? value : coerceAtomicToInteger(value, invocation);
+  return Array.from({ length: numeric.length }, (_, index) => {
+    if (isMissing(numeric, index)) return undefined;
+    const symbol = numeric.values[index] ?? -1;
+    return symbol < 0 ? undefined : String(symbol);
+  });
+}
+
+function legendTitle(value: RValue | undefined, invocation: BuiltinInvocation): string | undefined {
+  if (value === undefined || value.type === "null") return undefined;
+  const labels = legendLabels(value, invocation);
+  if (labels.length !== 1) {
+    throw new RTypeMismatchError("NRT3334", "legend() 'title' must have length one.");
+  }
+  return labels[0];
+}
+
+function legendGeometry(
+  state: GraphicsState,
+  event: Extract<RGraphicsEvent, { readonly kind: "legend" }>,
+): RList {
+  const xMinimum = Math.min(...state.xlim);
+  const xMaximum = Math.max(...state.xlim);
+  const yMinimum = Math.min(...state.ylim);
+  const yMaximum = Math.max(...state.ylim);
+  const xRange = xMaximum - xMinimum;
+  const yRange = yMaximum - yMinimum;
+  const rows = Math.ceil(event.entries.length / event.columns);
+  const rowHeight = yRange * 0.05 * event.cex;
+  const symbolWidth = xRange * 0.06 * event.cex;
+  const columnWidth =
+    symbolWidth +
+    xRange *
+      0.012 *
+      event.cex *
+      Math.max(1, ...event.entries.map((entry) => [...entry.label].length));
+  const width = columnWidth * event.columns;
+  const height = rowHeight * (rows + (event.title === undefined ? 0 : 1));
+  const [left, top] = legendTopLeft(event.position, width, height, [
+    xMinimum,
+    xMaximum,
+    yMinimum,
+    yMaximum,
+  ]);
+  const textX: number[] = [];
+  const textY: number[] = [];
+  for (let index = 0; index < event.entries.length; index += 1) {
+    const column = Math.floor(index / rows);
+    const row = index % rows;
+    textX.push(left + column * columnWidth + symbolWidth);
+    textY.push(top - rowHeight * (row + 0.7 + (event.title === undefined ? 0 : 1)));
+  }
+  return listValue(
+    [
+      listValue(
+        [doubleVector([width]), doubleVector([height]), doubleVector([left]), doubleVector([top])],
+        ["w", "h", "left", "top"],
+      ),
+      listValue([doubleVector(textX), doubleVector(textY)], ["x", "y"]),
+    ],
+    ["rect", "text"],
+  );
+}
+
+function legendTopLeft(
+  position: RGraphicsLegendPosition,
+  width: number,
+  height: number,
+  limits: readonly [number, number, number, number],
+): readonly [number, number] {
+  if (position.kind === "coordinates") return [position.x, position.y];
+  const [xMinimum, xMaximum, yMinimum, yMaximum] = limits;
+  const xRange = xMaximum - xMinimum;
+  const yRange = yMaximum - yMinimum;
+  const insetX = position.inset[0] * xRange;
+  const insetY = position.inset[1] * yRange;
+  const horizontal = position.value.endsWith("left")
+    ? xMinimum + insetX
+    : position.value.endsWith("right")
+      ? xMaximum - insetX - width
+      : xMinimum + (xRange - width) / 2;
+  const vertical = position.value.startsWith("bottom")
+    ? yMinimum + insetY + height
+    : position.value.startsWith("top")
+      ? yMaximum - insetY
+      : yMinimum + (yRange + height) / 2;
+  return [horizontal, vertical];
+}
+
 async function builtinDeviceHoldFlush(
   invocation: BuiltinInvocation,
   operation: "hold" | "flush",
@@ -13936,6 +14302,54 @@ function graphicsEventValue(event: RGraphicsEvent): RList {
       ["kind", "x0", "y0", "x1", "y1", "col", "lty", "lwd"],
     );
   }
+  if (event.kind === "legend") {
+    const position =
+      event.position.kind === "keyword"
+        ? listValue(
+            [
+              characterVector(["keyword"]),
+              characterVector([event.position.value]),
+              doubleVector(event.position.inset),
+            ],
+            ["kind", "value", "inset"],
+          )
+        : listValue(
+            [
+              characterVector(["coordinates"]),
+              doubleVector([event.position.x]),
+              doubleVector([event.position.y]),
+            ],
+            ["kind", "x", "y"],
+          );
+    const entries = listValue(
+      event.entries.map((entry) =>
+        listValue(
+          [
+            characterVector([entry.label]),
+            characterVector([entry.textColor]),
+            characterVector([entry.color]),
+            entry.lineType === undefined ? R_NULL : characterVector([entry.lineType]),
+            entry.lineWidth === undefined ? R_NULL : doubleVector([entry.lineWidth]),
+            entry.pointSymbol === undefined ? R_NULL : characterVector([entry.pointSymbol]),
+          ],
+          ["label", "text.col", "col", "lty", "lwd", "pch"],
+        ),
+      ),
+    );
+    return listValue(
+      [
+        characterVector(["legend"]),
+        position,
+        entries,
+        logicalVector([event.box]),
+        characterVector([event.background]),
+        integerVector([event.columns]),
+        doubleVector([event.cex]),
+        event.title === undefined ? R_NULL : characterVector([event.title]),
+      ],
+      ["kind", "position", "entries", "box", "bg", "ncol", "cex", "title"],
+    );
+  }
   return listValue(
     [
       characterVector(["raster"]),
@@ -14026,6 +14440,41 @@ function graphicsEventFromValue(value: RValue, invocation: BuiltinInvocation): R
       })),
     };
   }
+  if (kind.values[0] === "legend") {
+    const entriesValue = field("entries");
+    if (entriesValue?.type !== "list" || entriesValue.length === 0) {
+      throw new RTypeMismatchError("NRT3333", "A recorded legend entry list is malformed.");
+    }
+    invocation.context.allocate(entriesValue.length * 6);
+    const entries = entriesValue.values.map(recordedLegendEntry);
+    const box = recordedPlotLogical(field("box"), "box");
+    const background = recordedLegendColour(field("bg"), "bg");
+    const columns = recordedPlotInteger(field("ncol"), "ncol");
+    const cex = recordedPlotNumber(field("cex"), "cex");
+    const titleValue = field("title");
+    if (columns < 1 || !(cex > 0)) {
+      throw new RTypeMismatchError("NRT3333", "A recorded legend layout is malformed.");
+    }
+    if (
+      titleValue !== undefined &&
+      titleValue.type !== "null" &&
+      (titleValue.type !== "character" ||
+        titleValue.length !== 1 ||
+        titleValue.missing !== undefined)
+    ) {
+      throw new RTypeMismatchError("NRT3333", "A recorded legend title is malformed.");
+    }
+    return {
+      kind: "legend",
+      position: recordedLegendPosition(field("position")),
+      entries,
+      box,
+      background,
+      columns,
+      cex,
+      ...(titleValue?.type === "character" ? { title: titleValue.values[0] ?? "" } : {}),
+    };
+  }
   if (kind.values[0] !== "raster") {
     throw new RTypeMismatchError("NRT3333", `Unknown recorded plot command '${kind.values[0]}'.`);
   }
@@ -14055,6 +14504,105 @@ function graphicsEventFromValue(value: RValue, invocation: BuiltinInvocation): R
     angle: recordedPlotNumber(field("angle"), "angle"),
     interpolate: recordedPlotLogical(field("interpolate"), "interpolate"),
   };
+}
+
+function recordedLegendEntry(value: RValue): RGraphicsLegendEntry {
+  if (value.type !== "list") {
+    throw new RTypeMismatchError("NRT3333", "A recorded legend entry is malformed.");
+  }
+  const names = vectorNames(value);
+  const field = (name: string): RValue | undefined => {
+    const index = names?.indexOf(name) ?? -1;
+    return index < 0 ? undefined : value.values[index];
+  };
+  const label = recordedPlotCharacter(field("label"), "label");
+  const textColor = recordedLegendColour(field("text.col"), "text.col");
+  const color = recordedLegendColour(field("col"), "col");
+  const lineTypeValue = field("lty");
+  const lineWidthValue = field("lwd");
+  const pointSymbolValue = field("pch");
+  const lineType =
+    lineTypeValue?.type === "null" ? undefined : recordedPlotCharacter(lineTypeValue, "lty");
+  const lineWidth =
+    lineWidthValue?.type === "null" ? undefined : recordedPlotNumber(lineWidthValue, "lwd");
+  const pointSymbol =
+    pointSymbolValue?.type === "null" ? undefined : recordedPlotCharacter(pointSymbolValue, "pch");
+  if (
+    (lineType !== undefined && lineType !== "solid" && !/^(?:[1-9A-F]{2}){1,4}$/u.test(lineType)) ||
+    (lineWidth !== undefined && !(lineWidth > 0))
+  ) {
+    throw new RTypeMismatchError("NRT3333", "A recorded legend entry style is malformed.");
+  }
+  return {
+    label,
+    textColor,
+    color,
+    ...(lineType === undefined ? {} : { lineType }),
+    ...(lineWidth === undefined ? {} : { lineWidth }),
+    ...(pointSymbol === undefined ? {} : { pointSymbol }),
+  };
+}
+
+function recordedLegendPosition(value: RValue | undefined): RGraphicsLegendPosition {
+  if (value?.type !== "list") {
+    throw new RTypeMismatchError("NRT3333", "A recorded legend position is malformed.");
+  }
+  const names = vectorNames(value);
+  const field = (name: string): RValue | undefined => {
+    const index = names?.indexOf(name) ?? -1;
+    return index < 0 ? undefined : value.values[index];
+  };
+  const kind = recordedPlotCharacter(field("kind"), "position.kind");
+  if (kind === "coordinates") {
+    return {
+      kind,
+      x: recordedPlotNumber(field("x"), "position.x"),
+      y: recordedPlotNumber(field("y"), "position.y"),
+    };
+  }
+  if (kind !== "keyword") {
+    throw new RTypeMismatchError("NRT3333", "A recorded legend position kind is malformed.");
+  }
+  const keyword = recordedPlotCharacter(field("value"), "position.value");
+  const allowed = new Set([
+    "bottomright",
+    "bottom",
+    "bottomleft",
+    "left",
+    "topleft",
+    "top",
+    "topright",
+    "right",
+    "center",
+  ]);
+  if (!allowed.has(keyword)) {
+    throw new RTypeMismatchError("NRT3333", "A recorded legend position keyword is malformed.");
+  }
+  return {
+    kind,
+    value: keyword as Extract<RGraphicsLegendPosition, { readonly kind: "keyword" }>["value"],
+    inset: recordedPlotPair(field("inset"), "position.inset"),
+  };
+}
+
+function recordedLegendColour(value: RValue | undefined, name: string): string {
+  const color = recordedPlotCharacter(value, name);
+  if (!/^#[0-9A-F]{8}$/u.test(color)) {
+    throw new RTypeMismatchError("NRT3333", `A recorded legend '${name}' field is malformed.`);
+  }
+  return color;
+}
+
+function recordedPlotCharacter(value: RValue | undefined, name: string): string {
+  if (
+    value?.type !== "character" ||
+    value.length !== 1 ||
+    value.missing !== undefined ||
+    value.values[0] === undefined
+  ) {
+    throw new RTypeMismatchError("NRT3333", `A recorded plot '${name}' field is malformed.`);
+  }
+  return value.values[0];
 }
 
 function recordedPlotPair(value: RValue | undefined, name: string): readonly [number, number] {
@@ -14374,12 +14922,7 @@ function writeGraphics(
   state: GraphicsState,
   event: RGraphicsEvent,
 ): void {
-  const bytes =
-    event.kind === "raster"
-      ? event.rgba.byteLength
-      : event.kind === "segments"
-        ? event.segments.length * 64
-        : 0;
+  const bytes = graphicsEventByteLength(event);
   const nextDisplayLength = event.kind === "new-page" ? 1 : state.displayList.length + 1;
   const nextDisplayBytes = event.kind === "new-page" ? 0 : state.displayListBytes + bytes;
   if (nextDisplayLength > invocation.context.limits.maxVectorLength) {
@@ -14430,6 +14973,33 @@ function writeGraphics(
     state.displayList.push(event);
     state.displayListBytes = nextDisplayBytes;
   }
+}
+
+function graphicsEventByteLength(event: RGraphicsEvent): number {
+  if (event.kind === "raster") return event.rgba.byteLength;
+  if (event.kind === "segments") return event.segments.length * 64;
+  if (event.kind !== "legend") return 0;
+  return (
+    64 +
+    (event.title === undefined ? 0 : graphicsTextByteLength(event.title)) +
+    event.entries.reduce(
+      (bytes, entry) =>
+        bytes +
+        96 +
+        graphicsTextByteLength(entry.label) +
+        graphicsTextByteLength(entry.textColor) +
+        graphicsTextByteLength(entry.color) +
+        (entry.lineType === undefined ? 0 : graphicsTextByteLength(entry.lineType)) +
+        (entry.pointSymbol === undefined ? 0 : graphicsTextByteLength(entry.pointSymbol)),
+      0,
+    )
+  );
+}
+
+function graphicsTextByteLength(value: string): number {
+  let bytes = 0;
+  for (const character of value) bytes += utf8ByteLength(character.codePointAt(0) ?? 0);
+  return bytes;
 }
 
 function flushGraphics(invocation: BuiltinInvocation, state: GraphicsState): void {
