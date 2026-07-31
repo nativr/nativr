@@ -420,6 +420,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      and namespace-qualified access, independently authored defaults, and deterministic errors.
      Lattice's `update.trellis` remains package-owned, while built-in stored-call rewriting and
      re-evaluation remain separate language/call work.
+110. Frequency-ranked matrix-series graphics: `graphics::matplot` runs bit64's six measured
+     performance plots through existing page/window/box/segment/point commands with vector, matrix,
+     and numeric data-frame inputs, generated x positions, column and style cycling, incomplete
+     omission, logarithmic axes, point/line series, namespace access, Worker/Canvas rendering,
+     recording/replay, and resource bounds. Full axes/annotations, class-specific plot/line methods,
+     `add = TRUE`, step/histogram types, and device-identical layout remain separate graphics work.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

@@ -333,6 +333,38 @@ test("runs the required Worker examples without evaluation network traffic", asy
   expect(pointPixels.green).toBeGreaterThan(0);
 
   await page.locator("#source").fill(`
+    matplot(
+      matrix(c(0, 1, 2, 10, NA, 30), 3, 2),
+      type = "b",
+      pch = c("d", "i"),
+      col = c("red", "blue"),
+      lwd = c(4, 2),
+      axes = FALSE
+    )
+  `);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("null");
+  await expect(page.locator("#graphics-count")).toHaveText("4");
+  const matplotPixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
+    const context = canvas.getContext("2d");
+    if (context === null) return { red: 0, blue: 0 };
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    let red = 0;
+    let blue = 0;
+    for (let index = 0; index < pixels.length; index += 4) {
+      const r = pixels[index] ?? 0;
+      const g = pixels[index + 1] ?? 0;
+      const b = pixels[index + 2] ?? 0;
+      const a = pixels[index + 3] ?? 0;
+      if (r > 160 && g < 80 && b < 80 && a > 0) red += 1;
+      if (r < 80 && g < 80 && b > 160 && a > 0) blue += 1;
+    }
+    return { red, blue };
+  });
+  expect(matplotPixels.red).toBeGreaterThan(0);
+  expect(matplotPixels.blue).toBeGreaterThan(0);
+
+  await page.locator("#source").fill(`
     plot.new()
     plot.window(c(0, 4), c(0, 4))
     text(2, 2, "R", col = "blue", cex = 4, font = 2, srt = -90, xpd = TRUE)

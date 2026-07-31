@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           483 |
-| Overlapping callable names        |           468 |
-| Missing GNU R callable names      |         2,054 |
-| Name overlap                      |      18.5567% |
+| NativR registered names           |           484 |
+| Overlapping callable names        |           469 |
+| Missing GNU R callable names      |         2,053 |
+| Name overlap                      |      18.5964% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -375,6 +375,14 @@ selection, `NextMethod`, direct and namespace-qualified access, visibility, miss
 and independently authored `update.default` methods have coverage. NativR does not implement or copy
 lattice's package-owned `update.trellis`; GNU R's built-in stored-call extraction, call rewriting,
 formula updates, and optional re-evaluation remain incomplete.
+
+The rank-465 increment adds GNU R differential shape evidence for bit64's measured
+`graphics::matplot` calls. One- and two-argument numeric vectors, matrices, and data frames,
+generated x coordinates, cycled columns, incomplete-pair omission, point/line/both/overplotted/
+no-draw types, logarithmic coordinate resolution, style recycling, invisible return, namespace
+access, Worker/Canvas output, recording/replay, errors, and resource limits have coverage. Complete
+axes and annotation, class-specific `plot`/`lines` dispatch, `add = TRUE`, remaining plot types,
+date/time axes, exact diagnostics, long vectors, and device-identical layout remain incomplete.
 
 ## Completion evidence
 

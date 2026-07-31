@@ -315,6 +315,19 @@ journals, malformed-record rejection, and same-session record/replay have covera
 Hershey fonts, class-specific label coercion, clipping/log axes, arbitrary graphical controls, exact
 diagnostics, and device-identical metrics remain unsupported.
 
+`graphics::matplot` has differential shape evidence for bit64's six measured matrix-performance
+calls. One supplied vector/matrix/data frame becomes `y` with generated `1:n` x coordinates; two
+inputs must have equal row counts and cycle their columns independently. Numeric and logical
+vectors, matrices, and numeric data frames are supported. Point, line, both, overplotted, and
+no-draw types cycle by series, as do colors, symbols, fills, sizes, line types, and widths.
+Incomplete coordinate pairs are omitted and interrupt line segments; x/y log scales are resolved to
+host-neutral coordinates before transport. Each high-level call creates a bounded page and window,
+can emit a plot-frame box, and reuses the existing segment/point Worker, Canvas, hold, and
+record/replay paths. Character axis labels are accepted for the measured calls but complete
+axes/annotation rendering, class-specific `plot`/`lines` methods, `add = TRUE`, `verbose = TRUE`,
+step/histogram series, arbitrary graphical parameters, date/time axes, and device-identical layout
+are not claimed.
+
 `graphics::polygon` has differential evidence for zoo's measured filled-area panel helper. Its
 default accepts paired real coordinates, one-/two-column data frames, two-column matrices, complex
 coordinates, and named `list(x, y)` inputs; separate x/y vectors must have equal lengths. Missing or

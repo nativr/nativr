@@ -69,7 +69,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 483 registered functions, including resettable
+an initial condition/handler slice. It exposes 484 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
 preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
@@ -425,6 +425,14 @@ inherited classes and `NextMethod`, permits independently authored `update.defau
 works through direct and namespace-qualified calls. NativR does not include lattice's package-owned
 `update.trellis` method; the built-in `update.default` stored-call rewriting and re-evaluation path
 remains an explicit boundary.
+
+Rank 465 `graphics::matplot` now runs bit64's measured matrix-performance plots through the Worker
+graphics path. It accepts one- or two-argument numeric vectors, matrices, and data frames; cycles
+matrix columns and point/line styles; omits incomplete pairs; supports point, line, both,
+overplotted, and no-draw series; resolves x/y logarithmic coordinates; opens bounded pages and
+windows; and records/replays the resulting box, segment, and point commands. Full axes and
+annotations, class-specific `plot`/`lines` methods, `add = TRUE`, step/histogram series, and
+device-identical layout remain explicit boundaries.
 
 Development priority is based on a reproducible analysis of documented usage in popular CRAN
 packages. The committed
