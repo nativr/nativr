@@ -208,8 +208,8 @@ Both inline and Worker APIs retain the output in `evalDetailed` and charge it ag
 output budget. S3 print-method dispatch, global print options, line filling, labels, connections,
 and filesystem output are not claimed.
 
-`plot.new`, bounded `plot.window`, `axTicks`, `box`, `boxplot`, `rasterImage`, `segments`, and
-`legend` provide the first browser-native graphics slice. Evaluation owns page and linear
+`plot.new`, bounded `plot.window`, `axTicks`, `box`, `boxplot`, `persp`, `rasterImage`, `segments`,
+and `legend` provide the first browser-native graphics slice. Evaluation owns page and linear
 coordinate-window state, converts two-dimensional grayscale or character colors, three-/four-channel
 numeric/raw arrays, and packed `nativeRaster` integers to row-major RGBA, and emits commands for
 recycled raster placements, styled line segments, resolved plot frames and boxplots, and resolved
@@ -257,6 +257,17 @@ resolved line types/widths. Commands cross inline/Worker APIs, Canvas pixels, ou
 held journals, and same-session record/replay. Formula/data-frame methods, logarithmic axes,
 arbitrary `pars`, complete annotation/axes, exact notch-overlap diagnostics, and device-identical
 layout remain unsupported.
+
+`graphics::persp` has differential evidence for zoo's measured `persp(1:nO, 1:nC, zz)` call where
+`zz` is a classed numeric matrix. S3 dispatch runs before the owned default, which accepts ascending
+real x/y grids and a two-dimensional real z matrix, omits missing grid edges, validates explicit
+limits, and returns the invisible `4 × 4` homogeneous view matrix. Separate and aspect-preserving
+scale paths, `theta`, `phi`, `r`, `d`, `expand`, box control, axis-flag validation, namespace
+access, output limits, Worker transport, Canvas rendering, and same-session display-list replay have
+coverage. The browser drawing is a bounded projected white/black wireframe and box encoded as
+existing segment commands. Colored facet fills, lighting, axis arrows/ticks/labels,
+hidden-line/painter equivalence, hooks, arbitrary graphical `...`, `trans3d`, and device-identical
+pixels remain unsupported.
 
 `graphics::segments` has differential evidence for posterior's measured
 `segments(seq_along(theta), y0 = q5, y1 = q95)` vertical-interval shape. Exactly one of `x1` or `y1`

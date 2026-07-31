@@ -309,6 +309,18 @@ is bounded by `maxVectorLength`, and reset/dispose clears them. Calls without an
 return zero. The runtime and base packages contain no DOM or Canvas dependency; the Worker transfers
 commands to the public API and the Playground owns the reference Canvas renderer.
 
+`graphics::persp()` dispatches classed first arguments before its owned matrix default. The default
+requires increasing finite x/y coordinates and a two-dimensional real z grid, derives missing grids
+over `[0, 1]`, validates finite limits, and leaves edges touching missing z values absent. It
+normalizes coordinates separately when `scale = TRUE` or by their common largest range otherwise,
+applies `expand`, azimuth/elevation rotations, eye distance, and perspective division, and returns
+the resulting column-major `4 × 4` matrix invisibly. The measured default white surface and black
+border are represented by projected grid/box line segments in a padded linear window, so the
+existing Worker protocol, Canvas renderer, hold/flush journal, and record/replay codec need no host
+3D object. The `axes` flag is validated, but directional arrows and axis text are not emitted yet.
+Filled facets, shading/light angles, axis arrows/ticks/text, hidden-line removal, hooks, `trans3d`,
+and arbitrary graphical parameters are rejected explicitly.
+
 The active owned device also records a bounded display list. `recordPlot(load, attach)` snapshots
 the current page/window/raster/segments/box/boxplot/legend commands into an independently owned,
 classed `"recordedplot"` value and preserves the optional package metadata without loading packages.

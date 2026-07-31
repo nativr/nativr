@@ -69,7 +69,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 475 registered functions, including resettable
+an initial condition/handler slice. It exposes 476 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
 preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
@@ -366,6 +366,13 @@ component recycling, fractional seconds, explicit UTC/GMT labels, class metadata
 missingness, and pre-allocation limits. Its documented default `tz = ""` is computed as
 deterministic UTC in the browser while retaining the empty `tzone` label; regional time zones and
 daylight-saving databases remain explicit future work.
+
+Rank 457 `graphics::persp` now runs zoo's documented classed `100 × 10` numeric-matrix surface. The
+owned generic preserves package-defined S3 methods; its default validates ascending grids, computes
+the documented invisible `4 × 4` view transform for scaled or aspect-preserving views, and projects
+the default white/black wireframe plus bounding box into bounded Worker-safe line events rendered by
+the Playground. Filled facets, lighting, detailed ticks/text, hidden-line equivalence, and arbitrary
+graphical parameters remain explicit graphics-depth work.
 
 Development priority is based on a reproducible analysis of documented usage in popular CRAN
 packages. The committed

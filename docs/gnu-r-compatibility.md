@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           475 |
-| Overlapping callable names        |           460 |
-| Missing GNU R callable names      |         2,062 |
-| Name overlap                      |      18.2395% |
+| NativR registered names           |           476 |
+| Overlapping callable names        |           461 |
+| Missing GNU R callable names      |         2,061 |
+| Name overlap                      |      18.2791% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -304,6 +304,17 @@ invalid components, empty inputs, namespace access, errors, and allocation limit
 Regional zones and daylight-saving transitions, the host-dependent absolute value of `tz = ""`,
 platform-specific invalid-time normalization, broad character coercion, exact diagnostics, and long
 vectors remain incomplete.
+
+The rank-457 increment adds GNU R differential evidence for zoo's measured `persp(1:nO, 1:nC, zz)`
+call over a classed numeric matrix. S3 package-method forwarding, default/explicit grids, scaled and
+aspect-preserving normalization, `theta`/`phi` rotations, `r`/`d` perspective controls, `expand`,
+missing cells, ascending-grid and dimension validation, invisible `4 × 4` matrix shape and
+coefficients, namespace access, browser graphics output, same-session replay, errors, and allocation
+limits have coverage. The owned browser renderer emits the default white/black projected wireframe
+and box through resolved segment commands. Colored facets, shading, detailed ticks/text, hidden-line
+equivalence, hooks, arbitrary graphical parameters, `trans3d`, exact diagnostics, and cross-device
+pixel identity remain incomplete. The `axes` flag is validated, but axis arrows, ticks, and text
+remain unsupported.
 
 ## Completion evidence
 

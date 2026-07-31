@@ -972,6 +972,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     builtinLegend,
     "invisible",
   ),
+  definePackageBuiltin("graphics", "persp", ["x", "..."], "shape", builtinPerspective),
   definePackageBuiltin("graphics", "pairs", ["x", "..."], "shape", builtinPairs),
   defineBuiltin("nrow", ["x"], "behavioral", (invocation) => builtinDimension(invocation, 0)),
   defineBuiltin("ncol", ["x"], "behavioral", (invocation) => builtinDimension(invocation, 1)),
@@ -14784,6 +14785,564 @@ function boxplotWindow(event: Extract<RGraphicsEvent, { readonly kind: "boxplot"
   const padding = minimum === maximum ? 0.5 : (maximum - minimum) * 0.04;
   const numeric: readonly [number, number] = [minimum - padding, maximum + padding];
   return event.horizontal ? { xlim: numeric, ylim: category } : { xlim: category, ylim: numeric };
+}
+
+type PerspectiveMatrix = readonly [
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+];
+
+interface PerspectiveSurface {
+  readonly rows: number;
+  readonly columns: number;
+  readonly values: readonly (number | undefined)[];
+}
+
+interface PerspectiveProjection {
+  readonly x: number;
+  readonly y: number;
+}
+
+async function builtinPerspective(invocation: BuiltinInvocation): Promise<RValue> {
+  const generic = matchBuiltinArguments(invocation, ["x", "..."]);
+  const genericX = generic.matched.get("x");
+  if (genericX !== undefined && !genericX.promise.missing) {
+    const input = await invocation.force(genericX.promise);
+    const dispatched = await invocation.dispatchS3IfPresent("persp", input, invocation.arguments);
+    if (dispatched !== undefined) return dispatched;
+  }
+
+  const { matched, dots } = matchLazyArgumentsWithDots(invocation, [
+    "x",
+    "y",
+    "z",
+    "xlim",
+    "ylim",
+    "zlim",
+    "xlab",
+    "ylab",
+    "zlab",
+    "main",
+    "sub",
+    "theta",
+    "phi",
+    "r",
+    "d",
+    "scale",
+    "expand",
+    "col",
+    "border",
+    "ltheta",
+    "lphi",
+    "shade",
+    "box",
+    "axes",
+    "nticks",
+    "ticktype",
+  ]);
+  if (dots.length > 0) {
+    for (const argument of dots) await invocation.force(argument.promise);
+    throw new RUnsupportedFeatureError(
+      "NRU6163",
+      "persp() graphical controls outside the documented browser wireframe subset are unsupported.",
+    );
+  }
+  const values = new Map<string, RValue>();
+  for (const [name, argument] of matched) {
+    if (argument.promise.missing) {
+      throw new REvaluationError("NRE2103", `Argument '${name}' is missing in persp().`);
+    }
+    values.set(name, await invocation.force(argument.promise));
+  }
+
+  const explicitX = values.get("x");
+  const explicitZ = values.get("z");
+  const zValue =
+    explicitZ ??
+    (explicitX !== undefined && perspectiveMatrixDimensions(explicitX) !== undefined
+      ? explicitX
+      : undefined);
+  if (zValue === undefined) {
+    throw new REvaluationError("NRE2103", "Argument 'z' is missing in persp().");
+  }
+  const surface = perspectiveSurface(zValue);
+  const x =
+    explicitZ === undefined
+      ? perspectiveGrid(surface.rows)
+      : values.has("x")
+        ? perspectiveCoordinates(required(values, "x", "persp"), "x")
+        : perspectiveGrid(surface.rows);
+  const y = values.has("y")
+    ? perspectiveCoordinates(required(values, "y", "persp"), "y")
+    : perspectiveGrid(surface.columns);
+  if (x.length !== surface.rows || y.length !== surface.columns) {
+    throw new RTypeMismatchError(
+      "NRT3346",
+      "persp() coordinate lengths must match the rows and columns of 'z'.",
+    );
+  }
+  perspectiveIncreasing(x, "x");
+  perspectiveIncreasing(y, "y");
+
+  const finiteZ = surface.values.filter((value): value is number => value !== undefined);
+  const xlim = perspectiveLimits(values.get("xlim"), [x[0] ?? 0, x[x.length - 1] ?? 1], "xlim");
+  const ylim = perspectiveLimits(values.get("ylim"), [y[0] ?? 0, y[y.length - 1] ?? 1], "ylim");
+  const zlim = values.has("zlim")
+    ? perspectiveLimits(values.get("zlim"), [0, 1], "zlim")
+    : perspectiveRange(finiteZ, "z");
+  if (
+    x.some((value) => value < xlim[0] || value > xlim[1]) ||
+    y.some((value) => value < ylim[0] || value > ylim[1]) ||
+    finiteZ.some((value) => value < zlim[0] || value > zlim[1])
+  ) {
+    invocation.context.warn({
+      code: "NRW1030",
+      message: "surface extends beyond the box",
+    });
+  }
+
+  for (const name of ["xlab", "ylab", "zlab", "main", "sub"] as const) {
+    const annotation = values.get(name);
+    if (annotation !== undefined && annotation.type !== "null") {
+      throw new RUnsupportedFeatureError(
+        "NRU6163",
+        `persp(${name}=) awaits browser perspective text annotation.`,
+      );
+    }
+  }
+  const theta = perspectiveScalar(values.get("theta"), 0, "theta");
+  const phi = perspectiveScalar(values.get("phi"), 15, "phi");
+  const distance = perspectiveScalar(values.get("r"), Math.sqrt(3), "r");
+  const perspective = perspectiveScalar(values.get("d"), 1, "d");
+  const expand = perspectiveScalar(values.get("expand"), 1, "expand");
+  if (distance < 0 || perspective <= 0 || expand < 0) {
+    throw new RTypeMismatchError("NRT3346", "persp() received invalid viewing parameters.");
+  }
+  const scale = logicalFlag(values.get("scale"), true, "scale");
+  perspectiveUnshaded(values.get("shade"));
+  perspectiveScalar(values.get("ltheta"), -135, "ltheta");
+  perspectiveScalar(values.get("lphi"), 0, "lphi");
+  const box = logicalFlag(values.get("box"), true, "box");
+  logicalFlag(values.get("axes"), true, "axes");
+  perspectiveTickControls(values.get("nticks"), values.get("ticktype"));
+  perspectiveSurfaceColours(values.get("col"), invocation);
+  const border = perspectiveBorderColours(values.get("border"), invocation);
+
+  const matrix = perspectiveMatrix(
+    xlim,
+    ylim,
+    zlim,
+    theta,
+    phi,
+    distance,
+    perspective,
+    scale,
+    expand,
+  );
+  const segments = perspectiveSegments(
+    x,
+    y,
+    surface,
+    xlim,
+    ylim,
+    zlim,
+    matrix,
+    border,
+    box,
+    invocation,
+  );
+  const window = perspectiveWindow(x, y, surface.values, xlim, ylim, zlim, matrix);
+  const state = beginGraphicsPage(invocation);
+  state.xlim = window.xlim;
+  state.ylim = window.ylim;
+  writeGraphics(invocation, state, { kind: "window", ...window });
+  if (segments.length > 0) writeGraphics(invocation, state, { kind: "segments", segments });
+  invocation.setResultVisibility("invisible");
+  return withDimensions(doubleVector(matrix), [4, 4]);
+}
+
+function perspectiveMatrixDimensions(value: RValue): readonly number[] | undefined {
+  return isVector(value) ? vectorDimensions(value) : undefined;
+}
+
+function perspectiveSurface(value: RValue): PerspectiveSurface {
+  const dimensions = perspectiveMatrixDimensions(value);
+  if (
+    !isAtomic(value) ||
+    (value.type !== "logical" && value.type !== "integer" && value.type !== "double") ||
+    isFactor(value) ||
+    dimensions?.length !== 2 ||
+    (dimensions[0] ?? 0) < 2 ||
+    (dimensions[1] ?? 0) < 2
+  ) {
+    throw new RTypeMismatchError(
+      "NRT3346",
+      "persp() 'z' must be a real numeric matrix with at least two rows and columns.",
+    );
+  }
+  const values = Array.from({ length: value.length }, (_, index) => {
+    if (isMissing(value, index)) return undefined;
+    const number = value.values[index] ?? Number.NaN;
+    return Number.isFinite(number) ? number : undefined;
+  });
+  return {
+    rows: dimensions[0] ?? 0,
+    columns: dimensions[1] ?? 0,
+    values,
+  };
+}
+
+function perspectiveCoordinates(value: RValue, name: "x" | "y"): readonly number[] {
+  if (
+    !isAtomic(value) ||
+    (value.type !== "logical" &&
+      value.type !== "integer" &&
+      value.type !== "double" &&
+      value.type !== "raw") ||
+    isFactor(value)
+  ) {
+    throw new RTypeMismatchError("NRT3346", `persp() '${name}' must be a real numeric vector.`);
+  }
+  return Array.from({ length: value.length }, (_, index) => {
+    if (isMissing(value, index)) {
+      throw new RTypeMismatchError("NRT3346", `persp() '${name}' must not contain missing values.`);
+    }
+    const number = value.values[index] ?? Number.NaN;
+    if (!Number.isFinite(number)) {
+      throw new RTypeMismatchError("NRT3346", `persp() '${name}' must contain finite values.`);
+    }
+    return number;
+  });
+}
+
+function perspectiveGrid(length: number): readonly number[] {
+  const denominator = length - 1;
+  return Array.from({ length }, (_, index) => index / denominator);
+}
+
+function perspectiveIncreasing(values: readonly number[], name: "x" | "y"): void {
+  for (let index = 1; index < values.length; index += 1) {
+    if ((values[index - 1] ?? Number.NaN) >= (values[index] ?? Number.NaN)) {
+      throw new RTypeMismatchError("NRT3346", `increasing '${name}' values expected in persp().`);
+    }
+  }
+}
+
+function perspectiveRange(values: readonly number[], name: "z"): readonly [number, number] {
+  if (values.length === 0) {
+    throw new RTypeMismatchError("NRT3346", `persp() '${name}' has no finite values.`);
+  }
+  const minimum = Math.min(...values);
+  const maximum = Math.max(...values);
+  if (minimum === maximum) {
+    throw new RTypeMismatchError("NRT3346", `persp() received invalid '${name}' limits.`);
+  }
+  return [minimum, maximum];
+}
+
+function perspectiveLimits(
+  value: RValue | undefined,
+  fallback: readonly [number, number],
+  name: "xlim" | "ylim" | "zlim",
+): readonly [number, number] {
+  if (value === undefined) return fallback;
+  const limits = graphicsNumbers(value, name);
+  if (limits.length !== 2 || (limits[0] ?? 0) >= (limits[1] ?? 0)) {
+    throw new RTypeMismatchError(
+      "NRT3346",
+      `persp() '${name}' must contain two increasing finite values.`,
+    );
+  }
+  return [limits[0] ?? 0, limits[1] ?? 1];
+}
+
+function perspectiveScalar(value: RValue | undefined, fallback: number, name: string): number {
+  return value === undefined ? fallback : numericScalar(value, `persp(${name}=)`);
+}
+
+function perspectiveUnshaded(value: RValue | undefined): void {
+  if (value === undefined) return;
+  if (
+    (value.type !== "logical" && value.type !== "integer" && value.type !== "double") ||
+    value.length !== 1
+  ) {
+    throw new RTypeMismatchError("NRT3346", "persp() 'shade' must be one numeric value or NA.");
+  }
+  if (!isMissing(value, 0)) {
+    throw new RUnsupportedFeatureError("NRU6163", "persp(shade=) awaits browser surface lighting.");
+  }
+}
+
+function perspectiveTickControls(
+  nticksValue: RValue | undefined,
+  tickTypeValue: RValue | undefined,
+): void {
+  const nticks = perspectiveScalar(nticksValue, 5, "nticks");
+  if (!Number.isSafeInteger(nticks) || nticks < 0) {
+    throw new RTypeMismatchError("NRT3346", "persp() 'nticks' must be a non-negative integer.");
+  }
+  if (tickTypeValue === undefined) return;
+  const tickType = characterScalar(tickTypeValue, "persp(ticktype=)");
+  if (tickType === "simple") return;
+  if (tickType === "detailed") {
+    throw new RUnsupportedFeatureError(
+      "NRU6163",
+      'persp(ticktype = "detailed") awaits browser perspective tick annotations.',
+    );
+  }
+  throw new RTypeMismatchError("NRT3346", "persp() 'ticktype' must be 'simple' or 'detailed'.");
+}
+
+function perspectiveSurfaceColours(value: RValue | undefined, invocation: BuiltinInvocation): void {
+  if (value === undefined) return;
+  const colours = graphicsSegmentColours(value, invocation);
+  if (
+    colours.some(
+      (colour) =>
+        colour[3] !== 0 &&
+        (colour[0] !== 255 || colour[1] !== 255 || colour[2] !== 255 || colour[3] !== 255),
+    )
+  ) {
+    throw new RUnsupportedFeatureError(
+      "NRU6163",
+      "persp(col=) currently supports the default white or transparent wireframe surface only.",
+    );
+  }
+}
+
+function perspectiveBorderColours(
+  value: RValue | undefined,
+  invocation: BuiltinInvocation,
+): readonly RColour[] {
+  if (value === undefined || value.type === "null") return [[0, 0, 0, 255]];
+  return graphicsSegmentColours(value, invocation);
+}
+
+function perspectiveMatrix(
+  xlim: readonly [number, number],
+  ylim: readonly [number, number],
+  zlim: readonly [number, number],
+  theta: number,
+  phi: number,
+  distance: number,
+  perspective: number,
+  scale: boolean,
+  expand: number,
+): PerspectiveMatrix {
+  const xRange = xlim[1] - xlim[0];
+  const yRange = ylim[1] - ylim[0];
+  const zRange = zlim[1] - zlim[0];
+  const commonScale = 2 / Math.max(xRange, yRange, zRange);
+  const xScale = scale ? 2 / xRange : commonScale;
+  const yScale = scale ? 2 / yRange : commonScale;
+  const zScale = (scale ? 2 / zRange : commonScale) * expand;
+  const xOffset = -((xlim[0] + xlim[1]) * xScale) / 2;
+  const yOffset = -((ylim[0] + ylim[1]) * yScale) / 2;
+  const zOffset = -((zlim[0] + zlim[1]) * zScale) / 2;
+  const thetaRadians = (theta * Math.PI) / 180;
+  const phiRadians = (phi * Math.PI) / 180;
+  const cosTheta = Math.cos(thetaRadians);
+  const sinTheta = Math.sin(thetaRadians);
+  const cosPhi = Math.cos(phiRadians);
+  const sinPhi = Math.sin(phiRadians);
+
+  const xColumn = [
+    xScale * cosTheta,
+    yScale * sinTheta,
+    0,
+    xOffset * cosTheta + yOffset * sinTheta,
+  ] as const;
+  const yColumn = [
+    -xScale * sinTheta * sinPhi,
+    yScale * cosTheta * sinPhi,
+    zScale * cosPhi,
+    (-xOffset * sinTheta + yOffset * cosTheta) * sinPhi + zOffset * cosPhi,
+  ] as const;
+  const zColumn = [
+    xScale * sinTheta * cosPhi,
+    -yScale * cosTheta * cosPhi,
+    zScale * sinPhi,
+    -(-xOffset * sinTheta + yOffset * cosTheta) * cosPhi +
+      zOffset * sinPhi -
+      (distance + perspective),
+  ] as const;
+  const wColumn = zColumn.map((value, index) =>
+    index === 3 ? 1 - value / perspective : -value / perspective,
+  ) as unknown as readonly [number, number, number, number];
+  return [...xColumn, ...yColumn, ...zColumn, ...wColumn] as unknown as PerspectiveMatrix;
+}
+
+function perspectiveProject(
+  x: number,
+  y: number,
+  z: number,
+  matrix: PerspectiveMatrix,
+): PerspectiveProjection {
+  const projectedX = x * matrix[0] + y * matrix[1] + z * matrix[2] + matrix[3];
+  const projectedY = x * matrix[4] + y * matrix[5] + z * matrix[6] + matrix[7];
+  const weight = x * matrix[12] + y * matrix[13] + z * matrix[14] + matrix[15];
+  if (!Number.isFinite(projectedX) || !Number.isFinite(projectedY) || !Number.isFinite(weight)) {
+    throw new RTypeMismatchError("NRT3346", "persp() projection produced non-finite coordinates.");
+  }
+  if (Math.abs(weight) < Number.EPSILON) {
+    throw new RTypeMismatchError("NRT3346", "persp() viewing parameters produce a singular view.");
+  }
+  return { x: projectedX / weight, y: projectedY / weight };
+}
+
+function perspectiveSegments(
+  x: readonly number[],
+  y: readonly number[],
+  surface: PerspectiveSurface,
+  xlim: readonly [number, number],
+  ylim: readonly [number, number],
+  zlim: readonly [number, number],
+  matrix: PerspectiveMatrix,
+  colours: readonly RColour[],
+  box: boolean,
+  invocation: BuiltinInvocation,
+): readonly RGraphicsSegment[] {
+  const maximum =
+    surface.rows * (surface.columns - 1) + (surface.rows - 1) * surface.columns + (box ? 12 : 0);
+  invocation.context.allocate(maximum);
+  const segments: RGraphicsSegment[] = [];
+  let edgeIndex = 0;
+  const add = (
+    x0: number,
+    y0: number,
+    z0: number | undefined,
+    x1: number,
+    y1: number,
+    z1: number | undefined,
+    boxEdge = false,
+  ): void => {
+    invocation.context.checkpoint();
+    const colour = boxEdge ? ([0, 0, 0, 255] as const) : colours[edgeIndex++ % colours.length];
+    if (z0 === undefined || z1 === undefined || colour === undefined || colour[3] === 0) return;
+    const start = perspectiveProject(x0, y0, z0, matrix);
+    const end = perspectiveProject(x1, y1, z1, matrix);
+    segments.push({
+      x0: start.x,
+      y0: start.y,
+      x1: end.x,
+      y1: end.y,
+      color: graphicsCssColour(colour),
+      lineType: "solid",
+      lineWidth: 1,
+    });
+  };
+  const zAt = (row: number, column: number): number | undefined =>
+    surface.values[row + surface.rows * column];
+  for (let column = 0; column < surface.columns; column += 1) {
+    for (let row = 0; row + 1 < surface.rows; row += 1) {
+      add(
+        x[row] ?? 0,
+        y[column] ?? 0,
+        zAt(row, column),
+        x[row + 1] ?? 0,
+        y[column] ?? 0,
+        zAt(row + 1, column),
+      );
+    }
+  }
+  for (let row = 0; row < surface.rows; row += 1) {
+    for (let column = 0; column + 1 < surface.columns; column += 1) {
+      add(
+        x[row] ?? 0,
+        y[column] ?? 0,
+        zAt(row, column),
+        x[row] ?? 0,
+        y[column + 1] ?? 0,
+        zAt(row, column + 1),
+      );
+    }
+  }
+  if (box) {
+    const corners = [
+      [xlim[0], ylim[0], zlim[0]],
+      [xlim[1], ylim[0], zlim[0]],
+      [xlim[0], ylim[1], zlim[0]],
+      [xlim[1], ylim[1], zlim[0]],
+      [xlim[0], ylim[0], zlim[1]],
+      [xlim[1], ylim[0], zlim[1]],
+      [xlim[0], ylim[1], zlim[1]],
+      [xlim[1], ylim[1], zlim[1]],
+    ] as const;
+    const pairs = [
+      [0, 1],
+      [0, 2],
+      [1, 3],
+      [2, 3],
+      [4, 5],
+      [4, 6],
+      [5, 7],
+      [6, 7],
+      [0, 4],
+      [1, 5],
+      [2, 6],
+      [3, 7],
+    ] as const;
+    for (const [startIndex, endIndex] of pairs) {
+      const start = corners[startIndex];
+      const end = corners[endIndex];
+      add(start[0], start[1], start[2], end[0], end[1], end[2], true);
+    }
+  }
+  return segments;
+}
+
+function perspectiveWindow(
+  x: readonly number[],
+  y: readonly number[],
+  z: readonly (number | undefined)[],
+  xlim: readonly [number, number],
+  ylim: readonly [number, number],
+  zlim: readonly [number, number],
+  matrix: PerspectiveMatrix,
+): { readonly xlim: readonly [number, number]; readonly ylim: readonly [number, number] } {
+  const projected: PerspectiveProjection[] = [];
+  const rows = x.length;
+  for (let column = 0; column < y.length; column += 1) {
+    for (let row = 0; row < rows; row += 1) {
+      const value = z[row + rows * column];
+      if (value !== undefined) {
+        projected.push(perspectiveProject(x[row] ?? 0, y[column] ?? 0, value, matrix));
+      }
+    }
+  }
+  for (const xValue of xlim) {
+    for (const yValue of ylim) {
+      for (const zValue of zlim) {
+        projected.push(perspectiveProject(xValue, yValue, zValue, matrix));
+      }
+    }
+  }
+  const xs = projected.map((point) => point.x);
+  const ys = projected.map((point) => point.y);
+  const xMinimum = Math.min(...xs);
+  const xMaximum = Math.max(...xs);
+  const yMinimum = Math.min(...ys);
+  const yMaximum = Math.max(...ys);
+  const xPadding = Math.max((xMaximum - xMinimum) * 0.08, Number.EPSILON);
+  const yPadding = Math.max((yMaximum - yMinimum) * 0.08, Number.EPSILON);
+  return {
+    xlim: [xMinimum - xPadding, xMaximum + xPadding],
+    ylim: [yMinimum - yPadding, yMaximum + yPadding],
+  };
 }
 
 async function builtinRasterImage(invocation: BuiltinInvocation): Promise<RValue> {
