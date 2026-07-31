@@ -130,12 +130,20 @@ prevents a safe archive scan from being mislabeled as full package compatibility
 
 ## External proof
 
-The opt-in test `packages/package-tools/test/external-package.test.ts` downloads the unchanged
-[`pkgconfig 2.0.3`](https://cran.r-project.org/package=pkgconfig) source package, resolves it from
-the official repository index, verifies the pinned artifact digest, loads its namespace, checks all
-three exports, and executes `get_config()` through NativR. No package source is checked into this
-repository. The same test reads the installed artifact's unchanged DESCRIPTION through
-`readLines(system.file(...))`, proving the repository installer and runtime package-file seam meet.
+The opt-in test `packages/package-tools/test/external-package.test.ts` downloads three unchanged
+public source packages from the repository resolver and verifies a pinned artifact digest for each:
+
+- [`pkgconfig 2.0.3`](https://cran.r-project.org/package=pkgconfig) proves namespace exports,
+  package resources, and an ordinary package-owned call through `get_config()`;
+- [`generics 0.1.4`](https://cran.r-project.org/package=generics) proves package-owned S3 generic
+  dispatch to an application-defined method;
+- [`withr 3.0.3`](https://cran.r-project.org/package=withr) proves deeper unchanged-source loading
+  plus generated wrapper execution through `with_options()`, including restoration after the
+  supplied expression finishes.
+
+No package source is checked into this repository. Together these tests exercise repository
+installation, runtime package files, namespace loading, metaprogramming, dynamic caller frames,
+closure-formal replacement, and reusable state-management behavior.
 
 ```sh
 $env:NATIVR_EXTERNAL_PACKAGE_SMOKE="1"
@@ -145,10 +153,11 @@ pnpm vitest run packages/package-tools/test/external-package.test.ts
 On macOS or Linux, set the same variable for the command with
 `NATIVR_EXTERNAL_PACKAGE_SMOKE=1 pnpm vitest run packages/package-tools/test/external-package.test.ts`.
 
-The initial failure of that external test identified the missing documented
-[`utils::packageName()`](https://search.r-project.org/R/refmans/utils/html/packageName.html)
-environment-to-namespace seam. Implementing that general core API made the unchanged package load;
-the package itself was not patched or translated.
+Failures in these external tests become feature-discovery evidence. They have identified general
+runtime seams such as `utils::packageName()`, call-rooted replacement, `bquote()`, closure-like
+builtin formals, list-backed environments, dynamic `parent.frame()`, hook registration, and
+session-scoped `graphics::par()`. Each seam was implemented once in the runtime; none of the three
+packages was patched or translated.
 
 ## Explicit boundaries
 

@@ -766,8 +766,9 @@ outside the claim. Rank 448 `axTicks` is now complete for zoo's measured seconda
 representing 731,390 downloads, one measured call, and 0.6% weighted reach. The owned linear path
 derives horizontal or vertical ticks from `plot.window()` state, supports explicit `axp`, ascending
 and descending axes, coercible sides, lazy `usr`/`nintLog`, namespace access, and allocation limits.
-Logarithmic axes, `par()` access, complete `pretty` boundary identity, and axis drawing remain
-explicit boundaries. Rank 449 `box` is now complete for zoo's measured plot-frame redraw,
+Logarithmic axes, `par("xaxp"/"yaxp")`, complete `pretty` boundary identity, and axis drawing remain
+explicit boundaries; a separate session-local `par()` subset now covers common query, update, and
+restoration patterns. Rank 449 `box` is now complete for zoo's measured plot-frame redraw,
 representing 731,390 downloads, one measured call, and 0.6% weighted reach. The owned plot-region
 path resolves all documented `bty` edge shapes, `col`/`fg`, line type, and positive width before a
 bounded event crosses the Worker boundary and reaches Canvas or same-session record/replay. Figure,
@@ -941,8 +942,10 @@ ties:
     attribute-aware vector/list/expression/matrix/data-frame `tail`.
 25. Dynamic frames and transposition: caller-stack `parent.frame` plus column-major, dimname-aware
     `t` across core matrix shapes.
-26. Function signatures and repeated evaluation: closure `formals` as owned pairlists plus lazy
-    `replicate` evaluation with list, matrix, and array simplification.
+26. Function signatures and repeated evaluation: closure and explicitly modeled builtin `formals` as
+    owned pairlists, `formals<-`/`environment<-` wrapper generation, plus lazy `replicate`
+    evaluation with list, matrix, and array simplification. Unchanged `withr 3.0.3` now exercises
+    this path end to end through `with_options()`.
 27. Grouping and integerization: factor-level-aware `split` across owned data shapes plus
     metadata-preserving real-vector `floor`.
 28. Factor patterns and joins: truncating `gl` factor construction plus bounded atomic-column

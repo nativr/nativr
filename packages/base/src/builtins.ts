@@ -82,7 +82,7 @@ import type {
   RVector,
 } from "@nativr/runtime";
 import { assertNever } from "@nativr/ast";
-import type { AstNode, CallArgument, SourceSpan } from "@nativr/ast";
+import type { AstNode, CallArgument, FunctionParameter, SourceSpan } from "@nativr/ast";
 import { matchBuiltinArguments, matchLeadingDotsArguments } from "./arguments.js";
 import { CLUSTERING_BUILTIN_SPECS } from "./clustering.js";
 import { COLOUR_RAMP_BUILTIN_SPECS } from "./colour-ramp.js";
@@ -140,6 +140,11 @@ import {
 } from "./student-t.js";
 import { WEIGHTED_MEAN_BUILTIN_SPECS } from "./weighted-mean.js";
 
+const SYNTHETIC_SPAN: SourceSpan = Object.freeze({
+  start: Object.freeze({ offset: 0, line: 1, column: 1 }),
+  end: Object.freeze({ offset: 0, line: 1, column: 1 }),
+});
+
 type AtomicVector =
   RLogicalVector | RIntegerVector | RDoubleVector | RComplexVector | RRawVector | RCharacterVector;
 type NumericVector = RLogicalVector | RIntegerVector | RDoubleVector | RComplexVector;
@@ -183,9 +188,10 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ...FIRST_CLASS_OPERATOR_BUILTINS,
   defineBuiltin("c", ["..."], "behavioral", builtinC),
   defineBuiltin("switch", ["EXPR", "..."], "behavioral", builtinSwitch),
-  defineBuiltin("missing", ["x"], "behavioral", builtinMissing),
+  defineBuiltin("missing", ["x"], "behavioral", builtinMissing, "special"),
   defineBuiltin("quote", ["expr"], "behavioral", builtinQuote, "special"),
   defineBuiltin("substitute", ["expr", "env"], "behavioral", builtinLanguageSubstitute, "special"),
+  defineBuiltin("bquote", ["expr", "where", "splice"], "behavioral", builtinBquote, "special"),
   defineBuiltin(
     "match.call",
     ["definition", "call", "expand.dots", "envir"],
@@ -224,6 +230,30 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("sQuote", ["x", "q"], "behavioral", builtinSingleQuote),
   defineBuiltin("interactive", [], "behavioral", builtinInteractive),
   defineBuiltin("capabilities", ["what", "Xchk"], "behavioral", builtinCapabilities),
+  defineBuiltin("packageEvent", ["pkgname", "event"], "behavioral", builtinPackageEvent),
+  defineBuiltin("getHook", ["hookName"], "behavioral", builtinGetHook),
+  defineBuiltin(
+    "setHook",
+    ["hookName", "value", "action"],
+    "behavioral",
+    builtinSetHook,
+    "regular",
+    "invisible",
+  ),
+  withBuiltinFormals(
+    defineBuiltin("gctorture2", ["step", "wait", "inhibit_release"], "api", builtinGcTorture2),
+    [
+      { name: "step" },
+      {
+        name: "wait",
+        defaultValue: { kind: "Identifier", name: "step", span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "inhibit_release",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
   defineBuiltin("Sys.getlocale", ["category"], "behavioral", builtinSystemGetLocale),
   defineBuiltin("Sys.setlocale", ["category", "locale"], "behavioral", builtinSystemSetLocale),
   defineBuiltin("Sys.localeconv", [], "behavioral", builtinSystemLocaleConv),
@@ -625,6 +655,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("deparse1", ["expr"], "shape", builtinDeparse),
   defineBuiltin("body", ["fun"], "behavioral", builtinBody),
   defineBuiltin("formals", ["fun"], "behavioral", builtinFormals),
+  defineBuiltin("formals<-", ["fun", "value"], "behavioral", builtinFormalsReplacement),
   defineBuiltin("length", ["x"], "behavioral", builtinLength),
   defineBuiltin("lengths", ["x", "use.names"], "behavioral", builtinLengths),
   defineBuiltin("logical", ["length"], "behavioral", (invocation) =>
@@ -694,6 +725,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     builtinTypePredicate(invocation, "is.environment", (value) => value.type === "environment"),
   ),
   defineBuiltin("environment", ["fun"], "behavioral", builtinEnvironment),
+  defineBuiltin("environment<-", ["fun", "value"], "behavioral", builtinEnvironmentReplacement),
   defineBuiltin("globalenv", [], "behavioral", (invocation) =>
     builtinRootEnvironment(invocation, "global"),
   ),
@@ -1224,6 +1256,22 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     builtinHeatColors,
   ),
   defineBuiltin("plot", ["x", "..."], "shape", builtinPlot),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "graphics",
+      "par",
+      ["...", "no.readonly"],
+      "behavioral",
+      builtinGraphicsPar,
+    ),
+    [
+      { name: "..." },
+      {
+        name: "no.readonly",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
   definePackageBuiltin(
     "graphics",
     "plot.default",
@@ -1798,6 +1846,9 @@ const S4_GENERICS_STATE_KEY = "base.s4.generics";
 const S4_METHODS_STATE_KEY = "base.s4.methods";
 const S4_COERCIONS_STATE_KEY = "base.s4.coercions";
 const GRAPHICS_STATE_KEY = "graphics.device";
+const GRAPHICS_PARAMETERS_STATE_KEY = "graphics.parameters";
+const GC_TORTURE_STATE_KEY = "base.gctorture2";
+const HOOKS_STATE_KEY = "base.hooks";
 const VIRTUAL_TEXT_FILES_STATE_KEY = "base.virtualTextFiles";
 const PACKAGE_DATA_DIRECTORY_STATE_KEY = "utils.packageDataDirectory";
 const VIRTUAL_TEMP_ROOT = "nativr://session-temp";
@@ -1915,6 +1966,25 @@ function definePackageBuiltin(
   };
 }
 
+function withBuiltinFormals(
+  definition: BuiltinDefinition,
+  formals: readonly {
+    readonly name: string;
+    readonly defaultValue?: AstNode;
+  }[],
+): BuiltinDefinition {
+  return {
+    ...definition,
+    formals: Object.freeze(
+      formals.map((formal) => ({
+        name: formal.name,
+        ...(formal.defaultValue === undefined ? {} : { defaultValue: formal.defaultValue }),
+        span: SYNTHETIC_SPAN,
+      })),
+    ),
+  };
+}
+
 async function builtinArithmeticOperator(
   invocation: BuiltinInvocation,
   operator: string,
@@ -1981,7 +2051,72 @@ async function builtinC(invocation: BuiltinInvocation): Promise<RValue> {
     const value = await invocation.force(argument.promise);
     entries.push(argument.name === undefined ? { value } : { name: argument.name, value });
   }
+  if (entries.some((entry) => entry.value.type !== "null" && !isAtomic(entry.value))) {
+    return combineListEntries(entries, invocation);
+  }
   return combineAtomicEntries(entries, invocation, "c");
+}
+
+function combineListEntries(
+  entries: readonly { readonly name?: string; readonly value: RValue }[],
+  invocation: BuiltinInvocation,
+): RList {
+  const values: RValue[] = [];
+  const names: string[] = [];
+  let hasNames = false;
+  const append = (
+    value: RValue,
+    outerName: string | undefined,
+    innerName: string,
+    index: number,
+    length: number,
+  ) => {
+    values.push(value);
+    let name = innerName;
+    if (outerName !== undefined) {
+      name =
+        innerName.length > 0
+          ? `${outerName}.${innerName}`
+          : length === 1
+            ? outerName
+            : `${outerName}${index + 1}`;
+    }
+    names.push(name);
+    if (name.length > 0) hasNames = true;
+  };
+  for (const entry of entries) {
+    invocation.context.checkpoint();
+    if (entry.value.type === "null") continue;
+    if (entry.value.type === "list" || entry.value.type === "pairlist") {
+      const innerNames = vectorNames(entry.value);
+      for (let index = 0; index < entry.value.length; index += 1) {
+        append(
+          entry.value.values[index] ?? R_NULL,
+          entry.name,
+          innerNames?.[index] ?? "",
+          index,
+          entry.value.length,
+        );
+      }
+      continue;
+    }
+    if (isAtomic(entry.value)) {
+      const innerNames = vectorNames(entry.value);
+      for (let index = 0; index < entry.value.length; index += 1) {
+        append(
+          extractVectorElement(entry.value, integerVector([index + 1]), invocation.context),
+          entry.name,
+          innerNames?.[index] ?? "",
+          index,
+          entry.value.length,
+        );
+      }
+      continue;
+    }
+    append(entry.value, entry.name, "", 0, 1);
+  }
+  invocation.context.allocate(values.length);
+  return listValue(values, hasNames ? names : undefined);
 }
 
 function combineAtomicEntries(
@@ -2092,12 +2227,18 @@ function builtinMissing(invocation: BuiltinInvocation): RValue {
     throw new REvaluationError("NRE2103", "missing() requires exactly one argument name.");
   }
   const expression = argument.promise.expression;
-  if (expression?.kind !== "Identifier") {
+  const name =
+    expression?.kind === "Identifier"
+      ? expression.name
+      : expression?.kind === "UnsupportedExpression" && expression.feature === "dots"
+        ? "..."
+        : undefined;
+  if (name === undefined) {
     throw new REvaluationError("NRE2105", "Invalid use of missing().");
   }
-  const binding = lookupBinding(argument.promise.environment, expression.name);
+  const binding = lookupBinding(argument.promise.environment, name);
   if (binding === undefined) {
-    throw new REvaluationError("NRE2105", `missing(${expression.name}) did not find an argument.`);
+    throw new REvaluationError("NRE2105", `missing(${name}) did not find an argument.`);
   }
   return logicalVector([isMissingArgumentBinding(binding, new Set())]);
 }
@@ -2161,6 +2302,218 @@ async function builtinLanguageSubstitute(invocation: BuiltinInvocation): Promise
   }
 
   return quoteAst(substituteAst(expression, resolve, invocation));
+}
+
+async function builtinBquote(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = matchLazyArguments(invocation, ["expr", "where", "splice"]);
+  const expressionArgument = matched.get("expr");
+  if (
+    expressionArgument === undefined ||
+    expressionArgument.promise.missing ||
+    expressionArgument.promise.expression === null
+  ) {
+    throw new REvaluationError("NRE2103", "Argument 'expr' is missing in bquote().");
+  }
+  const whereArgument = matched.get("where");
+  const whereValue =
+    whereArgument === undefined ? undefined : await invocation.force(whereArgument.promise);
+  const where =
+    whereValue === undefined
+      ? invocation.currentEnvironment()
+      : whereValue.type === "environment"
+        ? whereValue
+        : whereValue.type === "list" || whereValue.type === "pairlist"
+          ? withEnvironment(whereValue, invocation.currentEnvironment())
+          : undefined;
+  if (where === undefined) {
+    throw new RTypeMismatchError(
+      "NRT3205",
+      "bquote(where=) requires an environment, list, or pairlist.",
+    );
+  }
+  const spliceArgument = matched.get("splice");
+  if (
+    spliceArgument !== undefined &&
+    logicalFlag(await invocation.force(spliceArgument.promise), false, "splice")
+  ) {
+    throw new RUnsupportedFeatureError(
+      "NRU6193",
+      "bquote(splice = TRUE) list splicing is not yet supported.",
+    );
+  }
+  return quoteAst(await bquoteAst(expressionArgument.promise.expression, where, invocation));
+}
+
+async function bquoteAst(
+  node: AstNode,
+  environment: REnvironment,
+  invocation: BuiltinInvocation,
+): Promise<AstNode> {
+  invocation.context.checkpoint();
+  if (
+    node.kind === "CallExpression" &&
+    node.callee.kind === "Identifier" &&
+    node.callee.name === "."
+  ) {
+    const argument = node.arguments[0];
+    if (argument === undefined || node.arguments.length !== 1 || argument.name !== undefined) {
+      throw new REvaluationError("NRE2103", ".() inside bquote() requires one argument.");
+    }
+    const value = await invocation.evaluate(
+      { type: "language", expression: argument.value },
+      environment,
+    );
+    return valueToAst(value);
+  }
+  switch (node.kind) {
+    case "Program":
+      return {
+        ...node,
+        body: await bquoteNodes(node.body, environment, invocation),
+      };
+    case "Block":
+      return {
+        ...node,
+        body: await bquoteNodes(node.body, environment, invocation),
+      };
+    case "Identifier":
+    case "DoubleLiteral":
+    case "ComplexLiteral":
+    case "IntegerLiteral":
+    case "StringLiteral":
+    case "LogicalLiteral":
+    case "NullLiteral":
+    case "MissingLiteral":
+    case "BreakExpression":
+    case "NextExpression":
+    case "UnsupportedExpression":
+      return node;
+    case "UnaryExpression":
+      return { ...node, operand: await bquoteAst(node.operand, environment, invocation) };
+    case "BinaryExpression":
+      return {
+        ...node,
+        left: await bquoteAst(node.left, environment, invocation),
+        right: await bquoteAst(node.right, environment, invocation),
+      };
+    case "AssignmentExpression":
+      return { ...node, value: await bquoteAst(node.value, environment, invocation) };
+    case "ReplacementExpression":
+      return {
+        ...node,
+        target: (await bquoteAst(node.target, environment, invocation)) as typeof node.target,
+        value: await bquoteAst(node.value, environment, invocation),
+      };
+    case "CallExpression":
+      return {
+        ...node,
+        callee: await bquoteAst(node.callee, environment, invocation),
+        arguments: await bquoteArguments(node.arguments, environment, invocation),
+      };
+    case "FunctionExpression":
+      return {
+        ...node,
+        parameters: await bquoteParameters(node.parameters, environment, invocation),
+        body: await bquoteAst(node.body, environment, invocation),
+      };
+    case "IfExpression":
+      return {
+        ...node,
+        condition: await bquoteAst(node.condition, environment, invocation),
+        consequence: await bquoteAst(node.consequence, environment, invocation),
+        ...(node.alternative === undefined
+          ? {}
+          : { alternative: await bquoteAst(node.alternative, environment, invocation) }),
+      };
+    case "ForExpression":
+      return {
+        ...node,
+        sequence: await bquoteAst(node.sequence, environment, invocation),
+        body: await bquoteAst(node.body, environment, invocation),
+      };
+    case "WhileExpression":
+      return {
+        ...node,
+        condition: await bquoteAst(node.condition, environment, invocation),
+        body: await bquoteAst(node.body, environment, invocation),
+      };
+    case "RepeatExpression":
+      return { ...node, body: await bquoteAst(node.body, environment, invocation) };
+    case "ReturnExpression":
+      return node.value === undefined
+        ? node
+        : { ...node, value: await bquoteAst(node.value, environment, invocation) };
+    case "SubsetExpression":
+      return {
+        ...node,
+        target: await bquoteAst(node.target, environment, invocation),
+        arguments: await bquoteArguments(node.arguments, environment, invocation),
+      };
+    case "NamespaceExpression":
+      return {
+        ...node,
+        namespace: await bquoteAst(node.namespace, environment, invocation),
+        member: await bquoteAst(node.member, environment, invocation),
+      };
+    case "FormulaExpression":
+      return {
+        ...node,
+        ...(node.left === undefined
+          ? {}
+          : { left: await bquoteAst(node.left, environment, invocation) }),
+        right: await bquoteAst(node.right, environment, invocation),
+      };
+    case "PipeExpression":
+      return {
+        ...node,
+        left: await bquoteAst(node.left, environment, invocation),
+        right: await bquoteAst(node.right, environment, invocation),
+      };
+    default:
+      return assertNever(node);
+  }
+}
+
+async function bquoteNodes(
+  nodes: readonly AstNode[],
+  environment: REnvironment,
+  invocation: BuiltinInvocation,
+): Promise<readonly AstNode[]> {
+  const output: AstNode[] = [];
+  for (const node of nodes) output.push(await bquoteAst(node, environment, invocation));
+  return Object.freeze(output);
+}
+
+async function bquoteArguments(
+  arguments_: readonly CallArgument[],
+  environment: REnvironment,
+  invocation: BuiltinInvocation,
+): Promise<readonly CallArgument[]> {
+  const output: CallArgument[] = [];
+  for (const argument of arguments_) {
+    output.push({
+      ...argument,
+      value: await bquoteAst(argument.value, environment, invocation),
+    });
+  }
+  return Object.freeze(output);
+}
+
+async function bquoteParameters(
+  parameters: readonly FunctionParameter[],
+  environment: REnvironment,
+  invocation: BuiltinInvocation,
+): Promise<readonly FunctionParameter[]> {
+  const output: FunctionParameter[] = [];
+  for (const parameter of parameters) {
+    output.push({
+      ...parameter,
+      ...(parameter.defaultValue === undefined
+        ? {}
+        : { defaultValue: await bquoteAst(parameter.defaultValue, environment, invocation) }),
+    });
+  }
+  return Object.freeze(output);
 }
 
 function substituteAst(
@@ -2589,6 +2942,80 @@ async function builtinCapabilities(invocation: BuiltinInvocation): Promise<RLogi
       : capabilitySelection(requested);
   invocation.context.allocate(names.length);
   return withNames(logicalVector(new Uint8Array(names.length)), names);
+}
+
+async function builtinGcTorture2(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["step", "wait", "inhibit_release"]);
+  const step = nonNegativeInteger(matched.get("step"), "step");
+  const wait = nonNegativeInteger(matched.get("wait") ?? integerVector([step]), "wait");
+  const inhibitRelease = logicalFlag(matched.get("inhibit_release"), false, "inhibit_release");
+  const previous = invocation.state.get(GC_TORTURE_STATE_KEY);
+  invocation.state.set(GC_TORTURE_STATE_KEY, { step, wait, inhibitRelease });
+  return integerVector([
+    typeof previous === "object" && previous !== null && "step" in previous
+      ? Number(previous.step)
+      : 0,
+  ]);
+}
+
+async function builtinPackageEvent(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["pkgname", "event"]);
+  const packageName = characterScalar(required(matched, "pkgname", "packageEvent"), "pkgname");
+  const event = characterScalar(required(matched, "event", "packageEvent"), "event");
+  if (!new Set(["onLoad", "attach", "detach", "onUnload"]).has(event)) {
+    throw new RTypeMismatchError(
+      "NRT3395",
+      `'arg' should be one of “onLoad”, “attach”, “detach”, “onUnload”`,
+    );
+  }
+  return characterVector([`UserHook::${packageName}::${event}`]);
+}
+
+function hooksState(invocation: BuiltinInvocation): Map<string, RValue[]> {
+  return stateMap<string, RValue[]>(invocation, HOOKS_STATE_KEY);
+}
+
+async function builtinGetHook(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["hookName"]);
+  const name = characterScalar(required(matched, "hookName", "getHook"), "hookName");
+  const values = hooksState(invocation).get(name) ?? [];
+  invocation.context.allocate(values.length);
+  return listValue(values);
+}
+
+async function builtinSetHook(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["hookName", "value", "action"]);
+  const name = characterScalar(required(matched, "hookName", "setHook"), "hookName");
+  const value = required(matched, "value", "setHook");
+  if (!isCallable(value)) {
+    throw new RTypeMismatchError("NRT3396", "hook value must be a function");
+  }
+  const suppliedAction = matched.get("action");
+  const action =
+    suppliedAction === undefined
+      ? "append"
+      : suppliedAction.type === "character" &&
+          suppliedAction.length > 0 &&
+          !isMissing(suppliedAction, 0)
+        ? (suppliedAction.values[0] ?? "")
+        : "";
+  if (action !== "append" && action !== "prepend" && action !== "replace") {
+    throw new RTypeMismatchError(
+      "NRT3397",
+      `'arg' should be one of “append”, “prepend”, “replace”`,
+    );
+  }
+  const hooks = hooksState(invocation);
+  const existing = hooks.get(name) ?? [];
+  hooks.set(
+    name,
+    action === "replace"
+      ? [value]
+      : action === "prepend"
+        ? [value, ...existing]
+        : [...existing, value],
+  );
+  return R_NULL;
 }
 
 function capabilitySelection(value: RValue): string[] {
@@ -7716,9 +8143,7 @@ function callableNameAst(value: RValue, call: string): AstNode {
     const name = value.values[0] ?? "";
     if (name.length > 0) return { kind: "Identifier", name, span: SYNTHETIC_SPAN };
   }
-  if (value.type === "language" && value.expression.kind === "Identifier") {
-    return value.expression;
-  }
+  if (value.type === "language") return value.expression;
   throw new RTypeMismatchError(
     "NRT3208",
     `${call}() requires a non-empty character string or symbol as its function name.`,
@@ -7726,7 +8151,7 @@ function callableNameAst(value: RValue, call: string): AstNode {
 }
 
 function callableAstNode(value: AstNode, call: string): AstNode {
-  if (value.kind === "Identifier") return value;
+  if (value.kind !== "StringLiteral") return value;
   if (value.kind === "StringLiteral" && value.value.length > 0) {
     return { kind: "Identifier", name: value.value, span: value.span };
   }
@@ -7860,11 +8285,6 @@ function nullAst(): AstNode {
   return { kind: "NullLiteral", span: SYNTHETIC_SPAN };
 }
 
-const SYNTHETIC_SPAN: SourceSpan = Object.freeze({
-  start: Object.freeze({ offset: 0, line: 1, column: 1 }),
-  end: Object.freeze({ offset: 0, line: 1, column: 1 }),
-});
-
 async function builtinSwitch(invocation: BuiltinInvocation): Promise<RValue> {
   const exactExpressionIndexes = invocation.arguments.flatMap((argument, index) =>
     argument.name === "EXPR" ? [index] : [],
@@ -7931,6 +8351,7 @@ async function forceSwitchAlternative(
 }
 
 function isMissingArgumentBinding(binding: RBinding, visited: Set<RBinding>): boolean {
+  if (binding.type === "dots") return binding.arguments.length === 0;
   if (binding.type !== "promise") return false;
   if (binding.missing) return true;
   if (visited.has(binding)) return false;
@@ -8003,9 +8424,53 @@ async function builtinFormals(invocation: BuiltinInvocation): Promise<RValue> {
       value.parameters.map((parameter) => parameter.name),
     );
   }
-  if (value.type === "builtin" || value.type === "character") return R_NULL;
+  if (value.type === "builtin") {
+    const parameters = value.definition.formals;
+    if (parameters === undefined) return R_NULL;
+    const defaults = parameters.map((parameter): RValue =>
+      parameter.defaultValue === undefined
+        ? ({ type: "symbol", name: "" } satisfies RSymbol)
+        : quoteAst(parameter.defaultValue),
+    );
+    invocation.context.allocate(defaults.length);
+    return pairlistValue(
+      defaults,
+      parameters.map((parameter) => parameter.name),
+    );
+  }
+  if (value.type === "character") return R_NULL;
   invocation.context.warn({ code: "NRW1013", message: "argument is not a function" });
   return R_NULL;
+}
+
+async function builtinFormalsReplacement(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["fun", "value"]);
+  const fun = required(matched, "fun", "formals<-");
+  const value = required(matched, "value", "formals<-");
+  if (fun.type !== "closure") {
+    throw new RTypeMismatchError("NRT3204", "invalid function argument to formals<-");
+  }
+  if (value.type === "null") return { ...fun, parameters: Object.freeze([]) };
+  if (value.type !== "pairlist" && value.type !== "list") {
+    throw new RTypeMismatchError("NRT3204", "invalid formal argument list for formals<-");
+  }
+  const names = vectorNames(value);
+  if (
+    names === undefined ||
+    names.length !== value.length ||
+    names.some((name) => name.length === 0)
+  ) {
+    throw new RTypeMismatchError("NRT3204", "invalid formal argument list for formals<-");
+  }
+  invocation.context.allocate(value.length);
+  const parameters = value.values.map((entry, index) => ({
+    name: names[index] ?? "",
+    ...(entry.type === "symbol" && entry.name.length === 0
+      ? {}
+      : { defaultValue: valueToAst(entry) }),
+    span: SYNTHETIC_SPAN,
+  }));
+  return { ...fun, parameters: Object.freeze(parameters) };
 }
 
 async function builtinLength(invocation: BuiltinInvocation): Promise<RValue> {
@@ -8260,6 +8725,19 @@ async function builtinEnvironment(invocation: BuiltinInvocation): Promise<RValue
     return invocation.baseEnvironment();
   }
   return R_NULL;
+}
+
+async function builtinEnvironmentReplacement(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["fun", "value"]);
+  const fun = required(matched, "fun", "environment<-");
+  const value = required(matched, "value", "environment<-");
+  if (fun.type !== "closure") {
+    throw new RTypeMismatchError("NRT3204", "target of assignment is not a closure");
+  }
+  if (value.type !== "environment") {
+    throw new RTypeMismatchError("NRT3227", "replacement object is not an environment");
+  }
+  return { ...fun, environment: value };
 }
 
 function builtinRootEnvironment(
@@ -8828,6 +9306,20 @@ function asEnvironmentValue(
   argument: string,
 ): REnvironment {
   if (value.type === "environment") return value;
+  if (value.type === "list") {
+    const names = vectorNames(value);
+    if (value.length > 0 && (names === undefined || names.some((name) => name.length === 0))) {
+      throw new RTypeMismatchError(
+        "NRT3215",
+        "names(x) must be a character vector of the same length as x",
+      );
+    }
+    const environment = createEnvironment(invocation.currentEnvironment());
+    for (let index = 0; index < value.length; index += 1) {
+      setBinding(environment, names?.[index] ?? "", value.values[index] ?? R_NULL);
+    }
+    return environment;
+  }
   if (
     (value.type === "integer" || value.type === "double") &&
     value.length === 1 &&
@@ -18217,6 +18709,179 @@ async function builtinPlotNew(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 type PlotType = "p" | "l" | "b" | "c" | "o" | "h" | "s" | "S" | "n";
+
+type GraphicsParametersState = Map<string, RValue>;
+
+function defaultGraphicsParameters(): GraphicsParametersState {
+  return new Map<string, RValue>([
+    ["adj", doubleVector([0.5])],
+    ["ann", logicalVector([true])],
+    ["bg", characterVector(["transparent"])],
+    ["bty", characterVector(["o"])],
+    ["cex", doubleVector([1])],
+    ["cex.axis", doubleVector([1])],
+    ["cex.lab", doubleVector([1])],
+    ["cex.main", doubleVector([1.2])],
+    ["cex.sub", doubleVector([1])],
+    ["col", characterVector(["black"])],
+    ["col.axis", characterVector(["black"])],
+    ["col.lab", characterVector(["black"])],
+    ["col.main", characterVector(["black"])],
+    ["col.sub", characterVector(["black"])],
+    ["family", characterVector([""])],
+    ["fg", characterVector(["black"])],
+    ["font", integerVector([1])],
+    ["font.axis", integerVector([1])],
+    ["font.lab", integerVector([1])],
+    ["font.main", integerVector([2])],
+    ["font.sub", integerVector([1])],
+    ["las", integerVector([0])],
+    ["lend", characterVector(["round"])],
+    ["ljoin", characterVector(["round"])],
+    ["lmitre", doubleVector([10])],
+    ["lty", characterVector(["solid"])],
+    ["lwd", doubleVector([1])],
+    ["mar", doubleVector([5.1, 4.1, 4.1, 2.1])],
+    ["mex", doubleVector([1])],
+    ["mfrow", integerVector([1, 1])],
+    ["mgp", doubleVector([3, 1, 0])],
+    ["oma", doubleVector([0, 0, 0, 0])],
+    ["pch", integerVector([1])],
+    ["ps", integerVector([12])],
+    ["pty", characterVector(["m"])],
+    ["srt", doubleVector([0])],
+    ["tck", doubleVector([0], [1])],
+    ["tcl", doubleVector([-0.5])],
+    ["xaxs", characterVector(["r"])],
+    ["xaxt", characterVector(["s"])],
+    ["xpd", logicalVector([false])],
+    ["yaxs", characterVector(["r"])],
+    ["yaxt", characterVector(["s"])],
+  ]);
+}
+
+function graphicsParametersState(invocation: BuiltinInvocation): GraphicsParametersState {
+  const existing = invocation.state.get(GRAPHICS_PARAMETERS_STATE_KEY);
+  if (existing instanceof Map) return existing as GraphicsParametersState;
+  const created = defaultGraphicsParameters();
+  invocation.state.set(GRAPHICS_PARAMETERS_STATE_KEY, created);
+  return created;
+}
+
+async function builtinGraphicsPar(invocation: BuiltinInvocation): Promise<RValue> {
+  const state = graphicsParametersState(invocation);
+  const queries: string[] = [];
+  const settings: Array<readonly [string, RValue]> = [];
+
+  for (const argument of invocation.arguments) {
+    if (argument.promise.missing) continue;
+    const value = await invocation.force(argument.promise);
+    if (argument.name === "no.readonly") {
+      logicalFlag(value, false, "no.readonly");
+      continue;
+    }
+    if (argument.name !== undefined) {
+      settings.push([argument.name, value]);
+      continue;
+    }
+    if (value.type === "character") {
+      for (let index = 0; index < value.length; index += 1) {
+        if (isMissing(value, index)) {
+          throw new RTypeMismatchError(
+            "NRT3390",
+            "invalid value specified for graphical parameter",
+          );
+        }
+        queries.push(value.values[index] ?? "");
+      }
+      continue;
+    }
+    if (value.type === "list" || value.type === "pairlist") {
+      const names = vectorNames(value);
+      if (names === undefined || names.some((name) => name.length === 0)) {
+        throw new RTypeMismatchError(
+          "NRT3391",
+          "a graphical parameter list must have non-empty names",
+        );
+      }
+      for (let index = 0; index < value.length; index += 1) {
+        settings.push([names[index] ?? "", value.values[index] ?? R_NULL]);
+      }
+      continue;
+    }
+    throw new RTypeMismatchError(
+      "NRT3392",
+      "par() unnamed arguments must be character vectors or named lists",
+      { details: { type: value.type } },
+    );
+  }
+
+  const warnUnknown = (name: string): void => {
+    invocation.context.warn({
+      code: "NRW1128",
+      message: `"${name}" is not a graphical parameter`,
+    });
+  };
+  const selected = (name: string): RValue => {
+    const value = state.get(name);
+    if (value !== undefined) return value;
+    warnUnknown(name);
+    return R_NULL;
+  };
+
+  if (settings.length > 0) {
+    const previous: RValue[] = [];
+    const names: string[] = [];
+    for (const [name, value] of settings) {
+      names.push(name);
+      const old = state.get(name);
+      if (old === undefined) {
+        warnUnknown(name);
+        previous.push(R_NULL);
+        continue;
+      }
+      validateGraphicsParameter(name, value, old);
+      previous.push(old);
+      state.set(name, value);
+    }
+    invocation.setResultVisibility("invisible");
+    return listValue(previous, names);
+  }
+
+  if (queries.length === 1) return selected(queries[0] ?? "");
+  const names = queries.length === 0 ? [...state.keys()] : queries;
+  return listValue(names.map(selected), names);
+}
+
+function validateGraphicsParameter(name: string, value: RValue, template: RValue): void {
+  if (template.type === "character") {
+    characterScalar(value, `par(${name}=)`);
+    return;
+  }
+  if (template.type === "logical") {
+    logicalFlag(value, false, `par(${name}=)`);
+    return;
+  }
+  if (!isAtomic(template)) throw new Error("Internal graphics parameter invariant failed.");
+  const numeric = requireNumeric(value, `par(${name}=)`);
+  if (numeric.length !== template.length) {
+    throw new RTypeMismatchError(
+      "NRT3393",
+      `graphical parameter '${name}' must have length ${template.length}`,
+    );
+  }
+  for (let index = 0; index < numeric.length; index += 1) {
+    if (
+      (isMissing(numeric, index) && name !== "tck") ||
+      (!isMissing(numeric, index) && !Number.isFinite(numberAt(numeric, index)))
+    ) {
+      throw new RTypeMismatchError(
+        "NRT3394",
+        `invalid value specified for graphical parameter '${name}'`,
+      );
+    }
+  }
+}
 
 async function builtinPlot(invocation: BuiltinInvocation): Promise<RValue> {
   const generic = matchBuiltinArguments(invocation, ["x", "..."]);

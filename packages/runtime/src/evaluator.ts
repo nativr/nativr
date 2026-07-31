@@ -212,6 +212,7 @@ interface ClosureCallFrame {
     readonly span?: SourceSpan;
   }[];
   readonly environment: REnvironment;
+  readonly callerEnvironment: REnvironment;
   readonly closure: RClosure;
   readonly matched: ReadonlyMap<string, RPromise>;
   readonly call?: CallExpressionNode;
@@ -344,6 +345,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "legend",
       "matplot",
       "pairs",
+      "par",
       "persp",
       "points",
       "polygon",
@@ -1191,18 +1193,24 @@ export class Evaluator {
       path.unshift(root);
       root = root.target;
     }
-    if (root.kind !== "Identifier") {
+    if (root.kind !== "Identifier" && root.kind !== "CallExpression") {
       throw unsupported("replacement paths without an identifier root", span);
     }
-    const targetEnvironment = this.#assignmentEnvironment(environment, root.name, nonLocal, span);
-    const binding = lookupBinding(targetEnvironment, root.name);
-    if (binding === undefined) {
-      throw new REvaluationError("NRE2001", `Object '${root.name}' not found.`, {
-        span: root.span,
-        details: { symbol: root.name },
-      });
+    let targetEnvironment: REnvironment | undefined;
+    let current: RValue;
+    if (root.kind === "Identifier") {
+      targetEnvironment = this.#assignmentEnvironment(environment, root.name, nonLocal, span);
+      const binding = lookupBinding(targetEnvironment, root.name);
+      if (binding === undefined) {
+        throw new REvaluationError("NRE2001", `Object '${root.name}' not found.`, {
+          span: root.span,
+          details: { symbol: root.name },
+        });
+      }
+      current = await this.#force(binding, context);
+    } else {
+      current = await this.#evaluateValue(root, environment, context);
     }
-    let current = await this.#force(binding, context);
     const replacement = await this.#evaluateValue(replacementNode, environment, context);
     const operations: PreparedSubsetOperation[] = [];
     for (let offset = 0; offset < path.length; offset += 1) {
@@ -1230,7 +1238,11 @@ export class Evaluator {
           : (operations[offset] as PreparedSubsetOperation);
       updated = this.#applyPreparedSubsetReplacement(operation, updated, context);
     }
-    setBinding(targetEnvironment, root.name, updated);
+    if (root.kind === "Identifier") {
+      setBinding(targetEnvironment as REnvironment, root.name, updated);
+    } else {
+      await this.#applyCallReplacement(root, updated, environment, context, nonLocal, span);
+    }
     return replacement;
   }
 
@@ -1365,6 +1377,19 @@ export class Evaluator {
     nonLocal: boolean,
     span: SourceSpan,
   ): Promise<RValue> {
+    const replacement = await this.#evaluateValue(replacementNode, environment, context);
+    await this.#applyCallReplacement(target, replacement, environment, context, nonLocal, span);
+    return replacement;
+  }
+
+  async #applyCallReplacement(
+    target: CallExpressionNode,
+    replacement: RValue,
+    environment: REnvironment,
+    context: EvaluationContext,
+    nonLocal: boolean,
+    span: SourceSpan,
+  ): Promise<void> {
     if (target.callee.kind !== "Identifier") {
       throw unsupported("non-identifier replacement functions", target.callee.span);
     }
@@ -1382,7 +1407,6 @@ export class Evaluator {
       });
     }
     const object = await this.#force(binding, context);
-    const replacement = await this.#evaluateValue(replacementNode, environment, context);
     const replacementName = `${target.callee.name}<-`;
     const callableBinding = lookupBinding(environment, replacementName);
     if (callableBinding === undefined) {
@@ -1409,13 +1433,12 @@ export class Evaluator {
         {
           name: "value",
           promise: createForcedPromise(replacement, environment),
-          span: replacementNode.span,
+          span,
         },
       ],
       context,
     );
     setBinding(targetEnvironment, objectName, updated);
-    return replacement;
   }
 
   async #evaluateCall(
@@ -1654,9 +1677,9 @@ export class Evaluator {
         currentEnvironment: () =>
           callerEnvironment ?? args[0]?.promise.environment ?? this.#globalEnvironment,
         parentFrame: (offset) => {
-          const index = this.#closureCallFrames.length - 1 - offset;
+          const index = this.#closureCallFrames.length - offset;
           return index >= 0
-            ? (this.#closureCallFrames[index]?.environment ?? this.#globalEnvironment)
+            ? (this.#closureCallFrames[index]?.callerEnvironment ?? this.#globalEnvironment)
             : this.#globalEnvironment;
         },
         currentCall: () => (call === undefined ? R_NULL : { type: "language", expression: call }),
@@ -1706,7 +1729,7 @@ export class Evaluator {
         details: { type: callable.type },
       });
     }
-    return this.#invokeClosure(callable, args, context, call);
+    return this.#invokeClosure(callable, args, context, call, callerEnvironment);
   }
 
   async #signalGlobalCondition(
@@ -1748,6 +1771,7 @@ export class Evaluator {
     }[],
     context: EvaluationContext,
     call?: CallExpressionNode,
+    callerEnvironment?: REnvironment,
   ): Promise<EvaluationResult> {
     context.enterCall();
     const functionTarget = Symbol("function");
@@ -1872,6 +1896,10 @@ export class Evaluator {
       this.#closureCallFrames.push({
         arguments: args,
         environment: frame,
+        callerEnvironment:
+          callerEnvironment ??
+          this.#closureCallFrames.at(-1)?.environment ??
+          this.#globalEnvironment,
         closure,
         matched,
         ...(call === undefined ? {} : { call }),

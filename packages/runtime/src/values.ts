@@ -239,6 +239,8 @@ export interface BuiltinDefinition {
   readonly package: string;
   readonly name: string;
   readonly kind: BuiltinKind;
+  /** Optional R-level formals for builtins that model an ordinary closure. */
+  readonly formals?: readonly FunctionParameter[];
   readonly resultVisibility?: "visible" | "invisible";
   readonly metadata: BuiltinMetadata;
   implementation(invocation: BuiltinInvocation): RValue | Promise<RValue>;

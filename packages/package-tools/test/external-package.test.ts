@@ -50,3 +50,86 @@ it.runIf(runExternal)(
   },
   30_000,
 );
+
+it.runIf(runExternal)(
+  "packs and loads the unchanged public generics 0.1.4 pure-R source package",
+  async () => {
+    let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    try {
+      const installed = await installPackagesFromRepository(["generics"]);
+      const artifact = installed.artifacts[0];
+      expect(artifact).toMatchObject({
+        package: { name: "generics", version: "0.1.4" },
+        compatibility: { packaging: "ready", execution: "unchecked" },
+        integrity: {
+          algorithm: "sha256",
+          value: "4c1fa1abb2f72603a542ac23f28da7a958d5deaed9948f82543d73f2d4c38d32",
+        },
+      });
+      runtime = await createR({
+        execution: "inline",
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+        packages: installed.bundles,
+      });
+      await expect(runtime.eval('requireNamespace("generics", quietly = TRUE)')).resolves.toBe(
+        true,
+      );
+      await expect(
+        runtime.eval(`
+          tidy.probe <- function(x, ...) "package-method"
+          generics::tidy(structure(1, class = "probe"))
+        `),
+      ).resolves.toBe("package-method");
+      await expect(runtime.eval('"tidy" %in% getNamespaceExports("generics")')).resolves.toBe(true);
+    } finally {
+      await runtime?.dispose();
+    }
+  },
+  30_000,
+);
+
+it.runIf(runExternal)(
+  "packs and loads the unchanged public withr 3.0.3 pure-R source package",
+  async () => {
+    let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    try {
+      const installed = await installPackagesFromRepository(["withr"]);
+      expect(installed.artifacts[0]).toMatchObject({
+        package: { name: "withr", version: "3.0.3" },
+        compatibility: { packaging: "ready", execution: "unchecked" },
+        integrity: {
+          algorithm: "sha256",
+          value: "ef73ac085c7a84f3152770b6180c9a4c29adfdd0d6e505bcb262a39b47c0d759",
+        },
+      });
+      runtime = await createR({
+        execution: "inline",
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+        packages: installed.bundles,
+      });
+      await expect(runtime.eval('requireNamespace("withr", quietly = TRUE)')).resolves.toBe(true);
+      await expect(
+        runtime.eval(`
+          before <- getOption("digits")
+          inside <- withr::with_options(list(digits = 3L), getOption("digits"))
+          c(before, inside, getOption("digits"))
+        `),
+      ).resolves.toEqual([7, 3, 7]);
+    } finally {
+      await runtime?.dispose();
+    }
+  },
+  30_000,
+);

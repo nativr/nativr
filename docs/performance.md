@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 318 KiB gzip;
+- Worker JavaScript: 334 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -457,3 +457,9 @@ Language subset 0.203 adds one independently implemented GNU R XDR v2/v3 reader/
 serialization, RDS, workspaces, package data, and namespace sysdata. Gzip uses browser-standard
 streams and no new dependency or host capability. The measured Worker is 331.4 KiB gzip, so the
 ceiling rises narrowly to 333 KiB. Client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.204 adds reusable pure-R metaprogramming and wrapper foundations, including
+call-rooted replacement, builtin formal metadata, dynamic caller frames, hooks, and common
+session-local `graphics::par()` state. It introduces no dependency, network path, or execution
+backend. The measured Worker is 333.7 KiB gzip, so the ceiling rises by 1 KiB to 334 KiB. Client and
+parser-Wasm budgets remain unchanged.
