@@ -30,6 +30,12 @@ integers cannot forge a live handle. `dget()` can parse only text previously pro
 session's bounded serializer. `readLines()` and read-only connections may additionally decode
 reviewed package-bundle bytes; package writes and host paths are rejected before lookup.
 
+GNU R XDR serialization is decoded directly from raw vectors or the same closed virtual-file
+capability set. Input bytes, decompressed bytes, nesting, vector lengths, references, and result
+allocation are bounded before use. Gzip uses browser-standard streams; unsupported compression,
+native-endian/ASCII streams, graph types, and malformed references fail without falling through to
+host libraries. Package `.rda` and `R/sysdata.rda` bytes are immutable reviewed bundle resources.
+
 Directory operations use the same closed capability set. Session, package, and runtime roots are
 recognized structurally; `.` and `..` are normalized with an explicit no-root-escape check; and the
 working directory is always one of those owned directories. Listing cannot discover host names,

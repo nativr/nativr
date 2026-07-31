@@ -28,6 +28,11 @@ type/value/warning observations only; it never copies implementation source. Rev
 unexplained large translations or suspiciously source-shaped changes and escalate uncertain
 provenance before merging.
 
+Serialization work may use the public R Internals serialization description and black-box byte
+outputs from a separately installed R process. Small byte fixtures must record that provenance and
+cover only observable interchange behavior. GNU R serializer/deserializer source, headers, tests, or
+mechanically translated control flow are not implementation inputs.
+
 Unmodified third-party source packages may be downloaded transiently in opt-in external execution
 tests to prove that the package loader works without package-specific rewrites. Those sources are
 test inputs under their own licenses: they are not copied into this repository, translated into the

@@ -7537,5 +7537,28 @@
     "expected": true,
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "serialize-unserialize-xdr-version-two",
+    "code": "value <- list(numbers = c(a = 1L, b = NA_integer_), label = \"portable\")\nbytes <- serialize(value, NULL, version = 2L)\nrestored <- unserialize(bytes)\nc(typeof(bytes), length(bytes) > 0L, identical(restored, value), names(restored), restored$numbers, restored$label)",
+    "expected": [
+      "raw",
+      "TRUE",
+      "TRUE",
+      "numbers",
+      "label",
+      "1",
+      { "__nativr__": "NA" },
+      "portable"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "save-rds-read-rds-xdr-gzip",
+    "code": "value <- list(a = 1:3, b = c(NA_character_, \"x\"))\npath <- tempfile(fileext = \".rds\")\nsaved <- withVisible(saveRDS(value, path, version = 3L, compress = TRUE))\nrestored <- readRDS(path)\ninfo <- infoRDS(path)\nc(is.null(saved$value), saved$visible, identical(restored, value), info$version, info$format, unlink(path))",
+    "expected": ["TRUE", "FALSE", "TRUE", "3", "xdr", "0"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

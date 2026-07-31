@@ -140,7 +140,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 139,missing,true,3,rlang|R6|data.table,3,3.1,4.6
 140,toupper,true,3,rlang|ggplot2|shiny,5,3.1,4.6
 141,gl,true,4,ggplot2|RcppEigen|loo|zoo,7,4.1,4.6
-142,serialize,false,5,jsonlite|curl|openssl|data.table|bit64,12,5.2,4.5
+142,serialize,true,5,jsonlite|curl|openssl|data.table|bit64,12,5.2,4.5
 143,class,true,5,vctrs|checkmate|posterior|zoo|bit64,21,5.2,4.5
 144,Encoding,false,3,rlang|utf8|xfun,12,3.1,4.5
 145,replicate,true,3,rlang|dplyr|memoise,4,3.1,4.5
@@ -232,7 +232,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 231,difftime,true,2,fs|promises,2,2.1,2.1
 232,url,false,2,jsonlite|openssl,6,2.1,2.1
 233,is.character,true,2,dplyr|data.table,4,2.1,2.1
-234,unserialize,false,2,jsonlite|data.table,2,2.1,2.0
+234,unserialize,true,2,jsonlite|data.table,2,2.1,2.0
 235,cut,true,2,dplyr|zoo,5,2.1,2.0
 236,as.factor,true,2,bslib|data.table,5,2.1,1.9
 237,Sys.setlocale,true,2,utf8|data.table,6,2.1,1.9
@@ -388,8 +388,8 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 387,as,true,1,data.table,2,1.0,0.7
 388,as.name,true,1,data.table,2,1.0,0.7
 389,is.list,true,1,data.table,2,1.0,0.7
-390,readRDS,false,1,data.table,2,1.0,0.7
-391,saveRDS,false,1,data.table,2,1.0,0.7
+390,readRDS,true,1,data.table,2,1.0,0.7
+391,saveRDS,true,1,data.table,2,1.0,0.7
 392,tracemem,false,1,data.table,2,1.0,0.7
 393,weekdays,true,1,data.table,2,1.0,0.7
 394,write.table,true,1,data.table,2,1.0,0.7

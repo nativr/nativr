@@ -79,12 +79,12 @@ signal.
 |        2 |           121 | `png`         |           5.5% |        5 |              7 |
 |        3 |           127 | `system.time` |           5.3% |        6 |             95 |
 |        4 |           138 | `par`         |           4.6% |        5 |             23 |
-|        5 |           142 | `serialize`   |           4.5% |        5 |             12 |
-|        6 |           144 | `Encoding`    |           4.5% |        3 |             12 |
-|        7 |           149 | `rcauchy`     |           4.2% |        3 |              4 |
-|        8 |           162 | `Sys.getenv`  |           3.7% |        3 |             16 |
-|        9 |           163 | `image`       |           3.7% |        3 |              6 |
-|       10 |           166 | `browseURL`   |           3.6% |        4 |              8 |
+|        5 |           144 | `Encoding`    |           4.5% |        3 |             12 |
+|        6 |           149 | `rcauchy`     |           4.2% |        3 |              4 |
+|        7 |           162 | `Sys.getenv`  |           3.7% |        3 |             16 |
+|        8 |           163 | `image`       |           3.7% |        3 |              6 |
+|        9 |           166 | `browseURL`   |           3.6% |        4 |              8 |
+|       10 |           168 | `gc`          |           3.5% |        3 |             17 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -136,35 +136,35 @@ calling-handler surface through `globalCallingHandlers` (rank 233, 2.2%) is now 
 Session search-path inspection through `search` and dynamic R-syntax call inspection through
 `sys.call` (ranks 234–235, 2.2% each) are now complete. Rank 236 `force` is already supported, rank
 237 `readline` requires an interactive host-adapter contract, ranks 238–239 `difftime` and
-`is.character` are already supported, and rank 241 `unserialize` belongs to the serialization
-architecture. Time-series coordinate shifting through `lag` (rank 242, 2.0%) is now complete.
-Numeric interval factorization through `cut` (rank 243, 2.0%) is now complete too. Ranks 244–245
-`Sys.setlocale` and `Sys.getlocale` are now complete for evaluator-owned C locale state and the two
-monetary profiles required by the later measured `withr` examples; arbitrary host locales,
-collation, and time-language mutation remain explicit boundaries. Rank 246 `plot.new` is now the
-page-state dependency for the measured raster slice, and rank 247 `logical` is already supported.
-Atomic run-length encoding through `rle` (rank 248, 1.9%) is now complete. Rank 249 `deparse` is
-already supported. Regex match extraction through `regmatches` (rank 250, 1.9%) is now complete
-together with its `gregexpr` match-object producer (rank 252, 1.9%) and the supporting first-match
-`regexpr` surface. Independent whitespace trimming through `trimws` (rank 251, 1.9%) is now complete
-too. Ranks 253–255 require package-metadata, connection, or process-timing host contracts, while
-rank 256 `vapply` is already supported. Time-series endpoint inspection through `end` (rank 257,
-1.8%) is now complete. Ranks 258–259 belong to graphics/color architecture; ranks 260 `complex` and
-261 `vector` are already supported, while rank 262 `file.remove` requires a filesystem host
-contract. Grouped factor reordering through `reorder` (rank 263, 1.7%) and planar convex-hull
-selection through `chull` (rank 264, 1.7%) are now complete. Rank 265 `terrain.colors` belongs to
-color-generation architecture. Model covariance plus central Student-t probabilities now complete
-`confint` (rank 266, 1.7%). Session-local numeric perturbation through `jitter` (rank 267, 1.7%) and
-argument-choice normalization through `match.arg` (rank 268, 1.7%) are complete. Stable logistic
-quantiles through `qlogis` (rank 269, 1.7%) and matrix centering/scaling through `scale` (rank 270,
-1.7%) are complete too. The model architecture completes `aov` and `fitted` (ranks 271–272), and
-`IQR` (rank 273) covers interquartile ranges through all nine GNU R quantile algorithms. Numeric
-clustering through `kmeans` (rank 274, 1.7%) is now complete for the documented bounded algorithms
-and data shapes. Ranks 275–278 (`log2`, `predict`, `resid`, and `rt`) are already supported.
-Circular, open, and filtering convolution through `convolve` (rank 225, 2.3%) is now complete, and
-rank 279 `Filter` is already supported. Hexadecimal integer modes through `as.hexmode` (rank 280,
-1.7%) are now complete together with their formatting, printing, selection, and bitwise method
-chain. Ranks 281 `axis`, 282 `readChar`, 283 `debug`, and 285 `undebug` depend on graphics,
+`is.character` are already supported, and rank 241 `unserialize` now shares the bounded GNU R XDR
+codec with rank 142 `serialize`. Time-series coordinate shifting through `lag` (rank 242, 2.0%) is
+now complete. Numeric interval factorization through `cut` (rank 243, 2.0%) is now complete too.
+Ranks 244–245 `Sys.setlocale` and `Sys.getlocale` are now complete for evaluator-owned C locale
+state and the two monetary profiles required by the later measured `withr` examples; arbitrary host
+locales, collation, and time-language mutation remain explicit boundaries. Rank 246 `plot.new` is
+now the page-state dependency for the measured raster slice, and rank 247 `logical` is already
+supported. Atomic run-length encoding through `rle` (rank 248, 1.9%) is now complete. Rank 249
+`deparse` is already supported. Regex match extraction through `regmatches` (rank 250, 1.9%) is now
+complete together with its `gregexpr` match-object producer (rank 252, 1.9%) and the supporting
+first-match `regexpr` surface. Independent whitespace trimming through `trimws` (rank 251, 1.9%) is
+now complete too. Ranks 253–255 require package-metadata, connection, or process-timing host
+contracts, while rank 256 `vapply` is already supported. Time-series endpoint inspection through
+`end` (rank 257, 1.8%) is now complete. Ranks 258–259 belong to graphics/color architecture; ranks
+260 `complex` and 261 `vector` are already supported, while rank 262 `file.remove` requires a
+filesystem host contract. Grouped factor reordering through `reorder` (rank 263, 1.7%) and planar
+convex-hull selection through `chull` (rank 264, 1.7%) are now complete. Rank 265 `terrain.colors`
+belongs to color-generation architecture. Model covariance plus central Student-t probabilities now
+complete `confint` (rank 266, 1.7%). Session-local numeric perturbation through `jitter` (rank 267,
+1.7%) and argument-choice normalization through `match.arg` (rank 268, 1.7%) are complete. Stable
+logistic quantiles through `qlogis` (rank 269, 1.7%) and matrix centering/scaling through `scale`
+(rank 270, 1.7%) are complete too. The model architecture completes `aov` and `fitted` (ranks
+271–272), and `IQR` (rank 273) covers interquartile ranges through all nine GNU R quantile
+algorithms. Numeric clustering through `kmeans` (rank 274, 1.7%) is now complete for the documented
+bounded algorithms and data shapes. Ranks 275–278 (`log2`, `predict`, `resid`, and `rt`) are already
+supported. Circular, open, and filtering convolution through `convolve` (rank 225, 2.3%) is now
+complete, and rank 279 `Filter` is already supported. Hexadecimal integer modes through `as.hexmode`
+(rank 280, 1.7%) are now complete together with their formatting, printing, selection, and bitwise
+method chain. Ranks 281 `axis`, 282 `readChar`, 283 `debug`, and 285 `undebug` depend on graphics,
 connection, or interactive-debug host architecture; rank 284 `emptyenv` is already supported. Rank
 286 `as.list.environment` is the next isolated browser-safe callable and is now complete with S3
 dispatch, local binding enumeration, hidden-name and sorting controls, hash-aware unsorted order,
@@ -569,37 +569,36 @@ identity checks between its `as.IDate`/`as.ITime` constructors and `methods::as`
 registry, inherited source-class lookup, core constructor fallback, identity behavior, namespace
 access, invisible registration, and bounded invalid-definition/unknown-target errors. The data.table
 classes and constructors remain package-owned and are not reproduced. Ranks 397 `as.name` and 398
-`is.list` are already registered. Ranks 399/400 `readRDS`/`saveRDS` are deferred until an owned R
-serialization contract and browser host adapter are designed, and rank 401 `tracemem` depends on
-object-identity instrumentation that the immutable value model does not yet expose. Rank 402
-`weekdays` is now complete for data.table's two IDate grouping-label calls:
-`factor(weekdays(idate))` and `weekday = weekdays(tt$date)`, again representing 864,145 downloads
-and 0.7% weighted reach. The base S3 generic resolves the package's inherited Date class and covers
-deterministic C-locale full/abbreviated names, recycled coercible abbreviation flags, Date
-fractions, names, missing/non-finite values, UTC/GMT POSIXct/POSIXlt inputs, direct methods, custom
-dispatch, and invalid inputs. Other locale profiles and the broader `months`/`quarters`/`julian`
-family remain separate work. Rank 403 `write.table` is deferred until the browser
-connection/filesystem adapter exists. Rank 404 `anyDuplicated` is now complete for data.table's
-measured `anyDuplicated(DT, by = c("A", "B"))` query, representing 864,145 downloads and 0.7%
-weighted reach. NativR supplies the package-method S3 seam plus independent atomic, factor, list,
-and data-frame defaults with forward/reverse first positions, names, missing/NaN distinctions,
-incomparables, empty inputs, and bounded control errors. The data.table class and method remain
-package-owned. Ranks 405 `Im`, 406 `new`, and 407 `Re` are already registered. Rank 408 `rep.int` is
-now complete for data.table's adaptive-window helper
-`an <- function(n, len) c(seq.int(n), rep.int(n, len - n))`, representing 864,145 downloads and 0.7%
-weighted reach. It covers scalar whole-vector and element-wise repetition, truncated/coercible
-counts, atomic/list/factor/expression storage, documented attribute removal, factor metadata, custom
-internal-S3 methods, and allocation guards. Rank 409 `methods::representation` is now complete for
-data.table's measured legacy S4 declaration `representation(x = "character", dt = "data.table")`,
-representing 864,145 downloads and 0.7% weighted reach. It returns an ordered plain parent/slot
-declaration list, decodes backtick slot names, validates scalar character declarations, rejects
-duplicate parent or slot entries, and feeds the bounded `setClass`/`new` path without bundling
-data.table. Rank 410 `trunc` is now complete for data.table's measured `trunc(seqtimes, "hours")`
-ITime method call, representing 864,145 downloads and 0.7% weighted reach. NativR supplies direct
-and Math-group S3 dispatch plus an independent toward-zero default with logical/integer coercion,
-signed zero, non-finite/missing values, attributes, eager default dots, and bounded invalid types;
-data.table retains ownership of ITime and its method. Rank 411 `utils::type.convert` is now complete
-for the callback in data.table's measured
+`is.list` are already registered. Ranks 399/400 `readRDS`/`saveRDS` now use the same XDR/gzip codec
+over browser-owned binary files, and rank 401 `tracemem` depends on object-identity instrumentation
+that the immutable value model does not yet expose. Rank 402 `weekdays` is now complete for
+data.table's two IDate grouping-label calls: `factor(weekdays(idate))` and
+`weekday = weekdays(tt$date)`, again representing 864,145 downloads and 0.7% weighted reach. The
+base S3 generic resolves the package's inherited Date class and covers deterministic C-locale
+full/abbreviated names, recycled coercible abbreviation flags, Date fractions, names,
+missing/non-finite values, UTC/GMT POSIXct/POSIXlt inputs, direct methods, custom dispatch, and
+invalid inputs. Other locale profiles and the broader `months`/`quarters`/`julian` family remain
+separate work. Rank 403 `write.table` is deferred until the browser connection/filesystem adapter
+exists. Rank 404 `anyDuplicated` is now complete for data.table's measured
+`anyDuplicated(DT, by = c("A", "B"))` query, representing 864,145 downloads and 0.7% weighted reach.
+NativR supplies the package-method S3 seam plus independent atomic, factor, list, and data-frame
+defaults with forward/reverse first positions, names, missing/NaN distinctions, incomparables, empty
+inputs, and bounded control errors. The data.table class and method remain package-owned. Ranks 405
+`Im`, 406 `new`, and 407 `Re` are already registered. Rank 408 `rep.int` is now complete for
+data.table's adaptive-window helper `an <- function(n, len) c(seq.int(n), rep.int(n, len - n))`,
+representing 864,145 downloads and 0.7% weighted reach. It covers scalar whole-vector and
+element-wise repetition, truncated/coercible counts, atomic/list/factor/expression storage,
+documented attribute removal, factor metadata, custom internal-S3 methods, and allocation guards.
+Rank 409 `methods::representation` is now complete for data.table's measured legacy S4 declaration
+`representation(x = "character", dt = "data.table")`, representing 864,145 downloads and 0.7%
+weighted reach. It returns an ordered plain parent/slot declaration list, decodes backtick slot
+names, validates scalar character declarations, rejects duplicate parent or slot entries, and feeds
+the bounded `setClass`/`new` path without bundling data.table. Rank 410 `trunc` is now complete for
+data.table's measured `trunc(seqtimes, "hours")` ITime method call, representing 864,145 downloads
+and 0.7% weighted reach. NativR supplies direct and Math-group S3 dispatch plus an independent
+toward-zero default with logical/integer coercion, signed zero, non-finite/missing values,
+attributes, eager default dots, and bounded invalid types; data.table retains ownership of ITime and
+its method. Rank 411 `utils::type.convert` is now complete for the callback in data.table's measured
 `tstrsplit(v, " ", type.convert = list(..., function(x) type.convert(x, as.is = TRUE)))` example,
 representing 864,145 downloads and 0.7% weighted reach. Its owned S3 default/list/data-frame methods
 cover the logical/integer/double/complex inference ladder, missing/decimal controls,

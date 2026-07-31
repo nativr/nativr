@@ -81,6 +81,47 @@ describe("pure-R package packager", () => {
     }
   });
 
+  it("retains GNU R sysdata workspaces and loads them into the package namespace", async () => {
+    const packageRoot = await fixturePackage();
+    await writeFile(
+      path.join(packageRoot, "R", "sysdata.rda"),
+      Buffer.from(
+        "1f8b08000000000000060b728930e28ae0626060606260610392cc40260b139060646061e004d2eca91589b90539a90c0cccc260650c0c0210e56069c64418230948f04255304268148358f31273538bd1b4b3e62426a5e6c038658939a5a9e8da9273128b61da60825c298925897a69454013d1947316e597ebc16c023ba70148fcffffff1f90026300638b5ebdf3000000",
+        "hex",
+      ),
+    );
+    await writeFile(
+      path.join(packageRoot, "R", "main.R"),
+      "square <- function(x) x ^ 2\nsysdata_total <- function() sum(example$value)\n",
+    );
+    await writeFile(
+      path.join(packageRoot, "NAMESPACE"),
+      "importFrom(stats, median)\nexport(square)\nexport(sysdata_total)\n",
+    );
+
+    const artifact = await packPackage(packageRoot);
+    expect(artifact.compatibility.packaging).toBe("ready");
+    expect(artifact.compatibility.issues).toContainEqual(
+      expect.objectContaining({ code: "NRPKG1004", severity: "warning", path: "R/sysdata.rda" }),
+    );
+    const sysdata = artifact.bundle.resources.find((resource) => resource.path === "R/sysdata.rda");
+    expect(sysdata?.data).toMatch(/^[A-Za-z0-9+/]+=*$/u);
+
+    const runtime = await createR({
+      execution: "inline",
+      assets: {
+        treeSitterRuntimeWasm: new URL("../../parser/assets/web-tree-sitter.wasm", import.meta.url),
+        rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+      },
+      packages: [artifact.bundle],
+    });
+    try {
+      await expect(runtime.eval("demopkg::sysdata_total()")).resolves.toBe(3);
+    } finally {
+      await runtime.dispose();
+    }
+  });
+
   it("reads the canonical one-directory source tarball shape without extracting links", async () => {
     const packageRoot = await fixturePackage();
     const parent = path.dirname(packageRoot);

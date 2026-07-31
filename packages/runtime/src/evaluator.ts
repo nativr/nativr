@@ -26,6 +26,7 @@ import {
   RTypeMismatchError,
   RUnsupportedFeatureError,
 } from "./errors.js";
+import { decodeRBase64Resource, decodeRWorkspaceFile } from "./serialization.js";
 import {
   characterVector,
   complexVector,
@@ -2149,6 +2150,7 @@ export class Evaluator {
         }
         const namespace = createEnvironment(importsEnvironment, true);
         record.namespace = namespace;
+        await this.#loadPackageSysdata(record, namespace, context);
         for (const program of record.definition.programs) {
           await this.#evaluateNode(program, namespace, context);
         }
@@ -2207,6 +2209,35 @@ export class Evaluator {
       record.attached = true;
     }
     return { name, version: record.definition.version, namespace, record };
+  }
+
+  async #loadPackageSysdata(
+    record: RuntimePackageRecord,
+    namespace: REnvironment,
+    context: EvaluationContext,
+  ): Promise<void> {
+    const archives = record.definition.resources.filter((resource) =>
+      /^R\/(?:.*\/)?sysdata\.(?:rda|rdata)$/iu.test(resource.path),
+    );
+    if (archives.length > 1) {
+      throw new REvaluationError(
+        "NRE2249",
+        `Package '${record.definition.name}' contains multiple internal sysdata archives.`,
+      );
+    }
+    const archive = archives[0];
+    if (archive === undefined) return;
+    const bytes = decodeRBase64Resource(archive.data, context);
+    const workspace = await decodeRWorkspaceFile(bytes, context, {
+      global: this.#globalEnvironment,
+      base: this.#baseEnvironment,
+      baseNamespace: this.#baseEnvironment,
+      empty: this.#emptyEnvironment,
+    });
+    for (const entry of workspace.entries) {
+      context.checkpoint();
+      setBinding(namespace, entry.name, entry.value);
+    }
   }
 
   async #invokePackageHook(

@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.202.0",
+  "languageSubsetVersion": "0.203.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -132,6 +132,11 @@
         { "name": "unlink", "compatibility": "behavioral" },
         { "name": "dput", "compatibility": "behavioral" },
         { "name": "dget", "compatibility": "behavioral" },
+        { "name": "unserialize", "compatibility": "behavioral" },
+        { "name": "serialize", "compatibility": "behavioral" },
+        { "name": "readRDS", "compatibility": "behavioral" },
+        { "name": "saveRDS", "compatibility": "behavioral" },
+        { "name": "infoRDS", "compatibility": "shape" },
         { "name": "save", "compatibility": "behavioral" },
         { "name": "load", "compatibility": "behavioral" },
         { "name": "try", "compatibility": "behavioral" },

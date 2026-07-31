@@ -13,8 +13,14 @@ import {
   createPromise,
   dataFrameRowCount,
   dataFrameValue,
+  decodeRBase64Resource,
+  decodeRSerialization,
+  decodeRSerializationFile,
+  decodeRWorkspaceFile,
   deparseAst,
   doubleVector,
+  encodeRSerialization,
+  encodeRSerializationFile,
   factorLevels,
   factorValue,
   extractVectorElement,
@@ -337,6 +343,23 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "invisible",
   ),
   defineBuiltin("dget", ["file", "keep.source"], "behavioral", builtinDget),
+  defineBuiltin("unserialize", ["connection", "refhook"], "behavioral", builtinUnserialize),
+  defineBuiltin(
+    "serialize",
+    ["object", "connection", "ascii", "xdr", "version", "refhook"],
+    "behavioral",
+    builtinSerialize,
+  ),
+  defineBuiltin("readRDS", ["file", "refhook"], "behavioral", builtinReadRds),
+  defineBuiltin(
+    "saveRDS",
+    ["object", "file", "ascii", "version", "compress", "refhook"],
+    "behavioral",
+    builtinSaveRds,
+    "regular",
+    "invisible",
+  ),
+  defineBuiltin("infoRDS", ["file"], "shape", builtinInfoRds),
   defineBuiltin(
     "save",
     [
@@ -1788,10 +1811,9 @@ const VIRTUAL_RUNTIME_COMPONENTS = Object.freeze([
   "modules",
   "share",
 ]);
-const VIRTUAL_WORKSPACE_HEADER = "# nativr-workspace-v1\n";
-
 interface VirtualTextFileState {
   readonly files: Map<string, string>;
+  readonly binaryFiles: Map<string, Uint8Array>;
   readonly directories: Set<string>;
   readonly connections: Map<number, VirtualTextConnection>;
   workingDirectory: string;
@@ -3320,6 +3342,7 @@ async function builtinFileExists(invocation: BuiltinInvocation): Promise<RLogica
         const path = resolveOwnedVirtualPath(invocation, suppliedPath, "file.exists");
         values.push(
           state.files.has(path) ||
+            state.binaryFiles.has(path) ||
             state.directories.has(path) ||
             runtimeVirtualDirectoryExists(path) ||
             packageVirtualPathExists(invocation, path),
@@ -3803,7 +3826,8 @@ function openVirtualTextConnection(
 
 function virtualTextFileExists(invocation: BuiltinInvocation, path: string): boolean {
   return path.startsWith(`${VIRTUAL_TEMP_ROOT}/`)
-    ? virtualTextFileState(invocation).files.has(path)
+    ? virtualTextFileState(invocation).files.has(path) ||
+        virtualTextFileState(invocation).binaryFiles.has(path)
     : invocation.packageFile(path) !== undefined;
 }
 
@@ -4054,21 +4078,25 @@ async function builtinUnlink(invocation: BuiltinInvocation): Promise<RIntegerVec
       failed = true;
       continue;
     }
-    if (state.files.has(resolved)) {
-      deleteVirtualTextFile(state, resolved);
+    if (state.files.has(resolved) || state.binaryFiles.has(resolved)) {
+      deleteVirtualFile(state, resolved);
       continue;
     }
     if (!state.directories.has(resolved)) continue;
     const prefix = `${resolved}/`;
     const hasChildren =
       [...state.files.keys()].some((candidate) => candidate.startsWith(prefix)) ||
+      [...state.binaryFiles.keys()].some((candidate) => candidate.startsWith(prefix)) ||
       [...state.directories].some((candidate) => candidate.startsWith(prefix));
     if (hasChildren && !recursive) {
       failed = true;
       continue;
     }
     for (const file of [...state.files.keys()]) {
-      if (file.startsWith(prefix)) deleteVirtualTextFile(state, file);
+      if (file.startsWith(prefix)) deleteVirtualFile(state, file);
+    }
+    for (const file of [...state.binaryFiles.keys()]) {
+      if (file.startsWith(prefix)) deleteVirtualFile(state, file);
     }
     for (const directory of [...state.directories]) {
       if (directory === resolved || directory.startsWith(prefix))
@@ -4114,6 +4142,271 @@ async function builtinDget(invocation: BuiltinInvocation): Promise<RValue> {
   );
 }
 
+async function builtinUnserialize(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["connection", "refhook"]);
+  validateSerializationRefHook(matched.get("refhook"), "unserialize");
+  const source = required(matched, "connection", "unserialize");
+  const bytes = serializationInputBytes(invocation, source, "unserialize");
+  return decodeRSerialization(bytes, invocation.context, serializationEnvironments(invocation))
+    .value;
+}
+
+async function builtinSerialize(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, [
+    "object",
+    "connection",
+    "ascii",
+    "xdr",
+    "version",
+    "refhook",
+  ]);
+  const object = required(matched, "object", "serialize");
+  const connection = required(matched, "connection", "serialize");
+  validateSerializationRefHook(matched.get("refhook"), "serialize");
+  validateXdrSerializationControls(matched.get("ascii"), matched.get("xdr"), "serialize");
+  const version = serializationVersion(matched.get("version"), "serialize");
+  const bytes = encodeRSerialization(
+    object,
+    invocation.context,
+    serializationEnvironments(invocation),
+    { version },
+  );
+  if (connection.type === "null") return rawVector(bytes);
+  if (!isVirtualTextConnectionHandle(connection)) {
+    throw new REvaluationError("NRE2238", "'connection' must be a connection");
+  }
+  writeSerializationTarget(invocation, connection, bytes, "serialize");
+  return R_NULL;
+}
+
+async function builtinReadRds(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["file", "refhook"]);
+  validateSerializationRefHook(matched.get("refhook"), "readRDS");
+  const source = required(matched, "file", "readRDS");
+  const bytes = serializationInputBytes(invocation, source, "readRDS");
+  return (
+    await decodeRSerializationFile(bytes, invocation.context, serializationEnvironments(invocation))
+  ).value;
+}
+
+async function builtinSaveRds(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, [
+    "object",
+    "file",
+    "ascii",
+    "version",
+    "compress",
+    "refhook",
+  ]);
+  const object = required(matched, "object", "saveRDS");
+  const file = required(matched, "file", "saveRDS");
+  validateSerializationRefHook(matched.get("refhook"), "saveRDS");
+  validateXdrSerializationControls(matched.get("ascii"), undefined, "saveRDS");
+  const version = serializationVersion(matched.get("version"), "saveRDS");
+  const compress = serializationCompression(matched.get("compress"), true, "saveRDS");
+  const bytes = await encodeRSerializationFile(
+    object,
+    invocation.context,
+    serializationEnvironments(invocation),
+    { version, compress },
+  );
+  writeSerializationTarget(invocation, file, bytes, "saveRDS");
+  return R_NULL;
+}
+
+async function builtinInfoRds(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["file"]);
+  const source = required(matched, "file", "infoRDS");
+  const bytes = serializationInputBytes(invocation, source, "infoRDS");
+  const { metadata } = await decodeRSerializationFile(
+    bytes,
+    invocation.context,
+    serializationEnvironments(invocation),
+  );
+  return listValue(
+    [
+      integerVector([metadata.version]),
+      characterVector([metadata.writerVersion]),
+      characterVector([metadata.minimumReaderVersion]),
+      characterVector([metadata.format]),
+      metadata.nativeEncoding === undefined
+        ? characterVector([""], [1])
+        : characterVector([metadata.nativeEncoding]),
+    ],
+    ["version", "writer_version", "min_reader_version", "format", "native_encoding"],
+  );
+}
+
+function validateSerializationRefHook(value: RValue | undefined, call: string): void {
+  if (value === undefined || value.type === "null") return;
+  throw new RUnsupportedFeatureError(
+    "NRU6192",
+    `${call}(refhook=) is unavailable until serialized reference objects are supported.`,
+  );
+}
+
+function validateXdrSerializationControls(
+  asciiValue: RValue | undefined,
+  xdrValue: RValue | undefined,
+  call: string,
+): void {
+  if (logicalFlag(asciiValue, false, "ascii")) {
+    throw new RUnsupportedFeatureError(
+      "NRU6192",
+      `${call}(ascii = TRUE) is not yet supported; use the portable XDR format.`,
+    );
+  }
+  if (!logicalFlag(xdrValue, true, "xdr")) {
+    throw new RUnsupportedFeatureError(
+      "NRU6192",
+      `${call}(xdr = FALSE) native-endian serialization is unavailable in the browser runtime.`,
+    );
+  }
+}
+
+function serializationVersion(value: RValue | undefined, call: string): 2 | 3 {
+  if (value === undefined || value.type === "null") return 3;
+  const version = numericScalar(value, "version");
+  if (version !== 2 && version !== 3) {
+    throw new RTypeMismatchError("NRT3352", `${call}(version=) must be NULL, 2, or 3.`);
+  }
+  return version;
+}
+
+function serializationCompression(
+  value: RValue | undefined,
+  fallback: boolean,
+  call: string,
+): boolean {
+  if (value === undefined) return fallback;
+  if (value.type === "logical") return logicalFlag(value, fallback, "compress");
+  if (value.type !== "character" || value.length !== 1 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3352", `${call}(compress=) has an invalid value.`);
+  }
+  const format = value.values[0] ?? "";
+  if (format === "gzip") return true;
+  if (["bzip2", "xz", "zstd"].includes(format)) {
+    throw new RUnsupportedFeatureError(
+      "NRU6192",
+      `${call}(compress = "${format}") is not yet available in the browser runtime.`,
+    );
+  }
+  throw new RTypeMismatchError("NRT3352", `${call}(compress=) has an invalid value.`);
+}
+
+function writeSerializationTarget(
+  invocation: BuiltinInvocation,
+  target: RValue,
+  bytes: Uint8Array,
+  call: string,
+): void {
+  if (isVirtualTextConnectionHandle(target)) {
+    const connection = requireVirtualTextConnection(invocation, target);
+    if (connection.packageFile) {
+      throw new RUnsupportedFeatureError(
+        "NRU6181",
+        `${call}() package files are immutable in the browser runtime.`,
+      );
+    }
+    if (connection.open) {
+      if (!virtualConnectionCanWrite(connection.mode)) {
+        throw new REvaluationError("NRE2240", "cannot write to this connection");
+      }
+      if (connection.text !== "binary") {
+        throw new REvaluationError("NRE2247", `${call}() requires a binary connection.`);
+      }
+    }
+    writeVirtualBinaryFile(invocation, connection.path, bytes);
+    if (connection.open) connection.cursor = bytes.byteLength;
+    return;
+  }
+  let path = resolveOwnedVirtualPath(invocation, filePathScalar(target, call), call);
+  if (path.startsWith("nativr://package/")) {
+    throw new RUnsupportedFeatureError(
+      "NRU6181",
+      `${call}() package files are immutable in the browser runtime.`,
+    );
+  }
+  path = requireVirtualTextPath(invocation, path, call);
+  writeVirtualBinaryFile(invocation, path, bytes);
+}
+
+function serializationEnvironments(invocation: BuiltinInvocation) {
+  return {
+    global: invocation.globalEnvironment(),
+    base: invocation.baseEnvironment(),
+    baseNamespace: invocation.baseEnvironment(),
+    empty: invocation.emptyEnvironment(),
+  } as const;
+}
+
+function serializationInputBytes(
+  invocation: BuiltinInvocation,
+  source: RValue,
+  call: "unserialize" | "readRDS" | "infoRDS",
+): Uint8Array {
+  if (source.type === "raw") return Uint8Array.from(source.values);
+  if (isVirtualTextConnectionHandle(source)) {
+    const connection = requireVirtualTextConnection(invocation, source);
+    if (connection.open && !virtualConnectionCanRead(connection.mode)) {
+      throw new REvaluationError("NRE2240", "cannot read from this connection");
+    }
+    if (connection.open && connection.text !== "binary") {
+      throw new REvaluationError("NRE2247", `${call}() requires a binary connection.`);
+    }
+    const bytes = readVirtualBinaryFile(invocation, connection.path, call);
+    if (connection.open) connection.cursor = bytes.byteLength;
+    return bytes;
+  }
+  if (call === "unserialize") {
+    throw new RTypeMismatchError(
+      "NRT3362",
+      "character vectors are not accepted by unserialize(); use a raw vector or connection.",
+    );
+  }
+  if (source.type !== "character" || source.length !== 1 || isMissing(source, 0)) {
+    throw new RTypeMismatchError(
+      "NRT3362",
+      `${call}() requires a raw vector, virtual path, or file connection.`,
+    );
+  }
+  return readVirtualBinaryFile(invocation, source.values[0] ?? "", call);
+}
+
+function readVirtualBinaryFile(
+  invocation: BuiltinInvocation,
+  suppliedPath: string,
+  call: string,
+): Uint8Array {
+  const path = resolveOwnedVirtualPath(invocation, suppliedPath, call);
+  if (path.startsWith(`${VIRTUAL_TEMP_ROOT}/`)) {
+    const state = virtualTextFileState(invocation);
+    const binary = state.binaryFiles.get(path);
+    if (binary !== undefined) return Uint8Array.from(binary);
+    const text = state.files.get(path);
+    if (text === undefined) {
+      throw new REvaluationError("NRE2195", `Cannot open virtual binary file '${path}'.`);
+    }
+    return encodeUtf8Bytes(text);
+  }
+  const packageFile = invocation.packageFile(path);
+  if (packageFile === undefined) {
+    throw new REvaluationError("NRE2195", `Cannot open package file '${path}'.`);
+  }
+  return packageFile.encoding === "base64"
+    ? decodeRBase64Resource(packageFile.data, invocation.context)
+    : encodeUtf8Bytes(packageFile.data);
+}
+
+function encodeUtf8Bytes(source: string): Uint8Array {
+  const Encoder = (
+    globalThis as unknown as {
+      readonly TextEncoder: new () => { readonly encode: (input: string) => Uint8Array };
+    }
+  ).TextEncoder;
+  return new Encoder().encode(source);
+}
+
 async function builtinSave(invocation: BuiltinInvocation): Promise<RValue> {
   const controlNames = new Set([
     "list",
@@ -4153,7 +4446,7 @@ async function builtinSave(invocation: BuiltinInvocation): Promise<RValue> {
   );
 
   const environment = await saveEnvironment(invocation, controls.get("envir"));
-  await validateSaveControls(invocation, controls);
+  const serialization = await validateSaveControls(invocation, controls);
   const names: string[] = [];
   const listArgument = controls.get("list");
   if (listArgument !== undefined && !listArgument.promise.missing) {
@@ -4187,52 +4480,44 @@ async function builtinSave(invocation: BuiltinInvocation): Promise<RValue> {
     values.push(binding.type === "promise" ? await invocation.force(binding) : binding);
   }
 
-  const archive = listValue(values, names);
-  const source = `${VIRTUAL_WORKSPACE_HEADER}${serializeDputValue(archive, invocation)}\n`;
-  writeVirtualTextFile(invocation, path, source);
+  const archive = pairlistValue(values, names);
+  const bytes = await encodeRSerializationFile(
+    archive,
+    invocation.context,
+    serializationEnvironments(invocation),
+    { version: serialization.version, workspace: true, compress: serialization.compress },
+  );
+  writeVirtualBinaryFile(invocation, path, bytes);
   return R_NULL;
 }
 
 async function builtinLoad(invocation: BuiltinInvocation): Promise<RCharacterVector> {
   const matched = await matchExact(invocation, ["file", "envir", "verbose"]);
-  const path = requireVirtualTextPath(
-    invocation,
-    characterScalar(required(matched, "file", "load"), "file"),
-    "load",
-  );
+  const path = characterScalar(required(matched, "file", "load"), "file");
   const target = matched.get("envir") ?? invocation.currentEnvironment();
   if (target.type !== "environment") {
     throw new RTypeMismatchError("NRT3227", "load(envir=) requires an environment.");
   }
   const verbose = loadVerbose(matched.get("verbose"));
-  const source = virtualTextFileState(invocation).files.get(path);
-  if (source === undefined) {
-    throw new REvaluationError("NRE2195", `Cannot open virtual workspace file '${path}'.`);
+  const bytes = readVirtualBinaryFile(invocation, path, "load");
+  let workspace: Awaited<ReturnType<typeof decodeRWorkspaceFile>>;
+  try {
+    workspace = await decodeRWorkspaceFile(
+      bytes,
+      invocation.context,
+      serializationEnvironments(invocation),
+    );
+  } catch (error) {
+    if (error instanceof RResourceLimitError || error instanceof RUnsupportedFeatureError)
+      throw error;
+    throw new REvaluationError("NRE2196", `Virtual workspace file '${path}' is malformed.`, {
+      cause: error,
+    });
   }
-  if (!source.startsWith(VIRTUAL_WORKSPACE_HEADER)) {
-    throw new REvaluationError("NRE2196", `Virtual file '${path}' is not a saved workspace.`);
-  }
-  const program = invocation.parse(source.slice(VIRTUAL_WORKSPACE_HEADER.length));
-  if (program.body.length !== 1) {
-    throw new REvaluationError("NRE2196", `Virtual workspace file '${path}' is malformed.`);
-  }
-  const archive = await invocation.evaluate(
-    { type: "expression", values: Object.freeze([...program.body]) },
-    invocation.currentEnvironment(),
-  );
-  const names = archive.type === "list" ? vectorNames(archive) : undefined;
-  if (
-    archive.type !== "list" ||
-    names === undefined ||
-    names.length !== archive.length ||
-    names.some((name) => name.length === 0)
-  ) {
-    throw new REvaluationError("NRE2196", `Virtual workspace file '${path}' is malformed.`);
-  }
-  invocation.context.allocate(names.length);
-  for (let index = 0; index < names.length; index += 1) {
+  const names = workspace.entries.map((entry) => entry.name);
+  for (const entry of workspace.entries) {
     invocation.context.checkpoint();
-    setBinding(target, names[index] ?? "", archive.values[index] ?? R_NULL);
+    setBinding(target, entry.name, entry.value);
   }
   if (verbose && names.length > 0) {
     invocation.context.writeOutput({
@@ -4272,32 +4557,28 @@ function saveObjectNames(value: RValue, argument: "..." | "list"): readonly stri
 async function validateSaveControls(
   invocation: BuiltinInvocation,
   controls: ReadonlyMap<string, BuiltinCallArgument>,
-): Promise<void> {
+): Promise<{ readonly version: 2 | 3; readonly compress: boolean }> {
   const ascii = controls.get("ascii");
-  if (ascii !== undefined) logicalFlag(await invocation.force(ascii.promise), false, "ascii");
+  if (ascii !== undefined && logicalFlag(await invocation.force(ascii.promise), false, "ascii")) {
+    throw new RUnsupportedFeatureError(
+      "NRU6192",
+      "save(ascii = TRUE) is not yet supported; use the portable XDR format.",
+    );
+  }
   const version = controls.get("version");
+  let selectedVersion: 2 | 3 = 3;
   if (version !== undefined) {
     const value = await invocation.force(version.promise);
-    if (value.type !== "null") {
-      const selected = numericScalar(value, "version");
-      if (selected !== 2 && selected !== 3) {
-        throw new RTypeMismatchError("NRT3352", "save(version=) must be NULL, 2, or 3.");
-      }
-    }
+    selectedVersion = serializationVersion(value, "save");
   }
   const compress = controls.get("compress");
+  let selectedCompression = true;
   if (compress !== undefined) {
-    const value = await invocation.force(compress.promise);
-    if (value.type === "logical") {
-      logicalFlag(value, true, "compress");
-    } else if (
-      value.type !== "character" ||
-      value.length !== 1 ||
-      isMissing(value, 0) ||
-      !["gzip", "bzip2", "xz", "zstd"].includes(value.values[0] ?? "")
-    ) {
-      throw new RTypeMismatchError("NRT3352", "save(compress=) has an invalid value.");
-    }
+    selectedCompression = serializationCompression(
+      await invocation.force(compress.promise),
+      true,
+      "save",
+    );
   }
   const compressionLevel = controls.get("compression_level");
   if (compressionLevel !== undefined) {
@@ -4311,6 +4592,10 @@ async function validateSaveControls(
         "save(compression_level=) must be an integer from 1 through 9.",
       );
     }
+    throw new RUnsupportedFeatureError(
+      "NRU6192",
+      `save(compression_level = ${String(level)}) cannot be selected through the browser CompressionStream API.`,
+    );
   }
   const evaluatePromises = controls.get("eval.promises");
   if (
@@ -4332,6 +4617,7 @@ async function validateSaveControls(
       "save(precheck = FALSE) partial archive writes are not implemented.",
     );
   }
+  return { version: selectedVersion, compress: selectedCompression };
 }
 
 function loadVerbose(value: RValue | undefined): boolean {
@@ -4368,6 +4654,8 @@ function virtualTextFileState(invocation: BuiltinInvocation): VirtualTextFileSta
     existing !== null &&
     "files" in existing &&
     existing.files instanceof Map &&
+    "binaryFiles" in existing &&
+    existing.binaryFiles instanceof Map &&
     "directories" in existing &&
     existing.directories instanceof Set &&
     "connections" in existing &&
@@ -4385,6 +4673,7 @@ function virtualTextFileState(invocation: BuiltinInvocation): VirtualTextFileSta
   }
   const created: VirtualTextFileState = {
     files: new Map(),
+    binaryFiles: new Map(),
     directories: new Set([VIRTUAL_TEMP_ROOT]),
     connections: new Map(),
     workingDirectory: VIRTUAL_TEMP_ROOT,
@@ -4568,6 +4857,7 @@ function virtualPathExists(invocation: BuiltinInvocation, path: string): boolean
   return (
     virtualDirectoryExists(invocation, path) ||
     virtualTextFileState(invocation).files.has(path) ||
+    virtualTextFileState(invocation).binaryFiles.has(path) ||
     invocation.packageFile(path) !== undefined
   );
 }
@@ -4587,14 +4877,15 @@ function createVirtualDirectory(
   if (
     !path.startsWith(`${VIRTUAL_TEMP_ROOT}/`) ||
     state.directories.has(path) ||
-    state.files.has(path)
+    state.files.has(path) ||
+    state.binaryFiles.has(path)
   ) {
     return false;
   }
   const missing: string[] = [];
   let current: string | undefined = path;
   while (current !== undefined && !state.directories.has(current)) {
-    if (state.files.has(current)) return false;
+    if (state.files.has(current) || state.binaryFiles.has(current)) return false;
     missing.push(current);
     current = sessionVirtualParent(current);
   }
@@ -4643,6 +4934,9 @@ function virtualDirectoryEntries(
     for (const file of state.files.keys()) {
       if (file.startsWith(prefix)) add(file.slice(prefix.length), false);
     }
+    for (const file of state.binaryFiles.keys()) {
+      if (file.startsWith(prefix)) add(file.slice(prefix.length), false);
+    }
   } else if (root === VIRTUAL_RUNTIME_ROOT) {
     for (const component of VIRTUAL_RUNTIME_COMPONENTS) add(component, true);
   } else {
@@ -4675,17 +4969,23 @@ function writeVirtualTextFile(invocation: BuiltinInvocation, path: string, sourc
     throw new REvaluationError("NRE2195", `Cannot open virtual text file '${path}'.`);
   }
   const previous = state.files.get(path);
-  if (previous === undefined && state.files.size >= invocation.context.limits.maxVectorLength) {
+  const previousBinary = state.binaryFiles.get(path);
+  if (
+    previous === undefined &&
+    previousBinary === undefined &&
+    state.files.size + state.binaryFiles.size >= invocation.context.limits.maxVectorLength
+  ) {
     throw new RResourceLimitError("NRL4002", "Virtual text-file count limit exceeded.", {
       details: {
         maxVectorLength: invocation.context.limits.maxVectorLength,
-        requested: state.files.size + 1,
+        requested: state.files.size + state.binaryFiles.size + 1,
       },
     });
   }
   const bytes =
     state.bytes -
     (previous === undefined ? 0 : virtualTextByteLength(previous)) +
+    (previousBinary === undefined ? 0 : -previousBinary.byteLength) +
     virtualTextByteLength(source);
   if (bytes > invocation.context.limits.maxOutputBytes) {
     throw new RResourceLimitError("NRL4007", "Virtual text-file storage limit exceeded.", {
@@ -4693,7 +4993,43 @@ function writeVirtualTextFile(invocation: BuiltinInvocation, path: string, sourc
     });
   }
   state.files.set(path, source);
+  state.binaryFiles.delete(path);
   state.bytes = bytes;
+}
+
+function writeVirtualBinaryFile(
+  invocation: BuiltinInvocation,
+  path: string,
+  bytes: Uint8Array,
+): void {
+  const state = virtualTextFileState(invocation);
+  const parent = sessionVirtualParent(path);
+  if (parent === undefined || !state.directories.has(parent) || state.directories.has(path)) {
+    throw new REvaluationError("NRE2195", `Cannot open virtual binary file '${path}'.`);
+  }
+  const previousText = state.files.get(path);
+  const previousBinary = state.binaryFiles.get(path);
+  if (
+    previousText === undefined &&
+    previousBinary === undefined &&
+    state.files.size + state.binaryFiles.size >= invocation.context.limits.maxVectorLength
+  ) {
+    throw new RResourceLimitError("NRL4002", "Virtual file count limit exceeded.");
+  }
+  const stored = Uint8Array.from(bytes);
+  const total =
+    state.bytes -
+    (previousText === undefined ? 0 : virtualTextByteLength(previousText)) -
+    (previousBinary?.byteLength ?? 0) +
+    stored.byteLength;
+  if (total > invocation.context.limits.maxOutputBytes) {
+    throw new RResourceLimitError("NRL4007", "Virtual binary-file storage limit exceeded.", {
+      details: { maxOutputBytes: invocation.context.limits.maxOutputBytes, outputBytes: total },
+    });
+  }
+  state.files.delete(path);
+  state.binaryFiles.set(path, stored);
+  state.bytes = total;
 }
 
 function deleteVirtualTextFile(state: VirtualTextFileState, path: string): void {
@@ -4703,12 +5039,20 @@ function deleteVirtualTextFile(state: VirtualTextFileState, path: string): void 
   state.bytes -= virtualTextByteLength(previous);
 }
 
+function deleteVirtualFile(state: VirtualTextFileState, path: string): void {
+  deleteVirtualTextFile(state, path);
+  const binary = state.binaryFiles.get(path);
+  if (binary === undefined) return;
+  state.binaryFiles.delete(path);
+  state.bytes -= binary.byteLength;
+}
+
 function destroyVirtualTextConnection(
   state: VirtualTextFileState,
   connection: VirtualTextConnection,
 ): void {
   state.connections.delete(connection.id);
-  if (connection.privateFile) deleteVirtualTextFile(state, connection.path);
+  if (connection.privateFile) deleteVirtualFile(state, connection.path);
 }
 
 function validateDputControl(value: RValue | undefined): void {
@@ -14938,8 +15282,8 @@ async function loadPackageDataset(
   overwrite: boolean,
 ): Promise<void> {
   const lower = located.path.toLowerCase();
-  const source = readVirtualTextFile(invocation, located.virtualPath, "package");
   if (lower.endsWith(".r")) {
+    const source = readVirtualTextFile(invocation, located.virtualPath, "package");
     const previous = new Map(target.bindings);
     const program = invocation.parse(source);
     const previousDirectory = invocation.state.get(PACKAGE_DATA_DIRECTORY_STATE_KEY);
@@ -14959,11 +15303,26 @@ async function loadPackageDataset(
     return;
   }
   if (lower.endsWith(".rda") || lower.endsWith(".rdata")) {
-    throw new RUnsupportedFeatureError(
-      "NRU6185",
-      `data() cannot yet decode GNU R binary dataset '${located.path}'.`,
+    const bytes = readVirtualBinaryFile(invocation, located.virtualPath, "data");
+    const workspace = await decodeRWorkspaceFile(
+      bytes,
+      invocation.context,
+      serializationEnvironments(invocation),
     );
+    for (const entry of workspace.entries) {
+      invocation.context.checkpoint();
+      if (target.bindings.has(entry.name) && !overwrite) {
+        invocation.context.warn({
+          code: "NRW1120",
+          message: `an object named '${entry.name}' already exists and will not be overwritten`,
+        });
+        continue;
+      }
+      setBinding(target, entry.name, entry.value);
+    }
+    return;
   }
+  const source = readVirtualTextFile(invocation, located.virtualPath, "package");
   const variant = lower.endsWith(".csv") ? "data-csv" : "data-table";
   const frame = readTableSource(invocation, source, tableDefaults(variant), new Map());
   const previous = target.bindings.get(dataset);

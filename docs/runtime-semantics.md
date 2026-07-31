@@ -396,19 +396,27 @@ missing markers, decimal separators, and escape/double quote modes. Files remain
 compressed streams, host paths, URLs, arbitrary encodings, `colClasses`, and the complete GNU R
 scanner are outside this slice.
 
-The serializer preserves atomic storage types, explicit missing masks versus ordinary `NaN`,
-infinities, complex components, raw bytes, strings, list/pairlist nesting, and ordinary vector
-attributes. This is deliberately a text-serialization seam for browser-safe package data, not an OS
-filesystem or connection implementation. Non-session paths, external file text, nondefault
-serialization controls, functions/environments, cyclic graphs, binary formats, and persistence
-outside one runtime session remain unsupported.
+The independent binary serializer reads and writes GNU R's documented XDR version-2/version-3 stream
+shape for owned atomic storage, explicit missing masks versus ordinary `NaN`, infinities, complex
+components, raw bytes, strings, list/pairlist nesting, names, and ordinary vector attributes.
+Version 3 records UTF-8 as its native encoding. The reader additionally expands the base compact
+integer/real-sequence ALTREP forms and normalizes compact automatic data-frame row names.
+Browser-standard `CompressionStream`/`DecompressionStream` supplies bounded gzip wrapping; the
+runtime never calls a host filesystem or embeds GNU R.
+
+`serialize(object, NULL)` returns a raw XDR stream and `unserialize(raw)` restores it.
+`saveRDS`/`readRDS` operate on bounded browser-memory paths or binary connections, while `infoRDS`
+reports the stream version, writer/minimum-reader versions, format, and native encoding. ASCII,
+native-endian, ordinary environment/closure/language graphs, reference hooks, unsupported ALTREP
+classes, bzip2/xz/zstd, cycles, and host persistence fail explicitly.
 
 `save(..., list, file, envir)` selects bindings without evaluating direct object names, forces their
-promises by default, serializes a named list through the same canonical-source encoder, and writes a
-versioned workspace header to the session text map. `load(file, envir, verbose)` validates and
-evaluates that archive, then installs its named entries in order. Duplicate names are preserved in
-the invisible return vector while the last binding wins in the target environment. Compression and
-version arguments are validated metadata only; no GNU R binary stream or compressor is embedded.
+promises by default, serializes a named pairlist behind the GNU R `RDX2`/`RDX3` workspace header,
+and writes a binary session file. `load(file, envir, verbose)` decodes session or immutable package
+workspace bytes and installs their named entries in order. Duplicate names are preserved in the
+invisible return vector while the last binding wins in the target environment. Versions 2 and 3,
+uncompressed output, and gzip output are supported; ASCII, other compressors, promise-graph
+persistence, and partial writes remain explicit boundaries.
 
 Application-supplied pure-R bundles are compiled at session initialization. DESCRIPTION and
 NAMESPACE parsing produces parser-independent runtime package definitions; package sources then use
@@ -421,13 +429,16 @@ dependency cycles, imports, exports, and lifecycle evaluation all remain resourc
 DESCRIPTION, NAMESPACE, retained `R/*.R` text, and base64 package resources share one immutable
 package-file lookup seam. UTF-8 uses the browser-standard fatal decoder, Latin-1 uses deterministic
 byte mapping, and both paths are bounded; package paths cannot be written through `writeLines()`.
+One packaged `R/sysdata.rda` workspace is decoded into the namespace before R source evaluation.
 `utils::data()` enumerates direct `data/` resources in attached or explicitly named packages. An
 `.R` dataset is decoded according to the package encoding, parsed to the normalized AST, and
 evaluated in the selected environment; overwrite protection restores pre-existing direct bindings.
 `.csv`, `.tab`, and `.txt` datasets use the owned table reader and bind one frame under the
-requested dataset name. The return vector and `packageIQR` listing shape follow GNU R's
-visible/invisible contract. Binary `.rda`/`.RData`, lazy-data databases, aliases/index metadata,
-compressed data, and temporary working-directory changes remain explicit boundaries.
+requested dataset name. `.rda`/`.RData` entries use the same XDR/gzip workspace decoder and install
+every named binding. The return vector and `packageIQR` listing shape follow GNU R's
+visible/invisible contract. Installed-package `.rdx`/`.rdb` lazy-load databases, aliases/index
+metadata, unsupported serialized types/compressors, and temporary working-directory changes remain
+explicit boundaries.
 
 `Sys.sleep(time)` uses short asynchronous timer slices, returns invisible `NULL`, and checks the
 active cancellation token without consuming evaluation steps. Non-negative finite intervals and
