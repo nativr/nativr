@@ -875,7 +875,15 @@ cycles vector/matrix/data-frame columns and point/line styles, omits incomplete 
 linear and logarithmic coordinates, and reuses bounded page/window/box/segment/point Worker/Canvas
 and display-list commands. Full axes/annotations, class-specific plotting methods, `add = TRUE`,
 step/histogram types, and device-identical layout remain boundaries. Ranks 466–469 are already
-registered; rank 470 `base::aperm` is the next unresolved callable candidate.
+registered. Rank 470 `base::aperm` is now complete for
+[bit64's](https://cran.r-project.org/web/packages/bit64/refman/bit64.html) measured `aperm(A, 2:1)`
+array-method requirement, representing 722,206 downloads, one measured occurrence, and 0.6% weighted
+reach. The owned
+[documented array-permutation path](https://stat.ethz.ch/R-manual/R-devel/library/base/html/aperm.html)
+adds `aperm`/`aperm.default` S3 dispatch, `NextMethod`, numeric/character axis permutations, reverse
+defaults, resized or fixed dimensions, dimnames, atomic/list arrays, lazy dots, and bounded
+column-major storage reordering. Table methods, malformed low-level attributes, exact diagnostics,
+and long vectors remain boundaries. Rank 471 `base::dget` is the next unresolved callable candidate.
 
 ## Completed implementation order
 
@@ -1254,6 +1262,10 @@ ties:
      vector/matrix/data-frame inputs, generated x coordinates, column/style recycling, incomplete
      omission, logarithmic coordinates, point/line series, Worker/Canvas rendering, display-list
      replay, namespace access, and resource limits.
+132. Array-axis permutation: `base::aperm()` and `aperm.default()` run bit64's measured matrix axis
+     swap with numeric/character permutations, reverse defaults, dimension/dimname resizing,
+     fixed-shape output, atomic/list arrays, lazy S3 dots, inherited dispatch, `NextMethod`,
+     namespace access, attribute cleanup, and resource limits.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

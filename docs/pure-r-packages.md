@@ -37,6 +37,12 @@ already provide much of the execution foundation. The remaining work is tracked 
 loading a package is a namespace, dependency, lifecycle, data, licensing, and compatibility
 problem—not just parsing a directory of `.R` files.
 
+The usage-ranked `base::aperm` increment demonstrates the intended reuse model: a package can define
+an ordinary R S3 method for its own array class, receive lazy arguments, and call `NextMethod()`
+into NativR's independently implemented `aperm.default` storage operation. The package method itself
+does not need a TypeScript rewrite. A general package loader is still required to discover,
+register, and isolate that method from `NAMESPACE` metadata.
+
 ## Boundaries
 
 - A pure-R package can load only when every core R feature and dependency it exercises is supported.

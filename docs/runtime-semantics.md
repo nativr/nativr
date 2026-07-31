@@ -336,6 +336,16 @@ record/replay need no additional protocol. Complete axes/labels, class-preservin
 dispatch, additions to existing plots, remaining plot types, and exact graphics layout remain
 unsupported.
 
+`base::aperm()` is an S3-first array-axis generic. Method arguments retain promises and are
+rematched for each selected method and `NextMethod()` target; unmatched named dots can therefore
+stay lazy, while an unnamed third argument can occupy `aperm.default()`'s later `resize` formal as
+in GNU R. The default decodes output coordinates in the permuted shape, maps them to input
+coordinates, and copies owned vector/list elements in column-major order without executing generated
+JavaScript. Numeric axes are integer-coerced and character axes use dimension-axis names. Omitted,
+`NULL`, and empty permutations reverse axes. Resized output permutes dimensions and dimnames;
+fixed-size output restores the original dimensions and drops dimnames. Only result shape attributes
+survive. Storage and iteration remain bounded by the shared allocation and step budgets.
+
 `graphics::polygon()` accepts the same owned coordinate containers but does not dispatch: paired
 vectors, two-column matrices/data frames, complex coordinates, and named `list(x, y)` become
 device-independent closed paths. Missing or non-finite pairs split separate polygons. Fill/border

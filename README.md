@@ -69,7 +69,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 484 registered functions, including resettable
+an initial condition/handler slice. It exposes 486 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
 preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
@@ -433,6 +433,12 @@ overplotted, and no-draw series; resolves x/y logarithmic coordinates; opens bou
 windows; and records/replays the resulting box, segment, and point commands. Full axes and
 annotations, class-specific `plot`/`lines` methods, `add = TRUE`, step/histogram series, and
 device-identical layout remain explicit boundaries.
+
+Rank 470 `base::aperm` now runs bit64's measured matrix-axis swap and supplies the S3 extension seam
+needed by pure-R array classes. The independently authored `aperm.default` handles numeric and named
+axis permutations, reverse-axis defaults, dimension/dimname resizing, `resize = FALSE`, atomic and
+list arrays, lazy dots, inherited dispatch, and `NextMethod`. Table-specific methods, invalid
+low-level attribute shapes, exact diagnostics, and long-vector storage remain explicit boundaries.
 
 Development priority is based on a reproducible analysis of documented usage in popular CRAN
 packages. The committed

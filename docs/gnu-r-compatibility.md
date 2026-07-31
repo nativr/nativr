@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           484 |
-| Overlapping callable names        |           469 |
-| Missing GNU R callable names      |         2,053 |
-| Name overlap                      |      18.5964% |
+| NativR registered names           |           486 |
+| Overlapping callable names        |           471 |
+| Missing GNU R callable names      |         2,051 |
+| Name overlap                      |      18.6757% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -383,6 +383,14 @@ no-draw types, logarithmic coordinate resolution, style recycling, invisible ret
 access, Worker/Canvas output, recording/replay, errors, and resource limits have coverage. Complete
 axes and annotation, class-specific `plot`/`lines` dispatch, `add = TRUE`, remaining plot types,
 date/time axes, exact diagnostics, long vectors, and device-identical layout remain incomplete.
+
+The rank-470 increment adds GNU R behavioral differential evidence for bit64's measured
+`base::aperm(A, 2:1)` requirement and the public `aperm.default` path. Numeric and named axis
+permutations, reverse defaults, resized and fixed-shape dimensions, permuted/dropped dimnames,
+atomic/list arrays, user and inherited S3 methods, `NextMethod`, lazy dots, direct/namespace access,
+attribute cleanup, errors, and resource limits have coverage. `aperm.table`, malformed low-level
+attributes, exact diagnostics, long vectors, and broader package-defined array classes remain
+incomplete.
 
 ## Completion evidence
 
