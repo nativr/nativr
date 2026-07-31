@@ -10,6 +10,7 @@ export type {
   PublicGraphicsEvent,
   PublicOutputEvent,
   PureRPackageBundle,
+  PureRPackageResource,
 } from "./api.js";
 export { isComplex, isExpression, isLanguage, isNA, isRaw, isSymbol, NA } from "./conversion.js";
 export type {

@@ -14,6 +14,7 @@ packages/nativr/src/assets/
 packages/nativr/LICENSE
 packages/nativr/NOTICE
 packages/nativr/README.md
+packages/package-tools/LICENSE
 apps/playground/public/assets/
 *.tgz
 .tmp/

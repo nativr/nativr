@@ -9,6 +9,8 @@ const root = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const temporaryRoot = path.resolve(os.tmpdir(), "nativr-pack-smoke");
 const packRoot = path.join(temporaryRoot, "tarball");
 const consumerRoot = path.join(temporaryRoot, "consumer");
+const packageToolConsumerRoot = path.join(temporaryRoot, "package-tool-consumer");
+const packageFixtureRoot = path.join(packageToolConsumerRoot, "fixture");
 verifyTemporaryRoot(temporaryRoot);
 
 await rm(temporaryRoot, { recursive: true, force: true });
@@ -88,8 +90,75 @@ try {
     cwd: root,
   });
   console.log(`Packed consumer build: passed (${tarball})`);
+
+  await runPnpm(
+    [
+      "--config.verify-deps-before-run=false",
+      "--filter",
+      "@nativr/package-tools",
+      "pack",
+      "--pack-destination",
+      packRoot,
+    ],
+    { cwd: root },
+  );
+  const packageToolTarball = (await readdir(packRoot)).find((file) =>
+    file.startsWith("nativr-package-tools-"),
+  );
+  if (packageToolTarball === undefined) {
+    throw new Error("pnpm pack did not create the package-tools tarball.");
+  }
+  const packageToolTarballPath = path.join(packRoot, packageToolTarball);
+  await mkdir(path.join(packageFixtureRoot, "R"), { recursive: true });
+  await writeFile(
+    path.join(packageToolConsumerRoot, "package.json"),
+    `${JSON.stringify(
+      {
+        name: "nativr-package-tool-smoke-consumer",
+        private: true,
+        type: "module",
+        packageManager: "pnpm@11.17.0",
+        dependencies: {
+          "@nativr/package-tools": `file:${packageToolTarballPath.replaceAll("\\", "/")}`,
+        },
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  await writeFile(
+    path.join(packageFixtureRoot, "DESCRIPTION"),
+    "Package: smokefixture\nVersion: 1.0.0\nLicense: MIT\nNeedsCompilation: no\n",
+  );
+  await writeFile(path.join(packageFixtureRoot, "NAMESPACE"), "export(double)\n");
+  await writeFile(path.join(packageFixtureRoot, "R", "double.R"), "double <- function(x) x * 2\n");
+  await runPnpm(
+    [
+      "--config.verify-deps-before-run=false",
+      "--dir",
+      packageToolConsumerRoot,
+      "install",
+      "--frozen-lockfile=false",
+    ],
+    { cwd: root },
+  );
+  const packageToolCli = path.join(
+    packageToolConsumerRoot,
+    "node_modules",
+    "@nativr",
+    "package-tools",
+    "dist",
+    "cli.js",
+  );
+  const artifactPath = path.join(packageToolConsumerRoot, "smokefixture.json");
+  await runNode(packageToolCli, ["pack", packageFixtureRoot, "--output", artifactPath], {
+    cwd: packageToolConsumerRoot,
+  });
+  await runNode(packageToolCli, ["verify", artifactPath], { cwd: packageToolConsumerRoot });
+  console.log(`Package-tools tarball CLI: passed (${packageToolTarball})`);
 } finally {
   await rm(consumerRoot, { recursive: true, force: true });
+  await rm(packageToolConsumerRoot, { recursive: true, force: true });
 }
 
 function verifyTemporaryRoot(target) {

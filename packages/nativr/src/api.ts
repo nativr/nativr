@@ -26,7 +26,7 @@ import type { JsInputValue, JsValue } from "./conversion.js";
 import type { RuntimeHost } from "./runtime-host.js";
 
 export type { PublicDataViewEvent, PublicGraphicsEvent, PublicOutputEvent } from "@nativr/protocol";
-export type { PureRPackageBundle } from "@nativr/protocol";
+export type { PureRPackageBundle, PureRPackageResource } from "@nativr/protocol";
 
 /** Optional asset overrides for CDNs, unusual bundlers, or tests. */
 export interface CreateRAssets {
@@ -140,10 +140,13 @@ function snapshotPackageBundles(
       const description = bundle["description"];
       const namespace = bundle["namespace"];
       const sourceInputs = asUnknownArray(bundle["rSources"]);
+      const resourceInputs =
+        bundle["resources"] === undefined ? [] : asUnknownArray(bundle["resources"]);
       if (
         typeof description !== "string" ||
         typeof namespace !== "string" ||
-        sourceInputs === undefined
+        sourceInputs === undefined ||
+        resourceInputs === undefined
       ) {
         throw new NativRError(
           "NRS5003",
@@ -170,6 +173,25 @@ function snapshotPackageBundles(
               );
             }
             return Object.freeze({ path, source });
+          }),
+        ),
+        resources: Object.freeze(
+          resourceInputs.map((entry, resourceIndex) => {
+            if (!isUnknownRecord(entry)) {
+              throw new NativRError(
+                "NRS5003",
+                `Package resource at index ${bundleIndex}:${resourceIndex} has an invalid shape.`,
+              );
+            }
+            const path = entry["path"];
+            const data = entry["data"];
+            if (typeof path !== "string" || typeof data !== "string") {
+              throw new NativRError(
+                "NRS5003",
+                `Package resource at index ${bundleIndex}:${resourceIndex} has an invalid shape.`,
+              );
+            }
+            return Object.freeze({ path, data });
           }),
         ),
       });

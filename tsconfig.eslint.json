@@ -12,6 +12,7 @@
       "@nativr/base": ["./packages/base/src/index.ts"],
       "@nativr/parser": ["./packages/parser/src/index.ts"],
       "@nativr/protocol": ["./packages/protocol/src/index.ts"],
+      "@nativr/package-tools": ["./packages/package-tools/src/index.ts"],
       "@nativr/runtime": ["./packages/runtime/src/index.ts"],
       "@nativr/nativr": ["./packages/nativr/src/index.ts"]
     }

@@ -9,6 +9,7 @@ const rules = new Map([
   ["runtime", new Set(["@nativr/ast"])],
   ["base", new Set(["@nativr/ast", "@nativr/runtime"])],
   ["protocol", new Set()],
+  ["package-tools", new Set()],
   [
     "nativr",
     new Set([

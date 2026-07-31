@@ -77,7 +77,7 @@ import type {
 } from "@nativr/runtime";
 import { assertNever } from "@nativr/ast";
 import type { AstNode, CallArgument, SourceSpan } from "@nativr/ast";
-import { matchBuiltinArguments } from "./arguments.js";
+import { matchBuiltinArguments, matchLeadingDotsArguments } from "./arguments.js";
 import { CLUSTERING_BUILTIN_SPECS } from "./clustering.js";
 import { COLOUR_RAMP_BUILTIN_SPECS } from "./colour-ramp.js";
 import {
@@ -223,6 +223,14 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("Sys.localeconv", [], "behavioral", builtinSystemLocaleConv),
   defineBuiltin("path.expand", ["path"], "shape", builtinPathExpand),
   defineBuiltin("file.path", ["...", "fsep"], "behavioral", builtinFilePath),
+  defineBuiltin(
+    "system.file",
+    ["...", "package", "lib.loc", "mustWork"],
+    "shape",
+    builtinSystemFile,
+    "regular",
+    "visible",
+  ),
   defineBuiltin("tempfile", ["pattern", "tmpdir", "fileext"], "shape", builtinTempFile),
   defineBuiltin(
     "unlink",
@@ -268,6 +276,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "regular",
     "invisible",
   ),
+  definePackageBuiltin("utils", "packageName", ["env"], "behavioral", builtinPackageName),
   definePackageBuiltin("utils", "sessionInfo", ["package"], "shape", builtinSessionInfo),
   definePackageBuiltin(
     "utils",
@@ -2561,6 +2570,85 @@ async function builtinFilePath(invocation: BuiltinInvocation): Promise<RCharacte
   );
 }
 
+async function builtinSystemFile(invocation: BuiltinInvocation): Promise<RCharacterVector> {
+  const { matched, dots } = matchLeadingDotsArguments(invocation, [
+    "package",
+    "lib.loc",
+    "mustWork",
+  ]);
+  const packageArgument = matched.get("package");
+  const packageValue =
+    packageArgument === undefined
+      ? characterVector(["base"])
+      : await invocation.force(packageArgument.promise);
+  if (valueLength(packageValue) !== 1) {
+    throw new REvaluationError("NRE2233", "'package' must be of length 1");
+  }
+  const packageName =
+    isAtomic(packageValue) && !isMissing(packageValue, 0)
+      ? isFactor(packageValue)
+        ? (factorLevels(packageValue)[(packageValue.values[0] ?? 0) - 1] ?? "")
+        : stringAt(packageValue, 0)
+      : "";
+  const libLocation = matched.get("lib.loc");
+  if (libLocation !== undefined) await invocation.force(libLocation.promise);
+  const mustWork = await lazyLogicalFlag(invocation, matched.get("mustWork"), false, "mustWork");
+  const components: { readonly values: readonly string[]; readonly missing: Uint8Array }[] = [];
+  for (const argument of dots) {
+    const value = await invocation.force(argument.promise);
+    if (!isAtomic(value) || value.length === 0) return systemFileNotFound(invocation, mustWork);
+    const missing = new Uint8Array(value.length);
+    const values = Array.from({ length: value.length }, (_, index) => {
+      if (isMissing(value, index)) {
+        missing[index] = 1;
+        return "";
+      }
+      return isFactor(value)
+        ? (factorLevels(value)[(value.values[index] ?? 0) - 1] ?? "")
+        : stringAt(value, index);
+    });
+    components.push({ values, missing });
+  }
+  if (packageName.length === 0) return systemFileNotFound(invocation, mustWork);
+  const length =
+    components.length === 0 ? 1 : Math.max(...components.map((part) => part.values.length));
+  const paths: string[] = [];
+  for (let index = 0; index < length; index += 1) {
+    invocation.context.checkpoint();
+    const parts: string[] = [];
+    let valid = true;
+    for (const component of components) {
+      const componentIndex = index % component.values.length;
+      if ((component.missing[componentIndex] ?? 0) !== 0) {
+        valid = false;
+        break;
+      }
+      const value = component.values[componentIndex] ?? "";
+      for (const part of value.replaceAll("\\", "/").split("/")) {
+        if (part.length === 0) continue;
+        if (part === "." || part === "..") {
+          valid = false;
+          break;
+        }
+        parts.push(part);
+      }
+      if (!valid) break;
+    }
+    if (!valid) continue;
+    const path = invocation.packageResourcePath(packageName, parts.join("/"));
+    if (path !== undefined) paths.push(path);
+  }
+  if (paths.length === 0) return systemFileNotFound(invocation, mustWork);
+  invocation.context.allocate(paths.length);
+  return characterVector(paths);
+}
+
+function systemFileNotFound(invocation: BuiltinInvocation, mustWork: boolean): RCharacterVector {
+  if (mustWork) throw new REvaluationError("NRE2234", "no file found");
+  invocation.context.allocate(1);
+  return characterVector([""]);
+}
+
 function filePathCharacters(input: RValue): string[] {
   if (input.type === "null") return [];
   if (isAtomic(input)) {
@@ -3093,6 +3181,18 @@ function virtualTextByteLength(value: string): number {
   let bytes = 0;
   for (const character of value) bytes += utf8ByteLength(character.codePointAt(0) ?? 0);
   return bytes;
+}
+
+async function builtinPackageName(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["env"]);
+  const environment = matched.get("env") ?? invocation.currentEnvironment();
+  if (environment.type !== "environment") {
+    throw new RTypeMismatchError("NRT3353", "'env' must be an environment");
+  }
+  const name = invocation.packageName(environment);
+  if (name === undefined) return R_NULL;
+  invocation.context.allocate(1);
+  return characterVector([name]);
 }
 
 async function builtinSessionInfo(invocation: BuiltinInvocation): Promise<RValue> {

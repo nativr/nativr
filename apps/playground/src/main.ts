@@ -50,7 +50,9 @@ const examples: readonly Example[] = [
   {
     id: "package",
     label: "Pure-R package bundle",
-    code: "library(nativrdemo)\ntwice_mean(c(1, 2, 6))",
+    code: `library(nativrdemo)
+stopifnot(system.file("extdata", "demo.json", package = "nativrdemo") == "nativr://package/nativrdemo/extdata/demo.json")
+twice_mean(c(1, 2, 6))`,
   },
   {
     id: "plot",

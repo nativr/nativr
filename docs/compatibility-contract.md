@@ -1710,17 +1710,26 @@ mutable `self`, private/active bindings, or reference semantics. `new_class` and
 vctrs-compatible class construction shapes, not the complete vctrs or S7 packages.
 
 Applications may provide `PureRPackageBundle` records at `createR()` initialization. DESCRIPTION and
-NAMESPACE metadata plus package-relative `R/*.R` source are validated and bounded before the Worker
-parses source into normalized ASTs. The initial loader provides dependency-ordered isolated
-namespaces, `import`/`importFrom`, explicit exports and internals, `S3method`, `.onLoad`,
-`.onAttach`, `library`, `require`, `requireNamespace`, namespace queries, attachment search-path
-entries, and reset/reload behavior. It rejects native compilation, `LinkingTo`, `useDynLib`, invalid
-source paths, and unsupported NAMESPACE directives before treating the bundle as loadable. This is
-an application asset interface, not arbitrary CRAN installation: dependency-version constraints,
-Depends-style attachment, package data/resources, lazy loading, install hooks, S4 registration,
-bytecode, compiled code, license resolution, and R CMD check behavior remain outside the slice.
+NAMESPACE metadata, package-relative `R/*.R` source, and optional base64 resources are validated and
+bounded before the Worker parses source into normalized ASTs. The loader provides dependency-ordered
+isolated namespaces, DESCRIPTION version checks, `import`/`importFrom`, explicit exports and
+internals, `S3method`, `.onLoad`, `.onAttach`, `library`, `require`, `requireNamespace`, namespace
+queries, `utils::packageName`, immutable `system.file` virtual paths, attachment search-path
+entries, and reset/reload behavior.
 
-Deliberate current exclusions include GNU R/webR embedding, arbitrary package installation,
-generated JavaScript execution, the complete graphics-device/base-graphics stack, filesystem access,
-runtime network access, locale-specific raw encodings, and the unimplemented remainder of complex
-mathematics.
+The Node-only `@nativr/package-tools` build path accepts standard source directories and `.tar.gz`
+archives, or resolves required `Depends`/`Imports` from a CRAN-like `PACKAGES` index. It enforces
+archive/file/byte/package limits, rejects links, native/JVM code, install hooks, `LinkingTo`,
+`useDynLib`, invalid paths, and unsupported NAMESPACE directives, preserves package resources and
+license metadata, and emits deterministic SHA-256 artifacts plus a dependency lock. The browser
+runtime remains network-free. `pkgconfig 2.0.3` has an opt-in executable external test for the full
+repository-to-namespace path.
+
+Package admission is not universal execution compatibility. Depends-style attachment, package data
+loading, lazy data, broader NAMESPACE and S4 registration, bytecode, compiled code, arbitrary
+resource connections, license-policy decisions, and R CMD check behavior remain outside this slice.
+
+Deliberate current exclusions include GNU R/webR embedding, browser-time package installation,
+universal package execution, generated JavaScript execution, the complete graphics-device/base-
+graphics stack, filesystem access, runtime network access, locale-specific raw encodings, and the
+unimplemented remainder of complex mathematics.

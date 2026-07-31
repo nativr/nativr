@@ -1,0 +1,317 @@
+import { createHash, randomUUID } from "node:crypto";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { gzipSync } from "node:zlib";
+
+import { c as createTar } from "tar";
+import { afterEach, describe, expect, it } from "vitest";
+
+import {
+  PackageCompatibilityError,
+  comparePackageVersions,
+  inspectPackage,
+  installPackagesFromRepository,
+  packPackage,
+  resolvePackageArtifacts,
+  verifyPackageArtifact,
+} from "../src/index.js";
+
+const temporaryRoots: string[] = [];
+
+afterEach(async () => {
+  for (const root of temporaryRoots.splice(0)) await rm(root, { recursive: true, force: true });
+});
+
+describe("pure-R package packager", () => {
+  it("builds deterministic JSON artifacts with metadata, source, resources, and integrity", async () => {
+    const packageRoot = await fixturePackage();
+    const first = await inspectPackage(packageRoot);
+    const second = await inspectPackage(packageRoot);
+
+    expect(first).toEqual(second);
+    expect(first).toMatchObject({
+      format: "nativr-pure-r-package",
+      formatVersion: 1,
+      package: { name: "demopkg", version: "1.2.3", license: "MIT + file LICENSE" },
+      compatibility: { packaging: "ready", execution: "unchecked" },
+    });
+    expect(first.dependencies).toEqual([
+      { name: "R", kind: "Depends", constraint: { operator: ">=", version: "4.0.0" } },
+      { name: "stats", kind: "Imports" },
+      { name: "helper", kind: "Suggests", constraint: { operator: ">=", version: "2.1" } },
+    ]);
+    expect(first.bundle.rSources).toEqual([
+      { path: "R/main.R", source: "square <- function(x) x ^ 2\n" },
+    ]);
+    expect(first.bundle.resources.map((resource) => resource.path)).toEqual([
+      "data/example.R",
+      "extdata/config.json",
+      "LICENSE",
+    ]);
+    expect(first.compatibility.issues).toContainEqual(
+      expect.objectContaining({ code: "NRPKG1006", severity: "warning", path: "data/example.R" }),
+    );
+    expect(verifyPackageArtifact(first)).toBe(true);
+    expect(
+      verifyPackageArtifact({
+        ...first,
+        package: { ...first.package, version: "9.9.9" },
+      }),
+    ).toBe(false);
+  });
+
+  it("reads the canonical one-directory source tarball shape without extracting links", async () => {
+    const packageRoot = await fixturePackage();
+    const parent = path.dirname(packageRoot);
+    const archive = path.join(parent, "demopkg_1.2.3.tar.gz");
+    await createTar({ gzip: true, file: archive, cwd: parent }, [path.basename(packageRoot)]);
+
+    const artifact = await packPackage(archive);
+    expect(artifact.package).toMatchObject({ name: "demopkg", version: "1.2.3" });
+    expect(
+      artifact.bundle.resources.find((resource) => resource.path === "extdata/config.json")?.data,
+    ).toBe(Buffer.from('{"scale":2}\n').toString("base64"));
+  });
+
+  it("honors Collate order and selects one explicit platform source variant", async () => {
+    const packageRoot = await fixturePackage();
+    await writeFile(path.join(packageRoot, "R", "a.R"), "a <- z + 1\n");
+    await writeFile(path.join(packageRoot, "R", "z.R"), "z <- 1\n");
+    await mkdir(path.join(packageRoot, "R", "unix"));
+    await mkdir(path.join(packageRoot, "R", "windows"));
+    await writeFile(path.join(packageRoot, "R", "unix", "platform.R"), "platform <- 'unix'\n");
+    await writeFile(
+      path.join(packageRoot, "R", "windows", "platform.R"),
+      "platform <- 'windows'\n",
+    );
+    const originalDescription = await readFile(path.join(packageRoot, "DESCRIPTION"), "utf8");
+    await writeFile(
+      path.join(packageRoot, "DESCRIPTION"),
+      `${originalDescription.trimEnd()}\nCollate.unix: 'z.R' 'a.R' 'main.R' 'unix/platform.R'\nCollate.windows: 'windows/platform.R' 'main.R' 'z.R' 'a.R'\n`,
+    );
+
+    const unix = await packPackage(packageRoot);
+    const windows = await packPackage(packageRoot, { sourcePlatform: "windows" });
+    expect(unix.sourcePlatform).toBe("unix");
+    expect(unix.bundle.rSources.map((entry) => entry.path)).toEqual([
+      "R/z.R",
+      "R/a.R",
+      "R/main.R",
+      "R/unix/platform.R",
+    ]);
+    expect(windows.sourcePlatform).toBe("windows");
+    expect(windows.bundle.rSources.map((entry) => entry.path)).toEqual([
+      "R/windows/platform.R",
+      "R/main.R",
+      "R/z.R",
+      "R/a.R",
+    ]);
+  });
+
+  it("decodes portable latin1 package metadata, namespace, and R sources", async () => {
+    const packageRoot = await fixturePackage();
+    await writeFile(
+      path.join(packageRoot, "DESCRIPTION"),
+      Buffer.from(
+        "Package: demopkg\nVersion: 1.2.3\nLicense: MIT\nEncoding: latin1\nDescription: caf\xe9\nNeedsCompilation: no\n",
+        "latin1",
+      ),
+    );
+    await writeFile(
+      path.join(packageRoot, "R", "main.R"),
+      Buffer.from("label <- 'caf\xe9'\n", "latin1"),
+    );
+
+    const artifact = await packPackage(packageRoot);
+    expect(artifact.bundle.description).toContain("Description: café");
+    expect(artifact.bundle.rSources[0]?.source).toContain("'café'");
+  });
+
+  it("reports native code and install hooks, then refuses to produce a load candidate", async () => {
+    const packageRoot = await fixturePackage();
+    await mkdir(path.join(packageRoot, "src"));
+    await writeFile(path.join(packageRoot, "src", "native.c"), "int demo(void) { return 1; }\n");
+    await writeFile(path.join(packageRoot, "configure"), "#!/bin/sh\n");
+    await writeFile(path.join(packageRoot, "NAMESPACE"), "useDynLib(demopkg)\nexport(square)\n");
+
+    const inspected = await inspectPackage(packageRoot);
+    expect(inspected.compatibility.packaging).toBe("blocked");
+    expect(inspected.compatibility.issues.map((issue) => issue.code)).toEqual(
+      expect.arrayContaining(["NRPKG1001", "NRPKG1003", "NRPKG1011"]),
+    );
+    await expect(packPackage(packageRoot)).rejects.toBeInstanceOf(PackageCompatibilityError);
+  });
+
+  it("enforces bounded input before constructing an artifact", async () => {
+    const packageRoot = await fixturePackage();
+    await expect(inspectPackage(packageRoot, { limits: { maxFiles: 2 } })).rejects.toThrow(
+      "configured file or byte limits",
+    );
+  });
+
+  it("resolves required dependencies in deterministic load order and emits a lock", async () => {
+    const consumerRoot = await fixturePackage();
+    await writeFile(
+      path.join(consumerRoot, "DESCRIPTION"),
+      [
+        "Package: demopkg",
+        "Version: 1.2.3",
+        "License: MIT + file LICENSE",
+        "Depends: R (>= 4.0.0)",
+        "Imports: stats, helper (>= 2.1)",
+        "NeedsCompilation: no",
+        "",
+      ].join("\n"),
+    );
+    const helperRoot = await fixturePackage("helper", "2.1.0");
+    const consumer = await packPackage(consumerRoot);
+    const helper = await packPackage(helperRoot);
+
+    const resolved = resolvePackageArtifacts([consumer, helper], { roots: ["demopkg"] });
+    expect(resolved.artifacts.map((artifact) => artifact.package.name)).toEqual([
+      "helper",
+      "demopkg",
+    ]);
+    expect(resolved.bundles).toEqual([helper.bundle, consumer.bundle]);
+    expect(resolved.lock).toMatchObject({
+      format: "nativr-package-lock",
+      formatVersion: 1,
+      roots: ["demopkg"],
+      packages: [
+        { name: "helper", version: "2.1.0", dependencies: [] },
+        { name: "demopkg", version: "1.2.3", dependencies: ["helper"] },
+      ],
+    });
+    expect(() => resolvePackageArtifacts([consumer], { roots: ["demopkg"] })).toThrow(
+      "requires missing package 'helper'",
+    );
+  });
+
+  it("keeps Suggests optional, checks requested optional edges, and compares R package versions", async () => {
+    const artifact = await packPackage(await fixturePackage());
+    expect(resolvePackageArtifacts([artifact]).artifacts).toHaveLength(1);
+    expect(() => resolvePackageArtifacts([artifact], { includeSuggests: true })).toThrow(
+      "requires missing package 'helper'",
+    );
+    expect(comparePackageVersions("1.2", "1.2.0")).toBe(0);
+    expect(comparePackageVersions("1.10", "1.9.9")).toBe(1);
+    expect(comparePackageVersions("1.0-2", "1.0.3")).toBe(-1);
+  });
+
+  it("installs a dependency closure from a bounded CRAN-like repository", async () => {
+    const consumerRoot = await fixturePackage();
+    await writeFile(
+      path.join(consumerRoot, "DESCRIPTION"),
+      "Package: demopkg\nVersion: 1.2.3\nImports: stats, helper (>= 2.1)\nNeedsCompilation: no\n",
+    );
+    const helperRoot = await fixturePackage("helper", "2.1.0");
+    const consumerArchive = await archivePackage(consumerRoot);
+    const helperArchive = await archivePackage(helperRoot);
+    const consumerMd5 = createHash("md5").update(consumerArchive).digest("hex");
+    const helperMd5 = createHash("md5").update(helperArchive).digest("hex");
+    const index = [
+      "Package: demopkg",
+      "Version: 1.2.3",
+      "Imports: stats, helper (>= 2.1)",
+      "NeedsCompilation: no",
+      `MD5sum: ${consumerMd5}`,
+      "",
+      "Package: helper",
+      "Version: 2.1.0",
+      "Imports: stats",
+      "NeedsCompilation: no",
+      `MD5sum: ${helperMd5}`,
+      "",
+    ].join("\n");
+    const fetch_: typeof fetch = (input) => {
+      const url = new URL(input instanceof Request ? input.url : input);
+      if (url.pathname.endsWith("/PACKAGES.gz"))
+        return Promise.resolve(new Response(gzipSync(index)));
+      if (url.pathname.endsWith("/demopkg_1.2.3.tar.gz"))
+        return Promise.resolve(new Response(consumerArchive));
+      if (url.pathname.endsWith("/helper_2.1.0.tar.gz"))
+        return Promise.resolve(new Response(helperArchive));
+      return Promise.resolve(new Response("missing", { status: 404 }));
+    };
+
+    const installed = await installPackagesFromRepository(["demopkg"], {
+      repository: "https://packages.example.test/cran/",
+      fetch: fetch_,
+    });
+    expect(installed.repository).toBe("https://packages.example.test/cran/");
+    expect(installed.indexIntegrity).toMatch(/^sha256-[a-f0-9]{64}$/u);
+    expect(installed.artifacts.map((artifact) => artifact.package.name)).toEqual([
+      "helper",
+      "demopkg",
+    ]);
+    expect(installed.lock.roots).toEqual(["demopkg"]);
+  });
+
+  it("rejects a repository archive that does not match its index digest", async () => {
+    const packageRoot = await fixturePackage();
+    const archive = await archivePackage(packageRoot);
+    const index = [
+      "Package: demopkg",
+      "Version: 1.2.3",
+      "MD5sum: 00000000000000000000000000000000",
+      "",
+    ].join("\n");
+    const fetch_: typeof fetch = (input) => {
+      const url = new URL(input instanceof Request ? input.url : input);
+      if (url.pathname.endsWith("/PACKAGES.gz")) return Promise.resolve(new Response(index));
+      if (url.pathname.endsWith("/demopkg_1.2.3.tar.gz"))
+        return Promise.resolve(new Response(archive));
+      return Promise.resolve(new Response("missing", { status: 404 }));
+    };
+
+    await expect(
+      installPackagesFromRepository(["demopkg"], {
+        repository: "https://packages.example.test/cran/",
+        fetch: fetch_,
+      }),
+    ).rejects.toThrow("Repository digest mismatch");
+  });
+});
+
+async function fixturePackage(name = "demopkg", version = "1.2.3"): Promise<string> {
+  const temporaryRoot = await mkdtemp(path.join(os.tmpdir(), "nativr-package-test-"));
+  temporaryRoots.push(temporaryRoot);
+  const packageRoot = path.join(temporaryRoot, name);
+  await mkdir(path.join(packageRoot, "R"), { recursive: true });
+  await mkdir(path.join(packageRoot, "inst", "extdata"), { recursive: true });
+  await mkdir(path.join(packageRoot, "data"), { recursive: true });
+  await writeFile(
+    path.join(packageRoot, "DESCRIPTION"),
+    [
+      `Package: ${name}`,
+      `Version: ${version}`,
+      "License: MIT + file LICENSE",
+      "Depends: R (>= 4.0.0)",
+      "Imports: stats",
+      "Suggests: helper (>= 2.1)",
+      "NeedsCompilation: no",
+      "",
+    ].join("\n"),
+  );
+  await writeFile(
+    path.join(packageRoot, "NAMESPACE"),
+    "importFrom(stats, median)\nexport(square)\n",
+  );
+  await writeFile(path.join(packageRoot, "R", "main.R"), "square <- function(x) x ^ 2\n");
+  await writeFile(path.join(packageRoot, "inst", "extdata", "config.json"), '{"scale":2}\n');
+  await writeFile(path.join(packageRoot, "data", "example.R"), "example <- 1:3\n");
+  await writeFile(path.join(packageRoot, "LICENSE"), "YEAR: 2026\nCOPYRIGHT HOLDER: Example\n");
+  return packageRoot;
+}
+
+async function archivePackage(packageRoot: string): Promise<Uint8Array> {
+  const archive = path.join(
+    path.dirname(packageRoot),
+    `${path.basename(packageRoot)}_${randomUUID()}.tar.gz`,
+  );
+  await createTar({ gzip: true, file: archive, cwd: path.dirname(packageRoot) }, [
+    path.basename(packageRoot),
+  ]);
+  return readFile(archive);
+}

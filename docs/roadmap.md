@@ -441,12 +441,11 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      through the same browser-memory seam, including object lists, environments, promise forcing,
      duplicate names, verbose output, format controls, visibility, and invalid archives. GNU R
      `.RData` binary interchange, host files, true compression, and persistence remain separate.
-114. Source-only package foundation: application-supplied bundles now validate DESCRIPTION,
-     NAMESPACE, and bounded `R/*.R` inputs; load dependency-ordered isolated namespaces; resolve
-     imports/exports and `::`/`:::`; register S3 methods; run lifecycle hooks; attach through
-     `library`; and execute in both inline and Worker sessions. A build-time packager, dependency
-     version solving, data/resources, broader NAMESPACE directives, independently published package
-     evidence, and R CMD check remain the next package-compatibility layers.
+114. Source-only package foundation: application-supplied bundles validate DESCRIPTION, NAMESPACE,
+     bounded `R/*.R` inputs, optional immutable resources, and dependency versions; load isolated
+     namespaces; resolve imports/exports and `::`/`:::`; register S3 methods; run lifecycle hooks;
+     attach through `library`; resolve package identity through `utils::packageName`; and execute in
+     inline or Worker sessions.
 115. Frequency-ranked high-level plotting: `base::plot` and `graphics::plot.default` run rank 22's
      measured numeric calls and package-owned S3 methods through the existing page/window/box/
      segment/point/text journal. One-vector and paired coordinates, regular linear ranges, common
@@ -454,6 +453,15 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      labels, Worker/Canvas rendering, recording/replay, visibility, and resource bounds have
      evidence. Specialized core methods, full axes, log/aspect layout, margins/clipping, and pixel
      equivalence remain separate graphics work.
+116. Build-time pure-R installation: `@nativr/package-tools` consumes bounded source directories,
+     safe `.tar.gz` archives, and CRAN-like source indexes; rejects native/JVM/install-hook and
+     namespace blockers; preserves R source, package resources, licenses, and dependency
+     constraints; applies Collate/platform source selection and portable encodings; verifies
+     repository digests; writes deterministic SHA-256 artifacts and locks; and feeds dependency-
+     first bundles directly to `createR`. Runtime `system.file` exposes immutable package resources.
+     The unchanged public `pkgconfig 2.0.3` source package passes an opt-in
+     repository/install/load/export/call test. Binary/lazy data, broader NAMESPACE/S4 forms, package
+     test orchestration, and audited native Wasm adapters remain later layers.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means
@@ -468,9 +476,9 @@ the measured surface is runnable, not that NativR implements all R semantics or 
 2. Complete indexing, arrays, frames, conditions, dates/times, object systems, I/O, serialization,
    numeric algorithms, statistics, and graphics behind browser-safe host interfaces.
 3. Implement the full inventoried core namespace surface with per-callable differential evidence.
-4. Build on the executable source-bundle namespace loader with independently published pure-R
-   packages, build-time packaging, dependency/version/resource handling, and R CMD check scenarios
-   without embedding GNU R or webR.
+4. Expand the executable package installer from the pinned `pkgconfig` proof to the measured pure-R
+   package corpus, binary/text data adapters, broader namespace/object-system declarations, package
+   test orchestration, and R CMD check scenarios without embedding GNU R or webR.
 5. Verify platform, browser, locale, time-zone, graphics, numeric, and performance behavior against
    the completion criteria in the GNU R compatibility ledger.
 6. Continue refreshing package-usage snapshots so high-reach gaps determine implementation order

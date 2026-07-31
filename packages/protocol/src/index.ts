@@ -76,6 +76,14 @@ export interface ProtocolRuntimeLimits {
   readonly maxOutputBytes: number;
 }
 
+/** One immutable file installed with a browser-supplied pure-R package. */
+export interface PureRPackageResource {
+  /** Installed package-relative path, after the source package's `inst/` prefix is removed. */
+  readonly path: string;
+  /** Binary contents encoded as canonical base64 so artifacts remain JSON serializable. */
+  readonly data: string;
+}
+
 /** One browser-supplied, source-only R package archive. */
 export interface PureRPackageBundle {
   /** Original package DESCRIPTION in DCF syntax. */
@@ -87,6 +95,8 @@ export interface PureRPackageBundle {
     readonly path: string;
     readonly source: string;
   }[];
+  /** Optional immutable package files used through browser-safe virtual package paths. */
+  readonly resources?: readonly PureRPackageResource[];
 }
 
 /** A structured warning crossing the Worker boundary. */
@@ -588,7 +598,13 @@ function isPureRPackageBundle(value: unknown): value is PureRPackageBundle {
     value.rSources.every(
       (entry) =>
         isRecord(entry) && typeof entry.path === "string" && typeof entry.source === "string",
-    )
+    ) &&
+    (value.resources === undefined ||
+      (Array.isArray(value.resources) &&
+        value.resources.every(
+          (entry) =>
+            isRecord(entry) && typeof entry.path === "string" && typeof entry.data === "string",
+        )))
   );
 }
 

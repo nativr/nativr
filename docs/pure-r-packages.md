@@ -1,97 +1,141 @@
-# Pure-R package loading
+# Pure-R package installation and loading
 
-Yes: packages whose executable code is entirely R can use NativR without rewriting each function in
-TypeScript. The important qualification is that “written in R” is necessary, not sufficient. The
-package and all of its dependencies must stay inside NativR's supported language, runtime,
-namespace, data, and I/O contracts.
+Yes: NativR's package strategy is to run package-owned R code, not to rewrite every exported
+function in TypeScript. Any standard pure-R source package can enter the installation pipeline. A
+successful install does not by itself promise successful execution: the package and its required
+dependency closure must stay inside NativR's supported language, namespace, data, resource, I/O, and
+core API contracts.
 
-## Current model
+## Build-time installation
 
-NativR loads a browser-safe package bundle; it does not run an ordinary host installation process.
-The initial public `PureRPackageBundle` contains:
+Browser evaluation remains network-free. Repository access, archive unpacking, compatibility
+inspection, and dependency resolution happen once during the application build:
 
-- the original DCF `DESCRIPTION` text;
-- the original `NAMESPACE` declarations;
-- an ordered set of package-relative `R/*.R` source files.
+```sh
+pnpm add -D @nativr/package-tools
 
-The application explicitly provides bundles through `createR({ packages })`. Worker initialization
-parses the metadata and R sources into NativR-owned normalized ASTs. Evaluation remains
-network-free; an application or service worker may fetch and cache a bundle before the runtime
-receives it.
+# Resolve the current CRAN-like source package plus required Depends/Imports.
+pnpm exec nativr-package install pkgconfig --output packages.json
 
-```ts
-const r = await createR({
-  packages: [
-    {
-      description: "Package: demo\nVersion: 0.1.0\nNeedsCompilation: no",
-      namespace: "export(square)",
-      rSources: [{ path: "R/square.R", source: "square <- function(x) x ^ 2" }],
-    },
-  ],
-});
-
-await r.eval("library(demo)");
-await r.eval("square(4)"); // 16
+# Or package a local source directory or source tarball.
+pnpm exec nativr-package pack ./mypackage --output mypackage.nativr.json
+pnpm exec nativr-package pack ./mypackage_1.0.0.tar.gz --output mypackage.nativr.json
 ```
 
-The runnable import-and-S3 example is in
-[`examples/pure-r-package.ts`](../examples/pure-r-package.ts).
+For separately built artifacts, `resolve` checks the complete local dependency graph and writes one
+dependency-first package set:
 
-## Executable foundation
+```sh
+pnpm exec nativr-package resolve dependency.nativr.json mypackage.nativr.json --output packages.json
+```
 
-The first loader milestone provides:
+The generated package set is ordinary JSON:
 
-1. isolated namespace and import environments;
-2. dependency-ordered loading and `import`/`importFrom` binding resolution;
+```ts
+import { createR } from "@nativr/nativr";
+import packageSet from "./packages.json" with { type: "json" };
+
+const r = await createR({ packages: packageSet.bundles });
+await r.eval("library(pkgconfig)");
+const value = await r.eval('pkgconfig::get_config("unset-option", 42L)');
+```
+
+An application can fetch and cache the JSON package set itself before `createR()`. The runtime does
+not fetch repositories or package resources during evaluation.
+
+## Artifact contract
+
+Each `nativr-pure-r-package` v1 artifact contains:
+
+- original DCF `DESCRIPTION` and `NAMESPACE` text;
+- an explicit `unix` or `windows` source-platform selection;
+- package-relative R sources decoded from portable UTF-8 or Latin-1 and ordered by `Collate`,
+  `Collate.unix`, or `Collate.windows` when declared (otherwise C-locale path order);
+- `inst/` files mapped to installed package-relative resources, plus preserved `data/`, `demo/`, and
+  license files;
+- typed dependency kinds and version constraints;
+- install-surface diagnostics;
+- a SHA-256 digest over the deterministic JSON payload.
+
+`verify` checks both the schema and digest. `createR()` deep-snapshots the bundle before structured
+clone so later JavaScript mutation cannot alter a Worker session.
+
+Resources use base64 only as a transport encoding. `system.file(..., package =)` exposes matching
+entries as opaque `nativr://package/<package>/...` paths. Those paths identify immutable files in
+the browser package store; they are not host filesystem paths.
+
+## Loader behavior
+
+Worker initialization parses all package R source through Tree-sitter into the NativR-owned
+normalized AST. The runtime then provides:
+
+1. dependency-ordered isolated namespaces with version checks;
+2. `import` and `importFrom` binding resolution;
 3. explicit exports, `pkg::name`, and internal `pkg:::name` lookup;
-4. `S3method` registration without attaching the method;
+4. `S3method` registration without attaching implementation bindings globally;
 5. `.onLoad()` and `.onAttach()` lifecycle hooks;
-6. `library`, `require`, `requireNamespace`, namespace queries, and reset behavior;
-7. rejection of native compilation, `LinkingTo`, `useDynLib`, malformed paths, and unsupported
-   namespace directives before package evaluation.
+6. `library`, `require`, `requireNamespace`, namespace queries, attachment search paths, and reset;
+7. package identity lookup through documented `utils::packageName()` semantics;
+8. bounded immutable resource lookup through `system.file()`.
 
-The combined DESCRIPTION, NAMESPACE, source-path, and R-source text plus source-file count are
-bounded by the configured `maxVectorLength` before any package source is parsed. Package loading
-then consumes the normal step, call-depth, allocation, and output budgets.
+Package source, metadata, resource counts, and encoded bytes are bounded before parsing. Package
+evaluation then consumes the ordinary step, call-depth, allocation, and output budgets.
 
-The parser, owned AST, environments, closures, promises, dispatch, and registered core namespaces
-are reused directly. Package closures retain their namespace environment, imported functions are
-resolved without leaking all internals into the global environment, and registered S3 methods work
-whether or not the package is attached.
+## Compatibility states
 
-The usage-ranked `base::aperm` increment demonstrates the reuse model: a package can define an
-ordinary R S3 method for its own array class, receive lazy arguments, and call `NextMethod()` into
-NativR's independently implemented `aperm.default` storage operation. The package method itself does
-not need a TypeScript rewrite; the loader discovers, registers, and isolates it from `NAMESPACE`
-metadata.
+The package tool deliberately separates two questions:
 
-The usage-ranked `dput`/`dget` and `save`/`load` increments add browser-safe session-local resource
-seams for supported package values. These formats are bounded and reset with the session; they are
-not GNU R binary interchange files or a host package filesystem.
+| Field                    | Meaning                                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------------------ |
+| `packaging: "ready"`     | The source install surface can be represented without native or host install code.         |
+| `packaging: "blocked"`   | A concrete archive, native-code, install-hook, namespace, or internal-data blocker exists. |
+| `execution: "unchecked"` | The artifact still needs runtime loading and package-specific executable evidence.         |
 
-## Boundaries
+Runtime parse/load errors identify the next missing R feature or imported binding. This distinction
+prevents a safe archive scan from being mislabeled as full package compatibility.
 
-- A pure-R package can load only when every core R feature and dependency it exercises is supported.
-- Packages using C, C++, Fortran, Rust, Java, system libraries, subprocesses, sockets, or native
-  graphics need a separately audited Wasm build or an explicit host adapter.
-- Install scripts and arbitrary package code do not gain filesystem, network, DOM, or JavaScript
-  access beyond declared browser-safe capabilities.
-- Third-party package code keeps its own license and notices. Loading it as an application asset
-  does not copy it into NativR's Apache-2.0 runtime or weaken the clean-room policy.
+## External proof
+
+The opt-in test `packages/package-tools/test/external-package.test.ts` downloads the unchanged
+[`pkgconfig 2.0.3`](https://cran.r-project.org/package=pkgconfig) source package, resolves it from
+the official repository index, verifies the pinned artifact digest, loads its namespace, checks all
+three exports, and executes `get_config()` through NativR. No package source is checked into this
+repository.
+
+```sh
+$env:NATIVR_EXTERNAL_PACKAGE_SMOKE="1"
+pnpm vitest run packages/package-tools/test/external-package.test.ts
+```
+
+On macOS or Linux, set the same variable for the command with
+`NATIVR_EXTERNAL_PACKAGE_SMOKE=1 pnpm vitest run packages/package-tools/test/external-package.test.ts`.
+
+The initial failure of that external test identified the missing documented
+[`utils::packageName()`](https://search.r-project.org/R/refmans/utils/html/packageName.html)
+environment-to-namespace seam. Implementing that general core API made the unchanged package load;
+the package itself was not patched or translated.
+
+## Explicit boundaries
+
+- C, C++, Fortran, Rust, Java, shared libraries, `LinkingTo`, `useDynLib`, subprocesses, system
+  libraries, sockets, and native graphics require separate audited Wasm or host adapters.
+- `configure`, `configure.win`, `cleanup`, and `cleanup.win` are not executed.
 - The current NAMESPACE parser supports `export`, `import`, `importFrom`, and `S3method`. S4
-  imports/method registration, conditional directives, `exportPattern`, lazy data, compiled code,
-  package resource files, installation hooks, and byte-compiled code remain outside this milestone.
-- The bundle is application-supplied, not a CRAN downloader or installer. A future build-time
-  packager must validate licenses, dependency versions, datasets, resources, and a capability
-  manifest before producing deployable artifacts.
-- NativR reports compatibility per package/version and does not imply that arbitrary CRAN packages
-  work merely because a loader exists.
+  registration, `exportPattern`, conditional declarations, and other directives remain blockers.
+- `inst/` and other resources are preserved, but connection-backed `readLines`, `file`, and related
+  APIs are separate work.
+- `data/*.R` and binary datasets are preserved with diagnostics; `data()` installation, `.rda`,
+  `.RData`, `.rds`, `R/sysdata.rda`, and full lazy-data behavior are not yet implemented.
+- Bytecode is not loaded. Original R source is parsed into the owned AST.
+- The packager defaults to the deterministic `unix` source variant. Packages with platform-specific
+  `R/` code can select `--source-platform windows`; the chosen variant is recorded in the artifact.
+- `Suggests` is optional unless `--include-suggests` is requested. `Enhances` is not a required
+  dependency edge.
+- Third-party package code retains its own license and notices. It is an application asset, not
+  copied into NativR's Apache-2.0 runtime.
+- A package is compatible only at the tested package version and capability manifest; NativR does
+  not infer compatibility from “NeedsCompilation: no” alone.
 
-## Delivery sequence
-
-The first milestone is executable and tested in the inline integration suite and the real Worker
-Playground: source parsing, imports, exports, namespace access, lifecycle hooks, S3 dispatch,
-dependency loading, and reset are covered. The next milestone is a build-time packager plus an
-independent public pure-R package whose measured tests pass unchanged. The bundle API remains
-experimental until that external-package evidence, version constraints, package data, resources, and
-broader NAMESPACE behavior are complete.
+The clean-room boundary in [`clean-room.md`](clean-room.md) applies to runtime work. Public package
+documentation and black-box results may define required behavior; GNU R, webR, or third-party
+implementation source is never copied into the runtime.

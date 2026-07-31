@@ -103,6 +103,15 @@ export interface RuntimePackageImport {
   readonly names?: readonly string[];
 }
 
+/** One package requirement retained from DESCRIPTION. */
+export interface RuntimePackageDependency {
+  readonly package: string;
+  readonly constraint?: {
+    readonly operator: ">=" | "<=" | "==" | ">" | "<" | "!=";
+    readonly version: string;
+  };
+}
+
 /** One S3 registration parsed independently from NAMESPACE. */
 export interface RuntimeS3Method {
   readonly generic: string;
@@ -110,15 +119,22 @@ export interface RuntimeS3Method {
   readonly method: string;
 }
 
+/** One immutable package-relative resource retained in the browser package store. */
+export interface RuntimePackageResource {
+  readonly path: string;
+  readonly data: string;
+}
+
 /** Parser-independent package input accepted by the runtime. */
 export interface RuntimePackageDefinition {
   readonly name: string;
   readonly version: string;
-  readonly dependencies: readonly string[];
+  readonly dependencies: readonly RuntimePackageDependency[];
   readonly imports: readonly RuntimePackageImport[];
   readonly exports: readonly string[];
   readonly s3Methods: readonly RuntimeS3Method[];
   readonly programs: readonly ProgramNode[];
+  readonly resources: readonly RuntimePackageResource[];
 }
 
 interface RuntimePackageRecord {
@@ -309,6 +325,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "capture.output",
       "demo",
       "glob2rx",
+      "packageName",
       "sessionInfo",
       "type.convert",
       "type.convert.data.frame",
@@ -1612,6 +1629,8 @@ export class Evaluator {
               .map(([name]) => name),
           ]),
         namespaceExports: async (name) => this.#namespaceExports(name, context),
+        packageResourcePath: (name, path) => this.#packageResourcePath(name, path),
+        packageName: (environment) => this.#packageName(environment),
         globalEnvironment: () => this.#globalEnvironment,
         baseEnvironment: () => this.#baseEnvironment,
         emptyEnvironment: () => this.#emptyEnvironment,
@@ -2024,6 +2043,7 @@ export class Evaluator {
               exports: await this.#namespaceExports(name, context),
               s3Methods: [],
               programs: [],
+              resources: [],
             },
             namespace: this.#baseEnvironment,
             loading: false,
@@ -2046,7 +2066,17 @@ export class Evaluator {
       try {
         for (const dependency of record.definition.dependencies) {
           context.checkpoint();
-          await this.#loadPackage(dependency, false, context);
+          const loadedDependency = await this.#loadPackage(dependency.package, false, context);
+          if (!runtimePackageDependencySatisfied(loadedDependency.version, dependency)) {
+            const constraint = dependency.constraint;
+            throw new REvaluationError(
+              "NRE2235",
+              `Package '${name}' requires '${dependency.package}' ${constraint?.operator ?? ""} ${constraint?.version ?? ""}, but ${loadedDependency.version} is installed.`.replaceAll(
+                /\s+/gu,
+                " ",
+              ),
+            );
+          }
         }
         const importsEnvironment = createEnvironment(this.#baseEnvironment, true);
         for (const import_ of record.definition.imports) {
@@ -2168,6 +2198,51 @@ export class Evaluator {
     }
     context.allocate(record.definition.exports.length);
     return Object.freeze([...record.definition.exports]);
+  }
+
+  #packageResourcePath(name: string, resourcePath: string): string | undefined {
+    const normalizedPath = resourcePath.replace(/^\/+|\/+$/gu, "");
+    if (REGISTERED_NAMESPACE_EXPORTS.has(name)) {
+      return normalizedPath.length === 0
+        ? `nativr://package/${encodeURIComponent(name)}`
+        : undefined;
+    }
+    const record = this.#packages.get(name);
+    if (record === undefined) return undefined;
+    if (
+      normalizedPath.length > 0 &&
+      normalizedPath !== "DESCRIPTION" &&
+      normalizedPath !== "NAMESPACE" &&
+      normalizedPath !== "R" &&
+      !record.definition.resources.some(
+        (resource) =>
+          resource.path === normalizedPath || resource.path.startsWith(`${normalizedPath}/`),
+      )
+    ) {
+      return undefined;
+    }
+    const encodedPath = normalizedPath
+      .split("/")
+      .filter((part) => part.length > 0)
+      .map((part) => encodeURIComponent(part))
+      .join("/");
+    const root = `nativr://package/${encodeURIComponent(name)}`;
+    return encodedPath.length === 0 ? root : `${root}/${encodedPath}`;
+  }
+
+  #packageName(environment: REnvironment): string | undefined {
+    let current: REnvironment | null = environment;
+    while (current !== null) {
+      if (current === this.#globalEnvironment || current === this.#attachedPackagesEnvironment) {
+        return undefined;
+      }
+      for (const [name, record] of this.#packages) {
+        if (record.namespace === current) return name;
+      }
+      if (current === this.#baseEnvironment) return "base";
+      current = current.parent;
+    }
+    return undefined;
   }
 
   async #dispatchS3IfPresent(
@@ -2419,6 +2494,49 @@ export class Evaluator {
       throw new RRuntimeDisposedError("NRS5001", "The NativR runtime has been disposed.");
     }
   }
+}
+
+function runtimePackageDependencySatisfied(
+  version: string,
+  dependency: RuntimePackageDependency,
+): boolean {
+  const constraint = dependency.constraint;
+  if (constraint === undefined) return true;
+  const comparison = compareRuntimePackageVersions(version, constraint.version);
+  switch (constraint.operator) {
+    case ">=":
+      return comparison >= 0;
+    case "<=":
+      return comparison <= 0;
+    case "==":
+      return comparison === 0;
+    case ">":
+      return comparison > 0;
+    case "<":
+      return comparison < 0;
+    case "!=":
+      return comparison !== 0;
+  }
+}
+
+function compareRuntimePackageVersions(left: string, right: string): number {
+  const leftParts = runtimePackageVersionParts(left);
+  const rightParts = runtimePackageVersionParts(right);
+  const length = Math.max(leftParts.length, rightParts.length);
+  for (let index = 0; index < length; index += 1) {
+    const leftPart = leftParts[index] ?? 0n;
+    const rightPart = rightParts[index] ?? 0n;
+    if (leftPart < rightPart) return -1;
+    if (leftPart > rightPart) return 1;
+  }
+  return 0;
+}
+
+function runtimePackageVersionParts(value: string): readonly bigint[] {
+  if (!/^[0-9]+(?:[.-][0-9]+)*$/u.test(value)) {
+    throw new REvaluationError("NRE2229", `Invalid package version '${value}'.`);
+  }
+  return value.split(/[.-]/u).map((part) => BigInt(part));
 }
 
 function machineConstants(): RValue {

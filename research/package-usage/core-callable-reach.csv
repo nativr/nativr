@@ -25,7 +25,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 24,factor,true,15,rlang|vctrs|ggplot2|pillar|dplyr|scales|isoband|stringr|tidyr|stringi|backports|testthat|checkmate|data.table|posterior,149,15.5,18.1
 25,unlink,true,17,ggplot2|withr|cpp11|dplyr|jsonlite|rstan|curl|ps|xfun|htmltools|knitr|testthat|openssl|data.table|diffobj|brio|bit64,45,17.5,18.0
 26,nrow,true,16,vctrs|ggplot2|RcppEigen|pillar|dplyr|jsonlite|isoband|curl|purrr|matrixStats|textshaping|systemfonts|data.table|shiny|zoo|bit64,52,16.5,17.6
-27,system.file,false,17,ggplot2|fs|bslib|rstan|sass|curl|StanHeaders|xfun|desc|knitr|base64enc|openssl|systemfonts|shiny|httr|xml2|httpuv,51,17.5,17.1
+27,system.file,true,17,ggplot2|fs|bslib|rstan|sass|curl|StanHeaders|xfun|desc|knitr|base64enc|openssl|systemfonts|shiny|httr|xml2|httpuv,51,17.5,17.1
 28,character,true,14,rlang|cli|vctrs|pillar|ps|purrr|xfun|stringr|stringi|crayon|backports|testthat|data.table|shiny,22,14.4,16.7
 29,require,true,15,vctrs|ggplot2|glue|cpp11|scales|bslib|rstan|curl|knitr|base64enc|data.table|posterior|promises|zoo|bit64,49,15.5,16.7
 30,as.character,true,15,rlang|ggplot2|pillar|dplyr|utf8|rmarkdown|xfun|digest|htmltools|openssl|data.table|shiny|xml2|diffobj|bit64,43,15.5,16.2

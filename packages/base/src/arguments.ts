@@ -58,3 +58,28 @@ export function matchBuiltinArguments(
   }
   return { matched, dots };
 }
+
+/** Match exact-only trailing formals after `...`, such as those on `system.file`. */
+export function matchLeadingDotsArguments(
+  invocation: BuiltinInvocation,
+  trailingParameters: readonly string[],
+): MatchedBuiltinArguments {
+  const matched = new Map<string, BuiltinCallArgument>();
+  const dots: BuiltinCallArgument[] = [];
+  for (const argument of invocation.arguments) {
+    if (argument.name === undefined) {
+      dots.push(argument);
+      continue;
+    }
+    const candidate = trailingParameters.includes(argument.name) ? argument.name : undefined;
+    if (candidate === undefined) {
+      dots.push(argument);
+      continue;
+    }
+    if (matched.has(candidate)) {
+      throw new REvaluationError("NRE2102", `Argument '${candidate}' matched more than once.`);
+    }
+    matched.set(candidate, argument);
+  }
+  return { matched, dots };
+}

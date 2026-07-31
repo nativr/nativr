@@ -4,12 +4,14 @@ import { REvaluationError, RResourceLimitError, RUnsupportedFeatureError } from 
 import type {
   RuntimeLimits,
   RuntimePackageDefinition,
+  RuntimePackageDependency,
   RuntimePackageImport,
   RuntimeS3Method,
 } from "@nativr/runtime";
 
 const PACKAGE_NAME = /^[A-Za-z](?:[A-Za-z0-9.]*[A-Za-z0-9])?$/u;
-const SOURCE_PATH = /^R\/(?:[A-Za-z0-9._-]+\/)*[A-Za-z0-9._-]+\.[Rr]$/u;
+const CANONICAL_BASE64 = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/u;
+const BASE64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 const NAMESPACE_DIRECTIVE = /([A-Za-z][A-Za-z0-9.]*)\s*\(([^()]*)\)/gu;
 
 export function compilePureRPackages(
@@ -43,18 +45,27 @@ export function compilePureRPackages(
       );
     }
     const namespace = parseNamespace(bundle.namespace, name);
-    const dependencyNames = [
+    const dependencyRequirements = [
       ...parseDependencies(description.get("Depends")),
       ...parseDependencies(description.get("Imports")),
-      ...namespace.imports.map((entry) => entry.package),
-    ].filter((dependency) => dependency !== "R" && dependency !== name);
-    const dependencies = Object.freeze([...new Set(dependencyNames)]);
-    const sources = [...bundle.rSources].sort((left, right) =>
-      left.path < right.path ? -1 : left.path > right.path ? 1 : 0,
+      ...namespace.imports.map<RuntimePackageDependency>((entry) => ({ package: entry.package })),
+    ].filter((dependency) => dependency.package !== "R" && dependency.package !== name);
+    const dependencies = Object.freeze(
+      dependencyRequirements.filter(
+        (dependency, index) =>
+          dependencyRequirements.findIndex(
+            (candidate) =>
+              candidate.package === dependency.package &&
+              candidate.constraint?.operator === dependency.constraint?.operator &&
+              candidate.constraint?.version === dependency.constraint?.version,
+          ) === index,
+      ),
     );
+    // Source order is semantic: package-tools has already applied DESCRIPTION Collate order.
+    const sources = [...bundle.rSources];
     const seenPaths = new Set<string>();
     const programs = sources.map((entry) => {
-      if (!SOURCE_PATH.test(entry.path) || seenPaths.has(entry.path)) {
+      if (!isPackageSourcePath(entry.path) || seenPaths.has(entry.path)) {
         throw new REvaluationError(
           "NRE2228",
           `Package '${name}' contains invalid or duplicate source path '${entry.path}'.`,
@@ -63,6 +74,25 @@ export function compilePureRPackages(
       seenPaths.add(entry.path);
       return parse(entry.source);
     });
+    const seenResourcePaths = new Set<string>();
+    const resources = [...(bundle.resources ?? [])]
+      .sort((left, right) => (left.path < right.path ? -1 : left.path > right.path ? 1 : 0))
+      .map((resource) => {
+        if (!isPackageResourcePath(resource.path) || seenResourcePaths.has(resource.path)) {
+          throw new REvaluationError(
+            "NRE2231",
+            `Package '${name}' contains invalid or duplicate resource path '${resource.path}'.`,
+          );
+        }
+        if (!isCanonicalBase64(resource.data)) {
+          throw new REvaluationError(
+            "NRE2232",
+            `Package '${name}' resource '${resource.path}' is not canonical base64.`,
+          );
+        }
+        seenResourcePaths.add(resource.path);
+        return Object.freeze({ path: resource.path, data: resource.data });
+      });
     return {
       name,
       version,
@@ -71,8 +101,32 @@ export function compilePureRPackages(
       exports: namespace.exports,
       s3Methods: namespace.s3Methods,
       programs: Object.freeze(programs),
+      resources: Object.freeze(resources),
     };
   });
+}
+
+function isCanonicalBase64(value: string): boolean {
+  if (!CANONICAL_BASE64.test(value)) return false;
+  if (value.endsWith("==")) {
+    return BASE64_ALPHABET.indexOf(value[value.length - 3] ?? "") % 16 === 0;
+  }
+  if (value.endsWith("=")) {
+    return BASE64_ALPHABET.indexOf(value[value.length - 2] ?? "") % 4 === 0;
+  }
+  return true;
+}
+
+function isPackageSourcePath(value: string): boolean {
+  if (!value.startsWith("R/") || !/\.[Rr]$/u.test(value) || value.includes("\\")) return false;
+  const parts = value.split("/");
+  return parts.every(
+    (part) =>
+      part.length > 0 &&
+      part !== "." &&
+      part !== ".." &&
+      ![...part].some((character) => character.codePointAt(0)! <= 0x1f),
+  );
 }
 
 function validateBundleBudget(bundles: readonly PureRPackageBundle[], limits: RuntimeLimits): void {
@@ -83,6 +137,10 @@ function validateBundleBudget(bundles: readonly PureRPackageBundle[], limits: Ru
     sourceUnits += bundle.description.length + bundle.namespace.length;
     for (const entry of bundle.rSources) {
       sourceUnits += entry.path.length + entry.source.length;
+    }
+    for (const resource of bundle.resources ?? []) {
+      sourceCount += 1;
+      sourceUnits += resource.path.length + resource.data.length;
     }
     if (sourceCount > limits.maxVectorLength || sourceUnits > limits.maxVectorLength) {
       throw new RResourceLimitError("NRL4002", "Pure-R package bundle source limit exceeded.", {
@@ -95,6 +153,18 @@ function validateBundleBudget(bundles: readonly PureRPackageBundle[], limits: Ru
       });
     }
   }
+}
+
+function isPackageResourcePath(value: string): boolean {
+  if (
+    value.length === 0 ||
+    value.startsWith("/") ||
+    value.includes("\\") ||
+    [...value].some((character) => character.codePointAt(0)! <= 0x1f)
+  ) {
+    return false;
+  }
+  return value.split("/").every((part) => part.length > 0 && part !== "." && part !== "..");
 }
 
 function parseDescription(source: string): ReadonlyMap<string, string> {
@@ -126,14 +196,24 @@ function requiredDescriptionField(fields: ReadonlyMap<string, string>, name: str
   return value;
 }
 
-function parseDependencies(value: string | undefined): readonly string[] {
+function parseDependencies(value: string | undefined): readonly RuntimePackageDependency[] {
   if (value === undefined || value.trim().length === 0) return [];
   return value.split(",").map((entry) => {
-    const match = /^([A-Za-z][A-Za-z0-9.]*)(?:\s*\([^)]*\))?$/u.exec(entry.trim());
+    const match =
+      /^([A-Za-z][A-Za-z0-9.]*)(?:\s*\(\s*(>=|<=|==|>|<|!=)\s*([0-9]+(?:[.-][0-9]+)*)\s*\))?$/u.exec(
+        entry.trim(),
+      );
     if (match?.[1] === undefined) {
       throw new REvaluationError("NRE2229", `Malformed package dependency '${entry.trim()}'.`);
     }
-    return match[1];
+    const operator = match[2] as ">=" | "<=" | "==" | ">" | "<" | "!=" | undefined;
+    const version = match[3];
+    return {
+      package: match[1],
+      ...(operator === undefined || version === undefined
+        ? {}
+        : { constraint: { operator, version } }),
+    };
   });
 }
 

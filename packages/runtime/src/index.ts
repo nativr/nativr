@@ -24,7 +24,9 @@ export type {
   EvaluationResult,
   EvaluatorOptions,
   RuntimePackageDefinition,
+  RuntimePackageDependency,
   RuntimePackageImport,
+  RuntimePackageResource,
   RuntimeS3Method,
 } from "./evaluator.js";
 export { deparseAst } from "./language.js";

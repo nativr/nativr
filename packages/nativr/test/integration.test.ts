@@ -11,11 +11,12 @@ const assets = {
 const pureRFixture: PureRPackageBundle = {
   description: `Package: nativrfixture
 Version: 0.1.0
-Imports: stats
+Imports: stats, utils
 NeedsCompilation: no`,
   namespace: `
 importFrom(stats, median)
-export(square, centered, new_score, describe, package_state)
+importFrom(utils, packageName)
+export(square, centered, new_score, describe, package_state, package_name)
 S3method(describe, score)
 S3method(plot, score)
 `,
@@ -38,16 +39,18 @@ new_score <- function(x) structure(x, class = c("score", "numeric"))
 describe.score <- function(x, ...) paste0(.package_state, ":", sum(x))
 plot.score <- function(x, ..., marker = "package-plot") c(marker, sum(x), list(...)$extra)
 package_state <- function() .package_state
+package_name <- function() packageName()
 hidden_helper <- function(x) x + 100
 `,
     },
   ],
+  resources: [{ path: "extdata/config.json", data: "eyJzY2FsZSI6Mn0K" }],
 };
 
 const pureRConsumer: PureRPackageBundle = {
   description: `Package: nativrconsumer
 Version: 0.2.0
-Imports: nativrfixture`,
+Imports: nativrfixture (>= 0.1.0)`,
   namespace: `importFrom(nativrfixture, square)\nexport(quad)`,
   rSources: [{ path: "R/quad.R", source: "quad <- function(x) square(square(x))" }],
 };
@@ -1465,6 +1468,38 @@ describe("complete inline source-to-result vertical slice", () => {
       assets,
       packages: [pureRFixture, pureRConsumer, failingS3Package],
     });
+    await expect(runtime.eval("system.file(package = 'base')")).resolves.toBe(
+      "nativr://package/base",
+    );
+    await expect(runtime.eval("system.file(package = 'nativrfixture')")).resolves.toBe(
+      "nativr://package/nativrfixture",
+    );
+    await expect(runtime.eval("system.file(package = factor('nativrfixture'))")).resolves.toBe(
+      "nativr://package/nativrfixture",
+    );
+    await expect(runtime.eval("system.file(package = NULL)")).rejects.toMatchObject({
+      code: "NRE2233",
+    });
+    await expect(
+      runtime.eval("system.file('extdata', 'config.json', package = 'nativrfixture')"),
+    ).resolves.toBe("nativr://package/nativrfixture/extdata/config.json");
+    await expect(
+      runtime.eval(
+        "system.file(c('R', 'extdata'), c('', 'config.json'), package = 'nativrfixture')",
+      ),
+    ).resolves.toEqual([
+      "nativr://package/nativrfixture/R",
+      "nativr://package/nativrfixture/extdata/config.json",
+    ]);
+    await expect(runtime.eval("system.file('missing', package = 'nativrfixture')")).resolves.toBe(
+      "",
+    );
+    await expect(
+      runtime.eval("system.file('missing', package = 'nativrfixture', must = TRUE)"),
+    ).resolves.toBe("");
+    await expect(
+      runtime.eval("system.file('missing', package = 'nativrfixture', mustWork = TRUE)"),
+    ).rejects.toMatchObject({ code: "NRE2234" });
     await expect(runtime.eval('isNamespaceLoaded("nativrfixture")')).resolves.toBe(false);
     await expect(runtime.eval('requireNamespace("nativrconsumer", quietly = TRUE)')).resolves.toBe(
       true,
@@ -1476,6 +1511,8 @@ describe("complete inline source-to-result vertical slice", () => {
       ),
     ).resolves.toEqual([true, true, false]);
     await expect(runtime.eval("nativrfixture::centered(c(1, 4, 10))")).resolves.toEqual([-3, 0, 6]);
+    await expect(runtime.eval("nativrfixture::package_name()")).resolves.toBe("nativrfixture");
+    await expect(runtime.eval("utils::packageName()")).resolves.toBe(null);
     await expect(runtime.eval("nativrfixture:::hidden_helper(1)")).resolves.toBe(101);
     await expect(runtime.eval("nativrfixture::hidden_helper(1)")).rejects.toMatchObject({
       code: "NRE2211",
@@ -1505,6 +1542,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "centered",
       "describe",
       "new_score",
+      "package_name",
       "package_state",
       "square",
     ]);
@@ -1524,6 +1562,45 @@ describe("complete inline source-to-result vertical slice", () => {
         c(before, failed, after)
       `),
     ).resolves.toEqual(["loaded:nativrfixture:6", "TRUE", "loaded:nativrfixture:6"]);
+    await runtime.dispose();
+  });
+
+  it("enforces pure-R package dependency versions while loading namespaces", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [
+        pureRFixture,
+        {
+          description:
+            "Package: versionconsumer\nVersion: 1.0.0\nImports: nativrfixture (>= 9.0.0)",
+          namespace: "importFrom(nativrfixture, square)\nexport(use_square)",
+          rSources: [{ path: "R/use.R", source: "use_square <- function(x) square(x)" }],
+        },
+      ],
+    });
+    await expect(runtime.eval("versionconsumer::use_square(2)")).rejects.toMatchObject({
+      code: "NRE2235",
+    });
+    await runtime.dispose();
+  });
+
+  it("preserves explicit package source order after build-time Collate processing", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [
+        {
+          description: "Package: collatefixture\nVersion: 1.0.0",
+          namespace: "export(answer)",
+          rSources: [
+            { path: "R/z first.R", source: "seed <- 41" },
+            { path: "R/a second.R", source: "answer <- seed + 1" },
+          ],
+        },
+      ],
+    });
+    await expect(runtime.eval("collatefixture::answer")).resolves.toBe(42);
     await runtime.dispose();
   });
 
@@ -1561,6 +1638,20 @@ describe("complete inline source-to-result vertical slice", () => {
         ],
       }),
     ).rejects.toMatchObject({ code: "NRE2228" });
+    await expect(
+      createR({
+        execution: "inline",
+        assets,
+        packages: [
+          {
+            description: "Package: malformedresource\nVersion: 1.0.0",
+            namespace: "",
+            rSources: [],
+            resources: [{ path: "extdata/value.bin", data: "AB==" }],
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({ code: "NRE2232" });
     await expect(
       createR({
         execution: "inline",
@@ -7031,7 +7122,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.197.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.198.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
