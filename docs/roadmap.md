@@ -364,6 +364,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
     namespace access, and attribute-free integer output. Unsafe unchecked invalid break vectors,
     recursive-list coercion, warning-text identity, and long-vector indices remain explicit
     boundaries.
+100. Frequency-ranked gray colors: `grDevices::gray.colors` and `grey` run zoo's two measured calls
+     through the shared `gray`/`grey` and `gray.colors`/`grey.colors` implementation, including
+     deterministic RGB(A) bytes, gamma interpolation, alpha recycling, reversal, descending
+     endpoints, aliases, namespace access, attribute removal, errors, and allocation limits.
+     Vector-valued palette controls, device profiles, and other palette families remain explicit
+     boundaries.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

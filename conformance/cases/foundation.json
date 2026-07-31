@@ -6917,5 +6917,78 @@
     ],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "gray-palettes-zoo-observed-levels",
+    "code": "c(grDevices::gray.colors(2, start = 0.7), grDevices::grey(7:1 / 8))",
+    "expected": [
+      "#B3B3B3",
+      "#E6E6E6",
+      "#DFDFDF",
+      "#BFBFBF",
+      "#9F9F9F",
+      "#808080",
+      "#606060",
+      "#404040",
+      "#202020"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "gray-palettes-gamma-alpha-reversal-and-aliases",
+    "code": "c(gray.colors(5), grey.colors(5, start = 0, end = 1, gamma = 1), gray.colors(3, alpha = c(0, 0.5, 1), rev = TRUE), gray.colors(3, gamma = 0), gray.colors(3, gamma = -1), gray.colors(2, start = 0.9, end = 0.1))",
+    "expected": [
+      "#4D4D4D",
+      "#888888",
+      "#AEAEAE",
+      "#CCCCCC",
+      "#E6E6E6",
+      "#000000",
+      "#404040",
+      "#808080",
+      "#BFBFBF",
+      "#FFFFFF",
+      "#E6E6E6FF",
+      "#AEAEAE80",
+      "#4D4D4D00",
+      "#FFFFFF",
+      "#FFFFFF",
+      "#FFFFFF",
+      "#4D4D4D",
+      "#737373",
+      "#E5E5E5",
+      "#E6E6E6",
+      "#191919"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "gray-levels-coercion-shape-and-input-boundaries",
+    "code": "x <- gray(structure(c(0, 0.25, 0.5, 0.75, 1), names = letters[1:5], tag = \"drop\"), c(0, 0.25, 0.5, 0.75, 1))\nc(x, grey(c(0.1, 0.5, 0.9), c(0.5, 1)), identical(gray(c(0.2, 0.8)), grey(c(0.2, 0.8))), is.null(attributes(x)), length(gray(NULL)), length(gray.colors(0)), length(gray.colors(3.9)) == 4, inherits(try(gray(c(0, NA_real_)), silent = TRUE), \"try-error\"), inherits(try(gray(0.5, 2), silent = TRUE), \"try-error\"), inherits(try(gray.colors(-1), silent = TRUE), \"try-error\"), inherits(try(gray.colors(3, start = -0.1), silent = TRUE), \"try-error\"), inherits(try(gray.colors(3, gamma = NA_real_), silent = TRUE), \"try-error\"), inherits(try(gray.colors(3, rev = NA), silent = TRUE), \"try-error\"))",
+    "expected": [
+      "#00000000",
+      "#40404040",
+      "#80808080",
+      "#BFBFBFBF",
+      "#FFFFFFFF",
+      "#1A1A1A80",
+      "#808080FF",
+      "#E6E6E680",
+      "TRUE",
+      "TRUE",
+      "0",
+      "0",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

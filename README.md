@@ -69,7 +69,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 470 registered functions, including resettable
+an initial condition/handler slice. It exposes 474 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
 preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
@@ -354,6 +354,12 @@ Rank 453 `base::findInterval` now runs zoo's irregular-date rolling-window width
 breakpoints, missing queries, the documented closure/inside controls, flattened numeric coercion,
 and attribute-free integer output. Unchecked unsorted/missing break vectors and recursive-list
 coercion remain explicit unsafe or unsupported boundaries.
+
+Ranks 454-455 add the shared `grDevices` gray-color surface used by zoo:
+`gray.colors(2, start = 0.7)` and `grey(7:1/8)`. The `gray`/`grey` and `gray.colors`/`grey.colors`
+aliases now produce deterministic uppercase RGB(A) bytes, including gamma-corrected palettes, alpha
+recycling, reversal, descending endpoints, and bounded output. General color spaces, device
+profiles, and the remaining palette families stay separate.
 
 Development priority is based on a reproducible analysis of documented usage in popular CRAN
 packages. The committed

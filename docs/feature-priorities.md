@@ -787,7 +787,17 @@ weighted reach. The owned
 uses bounded binary search with missing-query propagation, duplicate/infinite breakpoints,
 left/right closure and inside controls, numeric coercion, and sortedness validation. Unsafe
 unchecked break vectors, recursive-list coercion, and long-vector indices remain explicit
-boundaries. Rank 454 `gray.colors` is the next unresolved callable candidate.
+boundaries. Rank 454 `gray.colors` is now complete for
+[zoo's](https://cran.r-project.org/web/packages/zoo/refman/zoo.html) measured
+`gray.colors(2, start = 0.7)` call, representing 731,390 downloads, one measured call, and 0.6%
+weighted reach. Rank 455 `grey` is complete through the same shared path for zoo's measured
+`grey(7:1/8)` call at the same reach. The owned
+[gray palette](https://stat.ethz.ch/R-manual/R-devel/library/grDevices/html/gray.colors.html) and
+[gray-level](https://stat.ethz.ch/R-manual/R-devel/library/grDevices/html/gray.html) constructors
+cover all four documented gray/grey aliases, deterministic RGB(A) bytes, gamma correction, alpha
+recycling, reversal, and bounded allocation. Vector-valued palette controls, device profiles, and
+the remaining palette families are explicit boundaries. Rank 456 `ISOdatetime` is the next
+unresolved callable candidate.
 
 ## Completed implementation order
 
@@ -1124,6 +1134,10 @@ ties:
 120. Automatic field conversion: `utils::type.convert()` runs data.table's measured split-column
      callback with default/list/data-frame S3 methods, deterministic type inference, missing/decimal
      controls, matrix/container shapes, factor fallback, and bounded errors.
+121. Gray colors and palettes: `grDevices::gray()`/`grey()` and `gray.colors()`/`grey.colors()` run
+     zoo's two measured calls through a shared deterministic RGB(A) byte path with gamma
+     interpolation, scalar/recycled alpha, reversal, descending endpoints, attribute removal,
+     aliases, input validation, and allocation guards.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.182.0",
+  "languageSubsetVersion": "0.183.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -534,6 +534,10 @@
         { "name": "as.raster.numeric", "compatibility": "behavioral" },
         { "name": "as.raster.character", "compatibility": "behavioral" },
         { "name": "as.raster.raw", "compatibility": "behavioral" },
+        { "name": "gray", "compatibility": "behavioral" },
+        { "name": "grey", "compatibility": "behavioral" },
+        { "name": "gray.colors", "compatibility": "behavioral" },
+        { "name": "grey.colors", "compatibility": "behavioral" },
         { "name": "heat.colors", "compatibility": "behavioral" }
       ]
     },

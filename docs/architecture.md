@@ -117,12 +117,15 @@ first forcing an expression, while a previously forced promise is an ordinary vi
 Interval lookup follows the same rule: `base::findInterval` converts owned numeric-like vectors,
 validates ordinary breakpoint ordering, and performs a checkpointed binary search. This lets pure-R
 rolling-window code compute irregular Date widths without package-specific host code or an R
-process. Date-time formatting is also owned: `strftime` converts through the runtime's POSIXlt
-representation and expands bounded UTC/GMT, C-locale tokens without calling host locale or time-zone
-databases. No parser node or generated JavaScript crosses this boundary. Platform-shaped numeric
-constants such as `.Machine` are installed as owned runtime values rather than read from a host R
-process. Locale categories and monetary conventions follow the same rule: resettable evaluator state
-owns the supported profiles, so Worker results do not vary with the browser or operating-system
-locale. `utils::sessionInfo()` projects that state into a deterministic NativR/browser identity
-rather than probing or claiming the user's native operating system or a GNU R installation. Future
-backends attach behind stable operator IDs rather than duplicating package-specific algorithms.
+process. Gray colors follow the same ownership boundary: `grDevices::gray` and `gray.colors` perform
+numeric validation, gamma interpolation, byte rounding, alpha composition, and reversal without CSS,
+Canvas, a device profile, or a host color service. Date-time formatting is also owned: `strftime`
+converts through the runtime's POSIXlt representation and expands bounded UTC/GMT, C-locale tokens
+without calling host locale or time-zone databases. No parser node or generated JavaScript crosses
+this boundary. Platform-shaped numeric constants such as `.Machine` are installed as owned runtime
+values rather than read from a host R process. Locale categories and monetary conventions follow the
+same rule: resettable evaluator state owns the supported profiles, so Worker results do not vary
+with the browser or operating-system locale. `utils::sessionInfo()` projects that state into a
+deterministic NativR/browser identity rather than probing or claiming the user's native operating
+system or a GNU R installation. Future backends attach behind stable operator IDs rather than
+duplicating package-specific algorithms.

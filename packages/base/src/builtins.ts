@@ -882,6 +882,22 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "behavioral",
     (invocation) => builtinAsRasterMethod(invocation, "raw"),
   ),
+  definePackageBuiltin("grDevices", "gray", ["level", "alpha"], "behavioral", builtinGray),
+  definePackageBuiltin("grDevices", "grey", ["level", "alpha"], "behavioral", builtinGray),
+  definePackageBuiltin(
+    "grDevices",
+    "gray.colors",
+    ["n", "start", "end", "gamma", "alpha", "rev"],
+    "behavioral",
+    builtinGrayColors,
+  ),
+  definePackageBuiltin(
+    "grDevices",
+    "grey.colors",
+    ["n", "start", "end", "gamma", "alpha", "rev"],
+    "behavioral",
+    builtinGrayColors,
+  ),
   definePackageBuiltin(
     "grDevices",
     "heat.colors",
@@ -13457,6 +13473,173 @@ async function builtinPairs(invocation: BuiltinInvocation): Promise<RValue> {
   throw new RUnsupportedFeatureError(
     "NRU6146",
     "pairs.default() requires the broader browser graphics-device and panel-function slice.",
+  );
+}
+
+async function builtinGray(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["level", "alpha"]);
+  const levelValue = required(matched, "level", "gray");
+  if (levelValue.type === "null") return characterVector([]);
+  if (!isAtomic(levelValue)) {
+    throw new RTypeMismatchError("NRT3348", "gray() 'level' must be coercible to numeric.");
+  }
+  const levels = coerceAtomicToDouble(levelValue, invocation);
+  const alphas = grayAlphaVector(matched.get("alpha"), invocation);
+  if (alphas !== undefined && alphas.length > levels.length && levels.length > 0) {
+    throw new RTypeMismatchError(
+      "NRT3348",
+      "gray() 'alpha' cannot be longer than the gray-level vector.",
+    );
+  }
+  validateGrayLevels(levels, "gray() 'level'", invocation.context);
+  if (alphas !== undefined) {
+    validateGrayLevels(alphas, "gray() 'alpha'", invocation.context);
+  }
+
+  invocation.context.allocate(levels.length);
+  const colors = Array.from({ length: levels.length }, (_, index) => {
+    invocation.context.checkpoint();
+    const level = levels.values[index] ?? Number.NaN;
+    const alpha =
+      alphas === undefined ? undefined : (alphas.values[index % alphas.length] ?? Number.NaN);
+    return grayColor(level, alpha);
+  });
+  return characterVector(colors);
+}
+
+async function builtinGrayColors(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["n", "start", "end", "gamma", "alpha", "rev"]);
+  const length = grayPaletteLength(required(matched, "n", "gray.colors"), invocation);
+  const start = grayPaletteScalar(matched.get("start"), 0.3, "start");
+  const end = grayPaletteScalar(matched.get("end"), 0.9, "end");
+  const gamma = grayPaletteScalar(matched.get("gamma"), 2.2, "gamma");
+  if (start < 0 || start > 1 || end < 0 || end > 1) {
+    throw new RTypeMismatchError("NRT3348", "gray.colors() 'start' and 'end' must be in [0, 1].");
+  }
+  const alphas = grayAlphaVector(matched.get("alpha"), invocation);
+  if (alphas !== undefined) {
+    validateGrayLevels(alphas, "gray.colors() 'alpha'", invocation.context);
+  }
+  const reverse = paletteLogicalFlag(matched.get("rev"), false, "rev");
+  const startCorrected = gamma === 0 ? 1 : Math.pow(start, gamma);
+  const endCorrected = gamma === 0 ? 1 : Math.pow(end, gamma);
+  if (!Number.isFinite(startCorrected) || !Number.isFinite(endCorrected)) {
+    throw new RTypeMismatchError("NRT3348", "gray.colors() gamma correction must remain finite.");
+  }
+
+  invocation.context.allocate(length);
+  const colors = Array.from({ length }, (_, index) => {
+    invocation.context.checkpoint();
+    const corrected =
+      length <= 1
+        ? startCorrected
+        : startCorrected + ((endCorrected - startCorrected) * index) / (length - 1);
+    const level = gamma === 0 ? 1 : Math.pow(corrected, 1 / gamma);
+    if (!Number.isFinite(level) || level < 0 || level > 1) {
+      throw new RTypeMismatchError(
+        "NRT3348",
+        "gray.colors() produced a gray level outside [0, 1].",
+      );
+    }
+    const alpha =
+      alphas === undefined ? undefined : (alphas.values[index % alphas.length] ?? Number.NaN);
+    return grayColor(level, alpha);
+  });
+  return characterVector(reverse ? colors.reverse() : colors);
+}
+
+function grayPaletteLength(value: RValue, invocation: BuiltinInvocation): number {
+  if (!isAtomic(value) || value.length === 0) {
+    throw new RTypeMismatchError("NRT3348", "gray.colors() 'n' must start with one number.");
+  }
+  const numeric = coerceAtomicToDouble(value, invocation);
+  const first = numeric.values[0] ?? Number.NaN;
+  if (isMissing(numeric, 0) || !Number.isFinite(first) || first < 0) {
+    throw new RTypeMismatchError(
+      "NRT3348",
+      "gray.colors() 'n' must start with one finite non-negative number.",
+    );
+  }
+  return Math.ceil(first);
+}
+
+function grayPaletteScalar(value: RValue | undefined, fallback: number, name: string): number {
+  if (value === undefined) return fallback;
+  if (
+    (value.type !== "logical" &&
+      value.type !== "integer" &&
+      value.type !== "double" &&
+      value.type !== "complex") ||
+    value.length !== 1 ||
+    isMissing(value, 0)
+  ) {
+    throw new RTypeMismatchError(
+      "NRT3348",
+      `gray.colors() '${name}' must be one finite numeric value.`,
+    );
+  }
+  const result = numberAt(value, 0);
+  if (!Number.isFinite(result)) {
+    throw new RTypeMismatchError(
+      "NRT3348",
+      `gray.colors() '${name}' must be one finite numeric value.`,
+    );
+  }
+  return result;
+}
+
+function grayAlphaVector(
+  value: RValue | undefined,
+  invocation: BuiltinInvocation,
+): RDoubleVector | undefined {
+  if (value === undefined || value.type === "null") return undefined;
+  if (!isAtomic(value) || value.length === 0) {
+    throw new RTypeMismatchError("NRT3348", "gray() 'alpha' must contain numeric opacity values.");
+  }
+  return coerceAtomicToDouble(value, invocation);
+}
+
+function validateGrayLevels(
+  value: RDoubleVector,
+  name: string,
+  context: BuiltinInvocation["context"],
+): void {
+  for (let index = 0; index < value.length; index += 1) {
+    context.checkpoint();
+    const level = value.values[index] ?? Number.NaN;
+    if (isMissing(value, index) || !Number.isFinite(level) || level < 0 || level > 1) {
+      throw new RTypeMismatchError("NRT3348", `${name} must contain values in [0, 1].`);
+    }
+  }
+}
+
+function grayColor(level: number, alpha: number | undefined): string {
+  const byte = colorByte(level * 255);
+  return `#${byte}${byte}${byte}${alpha === undefined ? "" : colorByte(alpha * 255)}`;
+}
+
+function paletteLogicalFlag(value: RValue | undefined, fallback: boolean, name: string): boolean {
+  if (value === undefined) return fallback;
+  if (!isAtomic(value) || value.length !== 1 || isMissing(value, 0)) {
+    throw new RTypeMismatchError(
+      "NRT3348",
+      `gray.colors() '${name}' must be one non-missing logical value.`,
+    );
+  }
+  if (value.type === "character") {
+    const parsed = parseRLogical(value.values[0] ?? "");
+    if (parsed !== undefined) return parsed;
+  } else if (value.type === "complex") {
+    const real = value.real[0] ?? Number.NaN;
+    const imaginary = value.imaginary[0] ?? Number.NaN;
+    if (!Number.isNaN(real) && !Number.isNaN(imaginary)) return real !== 0 || imaginary !== 0;
+  } else {
+    const numeric = value.values[0] ?? Number.NaN;
+    if (!Number.isNaN(numeric)) return numeric !== 0;
+  }
+  throw new RTypeMismatchError(
+    "NRT3348",
+    `gray.colors() '${name}' must be one non-missing logical value.`,
   );
 }
 
