@@ -979,6 +979,131 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("generates zoo's frequency-ranked gamma-corrected gray palettes and levels", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval("c(grDevices::gray.colors(2, start = 0.7), grey(7:1 / 8))"),
+    ).resolves.toEqual([
+      "#B3B3B3",
+      "#E6E6E6",
+      "#DFDFDF",
+      "#BFBFBF",
+      "#9F9F9F",
+      "#808080",
+      "#606060",
+      "#404040",
+      "#202020",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          gray.colors(5),
+          grey.colors(5, start = 0, end = 1, gamma = 1),
+          gray.colors(3, alpha = c(0, 0.5, 1), rev = TRUE)
+        )
+      `),
+    ).resolves.toEqual([
+      "#4D4D4D",
+      "#888888",
+      "#AEAEAE",
+      "#CCCCCC",
+      "#E6E6E6",
+      "#000000",
+      "#404040",
+      "#808080",
+      "#BFBFBF",
+      "#FFFFFF",
+      "#E6E6E6FF",
+      "#AEAEAE80",
+      "#4D4D4D00",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          gray(0:8 / 8),
+          grey(c(0.1, 0.5, 0.9), c(0.5, 1)),
+          identical(gray(c(0.2, 0.8)), grey(c(0.2, 0.8))),
+          is.null(attributes(gray(structure(c(0.2, 0.8), names = c("a", "b"), tag = "drop"))))
+        )
+      `),
+    ).resolves.toEqual([
+      "#000000",
+      "#202020",
+      "#404040",
+      "#606060",
+      "#808080",
+      "#9F9F9F",
+      "#BFBFBF",
+      "#DFDFDF",
+      "#FFFFFF",
+      "#1A1A1A80",
+      "#808080FF",
+      "#E6E6E680",
+      "TRUE",
+      "TRUE",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          gray.colors(3.9),
+          length(gray.colors(0)),
+          gray.colors(3, gamma = 0),
+          gray.colors(3, gamma = -1),
+          gray.colors(2, start = 0.9, end = 0.1),
+          gray(c("0", "0.5", "1")),
+          gray(c(FALSE, TRUE), alpha = TRUE)
+        )
+      `),
+    ).resolves.toEqual([
+      "#4D4D4D",
+      "#969696",
+      "#C3C3C3",
+      "#E6E6E6",
+      "0",
+      "#FFFFFF",
+      "#FFFFFF",
+      "#FFFFFF",
+      "#4D4D4D",
+      "#737373",
+      "#E5E5E5",
+      "#E6E6E6",
+      "#191919",
+      "#000000",
+      "#808080",
+      "#FFFFFF",
+      "#000000FF",
+      "#FFFFFFFF",
+    ]);
+
+    for (const source of [
+      "gray()",
+      "gray(c(0, NA_real_))",
+      "gray(c(-0.1, 1.1))",
+      "gray(0.5, numeric())",
+      "gray(0.5, 2)",
+      "gray.colors()",
+      "gray.colors(-1)",
+      "gray.colors(3, start = -0.1)",
+      "gray.colors(3, gamma = NA_real_)",
+      "gray.colors(3, alpha = 2)",
+      "gray.colors(3, rev = NA)",
+      "gray.colors(3, start = c(0.2, 0.8))",
+    ]) {
+      await expect(runtime.eval(source), source).rejects.toMatchObject({
+        code: source === "gray()" || source === "gray.colors()" ? "NRE2103" : "NRT3348",
+      });
+    }
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 12 },
+    });
+    await expect(limited.eval("gray.colors(13)")).rejects.toMatchObject({ code: "NRL4002" });
+    await limited.dispose();
+  });
+
   it("computes the frequency-ranked factorial surface", async () => {
     const runtime = await session();
     await expect(runtime.eval("factorial(10)")).resolves.toBe(3_628_800);
@@ -5395,7 +5520,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.182.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.183.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

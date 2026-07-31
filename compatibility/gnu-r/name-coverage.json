@@ -4,11 +4,11 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 470,
-    "overlappingNames": 455,
-    "missingReferenceNames": 2067,
+    "nativrRegisteredNames": 474,
+    "overlappingNames": 459,
+    "missingReferenceNames": 2063,
     "nativrExtensionNames": 15,
-    "nameCoverage": 0.180412
+    "nameCoverage": 0.181998
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 345, "nameCoverage": 0.252377 },
@@ -18,8 +18,8 @@
     {
       "package": "grDevices",
       "callableNames": 135,
-      "overlappingNames": 13,
-      "nameCoverage": 0.096296
+      "overlappingNames": 17,
+      "nameCoverage": 0.125926
     },
     { "package": "graphics", "callableNames": 88, "overlappingNames": 9, "nameCoverage": 0.102273 },
     { "package": "datasets", "callableNames": 0, "overlappingNames": 0, "nameCoverage": 1 }
@@ -223,9 +223,13 @@
     "glob2rx",
     "globalCallingHandlers",
     "globalenv",
+    "gray",
+    "gray.colors",
     "gregexpr",
     "grep",
     "grepl",
+    "grey",
+    "grey.colors",
     "gsub",
     "head",
     "heat.colors",
@@ -1498,15 +1502,11 @@
     "glyphWidthLeft",
     "grSoftVersion",
     "graphics.off",
-    "gray",
-    "gray.colors",
     "grconvertX",
     "grconvertY",
     "gregexec",
     "grepRaw",
     "grepv",
-    "grey",
-    "grey.colors",
     "grid",
     "grouping",
     "gzcon",

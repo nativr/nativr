@@ -362,7 +362,16 @@ separate surfaces.
 `grDevices::heat.colors` has differential evidence for the measured sequential palette, exact
 red-to-yellow and pale-yellow hexadecimal bytes, optional alpha, reversal, count truncation, names,
 zero/negative counts, and invalid scalar inputs. It is independently generated and does not claim
-the other palette families, palette state, general color conversion, or device-specific rendering.
+palette families beyond the separately documented gray palette, palette state, general color
+conversion, or device-specific rendering.
+
+`grDevices::gray`/`grey` and `gray.colors`/`grey.colors` have differential evidence for zoo's
+measured `gray.colors(2, start = 0.7)` and `grey(7:1/8)` calls. Covered behavior includes uppercase
+RGB(A) bytes, documented gamma interpolation, default/custom/descending endpoints, zero/fractional
+counts, scalar or recycled alpha, reversal after alpha composition, alias identity, atomic numeric
+coercion for gray levels, attribute removal, namespace access, invalid ranges, and pre-allocation
+result limits. Start/end/gamma vectors, alpha vectors longer than direct gray-level inputs, host
+color profiles, warning-text identity, and long vectors are not compatibility claims.
 
 `head` has value and metadata coverage for atomic vectors, lists, pairlists, expressions, factors,
 two-dimensional matrices, and NativR data frames, including positive and negative `n`. `str` has
