@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 498,
-    "overlappingNames": 483,
-    "missingReferenceNames": 2039,
+    "nativrRegisteredNames": 500,
+    "overlappingNames": 485,
+    "missingReferenceNames": 2037,
     "nativrExtensionNames": 15,
-    "nameCoverage": 0.191515
+    "nameCoverage": 0.192308
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 362, "nameCoverage": 0.264813 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 363, "nameCoverage": 0.265545 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 70, "nameCoverage": 0.150862 },
     { "package": "methods", "callableNames": 209, "overlappingNames": 9, "nameCoverage": 0.043062 },
     { "package": "utils", "callableNames": 262, "overlappingNames": 11, "nameCoverage": 0.041985 },
@@ -24,8 +24,8 @@
     {
       "package": "graphics",
       "callableNames": 88,
-      "overlappingNames": 14,
-      "nameCoverage": 0.159091
+      "overlappingNames": 16,
+      "nameCoverage": 0.181818
     },
     { "package": "datasets", "callableNames": 0, "overlappingNames": 0, "nameCoverage": 1 }
   ],
@@ -354,6 +354,8 @@
     "paste0",
     "path.expand",
     "persp",
+    "plot",
+    "plot.default",
     "plot.new",
     "plot.window",
     "pmin",
@@ -1923,8 +1925,6 @@
     "plclust",
     "plnorm",
     "plogis",
-    "plot",
-    "plot.default",
     "plot.design",
     "plot.ecdf",
     "plot.function",

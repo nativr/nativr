@@ -20,7 +20,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 19,length,true,22,rlang|ggplot2|dplyr|S7|isoband|curl|StanHeaders|purrr|xfun|stringr|testthat|matrixStats|numDeriv|loo|data.table|shiny|posterior|httr|rstudioapi|diffobj|zoo|bit64,89,22.7,21.5
 20,file.path,true,20,rlang|withr|cpp11|dplyr|rstan|curl|xfun|digest|stringr|knitr|backports|tinytex|checkmate|data.table|shiny|rprojroot|rstudioapi|diffobj|readxl|brio,48,20.6,20.2
 21,lapply,true,17,rlang|cli|vctrs|ggplot2|jsonlite|S7|bslib|rstan|tidyr|stringi|gridExtra|abind|loo|data.table|shiny|readxl|zoo,55,17.5,19.7
-22,plot,false,20,ggplot2|withr|scales|gtable|rstan|labeling|xfun|htmltools|knitr|evaluate|testthat|matrixStats|systemfonts|loo|data.table|shiny|ragg|posterior|httr|zoo,179,20.6,19.1
+22,plot,true,20,ggplot2|withr|scales|gtable|rstan|labeling|xfun|htmltools|knitr|evaluate|testthat|matrixStats|systemfonts|loo|data.table|shiny|ragg|posterior|httr|zoo,179,20.6,19.1
 23,seq,true,16,rlang|vctrs|ggplot2|magrittr|tibble|dplyr|scales|xfun|digest|gridExtra|matrixStats|data.table|posterior|distributional|zoo|bit64,115,16.5,18.7
 24,factor,true,15,rlang|vctrs|ggplot2|pillar|dplyr|scales|isoband|stringr|tidyr|stringi|backports|testthat|checkmate|data.table|posterior,149,15.5,18.1
 25,unlink,true,17,ggplot2|withr|cpp11|dplyr|jsonlite|rstan|curl|ps|xfun|htmltools|knitr|testthat|openssl|data.table|diffobj|brio|bit64,45,17.5,18.0

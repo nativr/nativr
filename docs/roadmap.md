@@ -223,13 +223,13 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
 71. Frequency-ranked raster coercion: `grDevices::as.raster` converts ragg's measured capture matrix
     to GNU R's row-first raster shape, with grayscale logical/numeric/raw values, numeric/raw RGB(A)
     arrays, vector reshaping, missing/scaling boundaries, S3 methods, predicates, identity, and a
-    pixel-checked handoff to the existing browser `rasterImage` command path. General `plot` and
-    `plot.raster` remain separate graphics milestones.
+    pixel-checked handoff to the existing browser `rasterImage` command path. `plot.raster` remains
+    a separate graphics milestone.
 72. Frequency-ranked device flushing: `grDevices::dev.flush` runs ragg's measured zero-argument
     animation call shape, while paired `dev.hold` gives the owned browser device nested hold levels,
     bounded cross-evaluation page/window/raster buffering, ordered zero-level release, namespace
     access, reset cleanup, and executable return/coercion evidence. Third-party ragg/WebP devices,
-    general `plot`, and external display-list formats remain separate milestones.
+    complete high-level plot methods and external display-list formats remain separate milestones.
 73. Frequency-ranked plot replay: `grDevices::recordPlot` snapshots the supported browser device's
     bounded page/window/raster display list and `replayPlot` runs ragg's measured same-session
     record/replay shape, including public object shape, metadata retention, invisible return,
@@ -447,6 +447,13 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      `library`; and execute in both inline and Worker sessions. A build-time packager, dependency
      version solving, data/resources, broader NAMESPACE directives, independently published package
      evidence, and R CMD check remain the next package-compatibility layers.
+115. Frequency-ranked high-level plotting: `base::plot` and `graphics::plot.default` run rank 22's
+     measured numeric calls and package-owned S3 methods through the existing page/window/box/
+     segment/point/text journal. One-vector and paired coordinates, regular linear ranges, common
+     styles, point/line/both/overplotted/histogram/step/no-draw geometry, panel hooks, scalar
+     labels, Worker/Canvas rendering, recording/replay, visibility, and resource bounds have
+     evidence. Specialized core methods, full axes, log/aspect layout, margins/clipping, and pixel
+     equivalence remain separate graphics work.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

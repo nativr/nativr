@@ -289,30 +289,44 @@ planes into row-first classed character rasters. It drops source names/dimnames,
 `nrow`/`ncol` reshaping, preserves missing grayscale pixels, performs S3 dispatch, and returns
 existing raster values unchanged. `rasterImage()` consumes those values plus supported
 matrix/array/native-raster inputs as row-major RGBA commands with recycled positions.
-`graphics::box()` resolves plot-region `bty` edge shapes, `col`/`fg` precedence, line type, and
-positive width into one bounded frame command. It returns invisible `NULL`; figure, inner, and outer
-regions are rejected until the owned device has a margin/layout model. `graphics::boxplot()` is an
-S3 generic whose owned default accepts numeric vectors, lists of numeric groups, and numeric matrix
-columns. It omits missing observations, computes Tukey hinges, whiskers, notches, sample counts and
-outliers, and returns the six-field `stats`/`n`/`conf`/`out`/`group`/`names` result invisibly
-whether or not drawing is enabled. Drawing resolves positions, widths, fill/border colors, line
-types, and line widths into a bounded group event; horizontal/notched boxes, `outline`, `varwidth`,
-`at`, and `add` use the same owned device. Formula/data-frame methods, logarithmic axes, arbitrary
-`pars`, axis annotation, and device-identical layout remain unsupported. `graphics::segments()`
-consumes real/logical endpoint vectors, defaults an omitted `x1` or `y1` to its corresponding start
-coordinate, and recycles coordinates, colors, line types, and line widths without a recycling
-warning. Missing/non-finite coordinates and missing/transparent/invalid-width drawing entries are
-omitted. Valid colors are resolved to `#RRGGBBAA`, and documented line-type names, numeric cycles,
-and custom hexadecimal patterns are normalized before transport. `graphics::points()` dispatches
-classed first arguments before accessing the owned device. Its default accepts paired real vectors,
-two-column matrices, one-/two-column data frames, complex coordinates, and named `list(x, y)`
-containers, with an implicit sequence paired to a single ordinary vector. Separate x/y vectors must
-have equal lengths. It resolves numeric plotting-symbol codes 0:25, printable ASCII and
-negative-Unicode codes, literal one-character symbols, colors, fills, sizes, and widths into a
-bounded point event; missing/non-finite coordinates and non-drawing style entries are omitted.
-`type = "p"` draws, `type = "n"` validates without emission, and both return invisible `NULL`.
-Line/path types, locale-dependent codes, character coordinate coercion, broader coordinate classes,
-clipping/log axes, and device-identical font metrics remain unsupported.
+
+`base::plot()` is an S3 generic that probes class methods without consuming `plot.default`; this
+lets application-supplied pure-R package methods own their result and visibility. The
+`graphics::plot.default()` fallback normalizes ordinary one-vector and paired x/y containers through
+the same coordinate adapter as `points()`, computes finite linear ranges and GNU R-shaped 4% regular
+axis padding, then emits a page, window, optional frame, geometry, and supplied scalar character
+annotations. Point, line, both, overplotted, histogram, lower-step, upper-step, and no-draw types
+map to the existing point/segment commands. Colors, fills, symbols, sizes, line types, and widths
+recycle; missing or non-finite pairs are omitted and interrupt paths. Panel promises are forced
+after the window and on either side of data geometry, while annotations remain lazy when
+`ann = FALSE`. The default returns invisible `NULL`; package methods preserve their own visibility.
+Complete axis ticks/labels, expression-derived labels, logarithmic or fixed-aspect windows,
+specialized core plot methods, margins/clipping, and device-identical layout remain explicit
+boundaries. `graphics::box()` resolves plot-region `bty` edge shapes, `col`/`fg` precedence, line
+type, and positive width into one bounded frame command. It returns invisible `NULL`; figure, inner,
+and outer regions are rejected until the owned device has a margin/layout model.
+`graphics::boxplot()` is an S3 generic whose owned default accepts numeric vectors, lists of numeric
+groups, and numeric matrix columns. It omits missing observations, computes Tukey hinges, whiskers,
+notches, sample counts and outliers, and returns the six-field
+`stats`/`n`/`conf`/`out`/`group`/`names` result invisibly whether or not drawing is enabled. Drawing
+resolves positions, widths, fill/border colors, line types, and line widths into a bounded group
+event; horizontal/notched boxes, `outline`, `varwidth`, `at`, and `add` use the same owned device.
+Formula/data-frame methods, logarithmic axes, arbitrary `pars`, axis annotation, and
+device-identical layout remain unsupported. `graphics::segments()` consumes real/logical endpoint
+vectors, defaults an omitted `x1` or `y1` to its corresponding start coordinate, and recycles
+coordinates, colors, line types, and line widths without a recycling warning. Missing/non-finite
+coordinates and missing/transparent/invalid-width drawing entries are omitted. Valid colors are
+resolved to `#RRGGBBAA`, and documented line-type names, numeric cycles, and custom hexadecimal
+patterns are normalized before transport. `graphics::points()` dispatches classed first arguments
+before accessing the owned device. Its default accepts paired real vectors, two-column matrices,
+one-/two-column data frames, complex coordinates, and named `list(x, y)` containers, with an
+implicit sequence paired to a single ordinary vector. Separate x/y vectors must have equal lengths.
+It resolves numeric plotting-symbol codes 0:25, printable ASCII and negative-Unicode codes, literal
+one-character symbols, colors, fills, sizes, and widths into a bounded point event;
+missing/non-finite coordinates and non-drawing style entries are omitted. `type = "p"` draws,
+`type = "n"` validates without emission, and both return invisible `NULL`. Line/path types,
+locale-dependent codes, character coordinate coercion, broader coordinate classes, clipping/log
+axes, and device-identical font metrics remain unsupported.
 
 `graphics::text()` dispatches classed first arguments before device access. Its owned default
 accepts the point-coordinate containers above while recycling unequal x/y lengths. Atomic labels

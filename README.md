@@ -101,7 +101,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 498 registered functions, including resettable
+an initial condition/handler slice. It exposes 500 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
 preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
@@ -285,7 +285,7 @@ row-first raster values that feed the existing browser RGBA command path. Rank-4
 its paired `dev.hold` now implement nested browser-device hold levels: graphics commands remain
 bounded and private across evaluations until the level returns to zero, then reach the host in their
 original order. This covers the measured ragg animation call shape without claiming ragg's file
-device, WebP encoding, or the still-deferred general `plot`. Rank-422 `recordPlot`/`replayPlot` now
+device, WebP encoding, or complete high-level plot methods. Rank-422 `recordPlot`/`replayPlot` now
 captures and replays that owned page/window/raster display list for ragg's measured same-session
 call shape, including hold/flush integration and bounded command/raster storage. External GNU R
 recorded-plot formats, package reloading, `print.recordedplot`, and general graphics devices remain
@@ -463,7 +463,7 @@ graphics path. It accepts one- or two-argument numeric vectors, matrices, and da
 matrix columns and point/line styles; omits incomplete pairs; supports point, line, both,
 overplotted, and no-draw series; resolves x/y logarithmic coordinates; opens bounded pages and
 windows; and records/replays the resulting box, segment, and point commands. Full axes and
-annotations, class-specific `plot`/`lines` methods, `add = TRUE`, step/histogram series, and
+annotations, class-specific `lines` methods, `add = TRUE`, step/histogram series, and
 device-identical layout remain explicit boundaries.
 
 Rank 470 `base::aperm` now runs bit64's measured matrix-axis swap and supplies the S3 extension seam
@@ -486,6 +486,14 @@ values. The bit64-observed `save(e, file); rm(e); load(file)` shape, explicit ob
 environments, duplicate names, verbose output, return visibility, and format rejection have
 executable coverage. The archive is NativR-owned canonical source, not a GNU R `.RData` binary or a
 host file.
+
+Measured rank 22 `plot()` now supplies the high-reach S3 extension point used by package-defined
+`plot.<class>` methods and a bounded browser-native numeric default. One-argument vectors and paired
+x/y data support point, line, both, overplotted, histogram, step, and no-draw types; finite ranges,
+common point/line styles, panel hooks, scalar character labels, Worker transport, Canvas rendering,
+and display-list replay reuse the existing graphics path. Complete axes/tick labels, logarithmic and
+fixed-aspect layouts, formula/function/time-series/raster methods, clipping/margins, and
+device-identical output remain explicit boundaries.
 
 Development priority is based on a reproducible analysis of documented usage in popular CRAN
 packages. The committed

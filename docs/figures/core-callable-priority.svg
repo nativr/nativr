@@ -17,89 +17,89 @@
 <text x="60" y="94" class="subtitle">97 analyzable manuals; ranked by download-weighted package reach</text>
 <text x="60" y="122" class="legend">Red means the callable is absent from NativR builtins and evaluator-native callable language forms; behavioral completeness is stricter than availability.</text>
 <line x1="250" y1="152" x2="250" y2="1018" stroke="#e2e8f0"/><text x="250" y="142" text-anchor="middle" class="tick">0.0%</text>
-<line x1="448.75" y1="152" x2="448.75" y2="1018" stroke="#e2e8f0"/><text x="448.75" y="142" text-anchor="middle" class="tick">4.8%</text>
-<line x1="647.5" y1="152" x2="647.5" y2="1018" stroke="#e2e8f0"/><text x="647.5" y="142" text-anchor="middle" class="tick">9.6%</text>
-<line x1="846.25" y1="152" x2="846.25" y2="1018" stroke="#e2e8f0"/><text x="846.25" y="142" text-anchor="middle" class="tick">14.4%</text>
-<line x1="1045" y1="152" x2="1045" y2="1018" stroke="#e2e8f0"/><text x="1045" y="142" text-anchor="middle" class="tick">19.1%</text>
-<text x="234" y="186" text-anchor="end" class="label">plot</text>
+<line x1="448.75" y1="152" x2="448.75" y2="1018" stroke="#e2e8f0"/><text x="448.75" y="142" text-anchor="middle" class="tick">4.3%</text>
+<line x1="647.5" y1="152" x2="647.5" y2="1018" stroke="#e2e8f0"/><text x="647.5" y="142" text-anchor="middle" class="tick">8.6%</text>
+<line x1="846.25" y1="152" x2="846.25" y2="1018" stroke="#e2e8f0"/><text x="846.25" y="142" text-anchor="middle" class="tick">12.9%</text>
+<line x1="1045" y1="152" x2="1045" y2="1018" stroke="#e2e8f0"/><text x="1045" y="142" text-anchor="middle" class="tick">17.1%</text>
+<text x="234" y="186" text-anchor="end" class="label">system.file</text>
 <rect x="250" y="170" width="795.0" height="20" rx="3" fill="#dc2626"/>
-<text x="1049.0" y="185" class="value">19.1%</text>
-<text x="250" y="206" class="meta">20 packages; 179 observed calls</text>
-<text x="234" y="229" text-anchor="end" class="label">system.file</text>
-<rect x="250" y="213" width="711.8" height="20" rx="3" fill="#dc2626"/>
-<text x="969.8" y="228" class="value">17.1%</text>
-<text x="250" y="249" class="meta">17 packages; 51 observed calls</text>
-<text x="234" y="272" text-anchor="end" class="label">Sys.sleep</text>
-<rect x="250" y="256" width="646.4" height="20" rx="3" fill="#dc2626"/>
-<text x="904.4" y="271" class="value">15.6%</text>
-<text x="250" y="292" class="meta">16 packages; 47 observed calls</text>
-<text x="234" y="315" text-anchor="end" class="label">R.home</text>
-<rect x="250" y="299" width="527.0" height="20" rx="3" fill="#dc2626"/>
-<text x="785.0" y="314" class="value">12.7%</text>
-<text x="250" y="335" class="meta">12 packages; 23 observed calls</text>
-<text x="234" y="358" text-anchor="end" class="label">writeLines</text>
-<rect x="250" y="342" width="501.1" height="20" rx="3" fill="#dc2626"/>
-<text x="759.1" y="357" class="value">12.1%</text>
-<text x="250" y="378" class="meta">10 packages; 30 observed calls</text>
-<text x="234" y="401" text-anchor="end" class="label">readLines</text>
-<rect x="250" y="385" width="441.2" height="20" rx="3" fill="#dc2626"/>
-<text x="699.2" y="400" class="value">10.6%</text>
-<text x="250" y="421" class="meta">11 packages; 27 observed calls</text>
-<text x="234" y="444" text-anchor="end" class="label">file</text>
-<rect x="250" y="428" width="404.0" height="20" rx="3" fill="#dc2626"/>
-<text x="662.0" y="443" class="value">9.7%</text>
-<text x="250" y="464" class="meta">8 packages; 16 observed calls</text>
-<text x="234" y="487" text-anchor="end" class="label">close</text>
-<rect x="250" y="471" width="380.8" height="20" rx="3" fill="#dc2626"/>
-<text x="638.8" y="486" class="value">9.2%</text>
-<text x="250" y="507" class="meta">8 packages; 17 observed calls</text>
-<text x="234" y="530" text-anchor="end" class="label">tempdir</text>
-<rect x="250" y="514" width="373.6" height="20" rx="3" fill="#dc2626"/>
-<text x="631.6" y="529" class="value">9.0%</text>
-<text x="250" y="550" class="meta">9 packages; 26 observed calls</text>
-<text x="234" y="573" text-anchor="end" class="label">dev.off</text>
-<rect x="250" y="557" width="323.9" height="20" rx="3" fill="#dc2626"/>
-<text x="581.9" y="572" class="value">7.8%</text>
-<text x="250" y="593" class="meta">8 packages; 18 observed calls</text>
-<text x="234" y="616" text-anchor="end" class="label">data</text>
-<rect x="250" y="600" width="318.8" height="20" rx="3" fill="#dc2626"/>
-<text x="576.8" y="615" class="value">7.7%</text>
-<text x="250" y="636" class="meta">8 packages; 16 observed calls</text>
-<text x="234" y="659" text-anchor="end" class="label">write.csv</text>
-<rect x="250" y="643" width="292.4" height="20" rx="3" fill="#dc2626"/>
-<text x="550.4" y="658" class="value">7.0%</text>
-<text x="250" y="679" class="meta">7 packages; 15 observed calls</text>
-<text x="234" y="702" text-anchor="end" class="label">png</text>
-<rect x="250" y="686" width="226.9" height="20" rx="3" fill="#dc2626"/>
-<text x="484.9" y="701" class="value">5.5%</text>
-<text x="250" y="722" class="meta">5 packages; 7 observed calls</text>
-<text x="234" y="745" text-anchor="end" class="label">file.exists</text>
-<rect x="250" y="729" width="224.4" height="20" rx="3" fill="#dc2626"/>
-<text x="482.4" y="744" class="value">5.4%</text>
-<text x="250" y="765" class="meta">5 packages; 8 observed calls</text>
-<text x="234" y="788" text-anchor="end" class="label">read.csv</text>
-<rect x="250" y="772" width="222.2" height="20" rx="3" fill="#dc2626"/>
-<text x="480.2" y="787" class="value">5.3%</text>
-<text x="250" y="808" class="meta">6 packages; 11 observed calls</text>
-<text x="234" y="831" text-anchor="end" class="label">system.time</text>
-<rect x="250" y="815" width="218.2" height="20" rx="3" fill="#dc2626"/>
-<text x="476.2" y="830" class="value">5.3%</text>
-<text x="250" y="851" class="meta">6 packages; 95 observed calls</text>
-<text x="234" y="874" text-anchor="end" class="label">dir.create</text>
-<rect x="250" y="858" width="212.3" height="20" rx="3" fill="#dc2626"/>
-<text x="470.3" y="873" class="value">5.1%</text>
+<text x="1049.0" y="185" class="value">17.1%</text>
+<text x="250" y="206" class="meta">17 packages; 51 observed calls</text>
+<text x="234" y="229" text-anchor="end" class="label">Sys.sleep</text>
+<rect x="250" y="213" width="721.9" height="20" rx="3" fill="#dc2626"/>
+<text x="979.9" y="228" class="value">15.6%</text>
+<text x="250" y="249" class="meta">16 packages; 47 observed calls</text>
+<text x="234" y="272" text-anchor="end" class="label">R.home</text>
+<rect x="250" y="256" width="588.6" height="20" rx="3" fill="#dc2626"/>
+<text x="846.6" y="271" class="value">12.7%</text>
+<text x="250" y="292" class="meta">12 packages; 23 observed calls</text>
+<text x="234" y="315" text-anchor="end" class="label">writeLines</text>
+<rect x="250" y="299" width="559.6" height="20" rx="3" fill="#dc2626"/>
+<text x="817.6" y="314" class="value">12.1%</text>
+<text x="250" y="335" class="meta">10 packages; 30 observed calls</text>
+<text x="234" y="358" text-anchor="end" class="label">readLines</text>
+<rect x="250" y="342" width="492.7" height="20" rx="3" fill="#dc2626"/>
+<text x="750.7" y="357" class="value">10.6%</text>
+<text x="250" y="378" class="meta">11 packages; 27 observed calls</text>
+<text x="234" y="401" text-anchor="end" class="label">file</text>
+<rect x="250" y="385" width="451.3" height="20" rx="3" fill="#dc2626"/>
+<text x="709.3" y="400" class="value">9.7%</text>
+<text x="250" y="421" class="meta">8 packages; 16 observed calls</text>
+<text x="234" y="444" text-anchor="end" class="label">close</text>
+<rect x="250" y="428" width="425.3" height="20" rx="3" fill="#dc2626"/>
+<text x="683.3" y="443" class="value">9.2%</text>
+<text x="250" y="464" class="meta">8 packages; 17 observed calls</text>
+<text x="234" y="487" text-anchor="end" class="label">tempdir</text>
+<rect x="250" y="471" width="417.2" height="20" rx="3" fill="#dc2626"/>
+<text x="675.2" y="486" class="value">9.0%</text>
+<text x="250" y="507" class="meta">9 packages; 26 observed calls</text>
+<text x="234" y="530" text-anchor="end" class="label">dev.off</text>
+<rect x="250" y="514" width="361.8" height="20" rx="3" fill="#dc2626"/>
+<text x="619.8" y="529" class="value">7.8%</text>
+<text x="250" y="550" class="meta">8 packages; 18 observed calls</text>
+<text x="234" y="573" text-anchor="end" class="label">data</text>
+<rect x="250" y="557" width="356.1" height="20" rx="3" fill="#dc2626"/>
+<text x="614.1" y="572" class="value">7.7%</text>
+<text x="250" y="593" class="meta">8 packages; 16 observed calls</text>
+<text x="234" y="616" text-anchor="end" class="label">write.csv</text>
+<rect x="250" y="600" width="326.6" height="20" rx="3" fill="#dc2626"/>
+<text x="584.6" y="615" class="value">7.0%</text>
+<text x="250" y="636" class="meta">7 packages; 15 observed calls</text>
+<text x="234" y="659" text-anchor="end" class="label">png</text>
+<rect x="250" y="643" width="253.4" height="20" rx="3" fill="#dc2626"/>
+<text x="511.4" y="658" class="value">5.5%</text>
+<text x="250" y="679" class="meta">5 packages; 7 observed calls</text>
+<text x="234" y="702" text-anchor="end" class="label">file.exists</text>
+<rect x="250" y="686" width="250.6" height="20" rx="3" fill="#dc2626"/>
+<text x="508.6" y="701" class="value">5.4%</text>
+<text x="250" y="722" class="meta">5 packages; 8 observed calls</text>
+<text x="234" y="745" text-anchor="end" class="label">read.csv</text>
+<rect x="250" y="729" width="248.2" height="20" rx="3" fill="#dc2626"/>
+<text x="506.2" y="744" class="value">5.3%</text>
+<text x="250" y="765" class="meta">6 packages; 11 observed calls</text>
+<text x="234" y="788" text-anchor="end" class="label">system.time</text>
+<rect x="250" y="772" width="243.7" height="20" rx="3" fill="#dc2626"/>
+<text x="501.7" y="787" class="value">5.3%</text>
+<text x="250" y="808" class="meta">6 packages; 95 observed calls</text>
+<text x="234" y="831" text-anchor="end" class="label">dir.create</text>
+<rect x="250" y="815" width="237.1" height="20" rx="3" fill="#dc2626"/>
+<text x="495.1" y="830" class="value">5.1%</text>
+<text x="250" y="851" class="meta">4 packages; 6 observed calls</text>
+<text x="234" y="874" text-anchor="end" class="label">list.files</text>
+<rect x="250" y="858" width="222.7" height="20" rx="3" fill="#dc2626"/>
+<text x="480.7" y="873" class="value">4.8%</text>
 <text x="250" y="894" class="meta">4 packages; 6 observed calls</text>
-<text x="234" y="917" text-anchor="end" class="label">list.files</text>
-<rect x="250" y="901" width="199.4" height="20" rx="3" fill="#dc2626"/>
-<text x="457.4" y="916" class="value">4.8%</text>
-<text x="250" y="937" class="meta">4 packages; 6 observed calls</text>
-<text x="234" y="960" text-anchor="end" class="label">par</text>
-<rect x="250" y="944" width="193.0" height="20" rx="3" fill="#dc2626"/>
-<text x="451.0" y="959" class="value">4.6%</text>
-<text x="250" y="980" class="meta">5 packages; 23 observed calls</text>
-<text x="234" y="1003" text-anchor="end" class="label">serialize</text>
-<rect x="250" y="987" width="188.0" height="20" rx="3" fill="#dc2626"/>
-<text x="446.0" y="1002" class="value">4.5%</text>
-<text x="250" y="1023" class="meta">5 packages; 12 observed calls</text>
+<text x="234" y="917" text-anchor="end" class="label">par</text>
+<rect x="250" y="901" width="215.6" height="20" rx="3" fill="#dc2626"/>
+<text x="473.6" y="916" class="value">4.6%</text>
+<text x="250" y="937" class="meta">5 packages; 23 observed calls</text>
+<text x="234" y="960" text-anchor="end" class="label">serialize</text>
+<rect x="250" y="944" width="209.9" height="20" rx="3" fill="#dc2626"/>
+<text x="467.9" y="959" class="value">4.5%</text>
+<text x="250" y="980" class="meta">5 packages; 12 observed calls</text>
+<text x="234" y="1003" text-anchor="end" class="label">Encoding</text>
+<rect x="250" y="987" width="209.2" height="20" rx="3" fill="#dc2626"/>
+<text x="467.2" y="1002" class="value">4.5%</text>
+<text x="250" y="1023" class="meta">3 packages; 12 observed calls</text>
 <text x="60" y="1072" class="note">Named-call syntax only; operators and indirect calls are measured elsewhere. Counts are aggregate observations, and no example source is retained.</text>
 </svg>

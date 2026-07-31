@@ -1622,8 +1622,8 @@ export class Evaluator {
           setBinding(this.#globalEnvironment, name, value);
         },
         dispatchS3: async (generic, object) => this.#dispatchS3(generic, object, context),
-        dispatchS3IfPresent: async (generic, object, arguments_) =>
-          this.#dispatchS3IfPresent(generic, object, arguments_, context),
+        dispatchS3IfPresent: async (generic, object, arguments_, includeDefault) =>
+          this.#dispatchS3IfPresent(generic, object, arguments_, context, includeDefault),
         nextMethod: async (generic) => this.#nextS3Method(generic, context),
       });
       return {
@@ -2175,6 +2175,7 @@ export class Evaluator {
     object: RValue,
     arguments_: readonly BuiltinCallArgument[],
     context: EvaluationContext,
+    includeDefault = true,
   ): Promise<RValue | undefined> {
     if (generic.length === 0) {
       throw new REvaluationError("NRE2213", "UseMethod() generic name must be non-empty.");
@@ -2199,6 +2200,7 @@ export class Evaluator {
       0,
       methodArguments,
       context,
+      includeDefault,
     );
   }
 
@@ -2243,8 +2245,10 @@ export class Evaluator {
     startIndex: number,
     arguments_: ClosureCallFrame["arguments"],
     context: EvaluationContext,
+    includeDefault = true,
   ): Promise<RValue | undefined> {
-    for (let index = startIndex; index <= classes.length; index += 1) {
+    const end = includeDefault ? classes.length : classes.length - 1;
+    for (let index = startIndex; index <= end; index += 1) {
       const className = classes[index];
       const methodName = className === undefined ? `${generic}.default` : `${generic}.${className}`;
       const binding =

@@ -53,6 +53,11 @@ const examples: readonly Example[] = [
     code: "library(nativrdemo)\ntwice_mean(c(1, 2, 6))",
   },
   {
+    id: "plot",
+    label: "Numeric R plot",
+    code: "plot(1:5, c(1, 4, 2, 5, 3), type = 'b', col = 'blue', pch = 21, bg = 'white', main = 'NativR plot')",
+  },
+  {
     id: "output",
     label: "Print + cat output",
     code: 'print(c(alpha = 1, beta = 2))\ncat("mean =", mean(c(1, 2, 3)), "\\n")',
