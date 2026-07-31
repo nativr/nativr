@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.178.0",
+  "languageSubsetVersion": "0.179.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -503,6 +503,7 @@
         { "name": "plot.window", "compatibility": "shape" },
         { "name": "axTicks", "compatibility": "behavioral" },
         { "name": "box", "compatibility": "shape" },
+        { "name": "boxplot", "compatibility": "shape" },
         { "name": "rasterImage", "compatibility": "shape" },
         { "name": "segments", "compatibility": "shape" },
         { "name": "legend", "compatibility": "shape" },

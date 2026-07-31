@@ -69,7 +69,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 466 registered functions, including resettable
+an initial condition/handler slice. It exposes 467 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
 preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
@@ -329,6 +329,13 @@ Rank 449 `graphics::box` now runs zoo's measured plot-frame redraw. Plot-region 
 documented `bty` edge shapes, resolved `col`/`fg`, line types and positive widths, invisible return
 semantics, Worker transport, Canvas rendering, bounded display-list record/replay, and explicit
 boundaries for figure and margin regions that need a future layout model.
+
+Rank 450 `graphics::boxplot` now runs zoo's measured grouped-series example. The owned default
+computes Tukey hinges, whiskers, notches, and outliers for numeric vectors, lists, and matrix
+columns; returns GNU R-shaped statistics invisibly; forwards classed inputs through S3; and carries
+resolved boxplot commands through the Worker, Canvas renderer, output budget, and display-list
+record/replay path. Formula/data-frame methods, logarithmic axes, arbitrary `pars`, axis annotation,
+and device-identical layout remain explicit boundaries.
 
 Development priority is based on a reproducible analysis of documented usage in popular CRAN
 packages. The committed

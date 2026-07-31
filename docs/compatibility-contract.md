@@ -208,22 +208,22 @@ Both inline and Worker APIs retain the output in `evalDetailed` and charge it ag
 output budget. S3 print-method dispatch, global print options, line filling, labels, connections,
 and filesystem output are not claimed.
 
-`plot.new`, bounded `plot.window`, `axTicks`, `box`, `rasterImage`, `segments`, and `legend` provide
-the first browser-native graphics slice. Evaluation owns page and linear coordinate-window state,
-converts two-dimensional grayscale or character colors, three-/four-channel numeric/raw arrays, and
-packed `nativeRaster` integers to row-major RGBA, and emits commands for recycled raster placements,
-styled line segments, resolved plot frames, and resolved legend entries. Commands preserve raster
-angle/interpolation, finite segment endpoints, canonical colors, normalized line patterns, line
-widths, frame edges, text labels, point symbols, placement, and layout controls. They cross the
-Worker boundary, remain available in `evalDetailed.graphics`, and count toward the configured output
-budget. Inline and Worker callbacks receive the same command shapes, and the Playground renders them
-to Canvas. Evidence covers the measured systemfonts glyph-raster, httr PNG-array, posterior
-interval-segment, zoo plot-frame, and zoo legend patterns. The owned device also supports nested
-`dev.hold`/`dev.flush` levels, ordered cross-evaluation command buffering, and bounded same-session
-`recordPlot`/`replayPlot` over its own page/window/raster/segments/box/legend display list. General
-`plot`, device selection, axes, complete clipping/margins, graphical parameters beyond the
-documented controls, external display-list formats, and pixel equivalence across GNU R devices are
-not claimed.
+`plot.new`, bounded `plot.window`, `axTicks`, `box`, `boxplot`, `rasterImage`, `segments`, and
+`legend` provide the first browser-native graphics slice. Evaluation owns page and linear
+coordinate-window state, converts two-dimensional grayscale or character colors, three-/four-channel
+numeric/raw arrays, and packed `nativeRaster` integers to row-major RGBA, and emits commands for
+recycled raster placements, styled line segments, resolved plot frames and boxplots, and resolved
+legend entries. Commands preserve raster angle/interpolation, finite segment endpoints, canonical
+colors, normalized line patterns, line widths, frame edges, text labels, point symbols, placement,
+and layout controls. They cross the Worker boundary, remain available in `evalDetailed.graphics`,
+and count toward the configured output budget. Inline and Worker callbacks receive the same command
+shapes, and the Playground renders them to Canvas. Evidence covers the measured systemfonts
+glyph-raster, httr PNG-array, posterior interval-segment, zoo plot-frame, zoo grouped-boxplot, and
+zoo legend patterns. The owned device also supports nested `dev.hold`/`dev.flush` levels, ordered
+cross-evaluation command buffering, and bounded same-session `recordPlot`/`replayPlot` over its own
+page/window/raster/segments/box/boxplot/legend display list. General `plot`, device selection, axes,
+complete clipping/margins, graphical parameters beyond the documented controls, external
+display-list formats, and pixel equivalence across GNU R devices are not claimed.
 
 `graphics::axTicks` has differential evidence for zoo's measured secondary-axis tick lookup and
 ordinary horizontal-axis lookup. On the owned linear device, sides 1/3 derive ticks from the current
@@ -245,6 +245,18 @@ or no-frame styles emit no command. The command crosses inline/Worker APIs, is c
 `maxOutputBytes`, renders on Canvas, and round-trips through the bounded display list. Figure,
 inner, and outer regions, session `par()` state, arbitrary graphical parameters, exact device dash
 metrics, and cross-device pixel identity are not claimed.
+
+`graphics::boxplot` has differential evidence for zoo's measured grouped-series call and adjacent
+default shapes. Its S3 generic forwards classed inputs before the independently authored default
+accepts numeric vectors, lists of numeric groups, or numeric matrix columns. Missing values are
+omitted; Tukey hinges, whiskers, notch confidence limits, outliers, group indices, names, and sample
+counts populate the standard six-field result, which is returned invisibly with `plot = TRUE` or
+`FALSE`. Drawing supports vertical/horizontal orientation, notch and outline selection, fixed or
+sample-scaled widths, explicit positions, additive drawing, recycled border/fill colors, and
+resolved line types/widths. Commands cross inline/Worker APIs, Canvas pixels, output accounting,
+held journals, and same-session record/replay. Formula/data-frame methods, logarithmic axes,
+arbitrary `pars`, complete annotation/axes, exact notch-overlap diagnostics, and device-identical
+layout remain unsupported.
 
 `graphics::segments` has differential evidence for posterior's measured
 `segments(seq_along(theta), y0 = q5, y1 = q95)` vertical-interval shape. Exactly one of `x1` or `y1`
@@ -294,8 +306,8 @@ arbitrary external classes, and complete legacy diagnostics are not claimed.
 `grDevices::dev.flush` covers ragg's measured zero-argument animation-device call shape, and its
 paired `dev.hold` supplies the documented nested-level protocol on NativR's owned browser device.
 Positive levels increase or decrease the session-local hold count; negative levels clamp to zero;
-the flush that reaches zero releases pending page/window/raster/segments/box/legend commands in
-original order through the current `evalDetailed.graphics` result and host callback. Pending
+the flush that reaches zero releases pending page/window/raster/segments/box/boxplot/legend commands
+in original order through the current `evalDetailed.graphics` result and host callback. Pending
 graphics storage remains subject to `maxOutputBytes`, pending command count remains subject to
 `maxVectorLength`, state survives ordinary evaluation boundaries, and reset/dispose clears it.
 Without an active owned device both calls return integer zero. Level coercion, missing-state
@@ -308,15 +320,15 @@ device registration, cursors, and arbitrary third-party device callbacks are not
 owned browser device. It returns a visible classed list with the GNU R-observed public
 type/mode/class/length/no-names shape while storing an independently authored NativR command format.
 Optional `load` and `attach` character metadata is retained. `grDevices::replayPlot` validates only
-that format, restores page/window state, and re-emits raster, segment, and legend commands through
-the immediate or held graphics journal before returning invisible `NULL`. Display-list and recorded
-command counts are bounded by `maxVectorLength`; display-list graphics payloads and replay output by
-`maxOutputBytes`. Malformed values, absent record devices, reset cleanup, namespace access, and held
-replay have executable evidence. `reloadPkgs = TRUE` with stored package metadata is explicitly
-unsupported until namespace loading exists. GNU R's private or serialized recorded-plot
-representation, cross-version/cross-device replay, package reload/attach side effects,
-`print.recordedplot`, snapshots of arbitrary external devices, and general display-list editing are
-not claimed.
+that format, restores page/window state, and re-emits raster, segment, box, boxplot, and legend
+commands through the immediate or held graphics journal before returning invisible `NULL`.
+Display-list and recorded command counts are bounded by `maxVectorLength`; display-list graphics
+payloads and replay output by `maxOutputBytes`. Malformed values, absent record devices, reset
+cleanup, namespace access, and held replay have executable evidence. `reloadPkgs = TRUE` with stored
+package metadata is explicitly unsupported until namespace loading exists. GNU R's private or
+serialized recorded-plot representation, cross-version/cross-device replay, package reload/attach
+side effects, `print.recordedplot`, snapshots of arbitrary external devices, and general
+display-list editing are not claimed.
 
 `graphics::pairs` supplies the S3 generic used by rstan's measured `pairs.stanfit` call.
 Differential evidence covers the original classed dispatch value, lazy dots, labels/panels,

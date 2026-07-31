@@ -342,3 +342,7 @@ against the 308 KiB limit.
 Language subset 0.178 adds rank 449's `graphics::box()` resolved plot-frame event, Worker transport,
 Canvas renderer, and display-list codec without raising the ceiling. The complete production Worker
 measures 290.4 KiB gzip against the 308 KiB limit.
+
+Language subset 0.179 adds rank 450's `graphics::boxplot()` Tukey-statistics path, grouped graphics
+event, Worker transport, Canvas renderer, and display-list codec without raising the ceiling. The
+complete production Worker measures 292.8 KiB gzip against the 308 KiB limit.

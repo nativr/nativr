@@ -6723,5 +6723,40 @@
     "expected": [false, true, false, true, false, true],
     "expectedCompatibility": "shape",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "boxplot-zoo-observed-group-statistics",
+    "code": "fit <- graphics::boxplot(list(a = 1:5, b = c(2, 4, 6, 8, 100)), plot = FALSE)\nc(fit$stats, fit$n, round(fit$conf, 12), fit$out, fit$group)",
+    "expected": [
+      1, 2, 3, 4, 5, 2, 4, 6, 8, 8, 5, 5, 1.58680503822, 4.41319496178, 3.17361007644,
+      8.82638992356, 100, 2
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 1e-13, "relative": 1e-13 }
+  },
+  {
+    "id": "boxplot-return-shape-visibility-and-package-method-seam",
+    "code": "fit <- withVisible(boxplot(matrix(1:12, nrow = 4, dimnames = list(NULL, c(\"a\", \"b\", \"c\"))), plot = FALSE))\nboxplot.probe <- function(x, ..., marker = \"ok\") c(class(x), marker, list(...)$extra)\ncustom <- boxplot(structure(1:3, class = \"probe\"), marker = \"custom\", extra = 7)\nc(names(fit$value), dim(fit$value$stats), dim(fit$value$conf), fit$value$names, fit$visible, custom)",
+    "expected": [
+      "stats",
+      "n",
+      "conf",
+      "out",
+      "group",
+      "names",
+      "5",
+      "3",
+      "2",
+      "3",
+      "a",
+      "b",
+      "c",
+      "FALSE",
+      "probe",
+      "custom",
+      "7"
+    ],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

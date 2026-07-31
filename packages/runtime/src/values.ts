@@ -285,6 +285,20 @@ export interface RGraphicsSegment {
   readonly lineWidth: number;
 }
 
+/** One resolved box-and-whisker group sent to a browser graphics host. */
+export interface RGraphicsBoxplotGroup {
+  readonly label: string;
+  readonly center: number;
+  readonly width: number;
+  readonly stats: readonly [number, number, number, number, number];
+  readonly confidence: readonly [number, number];
+  readonly outliers: readonly number[];
+  readonly border: string;
+  readonly fill: string;
+  readonly lineType: string;
+  readonly lineWidth: number;
+}
+
 /** One resolved legend row sent to a browser graphics host. */
 export interface RGraphicsLegendEntry {
   readonly label: string;
@@ -345,6 +359,12 @@ export type RGraphicsEvent =
       /** A normalized R line-type pattern: solid or an even-length hexadecimal dash sequence. */
       readonly lineType: string;
       readonly lineWidth: number;
+    }
+  | {
+      readonly kind: "boxplot";
+      readonly horizontal: boolean;
+      readonly notch: boolean;
+      readonly groups: readonly RGraphicsBoxplotGroup[];
     }
   | {
       readonly kind: "legend";

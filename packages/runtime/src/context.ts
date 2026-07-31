@@ -203,6 +203,19 @@ function graphicsEventByteLength(event: RGraphicsEvent): number {
       64 + event.edges.length * 8 + utf8ByteLength(event.color) + utf8ByteLength(event.lineType)
     );
   }
+  if (event.kind === "boxplot") {
+    return event.groups.reduce(
+      (bytes, group) =>
+        bytes +
+        192 +
+        group.outliers.length * 16 +
+        utf8ByteLength(group.label) +
+        utf8ByteLength(group.border) +
+        utf8ByteLength(group.fill) +
+        utf8ByteLength(group.lineType),
+      32,
+    );
+  }
   if (event.kind !== "legend") return 0;
   return (
     64 +

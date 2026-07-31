@@ -4,11 +4,11 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 466,
-    "overlappingNames": 451,
-    "missingReferenceNames": 2071,
+    "nativrRegisteredNames": 467,
+    "overlappingNames": 452,
+    "missingReferenceNames": 2070,
     "nativrExtensionNames": 15,
-    "nameCoverage": 0.178826
+    "nameCoverage": 0.179223
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 344, "nameCoverage": 0.251646 },
@@ -21,7 +21,7 @@
       "overlappingNames": 13,
       "nameCoverage": 0.096296
     },
-    { "package": "graphics", "callableNames": 88, "overlappingNames": 8, "nameCoverage": 0.090909 },
+    { "package": "graphics", "callableNames": 88, "overlappingNames": 9, "nameCoverage": 0.102273 },
     { "package": "datasets", "callableNames": 0, "overlappingNames": 0, "nameCoverage": 1 }
   ],
   "matched": [
@@ -124,6 +124,7 @@
     "baseenv",
     "body",
     "box",
+    "boxplot",
     "by",
     "c",
     "call",
@@ -1022,7 +1023,6 @@
     "bitwXor",
     "bmp",
     "body<-",
-    "boxplot",
     "boxplot.default",
     "boxplot.matrix",
     "boxplot.stats",

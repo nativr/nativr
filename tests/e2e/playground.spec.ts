@@ -314,6 +314,50 @@ test("runs the required Worker examples without evaluation network traffic", asy
   expect(boxPixels).toEqual([255, 0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255, 255, 255, 255, 255]);
 
   await page.locator("#source").fill(`
+    boxplot(
+      list(alpha = 1:5, beta = c(2, 4, 6, 8, 100)),
+      border = c("red", "blue"),
+      col = c("lightgray", "lightblue")
+    )
+  `);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText(
+    '[[1, 2, 3, 4, 5, 2, 4, 6, 8, 8], [5, 5], [1.5868050382201329, 4.413194961779867, 3.1736100764402657, 8.826389923559734], 100, 2, ["alpha", "beta"]]',
+  );
+  await expect(page.locator("#graphics-count")).toHaveText("3");
+  const boxplotPixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
+    const context = canvas.getContext("2d");
+    if (context === null) return { red: 0, blue: 0, lightgray: 0, lightblue: 0 };
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    const counts = { red: 0, blue: 0, lightgray: 0, lightblue: 0 };
+    for (let index = 0; index < pixels.length; index += 4) {
+      const red = pixels[index] ?? 0;
+      const green = pixels[index + 1] ?? 0;
+      const blue = pixels[index + 2] ?? 0;
+      const alpha = pixels[index + 3] ?? 0;
+      if (red > 200 && green < 100 && blue < 100 && alpha > 0) counts.red += 1;
+      if (blue > 200 && red < 100 && green < 150 && alpha > 0) counts.blue += 1;
+      if (
+        red >= 190 &&
+        red <= 230 &&
+        Math.abs(red - green) <= 3 &&
+        Math.abs(red - blue) <= 3 &&
+        alpha > 0
+      ) {
+        counts.lightgray += 1;
+      }
+      if (red >= 140 && red <= 200 && green >= 190 && green <= 235 && blue >= 210 && alpha > 0) {
+        counts.lightblue += 1;
+      }
+    }
+    return counts;
+  });
+  expect(boxplotPixels.red).toBeGreaterThan(0);
+  expect(boxplotPixels.blue).toBeGreaterThan(0);
+  expect(boxplotPixels.lightgray).toBeGreaterThan(0);
+  expect(boxplotPixels.lightblue).toBeGreaterThan(0);
+
+  await page.locator("#source").fill(`
     plot.new()
     plot.window(c(0, 10), c(0, 10))
     visible <- withVisible(legend(
