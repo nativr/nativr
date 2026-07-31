@@ -69,7 +69,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 477 registered functions, including resettable
+an initial condition/handler slice. It exposes 478 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
 preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
@@ -381,6 +381,14 @@ default for real coordinate vectors, two-column matrices, data frames, complex c
 replay, Worker transfer, and Canvas rendering share one host-neutral point command. Line/path
 `type`s, coordinate classes beyond owned numeric storage, clipping/log axes, font identity, and
 arbitrary graphical parameters remain explicit boundaries.
+
+Rank 459 `graphics::polygon` now runs zoo's measured filled-area panel helper. The owned default
+accepts paired vectors, two-column matrices/data frames, complex coordinates, and `list(x, y)`;
+missing coordinates split independent closed polygons, while recycled fill/border colors, line
+types/widths, `fillOddEven`, solid fills, and `density = 0` resolve into a bounded Worker command.
+The same command supports held graphics, display-list replay, and Canvas rendering. Hatch-pattern
+density, coordinate classes beyond owned numeric storage, clipping/log axes, exact device dash
+metrics, and arbitrary graphical parameters remain explicit boundaries.
 
 Development priority is based on a reproducible analysis of documented usage in popular CRAN
 packages. The committed

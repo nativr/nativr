@@ -236,6 +236,7 @@ function renderGraphics(events: readonly PublicGraphicsEvent[]): void {
     if (event.kind === "raster") drawRaster(event);
     else if (event.kind === "segments") drawSegments(event);
     else if (event.kind === "points") drawPoints(event);
+    else if (event.kind === "polygon") drawPolygons(event);
     else if (event.kind === "box") drawBox(event);
     else if (event.kind === "boxplot") drawBoxplot(event);
     else drawLegend(event);
@@ -580,6 +581,51 @@ function drawPoints(event: Extract<PublicGraphicsEvent, { readonly kind: "points
     }
   }
   context.restore();
+}
+
+function drawPolygons(event: Extract<PublicGraphicsEvent, { readonly kind: "polygon" }>): void {
+  if (graphicsContext === null) return;
+  const xScale = graphics.width / (graphicsWindow.xlim[1] - graphicsWindow.xlim[0]);
+  const yScale = graphics.height / (graphicsWindow.ylim[1] - graphicsWindow.ylim[0]);
+  graphicsContext.save();
+  graphicsContext.lineCap = "round";
+  graphicsContext.lineJoin = "round";
+  for (const polygon of event.polygons) {
+    const firstX = polygon.x[0];
+    const firstY = polygon.y[0];
+    if (firstX === undefined || firstY === undefined) continue;
+    graphicsContext.beginPath();
+    graphicsContext.moveTo(
+      (firstX - graphicsWindow.xlim[0]) * xScale,
+      graphics.height - (firstY - graphicsWindow.ylim[0]) * yScale,
+    );
+    for (let index = 1; index < polygon.x.length; index += 1) {
+      const x = polygon.x[index];
+      const y = polygon.y[index];
+      if (x === undefined || y === undefined) continue;
+      graphicsContext.lineTo(
+        (x - graphicsWindow.xlim[0]) * xScale,
+        graphics.height - (y - graphicsWindow.ylim[0]) * yScale,
+      );
+    }
+    graphicsContext.closePath();
+    if (!polygon.fill.endsWith("00")) {
+      graphicsContext.fillStyle = polygon.fill;
+      graphicsContext.fill(polygon.fillRule);
+    }
+    if (!polygon.border.endsWith("00")) {
+      const dashScale = Math.max(1, polygon.lineWidth);
+      const dashes =
+        polygon.lineType === "solid"
+          ? []
+          : [...polygon.lineType].map((digit) => Number.parseInt(digit, 16) * dashScale);
+      graphicsContext.strokeStyle = polygon.border;
+      graphicsContext.lineWidth = polygon.lineWidth;
+      graphicsContext.setLineDash(dashes);
+      graphicsContext.stroke();
+    }
+  }
+  graphicsContext.restore();
 }
 
 function drawBox(event: Extract<PublicGraphicsEvent, { readonly kind: "box" }>): void {

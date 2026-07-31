@@ -7074,5 +7074,26 @@
     "expected": [true, true, false, true, false, true, false, true, true],
     "expectedCompatibility": "shape",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "polygon-zoo-observed-area-fill-and-visibility",
+    "code": "plot.new()\nplot.window(c(0, 5), c(0, 5))\nx <- 1:3\ny <- c(1, 3, 2)\nr <- withVisible(graphics::polygon(c(x[1], x, tail(x, 1), x[1]), c(0, as.numeric(y), 0, 0), col = 2))\nc(is.null(r$value), r$visible)",
+    "expected": [true, false],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "polygon-missing-splits-style-recycling-and-coordinate-shapes",
+    "code": "plot.new()\nplot.window(c(0, 6), c(0, 7))\na <- withVisible(polygon(c(1, 2, 3, NA, 4, 5, 6), c(1, 3, 1, NA, 4, 6, 4), col = c(\"red\", \"blue\"), border = c(FALSE, TRUE), lty = c(1, 2), lwd = c(1, 2), fillOddEven = TRUE))\nb <- withVisible(polygon(matrix(c(1, 2, 2, 1, 1, 1, 2, 2), ncol = 2), density = 0, col = \"yellow\", border = \"blue\"))\nd <- withVisible(polygon(list(x = numeric(), y = numeric())))\nc(is.null(a$value), a$visible, is.null(b$value), b$visible, is.null(d$value), d$visible)",
+    "expected": [true, false, true, false, true, false],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "polygon-empty-density-and-input-boundaries",
+    "code": "before <- inherits(try(polygon(1:3, c(1, 3, 1)), silent = TRUE), \"try-error\")\nplot.new()\nplot.window(c(0, 4), c(0, 4))\nempty <- withVisible(polygon(numeric(), numeric()))\nnone <- withVisible(polygon(1:3, c(1, 3, 1), density = 0))\nsolid <- withVisible(polygon(1:3, c(1, 3, 1), density = -1))\nc(before, is.null(empty$value), empty$visible, is.null(none$value), none$visible, is.null(solid$value), solid$visible, inherits(try(polygon(1:3, 1:2), silent = TRUE), \"try-error\"), inherits(try(polygon(), silent = TRUE), \"try-error\"))",
+    "expected": [true, true, false, true, false, true, false, true, true],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

@@ -4,11 +4,11 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 477,
-    "overlappingNames": 462,
-    "missingReferenceNames": 2060,
+    "nativrRegisteredNames": 478,
+    "overlappingNames": 463,
+    "missingReferenceNames": 2059,
     "nativrExtensionNames": 15,
-    "nameCoverage": 0.183188
+    "nameCoverage": 0.183584
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 346, "nameCoverage": 0.253109 },
@@ -21,7 +21,12 @@
       "overlappingNames": 17,
       "nameCoverage": 0.125926
     },
-    { "package": "graphics", "callableNames": 88, "overlappingNames": 11, "nameCoverage": 0.125 },
+    {
+      "package": "graphics",
+      "callableNames": 88,
+      "overlappingNames": 12,
+      "nameCoverage": 0.136364
+    },
     { "package": "datasets", "callableNames": 0, "overlappingNames": 0, "nameCoverage": 1 }
   ],
   "matched": [
@@ -344,6 +349,7 @@
     "pmin",
     "pnorm",
     "points",
+    "polygon",
     "ppoints",
     "predict",
     "print",
@@ -1927,7 +1933,6 @@
     "poisson",
     "poisson.test",
     "poly",
-    "polygon",
     "polym",
     "polypath",
     "polyroot",

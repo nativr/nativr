@@ -3836,6 +3836,147 @@ describe("complete inline source-to-result vertical slice", () => {
     await limited.dispose();
   });
 
+  it("fills zoo's usage-ranked area polygon through the Worker graphics protocol", async () => {
+    const observed: unknown[] = [];
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      onGraphics: (event) => observed.push(event),
+    });
+    const measured = await runtime.evalDetailed(`
+      plot.new()
+      plot.window(c(0, 5), c(0, 5))
+      x <- 1:3
+      y <- c(1, 3, 2)
+      visible <- withVisible(graphics::polygon(
+        c(x[1], x, tail(x, 1), x[1]),
+        c(0, as.numeric(y), 0, 0),
+        col = 2
+      ))
+      c(is.null(visible$value), visible$visible)
+    `);
+    expect(measured.value).toEqual([true, false]);
+    expect(measured.graphics).toEqual([
+      { kind: "new-page" },
+      { kind: "window", xlim: [0, 5], ylim: [0, 5] },
+      {
+        kind: "polygon",
+        polygons: [
+          {
+            x: [1, 1, 2, 3, 3, 1],
+            y: [0, 1, 3, 2, 0, 0],
+            fill: "#DF536BFF",
+            border: "#000000FF",
+            lineType: "solid",
+            lineWidth: 1,
+            fillRule: "nonzero",
+          },
+        ],
+      },
+    ]);
+    expect(observed).toEqual(measured.graphics);
+
+    const split = await runtime.evalDetailed(`
+      polygon(
+        c(1, 2, 2, 1, NA, 3, 4, 4, 3),
+        c(1, 1, 2, 2, NA, 3, 3, 4, 4),
+        col = c("red", "blue"),
+        border = c(FALSE, TRUE),
+        lty = c("dashed", "dotted"),
+        lwd = c(2, 3),
+        fillOddEven = TRUE
+      )
+    `);
+    expect(split.graphics).toEqual([
+      {
+        kind: "polygon",
+        polygons: [
+          {
+            x: [1, 2, 2, 1],
+            y: [1, 1, 2, 2],
+            fill: "#FF0000FF",
+            border: "#FFFFFF00",
+            lineType: "44",
+            lineWidth: 2,
+            fillRule: "evenodd",
+          },
+          {
+            x: [3, 4, 4, 3],
+            y: [3, 3, 4, 4],
+            fill: "#0000FFFF",
+            border: "#000000FF",
+            lineType: "13",
+            lineWidth: 3,
+            fillRule: "evenodd",
+          },
+        ],
+      },
+    ]);
+
+    const noFill = await runtime.evalDetailed(
+      "polygon(matrix(c(1, 2, 2, 1, 1, 1, 2, 2), ncol = 2), density = 0, col = 'yellow', border = 'blue')",
+    );
+    expect(noFill.graphics[0]).toMatchObject({
+      kind: "polygon",
+      polygons: [
+        {
+          fill: "#FFFFFF00",
+          border: "#0000FFFF",
+        },
+      ],
+    });
+    await expect(
+      runtime.evalDetailed("polygon(list(x = numeric(), y = numeric()))"),
+    ).resolves.toMatchObject({ value: null, visible: false, graphics: [] });
+
+    await runtime.eval("recorded <- recordPlot()\ndev.hold()");
+    const replayed = await runtime.evalDetailed("replayPlot(recorded)\ndev.flush()");
+    expect(replayed.graphics.filter((event) => event.kind === "polygon")).toHaveLength(3);
+    expect(replayed.graphics.at(-1)).toEqual(noFill.graphics[0]);
+    await expect(
+      runtime.eval(`
+        replayPlot(structure(
+          list(
+            list(list(
+              kind = "polygon",
+              polygons = list(list(
+                x = c(1, 2),
+                y = 1,
+                col = "#FF0000FF",
+                border = "#000000FF",
+                lty = "solid",
+                lwd = 1,
+                rule = "nonzero"
+              ))
+            )),
+            NULL
+          ),
+          class = "recordedplot"
+        ))
+      `),
+    ).rejects.toMatchObject({ code: "NRT3333" });
+    await expect(runtime.eval("polygon(1:3, 1:2)")).rejects.toMatchObject({ code: "NRT3348" });
+    await expect(runtime.eval("polygon(1:3, 1:3, density = 10)")).rejects.toMatchObject({
+      code: "NRU6165",
+    });
+    await expect(runtime.eval("polygon(1:3, 1:3, xpd = TRUE)")).rejects.toMatchObject({
+      code: "NRU6165",
+    });
+    await runtime.reset();
+    await expect(runtime.eval("polygon(1:3, 1:3)")).rejects.toMatchObject({ code: "NRE2190" });
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 10 },
+    });
+    await expect(limited.eval("plot.new()\npolygon(1:3, c(1, 3, 1))")).rejects.toMatchObject({
+      code: "NRL4002",
+    });
+    await limited.dispose();
+  });
+
   it("emits browser-native raster graphics for usage-ranked package patterns", async () => {
     const observed: unknown[] = [];
     const runtime = await createR({
@@ -5878,7 +6019,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.186.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.187.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -5908,6 +6049,7 @@ describe("complete inline source-to-result vertical slice", () => {
       { name: "rasterImage", compatibility: "shape" },
       { name: "segments", compatibility: "shape" },
       { name: "points", compatibility: "shape" },
+      { name: "polygon", compatibility: "shape" },
       { name: "legend", compatibility: "shape" },
       { name: "persp", compatibility: "shape" },
       { name: "pairs", compatibility: "shape" },

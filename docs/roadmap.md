@@ -387,6 +387,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      omission, namespace access, bounded Worker/Canvas rendering, and display-list replay. Line/path
      types, locale-dependent glyphs, broader coordinate classes, clipping/log axes, device font
      identity, and arbitrary graphical controls remain explicit boundaries.
+104. Frequency-ranked polygon graphics: `graphics::polygon` runs zoo's measured filled-area panel
+     helper with paired vector/matrix/data-frame/list/complex coordinates, missing-coordinate
+     polygon splitting, recycled fill/border colors and line types/widths, solid/no-fill density,
+     even-odd rules, namespace access, bounded Worker/Canvas rendering, and display-list replay.
+     Positive hatch density, broader coordinate classes, clipping/log axes, exact device dash/fill
+     metrics, and arbitrary graphical controls remain explicit boundaries.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

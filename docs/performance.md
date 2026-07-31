@@ -376,3 +376,8 @@ Language subset 0.186 adds rank 458's `graphics::points()` S3-first coordinate p
 protocol/display-list command, plotting-symbol and style recycling, missing-point omission, and
 bounded graphics accounting without raising the ceiling. The first production Worker measures 298.7
 KiB gzip against the 308 KiB limit.
+
+Language subset 0.187 adds rank 459's `graphics::polygon()` closed-path protocol/display-list
+command, missing-coordinate polygon splitting, recycled fill/border styles, Canvas fill rules, and
+bounded graphics accounting without raising the ceiling. The first production Worker measures 299.7
+KiB gzip against the 308 KiB limit.

@@ -334,6 +334,24 @@ test("runs the required Worker examples without evaluation network traffic", asy
 
   await page.locator("#source").fill(`
     plot.new()
+    plot.window(c(0, 4), c(0, 4))
+    polygon(c(1, 3, 3, 1), c(1, 1, 3, 3), col = "orange", border = "blue", lwd = 4)
+  `);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("null");
+  await expect(page.locator("#graphics-count")).toHaveText("3");
+  const polygonPixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
+    const context = canvas.getContext("2d");
+    if (context === null) return [];
+    return [
+      ...context.getImageData(320, 200, 1, 1).data,
+      ...context.getImageData(320, 100, 1, 1).data,
+    ];
+  });
+  expect(polygonPixels).toEqual([255, 165, 0, 255, 0, 0, 255, 255]);
+
+  await page.locator("#source").fill(`
+    plot.new()
     plot.window(c(0, 1), c(0, 1))
     box(bty = "c", col = "red", lwd = 6)
   `);
