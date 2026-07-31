@@ -4,11 +4,11 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 481,
-    "overlappingNames": 466,
-    "missingReferenceNames": 2056,
+    "nativrRegisteredNames": 482,
+    "overlappingNames": 467,
+    "missingReferenceNames": 2055,
     "nativrExtensionNames": 15,
-    "nameCoverage": 0.184774
+    "nameCoverage": 0.18517
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 348, "nameCoverage": 0.254572 },
@@ -24,8 +24,8 @@
     {
       "package": "graphics",
       "callableNames": 88,
-      "overlappingNames": 12,
-      "nameCoverage": 0.136364
+      "overlappingNames": 13,
+      "nameCoverage": 0.147727
     },
     { "package": "datasets", "callableNames": 0, "overlappingNames": 0, "nameCoverage": 1 }
   ],
@@ -459,6 +459,7 @@
     "tail",
     "tan",
     "tapply",
+    "text",
     "time",
     "tolower",
     "toupper",
@@ -2397,7 +2398,6 @@
     "terrain.colors",
     "testInheritedMethods",
     "testVirtual",
-    "text",
     "text.default",
     "textConnection",
     "textConnectionValue",

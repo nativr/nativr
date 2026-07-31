@@ -236,6 +236,7 @@ function renderGraphics(events: readonly PublicGraphicsEvent[]): void {
     if (event.kind === "raster") drawRaster(event);
     else if (event.kind === "segments") drawSegments(event);
     else if (event.kind === "points") drawPoints(event);
+    else if (event.kind === "text") drawText(event);
     else if (event.kind === "polygon") drawPolygons(event);
     else if (event.kind === "box") drawBox(event);
     else if (event.kind === "boxplot") drawBoxplot(event);
@@ -579,6 +580,53 @@ function drawPoints(event: Extract<PublicGraphicsEvent, { readonly kind: "points
         context.stroke();
         break;
     }
+  }
+  context.restore();
+}
+
+function drawText(event: Extract<PublicGraphicsEvent, { readonly kind: "text" }>): void {
+  if (graphicsContext === null) return;
+  const xScale = graphics.width / (graphicsWindow.xlim[1] - graphicsWindow.xlim[0]);
+  const yScale = graphics.height / (graphicsWindow.ylim[1] - graphicsWindow.ylim[0]);
+  const context = graphicsContext;
+  context.save();
+  for (const label of event.labels) {
+    const x = (label.x - graphicsWindow.xlim[0]) * xScale;
+    const y = graphics.height - (label.y - graphicsWindow.ylim[0]) * yScale;
+    const pixels = Math.max(1, 12 * label.size);
+    const style = label.font === 3 || label.font === 4 ? "italic " : "";
+    const weight = label.font === 2 || label.font === 4 ? "bold " : "";
+    const family = label.family.trim() === "" ? "sans-serif" : JSON.stringify(label.family);
+    context.font = `${style}${weight}${pixels}px ${family}`;
+    context.fillStyle = label.color;
+    context.textAlign = "left";
+    context.textBaseline = "alphabetic";
+    const metrics = context.measureText(label.label);
+    const width = metrics.width;
+    const ascent = metrics.actualBoundingBoxAscent || pixels * 0.8;
+    const descent = metrics.actualBoundingBoxDescent || pixels * 0.2;
+    context.save();
+    context.translate(x, y);
+    context.rotate((-label.rotation * Math.PI) / 180);
+    if (label.position === undefined) {
+      context.fillText(
+        label.label,
+        -width * label.horizontalAdjustment,
+        ascent * label.verticalAdjustment,
+      );
+    } else {
+      const distance = pixels * label.offset;
+      if (label.position === 1) {
+        context.fillText(label.label, -width / 2, distance + ascent);
+      } else if (label.position === 2) {
+        context.fillText(label.label, -distance - width, (ascent - descent) / 2);
+      } else if (label.position === 3) {
+        context.fillText(label.label, -width / 2, -distance - descent);
+      } else {
+        context.fillText(label.label, distance, (ascent - descent) / 2);
+      }
+    }
+    context.restore();
   }
   context.restore();
 }

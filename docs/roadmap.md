@@ -409,6 +409,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      simplification, list-array results and extraction, forwarded arguments, function names,
      `FUN = NULL` group codes, errors, and resource bounds. Formula indexes, custom split methods,
      broader class-specific simplification, and long vectors remain explicit boundaries.
+108. Frequency-ranked plot text: `graphics::text` runs zoo's measured rotated outside-label call
+     through resolved Worker/Canvas text commands with S3 dispatch, coordinate and label recycling,
+     truncation warnings, missing omission, colors/sizes/font faces/position/adjustment/offset/
+     rotation/family, namespace access, recording/replay, and resource bounds. Plotmath, Hershey
+     fonts, clipping/log axes, broader class coercion, and device-identical metrics remain explicit
+     boundaries.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

@@ -69,7 +69,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 481 registered functions, including resettable
+an initial condition/handler slice. It exposes 482 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
 preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
@@ -410,6 +410,14 @@ missing groups, forwards `...`, resolves functions or function names, returns gr
 `FUN = NULL`, simplifies scalar atomic results with a typed `default`, and otherwise returns
 indexable list arrays. Formula indexes, custom split methods, and broader class-specific
 simplification remain explicit boundaries.
+
+Rank 463 `graphics::text` now runs zoo's measured rotated outside-label call through the Worker
+graphics protocol and Playground Canvas renderer. It supports S3 dispatch, R coordinate containers
+with x/y recycling, character-label coercion and truncation warnings, missing omission, recycled
+colors/sizes/font faces/positions, adjustment, offset, rotation, browser font families, namespace
+access, bounded graphics accounting, and same-session recording/replay. Plotmath expressions,
+Hershey fonts, class-specific label coercion, clipping/log axes, and device-identical text metrics
+remain explicit boundaries.
 
 Development priority is based on a reproducible analysis of documented usage in popular CRAN
 packages. The committed

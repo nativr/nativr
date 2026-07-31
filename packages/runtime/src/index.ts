@@ -90,6 +90,7 @@ export type {
   RGraphicsLegendEntry,
   RGraphicsLegendPosition,
   RGraphicsPoint,
+  RGraphicsText,
   RGraphicsPolygon,
   RGraphicsSegment,
   RIntegerVector,

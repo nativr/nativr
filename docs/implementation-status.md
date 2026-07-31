@@ -11,7 +11,7 @@ Date: 2026-07-30
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 481 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 482 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Vector/list selection and replacement, recursive `[[`, arbitrary-dimensional column-major array
@@ -117,6 +117,12 @@ Date: 2026-07-30
   Worker transport, Canvas pixels, output accounting, and display-list replay. Line/path types,
   locale-dependent glyphs, broader coordinate classes, clipping/log axes, font identity, and
   arbitrary graphical controls remain explicit boundaries.
+- Usage-ranked `graphics::text` for zoo's measured rotated outside-label call, including S3
+  forwarding, vector/list/matrix/data-frame/complex coordinates, x/y and label recycling, truncation
+  warnings, missing omission, colors/sizes/font faces/position/adjustment/offset/rotation/family,
+  bounded Worker transport, Canvas pixels, output accounting, and display-list replay. Plotmath,
+  Hershey fonts, broader class coercion, clipping/log axes, and device-identical metrics remain
+  explicit boundaries.
 - Usage-ranked `graphics::polygon` for zoo's measured filled-area panel helper, including paired
   vector/matrix/data-frame/list/complex coordinates, missing-coordinate polygon splitting, recycled
   fill/border colors and line types/widths, solid/no-fill density, even-odd rules, invisible

@@ -3924,6 +3924,175 @@ describe("complete inline source-to-result vertical slice", () => {
     await limited.dispose();
   });
 
+  it("draws zoo's usage-ranked plot labels through the Worker graphics protocol", async () => {
+    const observed: unknown[] = [];
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      onGraphics: (event) => observed.push(event),
+    });
+    const drawn = await runtime.evalDetailed(`
+      plot.new()
+      plot.window(c(0, 10), c(0, 10))
+      visible <- withVisible(graphics::text(
+        1:3,
+        c(4, 5),
+        c("alpha", "beta", "gamma", "cut"),
+        adj = c(0, 1),
+        pos = c(1, 4),
+        offset = 0.25,
+        cex = c(2, 1),
+        col = c("blue", "green"),
+        font = c(2, 4),
+        srt = -90,
+        family = "serif",
+        xpd = TRUE
+      ))
+      c(is.null(visible$value), visible$visible)
+    `);
+    expect(drawn.value).toEqual([true, false]);
+    expect(drawn.warnings).toEqual([
+      {
+        code: "NRW1110",
+        message: "length(labels) > max(length(x), length(y)); 'labels' truncated to length 3",
+      },
+    ]);
+    expect(drawn.graphics).toEqual([
+      { kind: "new-page" },
+      { kind: "window", xlim: [0, 10], ylim: [0, 10] },
+      {
+        kind: "text",
+        labels: [
+          {
+            x: 1,
+            y: 4,
+            label: "alpha",
+            color: "#0000FFFF",
+            size: 2,
+            font: 2,
+            family: "serif",
+            rotation: -90,
+            horizontalAdjustment: 0,
+            verticalAdjustment: 1,
+            position: 1,
+            offset: 0.25,
+          },
+          {
+            x: 2,
+            y: 5,
+            label: "beta",
+            color: "#00FF00FF",
+            size: 1,
+            font: 4,
+            family: "serif",
+            rotation: -90,
+            horizontalAdjustment: 0,
+            verticalAdjustment: 1,
+            position: 4,
+            offset: 0.25,
+          },
+          {
+            x: 3,
+            y: 4,
+            label: "gamma",
+            color: "#0000FFFF",
+            size: 2,
+            font: 2,
+            family: "serif",
+            rotation: -90,
+            horizontalAdjustment: 0,
+            verticalAdjustment: 1,
+            position: 1,
+            offset: 0.25,
+          },
+        ],
+      },
+    ]);
+    expect(observed).toEqual(drawn.graphics);
+
+    const omitted = await runtime.evalDetailed(
+      "text(c(7, NA), 5, c('kept', 'omitted'), col = c('purple', 'red'))",
+    );
+    expect(omitted.graphics).toEqual([
+      {
+        kind: "text",
+        labels: [
+          {
+            x: 7,
+            y: 5,
+            label: "kept",
+            color: "#A020F0FF",
+            size: 1,
+            font: 1,
+            family: "",
+            rotation: 0,
+            horizontalAdjustment: 0.5,
+            verticalAdjustment: 0.5,
+            offset: 0.5,
+          },
+        ],
+      },
+    ]);
+    const defaults = await runtime.evalDetailed("text(list(x = 8:9, y = c(6, 7)))");
+    expect(defaults.graphics[0]).toMatchObject({
+      kind: "text",
+      labels: [{ label: "1" }, { label: "2" }],
+    });
+
+    await runtime.eval("recorded <- recordPlot()\ndev.hold()");
+    const replayed = await runtime.evalDetailed("replayPlot(recorded)\ndev.flush()");
+    expect(replayed.graphics.filter((event) => event.kind === "text")).toHaveLength(3);
+    expect(replayed.graphics.at(-1)).toEqual(defaults.graphics[0]);
+    await expect(
+      runtime.eval(`
+        replayPlot(structure(
+          list(
+            list(list(
+              kind = "text",
+              labels = list(list(
+                x = 1, y = 2, label = "x", col = "#000000FF", cex = 1,
+                font = 9, family = "", srt = 0, hadj = 0.5, vadj = 0.5,
+                pos = NULL, offset = 0.5
+              ))
+            )),
+            NULL
+          ),
+          class = "recordedplot"
+        ))
+      `),
+    ).rejects.toMatchObject({ code: "NRT3333" });
+    await expect(
+      runtime.eval(`
+        text.probe <- function(x, y = NULL, labels = "default", ..., marker = "default") {
+          c(class(x), labels, marker, list(...)$extra)
+        }
+        text(structure(1:2, class = "probe"), labels = "custom", marker = "yes", extra = 7)
+      `),
+    ).resolves.toEqual(["probe", "custom", "yes", "7"]);
+    await expect(runtime.eval("text(1, 2, character())")).rejects.toMatchObject({
+      code: "NRT3349",
+    });
+    await expect(runtime.eval("text(1, 2, expression(alpha))")).rejects.toMatchObject({
+      code: "NRU6165",
+    });
+    await expect(runtime.eval("text(1, 2, 'x', font = 5)")).rejects.toMatchObject({
+      code: "NRU6165",
+    });
+    await runtime.reset();
+    await expect(runtime.eval("text(1, 2, 'x')")).rejects.toMatchObject({ code: "NRE2190" });
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 10 },
+    });
+    await expect(limited.eval("plot.new()\ntext(1:2, 2:3, c('a', 'b'))")).rejects.toMatchObject({
+      code: "NRL4002",
+    });
+    await limited.dispose();
+  });
+
   it("fills zoo's usage-ranked area polygon through the Worker graphics protocol", async () => {
     const observed: unknown[] = [];
     const runtime = await createR({
@@ -6107,7 +6276,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.190.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.191.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -6137,6 +6306,7 @@ describe("complete inline source-to-result vertical slice", () => {
       { name: "rasterImage", compatibility: "shape" },
       { name: "segments", compatibility: "shape" },
       { name: "points", compatibility: "shape" },
+      { name: "text", compatibility: "shape" },
       { name: "polygon", compatibility: "shape" },
       { name: "legend", compatibility: "shape" },
       { name: "persp", compatibility: "shape" },

@@ -62,6 +62,7 @@ import type {
   RGraphicsLegendEntry,
   RGraphicsLegendPosition,
   RGraphicsPoint,
+  RGraphicsText,
   RGraphicsPolygon,
   RGraphicsSegment,
   RIntegerVector,
@@ -951,6 +952,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "invisible",
   ),
   definePackageBuiltin("graphics", "points", ["x", "..."], "shape", builtinPoints),
+  definePackageBuiltin("graphics", "text", ["x", "..."], "shape", builtinGraphicsText),
   definePackageBuiltin(
     "graphics",
     "polygon",
@@ -15614,17 +15616,306 @@ async function builtinPoints(invocation: BuiltinInvocation): Promise<RValue> {
   return R_NULL;
 }
 
+async function builtinGraphicsText(invocation: BuiltinInvocation): Promise<RValue> {
+  const generic = matchBuiltinArguments(invocation, ["x", "..."]);
+  const genericX = generic.matched.get("x");
+  if (genericX === undefined || genericX.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in text().");
+  }
+  const input = await invocation.force(genericX.promise);
+  const dispatched = await invocation.dispatchS3IfPresent("text", input, invocation.arguments);
+  if (dispatched !== undefined) return dispatched;
+
+  const { matched, dots } = matchLazyArgumentsWithDots(invocation, [
+    "x",
+    "y",
+    "labels",
+    "adj",
+    "pos",
+    "offset",
+    "vfont",
+    "cex",
+    "col",
+    "font",
+  ]);
+  const values = new Map<string, RValue>([["x", input]]);
+  for (const [name, argument] of matched) {
+    if (name === "x" || argument.promise.missing) continue;
+    values.set(name, await invocation.force(argument.promise));
+  }
+  const controls = new Map<string, RValue>();
+  const supportedControls = new Set(["srt", "family", "xpd"]);
+  for (const argument of dots) {
+    if (
+      argument.name === undefined ||
+      !supportedControls.has(argument.name) ||
+      controls.has(argument.name)
+    ) {
+      if (!argument.promise.missing) await invocation.force(argument.promise);
+      if (argument.name !== undefined && controls.has(argument.name)) {
+        throw new REvaluationError(
+          "NRE2102",
+          `Argument '${argument.name}' matched more than once.`,
+        );
+      }
+      throw new RUnsupportedFeatureError(
+        "NRU6165",
+        `text() graphical control '${argument.name ?? "<unnamed>"}' is outside the current browser text subset.`,
+      );
+    }
+    if (argument.promise.missing) {
+      throw new REvaluationError("NRE2103", `Argument '${argument.name}' is missing in text().`);
+    }
+    controls.set(argument.name, await invocation.force(argument.promise));
+  }
+
+  const vfont = values.get("vfont");
+  if (vfont !== undefined && vfont.type !== "null") {
+    throw new RUnsupportedFeatureError(
+      "NRU6165",
+      "text(vfont=) awaits browser Hershey vector-font rendering.",
+    );
+  }
+  const xpd = controls.get("xpd");
+  if (xpd !== undefined && (xpd.type !== "logical" || xpd.length !== 1)) {
+    throw new RTypeMismatchError("NRT3349", "text(xpd=) requires one logical or missing value.");
+  }
+
+  const coordinates = graphicsXyCoordinates(input, values.get("y"), invocation, "text");
+  const coordinateCount = Math.max(coordinates.x.length, coordinates.y.length);
+  const labelSource = values.get("labels");
+  const labels =
+    labelSource === undefined
+      ? characterVector(Array.from({ length: coordinateCount }, (_, index) => String(index + 1)))
+      : graphicsTextLabels(labelSource, invocation);
+  if (labels.length === 0) {
+    throw new RTypeMismatchError("NRT3349", "zero-length 'labels' specified");
+  }
+  if (labels.length > coordinateCount) {
+    invocation.context.warn({
+      code: "NRW1110",
+      message: `length(labels) > max(length(x), length(y)); 'labels' truncated to length ${coordinateCount}`,
+    });
+  }
+
+  const state = graphicsState(invocation, "text");
+  invocation.setResultVisibility("invisible");
+  if (coordinateCount === 0) return R_NULL;
+  const adjustments = graphicsTextAdjustments(values.get("adj"));
+  const positions = graphicsTextPositions(values.get("pos"));
+  const offset = graphicsTextScalar(values.get("offset"), 0.5, "offset");
+  const rotation = graphicsTextScalar(controls.get("srt"), 0, "srt");
+  const family =
+    controls.get("family") === undefined
+      ? ""
+      : characterScalar(controls.get("family") as RValue, "text(family=)");
+  const colors = graphicsTextColours(values.get("col"), invocation);
+  const sizes = graphicsTextSizes(values.get("cex"));
+  const fonts = graphicsTextFonts(values.get("font"));
+  const resolved: RGraphicsText[] = [];
+  invocation.context.allocate(coordinateCount * 11);
+  for (let index = 0; index < coordinateCount; index += 1) {
+    invocation.context.checkpoint();
+    const x =
+      coordinates.x.length === 0
+        ? undefined
+        : graphicsPointCoordinate(coordinates.x, index % coordinates.x.length);
+    const y =
+      coordinates.y.length === 0
+        ? undefined
+        : graphicsPointCoordinate(coordinates.y, index % coordinates.y.length);
+    const labelIndex = index % labels.length;
+    const label = isMissing(labels, labelIndex) ? undefined : labels.values[labelIndex];
+    const color = colors[index % colors.length];
+    const size = sizes[index % sizes.length];
+    const font = fonts[index % fonts.length];
+    const position = positions[index % positions.length];
+    if (
+      x === undefined ||
+      y === undefined ||
+      label === undefined ||
+      color === undefined ||
+      size === undefined ||
+      font === undefined
+    ) {
+      continue;
+    }
+    resolved.push({
+      x,
+      y,
+      label,
+      color: graphicsCssColour(color),
+      size,
+      font,
+      family,
+      rotation,
+      horizontalAdjustment: adjustments[0],
+      verticalAdjustment: adjustments[1],
+      ...(position === undefined ? {} : { position }),
+      offset,
+    });
+  }
+  if (resolved.length > 0) writeGraphics(invocation, state, { kind: "text", labels: resolved });
+  return R_NULL;
+}
+
+function graphicsTextLabels(value: RValue, invocation: BuiltinInvocation): RCharacterVector {
+  if (value.type === "expression") {
+    throw new RUnsupportedFeatureError(
+      "NRU6165",
+      "text() plotmath expressions await browser mathematical-text rendering.",
+    );
+  }
+  if (!isAtomic(value) || value.type === "complex" || value.type === "raw") {
+    throw new RTypeMismatchError(
+      "NRT3349",
+      "text(labels=) requires an atomic value coercible to character.",
+    );
+  }
+  return value.type === "character" ? value : coerceAtomicToCharacter(value, invocation);
+}
+
+function graphicsTextAdjustments(value: RValue | undefined): readonly [number, number] {
+  if (value === undefined || value.type === "null") return [0.5, 0.5];
+  if (
+    (value.type !== "logical" &&
+      value.type !== "integer" &&
+      value.type !== "double" &&
+      value.type !== "raw") ||
+    value.length < 1 ||
+    value.length > 2 ||
+    isFactor(value)
+  ) {
+    throw new RTypeMismatchError("NRT3349", "text(adj=) requires one or two real values.");
+  }
+  const adjustment = (index: number, fallback: number): number => {
+    if (index >= value.length || isMissing(value, index)) return fallback;
+    const result = value.values[index] ?? Number.NaN;
+    if (!Number.isFinite(result)) {
+      throw new RTypeMismatchError("NRT3349", "text(adj=) requires finite or missing values.");
+    }
+    return result;
+  };
+  return [adjustment(0, 0.5), adjustment(1, 0.5)];
+}
+
+function graphicsTextPositions(value: RValue | undefined): readonly (1 | 2 | 3 | 4 | undefined)[] {
+  if (value === undefined || value.type === "null") return [undefined];
+  if (
+    (value.type !== "logical" &&
+      value.type !== "integer" &&
+      value.type !== "double" &&
+      value.type !== "raw") ||
+    value.length === 0 ||
+    isFactor(value)
+  ) {
+    throw new RTypeMismatchError("NRT3349", "text(pos=) requires a nonempty real vector.");
+  }
+  return Array.from({ length: value.length }, (_, index) => {
+    if (isMissing(value, index)) {
+      throw new RTypeMismatchError("NRT3349", "text(pos=) values must be 1, 2, 3, or 4.");
+    }
+    const position = value.values[index] ?? Number.NaN;
+    if (!Number.isFinite(position) || !Number.isInteger(position) || position < 1 || position > 4) {
+      throw new RTypeMismatchError("NRT3349", "text(pos=) values must be 1, 2, 3, or 4.");
+    }
+    return position as 1 | 2 | 3 | 4;
+  });
+}
+
+function graphicsTextScalar(value: RValue | undefined, fallback: number, name: string): number {
+  if (value === undefined || value.type === "null") return fallback;
+  if (
+    (value.type !== "logical" &&
+      value.type !== "integer" &&
+      value.type !== "double" &&
+      value.type !== "raw") ||
+    value.length !== 1 ||
+    isMissing(value, 0) ||
+    isFactor(value)
+  ) {
+    throw new RTypeMismatchError("NRT3349", `text(${name}=) requires one finite real value.`);
+  }
+  const result = value.values[0] ?? Number.NaN;
+  if (!Number.isFinite(result)) {
+    throw new RTypeMismatchError("NRT3349", `text(${name}=) requires one finite real value.`);
+  }
+  return result;
+}
+
+function graphicsTextFonts(value: RValue | undefined): readonly (1 | 2 | 3 | 4)[] {
+  if (value === undefined || value.type === "null") return [1];
+  if (
+    (value.type !== "logical" &&
+      value.type !== "integer" &&
+      value.type !== "double" &&
+      value.type !== "raw") ||
+    value.length === 0 ||
+    isFactor(value)
+  ) {
+    throw new RTypeMismatchError("NRT3349", "text(font=) requires a nonempty real vector.");
+  }
+  return Array.from({ length: value.length }, (_, index) => {
+    if (isMissing(value, index)) return 1;
+    const font = value.values[index] ?? Number.NaN;
+    if (!Number.isInteger(font) || font < 1 || font > 4) {
+      throw new RUnsupportedFeatureError(
+        "NRU6165",
+        "text(font=) currently supports plain, bold, italic, and bold-italic faces 1 through 4.",
+      );
+    }
+    return font as 1 | 2 | 3 | 4;
+  });
+}
+
+function graphicsTextColours(
+  value: RValue | undefined,
+  invocation: BuiltinInvocation,
+): readonly RColour[] {
+  const fallback = [0, 0, 0, 255] as const;
+  if (value === undefined || value.type === "null" || (isVector(value) && value.length === 0)) {
+    return [fallback];
+  }
+  const colors = graphicsSegmentColours(value, invocation);
+  return !isAtomic(value)
+    ? colors
+    : colors.map((color, index) => (isMissing(value, index) ? fallback : color));
+}
+
+function graphicsTextSizes(value: RValue | undefined): readonly (number | undefined)[] {
+  if (value === undefined || value.type === "null") return [1];
+  if (
+    (value.type !== "logical" &&
+      value.type !== "integer" &&
+      value.type !== "double" &&
+      value.type !== "raw") ||
+    isFactor(value)
+  ) {
+    throw new RTypeMismatchError("NRT3349", "text(cex=) requires a numeric vector.");
+  }
+  if (value.length === 0) return [1];
+  return Array.from({ length: value.length }, (_, index) => {
+    if (isMissing(value, index)) return 1;
+    const size = value.values[index] ?? Number.NaN;
+    if (Number.isNaN(size) || size <= 0) return undefined;
+    if (!Number.isFinite(size)) {
+      throw new RTypeMismatchError("NRT3349", "text(cex=) must contain finite values.");
+    }
+    return size;
+  });
+}
+
 function graphicsXyCoordinates(
   input: RValue,
   suppliedY: RValue | undefined,
   invocation: BuiltinInvocation,
-  call: "points" | "polygon",
+  call: "points" | "polygon" | "text",
 ): { readonly x: RDoubleVector; readonly y: RDoubleVector } {
-  const errorCode = call === "points" ? "NRT3347" : "NRT3348";
+  const errorCode = call === "points" ? "NRT3347" : call === "polygon" ? "NRT3348" : "NRT3349";
   if (suppliedY !== undefined && suppliedY.type !== "null") {
     const x = graphicsXyAtomicCoordinates(input, "x", invocation, call);
     const y = graphicsXyAtomicCoordinates(suppliedY, "y", invocation, call);
-    if (x.length !== y.length) {
+    if (call !== "text" && x.length !== y.length) {
       throw new RTypeMismatchError(errorCode, `'x' and 'y' lengths differ in ${call}().`);
     }
     return { x, y };
@@ -15645,7 +15936,7 @@ function graphicsXyCoordinates(
         };
       }
       const second = graphicsXyAtomicCoordinates(values[1] ?? R_NULL, "y", invocation, call);
-      if (first.length !== second.length) {
+      if (call !== "text" && first.length !== second.length) {
         throw new RTypeMismatchError(errorCode, `'x' and 'y' lengths differ in ${call}().`);
       }
       return { x: first, y: second };
@@ -15703,11 +15994,11 @@ function graphicsXyAtomicCoordinates(
   value: RValue,
   name: "x" | "y",
   invocation: BuiltinInvocation,
-  call: "points" | "polygon",
+  call: "points" | "polygon" | "text",
 ): RDoubleVector {
   if (!isAtomic(value) || value.type === "character" || value.type === "complex") {
     throw new RTypeMismatchError(
-      call === "points" ? "NRT3347" : "NRT3348",
+      call === "points" ? "NRT3347" : call === "polygon" ? "NRT3348" : "NRT3349",
       `${call}() '${name}' coordinates must be real numeric.`,
     );
   }
@@ -16619,6 +16910,48 @@ function graphicsEventValue(event: RGraphicsEvent): RList {
       ["kind", "points"],
     );
   }
+  if (event.kind === "text") {
+    return listValue(
+      [
+        characterVector(["text"]),
+        listValue(
+          event.labels.map((label) =>
+            listValue(
+              [
+                doubleVector([label.x]),
+                doubleVector([label.y]),
+                characterVector([label.label]),
+                characterVector([label.color]),
+                doubleVector([label.size]),
+                integerVector([label.font]),
+                characterVector([label.family]),
+                doubleVector([label.rotation]),
+                doubleVector([label.horizontalAdjustment]),
+                doubleVector([label.verticalAdjustment]),
+                label.position === undefined ? R_NULL : integerVector([label.position]),
+                doubleVector([label.offset]),
+              ],
+              [
+                "x",
+                "y",
+                "label",
+                "col",
+                "cex",
+                "font",
+                "family",
+                "srt",
+                "hadj",
+                "vadj",
+                "pos",
+                "offset",
+              ],
+            ),
+          ),
+        ),
+      ],
+      ["kind", "labels"],
+    );
+  }
   if (event.kind === "polygon") {
     return listValue(
       [
@@ -16831,6 +17164,15 @@ function graphicsEventFromValue(value: RValue, invocation: BuiltinInvocation): R
     invocation.context.allocate(points.length * 7);
     return { kind: "points", points };
   }
+  if (kind.values[0] === "text") {
+    const labelsValue = field("labels");
+    if (labelsValue?.type !== "list" || labelsValue.length === 0) {
+      throw new RTypeMismatchError("NRT3333", "A recorded text command is malformed.");
+    }
+    const labels = labelsValue.values.map(recordedGraphicsText);
+    invocation.context.allocate(labels.length * 11);
+    return { kind: "text", labels };
+  }
   if (kind.values[0] === "polygon") {
     const polygonsValue = field("polygons");
     if (polygonsValue?.type !== "list" || polygonsValue.length === 0) {
@@ -16985,6 +17327,46 @@ function recordedGraphicsPoint(value: RValue): RGraphicsPoint {
     fill: recordedLegendColour(field("bg"), "bg"),
     size,
     lineWidth,
+  };
+}
+
+function recordedGraphicsText(value: RValue): RGraphicsText {
+  if (value.type !== "list") {
+    throw new RTypeMismatchError("NRT3333", "A recorded text label is malformed.");
+  }
+  const names = vectorNames(value);
+  const field = (name: string): RValue | undefined => {
+    const index = names?.indexOf(name) ?? -1;
+    return index < 0 ? undefined : value.values[index];
+  };
+  const size = recordedPlotNumber(field("cex"), "cex");
+  const font = recordedPlotInteger(field("font"), "font");
+  const positionValue = field("pos");
+  const position =
+    positionValue === undefined || positionValue.type === "null"
+      ? undefined
+      : recordedPlotInteger(positionValue, "pos");
+  if (
+    !(size > 0) ||
+    font < 1 ||
+    font > 4 ||
+    (position !== undefined && (position < 1 || position > 4))
+  ) {
+    throw new RTypeMismatchError("NRT3333", "A recorded text style is malformed.");
+  }
+  return {
+    x: recordedPlotNumber(field("x"), "x"),
+    y: recordedPlotNumber(field("y"), "y"),
+    label: recordedPlotCharacter(field("label"), "label"),
+    color: recordedLegendColour(field("col"), "col"),
+    size,
+    font: font as 1 | 2 | 3 | 4,
+    family: recordedPlotCharacter(field("family"), "family"),
+    rotation: recordedPlotNumber(field("srt"), "srt"),
+    horizontalAdjustment: recordedPlotNumber(field("hadj"), "hadj"),
+    verticalAdjustment: recordedPlotNumber(field("vadj"), "vadj"),
+    ...(position === undefined ? {} : { position: position as 1 | 2 | 3 | 4 }),
+    offset: recordedPlotNumber(field("offset"), "offset"),
   };
 }
 
@@ -17543,6 +17925,17 @@ function graphicsEventByteLength(event: RGraphicsEvent): number {
         (typeof point.symbol === "string" ? graphicsTextByteLength(point.symbol) : 8) +
         graphicsTextByteLength(point.color) +
         graphicsTextByteLength(point.fill),
+      32,
+    );
+  }
+  if (event.kind === "text") {
+    return event.labels.reduce(
+      (bytes, label) =>
+        bytes +
+        128 +
+        graphicsTextByteLength(label.label) +
+        graphicsTextByteLength(label.color) +
+        graphicsTextByteLength(label.family),
       32,
     );
   }

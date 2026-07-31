@@ -7208,5 +7208,26 @@
     "expected": [2, 4, 1, 3, 1, 2, 1, 2, 3, 1, 1, 3.5, 1, 1, 1],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "text-zoo-observed-rotated-outside-label-shape",
+    "code": "plot.new()\nplot.window(c(0, 10), c(0, 10))\nresult <- withVisible(graphics::text(10, 5, \"series\", srt = -90, xpd = TRUE, col = \"blue\"))\nc(is.null(result$value), result$visible)",
+    "expected": [true, false],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "text-coordinate-label-style-recycling-and-omission",
+    "code": "plot.new()\nplot.window(c(0, 10), c(0, 10))\na <- withVisible(text(1:3, c(4, 5), c(\"a\", \"b\", \"c\"), adj = c(0, 1), pos = c(1, 4), offset = .25, cex = c(2, 1), col = c(\"blue\", \"green\"), font = c(2, 4), srt = -90, family = \"serif\", xpd = TRUE))\nb <- withVisible(text(list(x = 8:9, y = 6:7)))\nd <- withVisible(text(c(1, NA), 2, c(\"kept\", \"omitted\")))\nc(is.null(a$value), a$visible, is.null(b$value), b$visible, is.null(d$value), d$visible)",
+    "expected": [true, false, true, false, true, false],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "text-s3-dispatch-and-input-boundaries",
+    "code": "text.zoo <- function(x, y = NULL, labels = \"default\", ..., marker = \"default\") c(class(x), labels, marker, list(...)$extra)\ncustom <- text(structure(1:2, class = \"zoo\"), labels = \"custom\", marker = \"yes\", extra = 7)\nbefore <- inherits(try(text(1, 2, \"x\"), silent = TRUE), \"try-error\")\nplot.new()\nzero <- inherits(try(text(1, 2, character()), silent = TRUE), \"try-error\")\nmissing <- inherits(try(text(), silent = TRUE), \"try-error\")\nc(custom, before, zero, missing)",
+    "expected": ["zoo", "custom", "yes", "7", "TRUE", "TRUE", "TRUE"],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]
