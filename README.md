@@ -82,13 +82,13 @@ console.log(await r.eval('readLines(system.file("DESCRIPTION", package = "demo")
 ```
 
 The loader supports isolated namespaces, dependency/import loading and version checks, package
-metadata/source/resources through virtual `system.file()` paths and bounded `readLines()`, exports,
-`pkg::name`, `pkg:::name`, S3 registrations, `.onLoad()`, `.onAttach()`, `library()`, `require()`,
-and `requireNamespace()` in inline and Worker execution. Arbitrary pure-R source packages can enter
-this pipeline, but that is not a claim that every package already executes: all dependencies, data
-formats, namespace directives, and R features it uses must also be supported. The unchanged public
-`pkgconfig 2.0.3` source package is the first pinned end-to-end external proof. See the
-[complete bundle example](examples/pure-r-package.ts) and
+metadata/source/resources through virtual `system.file()` paths, bounded `readLines()`, and
+read-only `file()` connections, plus exports, `pkg::name`, `pkg:::name`, S3 registrations,
+`.onLoad()`, `.onAttach()`, `library()`, `require()`, and `requireNamespace()` in inline and Worker
+execution. Arbitrary pure-R source packages can enter this pipeline, but that is not a claim that
+every package already executes: all dependencies, data formats, namespace directives, and R features
+it uses must also be supported. The unchanged public `pkgconfig 2.0.3` source package is the first
+pinned end-to-end external proof. See the [complete bundle example](examples/pure-r-package.ts) and
 [package-loading contract](docs/pure-r-packages.md).
 
 ### One-file browser example
@@ -130,7 +130,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 505 registered functions, including resettable
+an initial condition/handler slice. It exposes 513 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
 preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
@@ -351,19 +351,20 @@ Rank-435 `methods::show` now provides diffobj's measured style-display extension
 method lookup, method-result visibility, and bounded default text output. Rank-436
 `utils::capture.output` now runs httpuv's measured request-inspection expression through a nested,
 resource-bounded in-memory output capture, with visible-result printing, partial-line handling,
-message selection, and split output; browser filesystem and connection targets remain explicit
-boundaries. Rank-437 `utils::demo` reproduces the empty package-demo catalog shape while making
-external package demo discovery and execution an explicit package-resource boundary. Rank-438
-`RNGversion` runs zoo's measured R-3.5 reproducibility setup by selecting the historical Rounding
-sampler before `set.seed`; pre-R-1.7 generator families remain explicit boundaries. Ranks 439-443
-add the regular time-series foundation: `ts()` constructs vector or matrix series, `as.ts()` and
-`frequency()` expose their sampling metadata, and `window()` slices, downsamples, or explicitly
-extends them. These generics also forward to independently supplied methods such as `window.zoo`;
-NativR does not claim that zoo itself is bundled or compatible yet. Rank 444 `graphics::legend` now
-runs zoo's three measured line/point legend shapes through a bounded Worker graphics event and the
-Playground Canvas renderer, including keyword/coordinate placement, colors, columns, titles,
-invisible geometry results, and same-session record/replay. General base graphics, arbitrary
-graphical parameters, and device-identical layout remain explicit boundaries. See the
+message selection, split output, and bounded browser-memory file/connection targets. Host filesystem
+targets remain an explicit boundary. Rank-437 `utils::demo` reproduces the empty package-demo
+catalog shape while making external package demo discovery and execution an explicit
+package-resource boundary. Rank-438 `RNGversion` runs zoo's measured R-3.5 reproducibility setup by
+selecting the historical Rounding sampler before `set.seed`; pre-R-1.7 generator families remain
+explicit boundaries. Ranks 439-443 add the regular time-series foundation: `ts()` constructs vector
+or matrix series, `as.ts()` and `frequency()` expose their sampling metadata, and `window()` slices,
+downsamples, or explicitly extends them. These generics also forward to independently supplied
+methods such as `window.zoo`; NativR does not claim that zoo itself is bundled or compatible yet.
+Rank 444 `graphics::legend` now runs zoo's three measured line/point legend shapes through a bounded
+Worker graphics event and the Playground Canvas renderer, including keyword/coordinate placement,
+colors, columns, titles, invisible geometry results, and same-session record/replay. General base
+graphics, arbitrary graphical parameters, and device-identical layout remain explicit boundaries.
+See the
 [compatibility contract](https://github.com/nativr/nativr/blob/main/docs/compatibility-contract.md)
 for exact boundaries.
 
@@ -515,6 +516,13 @@ values. The bit64-observed `save(e, file); rm(e); load(file)` shape, explicit ob
 environments, duplicate names, verbose output, return visibility, and format rejection have
 executable coverage. The archive is NativR-owned canonical source, not a GNU R `.RData` binary or a
 host file.
+
+The usage-ranked `file`, `close`, `tempdir`, and `file.exists` foundation now exposes bounded,
+session-owned connection handles over that same browser-memory store and immutable package files.
+Implicit and explicit opening, read/write/append modes, persistent cursors, `seek`, `flush`,
+`isOpen`, `summary`, destruction, and connection-aware `readLines`, `writeLines`, `cat`, and
+`capture.output` have GNU R 4.6 differential coverage. Compressed, URL, socket, host-file, and raw
+binary connections remain explicit boundaries.
 
 Measured rank 22 `plot()` now supplies the high-reach S3 extension point used by package-defined
 `plot.<class>` methods and a bounded browser-native numeric default. One-argument vectors and paired

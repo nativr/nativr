@@ -222,10 +222,11 @@ claimed.
 
 `print` has executable value, output, and invisibility coverage for NULL, atomic vectors, names,
 basic lists, two-dimensional atomic matrices, and NativR data frames. `cat` concatenates NULL and
-atomic inputs with character-vector separators, emits ordered stdout, and returns invisible NULL.
-Both inline and Worker APIs retain the output in `evalDetailed` and charge it against the configured
-output budget. S3 print-method dispatch, global print options, line filling, labels, connections,
-and filesystem output are not claimed.
+atomic inputs with character-vector separators, emits ordered stdout or writes to a supported
+browser-memory path/file connection, honors path append mode, and returns invisible NULL. Both
+inline and Worker APIs retain stdout in `evalDetailed`; output and stored text share configured
+budgets. S3 print-method dispatch, global print options, line filling, labels, host files, and the
+complete connection stack are not claimed.
 
 `plot`, `plot.default`, `plot.new`, bounded `plot.window`, `axTicks`, `box`, `boxplot`, `persp`,
 `points`, `polygon`, `rasterImage`, `segments`, and `legend` provide the first browser-native
@@ -382,8 +383,18 @@ values.
 roundtrips, per-element separators, invisible writes, LF/CRLF/CR recognition, line-count limits,
 short-read errors, incomplete-final-line warnings, embedded-NUL truncation/skip behavior, and
 standard-output events. The same reader consumes bounded immutable package metadata, retained R
-source, and UTF-8/Latin-1 packaged resources through `system.file()` paths. Package writes, host
-paths, arbitrary connections, compression, seeking, and the broader connection stack are not
+source, and UTF-8/Latin-1 packaged resources through `system.file()` paths.
+
+`base::file`, `open`, `close`, `flush`, `isOpen`, and `seek` expose evaluator-owned classed integer
+handles over those paths. Differential evidence covers implicit operation-scoped opens; explicit
+read, write, append, and update modes; private empty-description connections; persistent cursors;
+connection summaries; access queries; flush/close visibility; and destruction. `tempdir` returns the
+opaque session root and `file.exists` recognizes session files and installed-package files or
+directories. `readLines`, `writeLines`, `cat`, and `utils::capture.output` consume the same handles;
+closed `capture.output` targets follow GNU R's destroy-after-use behavior. Handle identity prevents
+forging, package writes are rejected, and the map is reset with the evaluator. Host paths,
+compression, URLs, sockets, raw/binary I/O, encoding conversion on writes, independent read/write
+positions, positions beyond end of file, and the broader connection/filesystem stack are not
 claimed.
 
 `base::Sys.sleep` accepts GNU R's non-negative scalar-coercible interval shape, permits `Inf`,
@@ -1617,9 +1628,9 @@ The rank-436 increment adds GNU R differential evidence for httpuv's measured
 capture, visible expression printing, block visibility, partial and empty lines, nested captures,
 message-stream selection, unique type prefixes, split duplication, namespace access, argument
 errors, and byte limits are covered. The measured `cat` path also verifies GNU R's
-newline-containing separator terminator rule. Files and connections are explicit browser boundaries;
-warning/error sinking, arbitrary print methods, and the complete connection/sink stack are not
-claimed.
+newline-containing separator terminator rule. Both functions now target bounded browser-memory paths
+and file connections with differential evidence. Host files, warning/error sinks, arbitrary print
+methods, and the complete connection/sink stack are not claimed.
 
 Formula values record response, variables, expanded terms, interactions, transformations, and
 intercept state without exposing Tree-sitter nodes. `as.formula` accepts one character expression or

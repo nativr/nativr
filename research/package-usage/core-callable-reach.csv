@@ -63,13 +63,13 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 62,as.numeric,true,10,rlang|ggplot2|isoband|tidyr|yaml|openssl|matrixStats|data.table|shiny|zoo,31,10.3,10.5
 63,seq_len,true,10,RcppEigen|tibble|pillar|purrr|digest|gridExtra|checkmate|data.table|shiny|zoo,19,10.3,10.4
 64,getOption,true,10,withr|tibble|callr|ps|stringi|htmltools|knitr|loo|rstudioapi|diffobj,13,10.3,10.3
-65,file,false,8,rlang|withr|jsonlite|curl|ps|yaml|openssl|brio,16,8.2,9.7
+65,file,true,8,rlang|withr|jsonlite|curl|ps|yaml|openssl|brio,16,8.2,9.7
 66,gsub,true,8,glue|magrittr|tibble|dplyr|xfun|htmltools|knitr|readxl,8,8.2,9.7
 67,requireNamespace,true,8,vctrs|ggplot2|dplyr|scales|isoband|loo|data.table|distributional,19,8.2,9.7
 68,as.data.frame,true,9,ggplot2|tibble|jsonlite|rstan|purrr|knitr|data.table|zoo|bit64,22,9.3,9.6
-69,close,false,8,rlang|jsonlite|curl|processx|ps|yaml|later|brio,17,8.2,9.2
+69,close,true,8,rlang|jsonlite|curl|processx|ps|yaml|later|brio,17,8.2,9.2
 70,is.na,true,8,cli|vctrs|dplyr|S7|matrixStats|data.table|zoo|bit64,25,8.2,9.0
-71,tempdir,false,9,withr|rstan|ps|xfun|knitr|backports|checkmate|data.table|shiny,26,9.3,9.0
+71,tempdir,true,9,withr|rstan|ps|xfun|knitr|backports|checkmate|data.table|shiny,26,9.3,9.0
 72,ncol,true,8,vctrs|RcppEigen|dplyr|isoband|checkmate|matrixStats|data.table|zoo,25,8.2,8.9
 73,local,true,6,rlang|cli|withr|tibble|testthat|shiny,11,6.2,8.8
 74,with,true,7,rlang|ggplot2|tibble|scales|posterior|diffobj|zoo,18,7.2,8.7
@@ -123,7 +123,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 122,ordered,true,5,vctrs|dplyr|testthat|posterior|distributional,6,5.2,5.5
 123,coef,true,5,ggplot2|dplyr|purrr|data.table|zoo,7,5.2,5.4
 124,sort,true,5,withr|scales|StanHeaders|data.table|bit64,13,5.2,5.4
-125,file.exists,false,5,withr|cpp11|knitr|shiny|rprojroot,8,5.2,5.4
+125,file.exists,true,5,withr|cpp11|knitr|shiny|rprojroot,8,5.2,5.4
 126,read.csv,false,6,magrittr|curl|data.table|shiny|promises|bit64,11,6.2,5.3
 127,system.time,false,6,sass|processx|memoise|matrixStats|data.table|bit64,95,6.2,5.3
 128,unique,true,5,ggplot2|StanHeaders|stringi|data.table|bit64,22,5.2,5.1
@@ -339,7 +339,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 338,write,false,1,sass,1,1.0,1.2
 339,readBin,false,1,curl,2,1.0,1.2
 340,available.packages,false,1,curl,1,1.0,1.2
-341,open,false,1,curl,1,1.0,1.2
+341,open,true,1,curl,1,1.0,1.2
 342,stderr,false,1,curl,1,1.0,1.2
 343,barplot,false,2,zoo|bit64,3,2.1,1.2
 344,devAskNewPage,false,1,RColorBrewer,10,1.0,1.1

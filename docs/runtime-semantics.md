@@ -274,8 +274,9 @@ count as nonempty.
 atomic matrices, lists, and NativR data frames, returning its input invisibly. `cat()` concatenates
 NULL and atomic inputs with vectorized separators and returns invisible NULL. Output is collected by
 the evaluation context, transported as ordered Worker events, retained by `evalDetailed`, and
-charged against `maxOutputBytes`. General S3 print methods, console options, line filling,
-connections, and filesystem output remain outside this increment.
+charged against `maxOutputBytes`; `cat(file=)` can instead write a supported virtual path or file
+connection. General S3 print methods, console options, line filling, and host filesystem output
+remain outside this increment.
 
 Graphics output uses a second ordered journal on the same evaluation context. `plot.new()` starts an
 owned page, `plot.window()` records finite linear x/y limits, and `graphics::axTicks()` derives GNU
@@ -1103,9 +1104,10 @@ they do not normalize, resolve, inspect, or access a host filesystem.
 the `message` mode captures message/stderr events while leaving stdout public. Captured chunks are
 normalized into character lines without losing a final intentional blank line. Output-mode
 `split = TRUE` re-emits the same events after capture, and every capture has an independent
-`maxOutputBytes` bound. `file = NULL` is the browser contract; filesystem paths and connections are
-rejected. Warning/error sink behavior, arbitrary class-specific top-level printing, and GNU R's
-complete connection stack are outside this increment.
+`maxOutputBytes` bound. With `file = NULL` it returns character lines; a supported session path or
+file connection receives the exact captured chunks. Closed connection targets are destroyed after
+use as GNU R does. Host files, warning/error sink behavior, arbitrary class-specific top-level
+printing, and the complete connection stack are outside this increment.
 
 `utils::demo()` constructs the empty `packageIQR` catalog entirely from owned values when
 `package = character()` and no library location is supplied. It does not scan an operating-system R

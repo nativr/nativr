@@ -160,3 +160,11 @@ opaque virtual identifiers; the evaluator resolves exact identifiers without URL
 network access; and base `readLines()` performs bounded text decoding. Session writes use a separate
 evaluator-owned namespace, so package resources cannot be mutated and no host path crosses the
 `base -> runtime` boundary.
+
+File connections are evaluator-owned records layered over those same opaque identifiers, never host
+descriptors. R receives only a classed integer handle; the session map additionally checks the
+original value identity, owns open mode and cursor state, bounds handle count and stored bytes, and
+destroys records on `close()` or session reset. `readLines()`, `writeLines()`, `cat()`, and
+`capture.output()` route through one connection writer/reader, while package-backed records are
+read-only. This preserves the normal pure-R connection protocol without adding Node built-ins, DOM
+objects, filesystem resolution, network access, or a second execution backend.

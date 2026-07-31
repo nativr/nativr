@@ -11,7 +11,7 @@ Date: 2026-07-31
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 505 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 513 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Vector/list selection and replacement, recursive `[[`, arbitrary-dimensional column-major array
@@ -47,16 +47,21 @@ Date: 2026-07-31
   dependency/version-checked isolated namespaces, imports/exports, `::`/`:::`, S3 registration,
   lifecycle hooks, attachment, reset/reload, and matching inline/Worker execution. Immutable
   DESCRIPTION/NAMESPACE/R-source/resource paths are exposed by `system.file()` and readable through
-  bounded `readLines()`. Native code, package data/lazy data, broader NAMESPACE directives, binary
-  resource formats, and universal package execution remain explicit boundaries.
+  bounded `readLines()` or read-only file connections. Native code, package data/lazy data, broader
+  NAMESPACE directives, binary resource formats, and universal package execution remain explicit
+  boundaries.
 - Browser-owned text I/O through `readLines()`/`writeLines()` covers same-session temporary files,
   immutable package text, GNU R line endings, separators, NUL/incomplete-line behavior, byte limits,
-  and stdout events without host filesystem access. `Sys.sleep()` adds interruptible asynchronous
-  waits for package retry/polling code without blocking the Worker event loop.
+  and stdout events without host filesystem access. Session-owned `file()` handles add implicit and
+  explicit open/close, read/write/append modes, persistent cursors, bounded `seek()`, `flush()`,
+  `isOpen()`, `summary()`, invalid-handle rejection, `tempdir()`, and `file.exists()`. `Sys.sleep()`
+  adds interruptible asynchronous waits for package retry/polling code without blocking the Worker
+  event loop.
 - Browser-safe `print()` and `cat()` output with invisible return semantics, ordered inline/Worker
   events, `evalDetailed` retention, output-budget accounting, and Playground console rendering.
   `utils::capture.output()` adds nested in-memory stdout/message capture, visible-result printing,
-  partial-line preservation, split output, and an explicit no-filesystem boundary.
+  partial-line preservation, split output, and bounded browser-memory path/connection targets;
+  `cat()` uses the same connection writer. Host filesystem output remains an explicit boundary.
 - `utils::demo()` returns GNU R's empty `packageIQR` catalog shape when no package library is
   selected. External package demo discovery and execution remain an explicit package-resource
   boundary.
@@ -528,12 +533,12 @@ Date: 2026-07-31
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 9 files and 337 tests; aggregate V8 coverage is 85.00% statements, 72.44%
-  branches, 92.19% functions, and 86.14% lines.
+- Vitest currently passes 10 files and 354 tests; aggregate V8 coverage is 84.65% statements, 72.19%
+  branches, 92.49% functions, and 85.91% lines.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 683/683 cases. The optional black-box R oracle passes all 650
-  eligible cases and explicitly skips 33 NativR-owned
+- Checked-in conformance passes 697/697 cases. The optional black-box R oracle passes all 662
+  eligible cases and explicitly skips 35 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,
   expanded matrix, weighted sampling, S3, and R6 paths with no evaluation-time network requests.

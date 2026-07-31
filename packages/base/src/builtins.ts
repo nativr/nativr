@@ -224,6 +224,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("Sys.sleep", ["time"], "behavioral", builtinSystemSleep, "regular", "invisible"),
   defineBuiltin("path.expand", ["path"], "shape", builtinPathExpand),
   defineBuiltin("file.path", ["...", "fsep"], "behavioral", builtinFilePath),
+  defineBuiltin("tempdir", ["check"], "shape", builtinTempDir),
   defineBuiltin(
     "system.file",
     ["...", "package", "lib.loc", "mustWork"],
@@ -233,6 +234,25 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "visible",
   ),
   defineBuiltin("tempfile", ["pattern", "tmpdir", "fileext"], "shape", builtinTempFile),
+  defineBuiltin(
+    "file",
+    ["description", "open", "blocking", "encoding", "raw", "method"],
+    "behavioral",
+    builtinFile,
+  ),
+  defineBuiltin(
+    "open",
+    ["con", "open", "blocking"],
+    "behavioral",
+    builtinOpen,
+    "regular",
+    "invisible",
+  ),
+  defineBuiltin("close", ["con", "type"], "behavioral", builtinClose, "regular", "invisible"),
+  defineBuiltin("flush", ["con"], "behavioral", builtinFlush, "regular", "invisible"),
+  defineBuiltin("isOpen", ["con", "rw"], "behavioral", builtinIsOpen),
+  defineBuiltin("seek", ["con", "where", "origin", "rw"], "behavioral", builtinSeek),
+  defineBuiltin("file.exists", ["..."], "shape", builtinFileExists),
   defineBuiltin(
     "readLines",
     ["con", "n", "ok", "warn", "encoding", "skipNul"],
@@ -1601,8 +1621,28 @@ const VIRTUAL_WORKSPACE_HEADER = "# nativr-workspace-v1\n";
 
 interface VirtualTextFileState {
   readonly files: Map<string, string>;
+  readonly connections: Map<number, VirtualTextConnection>;
   nextId: number;
+  nextConnectionId: number;
   bytes: number;
+}
+
+type VirtualTextConnectionMode = "r" | "w" | "a" | "r+" | "w+" | "a+";
+
+interface VirtualTextConnection {
+  readonly id: number;
+  readonly handle: RIntegerVector;
+  readonly description: string;
+  readonly path: string;
+  readonly packageFile: boolean;
+  readonly privateFile: boolean;
+  blocking: boolean;
+  encoding: VirtualTextEncoding;
+  open: boolean;
+  mode: VirtualTextConnectionMode;
+  displayMode: string;
+  text: "text" | "binary";
+  cursor: number;
 }
 
 interface GraphicsState {
@@ -2719,6 +2759,13 @@ function systemFileNotFound(invocation: BuiltinInvocation, mustWork: boolean): R
   return characterVector([""]);
 }
 
+async function builtinTempDir(invocation: BuiltinInvocation): Promise<RCharacterVector> {
+  const matched = await matchExact(invocation, ["check"]);
+  coercibleLogicalFlag(matched.get("check"), false, "check");
+  invocation.context.allocate(1);
+  return characterVector([VIRTUAL_TEMP_ROOT]);
+}
+
 function filePathCharacters(input: RValue): string[] {
   if (input.type === "null") return [];
   if (isAtomic(input)) {
@@ -2756,35 +2803,242 @@ async function builtinTempFile(invocation: BuiltinInvocation): Promise<RCharacte
   const state = virtualTextFileState(invocation);
   const paths = Array.from({ length }, (_, index) => {
     invocation.context.checkpoint();
-    if (!Number.isSafeInteger(state.nextId)) {
-      throw new RResourceLimitError("NRL4002", "Virtual temporary-file identifier limit exceeded.");
-    }
     const pattern = patterns[index % patterns.length] ?? "file";
     const extension = extensions[index % extensions.length] ?? "";
-    const identifier = state.nextId.toString(16).padStart(8, "0");
-    state.nextId += 1;
-    return `${VIRTUAL_TEMP_ROOT}/${encodeURIComponent(pattern)}${identifier}${encodeURIComponent(
-      extension,
-    )}`;
+    return nextVirtualTempPath(state, pattern, extension);
   });
   return characterVector(paths);
 }
 
-async function builtinReadLines(invocation: BuiltinInvocation): Promise<RCharacterVector> {
-  const matched = await matchExact(invocation, ["con", "n", "ok", "warn", "encoding", "skipNul"]);
-  const connection = matched.get("con");
-  if (connection === undefined) {
+async function builtinFile(invocation: BuiltinInvocation): Promise<RIntegerVector> {
+  const matched = await matchExact(invocation, [
+    "description",
+    "open",
+    "blocking",
+    "encoding",
+    "raw",
+    "method",
+  ]);
+  const descriptionValue = matched.get("description");
+  const description =
+    descriptionValue === undefined ? "" : filePathScalar(descriptionValue, "file");
+  const blocking = coercibleLogicalFlag(matched.get("blocking"), true, "blocking");
+  if (coercibleLogicalFlag(matched.get("raw"), false, "raw")) {
     throw new RUnsupportedFeatureError(
-      "NRU6180",
-      "readLines() standard-input and connection objects are unavailable in the browser runtime.",
+      "NRU6183",
+      "file(raw = TRUE) raw connections are unavailable in the browser text runtime.",
     );
   }
-  const path = filePathScalar(connection, "readLines");
+  const encoding = virtualTextEncoding(matched.get("encoding"), "file");
+  const method = matched.get("method");
+  if (method !== undefined) virtualConnectionCharacter(method, "method", "file");
+
+  const state = virtualTextFileState(invocation);
+  if (state.connections.size >= invocation.context.limits.maxVectorLength) {
+    throw new RResourceLimitError("NRL4002", "Virtual connection count limit exceeded.", {
+      details: {
+        maxVectorLength: invocation.context.limits.maxVectorLength,
+        requested: state.connections.size + 1,
+      },
+    });
+  }
+  if (!Number.isSafeInteger(state.nextConnectionId) || state.nextConnectionId > 2_147_483_647) {
+    throw new RResourceLimitError("NRL4002", "Virtual connection identifier limit exceeded.");
+  }
+
+  const path = description === "" ? nextVirtualTempPath(state, "connection-", ".txt") : description;
+  const packageFile = path.startsWith("nativr://package/");
+  if (!packageFile) requireVirtualTextPath(path, "file");
+  const id = state.nextConnectionId;
+  state.nextConnectionId += 1;
+  invocation.context.allocate(1);
+  const handle = withClasses(integerVector([id]), ["file", "connection"]);
+  const connection: VirtualTextConnection = {
+    id,
+    handle,
+    description,
+    path,
+    packageFile,
+    privateFile: description === "",
+    blocking,
+    encoding,
+    open: false,
+    mode: "r",
+    displayMode: "r",
+    text: "text",
+    cursor: 0,
+  };
+  state.connections.set(id, connection);
+
+  const requested = virtualConnectionMode(matched.get("open"), "r", "file");
+  const shouldOpen = description === "" || requested.specified;
+  if (shouldOpen) {
+    try {
+      const mode =
+        description === "" && !requested.specified
+          ? {
+              mode: "w+" as const,
+              displayMode: "w+",
+              text: "text" as const,
+              specified: true,
+            }
+          : requested;
+      openVirtualTextConnection(invocation, connection, mode, false);
+    } catch (error) {
+      state.connections.delete(id);
+      throw error;
+    }
+  }
+  return handle;
+}
+
+async function builtinOpen(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["con", "open", "blocking"]);
+  const connection = requireVirtualTextConnection(invocation, required(matched, "con", "open"));
+  const mode = virtualConnectionMode(matched.get("open"), connection.mode, "open");
+  connection.blocking = coercibleLogicalFlag(
+    matched.get("blocking"),
+    connection.blocking,
+    "blocking",
+  );
+  openVirtualTextConnection(invocation, connection, mode, true);
+  return R_NULL;
+}
+
+async function builtinClose(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["con", "type"]);
+  const connection = requireVirtualTextConnection(invocation, required(matched, "con", "close"));
+  const type = matched.get("type");
+  if (type !== undefined) {
+    const selected = virtualConnectionCharacter(type, "type", "close");
+    if (selected !== "read" && selected !== "write" && selected !== "rw") {
+      throw new RTypeMismatchError("NRT3356", "invalid 'type' argument");
+    }
+  }
+  const state = virtualTextFileState(invocation);
+  state.connections.delete(connection.id);
+  if (connection.privateFile) deleteVirtualTextFile(state, connection.path);
+  return connection.open ? integerVector([0]) : R_NULL;
+}
+
+async function builtinFlush(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["con"]);
+  requireVirtualTextConnection(invocation, required(matched, "con", "flush"));
+  return R_NULL;
+}
+
+async function builtinIsOpen(invocation: BuiltinInvocation): Promise<RLogicalVector> {
+  const matched = await matchExact(invocation, ["con", "rw"]);
+  const connection = requireVirtualTextConnection(invocation, required(matched, "con", "isOpen"));
+  const access = virtualConnectionAccess(matched.get("rw"), "isOpen");
+  const result =
+    connection.open &&
+    (access === "" ||
+      (access === "read" && virtualConnectionCanRead(connection.mode)) ||
+      (access === "write" && virtualConnectionCanWrite(connection.mode)));
+  invocation.context.allocate(1);
+  return logicalVector([result]);
+}
+
+async function builtinSeek(invocation: BuiltinInvocation): Promise<RDoubleVector> {
+  const matched = await matchExact(invocation, ["con", "where", "origin", "rw"]);
+  const connection = requireVirtualTextConnection(invocation, required(matched, "con", "seek"));
+  if (!connection.open) throw new REvaluationError("NRE2239", "connection is not open");
+  const access = virtualConnectionAccess(matched.get("rw"), "seek");
+  if (access === "read" && !virtualConnectionCanRead(connection.mode)) {
+    throw new REvaluationError("NRE2240", "connection is not open for reading");
+  }
+  if (access === "write" && !virtualConnectionCanWrite(connection.mode)) {
+    throw new REvaluationError("NRE2240", "connection is not open for writing");
+  }
+
+  const previous = connection.cursor;
+  const where = virtualSeekPosition(matched.get("where"));
+  if (where !== undefined) {
+    const originValue = matched.get("origin");
+    const origin =
+      originValue === undefined
+        ? "start"
+        : virtualConnectionCharacter(originValue, "origin", "seek");
+    if (origin !== "start" && origin !== "current" && origin !== "end") {
+      throw new RTypeMismatchError("NRT3356", "invalid 'origin' argument");
+    }
+    const source = readVirtualTextFile(invocation, connection.path, connection.encoding);
+    const base = origin === "start" ? 0 : origin === "current" ? connection.cursor : source.length;
+    const position = base + where;
+    if (!Number.isSafeInteger(position) || position < 0 || position > source.length) {
+      throw new REvaluationError("NRE2240", "invalid seek position");
+    }
+    connection.cursor = position;
+  }
+  invocation.context.allocate(1);
+  return doubleVector([previous]);
+}
+
+async function builtinFileExists(invocation: BuiltinInvocation): Promise<RLogicalVector> {
+  const inputs = await forceAll(invocation);
+  const state = virtualTextFileState(invocation);
+  const values: boolean[] = [];
+  for (const input of inputs) {
+    if (input.type === "null") continue;
+    if (!isAtomic(input)) {
+      throw new RTypeMismatchError("NRT3356", "invalid 'file' argument");
+    }
+    for (let index = 0; index < input.length; index += 1) {
+      invocation.context.checkpoint();
+      if (isMissing(input, index)) {
+        values.push(false);
+        continue;
+      }
+      const path = isFactor(input)
+        ? (factorLevels(input)[(input.values[index] ?? 0) - 1] ?? "")
+        : stringAt(input, index);
+      values.push(
+        path === VIRTUAL_TEMP_ROOT ||
+          state.files.has(path) ||
+          packageVirtualPathExists(invocation, path),
+      );
+    }
+  }
+  invocation.context.allocate(values.length);
+  return logicalVector(values);
+}
+
+async function builtinReadLines(invocation: BuiltinInvocation): Promise<RCharacterVector> {
+  const matched = await matchExact(invocation, ["con", "n", "ok", "warn", "encoding", "skipNul"]);
+  const connectionValue = matched.get("con");
+  if (connectionValue === undefined) {
+    throw new RUnsupportedFeatureError(
+      "NRU6180",
+      "readLines() standard input is unavailable in the browser runtime.",
+    );
+  }
   const count = readLinesCount(matched.get("n"));
   const ok = coercibleLogicalFlag(matched.get("ok"), true, "ok");
   const warn = coercibleLogicalFlag(matched.get("warn"), true, "warn");
   const skipNul = coercibleLogicalFlag(matched.get("skipNul"), false, "skipNul");
-  const encoding = readLinesEncoding(matched.get("encoding"));
+  let path: string;
+  let label: string;
+  let encoding: VirtualTextEncoding;
+  let start = 0;
+  let connection: VirtualTextConnection | undefined;
+  if (isVirtualTextConnectionHandle(connectionValue)) {
+    connection = requireVirtualTextConnection(invocation, connectionValue);
+    if (connection.open && !virtualConnectionCanRead(connection.mode)) {
+      throw new REvaluationError("NRE2240", "cannot read from this connection");
+    }
+    path = connection.path;
+    label = connection.description;
+    encoding =
+      matched.get("encoding") === undefined
+        ? connection.encoding
+        : virtualTextEncoding(matched.get("encoding"), "readLines");
+    start = connection.open ? connection.cursor : 0;
+  } else {
+    path = filePathScalar(connectionValue, "readLines");
+    label = path;
+    encoding = virtualTextEncoding(matched.get("encoding"), "readLines");
+  }
   if (count === 0) return characterVector([]);
 
   const source = readVirtualTextFile(invocation, path, encoding);
@@ -2796,12 +3050,13 @@ async function builtinReadLines(invocation: BuiltinInvocation): Promise<RCharact
       },
     });
   }
-  const lines = splitVirtualTextLines(invocation, source, count, warn, skipNul, path);
-  if (!ok && count > 0 && lines.length < count) {
+  const result = splitVirtualTextLines(invocation, source, start, count, warn, skipNul, label);
+  if (connection?.open) connection.cursor = start + result.consumed;
+  if (!ok && count > 0 && result.lines.length < count) {
     throw new REvaluationError("NRE2236", "too few lines read in readLines");
   }
-  invocation.context.allocate(lines.length);
-  return characterVector(lines);
+  invocation.context.allocate(result.lines.length);
+  return characterVector(result.lines);
 }
 
 async function builtinWriteLines(invocation: BuiltinInvocation): Promise<RValue> {
@@ -2818,12 +3073,24 @@ async function builtinWriteLines(invocation: BuiltinInvocation): Promise<RValue>
     return `${isMissing(text, index) ? "NA" : (text.values[index] ?? "")}${separator}`;
   }).join("");
 
-  const connection = matched.get("con");
-  if (connection === undefined) {
+  const connectionValue = matched.get("con");
+  if (connectionValue === undefined) {
     if (source.length > 0) invocation.context.writeOutput({ stream: "stdout", text: source });
     return R_NULL;
   }
-  const path = filePathScalar(connection, "writeLines");
+  if (isVirtualTextConnectionHandle(connectionValue)) {
+    const connection = requireVirtualTextConnection(invocation, connectionValue);
+    if (connection.open) {
+      if (!virtualConnectionCanWrite(connection.mode)) {
+        throw new REvaluationError("NRE2240", "cannot write to this connection");
+      }
+      writeVirtualTextConnection(invocation, connection, source);
+    } else {
+      writeClosedVirtualTextConnection(invocation, connection, source);
+    }
+    return R_NULL;
+  }
+  const path = filePathScalar(connectionValue, "writeLines");
   if (path.startsWith("nativr://package/")) {
     throw new RUnsupportedFeatureError(
       "NRU6181",
@@ -2892,7 +3159,7 @@ function coercibleLogicalFlag(value: RValue | undefined, fallback: boolean, name
 
 type VirtualTextEncoding = "utf8" | "latin1";
 
-function readLinesEncoding(value: RValue | undefined): VirtualTextEncoding {
+function virtualTextEncoding(value: RValue | undefined, call: string): VirtualTextEncoding {
   if (value === undefined) return "utf8";
   if (value.type !== "character" || value.length === 0 || isMissing(value, 0)) {
     throw new RTypeMismatchError("NRT3355", "invalid 'encoding' argument");
@@ -2902,8 +3169,268 @@ function readLinesEncoding(value: RValue | undefined): VirtualTextEncoding {
   if (normalized === "latin1" || normalized === "bytes") return "latin1";
   throw new RUnsupportedFeatureError(
     "NRU6182",
-    `readLines() encoding '${value.values[0] ?? ""}' is unavailable in the browser runtime.`,
+    `${call}() encoding '${value.values[0] ?? ""}' is unavailable in the browser runtime.`,
   );
+}
+
+function nextVirtualTempPath(
+  state: VirtualTextFileState,
+  pattern: string,
+  extension: string,
+): string {
+  if (!Number.isSafeInteger(state.nextId)) {
+    throw new RResourceLimitError("NRL4002", "Virtual temporary-file identifier limit exceeded.");
+  }
+  const identifier = state.nextId.toString(16).padStart(8, "0");
+  state.nextId += 1;
+  return `${VIRTUAL_TEMP_ROOT}/${encodeURIComponent(pattern)}${identifier}${encodeURIComponent(
+    extension,
+  )}`;
+}
+
+function virtualConnectionCharacter(value: RValue, name: string, call: string): string {
+  if (value.type !== "character" || value.length !== 1 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3356", `${call}() requires a character '${name}' value.`);
+  }
+  return value.values[0] ?? "";
+}
+
+function virtualConnectionMode(
+  value: RValue | undefined,
+  fallback: VirtualTextConnectionMode,
+  call: string,
+): {
+  readonly mode: VirtualTextConnectionMode;
+  readonly displayMode: string;
+  readonly text: "text" | "binary";
+  readonly specified: boolean;
+} {
+  if (value === undefined) {
+    return { mode: fallback, displayMode: fallback, text: "text", specified: false };
+  }
+  const requested = virtualConnectionCharacter(value, "open", call);
+  if (requested === "") {
+    return { mode: fallback, displayMode: fallback, text: "text", specified: false };
+  }
+  const base = requested[0];
+  const suffix = requested.slice(1);
+  if (
+    (base !== "r" && base !== "w" && base !== "a") ||
+    !["", "t", "b", "+", "t+", "b+", "+t", "+b"].includes(suffix)
+  ) {
+    throw new REvaluationError("NRE2238", `invalid connection open mode '${requested}'`);
+  }
+  const mode = `${base}${suffix.includes("+") ? "+" : ""}` as VirtualTextConnectionMode;
+  return {
+    mode,
+    displayMode: requested,
+    text: suffix.includes("b") ? "binary" : "text",
+    specified: true,
+  };
+}
+
+function virtualConnectionCanRead(mode: VirtualTextConnectionMode): boolean {
+  return mode === "r" || mode.endsWith("+");
+}
+
+function virtualConnectionCanWrite(mode: VirtualTextConnectionMode): boolean {
+  return mode === "w" || mode === "a" || mode.endsWith("+");
+}
+
+function virtualConnectionAccess(value: RValue | undefined, call: string): "" | "read" | "write" {
+  if (value === undefined) return "";
+  const requested = virtualConnectionCharacter(value, "rw", call);
+  if (requested === "" || requested === "rw") return "";
+  if (requested === "r" || requested === "read") return "read";
+  if (requested === "w" || requested === "write") return "write";
+  throw new RTypeMismatchError("NRT3356", "invalid 'rw' argument");
+}
+
+function virtualSeekPosition(value: RValue | undefined): number | undefined {
+  if (value === undefined) return undefined;
+  if (value.type === "null" || !isAtomic(value) || value.length === 0 || isMissing(value, 0)) {
+    return undefined;
+  }
+  let numeric: number | undefined;
+  if (value.type === "character") {
+    const parsed = parseRNumber(value.values[0] ?? "");
+    if (parsed.valid) numeric = parsed.value;
+  } else if (value.type === "complex") {
+    if ((value.imaginary[0] ?? 0) === 0) numeric = value.real[0];
+  } else {
+    numeric = value.values[0];
+  }
+  if (numeric === undefined || !Number.isSafeInteger(numeric)) {
+    throw new RTypeMismatchError("NRT3356", "invalid 'where' argument");
+  }
+  return numeric;
+}
+
+function isVirtualTextConnectionHandle(value: RValue): value is RIntegerVector {
+  if (value.type !== "integer" || value.length !== 1 || isMissing(value, 0)) return false;
+  const classes = vectorClasses(value);
+  return classes?.includes("connection") === true && classes.includes("file");
+}
+
+function requireVirtualTextConnection(
+  invocation: BuiltinInvocation,
+  value: RValue,
+): VirtualTextConnection {
+  if (!isVirtualTextConnectionHandle(value)) {
+    throw new REvaluationError("NRE2238", "invalid connection");
+  }
+  const id = value.values[0] ?? -1;
+  const connection = virtualTextFileState(invocation).connections.get(id);
+  if (connection === undefined || connection.handle !== value) {
+    throw new REvaluationError("NRE2238", "invalid connection");
+  }
+  return connection;
+}
+
+function openVirtualTextConnection(
+  invocation: BuiltinInvocation,
+  connection: VirtualTextConnection,
+  requested: {
+    readonly mode: VirtualTextConnectionMode;
+    readonly displayMode: string;
+    readonly text: "text" | "binary";
+  },
+  warnAlreadyOpen: boolean,
+): void {
+  if (connection.open) {
+    if (warnAlreadyOpen) {
+      invocation.context.warn({ code: "NRW1118", message: "connection is already open" });
+    }
+    return;
+  }
+  const canRead = virtualConnectionCanRead(requested.mode);
+  const canWrite = virtualConnectionCanWrite(requested.mode);
+  if (canWrite && connection.packageFile) {
+    throw new RUnsupportedFeatureError(
+      "NRU6181",
+      "Package files are immutable in the browser runtime.",
+    );
+  }
+  const exists = virtualTextFileExists(invocation, connection.path);
+  if (canRead && (requested.mode === "r" || requested.mode === "r+") && !exists) {
+    throw new REvaluationError(
+      "NRE2195",
+      `Cannot open virtual text file '${connection.description || connection.path}'.`,
+    );
+  }
+  if (requested.mode === "w" || requested.mode === "w+") {
+    writeVirtualTextFile(invocation, connection.path, "");
+  } else if ((requested.mode === "a" || requested.mode === "a+") && !exists) {
+    writeVirtualTextFile(invocation, connection.path, "");
+  }
+  connection.open = true;
+  connection.mode = requested.mode;
+  connection.displayMode = requested.displayMode;
+  connection.text = requested.text;
+  connection.cursor = 0;
+}
+
+function virtualTextFileExists(invocation: BuiltinInvocation, path: string): boolean {
+  return path.startsWith(`${VIRTUAL_TEMP_ROOT}/`)
+    ? virtualTextFileState(invocation).files.has(path)
+    : invocation.packageFile(path) !== undefined;
+}
+
+function writeClosedVirtualTextConnection(
+  invocation: BuiltinInvocation,
+  connection: VirtualTextConnection,
+  source: string,
+): void {
+  if (connection.packageFile) {
+    throw new RUnsupportedFeatureError(
+      "NRU6181",
+      "writeLines() package files are immutable in the browser runtime.",
+    );
+  }
+  writeVirtualTextFile(invocation, connection.path, source);
+}
+
+function writeVirtualTextConnection(
+  invocation: BuiltinInvocation,
+  connection: VirtualTextConnection,
+  source: string,
+): void {
+  if (connection.packageFile) {
+    throw new RUnsupportedFeatureError(
+      "NRU6181",
+      "writeLines() package files are immutable in the browser runtime.",
+    );
+  }
+  const existing = virtualTextFileState(invocation).files.get(connection.path) ?? "";
+  if (connection.mode === "a" || connection.mode === "a+") {
+    const updated = `${existing}${source}`;
+    writeVirtualTextFile(invocation, connection.path, updated);
+    connection.cursor = updated.length;
+    return;
+  }
+  const cursor = Math.min(connection.cursor, existing.length);
+  const updated = `${existing.slice(0, cursor)}${source}${existing.slice(cursor + source.length)}`;
+  writeVirtualTextFile(invocation, connection.path, updated);
+  connection.cursor = cursor + source.length;
+}
+
+function writeVirtualTextTarget(
+  invocation: BuiltinInvocation,
+  target: RValue,
+  source: string,
+  append: boolean,
+  call: "cat" | "capture.output",
+): VirtualTextConnection | undefined {
+  if (isVirtualTextConnectionHandle(target)) {
+    const connection = requireVirtualTextConnection(invocation, target);
+    if (connection.open) {
+      if (!virtualConnectionCanWrite(connection.mode)) {
+        throw new REvaluationError("NRE2240", "cannot write to this connection");
+      }
+      writeVirtualTextConnection(invocation, connection, source);
+    } else {
+      writeClosedVirtualTextConnection(invocation, connection, source);
+    }
+    return connection;
+  }
+  const path = filePathScalar(target, call);
+  if (path.startsWith("nativr://package/")) {
+    throw new RUnsupportedFeatureError(
+      "NRU6181",
+      `${call}() package files are immutable in the browser runtime.`,
+    );
+  }
+  requireVirtualTextPath(path, call);
+  const previous = virtualTextFileState(invocation).files.get(path) ?? "";
+  writeVirtualTextFile(invocation, path, append ? `${previous}${source}` : source);
+  return undefined;
+}
+
+function packageVirtualPathExists(invocation: BuiltinInvocation, path: string): boolean {
+  const prefix = "nativr://package/";
+  if (!path.startsWith(prefix)) return false;
+  const encoded = path.slice(prefix.length).split("/");
+  if (encoded.length === 0 || encoded.some((part) => part.length === 0)) return false;
+  try {
+    const parts = encoded.map((part) => decodeURIComponent(part));
+    const name = parts.shift();
+    if (
+      name === undefined ||
+      parts.some(
+        (part) =>
+          part.length === 0 ||
+          part === "." ||
+          part === ".." ||
+          part.includes("/") ||
+          part.includes("\\"),
+      )
+    ) {
+      return false;
+    }
+    return invocation.packageResourcePath(name, parts.join("/")) === path;
+  } catch {
+    return false;
+  }
 }
 
 function readVirtualTextFile(
@@ -2975,19 +3502,33 @@ function decodeBase64Resource(value: string, invocation: BuiltinInvocation): Uin
 function splitVirtualTextLines(
   invocation: BuiltinInvocation,
   source: string,
+  start: number,
   count: number,
   warn: boolean,
   skipNul: boolean,
   path: string,
-): readonly string[] {
-  if (source.length === 0) return [];
-  const normalized = source.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
-  const complete = normalized.endsWith("\n");
-  const allLines = normalized.split("\n");
-  if (complete) allLines.pop();
-  const selected = count < 0 ? allLines : allLines.slice(0, count);
-  const lines = selected.map((line, index) => {
+): { readonly lines: readonly string[]; readonly consumed: number } {
+  if (start >= source.length) return { lines: [], consumed: 0 };
+  const selected: { readonly text: string; readonly complete: boolean }[] = [];
+  let cursor = start;
+  while (cursor < source.length && (count < 0 || selected.length < count)) {
     invocation.context.checkpoint();
+    const lineStart = cursor;
+    while (cursor < source.length && source[cursor] !== "\n" && source[cursor] !== "\r") {
+      cursor += 1;
+    }
+    const text = source.slice(lineStart, cursor);
+    if (cursor < source.length) {
+      if (source[cursor] === "\r" && source[cursor + 1] === "\n") cursor += 2;
+      else cursor += 1;
+      selected.push({ text, complete: true });
+    } else {
+      selected.push({ text, complete: false });
+    }
+  }
+  const lines = selected.map((selectedLine, index) => {
+    invocation.context.checkpoint();
+    const line = selectedLine.text;
     if (skipNul) return line.replaceAll("\0", "");
     const nul = line.indexOf("\0");
     if (nul < 0) return line;
@@ -2999,14 +3540,15 @@ function splitVirtualTextLines(
     }
     return line.slice(0, nul);
   });
-  const reachedEof = count < 0 || selected.length === allLines.length;
-  if (warn && reachedEof && !complete) {
+  const reachedEof = cursor >= source.length;
+  const finalLine = selected.at(-1);
+  if (warn && reachedEof && finalLine !== undefined && !finalLine.complete) {
     invocation.context.warn({
       code: "NRW1117",
       message: `incomplete final line found on '${path}'`,
     });
   }
-  return lines;
+  return { lines, consumed: cursor - start };
 }
 
 async function builtinUnlink(invocation: BuiltinInvocation): Promise<RIntegerVector> {
@@ -3025,10 +3567,7 @@ async function builtinUnlink(invocation: BuiltinInvocation): Promise<RIntegerVec
   for (const path of paths.values) {
     invocation.context.checkpoint();
     requireVirtualTextPath(path, "unlink");
-    const previous = state.files.get(path);
-    if (previous === undefined) continue;
-    state.files.delete(path);
-    state.bytes -= virtualTextByteLength(previous);
+    deleteVirtualTextFile(state, path);
   }
   return integerVector([0]);
 }
@@ -3317,21 +3856,41 @@ function virtualTextFileState(invocation: BuiltinInvocation): VirtualTextFileSta
     existing !== null &&
     "files" in existing &&
     existing.files instanceof Map &&
+    "connections" in existing &&
+    existing.connections instanceof Map &&
     "nextId" in existing &&
     typeof existing.nextId === "number" &&
+    "nextConnectionId" in existing &&
+    typeof existing.nextConnectionId === "number" &&
     "bytes" in existing &&
     typeof existing.bytes === "number"
   ) {
     return existing as VirtualTextFileState;
   }
-  const created: VirtualTextFileState = { files: new Map(), nextId: 1, bytes: 0 };
+  const created: VirtualTextFileState = {
+    files: new Map(),
+    connections: new Map(),
+    nextId: 1,
+    nextConnectionId: 3,
+    bytes: 0,
+  };
   invocation.state.set(VIRTUAL_TEXT_FILES_STATE_KEY, created);
   return created;
 }
 
 function requireVirtualTextPath(
   path: string,
-  call: "dget" | "dput" | "load" | "readLines" | "save" | "unlink" | "writeLines",
+  call:
+    | "capture.output"
+    | "cat"
+    | "dget"
+    | "dput"
+    | "file"
+    | "load"
+    | "readLines"
+    | "save"
+    | "unlink"
+    | "writeLines",
 ): void {
   if (path.startsWith(`${VIRTUAL_TEMP_ROOT}/`) && path.length > VIRTUAL_TEMP_ROOT.length + 1)
     return;
@@ -3363,6 +3922,13 @@ function writeVirtualTextFile(invocation: BuiltinInvocation, path: string, sourc
   }
   state.files.set(path, source);
   state.bytes = bytes;
+}
+
+function deleteVirtualTextFile(state: VirtualTextFileState, path: string): void {
+  const previous = state.files.get(path);
+  if (previous === undefined) return;
+  state.files.delete(path);
+  state.bytes -= virtualTextByteLength(previous);
 }
 
 function validateDputControl(value: RValue | undefined): void {
@@ -13305,13 +13871,41 @@ async function builtinCaptureOutput(invocation: BuiltinInvocation): Promise<RVal
   }
 
   const file = controls.get("file");
+  let targetConnection: VirtualTextConnection | undefined;
+  let targetConnectionWasOpen = false;
   if (file !== undefined && file.type !== "null") {
-    throw new RUnsupportedFeatureError(
-      "NRU6156",
-      "capture.output(file=) connections and filesystem output are not supported.",
-    );
+    if (isVirtualTextConnectionHandle(file)) {
+      targetConnection = requireVirtualTextConnection(invocation, file);
+      targetConnectionWasOpen = targetConnection.open;
+      if (targetConnection.open && !virtualConnectionCanWrite(targetConnection.mode)) {
+        throw new REvaluationError("NRE2240", "cannot write to this connection");
+      }
+      if (targetConnection.packageFile) {
+        throw new RUnsupportedFeatureError(
+          "NRU6181",
+          "capture.output() package files are immutable in the browser runtime.",
+        );
+      }
+    } else {
+      const path = filePathScalar(file, "capture.output");
+      if (path.startsWith("nativr://package/")) {
+        throw new RUnsupportedFeatureError(
+          "NRU6181",
+          "capture.output() package files are immutable in the browser runtime.",
+        );
+      }
+      if (
+        !path.startsWith(`${VIRTUAL_TEMP_ROOT}/`) ||
+        path.length <= VIRTUAL_TEMP_ROOT.length + 1
+      ) {
+        throw new RUnsupportedFeatureError(
+          "NRU6156",
+          "capture.output(file=) host filesystem output is unavailable in the browser runtime.",
+        );
+      }
+    }
   }
-  logicalFlag(controls.get("append"), false, "append");
+  const append = logicalFlag(controls.get("append"), false, "append");
   const type = captureOutputType(controls.get("type"));
   const split = logicalFlag(controls.get("split"), false, "split");
   if (type === "message" && split) {
@@ -13353,6 +13947,20 @@ async function builtinCaptureOutput(invocation: BuiltinInvocation): Promise<RVal
 
   if (split) {
     for (const output of captured) invocation.context.writeOutput(output);
+  }
+  if (file !== undefined && file.type !== "null") {
+    writeVirtualTextTarget(
+      invocation,
+      file,
+      captured.map((output) => output.text).join(""),
+      append,
+      "capture.output",
+    );
+    if (targetConnection !== undefined && !targetConnectionWasOpen) {
+      virtualTextFileState(invocation).connections.delete(targetConnection.id);
+    }
+    invocation.setResultVisibility("invisible");
+    return R_NULL;
   }
   const lines = capturedOutputLines(captured);
   invocation.context.allocate(lines.length);
@@ -13471,12 +14079,6 @@ async function builtinCat(invocation: BuiltinInvocation): Promise<RValue> {
   }
 
   const file = controls.get("file");
-  if (file !== undefined && (file.type !== "character" || characterScalar(file, "file") !== "")) {
-    throw new RUnsupportedFeatureError(
-      "NRU6133",
-      "cat(file=) connections and filesystem output are not available in the browser runtime.",
-    );
-  }
   const separators =
     controls.get("sep") === undefined
       ? [" "]
@@ -13491,12 +14093,7 @@ async function builtinCat(invocation: BuiltinInvocation): Promise<RValue> {
   if (labels !== undefined && labels.type !== "null") {
     throw new RUnsupportedFeatureError("NRU6135", "cat(labels=) is not yet supported.");
   }
-  if (logicalFlag(controls.get("append"), false, "append")) {
-    throw new RUnsupportedFeatureError(
-      "NRU6136",
-      "cat(append=TRUE) requires a filesystem connection and is not available.",
-    );
-  }
+  const append = logicalFlag(controls.get("append"), false, "append");
 
   const pieces: string[] = [];
   for (const [argumentIndex, input] of inputs.entries()) {
@@ -13525,7 +14122,11 @@ async function builtinCat(invocation: BuiltinInvocation): Promise<RValue> {
           index === 0 ? piece : `${separators[(index - 1) % separators.length] ?? ""}${piece}`,
         )
         .join("");
-  if (text.length > 0) invocation.context.writeOutput({ stream: "stdout", text });
+  if (file === undefined || (file.type === "character" && characterScalar(file, "file") === "")) {
+    if (text.length > 0) invocation.context.writeOutput({ stream: "stdout", text });
+  } else {
+    writeVirtualTextTarget(invocation, file, text, append, "cat");
+  }
   return R_NULL;
 }
 
@@ -24656,7 +25257,30 @@ async function builtinCovariance(
 
 async function builtinSummary(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["object"]);
-  const input = requireNumeric(required(matched, "object", "summary"), "summary");
+  const object = required(matched, "object", "summary");
+  if (isVirtualTextConnectionHandle(object)) {
+    const connection = requireVirtualTextConnection(invocation, object);
+    const canRead = connection.open
+      ? virtualConnectionCanRead(connection.mode)
+      : virtualTextFileExists(invocation, connection.path) || !connection.packageFile;
+    const canWrite = connection.open
+      ? virtualConnectionCanWrite(connection.mode)
+      : !connection.packageFile;
+    invocation.context.allocate(7);
+    return listValue(
+      [
+        characterVector([connection.description]),
+        characterVector(["file"]),
+        characterVector([connection.displayMode]),
+        characterVector([connection.text]),
+        characterVector([connection.open ? "opened" : "closed"]),
+        characterVector([canRead ? "yes" : "no"]),
+        characterVector([canWrite ? "yes" : "no"]),
+      ],
+      ["description", "class", "mode", "text", "opened", "can read", "can write"],
+    );
+  }
+  const input = requireNumeric(object, "summary");
   const collected = collectNumeric(input, true, invocation);
   if (collected.type !== "values" || collected.values.length === 0) {
     return withNames(doubleVector(new Float64Array(6), new Uint8Array(6).fill(1)), [

@@ -300,9 +300,9 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
     handling, pagers, and automatic bare-expression S4 display remain separate work.
 86. Frequency-ranked in-memory output capture: `utils::capture.output` runs httpuv's measured
     request-inspection expression through nested bounded stream capture, visible-result printing,
-    partial/empty-line handling, message selection, split output, and namespace access. Files,
-    connections, complete warning/error sinking, and arbitrary print-method fidelity remain separate
-    work.
+    partial/empty-line handling, message selection, split output, namespace access, and supported
+    browser-memory path/connection targets. Host files, complete warning/error sinking, and
+    arbitrary print-method fidelity remain separate work.
 87. Frequency-ranked demo catalog boundary: `utils::demo` reproduces the empty GNU R `packageIQR`
     catalog shape without reading a host library. Topic lookup, external package discovery, and demo
     script execution fail explicitly pending package namespaces, resources, and source loading; no
@@ -465,8 +465,14 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
 117. Package text and cooperative waits: `base::readLines` reads same-session temporary text plus
      immutable DESCRIPTION, NAMESPACE, retained R source, and UTF-8/Latin-1 package resources;
      `writeLines` supplies bounded temporary-file and stdout writes; and `Sys.sleep` yields in short
-     cancellable timer slices. General connections, host files, compression, URLs, and binary
-     resource/data readers remain later layers.
+     cancellable timer slices. Host files, compression, URLs, and binary resource/data readers
+     remain later layers.
+118. Browser text connections: usage-ranked `base::file`, `close`, `tempdir`, and `file.exists`,
+     with adjacent `open`, `flush`, `isOpen`, and `seek`, expose session-owned classed handles over
+     temporary text and immutable package resources. Implicit/explicit lifecycle, read/write/append
+     modes, cursors, summaries, destruction, connection-aware line I/O, `cat`, and
+     `utils::capture.output` have GNU R differential evidence. Host files, compression, URLs,
+     sockets, raw/binary I/O, and the full filesystem remain later layers.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means
