@@ -322,3 +322,7 @@ ceiling. The complete production Worker measures 285.7 KiB gzip against the 308 
 Language subset 0.173 adds rank 444's `graphics::legend()` event, resolved line/point keys, geometry
 result, strict display-list codec, and browser Canvas renderer without raising the Worker ceiling.
 The complete production Worker measures 287.9 KiB gzip against the 308 KiB limit.
+
+Language subset 0.174 adds rank 445's `comment()` getter/replacement and matching special-attribute
+validation without raising the ceiling. The complete production Worker measures 288.1 KiB gzip
+against the 308 KiB limit.

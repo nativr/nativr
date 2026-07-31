@@ -321,6 +321,10 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
     invisible geometry results, Worker transport, Canvas rendering, bounded journals, and
     same-session record/replay. Complete base graphics and device-identical layout remain separate
     work.
+91. Frequency-ranked comment metadata: `comment`, `comment<-`, and the equivalent `attr<-` path
+    cover zoo's measured set/query example, missing character comments, deletion, visibility,
+    validation, and preservation of other owned attributes. Extending attributes to closures,
+    environments, and language objects remains separate value-model work.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

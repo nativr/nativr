@@ -733,6 +733,29 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "comment-zoo-observed-replacement-and-query",
+    "code": "x1 <- structure(1:5, class = \"zoo\", index = 1:5)\nvisible <- withVisible(comment(x1) <- c(\"This is a very simple example of a zoo object.\", \"It can be recreated using this R code: example(zoo)\"))\nc(base::comment(x1), attr(x1, \"comment\"), class(x1), visible$value, visible$visible)",
+    "expected": [
+      "This is a very simple example of a zoo object.",
+      "It can be recreated using this R code: example(zoo)",
+      "This is a very simple example of a zoo object.",
+      "It can be recreated using this R code: example(zoo)",
+      "zoo",
+      "This is a very simple example of a zoo object.",
+      "It can be recreated using this R code: example(zoo)",
+      "FALSE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "comment-removal-missing-and-attribute-path",
+    "code": "x <- structure(c(a = 1, b = 2), marker = \"kept\")\ncomment(x) <- NA_character_\nmissing <- is.na(comment(x))\ncomment(x) <- character()\nremoved <- is.null(comment(x))\nattr(x, \"comment\") <- c(\"first\", \"second\")\nbad <- inherits(try(attr(x, \"comment\") <- 1, silent = TRUE), \"try-error\")\nc(missing, removed, names(x), attr(x, \"marker\"), comment(x), bad)",
+    "expected": ["TRUE", "TRUE", "a", "b", "kept", "first", "second", "TRUE"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "lengths-across-core-values",
     "code": "c(length(function() 1), length(~x), lengths(list(1:2, NULL, \"x\")))",
     "expected": [1, 2, 2, 0, 1],

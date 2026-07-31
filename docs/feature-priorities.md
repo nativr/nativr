@@ -739,7 +739,13 @@ bottom-left, bottom-right, and top-left line/point keys plus coordinate placemen
 colors/styles, boxes, columns, titles, invisible geometry results, Worker transport, Canvas pixels,
 and display-list replay. General graphical `...`, fill/density legends, expression labels, exact
 device text metrics, and the complete base-graphics stack remain explicit boundaries. Rank 445
-`comment` is the next unresolved callable candidate.
+`comment` and its replacement form are now complete for zoo's two measured calls, representing
+731,390 downloads and 0.6% weighted reach. The observed example attaches two character metadata
+lines to a classed series and reads them back without affecting default printing. Differential
+evidence also covers absent comments, missing values, `NULL`/empty removal, attribute preservation,
+`attr<-` validation, visibility, namespace access, and invalid replacements. Comments on closures,
+environments, and language objects await the future general attribute model. Rank 446 `cycle` is the
+next unresolved callable candidate.
 
 ## Completed implementation order
 

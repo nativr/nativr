@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.173.0",
+  "languageSubsetVersion": "0.174.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -260,6 +260,8 @@
         { "name": "attr", "compatibility": "behavioral" },
         { "name": "attr<-", "compatibility": "behavioral" },
         { "name": "attributes", "compatibility": "behavioral" },
+        { "name": "comment", "compatibility": "behavioral" },
+        { "name": "comment<-", "compatibility": "behavioral" },
         { "name": "rownames", "compatibility": "behavioral" },
         { "name": "colnames", "compatibility": "behavioral" },
         { "name": "dimnames", "compatibility": "behavioral" },
