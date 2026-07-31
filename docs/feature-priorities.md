@@ -779,8 +779,15 @@ call, and 0.6% weighted reach. The owned path produces current-to-past column-ma
 supported vectors and multivariate matrices with source-type preservation, attribute removal,
 fractional-vector behavior, GNU R matrix coercions, and pre-allocation result limits. Factor
 vectors, data frames, expression vectors, raw/list matrices, and fractional nonempty-matrix
-dimensions remain explicit boundaries. Rank 453 `findInterval` is the next unresolved callable
-candidate.
+dimensions remain explicit boundaries. Rank 453 `findInterval` is now complete for
+[zoo's](https://cran.r-project.org/web/packages/zoo/refman/zoo.html) measured irregular-Date
+rolling-window width expression, representing 731,390 downloads, one measured call, and 0.6%
+weighted reach. The owned
+[documented interval search](https://stat.ethz.ch/R-manual/R-devel/library/base/html/findInterval.html)
+uses bounded binary search with missing-query propagation, duplicate/infinite breakpoints,
+left/right closure and inside controls, numeric coercion, and sortedness validation. Unsafe
+unchecked break vectors, recursive-list coercion, and long-vector indices remain explicit
+boundaries. Rank 454 `gray.colors` is the next unresolved callable candidate.
 
 ## Completed implementation order
 

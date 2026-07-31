@@ -354,3 +354,7 @@ the 308 KiB limit.
 Language subset 0.181 adds rank 452's `stats::embed()` column-major lag-matrix construction,
 fractional-vector compatibility, attribute normalization, and result-length accounting without
 raising the ceiling. The first production Worker measures 293.3 KiB gzip against the 308 KiB limit.
+
+Language subset 0.182 adds rank 453's `base::findInterval()` sorted-break validation, numeric
+coercion, interval controls, and checkpointed binary search without raising the ceiling. The first
+production Worker measures 293.9 KiB gzip against the 308 KiB limit.

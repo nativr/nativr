@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.181.0",
+  "languageSubsetVersion": "0.182.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -405,6 +405,7 @@
         { "name": "as.data.frame", "compatibility": "shape" },
         { "name": "tibble", "compatibility": "behavioral" },
         { "name": "tribble", "compatibility": "behavioral" },
+        { "name": "findInterval", "compatibility": "behavioral" },
         { "name": "cut", "compatibility": "behavioral" },
         { "name": "rle", "compatibility": "behavioral" },
         { "name": "reorder", "compatibility": "behavioral" },

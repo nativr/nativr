@@ -451,7 +451,7 @@ rank,callable,nativr_registered,packages,occurrences,package_reach_percent,downl
 450,boxplot,true,1,1,1.0,0.6
 451,deltat,true,1,1,1.0,0.6
 452,embed,true,1,1,1.0,0.6
-453,findInterval,false,1,1,1.0,0.6
+453,findInterval,true,1,1,1.0,0.6
 454,gray.colors,false,1,1,1.0,0.6
 455,grey,false,1,1,1.0,0.6
 456,ISOdatetime,false,1,1,1.0,0.6
