@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.186.0",
+  "languageSubsetVersion": "0.187.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -511,6 +511,7 @@
         { "name": "rasterImage", "compatibility": "shape" },
         { "name": "segments", "compatibility": "shape" },
         { "name": "points", "compatibility": "shape" },
+        { "name": "polygon", "compatibility": "shape" },
         { "name": "legend", "compatibility": "shape" },
         { "name": "persp", "compatibility": "shape" },
         { "name": "pairs", "compatibility": "shape" }

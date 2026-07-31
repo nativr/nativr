@@ -300,6 +300,20 @@ export interface RGraphicsPoint {
   readonly lineWidth: number;
 }
 
+/** One resolved closed polygon sent to a browser graphics host. */
+export interface RGraphicsPolygon {
+  readonly x: readonly number[];
+  readonly y: readonly number[];
+  /** CSS-compatible #RRGGBBAA solid fill color. */
+  readonly fill: string;
+  /** CSS-compatible #RRGGBBAA border color. */
+  readonly border: string;
+  /** A normalized R line-type pattern, including `blank`. */
+  readonly lineType: string;
+  readonly lineWidth: number;
+  readonly fillRule: "nonzero" | "evenodd";
+}
+
 /** One resolved box-and-whisker group sent to a browser graphics host. */
 export interface RGraphicsBoxplotGroup {
   readonly label: string;
@@ -369,6 +383,10 @@ export type RGraphicsEvent =
   | {
       readonly kind: "points";
       readonly points: readonly RGraphicsPoint[];
+    }
+  | {
+      readonly kind: "polygon";
+      readonly polygons: readonly RGraphicsPolygon[];
     }
   | {
       readonly kind: "box";

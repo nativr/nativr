@@ -457,7 +457,7 @@ rank,callable,nativr_registered,packages,occurrences,package_reach_percent,downl
 456,ISOdatetime,true,1,1,1.0,0.6
 457,persp,true,1,1,1.0,0.6
 458,points,true,1,1,1.0,0.6
-459,polygon,false,1,1,1.0,0.6
+459,polygon,true,1,1,1.0,0.6
 460,replace,false,1,1,1.0,0.6
 461,rlnorm,false,1,1,1.0,0.6
 462,tapply,false,1,1,1.0,0.6

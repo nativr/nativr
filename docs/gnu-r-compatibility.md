@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           477 |
-| Overlapping callable names        |           462 |
-| Missing GNU R callable names      |         2,060 |
-| Name overlap                      |      18.3188% |
+| NativR registered names           |           478 |
+| Overlapping callable names        |           463 |
+| Missing GNU R callable names      |         2,059 |
+| Name overlap                      |      18.3584% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -326,6 +326,15 @@ errors, and allocation/output limits have coverage. Line/path types, locale-depe
 character coordinate coercion, broader coordinate classes, clipping/log axes, exact device
 font/symbol sizing, arbitrary graphical parameters, exact diagnostics, and cross-device pixel
 identity remain incomplete.
+
+The rank-459 increment adds GNU R differential evidence for zoo's measured filled-area `polygon`
+call. Paired/vector/matrix/data-frame/list/complex coordinates, equal-length validation,
+missing/non-finite polygon splitting, invisible results, recycled fill/border colors, line
+types/widths, logical borders, `fillOddEven`, `density = 0`, solid density modes, namespace access,
+Worker protocol output, Canvas fill/border pixels, same-session replay, malformed-record rejection,
+errors, and allocation/output limits have coverage. Positive hatch density, coordinate classes
+beyond owned numeric storage, clipping/log axes, exact device dash/fill metrics, arbitrary graphical
+parameters, exact diagnostics, and cross-device pixel identity remain incomplete.
 
 ## Completion evidence
 

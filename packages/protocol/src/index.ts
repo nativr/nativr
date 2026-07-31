@@ -151,6 +151,21 @@ export type PublicGraphicsEvent =
       }[];
     }
   | {
+      readonly kind: "polygon";
+      readonly polygons: readonly {
+        readonly x: readonly number[];
+        readonly y: readonly number[];
+        /** CSS-compatible #RRGGBBAA solid fill color. */
+        readonly fill: string;
+        /** CSS-compatible #RRGGBBAA border color. */
+        readonly border: string;
+        /** `blank`, `solid`, or an even-length hexadecimal dash sequence. */
+        readonly lineType: string;
+        readonly lineWidth: number;
+        readonly fillRule: "nonzero" | "evenodd";
+      }[];
+    }
+  | {
       readonly kind: "box";
       readonly edges: readonly ("top" | "right" | "bottom" | "left")[];
       /** CSS-compatible #RRGGBBAA color. */

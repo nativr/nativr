@@ -62,6 +62,7 @@ import type {
   RGraphicsLegendEntry,
   RGraphicsLegendPosition,
   RGraphicsPoint,
+  RGraphicsPolygon,
   RGraphicsSegment,
   RIntegerVector,
   RLanguage,
@@ -948,6 +949,14 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "invisible",
   ),
   definePackageBuiltin("graphics", "points", ["x", "..."], "shape", builtinPoints),
+  definePackageBuiltin(
+    "graphics",
+    "polygon",
+    ["x", "y", "density", "angle", "border", "col", "lty", "...", "fillOddEven"],
+    "shape",
+    builtinPolygon,
+    "invisible",
+  ),
   definePackageBuiltin(
     "graphics",
     "legend",
@@ -15449,7 +15458,7 @@ async function builtinPoints(invocation: BuiltinInvocation): Promise<RValue> {
       `points(type = "${type}") awaits browser line/path drawing.`,
     );
   }
-  const coordinates = graphicsPointCoordinates(input, values.get("y"), invocation);
+  const coordinates = graphicsXyCoordinates(input, values.get("y"), invocation, "points");
   const state = graphicsState(invocation, "points");
   invocation.setResultVisibility("invisible");
   if (type === "n" || coordinates.x.length === 0) return R_NULL;
@@ -15495,16 +15504,18 @@ async function builtinPoints(invocation: BuiltinInvocation): Promise<RValue> {
   return R_NULL;
 }
 
-function graphicsPointCoordinates(
+function graphicsXyCoordinates(
   input: RValue,
   suppliedY: RValue | undefined,
   invocation: BuiltinInvocation,
+  call: "points" | "polygon",
 ): { readonly x: RDoubleVector; readonly y: RDoubleVector } {
+  const errorCode = call === "points" ? "NRT3347" : "NRT3348";
   if (suppliedY !== undefined && suppliedY.type !== "null") {
-    const x = graphicsPointAtomicCoordinates(input, "x", invocation);
-    const y = graphicsPointAtomicCoordinates(suppliedY, "y", invocation);
+    const x = graphicsXyAtomicCoordinates(input, "x", invocation, call);
+    const y = graphicsXyAtomicCoordinates(suppliedY, "y", invocation, call);
     if (x.length !== y.length) {
-      throw new RTypeMismatchError("NRT3347", "'x' and 'y' lengths differ in points().");
+      throw new RTypeMismatchError(errorCode, `'x' and 'y' lengths differ in ${call}().`);
     }
     return { x, y };
   }
@@ -15516,16 +15527,16 @@ function graphicsPointCoordinates(
         return { x: doubleVector([]), y: doubleVector([]) };
       }
       const rows = dataFrameRowCount(input);
-      const first = graphicsPointAtomicCoordinates(values[0] ?? R_NULL, "x", invocation);
+      const first = graphicsXyAtomicCoordinates(values[0] ?? R_NULL, "x", invocation, call);
       if (input.length === 1) {
         return {
           x: doubleVector(Array.from({ length: rows }, (_, index) => index + 1)),
           y: first,
         };
       }
-      const second = graphicsPointAtomicCoordinates(values[1] ?? R_NULL, "y", invocation);
+      const second = graphicsXyAtomicCoordinates(values[1] ?? R_NULL, "y", invocation, call);
       if (first.length !== second.length) {
-        throw new RTypeMismatchError("NRT3347", "'x' and 'y' lengths differ in points().");
+        throw new RTypeMismatchError(errorCode, `'x' and 'y' lengths differ in ${call}().`);
       }
       return { x: first, y: second };
     }
@@ -15534,21 +15545,21 @@ function graphicsPointCoordinates(
     const yIndex = names?.indexOf("y") ?? -1;
     if (xIndex < 0 || yIndex < 0) {
       throw new RTypeMismatchError(
-        "NRT3347",
-        "points() list input requires named 'x' and 'y' components.",
+        errorCode,
+        `${call}() list input requires named 'x' and 'y' components.`,
       );
     }
-    const x = graphicsPointAtomicCoordinates(values[xIndex] ?? R_NULL, "x", invocation);
-    const y = graphicsPointAtomicCoordinates(values[yIndex] ?? R_NULL, "y", invocation);
+    const x = graphicsXyAtomicCoordinates(values[xIndex] ?? R_NULL, "x", invocation, call);
+    const y = graphicsXyAtomicCoordinates(values[yIndex] ?? R_NULL, "y", invocation, call);
     if (x.length !== y.length) {
-      throw new RTypeMismatchError("NRT3347", "'x' and 'y' lengths differ in points().");
+      throw new RTypeMismatchError(errorCode, `'x' and 'y' lengths differ in ${call}().`);
     }
     return { x, y };
   }
   if (!isAtomic(input)) {
     throw new RTypeMismatchError(
-      "NRT3347",
-      "points() requires atomic coordinates, a matrix, a data frame, or an x/y list.",
+      errorCode,
+      `${call}() requires atomic coordinates, a matrix, a data frame, or an x/y list.`,
     );
   }
   const dimensions = vectorDimensions(input);
@@ -15556,9 +15567,9 @@ function graphicsPointCoordinates(
     const rows = dimensions[0] ?? 0;
     const columns = dimensions[1] ?? 0;
     if (columns < 2) {
-      throw new RTypeMismatchError("NRT3347", "points() matrix input requires two columns.");
+      throw new RTypeMismatchError(errorCode, `${call}() matrix input requires two columns.`);
     }
-    const numeric = graphicsPointAtomicCoordinates(input, "x", invocation);
+    const numeric = graphicsXyAtomicCoordinates(input, "x", invocation, call);
     return {
       x: sliceConvexHullCoordinates(numeric, 0, rows),
       y: sliceConvexHullCoordinates(numeric, rows, rows),
@@ -15571,20 +15582,24 @@ function graphicsPointCoordinates(
       y: doubleVector(input.imaginary, input.missing),
     };
   }
-  const y = graphicsPointAtomicCoordinates(input, "x", invocation);
+  const y = graphicsXyAtomicCoordinates(input, "x", invocation, call);
   return {
     x: doubleVector(Array.from({ length: y.length }, (_, index) => index + 1)),
     y,
   };
 }
 
-function graphicsPointAtomicCoordinates(
+function graphicsXyAtomicCoordinates(
   value: RValue,
   name: "x" | "y",
   invocation: BuiltinInvocation,
+  call: "points" | "polygon",
 ): RDoubleVector {
   if (!isAtomic(value) || value.type === "character" || value.type === "complex") {
-    throw new RTypeMismatchError("NRT3347", `points() '${name}' coordinates must be real numeric.`);
+    throw new RTypeMismatchError(
+      call === "points" ? "NRT3347" : "NRT3348",
+      `${call}() '${name}' coordinates must be real numeric.`,
+    );
   }
   return coerceAtomicToDouble(value, invocation);
 }
@@ -15682,6 +15697,204 @@ function graphicsPointLineWidths(value: RValue | undefined): readonly (number | 
   if (value === undefined || value.type === "null") return [1];
   if (isVector(value) && value.length === 0) return [1];
   return graphicsSegmentLineWidths(value);
+}
+
+async function builtinPolygon(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched, dots } = matchLazyArgumentsWithDots(invocation, [
+    "x",
+    "y",
+    "density",
+    "angle",
+    "border",
+    "col",
+    "lty",
+    "fillOddEven",
+  ]);
+  const values = new Map<string, RValue>();
+  for (const [name, argument] of matched) {
+    if (argument.promise.missing) {
+      throw new REvaluationError("NRE2103", `Argument '${name}' is missing in polygon().`);
+    }
+    values.set(name, await invocation.force(argument.promise));
+  }
+  const x = values.get("x");
+  if (x === undefined) {
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in polygon().");
+  }
+
+  let lineWidthValue: RValue | undefined;
+  for (const argument of dots) {
+    if (argument.name !== "lwd" || lineWidthValue !== undefined) {
+      if (!argument.promise.missing) await invocation.force(argument.promise);
+      if (argument.name === "lwd" && lineWidthValue !== undefined) {
+        throw new REvaluationError("NRE2102", "Argument 'lwd' matched more than once.");
+      }
+      throw new RUnsupportedFeatureError(
+        "NRU6165",
+        `polygon() graphical control '${argument.name ?? "<unnamed>"}' is outside the current browser polygon subset.`,
+      );
+    }
+    if (argument.promise.missing) {
+      throw new REvaluationError("NRE2103", "Argument 'lwd' is missing in polygon().");
+    }
+    lineWidthValue = await invocation.force(argument.promise);
+  }
+
+  const coordinates = graphicsXyCoordinates(x, values.get("y"), invocation, "polygon");
+  const state = graphicsState(invocation, "polygon");
+  const runs = graphicsPolygonRuns(coordinates, invocation);
+  if (runs.length === 0) return R_NULL;
+
+  const density = graphicsPolygonDensity(values.get("density"));
+  graphicsPolygonAngles(values.get("angle"));
+  const fills = graphicsPolygonColours(values.get("col"), [255, 255, 255, 0], invocation, false);
+  const borders = graphicsPolygonColours(values.get("border"), [0, 0, 0, 255], invocation, true);
+  const lineTypes = graphicsPolygonLineTypes(values.get("lty"));
+  const lineWidths = graphicsPointLineWidths(lineWidthValue);
+  const fillRule = logicalFlag(values.get("fillOddEven"), false, "fillOddEven")
+    ? "evenodd"
+    : "nonzero";
+
+  const polygons: RGraphicsPolygon[] = [];
+  invocation.context.allocate(runs.reduce((length, run) => length + run.x.length * 2 + 8, 0));
+  for (let index = 0; index < runs.length; index += 1) {
+    invocation.context.checkpoint();
+    const run = runs[index];
+    if (run === undefined || run.x.length < 2) continue;
+    const densityMode = density[index % density.length] ?? "solid";
+    const fill =
+      densityMode === "none"
+        ? ([255, 255, 255, 0] as const)
+        : (fills[index % fills.length] ?? ([255, 255, 255, 0] as const));
+    let border = borders[index % borders.length] ?? ([255, 255, 255, 0] as const);
+    let lineType = lineTypes[index % lineTypes.length] ?? "solid";
+    let lineWidth = lineWidths[index % lineWidths.length];
+    if (lineType === "blank" || lineWidth === undefined) {
+      border = [255, 255, 255, 0];
+      lineType = "solid";
+      lineWidth = 1;
+    }
+    if (fill[3] === 0 && border[3] === 0) continue;
+    polygons.push({
+      x: run.x,
+      y: run.y,
+      fill: graphicsCssColour(fill),
+      border: graphicsCssColour(border),
+      lineType,
+      lineWidth,
+      fillRule,
+    });
+  }
+  if (polygons.length > 0) writeGraphics(invocation, state, { kind: "polygon", polygons });
+  return R_NULL;
+}
+
+function graphicsPolygonRuns(
+  coordinates: {
+    readonly x: RDoubleVector;
+    readonly y: RDoubleVector;
+  },
+  invocation: BuiltinInvocation,
+): readonly {
+  readonly x: readonly number[];
+  readonly y: readonly number[];
+}[] {
+  const runs: { readonly x: number[]; readonly y: number[] }[] = [];
+  let x: number[] = [];
+  let y: number[] = [];
+  invocation.context.allocate(coordinates.x.length * 2);
+  const flush = (): void => {
+    if (x.length > 0) runs.push({ x, y });
+    x = [];
+    y = [];
+  };
+  for (let index = 0; index < coordinates.x.length; index += 1) {
+    invocation.context.checkpoint();
+    const xCoordinate = graphicsPointCoordinate(coordinates.x, index);
+    const yCoordinate = graphicsPointCoordinate(coordinates.y, index);
+    if (xCoordinate === undefined || yCoordinate === undefined) {
+      flush();
+      continue;
+    }
+    x.push(xCoordinate);
+    y.push(yCoordinate);
+  }
+  flush();
+  return runs;
+}
+
+function graphicsPolygonDensity(value: RValue | undefined): readonly ("solid" | "none")[] {
+  if (value === undefined || value.type === "null") return ["solid"];
+  if (
+    (value.type !== "logical" &&
+      value.type !== "integer" &&
+      value.type !== "double" &&
+      value.type !== "raw") ||
+    isFactor(value)
+  ) {
+    throw new RTypeMismatchError("NRT3348", "polygon(density=) requires a numeric vector or NULL.");
+  }
+  if (value.length === 0) return ["solid"];
+  return Array.from({ length: value.length }, (_, index) => {
+    if (isMissing(value, index)) return "solid";
+    const density = value.values[index] ?? Number.NaN;
+    if (!Number.isFinite(density)) {
+      throw new RTypeMismatchError(
+        "NRT3348",
+        "polygon(density=) must contain finite values or NA.",
+      );
+    }
+    if (density > 0) {
+      throw new RUnsupportedFeatureError(
+        "NRU6165",
+        "polygon() line-density shading awaits browser hatch-pattern support.",
+      );
+    }
+    return density === 0 ? "none" : "solid";
+  });
+}
+
+function graphicsPolygonAngles(value: RValue | undefined): void {
+  if (value === undefined || value.type === "null") return;
+  if (
+    (value.type !== "logical" &&
+      value.type !== "integer" &&
+      value.type !== "double" &&
+      value.type !== "raw") ||
+    isFactor(value)
+  ) {
+    throw new RTypeMismatchError("NRT3348", "polygon(angle=) requires a numeric vector.");
+  }
+  for (let index = 0; index < value.length; index += 1) {
+    if (isMissing(value, index)) continue;
+    if (!Number.isFinite(value.values[index] ?? Number.NaN)) {
+      throw new RTypeMismatchError("NRT3348", "polygon(angle=) must contain finite values or NA.");
+    }
+  }
+}
+
+function graphicsPolygonColours(
+  value: RValue | undefined,
+  fallback: RColour,
+  invocation: BuiltinInvocation,
+  logicalBorder: boolean,
+): readonly RColour[] {
+  if (value === undefined || value.type === "null") return [fallback];
+  if (isVector(value) && value.length === 0) return [fallback];
+  if (logicalBorder && value.type === "logical") {
+    return Array.from({ length: value.length }, (_, index) =>
+      isMissing(value, index) || value.values[index] === 0
+        ? ([255, 255, 255, 0] as const)
+        : ([0, 0, 0, 255] as const),
+    );
+  }
+  return graphicsSegmentColours(value, invocation);
+}
+
+function graphicsPolygonLineTypes(value: RValue | undefined): readonly string[] {
+  if (value === undefined || value.type === "null") return ["solid"];
+  if (isVector(value) && value.length === 0) return ["solid"];
+  return graphicsSegmentLineTypes(value);
 }
 
 async function builtinSegments(invocation: BuiltinInvocation): Promise<RValue> {
@@ -16296,6 +16509,30 @@ function graphicsEventValue(event: RGraphicsEvent): RList {
       ["kind", "points"],
     );
   }
+  if (event.kind === "polygon") {
+    return listValue(
+      [
+        characterVector(["polygon"]),
+        listValue(
+          event.polygons.map((polygon) =>
+            listValue(
+              [
+                doubleVector(polygon.x),
+                doubleVector(polygon.y),
+                characterVector([polygon.fill]),
+                characterVector([polygon.border]),
+                characterVector([polygon.lineType]),
+                doubleVector([polygon.lineWidth]),
+                characterVector([polygon.fillRule]),
+              ],
+              ["x", "y", "col", "border", "lty", "lwd", "rule"],
+            ),
+          ),
+        ),
+      ],
+      ["kind", "polygons"],
+    );
+  }
   if (event.kind === "box") {
     return listValue(
       [
@@ -16484,6 +16721,17 @@ function graphicsEventFromValue(value: RValue, invocation: BuiltinInvocation): R
     invocation.context.allocate(points.length * 7);
     return { kind: "points", points };
   }
+  if (kind.values[0] === "polygon") {
+    const polygonsValue = field("polygons");
+    if (polygonsValue?.type !== "list" || polygonsValue.length === 0) {
+      throw new RTypeMismatchError("NRT3333", "A recorded polygon command is malformed.");
+    }
+    const polygons = polygonsValue.values.map(recordedGraphicsPolygon);
+    invocation.context.allocate(
+      polygons.reduce((length, polygon) => length + polygon.x.length * 2 + 7, 0),
+    );
+    return { kind: "polygon", polygons };
+  }
   if (kind.values[0] === "box") {
     const edges = recordedPlotCharacters(field("edges"), "edges");
     const color = recordedPlotCharacter(field("col"), "col");
@@ -16627,6 +16875,40 @@ function recordedGraphicsPoint(value: RValue): RGraphicsPoint {
     fill: recordedLegendColour(field("bg"), "bg"),
     size,
     lineWidth,
+  };
+}
+
+function recordedGraphicsPolygon(value: RValue): RGraphicsPolygon {
+  if (value.type !== "list") {
+    throw new RTypeMismatchError("NRT3333", "A recorded polygon is malformed.");
+  }
+  const names = vectorNames(value);
+  const field = (name: string): RValue | undefined => {
+    const index = names?.indexOf(name) ?? -1;
+    return index < 0 ? undefined : value.values[index];
+  };
+  const x = recordedPlotNumbers(field("x"), "x");
+  const y = recordedPlotNumbers(field("y"), "y");
+  const lineType = recordedPlotCharacter(field("lty"), "lty");
+  const lineWidth = recordedPlotNumber(field("lwd"), "lwd");
+  const fillRule = recordedPlotCharacter(field("rule"), "rule");
+  if (
+    x.length < 2 ||
+    x.length !== y.length ||
+    (lineType !== "solid" && !/^(?:[1-9A-F]{2}){1,4}$/u.test(lineType)) ||
+    !(lineWidth > 0) ||
+    (fillRule !== "nonzero" && fillRule !== "evenodd")
+  ) {
+    throw new RTypeMismatchError("NRT3333", "A recorded polygon style is malformed.");
+  }
+  return {
+    x,
+    y,
+    fill: recordedLegendColour(field("col"), "col"),
+    border: recordedLegendColour(field("border"), "border"),
+    lineType,
+    lineWidth,
+    fillRule,
   };
 }
 
@@ -17151,6 +17433,18 @@ function graphicsEventByteLength(event: RGraphicsEvent): number {
         (typeof point.symbol === "string" ? graphicsTextByteLength(point.symbol) : 8) +
         graphicsTextByteLength(point.color) +
         graphicsTextByteLength(point.fill),
+      32,
+    );
+  }
+  if (event.kind === "polygon") {
+    return event.polygons.reduce(
+      (bytes, polygon) =>
+        bytes +
+        96 +
+        (polygon.x.length + polygon.y.length) * 8 +
+        graphicsTextByteLength(polygon.fill) +
+        graphicsTextByteLength(polygon.border) +
+        graphicsTextByteLength(polygon.lineType),
       32,
     );
   }

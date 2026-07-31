@@ -209,6 +209,18 @@ function graphicsEventByteLength(event: RGraphicsEvent): number {
       32,
     );
   }
+  if (event.kind === "polygon") {
+    return event.polygons.reduce(
+      (bytes, polygon) =>
+        bytes +
+        96 +
+        (polygon.x.length + polygon.y.length) * 8 +
+        utf8ByteLength(polygon.fill) +
+        utf8ByteLength(polygon.border) +
+        utf8ByteLength(polygon.lineType),
+      32,
+    );
+  }
   if (event.kind === "box") {
     return (
       64 + event.edges.length * 8 + utf8ByteLength(event.color) + utf8ByteLength(event.lineType)

@@ -57,12 +57,14 @@ await r.eval(`
 owned row-major RGBA buffer plus placement, angle, and interpolation fields, and `segments` carries
 finite endpoint records with resolved `#RRGGBBAA` colors, line widths, and normalized dash patterns.
 `points` carries finite coordinates, numeric or literal-character symbols, resolved border/fill
-colors, size multipliers, and line widths. `legend` carries a keyword/coordinate anchor, resolved
-entry labels and line/point styles, box and background state, column count, scale, and optional
-title. Raster buffers and bounded segment/point/legend payloads count toward `maxOutputBytes`;
-raster buffers cross the Worker boundary as transferables. The package never imports the DOM; hosts
-decide whether to render commands to Canvas, another device, or a test recorder. The Playground
-includes the reference Canvas renderer.
+colors, size multipliers, and line widths. `polygon` carries closed finite-coordinate paths,
+canonical fill/border colors, normalized line types and widths, and an even-odd or nonzero fill
+rule. `legend` carries a keyword/coordinate anchor, resolved entry labels and line/point styles, box
+and background state, column count, scale, and optional title. Raster buffers and bounded
+segment/point/polygon/legend payloads count toward `maxOutputBytes`; raster buffers cross the Worker
+boundary as transferables. The package never imports the DOM; hosts decide whether to render
+commands to Canvas, another device, or a test recorder. The Playground includes the reference Canvas
+renderer.
 
 ```ts
 const graphics = [];
@@ -77,6 +79,7 @@ await r.eval(`
   rasterImage(image, 0, 0, 2, 2)
   segments(c(.5, 1.5), c(.25, .5), y1 = c(1.5, 1.75), col = c("red", "blue"))
   points(c(.5, 1, 1.5), c(.5, 1.5, 1), pch = c(16, 21, 65), col = c("red", "blue", "green"))
+  polygon(c(.25, 1, 1.75), c(.25, 1.75, .25), col = "#FFA50099", border = "blue")
   legend("topleft", c("A", "B"), lty = 1, pch = 1:2, col = c("red", "blue"))
 `);
 await r.eval("dev.flush()");
@@ -87,12 +90,12 @@ await r.eval(`
 ```
 
 The middle evaluation returns no graphics because the owned device is held. The final flush reaches
-level zero and releases the pending window/raster/segments/points/legend commands in order; pending
-raster, segment, point, and legend storage remains subject to `maxOutputBytes` and pending command
-count to `maxVectorLength`. `recordPlot()` snapshots the current NativR-owned display list and
-`replayPlot()` re-emits it through the same graphics callback. Only same-runtime NativR recorded
-plots are accepted; external GNU R serialized plots and package reloading are not part of this API
-slice.
+level zero and releases the pending window/raster/segments/points/polygon/legend commands in order;
+pending raster, segment, point, polygon, and legend storage remains subject to `maxOutputBytes` and
+pending command count to `maxVectorLength`. `recordPlot()` snapshots the current NativR-owned
+display list and `replayPlot()` re-emits it through the same graphics callback. Only same-runtime
+NativR recorded plots are accepted; external GNU R serialized plots and package reloading are not
+part of this API slice.
 
 `eval` unwraps length-one atomic vectors and returns arrays for longer vectors. `NULL` becomes
 `null`; R missing values become the canonical exported `NA` marker; ordinary NaN remains JavaScript

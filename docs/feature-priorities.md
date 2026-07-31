@@ -820,8 +820,17 @@ preserves S3 forwarding and resolves vector/matrix/data-frame/list/complex coord
 plotting symbols, colors, fills, sizes, and widths into a bounded Worker point command. Missing
 drawing entries are omitted; display-list replay and Canvas pixels share that command. Line/path
 types, locale-dependent glyph codes, coordinate classes, clipping/log axes, font identity, and
-arbitrary graphical controls remain boundaries. Rank 459 `polygon` is the next unresolved callable
-candidate.
+arbitrary graphical controls remain boundaries. Rank 459 `polygon` is now complete for
+[zoo's](https://cran.r-project.org/web/packages/zoo/refman/zoo.html) measured `pnl.xyarea` helper,
+which closes an observed series against a fill baseline, representing 731,390 downloads, one
+measured occurrence, and 0.6% weighted reach. The owned
+[documented default](https://stat.ethz.ch/R-manual/R-devel/library/graphics/html/polygon.html)
+normalizes vector/matrix/data-frame/list/complex coordinates, splits missing-coordinate runs, and
+resolves recycled fills, borders, line types/widths, solid/no-fill density, and even-odd fill rules
+into a bounded Worker polygon command. Display-list replay and Canvas fill/border pixels share the
+same command. Hatch-pattern density, broader coordinate classes, clipping/log axes, exact dash
+metrics, and arbitrary graphical controls remain boundaries. Rank 460 `replace` is the next
+unresolved callable candidate.
 
 ## Completed implementation order
 
@@ -1174,6 +1183,10 @@ ties:
      numeric default with paired/vector/matrix/data-frame/list/complex coordinates, numeric and
      character plotting symbols, recycled colors/fills/sizes/widths, missing-point omission,
      namespace access, bounded Worker/Canvas rendering, and display-list replay.
+125. Polygon graphics: `graphics::polygon()` runs zoo's measured filled-area panel helper with
+     vector/matrix/data-frame/list/complex coordinates, missing-coordinate polygon splitting,
+     recycled fills/borders/line types/widths, solid/no-fill density, even-odd rules, namespace
+     access, bounded Worker/Canvas rendering, and display-list replay.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.
