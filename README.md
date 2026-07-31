@@ -131,7 +131,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 522 registered functions, including resettable
+an initial condition/handler slice. It exposes 533 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Browser-memory `read.table`/`read.csv`/
 `read.delim` and `write.table`/`write.csv` paths provide quoted text-table interchange without host
@@ -522,10 +522,14 @@ host file.
 
 The usage-ranked `file`, `close`, `tempdir`, and `file.exists` foundation now exposes bounded,
 session-owned connection handles over that same browser-memory store and immutable package files.
-Implicit and explicit opening, read/write/append modes, persistent cursors, `seek`, `flush`,
-`isOpen`, `summary`, destruction, and connection-aware `readLines`, `writeLines`, `cat`, and
-`capture.output` have GNU R 4.6 differential coverage. Compressed, URL, socket, host-file, and raw
-binary connections remain explicit boundaries.
+`R.home`, `dir.create`, `dir.exists`, `list.files`/`dir`, `list.dirs`, `getwd`, `setwd`,
+`normalizePath`, `basename`, and `dirname` add an owned directory tree and relative-path layer for
+unchanged package code. Package resources can be enumerated or selected as a read-only working
+directory, while session directories can be created and removed recursively. Implicit and explicit
+connection opening, read/write/append modes, persistent cursors, `seek`, `flush`, `isOpen`,
+`summary`, destruction, and connection-aware `readLines`, `writeLines`, `cat`, and `capture.output`
+have executable coverage. Compressed, URL, socket, absolute host-file, symlink, and raw binary
+connections remain explicit boundaries.
 
 Measured rank 22 `plot()` now supplies the high-reach S3 extension point used by package-defined
 `plot.<class>` methods and a bounded browser-native numeric default. One-argument vectors and paired

@@ -447,3 +447,8 @@ scanner/writer shared by `data()`, the `read.table`/CSV/delimited family, and th
 It reuses owned vectors, data frames, type conversion, virtual files, and connections without a host
 CSV dependency or another execution backend. The measured Worker is 323.3 KiB gzip, so the ceiling
 rises to 324 KiB. Client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.202 adds one evaluator-owned directory index, current-directory state, and shared
+relative-path normalization for the existing text, table, serialization, package-resource, and
+connection seams. It adds no dependency or host filesystem capability. The measured Worker is 326.0
+KiB gzip, so the ceiling rises narrowly to 328 KiB. Client and parser-Wasm budgets remain unchanged.

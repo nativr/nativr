@@ -11,7 +11,7 @@ Date: 2026-07-31
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 522 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 533 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Vector/list selection and replacement, recursive `[[`, arbitrary-dimensional column-major array
@@ -46,7 +46,8 @@ Date: 2026-07-31
   dependency closures into integrity-locked bundles, followed by normalized-AST parsing,
   dependency/version-checked isolated namespaces, imports/exports, `::`/`:::`, S3 registration,
   lifecycle hooks, attachment, reset/reload, and matching inline/Worker execution. Immutable
-  DESCRIPTION/NAMESPACE/R-source/resource paths are exposed by `system.file()` and readable through
+  DESCRIPTION/NAMESPACE/R-source/resource paths are exposed by `system.file()`, enumerable through
+  `list.files()`/`list.dirs()`, selectable as a read-only working directory, and readable through
   bounded `readLines()` or read-only file connections. `utils::data()` discovers and executes
   package `data/*.R` scripts or imports `.csv`/`.tab`/`.txt` resources into a selected environment.
   Native code, GNU R binary/lazy data, broader NAMESPACE directives, binary resource formats, and
@@ -55,9 +56,12 @@ Date: 2026-07-31
   immutable package text, GNU R line endings, separators, NUL/incomplete-line behavior, byte limits,
   and stdout events without host filesystem access. Session-owned `file()` handles add implicit and
   explicit open/close, read/write/append modes, persistent cursors, bounded `seek()`, `flush()`,
-  `isOpen()`, `summary()`, invalid-handle rejection, `tempdir()`, and `file.exists()`. `Sys.sleep()`
-  adds interruptible asynchronous waits for package retry/polling code without blocking the Worker
-  event loop.
+  `isOpen()`, `summary()`, invalid-handle rejection, `tempdir()`, and `file.exists()`. An owned
+  directory tree adds `R.home()`, `dir.create()`/`dir.exists()`, `list.files()`/`dir()`,
+  `list.dirs()`, `getwd()`/`setwd()`, `normalizePath()`, `basename()`, and `dirname()`; relative
+  paths resolve only within the current session, package, or runtime root. `Sys.sleep()` adds
+  interruptible asynchronous waits for package retry/polling code without blocking the Worker event
+  loop.
 - Browser-memory tabular I/O includes `utils::read.table`, `read.csv`, `read.csv2`, `read.delim`,
   `read.delim2`, `write.table`, `write.csv`, and `write.csv2`. The bounded parser handles
   separators, quoted fields (including doubled quotes and embedded newlines), headers, row/column
@@ -167,9 +171,9 @@ Date: 2026-07-31
   classed-data-frame roundtrip, backed by bounded evaluator-owned `nativr://session-temp/...` text
   storage and the existing parser/normalized-AST/evaluator path. Atomic vectors, list/pairlist
   nesting, ordinary attributes, missing/NaN/infinite values, complex/raw storage, Unicode,
-  visibility, missing files, and resource limits have coverage. Host paths/connections, nondefault
-  controls, closures/environments, cycles, binary serialization, and persistence remain explicit
-  boundaries.
+  visibility, missing files, and resource limits have coverage. Absolute host paths/connections,
+  nondefault controls, closures/environments, cycles, binary serialization, and persistence remain
+  explicit boundaries.
 - Usage-ranked `base::save`/`load` for bit64's observed workspace roundtrip, including direct and
   `list=` object selection, duplicates, target environments, promise forcing, verbose output,
   invisible save/load returns, version/compression validation, missing-object failures, and reset
@@ -540,11 +544,11 @@ Date: 2026-07-31
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 10 files and 360 tests; aggregate V8 coverage is 84.77% statements, 72.42%
-  branches, 92.41% functions, and 86.05% lines.
+- Vitest currently passes 10 files and 362 tests; aggregate V8 coverage is 84.77% statements, 72.49%
+  branches, 92.39% functions, and 86.07% lines.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 699/699 cases. The optional black-box R oracle passes all 664
+- Checked-in conformance passes 701/701 cases. The optional black-box R oracle passes all 666
   eligible cases and explicitly skips 35 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,

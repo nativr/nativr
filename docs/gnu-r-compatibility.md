@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           522 |
-| Overlapping callable names        |           507 |
-| Missing GNU R callable names      |         2,015 |
-| Name overlap                      |       20.103% |
+| NativR registered names           |           533 |
+| Overlapping callable names        |           518 |
+| Missing GNU R callable names      |         2,004 |
+| Name overlap                      |       20.539% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -71,6 +71,14 @@ writes. NativR-only package cases additionally discover and execute unchanged `d
 load `.csv` package datasets, honor the package's UTF-8/Latin-1 declaration, target explicit
 environments, and protect existing bindings. GNU R binary/lazy data, compressed tables, host files,
 URLs, arbitrary encodings, and the full `scan`/column-class surface remain incomplete.
+
+The browser-directory increment adds `R.home`, `dir.create`, `dir.exists`, `list.files`/`dir`,
+`list.dirs`, `getwd`, `setwd`, `normalizePath`, `basename`, and `dirname`, raising current name
+overlap to 518 of 2,522. Differential cases cover public return shapes, listing and path behavior;
+NativR-only integration cases cover nested session directories, relative text/table I/O, bounded
+normalization, recursive removal, package-resource enumeration, and a package directory as the
+working directory. These are browser-owned virtual roots, not access to host files, symlinks,
+permissions, mount points, or an installed GNU R library.
 
 The rank-404 increment adds differential evidence for `anyDuplicated` across atomic vectors,
 factors, recursive lists, complete data-frame rows, missing-value distinctions, incomparables,
@@ -195,8 +203,9 @@ The rank-433 increment adds GNU R differential evidence for diffobj's measured
 separators, missing and zero-length components, plus strict character-only `path.expand`, attribute
 removal, errors, and resource limits are covered. NativR deliberately exposes no browser home
 directory, so leading tildes follow R's documented unknown-home rule and remain unchanged. Host-home
-discovery, path normalization, existence checks, filesystem access, platform encodings, and
-Windows-specific trailing-separator cleanup remain incomplete.
+discovery, host-path normalization, host filesystem access, platform encodings, and Windows-specific
+trailing-separator cleanup remain incomplete. The later browser-directory increment supplies bounded
+normalization and existence checks only for NativR-owned virtual roots.
 
 The rank-434 increment adds GNU R differential evidence for diffobj's measured `setOldClass("zulu")`
 registration before its `guidesPrint` S4 method. Session-local class-chain registration, inherited

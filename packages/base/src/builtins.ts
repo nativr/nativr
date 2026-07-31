@@ -222,8 +222,14 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("Sys.setlocale", ["category", "locale"], "behavioral", builtinSystemSetLocale),
   defineBuiltin("Sys.localeconv", [], "behavioral", builtinSystemLocaleConv),
   defineBuiltin("Sys.sleep", ["time"], "behavioral", builtinSystemSleep, "regular", "invisible"),
+  defineBuiltin("R.home", ["component"], "shape", builtinRHome),
   defineBuiltin("path.expand", ["path"], "shape", builtinPathExpand),
+  defineBuiltin("basename", ["path"], "behavioral", builtinBaseName),
+  defineBuiltin("dirname", ["path"], "behavioral", builtinDirName),
   defineBuiltin("file.path", ["...", "fsep"], "behavioral", builtinFilePath),
+  defineBuiltin("getwd", [], "shape", builtinGetWorkingDirectory),
+  defineBuiltin("setwd", ["dir"], "behavioral", builtinSetWorkingDirectory, "regular", "invisible"),
+  defineBuiltin("normalizePath", ["path", "winslash", "mustWork"], "shape", builtinNormalizePath),
   defineBuiltin("tempdir", ["check"], "shape", builtinTempDir),
   defineBuiltin(
     "system.file",
@@ -253,6 +259,53 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("isOpen", ["con", "rw"], "behavioral", builtinIsOpen),
   defineBuiltin("seek", ["con", "where", "origin", "rw"], "behavioral", builtinSeek),
   defineBuiltin("file.exists", ["..."], "shape", builtinFileExists),
+  defineBuiltin("dir.exists", ["paths"], "behavioral", builtinDirectoryExists),
+  defineBuiltin(
+    "dir.create",
+    ["path", "showWarnings", "recursive", "mode"],
+    "behavioral",
+    builtinDirectoryCreate,
+    "regular",
+    "invisible",
+  ),
+  defineBuiltin(
+    "list.files",
+    [
+      "path",
+      "pattern",
+      "all.files",
+      "full.names",
+      "recursive",
+      "ignore.case",
+      "include.dirs",
+      "no..",
+      "fixed",
+    ],
+    "behavioral",
+    builtinListFiles,
+  ),
+  defineBuiltin(
+    "dir",
+    [
+      "path",
+      "pattern",
+      "all.files",
+      "full.names",
+      "recursive",
+      "ignore.case",
+      "include.dirs",
+      "no..",
+      "fixed",
+    ],
+    "behavioral",
+    builtinListFiles,
+  ),
+  defineBuiltin(
+    "list.dirs",
+    ["path", "full.names", "recursive"],
+    "behavioral",
+    builtinListDirectories,
+  ),
   defineBuiltin(
     "readLines",
     ["con", "n", "ok", "warn", "encoding", "skipNul"],
@@ -1725,11 +1778,23 @@ const GRAPHICS_STATE_KEY = "graphics.device";
 const VIRTUAL_TEXT_FILES_STATE_KEY = "base.virtualTextFiles";
 const PACKAGE_DATA_DIRECTORY_STATE_KEY = "utils.packageDataDirectory";
 const VIRTUAL_TEMP_ROOT = "nativr://session-temp";
+const VIRTUAL_RUNTIME_ROOT = "nativr://runtime";
+const VIRTUAL_RUNTIME_COMPONENTS = Object.freeze([
+  "bin",
+  "doc",
+  "etc",
+  "include",
+  "library",
+  "modules",
+  "share",
+]);
 const VIRTUAL_WORKSPACE_HEADER = "# nativr-workspace-v1\n";
 
 interface VirtualTextFileState {
   readonly files: Map<string, string>;
+  readonly directories: Set<string>;
   readonly connections: Map<number, VirtualTextConnection>;
+  workingDirectory: string;
   nextId: number;
   nextConnectionId: number;
   bytes: number;
@@ -2754,6 +2819,152 @@ async function builtinPathExpand(invocation: BuiltinInvocation): Promise<RCharac
   return characterVector(path.values, path.missing);
 }
 
+async function builtinRHome(invocation: BuiltinInvocation): Promise<RCharacterVector> {
+  const matched = await matchExact(invocation, ["component"]);
+  const value = matched.get("component");
+  let component = "home";
+  if (value !== undefined) {
+    if (!isAtomic(value) || value.length !== 1) {
+      throw new RTypeMismatchError("NRT3360", "EXPR must be a length 1 vector");
+    }
+    if (value.type === "character")
+      component = isMissing(value, 0) ? "NA" : (value.values[0] ?? "");
+    else if (isFactor(value))
+      component = isMissing(value, 0)
+        ? "NA"
+        : (factorLevels(value)[(value.values[0] ?? 0) - 1] ?? "");
+  }
+  const path =
+    component === "" || component === "home"
+      ? VIRTUAL_RUNTIME_ROOT
+      : `${VIRTUAL_RUNTIME_ROOT}/${component.replaceAll("\\", "/")}`;
+  invocation.context.allocate(1);
+  return characterVector([path]);
+}
+
+async function builtinBaseName(invocation: BuiltinInvocation): Promise<RCharacterVector> {
+  const matched = await matchExact(invocation, ["path"]);
+  const paths = required(matched, "path", "basename");
+  if (paths.type !== "character") {
+    throw new RTypeMismatchError("NRT3360", "a character vector argument expected");
+  }
+  const missing = new Uint8Array(paths.length);
+  const values = paths.values.map((path, index) => {
+    if (isMissing(paths, index)) {
+      missing[index] = 1;
+      return "";
+    }
+    if (path.length === 0) return "";
+    const normalized = path.replaceAll("\\", "/").replace(/\/+$/u, "");
+    if (normalized.length === 0) return "";
+    return normalized.slice(normalized.lastIndexOf("/") + 1);
+  });
+  invocation.context.allocate(values.length);
+  return characterVector(values, compactMask(missing));
+}
+
+async function builtinDirName(invocation: BuiltinInvocation): Promise<RCharacterVector> {
+  const matched = await matchExact(invocation, ["path"]);
+  const paths = required(matched, "path", "dirname");
+  if (paths.type !== "character") {
+    throw new RTypeMismatchError("NRT3360", "a character vector argument expected");
+  }
+  const missing = new Uint8Array(paths.length);
+  const values = paths.values.map((path, index) => {
+    if (isMissing(paths, index)) {
+      missing[index] = 1;
+      return "";
+    }
+    if (path.length === 0) return "";
+    const normalized = path.replaceAll("\\", "/");
+    if (/^\/+$/u.test(normalized)) return "/";
+    const stripped = normalized.replace(/\/+$/u, "");
+    const separator = stripped.lastIndexOf("/");
+    if (separator < 0) return ".";
+    if (separator === 0) return "/";
+    return stripped.slice(0, separator).replace(/\/+$/u, "");
+  });
+  invocation.context.allocate(values.length);
+  return characterVector(values, compactMask(missing));
+}
+
+async function builtinGetWorkingDirectory(
+  invocation: BuiltinInvocation,
+): Promise<RCharacterVector> {
+  await matchExact(invocation, []);
+  invocation.context.allocate(1);
+  return characterVector([virtualTextFileState(invocation).workingDirectory]);
+}
+
+async function builtinSetWorkingDirectory(
+  invocation: BuiltinInvocation,
+): Promise<RCharacterVector> {
+  const matched = await matchExact(invocation, ["dir"]);
+  const supplied = characterScalar(required(matched, "dir", "setwd"), "dir");
+  const state = virtualTextFileState(invocation);
+  const path = resolveOwnedVirtualPath(invocation, supplied, "setwd");
+  if (!virtualDirectoryExists(invocation, path)) {
+    throw new REvaluationError("NRE2246", "cannot change working directory");
+  }
+  const previous = state.workingDirectory;
+  state.workingDirectory = path;
+  invocation.context.allocate(1);
+  return characterVector([previous]);
+}
+
+async function builtinNormalizePath(invocation: BuiltinInvocation): Promise<RCharacterVector> {
+  const matched = await matchExact(invocation, ["path", "winslash", "mustWork"]);
+  const input = required(matched, "path", "normalizePath");
+  if (input.type !== "character") {
+    throw new RTypeMismatchError("NRT3360", "'path' must be a character vector");
+  }
+  const winslash = matched.get("winslash");
+  if (winslash !== undefined) {
+    const separator = characterScalar(winslash, "winslash");
+    if (separator !== "/" && separator !== "\\") {
+      throw new RTypeMismatchError("NRT3360", "'winslash' must be '/' or '\\\\'");
+    }
+  }
+  const mustWork = virtualMustWork(matched.get("mustWork"));
+  const missing = new Uint8Array(input.length);
+  const paths = input.values.map((supplied, index) => {
+    if (isMissing(input, index)) {
+      missing[index] = 1;
+      return "";
+    }
+    let path: string;
+    try {
+      path = resolveOwnedVirtualPath(invocation, supplied, "normalizePath");
+    } catch (error) {
+      if (mustWork === true) throw error;
+      if (mustWork === undefined) {
+        invocation.context.warn({
+          code: "NRW1122",
+          message: `path[${String(index + 1)}]=${JSON.stringify(supplied)} cannot be made absolute`,
+        });
+      }
+      return supplied.replaceAll("\\", "/");
+    }
+    if (!virtualPathExists(invocation, path)) {
+      if (mustWork === true) {
+        throw new REvaluationError(
+          "NRE2246",
+          `path[${String(index + 1)}]=${JSON.stringify(supplied)} does not exist`,
+        );
+      }
+      if (mustWork === undefined) {
+        invocation.context.warn({
+          code: "NRW1122",
+          message: `path[${String(index + 1)}]=${JSON.stringify(supplied)} does not exist`,
+        });
+      }
+    }
+    return path;
+  });
+  invocation.context.allocate(paths.length);
+  return characterVector(paths, compactMask(missing));
+}
+
 async function builtinFilePath(invocation: BuiltinInvocation): Promise<RCharacterVector> {
   let separator = "/";
   let separatorArgument: BuiltinCallArgument | undefined;
@@ -2892,28 +3103,30 @@ function filePathCharacters(input: RValue): string[] {
 async function builtinTempFile(invocation: BuiltinInvocation): Promise<RCharacterVector> {
   const matched = await matchExact(invocation, ["pattern", "tmpdir", "fileext"]);
   const patterns = virtualPathParts(matched.get("pattern"), ["file"], "pattern");
-  const directories = virtualPathParts(matched.get("tmpdir"), [VIRTUAL_TEMP_ROOT], "tmpdir");
+  const state = virtualTextFileState(invocation);
+  const directories = virtualPathParts(matched.get("tmpdir"), [VIRTUAL_TEMP_ROOT], "tmpdir").map(
+    (directory) => resolveOwnedVirtualPath(invocation, directory, "tempfile"),
+  );
   const extensions = virtualPathParts(matched.get("fileext"), [""], "fileext");
   if (patterns.length === 0 || directories.length === 0 || extensions.length === 0) {
     return characterVector([]);
   }
   for (const directory of directories) {
-    if (directory.replace(/\/+$/u, "") !== VIRTUAL_TEMP_ROOT) {
+    if (!directory.startsWith(VIRTUAL_TEMP_ROOT) || !state.directories.has(directory)) {
       throw new RUnsupportedFeatureError(
         "NRU6168",
-        "tempfile(tmpdir=) supports only the current session's browser-memory temp directory.",
+        "tempfile(tmpdir=) requires an existing browser-memory session directory.",
       );
     }
   }
 
   const length = Math.max(patterns.length, directories.length, extensions.length);
   invocation.context.allocate(length);
-  const state = virtualTextFileState(invocation);
   const paths = Array.from({ length }, (_, index) => {
     invocation.context.checkpoint();
     const pattern = patterns[index % patterns.length] ?? "file";
     const extension = extensions[index % extensions.length] ?? "";
-    return nextVirtualTempPath(state, pattern, extension);
+    return nextVirtualTempPath(state, pattern, extension, directories[index % directories.length]);
   });
   return characterVector(paths);
 }
@@ -2954,12 +3167,12 @@ async function builtinFile(invocation: BuiltinInvocation): Promise<RIntegerVecto
     throw new RResourceLimitError("NRL4002", "Virtual connection identifier limit exceeded.");
   }
 
-  const path =
+  let path =
     description === ""
       ? nextVirtualTempPath(state, "connection-", ".txt")
-      : resolvePackageDataRelativePath(invocation, description);
+      : resolveOwnedVirtualPath(invocation, description, "file");
   const packageFile = path.startsWith("nativr://package/");
-  if (!packageFile) requireVirtualTextPath(path, "file");
+  if (!packageFile) path = requireVirtualTextPath(invocation, path, "file");
   const id = state.nextConnectionId;
   state.nextConnectionId += 1;
   invocation.context.allocate(1);
@@ -3103,16 +3316,160 @@ async function builtinFileExists(invocation: BuiltinInvocation): Promise<RLogica
       const suppliedPath = isFactor(input)
         ? (factorLevels(input)[(input.values[index] ?? 0) - 1] ?? "")
         : stringAt(input, index);
-      const path = resolvePackageDataRelativePath(invocation, suppliedPath);
-      values.push(
-        path === VIRTUAL_TEMP_ROOT ||
+      try {
+        const path = resolveOwnedVirtualPath(invocation, suppliedPath, "file.exists");
+        values.push(
           state.files.has(path) ||
-          packageVirtualPathExists(invocation, path),
-      );
+            state.directories.has(path) ||
+            runtimeVirtualDirectoryExists(path) ||
+            packageVirtualPathExists(invocation, path),
+        );
+      } catch {
+        values.push(false);
+      }
     }
   }
   invocation.context.allocate(values.length);
   return logicalVector(values);
+}
+
+async function builtinDirectoryExists(invocation: BuiltinInvocation): Promise<RLogicalVector> {
+  const matched = await matchExact(invocation, ["paths"]);
+  const input = required(matched, "paths", "dir.exists");
+  if (input.type !== "character") {
+    throw new RTypeMismatchError("NRT3361", "invalid filename argument");
+  }
+  const values = input.values.map((supplied, index) => {
+    invocation.context.checkpoint();
+    if (isMissing(input, index)) return false;
+    try {
+      return virtualDirectoryExists(
+        invocation,
+        resolveOwnedVirtualPath(invocation, supplied, "dir.exists"),
+      );
+    } catch {
+      return false;
+    }
+  });
+  invocation.context.allocate(values.length);
+  return logicalVector(values);
+}
+
+async function builtinDirectoryCreate(invocation: BuiltinInvocation): Promise<RLogicalVector> {
+  const matched = await matchExact(invocation, ["path", "showWarnings", "recursive", "mode"]);
+  const input = required(matched, "path", "dir.create");
+  if (input.type !== "character" || input.length !== 1) {
+    throw new RTypeMismatchError("NRT3361", "invalid 'path' argument");
+  }
+  const showWarnings = coercibleLogicalFlag(matched.get("showWarnings"), true, "showWarnings");
+  const recursive = coercibleLogicalFlag(matched.get("recursive"), false, "recursive");
+  const mode = matched.get("mode");
+  if (mode !== undefined) characterScalar(mode, "mode");
+  if (isMissing(input, 0)) return logicalVector([0]);
+  const supplied = input.values[0] ?? "";
+  const path = resolveOwnedVirtualPath(invocation, supplied, "dir.create");
+  const state = virtualTextFileState(invocation);
+  const created = createVirtualDirectory(invocation, state, path, recursive);
+  if (!created && showWarnings && !virtualDirectoryExists(invocation, path)) {
+    invocation.context.warn({
+      code: "NRW1123",
+      message: `cannot create dir '${supplied}', reason 'No such file or directory'`,
+    });
+  }
+  invocation.context.allocate(1);
+  return logicalVector([created ? 1 : 0]);
+}
+
+async function builtinListFiles(invocation: BuiltinInvocation): Promise<RCharacterVector> {
+  const matched = await matchExact(invocation, [
+    "path",
+    "pattern",
+    "all.files",
+    "full.names",
+    "recursive",
+    "ignore.case",
+    "include.dirs",
+    "no..",
+    "fixed",
+  ]);
+  const pathValue = matched.get("path") ?? characterVector(["."]);
+  if (pathValue.type !== "character") {
+    throw new RTypeMismatchError("NRT3361", "invalid 'path' argument");
+  }
+  const patternValue = matched.get("pattern");
+  const pattern =
+    patternValue === undefined || patternValue.type === "null"
+      ? undefined
+      : characterScalar(patternValue, "pattern");
+  const allFiles = coercibleLogicalFlag(matched.get("all.files"), false, "all.files");
+  const fullNames = coercibleLogicalFlag(matched.get("full.names"), false, "full.names");
+  const recursive = coercibleLogicalFlag(matched.get("recursive"), false, "recursive");
+  const ignoreCase = coercibleLogicalFlag(matched.get("ignore.case"), false, "ignore.case");
+  const includeDirectories = coercibleLogicalFlag(
+    matched.get("include.dirs"),
+    false,
+    "include.dirs",
+  );
+  const excludeDots = coercibleLogicalFlag(matched.get("no.."), false, "no..");
+  const fixed = coercibleLogicalFlag(matched.get("fixed"), false, "fixed");
+  const expression =
+    pattern === undefined ? undefined : compileBrowserPattern(pattern, fixed, ignoreCase, false);
+  const results: string[] = [];
+  for (let pathIndex = 0; pathIndex < pathValue.length; pathIndex += 1) {
+    invocation.context.checkpoint();
+    if (isMissing(pathValue, pathIndex)) continue;
+    let root: string;
+    try {
+      root = resolveOwnedVirtualPath(invocation, pathValue.values[pathIndex] ?? ".", "list.files");
+    } catch {
+      continue;
+    }
+    if (!virtualDirectoryExists(invocation, root)) continue;
+    const entries = virtualDirectoryEntries(invocation, root, recursive, includeDirectories);
+    if (!recursive && allFiles && !excludeDots) {
+      entries.push({ relative: ".", directory: true }, { relative: "..", directory: true });
+    }
+    for (const entry of entries) {
+      const segments = entry.relative.split("/");
+      if (!allFiles && segments.some((segment) => segment.startsWith("."))) continue;
+      const name = segments.at(-1) ?? "";
+      if (expression !== undefined && !expression.test(name)) continue;
+      results.push(fullNames ? joinOwnedVirtualPath(root, entry.relative) : entry.relative);
+    }
+  }
+  results.sort();
+  invocation.context.allocate(results.length);
+  return characterVector(results);
+}
+
+async function builtinListDirectories(invocation: BuiltinInvocation): Promise<RCharacterVector> {
+  const matched = await matchExact(invocation, ["path", "full.names", "recursive"]);
+  const pathValue = matched.get("path") ?? characterVector(["."]);
+  if (pathValue.type !== "character") {
+    throw new RTypeMismatchError("NRT3361", "invalid 'path' argument");
+  }
+  const fullNames = coercibleLogicalFlag(matched.get("full.names"), true, "full.names");
+  const recursive = coercibleLogicalFlag(matched.get("recursive"), true, "recursive");
+  const results: string[] = [];
+  for (let pathIndex = 0; pathIndex < pathValue.length; pathIndex += 1) {
+    invocation.context.checkpoint();
+    if (isMissing(pathValue, pathIndex)) continue;
+    let root: string;
+    try {
+      root = resolveOwnedVirtualPath(invocation, pathValue.values[pathIndex] ?? ".", "list.dirs");
+    } catch {
+      continue;
+    }
+    if (!virtualDirectoryExists(invocation, root)) continue;
+    if (recursive) results.push(fullNames ? root : "");
+    for (const entry of virtualDirectoryEntries(invocation, root, recursive, true)) {
+      if (!entry.directory) continue;
+      results.push(fullNames ? joinOwnedVirtualPath(root, entry.relative) : entry.relative);
+    }
+  }
+  results.sort();
+  invocation.context.allocate(results.length);
+  return characterVector(results);
 }
 
 async function builtinReadLines(invocation: BuiltinInvocation): Promise<RCharacterVector> {
@@ -3201,14 +3558,18 @@ async function builtinWriteLines(invocation: BuiltinInvocation): Promise<RValue>
     }
     return R_NULL;
   }
-  const path = filePathScalar(connectionValue, "writeLines");
+  let path = resolveOwnedVirtualPath(
+    invocation,
+    filePathScalar(connectionValue, "writeLines"),
+    "writeLines",
+  );
   if (path.startsWith("nativr://package/")) {
     throw new RUnsupportedFeatureError(
       "NRU6181",
       "writeLines() package files are immutable in the browser runtime.",
     );
   }
-  requireVirtualTextPath(path, "writeLines");
+  path = requireVirtualTextPath(invocation, path, "writeLines");
   writeVirtualTextFile(invocation, path, source);
   return R_NULL;
 }
@@ -3288,15 +3649,14 @@ function nextVirtualTempPath(
   state: VirtualTextFileState,
   pattern: string,
   extension: string,
+  directory = VIRTUAL_TEMP_ROOT,
 ): string {
   if (!Number.isSafeInteger(state.nextId)) {
     throw new RResourceLimitError("NRL4002", "Virtual temporary-file identifier limit exceeded.");
   }
   const identifier = state.nextId.toString(16).padStart(8, "0");
   state.nextId += 1;
-  return `${VIRTUAL_TEMP_ROOT}/${encodeURIComponent(pattern)}${identifier}${encodeURIComponent(
-    extension,
-  )}`;
+  return `${directory}/${encodeURIComponent(pattern)}${identifier}${encodeURIComponent(extension)}`;
 }
 
 function virtualConnectionCharacter(value: RValue, name: string, call: string): string {
@@ -3504,14 +3864,14 @@ function writeVirtualTextTarget(
     }
     return connection;
   }
-  const path = filePathScalar(target, call);
+  let path = resolveOwnedVirtualPath(invocation, filePathScalar(target, call), call);
   if (path.startsWith("nativr://package/")) {
     throw new RUnsupportedFeatureError(
       "NRU6181",
       `${call}() package files are immutable in the browser runtime.`,
     );
   }
-  requireVirtualTextPath(path, call);
+  path = requireVirtualTextPath(invocation, path, call);
   const previous = virtualTextFileState(invocation).files.get(path) ?? "";
   writeVirtualTextFile(invocation, path, append ? `${previous}${source}` : source);
   return undefined;
@@ -3549,7 +3909,7 @@ function readVirtualTextFile(
   path: string,
   encoding: VirtualTextEncoding | "package",
 ): string {
-  path = resolvePackageDataRelativePath(invocation, path);
+  path = resolveOwnedVirtualPath(invocation, path, "readLines");
   if (path.startsWith(`${VIRTUAL_TEMP_ROOT}/`)) {
     const source = virtualTextFileState(invocation).files.get(path);
     if (source === undefined) {
@@ -3562,7 +3922,6 @@ function readVirtualTextFile(
     if (path.startsWith("nativr://package/")) {
       throw new REvaluationError("NRE2195", `Cannot open package file '${path}'.`);
     }
-    requireVirtualTextPath(path, "readLines");
     throw new REvaluationError("NRE2195", `Cannot open virtual text file '${path}'.`);
   }
   if (packageFile.encoding === "text") return packageFile.data;
@@ -3676,7 +4035,7 @@ function splitVirtualTextLines(
 
 async function builtinUnlink(invocation: BuiltinInvocation): Promise<RIntegerVector> {
   const matched = await matchExact(invocation, ["x", "recursive", "force", "expand"]);
-  logicalFlag(matched.get("recursive"), false, "recursive");
+  const recursive = logicalFlag(matched.get("recursive"), false, "recursive");
   logicalFlag(matched.get("force"), false, "force");
   logicalFlag(matched.get("expand"), true, "expand");
   const paths = required(matched, "x", "unlink");
@@ -3687,12 +4046,36 @@ async function builtinUnlink(invocation: BuiltinInvocation): Promise<RIntegerVec
     );
   }
   const state = virtualTextFileState(invocation);
+  let failed = false;
   for (const path of paths.values) {
     invocation.context.checkpoint();
-    requireVirtualTextPath(path, "unlink");
-    deleteVirtualTextFile(state, path);
+    const resolved = resolveOwnedVirtualPath(invocation, path, "unlink");
+    if (!resolved.startsWith(`${VIRTUAL_TEMP_ROOT}/`)) {
+      failed = true;
+      continue;
+    }
+    if (state.files.has(resolved)) {
+      deleteVirtualTextFile(state, resolved);
+      continue;
+    }
+    if (!state.directories.has(resolved)) continue;
+    const prefix = `${resolved}/`;
+    const hasChildren =
+      [...state.files.keys()].some((candidate) => candidate.startsWith(prefix)) ||
+      [...state.directories].some((candidate) => candidate.startsWith(prefix));
+    if (hasChildren && !recursive) {
+      failed = true;
+      continue;
+    }
+    for (const file of [...state.files.keys()]) {
+      if (file.startsWith(prefix)) deleteVirtualTextFile(state, file);
+    }
+    for (const directory of [...state.directories]) {
+      if (directory === resolved || directory.startsWith(prefix))
+        state.directories.delete(directory);
+    }
   }
-  return integerVector([0]);
+  return integerVector([failed ? 1 : 0]);
 }
 
 async function builtinDput(invocation: BuiltinInvocation): Promise<RValue> {
@@ -3701,21 +4084,21 @@ async function builtinDput(invocation: BuiltinInvocation): Promise<RValue> {
   validateDputControl(matched.get("control"));
   const source = `${serializeDputValue(input, invocation)}\n`;
   const file = matched.get("file");
-  const path = file === undefined ? "" : characterScalar(file, "file");
+  let path = file === undefined ? "" : characterScalar(file, "file");
   if (path.length === 0) {
     invocation.context.writeOutput({ stream: "stdout", text: source });
     return input;
   }
-  requireVirtualTextPath(path, "dput");
+  path = requireVirtualTextPath(invocation, path, "dput");
   writeVirtualTextFile(invocation, path, source);
   return input;
 }
 
 async function builtinDget(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["file", "keep.source"]);
-  const path = characterScalar(required(matched, "file", "dget"), "file");
+  let path = characterScalar(required(matched, "file", "dget"), "file");
   logicalFlag(matched.get("keep.source"), false, "keep.source");
-  requireVirtualTextPath(path, "dget");
+  path = requireVirtualTextPath(invocation, path, "dget");
   const source = virtualTextFileState(invocation).files.get(path);
   if (source === undefined) {
     throw new REvaluationError("NRE2195", `Cannot open virtual text file '${path}'.`);
@@ -3763,8 +4146,11 @@ async function builtinSave(invocation: BuiltinInvocation): Promise<RValue> {
   if (fileArgument === undefined || fileArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'file' is missing in save().");
   }
-  const path = characterScalar(await invocation.force(fileArgument.promise), "file");
-  requireVirtualTextPath(path, "save");
+  const path = requireVirtualTextPath(
+    invocation,
+    characterScalar(await invocation.force(fileArgument.promise), "file"),
+    "save",
+  );
 
   const environment = await saveEnvironment(invocation, controls.get("envir"));
   await validateSaveControls(invocation, controls);
@@ -3809,8 +4195,11 @@ async function builtinSave(invocation: BuiltinInvocation): Promise<RValue> {
 
 async function builtinLoad(invocation: BuiltinInvocation): Promise<RCharacterVector> {
   const matched = await matchExact(invocation, ["file", "envir", "verbose"]);
-  const path = characterScalar(required(matched, "file", "load"), "file");
-  requireVirtualTextPath(path, "load");
+  const path = requireVirtualTextPath(
+    invocation,
+    characterScalar(required(matched, "file", "load"), "file"),
+    "load",
+  );
   const target = matched.get("envir") ?? invocation.currentEnvironment();
   if (target.type !== "environment") {
     throw new RTypeMismatchError("NRT3227", "load(envir=) requires an environment.");
@@ -3979,8 +4368,12 @@ function virtualTextFileState(invocation: BuiltinInvocation): VirtualTextFileSta
     existing !== null &&
     "files" in existing &&
     existing.files instanceof Map &&
+    "directories" in existing &&
+    existing.directories instanceof Set &&
     "connections" in existing &&
     existing.connections instanceof Map &&
+    "workingDirectory" in existing &&
+    typeof existing.workingDirectory === "string" &&
     "nextId" in existing &&
     typeof existing.nextId === "number" &&
     "nextConnectionId" in existing &&
@@ -3992,7 +4385,9 @@ function virtualTextFileState(invocation: BuiltinInvocation): VirtualTextFileSta
   }
   const created: VirtualTextFileState = {
     files: new Map(),
+    directories: new Set([VIRTUAL_TEMP_ROOT]),
     connections: new Map(),
+    workingDirectory: VIRTUAL_TEMP_ROOT,
     nextId: 1,
     nextConnectionId: 3,
     bytes: 0,
@@ -4001,17 +4396,284 @@ function virtualTextFileState(invocation: BuiltinInvocation): VirtualTextFileSta
   return created;
 }
 
-function requireVirtualTextPath(path: string, call: string): void {
-  if (path.startsWith(`${VIRTUAL_TEMP_ROOT}/`) && path.length > VIRTUAL_TEMP_ROOT.length + 1)
-    return;
+function virtualMustWork(value: RValue | undefined): boolean | undefined {
+  if (value === undefined) return undefined;
+  if (value.type !== "logical" || value.length !== 1) {
+    throw new RTypeMismatchError("NRT3361", "'mustWork' must be a logical value");
+  }
+  return isMissing(value, 0) ? undefined : value.values[0] === 1;
+}
+
+function normalizeOwnedPathSuffix(root: string, suffix: string, call: string): string {
+  const parts: string[] = [];
+  for (const part of suffix.replaceAll("\\", "/").split("/")) {
+    if (part.length === 0 || part === ".") continue;
+    if (part === "..") {
+      if (parts.length === 0) {
+        throw new RUnsupportedFeatureError(
+          "NRU6191",
+          `${call}() cannot traverse outside the browser-owned virtual root.`,
+        );
+      }
+      parts.pop();
+      continue;
+    }
+    parts.push(part);
+  }
+  return parts.length === 0 ? root : `${root}/${parts.join("/")}`;
+}
+
+function parsePackageVirtualPath(
+  path: string,
+): { readonly name: string; readonly resourcePath: string } | undefined {
+  const prefix = "nativr://package/";
+  if (!path.startsWith(prefix)) return undefined;
+  const encoded = path.slice(prefix.length).replaceAll("\\", "/").split("/");
+  if (encoded.length === 0 || encoded[0]?.length === 0) return undefined;
+  try {
+    const name = decodeURIComponent(encoded[0] ?? "");
+    const parts: string[] = [];
+    for (const encodedPart of encoded.slice(1)) {
+      const part = decodeURIComponent(encodedPart);
+      if (part.length === 0 || part === ".") continue;
+      if (part === ".." || part.includes("/") || part.includes("\\") || name.length === 0) {
+        return undefined;
+      }
+      parts.push(part);
+    }
+    return { name, resourcePath: parts.join("/") };
+  } catch {
+    return undefined;
+  }
+}
+
+function canonicalPackageVirtualPath(
+  invocation: BuiltinInvocation,
+  path: string,
+): string | undefined {
+  const parsed = parsePackageVirtualPath(path);
+  if (parsed === undefined) return undefined;
+  return (
+    invocation.packageResourcePath(parsed.name, parsed.resourcePath) ??
+    `nativr://package/${encodeURIComponent(parsed.name)}${
+      parsed.resourcePath.length === 0
+        ? ""
+        : `/${parsed.resourcePath
+            .split("/")
+            .map((part) => encodeURIComponent(part))
+            .join("/")}`
+    }`
+  );
+}
+
+function resolveOwnedVirtualPath(
+  invocation: BuiltinInvocation,
+  suppliedPath: string,
+  call: string,
+): string {
+  const packageRelative = resolvePackageDataRelativePath(invocation, suppliedPath);
+  if (packageRelative.startsWith("nativr://package/")) {
+    const canonical = canonicalPackageVirtualPath(invocation, packageRelative);
+    if (canonical !== undefined) return canonical;
+    throw new RUnsupportedFeatureError("NRU6191", `${call}() received an invalid package path.`);
+  }
+  const path = packageRelative.replaceAll("\\", "/");
+  if (path === VIRTUAL_TEMP_ROOT || path.startsWith(`${VIRTUAL_TEMP_ROOT}/`)) {
+    return normalizeOwnedPathSuffix(VIRTUAL_TEMP_ROOT, path.slice(VIRTUAL_TEMP_ROOT.length), call);
+  }
+  if (path === VIRTUAL_RUNTIME_ROOT || path.startsWith(`${VIRTUAL_RUNTIME_ROOT}/`)) {
+    return normalizeOwnedPathSuffix(
+      VIRTUAL_RUNTIME_ROOT,
+      path.slice(VIRTUAL_RUNTIME_ROOT.length),
+      call,
+    );
+  }
+  if (
+    path.length === 0 ||
+    path.startsWith("/") ||
+    /^[A-Za-z]:\//u.test(path) ||
+    /^[A-Za-z][A-Za-z0-9+.-]*:\/\//u.test(path)
+  ) {
+    throw new RUnsupportedFeatureError(
+      "NRU6169",
+      `${call}() host-filesystem paths are unavailable in the browser runtime.`,
+    );
+  }
+  const state = virtualTextFileState(invocation);
+  if (
+    state.workingDirectory === VIRTUAL_TEMP_ROOT ||
+    state.workingDirectory.startsWith(`${VIRTUAL_TEMP_ROOT}/`)
+  ) {
+    return normalizeOwnedPathSuffix(
+      VIRTUAL_TEMP_ROOT,
+      `${state.workingDirectory.slice(VIRTUAL_TEMP_ROOT.length)}/${path}`,
+      call,
+    );
+  }
+  if (
+    state.workingDirectory === VIRTUAL_RUNTIME_ROOT ||
+    state.workingDirectory.startsWith(`${VIRTUAL_RUNTIME_ROOT}/`)
+  ) {
+    return normalizeOwnedPathSuffix(
+      VIRTUAL_RUNTIME_ROOT,
+      `${state.workingDirectory.slice(VIRTUAL_RUNTIME_ROOT.length)}/${path}`,
+      call,
+    );
+  }
+  const packageDirectory = parsePackageVirtualPath(state.workingDirectory);
+  if (packageDirectory !== undefined) {
+    const root = `nativr://package/${encodeURIComponent(packageDirectory.name)}`;
+    const combined = normalizeOwnedPathSuffix(
+      root,
+      `${packageDirectory.resourcePath}/${path}`,
+      call,
+    );
+    return canonicalPackageVirtualPath(invocation, combined) ?? combined;
+  }
+  throw new RUnsupportedFeatureError(
+    "NRU6191",
+    `${call}() has no browser-owned working directory.`,
+  );
+}
+
+function requireVirtualTextPath(invocation: BuiltinInvocation, path: string, call: string): string {
+  const resolved = resolveOwnedVirtualPath(invocation, path, call);
+  if (
+    resolved.startsWith(`${VIRTUAL_TEMP_ROOT}/`) &&
+    resolved.length > VIRTUAL_TEMP_ROOT.length + 1
+  )
+    return resolved;
   throw new RUnsupportedFeatureError(
     "NRU6169",
-    `${call}() host-filesystem and connection paths are unavailable; use tempfile() session-memory paths.`,
+    `${call}() requires a writable browser-memory file path.`,
   );
+}
+
+function runtimeVirtualDirectoryExists(path: string): boolean {
+  return (
+    path === VIRTUAL_RUNTIME_ROOT ||
+    VIRTUAL_RUNTIME_COMPONENTS.some((component) => path === `${VIRTUAL_RUNTIME_ROOT}/${component}`)
+  );
+}
+
+function virtualDirectoryExists(invocation: BuiltinInvocation, path: string): boolean {
+  if (virtualTextFileState(invocation).directories.has(path)) return true;
+  if (runtimeVirtualDirectoryExists(path)) return true;
+  const parsed = parsePackageVirtualPath(path);
+  if (parsed === undefined || invocation.packageFile(path) !== undefined) return false;
+  return invocation.packageResourcePath(parsed.name, parsed.resourcePath) === path;
+}
+
+function virtualPathExists(invocation: BuiltinInvocation, path: string): boolean {
+  return (
+    virtualDirectoryExists(invocation, path) ||
+    virtualTextFileState(invocation).files.has(path) ||
+    invocation.packageFile(path) !== undefined
+  );
+}
+
+function sessionVirtualParent(path: string): string | undefined {
+  if (path === VIRTUAL_TEMP_ROOT || !path.startsWith(`${VIRTUAL_TEMP_ROOT}/`)) return undefined;
+  const separator = path.lastIndexOf("/");
+  return separator <= VIRTUAL_TEMP_ROOT.length ? VIRTUAL_TEMP_ROOT : path.slice(0, separator);
+}
+
+function createVirtualDirectory(
+  invocation: BuiltinInvocation,
+  state: VirtualTextFileState,
+  path: string,
+  recursive: boolean,
+): boolean {
+  if (
+    !path.startsWith(`${VIRTUAL_TEMP_ROOT}/`) ||
+    state.directories.has(path) ||
+    state.files.has(path)
+  ) {
+    return false;
+  }
+  const missing: string[] = [];
+  let current: string | undefined = path;
+  while (current !== undefined && !state.directories.has(current)) {
+    if (state.files.has(current)) return false;
+    missing.push(current);
+    current = sessionVirtualParent(current);
+  }
+  if (!recursive && missing.length > 1) return false;
+  if (state.directories.size + missing.length > invocation.context.limits.maxVectorLength) {
+    throw new RResourceLimitError("NRL4002", "Virtual directory count limit exceeded.", {
+      details: {
+        maxVectorLength: invocation.context.limits.maxVectorLength,
+        requested: state.directories.size + missing.length,
+      },
+    });
+  }
+  for (const directory of missing.reverse()) state.directories.add(directory);
+  invocation.context.allocate(missing.length);
+  return true;
+}
+
+interface VirtualDirectoryEntry {
+  readonly relative: string;
+  readonly directory: boolean;
+}
+
+function virtualDirectoryEntries(
+  invocation: BuiltinInvocation,
+  root: string,
+  recursive: boolean,
+  includeDirectories: boolean,
+): VirtualDirectoryEntry[] {
+  const descendants = new Map<string, boolean>();
+  const add = (relative: string, directory: boolean) => {
+    if (relative.length === 0) return;
+    const parts = relative.split("/");
+    if (!recursive && parts.length > 1) {
+      descendants.set(parts[0] ?? "", true);
+      return;
+    }
+    if (directory && recursive && !includeDirectories) return;
+    descendants.set(relative, directory);
+  };
+  const prefix = `${root}/`;
+  if (root === VIRTUAL_TEMP_ROOT || root.startsWith(`${VIRTUAL_TEMP_ROOT}/`)) {
+    const state = virtualTextFileState(invocation);
+    for (const directory of state.directories) {
+      if (directory.startsWith(prefix)) add(directory.slice(prefix.length), true);
+    }
+    for (const file of state.files.keys()) {
+      if (file.startsWith(prefix)) add(file.slice(prefix.length), false);
+    }
+  } else if (root === VIRTUAL_RUNTIME_ROOT) {
+    for (const component of VIRTUAL_RUNTIME_COMPONENTS) add(component, true);
+  } else {
+    const parsed = parsePackageVirtualPath(root);
+    if (parsed !== undefined) {
+      const resources = invocation.packageResourcePaths(parsed.name, parsed.resourcePath) ?? [];
+      const resourcePrefix = parsed.resourcePath.length === 0 ? "" : `${parsed.resourcePath}/`;
+      for (const resource of resources) {
+        if (!resource.startsWith(resourcePrefix) || resource === parsed.resourcePath) continue;
+        const relative = resource.slice(resourcePrefix.length);
+        const parts = relative.split("/");
+        for (let index = 1; index < parts.length; index += 1) {
+          add(parts.slice(0, index).join("/"), true);
+        }
+        add(relative, false);
+      }
+    }
+  }
+  return [...descendants].map(([relative, directory]) => ({ relative, directory }));
+}
+
+function joinOwnedVirtualPath(root: string, relative: string): string {
+  return `${root.replace(/\/+$/u, "")}/${relative}`;
 }
 
 function writeVirtualTextFile(invocation: BuiltinInvocation, path: string, source: string): void {
   const state = virtualTextFileState(invocation);
+  const parent = sessionVirtualParent(path);
+  if (parent === undefined || !state.directories.has(parent) || state.directories.has(path)) {
+    throw new REvaluationError("NRE2195", `Cannot open virtual text file '${path}'.`);
+  }
   const previous = state.files.get(path);
   if (previous === undefined && state.files.size >= invocation.context.limits.maxVectorLength) {
     throw new RResourceLimitError("NRL4002", "Virtual text-file count limit exceeded.", {

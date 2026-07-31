@@ -370,10 +370,11 @@ differential roundtrip coverage. `dput` and `unlink` return invisibly, missing v
 deterministically, and file count, stored UTF-8 bytes, serialization depth, allocation, and
 evaluation steps are bounded.
 
-This is a browser-memory compatibility slice, not host filesystem emulation. Paths outside the
-session-temp namespace and R connections are rejected. Only the default `dput(control=)` set is
-accepted; environments, closures, formulas, builtins, cyclic graphs, promise/source-reference
-retention, arbitrary externally written source, binary serialization, compression, and cross-session
+This is a browser-memory compatibility slice, not host filesystem emulation. Relative paths are
+accepted only when the current directory belongs to a NativR-owned root; absolute host paths and
+unsupported connections are rejected. Only the default `dput(control=)` set is accepted;
+environments, closures, formulas, builtins, cyclic graphs, promise/source-reference retention,
+arbitrary externally written source, binary serialization, compression, and cross-session
 persistence are not claimed. Owned symbols, calls, and expression vectors use explicit
 reconstructing wrappers and have NativR-only executable evidence; GNU R's own text roundtrip can
 instead evaluate some nested language objects, so no strict differential claim is made for those
@@ -395,6 +396,15 @@ closed `capture.output` targets follow GNU R's destroy-after-use behavior. Handl
 forging, package writes are rejected, and the map is reset with the evaluator. Host paths,
 compression, URLs, sockets, raw/binary I/O, encoding conversion on writes, independent read/write
 positions, positions beyond end of file, and the broader connection/filesystem stack are not
+claimed.
+
+`base::R.home`, `dir.create`, `dir.exists`, `list.files`/`dir`, `list.dirs`, `getwd`, `setwd`,
+`normalizePath`, `basename`, and `dirname` have public-shape differential evidence plus NativR-only
+integration coverage for the virtual directory boundary. The runtime owns a static runtime tree,
+immutable package trees, a mutable session tree, and one current directory. Relative paths apply to
+line, table, serialization, workspace, and connection operations; normalization of `.` and `..`
+cannot escape an owned root. Recursive creation/removal is session-only. Host paths, symlinks,
+permissions, file metadata, mounts, platform separators, and host current-directory behavior are not
 claimed.
 
 `utils::read.table`, `read.csv`, `read.csv2`, `read.delim`, and `read.delim2` have behavioral

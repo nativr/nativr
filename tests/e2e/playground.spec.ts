@@ -53,6 +53,21 @@ test("runs the required Worker examples without evaluation network traffic", asy
     '["label", "value", "a,b", "c", "integer", "1", NA, "0"]',
   );
 
+  await page.locator("#source").fill(`
+    root <- tempfile("worker-tree-")
+    dir.create(file.path(root, "nested"), recursive = TRUE)
+    old <- setwd(root)
+    writeLines("worker-relative", file.path("nested", "value.txt"))
+    value <- readLines(file.path("nested", "value.txt"))
+    entries <- list.files(".", recursive = TRUE, include.dirs = TRUE)
+    setwd(old)
+    c(value, entries, dir.exists(root), unlink(root, recursive = TRUE))
+  `);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText(
+    '["worker-relative", "nested", "nested/value.txt", "TRUE", "0"]',
+  );
+
   await page.getByRole("button", { name: "Numeric R plot" }).click();
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("null");

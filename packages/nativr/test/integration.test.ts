@@ -1383,13 +1383,12 @@ describe("complete inline source-to-result vertical slice", () => {
     const removed = await runtime.evalDetailed("unlink(tempfile())");
     expect(removed).toMatchObject({ value: 0, visible: false });
 
-    await expect(runtime.eval("dput(1, 'host-file.R')")).rejects.toMatchObject({
-      code: "NRU6169",
-    });
-    await expect(runtime.eval("dget('host-file.R')")).rejects.toMatchObject({
-      code: "NRU6169",
-    });
-    await expect(runtime.eval("unlink('host-file.R')")).rejects.toMatchObject({
+    await expect(
+      runtime.eval(
+        "dput(1, 'relative-file.R'); c(dget('relative-file.R'), unlink('relative-file.R'))",
+      ),
+    ).resolves.toEqual([1, 0]);
+    await expect(runtime.eval("dput(1, '/host-file.R')")).rejects.toMatchObject({
       code: "NRU6169",
     });
     await expect(runtime.eval("dput(function(x) x, tempfile())")).rejects.toMatchObject({
@@ -1448,10 +1447,174 @@ describe("complete inline source-to-result vertical slice", () => {
         'path <- tempfile(); writeLines("one", path); readLines(path, n = 2, ok = FALSE)',
       ),
     ).rejects.toMatchObject({ code: "NRE2236" });
-    await expect(runtime.eval("readLines('host.txt')")).rejects.toMatchObject({ code: "NRU6169" });
+    await expect(runtime.eval("readLines('missing.txt')")).rejects.toMatchObject({
+      code: "NRE2195",
+    });
     await expect(runtime.eval("writeLines(1:2, tempfile())")).rejects.toMatchObject({
       code: "NRT3355",
     });
+    await runtime.dispose();
+  });
+
+  it("manages browser-owned directories, relative paths, and deterministic runtime roots", async () => {
+    const runtime = await session();
+    const result = await runtime.evalDetailed(`
+      home <- R.home()
+      components <- c("bin", "doc", "etc", "include", "modules", "share")
+      component_paths <- sapply(components, R.home)
+      root <- tempfile("tree-")
+      created <- withVisible(dir.create(root))
+      nested <- dir.create(file.path(root, "a", "b"), recursive = TRUE)
+      hidden <- dir.create(file.path(root, ".hidden"))
+      previous <- withVisible(setwd(file.path(root, "a")))
+      writeLines("relative", "relative.txt")
+      writeLines("nested", file.path("b", "nested.txt"))
+      normalized <- normalizePath("./b/../b", mustWork = TRUE)
+      local_files <- list.files(".")
+      recursive_files <- list.files(root, recursive = TRUE, include.dirs = TRUE)
+      text_files <- list.files(root, pattern = "\\.txt$", recursive = TRUE)
+      directories <- list.dirs(root, full.names = FALSE)
+      current <- getwd()
+      relative_line <- readLines("relative.txt")
+      nested_line <- readLines("b/nested.txt")
+      restored <- withVisible(setwd(previous$value))
+      result <- c(
+        substring(component_paths, 1, nchar(home)) == home,
+        dir.exists(c(home, component_paths)),
+        created$value, created$visible, nested, hidden,
+        previous$value, previous$visible,
+        basename(c("", "/", "a/", "a/b")),
+        dirname(c("", "/", "a/", "a/b")),
+        current == file.path(root, "a"),
+        normalized == file.path(root, "a", "b"),
+        relative_line, nested_line,
+        local_files,
+        recursive_files,
+        text_files,
+        directories,
+        restored$value == current, restored$visible,
+        file.exists(root), dir.exists(root),
+        unlink(root), unlink(root, recursive = TRUE), file.exists(root)
+      )
+      result
+    `);
+    expect(result.value).toEqual([
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "FALSE",
+      "TRUE",
+      "TRUE",
+      "nativr://session-temp",
+      "FALSE",
+      "",
+      "",
+      "a",
+      "b",
+      "",
+      "/",
+      ".",
+      "a",
+      "TRUE",
+      "TRUE",
+      "relative",
+      "nested",
+      "b",
+      "relative.txt",
+      "a",
+      "a/b",
+      "a/b/nested.txt",
+      "a/relative.txt",
+      "a/b/nested.txt",
+      "a/relative.txt",
+      "",
+      ".hidden",
+      "a",
+      "a/b",
+      "TRUE",
+      "FALSE",
+      "TRUE",
+      "TRUE",
+      "1",
+      "0",
+      "FALSE",
+    ]);
+    expect(result.warnings).toEqual([]);
+    await runtime.dispose();
+  });
+
+  it("bounds virtual directory mutation and reports missing-path behavior", async () => {
+    const runtime = await session();
+    const missingParent = await runtime.evalDetailed(
+      'dir.create(file.path("absent", "child"), showWarnings = TRUE)',
+    );
+    expect(missingParent.value).toBe(false);
+    expect(missingParent.visible).toBe(false);
+    expect(missingParent.warnings).toMatchObject([{ code: "NRW1123" }]);
+    await expect(
+      runtime.eval(`
+        root <- "relative-tree"
+        made <- dir.create(file.path(root, "child"), recursive = TRUE)
+        generated <- tempfile(tmpdir = file.path(root, "child"), fileext = ".txt")
+        writeLines("generated", generated)
+        writeLines("hidden", file.path(root, ".hidden"))
+        writeLines("visible", file.path(root, "visible"))
+        c(
+          made,
+          dir.create(root),
+          basename(generated),
+          readLines(generated),
+          list.files(root, all.files = TRUE),
+          list.files(root, all.files = TRUE, no.. = TRUE),
+          normalizePath("does-not-exist", mustWork = FALSE),
+          length(list.files("does-not-exist")),
+          dir.exists(c(root, generated, "/host")),
+          unlink(root, recursive = TRUE)
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "FALSE",
+      "file00000001.txt",
+      "generated",
+      ".",
+      "..",
+      ".hidden",
+      "child",
+      "visible",
+      ".hidden",
+      "child",
+      "visible",
+      "nativr://session-temp/does-not-exist",
+      "0",
+      "TRUE",
+      "FALSE",
+      "FALSE",
+      "0",
+    ]);
+    await expect(runtime.eval('setwd("missing-directory")')).rejects.toMatchObject({
+      code: "NRE2246",
+    });
+    await expect(runtime.eval('normalizePath("missing", mustWork = TRUE)')).rejects.toMatchObject({
+      code: "NRE2246",
+    });
+    await expect(runtime.eval('writeLines("x", "../outside.txt")')).rejects.toMatchObject({
+      code: "NRU6191",
+    });
+    await expect(runtime.eval("dir.create(1)")).rejects.toMatchObject({ code: "NRT3361" });
+    await expect(runtime.eval("list.files(1)")).rejects.toMatchObject({ code: "NRT3361" });
+    await expect(runtime.eval("basename(1)")).rejects.toMatchObject({ code: "NRT3360" });
     await runtime.dispose();
   });
 
@@ -1535,7 +1698,16 @@ describe("complete inline source-to-result vertical slice", () => {
       `),
     ).resolves.toEqual(["private", "", "w+", "TRUE"]);
 
-    await expect(runtime.eval("file('host.txt')")).rejects.toMatchObject({ code: "NRU6169" });
+    await expect(
+      runtime.eval(`
+        relative <- file("relative.txt")
+        details <- summary(relative)
+        result <- c(details$description, isOpen(relative))
+        close(relative)
+        result
+      `),
+    ).resolves.toEqual(["relative.txt", "FALSE"]);
+    await expect(runtime.eval("file('/host.txt')")).rejects.toMatchObject({ code: "NRU6169" });
     await expect(runtime.eval("file(raw = TRUE)")).rejects.toMatchObject({ code: "NRU6183" });
     await expect(
       runtime.eval("path <- tempfile(); con <- file(path, 'w'); readLines(con)"),
@@ -1651,10 +1823,16 @@ describe("complete inline source-to-result vertical slice", () => {
       "0",
     ]);
 
-    await expect(runtime.eval("save(x, file = 'host.RData')")).rejects.toMatchObject({
-      code: "NRU6169",
-    });
-    await expect(runtime.eval("load('host.RData')")).rejects.toMatchObject({
+    await expect(
+      runtime.eval(`
+        relative_value <- 12L
+        save(relative_value, file = "relative.RData")
+        rm(relative_value)
+        loaded <- load("relative.RData")
+        c(loaded, relative_value, unlink("relative.RData"))
+      `),
+    ).resolves.toEqual(["relative_value", "12", "0"]);
+    await expect(runtime.eval("save(d, file = '/host.RData')")).rejects.toMatchObject({
       code: "NRU6169",
     });
     await expect(
@@ -1900,6 +2078,36 @@ describe("complete inline source-to-result vertical slice", () => {
         c(class(index), nrow(index$results), index$results[, "Item"])
       `),
     ).resolves.toEqual(["packageIQR", "3", "csvset", "derived", "example"]);
+    await expect(
+      runtime.eval(`
+        root <- system.file(package = "nativrfixture")
+        data_root <- file.path(root, "data")
+        c(
+          dir.exists(data_root), file.exists(data_root),
+          list.files(root),
+          list.files(data_root, pattern = "\\.csv$", recursive = TRUE)
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "TRUE",
+      "DESCRIPTION",
+      "NAMESPACE",
+      "R",
+      "data",
+      "extdata",
+      "csvset.csv",
+      "raw/raw.csv",
+    ]);
+    await expect(
+      runtime.eval(`
+        package_root <- system.file("data", package = "nativrfixture")
+        previous <- setwd(package_root)
+        direct <- read.csv("raw/raw.csv")
+        restored <- setwd(previous)
+        c(direct$label, direct$value, restored == package_root)
+      `),
+    ).resolves.toEqual(["x", "y", "10", "20", "TRUE"]);
 
     const loaded = await runtime.evalDetailed(`
       result <- withVisible(data(example, package = "nativrfixture"))
@@ -1956,7 +2164,7 @@ describe("complete inline source-to-result vertical slice", () => {
       `),
     ).resolves.toEqual(["x", "y", "10", "20"]);
     await expect(runtime.eval('read.csv("raw/raw.csv")')).rejects.toMatchObject({
-      code: "NRU6169",
+      code: "NRE2195",
     });
     await expect(
       runtime.eval(`
@@ -7803,7 +8011,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.201.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.202.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
