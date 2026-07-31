@@ -73,29 +73,31 @@ likewise remain in the owned base layer: central tails reuse the regularized-gam
 tails use a direct Mills-ratio expansion, so `stats::pnorm` never delegates to a host statistics
 library. The public `stats::rgamma` path reuses the same rejection sampler that already feeds owned
 beta, chi-squared, and Student-t draws, without introducing a second RNG or host distribution
-service. Browser-independent text adapters also remain in the base layer: `utils::glob2rx` coerces
-owned values and translates glob metacharacters directly into R regular-expression text, while
-`sQuote` wraps coerced text using deterministic C-locale, explicit Unicode/TeX, or caller-supplied
-quote pairs. Neither asks the host filesystem, shell, locale, URL APIs, or a JavaScript
-regular-expression engine to interpret its input. Simple shape constructors remain in the same owned
-base layer: `mat.or.vec` allocates zero-filled typed arrays and attaches runtime dimensions
-directly, without delegating to a host matrix library. Primitive `seq.int` similarly selects integer
-or double typed storage after bounded, checkpointed sequence generation and routes classed first
-arguments through the evaluator's existing `seq` S3 dispatch seam. Explicit `methods::setAs`
-declarations live in a separate evaluator-session coercion map; `methods::as` resolves owned source
-classes and their declared parents before invoking a registered R closure or a core `as.<Class>`
-constructor. `methods::setOldClass` records S3 class chains in the same session-owned class map,
-allowing bounded S4 generic and coercion lookup to traverse declared old-style inheritance without
-consulting an R installation, host class registry, or package code. `methods::show` consumes that
-same map for single-object display dispatch; package-defined methods write through the bounded
-output journal, while the fallback formats only owned values and never opens a pager or terminal
-device. The output journal also supports nested, stream-selective capture frames for
-`utils::capture.output`. Captured text remains evaluator-owned until it becomes a bounded character
-result or is explicitly duplicated by `split = TRUE`; it never enters a host file or connection. The
-`stats::family` entry is another deliberately thin generic seam: it routes owned class metadata
-through the same evaluator S3 stack but does not embed distributional's package-owned method or
-objects. Regular time-series values follow the same boundary. `stats::ts` creates only owned
-vectors/matrices and `tsp` metadata; `as.ts`, `frequency`, `deltat`, `stats::cycle`, and
+service. `stats::rlnorm` similarly exponentiates the same session-owned Inversion normal stream
+after vectorized log-scale parameter validation, preserving fixed-seed ordering without a parallel
+random engine. Browser-independent text adapters also remain in the base layer: `utils::glob2rx`
+coerces owned values and translates glob metacharacters directly into R regular-expression text,
+while `sQuote` wraps coerced text using deterministic C-locale, explicit Unicode/TeX, or
+caller-supplied quote pairs. Neither asks the host filesystem, shell, locale, URL APIs, or a
+JavaScript regular-expression engine to interpret its input. Simple shape constructors remain in the
+same owned base layer: `mat.or.vec` allocates zero-filled typed arrays and attaches runtime
+dimensions directly, without delegating to a host matrix library. Primitive `seq.int` similarly
+selects integer or double typed storage after bounded, checkpointed sequence generation and routes
+classed first arguments through the evaluator's existing `seq` S3 dispatch seam. Explicit
+`methods::setAs` declarations live in a separate evaluator-session coercion map; `methods::as`
+resolves owned source classes and their declared parents before invoking a registered R closure or a
+core `as.<Class>` constructor. `methods::setOldClass` records S3 class chains in the same
+session-owned class map, allowing bounded S4 generic and coercion lookup to traverse declared
+old-style inheritance without consulting an R installation, host class registry, or package code.
+`methods::show` consumes that same map for single-object display dispatch; package-defined methods
+write through the bounded output journal, while the fallback formats only owned values and never
+opens a pager or terminal device. The output journal also supports nested, stream-selective capture
+frames for `utils::capture.output`. Captured text remains evaluator-owned until it becomes a bounded
+character result or is explicitly duplicated by `split = TRUE`; it never enters a host file or
+connection. The `stats::family` entry is another deliberately thin generic seam: it routes owned
+class metadata through the same evaluator S3 stack but does not embed distributional's package-owned
+method or objects. Regular time-series values follow the same boundary. `stats::ts` creates only
+owned vectors/matrices and `tsp` metadata; `as.ts`, `frequency`, `deltat`, `stats::cycle`, and
 `stats::window` route external classes through the evaluator's S3 stack before using the
 regular-series fallback. The non-generic `stats::embed` consumes only owned vector/matrix storage
 and builds bounded, column-major lag matrices, so pure-R rolling-window helpers can reuse the

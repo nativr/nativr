@@ -187,6 +187,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "rchisq",
       "rexp",
       "rgamma",
+      "rlnorm",
       "rnorm",
       "rpois",
       "rt",

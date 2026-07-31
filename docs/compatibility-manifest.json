@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.188.0",
+  "languageSubsetVersion": "0.189.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -482,6 +482,7 @@
       "name": "stats",
       "referenceVersion": "R 4.6.x documented behavior",
       "functions": [
+        { "name": "rlnorm", "compatibility": "behavioral" },
         { "name": "rgamma", "compatibility": "shape" },
         { "name": "ts", "compatibility": "behavioral" },
         { "name": "as.ts", "compatibility": "behavioral" },

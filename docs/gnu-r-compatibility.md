@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           479 |
-| Overlapping callable names        |           464 |
-| Missing GNU R callable names      |         2,058 |
-| Name overlap                      |      18.3981% |
+| NativR registered names           |           480 |
+| Overlapping callable names        |           465 |
+| Missing GNU R callable names      |         2,057 |
+| Name overlap                      |      18.4377% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -344,6 +344,14 @@ materialization/deletion, partial argument matching, namespace access, warnings,
 allocation limits have coverage. Expression vectors, arbitrary class-specific `[<-` methods,
 recursive objects outside the owned value model, exact legacy diagnostics, and long-vector behavior
 remain incomplete.
+
+The rank-461 increment adds GNU R differential evidence for zoo's measured `rlnorm(200, mean = 1)`
+flow generator. Historical Mersenne-Twister/Inversion fixed-seed values, scalar/vector `n`,
+truncated counts, recycled `meanlog`/`sdlog`, attribute removal, zero-deviation point masses without
+RNG advancement, empty parameters, missing/NaN and non-finite/domain behavior, one aggregate
+warning, namespace access, errors, and allocation limits have coverage. Alternative normal
+generators, bit identity outside the Inversion path, exact platform diagnostics, long vectors, and
+the `dlnorm`/`plnorm`/`qlnorm` family remain incomplete.
 
 ## Completion evidence
 

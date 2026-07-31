@@ -6107,7 +6107,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.188.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.189.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -6583,6 +6583,75 @@ describe("complete inline source-to-result vertical slice", () => {
     });
     await expect(runtime.eval("rnorm(1, sd = -1)")).rejects.toMatchObject({ code: "NRE2111" });
     await runtime.dispose();
+  });
+
+  it("generates zoo's usage-ranked log-normal flow through the session RNG", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        suppressWarnings(RNGversion("3.5.0"))
+        set.seed(0)
+        round(stats::rlnorm(8, mean = 1), 12)
+      `),
+    ).resolves.toEqual([
+      9.611442203053, 1.961612108081, 10.27587857616, 9.702943775026, 4.115010700361,
+      0.582777366095, 1.074046149912, 2.024412536848,
+    ]);
+    await expect(
+      runtime.eval(`
+        set.seed(123)
+        c(round(rlnorm(c(10, 20, 30), meanlog = c(0, 1), sdlog = c(0, .5)), 12),
+          length(rlnorm(2.9)),
+          length(rlnorm(c(NA, NA, NA))))
+      `),
+    ).resolves.toEqual([1, 2.053944676702, 1, 2, 3]);
+    await expect(
+      runtime.eval(`
+        set.seed(42)
+        baseline <- runif(1)
+        set.seed(42)
+        constant <- rlnorm(3, 1, 0)
+        after <- runif(1)
+        c(constant, baseline == after, is.null(names(rlnorm(c(a = 1, b = 2)))))
+      `),
+    ).resolves.toEqual([Math.E, Math.E, Math.E, 1, 1]);
+
+    const invalid = await runtime.evalDetailed(`
+      rlnorm(
+        7,
+        meanlog = c(NA, NaN, 0, Inf, -Inf, 0, 0),
+        sdlog = c(1, 1, -1, 0, 0, Inf, 0)
+      )
+    `);
+    expect(invalid.value).toEqual([
+      Number.NaN,
+      Number.NaN,
+      Number.NaN,
+      Number.POSITIVE_INFINITY,
+      0,
+      Number.NaN,
+      1,
+    ]);
+    expect(invalid.warnings).toEqual([{ code: "NRW1003", message: "NAs produced" }]);
+
+    const empty = await runtime.evalDetailed("rlnorm(3, numeric())");
+    expect(empty.value).toEqual([NA, NA, NA]);
+    expect(empty.warnings).toEqual([{ code: "NRW1003", message: "NAs produced" }]);
+    await expect(runtime.eval("rlnorm(numeric())")).resolves.toEqual([]);
+    await expect(runtime.eval("rlnorm(-1)")).rejects.toMatchObject({ code: "NRT3308" });
+    await expect(runtime.eval("rlnorm(1, factor('a'))")).rejects.toMatchObject({
+      code: "NRT3309",
+    });
+    await expect(runtime.eval("rlnorm()")).rejects.toMatchObject({ code: "NRE2103" });
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 8 },
+    });
+    await expect(limited.eval("rlnorm(9)")).rejects.toMatchObject({ code: "NRL4002" });
+    await limited.dispose();
   });
 
   it("configures usage-ranked GNU R random kinds with a reproducible browser-native engine", async () => {

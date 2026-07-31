@@ -4,15 +4,15 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 479,
-    "overlappingNames": 464,
-    "missingReferenceNames": 2058,
+    "nativrRegisteredNames": 480,
+    "overlappingNames": 465,
+    "missingReferenceNames": 2057,
     "nativrExtensionNames": 15,
-    "nameCoverage": 0.183981
+    "nameCoverage": 0.184377
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 347, "nameCoverage": 0.253841 },
-    { "package": "stats", "callableNames": 464, "overlappingNames": 68, "nameCoverage": 0.146552 },
+    { "package": "stats", "callableNames": 464, "overlappingNames": 69, "nameCoverage": 0.148707 },
     { "package": "methods", "callableNames": 209, "overlappingNames": 9, "nameCoverage": 0.043062 },
     { "package": "utils", "callableNames": 262, "overlappingNames": 11, "nameCoverage": 0.041985 },
     {
@@ -392,6 +392,7 @@
     "rgamma",
     "rgb",
     "rle",
+    "rlnorm",
     "rm",
     "rnorm",
     "round",
@@ -2151,7 +2152,6 @@
     "rgb2hsv",
     "rgeom",
     "rhyper",
-    "rlnorm",
     "rlogis",
     "rmultinom",
     "rnbinom",

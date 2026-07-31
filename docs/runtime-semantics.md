@@ -786,6 +786,15 @@ documented limits, and empty parameters return owned missing values. Invalid, mi
 parameters produce `NaN` with one call-level warning. Reseeding resets the same session stream used
 by every other random builtin.
 
+`stats::rlnorm()` applies `exp(meanlog + sdlog * Z)` to the same evaluator-owned Inversion normal
+stream. A multi-element `n` requests its length; otherwise the non-negative scalar is truncated. Log
+means and deviations recycle without a fractional-recycling warning, and output drops their
+attributes. Zero deviation returns the point mass `exp(meanlog)` without consuming RNG state.
+Missing/NaN means and negative/non-finite deviations produce `NaN`, while empty parameter vectors
+produce missing values; either path emits one call-level warning. Infinite means with finite
+non-negative deviation retain their zero/infinity limits. Alternative normal generators and the
+remaining log-normal distribution family are not implemented.
+
 `stats::dbinom()` evaluates binomial mass on the log scale, then exponentiates only for ordinary
 probability output. Edge counts below 64 accumulate a direct log-product coefficient; larger counts
 use the owned Lanczos log-gamma approximation. Quantile, size, and probability vectors recycle to
