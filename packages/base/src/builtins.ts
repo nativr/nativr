@@ -906,6 +906,14 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   definePackageBuiltin(
     "graphics",
+    "box",
+    ["which", "lty", "..."],
+    "shape",
+    builtinGraphicsBox,
+    "invisible",
+  ),
+  definePackageBuiltin(
+    "graphics",
     "rasterImage",
     ["image", "xleft", "ybottom", "xright", "ytop", "angle", "interpolate", "..."],
     "shape",
@@ -13964,6 +13972,151 @@ function linearAxisParameters(
   return reversed ? [upper, lower, intervals] : [lower, upper, intervals];
 }
 
+async function builtinGraphicsBox(invocation: BuiltinInvocation): Promise<RValue> {
+  const lazy = matchLazyArgumentsWithDots(invocation, ["which", "lty"]);
+  const values = new Map<string, RValue>();
+  for (const [name, argument] of lazy.matched) {
+    if (!argument.promise.missing) values.set(name, await invocation.force(argument.promise));
+  }
+  for (const argument of lazy.dots) {
+    const value = await invocation.force(argument.promise);
+    const name = argument.name;
+    if (name === "bty" || name === "col" || name === "fg" || name === "lwd" || name === "xpd") {
+      values.set(name, value);
+      continue;
+    }
+    invocation.context.warn({
+      code: "NRW1028",
+      message:
+        name === undefined
+          ? "unnamed argument is not a graphical parameter"
+          : `"${name}" is not a graphical parameter`,
+    });
+  }
+
+  const state = graphicsState(invocation, "box");
+  const which = graphicsBoxWhich(values.get("which"));
+  if (which !== "plot") {
+    throw new RUnsupportedFeatureError(
+      "NRU6161",
+      `box(which = "${which}") awaits browser figure and margin region state.`,
+    );
+  }
+
+  const edges = graphicsBoxEdges(values.get("bty"));
+  const lineTypeValue = values.get("lty");
+  const lineTypes = graphicsSegmentLineTypes(
+    lineTypeValue?.type === "null" ? undefined : lineTypeValue,
+  );
+  if (lineTypes.length !== 1) {
+    throw new RTypeMismatchError(
+      "NRT3344",
+      'graphical parameter "lty" must have length one in box().',
+    );
+  }
+  const lineType = lineTypes[0] ?? "solid";
+
+  const lineWidth = graphicsBoxLineWidth(values.get("lwd"));
+
+  const color =
+    graphicsBoxColour(values.get("col"), invocation) ??
+    graphicsBoxColour(values.get("fg"), invocation) ??
+    ([0, 0, 0, 255] as const);
+  if (edges.length === 0 || lineType === "blank" || color[3] === 0) return R_NULL;
+  writeGraphics(invocation, state, {
+    kind: "box",
+    edges,
+    color: graphicsCssColour(color),
+    lineType,
+    lineWidth,
+  });
+  return R_NULL;
+}
+
+function graphicsBoxWhich(value: RValue | undefined): "plot" | "figure" | "inner" | "outer" {
+  if (
+    value === undefined ||
+    (value.type === "character" && value.length > 0 && !isMissing(value, 0))
+  ) {
+    const source = value?.type === "character" ? (value.values[0] ?? "") : "plot";
+    const choices = ["plot", "figure", "inner", "outer"] as const;
+    const exact = choices.find((choice) => choice === source);
+    const candidates =
+      exact === undefined ? choices.filter((choice) => choice.startsWith(source)) : [exact];
+    const match = candidates.length === 1 ? candidates[0] : undefined;
+    if (match !== undefined) return match;
+  }
+  throw new RTypeMismatchError("NRT3344", "invalid 'which' argument in box().");
+}
+
+function graphicsBoxEdges(
+  value: RValue | undefined,
+): readonly ("top" | "right" | "bottom" | "left")[] {
+  const source =
+    value === undefined || value.type === "null" ? "o" : characterScalar(value, "box(bty=)");
+  const edges: Readonly<Record<string, readonly ("top" | "right" | "bottom" | "left")[]>> = {
+    o: ["top", "right", "bottom", "left"],
+    l: ["bottom", "left"],
+    "7": ["top", "right"],
+    c: ["top", "bottom", "left"],
+    u: ["right", "bottom", "left"],
+    "]": ["top", "right", "bottom"],
+    n: [],
+  };
+  const selected = edges[source];
+  if (selected === undefined) {
+    throw new RTypeMismatchError(
+      "NRT3344",
+      'invalid value specified for graphical parameter "bty" in box().',
+    );
+  }
+  return selected;
+}
+
+function graphicsBoxLineWidth(value: RValue | undefined): number {
+  if (value === undefined || value.type === "null") return 1;
+  if (
+    (value.type !== "logical" &&
+      value.type !== "integer" &&
+      value.type !== "double" &&
+      value.type !== "raw") ||
+    isFactor(value) ||
+    value.length !== 1 ||
+    isMissing(value, 0) ||
+    !Number.isFinite(value.values[0]) ||
+    (value.values[0] ?? 0) <= 0
+  ) {
+    throw new RTypeMismatchError(
+      "NRT3344",
+      'invalid value specified for graphical parameter "lwd" in box().',
+    );
+  }
+  return value.values[0] ?? 1;
+}
+
+function graphicsBoxColour(
+  value: RValue | undefined,
+  invocation: BuiltinInvocation,
+): RColour | undefined {
+  if (value === undefined || value.type === "null") return undefined;
+  if (!isAtomic(value)) return graphicsSegmentColours(value, invocation)[0];
+  if (value.length === 0) return undefined;
+  if (value.length !== 1) {
+    throw new RTypeMismatchError(
+      "NRT3344",
+      "graphical color parameters must have length one in box().",
+    );
+  }
+  if (
+    isMissing(value, 0) ||
+    ((value.type === "logical" || value.type === "integer" || value.type === "double") &&
+      !Number.isFinite(value.values[0] ?? Number.NaN))
+  ) {
+    return undefined;
+  }
+  return graphicsSegmentColours(value, invocation)[0];
+}
+
 async function builtinRasterImage(invocation: BuiltinInvocation): Promise<RValue> {
   const { matched, dots } = matchLazyArgumentsWithDots(invocation, [
     "image",
@@ -14599,6 +14752,18 @@ function graphicsEventValue(event: RGraphicsEvent): RList {
       ["kind", "x0", "y0", "x1", "y1", "col", "lty", "lwd"],
     );
   }
+  if (event.kind === "box") {
+    return listValue(
+      [
+        characterVector(["box"]),
+        characterVector(event.edges),
+        characterVector([event.color]),
+        characterVector([event.lineType]),
+        doubleVector([event.lineWidth]),
+      ],
+      ["kind", "edges", "col", "lty", "lwd"],
+    );
+  }
   if (event.kind === "legend") {
     const position =
       event.position.kind === "keyword"
@@ -14735,6 +14900,32 @@ function graphicsEventFromValue(value: RValue, invocation: BuiltinInvocation): R
         lineType: lineTypes[index] ?? "solid",
         lineWidth: lineWidths[index] ?? 1,
       })),
+    };
+  }
+  if (kind.values[0] === "box") {
+    const edges = recordedPlotCharacters(field("edges"), "edges");
+    const color = recordedPlotCharacter(field("col"), "col");
+    const lineType = recordedPlotCharacter(field("lty"), "lty");
+    const lineWidth = recordedPlotNumber(field("lwd"), "lwd");
+    const allowedEdges = new Set(["top", "right", "bottom", "left"]);
+    if (
+      edges.length === 0 ||
+      edges.length > allowedEdges.size ||
+      new Set(edges).size !== edges.length ||
+      edges.some((edge) => !allowedEdges.has(edge)) ||
+      !/^#[0-9A-F]{8}$/u.test(color) ||
+      (lineType !== "solid" && !/^(?:[1-9A-F]{2}){1,4}$/u.test(lineType)) ||
+      !(lineWidth > 0)
+    ) {
+      throw new RTypeMismatchError("NRT3333", "A recorded box command is malformed.");
+    }
+    invocation.context.allocate(edges.length + 4);
+    return {
+      kind: "box",
+      edges: edges as readonly ("top" | "right" | "bottom" | "left")[],
+      color,
+      lineType,
+      lineWidth,
     };
   }
   if (kind.values[0] === "legend") {
@@ -15275,6 +15466,14 @@ function writeGraphics(
 function graphicsEventByteLength(event: RGraphicsEvent): number {
   if (event.kind === "raster") return event.rgba.byteLength;
   if (event.kind === "segments") return event.segments.length * 64;
+  if (event.kind === "box") {
+    return (
+      64 +
+      event.edges.length * 8 +
+      graphicsTextByteLength(event.color) +
+      graphicsTextByteLength(event.lineType)
+    );
+  }
   if (event.kind !== "legend") return 0;
   return (
     64 +

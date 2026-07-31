@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           465 |
-| Overlapping callable names        |           450 |
-| Missing GNU R callable names      |         2,072 |
-| Name overlap                      |      17.8430% |
+| NativR registered names           |           466 |
+| Overlapping callable names        |           451 |
+| Missing GNU R callable names      |         2,071 |
+| Name overlap                      |      17.8826% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -246,6 +246,14 @@ side coercion, the observed `floor(abs(intervals) + 0.25)` conversion, lazy line
 namespace access, errors, and allocation limits are covered. The independently authored spacing path
 targets the measured 1/2/5-power-of-ten ranges. Logarithmic axes, complete `pretty` boundary
 identity, `par()` access, and actual axis drawing remain explicit incomplete graphics work.
+
+The rank-449 increment adds GNU R differential return/visibility evidence and browser-host evidence
+for zoo's measured `box()` call. The plot-region path covers all documented `bty` edge shapes,
+unique-prefix `which`, `col` then `fg` fallback, normalized line types, strictly positive widths,
+transparent/no-frame suppression, namespace access, unknown-parameter warnings, output limits,
+Worker transfer, Canvas pixels, and same-session record/replay. Figure, inner, and outer regions
+await a browser margin/layout model; arbitrary graphical parameters and device-pixel identity are
+not claimed.
 
 ## Completion evidence
 

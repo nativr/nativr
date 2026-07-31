@@ -258,26 +258,29 @@ planes into row-first classed character rasters. It drops source names/dimnames,
 `nrow`/`ncol` reshaping, preserves missing grayscale pixels, performs S3 dispatch, and returns
 existing raster values unchanged. `rasterImage()` consumes those values plus supported
 matrix/array/native-raster inputs as row-major RGBA commands with recycled positions.
-`graphics::segments()` consumes real/logical endpoint vectors, defaults an omitted `x1` or `y1` to
-its corresponding start coordinate, and recycles coordinates, colors, line types, and line widths
-without a recycling warning. Missing/non-finite coordinates and missing/transparent/invalid-width
-drawing entries are omitted. Valid colors are resolved to `#RRGGBBAA`, and documented line-type
-names, numeric cycles, and custom hexadecimal patterns are normalized before transport.
-`graphics::legend()` resolves positional or named labels, keyword/coordinate placement, insets, line
-and point keys, palette/text colors, box/background, size, columns, horizontal layout, and title
-into a device-independent event. It returns an invisible `rect`/`text` geometry list; `plot = FALSE`
-returns geometry without emission. Raster bytes and bounded segment/legend payloads share
-`maxOutputBytes` with text and returned values. `dev.hold(level)` and `dev.flush(level)` maintain a
-session-local, nonnegative nested hold level for the active owned device. While held,
-page/window/raster/segments/legend commands remain in an ordered journal across evaluation
-boundaries; the flush that reaches zero emits all pending commands through the current result and
-callback. Pending graphics bytes are bounded by `maxOutputBytes`, pending command count is bounded
-by `maxVectorLength`, and reset/dispose clears them. Calls without an active device return zero. The
-runtime and base packages contain no DOM or Canvas dependency; the Worker transfers commands to the
-public API and the Playground owns the reference Canvas renderer.
+`graphics::box()` resolves plot-region `bty` edge shapes, `col`/`fg` precedence, line type, and
+positive width into one bounded frame command. It returns invisible `NULL`; figure, inner, and outer
+regions are rejected until the owned device has a margin/layout model. `graphics::segments()`
+consumes real/logical endpoint vectors, defaults an omitted `x1` or `y1` to its corresponding start
+coordinate, and recycles coordinates, colors, line types, and line widths without a recycling
+warning. Missing/non-finite coordinates and missing/transparent/invalid-width drawing entries are
+omitted. Valid colors are resolved to `#RRGGBBAA`, and documented line-type names, numeric cycles,
+and custom hexadecimal patterns are normalized before transport. `graphics::legend()` resolves
+positional or named labels, keyword/coordinate placement, insets, line and point keys, palette/text
+colors, box/background, size, columns, horizontal layout, and title into a device-independent event.
+It returns an invisible `rect`/`text` geometry list; `plot = FALSE` returns geometry without
+emission. Raster bytes and bounded segment/box/legend payloads share `maxOutputBytes` with text and
+returned values. `dev.hold(level)` and `dev.flush(level)` maintain a session-local, nonnegative
+nested hold level for the active owned device. While held, page/window/raster/segments/box/legend
+commands remain in an ordered journal across evaluation boundaries; the flush that reaches zero
+emits all pending commands through the current result and callback. Pending graphics bytes are
+bounded by `maxOutputBytes`, pending command count is bounded by `maxVectorLength`, and
+reset/dispose clears them. Calls without an active device return zero. The runtime and base packages
+contain no DOM or Canvas dependency; the Worker transfers commands to the public API and the
+Playground owns the reference Canvas renderer.
 
 The active owned device also records a bounded display list. `recordPlot(load, attach)` snapshots
-the current page/window/raster/segments/legend commands into an independently owned, classed
+the current page/window/raster/segments/box/legend commands into an independently owned, classed
 `"recordedplot"` value and preserves the optional package metadata without loading packages.
 `replayPlot(x, reloadPkgs = FALSE)` accepts only that NativR-owned format, replaces the active
 display list, and routes the recorded commands through the same immediate or held journal; it
@@ -285,7 +288,7 @@ returns invisible `NULL`. Display-list command count is limited by `maxVectorLen
 by `maxOutputBytes`, and reset/dispose clears device state. `reloadPkgs = TRUE` is rejected when
 stored package metadata would require a namespace loader. External or serialized GNU R
 `recordedplot` values, `print.recordedplot`, cross-version compatibility, complete devices, general
-high-/low-level plotting beyond the documented `segments`/`legend` slices, axes, complete
+high-/low-level plotting beyond the documented `segments`/`box`/`legend` slices, axes, complete
 clipping/margins, graphical parameters supplied through `...`, broad color-space conversion, fonts,
 and arbitrary display-list operations remain outside this increment.
 

@@ -208,21 +208,22 @@ Both inline and Worker APIs retain the output in `evalDetailed` and charge it ag
 output budget. S3 print-method dispatch, global print options, line filling, labels, connections,
 and filesystem output are not claimed.
 
-`plot.new`, bounded `plot.window`, `axTicks`, `rasterImage`, `segments`, and `legend` provide the
-first browser-native graphics slice. Evaluation owns page and linear coordinate-window state,
+`plot.new`, bounded `plot.window`, `axTicks`, `box`, `rasterImage`, `segments`, and `legend` provide
+the first browser-native graphics slice. Evaluation owns page and linear coordinate-window state,
 converts two-dimensional grayscale or character colors, three-/four-channel numeric/raw arrays, and
 packed `nativeRaster` integers to row-major RGBA, and emits commands for recycled raster placements,
-styled line segments, and resolved legend entries. Commands preserve raster angle/interpolation,
-finite segment endpoints, canonical colors, normalized line patterns, line widths, text labels,
-point symbols, placement, and layout controls. They cross the Worker boundary, remain available in
-`evalDetailed.graphics`, and count toward the configured output budget. Inline and Worker callbacks
-receive the same command shapes, and the Playground renders them to Canvas. Evidence covers the
-measured systemfonts glyph-raster, httr PNG-array, posterior interval-segment, and zoo legend
-patterns. The owned device also supports nested `dev.hold`/`dev.flush` levels, ordered
-cross-evaluation command buffering, and bounded same-session `recordPlot`/`replayPlot` over its own
-page/window/raster/segments/legend display list. General `plot`, device selection, axes, complete
-clipping/margins, graphical parameters beyond the documented controls, external display-list
-formats, and pixel equivalence across GNU R devices are not claimed.
+styled line segments, resolved plot frames, and resolved legend entries. Commands preserve raster
+angle/interpolation, finite segment endpoints, canonical colors, normalized line patterns, line
+widths, frame edges, text labels, point symbols, placement, and layout controls. They cross the
+Worker boundary, remain available in `evalDetailed.graphics`, and count toward the configured output
+budget. Inline and Worker callbacks receive the same command shapes, and the Playground renders them
+to Canvas. Evidence covers the measured systemfonts glyph-raster, httr PNG-array, posterior
+interval-segment, zoo plot-frame, and zoo legend patterns. The owned device also supports nested
+`dev.hold`/`dev.flush` levels, ordered cross-evaluation command buffering, and bounded same-session
+`recordPlot`/`replayPlot` over its own page/window/raster/segments/box/legend display list. General
+`plot`, device selection, axes, complete clipping/margins, graphical parameters beyond the
+documented controls, external display-list formats, and pixel equivalence across GNU R devices are
+not claimed.
 
 `graphics::axTicks` has differential evidence for zoo's measured secondary-axis tick lookup and
 ordinary horizontal-axis lookup. On the owned linear device, sides 1/3 derive ticks from the current
@@ -234,6 +235,16 @@ remain lazy, unique partial argument matching and namespace access are covered, 
 allocation is bounded. Complete `pretty` equivalence for every floating-point boundary,
 `par("xaxp"/"yaxp")`, logarithmic axes and `grDevices::axisTicks`, axis drawing, and device-specific
 graphical parameters are not claimed.
+
+`graphics::box` has differential return/visibility evidence for zoo's measured `box()` redraw and
+browser-host evidence for the resulting frame. `which = "plot"` accepts its documented unique
+prefix, and `bty` resolves `o`, `l`, `7`, `c`, `u`, `]`, and `n` into explicit edges. A supplied
+non-missing `col` takes precedence over `fg`, with black as the current owned-device default; named,
+numeric, and hexadecimal line types are normalized, widths must be positive, and blank, transparent,
+or no-frame styles emit no command. The command crosses inline/Worker APIs, is charged against
+`maxOutputBytes`, renders on Canvas, and round-trips through the bounded display list. Figure,
+inner, and outer regions, session `par()` state, arbitrary graphical parameters, exact device dash
+metrics, and cross-device pixel identity are not claimed.
 
 `graphics::segments` has differential evidence for posterior's measured
 `segments(seq_along(theta), y0 = q5, y1 = q95)` vertical-interval shape. Exactly one of `x1` or `y1`
@@ -283,15 +294,15 @@ arbitrary external classes, and complete legacy diagnostics are not claimed.
 `grDevices::dev.flush` covers ragg's measured zero-argument animation-device call shape, and its
 paired `dev.hold` supplies the documented nested-level protocol on NativR's owned browser device.
 Positive levels increase or decrease the session-local hold count; negative levels clamp to zero;
-the flush that reaches zero releases pending page/window/raster/segments/legend commands in original
-order through the current `evalDetailed.graphics` result and host callback. Pending graphics storage
-remains subject to `maxOutputBytes`, pending command count remains subject to `maxVectorLength`,
-state survives ordinary evaluation boundaries, and reset/dispose clears it. Without an active owned
-device both calls return integer zero. Level coercion, missing-state preservation, namespace access,
-and nested returns have executable coverage. GNU R 4.6.0 currently returns these integer levels
-visibly even though its help page describes them as invisible; NativR follows the pinned executable
-oracle. The ragg device itself, WebP animation encoding, general device registration, cursors, and
-arbitrary third-party device callbacks are not included.
+the flush that reaches zero releases pending page/window/raster/segments/box/legend commands in
+original order through the current `evalDetailed.graphics` result and host callback. Pending
+graphics storage remains subject to `maxOutputBytes`, pending command count remains subject to
+`maxVectorLength`, state survives ordinary evaluation boundaries, and reset/dispose clears it.
+Without an active owned device both calls return integer zero. Level coercion, missing-state
+preservation, namespace access, and nested returns have executable coverage. GNU R 4.6.0 currently
+returns these integer levels visibly even though its help page describes them as invisible; NativR
+follows the pinned executable oracle. The ragg device itself, WebP animation encoding, general
+device registration, cursors, and arbitrary third-party device callbacks are not included.
 
 `grDevices::recordPlot` covers ragg's measured capture/record/replay sequence after drawing on the
 owned browser device. It returns a visible classed list with the GNU R-observed public

@@ -69,7 +69,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 465 registered functions, including resettable
+an initial condition/handler slice. It exposes 466 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
 preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
@@ -324,6 +324,11 @@ Rank 448 `graphics::axTicks` now runs zoo's measured linear secondary-axis tick 
 horizontal or vertical tick locations from the owned `plot.window` state, also supports explicit
 `axp` parameters and reversed axes, and keeps logarithmic axes as an explicit compatibility
 boundary.
+
+Rank 449 `graphics::box` now runs zoo's measured plot-frame redraw. Plot-region frames support all
+documented `bty` edge shapes, resolved `col`/`fg`, line types and positive widths, invisible return
+semantics, Worker transport, Canvas rendering, bounded display-list record/replay, and explicit
+boundaries for figure and margin regions that need a future layout model.
 
 Development priority is based on a reproducible analysis of documented usage in popular CRAN
 packages. The committed

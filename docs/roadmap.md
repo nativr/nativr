@@ -337,6 +337,10 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
     reversed 1/2/5-power-of-ten ranges, lazy linear arguments, namespace access, validation, and
     allocation limits. Logarithmic axes and complete base-graphics axis drawing remain separate
     work.
+95. Frequency-ranked plot frames: `graphics::box` runs zoo's measured redraw through a bounded
+    plot-region graphics event with all documented `bty` edge shapes, resolved `col`/`fg`, line
+    styles, positive widths, Worker/Canvas rendering, and same-session record/replay. Figure and
+    margin regions remain separate layout work.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

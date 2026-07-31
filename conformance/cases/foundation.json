@@ -6709,5 +6709,19 @@
     ],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 1e-14, "relative": 1e-14 }
+  },
+  {
+    "id": "box-zoo-observed-default-return-and-prefix",
+    "code": "plot.new()\nplot.window(c(0, 1), c(0, 1))\na <- withVisible(graphics::box())\nb <- withVisible(box(which = c(\"plot\", \"figure\"), lty = NULL, lwd = NULL))\nc(a$visible, is.null(a$value), b$visible, is.null(b$value))",
+    "expected": [false, true, false, true],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "box-plot-region-types-and-style-return",
+    "code": "plot.new()\nplot.window(c(0, 1), c(0, 1))\na <- withVisible(box(bty = \"c\", col = NA, fg = \"red\", lty = \"dashed\", lwd = 2, xpd = NA))\nb <- withVisible(box(bty = \"n\"))\nc <- withVisible(box(col = \"transparent\"))\nc(a$visible, is.null(a$value), b$visible, is.null(b$value), c$visible, is.null(c$value))",
+    "expected": [false, true, false, true, false, true],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

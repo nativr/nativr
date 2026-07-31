@@ -135,6 +135,15 @@ export type PublicGraphicsEvent =
       }[];
     }
   | {
+      readonly kind: "box";
+      readonly edges: readonly ("top" | "right" | "bottom" | "left")[];
+      /** CSS-compatible #RRGGBBAA color. */
+      readonly color: string;
+      /** `solid` or an even-length hexadecimal dash sequence. */
+      readonly lineType: string;
+      readonly lineWidth: number;
+    }
+  | {
       readonly kind: "legend";
       readonly position:
         | {

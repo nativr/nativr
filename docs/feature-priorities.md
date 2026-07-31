@@ -760,7 +760,12 @@ representing 731,390 downloads, one measured call, and 0.6% weighted reach. The 
 derives horizontal or vertical ticks from `plot.window()` state, supports explicit `axp`, ascending
 and descending axes, coercible sides, lazy `usr`/`nintLog`, namespace access, and allocation limits.
 Logarithmic axes, `par()` access, complete `pretty` boundary identity, and axis drawing remain
-explicit boundaries. Rank 449 `box` is the next unresolved callable candidate.
+explicit boundaries. Rank 449 `box` is now complete for zoo's measured plot-frame redraw,
+representing 731,390 downloads, one measured call, and 0.6% weighted reach. The owned plot-region
+path resolves all documented `bty` edge shapes, `col`/`fg`, line type, and positive width before a
+bounded event crosses the Worker boundary and reaches Canvas or same-session record/replay. Figure,
+inner, and outer regions require a future margin/layout model. Rank 450 `boxplot` is the next
+unresolved callable candidate.
 
 ## Completed implementation order
 
