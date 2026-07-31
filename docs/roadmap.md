@@ -462,6 +462,11 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      The unchanged public `pkgconfig 2.0.3` source package passes an opt-in
      repository/install/load/export/call test. Binary/lazy data, broader NAMESPACE/S4 forms, package
      test orchestration, and audited native Wasm adapters remain later layers.
+117. Package text and cooperative waits: `base::readLines` reads same-session temporary text plus
+     immutable DESCRIPTION, NAMESPACE, retained R source, and UTF-8/Latin-1 package resources;
+     `writeLines` supplies bounded temporary-file and stdout writes; and `Sys.sleep` yields in short
+     cancellable timer slices. General connections, host files, compression, URLs, and binary
+     resource/data readers remain later layers.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

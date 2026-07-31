@@ -31,11 +31,11 @@ events are absent from `evalDetailed().output` and `onOutput`; `split = TRUE` du
 to both destinations. Captured bytes remain bounded by `maxOutputBytes`. File paths and connection
 targets are rejected because the browser runtime exposes no filesystem.
 
-R code can use `tempfile()` with `dput()`/`dget()`/`unlink()` for bounded, same-session text
-serialization. Those opaque `nativr://session-temp/...` paths never leave the evaluator and are
-cleared by `reset()` or `dispose()`; they are not host files and cannot be passed through the public
-JavaScript API. `save()`/`load()` use the same resource seam for supported workspace values; their
-archive is NativR canonical source rather than a GNU R `.RData` binary.
+R code can use `tempfile()` with `readLines()`/`writeLines()`, `dput()`/`dget()`/`unlink()`, or
+`save()`/`load()` for bounded, same-session text and supported workspace serialization. Those opaque
+`nativr://session-temp/...` paths never leave the evaluator and are cleared by `reset()` or
+`dispose()`; they are not host files and cannot be passed through the public JavaScript API. The
+workspace archive is NativR canonical source rather than a GNU R `.RData` binary.
 
 `createR({ packages })` accepts `PureRPackageBundle` objects containing DCF `DESCRIPTION`,
 `NAMESPACE`, deterministic package-relative `R/*.R` source strings, and optional base64 package
@@ -43,9 +43,10 @@ resources. The bundle is deep-snapshotted, structured-cloned during Worker initi
 into the owned AST, and registered in the session's isolated package catalog. `pkg::name` loads a
 namespace without attaching it; `library(pkg)` attaches its exports. Imports, dependency version
 constraints, S3 registrations, `.onLoad()`, and `.onAttach()` use the runtime's environment and
-closure model. `system.file()` returns opaque `nativr://package/...` paths for immutable packaged
-resources. `reset()` unloads and detaches packages while retaining the supplied catalog so later
-namespace access can load it again.
+closure model. `system.file()` returns opaque `nativr://package/...` paths for immutable package
+metadata, retained R source, and packaged resources; `readLines()` can read their text without
+granting host-filesystem access. `reset()` unloads and detaches packages while retaining the
+supplied catalog so later namespace access can load it again.
 
 `@nativr/package-tools` is the build-time installer for standard source directories, `.tar.gz`
 archives, and CRAN-like repositories. It resolves required dependencies and emits integrity-locked

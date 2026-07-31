@@ -153,3 +153,10 @@ not vary with the browser or operating-system locale. `utils::sessionInfo()` pro
 into a deterministic NativR/browser identity rather than probing or claiming the user's native
 operating system or a GNU R installation. Future backends attach behind stable operator IDs rather
 than duplicating package-specific algorithms.
+
+Package-file access follows the same ownership rule. The facade retains DESCRIPTION, NAMESPACE,
+ordered `R/*.R` text, and base64 resources in immutable runtime definitions. `system.file()` creates
+opaque virtual identifiers; the evaluator resolves exact identifiers without URL, filesystem, or
+network access; and base `readLines()` performs bounded text decoding. Session writes use a separate
+evaluator-owned namespace, so package resources cannot be mutated and no host path crosses the
+`base -> runtime` boundary.

@@ -378,6 +378,19 @@ reconstructing wrappers and have NativR-only executable evidence; GNU R's own te
 instead evaluate some nested language objects, so no strict differential claim is made for those
 values.
 
+`base::writeLines` and `readLines` have behavioral differential evidence for same-session text
+roundtrips, per-element separators, invisible writes, LF/CRLF/CR recognition, line-count limits,
+short-read errors, incomplete-final-line warnings, embedded-NUL truncation/skip behavior, and
+standard-output events. The same reader consumes bounded immutable package metadata, retained R
+source, and UTF-8/Latin-1 packaged resources through `system.file()` paths. Package writes, host
+paths, arbitrary connections, compression, seeking, and the broader connection stack are not
+claimed.
+
+`base::Sys.sleep` accepts GNU R's non-negative scalar-coercible interval shape, permits `Inf`,
+returns invisible `NULL`, and cooperatively checks cancellation between short asynchronous timer
+slices. Missing, `NaN`, empty, and negative times fail. Exact scheduler resolution is host-dependent
+and is not claimed.
+
 `base::save` and `load` extend the same session-owned resource seam with behavioral differential
 evidence for bit64's observed workspace roundtrip. `save` selects direct object expressions and/or
 character names supplied by `list`, looks them up in `envir`, forces promises by default, preserves
@@ -1715,7 +1728,7 @@ bounded before the Worker parses source into normalized ASTs. The loader provide
 isolated namespaces, DESCRIPTION version checks, `import`/`importFrom`, explicit exports and
 internals, `S3method`, `.onLoad`, `.onAttach`, `library`, `require`, `requireNamespace`, namespace
 queries, `utils::packageName`, immutable `system.file` virtual paths, attachment search-path
-entries, and reset/reload behavior.
+entries, bounded text reads for DESCRIPTION/NAMESPACE/R source/resources, and reset/reload behavior.
 
 The Node-only `@nativr/package-tools` build path accepts standard source directories and `.tar.gz`
 archives, or resolves required `Depends`/`Imports` from a CRAN-like `PACKAGES` index. It enforces
@@ -1727,7 +1740,8 @@ repository-to-namespace path.
 
 Package admission is not universal execution compatibility. Depends-style attachment, package data
 loading, lazy data, broader NAMESPACE and S4 registration, bytecode, compiled code, arbitrary
-resource connections, license-policy decisions, and R CMD check behavior remain outside this slice.
+connections and binary resource decoders, license-policy decisions, and R CMD check behavior remain
+outside this slice.
 
 Deliberate current exclusions include GNU R/webR embedding, browser-time package installation,
 universal package execution, generated JavaScript execution, the complete graphics-device/base-

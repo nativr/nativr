@@ -41,6 +41,9 @@ it.runIf(runExternal)(
         "set_config_in",
       ]);
       await expect(runtime.eval('pkgconfig::get_config("unset-option", 42L)')).resolves.toBe(42);
+      await expect(
+        runtime.eval('readLines(system.file("DESCRIPTION", package = "pkgconfig"), n = 1L)'),
+      ).resolves.toBe("Package: pkgconfig");
     } finally {
       await runtime?.dispose();
     }

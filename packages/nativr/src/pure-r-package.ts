@@ -74,11 +74,20 @@ export function compilePureRPackages(
       seenPaths.add(entry.path);
       return parse(entry.source);
     });
+    const textResources = Object.freeze([
+      Object.freeze({ path: "DESCRIPTION", text: bundle.description }),
+      Object.freeze({ path: "NAMESPACE", text: bundle.namespace }),
+      ...sources.map((entry) => Object.freeze({ path: entry.path, text: entry.source })),
+    ]);
     const seenResourcePaths = new Set<string>();
     const resources = [...(bundle.resources ?? [])]
       .sort((left, right) => (left.path < right.path ? -1 : left.path > right.path ? 1 : 0))
       .map((resource) => {
-        if (!isPackageResourcePath(resource.path) || seenResourcePaths.has(resource.path)) {
+        if (
+          !isPackageResourcePath(resource.path) ||
+          seenResourcePaths.has(resource.path) ||
+          textResources.some((text) => text.path === resource.path)
+        ) {
           throw new REvaluationError(
             "NRE2231",
             `Package '${name}' contains invalid or duplicate resource path '${resource.path}'.`,
@@ -101,6 +110,7 @@ export function compilePureRPackages(
       exports: namespace.exports,
       s3Methods: namespace.s3Methods,
       programs: Object.freeze(programs),
+      textResources,
       resources: Object.freeze(resources),
     };
   });

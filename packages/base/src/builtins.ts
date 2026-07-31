@@ -221,6 +221,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("Sys.getlocale", ["category"], "behavioral", builtinSystemGetLocale),
   defineBuiltin("Sys.setlocale", ["category", "locale"], "behavioral", builtinSystemSetLocale),
   defineBuiltin("Sys.localeconv", [], "behavioral", builtinSystemLocaleConv),
+  defineBuiltin("Sys.sleep", ["time"], "behavioral", builtinSystemSleep, "regular", "invisible"),
   defineBuiltin("path.expand", ["path"], "shape", builtinPathExpand),
   defineBuiltin("file.path", ["...", "fsep"], "behavioral", builtinFilePath),
   defineBuiltin(
@@ -232,6 +233,20 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "visible",
   ),
   defineBuiltin("tempfile", ["pattern", "tmpdir", "fileext"], "shape", builtinTempFile),
+  defineBuiltin(
+    "readLines",
+    ["con", "n", "ok", "warn", "encoding", "skipNul"],
+    "behavioral",
+    builtinReadLines,
+  ),
+  defineBuiltin(
+    "writeLines",
+    ["text", "con", "sep", "useBytes"],
+    "behavioral",
+    builtinWriteLines,
+    "regular",
+    "invisible",
+  ),
   defineBuiltin(
     "unlink",
     ["x", "recursive", "force", "expand"],
@@ -2524,6 +2539,61 @@ async function builtinSystemLocaleConv(invocation: BuiltinInvocation): Promise<R
   return withNames(characterVector(values), C_LOCALE_CONVENTION_NAMES);
 }
 
+async function builtinSystemSleep(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["time"]);
+  const value = required(matched, "time", "Sys.sleep");
+  const time = sleepSeconds(value, invocation);
+  if (time < 0 || Number.isNaN(time)) {
+    throw new RTypeMismatchError("NRT3354", "invalid 'time' value");
+  }
+  if (time === 0) return R_NULL;
+
+  const duration = time * 1_000;
+  const deadline = Number.isFinite(duration) ? Date.now() + duration : Number.POSITIVE_INFINITY;
+  while (Date.now() < deadline) {
+    const remaining = deadline - Date.now();
+    await waitForBrowserTimer(
+      Math.min(50, Number.isFinite(remaining) ? Math.max(0, remaining) : 50),
+    );
+    invocation.context.checkpoint(0);
+  }
+  return R_NULL;
+}
+
+function waitForBrowserTimer(milliseconds: number): Promise<void> {
+  const timer = (
+    globalThis as unknown as {
+      readonly setTimeout: (callback: () => void, delay: number) => unknown;
+    }
+  ).setTimeout;
+  return new Promise((resolve) => timer(resolve, milliseconds));
+}
+
+function sleepSeconds(value: RValue, invocation: BuiltinInvocation): number {
+  if (value.type === "null" || !isAtomic(value) || value.length === 0 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3354", "invalid 'time' value");
+  }
+  if (value.type === "character") {
+    const parsed = parseRNumber(value.values[0] ?? "");
+    if (!parsed.valid) {
+      invocation.context.warn({ code: "NRW1006", message: "NAs introduced by coercion" });
+      return Number.NaN;
+    }
+    return parsed.value;
+  }
+  if (value.type === "complex") {
+    const imaginary = value.imaginary[0] ?? 0;
+    if (imaginary !== 0) {
+      invocation.context.warn({
+        code: "NRW1005",
+        message: "imaginary parts discarded in coercion",
+      });
+    }
+    return value.real[0] ?? 0;
+  }
+  return value.values[0] ?? 0;
+}
+
 async function builtinPathExpand(invocation: BuiltinInvocation): Promise<RCharacterVector> {
   const matched = await matchExact(invocation, ["path"]);
   const path = required(matched, "path", "path.expand");
@@ -2698,6 +2768,245 @@ async function builtinTempFile(invocation: BuiltinInvocation): Promise<RCharacte
     )}`;
   });
   return characterVector(paths);
+}
+
+async function builtinReadLines(invocation: BuiltinInvocation): Promise<RCharacterVector> {
+  const matched = await matchExact(invocation, ["con", "n", "ok", "warn", "encoding", "skipNul"]);
+  const connection = matched.get("con");
+  if (connection === undefined) {
+    throw new RUnsupportedFeatureError(
+      "NRU6180",
+      "readLines() standard-input and connection objects are unavailable in the browser runtime.",
+    );
+  }
+  const path = filePathScalar(connection, "readLines");
+  const count = readLinesCount(matched.get("n"));
+  const ok = coercibleLogicalFlag(matched.get("ok"), true, "ok");
+  const warn = coercibleLogicalFlag(matched.get("warn"), true, "warn");
+  const skipNul = coercibleLogicalFlag(matched.get("skipNul"), false, "skipNul");
+  const encoding = readLinesEncoding(matched.get("encoding"));
+  if (count === 0) return characterVector([]);
+
+  const source = readVirtualTextFile(invocation, path, encoding);
+  if (virtualTextByteLength(source) > invocation.context.limits.maxOutputBytes) {
+    throw new RResourceLimitError("NRL4007", "Virtual text-file read limit exceeded.", {
+      details: {
+        maxOutputBytes: invocation.context.limits.maxOutputBytes,
+        outputBytes: virtualTextByteLength(source),
+      },
+    });
+  }
+  const lines = splitVirtualTextLines(invocation, source, count, warn, skipNul, path);
+  if (!ok && count > 0 && lines.length < count) {
+    throw new REvaluationError("NRE2236", "too few lines read in readLines");
+  }
+  invocation.context.allocate(lines.length);
+  return characterVector(lines);
+}
+
+async function builtinWriteLines(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["text", "con", "sep", "useBytes"]);
+  const text = required(matched, "text", "writeLines");
+  if (text.type !== "character") {
+    throw new RTypeMismatchError("NRT3355", "can only write character objects");
+  }
+  const separatorValue = matched.get("sep");
+  const separator = separatorValue === undefined ? "\n" : writeLinesSeparator(separatorValue);
+  coercibleLogicalFlag(matched.get("useBytes"), false, "useBytes");
+  const source = Array.from({ length: text.length }, (_, index) => {
+    invocation.context.checkpoint();
+    return `${isMissing(text, index) ? "NA" : (text.values[index] ?? "")}${separator}`;
+  }).join("");
+
+  const connection = matched.get("con");
+  if (connection === undefined) {
+    if (source.length > 0) invocation.context.writeOutput({ stream: "stdout", text: source });
+    return R_NULL;
+  }
+  const path = filePathScalar(connection, "writeLines");
+  if (path.startsWith("nativr://package/")) {
+    throw new RUnsupportedFeatureError(
+      "NRU6181",
+      "writeLines() package files are immutable in the browser runtime.",
+    );
+  }
+  requireVirtualTextPath(path, "writeLines");
+  writeVirtualTextFile(invocation, path, source);
+  return R_NULL;
+}
+
+function filePathScalar(value: RValue, call: string): string {
+  if (value.type !== "character" || value.length !== 1 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3355", `${call}() requires a non-missing character path.`);
+  }
+  return value.values[0] ?? "";
+}
+
+function writeLinesSeparator(value: RValue): string {
+  if (value.type !== "character" || value.length === 0 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3355", "invalid 'sep' argument");
+  }
+  return value.values[0] ?? "";
+}
+
+function readLinesCount(value: RValue | undefined): number {
+  if (value === undefined) return -1;
+  if (value.type === "null" || !isAtomic(value) || value.length === 0 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3355", "invalid 'n' argument");
+  }
+  let numeric: number | undefined;
+  if (value.type === "character") {
+    const parsed = parseRNumber(value.values[0] ?? "");
+    if (!parsed.valid) throw new RTypeMismatchError("NRT3355", "invalid 'n' argument");
+    numeric = parsed.value;
+  } else {
+    numeric = value.type === "complex" ? value.real[0] : value.values[0];
+  }
+  if (numeric === undefined || !Number.isFinite(numeric)) {
+    throw new RTypeMismatchError("NRT3355", "invalid 'n' argument");
+  }
+  return Math.trunc(numeric);
+}
+
+function coercibleLogicalFlag(value: RValue | undefined, fallback: boolean, name: string): boolean {
+  if (value === undefined) return fallback;
+  if (value.type === "null" || !isAtomic(value) || value.length === 0 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3355", `invalid '${name}' argument`);
+  }
+  if (value.type === "character") {
+    const parsed = parseRLogical(value.values[0] ?? "");
+    if (parsed === undefined) {
+      throw new RTypeMismatchError("NRT3355", `invalid '${name}' argument`);
+    }
+    return parsed;
+  }
+  if (value.type === "complex") {
+    return (value.real[0] ?? 0) !== 0 || (value.imaginary[0] ?? 0) !== 0;
+  }
+  const scalar = value.values[0] ?? 0;
+  if (typeof scalar === "number" && Number.isNaN(scalar)) {
+    throw new RTypeMismatchError("NRT3355", `invalid '${name}' argument`);
+  }
+  return scalar !== 0;
+}
+
+type VirtualTextEncoding = "utf8" | "latin1";
+
+function readLinesEncoding(value: RValue | undefined): VirtualTextEncoding {
+  if (value === undefined) return "utf8";
+  if (value.type !== "character" || value.length === 0 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3355", "invalid 'encoding' argument");
+  }
+  const normalized = (value.values[0] ?? "").toLowerCase().replaceAll("-", "");
+  if (normalized === "unknown" || normalized === "utf8") return "utf8";
+  if (normalized === "latin1" || normalized === "bytes") return "latin1";
+  throw new RUnsupportedFeatureError(
+    "NRU6182",
+    `readLines() encoding '${value.values[0] ?? ""}' is unavailable in the browser runtime.`,
+  );
+}
+
+function readVirtualTextFile(
+  invocation: BuiltinInvocation,
+  path: string,
+  encoding: VirtualTextEncoding,
+): string {
+  if (path.startsWith(`${VIRTUAL_TEMP_ROOT}/`)) {
+    const source = virtualTextFileState(invocation).files.get(path);
+    if (source === undefined) {
+      throw new REvaluationError("NRE2195", `Cannot open virtual text file '${path}'.`);
+    }
+    return source;
+  }
+  const packageFile = invocation.packageFile(path);
+  if (packageFile === undefined) {
+    if (path.startsWith("nativr://package/")) {
+      throw new REvaluationError("NRE2195", `Cannot open package file '${path}'.`);
+    }
+    requireVirtualTextPath(path, "readLines");
+    throw new REvaluationError("NRE2195", `Cannot open virtual text file '${path}'.`);
+  }
+  if (packageFile.encoding === "text") return packageFile.data;
+  const bytes = decodeBase64Resource(packageFile.data, invocation);
+  if (encoding === "latin1") return decodeLatin1Bytes(bytes);
+  try {
+    const Decoder = (
+      globalThis as unknown as {
+        readonly TextDecoder: new (
+          label: string,
+          options: { readonly fatal: boolean },
+        ) => { readonly decode: (input: Uint8Array) => string };
+      }
+    ).TextDecoder;
+    return new Decoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    throw new REvaluationError("NRE2237", `Package file '${path}' is not valid UTF-8 text.`);
+  }
+}
+
+function decodeLatin1Bytes(bytes: Uint8Array): string {
+  const chunks: string[] = [];
+  for (let offset = 0; offset < bytes.length; offset += 8_192) {
+    chunks.push(String.fromCodePoint(...bytes.subarray(offset, offset + 8_192)));
+  }
+  return chunks.join("");
+}
+
+function decodeBase64Resource(value: string, invocation: BuiltinInvocation): Uint8Array {
+  const padding = value.endsWith("==") ? 2 : value.endsWith("=") ? 1 : 0;
+  const length = (value.length / 4) * 3 - padding;
+  if (length > invocation.context.limits.maxOutputBytes) {
+    throw new RResourceLimitError("NRL4007", "Package-file read limit exceeded.", {
+      details: { maxOutputBytes: invocation.context.limits.maxOutputBytes, outputBytes: length },
+    });
+  }
+  invocation.context.allocate(length);
+  const binary = (globalThis as unknown as { readonly atob: (input: string) => string }).atob(
+    value,
+  );
+  const output = new Uint8Array(length);
+  for (let index = 0; index < length; index += 1) {
+    if (index % 4_096 === 0) invocation.context.checkpoint();
+    output[index] = binary.charCodeAt(index);
+  }
+  return output;
+}
+
+function splitVirtualTextLines(
+  invocation: BuiltinInvocation,
+  source: string,
+  count: number,
+  warn: boolean,
+  skipNul: boolean,
+  path: string,
+): readonly string[] {
+  if (source.length === 0) return [];
+  const normalized = source.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
+  const complete = normalized.endsWith("\n");
+  const allLines = normalized.split("\n");
+  if (complete) allLines.pop();
+  const selected = count < 0 ? allLines : allLines.slice(0, count);
+  const lines = selected.map((line, index) => {
+    invocation.context.checkpoint();
+    if (skipNul) return line.replaceAll("\0", "");
+    const nul = line.indexOf("\0");
+    if (nul < 0) return line;
+    if (warn) {
+      invocation.context.warn({
+        code: "NRW1116",
+        message: `line ${String(index + 1)} appears to contain an embedded nul`,
+      });
+    }
+    return line.slice(0, nul);
+  });
+  const reachedEof = count < 0 || selected.length === allLines.length;
+  if (warn && reachedEof && !complete) {
+    invocation.context.warn({
+      code: "NRW1117",
+      message: `incomplete final line found on '${path}'`,
+    });
+  }
+  return lines;
 }
 
 async function builtinUnlink(invocation: BuiltinInvocation): Promise<RIntegerVector> {
@@ -3022,7 +3331,7 @@ function virtualTextFileState(invocation: BuiltinInvocation): VirtualTextFileSta
 
 function requireVirtualTextPath(
   path: string,
-  call: "dget" | "dput" | "load" | "save" | "unlink",
+  call: "dget" | "dput" | "load" | "readLines" | "save" | "unlink" | "writeLines",
 ): void {
   if (path.startsWith(`${VIRTUAL_TEMP_ROOT}/`) && path.length > VIRTUAL_TEMP_ROOT.length + 1)
     return;

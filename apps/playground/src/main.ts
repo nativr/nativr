@@ -51,7 +51,9 @@ const examples: readonly Example[] = [
     id: "package",
     label: "Pure-R package bundle",
     code: `library(nativrdemo)
-stopifnot(system.file("extdata", "demo.json", package = "nativrdemo") == "nativr://package/nativrdemo/extdata/demo.json")
+resource <- system.file("extdata", "demo.json", package = "nativrdemo")
+stopifnot(resource == "nativr://package/nativrdemo/extdata/demo.json")
+stopifnot(readLines(resource) == '{"demo":true}')
 twice_mean(c(1, 2, 6))`,
   },
   {

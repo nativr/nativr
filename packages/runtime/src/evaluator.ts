@@ -125,6 +125,12 @@ export interface RuntimePackageResource {
   readonly data: string;
 }
 
+/** One immutable UTF-16 JavaScript string retained as a package-relative text file. */
+export interface RuntimePackageTextResource {
+  readonly path: string;
+  readonly text: string;
+}
+
 /** Parser-independent package input accepted by the runtime. */
 export interface RuntimePackageDefinition {
   readonly name: string;
@@ -134,6 +140,7 @@ export interface RuntimePackageDefinition {
   readonly exports: readonly string[];
   readonly s3Methods: readonly RuntimeS3Method[];
   readonly programs: readonly ProgramNode[];
+  readonly textResources: readonly RuntimePackageTextResource[];
   readonly resources: readonly RuntimePackageResource[];
 }
 
@@ -142,6 +149,33 @@ interface RuntimePackageRecord {
   namespace: REnvironment | undefined;
   loading: boolean;
   attached: boolean;
+}
+
+function parsePackageVirtualPath(
+  value: string,
+): { readonly name: string; readonly resourcePath: string } | undefined {
+  const prefix = "nativr://package/";
+  if (!value.startsWith(prefix)) return undefined;
+  const encodedParts = value.slice(prefix.length).split("/");
+  if (encodedParts.length < 2 || encodedParts.some((part) => part.length === 0)) return undefined;
+  try {
+    const parts = encodedParts.map((part) => decodeURIComponent(part));
+    if (
+      parts.some(
+        (part) =>
+          part.length === 0 ||
+          part === "." ||
+          part === ".." ||
+          part.includes("/") ||
+          part.includes("\\"),
+      )
+    ) {
+      return undefined;
+    }
+    return { name: parts[0] ?? "", resourcePath: parts.slice(1).join("/") };
+  } catch {
+    return undefined;
+  }
 }
 
 const DEFAULT_SEARCH_PATH = Object.freeze([
@@ -1630,6 +1664,7 @@ export class Evaluator {
           ]),
         namespaceExports: async (name) => this.#namespaceExports(name, context),
         packageResourcePath: (name, path) => this.#packageResourcePath(name, path),
+        packageFile: (path) => this.#packageFile(path),
         packageName: (environment) => this.#packageName(environment),
         globalEnvironment: () => this.#globalEnvironment,
         baseEnvironment: () => this.#baseEnvironment,
@@ -2043,6 +2078,7 @@ export class Evaluator {
               exports: await this.#namespaceExports(name, context),
               s3Methods: [],
               programs: [],
+              textResources: [],
               resources: [],
             },
             namespace: this.#baseEnvironment,
@@ -2211,9 +2247,10 @@ export class Evaluator {
     if (record === undefined) return undefined;
     if (
       normalizedPath.length > 0 &&
-      normalizedPath !== "DESCRIPTION" &&
-      normalizedPath !== "NAMESPACE" &&
-      normalizedPath !== "R" &&
+      !record.definition.textResources.some(
+        (resource) =>
+          resource.path === normalizedPath || resource.path.startsWith(`${normalizedPath}/`),
+      ) &&
       !record.definition.resources.some(
         (resource) =>
           resource.path === normalizedPath || resource.path.startsWith(`${normalizedPath}/`),
@@ -2228,6 +2265,23 @@ export class Evaluator {
       .join("/");
     const root = `nativr://package/${encodeURIComponent(name)}`;
     return encodedPath.length === 0 ? root : `${root}/${encodedPath}`;
+  }
+
+  #packageFile(
+    path: string,
+  ): { readonly encoding: "text" | "base64"; readonly data: string } | undefined {
+    const resolved = parsePackageVirtualPath(path);
+    if (resolved === undefined || resolved.resourcePath.length === 0) return undefined;
+    const record = this.#packages.get(resolved.name);
+    if (record === undefined) return undefined;
+    const text = record.definition.textResources.find(
+      (resource) => resource.path === resolved.resourcePath,
+    );
+    if (text !== undefined) return { encoding: "text", data: text.text };
+    const binary = record.definition.resources.find(
+      (resource) => resource.path === resolved.resourcePath,
+    );
+    return binary === undefined ? undefined : { encoding: "base64", data: binary.data };
   }
 
   #packageName(environment: REnvironment): string | undefined {

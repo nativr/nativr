@@ -368,6 +368,13 @@ through the normal Tree-sitter R parser, normalized AST, and evaluator in the ca
 stored-byte budget is `maxOutputBytes`; entry counts, traversal, recursion, and reconstructed values
 also consume the normal resource limits.
 
+`writeLines(text, path)` truncates a session text file and writes the selected separator after every
+character element; missing strings render as `NA`. With no connection argument it emits the same
+bounded stdout events as other textual output. `readLines(path)` recognizes LF, CRLF, and CR,
+supports bounded `n`, `ok`, incomplete-final-line and embedded-NUL warnings, and `skipNul`. It reads
+either session text or immutable package files resolved through `system.file()`. General connection
+objects and host paths are rejected before any host API can be reached.
+
 The serializer preserves atomic storage types, explicit missing masks versus ordinary `NaN`,
 infinities, complex components, raw bytes, strings, list/pairlist nesting, and ordinary vector
 attributes. This is deliberately a text-serialization seam for browser-safe package data, not an OS
@@ -390,6 +397,14 @@ attachment, and exported bindings enter the attached-package search environment 
 `library()`. Reset clears namespaces, hooks, attachment state, S3 registrations, and search entries
 but retains the immutable bundle catalog for deterministic reload. Source size, source count,
 dependency cycles, imports, exports, and lifecycle evaluation all remain resource-checked.
+DESCRIPTION, NAMESPACE, retained `R/*.R` text, and base64 package resources share one immutable
+package-file lookup seam. UTF-8 uses the browser-standard fatal decoder, Latin-1 uses deterministic
+byte mapping, and both paths are bounded; package paths cannot be written through `writeLines()`.
+
+`Sys.sleep(time)` uses short asynchronous timer slices, returns invisible `NULL`, and checks the
+active cancellation token without consuming evaluation steps. Non-negative finite intervals and
+`Inf` are accepted; missing, `NaN`, and negative values fail. Inline interruption is cooperative,
+while the public Worker API retains its stronger terminate-and-reset behavior.
 
 `graphics::polygon()` accepts the same owned coordinate containers but does not dispatch: paired
 vectors, two-column matrices/data frames, complex coordinates, and named `list(x, y)` become

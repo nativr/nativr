@@ -44,7 +44,13 @@ hidden_helper <- function(x) x + 100
 `,
     },
   ],
-  resources: [{ path: "extdata/config.json", data: "eyJzY2FsZSI6Mn0K" }],
+  resources: [
+    { path: "extdata/config.json", data: "eyJzY2FsZSI6Mn0K" },
+    { path: "extdata/line-endings.txt", data: "YQ0KYg1jCg==" },
+    { path: "extdata/nul.txt", data: "YQBiCg==" },
+    { path: "extdata/latin1.txt", data: "6Qo=" },
+    { path: "extdata/invalid-utf8.txt", data: "/w==" },
+  ],
 };
 
 const pureRConsumer: PureRPackageBundle = {
@@ -1392,6 +1398,57 @@ describe("complete inline source-to-result vertical slice", () => {
     await limited.dispose();
   });
 
+  it("reads and writes GNU R-style text lines through bounded virtual files", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        path <- tempfile(fileext = ".txt")
+        written <- withVisible(writeLines(c("alpha", "", NA_character_), path))
+        lines <- readLines(path)
+        c(lines, is.null(written$value), written$visible, unlink(path))
+      `),
+    ).resolves.toEqual(["alpha", "", "NA", "TRUE", "FALSE", "0"]);
+
+    const output = await runtime.evalDetailed('writeLines(c("a", "b"), sep = "|")');
+    expect(output).toMatchObject({ value: null, visible: false });
+    expect(output.output).toEqual([{ stream: "stdout", text: "a|b|" }]);
+
+    const incomplete = await runtime.evalDetailed(`
+      path <- tempfile()
+      writeLines("tail", path, sep = "")
+      readLines(path)
+    `);
+    expect(incomplete.value).toBe("tail");
+    expect(incomplete.warnings).toHaveLength(1);
+    expect(incomplete.warnings[0]?.code).toBe("NRW1117");
+    expect(incomplete.warnings[0]?.message).toContain("incomplete final line");
+    await expect(
+      runtime.eval(
+        'path <- tempfile(); writeLines("one", path); readLines(path, n = 2, ok = FALSE)',
+      ),
+    ).rejects.toMatchObject({ code: "NRE2236" });
+    await expect(runtime.eval("readLines('host.txt')")).rejects.toMatchObject({ code: "NRU6169" });
+    await expect(runtime.eval("writeLines(1:2, tempfile())")).rejects.toMatchObject({
+      code: "NRT3355",
+    });
+    await runtime.dispose();
+  });
+
+  it("suspends cooperatively with GNU R-compatible Sys.sleep() validation and visibility", async () => {
+    const runtime = await session();
+    const slept = await runtime.evalDetailed("Sys.sleep(0.01)");
+    expect(slept).toMatchObject({ value: null, visible: false });
+    expect(slept.elapsedMs).toBeGreaterThanOrEqual(5);
+    await expect(runtime.eval("Sys.sleep(-1)")).rejects.toMatchObject({ code: "NRT3354" });
+    await expect(runtime.eval("Sys.sleep(NA_real_)")).rejects.toMatchObject({ code: "NRT3354" });
+
+    const pending = runtime.eval("Sys.sleep(10)");
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await runtime.interrupt();
+    await expect(pending).rejects.toMatchObject({ code: "NRL4005" });
+    await runtime.dispose();
+  });
+
   it("restores bit64's usage-ranked save/load workspace through session memory", async () => {
     const runtime = await session();
     await expect(
@@ -1484,6 +1541,50 @@ describe("complete inline source-to-result vertical slice", () => {
       runtime.eval("system.file('extdata', 'config.json', package = 'nativrfixture')"),
     ).resolves.toBe("nativr://package/nativrfixture/extdata/config.json");
     await expect(
+      runtime.eval("readLines(system.file('extdata', 'config.json', package = 'nativrfixture'))"),
+    ).resolves.toBe('{"scale":2}');
+    await expect(
+      runtime.eval(
+        "readLines(system.file('extdata', 'line-endings.txt', package = 'nativrfixture'))",
+      ),
+    ).resolves.toEqual(["a", "b", "c"]);
+    const nulResource = await runtime.evalDetailed(
+      "readLines(system.file('extdata', 'nul.txt', package = 'nativrfixture'))",
+    );
+    expect(nulResource.value).toBe("a");
+    expect(nulResource.warnings).toEqual([
+      { code: "NRW1116", message: "line 1 appears to contain an embedded nul" },
+    ]);
+    await expect(
+      runtime.eval(
+        "readLines(system.file('extdata', 'nul.txt', package = 'nativrfixture'), skipNul = TRUE)",
+      ),
+    ).resolves.toBe("ab");
+    await expect(
+      runtime.eval(
+        "readLines(system.file('extdata', 'latin1.txt', package = 'nativrfixture'), encoding = 'latin1')",
+      ),
+    ).resolves.toBe("é");
+    await expect(
+      runtime.eval(
+        "readLines(system.file('extdata', 'invalid-utf8.txt', package = 'nativrfixture'))",
+      ),
+    ).rejects.toMatchObject({ code: "NRE2237" });
+    await expect(
+      runtime.eval("readLines(system.file('DESCRIPTION', package = 'nativrfixture'), n = 1)"),
+    ).resolves.toBe("Package: nativrfixture");
+    await expect(
+      runtime.eval("readLines(system.file('NAMESPACE', package = 'nativrfixture'), n = 1)"),
+    ).resolves.toBe("");
+    await expect(
+      runtime.eval(
+        "length(readLines(system.file('R', 'functions.R', package = 'nativrfixture'))) > 1",
+      ),
+    ).resolves.toBe(true);
+    await expect(
+      runtime.eval("writeLines('changed', system.file('DESCRIPTION', package = 'nativrfixture'))"),
+    ).rejects.toMatchObject({ code: "NRU6181" });
+    await expect(
       runtime.eval(
         "system.file(c('R', 'extdata'), c('', 'config.json'), package = 'nativrfixture')",
       ),
@@ -1563,6 +1664,17 @@ describe("complete inline source-to-result vertical slice", () => {
       `),
     ).resolves.toEqual(["loaded:nativrfixture:6", "TRUE", "loaded:nativrfixture:6"]);
     await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      packages: [pureRFixture],
+      limits: { maxOutputBytes: 4 },
+    });
+    await expect(
+      limited.eval("readLines(system.file('extdata', 'config.json', package = 'nativrfixture'))"),
+    ).rejects.toMatchObject({ code: "NRL4007" });
+    await limited.dispose();
   });
 
   it("enforces pure-R package dependency versions while loading namespaces", async () => {
@@ -7122,7 +7234,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.198.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.199.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
