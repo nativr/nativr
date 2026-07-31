@@ -996,6 +996,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   definePackageBuiltin("stats", "as.ts", ["x", "..."], "behavioral", builtinAsTimeSeries),
   definePackageBuiltin("stats", "frequency", ["x", "..."], "behavioral", builtinFrequency),
+  definePackageBuiltin("stats", "deltat", ["x", "..."], "behavioral", builtinDeltaTime),
   definePackageBuiltin("stats", "cycle", ["x", "..."], "behavioral", builtinCycle),
   definePackageBuiltin(
     "stats",
@@ -17786,6 +17787,26 @@ async function builtinFrequency(invocation: BuiltinInvocation): Promise<RValue> 
   const dimensions = vectorDimensions(input);
   const rows = dimensions?.[0] ?? input.length;
   return doubleVector([validatedTimeSeries(input, rows, "frequency", false).frequency]);
+}
+
+async function builtinDeltaTime(invocation: BuiltinInvocation): Promise<RValue> {
+  const lazy = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const inputArgument = lazy.matched.get("x");
+  if (inputArgument === undefined || inputArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in deltat().");
+  }
+  const input = await invocation.force(inputArgument.promise);
+  const dispatchArguments = [
+    inputArgument,
+    ...invocation.arguments.filter((argument) => argument !== inputArgument),
+  ];
+  const dispatched = await invocation.dispatchS3IfPresent("deltat", input, dispatchArguments);
+  if (dispatched !== undefined) return dispatched;
+  if (!isVector(input) || input.attributes.get("tsp") === undefined) return doubleVector([1]);
+  const dimensions = vectorDimensions(input);
+  const rows = dimensions?.[0] ?? input.length;
+  const frequency = validatedTimeSeries(input, rows, "deltat", false).frequency;
+  return doubleVector([1 / frequency]);
 }
 
 async function builtinCycle(invocation: BuiltinInvocation): Promise<RValue> {

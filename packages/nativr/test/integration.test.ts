@@ -2358,6 +2358,48 @@ describe("complete inline source-to-result vertical slice", () => {
     await limited.dispose();
   });
 
+  it("computes zoo's usage-ranked sampling interval with S3 dispatch", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        c(
+          stats::deltat(1:3),
+          deltat(matrix(1:6, 2)),
+          deltat(NULL),
+          deltat(expression(a, b)),
+          deltat(function() 1),
+          deltat(ts(1:5, start = c(2000, 2), frequency = 4)),
+          deltat(structure(1:3, tsp = c(2, 3, 2)))
+        )
+      `),
+    ).resolves.toEqual([1, 1, 1, 1, 1, 0.25, 0.5]);
+    await expect(
+      runtime.eval(`
+        deltat.zoo <- function(x, ..., marker = "default") {
+          c(marker, attr(x, "frequency"), list(...)$extra)
+        }
+        deltat(
+          structure(1:3, class = "zoo", frequency = 4),
+          marker = "measured",
+          extra = "dot"
+        )
+      `),
+    ).resolves.toEqual(["measured", "4", "dot"]);
+    await expect(runtime.eval("deltat(1:3, stop('dots stay lazy'))")).resolves.toBe(1);
+    await expect(
+      runtime.eval(`
+        interval <- deltat(ts(1:3, frequency = 4))
+        visible <- withVisible(deltat(ts(1:3)))
+        c(typeof(interval), length(interval), is.null(names(interval)), visible$visible)
+      `),
+    ).resolves.toEqual(["double", "1", "TRUE", "TRUE"]);
+    await expect(runtime.eval("deltat()")).rejects.toMatchObject({ code: "NRE2103" });
+    await expect(runtime.eval("deltat(structure(1:3, tsp = c(1, 2, 4)))")).rejects.toMatchObject({
+      code: "NRT3284",
+    });
+    await runtime.dispose();
+  });
+
   it("extracts usage-ranked regular windows and exposes package-owned S3 seams", async () => {
     const runtime = await session();
     await expect(
@@ -5121,7 +5163,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.179.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.180.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

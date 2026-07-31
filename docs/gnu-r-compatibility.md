@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           467 |
-| Overlapping callable names        |           452 |
-| Missing GNU R callable names      |         2,070 |
-| Name overlap                      |      17.9223% |
+| NativR registered names           |           468 |
+| Overlapping callable names        |           453 |
+| Missing GNU R callable names      |         2,069 |
+| Name overlap                      |      17.9619% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -263,6 +263,13 @@ outlines, colors, line styles, `add`, output limits, Worker transfer, Canvas pix
 record/replay have executable coverage. Formula/data-frame methods, logarithmic axes, arbitrary
 `pars`, complete annotation/axes, every legacy diagnostic, and device-identical layout remain
 incomplete.
+
+The rank-451 increment adds GNU R differential evidence for zoo's measured `deltat(z)` regular
+sampling-interval call. The generic dispatches to independently declared package methods with lazy
+dots; its default returns an unnamed visible double equal to one for ordinary inputs or the
+reciprocal of validated `tsp` frequency. Vectors, matrices, expressions, closures, namespace access,
+visibility, and malformed metadata have adjacent coverage. Zoo's irregular index inference and
+methods remain package-owned, and loading zoo still depends on the planned pure-R package layer.
 
 ## Completion evidence
 

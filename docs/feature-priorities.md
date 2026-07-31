@@ -769,8 +769,12 @@ for zoo's measured grouped-series call, representing 731,390 downloads, one meas
 weighted reach. The owned S3/default path computes Tukey statistics for vector, list, and matrix
 groups and carries resolved boxes, whiskers, notches, and outliers through Worker/Canvas and
 same-session record/replay. Formula/data-frame methods, logarithmic axes, arbitrary `pars`, complete
-annotation/axes, and device-identical layout remain explicit boundaries. Rank 451 `deltat` is the
-next unresolved callable candidate.
+annotation/axes, and device-identical layout remain explicit boundaries. Rank 451 `deltat` is now
+complete for zoo's measured regular-series sampling-interval call, representing 731,390 downloads,
+one measured call, and 0.6% weighted reach. The generic forwards lazy dots to package methods such
+as `deltat.zoo`; its owned default returns one or the reciprocal of validated `tsp` frequency. Zoo's
+irregular-series inference and package methods remain package-owned. Rank 452 `embed` is the next
+unresolved callable candidate.
 
 ## Completed implementation order
 

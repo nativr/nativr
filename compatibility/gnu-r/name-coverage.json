@@ -4,15 +4,15 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 467,
-    "overlappingNames": 452,
-    "missingReferenceNames": 2070,
+    "nativrRegisteredNames": 468,
+    "overlappingNames": 453,
+    "missingReferenceNames": 2069,
     "nativrExtensionNames": 15,
-    "nameCoverage": 0.179223
+    "nameCoverage": 0.179619
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 344, "nameCoverage": 0.251646 },
-    { "package": "stats", "callableNames": 464, "overlappingNames": 66, "nameCoverage": 0.142241 },
+    { "package": "stats", "callableNames": 464, "overlappingNames": 67, "nameCoverage": 0.144397 },
     { "package": "methods", "callableNames": 209, "overlappingNames": 9, "nameCoverage": 0.043062 },
     { "package": "utils", "callableNames": 262, "overlappingNames": 11, "nameCoverage": 0.041985 },
     {
@@ -168,6 +168,7 @@
     "data.frame",
     "dbinom",
     "delayedAssign",
+    "deltat",
     "demo",
     "density",
     "density.default",
@@ -1194,7 +1195,6 @@
     "defaultDumpName",
     "defaultPrototype",
     "delete.response",
-    "deltat",
     "dendrapply",
     "densCols",
     "deriv",
