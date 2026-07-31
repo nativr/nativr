@@ -57,6 +57,7 @@ import type {
   REnvironment,
   RExpression,
   RFormula,
+  RGraphicsBoxplotGroup,
   RGraphicsEvent,
   RGraphicsLegendEntry,
   RGraphicsLegendPosition,
@@ -912,6 +913,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     builtinGraphicsBox,
     "invisible",
   ),
+  definePackageBuiltin("graphics", "boxplot", ["x", "..."], "shape", builtinBoxplot),
   definePackageBuiltin(
     "graphics",
     "rasterImage",
@@ -13824,6 +13826,11 @@ async function builtinDrop(invocation: BuiltinInvocation): Promise<RValue> {
 
 async function builtinPlotNew(invocation: BuiltinInvocation): Promise<RValue> {
   await matchExact(invocation, []);
+  beginGraphicsPage(invocation);
+  return R_NULL;
+}
+
+function beginGraphicsPage(invocation: BuiltinInvocation): GraphicsState {
   const existing = activeGraphicsState(invocation);
   const state: GraphicsState = existing ?? {
     active: true,
@@ -13839,7 +13846,7 @@ async function builtinPlotNew(invocation: BuiltinInvocation): Promise<RValue> {
   state.ylim = [0, 1];
   invocation.state.set(GRAPHICS_STATE_KEY, state);
   writeGraphics(invocation, state, { kind: "new-page" });
-  return R_NULL;
+  return state;
 }
 
 async function builtinPlotWindow(invocation: BuiltinInvocation): Promise<RValue> {
@@ -14115,6 +14122,471 @@ function graphicsBoxColour(
     return undefined;
   }
   return graphicsSegmentColours(value, invocation)[0];
+}
+
+interface BoxplotInputGroup {
+  readonly label: string;
+  readonly values: readonly number[];
+}
+
+interface BoxplotSummary {
+  readonly stats: readonly [number, number, number, number, number];
+  readonly count: number;
+  readonly confidence: readonly [number, number];
+  readonly outliers: readonly number[];
+}
+
+async function builtinBoxplot(invocation: BuiltinInvocation): Promise<RValue> {
+  const generic = matchBuiltinArguments(invocation, ["x", "..."]);
+  const inputArgument = generic.matched.get("x");
+  if (inputArgument === undefined || inputArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in boxplot().");
+  }
+  const input = await invocation.force(inputArgument.promise);
+  const dispatched = await invocation.dispatchS3IfPresent("boxplot", input, invocation.arguments);
+  if (dispatched !== undefined) return dispatched;
+
+  const controlNames = new Set([
+    "range",
+    "width",
+    "varwidth",
+    "notch",
+    "outline",
+    "names",
+    "plot",
+    "border",
+    "col",
+    "log",
+    "pars",
+    "ann",
+    "horizontal",
+    "add",
+    "at",
+    "lty",
+    "lwd",
+    "boxwex",
+    "staplewex",
+  ]);
+  const controls = new Map<string, BuiltinCallArgument>();
+  const extraData: BuiltinCallArgument[] = [];
+  for (const argument of generic.dots) {
+    if (argument.name === undefined) {
+      extraData.push(argument);
+      continue;
+    }
+    if (!controlNames.has(argument.name)) {
+      await invocation.force(argument.promise);
+      throw new RUnsupportedFeatureError(
+        "NRU6162",
+        `boxplot() graphical control '${argument.name}' is outside the current browser subset.`,
+      );
+    }
+    if (controls.has(argument.name)) {
+      throw new REvaluationError("NRE2102", `Argument '${argument.name}' matched more than once.`);
+    }
+    controls.set(argument.name, argument);
+  }
+
+  const values = new Map<string, RValue>();
+  for (const [name, argument] of controls) {
+    if (argument.promise.missing) {
+      throw new REvaluationError("NRE2103", `Argument '${name}' is missing in boxplot().`);
+    }
+    values.set(name, await invocation.force(argument.promise));
+  }
+  const extras: RValue[] = [];
+  for (const argument of extraData) {
+    if (!argument.promise.missing) extras.push(await invocation.force(argument.promise));
+  }
+
+  const range = boxplotNonNegativeScalar(values.get("range"), 1.5, "range");
+  const groups = boxplotInputGroups(input, extras, invocation);
+  const labels = boxplotLabels(
+    values.get("names"),
+    groups.map((group) => group.label),
+  );
+  const summaries = groups.map((group) => boxplotSummary(group.values, range, invocation));
+  const result = boxplotResult(summaries, labels, invocation);
+
+  const plot = logicalFlag(values.get("plot"), true, "plot");
+  const inputDimensions = isVector(input) ? vectorDimensions(input) : undefined;
+  if (!plot) {
+    if (inputDimensions?.length === 2) invocation.setResultVisibility("invisible");
+    return result;
+  }
+
+  const logarithmic = values.get("log");
+  if (
+    logarithmic !== undefined &&
+    logarithmic.type !== "null" &&
+    characterScalar(logarithmic, "boxplot(log=)") !== ""
+  ) {
+    throw new RUnsupportedFeatureError(
+      "NRU6162",
+      "boxplot(log=) awaits logarithmic browser graphics coordinates.",
+    );
+  }
+  const pars = values.get("pars");
+  if (pars !== undefined && pars.type !== "null") {
+    throw new RUnsupportedFeatureError(
+      "NRU6162",
+      "boxplot(pars=) awaits the broader browser graphical-parameter registry.",
+    );
+  }
+  logicalFlag(values.get("ann"), true, "ann");
+  const horizontal = logicalFlag(values.get("horizontal"), false, "horizontal");
+  const add = logicalFlag(values.get("add"), false, "add");
+  const notch = logicalFlag(values.get("notch"), false, "notch");
+  const outline = logicalFlag(values.get("outline"), true, "outline");
+  const centers = boxplotCenters(values.get("at"), groups.length);
+  const widths = boxplotWidths(
+    values.get("width"),
+    values.get("boxwex"),
+    logicalFlag(values.get("varwidth"), false, "varwidth"),
+    summaries,
+  );
+  boxplotNonNegativeScalar(values.get("staplewex"), 0.5, "staplewex");
+  const borders = boxplotColours(values.get("border"), "black", invocation);
+  const fills = boxplotColours(values.get("col"), "lightgray", invocation);
+  const lineTypes = graphicsSegmentLineTypes(
+    values.get("lty")?.type === "null" ? undefined : values.get("lty"),
+  );
+  const lineWidths = graphicsSegmentLineWidths(
+    values.get("lwd")?.type === "null" ? undefined : values.get("lwd"),
+  );
+  if (lineTypes.length === 0 || lineWidths.length === 0) {
+    invocation.setResultVisibility("invisible");
+    return result;
+  }
+
+  const eventGroups: RGraphicsBoxplotGroup[] = [];
+  for (let index = 0; index < summaries.length; index += 1) {
+    invocation.context.checkpoint();
+    const summary = summaries[index];
+    const lineWidth = lineWidths[index % lineWidths.length];
+    if (summary === undefined || summary.count === 0 || lineWidth === undefined) continue;
+    const lineType = lineTypes[index % lineTypes.length] ?? "solid";
+    if (lineType === "blank") continue;
+    eventGroups.push({
+      label: labels[index] ?? String(index + 1),
+      center: centers[index] ?? index + 1,
+      width: widths[index] ?? 0.8,
+      stats: summary.stats,
+      confidence: summary.confidence,
+      outliers: outline ? summary.outliers : [],
+      border: graphicsCssColour(borders[index % borders.length] ?? ([0, 0, 0, 255] as const)),
+      fill: graphicsCssColour(fills[index % fills.length] ?? ([255, 255, 255, 0] as const)),
+      lineType,
+      lineWidth,
+    });
+  }
+  if (eventGroups.length === 0) {
+    throw new RTypeMismatchError("NRT3345", "boxplot() requires finite values to draw.");
+  }
+  if (
+    notch &&
+    summaries.some(
+      (summary) =>
+        summary.count > 0 &&
+        (summary.confidence[0] < summary.stats[1] || summary.confidence[1] > summary.stats[3]),
+    )
+  ) {
+    invocation.context.warn({
+      code: "NRW1029",
+      message: "some notches went outside hinges ('box'): maybe set notch=FALSE",
+    });
+  }
+
+  const event: Extract<RGraphicsEvent, { readonly kind: "boxplot" }> = {
+    kind: "boxplot",
+    horizontal,
+    notch,
+    groups: eventGroups,
+  };
+  let state: GraphicsState;
+  if (add) {
+    state = graphicsState(invocation, "boxplot");
+  } else {
+    state = beginGraphicsPage(invocation);
+    const limits = boxplotWindow(event);
+    state.xlim = limits.xlim;
+    state.ylim = limits.ylim;
+    writeGraphics(invocation, state, { kind: "window", ...limits });
+  }
+  writeGraphics(invocation, state, event);
+  invocation.setResultVisibility("invisible");
+  return result;
+}
+
+function boxplotInputGroups(
+  input: RValue,
+  extras: readonly RValue[],
+  invocation: BuiltinInvocation,
+): readonly BoxplotInputGroup[] {
+  if (input.type === "list") {
+    const names = vectorNames(input);
+    return input.values.map((value, index) => ({
+      label: names?.[index] || String(index + 1),
+      values: boxplotNumericValues(value ?? R_NULL, invocation),
+    }));
+  }
+  if (
+    !isAtomic(input) ||
+    isFactor(input) ||
+    input.type === "complex" ||
+    input.type === "character"
+  ) {
+    throw new RTypeMismatchError(
+      "NRT3345",
+      "boxplot() data must be numeric vectors, a numeric matrix, or a list of numeric vectors.",
+    );
+  }
+  const dimensions = vectorDimensions(input);
+  const groups: BoxplotInputGroup[] = [];
+  if (dimensions !== undefined) {
+    if (dimensions.length !== 2) {
+      throw new RTypeMismatchError("NRT3345", "boxplot() arrays must have exactly two dimensions.");
+    }
+    const rows = dimensions[0] ?? 0;
+    const columns = dimensions[1] ?? 0;
+    const dimensionNames = input.attributes.get("dimnames");
+    const columnNames = dimensionNames?.type === "list" ? dimensionNames.values[1] : undefined;
+    for (let column = 0; column < columns; column += 1) {
+      groups.push({
+        label:
+          columnNames?.type === "character" &&
+          !isMissing(columnNames, column) &&
+          (columnNames.values[column] ?? "") !== ""
+            ? (columnNames.values[column] ?? String(column + 1))
+            : String(column + 1),
+        values: boxplotNumericValues(input, invocation, column * rows, rows),
+      });
+    }
+    return groups;
+  }
+  groups.push({ label: "1", values: boxplotNumericValues(input, invocation) });
+  for (const [index, value] of extras.entries()) {
+    groups.push({
+      label: String(index + 2),
+      values: boxplotNumericValues(value, invocation),
+    });
+  }
+  return groups;
+}
+
+function boxplotNumericValues(
+  value: RValue,
+  invocation: BuiltinInvocation,
+  offset = 0,
+  length?: number,
+): readonly number[] {
+  if (value.type === "null") return [];
+  if (
+    !isAtomic(value) ||
+    isFactor(value) ||
+    value.type === "complex" ||
+    value.type === "character"
+  ) {
+    throw new RTypeMismatchError("NRT3345", "boxplot() group data must be numeric.");
+  }
+  const count = length ?? value.length;
+  invocation.context.allocate(count);
+  const output: number[] = [];
+  for (let local = 0; local < count; local += 1) {
+    invocation.context.checkpoint();
+    const index = offset + local;
+    const number = value.values[index] ?? Number.NaN;
+    if (isMissing(value, index) || Number.isNaN(number)) continue;
+    if (!Number.isFinite(number)) {
+      throw new RUnsupportedFeatureError(
+        "NRU6162",
+        "boxplot() infinite observations await non-finite graphics-range semantics.",
+      );
+    }
+    output.push(number);
+  }
+  return output;
+}
+
+function boxplotSummary(
+  input: readonly number[],
+  range: number,
+  invocation: BuiltinInvocation,
+): BoxplotSummary {
+  if (input.length === 0) {
+    return {
+      stats: [Number.NaN, Number.NaN, Number.NaN, Number.NaN, Number.NaN],
+      count: 0,
+      confidence: [Number.NaN, Number.NaN],
+      outliers: [],
+    };
+  }
+  const values = [...input].sort((left, right) => left - right);
+  const count = values.length;
+  const hingePosition = Math.floor((count + 3) / 2) / 2;
+  const positions = [1, hingePosition, (count + 1) / 2, count + 1 - hingePosition, count];
+  const five = positions.map((position) => {
+    invocation.context.checkpoint();
+    const lower = values[Math.floor(position) - 1] ?? values[0] ?? 0;
+    const upper = values[Math.ceil(position) - 1] ?? values.at(-1) ?? 0;
+    return (lower + upper) / 2;
+  });
+  const lowerHinge = five[1] ?? 0;
+  const median = five[2] ?? 0;
+  const upperHinge = five[3] ?? 0;
+  const spread = upperHinge - lowerHinge;
+  const lowerFence = lowerHinge - range * spread;
+  const upperFence = upperHinge + range * spread;
+  const inside =
+    range === 0 ? values : values.filter((value) => value >= lowerFence && value <= upperFence);
+  const lowerWhisker = inside[0] ?? values[0] ?? 0;
+  const upperWhisker = inside.at(-1) ?? values.at(-1) ?? 0;
+  const outliers =
+    range === 0 ? [] : values.filter((value) => value < lowerWhisker || value > upperWhisker);
+  const notch = (1.58 * spread) / Math.sqrt(count);
+  return {
+    stats: [lowerWhisker, lowerHinge, median, upperHinge, upperWhisker],
+    count,
+    confidence: [median - notch, median + notch],
+    outliers,
+  };
+}
+
+function boxplotResult(
+  summaries: readonly BoxplotSummary[],
+  labels: readonly string[],
+  invocation: BuiltinInvocation,
+): RList {
+  const stats = summaries.flatMap((summary) => summary.stats);
+  const confidence = summaries.flatMap((summary) => summary.confidence);
+  const outliers: number[] = [];
+  const groups: number[] = [];
+  for (const [index, summary] of summaries.entries()) {
+    outliers.push(...summary.outliers);
+    groups.push(...summary.outliers.map(() => index + 1));
+  }
+  invocation.context.allocate(
+    stats.length + confidence.length + outliers.length * 2 + labels.length,
+  );
+  return listValue(
+    [
+      boxplotResultMatrix(stats, 5, summaries.length),
+      doubleVector(summaries.map((summary) => summary.count)),
+      boxplotResultMatrix(confidence, 2, summaries.length),
+      doubleVector(outliers),
+      doubleVector(groups),
+      characterVector(labels),
+    ],
+    ["stats", "n", "conf", "out", "group", "names"],
+  );
+}
+
+function boxplotResultMatrix(
+  source: readonly number[],
+  rows: number,
+  columns: number,
+): RDoubleVector {
+  const values = new Float64Array(source.length);
+  const missing = new Uint8Array(source.length);
+  for (let index = 0; index < source.length; index += 1) {
+    const value = source[index] ?? Number.NaN;
+    if (Number.isNaN(value)) missing[index] = 1;
+    else values[index] = value;
+  }
+  return withDimensions(doubleVector(values, compactMask(missing)), [rows, columns]);
+}
+
+function boxplotLabels(value: RValue | undefined, fallback: readonly string[]): readonly string[] {
+  if (value === undefined) return fallback;
+  if (
+    value.type !== "character" ||
+    value.length !== fallback.length ||
+    value.missing !== undefined
+  ) {
+    throw new RTypeMismatchError(
+      "NRT3345",
+      "boxplot(names=) must be a non-missing character vector matching the group count.",
+    );
+  }
+  return value.values;
+}
+
+function boxplotNonNegativeScalar(
+  value: RValue | undefined,
+  fallback: number,
+  name: string,
+): number {
+  if (value === undefined || value.type === "null") return fallback;
+  const result = numericScalar(value, `boxplot(${name}=)`);
+  if (result < 0) {
+    throw new RTypeMismatchError("NRT3345", `'${name}' must not be negative in boxplot().`);
+  }
+  return result;
+}
+
+function boxplotCenters(value: RValue | undefined, count: number): readonly number[] {
+  if (value === undefined || value.type === "null") {
+    return Array.from({ length: count }, (_, index) => index + 1);
+  }
+  const centers = graphicsNumbers(value, "at");
+  if (centers.length !== count) {
+    throw new RTypeMismatchError("NRT3345", "boxplot(at=) must match the group count.");
+  }
+  return centers;
+}
+
+function boxplotWidths(
+  value: RValue | undefined,
+  boxWidthValue: RValue | undefined,
+  variable: boolean,
+  summaries: readonly BoxplotSummary[],
+): readonly number[] {
+  const boxWidth = boxplotNonNegativeScalar(boxWidthValue, 0.8, "boxwex");
+  let widths =
+    value === undefined || value.type === "null"
+      ? summaries.map(() => 1)
+      : graphicsNumbers(value, "width");
+  if (widths.length !== summaries.length || widths.some((width) => !(width > 0))) {
+    throw new RTypeMismatchError(
+      "NRT3345",
+      "boxplot(width=) must contain one positive value per group.",
+    );
+  }
+  if (variable) {
+    widths = widths.map((width, index) => width * Math.sqrt(summaries[index]?.count ?? 0));
+  }
+  const maximum = Math.max(...widths);
+  if (!(maximum > 0)) {
+    throw new RTypeMismatchError("NRT3345", "boxplot() variable widths require nonempty groups.");
+  }
+  return widths.map((width) => (boxWidth * width) / maximum);
+}
+
+function boxplotColours(
+  value: RValue | undefined,
+  fallback: string,
+  invocation: BuiltinInvocation,
+): readonly RColour[] {
+  if (value?.type === "null") return [[255, 255, 255, 0]];
+  const colors = graphicsSegmentColours(value ?? characterVector([fallback]), invocation);
+  return colors.length === 0 ? [[255, 255, 255, 0]] : colors;
+}
+
+function boxplotWindow(event: Extract<RGraphicsEvent, { readonly kind: "boxplot" }>): {
+  readonly xlim: readonly [number, number];
+  readonly ylim: readonly [number, number];
+} {
+  const centers = event.groups.map((group) => group.center);
+  const values = event.groups.flatMap((group) => [...group.stats, ...group.outliers]);
+  const category: readonly [number, number] = [
+    Math.min(...centers) - 0.5,
+    Math.max(...centers) + 0.5,
+  ];
+  const minimum = Math.min(...values);
+  const maximum = Math.max(...values);
+  const padding = minimum === maximum ? 0.5 : (maximum - minimum) * 0.04;
+  const numeric: readonly [number, number] = [minimum - padding, maximum + padding];
+  return event.horizontal ? { xlim: numeric, ylim: category } : { xlim: category, ylim: numeric };
 }
 
 async function builtinRasterImage(invocation: BuiltinInvocation): Promise<RValue> {
@@ -14764,6 +15236,35 @@ function graphicsEventValue(event: RGraphicsEvent): RList {
       ["kind", "edges", "col", "lty", "lwd"],
     );
   }
+  if (event.kind === "boxplot") {
+    return listValue(
+      [
+        characterVector(["boxplot"]),
+        logicalVector([event.horizontal]),
+        logicalVector([event.notch]),
+        listValue(
+          event.groups.map((group) =>
+            listValue(
+              [
+                characterVector([group.label]),
+                doubleVector([group.center]),
+                doubleVector([group.width]),
+                doubleVector(group.stats),
+                doubleVector(group.confidence),
+                doubleVector(group.outliers),
+                characterVector([group.border]),
+                characterVector([group.fill]),
+                characterVector([group.lineType]),
+                doubleVector([group.lineWidth]),
+              ],
+              ["label", "center", "width", "stats", "conf", "out", "border", "fill", "lty", "lwd"],
+            ),
+          ),
+        ),
+      ],
+      ["kind", "horizontal", "notch", "groups"],
+    );
+  }
   if (event.kind === "legend") {
     const position =
       event.position.kind === "keyword"
@@ -14928,6 +15429,22 @@ function graphicsEventFromValue(value: RValue, invocation: BuiltinInvocation): R
       lineWidth,
     };
   }
+  if (kind.values[0] === "boxplot") {
+    const groupsValue = field("groups");
+    if (groupsValue?.type !== "list" || groupsValue.length === 0) {
+      throw new RTypeMismatchError("NRT3333", "A recorded boxplot group list is malformed.");
+    }
+    const groups = groupsValue.values.map(recordedBoxplotGroup);
+    invocation.context.allocate(
+      groups.reduce((length, group) => length + 10 + group.outliers.length, 0),
+    );
+    return {
+      kind: "boxplot",
+      horizontal: recordedPlotLogical(field("horizontal"), "horizontal"),
+      notch: recordedPlotLogical(field("notch"), "notch"),
+      groups,
+    };
+  }
   if (kind.values[0] === "legend") {
     const entriesValue = field("entries");
     if (entriesValue?.type !== "list" || entriesValue.length === 0) {
@@ -14991,6 +15508,47 @@ function graphicsEventFromValue(value: RValue, invocation: BuiltinInvocation): R
     ytop: recordedPlotNumber(field("ytop"), "ytop"),
     angle: recordedPlotNumber(field("angle"), "angle"),
     interpolate: recordedPlotLogical(field("interpolate"), "interpolate"),
+  };
+}
+
+function recordedBoxplotGroup(value: RValue): RGraphicsBoxplotGroup {
+  if (value.type !== "list") {
+    throw new RTypeMismatchError("NRT3333", "A recorded boxplot group is malformed.");
+  }
+  const names = vectorNames(value);
+  const field = (name: string): RValue | undefined => {
+    const index = names?.indexOf(name) ?? -1;
+    return index < 0 ? undefined : value.values[index];
+  };
+  const stats = recordedPlotNumbers(field("stats"), "stats");
+  const confidence = recordedPlotNumbers(field("conf"), "conf");
+  const outliers = recordedPlotNumbers(field("out"), "out");
+  const center = recordedPlotNumber(field("center"), "center");
+  const width = recordedPlotNumber(field("width"), "width");
+  const border = recordedLegendColour(field("border"), "border");
+  const fill = recordedLegendColour(field("fill"), "fill");
+  const lineType = recordedPlotCharacter(field("lty"), "lty");
+  const lineWidth = recordedPlotNumber(field("lwd"), "lwd");
+  if (
+    stats.length !== 5 ||
+    confidence.length !== 2 ||
+    !(width > 0) ||
+    (lineType !== "solid" && !/^(?:[1-9A-F]{2}){1,4}$/u.test(lineType)) ||
+    !(lineWidth > 0)
+  ) {
+    throw new RTypeMismatchError("NRT3333", "A recorded boxplot group style is malformed.");
+  }
+  return {
+    label: recordedPlotCharacter(field("label"), "label"),
+    center,
+    width,
+    stats: [stats[0] ?? 0, stats[1] ?? 0, stats[2] ?? 0, stats[3] ?? 0, stats[4] ?? 0],
+    confidence: [confidence[0] ?? 0, confidence[1] ?? 0],
+    outliers,
+    border,
+    fill,
+    lineType,
+    lineWidth,
   };
 }
 
@@ -15472,6 +16030,19 @@ function graphicsEventByteLength(event: RGraphicsEvent): number {
       event.edges.length * 8 +
       graphicsTextByteLength(event.color) +
       graphicsTextByteLength(event.lineType)
+    );
+  }
+  if (event.kind === "boxplot") {
+    return event.groups.reduce(
+      (bytes, group) =>
+        bytes +
+        192 +
+        group.outliers.length * 16 +
+        graphicsTextByteLength(group.label) +
+        graphicsTextByteLength(group.border) +
+        graphicsTextByteLength(group.fill) +
+        graphicsTextByteLength(group.lineType),
+      32,
     );
   }
   if (event.kind !== "legend") return 0;

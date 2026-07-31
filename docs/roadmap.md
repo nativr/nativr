@@ -341,6 +341,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
     plot-region graphics event with all documented `bty` edge shapes, resolved `col`/`fg`, line
     styles, positive widths, Worker/Canvas rendering, and same-session record/replay. Figure and
     margin regions remain separate layout work.
+96. Frequency-ranked grouped boxplots: `graphics::boxplot` runs zoo's measured vector/matrix example
+    through owned Tukey statistics and a bounded S3/default graphics path, including grouped
+    list/matrix inputs, missing/empty groups, whiskers/notches/outliers, widths/positions,
+    Worker/Canvas rendering, and same-session record/replay. Formula/data-frame methods, logarithmic
+    axes, arbitrary `pars`, complete annotation/axes, and device-identical layout remain separate
+    work.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

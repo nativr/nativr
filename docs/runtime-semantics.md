@@ -260,7 +260,14 @@ existing raster values unchanged. `rasterImage()` consumes those values plus sup
 matrix/array/native-raster inputs as row-major RGBA commands with recycled positions.
 `graphics::box()` resolves plot-region `bty` edge shapes, `col`/`fg` precedence, line type, and
 positive width into one bounded frame command. It returns invisible `NULL`; figure, inner, and outer
-regions are rejected until the owned device has a margin/layout model. `graphics::segments()`
+regions are rejected until the owned device has a margin/layout model. `graphics::boxplot()` is an
+S3 generic whose owned default accepts numeric vectors, lists of numeric groups, and numeric matrix
+columns. It omits missing observations, computes Tukey hinges, whiskers, notches, sample counts and
+outliers, and returns the six-field `stats`/`n`/`conf`/`out`/`group`/`names` result invisibly
+whether or not drawing is enabled. Drawing resolves positions, widths, fill/border colors, line
+types, and line widths into a bounded group event; horizontal/notched boxes, `outline`, `varwidth`,
+`at`, and `add` use the same owned device. Formula/data-frame methods, logarithmic axes, arbitrary
+`pars`, axis annotation, and device-identical layout remain unsupported. `graphics::segments()`
 consumes real/logical endpoint vectors, defaults an omitted `x1` or `y1` to its corresponding start
 coordinate, and recycles coordinates, colors, line types, and line widths without a recycling
 warning. Missing/non-finite coordinates and missing/transparent/invalid-width drawing entries are
@@ -269,19 +276,19 @@ and custom hexadecimal patterns are normalized before transport. `graphics::lege
 positional or named labels, keyword/coordinate placement, insets, line and point keys, palette/text
 colors, box/background, size, columns, horizontal layout, and title into a device-independent event.
 It returns an invisible `rect`/`text` geometry list; `plot = FALSE` returns geometry without
-emission. Raster bytes and bounded segment/box/legend payloads share `maxOutputBytes` with text and
-returned values. `dev.hold(level)` and `dev.flush(level)` maintain a session-local, nonnegative
-nested hold level for the active owned device. While held, page/window/raster/segments/box/legend
-commands remain in an ordered journal across evaluation boundaries; the flush that reaches zero
-emits all pending commands through the current result and callback. Pending graphics bytes are
-bounded by `maxOutputBytes`, pending command count is bounded by `maxVectorLength`, and
-reset/dispose clears them. Calls without an active device return zero. The runtime and base packages
-contain no DOM or Canvas dependency; the Worker transfers commands to the public API and the
-Playground owns the reference Canvas renderer.
+emission. Raster bytes and bounded segment/box/boxplot/legend payloads share `maxOutputBytes` with
+text and returned values. `dev.hold(level)` and `dev.flush(level)` maintain a session-local,
+nonnegative nested hold level for the active owned device. While held,
+page/window/raster/segments/box/boxplot/legend commands remain in an ordered journal across
+evaluation boundaries; the flush that reaches zero emits all pending commands through the current
+result and callback. Pending graphics bytes are bounded by `maxOutputBytes`, pending command count
+is bounded by `maxVectorLength`, and reset/dispose clears them. Calls without an active device
+return zero. The runtime and base packages contain no DOM or Canvas dependency; the Worker transfers
+commands to the public API and the Playground owns the reference Canvas renderer.
 
 The active owned device also records a bounded display list. `recordPlot(load, attach)` snapshots
-the current page/window/raster/segments/box/legend commands into an independently owned, classed
-`"recordedplot"` value and preserves the optional package metadata without loading packages.
+the current page/window/raster/segments/box/boxplot/legend commands into an independently owned,
+classed `"recordedplot"` value and preserves the optional package metadata without loading packages.
 `replayPlot(x, reloadPkgs = FALSE)` accepts only that NativR-owned format, replaces the active
 display list, and routes the recorded commands through the same immediate or held journal; it
 returns invisible `NULL`. Display-list command count is limited by `maxVectorLength`, raster bytes

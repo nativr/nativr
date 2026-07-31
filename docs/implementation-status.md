@@ -11,7 +11,7 @@ Date: 2026-07-30
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 466 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 467 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Vector/list selection and replacement, recursive `[[`, arbitrary-dimensional column-major array
@@ -59,10 +59,10 @@ Date: 2026-07-30
   matrix-row coordinates, validated `tsp`, and fractional frequencies. Data-frame coercion,
   irregular zoo indexes, replacement windows, interpolation, and the remaining adjacent time-series
   family remain incomplete.
-- Device-independent `new-page`, coordinate-window, RGBA-raster, styled line-segment, and resolved
-  legend graphics events with bounded `plot.new()`, `plot.window()`, `rasterImage()`, `segments()`,
-  and `legend()` builtins, transferable raster buffers, output budgeting, and Playground Canvas
-  rendering.
+- Device-independent `new-page`, coordinate-window, RGBA-raster, styled line-segment, resolved
+  plot-frame/boxplot, and legend graphics events with bounded `plot.new()`, `plot.window()`,
+  `rasterImage()`, `segments()`, `box()`, `boxplot()`, and `legend()` builtins, transferable raster
+  buffers, output budgeting, and Playground Canvas rendering.
 - Usage-ranked `grDevices::as.raster`/`is.raster` with ragg's captured-color-matrix shape, row-first
   raster storage, logical/numeric/raw grayscale, numeric/raw RGB(A), vector reshaping,
   names/dimnames removal, S3 methods, identity, missingness/scaling boundaries, and downstream
@@ -87,6 +87,12 @@ Date: 2026-07-30
   edge shapes, `col`/`fg` precedence, normalized line types, positive widths, invisible returns,
   Worker transport, Canvas pixels, output accounting, and same-session display-list replay. Figure
   and margin regions remain an explicit unsupported boundary.
+- Usage-ranked `graphics::boxplot` for zoo's measured grouped-series call, including numeric
+  vector/list/matrix inputs, Tukey hinges and whiskers, notch confidence limits, outliers, invisible
+  standard result shape, S3 forwarding, widths/positions/styles, Worker transport, Canvas pixels,
+  output accounting, and same-session display-list replay. Formula/data-frame methods, logarithmic
+  axes, arbitrary `pars`, complete annotation/axes, and device-identical layout remain explicit
+  boundaries.
 - Usage-ranked `comment()`/`comment<-` for zoo's measured metadata example, including query,
   replacement, `NULL`/empty removal, missing character comments, ordinary attribute preservation,
   `attr<-` validation, and explicit boundaries for values outside the current attributed-sequence

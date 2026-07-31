@@ -2857,6 +2857,228 @@ describe("complete inline source-to-result vertical slice", () => {
     await limited.dispose();
   });
 
+  it("computes and draws zoo's usage-ranked boxplots through S3 and Worker graphics seams", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+    });
+    await expect(
+      runtime.eval(`
+        fit <- graphics::boxplot(c(1, 2, 3, 4, 5, 100, NA), plot = FALSE)
+        c(fit$stats, fit$n, round(fit$conf, 12), fit$out, fit$group)
+      `),
+    ).resolves.toEqual([1, 2, 3.5, 5, 5, 6, 1.564903103201, 5.435096896799, 100, 1]);
+    await expect(
+      runtime.eval(`
+        fit <- boxplot(list(a = 1:5, b = c(2, 4, 6, 8, 100)), plot = FALSE)
+        c(dim(fit$stats), dim(fit$conf), fit$n, fit$stats, fit$out, fit$group, fit$names)
+      `),
+    ).resolves.toEqual([
+      "5",
+      "2",
+      "2",
+      "2",
+      "5",
+      "5",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "2",
+      "4",
+      "6",
+      "8",
+      "8",
+      "100",
+      "2",
+      "a",
+      "b",
+    ]);
+    await expect(
+      runtime.eval(`
+        empty <- boxplot(numeric(), plot = FALSE)
+        c(empty$n, is.na(empty$stats), is.na(empty$conf), length(empty$out), empty$names)
+      `),
+    ).resolves.toEqual(["0", "TRUE", "TRUE", "TRUE", "TRUE", "TRUE", "TRUE", "TRUE", "0", "1"]);
+
+    const matrixVisibility = await runtime.evalDetailed(`
+      visible <- withVisible(boxplot(
+        matrix(1:12, nrow = 4, dimnames = list(NULL, c("a", "b", "c"))),
+        plot = FALSE
+      ))
+      visible$visible
+    `);
+    expect(matrixVisibility.value).toBe(false);
+
+    await expect(
+      runtime.eval(`
+        boxplot.probe <- function(x, ..., marker = "ok") c(class(x), marker, list(...)$extra)
+        boxplot(structure(1:3, class = "probe"), marker = "custom", extra = 7)
+      `),
+    ).resolves.toEqual(["probe", "custom", "7"]);
+
+    const drawn = await runtime.evalDetailed(`
+      boxplot(
+        list(alpha = 1:5, beta = c(2, 4, 6, 8, 100)),
+        border = c("black", "red"),
+        col = c("lightgray", "blue")
+      )
+    `);
+    expect(drawn.visible).toBe(false);
+    expect(drawn.graphics.slice(0, 2)).toEqual([
+      { kind: "new-page" },
+      { kind: "window", xlim: [0.5, 2.5], ylim: [-2.96, 103.96] },
+    ]);
+    expect(drawn.graphics[2]).toEqual({
+      kind: "boxplot",
+      horizontal: false,
+      notch: false,
+      groups: [
+        {
+          label: "alpha",
+          center: 1,
+          width: 0.8,
+          stats: [1, 2, 3, 4, 5],
+          confidence: [1.5868050382201329, 4.413194961779867],
+          outliers: [],
+          border: "#000000FF",
+          fill: "#D3D3D3FF",
+          lineType: "solid",
+          lineWidth: 1,
+        },
+        {
+          label: "beta",
+          center: 2,
+          width: 0.8,
+          stats: [2, 4, 6, 8, 8],
+          confidence: [3.1736100764402657, 8.826389923559734],
+          outliers: [100],
+          border: "#FF0000FF",
+          fill: "#0000FFFF",
+          lineType: "solid",
+          lineWidth: 1,
+        },
+      ],
+    });
+
+    await runtime.eval("recorded <- recordPlot()\ndev.hold()");
+    const replayed = await runtime.evalDetailed("replayPlot(recorded)\ndev.flush()");
+    expect(replayed.graphics.at(-1)).toEqual(drawn.graphics[2]);
+    await expect(
+      runtime.eval(`
+        replayPlot(structure(
+          list(
+            list(list(
+              kind = "boxplot",
+              horizontal = FALSE,
+              notch = FALSE,
+              groups = list(list(
+                label = "x",
+                center = 1,
+                width = 0.8,
+                stats = 1:4,
+                conf = c(1, 2),
+                out = numeric(),
+                border = "#000000FF",
+                fill = "#D3D3D3FF",
+                lty = "solid",
+                lwd = 1
+              ))
+            )),
+            NULL
+          ),
+          class = "recordedplot"
+        ))
+      `),
+    ).rejects.toMatchObject({ code: "NRT3333" });
+
+    const controlled = await runtime.evalDetailed(`
+      boxplot(
+        list(a = 1:4, b = 1:9),
+        horizontal = TRUE,
+        notch = TRUE,
+        outline = FALSE,
+        varwidth = TRUE,
+        at = c(2, 5),
+        width = c(1, 2),
+        boxwex = 0.6,
+        border = c("red", "blue"),
+        col = NULL,
+        lty = c("dashed", "dotted"),
+        lwd = c(2, 3)
+      )
+    `);
+    expect(controlled.visible).toBe(false);
+    expect(controlled.warnings).toEqual([
+      {
+        code: "NRW1029",
+        message: "some notches went outside hinges ('box'): maybe set notch=FALSE",
+      },
+    ]);
+    expect(controlled.graphics[2]).toMatchObject({
+      kind: "boxplot",
+      horizontal: true,
+      notch: true,
+      groups: [
+        {
+          label: "a",
+          center: 2,
+          width: 0.19999999999999998,
+          outliers: [],
+          border: "#FF0000FF",
+          fill: "#FFFFFF00",
+          lineType: "44",
+          lineWidth: 2,
+        },
+        {
+          label: "b",
+          center: 5,
+          width: 0.6,
+          outliers: [],
+          border: "#0000FFFF",
+          fill: "#FFFFFF00",
+          lineType: "13",
+          lineWidth: 3,
+        },
+      ],
+    });
+    const added = await runtime.evalDetailed("boxplot(10:12, at = 4, add = TRUE, col = 'green')");
+    expect(added.graphics).toHaveLength(1);
+    expect(added.graphics[0]).toMatchObject({
+      kind: "boxplot",
+      groups: [{ center: 4, fill: "#00FF00FF" }],
+    });
+
+    await expect(runtime.eval("boxplot(1:3, range = -1, plot = FALSE)")).rejects.toMatchObject({
+      code: "NRT3345",
+    });
+    await expect(runtime.eval("boxplot(factor(c('a', 'b')), plot = FALSE)")).rejects.toMatchObject({
+      code: "NRT3345",
+    });
+    await expect(runtime.eval("boxplot(1:3, log = 'y')")).rejects.toMatchObject({
+      code: "NRU6162",
+    });
+    await expect(runtime.eval("boxplot(1:3, outpch = 4)")).rejects.toMatchObject({
+      code: "NRU6162",
+    });
+    await runtime.reset();
+    await expect(runtime.eval("boxplot(1:3, add = TRUE)")).rejects.toMatchObject({
+      code: "NRE2190",
+    });
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxOutputBytes: 300 },
+    });
+    await expect(limited.eval("boxplot(list(1:5, 6:10))")).rejects.toMatchObject({
+      code: "NRL4007",
+    });
+    await limited.dispose();
+  });
+
   it("emits browser-native raster graphics for usage-ranked package patterns", async () => {
     const observed: unknown[] = [];
     const runtime = await createR({
@@ -4899,7 +5121,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.178.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.179.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -4925,6 +5147,7 @@ describe("complete inline source-to-result vertical slice", () => {
       { name: "plot.window", compatibility: "shape" },
       { name: "axTicks", compatibility: "behavioral" },
       { name: "box", compatibility: "shape" },
+      { name: "boxplot", compatibility: "shape" },
       { name: "rasterImage", compatibility: "shape" },
       { name: "segments", compatibility: "shape" },
       { name: "legend", compatibility: "shape" },

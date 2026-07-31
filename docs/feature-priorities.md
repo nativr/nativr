@@ -764,8 +764,13 @@ explicit boundaries. Rank 449 `box` is now complete for zoo's measured plot-fram
 representing 731,390 downloads, one measured call, and 0.6% weighted reach. The owned plot-region
 path resolves all documented `bty` edge shapes, `col`/`fg`, line type, and positive width before a
 bounded event crosses the Worker boundary and reaches Canvas or same-session record/replay. Figure,
-inner, and outer regions require a future margin/layout model. Rank 450 `boxplot` is the next
-unresolved callable candidate.
+inner, and outer regions require a future margin/layout model. Rank 450 `boxplot` is now complete
+for zoo's measured grouped-series call, representing 731,390 downloads, one measured call, and 0.6%
+weighted reach. The owned S3/default path computes Tukey statistics for vector, list, and matrix
+groups and carries resolved boxes, whiskers, notches, and outliers through Worker/Canvas and
+same-session record/replay. Formula/data-frame methods, logarithmic axes, arbitrary `pars`, complete
+annotation/axes, and device-identical layout remain explicit boundaries. Rank 451 `deltat` is the
+next unresolved callable candidate.
 
 ## Completed implementation order
 

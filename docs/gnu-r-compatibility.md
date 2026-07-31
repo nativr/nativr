@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           466 |
-| Overlapping callable names        |           451 |
-| Missing GNU R callable names      |         2,071 |
-| Name overlap                      |      17.8826% |
+| NativR registered names           |           467 |
+| Overlapping callable names        |           452 |
+| Missing GNU R callable names      |         2,070 |
+| Name overlap                      |      17.9223% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -254,6 +254,15 @@ transparent/no-frame suppression, namespace access, unknown-parameter warnings, 
 Worker transfer, Canvas pixels, and same-session record/replay. Figure, inner, and outer regions
 await a browser margin/layout model; arbitrary graphical parameters and device-pixel identity are
 not claimed.
+
+The rank-450 increment adds GNU R differential evidence and browser-host evidence for zoo's measured
+`boxplot()` call. Numeric vectors, grouped lists, and matrix columns produce Tukey hinges, whiskers,
+notch confidence limits, outliers, counts, names, and group indices in the standard invisible result
+shape. S3 forwarding, missing/empty groups, range and width controls, orientation, notches,
+outlines, colors, line styles, `add`, output limits, Worker transfer, Canvas pixels, and owned
+record/replay have executable coverage. Formula/data-frame methods, logarithmic axes, arbitrary
+`pars`, complete annotation/axes, every legacy diagnostic, and device-identical layout remain
+incomplete.
 
 ## Completion evidence
 

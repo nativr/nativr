@@ -236,6 +236,7 @@ function renderGraphics(events: readonly PublicGraphicsEvent[]): void {
     if (event.kind === "raster") drawRaster(event);
     else if (event.kind === "segments") drawSegments(event);
     else if (event.kind === "box") drawBox(event);
+    else if (event.kind === "boxplot") drawBoxplot(event);
     else drawLegend(event);
   }
 }
@@ -396,6 +397,87 @@ function drawBox(event: Extract<PublicGraphicsEvent, { readonly kind: "box" }>):
     graphicsContext.moveTo(x0, y0);
     graphicsContext.lineTo(x1, y1);
     graphicsContext.stroke();
+  }
+  graphicsContext.restore();
+}
+
+function drawBoxplot(event: Extract<PublicGraphicsEvent, { readonly kind: "boxplot" }>): void {
+  if (graphicsContext === null) return;
+  const xScale = graphics.width / (graphicsWindow.xlim[1] - graphicsWindow.xlim[0]);
+  const yScale = graphics.height / (graphicsWindow.ylim[1] - graphicsWindow.ylim[0]);
+  const xPixel = (value: number): number => (value - graphicsWindow.xlim[0]) * xScale;
+  const yPixel = (value: number): number =>
+    graphics.height - (value - graphicsWindow.ylim[0]) * yScale;
+
+  graphicsContext.save();
+  graphicsContext.lineCap = "butt";
+  graphicsContext.lineJoin = "miter";
+  for (const group of event.groups) {
+    const [lowerWhisker, lowerHinge, median, upperHinge, upperWhisker] = group.stats;
+    const [lowerConfidence, upperConfidence] = group.confidence;
+    const halfWidth = group.width / 2;
+    const innerHalfWidth = halfWidth / 2;
+    const point = (category: number, value: number): readonly [number, number] =>
+      event.horizontal ? [xPixel(value), yPixel(category)] : [xPixel(category), yPixel(value)];
+    const body = event.notch
+      ? [
+          point(group.center - halfWidth, lowerHinge),
+          point(group.center - halfWidth, lowerConfidence),
+          point(group.center - innerHalfWidth, median),
+          point(group.center - halfWidth, upperConfidence),
+          point(group.center - halfWidth, upperHinge),
+          point(group.center + halfWidth, upperHinge),
+          point(group.center + halfWidth, upperConfidence),
+          point(group.center + innerHalfWidth, median),
+          point(group.center + halfWidth, lowerConfidence),
+          point(group.center + halfWidth, lowerHinge),
+        ]
+      : [
+          point(group.center - halfWidth, lowerHinge),
+          point(group.center - halfWidth, upperHinge),
+          point(group.center + halfWidth, upperHinge),
+          point(group.center + halfWidth, lowerHinge),
+        ];
+    graphicsContext.strokeStyle = group.border;
+    graphicsContext.fillStyle = group.fill;
+    graphicsContext.lineWidth = group.lineWidth;
+    graphicsContext.setLineDash(legendLineDashes(group.lineType, group.lineWidth));
+    graphicsContext.beginPath();
+    const first = body[0];
+    if (first === undefined) continue;
+    graphicsContext.moveTo(first[0], first[1]);
+    for (const coordinate of body.slice(1)) graphicsContext.lineTo(coordinate[0], coordinate[1]);
+    graphicsContext.closePath();
+    graphicsContext.fill();
+    graphicsContext.stroke();
+
+    const line = (start: readonly [number, number], end: readonly [number, number]): void => {
+      graphicsContext?.beginPath();
+      graphicsContext?.moveTo(start[0], start[1]);
+      graphicsContext?.lineTo(end[0], end[1]);
+      graphicsContext?.stroke();
+    };
+    line(point(group.center, lowerWhisker), point(group.center, lowerHinge));
+    line(point(group.center, upperHinge), point(group.center, upperWhisker));
+    line(
+      point(group.center - innerHalfWidth, lowerWhisker),
+      point(group.center + innerHalfWidth, lowerWhisker),
+    );
+    line(
+      point(group.center - innerHalfWidth, upperWhisker),
+      point(group.center + innerHalfWidth, upperWhisker),
+    );
+    line(
+      point(group.center - (event.notch ? innerHalfWidth : halfWidth), median),
+      point(group.center + (event.notch ? innerHalfWidth : halfWidth), median),
+    );
+    graphicsContext.setLineDash([]);
+    for (const outlier of group.outliers) {
+      const [x, y] = point(group.center, outlier);
+      graphicsContext.beginPath();
+      graphicsContext.arc(x, y, Math.max(2.5, group.lineWidth * 1.5), 0, Math.PI * 2);
+      graphicsContext.stroke();
+    }
   }
   graphicsContext.restore();
 }
