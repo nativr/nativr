@@ -338,6 +338,15 @@ export type RGraphicsEvent =
       readonly segments: readonly RGraphicsSegment[];
     }
   | {
+      readonly kind: "box";
+      readonly edges: readonly ("top" | "right" | "bottom" | "left")[];
+      /** CSS-compatible #RRGGBBAA color resolved before crossing the host boundary. */
+      readonly color: string;
+      /** A normalized R line-type pattern: solid or an even-length hexadecimal dash sequence. */
+      readonly lineType: string;
+      readonly lineWidth: number;
+    }
+  | {
       readonly kind: "legend";
       readonly position: RGraphicsLegendPosition;
       readonly entries: readonly RGraphicsLegendEntry[];

@@ -11,7 +11,7 @@ Date: 2026-07-30
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 465 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 466 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Vector/list selection and replacement, recursive `[[`, arbitrary-dimensional column-major array
@@ -83,6 +83,10 @@ Date: 2026-07-30
   state-derived horizontal/vertical pretty ticks, explicit `axp`, forward/reversed axes, coercible
   sides, lazy linear-only arguments, namespace access, and allocation limits. Logarithmic ticks
   remain an explicit unsupported boundary.
+- Usage-ranked `graphics::box` for zoo's measured plot-frame redraw, including all plot-region `bty`
+  edge shapes, `col`/`fg` precedence, normalized line types, positive widths, invisible returns,
+  Worker transport, Canvas pixels, output accounting, and same-session display-list replay. Figure
+  and margin regions remain an explicit unsupported boundary.
 - Usage-ranked `comment()`/`comment<-` for zoo's measured metadata example, including query,
   replacement, `NULL`/empty removal, missing character comments, ordinary attribute preservation,
   `attr<-` validation, and explicit boundaries for values outside the current attributed-sequence

@@ -295,6 +295,26 @@ test("runs the required Worker examples without evaluation network traffic", asy
 
   await page.locator("#source").fill(`
     plot.new()
+    plot.window(c(0, 1), c(0, 1))
+    box(bty = "c", col = "red", lwd = 6)
+  `);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("null");
+  await expect(page.locator("#graphics-count")).toHaveText("3");
+  const boxPixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
+    const context = canvas.getContext("2d");
+    if (context === null) return [];
+    return [
+      ...context.getImageData(2, 200, 1, 1).data,
+      ...context.getImageData(320, 2, 1, 1).data,
+      ...context.getImageData(320, 397, 1, 1).data,
+      ...context.getImageData(637, 200, 1, 1).data,
+    ];
+  });
+  expect(boxPixels).toEqual([255, 0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255, 255, 255, 255, 255]);
+
+  await page.locator("#source").fill(`
+    plot.new()
     plot.window(c(0, 10), c(0, 10))
     visible <- withVisible(legend(
       "topleft",

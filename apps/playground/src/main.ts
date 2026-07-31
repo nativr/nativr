@@ -235,6 +235,7 @@ function renderGraphics(events: readonly PublicGraphicsEvent[]): void {
     }
     if (event.kind === "raster") drawRaster(event);
     else if (event.kind === "segments") drawSegments(event);
+    else if (event.kind === "box") drawBox(event);
     else drawLegend(event);
   }
 }
@@ -359,6 +360,41 @@ function drawSegments(event: Extract<PublicGraphicsEvent, { readonly kind: "segm
       (segment.x1 - graphicsWindow.xlim[0]) * xScale,
       graphics.height - (segment.y1 - graphicsWindow.ylim[0]) * yScale,
     );
+    graphicsContext.stroke();
+  }
+  graphicsContext.restore();
+}
+
+function drawBox(event: Extract<PublicGraphicsEvent, { readonly kind: "box" }>): void {
+  if (graphicsContext === null) return;
+  const inset = event.lineWidth / 2;
+  const left = inset;
+  const right = graphics.width - inset;
+  const top = inset;
+  const bottom = graphics.height - inset;
+  const endpoints = {
+    top: [left, top, right, top],
+    right: [right, top, right, bottom],
+    bottom: [right, bottom, left, bottom],
+    left: [left, bottom, left, top],
+  } as const;
+  const dashScale = Math.max(1, event.lineWidth);
+  const dashes =
+    event.lineType === "solid"
+      ? []
+      : [...event.lineType].map((digit) => Number.parseInt(digit, 16) * dashScale);
+
+  graphicsContext.save();
+  graphicsContext.strokeStyle = event.color;
+  graphicsContext.lineWidth = event.lineWidth;
+  graphicsContext.lineCap = "butt";
+  graphicsContext.lineJoin = "miter";
+  graphicsContext.setLineDash(dashes);
+  for (const edge of event.edges) {
+    const [x0, y0, x1, y1] = endpoints[edge];
+    graphicsContext.beginPath();
+    graphicsContext.moveTo(x0, y0);
+    graphicsContext.lineTo(x1, y1);
     graphicsContext.stroke();
   }
   graphicsContext.restore();

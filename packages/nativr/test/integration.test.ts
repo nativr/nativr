@@ -2757,6 +2757,106 @@ describe("complete inline source-to-result vertical slice", () => {
     await limited.dispose();
   });
 
+  it("draws zoo's usage-ranked plot boxes through the graphics journal", async () => {
+    const observed: unknown[] = [];
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      onGraphics: (event) => observed.push(event),
+    });
+    const styled = await runtime.evalDetailed(`
+      plot.new()
+      plot.window(c(0, 10), c(0, 5))
+      visible <- withVisible(graphics::box(
+        wh = "p",
+        lty = "dashed",
+        bty = "c",
+        col = NA,
+        fg = "red",
+        lwd = 2,
+        xpd = NA
+      ))
+      c(is.null(visible$value), visible$visible)
+    `);
+    expect(styled.value).toEqual([true, false]);
+    expect(styled.visible).toBe(true);
+    expect(styled.graphics).toEqual([
+      { kind: "new-page" },
+      { kind: "window", xlim: [0, 10], ylim: [0, 5] },
+      {
+        kind: "box",
+        edges: ["top", "bottom", "left"],
+        color: "#FF0000FF",
+        lineType: "44",
+        lineWidth: 2,
+      },
+    ]);
+    expect(observed).toEqual(styled.graphics);
+
+    const defaults = await runtime.evalDetailed(
+      "box(which = c('plot', 'figure'), lty = NULL, lwd = NULL)",
+    );
+    expect(defaults.graphics).toEqual([
+      {
+        kind: "box",
+        edges: ["top", "right", "bottom", "left"],
+        color: "#000000FF",
+        lineType: "solid",
+        lineWidth: 1,
+      },
+    ]);
+    await expect(runtime.eval("box(bty = 'n')")).resolves.toBeNull();
+    await expect(runtime.eval("box(col = 'transparent')")).resolves.toBeNull();
+
+    const warning = await runtime.evalDetailed("box(wat = 1)");
+    expect(warning.warnings).toEqual([
+      { code: "NRW1028", message: '"wat" is not a graphical parameter' },
+    ]);
+    expect(warning.graphics).toHaveLength(1);
+
+    await runtime.eval("recorded <- recordPlot()\ndev.hold()");
+    const replayed = await runtime.evalDetailed("replayPlot(recorded)\ndev.flush()");
+    expect(replayed.graphics.at(-1)).toEqual(warning.graphics[0]);
+    await expect(
+      runtime.eval(`
+        replayPlot(structure(
+          list(
+            list(list(
+              kind = "box",
+              edges = c("top", "top"),
+              col = "#FF0000FF",
+              lty = "solid",
+              lwd = 1
+            )),
+            NULL
+          ),
+          class = "recordedplot"
+        ))
+      `),
+    ).rejects.toMatchObject({ code: "NRT3333" });
+
+    await expect(runtime.eval("box(which = 'figure')")).rejects.toMatchObject({ code: "NRU6161" });
+    await expect(runtime.eval("box(which = NA_character_)")).rejects.toMatchObject({
+      code: "NRT3344",
+    });
+    await expect(runtime.eval("box(bty = 'x')")).rejects.toMatchObject({ code: "NRT3344" });
+    await expect(runtime.eval("box(lty = c(1, 2))")).rejects.toMatchObject({ code: "NRT3344" });
+    await expect(runtime.eval("box(lwd = 0)")).rejects.toMatchObject({ code: "NRT3344" });
+    await runtime.reset();
+    await expect(runtime.eval("box()")).rejects.toMatchObject({ code: "NRE2190" });
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxOutputBytes: 90 },
+    });
+    await expect(limited.eval("plot.new()\nbox(col = 'red')")).rejects.toMatchObject({
+      code: "NRL4007",
+    });
+    await limited.dispose();
+  });
+
   it("emits browser-native raster graphics for usage-ranked package patterns", async () => {
     const observed: unknown[] = [];
     const runtime = await createR({
@@ -4799,7 +4899,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.177.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.178.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -4824,6 +4924,7 @@ describe("complete inline source-to-result vertical slice", () => {
       { name: "plot.new", compatibility: "behavioral" },
       { name: "plot.window", compatibility: "shape" },
       { name: "axTicks", compatibility: "behavioral" },
+      { name: "box", compatibility: "shape" },
       { name: "rasterImage", compatibility: "shape" },
       { name: "segments", compatibility: "shape" },
       { name: "legend", compatibility: "shape" },
