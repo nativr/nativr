@@ -6550,5 +6550,19 @@
     "expectedWarning": true,
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "legend-zoo-return-shape-and-visibility",
+    "code": "plot.new()\nplot.window(c(0, 10), c(0, 10))\nvisible <- withVisible(graphics::legend(\"bottomleft\", legend = c(\"alpha\", \"beta\"), lty = 1, pch = 1:2, col = 1:2, text.col = c(\"blue\", \"red\"), inset = 0.05, title = \"Groups\"))\nc(names(visible$value), names(visible$value$rect), names(visible$value$text), visible$visible)",
+    "expected": ["rect", "text", "w", "h", "left", "top", "x", "y", "FALSE"],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "legend-zoo-observed-call-shapes",
+    "code": "plot.new()\nplot.window(c(0, 10), c(0, 10))\nsites <- c(\"site 1\", \"site 2\", \"site 3\")\nfirst <- withVisible(legend(\"bottomleft\", legend = sites, lty = 1, pch = 1:3, col = 1:3))\nsecond <- withVisible(legend(\"bottomright\", sites, lty = 1, col = 1:2))\nthird <- withVisible(legend(x = \"topleft\", bty = \"n\", lty = c(1, 1), col = c(\"black\", \"blue\"), legend = paste(sites[1:2], c(\"(left scale)\", \"(right scale)\"))))\ncoordinate <- withVisible(legend(8, 9, c(\"x\", \"y\"), pch = c(\"x\", \"y\"), horiz = TRUE, plot = FALSE))\nc(first$visible, second$visible, third$visible, coordinate$visible, names(coordinate$value))",
+    "expected": ["FALSE", "FALSE", "FALSE", "FALSE", "rect", "text"],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

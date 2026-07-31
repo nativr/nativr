@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           459 |
-| Overlapping callable names        |           444 |
-| Missing GNU R callable names      |         2,078 |
-| Name overlap                      |      17.6051% |
+| NativR registered names           |           460 |
+| Overlapping callable names        |           445 |
+| Missing GNU R callable names      |         2,077 |
+| Name overlap                      |      17.6447% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -212,6 +212,14 @@ downsampling, extension padding, clamping warnings, and package-method forwardin
 tested with an independently declared `window.zoo` equivalent, not zoo implementation code.
 Irregular indexes, zoo constructors/methods, replacement windows, data-frame coercion, and arbitrary
 resampling remain incomplete and depend in part on the planned package loader.
+
+The rank-444 increment adds GNU R differential evidence for all three `graphics::legend` call shapes
+measured in zoo's documentation. The browser-owned subset covers positional or named labels,
+keyword/coordinate placement, line and point keys, palette or named colors, text colors, boxes,
+backgrounds, titles, columns, horizontal layout, inset, `plot = FALSE`, invisible geometry results,
+Worker transport, Canvas rendering, output limits, and same-session record/replay. It does not claim
+GNU R's complete text metrics, margins/clipping, expression labels, fill/density keys, arbitrary
+graphical `...`, device-specific placement, or zoo package loading.
 
 ## Completion evidence
 

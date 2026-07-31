@@ -285,6 +285,34 @@ export interface RGraphicsSegment {
   readonly lineWidth: number;
 }
 
+/** One resolved legend row sent to a browser graphics host. */
+export interface RGraphicsLegendEntry {
+  readonly label: string;
+  readonly textColor: string;
+  readonly color: string;
+  readonly lineType?: string;
+  readonly lineWidth?: number;
+  readonly pointSymbol?: string;
+}
+
+/** A device-independent legend anchor. */
+export type RGraphicsLegendPosition =
+  | {
+      readonly kind: "keyword";
+      readonly value:
+        | "bottomright"
+        | "bottom"
+        | "bottomleft"
+        | "left"
+        | "topleft"
+        | "top"
+        | "topright"
+        | "right"
+        | "center";
+      readonly inset: readonly [number, number];
+    }
+  | { readonly kind: "coordinates"; readonly x: number; readonly y: number };
+
 /** Device-independent graphics commands collected for a browser host. */
 export type RGraphicsEvent =
   | { readonly kind: "new-page" }
@@ -308,6 +336,16 @@ export type RGraphicsEvent =
   | {
       readonly kind: "segments";
       readonly segments: readonly RGraphicsSegment[];
+    }
+  | {
+      readonly kind: "legend";
+      readonly position: RGraphicsLegendPosition;
+      readonly entries: readonly RGraphicsLegendEntry[];
+      readonly box: boolean;
+      readonly background: string;
+      readonly columns: number;
+      readonly cex: number;
+      readonly title?: string;
     };
 
 /** Context exposed to deterministic computational operators. */

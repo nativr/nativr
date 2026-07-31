@@ -69,7 +69,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 459 registered functions, including resettable
+an initial condition/handler slice. It exposes 460 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
 preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
@@ -298,7 +298,11 @@ sampler before `set.seed`; pre-R-1.7 generator families remain explicit boundari
 add the regular time-series foundation: `ts()` constructs vector or matrix series, `as.ts()` and
 `frequency()` expose their sampling metadata, and `window()` slices, downsamples, or explicitly
 extends them. These generics also forward to independently supplied methods such as `window.zoo`;
-NativR does not claim that zoo itself is bundled or loadable yet. See the
+NativR does not claim that zoo itself is bundled or loadable yet. Rank 444 `graphics::legend` now
+runs zoo's three measured line/point legend shapes through a bounded Worker graphics event and the
+Playground Canvas renderer, including keyword/coordinate placement, colors, columns, titles,
+invisible geometry results, and same-session record/replay. General base graphics, arbitrary
+graphical parameters, and device-identical layout remain explicit boundaries. See the
 [compatibility contract](https://github.com/nativr/nativr/blob/main/docs/compatibility-contract.md)
 for exact boundaries.
 

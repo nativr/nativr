@@ -293,6 +293,51 @@ test("runs the required Worker examples without evaluation network traffic", asy
   });
   expect(segmentPixels).toEqual([255, 0, 0, 255, 0, 0, 255, 255, 0, 255, 0, 255]);
 
+  await page.locator("#source").fill(`
+    plot.new()
+    plot.window(c(0, 10), c(0, 10))
+    visible <- withVisible(legend(
+      "topleft",
+      c("alpha", "beta"),
+      lty = 1,
+      lwd = 4,
+      pch = 1:2,
+      col = c("red", "blue")
+    ))
+    c(names(visible$value), visible$visible)
+  `);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText('["rect", "text", "FALSE"]');
+  await expect(page.locator("#graphics-count")).toHaveText("3");
+  const legendPixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
+    const context = canvas.getContext("2d");
+    if (context === null) return { red: 0, blue: 0 };
+    const pixels = context.getImageData(0, 0, 120, 100).data;
+    let red = 0;
+    let blue = 0;
+    for (let index = 0; index < pixels.length; index += 4) {
+      if (
+        pixels[index] === 255 &&
+        pixels[index + 1] === 0 &&
+        pixels[index + 2] === 0 &&
+        pixels[index + 3] === 255
+      ) {
+        red += 1;
+      }
+      if (
+        pixels[index] === 0 &&
+        pixels[index + 1] === 0 &&
+        pixels[index + 2] === 255 &&
+        pixels[index + 3] === 255
+      ) {
+        blue += 1;
+      }
+    }
+    return { red, blue };
+  });
+  expect(legendPixels.red).toBeGreaterThan(0);
+  expect(legendPixels.blue).toBeGreaterThan(0);
+
   await page
     .locator("#source")
     .fill(

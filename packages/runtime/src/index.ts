@@ -86,6 +86,8 @@ export type {
   RExpression,
   RFormula,
   RGraphicsEvent,
+  RGraphicsLegendEntry,
+  RGraphicsLegendPosition,
   RGraphicsSegment,
   RIntegerVector,
   RList,

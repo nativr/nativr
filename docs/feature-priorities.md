@@ -733,7 +733,13 @@ reach. GNU R differential evidence covers vector/matrix construction, calendar c
 recycling, coercion, frequency lookup, regular windows, integral downsampling, extension with typed
 missing values, warnings, namespace access, and independently registered package methods. Zoo's own
 irregular index constructors and methods remain package-owned and are not claimed until the pure-R
-package loader can provide them. Rank 444 `legend` is the next unresolved callable candidate.
+package loader can provide them. Rank 444 `legend` is now complete for zoo's 731,390 downloads,
+three measured calls, and 0.6% weighted reach. The browser-owned subset covers the observed
+bottom-left, bottom-right, and top-left line/point keys plus coordinate placement, recycled
+colors/styles, boxes, columns, titles, invisible geometry results, Worker transport, Canvas pixels,
+and display-list replay. General graphical `...`, fill/density legends, expression labels, exact
+device text metrics, and the complete base-graphics stack remain explicit boundaries. Rank 445
+`comment` is the next unresolved callable candidate.
 
 ## Completed implementation order
 

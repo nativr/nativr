@@ -133,6 +133,38 @@ export type PublicGraphicsEvent =
         readonly lineType: string;
         readonly lineWidth: number;
       }[];
+    }
+  | {
+      readonly kind: "legend";
+      readonly position:
+        | {
+            readonly kind: "keyword";
+            readonly value:
+              | "bottomright"
+              | "bottom"
+              | "bottomleft"
+              | "left"
+              | "topleft"
+              | "top"
+              | "topright"
+              | "right"
+              | "center";
+            readonly inset: readonly [number, number];
+          }
+        | { readonly kind: "coordinates"; readonly x: number; readonly y: number };
+      readonly entries: readonly {
+        readonly label: string;
+        readonly textColor: string;
+        readonly color: string;
+        readonly lineType?: string;
+        readonly lineWidth?: number;
+        readonly pointSymbol?: string;
+      }[];
+      readonly box: boolean;
+      readonly background: string;
+      readonly columns: number;
+      readonly cex: number;
+      readonly title?: string;
     };
 
 /** Source positions are wire-only plain records. */

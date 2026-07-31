@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.172.0",
+  "languageSubsetVersion": "0.173.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -499,6 +499,7 @@
         { "name": "plot.window", "compatibility": "shape" },
         { "name": "rasterImage", "compatibility": "shape" },
         { "name": "segments", "compatibility": "shape" },
+        { "name": "legend", "compatibility": "shape" },
         { "name": "pairs", "compatibility": "shape" }
       ]
     },

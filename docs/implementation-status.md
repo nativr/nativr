@@ -11,7 +11,7 @@ Date: 2026-07-30
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 459 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 460 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Vector/list selection and replacement, recursive `[[`, arbitrary-dimensional column-major array
@@ -58,9 +58,10 @@ Date: 2026-07-30
   out-of-range warnings, and package-owned S3 method forwarding. Data-frame coercion, irregular zoo
   indexes, replacement windows, interpolation, and the full adjacent time-series family remain
   incomplete.
-- Device-independent `new-page`, coordinate-window, RGBA-raster, and styled line-segment graphics
-  events with bounded `plot.new()`, `plot.window()`, `rasterImage()`, and `segments()` builtins,
-  transferable raster buffers, output budgeting, and Playground Canvas rendering.
+- Device-independent `new-page`, coordinate-window, RGBA-raster, styled line-segment, and resolved
+  legend graphics events with bounded `plot.new()`, `plot.window()`, `rasterImage()`, `segments()`,
+  and `legend()` builtins, transferable raster buffers, output budgeting, and Playground Canvas
+  rendering.
 - Usage-ranked `grDevices::as.raster`/`is.raster` with ragg's captured-color-matrix shape, row-first
   raster storage, logical/numeric/raw grayscale, numeric/raw RGB(A), vector reshaping,
   names/dimnames removal, S3 methods, identity, missingness/scaling boundaries, and downstream
@@ -74,6 +75,9 @@ Date: 2026-07-30
 - Usage-ranked `graphics::segments` for posterior's measured vertical interval call, including
   omitted-endpoint defaults, vector recycling, resolved colors and line patterns, omitted
   missing/non-finite entries, Worker transport, Canvas pixels, and same-session display-list replay.
+- Usage-ranked `graphics::legend` for zoo's three measured call shapes, including keyword and
+  coordinate placement, recycled line/point/color controls, columns, titles, optional boxes,
+  invisible geometry results, Worker transport, Canvas pixels, and same-session display-list replay.
 - Frequency-prioritized `head()` selection for core owned data shapes and bounded `str()` structural
   output with invisible return semantics.
 - Strict recursive `identical()` comparison with numeric, missing-value, attribute-order,
@@ -402,11 +406,11 @@ Date: 2026-07-30
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 9 files and 307 tests.
+- Vitest currently passes 9 files and 312 tests.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 603/603 cases. The optional black-box R oracle passes all 575
-  eligible cases and explicitly skips 28 NativR-owned
+- Checked-in conformance passes 618/618 cases. The optional black-box R oracle passes all 588
+  eligible cases and explicitly skips 30 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the expanded matrix, weighted
   sampling, S3, and R6 paths with no evaluation-time network requests.

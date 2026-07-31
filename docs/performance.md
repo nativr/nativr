@@ -318,3 +318,7 @@ the ceiling. The complete production Worker measures 284.0 KiB gzip against the 
 Language subset 0.172 adds ranks 439-443's regular time-series constructor, coercion, frequency,
 window selection, integral downsampling, extension padding, and S3 seams without raising the
 ceiling. The complete production Worker measures 285.7 KiB gzip against the 308 KiB limit.
+
+Language subset 0.173 adds rank 444's `graphics::legend()` event, resolved line/point keys, geometry
+result, strict display-list codec, and browser Canvas renderer without raising the Worker ceiling.
+The complete production Worker measures 287.9 KiB gzip against the 308 KiB limit.
