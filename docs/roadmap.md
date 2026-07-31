@@ -426,6 +426,11 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      omission, logarithmic axes, point/line series, namespace access, Worker/Canvas rendering,
      recording/replay, and resource bounds. Full axes/annotations, class-specific plot/line methods,
      `add = TRUE`, step/histogram types, and device-identical layout remain separate graphics work.
+111. Frequency-ranked array permutation: `base::aperm` and `aperm.default` run bit64's measured axis
+     swap with numeric/character permutations, reverse defaults, resized or fixed dimensions,
+     permuted dimnames, owned atomic/list storage, lazy S3 dots, inherited dispatch, `NextMethod`,
+     namespace access, and resource bounds. Table methods, malformed low-level attributes, exact
+     diagnostics, and long-vector storage remain separate compatibility work.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.193.0",
+  "languageSubsetVersion": "0.194.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -327,6 +327,8 @@
         { "name": "ncol", "compatibility": "behavioral" },
         { "name": "as.matrix", "compatibility": "shape" },
         { "name": "t", "compatibility": "behavioral" },
+        { "name": "aperm", "compatibility": "behavioral" },
+        { "name": "aperm.default", "compatibility": "behavioral" },
         { "name": "rbind", "compatibility": "behavioral" },
         { "name": "cbind", "compatibility": "behavioral" },
         { "name": "diag", "compatibility": "behavioral" },

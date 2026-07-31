@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 484,
-    "overlappingNames": 469,
-    "missingReferenceNames": 2053,
+    "nativrRegisteredNames": 486,
+    "overlappingNames": 471,
+    "missingReferenceNames": 2051,
     "nativrExtensionNames": 15,
-    "nameCoverage": 0.185964
+    "nameCoverage": 0.186757
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 348, "nameCoverage": 0.254572 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 350, "nameCoverage": 0.256035 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 70, "nameCoverage": 0.150862 },
     { "package": "methods", "callableNames": 209, "overlappingNames": 9, "nameCoverage": 0.043062 },
     { "package": "utils", "callableNames": 262, "overlappingNames": 11, "nameCoverage": 0.041985 },
@@ -85,6 +85,8 @@
     "anyDuplicated.data.frame",
     "anyDuplicated.default",
     "aov",
+    "aperm",
+    "aperm.default",
     "append",
     "apply",
     "approx",
@@ -867,8 +869,6 @@
     "anyNA.POSIXlt",
     "anyNA.data.frame",
     "anyNA.numeric_version",
-    "aperm",
-    "aperm.default",
     "aperm.table",
     "approxfun",
     "apropos",

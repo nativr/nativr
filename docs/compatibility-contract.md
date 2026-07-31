@@ -328,6 +328,19 @@ axes/annotation rendering, class-specific `plot`/`lines` methods, `add = TRUE`, 
 step/histogram series, arbitrary graphical parameters, date/time axes, and device-identical layout
 are not claimed.
 
+`base::aperm` and `aperm.default` have behavioral differential evidence for bit64's measured
+`aperm(A, 2:1)` array-method requirement. The generic forces only its dispatch object and supports
+lazy method arguments, inherited class lookup, and `NextMethod` before the independently authored
+default; arguments are rematched at each method, including positional matching into `resize`. The
+default accepts owned atomic and list arrays, reverses axes for omitted/`NULL`/empty `perm`,
+truncates numeric axes to integers, resolves character axes against named dimensions, and reorders
+storage in column-major order. With `resize = TRUE`, dimensions and dimension names follow the
+permutation; `resize = FALSE` retains the original dimensions and removes dimension names. Output
+drops unrelated source attributes as the documented default does. Direct/namespace access, zero
+extents, lazy unused dots, invalid permutations, coercible resize flags, and allocation/step limits
+have coverage. `aperm.table`, malformed attributes created below the public constructors, exact
+legacy diagnostics, and long vectors are not claimed.
+
 `graphics::polygon` has differential evidence for zoo's measured filled-area panel helper. Its
 default accepts paired real coordinates, one-/two-column data frames, two-column matrices, complex
 coordinates, and named `list(x, y)` inputs; separate x/y vectors must have equal lengths. Missing or

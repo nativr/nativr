@@ -407,3 +407,8 @@ embedded; the built-in stored-call default remains explicit future work. The mea
 Language subset 0.193 adds rank 465's `graphics::matplot()` matrix-series adapter, log-coordinate
 resolution, and style/column cycling while reusing existing page, window, box, segment, and point
 events. The measured Worker size is 304.0 KiB gzip against the unchanged 308 KiB limit.
+
+Language subset 0.194 adds rank 470's `base::aperm()`/`aperm.default()` array-axis permutation and
+S3 extension seam. The column-major reorder reuses owned vector subsetting and dimension metadata
+without another execution backend. The measured Worker size is 304.7 KiB gzip against the unchanged
+308 KiB limit.

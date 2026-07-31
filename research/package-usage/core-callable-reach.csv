@@ -468,7 +468,7 @@ rank,callable,nativr_registered,packages,occurrences,package_reach_percent,downl
 467,is.double,true,1,2,1.0,0.6
 468,rank,true,1,2,1.0,0.6
 469,var,true,1,2,1.0,0.6
-470,aperm,false,1,1,1.0,0.6
+470,aperm,true,1,1,1.0,0.6
 471,dget,false,1,1,1.0,0.6
 472,hashtab,false,1,1,1.0,0.6
 473,is.element,false,1,1,1.0,0.6

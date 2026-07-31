@@ -1020,6 +1020,13 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("ncol", ["x"], "behavioral", (invocation) => builtinDimension(invocation, 1)),
   defineBuiltin("as.matrix", ["x"], "shape", builtinAsMatrix),
   defineBuiltin("t", ["x"], "behavioral", builtinTranspose),
+  defineBuiltin("aperm", ["a", "perm", "..."], "behavioral", builtinArrayPermutation),
+  defineBuiltin(
+    "aperm.default",
+    ["a", "perm", "resize", "..."],
+    "behavioral",
+    builtinArrayPermutationDefault,
+  ),
   defineBuiltin("rbind", ["..."], "behavioral", (invocation) => builtinBind(invocation, "row")),
   defineBuiltin("cbind", ["..."], "behavioral", (invocation) => builtinBind(invocation, "column")),
   defineBuiltin("diag", ["x", "nrow", "ncol", "names"], "behavioral", builtinDiag),
@@ -19234,6 +19241,193 @@ async function builtinTranspose(invocation: BuiltinInvocation): Promise<RValue> 
   return names === undefined
     ? output
     : withAttribute(output, "dimnames", listValue([R_NULL, characterVector(names)]));
+}
+
+async function builtinArrayPermutation(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched } = matchBuiltinArguments(invocation, ["a", "perm", "..."]);
+  const inputArgument = matched.get("a");
+  if (inputArgument === undefined || inputArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'a' is missing in aperm().");
+  }
+  const input = await invocation.force(inputArgument.promise);
+  const dispatchArguments = [
+    inputArgument,
+    ...invocation.arguments.filter((argument) => argument !== inputArgument),
+  ];
+  const dispatched = await invocation.dispatchS3IfPresent("aperm", input, dispatchArguments);
+  if (dispatched !== undefined) return dispatched;
+  return arrayPermutationDefault(invocation, input);
+}
+
+async function builtinArrayPermutationDefault(invocation: BuiltinInvocation): Promise<RValue> {
+  return arrayPermutationDefault(invocation);
+}
+
+async function arrayPermutationDefault(
+  invocation: BuiltinInvocation,
+  suppliedInput?: RValue,
+): Promise<RValue> {
+  const { matched } = matchBuiltinArguments(invocation, ["a", "perm", "resize", "..."]);
+  let input = suppliedInput;
+  if (input === undefined) {
+    const inputArgument = matched.get("a");
+    if (inputArgument === undefined || inputArgument.promise.missing) {
+      throw new REvaluationError("NRE2103", "Argument 'a' is missing in aperm.default().");
+    }
+    input = await invocation.force(inputArgument.promise);
+  }
+  if (!isVector(input)) {
+    throw new RTypeMismatchError("NRT3351", "aperm() first argument must be an array.");
+  }
+  const dimensions = vectorDimensions(input);
+  if (dimensions === undefined) {
+    throw new RTypeMismatchError("NRT3351", "aperm() first argument must be an array.");
+  }
+
+  const permutationArgument = matched.get("perm");
+  const permutationValue =
+    permutationArgument === undefined || permutationArgument.promise.missing
+      ? undefined
+      : await invocation.force(permutationArgument.promise);
+  const permutation = arrayPermutationAxes(input, dimensions, permutationValue, invocation);
+  const resizeArgument = matched.get("resize");
+  const resize =
+    resizeArgument === undefined || resizeArgument.promise.missing
+      ? true
+      : arrayPermutationResize(await invocation.force(resizeArgument.promise));
+  const permutedDimensions = permutation.map((axis) => dimensions[axis] ?? 0);
+  const oldStrides: number[] = [];
+  let stride = 1;
+  for (const dimension of dimensions) {
+    oldStrides.push(stride);
+    stride *= dimension;
+  }
+
+  const indices = Array.from({ length: input.length }, (_, outputIndex) => {
+    invocation.context.checkpoint();
+    let remaining = outputIndex;
+    let inputIndex = 0;
+    for (let axis = 0; axis < permutation.length; axis += 1) {
+      invocation.context.checkpoint();
+      const dimension = permutedDimensions[axis] ?? 0;
+      const coordinate = dimension === 0 ? 0 : remaining % dimension;
+      remaining = dimension === 0 ? 0 : Math.floor(remaining / dimension);
+      const inputAxis = permutation[axis] ?? 0;
+      inputIndex += coordinate * (oldStrides[inputAxis] ?? 0);
+    }
+    return inputIndex + 1;
+  });
+  invocation.context.allocate(permutation.length);
+  let output: RVector = {
+    ...subsetVector(input, integerVector(indices), invocation.context),
+    attributes: new Map<string, RValue>(),
+  };
+  output = withDimensions(output, resize ? permutedDimensions : dimensions);
+  if (!resize) return output;
+
+  const dimensionNames = input.attributes.get("dimnames");
+  if (dimensionNames === undefined) return output;
+  if (dimensionNames.type !== "list" || dimensionNames.length !== dimensions.length) {
+    throw new RTypeMismatchError("NRT3351", "aperm() input has malformed dimension names.");
+  }
+  const labels = vectorNames(dimensionNames);
+  return withAttribute(
+    output,
+    "dimnames",
+    listValue(
+      permutation.map((axis) => dimensionNames.values[axis] ?? R_NULL),
+      labels === undefined ? undefined : permutation.map((axis) => labels[axis] ?? ""),
+    ),
+  );
+}
+
+function arrayPermutationAxes(
+  input: RVector,
+  dimensions: readonly number[],
+  supplied: RValue | undefined,
+  invocation: BuiltinInvocation,
+): readonly number[] {
+  if (supplied === undefined || supplied.type === "null") {
+    return Array.from({ length: dimensions.length }, (_, axis) => dimensions.length - axis - 1);
+  }
+  if (!isAtomic(supplied)) {
+    throw new RTypeMismatchError("NRT3351", "aperm() 'perm' must be numeric or character.");
+  }
+  if (supplied.length === 0) {
+    return Array.from({ length: dimensions.length }, (_, axis) => dimensions.length - axis - 1);
+  }
+  if (supplied.length !== dimensions.length) {
+    throw new RTypeMismatchError(
+      "NRT3351",
+      `aperm() 'perm' has length ${supplied.length}; expected ${dimensions.length}.`,
+    );
+  }
+
+  let axes: readonly number[];
+  if (supplied.type === "character") {
+    const dimensionNames = input.attributes.get("dimnames");
+    const labels =
+      dimensionNames?.type === "list" && dimensionNames.length === dimensions.length
+        ? vectorNames(dimensionNames)
+        : undefined;
+    if (labels === undefined) {
+      throw new RTypeMismatchError(
+        "NRT3351",
+        "aperm() character 'perm' requires named dimensions.",
+      );
+    }
+    axes = Array.from({ length: supplied.length }, (_, index) => {
+      if (isMissing(supplied, index)) {
+        throw new RTypeMismatchError(
+          "NRT3351",
+          `aperm() 'perm[${index + 1}]' does not match a dimension name.`,
+        );
+      }
+      const label = supplied.values[index] ?? "";
+      const axis = labels.indexOf(label);
+      if (axis < 0) {
+        throw new RTypeMismatchError(
+          "NRT3351",
+          `aperm() 'perm[${index + 1}]' does not match a dimension name.`,
+        );
+      }
+      return axis;
+    });
+  } else {
+    const integerPermutation = coerceAtomicToInteger(supplied, invocation);
+    axes = Array.from({ length: integerPermutation.length }, (_, index) => {
+      if (isMissing(integerPermutation, index)) {
+        throw new RTypeMismatchError("NRT3351", "aperm() 'perm' contains an invalid axis.");
+      }
+      const axis = (integerPermutation.values[index] ?? 0) - 1;
+      if (axis < 0 || axis >= dimensions.length) {
+        throw new RTypeMismatchError("NRT3351", "aperm() 'perm' axis is out of range.");
+      }
+      return axis;
+    });
+  }
+  if (new Set(axes).size !== dimensions.length) {
+    throw new RTypeMismatchError("NRT3351", "aperm() 'perm' must be a permutation.");
+  }
+  return axes;
+}
+
+function arrayPermutationResize(value: RValue): boolean {
+  if (!isAtomic(value) || value.length === 0 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3351", "aperm() 'resize' must be TRUE or FALSE.");
+  }
+  if (value.type === "character") {
+    const parsed = parseRLogical(value.values[0] ?? "");
+    if (parsed !== undefined) return parsed;
+  } else if (value.type === "complex") {
+    const real = value.real[0] ?? Number.NaN;
+    const imaginary = value.imaginary[0] ?? Number.NaN;
+    if (!Number.isNaN(real) && !Number.isNaN(imaginary)) return real !== 0 || imaginary !== 0;
+  } else {
+    const numeric = value.values[0] ?? Number.NaN;
+    if (!Number.isNaN(numeric)) return numeric !== 0;
+  }
+  throw new RTypeMismatchError("NRT3351", "aperm() 'resize' must be TRUE or FALSE.");
 }
 
 async function builtinCholesky(invocation: BuiltinInvocation): Promise<RValue> {

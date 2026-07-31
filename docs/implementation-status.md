@@ -11,7 +11,7 @@ Date: 2026-07-30
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 484 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 486 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Vector/list selection and replacement, recursive `[[`, arbitrary-dimensional column-major array
@@ -129,6 +129,11 @@ Date: 2026-07-30
   symbols, fills, sizes, line types, and widths, bounded Worker/Canvas output, and display-list
   replay. Full axes and annotations, class-specific plotting methods, `add = TRUE`, step/histogram
   types, and device-identical layout remain explicit boundaries.
+- Usage-ranked `base::aperm`/`aperm.default` for bit64's measured matrix-axis swap and independently
+  authored pure-R array classes, including numeric/character axis permutations, reverse defaults,
+  resized dimensions/dimnames, fixed-shape output, atomic/list arrays, lazy S3 dots, inherited
+  dispatch, `NextMethod`, namespace access, attribute cleanup, and resource bounds. `aperm.table`,
+  malformed low-level attributes, exact diagnostics, and long vectors remain explicit boundaries.
 - Usage-ranked `graphics::polygon` for zoo's measured filled-area panel helper, including paired
   vector/matrix/data-frame/list/complex coordinates, missing-coordinate polygon splitting, recycled
   fill/border colors and line types/widths, solid/no-fill density, even-odd rules, invisible

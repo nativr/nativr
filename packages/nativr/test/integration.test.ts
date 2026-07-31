@@ -1145,6 +1145,102 @@ describe("complete inline source-to-result vertical slice", () => {
     await limited.dispose();
   });
 
+  it("permutes bit64's usage-ranked arrays through base::aperm S3 dispatch", async () => {
+    const runtime = await session();
+    await runtime.eval(`
+      source <- array(
+        1:24,
+        c(2, 3, 4),
+        dimnames = list(
+          row = c("r1", "r2"),
+          col = c("c1", "c2", "c3"),
+          layer = paste0("z", 1:4)
+        )
+      )
+      permuted <- aperm(source, c(2, 3, 1))
+    `);
+    await expect(runtime.eval("permuted")).resolves.toEqual([
+      1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24,
+    ]);
+    await expect(runtime.evalRaw("permuted")).resolves.toMatchObject({
+      type: "integer",
+      dim: [3, 4, 2],
+    });
+    await expect(
+      runtime.eval("c(names(dimnames(permuted)), unlist(dimnames(permuted)))"),
+    ).resolves.toEqual([
+      "col",
+      "layer",
+      "row",
+      "c1",
+      "c2",
+      "c3",
+      "z1",
+      "z2",
+      "z3",
+      "z4",
+      "r1",
+      "r2",
+    ]);
+
+    await runtime.eval("fixed <- aperm.default(source, c(2, 3, 1), resize = FALSE)");
+    await expect(runtime.eval("fixed")).resolves.toEqual([
+      1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24,
+    ]);
+    await expect(runtime.evalRaw("fixed")).resolves.toMatchObject({
+      type: "integer",
+      dim: [2, 3, 4],
+    });
+    await expect(runtime.eval("is.null(dimnames(fixed))")).resolves.toBe(true);
+
+    await runtime.eval(
+      "reversed <- base::aperm.default(source, NULL, marker = stop('dots stay lazy'))",
+    );
+    await expect(runtime.evalRaw("reversed")).resolves.toMatchObject({
+      type: "integer",
+      dim: [4, 3, 2],
+    });
+    await runtime.eval("named <- aperm(source, c('layer', 'row', 'col'))");
+    await expect(runtime.eval("named")).resolves.toEqual([
+      1, 7, 13, 19, 2, 8, 14, 20, 3, 9, 15, 21, 4, 10, 16, 22, 5, 11, 17, 23, 6, 12, 18, 24,
+    ]);
+    await expect(runtime.evalRaw("named")).resolves.toMatchObject({
+      type: "integer",
+      dim: [4, 2, 3],
+    });
+
+    await expect(
+      runtime.eval(`
+        aperm.probe <- function(a, perm, ...) "custom"
+        aperm(structure(source, class = c("probe", "array")), c(3, 1, 2), stop("lazy"))
+      `),
+    ).resolves.toBe("custom");
+    await expect(
+      runtime.eval(`
+        aperm.probe <- function(a, perm, ...) NextMethod()
+        inherited <- structure(array(1:6, c(2, 3)), class = c("probe", "array"), note = "drop")
+        inherited <- aperm(inherited, c(2, 1), marker = stop("default dots stay lazy"))
+        c(inherited, dim(inherited), is.null(attr(inherited, "class")), is.null(attr(inherited, "note")))
+      `),
+    ).resolves.toEqual([1, 3, 5, 2, 4, 6, 3, 2, 1, 1]);
+
+    await expect(runtime.eval("aperm()")).rejects.toMatchObject({ code: "NRE2103" });
+    await expect(runtime.eval("aperm(1:4)")).rejects.toMatchObject({ code: "NRT3351" });
+    await expect(runtime.eval("aperm(source, c(1, 2))")).rejects.toMatchObject({
+      code: "NRT3351",
+    });
+    await expect(runtime.eval("aperm(source, c(1, 1, 3))")).rejects.toMatchObject({
+      code: "NRT3351",
+    });
+    await expect(runtime.eval("aperm(source, c('row', 'bad', 'col'))")).rejects.toMatchObject({
+      code: "NRT3351",
+    });
+    await expect(runtime.eval("aperm(source, c(2, 3, 1), resize = NA)")).rejects.toMatchObject({
+      code: "NRT3351",
+    });
+    await runtime.dispose();
+  });
+
   it("generates the frequency-ranked grDevices heat palette", async () => {
     const runtime = await session();
     await expect(runtime.eval("grDevices::heat.colors(5)")).resolves.toEqual([
@@ -6469,7 +6565,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.193.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.194.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
