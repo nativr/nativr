@@ -250,6 +250,16 @@ validates the owned command shape. GNU R-exact font metrics and geometry values,
 fill/density keys, merged-line controls, arbitrary graphical `...`, margins/clipping, log axes, and
 device-identical rendering are not claimed.
 
+`comment(x)` and `comment(x) <- value` have differential evidence for zoo's measured metadata
+example. On owned atomic vectors, arrays, factors, lists, pairlists, and data frames, comments are
+character attributes that do not alter the underlying value or other attributes. `NULL` and
+zero-length character replacement remove the attribute; missing character elements are retained;
+non-character values fail; and direct `attr(x, "comment") <- value` follows the same validation.
+Replacement assignment returns its right-hand side invisibly through the normal replacement-function
+protocol. Querying an unsupported non-attributed value returns `NULL`; setting comments on closures,
+environments, symbols, formulas, calls, and expression vectors remains explicit future general
+attribute-model work.
+
 `grDevices::as.raster` has differential coverage for ragg's measured captured-color-matrix call, the
 row-first `"raster"` storage contract, character matrices/vectors, logical/numeric/raw grayscale
 conversion, numeric/raw RGB and RGBA planes, missing grayscale pixels, `max` scaling, vector

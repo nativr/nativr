@@ -901,6 +901,13 @@ Registered `base`, `stats`, `graphics`, `methods`, `utils`, `R6`, `vctrs`, and `
 access bypasses global shadowing for exact members. `::` and registered `:::` lookup do no I/O and
 never load packages.
 
+`comment()` reads the `"comment"` character attribute from the currently attributed sequence model.
+`comment<-` and `attr(x, "comment") <- value` share validation: character values attach metadata,
+`NULL` or `character()` removes it, missing character elements remain distinct, and every unrelated
+attribute is preserved. Replacement uses the ordinary copy-and-rebind path. Closures, environments,
+and owned language values do not yet carry general attribute maps, so setting their comments raises
+an explicit unsupported-feature condition rather than silently discarding metadata.
+
 Explicit classes use the ordinary attribute map. S3 `UseMethod` dispatches through ordered classes
 and `.default`; `NextMethod` continues the current chain. The bounded S4 layer stores class,
 old-style class, single-object generic, method, and explicit coercion declarations in session state.

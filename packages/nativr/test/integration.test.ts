@@ -4636,7 +4636,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.173.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.174.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -7314,6 +7314,61 @@ describe("complete inline source-to-result vertical slice", () => {
     });
     await expect(runtime.eval('names(1:2) <- c("a", "b")')).rejects.toMatchObject({
       code: "NRU6001",
+    });
+    await runtime.dispose();
+  });
+
+  it("queries and replaces zoo's usage-ranked comment attribute", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x1 <- structure(1:5, class = "zoo", index = 1:5)
+        visible <- withVisible(comment(x1) <- c(
+          "This is a very simple example of a zoo object.",
+          "It can be recreated using this R code: example(zoo)"
+        ))
+        c(
+          base::comment(x1),
+          attr(x1, "comment"),
+          class(x1),
+          visible$value,
+          visible$visible
+        )
+      `),
+    ).resolves.toEqual([
+      "This is a very simple example of a zoo object.",
+      "It can be recreated using this R code: example(zoo)",
+      "This is a very simple example of a zoo object.",
+      "It can be recreated using this R code: example(zoo)",
+      "zoo",
+      "This is a very simple example of a zoo object.",
+      "It can be recreated using this R code: example(zoo)",
+      "FALSE",
+    ]);
+    await expect(
+      runtime.eval(`
+        x <- structure(c(a = 1, b = 2), marker = "kept")
+        comment(x) <- NA_character_
+        missing <- is.na(comment(x))
+        comment(x) <- character()
+        removed <- is.null(comment(x))
+        attr(x, "comment") <- c("first", "second")
+        c(missing, removed, names(x), attr(x, "marker"), comment(x))
+      `),
+    ).resolves.toEqual(["TRUE", "TRUE", "a", "b", "kept", "first", "second"]);
+    await expect(runtime.eval("comment(1:3)")).resolves.toBeNull();
+    await expect(runtime.eval("comment(function(x) x)")).resolves.toBeNull();
+    await expect(runtime.eval("x <- 1\ncomment(x) <- 2")).rejects.toMatchObject({
+      code: "NRT3335",
+    });
+    await expect(runtime.eval("x <- 1\nattr(x, 'comment') <- list('bad')")).rejects.toMatchObject({
+      code: "NRT3335",
+    });
+    await expect(runtime.eval("x <- NULL\ncomment(x) <- 'bad'")).rejects.toMatchObject({
+      code: "NRT3335",
+    });
+    await expect(runtime.eval("x <- function() 1\ncomment(x) <- 'future'")).rejects.toMatchObject({
+      code: "NRU6160",
     });
     await runtime.dispose();
   });

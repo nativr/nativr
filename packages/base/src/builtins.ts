@@ -637,6 +637,8 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("attr", ["x", "which", "exact"], "behavioral", builtinAttr),
   defineBuiltin("attr<-", ["x", "which", "value"], "behavioral", builtinAttrReplacement),
   defineBuiltin("attributes", ["obj"], "behavioral", builtinAttributes),
+  defineBuiltin("comment", ["x"], "behavioral", builtinComment),
+  defineBuiltin("comment<-", ["x", "value"], "behavioral", builtinCommentReplacement),
   defineBuiltin("rownames", ["x"], "behavioral", (invocation) =>
     builtinAxisNames(invocation, "row"),
   ),
@@ -9158,6 +9160,7 @@ async function builtinAttrReplacement(invocation: BuiltinInvocation): Promise<RV
   if (name === "names") return replaceNamesAttribute(value, replacement, invocation);
   if (name === "class") return replaceClassAttribute(value, replacement, invocation);
   if (name === "dim") return replaceDimensionAttribute(value, replacement, invocation);
+  if (name === "comment") return replaceCommentAttribute(value, replacement, invocation);
   if (!isAttributedSequence(value)) {
     throw new RTypeMismatchError(
       "NRT3200",
@@ -9168,6 +9171,50 @@ async function builtinAttrReplacement(invocation: BuiltinInvocation): Promise<RV
   return replacement.type === "null"
     ? withoutAttribute(value, name)
     : withAttribute(value, name, replacement);
+}
+
+async function builtinComment(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["x"]);
+  const value = required(matched, "x", "comment");
+  if (!isAttributedSequence(value)) return R_NULL;
+  const comment = value.attributes.get("comment");
+  return comment?.type === "character" ? comment : R_NULL;
+}
+
+async function builtinCommentReplacement(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["x", "value"]);
+  return replaceCommentAttribute(
+    required(matched, "x", "comment<-"),
+    required(matched, "value", "comment<-"),
+    invocation,
+  );
+}
+
+function replaceCommentAttribute(
+  value: RValue,
+  replacement: RValue,
+  invocation: BuiltinInvocation,
+): RValue {
+  if (replacement.type !== "null" && replacement.type !== "character") {
+    throw new RTypeMismatchError(
+      "NRT3335",
+      "comment replacement requires a character vector or NULL.",
+    );
+  }
+  if (!isAttributedSequence(value)) {
+    if (value.type === "null") {
+      throw new RTypeMismatchError("NRT3335", "Cannot set a comment attribute on NULL.");
+    }
+    throw new RUnsupportedFeatureError(
+      "NRU6160",
+      `comment replacement on ${value.type} values requires the future general attribute model.`,
+    );
+  }
+  if (replacement.type === "null" || replacement.length === 0) {
+    return withoutAttribute(value, "comment");
+  }
+  invocation.context.allocate(replacement.length);
+  return withAttribute(value, "comment", replacement);
 }
 
 async function builtinAttributes(invocation: BuiltinInvocation): Promise<RValue> {

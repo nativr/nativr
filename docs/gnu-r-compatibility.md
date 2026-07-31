@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           460 |
-| Overlapping callable names        |           445 |
-| Missing GNU R callable names      |         2,077 |
-| Name overlap                      |      17.6447% |
+| NativR registered names           |           462 |
+| Overlapping callable names        |           447 |
+| Missing GNU R callable names      |         2,075 |
+| Name overlap                      |      17.7240% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -220,6 +220,13 @@ backgrounds, titles, columns, horizontal layout, inset, `plot = FALSE`, invisibl
 Worker transport, Canvas rendering, output limits, and same-session record/replay. It does not claim
 GNU R's complete text metrics, margins/clipping, expression labels, fill/density keys, arbitrary
 graphical `...`, device-specific placement, or zoo package loading.
+
+The rank-445 increment adds GNU R differential evidence for zoo's paired `comment(x) <- value` and
+`comment(x)` calls. Character vectors, missing comments, absent attributes, `NULL`/empty removal,
+replacement visibility, preservation of other attributes, and the equivalent `attr<-` validation
+path are covered for owned attributed sequences. GNU R also permits comments on closures,
+environments, and language objects; those require NativR's future general attribute model and remain
+explicitly unsupported for replacement.
 
 ## Completion evidence
 
