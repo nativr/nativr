@@ -393,6 +393,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      even-odd rules, namespace access, bounded Worker/Canvas rendering, and display-list replay.
      Positive hatch density, broader coordinate classes, clipping/log axes, exact device dash/fill
      metrics, and arbitrary graphical controls remain explicit boundaries.
+105. Frequency-ranked immutable replacement: `base::replace` runs zoo's measured missing-run helper
+     through the shared one-dimensional subset-replacement engine with input immutability,
+     numeric/logical/character subscripts, recycling/promotion, names/extension, matrices, factors,
+     lists, pairlists, owned data frames, `NULL` paths, namespace access, and resource bounds.
+     Expression vectors, arbitrary class-specific `[<-` methods, exact legacy diagnostics, and long
+     vectors remain explicit boundaries.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

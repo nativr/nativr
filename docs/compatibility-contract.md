@@ -68,6 +68,16 @@ column through `df$x[i] <- value` remains an incompatible column-length error ra
 growing the frame. Factor replacement maps labels back to existing levels, extends with missing
 codes, and warns when an assigned label is not a level.
 
+`base::replace` has differential evidence for zoo's measured `replace(x, 1:min(length(x)), 3)`
+missing-run helper. It returns a new value and leaves `x` unchanged by delegating to the same owned
+one-dimensional `[<-` path. Numeric, logical, character, negative, zero, empty, and missing
+subscript behavior; replacement recycling and promotion; names and extension; matrix
+dimensions/dimnames; factor levels; list and pairlist results; owned data-frame columns; `NULL`
+deletion/materialization; partial argument names; namespace access; warnings, errors, and resource
+limits have coverage. Expression-vector replacement, arbitrary class-specific `[<-` dispatch,
+recursive objects beyond the owned value model, exact diagnostic wording, and long-vector behavior
+remain unsupported.
+
 Direct `drop(x)` has differential coverage for the four measured matrixStats validation calls and
 posterior's measured explicit rvar-array reduction. It removes every singleton extent, adjusts
 surviving named dimension axes, derives vector names under GNU R's scalar and one-axis rules, keeps

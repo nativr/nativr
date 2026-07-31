@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           478 |
-| Overlapping callable names        |           463 |
-| Missing GNU R callable names      |         2,059 |
-| Name overlap                      |      18.3584% |
+| NativR registered names           |           479 |
+| Overlapping callable names        |           464 |
+| Missing GNU R callable names      |         2,058 |
+| Name overlap                      |      18.3981% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -335,6 +335,15 @@ Worker protocol output, Canvas fill/border pixels, same-session replay, malforme
 errors, and allocation/output limits have coverage. Positive hatch density, coordinate classes
 beyond owned numeric storage, clipping/log axes, exact device dash/fill metrics, arbitrary graphical
 parameters, exact diagnostics, and cross-device pixel identity remain incomplete.
+
+The rank-460 increment adds GNU R differential evidence for zoo's measured
+`replace(x, 1:min(length(x)), 3)` missing-run helper. Input immutability,
+numeric/logical/character/negative/zero/empty/missing subscripts, recycling and promotion,
+names/extension, matrix metadata, factors, lists, pairlists, owned data frames, `NULL`
+materialization/deletion, partial argument matching, namespace access, warnings, errors, and
+allocation limits have coverage. Expression vectors, arbitrary class-specific `[<-` methods,
+recursive objects outside the owned value model, exact legacy diagnostics, and long-vector behavior
+remain incomplete.
 
 ## Completion evidence
 

@@ -381,3 +381,7 @@ Language subset 0.187 adds rank 459's `graphics::polygon()` closed-path protocol
 command, missing-coordinate polygon splitting, recycled fill/border styles, Canvas fill rules, and
 bounded graphics accounting without raising the ceiling. The first production Worker measures 299.7
 KiB gzip against the 308 KiB limit.
+
+Language subset 0.188 adds rank 460's `base::replace()` wrapper over the existing immutable subset
+replacement engine, including `NULL` target materialization and no parallel replacement algorithm.
+The first production Worker measures 299.9 KiB gzip against the 308 KiB limit.

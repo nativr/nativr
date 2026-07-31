@@ -22,6 +22,11 @@ The default session owns a module Worker and a global environment. Requests are 
 mode dynamically loads the same semantic host and exists for tests and constrained environments; it
 can block its calling thread.
 
+High-level helpers reuse semantic runtime primitives instead of maintaining parallel behavior.
+`base::replace`, for example, delegates to the same immutable one-dimensional subset-replacement
+engine used by direct `x[index] <- value` evaluation, so coercion, recycling, attributes, extension,
+warnings, checkpoints, and allocation accounting stay on one path.
+
 The core deliberately has no external table, package, file, network, native statistics, or host
 graphics engine. Its initial graphics seam is a deterministic command journal: base builtins emit
 page, coordinate-window, RGBA-raster, resolved line-segment, resolved point-symbol, resolved

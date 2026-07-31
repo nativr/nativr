@@ -44,6 +44,14 @@ Raw values support construction/coercion, concatenation, comparison, bytewise `!
 selection/replacement, shifts, integer-bit expansion, UTF-8 character conversion, and Worker
 transport. Encoding-sensitive behavior outside UTF-8 remains incomplete.
 
+`base::replace(x, list, values)` forces its three arguments, leaves `x` unchanged, and returns the
+result of the runtime's immutable one-dimensional subset replacement. Numeric/logical/character
+subscripts, names and extension, atomic promotion, ordinary recycling warnings, dimensions, factors,
+lists, pairlists, owned data frames, and `NULL` deletion share the direct `[<-` path. Replacing into
+`NULL` first materializes an empty atomic/list target from `values`; a `NULL` subscript preserves
+that empty target. Expression vectors and arbitrary class-specific `[<-` methods remain outside the
+owned path.
+
 `typeof`, `mode`, and the core `is.*` predicates inspect NativR storage without exposing parser
 nodes. `as.logical`, `as.integer`, `as.double`/`as.numeric`, and `as.character` cover NULL and
 atomic vectors, including factors, complex imaginary-discard warnings, integer-range warnings, and
