@@ -978,6 +978,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   definePackageBuiltin("stats", "as.ts", ["x", "..."], "behavioral", builtinAsTimeSeries),
   definePackageBuiltin("stats", "frequency", ["x", "..."], "behavioral", builtinFrequency),
+  definePackageBuiltin("stats", "cycle", ["x", "..."], "behavioral", builtinCycle),
   definePackageBuiltin(
     "stats",
     "window",
@@ -16766,6 +16767,56 @@ async function builtinFrequency(invocation: BuiltinInvocation): Promise<RValue> 
   const dimensions = vectorDimensions(input);
   const rows = dimensions?.[0] ?? input.length;
   return doubleVector([validatedTimeSeries(input, rows, "frequency", false).frequency]);
+}
+
+async function builtinCycle(invocation: BuiltinInvocation): Promise<RValue> {
+  const lazy = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const inputArgument = lazy.matched.get("x");
+  if (inputArgument === undefined || inputArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in cycle().");
+  }
+  const input = await invocation.force(inputArgument.promise);
+  const dispatchArguments = [
+    inputArgument,
+    ...invocation.arguments.filter((argument) => argument !== inputArgument),
+  ];
+  const dispatched = await invocation.dispatchS3IfPresent("cycle", input, dispatchArguments);
+  if (dispatched !== undefined) return dispatched;
+  if (input.type === "null" || isDataFrame(input)) {
+    throw new RTypeMismatchError("NRT3284", "cycle() requires a vector or matrix time series.");
+  }
+  if (!isVector(input) && input.type !== "expression") {
+    throw new RTypeMismatchError(
+      "NRT3284",
+      `cycle() requires a vector or matrix time series; received '${input.type}'.`,
+    );
+  }
+  const rows =
+    input.type === "expression"
+      ? input.values.length
+      : (vectorDimensions(input)?.[0] ?? input.length);
+  if (rows === 0) {
+    throw new RTypeMismatchError("NRT3284", "time-series must have one or more observations.");
+  }
+  const series =
+    input.type === "expression"
+      ? { start: 1, end: rows, frequency: 1 }
+      : validatedTimeSeries(input, rows, "cycle", true);
+  const initialCycle = roundNumber(positiveModulo(series.start, 1) * series.frequency, 0);
+  invocation.context.allocate(rows + 3);
+  const values = Float64Array.from({ length: rows }, (_, index) => {
+    invocation.context.checkpoint();
+    return positiveModulo(initialCycle + index, series.frequency) + 1;
+  });
+  let result = withAttribute(
+    doubleVector(values),
+    "tsp",
+    doubleVector([series.start, series.end, series.frequency]),
+  );
+  if (input.type !== "expression" && vectorClasses(input)?.includes("ts")) {
+    result = withClasses(result, ["ts"]);
+  }
+  return result;
 }
 
 async function builtinTimeSeriesWindow(invocation: BuiltinInvocation): Promise<RValue> {

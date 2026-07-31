@@ -135,8 +135,10 @@ the original lazy arguments before this default path, providing the package boun
 or two-number calendar coordinates into a decimal start, derives or validates the observation count,
 recycles or truncates each series by rows when an explicit end is supplied, and attaches `tsp` plus
 the requested/default `ts` or `mts` class. Matrix columns remain independent series and receive
-stable series names. `as.ts()` and `frequency()` perform S3 dispatch first; their defaults respect
-validated existing `tsp` metadata and otherwise use row coordinates with frequency one.
+stable series names. `as.ts()`, `frequency()`, and `cycle()` perform S3 dispatch first. The first
+two defaults respect validated existing `tsp` metadata and otherwise use row coordinates with
+frequency one. `cycle()` emits one double observation number per vector element or matrix row,
+retaining the validated interval and explicit `ts` class while supporting fractional frequencies.
 
 `stats::window()` also dispatches before its owned default. For regular vector or matrix series it
 aligns boundaries to source observations, samples only integral divisors of the source frequency,

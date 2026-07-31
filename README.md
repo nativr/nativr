@@ -69,7 +69,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 462 registered functions, including resettable
+an initial condition/handler slice. It exposes 463 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
 preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
@@ -310,6 +310,11 @@ Rank 445 `comment` and its replacement form now run zoo's measured metadata exam
 arrays, lists, pairlists, and data frames can query, set, replace, or remove character comments
 while preserving their other attributes; the future general attribute model is still required before
 closures, environments, and language objects can receive comments.
+
+Rank 446 `stats::cycle` now runs zoo's two measured regular-series call shapes through a GNU
+R-compatible default and an S3 extension seam. It derives observation cycles from validated `tsp`
+metadata for vectors and matrix rows, including fractional frequencies, while leaving zoo's
+irregular-series method and index model package-owned.
 
 Development priority is based on a reproducible analysis of documented usage in popular CRAN
 packages. The committed

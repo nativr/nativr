@@ -326,3 +326,7 @@ The complete production Worker measures 287.9 KiB gzip against the 308 KiB limit
 Language subset 0.174 adds rank 445's `comment()` getter/replacement and matching special-attribute
 validation without raising the ceiling. The complete production Worker measures 288.1 KiB gzip
 against the 308 KiB limit.
+
+Language subset 0.175 adds rank 446's `stats::cycle()` generic, regular-series coordinate default,
+and package-method S3 seam without raising the ceiling. The complete production Worker measures
+288.3 KiB gzip against the 308 KiB limit.

@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           462 |
-| Overlapping callable names        |           447 |
-| Missing GNU R callable names      |         2,075 |
-| Name overlap                      |      17.7240% |
+| NativR registered names           |           463 |
+| Overlapping callable names        |           448 |
+| Missing GNU R callable names      |         2,074 |
+| Name overlap                      |      17.7637% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -227,6 +227,12 @@ replacement visibility, preservation of other attributes, and the equivalent `at
 path are covered for owned attributed sequences. GNU R also permits comments on closures,
 environments, and language objects; those require NativR's future general attribute model and remain
 explicitly unsupported for replacement.
+
+The rank-446 increment adds GNU R differential evidence for zoo's two measured `cycle` calls.
+Regular vector and matrix-row series, default frequency-one inputs, calendar starts, fractional
+frequencies, `tsp`/`ts` metadata, namespace access, lazy dots, errors, and allocation limits are
+covered. An independently declared `cycle.zoo` method verifies the S3 package seam without copying
+or claiming zoo's irregular-series implementation, index storage, or package loading.
 
 ## Completion evidence
 
