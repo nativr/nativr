@@ -20,15 +20,16 @@ Nested `capture.output()` frames retain selected textual events only in evaluato
 enforce the same byte ceiling before constructing the result vector. Its `file` and connection forms
 are explicit unsupported errors, so capture cannot become an implicit filesystem escape.
 
-`tempfile()`, `dput()`, `dget()`, and `unlink()` expose only opaque session-memory paths. The map is
-owned by the evaluator, cleared on reset/disposal, limited by the output-byte and vector budgets,
-and never resolves a path through browser or operating-system APIs. `dget()` can parse only text
-previously produced by the same session's bounded serializer; host paths and connections are
-rejected before lookup.
+`tempfile()`, `readLines()`, `writeLines()`, `dput()`, `dget()`, and `unlink()` expose only opaque
+session-memory or immutable package paths. The mutable map is owned by the evaluator, cleared on
+reset/disposal, limited by the output-byte and vector budgets, and never resolves a path through
+browser or operating-system APIs. `dget()` can parse only text previously produced by the same
+session's bounded serializer. `readLines()` may additionally decode reviewed package-bundle bytes;
+package writes, host paths, and general connections are rejected before lookup.
 
 `utils::demo()` does not probe installed R libraries, execute package scripts, start servers, or
-perform network access. Only the empty owned catalog shape is available until package resources can
-be validated and loaded through an explicit browser-safe package layer.
+perform network access. Its current empty catalog does not yet discover or execute the validated
+resources available through the separate browser-safe package layer.
 
 Graphics use typed, device-independent records rather than exposing a DOM or Canvas object to R
 code. Raster RGBA bytes share the evaluation output budget and are transferred out of the Worker;

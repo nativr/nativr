@@ -11,7 +11,7 @@ Date: 2026-07-31
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 502 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 505 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Vector/list selection and replacement, recursive `[[`, arbitrary-dimensional column-major array
@@ -42,12 +42,17 @@ Date: 2026-07-31
   parser-validated public symbol/language/expression input records.
 - Backtick-delimited names normalize to their underlying R binding names, including operator names.
 - Worker-first and inline public APIs, versioned snapshots/protocol, and a runnable Vite playground.
-- Application-supplied source-only R package bundles with validated DESCRIPTION/NAMESPACE metadata,
-  bounded source input, normalized-AST parsing, dependency-ordered isolated namespaces,
-  `import`/`importFrom`, exports, `::`/`:::`, S3 registration, `.onLoad`/`.onAttach`, attachment,
-  namespace queries, reset/reload behavior, and matching inline/Worker execution. Native code,
-  arbitrary installation, package resources/data, dependency-version constraints, and the wider
-  NAMESPACE/install protocol remain explicit boundaries.
+- Build-time installation of standard pure-R source directories, tarballs, and CRAN-like repository
+  dependency closures into integrity-locked bundles, followed by normalized-AST parsing,
+  dependency/version-checked isolated namespaces, imports/exports, `::`/`:::`, S3 registration,
+  lifecycle hooks, attachment, reset/reload, and matching inline/Worker execution. Immutable
+  DESCRIPTION/NAMESPACE/R-source/resource paths are exposed by `system.file()` and readable through
+  bounded `readLines()`. Native code, package data/lazy data, broader NAMESPACE directives, binary
+  resource formats, and universal package execution remain explicit boundaries.
+- Browser-owned text I/O through `readLines()`/`writeLines()` covers same-session temporary files,
+  immutable package text, GNU R line endings, separators, NUL/incomplete-line behavior, byte limits,
+  and stdout events without host filesystem access. `Sys.sleep()` adds interruptible asynchronous
+  waits for package retry/polling code without blocking the Worker event loop.
 - Browser-safe `print()` and `cat()` output with invisible return semantics, ordered inline/Worker
   events, `evalDetailed` retention, output-budget accounting, and Playground console rendering.
   `utils::capture.output()` adds nested in-memory stdout/message capture, visible-result printing,

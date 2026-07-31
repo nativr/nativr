@@ -25,6 +25,10 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("6");
 
+  await page.locator("#source").fill("Sys.sleep(0.01)\n7");
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("7");
+
   await page.getByRole("button", { name: "Numeric R plot" }).click();
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("null");

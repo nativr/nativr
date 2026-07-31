@@ -7386,6 +7386,35 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "write-lines-read-lines-session-roundtrip",
+    "code": "path <- tempfile(fileext = \".txt\")\nwritten <- withVisible(writeLines(c(\"alpha\", \"\", NA_character_), path))\nlines <- readLines(path)\nc(lines, is.null(written$value), written$visible, unlink(path))",
+    "expected": ["alpha", "", "NA", "TRUE", "FALSE", "0"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "read-lines-count-line-endings-incomplete-and-ok",
+    "code": "path <- tempfile()\nwriteLines(c(\"a\", \"b\", \"c\"), path, sep = \"\\r\")\nfirst <- readLines(path, n = 2)\nwriteLines(\"tail\", path, sep = \"\")\nlast <- suppressWarnings(readLines(path))\nc(first, last, inherits(try(readLines(path, n = 2, ok = FALSE), silent = TRUE), \"try-error\"), unlink(path))",
+    "expected": ["a", "b", "tail", "TRUE", "0"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "write-lines-standard-output-separator-and-visibility",
+    "code": "withVisible(writeLines(c(\"a\", \"b\"), sep = \"|\"))$visible",
+    "expected": false,
+    "expectedOutput": "a|b|",
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "sys-sleep-zero-visibility-and-invalid-time",
+    "code": "result <- withVisible(Sys.sleep(0))\nc(is.null(result$value), result$visible, inherits(try(Sys.sleep(-1), silent = TRUE), \"try-error\"), inherits(try(Sys.sleep(NA_real_), silent = TRUE), \"try-error\"))",
+    "expected": [true, false, true, true],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "utils-package-name-global-boundary",
     "code": "is.null(utils::packageName())",
     "expected": true,

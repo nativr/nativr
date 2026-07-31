@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 314 KiB gzip;
+- Worker JavaScript: 316 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -429,3 +429,9 @@ Language subset 0.197 adds measured rank 22's `base::plot()` S3 extension point 
 point, text, Worker, Canvas, and display-list machinery; the only evaluator change lets a generic
 probe class methods without prematurely selecting its default. The measured Worker is 312.1 KiB
 gzip, so the ceiling rises narrowly to 314 KiB.
+
+Language subset 0.199 retains DESCRIPTION, NAMESPACE, and ordered R source beside immutable package
+resources, adds bounded `readLines()`/`writeLines()` text paths, and implements cooperative
+`Sys.sleep()` timer slices. UTF-8 and base64 use standard browser primitives after size review; the
+measured Worker is 315.1 KiB gzip, so the ceiling rises narrowly to 316 KiB. Client and parser-Wasm
+budgets remain unchanged.

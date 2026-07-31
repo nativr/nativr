@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.198.0",
+  "languageSubsetVersion": "0.199.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -103,10 +103,13 @@
         { "name": "Sys.getlocale", "compatibility": "behavioral" },
         { "name": "Sys.setlocale", "compatibility": "behavioral" },
         { "name": "Sys.localeconv", "compatibility": "behavioral" },
+        { "name": "Sys.sleep", "compatibility": "behavioral" },
         { "name": "path.expand", "compatibility": "shape" },
         { "name": "file.path", "compatibility": "behavioral" },
         { "name": "system.file", "compatibility": "shape" },
         { "name": "tempfile", "compatibility": "shape" },
+        { "name": "readLines", "compatibility": "behavioral" },
+        { "name": "writeLines", "compatibility": "behavioral" },
         { "name": "unlink", "compatibility": "behavioral" },
         { "name": "dput", "compatibility": "behavioral" },
         { "name": "dget", "compatibility": "behavioral" },

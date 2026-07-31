@@ -32,7 +32,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 31,sum,true,14,rlang|vctrs|ggplot2|fs|dplyr|S7|StanHeaders|purrr|matrixStats|numDeriv|loo|data.table|zoo|bit64,82,14.4,16.2
 32,identical,true,17,rlang|withr|jsonlite|rstan|xfun|digest|base64enc|checkmate|openssl|matrixStats|loo|data.table|shiny|diffobj|httpuv|brio|bit64,155,17.5,16.1
 33,message,true,14,rlang|Rcpp|withr|magrittr|jsonlite|purrr|xfun|evaluate|backports|testthat|shiny|rstudioapi|promises|bit64,100,14.4,15.8
-34,Sys.sleep,false,16,cli|S7|bslib|rmarkdown|callr|processx|purrr|xfun|memoise|data.table|shiny|httr|rstudioapi|sys|later|promises,47,16.5,15.6
+34,Sys.sleep,true,16,cli|S7|bslib|rmarkdown|callr|processx|purrr|xfun|memoise|data.table|shiny|httr|rstudioapi|sys|later|promises,47,16.5,15.6
 35,lm,true,12,rlang|ggplot2|RcppEigen|tibble|dplyr|purrr|xfun|tidyr|knitr|data.table|diffobj|zoo,28,12.4,14.4
 36,as.Date,true,11,vctrs|ggplot2|glue|withr|pillar|dplyr|scales|stringr|tidyr|data.table|shiny,33,11.3,14.4
 37,options,true,12,rlang|cli|tibble|pillar|scales|jsonlite|xfun|matrixStats|data.table|shiny|diffobj|bit64,53,12.4,14.2
@@ -50,7 +50,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 49,mean,true,11,rlang|ggplot2|magrittr|dplyr|purrr|tidyr|matrixStats|data.table|posterior|distributional|zoo,113,11.3,12.3
 50,invisible,true,10,rlang|lifecycle|R6|magrittr|utf8|testthat|data.table|shiny|httr|promises,19,10.3,12.1
 51,interactive,true,11,cli|cpp11|bslib|sass|purrr|xfun|htmltools|knitr|fontawesome|data.table|shiny,107,11.3,12.1
-52,writeLines,false,10,rlang|withr|cpp11|pillar|sass|xfun|knitr|testthat|sys|diffobj,30,10.3,12.1
+52,writeLines,true,10,rlang|withr|cpp11|pillar|sass|xfun|knitr|testthat|sys|diffobj,30,10.3,12.1
 53,rbind,true,12,ggplot2|magrittr|gtable|rstan|StanHeaders|stringr|matrixStats|data.table|posterior|distributional|zoo|bit64,18,12.4,11.9
 54,max,true,10,vctrs|ggplot2|magrittr|pillar|dplyr|labeling|htmlwidgets|numDeriv|data.table|zoo,30,10.3,11.9
 55,as.integer,true,10,rlang|cpp11|pillar|dplyr|jsonlite|digest|yaml|checkmate|data.table|bit64,23,10.3,11.9
@@ -59,7 +59,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 58,Sys.Date,true,9,vctrs|ggplot2|magrittr|pillar|S7|xfun|data.table|shiny|zoo,26,9.3,10.9
 59,round,true,10,vctrs|ggplot2|dplyr|scales|jsonlite|data.table|shiny|promises|zoo|bit64,17,10.3,10.8
 60,is.null,true,8,rlang|cli|ggplot2|fs|purrr|htmltools|shiny|rstudioapi,18,8.2,10.7
-61,readLines,false,11,withr|utf8|rstan|curl|xfun|stringr|openssl|httr|xml2|commonmark|diffobj,27,11.3,10.6
+61,readLines,true,11,withr|utf8|rstan|curl|xfun|stringr|openssl|httr|xml2|commonmark|diffobj,27,11.3,10.6
 62,as.numeric,true,10,rlang|ggplot2|isoband|tidyr|yaml|openssl|matrixStats|data.table|shiny|zoo,31,10.3,10.5
 63,seq_len,true,10,RcppEigen|tibble|pillar|purrr|digest|gridExtra|checkmate|data.table|shiny|zoo,19,10.3,10.4
 64,getOption,true,10,withr|tibble|callr|ps|stringi|htmltools|knitr|loo|rstudioapi|diffobj,13,10.3,10.3
