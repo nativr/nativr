@@ -1806,6 +1806,76 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("measures lazy expressions with browser-safe system.time and proc.time values", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        tracker <- 0L
+        timed <- withVisible(system.time({
+          Sys.sleep(0.01)
+          tracker <- tracker + 1L
+          invisible(42L)
+        }, gcFirst = FALSE))
+        c(
+          tracker,
+          timed$visible,
+          inherits(timed$value, "proc_time"),
+          identical(names(timed$value), c(
+            "user.self", "sys.self", "elapsed", "user.child", "sys.child"
+          )),
+          length(timed$value) == 5L,
+          all(timed$value[1:3] >= 0),
+          timed$value[["elapsed"]] >= 0.005,
+          all(is.na(timed$value[4:5]))
+        )
+      `),
+    ).resolves.toEqual([1, 1, 1, 1, 1, 1, 1, 1]);
+    await expect(
+      runtime.eval(`
+        before <- proc.time()
+        Sys.sleep(0.005)
+        after <- proc.time()
+        c(
+          inherits(before, "proc_time"),
+          identical(names(before), names(after)),
+          after[["elapsed"]] >= before[["elapsed"]],
+          all(is.na(after[4:5]))
+        )
+      `),
+    ).resolves.toEqual([true, true, true, true]);
+    await expect(
+      runtime.eval(`
+        fmls <- formals(system.time)
+        c(names(fmls), identical(fmls[["gcFirst"]], TRUE))
+      `),
+    ).resolves.toEqual(["expr", "gcFirst", "TRUE"]);
+    await expect(
+      runtime.eval(
+        "c(inherits(system.time(NULL, gcFirst = 1L), 'proc_time'), inherits(system.time(NULL, gcFirst = 'FALSE'), 'proc_time'))",
+      ),
+    ).resolves.toEqual([true, true]);
+
+    const failed = await runtime.evalDetailed(
+      'try(system.time(stop("timed failure", call. = FALSE)), silent = TRUE)',
+    );
+    expect(failed.output).toHaveLength(1);
+    expect(failed.output[0]).toMatchObject({ stream: "stderr" });
+    expect(failed.output[0]?.text).toMatch(/^Timing stopped at: 0 0 \d/u);
+    await expect(runtime.eval("system.time()")).rejects.toMatchObject({ code: "NRE2103" });
+    await expect(runtime.eval("system.time(NULL, gcFirst = NA)")).rejects.toMatchObject({
+      code: "NRT3399",
+    });
+    await expect(runtime.eval("system.time(NULL, gcFirst = logical())")).rejects.toMatchObject({
+      code: "NRT3399",
+    });
+    await expect(runtime.eval("system.time(NULL, gcFirst = c(TRUE, FALSE))")).rejects.toMatchObject(
+      { code: "NRT3399" },
+    );
+    await runtime.reset();
+    await expect(runtime.eval('unname(proc.time()[["elapsed"]])')).resolves.toBe(0);
+    await runtime.dispose();
+  });
+
   it("restores bit64's usage-ranked save/load workspace through session memory", async () => {
     const runtime = await session();
     await expect(
@@ -8112,7 +8182,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.205.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.206.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

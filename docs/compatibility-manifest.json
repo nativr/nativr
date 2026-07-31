@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.205.0",
+  "languageSubsetVersion": "0.206.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -109,6 +109,8 @@
         { "name": "Sys.setlocale", "compatibility": "behavioral" },
         { "name": "Sys.localeconv", "compatibility": "behavioral" },
         { "name": "Sys.sleep", "compatibility": "behavioral" },
+        { "name": "proc.time", "compatibility": "behavioral" },
+        { "name": "system.time", "compatibility": "behavioral" },
         { "name": "R.home", "compatibility": "shape" },
         { "name": "path.expand", "compatibility": "shape" },
         { "name": "basename", "compatibility": "behavioral" },

@@ -453,6 +453,14 @@ active cancellation token without consuming evaluation steps. Non-negative finit
 `Inf` are accepted; missing, `NaN`, and negative values fail. Inline interruption is cooperative,
 while the public Worker API retains its stronger terminate-and-reset behavior.
 
+`system.time(expr, gcFirst = TRUE)` validates `gcFirst` with GNU R's scalar condition coercion, then
+samples a monotonic browser clock around one lazy force of `expr`. Its visible `proc_time` vector
+contains zero browser process CPU fields, measured elapsed seconds, and missing child-process
+fields. A catchable expression error writes `Timing stopped at:` to stderr and is rethrown.
+`proc.time()` uses the same clock and a resettable session origin, never decreases within a session,
+and returns the same named/classed shape. Browser JavaScript does not expose forced garbage
+collection, process CPU counters, or child-process counters, so those operations are not fabricated.
+
 `graphics::polygon()` accepts the same owned coordinate containers but does not dispatch: paired
 vectors, two-column matrices/data frames, complex coordinates, and named `list(x, y)` become
 device-independent closed paths. Missing or non-finite pairs split separate polygons. Fill/border

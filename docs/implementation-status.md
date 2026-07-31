@@ -68,6 +68,11 @@ Date: 2026-07-31
   paths resolve only within the current session, package, or runtime root. `Sys.sleep()` adds
   interruptible asynchronous waits for package retry/polling code without blocking the Worker event
   loop.
+- Usage-ranked `system.time()` plus adjacent `proc.time()` with one lazy expression evaluation,
+  closure-like formals, validated `gcFirst`, visible named/classed `proc_time` results, monotonic
+  elapsed seconds, missing unavailable child-process fields, timed-error stderr output, and
+  deterministic reset. Browser-unavailable CPU, child-process, and forced-GC metrics are explicit
+  platform boundaries rather than invented values.
 - Browser-memory tabular I/O includes `utils::read.table`, `read.csv`, `read.csv2`, `read.delim`,
   `read.delim2`, `write.table`, `write.csv`, and `write.csv2`. The bounded parser handles
   separators, quoted fields (including doubled quotes and embedded newlines), headers, row/column
@@ -555,11 +560,11 @@ Date: 2026-07-31
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 11 files and 375 tests; aggregate V8 coverage is 84.44% statements, 72.24%
-  branches, 92.42% functions, and 85.70% lines.
+- Vitest currently passes 11 files and 376 tests; aggregate V8 coverage is 84.45% statements, 72.24%
+  branches, 92.43% functions, and 85.71% lines.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 707/707 cases. The optional black-box R oracle passes all 672
+- Checked-in conformance passes 708/708 cases. The optional black-box R oracle passes all 673
   eligible cases and explicitly skips 35 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,

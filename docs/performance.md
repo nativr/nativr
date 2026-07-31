@@ -469,3 +469,8 @@ Language subset 0.205 adds the usage-ranked single-browser-device lifecycle thro
 device-local graphical parameters without adding a device library or host adapter. The measured
 Worker is 334.1 KiB gzip, so the ceiling rises narrowly to 335 KiB. Client and parser-Wasm budgets
 remain unchanged.
+
+Language subset 0.206 adds `system.time()` and `proc.time()` over the browser monotonic clock,
+including lazy expression timing, `proc_time` metadata, scalar control validation, and bounded
+timed-error output. It adds no dependency or host process adapter. The measured Worker is 334.6 KiB
+gzip and remains within the existing 335 KiB ceiling; client and parser-Wasm budgets are unchanged.

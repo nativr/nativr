@@ -73,18 +73,18 @@ excluded; this prevents package-owned functions from being mislabeled as GNU R c
 The primary ranking remains download-weighted package reach; raw occurrence counts are a secondary
 signal.
 
-| Priority | Measured rank | Callable      | Weighted reach | Packages | Observed calls |
-| -------: | ------------: | ------------- | -------------: | -------: | -------------: |
-|        1 |           121 | `png`         |           5.5% |        5 |              7 |
-|        2 |           127 | `system.time` |           5.3% |        6 |             95 |
-|        3 |           144 | `Encoding`    |           4.5% |        3 |             12 |
-|        4 |           149 | `rcauchy`     |           4.2% |        3 |              4 |
-|        5 |           162 | `Sys.getenv`  |           3.7% |        3 |             16 |
-|        6 |           163 | `image`       |           3.7% |        3 |              6 |
-|        7 |           166 | `browseURL`   |           3.6% |        4 |              8 |
-|        8 |           168 | `gc`          |           3.5% |        3 |             17 |
-|        9 |           174 | `lines`       |           3.4% |        4 |             20 |
-|       10 |           175 | `Sys.setenv`  |           3.3% |        4 |              7 |
+| Priority | Measured rank | Callable     | Weighted reach | Packages | Observed calls |
+| -------: | ------------: | ------------ | -------------: | -------: | -------------: |
+|        1 |           121 | `png`        |           5.5% |        5 |              7 |
+|        2 |           144 | `Encoding`   |           4.5% |        3 |             12 |
+|        3 |           149 | `rcauchy`    |           4.2% |        3 |              4 |
+|        4 |           162 | `Sys.getenv` |           3.7% |        3 |             16 |
+|        5 |           163 | `image`      |           3.7% |        3 |              6 |
+|        6 |           166 | `browseURL`  |           3.6% |        4 |              8 |
+|        7 |           168 | `gc`         |           3.5% |        3 |             17 |
+|        8 |           174 | `lines`      |           3.4% |        4 |             20 |
+|        9 |           175 | `Sys.setenv` |           3.3% |        4 |              7 |
+|       10 |           176 | `system`     |           3.3% |        3 |              5 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -92,8 +92,8 @@ behavior. The previous leaders `library`, `require`, `requireNamespace`, `tempfi
 `plot`, `Sys.sleep`, `writeLines`, `readLines`, `file`, `close`, `tempdir`, `file.exists`, `R.home`,
 `dir.create`, and `list.files` now have executable browser-memory/package-bundle/graphics paths. The
 remaining leaders divide across graphics/device architecture (`png`, `image`, `lines`),
-serialization/encoding, timing, browser capability adapters, and distributions. Dynamic caller
-lookup through `parent.frame` and matrix transpose through `t` are now complete. Closure `formals`
+serialization/encoding, browser capability adapters, and distributions. Dynamic caller lookup
+through `parent.frame` and matrix transpose through `t` are now complete. Closure `formals`
 inspection (rank 135, 4.8% weighted reach) and lazy `replicate` evaluation (rank 148, 4.5% weighted
 reach) are now complete as well. Rank 22 `plot` is now available for all 179 measured occurrences
 across 20 sampled package manuals, representing 19.1% download-weighted reach. The implementation
@@ -112,8 +112,10 @@ adjacent `flush`, `isOpen`, and `seek` operations use the same handles. Ranks 48
 `write.csv`, and `read.csv` now use that layer for package data scripts, text datasets, quoted
 tabular input/output, and deterministic type conversion. Rank 80 `dev.off` is now complete through
 the single browser-device lifecycle, so the generated callable figure advances `png` to the
-highest-reach absent core name. Grouped `split` (rank 155) and real-vector `floor` (rank 156) are
-now complete at 4.1% weighted reach each. Factor generator `gl` (rank 158, 4.1%) and a bounded
+highest-reach absent core name. Rank 127 `system.time` now covers all 95 measured calls across six
+packages through lazy single evaluation, GNU R-shaped `proc_time` results, and the adjacent
+`proc.time` session clock. Grouped `split` (rank 155) and real-vector `floor` (rank 156) are now
+complete at 4.1% weighted reach each. Factor generator `gl` (rank 158, 4.1%) and a bounded
 data-frame `merge` subset (rank 161, 4.0%) are now complete. Data-mask mutation through `within`
 (rank 167, 3.8%) and vectorized real/complex trigonometry led by `sin` (rank 177, 3.6%) are now
 complete as well. After filtering out already-supported names and architecture-dependent host,
