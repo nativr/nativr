@@ -17,6 +17,7 @@ NeedsCompilation: no`,
 importFrom(stats, median)
 export(square, centered, new_score, describe, package_state)
 S3method(describe, score)
+S3method(plot, score)
 `,
   rSources: [
     {
@@ -35,6 +36,7 @@ square <- function(x) x ^ 2
 centered <- function(x) x - median(x)
 new_score <- function(x) structure(x, class = c("score", "numeric"))
 describe.score <- function(x, ...) paste0(.package_state, ":", sum(x))
+plot.score <- function(x, ..., marker = "package-plot") c(marker, sum(x), list(...)$extra)
 package_state <- function() .package_state
 hidden_helper <- function(x) x + 100
 `,
@@ -1496,6 +1498,9 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(runtime.eval("describe(new_score(1:3))")).resolves.toBe(
       "attached:nativrfixture:6",
     );
+    await expect(
+      runtime.eval("x <- withVisible(plot(new_score(1:3), extra = 7)); c(x$value, x$visible)"),
+    ).resolves.toEqual(["package-plot", "6", "7", "TRUE"]);
     await expect(runtime.eval('sort(getNamespaceExports("nativrfixture"))')).resolves.toEqual([
       "centered",
       "describe",
@@ -4368,6 +4373,142 @@ describe("complete inline source-to-result vertical slice", () => {
     await limited.dispose();
   });
 
+  it("draws the usage-ranked numeric plot generic and preserves package S3 seams", async () => {
+    const observed: unknown[] = [];
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      onGraphics: (event) => observed.push(event),
+    });
+    const drawn = await runtime.evalDetailed(`
+      visible <- withVisible(plot(
+        c(1, 2, NA, 4), c(2, 4, NA, 8),
+        type = "b", xlim = c(0, 5), ylim = c(0, 10),
+        main = "Measured plot", xlab = "x",
+        col = "red", bg = "white", pch = 21, lwd = 2, lty = 2,
+        panel.first = points(3, 5, pch = 16, col = "blue")
+      ))
+      c(is.null(visible$value), visible$visible)
+    `);
+    expect(drawn.value).toEqual([true, false]);
+    expect(drawn.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "window",
+      "points",
+      "box",
+      "segments",
+      "points",
+      "text",
+    ]);
+    expect(drawn.graphics[1]).toEqual({
+      kind: "window",
+      xlim: [-0.2, 5.2],
+      ylim: [-0.4, 10.4],
+    });
+    expect(drawn.graphics[2]).toMatchObject({
+      kind: "points",
+      points: [{ x: 3, y: 5, symbol: 16, color: "#0000FFFF" }],
+    });
+    expect(drawn.graphics[3]).toEqual({
+      kind: "box",
+      edges: ["top", "right", "bottom", "left"],
+      color: "#000000FF",
+      lineType: "solid",
+      lineWidth: 1,
+    });
+    expect(drawn.graphics[4]).toMatchObject({
+      kind: "segments",
+      segments: [
+        {
+          x0: 1,
+          y0: 2,
+          x1: 2,
+          y1: 4,
+          color: "#FF0000FF",
+          lineType: "44",
+          lineWidth: 2,
+        },
+      ],
+    });
+    expect(drawn.graphics[5]).toMatchObject({
+      kind: "points",
+      points: [
+        { x: 1, y: 2, symbol: 21, color: "#FF0000FF", fill: "#FFFFFFFF" },
+        { x: 2, y: 4, symbol: 21, color: "#FF0000FF", fill: "#FFFFFFFF" },
+        { x: 4, y: 8, symbol: 21, color: "#FF0000FF", fill: "#FFFFFFFF" },
+      ],
+    });
+    expect(drawn.graphics[6]).toMatchObject({
+      kind: "text",
+      labels: [{ label: "Measured plot" }, { label: "x" }],
+    });
+    expect(observed).toEqual(drawn.graphics);
+
+    const scalar = await runtime.evalDetailed("plot(1, axes = FALSE, ann = FALSE)");
+    expect(scalar.graphics).toEqual([
+      { kind: "new-page" },
+      { kind: "window", xlim: [0.568, 1.432], ylim: [0.568, 1.432] },
+      expect.objectContaining({ kind: "points" }),
+    ]);
+    const histogram = await runtime.evalDetailed(
+      "plot(1:3, type = 'h', axes = FALSE, ann = FALSE)",
+    );
+    expect(histogram.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "window",
+      "segments",
+    ]);
+    if (histogram.graphics[2]?.kind === "segments") {
+      expect(histogram.graphics[2].segments).toHaveLength(3);
+      expect(histogram.graphics[2].segments[0]).toMatchObject({ x0: 1, y0: 0, x1: 1, y1: 1 });
+    }
+    for (const type of ["s", "S"] as const) {
+      const stepped = await runtime.evalDetailed(
+        `plot(1:3, type = '${type}', axes = FALSE, ann = FALSE)`,
+      );
+      expect(stepped.graphics[2]).toMatchObject({ kind: "segments" });
+      if (stepped.graphics[2]?.kind === "segments") {
+        expect(stepped.graphics[2].segments).toHaveLength(4);
+      }
+    }
+    await expect(
+      runtime.evalDetailed("plot(1:3, type = 'n', main = stop('lazy'), ann = FALSE)"),
+    ).resolves.toMatchObject({
+      value: null,
+      visible: false,
+      graphics: [
+        { kind: "new-page" },
+        expect.objectContaining({ kind: "window" }),
+        expect.objectContaining({ kind: "box" }),
+      ],
+    });
+    await expect(
+      runtime.eval(`
+        plot.probe <- function(x, ..., marker = "custom") c(class(x), marker, list(...)$extra)
+        custom <- withVisible(plot(structure(1:3, class = "probe"), extra = 7))
+        c(custom$value, custom$visible)
+      `),
+    ).resolves.toEqual(["probe", "custom", "7", "TRUE"]);
+    await expect(runtime.eval("plot()")).rejects.toMatchObject({ code: "NRE2103" });
+    await expect(runtime.eval("plot(1:3, 1:2)")).rejects.toMatchObject({ code: "NRT3353" });
+    await expect(runtime.eval("plot(c(NA, Inf))")).rejects.toMatchObject({ code: "NRT3353" });
+    await expect(runtime.eval("plot(1:3, type = 'q')")).rejects.toMatchObject({ code: "NRT3353" });
+    await expect(runtime.eval("plot(1:3, log = 'x')")).rejects.toMatchObject({ code: "NRU6170" });
+    await expect(runtime.eval("plot(1:3, asp = 1)")).rejects.toMatchObject({ code: "NRU6170" });
+    await expect(runtime.eval("plot(1:3, lend = 'butt')")).rejects.toMatchObject({
+      code: "NRU6170",
+    });
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 10 },
+    });
+    await expect(limited.eval("plot(1:2)")).rejects.toMatchObject({ code: "NRL4002" });
+    await limited.dispose();
+  });
+
   it("draws zoo's usage-ranked point generic through the Worker graphics protocol", async () => {
     const observed: unknown[] = [];
     const runtime = await createR({
@@ -6890,7 +7031,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.196.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.197.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -6912,6 +7053,7 @@ describe("complete inline source-to-result vertical slice", () => {
       s3MethodDispatch: "supported",
     });
     expect(capabilities.packages.find((entry) => entry.name === "graphics")?.functions).toEqual([
+      { name: "plot.default", compatibility: "shape" },
       { name: "plot.new", compatibility: "behavioral" },
       { name: "plot.window", compatibility: "shape" },
       { name: "matplot", compatibility: "shape" },

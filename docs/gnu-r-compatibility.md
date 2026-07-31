@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           498 |
-| Overlapping callable names        |           483 |
-| Missing GNU R callable names      |         2,039 |
-| Name overlap                      |      19.1515% |
+| NativR registered names           |           500 |
+| Overlapping callable names        |           485 |
+| Missing GNU R callable names      |         2,037 |
+| Name overlap                      |      19.2308% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -87,14 +87,15 @@ or complete ISO week-year behavior.
 The rank-420 increment adds differential evidence for `grDevices::as.raster` through ragg's measured
 capture-matrix conversion. Row-first character raster storage, grayscale and RGB(A) conversion,
 vector shaping, missing/scaling behavior, S3 methods, predicates, identity, and the downstream
-browser RGBA byte order are covered without claiming general `plot`, device capture, raster
+browser RGBA byte order are covered without claiming `plot.raster`, device capture, raster
 index/replacement methods, or complete graphics-device equivalence.
 
 The rank-421 increment adds GNU R differential evidence for ragg's measured `dev.flush()` call shape
 and NativR-owned browser-device evidence for paired `dev.hold`. Nested levels, cross-evaluation
 command suppression, ordered zero-level release, reset cleanup, namespace access, level coercion,
 visible integer returns, and pending-memory limits are covered without claiming the ragg/WebP
-device, arbitrary third-party device callbacks, general `plot`, or external display-list formats.
+device, arbitrary third-party device callbacks, specialized plot methods, or external display-list
+formats.
 
 The rank-422 increment adds GNU R differential evidence for ragg's measured `recordPlot()` and
 `replayPlot(recorded)` call shapes plus NativR-owned same-session display-list behavior. Public
@@ -416,6 +417,16 @@ ordering, isolated imports, exports and internals, `library()` attachment, names
 `.onLoad`/`.onAttach`, registered S3 dispatch, Worker initialization, reset, native-code rejection,
 malformed metadata, and source limits. The next compatibility threshold is a build-time packager and
 an independently published source-only package tested without source rewrites.
+
+The rank-22 plot increment adds GNU R differential shape evidence for the highest-reach previously
+absent core name. `base::plot` dispatches user and registered package S3 methods before the owned
+`graphics::plot.default`; custom method values and visibility are preserved. Numeric one-vector and
+paired-coordinate calls cover regular linear range padding, point/line/both/overplotted/histogram/
+step/no-draw geometry, common styles, panel hooks, scalar character annotations, invisible default
+returns, Worker/Canvas output, display-list replay, errors, and allocation limits. Complete axes and
+auto labels, log/aspect layout, formula/function/time-series/raster and other core methods,
+margins/clipping, arbitrary graphical controls, exact diagnostics, long vectors, and
+device-identical rendering remain incomplete.
 
 ## Completion evidence
 

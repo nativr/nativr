@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.196.0",
+  "languageSubsetVersion": "0.197.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -335,6 +335,7 @@
         { "name": "dim", "compatibility": "behavioral" },
         { "name": "dim<-", "compatibility": "behavioral" },
         { "name": "drop", "compatibility": "behavioral" },
+        { "name": "plot", "compatibility": "shape" },
         { "name": "nrow", "compatibility": "behavioral" },
         { "name": "ncol", "compatibility": "behavioral" },
         { "name": "as.matrix", "compatibility": "shape" },
@@ -521,6 +522,7 @@
       "name": "graphics",
       "referenceVersion": "R 4.6.x documented behavior",
       "functions": [
+        { "name": "plot.default", "compatibility": "shape" },
         { "name": "plot.new", "compatibility": "behavioral" },
         { "name": "plot.window", "compatibility": "shape" },
         { "name": "matplot", "compatibility": "shape" },

@@ -11,7 +11,7 @@ Date: 2026-07-31
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 498 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 500 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Vector/list selection and replacement, recursive `[[`, arbitrary-dimensional column-major array
@@ -81,6 +81,12 @@ Date: 2026-07-31
   plot-frame/boxplot, and legend graphics events with bounded `plot.new()`, `plot.window()`,
   `rasterImage()`, `segments()`, `box()`, `boxplot()`, and `legend()` builtins, transferable raster
   buffers, output budgeting, and Playground Canvas rendering.
+- Usage-ranked `base::plot` plus `graphics::plot.default` with S3-first package-method forwarding,
+  numeric vector/x-y/matrix/data-frame/list coordinates, point/line/both/overplotted/histogram/step/
+  no-draw geometry, GNU R-shaped 4% linear range padding, common styles, panel hooks, scalar labels,
+  invisible default returns, bounded Worker/Canvas output, and display-list replay. Complete axis
+  ticks/labels, logarithmic or fixed-aspect layout, specialized core methods, margins/clipping, and
+  device-identical rendering remain explicit boundaries.
 - Usage-ranked `grDevices::as.raster`/`is.raster` with ragg's captured-color-matrix shape, row-first
   raster storage, logical/numeric/raw grayscale, numeric/raw RGB(A), vector reshaping,
   names/dimnames removal, S3 methods, identity, missingness/scaling boundaries, and downstream

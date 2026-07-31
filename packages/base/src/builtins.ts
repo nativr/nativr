@@ -996,6 +996,34 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "behavioral",
     builtinHeatColors,
   ),
+  defineBuiltin("plot", ["x", "..."], "shape", builtinPlot),
+  definePackageBuiltin(
+    "graphics",
+    "plot.default",
+    [
+      "x",
+      "y",
+      "type",
+      "xlim",
+      "ylim",
+      "log",
+      "main",
+      "sub",
+      "xlab",
+      "ylab",
+      "ann",
+      "axes",
+      "frame.plot",
+      "panel.first",
+      "panel.last",
+      "asp",
+      "xgap.axis",
+      "ygap.axis",
+      "...",
+    ],
+    "shape",
+    builtinPlotDefault,
+  ),
   definePackageBuiltin("graphics", "plot.new", [], "behavioral", builtinPlotNew, "invisible"),
   definePackageBuiltin(
     "graphics",
@@ -14984,6 +15012,368 @@ async function builtinPlotNew(invocation: BuiltinInvocation): Promise<RValue> {
   return R_NULL;
 }
 
+type PlotType = "p" | "l" | "b" | "c" | "o" | "h" | "s" | "S" | "n";
+
+async function builtinPlot(invocation: BuiltinInvocation): Promise<RValue> {
+  const generic = matchBuiltinArguments(invocation, ["x", "..."]);
+  const xArgument = generic.matched.get("x");
+  if (xArgument === undefined || xArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in plot().");
+  }
+  const input = await invocation.force(xArgument.promise);
+  const dispatched = await invocation.dispatchS3IfPresent(
+    "plot",
+    input,
+    invocation.arguments,
+    false,
+  );
+  return dispatched ?? builtinPlotDefault(invocation);
+}
+
+async function builtinPlotDefault(invocation: BuiltinInvocation): Promise<RValue> {
+  const lazy = matchLazyArgumentsWithDots(invocation, [
+    "x",
+    "y",
+    "type",
+    "xlim",
+    "ylim",
+    "log",
+    "main",
+    "sub",
+    "xlab",
+    "ylab",
+    "ann",
+    "axes",
+    "frame.plot",
+    "panel.first",
+    "panel.last",
+    "asp",
+    "xgap.axis",
+    "ygap.axis",
+  ]);
+  const xArgument = lazy.matched.get("x");
+  if (xArgument === undefined || xArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in plot.default().");
+  }
+  const input = await invocation.force(xArgument.promise);
+  const value = async (name: string): Promise<RValue | undefined> => {
+    const argument = lazy.matched.get(name);
+    if (argument === undefined || argument.promise.missing) return undefined;
+    return invocation.force(argument.promise);
+  };
+  const y = await value("y");
+  const coordinates = graphicsXyCoordinates(input, y, invocation, "plot");
+  const type = plotType(await value("type"));
+  const log = await value("log");
+  if (log !== undefined && log.type !== "null" && characterScalar(log, "plot(log=)") !== "") {
+    throw new RUnsupportedFeatureError(
+      "NRU6170",
+      "plot.default(log=) awaits logarithmic browser axes and coordinate transforms.",
+    );
+  }
+  plotDefaultAspect(await value("asp"), "asp");
+  plotDefaultAspect(await value("xgap.axis"), "xgap.axis");
+  plotDefaultAspect(await value("ygap.axis"), "ygap.axis");
+
+  const xlim = plotWindowLimits(await value("xlim"), coordinates.x, "xlim");
+  const ylim = plotWindowLimits(await value("ylim"), coordinates.y, "ylim");
+  const axes = logicalFlag(await value("axes"), true, "axes");
+  const ann = logicalFlag(await value("ann"), true, "ann");
+  const suppliedFrame = await value("frame.plot");
+  const frame = logicalFlag(suppliedFrame, axes, "frame.plot");
+
+  const controls = new Map<string, RValue>();
+  const supportedControls = new Set(["pch", "col", "bg", "cex", "lwd", "lty"]);
+  for (const argument of lazy.dots) {
+    if (
+      argument.name === undefined ||
+      !supportedControls.has(argument.name) ||
+      controls.has(argument.name)
+    ) {
+      if (!argument.promise.missing) await invocation.force(argument.promise);
+      if (argument.name !== undefined && controls.has(argument.name)) {
+        throw new REvaluationError(
+          "NRE2102",
+          `Argument '${argument.name}' matched more than once.`,
+        );
+      }
+      throw new RUnsupportedFeatureError(
+        "NRU6170",
+        `plot.default() graphical control '${argument.name ?? "<unnamed>"}' is outside the measured browser plot subset.`,
+      );
+    }
+    if (argument.promise.missing) {
+      throw new REvaluationError(
+        "NRE2103",
+        `Argument '${argument.name}' is missing in plot.default().`,
+      );
+    }
+    controls.set(argument.name, await invocation.force(argument.promise));
+  }
+
+  const state = beginGraphicsPage(invocation);
+  state.xlim = xlim;
+  state.ylim = ylim;
+  writeGraphics(invocation, state, { kind: "window", xlim, ylim });
+  await plotPanel(invocation, lazy.matched.get("panel.first"));
+  if (frame) {
+    writeGraphics(invocation, state, {
+      kind: "box",
+      edges: ["top", "right", "bottom", "left"],
+      color: "#000000FF",
+      lineType: "solid",
+      lineWidth: 1,
+    });
+  }
+  plotDefaultGeometry(invocation, state, coordinates, type, controls);
+  await plotPanel(invocation, lazy.matched.get("panel.last"));
+  if (ann) {
+    const annotations = new Map<string, RValue>();
+    for (const name of ["main", "sub", "xlab", "ylab"]) {
+      const annotation = await value(name);
+      if (annotation !== undefined) annotations.set(name, annotation);
+    }
+    plotDefaultAnnotations(invocation, state, annotations);
+  }
+  invocation.setResultVisibility("invisible");
+  return R_NULL;
+}
+
+function plotType(value: RValue | undefined): PlotType {
+  if (value === undefined || value.type === "null") return "p";
+  const type = characterScalar(value, "plot(type=)");
+  if (!["p", "l", "b", "c", "o", "h", "s", "S", "n"].includes(type)) {
+    throw new RTypeMismatchError("NRT3353", `invalid plot type '${type}'`);
+  }
+  return type as PlotType;
+}
+
+function plotDefaultAspect(value: RValue | undefined, name: string): void {
+  if (value === undefined || value.type === "null") return;
+  if (
+    isAtomic(value) &&
+    value.type !== "character" &&
+    value.type !== "complex" &&
+    value.length === 1 &&
+    isMissing(value, 0)
+  ) {
+    return;
+  }
+  throw new RUnsupportedFeatureError(
+    "NRU6170",
+    `plot.default(${name}=) awaits browser layout constraints beyond the measured numeric plot subset.`,
+  );
+}
+
+function plotWindowLimits(
+  supplied: RValue | undefined,
+  coordinates: RDoubleVector,
+  name: "xlim" | "ylim",
+): readonly [number, number] {
+  let start: number;
+  let end: number;
+  if (supplied !== undefined && supplied.type !== "null") {
+    const source = graphicsNumbers(supplied, name);
+    if (source.length !== 2 || !source.every(Number.isFinite)) {
+      throw new RTypeMismatchError("NRT3353", `need finite '${name}' values`);
+    }
+    start = source[0] ?? 0;
+    end = source[1] ?? 0;
+  } else {
+    const finite = Array.from({ length: coordinates.length }, (_, index) =>
+      graphicsPointCoordinate(coordinates, index),
+    ).filter((coordinate): coordinate is number => coordinate !== undefined);
+    if (finite.length === 0) {
+      throw new RTypeMismatchError(
+        "NRT3353",
+        `need finite '${name === "xlim" ? "xlim" : "ylim"}' values`,
+      );
+    }
+    start = Math.min(...finite);
+    end = Math.max(...finite);
+  }
+  const reversed = start > end;
+  let lower = Math.min(start, end);
+  let upper = Math.max(start, end);
+  if (lower === upper) {
+    const expansion = lower === 0 ? 1 : Math.abs(lower) * 0.4;
+    lower -= expansion;
+    upper += expansion;
+  }
+  const padding = (upper - lower) * 0.04;
+  lower -= padding;
+  upper += padding;
+  return reversed ? [upper, lower] : [lower, upper];
+}
+
+async function plotPanel(
+  invocation: BuiltinInvocation,
+  argument: BuiltinCallArgument | undefined,
+): Promise<void> {
+  if (argument === undefined || argument.promise.missing) return;
+  await invocation.force(argument.promise);
+}
+
+function plotDefaultGeometry(
+  invocation: BuiltinInvocation,
+  state: GraphicsState,
+  coordinates: { readonly x: RDoubleVector; readonly y: RDoubleVector },
+  type: PlotType,
+  controls: ReadonlyMap<string, RValue>,
+): void {
+  if (type === "n" || coordinates.x.length === 0) return;
+  const colors = graphicsSegmentColours(controls.get("col"), invocation);
+  const lineTypes = graphicsSegmentLineTypes(controls.get("lty"));
+  const lineWidths = graphicsSegmentLineWidths(controls.get("lwd"));
+  const segments: RGraphicsSegment[] = [];
+  const addSegment = (x0: number, y0: number, x1: number, y1: number, index: number): void => {
+    const color = colors[index % colors.length];
+    const lineType = lineTypes[index % lineTypes.length];
+    const lineWidth = lineWidths[index % lineWidths.length];
+    if (
+      color === undefined ||
+      color[3] === 0 ||
+      lineType === undefined ||
+      lineType === "blank" ||
+      lineWidth === undefined
+    ) {
+      return;
+    }
+    segments.push({
+      x0,
+      y0,
+      x1,
+      y1,
+      color: graphicsCssColour(color),
+      lineType,
+      lineWidth,
+    });
+  };
+  invocation.context.allocate(coordinates.x.length * 12);
+  if (type === "h") {
+    for (let index = 0; index < coordinates.x.length; index += 1) {
+      invocation.context.checkpoint();
+      const x = graphicsPointCoordinate(coordinates.x, index);
+      const y = graphicsPointCoordinate(coordinates.y, index);
+      if (x !== undefined && y !== undefined) addSegment(x, 0, x, y, index);
+    }
+  } else if (["l", "b", "c", "o", "s", "S"].includes(type)) {
+    for (let index = 1; index < coordinates.x.length; index += 1) {
+      invocation.context.checkpoint();
+      const x0 = graphicsPointCoordinate(coordinates.x, index - 1);
+      const y0 = graphicsPointCoordinate(coordinates.y, index - 1);
+      const x1 = graphicsPointCoordinate(coordinates.x, index);
+      const y1 = graphicsPointCoordinate(coordinates.y, index);
+      if (x0 === undefined || y0 === undefined || x1 === undefined || y1 === undefined) continue;
+      if (type === "s") {
+        addSegment(x0, y0, x1, y0, index - 1);
+        addSegment(x1, y0, x1, y1, index - 1);
+      } else if (type === "S") {
+        addSegment(x0, y0, x0, y1, index - 1);
+        addSegment(x0, y1, x1, y1, index - 1);
+      } else {
+        addSegment(x0, y0, x1, y1, index - 1);
+      }
+    }
+  }
+  if (segments.length > 0) writeGraphics(invocation, state, { kind: "segments", segments });
+
+  if (type !== "p" && type !== "b" && type !== "o") return;
+  const symbols = graphicsPointSymbols(controls.get("pch"));
+  const pointColors = graphicsPointColours(controls.get("col"), [0, 0, 0, 255], invocation, true);
+  const fills = graphicsPointColours(controls.get("bg"), [255, 255, 255, 0], invocation, false);
+  const sizes = graphicsPointSizes(controls.get("cex"));
+  const pointWidths = graphicsPointLineWidths(controls.get("lwd"));
+  const points: RGraphicsPoint[] = [];
+  for (let index = 0; index < coordinates.x.length; index += 1) {
+    invocation.context.checkpoint();
+    const x = graphicsPointCoordinate(coordinates.x, index);
+    const y = graphicsPointCoordinate(coordinates.y, index);
+    const symbol = symbols[index % symbols.length];
+    const color = pointColors[index % pointColors.length];
+    const fill = fills[index % fills.length];
+    const size = sizes[index % sizes.length];
+    const lineWidth = pointWidths[index % pointWidths.length];
+    if (
+      x === undefined ||
+      y === undefined ||
+      symbol === undefined ||
+      color === undefined ||
+      fill === undefined ||
+      size === undefined ||
+      lineWidth === undefined
+    ) {
+      continue;
+    }
+    points.push({
+      x,
+      y,
+      symbol,
+      color: graphicsCssColour(color),
+      fill: graphicsCssColour(fill),
+      size,
+      lineWidth,
+    });
+  }
+  if (points.length > 0) writeGraphics(invocation, state, { kind: "points", points });
+}
+
+function plotDefaultAnnotations(
+  invocation: BuiltinInvocation,
+  state: GraphicsState,
+  values: ReadonlyMap<string, RValue>,
+): void {
+  const label = (name: string): string | undefined => {
+    const value = values.get(name);
+    if (value === undefined || value.type === "null") return undefined;
+    if (value.type !== "character" || value.length !== 1 || isMissing(value, 0)) {
+      throw new RUnsupportedFeatureError(
+        "NRU6170",
+        `plot.default(${name}=) currently accepts one character label or NULL.`,
+      );
+    }
+    return value.values[0] ?? "";
+  };
+  const main = label("main");
+  const sub = label("sub");
+  const xlab = label("xlab");
+  const ylab = label("ylab");
+  const xMiddle = (state.xlim[0] + state.xlim[1]) / 2;
+  const yMiddle = (state.ylim[0] + state.ylim[1]) / 2;
+  const labels: RGraphicsText[] = [];
+  const add = (
+    text: string | undefined,
+    x: number,
+    y: number,
+    rotation: number,
+    horizontalAdjustment: number,
+    verticalAdjustment: number,
+    size: number,
+    font: 1 | 2,
+  ): void => {
+    if (text === undefined || text.length === 0) return;
+    labels.push({
+      x,
+      y,
+      label: text,
+      color: "#000000FF",
+      size,
+      font,
+      family: "",
+      rotation,
+      horizontalAdjustment,
+      verticalAdjustment,
+      offset: 0.5,
+    });
+  };
+  add(main, xMiddle, state.ylim[1], 0, 0.5, 1.2, 1.2, 2);
+  add(sub, xMiddle, state.ylim[0], 0, 0.5, -0.2, 1, 1);
+  add(xlab, xMiddle, state.ylim[0], 0, 0.5, -1.2, 1, 1);
+  add(ylab, state.xlim[0], yMiddle, 90, 0.5, -1.2, 1, 1);
+  invocation.context.allocate(labels.length * 8);
+  if (labels.length > 0) writeGraphics(invocation, state, { kind: "text", labels });
+}
+
 function beginGraphicsPage(invocation: BuiltinInvocation): GraphicsState {
   const existing = activeGraphicsState(invocation);
   const state: GraphicsState = existing ?? {
@@ -17212,9 +17602,16 @@ function graphicsXyCoordinates(
   input: RValue,
   suppliedY: RValue | undefined,
   invocation: BuiltinInvocation,
-  call: "points" | "polygon" | "text",
+  call: "plot" | "points" | "polygon" | "text",
 ): { readonly x: RDoubleVector; readonly y: RDoubleVector } {
-  const errorCode = call === "points" ? "NRT3347" : call === "polygon" ? "NRT3348" : "NRT3349";
+  const errorCode =
+    call === "plot"
+      ? "NRT3353"
+      : call === "points"
+        ? "NRT3347"
+        : call === "polygon"
+          ? "NRT3348"
+          : "NRT3349";
   if (suppliedY !== undefined && suppliedY.type !== "null") {
     const x = graphicsXyAtomicCoordinates(input, "x", invocation, call);
     const y = graphicsXyAtomicCoordinates(suppliedY, "y", invocation, call);
@@ -17297,11 +17694,17 @@ function graphicsXyAtomicCoordinates(
   value: RValue,
   name: "x" | "y",
   invocation: BuiltinInvocation,
-  call: "points" | "polygon" | "text",
+  call: "plot" | "points" | "polygon" | "text",
 ): RDoubleVector {
   if (!isAtomic(value) || value.type === "character" || value.type === "complex") {
     throw new RTypeMismatchError(
-      call === "points" ? "NRT3347" : call === "polygon" ? "NRT3348" : "NRT3349",
+      call === "plot"
+        ? "NRT3353"
+        : call === "points"
+          ? "NRT3347"
+          : call === "polygon"
+            ? "NRT3348"
+            : "NRT3349",
       `${call}() '${name}' coordinates must be real numeric.`,
     );
   }

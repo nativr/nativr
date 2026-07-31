@@ -227,23 +227,40 @@ Both inline and Worker APIs retain the output in `evalDetailed` and charge it ag
 output budget. S3 print-method dispatch, global print options, line filling, labels, connections,
 and filesystem output are not claimed.
 
-`plot.new`, bounded `plot.window`, `axTicks`, `box`, `boxplot`, `persp`, `points`, `polygon`,
-`rasterImage`, `segments`, and `legend` provide the first browser-native graphics slice. Evaluation
-owns page and linear coordinate-window state, converts two-dimensional grayscale or character
-colors, three-/four-channel numeric/raw arrays, and packed `nativeRaster` integers to row-major
-RGBA, and emits commands for recycled raster placements, styled line segments, resolved point
-symbols and polygons, plot frames and boxplots, and resolved legend entries. Commands preserve
-raster angle/interpolation, finite coordinates, canonical colors, normalized line patterns, line
-widths, polygon fill rules, frame edges, text labels, point symbols, placement, and layout controls.
-They cross the Worker boundary, remain available in `evalDetailed.graphics`, and count toward the
-configured output budget. Inline and Worker callbacks receive the same command shapes, and the
-Playground renders them to Canvas. Evidence covers the measured systemfonts glyph-raster, httr
-PNG-array, posterior interval-segment, zoo filled-area, zoo plot-frame, zoo grouped-boxplot, and zoo
-legend patterns. The owned device also supports nested `dev.hold`/`dev.flush` levels, ordered
-cross-evaluation command buffering, and bounded same-session `recordPlot`/`replayPlot` over its own
-page/window/raster/segments/points/polygon/box/boxplot/legend display list. General `plot`, device
-selection, axes, complete clipping/margins, graphical parameters beyond the documented controls,
-external display-list formats, and pixel equivalence across GNU R devices are not claimed.
+`plot`, `plot.default`, `plot.new`, bounded `plot.window`, `axTicks`, `box`, `boxplot`, `persp`,
+`points`, `polygon`, `rasterImage`, `segments`, and `legend` provide the first browser-native
+graphics slice. Evaluation owns page and linear coordinate-window state, converts two-dimensional
+grayscale or character colors, three-/four-channel numeric/raw arrays, and packed `nativeRaster`
+integers to row-major RGBA, and emits commands for recycled raster placements, styled line segments,
+resolved point symbols and polygons, plot frames and boxplots, and resolved legend entries. Commands
+preserve raster angle/interpolation, finite coordinates, canonical colors, normalized line patterns,
+line widths, polygon fill rules, frame edges, text labels, point symbols, placement, and layout
+controls. They cross the Worker boundary, remain available in `evalDetailed.graphics`, and count
+toward the configured output budget. Inline and Worker callbacks receive the same command shapes,
+and the Playground renders them to Canvas. Evidence covers the measured systemfonts glyph-raster,
+httr PNG-array, posterior interval-segment, zoo filled-area, zoo plot-frame, zoo grouped-boxplot,
+and zoo legend patterns. The owned device also supports nested `dev.hold`/`dev.flush` levels,
+ordered cross-evaluation command buffering, and bounded same-session `recordPlot`/`replayPlot` over
+its own page/window/raster/segments/points/text/polygon/box/boxplot/legend display list. Complete
+plot methods, device selection, axis tick/label drawing, complete clipping/margins, graphical
+parameters beyond the documented controls, external display-list formats, and pixel equivalence
+across GNU R devices are not claimed.
+
+`base::plot` and `graphics::plot.default` have differential shape evidence for the sampled rank-22
+numeric calls and package-owned S3 extension point. The generic probes class methods before entering
+the default, including methods registered by application-supplied pure-R packages; method return
+values and visibility remain package-owned. The default accepts one real vector, paired real x/y,
+two-column matrices, one-/two-column data frames, named x/y lists, and complex coordinates through
+the shared coordinate adapter. It computes GNU R-shaped linear ranges with 4% regular-axis padding,
+opens a page/window, and emits point, line, both, overplotted, histogram, lower/upper step, or
+no-draw geometry. Common color/fill/symbol/size/line controls recycle; incomplete coordinates are
+omitted and split paths. `panel.first` and `panel.last` are forced around the data geometry,
+`axes`/`frame.plot` control the owned frame, and supplied scalar character main/sub/x/y labels
+become bounded text commands. The default returns invisible `NULL` through inline and Worker
+sessions and participates in hold/flush and display-list replay. Automatic expression-derived
+labels, tick marks and tick labels, logarithmic or fixed-aspect axes, complete axis-gap layout,
+formula/function/time-series/raster and other specialized methods, arbitrary graphical parameters,
+margins/clipping, and device-identical pixels remain outside this shape-level claim.
 
 `graphics::axTicks` has differential evidence for zoo's measured secondary-axis tick lookup and
 ordinary horizontal-axis lookup. On the owned linear device, sides 1/3 derive ticks from the current
@@ -425,9 +442,9 @@ row-first `"raster"` storage contract, character matrices/vectors, logical/numer
 conversion, numeric/raw RGB and RGBA planes, missing grayscale pixels, `max` scaling, vector
 `nrow`/`ncol` reshaping, dropped names/dimnames, S3 dispatch, existing-raster identity, internal
 method access, predicates, lazy unused character/raw `max`, and bounded input errors. The resulting
-object feeds the existing `rasterImage` RGBA journal with pixel-order evidence. General `plot`,
-`plot.raster`, raster subset/replacement methods, `as.matrix.raster`, `nativeRaster` coercion,
-arbitrary external classes, and complete legacy diagnostics are not claimed.
+object feeds the existing `rasterImage` RGBA journal with pixel-order evidence. `plot.raster`,
+raster subset/replacement methods, `as.matrix.raster`, `nativeRaster` coercion, arbitrary external
+classes, and complete legacy diagnostics are not claimed.
 
 `grDevices::dev.flush` covers ragg's measured zero-argument animation-device call shape, and its
 paired `dev.hold` supplies the documented nested-level protocol on NativR's owned browser device.
@@ -1476,7 +1493,7 @@ fractional seconds, names, missing/non-finite inputs, timezone labels, empty inp
 separately by `Sys.time`; named-zone/DST and host-locale behavior are not claimed.
 
 `as.raster` has differential coverage for ragg's measured `plot(as.raster(raster))` conversion
-input, excluding the still-unimplemented general `plot` call. Character capture matrices retain
+input, excluding the still-unimplemented `plot.raster` method. Character capture matrices retain
 their color strings while switching to row-first raster storage; numeric/logical/raw grayscale,
 RGB(A) arrays, reshaping, S3, predicates, identity, missing values, scaling, and the downstream
 `rasterImage` byte order are covered. Device capture, `plot.raster`, raster indexing/replacement,
@@ -1487,7 +1504,7 @@ The rank-421 increment adds GNU R differential evidence for ragg's measured zero
 `dev.hold()` protocol. Nested levels, cross-evaluation suppression, ordered release, reset,
 namespace access, scalar/vector level coercion, missing input, visible integer returns, and pending
 raster memory limits are covered. This does not claim ragg's `agg_webp_anim` device, animation
-encoding, general `plot`, or arbitrary GNU R graphics-device equivalence.
+encoding, specialized plot methods, or arbitrary GNU R graphics-device equivalence.
 
 The rank-422 increment adds GNU R differential evidence for ragg's measured `recordPlot()` and
 `replayPlot(recorded)` call shapes plus NativR-owned device evidence for bounded capture and replay.
