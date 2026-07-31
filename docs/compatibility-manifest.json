@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.191.0",
+  "languageSubsetVersion": "0.192.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -499,7 +499,8 @@
         { "name": "weighted.mean", "compatibility": "behavioral" },
         { "name": "weighted.mean.default", "compatibility": "numeric" },
         { "name": "nlm", "compatibility": "numeric" },
-        { "name": "optim", "compatibility": "numeric" }
+        { "name": "optim", "compatibility": "numeric" },
+        { "name": "update", "compatibility": "shape" }
       ]
     },
     {

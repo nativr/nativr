@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           482 |
-| Overlapping callable names        |           467 |
-| Missing GNU R callable names      |         2,055 |
-| Name overlap                      |      18.5170% |
+| NativR registered names           |           483 |
+| Overlapping callable names        |           468 |
+| Missing GNU R callable names      |         2,054 |
+| Name overlap                      |      18.5567% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -368,6 +368,13 @@ position/adjustment/offset, rotation, family, `xpd`, invisible return, namespace
 Canvas transport, recording/replay, malformed records, errors, and resource limits have coverage.
 Plotmath, Hershey fonts, class-specific label coercion, clipping/log axes, arbitrary graphical
 parameters, exact diagnostics, long vectors, and device-identical metrics remain incomplete.
+
+The rank-464 increment adds GNU R differential shape evidence for the `stats::update` S3 extension
+point used by zoo's documented lattice call. Original classed objects, lazy dots, inherited method
+selection, `NextMethod`, direct and namespace-qualified access, visibility, missing-object errors,
+and independently authored `update.default` methods have coverage. NativR does not implement or copy
+lattice's package-owned `update.trellis`; GNU R's built-in stored-call extraction, call rewriting,
+formula updates, and optional re-evaluation remain incomplete.
 
 ## Completion evidence
 

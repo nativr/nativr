@@ -408,6 +408,14 @@ The runtime does not implement or imitate Stan objects or rstan's package-owned 
 `pairs.default`, the formula method, scatterplot layout, panel callbacks, axes, text, and general
 graphical parameters remain outside this bounded extension-point slice.
 
+`stats::update` supplies the S3 generic used by zoo's documented lattice update call. Differential
+shape evidence covers the original classed dispatch value, lazy `...`, inherited class lookup,
+`NextMethod`, direct and namespace-qualified access, result visibility, missing-object errors, and
+independently authored `update.default` methods. NativR does not implement or imitate lattice's
+package-owned `update.trellis` method. Without a user or package method, the built-in
+`update.default` stored-call extraction, call rewriting, formula replacement, and optional
+re-evaluation path raises an explicit unsupported-feature error.
+
 `grDevices::colors` and its true `colours` alias expose the complete ordered GNU R 4.6.0 catalog of
 657 public names. `distinct = TRUE` returns the documented 502-name first-occurrence subset after
 RGB deduplication; logical and numeric scalar conditions, partial argument matching, missing/invalid

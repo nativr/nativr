@@ -7229,5 +7229,26 @@
     "expected": ["zoo", "custom", "yes", "7", "TRUE", "TRUE", "TRUE"],
     "expectedCompatibility": "shape",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "update-zoo-observed-trellis-extension-shape",
+    "code": "update.trellis <- function(object, ..., redraw = TRUE) c(class(object), list(...)$type, redraw)\nplot <- structure(list(), class = \"trellis\")\nresult <- withVisible(stats::update(plot, type = c(\"l\", \"g\")))\nc(result$value, result$visible)",
+    "expected": ["trellis", "l", "g", "TRUE", "TRUE"],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "update-inherited-next-method-default-and-lazy-dots",
+    "code": "update.child <- function(object, ...) c(\"child\", NextMethod())\nupdate.parent <- function(object, ...) \"parent\"\ninherited <- update(structure(1, class = c(\"child\", \"parent\")), stop(\"unused dot stays lazy\"))\nupdate.default <- function(object, ..., evaluate = TRUE) c(object, evaluate, list(...)$gain)\ndefault <- stats::update(3, gain = 2, evaluate = FALSE)\nc(inherited, default)",
+    "expected": ["child", "parent", "3", "0", "2"],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "update-default-and-missing-object-boundaries",
+    "code": "c(inherits(try(update(list()), silent = TRUE), \"try-error\"), inherits(try(update(), silent = TRUE), \"try-error\"))",
+    "expected": [true, true],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

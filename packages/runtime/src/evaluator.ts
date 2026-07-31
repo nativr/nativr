@@ -200,6 +200,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "embed",
       "frequency",
       "ts",
+      "update",
       "var",
       "weights",
       "weighted.mean",

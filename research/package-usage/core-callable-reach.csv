@@ -462,7 +462,7 @@ rank,callable,nativr_registered,packages,occurrences,package_reach_percent,downl
 461,rlnorm,true,1,1,1.0,0.6
 462,tapply,true,1,1,1.0,0.6
 463,text,true,1,1,1.0,0.6
-464,update,false,1,1,1.0,0.6
+464,update,true,1,1,1.0,0.6
 465,matplot,false,1,6,1.0,0.6
 466,is.atomic,true,1,2,1.0,0.6
 467,is.double,true,1,2,1.0,0.6

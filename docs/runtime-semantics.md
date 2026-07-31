@@ -381,6 +381,14 @@ The default matrix/data-frame scatterplot layout, formula method, panel executio
 general graphical parameters remain outside the current graphics-device slice and produce an
 explicit unsupported-feature error.
 
+`stats::update()` is an S3-first extension point. It forces only `object` for dispatch and forwards
+the original argument promises, including lazy `...`, to the selected method. Inherited class search
+and `NextMethod()` reuse the evaluator's ordinary S3 machinery; a package or user-defined
+`update.default` can therefore provide its own behavior. If no method exists, NativR reports a
+bounded unsupported-feature error because the built-in GNU R default requires stored-call
+extraction, language rewriting, formula substitution, and optional re-evaluation that are not yet
+implemented.
+
 `colors()` and `colours()` resolve to the same registered `grDevices` builtin. A compact
 browser-owned catalog expands to the 657 GNU R 4.6.0 public names in their documented order; a
 versioned omission index derives the 502-name `distinct = TRUE` result. Each call returns a fresh

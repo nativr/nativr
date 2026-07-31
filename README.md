@@ -69,7 +69,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 482 registered functions, including resettable
+an initial condition/handler slice. It exposes 483 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
 preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
@@ -418,6 +418,13 @@ colors/sizes/font faces/positions, adjustment, offset, rotation, browser font fa
 access, bounded graphics accounting, and same-session recording/replay. Plotmath expressions,
 Hershey fonts, class-specific label coercion, clipping/log axes, and device-identical text metrics
 remain explicit boundaries.
+
+Rank 464 `stats::update` now exposes the S3 extension seam used by zoo's documented
+`update(trellis.last.object(), type = c("l", "g"))` call. It preserves lazy `...`, dispatches across
+inherited classes and `NextMethod`, permits independently authored `update.default` methods, and
+works through direct and namespace-qualified calls. NativR does not include lattice's package-owned
+`update.trellis` method; the built-in `update.default` stored-call rewriting and re-evaluation path
+remains an explicit boundary.
 
 Development priority is based on a reproducible analysis of documented usage in popular CRAN
 packages. The committed
