@@ -921,6 +921,33 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   definePackageBuiltin(
     "graphics",
+    "matplot",
+    [
+      "x",
+      "y",
+      "type",
+      "lty",
+      "lwd",
+      "lend",
+      "pch",
+      "col",
+      "cex",
+      "bg",
+      "xlab",
+      "ylab",
+      "xlim",
+      "ylim",
+      "log",
+      "...",
+      "add",
+      "verbose",
+    ],
+    "shape",
+    builtinMatplot,
+    "invisible",
+  ),
+  definePackageBuiltin(
+    "graphics",
     "axTicks",
     ["side", "axp", "usr", "log", "nintLog"],
     "behavioral",
@@ -14208,6 +14235,476 @@ async function builtinPlotWindow(invocation: BuiltinInvocation): Promise<RValue>
   state.ylim = ylim;
   writeGraphics(invocation, state, { kind: "window", xlim, ylim });
   return R_NULL;
+}
+
+interface MatplotMatrix {
+  readonly rows: number;
+  readonly columns: number;
+  readonly values: readonly (number | undefined)[];
+}
+
+type MatplotType = "p" | "l" | "b" | "o" | "n";
+
+async function builtinMatplot(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched, dots } = matchLazyArgumentsWithDots(invocation, [
+    "x",
+    "y",
+    "type",
+    "lty",
+    "lwd",
+    "lend",
+    "pch",
+    "col",
+    "cex",
+    "bg",
+    "xlab",
+    "ylab",
+    "xlim",
+    "ylim",
+    "log",
+    "add",
+    "verbose",
+  ]);
+  const xArgument = matched.get("x");
+  const yArgument = matched.get("y");
+  const xMissing = xArgument === undefined || xArgument.promise.missing;
+  const yMissing = yArgument === undefined || yArgument.promise.missing;
+  if (xMissing && yMissing) {
+    throw new REvaluationError("NRE2103", "Arguments 'x' and 'y' are both missing in matplot().");
+  }
+
+  let x: MatplotMatrix;
+  let y: MatplotMatrix;
+  if (yMissing) {
+    if (xArgument === undefined) {
+      throw new REvaluationError("NRE2103", "Argument 'x' is missing in matplot().");
+    }
+    y = matplotMatrix(await invocation.force(xArgument.promise), invocation, "y");
+    x = matplotSequence(y.rows);
+  } else {
+    if (yArgument === undefined) {
+      throw new REvaluationError("NRE2103", "Argument 'y' is missing in matplot().");
+    }
+    y = matplotMatrix(await invocation.force(yArgument.promise), invocation, "y");
+    if (xMissing) {
+      x = matplotSequence(y.rows);
+    } else {
+      if (xArgument === undefined) {
+        throw new REvaluationError("NRE2103", "Argument 'x' is missing in matplot().");
+      }
+      x = matplotMatrix(await invocation.force(xArgument.promise), invocation, "x");
+    }
+  }
+  if (x.rows !== y.rows) {
+    throw new RTypeMismatchError("NRT3350", "matplot() 'x' and 'y' must have the same row count.");
+  }
+
+  const values = new Map<string, RValue>();
+  for (const name of [
+    "type",
+    "lty",
+    "lwd",
+    "lend",
+    "pch",
+    "col",
+    "cex",
+    "bg",
+    "xlab",
+    "ylab",
+    "xlim",
+    "ylim",
+    "log",
+    "add",
+    "verbose",
+  ] as const) {
+    const argument = matched.get(name);
+    if (argument !== undefined && !argument.promise.missing) {
+      values.set(name, await invocation.force(argument.promise));
+    }
+  }
+
+  let axes = true;
+  for (const argument of dots) {
+    if (argument.name !== "axes") {
+      if (!argument.promise.missing) await invocation.force(argument.promise);
+      throw new RUnsupportedFeatureError(
+        "NRU6167",
+        `matplot() graphical control '${argument.name ?? "<unnamed>"}' is outside the measured browser matrix-plot subset.`,
+      );
+    }
+    if (argument.promise.missing) {
+      throw new REvaluationError("NRE2103", "Argument 'axes' is missing in matplot().");
+    }
+    axes = logicalFlag(await invocation.force(argument.promise), true, "axes");
+  }
+
+  matplotAnnotation(values.get("xlab"), "xlab");
+  matplotAnnotation(values.get("ylab"), "ylab");
+  matplotLineEnds(values.get("lend"));
+  const add = logicalFlag(values.get("add"), false, "add");
+  if (add) {
+    throw new RUnsupportedFeatureError(
+      "NRU6167",
+      "matplot(add = TRUE) awaits class-preserving plot()/lines() composition.",
+    );
+  }
+  const verbose = logicalFlag(values.get("verbose"), false, "verbose");
+  if (verbose) {
+    throw new RUnsupportedFeatureError(
+      "NRU6167",
+      "matplot(verbose = TRUE) awaits GNU R diagnostic text compatibility.",
+    );
+  }
+
+  const log = matplotLogAxes(values.get("log"));
+  const seriesCount = Math.max(x.columns, y.columns);
+  invocation.context.allocate(seriesCount * Math.max(x.rows, 1) * 4);
+  const transformed = matplotCoordinates(x, y, seriesCount, log, invocation);
+  const xlim = matplotWindowLimits(values.get("xlim"), transformed.x, log.x, "xlim");
+  const ylim = matplotWindowLimits(values.get("ylim"), transformed.y, log.y, "ylim");
+  const state = beginGraphicsPage(invocation);
+  state.xlim = xlim;
+  state.ylim = ylim;
+  writeGraphics(invocation, state, { kind: "window", xlim, ylim });
+
+  const types = matplotTypes(values.get("type"));
+  const colors = graphicsSegmentColours(
+    values.get("col") ?? integerVector([1, 2, 3, 4, 5, 6]),
+    invocation,
+  );
+  const lineTypes = graphicsSegmentLineTypes(values.get("lty") ?? integerVector([1, 2, 3, 4, 5]));
+  const lineWidths = graphicsSegmentLineWidths(values.get("lwd"));
+  const symbols = matplotPointSymbols(values.get("pch"));
+  const fills = graphicsPointColours(values.get("bg"), [255, 255, 255, 0], invocation, false);
+  const sizes = graphicsPointSizes(values.get("cex"));
+
+  if (axes) {
+    const axisColor = colors[0] ?? ([0, 0, 0, 255] as const);
+    const axisLineType = lineTypes[0] ?? "solid";
+    const axisLineWidth = lineWidths[0];
+    if (axisColor[3] !== 0 && axisLineType !== "blank" && axisLineWidth !== undefined) {
+      writeGraphics(invocation, state, {
+        kind: "box",
+        edges: ["top", "right", "bottom", "left"],
+        color: graphicsCssColour(axisColor),
+        lineType: axisLineType,
+        lineWidth: axisLineWidth,
+      });
+    }
+  }
+
+  const segments: RGraphicsSegment[] = [];
+  const points: RGraphicsPoint[] = [];
+  for (let series = 0; series < seriesCount; series += 1) {
+    invocation.context.checkpoint();
+    const type = types[series % types.length] ?? "p";
+    const color = colors[series % colors.length];
+    const lineType = lineTypes[series % lineTypes.length];
+    const lineWidth = lineWidths[series % lineWidths.length];
+    const symbol = symbols[series % symbols.length];
+    const fill = fills[series % fills.length];
+    const size = sizes[series % sizes.length];
+    const drawLines = type === "l" || type === "b" || type === "o";
+    const drawPoints = type === "p" || type === "b" || type === "o";
+    if (
+      drawLines &&
+      color !== undefined &&
+      color[3] !== 0 &&
+      lineType !== undefined &&
+      lineType !== "blank" &&
+      lineWidth !== undefined
+    ) {
+      for (let row = 1; row < x.rows; row += 1) {
+        const previous = matplotCoordinateAt(transformed, series, row - 1);
+        const current = matplotCoordinateAt(transformed, series, row);
+        if (previous === undefined || current === undefined) continue;
+        segments.push({
+          x0: previous.x,
+          y0: previous.y,
+          x1: current.x,
+          y1: current.y,
+          color: graphicsCssColour(color),
+          lineType,
+          lineWidth,
+        });
+      }
+    }
+    if (
+      drawPoints &&
+      color !== undefined &&
+      symbol !== undefined &&
+      fill !== undefined &&
+      size !== undefined &&
+      lineWidth !== undefined
+    ) {
+      for (let row = 0; row < x.rows; row += 1) {
+        const coordinate = matplotCoordinateAt(transformed, series, row);
+        if (coordinate === undefined) continue;
+        points.push({
+          x: coordinate.x,
+          y: coordinate.y,
+          symbol,
+          color: graphicsCssColour(color),
+          fill: graphicsCssColour(fill),
+          size,
+          lineWidth,
+        });
+      }
+    }
+  }
+  if (segments.length > 0) writeGraphics(invocation, state, { kind: "segments", segments });
+  if (points.length > 0) writeGraphics(invocation, state, { kind: "points", points });
+  return R_NULL;
+}
+
+function matplotMatrix(
+  value: RValue,
+  invocation: BuiltinInvocation,
+  name: "x" | "y",
+): MatplotMatrix {
+  if (isDataFrame(value)) {
+    const rows = dataFrameRowCount(value);
+    const values: (number | undefined)[] = [];
+    for (const column of value.values) {
+      const numeric = matplotAtomicColumn(column, invocation, name);
+      if (numeric.length !== rows) {
+        throw new RTypeMismatchError(
+          "NRT3350",
+          `matplot() '${name}' has ragged data-frame columns.`,
+        );
+      }
+      for (let row = 0; row < rows; row += 1) {
+        values.push(matplotNumberAt(numeric, row));
+      }
+    }
+    return { rows, columns: value.length, values };
+  }
+  if (
+    !isAtomic(value) ||
+    value.type === "character" ||
+    value.type === "complex" ||
+    isFactor(value)
+  ) {
+    throw new RTypeMismatchError(
+      "NRT3350",
+      `matplot() '${name}' must be a real vector, matrix, or numeric data frame.`,
+    );
+  }
+  const dimensions = vectorDimensions(value);
+  if (dimensions !== undefined && dimensions.length !== 2) {
+    throw new RTypeMismatchError("NRT3350", `matplot() '${name}' arrays must have two dimensions.`);
+  }
+  const numeric = coerceAtomicToDouble(value, invocation);
+  const rows = dimensions?.[0] ?? numeric.length;
+  const columns = dimensions?.[1] ?? 1;
+  return {
+    rows,
+    columns,
+    values: Array.from({ length: numeric.length }, (_, index) => matplotNumberAt(numeric, index)),
+  };
+}
+
+function matplotAtomicColumn(
+  value: RValue,
+  invocation: BuiltinInvocation,
+  name: "x" | "y",
+): RDoubleVector {
+  if (
+    !isAtomic(value) ||
+    value.type === "character" ||
+    value.type === "complex" ||
+    isFactor(value)
+  ) {
+    throw new RTypeMismatchError(
+      "NRT3350",
+      `matplot() '${name}' data-frame columns must be real numeric.`,
+    );
+  }
+  return coerceAtomicToDouble(value, invocation);
+}
+
+function matplotNumberAt(value: RDoubleVector, index: number): number | undefined {
+  if (isMissing(value, index)) return undefined;
+  const number = value.values[index] ?? Number.NaN;
+  return Number.isFinite(number) ? number : undefined;
+}
+
+function matplotSequence(rows: number): MatplotMatrix {
+  return {
+    rows,
+    columns: 1,
+    values: Array.from({ length: rows }, (_, index) => index + 1),
+  };
+}
+
+function matplotAnnotation(value: RValue | undefined, name: "xlab" | "ylab"): void {
+  if (
+    value !== undefined &&
+    value.type !== "null" &&
+    (value.type !== "character" || value.length !== 1 || isMissing(value, 0))
+  ) {
+    throw new RUnsupportedFeatureError(
+      "NRU6167",
+      `matplot(${name}=) currently accepts one character label or NULL.`,
+    );
+  }
+}
+
+function matplotLineEnds(value: RValue | undefined): void {
+  if (value === undefined || value.type === "null") return;
+  if (
+    value.type !== "character" ||
+    value.length !== 1 ||
+    isMissing(value, 0) ||
+    value.values[0] !== "round"
+  ) {
+    throw new RUnsupportedFeatureError(
+      "NRU6167",
+      "matplot(lend=) currently supports the browser renderer's round line ends only.",
+    );
+  }
+}
+
+function matplotLogAxes(value: RValue | undefined): { readonly x: boolean; readonly y: boolean } {
+  if (value === undefined || value.type === "null") return { x: false, y: false };
+  const source = characterScalar(value, "matplot(log=)");
+  if (![...source].every((axis) => axis === "x" || axis === "y")) {
+    throw new RTypeMismatchError("NRT3350", "matplot(log=) must contain only 'x' and/or 'y'.");
+  }
+  return { x: source.includes("x"), y: source.includes("y") };
+}
+
+function matplotCoordinates(
+  x: MatplotMatrix,
+  y: MatplotMatrix,
+  seriesCount: number,
+  log: { readonly x: boolean; readonly y: boolean },
+  invocation: BuiltinInvocation,
+): {
+  readonly rows: number;
+  readonly series: number;
+  readonly x: readonly (number | undefined)[];
+  readonly y: readonly (number | undefined)[];
+} {
+  const xs: (number | undefined)[] = [];
+  const ys: (number | undefined)[] = [];
+  for (let series = 0; series < seriesCount; series += 1) {
+    const xColumn = series % x.columns;
+    const yColumn = series % y.columns;
+    for (let row = 0; row < x.rows; row += 1) {
+      invocation.context.checkpoint();
+      xs.push(matplotTransform(x.values[row + x.rows * xColumn], log.x));
+      ys.push(matplotTransform(y.values[row + y.rows * yColumn], log.y));
+    }
+  }
+  return { rows: x.rows, series: seriesCount, x: xs, y: ys };
+}
+
+function matplotTransform(value: number | undefined, logarithmic: boolean): number | undefined {
+  if (value === undefined || (logarithmic && value <= 0)) return undefined;
+  const transformed = logarithmic ? Math.log10(value) : value;
+  return Number.isFinite(transformed) ? transformed : undefined;
+}
+
+function matplotWindowLimits(
+  supplied: RValue | undefined,
+  coordinates: readonly (number | undefined)[],
+  logarithmic: boolean,
+  name: "xlim" | "ylim",
+): readonly [number, number] {
+  let start: number;
+  let end: number;
+  if (supplied !== undefined && supplied.type !== "null") {
+    const source = graphicsNumbers(supplied, name);
+    if (source.length !== 2 || source[0] === source[1]) {
+      throw new RTypeMismatchError("NRT3350", `matplot(${name}=) requires two distinct values.`);
+    }
+    const first = matplotTransform(source[0], logarithmic);
+    const second = matplotTransform(source[1], logarithmic);
+    if (first === undefined || second === undefined) {
+      throw new RTypeMismatchError(
+        "NRT3350",
+        `matplot(${name}=) must contain valid values for the selected scale.`,
+      );
+    }
+    start = first;
+    end = second;
+  } else {
+    const finite = coordinates.filter(
+      (coordinate): coordinate is number => coordinate !== undefined,
+    );
+    if (finite.length === 0) {
+      throw new RTypeMismatchError(
+        "NRT3350",
+        `matplot() needs finite '${name === "xlim" ? "x" : "y"}' values.`,
+      );
+    }
+    start = Math.min(...finite);
+    end = Math.max(...finite);
+  }
+  const reversed = start > end;
+  let lower = Math.min(start, end);
+  let upper = Math.max(start, end);
+  if (lower === upper) {
+    const expansion = Math.max(Math.abs(lower) * 0.04, 1);
+    lower -= expansion;
+    upper += expansion;
+  } else {
+    const padding = (upper - lower) * 0.04;
+    lower -= padding;
+    upper += padding;
+  }
+  return reversed ? [upper, lower] : [lower, upper];
+}
+
+function matplotTypes(value: RValue | undefined): readonly MatplotType[] {
+  if (value === undefined || value.type === "null") return ["p"];
+  if (value.type !== "character" || value.length === 0) {
+    throw new RTypeMismatchError("NRT3350", "matplot(type=) requires a nonempty character vector.");
+  }
+  const sources =
+    value.length === 1 && !isMissing(value, 0)
+      ? [...(value.values[0] ?? "")]
+      : Array.from({ length: value.length }, (_, index) =>
+          isMissing(value, index) ? "" : (value.values[index] ?? ""),
+        );
+  if (
+    sources.length === 0 ||
+    sources.some(
+      (source): boolean => source.length !== 1 || !["p", "l", "b", "o", "n"].includes(source),
+    )
+  ) {
+    throw new RUnsupportedFeatureError(
+      "NRU6167",
+      "matplot(type=) currently supports point, line, both, overplotted, and no-draw types.",
+    );
+  }
+  return sources as MatplotType[];
+}
+
+function matplotPointSymbols(value: RValue | undefined): readonly (number | string | undefined)[] {
+  if (value === undefined || value.type === "null") {
+    return [..."1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"];
+  }
+  if (value.type === "character" && value.length === 1 && !isMissing(value, 0)) {
+    return graphicsPointSymbols(characterVector([...(value.values[0] ?? "")]));
+  }
+  return graphicsPointSymbols(value);
+}
+
+function matplotCoordinateAt(
+  coordinates: {
+    readonly rows: number;
+    readonly x: readonly (number | undefined)[];
+    readonly y: readonly (number | undefined)[];
+  },
+  series: number,
+  row: number,
+): { readonly x: number; readonly y: number } | undefined {
+  const index = row + coordinates.rows * series;
+  const x = coordinates.x[index];
+  const y = coordinates.y[index];
+  return x === undefined || y === undefined ? undefined : { x, y };
 }
 
 async function builtinAxisTicks(invocation: BuiltinInvocation): Promise<RValue> {

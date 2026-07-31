@@ -257,6 +257,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "box",
       "boxplot",
       "legend",
+      "matplot",
       "pairs",
       "persp",
       "points",

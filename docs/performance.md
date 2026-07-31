@@ -403,3 +403,7 @@ Language subset 0.192 adds rank 464's `stats::update()` S3 extension seam by reu
 existing lazy method-dispatch machinery. No package method or second call-rewriting engine is
 embedded; the built-in stored-call default remains explicit future work. The measured Worker size is
 302.4 KiB gzip against the unchanged 308 KiB limit.
+
+Language subset 0.193 adds rank 465's `graphics::matplot()` matrix-series adapter, log-coordinate
+resolution, and style/column cycling while reusing existing page, window, box, segment, and point
+events. The measured Worker size is 304.0 KiB gzip against the unchanged 308 KiB limit.

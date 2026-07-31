@@ -11,7 +11,7 @@ Date: 2026-07-30
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 483 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 484 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Vector/list selection and replacement, recursive `[[`, arbitrary-dimensional column-major array
@@ -123,6 +123,12 @@ Date: 2026-07-30
   bounded Worker transport, Canvas pixels, output accounting, and display-list replay. Plotmath,
   Hershey fonts, broader class coercion, clipping/log axes, and device-identical metrics remain
   explicit boundaries.
+- Usage-ranked `graphics::matplot` for bit64's six measured matrix-performance calls, including
+  vector/matrix/data-frame series, one-argument x generation, column cycling, missing omission,
+  point/line/both/overplotted/no-draw types, log-x/log-y coordinate resolution, recycled colors,
+  symbols, fills, sizes, line types, and widths, bounded Worker/Canvas output, and display-list
+  replay. Full axes and annotations, class-specific plotting methods, `add = TRUE`, step/histogram
+  types, and device-identical layout remain explicit boundaries.
 - Usage-ranked `graphics::polygon` for zoo's measured filled-area panel helper, including paired
   vector/matrix/data-frame/list/complex coordinates, missing-coordinate polygon splitting, recycled
   fill/border colors and line types/widths, solid/no-fill density, even-odd rules, invisible

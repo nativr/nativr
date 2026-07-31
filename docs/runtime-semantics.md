@@ -324,6 +324,18 @@ journals, and same-session record/replay share the existing graphics path. Plotm
 Hershey fonts, class-specific label coercion, plot-region clipping, logarithmic axes, and
 device-identical text metrics remain unsupported.
 
+`graphics::matplot()` is a high-level numeric matrix-series adapter over the owned browser graphics
+journal. With one input it generates `1:n` x coordinates; with two inputs it validates equal row
+counts and cycles their columns. Numeric/logical vectors, matrices, and numeric data frames become
+column-major series. Point, line, both, overplotted, and no-draw types plus colors, symbols, fills,
+sizes, line types, and widths cycle by series. Incomplete pairs omit points and split line runs.
+Logarithmic x/y values are converted to finite base-10 device coordinates before window and command
+emission. A call begins a page, computes padded limits, writes a window and optional box, then emits
+the same bounded segment and point events used elsewhere, so Worker transport and same-session
+record/replay need no additional protocol. Complete axes/labels, class-preserving `plot`/`lines`
+dispatch, additions to existing plots, remaining plot types, and exact graphics layout remain
+unsupported.
+
 `graphics::polygon()` accepts the same owned coordinate containers but does not dispatch: paired
 vectors, two-column matrices/data frames, complex coordinates, and named `list(x, y)` become
 device-independent closed paths. Missing or non-finite pairs split separate polygons. Fill/border

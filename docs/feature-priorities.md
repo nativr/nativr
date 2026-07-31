@@ -867,8 +867,15 @@ downloads, one measured occurrence, and 0.6% weighted reach. The owned
 [documented generic path](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/update.html)
 preserves lazy dots and supports inherited S3/`NextMethod` dispatch plus independently authored
 default methods. Lattice's package-owned method and GNU R's built-in stored-call rewriting and
-re-evaluation remain boundaries. Rank 465 `graphics::matplot` is the next unresolved callable
-candidate.
+re-evaluation remain boundaries. Rank 465 `graphics::matplot` is now complete for
+[bit64's](https://cran.r-project.org/web/packages/bit64/refman/bit64.html) six measured
+matrix-performance plots, representing 722,206 downloads and 0.6% weighted reach. The owned
+[documented matrix-plot path](https://stat.ethz.ch/R-manual/R-devel/library/graphics/html/matplot.html)
+cycles vector/matrix/data-frame columns and point/line styles, omits incomplete pairs, resolves
+linear and logarithmic coordinates, and reuses bounded page/window/box/segment/point Worker/Canvas
+and display-list commands. Full axes/annotations, class-specific plotting methods, `add = TRUE`,
+step/histogram types, and device-identical layout remain boundaries. Ranks 466–469 are already
+registered; rank 470 `base::aperm` is the next unresolved callable candidate.
 
 ## Completed implementation order
 
@@ -1243,6 +1250,10 @@ ties:
 130. Model-call updates: `stats::update()` runs zoo's measured lattice extension call through lazy
      S3 dispatch, inherited method selection, `NextMethod`, namespace access, independently authored
      defaults, deterministic unsupported boundaries, and resource limits.
+131. Matrix-series graphics: `graphics::matplot()` runs bit64's six measured performance plots with
+     vector/matrix/data-frame inputs, generated x coordinates, column/style recycling, incomplete
+     omission, logarithmic coordinates, point/line series, Worker/Canvas rendering, display-list
+     replay, namespace access, and resource limits.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

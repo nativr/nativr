@@ -990,6 +990,161 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("draws bit64's frequency-ranked graphics::matplot matrix series", async () => {
+    const runtime = await session();
+    const observed: unknown[] = [];
+    const listening = await createR({
+      execution: "inline",
+      assets,
+      onGraphics: (event) => observed.push(event),
+    });
+    const plotted = await listening.evalDetailed(`
+      values <- matrix(c(0, 1, 2, 10, NA, 30), 3, 2)
+      graphics::matplot(
+        values,
+        type = "b",
+        pch = c("d", "i"),
+        col = c("red", "blue"),
+        lty = 1:2,
+        lwd = c(1, 2),
+        xlab = "tasks",
+        ylab = "relative speed",
+        axes = FALSE
+      )
+    `);
+    expect(plotted.value).toBeNull();
+    expect(plotted.visible).toBe(false);
+    expect(plotted.graphics).toHaveLength(4);
+    expect(plotted.graphics[0]).toEqual({ kind: "new-page" });
+    expect(plotted.graphics[1]).toEqual({
+      kind: "window",
+      xlim: [0.92, 3.08],
+      ylim: [-1.2, 31.2],
+    });
+    expect(plotted.graphics[2]).toEqual({
+      kind: "segments",
+      segments: [
+        {
+          x0: 1,
+          y0: 0,
+          x1: 2,
+          y1: 1,
+          color: "#FF0000FF",
+          lineType: "solid",
+          lineWidth: 1,
+        },
+        {
+          x0: 2,
+          y0: 1,
+          x1: 3,
+          y1: 2,
+          color: "#FF0000FF",
+          lineType: "solid",
+          lineWidth: 1,
+        },
+      ],
+    });
+    expect(plotted.graphics[3]).toMatchObject({
+      kind: "points",
+      points: [
+        { x: 1, y: 0, symbol: "d", color: "#FF0000FF", lineWidth: 1 },
+        { x: 2, y: 1, symbol: "d", color: "#FF0000FF", lineWidth: 1 },
+        { x: 3, y: 2, symbol: "d", color: "#FF0000FF", lineWidth: 1 },
+        { x: 1, y: 10, symbol: "i", color: "#0000FFFF", lineWidth: 2 },
+        { x: 3, y: 30, symbol: "i", color: "#0000FFFF", lineWidth: 2 },
+      ],
+    });
+    expect(observed).toEqual(plotted.graphics);
+
+    const logged = await listening.evalDetailed(`
+      matplot(
+        1:3,
+        cbind(c(1, 10, 100), c(2, 20, 200)),
+        type = "b",
+        pch = c("d", "i"),
+        log = "y",
+        axes = FALSE
+      )
+    `);
+    expect(logged.graphics).toHaveLength(4);
+    expect(logged.graphics[1]).toMatchObject({
+      kind: "window",
+      xlim: [0.92, 3.08],
+    });
+    const logMaximum = Math.log10(200);
+    const logPadding = logMaximum * 0.04;
+    const window = logged.graphics[1];
+    expect(window?.kind).toBe("window");
+    if (window?.kind === "window") {
+      expect(window.ylim[0]).toBeCloseTo(-logPadding, 14);
+      expect(window.ylim[1]).toBeCloseTo(logMaximum + logPadding, 14);
+    }
+    const loggedSegments = logged.graphics[2];
+    expect(loggedSegments?.kind).toBe("segments");
+    if (loggedSegments?.kind === "segments") {
+      expect(loggedSegments.segments).toHaveLength(4);
+      expect(loggedSegments.segments[0]).toMatchObject({ x0: 1, y0: 0, x1: 2, y1: 1 });
+      expect(loggedSegments.segments[2]?.x0).toBe(1);
+      expect(loggedSegments.segments[2]?.y0).toBeCloseTo(Math.log10(2), 14);
+      expect(loggedSegments.segments[2]?.x1).toBe(2);
+      expect(loggedSegments.segments[2]?.y1).toBeCloseTo(Math.log10(20), 14);
+    }
+    const loggedPoints = logged.graphics[3];
+    expect(loggedPoints?.kind).toBe("points");
+    if (loggedPoints?.kind === "points") {
+      expect(loggedPoints.points).toHaveLength(6);
+      expect(loggedPoints.points[2]).toMatchObject({ x: 3, y: 2, symbol: "d" });
+      expect(loggedPoints.points[5]?.x).toBe(3);
+      expect(loggedPoints.points[5]?.y).toBeCloseTo(Math.log10(200), 14);
+      expect(loggedPoints.points[5]?.symbol).toBe("i");
+    }
+
+    const framed = await listening.evalDetailed(
+      "matplot(matrix(1:6, 3, 2), type = 'n', col = 'green')",
+    );
+    expect(framed.graphics).toEqual([
+      { kind: "new-page" },
+      { kind: "window", xlim: [0.92, 3.08], ylim: [0.8, 6.2] },
+      {
+        kind: "box",
+        edges: ["top", "right", "bottom", "left"],
+        color: "#00FF00FF",
+        lineType: "solid",
+        lineWidth: 1,
+      },
+    ]);
+    await listening.eval("saved <- recordPlot()");
+    const replayed = await listening.evalDetailed("replayPlot(saved)");
+    expect(replayed.graphics).toEqual(framed.graphics);
+    await listening.dispose();
+
+    await expect(runtime.eval("matplot()")).rejects.toMatchObject({ code: "NRE2103" });
+    await expect(runtime.eval("matplot(1:3, 1:2)")).rejects.toMatchObject({ code: "NRT3350" });
+    await expect(runtime.eval("matplot(c(-1, 0), log = 'y')")).rejects.toMatchObject({
+      code: "NRT3350",
+    });
+    await expect(runtime.eval("matplot(1:3, type = 'h')")).rejects.toMatchObject({
+      code: "NRU6167",
+    });
+    await expect(runtime.eval("matplot(1:3, add = TRUE)")).rejects.toMatchObject({
+      code: "NRU6167",
+    });
+    await expect(runtime.eval("matplot(1:3, main = 'unsupported')")).rejects.toMatchObject({
+      code: "NRU6167",
+    });
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 10 },
+    });
+    await expect(limited.eval("matplot(matrix(1:12, 4, 3))")).rejects.toMatchObject({
+      code: "NRL4002",
+    });
+    await limited.dispose();
+  });
+
   it("generates the frequency-ranked grDevices heat palette", async () => {
     const runtime = await session();
     await expect(runtime.eval("grDevices::heat.colors(5)")).resolves.toEqual([
@@ -6314,7 +6469,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.192.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.193.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -6338,6 +6493,7 @@ describe("complete inline source-to-result vertical slice", () => {
     expect(capabilities.packages.find((entry) => entry.name === "graphics")?.functions).toEqual([
       { name: "plot.new", compatibility: "behavioral" },
       { name: "plot.window", compatibility: "shape" },
+      { name: "matplot", compatibility: "shape" },
       { name: "axTicks", compatibility: "behavioral" },
       { name: "box", compatibility: "shape" },
       { name: "boxplot", compatibility: "shape" },

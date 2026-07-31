@@ -4,11 +4,11 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 483,
-    "overlappingNames": 468,
-    "missingReferenceNames": 2054,
+    "nativrRegisteredNames": 484,
+    "overlappingNames": 469,
+    "missingReferenceNames": 2053,
     "nativrExtensionNames": 15,
-    "nameCoverage": 0.185567
+    "nameCoverage": 0.185964
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 348, "nameCoverage": 0.254572 },
@@ -24,8 +24,8 @@
     {
       "package": "graphics",
       "callableNames": 88,
-      "overlappingNames": 13,
-      "nameCoverage": 0.147727
+      "overlappingNames": 14,
+      "nameCoverage": 0.159091
     },
     { "package": "datasets", "callableNames": 0, "overlappingNames": 0, "nameCoverage": 1 }
   ],
@@ -308,6 +308,7 @@
     "match",
     "match.arg",
     "match.call",
+    "matplot",
     "matrix",
     "max",
     "mean",
@@ -1745,7 +1746,6 @@
     "match.fun",
     "matchSignature",
     "matlines",
-    "matplot",
     "matpoints",
     "matrixOps",
     "mauchly.test",
