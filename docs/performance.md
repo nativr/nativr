@@ -334,3 +334,7 @@ and package-method S3 seam without raising the ceiling. The complete production 
 Language subset 0.176 adds rank 447's `signif()` real/complex significant-digit rounding and S3
 dispatch seams without raising the ceiling. The complete production Worker measures 288.9 KiB gzip
 against the 308 KiB limit.
+
+Language subset 0.177 adds rank 448's `graphics::axTicks()` linear state-derived and explicit
+parameter paths without raising the ceiling. The complete production Worker measures 289.6 KiB gzip
+against the 308 KiB limit.

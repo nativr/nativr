@@ -332,6 +332,11 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
 93. Frequency-ranked significant-digit rounding: `signif` runs zoo's two plot-limit calculations and
     covers decimal ties-to-even, real/complex vectors, recycled/clamped digit controls, metadata,
     missing and non-finite values, resource limits, and direct/Math S3 dispatch.
+94. Frequency-ranked linear axis ticks: `graphics::axTicks` runs zoo's measured secondary-axis
+    lookup through owned `plot.window` state and explicit `axp` parameters, including forward and
+    reversed 1/2/5-power-of-ten ranges, lazy linear arguments, namespace access, validation, and
+    allocation limits. Logarithmic axes and complete base-graphics axis drawing remain separate
+    work.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

@@ -208,13 +208,13 @@ Both inline and Worker APIs retain the output in `evalDetailed` and charge it ag
 output budget. S3 print-method dispatch, global print options, line filling, labels, connections,
 and filesystem output are not claimed.
 
-`plot.new`, bounded `plot.window`, `rasterImage`, `segments`, and `legend` provide the first
-browser-native graphics slice. Evaluation owns page and linear coordinate-window state, converts
-two-dimensional grayscale or character colors, three-/four-channel numeric/raw arrays, and packed
-`nativeRaster` integers to row-major RGBA, and emits commands for recycled raster placements, styled
-line segments, and resolved legend entries. Commands preserve raster angle/interpolation, finite
-segment endpoints, canonical colors, normalized line patterns, line widths, text labels, point
-symbols, placement, and layout controls. They cross the Worker boundary, remain available in
+`plot.new`, bounded `plot.window`, `axTicks`, `rasterImage`, `segments`, and `legend` provide the
+first browser-native graphics slice. Evaluation owns page and linear coordinate-window state,
+converts two-dimensional grayscale or character colors, three-/four-channel numeric/raw arrays, and
+packed `nativeRaster` integers to row-major RGBA, and emits commands for recycled raster placements,
+styled line segments, and resolved legend entries. Commands preserve raster angle/interpolation,
+finite segment endpoints, canonical colors, normalized line patterns, line widths, text labels,
+point symbols, placement, and layout controls. They cross the Worker boundary, remain available in
 `evalDetailed.graphics`, and count toward the configured output budget. Inline and Worker callbacks
 receive the same command shapes, and the Playground renders them to Canvas. Evidence covers the
 measured systemfonts glyph-raster, httr PNG-array, posterior interval-segment, and zoo legend
@@ -223,6 +223,17 @@ cross-evaluation command buffering, and bounded same-session `recordPlot`/`repla
 page/window/raster/segments/legend display list. General `plot`, device selection, axes, complete
 clipping/margins, graphical parameters beyond the documented controls, external display-list
 formats, and pixel equivalence across GNU R devices are not claimed.
+
+`graphics::axTicks` has differential evidence for zoo's measured secondary-axis tick lookup and
+ordinary horizontal-axis lookup. On the owned linear device, sides 1/3 derive ticks from the current
+x limits and sides 2/4 from the current y limits; common ranges use independently authored
+1/2/5-power-of-ten spacing, and reversed limits retain descending order. Explicit
+`axp = c(start, end, intervals)` follows the GNU R-observed `floor(abs(intervals) + 0.25)`
+conversion and can run without an active device when `log = FALSE`. Linear `usr` and `nintLog`
+remain lazy, unique partial argument matching and namespace access are covered, and result
+allocation is bounded. Complete `pretty` equivalence for every floating-point boundary,
+`par("xaxp"/"yaxp")`, logarithmic axes and `grDevices::axisTicks`, axis drawing, and device-specific
+graphical parameters are not claimed.
 
 `graphics::segments` has differential evidence for posterior's measured
 `segments(seq_along(theta), y0 = q5, y1 = q95)` vertical-interval shape. Exactly one of `x1` or `y1`

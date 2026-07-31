@@ -6685,5 +6685,29 @@
     "expected": ["FALSE", "FALSE", "FALSE", "FALSE", "rect", "text"],
     "expectedCompatibility": "shape",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "axis-ticks-zoo-observed-linear-window",
+    "code": "plot.new()\nplot.window(c(1, 10), c(0, 130))\nforward <- c(axTicks(1), graphics::axTicks(4))\nplot.window(c(10, 0), c(17, -3))\nc(forward, axTicks(1), axTicks(2))",
+    "expected": [2, 4, 6, 8, 10, 0, 20, 40, 60, 80, 100, 120, 10, 8, 6, 4, 2, 0, 15, 10, 5, 0],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "axis-ticks-explicit-linear-parameters-and-laziness",
+    "code": "a <- graphics::axTicks(\"1\", axp = c(0, 1, 3), usr = stop(\"unused usr\"), log = FALSE, nintLog = stop(\"unused nintLog\"))\nb <- axTicks(2.9, axp = c(6, 0, -3.9), usr = numeric(), log = FALSE)\nc(a, b, axTicks(1, axp = c(0, 1, 0), log = FALSE), axTicks(1, axp = c(0, 1, .74), log = FALSE), axTicks(1, axp = c(0, 1, .75), log = FALSE))",
+    "expected": [0, 0.333333333333333, 0.666666666666667, 1, 6, 4.5, 3, 1.5, 0, 0, 0, 0, 1],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 1e-14, "relative": 1e-14 }
+  },
+  {
+    "id": "axis-ticks-linear-pretty-scale-families",
+    "code": "plot.new()\ncollect <- function(limits) { plot.window(limits, c(0, 1)); axTicks(1) }\nc(collect(c(0, 7)), collect(c(0, 9)), collect(c(-.03, .17)), collect(c(100, 101)), collect(c(1e-7, 9e-7)))",
+    "expected": [
+      0, 1, 2, 3, 4, 5, 6, 7, 0, 2, 4, 6, 8, 0, 0.05, 0.1, 0.15, 100, 100.2, 100.4, 100.6, 100.8,
+      101, 2e-7, 4e-7, 6e-7, 8e-7
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 1e-14, "relative": 1e-14 }
   }
 ]

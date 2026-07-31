@@ -247,29 +247,34 @@ charged against `maxOutputBytes`. General S3 print methods, console options, lin
 connections, and filesystem output remain outside this increment.
 
 Graphics output uses a second ordered journal on the same evaluation context. `plot.new()` starts an
-owned page, `plot.window()` records finite linear x/y limits, and `grDevices::as.raster()` converts
-character capture matrices, grayscale logical/numeric/raw values, and numeric/raw RGB(A) planes into
-row-first classed character rasters. It drops source names/dimnames, supports vector `nrow`/`ncol`
-reshaping, preserves missing grayscale pixels, performs S3 dispatch, and returns existing raster
-values unchanged. `rasterImage()` consumes those values plus supported matrix/array/native-raster
-inputs as row-major RGBA commands with recycled positions. `graphics::segments()` consumes
-real/logical endpoint vectors, defaults an omitted `x1` or `y1` to its corresponding start
-coordinate, and recycles coordinates, colors, line types, and line widths without a recycling
-warning. Missing/non-finite coordinates and missing/transparent/invalid-width drawing entries are
-omitted. Valid colors are resolved to `#RRGGBBAA`, and documented line-type names, numeric cycles,
-and custom hexadecimal patterns are normalized before transport. `graphics::legend()` resolves
-positional or named labels, keyword/coordinate placement, insets, line and point keys, palette/text
-colors, box/background, size, columns, horizontal layout, and title into a device-independent event.
-It returns an invisible `rect`/`text` geometry list; `plot = FALSE` returns geometry without
-emission. Raster bytes and bounded segment/legend payloads share `maxOutputBytes` with text and
-returned values. `dev.hold(level)` and `dev.flush(level)` maintain a session-local, nonnegative
-nested hold level for the active owned device. While held, page/window/raster/segments/legend
-commands remain in an ordered journal across evaluation boundaries; the flush that reaches zero
-emits all pending commands through the current result and callback. Pending graphics bytes are
-bounded by `maxOutputBytes`, pending command count is bounded by `maxVectorLength`, and
-reset/dispose clears them. Calls without an active device return zero. The runtime and base packages
-contain no DOM or Canvas dependency; the Worker transfers commands to the public API and the
-Playground owns the reference Canvas renderer.
+owned page, `plot.window()` records finite linear x/y limits, and `graphics::axTicks()` derives GNU
+R-shaped linear tick locations for either axis from that state. Explicit finite
+`axp = c(start, end, intervals)` works without a device when `log = FALSE`; the interval count is
+converted with the GNU R-observed `floor(abs(intervals) + 0.25)` rule and bounded by
+`maxVectorLength`, reversed endpoints retain their order, and unused linear `usr`/`nintLog` promises
+remain lazy. Logarithmic axes are an explicit unsupported boundary. `grDevices::as.raster()`
+converts character capture matrices, grayscale logical/numeric/raw values, and numeric/raw RGB(A)
+planes into row-first classed character rasters. It drops source names/dimnames, supports vector
+`nrow`/`ncol` reshaping, preserves missing grayscale pixels, performs S3 dispatch, and returns
+existing raster values unchanged. `rasterImage()` consumes those values plus supported
+matrix/array/native-raster inputs as row-major RGBA commands with recycled positions.
+`graphics::segments()` consumes real/logical endpoint vectors, defaults an omitted `x1` or `y1` to
+its corresponding start coordinate, and recycles coordinates, colors, line types, and line widths
+without a recycling warning. Missing/non-finite coordinates and missing/transparent/invalid-width
+drawing entries are omitted. Valid colors are resolved to `#RRGGBBAA`, and documented line-type
+names, numeric cycles, and custom hexadecimal patterns are normalized before transport.
+`graphics::legend()` resolves positional or named labels, keyword/coordinate placement, insets, line
+and point keys, palette/text colors, box/background, size, columns, horizontal layout, and title
+into a device-independent event. It returns an invisible `rect`/`text` geometry list; `plot = FALSE`
+returns geometry without emission. Raster bytes and bounded segment/legend payloads share
+`maxOutputBytes` with text and returned values. `dev.hold(level)` and `dev.flush(level)` maintain a
+session-local, nonnegative nested hold level for the active owned device. While held,
+page/window/raster/segments/legend commands remain in an ordered journal across evaluation
+boundaries; the flush that reaches zero emits all pending commands through the current result and
+callback. Pending graphics bytes are bounded by `maxOutputBytes`, pending command count is bounded
+by `maxVectorLength`, and reset/dispose clears them. Calls without an active device return zero. The
+runtime and base packages contain no DOM or Canvas dependency; the Worker transfers commands to the
+public API and the Playground owns the reference Canvas renderer.
 
 The active owned device also records a bounded display list. `recordPlot(load, attach)` snapshots
 the current page/window/raster/segments/legend commands into an independently owned, classed

@@ -755,7 +755,12 @@ maxima are rounded to two significant digits before sizing a primary/secondary p
 Differential evidence covers real and complex vectors, decimal ties-to-even, recycled and clamped
 1–22 digit controls, missing and non-finite values, metadata retention, allocation limits, and
 direct/Math-group S3 methods. Exact identity for every platform decimal-to-binary boundary remains
-outside the claim. Rank 448 `axTicks` is the next unresolved callable candidate.
+outside the claim. Rank 448 `axTicks` is now complete for zoo's measured secondary-axis tick lookup,
+representing 731,390 downloads, one measured call, and 0.6% weighted reach. The owned linear path
+derives horizontal or vertical ticks from `plot.window()` state, supports explicit `axp`, ascending
+and descending axes, coercible sides, lazy `usr`/`nintLog`, namespace access, and allocation limits.
+Logarithmic axes, `par()` access, complete `pretty` boundary identity, and axis drawing remain
+explicit boundaries. Rank 449 `box` is the next unresolved callable candidate.
 
 ## Completed implementation order
 
