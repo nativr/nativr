@@ -69,7 +69,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 478 registered functions, including resettable
+an initial condition/handler slice. It exposes 479 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
 preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
@@ -389,6 +389,13 @@ types/widths, `fillOddEven`, solid fills, and `density = 0` resolve into a bound
 The same command supports held graphics, display-list replay, and Canvas rendering. Hatch-pattern
 density, coordinate classes beyond owned numeric storage, clipping/log axes, exact device dash
 metrics, and arbitrary graphical parameters remain explicit boundaries.
+
+Rank 460 `base::replace` now runs zoo's measured missing-run fill helper through NativR's existing
+immutable `[` replacement engine. It covers numeric/logical/character subscripts, ordinary
+recycling, names and extension, atomic type promotion, matrices, factors, lists, pairlists, owned
+data frames, `NULL` materialization/deletion, partial argument matching, input immutability, and
+resource limits. Expression vectors, arbitrary class-specific `[<-` methods, and exact legacy
+diagnostic wording remain explicit boundaries.
 
 Development priority is based on a reproducible analysis of documented usage in popular CRAN
 packages. The committed

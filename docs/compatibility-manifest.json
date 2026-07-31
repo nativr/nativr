@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.187.0",
+  "languageSubsetVersion": "0.188.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -275,6 +275,7 @@
         { "name": "rep_len", "compatibility": "behavioral" },
         { "name": "replicate", "compatibility": "behavioral" },
         { "name": "append", "compatibility": "behavioral" },
+        { "name": "replace", "compatibility": "behavioral" },
         { "name": "rev", "compatibility": "behavioral" },
         { "name": "RNGkind", "compatibility": "behavioral" },
         { "name": "RNGversion", "compatibility": "behavioral" },

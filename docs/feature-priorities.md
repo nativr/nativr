@@ -829,8 +829,16 @@ normalizes vector/matrix/data-frame/list/complex coordinates, splits missing-coo
 resolves recycled fills, borders, line types/widths, solid/no-fill density, and even-odd fill rules
 into a bounded Worker polygon command. Display-list replay and Canvas fill/border pixels share the
 same command. Hatch-pattern density, broader coordinate classes, clipping/log axes, exact dash
-metrics, and arbitrary graphical controls remain boundaries. Rank 460 `replace` is the next
-unresolved callable candidate.
+metrics, and arbitrary graphical controls remain boundaries. Rank 460 `replace` is now complete for
+[zoo's](https://cran.r-project.org/web/packages/zoo/refman/zoo.html) measured
+`replace(x, 1:min(length(x)), 3)` missing-run helper, representing 731,390 downloads, one measured
+occurrence, and 0.6% weighted reach. The owned
+[documented helper](https://stat.ethz.ch/R-manual/R-devel/library/base/html/replace.html) reuses
+NativR's immutable subset-replacement engine for numeric/logical/character subscripts, recycling,
+names/extension, atomic promotion, matrices, factors, lists, pairlists, owned data frames, and
+`NULL` materialization/deletion. Expression vectors, arbitrary class-specific `[<-` methods, exact
+legacy diagnostics, and long vectors remain boundaries. Rank 461 `rlnorm` is the next unresolved
+callable candidate.
 
 ## Completed implementation order
 
@@ -1187,6 +1195,10 @@ ties:
      vector/matrix/data-frame/list/complex coordinates, missing-coordinate polygon splitting,
      recycled fills/borders/line types/widths, solid/no-fill density, even-odd rules, namespace
      access, bounded Worker/Canvas rendering, and display-list replay.
+126. Immutable value replacement: `base::replace()` runs zoo's measured missing-run helper through
+     the shared one-dimensional subset-replacement path with input immutability, subscript forms,
+     recycling, promotion, names/extension, matrices, factors, lists, pairlists, owned data frames,
+     `NULL` paths, namespace access, warnings, errors, and resource bounds.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

@@ -665,6 +665,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("rep_len", ["x", "length.out"], "behavioral", builtinRepLen),
   defineBuiltin("replicate", ["n", "expr", "simplify"], "behavioral", builtinReplicate),
   defineBuiltin("append", ["x", "values", "after"], "behavioral", builtinAppend),
+  defineBuiltin("replace", ["x", "list", "values"], "behavioral", builtinReplace),
   defineBuiltin("rev", ["x"], "behavioral", builtinRev),
   defineBuiltin("RNGkind", ["kind", "normal.kind", "sample.kind"], "behavioral", builtinRandomKind),
   defineBuiltin("RNGversion", ["vstr"], "behavioral", builtinRandomVersion, "regular", "invisible"),
@@ -10347,6 +10348,55 @@ function appendFactors(
   }
   const factor = factorValue(codes, levels, compactMask(missing));
   return hasNames ? withNames(factor, names) : factor;
+}
+
+async function builtinReplace(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["x", "list", "values"]);
+  const input = required(matched, "x", "replace");
+  const index = required(matched, "list", "replace");
+  const replacement = required(matched, "values", "replace");
+  const subscript = index.type === "null" ? integerVector([]) : index;
+  if (input.type === "null") {
+    if (replacement.type === "null") return R_NULL;
+    return replaceVectorSubset(
+      emptyReplaceTarget(replacement),
+      subscript,
+      replacement,
+      invocation.context,
+    );
+  }
+  if (!isVector(input) && input.type !== "pairlist") {
+    throw new RTypeMismatchError(
+      "NRT3349",
+      "replace(x=) requires NULL, an atomic vector, a list, or a pairlist.",
+    );
+  }
+  return replaceVectorSubset(input, subscript, replacement, invocation.context);
+}
+
+function emptyReplaceTarget(replacement: RValue): RVector {
+  switch (replacement.type) {
+    case "logical":
+      return logicalVector([]);
+    case "integer":
+      return integerVector([]);
+    case "double":
+      return doubleVector([]);
+    case "complex":
+      return complexVector([], []);
+    case "raw":
+      return rawVector([]);
+    case "character":
+      return characterVector([]);
+    case "list":
+    case "pairlist":
+      return listValue([]);
+    default:
+      throw new RUnsupportedFeatureError(
+        "NRU6166",
+        `replace(NULL, ..., values=) does not yet materialize ${replacement.type} values.`,
+      );
+  }
 }
 
 async function builtinRev(invocation: BuiltinInvocation): Promise<RValue> {

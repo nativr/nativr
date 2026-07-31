@@ -1869,6 +1869,94 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("runs zoo's usage-ranked immutable replace helper through owned subset semantics", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- c(NA, 10, NA, NA, 20, NA)
+        result <- replace(x, 1:min(length(x)), 3)
+        c(result, x[2], x[5], sum(is.na(x)))
+      `),
+    ).resolves.toEqual([3, 3, 3, 3, 3, 3, 10, 20, 4]);
+    await expect(
+      runtime.eval(`
+        x <- setNames(1:4, letters[1:4])
+        y <- base::replace(x = x, li = c(2, 4), val = c(9L, 8L))
+        m <- matrix(1:4, 2, dimnames = list(c("r1", "r2"), c("c1", "c2")))
+        z <- replace(m, c(TRUE, FALSE), 0)
+        c(y, names(y), typeof(y), z, dim(z), dimnames(z)[[1]], dimnames(z)[[2]])
+      `),
+    ).resolves.toEqual([
+      "1",
+      "9",
+      "3",
+      "8",
+      "a",
+      "b",
+      "c",
+      "d",
+      "integer",
+      "0",
+      "2",
+      "0",
+      "4",
+      "2",
+      "2",
+      "r1",
+      "r2",
+      "c1",
+      "c2",
+    ]);
+    await expect(
+      runtime.eval(`
+        x <- list(a = 1, b = 2)
+        listed <- replace(x, 1, list("x"))
+        deleted <- replace(x, 1, NULL)
+        named <- replace(c(a = 1, b = 2), c("b", "c"), c(9, 8))
+        pair <- replace(pairlist(a = 1, b = 2), 1, 9)
+        c(listed$a, listed$b, names(deleted), named, names(named), pair$a, pair$b, typeof(pair))
+      `),
+    ).resolves.toEqual(["x", "2", "b", "1", "9", "8", "a", "b", "c", "9", "2", "list"]);
+    await expect(
+      runtime.eval(`
+        f <- replace(factor(c("a", "b", "a")), 2, "a")
+        c(as.integer(f), as.character(f), levels(f), class(f),
+          replace(NULL, 1, 2), replace(NULL, 1, list(3))[[1]],
+          length(replace(NULL, NULL, 2)))
+      `),
+    ).resolves.toEqual(["1", "1", "1", "a", "a", "a", "a", "b", "factor", "2", "3", "0"]);
+    const recycled = await runtime.evalDetailed("replace(1:5, 1:3, 8:9)");
+    expect(recycled.value).toEqual([8, 9, 8, 4, 5]);
+    expect(recycled.warnings).toEqual([
+      {
+        code: "NRW1001",
+        message: "Longer object length is not a multiple of shorter object length.",
+      },
+    ]);
+    await expect(runtime.eval("replace(1:3, c(-1, 2), 9)")).rejects.toMatchObject({
+      code: "NRE2201",
+    });
+    await expect(runtime.eval("replace(1:3, 1, NULL)")).rejects.toMatchObject({
+      code: "NRT3129",
+    });
+    await expect(runtime.eval("replace(globalenv(), 1, 2)")).rejects.toMatchObject({
+      code: "NRT3349",
+    });
+    await expect(runtime.eval("replace(NULL, 1, quote(a))")).rejects.toMatchObject({
+      code: "NRU6166",
+    });
+    await expect(runtime.eval("replace()")).rejects.toMatchObject({ code: "NRE2103" });
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 8 },
+    });
+    await expect(limited.eval("replace(1, 9, 2)")).rejects.toMatchObject({ code: "NRL4002" });
+    await limited.dispose();
+  });
+
   it("computes usage-ranked real and complex tangent values", async () => {
     const runtime = await session();
     await expect(runtime.eval("c(typeof(pi), pi == base::pi)")).resolves.toEqual([
@@ -6019,7 +6107,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.187.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.188.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
