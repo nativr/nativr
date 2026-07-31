@@ -309,5 +309,5 @@ adjacent GNU R `cat` newline-terminator rule add approximately 0.7 KiB; the firs
 measures 307.5 KiB gzip.
 
 Language subset 0.170 adds the rank-437 `utils::demo()` empty-catalog shape and explicit external
-package-resource boundary without raising the ceiling. The Worker measures 307.5 KiB gzip in the
-isolated size build and 307.9 KiB in the complete production build, against the 308 KiB limit.
+package-resource boundary without raising the ceiling. After the Vite 8/Oxc build migration, the
+complete production Worker measures 283.7 KiB gzip against the 308 KiB limit.
