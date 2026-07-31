@@ -153,6 +153,16 @@ measured GNU R vector behavior; nonempty matrices require an integer dimension. 
 classed non-`ts` vectors, factor vectors, data frames, expression vectors, higher arrays, raw/list
 matrices, and the complete result length fail or are limited before allocation.
 
+`base::findInterval(x, vec, ...)` flattens supported atomic inputs through the runtime's double
+coercion path, validates `vec` as weakly increasing with no missing values by default, and returns
+an unattributed integer vector with one interval index per `x` value. The default uses left-closed,
+right-open intervals; `left.open`, `rightmost.closed`, and `all.inside` apply the documented
+boundary transformations, including duplicate and infinite breakpoints. Missing and `NaN` queries
+produce integer `NA`. Each query uses checkpointed binary search, while sortedness checking is
+linear. `checkSorted = FALSE` skips validation only as documented; behavior for unsorted or missing
+breakpoints is deliberately not claimed. `checkNA = FALSE` retains deterministic missing propagation
+in the browser. Recursive-list coercion remains unsupported.
+
 `stats::window()` also dispatches before its owned default. For regular vector or matrix series it
 aligns boundaries to source observations, samples only integral divisors of the source frequency,
 preserves series classes and column names, and computes a new exact `tsp`. Incompatible frequency

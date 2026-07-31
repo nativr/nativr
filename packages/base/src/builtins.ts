@@ -1204,6 +1204,12 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("as.data.frame", ["x"], "shape", builtinAsDataFrame),
   defineBuiltin("tibble", ["..."], "behavioral", builtinTibble),
   defineBuiltin("tribble", ["..."], "behavioral", builtinTribble),
+  defineBuiltin(
+    "findInterval",
+    ["x", "vec", "rightmost.closed", "all.inside", "left.open", "checkSorted", "checkNA"],
+    "behavioral",
+    builtinFindInterval,
+  ),
   defineBuiltin("cut", ["x", "..."], "behavioral", builtinCut),
   defineBuiltin("rle", ["x"], "behavioral", builtinRunLengthEncoding),
   defineBuiltin("reorder", ["x", "..."], "behavioral", builtinReorder),
@@ -21595,6 +21601,148 @@ function viewTitle(value: RValue): string {
     throw new RTypeMismatchError("NRT3337", "View(title=) must be one character value.");
   }
   return isMissing(value, 0) ? "NA" : (value.values[0] ?? "");
+}
+
+async function builtinFindInterval(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, [
+    "x",
+    "vec",
+    "rightmost.closed",
+    "all.inside",
+    "left.open",
+    "checkSorted",
+    "checkNA",
+  ]);
+  const input = findIntervalNumeric(required(matched, "x", "findInterval"), "x", invocation);
+  const breakInput = findIntervalNumeric(
+    required(matched, "vec", "findInterval"),
+    "vec",
+    invocation,
+  );
+  const rightmostClosed = findIntervalFlag(
+    matched.get("rightmost.closed"),
+    false,
+    "rightmost.closed",
+  );
+  const allInside = findIntervalFlag(matched.get("all.inside"), false, "all.inside");
+  const leftOpen = findIntervalFlag(matched.get("left.open"), false, "left.open");
+  const checkSorted = findIntervalFlag(matched.get("checkSorted"), true, "checkSorted");
+  const checkMissing = findIntervalFlag(matched.get("checkNA"), true, "checkNA");
+  const breaks = Array.from({ length: breakInput.length }, (_, index) =>
+    isMissing(breakInput, index) ? Number.NaN : (breakInput.values[index] ?? Number.NaN),
+  );
+  if (checkSorted) {
+    for (let index = 0; index < breaks.length; index += 1) {
+      invocation.context.checkpoint();
+      const current = breaks[index] ?? Number.NaN;
+      if (Number.isNaN(current) || (index > 0 && current < (breaks[index - 1] ?? Number.NaN))) {
+        throw new RTypeMismatchError(
+          "NRT3347",
+          "'vec' must be sorted non-decreasingly and not contain missing values.",
+        );
+      }
+    }
+  }
+
+  invocation.context.allocate(input.length);
+  const output = new Int32Array(input.length);
+  const missing = new Uint8Array(input.length);
+  for (let index = 0; index < input.length; index += 1) {
+    invocation.context.checkpoint();
+    const query = findIntervalQuery(input, index, checkMissing);
+    if (query === undefined) {
+      missing[index] = 1;
+      continue;
+    }
+    let interval = findIntervalIndex(query, breaks, leftOpen, invocation.context);
+    if (allInside && breaks.length > 0) {
+      if (interval === 0) interval = 1;
+      else if (interval === breaks.length) interval = breaks.length - 1;
+    }
+    if (rightmostClosed && breaks.length > 0) {
+      if (!leftOpen && query === breaks[breaks.length - 1]) interval = breaks.length - 1;
+      else if (leftOpen && query === breaks[0]) interval = 1;
+    }
+    output[index] = interval;
+  }
+  return integerVector(output, compactMask(missing));
+}
+
+function findIntervalNumeric(
+  value: RValue,
+  name: string,
+  invocation: BuiltinInvocation,
+): RDoubleVector {
+  if (value.type === "null") return doubleVector([]);
+  if (!isAtomic(value)) {
+    throw new RTypeMismatchError(
+      "NRT3347",
+      `findInterval(${name}=) must be coercible to a numeric vector.`,
+    );
+  }
+  return coerceAtomicToDouble(value, invocation);
+}
+
+function findIntervalFlag(value: RValue | undefined, fallback: boolean, name: string): boolean {
+  if (value === undefined) return fallback;
+  if (!isAtomic(value) || value.length !== 1 || isMissing(value, 0)) {
+    throw new RTypeMismatchError(
+      "NRT3347",
+      `findInterval(${name}=) must be one non-missing logical value.`,
+    );
+  }
+  if (value.type === "character") {
+    const parsed = parseRLogical(value.values[0] ?? "");
+    if (parsed !== undefined) return parsed;
+    throw new RTypeMismatchError(
+      "NRT3347",
+      `findInterval(${name}=) must be one non-missing logical value.`,
+    );
+  }
+  if (value.type === "complex") {
+    const real = value.real[0] ?? Number.NaN;
+    const imaginary = value.imaginary[0] ?? Number.NaN;
+    if (!Number.isNaN(real) && !Number.isNaN(imaginary)) {
+      return real !== 0 || imaginary !== 0;
+    }
+  } else {
+    const numeric = value.values[0] ?? Number.NaN;
+    if (!Number.isNaN(numeric)) return numeric !== 0;
+  }
+  throw new RTypeMismatchError(
+    "NRT3347",
+    `findInterval(${name}=) must be one non-missing logical value.`,
+  );
+}
+
+function findIntervalQuery(
+  input: RDoubleVector,
+  index: number,
+  checkMissing: boolean,
+): number | undefined {
+  const missing = isMissing(input, index);
+  const value = input.values[index] ?? Number.NaN;
+  if (checkMissing && (missing || Number.isNaN(value))) return undefined;
+  const unchecked = missing ? Number.NaN : value;
+  return Number.isNaN(unchecked) ? undefined : unchecked;
+}
+
+function findIntervalIndex(
+  query: number,
+  breaks: readonly number[],
+  leftOpen: boolean,
+  context: BuiltinInvocation["context"],
+): number {
+  let lower = 0;
+  let upper = breaks.length;
+  while (lower < upper) {
+    context.checkpoint();
+    const middle = lower + Math.floor((upper - lower) / 2);
+    const breakpoint = breaks[middle] ?? Number.NaN;
+    if (leftOpen ? breakpoint < query : breakpoint <= query) lower = middle + 1;
+    else upper = middle;
+  }
+  return lower;
 }
 
 async function builtinCut(invocation: BuiltinInvocation): Promise<RValue> {

@@ -839,6 +839,15 @@ frames, arbitrary classed vectors other than `ts`, expression vectors, higher-ra
 matrices, and fractional dimensions on nonempty matrices are rejected; long-vector storage and
 undocumented edge diagnostics are not claimed.
 
+`base::findInterval` returns interval indices for supported atomic `x` and `vec` inputs after
+flattened double coercion. Differential evidence covers zoo's measured irregular-Date rolling-width
+expression, default and left-open boundaries, rightmost closure, `all.inside`, duplicate/empty/
+single/infinite break vectors, missing and `NaN` queries, numeric character coercion, matrix
+flattening, attribute removal, logical control coercion, namespace access, and sortedness checks.
+The implementation uses bounded binary search. Unsorted or missing breakpoints with
+`checkSorted = FALSE`, platform-dependent unchecked missing-query behavior, recursive-list coercion,
+warning text identity, and long-vector indices are not compatibility claims.
+
 `stats::cycle` dispatches package-owned S3 methods before its regular-series default. The default
 returns one observation cycle per vector element or matrix row, derives the initial cycle from
 validated `tsp` start/frequency metadata with ties-to-even rounding, retains the `tsp` interval, and

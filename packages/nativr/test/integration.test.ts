@@ -2525,6 +2525,113 @@ describe("complete inline source-to-result vertical slice", () => {
     await limited.dispose();
   });
 
+  it("finds zoo's usage-ranked irregular Date window widths with bounded binary search", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        tt <- as.Date("2000-01-01") + c(1, 2, 5, 6, 7, 8, 10)
+        intervals <- findInterval(tt - 3, tt)
+        c(intervals, seq_along(tt) - intervals)
+      `),
+    ).resolves.toEqual([0, 0, 2, 2, 2, 3, 5, 1, 2, 1, 2, 3, 3, 2]);
+
+    await expect(
+      runtime.eval(`
+        x <- c(-Inf, 4, 5, 7, 10, 15, Inf, NA, NaN)
+        v <- c(5, 10, 15)
+        c(
+          findInterval(x, v),
+          findInterval(x, v, left.open = TRUE),
+          findInterval(x, v, rightmost.closed = TRUE),
+          findInterval(x, v, all.inside = TRUE)
+        )
+      `),
+    ).resolves.toEqual([
+      0,
+      0,
+      1,
+      1,
+      2,
+      3,
+      3,
+      NA,
+      NA,
+      0,
+      0,
+      0,
+      1,
+      1,
+      2,
+      3,
+      NA,
+      NA,
+      0,
+      0,
+      1,
+      1,
+      2,
+      2,
+      3,
+      NA,
+      NA,
+      1,
+      1,
+      1,
+      1,
+      2,
+      2,
+      2,
+      NA,
+      NA,
+    ]);
+    await expect(
+      runtime.eval(`
+        x <- c(-Inf, 0, 5, 10, Inf)
+        v <- c(5, 5, 10, 10)
+        c(
+          findInterval(x, v),
+          findInterval(x, v, rightmost.closed = TRUE),
+          findInterval(x, v, left.open = TRUE),
+          findInterval(x, v, left.open = TRUE, rightmost.closed = TRUE)
+        )
+      `),
+    ).resolves.toEqual([0, 0, 2, 4, 4, 0, 0, 2, 3, 4, 0, 0, 0, 2, 4, 0, 0, 1, 2, 4]);
+    await expect(
+      runtime.eval(`
+        c(
+          findInterval(c(-Inf, 0, 5, 10, Inf), 5, all.inside = TRUE),
+          findInterval(1:3, numeric()),
+          length(findInterval(NULL, 1:3)),
+          findInterval(c("1", "2"), "1.5"),
+          findInterval(10, c(5, 10), rightmost.closed = "TRUE"),
+          findInterval(1:3, 1:3, checkSorted = FALSE, checkNA = FALSE)
+        )
+      `),
+    ).resolves.toEqual([1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 3]);
+    await expect(
+      runtime.eval(`
+        y <- findInterval(structure(matrix(1:4, 2), marker = "drop"), c(1, 3))
+        c(y, typeof(y), is.null(attributes(y)))
+      `),
+    ).resolves.toEqual(["1", "1", "2", "2", "integer", "TRUE"]);
+
+    for (const source of [
+      "findInterval()",
+      "findInterval(1)",
+      "findInterval(1:3, c(2, 1))",
+      "findInterval(1:3, c(1, NA_real_))",
+      "findInterval(1:3, list(1, 2))",
+      "findInterval(1, 0, rightmost.closed = logical())",
+      "findInterval(1, 0, all.inside = NA)",
+      "findInterval(1, 0, left.open = c(FALSE, TRUE))",
+    ]) {
+      await expect(runtime.eval(source), source).rejects.toMatchObject({
+        code: source === "findInterval()" || source === "findInterval(1)" ? "NRE2103" : "NRT3347",
+      });
+    }
+    await runtime.dispose();
+  });
+
   it("extracts usage-ranked regular windows and exposes package-owned S3 seams", async () => {
     const runtime = await session();
     await expect(
@@ -5288,7 +5395,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.181.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.182.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

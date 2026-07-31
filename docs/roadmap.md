@@ -358,6 +358,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
     behavior, zero-column matrices, namespace access, and pre-allocation result limits. Factor
     vectors, data frames, expression vectors, raw/list matrices, higher arrays, and fractional
     dimensions on nonempty matrices remain explicit boundaries.
+99. Frequency-ranked interval indices: `base::findInterval` runs zoo's measured irregular-Date
+    rolling-width expression through checkpointed binary search, with weakly sorted duplicate/
+    infinite breakpoints, missing queries, closure and inside controls, flattened numeric coercion,
+    namespace access, and attribute-free integer output. Unsafe unchecked invalid break vectors,
+    recursive-list coercion, warning-text identity, and long-vector indices remain explicit
+    boundaries.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

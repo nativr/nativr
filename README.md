@@ -69,7 +69,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 469 registered functions, including resettable
+an initial condition/handler slice. It exposes 470 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
 preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
@@ -348,6 +348,12 @@ preserves vector storage, applies GNU R's matrix coercions, removes source attri
 for the complete result before allocation. This is directly reusable by pure-R rolling-window code;
 factor/data-frame inputs, expression vectors, list matrices, and fractional dimensions on nonempty
 matrices remain explicit GNU R-aligned boundaries.
+
+Rank 453 `base::findInterval` now runs zoo's irregular-date rolling-window width expression
+`seq_along(tt) - findInterval(tt - 3, tt)`. A bounded binary search supports duplicate and infinite
+breakpoints, missing queries, the documented closure/inside controls, flattened numeric coercion,
+and attribute-free integer output. Unchecked unsorted/missing break vectors and recursive-list
+coercion remain explicit unsafe or unsupported boundaries.
 
 Development priority is based on a reproducible analysis of documented usage in popular CRAN
 packages. The committed

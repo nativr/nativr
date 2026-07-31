@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           469 |
-| Overlapping callable names        |           454 |
-| Missing GNU R callable names      |         2,068 |
-| Name overlap                      |      18.0016% |
+| NativR registered names           |           470 |
+| Overlapping callable names        |           455 |
+| Missing GNU R callable names      |         2,067 |
+| Name overlap                      |      18.0412% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -279,6 +279,14 @@ columns with column-major ordering and only result dimensions retained. Multivar
 dimensions, namespace access, errors, and allocation limits have coverage. Factor vectors, data
 frames, expression vectors, raw/list matrices, higher arrays, fractional nonempty-matrix dimensions,
 and exact undocumented diagnostics remain explicitly incomplete.
+
+The rank-453 increment adds GNU R differential evidence for zoo's measured
+`seq_along(tt) - findInterval(tt - 3, tt)` irregular-Date rolling-width expression. Weakly sorted,
+duplicate, empty, single, finite, and infinite break vectors; default and left-open intervals;
+rightmost closure; `all.inside`; missing/NaN queries; flattened atomic numeric coercion; control
+coercion; namespace access; result type/attributes; errors; and bounded binary-search steps have
+coverage. Unsafe unchecked invalid break vectors, recursive-list coercion, exact diagnostics, and
+long-vector indices remain incomplete.
 
 ## Completion evidence
 
