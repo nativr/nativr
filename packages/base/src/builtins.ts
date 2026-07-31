@@ -14701,13 +14701,11 @@ async function builtinRgb(invocation: BuiltinInvocation): Promise<RValue> {
   const blueArgument = matched.get("blue");
   const alphaArgument = matched.get("alpha");
   let channels: readonly RValue[];
-  let includeAlpha = alphaArgument !== undefined && !alphaArgument.promise.missing;
   if (
     (greenArgument === undefined || greenArgument.promise.missing) &&
     (blueArgument === undefined || blueArgument.promise.missing)
   ) {
     channels = rgbContainerChannels(red, invocation);
-    includeAlpha = channels.length === 4;
   } else {
     if (
       greenArgument === undefined ||
@@ -14722,6 +14720,7 @@ async function builtinRgb(invocation: BuiltinInvocation): Promise<RValue> {
       await invocation.force(greenArgument.promise),
       await invocation.force(blueArgument.promise),
     ];
+    const includeAlpha = alphaArgument !== undefined && !alphaArgument.promise.missing;
     if (includeAlpha && alphaArgument !== undefined) {
       channels = [...channels, await invocation.force(alphaArgument.promise)];
     }

@@ -1,4 +1,4 @@
-import { defineConfig, transformWithEsbuild } from "vite";
+import { defineConfig, minify } from "vite";
 import dts from "vite-plugin-dts";
 
 export default defineConfig({
@@ -40,13 +40,11 @@ function compactWorkerOutput() {
     name: "nativr-compact-worker-output",
     enforce: "post" as const,
     async renderChunk(code: string, chunk: { readonly fileName: string }) {
-      return transformWithEsbuild(code, chunk.fileName, {
-        target: "es2022",
-        format: "esm",
-        minifyIdentifiers: true,
-        minifySyntax: true,
-        minifyWhitespace: true,
-        legalComments: "none",
+      return minify(chunk.fileName, code, {
+        module: true,
+        compress: { target: "es2022" },
+        mangle: true,
+        codegen: { removeWhitespace: true, legalComments: "none" },
         sourcemap: true,
       });
     },
