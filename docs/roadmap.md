@@ -501,6 +501,11 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      is reusable runtime support, not a package-specific translation; broader hook delivery,
      complete builtin signatures, arbitrary `bquote` splicing, and the remaining graphical
      parameters stay in progress.
+123. Browser graphics-device lifecycle: usage-ranked `grDevices::dev.off`, adjacent `dev.cur` and
+     `dev.list`, and `graphics.off` now expose one session-owned device with GNU R-shaped
+     null/current values, close visibility, held-command flushing, graphical-parameter reset, and
+     deterministic reopen behavior. Multiple simultaneous devices, selection among devices, and
+     file-format devices remain later graphics architecture.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

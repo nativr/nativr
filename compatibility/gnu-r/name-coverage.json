@@ -4,11 +4,11 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 546,
-    "overlappingNames": 531,
-    "missingReferenceNames": 1991,
+    "nativrRegisteredNames": 550,
+    "overlappingNames": 535,
+    "missingReferenceNames": 1987,
     "nativrExtensionNames": 15,
-    "nameCoverage": 0.210547
+    "nameCoverage": 0.212133
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 398, "nameCoverage": 0.291149 },
@@ -18,8 +18,8 @@
     {
       "package": "grDevices",
       "callableNames": 135,
-      "overlappingNames": 17,
-      "nameCoverage": 0.125926
+      "overlappingNames": 21,
+      "nameCoverage": 0.155556
     },
     {
       "package": "graphics",
@@ -188,8 +188,11 @@
     "density.default",
     "deparse",
     "deparse1",
+    "dev.cur",
     "dev.flush",
     "dev.hold",
+    "dev.list",
+    "dev.off",
     "df.residual",
     "dget",
     "diag",
@@ -252,6 +255,7 @@
     "glob2rx",
     "globalCallingHandlers",
     "globalenv",
+    "graphics.off",
     "gray",
     "gray.colors",
     "gregexpr",
@@ -1283,12 +1287,9 @@
     "dev.copy",
     "dev.copy2eps",
     "dev.copy2pdf",
-    "dev.cur",
     "dev.interactive",
-    "dev.list",
     "dev.new",
     "dev.next",
-    "dev.off",
     "dev.prev",
     "dev.print",
     "dev.set",
@@ -1554,7 +1555,6 @@
     "glyphWidth",
     "glyphWidthLeft",
     "grSoftVersion",
-    "graphics.off",
     "grconvertX",
     "grconvertY",
     "gregexec",

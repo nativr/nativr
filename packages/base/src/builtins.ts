@@ -1173,6 +1173,20 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   definePackageBuiltin("grDevices", "dev.flush", ["level"], "behavioral", (invocation) =>
     builtinDeviceHoldFlush(invocation, "flush"),
   ),
+  definePackageBuiltin("grDevices", "dev.cur", [], "behavioral", builtinDeviceCurrent),
+  definePackageBuiltin("grDevices", "dev.list", [], "behavioral", builtinDeviceList),
+  withBuiltinFormals(
+    definePackageBuiltin("grDevices", "dev.off", ["which"], "behavioral", builtinDeviceOff),
+    [{ name: "which", defaultValue: callAst("dev.cur", []) }],
+  ),
+  definePackageBuiltin(
+    "grDevices",
+    "graphics.off",
+    [],
+    "behavioral",
+    builtinGraphicsOff,
+    "invisible",
+  ),
   definePackageBuiltin(
     "grDevices",
     "recordPlot",
@@ -22320,6 +22334,71 @@ async function builtinDeviceHoldFlush(
     if (state.holdLevel === 0 && state.pending.length > 0) flushGraphics(invocation, state);
   }
   return integerVector([state.holdLevel]);
+}
+
+async function builtinDeviceCurrent(invocation: BuiltinInvocation): Promise<RValue> {
+  await matchExact(invocation, []);
+  return currentDeviceValue(activeGraphicsState(invocation) !== undefined);
+}
+
+async function builtinDeviceList(invocation: BuiltinInvocation): Promise<RValue> {
+  await matchExact(invocation, []);
+  return activeGraphicsState(invocation) === undefined
+    ? R_NULL
+    : withNames(integerVector([2]), ["NativR"]);
+}
+
+async function builtinDeviceOff(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["which"]);
+  const state = activeGraphicsState(invocation);
+  const supplied = matched.get("which");
+  const target =
+    supplied === undefined ? (state === undefined ? 1 : 2) : deviceNumber(supplied, invocation);
+
+  if (target === 1) {
+    throw new REvaluationError("NRE2197", "cannot shut down device 1 (the null device)");
+  }
+  if (state !== undefined && target === 2) closeGraphicsDevice(invocation, state);
+  return currentDeviceValue(activeGraphicsState(invocation) !== undefined);
+}
+
+async function builtinGraphicsOff(invocation: BuiltinInvocation): Promise<RValue> {
+  await matchExact(invocation, []);
+  const state = activeGraphicsState(invocation);
+  if (state !== undefined) closeGraphicsDevice(invocation, state);
+  return R_NULL;
+}
+
+function currentDeviceValue(active: boolean): RIntegerVector {
+  return withNames(integerVector([active ? 2 : 1]), [active ? "NativR" : "null device"]);
+}
+
+function deviceNumber(value: RValue, invocation: BuiltinInvocation): number {
+  const coerced =
+    value.type === "null"
+      ? integerVector([])
+      : isAtomic(value)
+        ? coerceAtomicToInteger(value, invocation)
+        : undefined;
+  if (coerced === undefined) {
+    throw new RTypeMismatchError("NRT3398", "dev.off(which=) requires an atomic device number.");
+  }
+  if (coerced.length === 0) {
+    throw new RTypeMismatchError("NRT3398", "argument is of length zero");
+  }
+  if (coerced.length !== 1) {
+    throw new RTypeMismatchError("NRT3398", "the condition has length > 1");
+  }
+  if (isMissing(coerced, 0)) {
+    throw new RTypeMismatchError("NRT3398", "missing value where TRUE/FALSE needed");
+  }
+  return coerced.values[0] ?? 0;
+}
+
+function closeGraphicsDevice(invocation: BuiltinInvocation, state: GraphicsState): void {
+  if (state.pending.length > 0) flushGraphics(invocation, state);
+  invocation.state.delete(GRAPHICS_STATE_KEY);
+  invocation.state.delete(GRAPHICS_PARAMETERS_STATE_KEY);
 }
 
 function deviceHoldLevel(

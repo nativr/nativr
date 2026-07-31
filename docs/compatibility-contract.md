@@ -240,12 +240,14 @@ controls. They cross the Worker boundary, remain available in `evalDetailed.grap
 toward the configured output budget. Inline and Worker callbacks receive the same command shapes,
 and the Playground renders them to Canvas. Evidence covers the measured systemfonts glyph-raster,
 httr PNG-array, posterior interval-segment, zoo filled-area, zoo plot-frame, zoo grouped-boxplot,
-and zoo legend patterns. The owned device also supports nested `dev.hold`/`dev.flush` levels,
-ordered cross-evaluation command buffering, and bounded same-session `recordPlot`/`replayPlot` over
-its own page/window/raster/segments/points/text/polygon/box/boxplot/legend display list. Complete
-plot methods, device selection, axis tick/label drawing, complete clipping/margins, graphical
-parameters beyond the documented controls, external display-list formats, and pixel equivalence
-across GNU R devices are not claimed.
+and zoo legend patterns. The owned device also supports `dev.cur`/`dev.list`, GNU R-shaped null
+device 1 and browser device 2 identities, `dev.off`/`graphics.off` closure, nested
+`dev.hold`/`dev.flush` levels, ordered cross-evaluation command buffering, and bounded same-session
+`recordPlot`/`replayPlot` over its own page/window/raster/segments/points/text/polygon/box/boxplot/
+legend display list. Closing flushes held commands and resets device-local `par()` values. Complete
+plot methods, multiple-device selection, file devices, axis tick/label drawing, complete
+clipping/margins, graphical parameters beyond the documented controls, external display-list
+formats, and pixel equivalence across GNU R devices are not claimed.
 
 `base::plot` and `graphics::plot.default` have differential shape evidence for the sampled rank-22
 numeric calls and package-owned S3 extension point. The generic probes class methods before entering

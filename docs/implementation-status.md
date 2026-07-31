@@ -121,6 +121,9 @@ Date: 2026-07-31
 - Usage-ranked `grDevices::dev.hold`/`dev.flush` with nested owned-device levels, bounded ordered
   graphics buffering across evaluations, zero-level release, namespace access, visible integer
   returns, and reset/dispose cleanup.
+- Usage-ranked `grDevices::dev.cur`/`dev.list`/`dev.off` plus `graphics.off` with one browser-owned
+  device, GNU R-shaped null/current values and visibility, held-command flush on close, graphical-
+  parameter reset, reopen behavior, namespace access, and explicit multiple/file-device boundaries.
 - Usage-ranked `grDevices::recordPlot`/`replayPlot` with a bounded independently owned display list,
   ragg's same-session record/replay shape, package-metadata retention, held replay, invisible replay
   return, namespace access, malformed-input guards, and explicit external-format/reload boundaries.
@@ -552,11 +555,11 @@ Date: 2026-07-31
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 10 files and 362 tests; aggregate V8 coverage is 84.77% statements, 72.49%
-  branches, 92.39% functions, and 86.07% lines.
+- Vitest currently passes 11 files and 375 tests; aggregate V8 coverage is 84.44% statements, 72.24%
+  branches, 92.42% functions, and 85.70% lines.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 701/701 cases. The optional black-box R oracle passes all 666
+- Checked-in conformance passes 707/707 cases. The optional black-box R oracle passes all 672
   eligible cases and explicitly skips 35 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,

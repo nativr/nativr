@@ -476,6 +476,14 @@ command count is bounded by `maxVectorLength`, and reset/dispose clears them. Ca
 active device return zero. The runtime and base packages contain no DOM or Canvas dependency; the
 Worker transfers commands to the public API and the Playground owns the reference Canvas renderer.
 
+`dev.cur()` and `dev.list()` expose the session's single owned browser device as device 2 and use
+GNU R's named null-device value 1 when no page is active. `dev.off(which = dev.cur())` closes device
+2, flushes held commands before removal, resets device-local `par()` state, and returns the new
+current device; unsupported device numbers are harmless no-ops, while closing null device 1 is an
+error. `graphics.off()` closes the owned device and returns invisible `NULL`. A later `plot.new()`
+opens a fresh device 2. Multiple simultaneous devices, device switching, and file-format devices are
+not part of this lifecycle.
+
 `graphics::persp()` dispatches classed first arguments before its owned matrix default. The default
 requires increasing finite x/y coordinates and a two-dimensional real z grid, derives missing grids
 over `[0, 1]`, validates finite limits, and leaves edges touching missing z values absent. It
