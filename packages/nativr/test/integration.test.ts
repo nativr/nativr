@@ -2163,6 +2163,152 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("constructs and coerces usage-ranked regular time series", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(
+        "x <- stats::ts(1:10, frequency = 4, start = c(1959, 2))\nc(x, attr(x, 'tsp'), class(x), frequency(x))",
+      ),
+    ).resolves.toEqual([
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10",
+      "1959.25",
+      "1961.5",
+      "4",
+      "ts",
+      "4",
+    ]);
+    await expect(
+      runtime.eval(
+        "x <- ts(1:3, start = 2000, end = 2001, frequency = 4)\nm <- ts(matrix(1:6, 3, 2), start = 2000, end = 2001, frequency = 4)\nc(x, attr(x, 'tsp'), dim(m), m, colnames(m), class(m))",
+      ),
+    ).resolves.toEqual([
+      "1",
+      "2",
+      "3",
+      "1",
+      "2",
+      "2000",
+      "2001",
+      "4",
+      "5",
+      "2",
+      "1",
+      "2",
+      "3",
+      "1",
+      "2",
+      "4",
+      "5",
+      "6",
+      "4",
+      "5",
+      "Series 1",
+      "Series 2",
+      "mts",
+      "ts",
+      "matrix",
+      "array",
+    ]);
+    await expect(
+      runtime.eval(
+        "a <- as.ts(c(a = 10, b = 20, c = 30))\nb <- as.ts(structure(1:3, tsp = c(2000, 2001, 2), class = 'custom'))\nc(a, names(a), attr(a, 'tsp'), class(a), b, attr(b, 'tsp'), class(b))",
+      ),
+    ).resolves.toEqual([
+      "10",
+      "20",
+      "30",
+      "a",
+      "b",
+      "c",
+      "1",
+      "3",
+      "1",
+      "ts",
+      "1",
+      "2",
+      "3",
+      "2000",
+      "2001",
+      "2",
+      "ts",
+    ]);
+    await expect(runtime.eval("ts(numeric())")).rejects.toMatchObject({ code: "NRT3284" });
+    await expect(runtime.eval("ts(1:3, frequency = -1)")).rejects.toMatchObject({
+      code: "NRT3284",
+    });
+    await expect(runtime.eval("as.ts(data.frame(x = 1:3))")).rejects.toMatchObject({
+      code: "NRT3284",
+    });
+    await runtime.dispose();
+  });
+
+  it("extracts usage-ranked regular windows and exposes package-owned S3 seams", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(
+        "x <- ts(1:10, start = c(1959, 2), frequency = 4)\ny <- stats::window(x, start = 1960, end = 1961)\nc(y, attr(y, 'tsp'), class(y), frequency(y))",
+      ),
+    ).resolves.toEqual(["4", "5", "6", "7", "8", "1960", "1961", "4", "ts", "4"]);
+    await expect(
+      runtime.eval(
+        "x <- window(ts(1:12, start = 2000, frequency = 4), start = c(2000, 3), deltat = 1)\nc(x, attr(x, 'tsp'), class(x))",
+      ),
+    ).resolves.toEqual(["3", "7", "11", "2000.5", "2002.5", "1", "ts"]);
+    await expect(
+      runtime.eval(
+        "x <- window(ts(1:4, start = 2000, frequency = 4), start = c(1999, 4), end = c(2001, 1), extend = TRUE)\nc(x, attr(x, 'tsp'))",
+      ),
+    ).resolves.toEqual([NA, 1, 2, 3, 4, NA, 1999.75, 2001, 4]);
+
+    await runtime.eval(
+      "as.ts.zoo <- function(x, ..., marker = 'a') c(marker, attr(x, 'index'))\nfrequency.zoo <- function(x, ...) 12\nwindow.zoo <- function(x, ..., marker = 'w') c(marker, attr(x, 'index'))\nNULL",
+    );
+    await expect(
+      runtime.eval(
+        "x <- structure(1:3, class = 'zoo', index = c(4, 7, 9))\nc(as.ts(x, marker = 'as'), frequency(x), window(x, marker = 'win'))",
+      ),
+    ).resolves.toEqual(["as", "4", "7", "9", "12", "win", "4", "7", "9"]);
+
+    const bounded = await runtime.evalDetailed(
+      "window(ts(1:4, start = 2000, frequency = 4), start = 1999, end = 2002)",
+    );
+    expect(bounded.value).toEqual([1, 2, 3, 4]);
+    expect(bounded.warnings).toEqual([
+      { code: "NRW1026", message: "'start' value not changed" },
+      { code: "NRW1027", message: "'end' value not changed" },
+    ]);
+    const incompatible = await runtime.evalDetailed(
+      "window(ts(1:4, start = 2000, frequency = 4), frequency = 8)",
+    );
+    expect(incompatible.value).toEqual([1, 2, 3, 4]);
+    expect(incompatible.warnings).toEqual([
+      { code: "NRW1025", message: "'frequency' not changed" },
+    ]);
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 8 },
+    });
+    await expect(limited.eval("ts(1, start = 1, end = 100)")).rejects.toMatchObject({
+      code: "NRL4002",
+    });
+    await expect(
+      limited.eval("window(ts(1:2), start = -100, end = 100, extend = TRUE)"),
+    ).rejects.toMatchObject({ code: "NRL4002" });
+    await limited.dispose();
+  });
+
   it("omits usage-ranked incomplete cases with row metadata and S3 boundaries", async () => {
     const runtime = await session();
     await expect(
@@ -4356,7 +4502,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.171.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.172.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

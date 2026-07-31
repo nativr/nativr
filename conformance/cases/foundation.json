@@ -6437,5 +6437,118 @@
     "expectedCompatibility": "api",
     "rOracle": false,
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "time-series-constructor-calendar-coordinates",
+    "code": "x <- stats::ts(1:10, frequency = 4, start = c(1959, 2))\nc(x, attr(x, \"tsp\"), class(x), frequency(x))",
+    "expected": [
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10",
+      "1959.25",
+      "1961.5",
+      "4",
+      "ts",
+      "4"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "time-series-endpoint-recycling-and-matrix-shape",
+    "code": "x <- ts(1:3, start = 2000, end = 2001, frequency = 4)\nm <- ts(matrix(1:6, 3, 2), start = 2000, end = 2001, frequency = 4)\nc(x, attr(x, \"tsp\"), dim(m), m, colnames(m), class(m))",
+    "expected": [
+      "1",
+      "2",
+      "3",
+      "1",
+      "2",
+      "2000",
+      "2001",
+      "4",
+      "5",
+      "2",
+      "1",
+      "2",
+      "3",
+      "1",
+      "2",
+      "4",
+      "5",
+      "6",
+      "4",
+      "5",
+      "Series 1",
+      "Series 2",
+      "mts",
+      "ts",
+      "matrix",
+      "array"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "as-ts-default-metadata-and-frequency",
+    "code": "a <- as.ts(c(a = 10, b = 20, c = 30))\nb <- as.ts(structure(1:3, tsp = c(2000, 2001, 2), class = \"custom\"))\nc(a, names(a), attr(a, \"tsp\"), class(a), b, attr(b, \"tsp\"), class(b), frequency(a), frequency(b))",
+    "expected": [
+      "10",
+      "20",
+      "30",
+      "a",
+      "b",
+      "c",
+      "1",
+      "3",
+      "1",
+      "ts",
+      "1",
+      "2",
+      "3",
+      "2000",
+      "2001",
+      "2",
+      "ts",
+      "1",
+      "2"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "window-regular-calendar-subset",
+    "code": "x <- ts(1:10, start = c(1959, 2), frequency = 4)\ny <- stats::window(x, start = 1960, end = 1961)\nc(y, attr(y, \"tsp\"), class(y), frequency(y))",
+    "expected": ["4", "5", "6", "7", "8", "1960", "1961", "4", "ts", "4"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "window-downsample-and-extend-shapes",
+    "code": "a <- window(ts(1:12, start = 2000, frequency = 4), start = c(2000, 3), deltat = 1)\nb <- window(ts(1:4, start = 2000, frequency = 4), start = c(1999, 4), end = c(2001, 1), extend = TRUE)\nc(a, attr(a, \"tsp\"), b, attr(b, \"tsp\"))",
+    "expected": [3, 7, 11, 2000.5, 2002.5, 1, "NA", 1, 2, 3, 4, "NA", 1999.75, 2001, 4],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "time-series-package-method-seams",
+    "code": "as.ts.zoo <- function(x, ..., marker = \"a\") c(marker, attr(x, \"index\"))\nfrequency.zoo <- function(x, ...) 12\nwindow.zoo <- function(x, ..., marker = \"w\") c(marker, attr(x, \"index\"))\nx <- structure(1:3, class = \"zoo\", index = c(4, 7, 9))\nc(as.ts(x, marker = \"as\"), frequency(x), window(x, marker = \"win\"))",
+    "expected": ["as", "4", "7", "9", "12", "win", "4", "7", "9"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "window-outside-range-warnings",
+    "code": "window(ts(1:4, start = 2000, frequency = 4), start = 1999, end = 2002)",
+    "expected": [1, 2, 3, 4],
+    "expectedWarning": true,
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

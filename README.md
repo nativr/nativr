@@ -69,7 +69,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 455 registered functions, including resettable
+an initial condition/handler slice. It exposes 459 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Data-mask and local-environment evaluation
 preserve result visibility, while `all.equal` provides bounded tolerant recursive comparison and
@@ -294,7 +294,11 @@ message selection, and split output; browser filesystem and connection targets r
 boundaries. Rank-437 `utils::demo` reproduces the empty package-demo catalog shape while making
 external package demo discovery and execution an explicit package-loader boundary. Rank-438
 `RNGversion` runs zoo's measured R-3.5 reproducibility setup by selecting the historical Rounding
-sampler before `set.seed`; pre-R-1.7 generator families remain explicit boundaries. See the
+sampler before `set.seed`; pre-R-1.7 generator families remain explicit boundaries. Ranks 439-443
+add the regular time-series foundation: `ts()` constructs vector or matrix series, `as.ts()` and
+`frequency()` expose their sampling metadata, and `window()` slices, downsamples, or explicitly
+extends them. These generics also forward to independently supplied methods such as `window.zoo`;
+NativR does not claim that zoo itself is bundled or loadable yet. See the
 [compatibility contract](https://github.com/nativr/nativr/blob/main/docs/compatibility-contract.md)
 for exact boundaries.
 

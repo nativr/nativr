@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.171.0",
+  "languageSubsetVersion": "0.172.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -477,6 +477,10 @@
       "referenceVersion": "R 4.6.x documented behavior",
       "functions": [
         { "name": "rgamma", "compatibility": "shape" },
+        { "name": "ts", "compatibility": "behavioral" },
+        { "name": "as.ts", "compatibility": "behavioral" },
+        { "name": "frequency", "compatibility": "behavioral" },
+        { "name": "window", "compatibility": "behavioral" },
         { "name": "mad", "compatibility": "numeric" },
         { "name": "family", "compatibility": "shape" },
         { "name": "ppoints", "compatibility": "behavioral" },
