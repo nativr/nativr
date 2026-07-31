@@ -4,15 +4,15 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 482,
-    "overlappingNames": 467,
-    "missingReferenceNames": 2055,
+    "nativrRegisteredNames": 483,
+    "overlappingNames": 468,
+    "missingReferenceNames": 2054,
     "nativrExtensionNames": 15,
-    "nameCoverage": 0.18517
+    "nameCoverage": 0.185567
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 348, "nameCoverage": 0.254572 },
-    { "package": "stats", "callableNames": 464, "overlappingNames": 69, "nameCoverage": 0.148707 },
+    { "package": "stats", "callableNames": 464, "overlappingNames": 70, "nameCoverage": 0.150862 },
     { "package": "methods", "callableNames": 209, "overlappingNames": 9, "nameCoverage": 0.043062 },
     { "package": "utils", "callableNames": 262, "overlappingNames": 11, "nameCoverage": 0.041985 },
     {
@@ -476,6 +476,7 @@
     "unique",
     "unlist",
     "unname",
+    "update",
     "vapply",
     "var",
     "vcov",
@@ -2463,7 +2464,6 @@
     "untracemem",
     "unz",
     "unzip",
-    "update",
     "update.default",
     "update.formula",
     "update.packages",

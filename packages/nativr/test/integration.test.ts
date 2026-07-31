@@ -952,6 +952,44 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("dispatches zoo's frequency-ranked stats::update package extension point", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        update.trellis <- function(object, ..., redraw = TRUE) {
+          c(class(object), list(...)$type, redraw)
+        }
+        plot <- structure(list(), class = "trellis")
+        result <- withVisible(stats::update(plot, type = c("l", "g")))
+        c(result$value, result$visible)
+      `),
+    ).resolves.toEqual(["trellis", "l", "g", "TRUE", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        update.lazy <- function(object, ..., marker = "ok") marker
+        update(structure(1, class = "lazy"), stop("unused dot remains lazy"))
+      `),
+    ).resolves.toBe("ok");
+    await expect(
+      runtime.eval(`
+        update.child <- function(object, ...) c("child", NextMethod())
+        update.parent <- function(object, ...) "parent"
+        update(structure(1, class = c("child", "parent")), stop("still lazy"))
+      `),
+    ).resolves.toEqual(["child", "parent"]);
+    await expect(runtime.eval("update(list())")).rejects.toMatchObject({ code: "NRU6166" });
+    await expect(
+      runtime.eval(`
+        update.default <- function(object, ..., evaluate = TRUE) {
+          c(object, evaluate, list(...)$gain)
+        }
+        stats::update(3, gain = 2, evaluate = FALSE)
+      `),
+    ).resolves.toEqual([3, 0, 2]);
+    await expect(runtime.eval("update()")).rejects.toMatchObject({ code: "NRE2147" });
+    await runtime.dispose();
+  });
+
   it("generates the frequency-ranked grDevices heat palette", async () => {
     const runtime = await session();
     await expect(runtime.eval("grDevices::heat.colors(5)")).resolves.toEqual([
@@ -6276,7 +6314,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.191.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.192.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

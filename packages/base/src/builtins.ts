@@ -1356,6 +1356,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("rank", ["x", "na.last", "ties.method"], "behavioral", builtinRank),
   defineBuiltin("formula", ["x"], "shape", builtinFormula),
   defineBuiltin("as.formula", ["object", "env"], "behavioral", builtinAsFormula),
+  definePackageBuiltin("stats", "update", ["object", "..."], "shape", builtinUpdate),
   defineBuiltin("all.vars", ["expr"], "behavioral", builtinAllVars),
   defineBuiltin("class", ["x"], "behavioral", builtinClass),
   defineBuiltin("class<-", ["x", "value"], "behavioral", builtinClassReplacement),
@@ -13603,6 +13604,21 @@ async function builtinPairs(invocation: BuiltinInvocation): Promise<RValue> {
   throw new RUnsupportedFeatureError(
     "NRU6146",
     "pairs.default() requires the broader browser graphics-device and panel-function slice.",
+  );
+}
+
+async function builtinUpdate(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched } = matchBuiltinArguments(invocation, ["object", "..."]);
+  const objectArgument = matched.get("object");
+  if (objectArgument === undefined || objectArgument.promise.missing) {
+    throw new REvaluationError("NRE2147", "Argument 'object' is missing in update().");
+  }
+  const object = await invocation.force(objectArgument.promise);
+  const dispatched = await invocation.dispatchS3IfPresent("update", object, invocation.arguments);
+  if (dispatched !== undefined) return dispatched;
+  throw new RUnsupportedFeatureError(
+    "NRU6166",
+    "update.default() awaits generic stored-call rewriting and re-evaluation.",
   );
 }
 

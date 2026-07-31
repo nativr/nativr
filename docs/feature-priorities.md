@@ -860,7 +860,15 @@ call, representing 731,390 downloads, one measured occurrence, and 0.6% weighted
 carries recycled coordinates, labels, colors, sizes, font faces, positions, adjustment, offset,
 rotation, and family through bounded Worker/Canvas and display-list paths. Plotmath, Hershey fonts,
 class-specific label coercion, clipping/log axes, and device-identical metrics remain boundaries.
-Rank 464 `update` is the next unresolved callable candidate.
+Rank 464 `stats::update` is now complete for
+[zoo's](https://cran.r-project.org/web/packages/zoo/refman/zoo.html) documented
+`update(trellis.last.object(), type = c("l", "g"))` lattice extension call, representing 731,390
+downloads, one measured occurrence, and 0.6% weighted reach. The owned
+[documented generic path](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/update.html)
+preserves lazy dots and supports inherited S3/`NextMethod` dispatch plus independently authored
+default methods. Lattice's package-owned method and GNU R's built-in stored-call rewriting and
+re-evaluation remain boundaries. Rank 465 `graphics::matplot` is the next unresolved callable
+candidate.
 
 ## Completed implementation order
 
@@ -1232,6 +1240,9 @@ ties:
 129. Plot text: `graphics::text()` runs zoo's measured rotated outside-label call with S3 dispatch,
      coordinate/label recycling, truncation warnings, missing omission, resolved browser text
      styles, Worker/Canvas rendering, display-list replay, namespace access, and resource bounds.
+130. Model-call updates: `stats::update()` runs zoo's measured lattice extension call through lazy
+     S3 dispatch, inherited method selection, `NextMethod`, namespace access, independently authored
+     defaults, deterministic unsupported boundaries, and resource limits.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

@@ -415,6 +415,11 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      rotation/family, namespace access, recording/replay, and resource bounds. Plotmath, Hershey
      fonts, clipping/log axes, broader class coercion, and device-identical metrics remain explicit
      boundaries.
+109. Frequency-ranked model-call updates: `stats::update` runs zoo's documented lattice extension
+     call through an S3-first generic with lazy dots, inherited method lookup, `NextMethod`, direct
+     and namespace-qualified access, independently authored defaults, and deterministic errors.
+     Lattice's `update.trellis` remains package-owned, while built-in stored-call rewriting and
+     re-evaluation remain separate language/call work.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

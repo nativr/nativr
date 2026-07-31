@@ -398,3 +398,8 @@ measures 300.9 KiB gzip against the 308 KiB limit.
 Language subset 0.191 adds rank 463's `graphics::text()` S3-first coordinate path, resolved
 host-neutral text protocol/display-list command, style recycling, missing-label omission, and Canvas
 rendering. The first production Worker measures 302.3 KiB gzip against the unchanged 308 KiB limit.
+
+Language subset 0.192 adds rank 464's `stats::update()` S3 extension seam by reusing the evaluator's
+existing lazy method-dispatch machinery. No package method or second call-rewriting engine is
+embedded; the built-in stored-call default remains explicit future work. The measured Worker size is
+302.4 KiB gzip against the unchanged 308 KiB limit.

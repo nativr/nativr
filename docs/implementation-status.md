@@ -11,7 +11,7 @@ Date: 2026-07-30
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 482 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 483 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Vector/list selection and replacement, recursive `[[`, arbitrary-dimensional column-major array
@@ -216,6 +216,10 @@ Date: 2026-07-30
 - Usage-ranked `graphics::pairs` S3 dispatch for rstan's measured `pairs.stanfit` call shape,
   including lazy labels, panels, parameter selection, condition, and graphical dots, with an
   explicit boundary before the full default scatterplot-matrix device.
+- Usage-ranked `stats::update` S3 dispatch for zoo's measured lattice call shape, including lazy
+  dots, inherited method lookup, `NextMethod`, direct and namespace-qualified access, and
+  independently authored default methods. The built-in stored-call rewriting and re-evaluation
+  default remains an explicit boundary.
 - Usage-ranked `grDevices::heat.colors` with the measured sequential palette shape, exact
   red-to-yellow/pale-yellow hexadecimal generation, optional alpha, reversal, numeric count
   coercion, empty outputs, and explicit invalid-input boundaries.
