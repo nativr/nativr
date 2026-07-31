@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           474 |
-| Overlapping callable names        |           459 |
-| Missing GNU R callable names      |         2,063 |
-| Name overlap                      |      18.1998% |
+| NativR registered names           |           475 |
+| Overlapping callable names        |           460 |
+| Missing GNU R callable names      |         2,062 |
+| Name overlap                      |      18.2395% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -295,6 +295,15 @@ RGB(A) formatting, scalar/recycled alpha, reversal, zero/fractional counts, atom
 coercion, namespace access, attribute removal, errors, and allocation limits have coverage.
 Vector-valued palette controls, direct alpha vectors longer than the level input, exact diagnostics,
 device color profiles, and long vectors remain incomplete.
+
+The rank-456 increment adds GNU R differential evidence for zoo's measured
+`ISOdatetime(2003, 2, c(1, 3, 7, 9, 14), 0, 0, 0)` POSIXct index shape. Required clock fields,
+component recycling, fractional seconds, explicit UTC/GMT values and labels, default-zone relative
+spacing, POSIXct/POSIXt class and `tzone` metadata, years 0:9999, missing/non-finite/non-integral/
+invalid components, empty inputs, namespace access, errors, and allocation limits have coverage.
+Regional zones and daylight-saving transitions, the host-dependent absolute value of `tz = ""`,
+platform-specific invalid-time normalization, broad character coercion, exact diagnostics, and long
+vectors remain incomplete.
 
 ## Completion evidence
 

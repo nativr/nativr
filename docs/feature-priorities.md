@@ -796,8 +796,15 @@ weighted reach. Rank 455 `grey` is complete through the same shared path for zoo
 [gray-level](https://stat.ethz.ch/R-manual/R-devel/library/grDevices/html/gray.html) constructors
 cover all four documented gray/grey aliases, deterministic RGB(A) bytes, gamma correction, alpha
 recycling, reversal, and bounded allocation. Vector-valued palette controls, device profiles, and
-the remaining palette families are explicit boundaries. Rank 456 `ISOdatetime` is the next
-unresolved callable candidate.
+the remaining palette families are explicit boundaries. Rank 456 `ISOdatetime` is now complete for
+[zoo's](https://cran.r-project.org/web/packages/zoo/refman/zoo.html) measured five-date POSIXct
+index constructor, representing 731,390 downloads, one measured call, and 0.6% weighted reach. The
+owned [documented wrapper](https://stat.ethz.ch/R-manual/R-devel/library/base/html/ISOdatetime.html)
+reuses the existing `ISOdate` calendar path with required clock components, ordinary recycling,
+fractional seconds, UTC/GMT controls, calendar validation, and POSIXct metadata. Empty `tz` uses
+deterministic UTC arithmetic while retaining its empty label; regional zones/DST, platform-specific
+invalid-time normalization, and broad character coercion remain boundaries. Rank 457 `persp` is the
+next unresolved callable candidate.
 
 ## Completed implementation order
 
@@ -1138,6 +1145,10 @@ ties:
      zoo's two measured calls through a shared deterministic RGB(A) byte path with gamma
      interpolation, scalar/recycled alpha, reversal, descending endpoints, attribute removal,
      aliases, input validation, and allocation guards.
+122. POSIXct component construction: `base::ISOdatetime()` runs zoo's measured five-date index
+     through the shared `ISOdate` path with required clock fields, component recycling, fractional
+     seconds, UTC/GMT/empty labels, deterministic browser UTC defaults, invalid-calendar
+     missingness, namespace access, metadata, and allocation guards.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

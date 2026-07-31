@@ -11,7 +11,7 @@ Date: 2026-07-30
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 474 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 475 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Vector/list selection and replacement, recursive `[[`, arbitrary-dimensional column-major array
@@ -307,9 +307,11 @@ Date: 2026-07-30
 - Numeric-order `as.factor` coercion with existing-factor identity, plus grouped `ave`
   transformations with multiple grouping vectors, missing-group retention, callable lookup, and
   type-preserving group replacement.
-- Vectorized UTC/GMT `ISOdate` construction with component recycling, class/time-zone metadata, and
-  invalid-date missingness, plus bounded atomic `expand.grid` Cartesian data frames with factor
-  controls, list inputs, zero-length shapes, and optional output-dimension metadata.
+- Vectorized UTC/GMT `ISOdate` and usage-ranked `ISOdatetime` construction with component recycling,
+  fractional seconds, class/time-zone metadata, invalid-date missingness, required `ISOdatetime`
+  clock fields, and a deterministic browser UTC interpretation of empty `tz`, plus bounded atomic
+  `expand.grid` Cartesian data frames with factor controls, list inputs, zero-length shapes, and
+  optional output-dimension metadata.
 - Type-promoting `append` insertion across atomic, list, factor, pairlist, expression, and matrix
   shapes, plus metadata-preserving real/complex `cos` with missingness and domain warnings.
 - Browser-native clockwise `chull` boundary indices across paired/recycled coordinates, matrices,
@@ -444,10 +446,10 @@ Date: 2026-07-30
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 9 files and 322 tests.
+- Vitest currently passes 9 files and 323 tests.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 643/643 cases. The optional black-box R oracle passes all 613
+- Checked-in conformance passes 646/646 cases. The optional black-box R oracle passes all 616
   eligible cases and explicitly skips 30 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the expanded matrix, weighted

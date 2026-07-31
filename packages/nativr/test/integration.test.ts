@@ -1696,6 +1696,92 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("constructs zoo's usage-ranked POSIXct index with deterministic browser timezone rules", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- ISOdatetime(2003, 2, c(1, 3, 7, 9, 14), 0, 0, 0)
+        c(unclass(x), class(x), attr(x, "tzone"), typeof(x))
+      `),
+    ).resolves.toEqual([
+      "1044057600",
+      "1044230400",
+      "1044576000",
+      "1044748800",
+      "1045180800",
+      "POSIXct",
+      "POSIXt",
+      "",
+      "double",
+    ]);
+    await expect(
+      runtime.eval(`
+        x <- base::ISOdatetime(
+          c(1970, 2000),
+          c(1, 2, 3),
+          1,
+          0,
+          c(0, 30),
+          c(0.25, 0.5, 0.75),
+          tz = "GMT"
+        )
+        c(unclass(x), attr(x, "tzone"), class(x))
+      `),
+    ).resolves.toEqual(["0.25", "949365000.5", "5097600.75", "GMT", "POSIXct", "POSIXt"]);
+    await expect(
+      runtime.eval(`
+        x <- ISOdatetime(
+          c(0, 1, 9999, 10000, 1970, 1970),
+          1,
+          c(1, 1, 1, 1, 32, 1),
+          c(0, 0, 0, 0, 0, 0.5),
+          0,
+          c(0.125, 0, 0, 0, 0, 0),
+          tz = "UTC"
+        )
+        c(unclass(x[1:3]), is.na(x[4:6]), attr(x, "tzone"))
+      `),
+    ).resolves.toEqual([
+      "-62167219199.875",
+      "-62135596800",
+      "253370764800",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "UTC",
+    ]);
+    await expect(
+      runtime.eval(`
+        x <- ISOdatetime(numeric(), 1, 1, 0, 0, 0, tz = "UTC")
+        c(typeof(x), length(x), class(x), attr(x, "tzone"))
+      `),
+    ).resolves.toEqual(["integer", "0", "POSIXct", "POSIXt", "UTC"]);
+
+    for (const source of [
+      "ISOdatetime()",
+      "ISOdatetime(2000, 1, 1)",
+      "ISOdatetime('2000', 1, 1, 0, 0, 0)",
+    ]) {
+      await expect(runtime.eval(source), source).rejects.toMatchObject({
+        code: source.includes("'2000'") ? "NRT3240" : "NRE2103",
+      });
+    }
+    await expect(
+      runtime.eval("ISOdatetime(2000, 1, 1, 0, 0, 0, tz = 'America/New_York')"),
+    ).rejects.toMatchObject({ code: "NRU6141" });
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 12 },
+    });
+    await expect(
+      limited.eval("ISOdatetime(2000, 1, 1:13, 0, 0, 0, tz = 'UTC')"),
+    ).rejects.toMatchObject({ code: "NRL4002" });
+    await limited.dispose();
+  });
+
   it("inserts vector values and computes vectorized real and complex cosine", async () => {
     const runtime = await session();
     await expect(
@@ -5520,7 +5606,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.183.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.184.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

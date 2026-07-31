@@ -840,6 +840,15 @@ components are missing. Strict parsing and UTC/GMT-only conversion avoid browser
 Named regional zones and daylight-saving transitions remain outside this slice. `Sys.Date` and
 `Sys.time` explicitly expose the host clock.
 
+`ISOdate()` and `ISOdatetime()` share an owned numeric-component constructor. Both recycle year,
+month, day, hour, minute, and second vectors, retain fractional seconds, return
+`c("POSIXct", "POSIXt")` with the requested `tzone` label, and map missing, non-finite, non-integral
+calendar fields, years outside 0:9999, and invalid calendar/time combinations to missing values.
+`ISOdate` supplies noon/GMT defaults; `ISOdatetime` requires all clock fields and maps `tz = ""` to
+deterministic UTC arithmetic without changing the empty label. Regional zones, DST transitions,
+host-zone probing, platform-specific normalization of invalid times, and broad character component
+coercion are outside this slice.
+
 `weekdays()` is an S3 generic with registered `Date` and `POSIXt` methods. Package classes such as
 data.table's IDate reach the Date method through their explicit inherited class vector. Full and
 three-letter names come from the runtime's deterministic C `LC_TIME` profile; abbreviation controls

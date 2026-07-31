@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.183.0",
+  "languageSubsetVersion": "0.184.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -432,6 +432,7 @@
         { "name": "weekdays", "compatibility": "behavioral" },
         { "name": "weekdays.Date", "compatibility": "behavioral" },
         { "name": "weekdays.POSIXt", "compatibility": "behavioral" },
+        { "name": "ISOdatetime", "compatibility": "behavioral" },
         { "name": "ISOdate", "compatibility": "behavioral" },
         { "name": "strptime", "compatibility": "numeric" },
         { "name": "strftime", "compatibility": "behavioral" },
