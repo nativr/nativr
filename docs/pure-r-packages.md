@@ -159,6 +159,11 @@ builtin formals, list-backed environments, dynamic `parent.frame()`, hook regist
 session-scoped `graphics::par()`. Each seam was implemented once in the runtime; none of the three
 packages was patched or translated.
 
+The same rule applies to later packages: a missing callable is prioritized by measured package reach
+and implemented as reusable runtime behavior. For example, the rank-80 `dev.off()` gap led to one
+browser-device lifecycle shared by every package, including current/list queries, held-command
+flush, close, reset, and reopen semantics. Package-specific shims are not the compatibility model.
+
 ## Explicit boundaries
 
 - C, C++, Fortran, Rust, Java, shared libraries, `LinkingTo`, `useDynLib`, subprocesses, system

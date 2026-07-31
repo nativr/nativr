@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.204.0",
+  "languageSubsetVersion": "0.205.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -586,6 +586,10 @@
         { "name": "colours", "compatibility": "behavioral" },
         { "name": "dev.hold", "compatibility": "behavioral" },
         { "name": "dev.flush", "compatibility": "behavioral" },
+        { "name": "dev.cur", "compatibility": "behavioral" },
+        { "name": "dev.list", "compatibility": "behavioral" },
+        { "name": "dev.off", "compatibility": "behavioral" },
+        { "name": "graphics.off", "compatibility": "behavioral" },
         { "name": "recordPlot", "compatibility": "behavioral" },
         { "name": "replayPlot", "compatibility": "behavioral" },
         { "name": "is.raster", "compatibility": "behavioral" },

@@ -75,23 +75,23 @@ signal.
 
 | Priority | Measured rank | Callable      | Weighted reach | Packages | Observed calls |
 | -------: | ------------: | ------------- | -------------: | -------: | -------------: |
-|        1 |            80 | `dev.off`     |           7.8% |        8 |             18 |
-|        2 |           121 | `png`         |           5.5% |        5 |              7 |
-|        3 |           127 | `system.time` |           5.3% |        6 |             95 |
-|        4 |           138 | `par`         |           4.6% |        5 |             23 |
-|        5 |           144 | `Encoding`    |           4.5% |        3 |             12 |
-|        6 |           149 | `rcauchy`     |           4.2% |        3 |              4 |
-|        7 |           162 | `Sys.getenv`  |           3.7% |        3 |             16 |
-|        8 |           163 | `image`       |           3.7% |        3 |              6 |
-|        9 |           166 | `browseURL`   |           3.6% |        4 |              8 |
-|       10 |           168 | `gc`          |           3.5% |        3 |             17 |
+|        1 |           121 | `png`         |           5.5% |        5 |              7 |
+|        2 |           127 | `system.time` |           5.3% |        6 |             95 |
+|        3 |           144 | `Encoding`    |           4.5% |        3 |             12 |
+|        4 |           149 | `rcauchy`     |           4.2% |        3 |              4 |
+|        5 |           162 | `Sys.getenv`  |           3.7% |        3 |             16 |
+|        6 |           163 | `image`       |           3.7% |        3 |              6 |
+|        7 |           166 | `browseURL`   |           3.6% |        4 |              8 |
+|        8 |           168 | `gc`          |           3.5% |        3 |             17 |
+|        9 |           174 | `lines`       |           3.4% |        4 |             20 |
+|       10 |           175 | `Sys.setenv`  |           3.3% |        4 |              7 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
 behavior. The previous leaders `library`, `require`, `requireNamespace`, `tempfile`, `unlink`,
 `plot`, `Sys.sleep`, `writeLines`, `readLines`, `file`, `close`, `tempdir`, `file.exists`, `R.home`,
 `dir.create`, and `list.files` now have executable browser-memory/package-bundle/graphics paths. The
-remaining leaders divide across graphics/device architecture (`dev.off`, `png`, `par`, `image`),
+remaining leaders divide across graphics/device architecture (`png`, `image`, `lines`),
 serialization/encoding, timing, browser capability adapters, and distributions. Dynamic caller
 lookup through `parent.frame` and matrix transpose through `t` are now complete. Closure `formals`
 inspection (rank 135, 4.8% weighted reach) and lazy `replicate` evaluation (rank 148, 4.5% weighted
@@ -110,28 +110,29 @@ adjacent `flush`, `isOpen`, and `seek` operations use the same handles. Ranks 48
 `dir.create`, and 135 `list.files` now share a bounded virtual-directory layer with `dir.exists`,
 `list.dirs`, `getwd`/`setwd`, `normalizePath`, `basename`, and `dirname`. Usage-ranked `data`,
 `write.csv`, and `read.csv` now use that layer for package data scripts, text datasets, quoted
-tabular input/output, and deterministic type conversion. The generated callable figure therefore
-keeps `dev.off` as the highest-reach absent core name. Grouped `split` (rank 155) and real-vector
-`floor` (rank 156) are now complete at 4.1% weighted reach each. Factor generator `gl` (rank 158,
-4.1%) and a bounded data-frame `merge` subset (rank 161, 4.0%) are now complete. Data-mask mutation
-through `within` (rank 167, 3.8%) and vectorized real/complex trigonometry led by `sin` (rank 177,
-3.6%) are now complete as well. After filtering out already-supported names and
-architecture-dependent host, graphics, serialization, and source-loading entries, numeric-order
-factor coercion through `as.factor` (rank 187, 3.1%) and grouped transformation through `ave` (rank
-188, 3.0%) are now complete. UTC date construction through `ISOdate` (rank 189, 3.0%) and Cartesian
-data-frame construction through `expand.grid` (rank 190, 3.0%) are now complete too. After filtering
-out package metadata, graphics, host-memory, process, and object-introspection work, vector
-insertion through `append` (rank 195, 2.9%) and vectorized real/complex cosine through `cos` (rank
-199, 2.9%) are now complete. The set-operation family is now complete through `intersect` (rank
-186), `setdiff` (rank 208), and `union` (rank 209), followed by parallel minimum selection through
-`pmin` (rank 215, 2.4%), lagged vector differencing through `diff` (rank 222, 2.3%), and explicit
-vector-mode coercion through `as.vector` (rank 224, 2.3%). Integer-code-point decoding through
-`intToUtf8` (rank 226, 2.3%) is now complete as well. The bounded `show` generic is now complete for
-registered single-object display methods and deterministic fallback output, while rank 227 `rep_len`
-is already supported. Matrix-diagonal construction and extraction through `diag` (rank 228, 2.2%) is
-now complete too. Rank 229 `identity` is already supported, while rank 230 `textConnection` belongs
-to the connection/host-adapter surface. Formula coercion through `as.formula` (rank 231, 2.2%) is
-now complete. Quoted evaluation through `evalq` (rank 232, 2.2%) is now complete too. The global
+tabular input/output, and deterministic type conversion. Rank 80 `dev.off` is now complete through
+the single browser-device lifecycle, so the generated callable figure advances `png` to the
+highest-reach absent core name. Grouped `split` (rank 155) and real-vector `floor` (rank 156) are
+now complete at 4.1% weighted reach each. Factor generator `gl` (rank 158, 4.1%) and a bounded
+data-frame `merge` subset (rank 161, 4.0%) are now complete. Data-mask mutation through `within`
+(rank 167, 3.8%) and vectorized real/complex trigonometry led by `sin` (rank 177, 3.6%) are now
+complete as well. After filtering out already-supported names and architecture-dependent host,
+graphics, serialization, and source-loading entries, numeric-order factor coercion through
+`as.factor` (rank 187, 3.1%) and grouped transformation through `ave` (rank 188, 3.0%) are now
+complete. UTC date construction through `ISOdate` (rank 189, 3.0%) and Cartesian data-frame
+construction through `expand.grid` (rank 190, 3.0%) are now complete too. After filtering out
+package metadata, graphics, host-memory, process, and object-introspection work, vector insertion
+through `append` (rank 195, 2.9%) and vectorized real/complex cosine through `cos` (rank 199, 2.9%)
+are now complete. The set-operation family is now complete through `intersect` (rank 186), `setdiff`
+(rank 208), and `union` (rank 209), followed by parallel minimum selection through `pmin` (rank 215,
+2.4%), lagged vector differencing through `diff` (rank 222, 2.3%), and explicit vector-mode coercion
+through `as.vector` (rank 224, 2.3%). Integer-code-point decoding through `intToUtf8` (rank 226,
+2.3%) is now complete as well. The bounded `show` generic is now complete for registered
+single-object display methods and deterministic fallback output, while rank 227 `rep_len` is already
+supported. Matrix-diagonal construction and extraction through `diag` (rank 228, 2.2%) is now
+complete too. Rank 229 `identity` is already supported, while rank 230 `textConnection` belongs to
+the connection/host-adapter surface. Formula coercion through `as.formula` (rank 231, 2.2%) is now
+complete. Quoted evaluation through `evalq` (rank 232, 2.2%) is now complete too. The global
 calling-handler surface through `globalCallingHandlers` (rank 233, 2.2%) is now complete as well.
 Session search-path inspection through `search` and dynamic R-syntax call inspection through
 `sys.call` (ranks 234–235, 2.2% each) are now complete. Rank 236 `force` is already supported, rank

@@ -8112,7 +8112,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.204.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.205.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -11019,6 +11019,73 @@ describe("complete inline source-to-result vertical slice", () => {
     expect(unknown.warnings).toEqual([
       { code: "NRW1128", message: '"not-a-par" is not a graphical parameter' },
     ]);
+    await runtime.dispose();
+  });
+
+  it("tracks and closes the browser-owned graphics device", async () => {
+    const observed: unknown[] = [];
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      onGraphics: (event) => observed.push(event),
+    });
+    await expect(
+      runtime.eval(`
+        initial <- c(unname(grDevices::dev.cur()), is.null(grDevices::dev.list()))
+        graphics::plot.new()
+        active <- c(unname(grDevices::dev.cur()), unname(grDevices::dev.list()))
+        ignored <- unname(grDevices::dev.off(3L))
+        c(initial, active, ignored, unname(grDevices::dev.cur()))
+      `),
+    ).resolves.toEqual([1, 1, 2, 2, 2, 2]);
+    await expect(
+      runtime.eval('identical(formals(grDevices::dev.off)[["which"]], quote(dev.cur()))'),
+    ).resolves.toBe(true);
+    await expect(runtime.eval("grDevices::dev.off(1L)")).rejects.toMatchObject({
+      code: "NRE2197",
+    });
+    await expect(runtime.eval("unname(grDevices::dev.cur())")).resolves.toBe(2);
+
+    const closed = await runtime.evalDetailed(`
+      grDevices::dev.hold()
+      graphics::plot.window(c(0, 1), c(0, 1))
+      graphics::segments(0, 0, 1, 1)
+      graphics::par(mar = c(1, 2, 3, 4))
+      closed <- withVisible(grDevices::dev.off())
+      c(
+        unname(closed$value), closed$visible,
+        unname(grDevices::dev.cur()), is.null(grDevices::dev.list())
+      )
+    `);
+    expect(closed.value).toEqual([1, 1, 1, 1]);
+    expect(closed.graphics.map((event) => event.kind)).toEqual(["window", "segments"]);
+    expect(observed.map((event) => (event as { kind: string }).kind)).toEqual([
+      "new-page",
+      "window",
+      "segments",
+    ]);
+    await expect(
+      runtime.eval(`
+        graphics::plot.new()
+        c(graphics::par("mar"), unname(grDevices::dev.cur()))
+      `),
+    ).resolves.toEqual([5.1, 4.1, 4.1, 2.1, 2]);
+    const allClosed = await runtime.evalDetailed(
+      "visible <- withVisible(grDevices::graphics.off()); c(is.null(visible$value), visible$visible)",
+    );
+    expect(allClosed.value).toEqual([true, false]);
+    await expect(runtime.eval("grDevices::dev.off()")).rejects.toMatchObject({
+      code: "NRE2197",
+    });
+    await expect(runtime.eval("grDevices::dev.off(integer())")).rejects.toMatchObject({
+      code: "NRT3398",
+    });
+    await expect(runtime.eval("grDevices::dev.off(NA_integer_)")).rejects.toMatchObject({
+      code: "NRT3398",
+    });
+    await expect(runtime.eval("grDevices::dev.off(2:3)")).rejects.toMatchObject({
+      code: "NRT3398",
+    });
     await runtime.dispose();
   });
 

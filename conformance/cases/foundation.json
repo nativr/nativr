@@ -7577,8 +7577,15 @@
   },
   {
     "id": "graphics-par-query-update-and-restore",
-    "code": "before <- par(\"mar\")\nold <- par(mar = c(1, 2, 3, 4), mfrow = c(2L, 3L))\nduring <- c(par(\"mar\"), par(\"mfrow\"))\npar(old)\nafter <- par(\"mar\")\nif (\"dev.off\" %in% getNamespaceExports(\"grDevices\")) grDevices::dev.off()\nunlink(\"Rplots.pdf\")\nc(before, during, after)",
+    "code": "before <- par(\"mar\")\nold <- par(mar = c(1, 2, 3, 4), mfrow = c(2L, 3L))\nduring <- c(par(\"mar\"), par(\"mfrow\"))\npar(old)\nafter <- par(\"mar\")\nif (!is.null(grDevices::dev.list())) grDevices::dev.off()\nunlink(\"Rplots.pdf\")\nc(before, during, after)",
     "expected": [5.1, 4.1, 4.1, 2.1, 1, 2, 3, 4, 2, 3, 5.1, 4.1, 4.1, 2.1],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "graphics-device-current-list-close-and-reopen",
+    "code": "graphics::plot.new()\nbefore <- c(unname(grDevices::dev.cur()), unname(grDevices::dev.list()))\nignored <- unname(grDevices::dev.off(3L))\nclosed <- grDevices::dev.off()\nafter <- c(unname(grDevices::dev.cur()), is.null(grDevices::dev.list()), inherits(try(grDevices::dev.off(), silent = TRUE), \"try-error\"))\nunlink(\"Rplots.pdf\")\nc(before, ignored, unname(closed), after)",
+    "expected": [2, 2, 2, 1, 1, 1, 1],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
   }

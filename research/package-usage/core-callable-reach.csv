@@ -78,7 +78,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 77,all.equal,true,9,dplyr|jsonlite|curl|abind|matrixStats|numDeriv|loo|data.table|bit64,65,9.3,8.1
 78,strsplit,true,6,cli|vctrs|tibble|digest|crayon|data.table,8,6.2,8.0
 79,ifelse,true,7,vctrs|ggplot2|dplyr|stringi|htmlwidgets|data.table|zoo,11,7.2,8.0
-80,dev.off,false,8,ggplot2|sass|xfun|knitr|testthat|data.table|shiny|ragg,18,8.2,7.8
+80,dev.off,true,8,ggplot2|sass|xfun|knitr|testthat|data.table|shiny|ragg,18,8.2,7.8
 81,min,true,7,ggplot2|magrittr|dplyr|labeling|htmlwidgets|data.table|zoo,17,7.2,7.8
 82,quote,true,6,rlang|ggplot2|tibble|backports|data.table|shiny,110,6.2,7.7
 83,as.matrix,true,8,viridisLite|rstan|StanHeaders|RColorBrewer|purrr|loo|data.table|zoo,16,8.2,7.7

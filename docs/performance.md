@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 334 KiB gzip;
+- Worker JavaScript: 335 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -463,3 +463,9 @@ call-rooted replacement, builtin formal metadata, dynamic caller frames, hooks, 
 session-local `graphics::par()` state. It introduces no dependency, network path, or execution
 backend. The measured Worker is 333.7 KiB gzip, so the ceiling rises by 1 KiB to 334 KiB. Client and
 parser-Wasm budgets remain unchanged.
+
+Language subset 0.205 adds the usage-ranked single-browser-device lifecycle through `dev.cur()`,
+`dev.list()`, `dev.off()`, and `graphics.off()`. Closing flushes held journal commands and resets
+device-local graphical parameters without adding a device library or host adapter. The measured
+Worker is 334.1 KiB gzip, so the ceiling rises narrowly to 335 KiB. Client and parser-Wasm budgets
+remain unchanged.
