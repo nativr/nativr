@@ -2251,6 +2251,113 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("computes zoo's usage-ranked regular-series cycles with S3 dispatch", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- stats::ts(1:10, frequency = 4, start = c(1959, 2))
+        y <- stats::cycle(x)
+        c(y, attr(y, "tsp"), class(y))
+      `),
+    ).resolves.toEqual([
+      "2",
+      "3",
+      "4",
+      "1",
+      "2",
+      "3",
+      "4",
+      "1",
+      "2",
+      "3",
+      "1959.25",
+      "1961.5",
+      "4",
+      "ts",
+    ]);
+    await expect(
+      runtime.eval(`
+        plain <- cycle(1:5)
+        matrixCycle <- cycle(matrix(1:12, 6, 2))
+        multi <- cycle(ts(matrix(1:12, 6, 2), start = c(2000, 3), frequency = 4))
+        fractional <- cycle(ts(1:6, start = 1.2, frequency = 2.5))
+        c(
+          plain,
+          attr(plain, "tsp"),
+          is.null(class(plain)),
+          matrixCycle,
+          attr(matrixCycle, "tsp"),
+          multi,
+          class(multi),
+          fractional
+        )
+      `),
+    ).resolves.toEqual([
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "5",
+      "1",
+      "FALSE",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "6",
+      "1",
+      "3",
+      "4",
+      "1",
+      "2",
+      "3",
+      "4",
+      "ts",
+      "1",
+      "2",
+      "3",
+      "1.5",
+      "2.5",
+      "1",
+    ]);
+    await expect(
+      runtime.eval("x <- cycle(expression(a, b))\nc(x, attr(x, 'tsp'))"),
+    ).resolves.toEqual([1, 1, 1, 2, 1]);
+    await runtime.eval(`
+      cycle.zoo <- function(x, ..., marker = "default") {
+        c(marker, attr(x, "index"), list(...)$extra)
+      }
+      NULL
+    `);
+    await expect(
+      runtime.eval(
+        "cycle(structure(1:3, class = 'zoo', index = c(4, 7, 9)), marker = 'ok', extra = 'dot')",
+      ),
+    ).resolves.toEqual(["ok", "4", "7", "9", "dot"]);
+    await expect(runtime.eval("cycle(1:3, stop('dots stay lazy'))")).resolves.toEqual([1, 1, 1]);
+    await expect(runtime.eval("cycle(integer())")).rejects.toMatchObject({ code: "NRT3284" });
+    await expect(runtime.eval("cycle(data.frame(x = 1:3))")).rejects.toMatchObject({
+      code: "NRT3284",
+    });
+    await expect(runtime.eval("cycle(structure(1:3, tsp = c(1, 2, 4)))")).rejects.toMatchObject({
+      code: "NRT3284",
+    });
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 8 },
+    });
+    await expect(limited.eval("cycle(1:10)")).rejects.toMatchObject({ code: "NRL4002" });
+    await limited.dispose();
+  });
+
   it("extracts usage-ranked regular windows and exposes package-owned S3 seams", async () => {
     const runtime = await session();
     await expect(
@@ -4636,7 +4743,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.174.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.175.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

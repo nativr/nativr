@@ -325,6 +325,10 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
     cover zoo's measured set/query example, missing character comments, deletion, visibility,
     validation, and preservation of other owned attributes. Extending attributes to closures,
     environments, and language objects remains separate value-model work.
+92. Frequency-ranked regular-series cycles: `stats::cycle` covers zoo's two measured call shapes
+    through a validated vector/matrix-row default and an S3 extension seam, including calendar
+    starts, fractional frequencies, `tsp` metadata, lazy dots, and package-owned `cycle.zoo`
+    forwarding without embedding zoo.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

@@ -744,8 +744,13 @@ device text metrics, and the complete base-graphics stack remain explicit bounda
 lines to a classed series and reads them back without affecting default printing. Differential
 evidence also covers absent comments, missing values, `NULL`/empty removal, attribute preservation,
 `attr<-` validation, visibility, namespace access, and invalid replacements. Comments on closures,
-environments, and language objects await the future general attribute model. Rank 446 `cycle` is the
-next unresolved callable candidate.
+environments, and language objects await the future general attribute model. Rank 446 `cycle` is now
+complete for zoo's two measured calls, representing 731,390 downloads and 0.6% weighted reach. The
+owned default derives observation numbers from validated regular `tsp` metadata for vectors and
+matrix rows, including calendar starts and fractional frequencies, while the S3 generic forwards
+lazy dots to independently supplied methods such as `cycle.zoo`. Zoo's irregular-series method,
+index storage, and package loading remain package-owned. Rank 447 `signif` is the next unresolved
+callable candidate.
 
 ## Completed implementation order
 

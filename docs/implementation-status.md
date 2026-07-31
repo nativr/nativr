@@ -11,7 +11,7 @@ Date: 2026-07-30
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 462 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 463 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Vector/list selection and replacement, recursive `[[`, arbitrary-dimensional column-major array
@@ -53,11 +53,12 @@ Date: 2026-07-30
   R-3.5 examples and restores current Rejection defaults for R 3.6 or newer. Historical pre-R-1.7
   uniform and normal generators remain explicit unsupported boundaries.
 - Regular time-series foundations include vector and matrix `stats::ts()` construction with calendar
-  coordinates and endpoint-driven recycling, default and S3-dispatched `as.ts()` and `frequency()`,
-  plus `stats::window()` subsetting, integral downsampling, bounded extension with typed `NA`,
-  out-of-range warnings, and package-owned S3 method forwarding. Data-frame coercion, irregular zoo
-  indexes, replacement windows, interpolation, and the full adjacent time-series family remain
-  incomplete.
+  coordinates and endpoint-driven recycling, default and S3-dispatched `as.ts()`, `frequency()`, and
+  `cycle()`, plus `stats::window()` subsetting, integral downsampling, bounded extension with typed
+  `NA`, out-of-range warnings, and package-owned S3 method forwarding. Cycle results cover vector or
+  matrix-row coordinates, validated `tsp`, and fractional frequencies. Data-frame coercion,
+  irregular zoo indexes, replacement windows, interpolation, and the remaining adjacent time-series
+  family remain incomplete.
 - Device-independent `new-page`, coordinate-window, RGBA-raster, styled line-segment, and resolved
   legend graphics events with bounded `plot.new()`, `plot.window()`, `rasterImage()`, `segments()`,
   and `legend()` builtins, transferable raster buffers, output budgeting, and Playground Canvas

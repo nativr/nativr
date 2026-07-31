@@ -194,6 +194,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "sd",
       "set.seed",
       "as.ts",
+      "cycle",
       "frequency",
       "ts",
       "var",

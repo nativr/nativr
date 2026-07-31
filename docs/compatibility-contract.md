@@ -768,7 +768,7 @@ nonempty vectors and matrix row counts, positive regular `tsp` metadata includin
 one, fractional `offset`, configurable `ts.eps` snapping near integer years, unchanged result `tsp`,
 and `ts` result class. Empty values, data frames, malformed series metadata, and non-finite controls
 produce bounded errors. Zoo's replacement generic `time<-`, irregular indexes, namespace-registered
-hidden methods, and the wider `cycle`/`deltat` family remain outside this increment.
+hidden methods, and the wider `deltat` family remain outside this increment.
 
 `stats::ts` constructs nonempty vector or two-dimensional matrix time series. One- or two-number
 calendar `start`/`end` coordinates, positive `frequency` or `deltat`, configurable `ts.eps`,
@@ -779,6 +779,15 @@ endpoint-driven row recycling/truncation, vector names, matrix series names, `ts
 first and otherwise returns the validated `tsp` frequency or one. Data-frame-to-numeric-matrix
 coercion, zero-row series, higher-rank arrays, long-vector storage, language-specific printing,
 aligned time-series arithmetic, and exhaustive floating-point endpoint diagnostics are not claimed.
+
+`stats::cycle` dispatches package-owned S3 methods before its regular-series default. The default
+returns one observation cycle per vector element or matrix row, derives the initial cycle from
+validated `tsp` start/frequency metadata with ties-to-even rounding, retains the `tsp` interval, and
+keeps explicit `ts` class metadata. GNU R differential evidence covers zoo's two measured generic
+call shapes through ordinary `ts` values and an independently declared `cycle.zoo` seam, including
+fractional frequencies and lazy dots. Zoo's irregular indexes and method implementation,
+namespace-hidden methods, data frames, zero-row series, and exhaustive floating-point boundaries
+remain incomplete.
 
 `stats::window` dispatches package-owned methods before its regular-series default. The owned path
 aligns scalar or calendar-pair boundaries to the next/previous observation, preserves vector or
