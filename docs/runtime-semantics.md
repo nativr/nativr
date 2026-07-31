@@ -377,6 +377,15 @@ either session text or immutable package files resolved through `system.file()`.
 `file()` connections provide operation-scoped or persistent cursor access; host paths and other
 connection classes are rejected before any host API can be reached.
 
+The same map owns a bounded directory tree and current working directory. `R.home()` identifies a
+static `nativr://runtime` shape; `tempdir()` identifies the mutable session root; and package roots
+come only from supplied bundles. `dir.create()` and recursive `unlink()` mutate session directories,
+while `dir.exists()`, `list.files()`/`dir()`, `list.dirs()`, `getwd()`/`setwd()`, `normalizePath()`,
+`basename()`, and `dirname()` operate across owned roots. Relative paths resolve against the current
+owned directory, including a read-only package directory. Dot segments are normalized without
+allowing traversal above their root. Absolute host paths, links, permissions, mounts, and host
+working-directory state are never consulted.
+
 `utils::read.table` and its CSV/delimited variants consume that same text layer or inline `text=`.
 The owned bounded scanner recognizes LF/CRLF/CR records, explicit or whitespace separators, quoted
 fields, doubled quotes, embedded quoted newlines, comments, skipped/blank lines, filling, headers,

@@ -137,6 +137,11 @@ the package itself was not patched or translated.
   `isOpen()`, `flush()`, bounded `seek()`, and `summary()`. Compressed connections, URLs, sockets,
   host paths, raw/binary I/O, separate read/write seek positions, and the broader file API remain
   separate work.
+- Package resources and their parent directories can be enumerated with `list.files()`/`list.dirs()`
+  or selected with `setwd()`. Relative `readLines()`, table-reader, and connection paths then
+  resolve inside that immutable package root. `R.home()` and the runtime/package/session directory
+  trees are virtual NativR identifiers; they do not reveal or depend on an operating-system
+  installation.
 - Package `data/*.R` scripts execute through the same parser and normalized AST as package source;
   `.csv`, `.tab`, and `.txt` datasets load into owned data frames. GNU R `.rda`, `.RData`, `.rds`,
   `R/sysdata.rda`, compressed data files, data indexes/aliases, and full lazy-data behavior remain

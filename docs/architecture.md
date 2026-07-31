@@ -161,6 +161,12 @@ network access; and base `readLines()` performs bounded text decoding. Session w
 evaluator-owned namespace, so package resources cannot be mutated and no host path crosses the
 `base -> runtime` boundary.
 
+An evaluator-owned directory index sits over the same identifiers. It supplies static runtime and
+package directories, mutable session directories, a resettable current working directory, and
+root-bounded dot-segment normalization. Directory listing and relative-path resolution therefore
+work for unchanged pure-R source without exposing browser URLs, Node paths, or operating-system
+filesystem capabilities.
+
 File connections are evaluator-owned records layered over those same opaque identifiers, never host
 descriptors. R receives only a classed integer handle; the session map additionally checks the
 original value identity, owns open mode and cursor state, bounds handle count and stored bytes, and

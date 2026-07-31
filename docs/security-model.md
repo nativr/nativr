@@ -30,6 +30,11 @@ integers cannot forge a live handle. `dget()` can parse only text previously pro
 session's bounded serializer. `readLines()` and read-only connections may additionally decode
 reviewed package-bundle bytes; package writes and host paths are rejected before lookup.
 
+Directory operations use the same closed capability set. Session, package, and runtime roots are
+recognized structurally; `.` and `..` are normalized with an explicit no-root-escape check; and the
+working directory is always one of those owned directories. Listing cannot discover host names,
+package/runtime trees remain immutable, and recursive deletion is confined to the session tree.
+
 `utils::data()` can enumerate only immutable resources already admitted to the session package
 catalog. Package `.R` data scripts pass through Tree-sitter and the normalized evaluator under the
 same call, step, allocation, and output budgets as all other R code. Delimited table readers and

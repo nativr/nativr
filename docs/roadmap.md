@@ -478,6 +478,13 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      and execute package `data/*.R`, import package text datasets, and round-trip quoted data frames
      over bounded browser-memory paths/connections. GNU R binary/lazy data, compressed input,
      aliases, host paths, URLs, arbitrary encodings, and the complete scanner remain later layers.
+120. Browser-owned directories and relative paths: usage-ranked `R.home`, `dir.create`, and
+     `list.files`, together with `dir.exists`, `dir`, `list.dirs`, `getwd`, `setwd`,
+     `normalizePath`, `basename`, and `dirname`, provide bounded session/package/runtime directory
+     trees. Relative line/table/serialization/connection I/O, package-resource enumeration,
+     read-only package working directories, recursive session creation/removal, root-escape checks,
+     and reset behavior have executable evidence. Host files, links, permissions, metadata, mounts,
+     and platform-specific path behavior remain later layers.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

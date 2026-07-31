@@ -7342,8 +7342,8 @@
   },
   {
     "id": "virtual-text-file-boundaries",
-    "code": "path <- tempfile()\ndput(1, path)\nunlink(path)\nc(inherits(try(dget(path), silent = TRUE), \"try-error\"), inherits(try(dput(1, \"host-file.R\"), silent = TRUE), \"try-error\"), inherits(try(dget(\"host-file.R\"), silent = TRUE), \"try-error\"), inherits(try(unlink(\"host-file.R\"), silent = TRUE), \"try-error\"), inherits(try(dput(function(x) x, tempfile()), silent = TRUE), \"try-error\"), inherits(try(dput(1, tempfile(), control = \"all\"), silent = TRUE), \"try-error\"))",
-    "expected": [true, true, true, true, true, true],
+    "code": "path <- tempfile()\ndput(1, path)\nunlink(path)\ndput(2, \"relative-file.R\")\nrelative <- dget(\"relative-file.R\")\nremoved <- unlink(\"relative-file.R\")\nc(\n  inherits(try(dget(path), silent = TRUE), \"try-error\"),\n  relative,\n  removed,\n  inherits(try(dput(1, \"/host-file.R\"), silent = TRUE), \"try-error\"),\n  inherits(try(dget(\"/host-file.R\"), silent = TRUE), \"try-error\"),\n  inherits(try(unlink(\"/host-file.R\"), silent = TRUE), \"try-error\"),\n  inherits(try(dput(function(x) x, tempfile()), silent = TRUE), \"try-error\"),\n  inherits(try(dput(1, tempfile(), control = \"all\"), silent = TRUE), \"try-error\")\n)",
+    "expected": [1, 2, 0, 1, 1, 1, 1, 1],
     "expectedCompatibility": "behavioral",
     "rOracle": false,
     "tolerance": { "absolute": 0, "relative": 0 }
@@ -7364,10 +7364,48 @@
   },
   {
     "id": "save-load-browser-memory-boundaries",
-    "code": "path <- tempfile()\ndput(1, path)\nc(inherits(try(save(1, file = path), silent = TRUE), \"try-error\"), inherits(try(load(path), silent = TRUE), \"try-error\"), inherits(try(save(missing_object, file = tempfile()), silent = TRUE), \"try-error\"), inherits(try(save(function(x) x, file = tempfile()), silent = TRUE), \"try-error\"), inherits(try(save(1, file = \"host.RData\"), silent = TRUE), \"try-error\"), inherits(try(load(\"host.RData\"), silent = TRUE), \"try-error\"))",
+    "code": "path <- tempfile()\ndput(1, path)\nc(inherits(try(save(1, file = path), silent = TRUE), \"try-error\"), inherits(try(load(path), silent = TRUE), \"try-error\"), inherits(try(save(missing_object, file = tempfile()), silent = TRUE), \"try-error\"), inherits(try(save(function(x) x, file = tempfile()), silent = TRUE), \"try-error\"), inherits(try(save(1, file = \"/host.RData\"), silent = TRUE), \"try-error\"), inherits(try(load(\"/host.RData\"), silent = TRUE), \"try-error\"))",
     "expected": [true, true, true, true, true, true],
     "expectedCompatibility": "behavioral",
     "rOracle": false,
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "browser-owned-directory-relative-path-roundtrip",
+    "code": "root <- tempfile(\"tree-\")\ncreated <- dir.create(root)\nnested <- dir.create(file.path(root, \"a\", \"b\"), recursive = TRUE)\nold <- setwd(file.path(root, \"a\"))\nwriteLines(\"relative\", \"relative.txt\")\nwriteLines(\"nested\", file.path(\"b\", \"nested.txt\"))\ncurrent <- getwd()\nnormalized <- normalizePath(\"./b/../b\", mustWork = TRUE)\nlocal <- list.files(\".\")\nrecursive <- list.files(root, recursive = TRUE, include.dirs = TRUE)\nrelative <- readLines(\"relative.txt\")\nsetwd(old)\nc(created, nested, dir.exists(root), normalizePath(current) == normalizePath(file.path(root, \"a\")), normalized == normalizePath(file.path(root, \"a\", \"b\")), relative, local, recursive, basename(c(\"\", \"/\", \"a/\", \"a/b\")), dirname(c(\"\", \"/\", \"a/\", \"a/b\")), unlink(root), unlink(root, recursive = TRUE), file.exists(root))",
+    "expected": [
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "relative",
+      "b",
+      "relative.txt",
+      "a",
+      "a/b",
+      "a/b/nested.txt",
+      "a/relative.txt",
+      "",
+      "",
+      "a",
+      "b",
+      "",
+      "/",
+      ".",
+      "a",
+      "1",
+      "0",
+      "FALSE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "r-home-component-shape",
+    "code": "home <- R.home()\npaths <- sapply(c(\"bin\", \"doc\", \"etc\", \"include\", \"modules\", \"share\"), R.home)\nc(length(home) == 1L, nchar(home) > 0L, length(paths) == 6L, all(nchar(paths) > 0L), all(dir.exists(paths)), all(paths != home))",
+    "expected": [true, true, true, true, true, true],
+    "expectedCompatibility": "shape",
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {

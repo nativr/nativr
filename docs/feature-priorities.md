@@ -75,45 +75,47 @@ signal.
 
 | Priority | Measured rank | Callable      | Weighted reach | Packages | Observed calls |
 | -------: | ------------: | ------------- | -------------: | -------: | -------------: |
-|        1 |            48 | `R.home`      |          12.7% |       12 |             23 |
-|        2 |            80 | `dev.off`     |           7.8% |        8 |             18 |
-|        3 |           121 | `png`         |           5.5% |        5 |              7 |
-|        4 |           127 | `system.time` |           5.3% |        6 |             95 |
-|        5 |           129 | `dir.create`  |           5.1% |        4 |              6 |
-|        6 |           135 | `list.files`  |           4.8% |        4 |              6 |
-|        7 |           138 | `par`         |           4.6% |        5 |             23 |
-|        8 |           142 | `serialize`   |           4.5% |        5 |             12 |
-|        9 |           144 | `Encoding`    |           4.5% |        3 |             12 |
-|       10 |           149 | `rcauchy`     |           4.2% |        3 |              4 |
+|        1 |            80 | `dev.off`     |           7.8% |        8 |             18 |
+|        2 |           121 | `png`         |           5.5% |        5 |              7 |
+|        3 |           127 | `system.time` |           5.3% |        6 |             95 |
+|        4 |           138 | `par`         |           4.6% |        5 |             23 |
+|        5 |           142 | `serialize`   |           4.5% |        5 |             12 |
+|        6 |           144 | `Encoding`    |           4.5% |        3 |             12 |
+|        7 |           149 | `rcauchy`     |           4.2% |        3 |              4 |
+|        8 |           162 | `Sys.getenv`  |           3.7% |        3 |             16 |
+|        9 |           163 | `image`       |           3.7% |        3 |              6 |
+|       10 |           166 | `browseURL`   |           3.6% |        4 |              8 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
 behavior. The previous leaders `library`, `require`, `requireNamespace`, `tempfile`, `unlink`,
-`plot`, `Sys.sleep`, `writeLines`, `readLines`, `file`, `close`, `tempdir`, and `file.exists` now
-have executable browser-memory/package-bundle/graphics paths. The remaining leaders divide across
-graphics/device architecture (`dev.off`, `png`, `par`), browser-safe host/resource adapters
-(`R.home`, `dir.create`, `list.files`), serialization/encoding, timing, and distributions. Dynamic
-caller lookup through `parent.frame` and matrix transpose through `t` are now complete. Closure
-`formals` inspection (rank 135, 4.8% weighted reach) and lazy `replicate` evaluation (rank 148, 4.5%
-weighted reach) are now complete as well. Rank 22 `plot` is now available for all 179 measured
-occurrences across 20 sampled package manuals, representing 19.1% download-weighted reach. The
-implementation prioritizes the common numeric vector/x-y calls and the S3 seam required by
-package-owned plot methods: point, line, both, overplotted, histogram, step, and no-draw geometry
-reuse the owned Worker/Canvas graphics journal. This is shape-level availability, not complete
-base-graphics compatibility; specialized methods, full axes/tick labels, log/aspect layout, margins,
-clipping, and arbitrary graphical controls remain declared boundaries. Rank 27 `system.file` is now
-available at 17.1% weighted reach through bounded, immutable package-resource paths. Rank 34
-`Sys.sleep` adds cooperative Worker-safe waits, while rank 52 `writeLines` and rank 61 `readLines`
-add session-memory roundtrips and immutable package-text reads. Ranks 65 `file`, 69 `close`, 71
-`tempdir`, and 125 `file.exists` now share a bounded session-owned connection and path layer; rank
-341 `open` and its adjacent `flush`, `isOpen`, and `seek` operations use the same handles.
-Usage-ranked `data`, `write.csv`, and `read.csv` now use that layer for package data scripts, text
-datasets, quoted tabular input/output, and deterministic type conversion. The generated callable
-figure therefore keeps `R.home` as the highest-reach absent core name. Grouped `split` (rank 155)
-and real-vector `floor` (rank 156) are now complete at 4.1% weighted reach each. Factor generator
-`gl` (rank 158, 4.1%) and a bounded data-frame `merge` subset (rank 161, 4.0%) are now complete.
-Data-mask mutation through `within` (rank 167, 3.8%) and vectorized real/complex trigonometry led by
-`sin` (rank 177, 3.6%) are now complete as well. After filtering out already-supported names and
+`plot`, `Sys.sleep`, `writeLines`, `readLines`, `file`, `close`, `tempdir`, `file.exists`, `R.home`,
+`dir.create`, and `list.files` now have executable browser-memory/package-bundle/graphics paths. The
+remaining leaders divide across graphics/device architecture (`dev.off`, `png`, `par`, `image`),
+serialization/encoding, timing, browser capability adapters, and distributions. Dynamic caller
+lookup through `parent.frame` and matrix transpose through `t` are now complete. Closure `formals`
+inspection (rank 135, 4.8% weighted reach) and lazy `replicate` evaluation (rank 148, 4.5% weighted
+reach) are now complete as well. Rank 22 `plot` is now available for all 179 measured occurrences
+across 20 sampled package manuals, representing 19.1% download-weighted reach. The implementation
+prioritizes the common numeric vector/x-y calls and the S3 seam required by package-owned plot
+methods: point, line, both, overplotted, histogram, step, and no-draw geometry reuse the owned
+Worker/Canvas graphics journal. This is shape-level availability, not complete base-graphics
+compatibility; specialized methods, full axes/tick labels, log/aspect layout, margins, clipping, and
+arbitrary graphical controls remain declared boundaries. Rank 27 `system.file` is now available at
+17.1% weighted reach through bounded, immutable package-resource paths. Rank 34 `Sys.sleep` adds
+cooperative Worker-safe waits, while rank 52 `writeLines` and rank 61 `readLines` add session-memory
+roundtrips and immutable package-text reads. Ranks 65 `file`, 69 `close`, 71 `tempdir`, and 125
+`file.exists` now share a bounded session-owned connection and path layer; rank 341 `open` and its
+adjacent `flush`, `isOpen`, and `seek` operations use the same handles. Ranks 48 `R.home`, 129
+`dir.create`, and 135 `list.files` now share a bounded virtual-directory layer with `dir.exists`,
+`list.dirs`, `getwd`/`setwd`, `normalizePath`, `basename`, and `dirname`. Usage-ranked `data`,
+`write.csv`, and `read.csv` now use that layer for package data scripts, text datasets, quoted
+tabular input/output, and deterministic type conversion. The generated callable figure therefore
+keeps `dev.off` as the highest-reach absent core name. Grouped `split` (rank 155) and real-vector
+`floor` (rank 156) are now complete at 4.1% weighted reach each. Factor generator `gl` (rank 158,
+4.1%) and a bounded data-frame `merge` subset (rank 161, 4.0%) are now complete. Data-mask mutation
+through `within` (rank 167, 3.8%) and vectorized real/complex trigonometry led by `sin` (rank 177,
+3.6%) are now complete as well. After filtering out already-supported names and
 architecture-dependent host, graphics, serialization, and source-loading entries, numeric-order
 factor coercion through `as.factor` (rank 187, 3.1%) and grouped transformation through `ave` (rank
 188, 3.0%) are now complete. UTC date construction through `ISOdate` (rank 189, 3.0%) and Cartesian
@@ -1302,6 +1304,13 @@ ties:
      `readLines`, `writeLines`, `cat`, and `utils::capture.output`; forged handles, package writes,
      and host paths are rejected. Compression, URLs, sockets, raw/binary I/O, and the wider
      filesystem remain separate host-adapter work.
+136. Browser-owned directories and relative paths: ranks 48 `base::R.home`, 129 `base::dir.create`,
+     and 135 `base::list.files`, with `dir.exists`, `dir`, `list.dirs`, `getwd`, `setwd`,
+     `normalizePath`, `basename`, and `dirname`, expose bounded session, package, and runtime roots.
+     Package code can enumerate installed resources, select a package subdirectory as its working
+     directory, and use unchanged relative text/table paths; session code can create and recursively
+     remove nested directories. Absolute host paths, root escape, symlinks, permissions, and mounts
+     remain explicit boundaries.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

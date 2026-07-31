@@ -40,6 +40,13 @@ supported shared text cursor, and `isOpen()` or `summary()` reports state. Those
 `dispose()`; they are not host files and cannot be passed through the public JavaScript API. The
 workspace archive is NativR canonical source rather than a GNU R `.RData` binary.
 
+Within R, `dir.create()` can create nested session directories and `getwd()`/`setwd()` plus relative
+paths work across session files and immutable package resources. `list.files()`/`dir()` and
+`list.dirs()` enumerate only those owned roots; `normalizePath()`, `basename()`, and `dirname()` are
+pure virtual-path operations. `reset()` clears mutable directories and restores the working
+directory to `tempdir()`. `R.home()` reports a static NativR runtime root, not a host R
+installation.
+
 `utils::read.table()`/`read.csv()`/`read.delim()` and their matching writers use the same paths and
 connections, so package or application code can exchange bounded delimited data frames without a
 host file. Inline `text=` is also accepted. This is a deterministic text-table subset, not a claim
