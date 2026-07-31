@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1120" viewBox="0 0 1200 1120" role="img" aria-labelledby="title description">
+<title id="title">Highest-reach GNU R core callables not registered by NativR</title>
+<desc id="description">The twenty highest download-weighted GNU R core callable names detected in CRAN reference-manual examples that are not present in the NativR builtin registry.</desc>
+<rect width="1200" height="1120" fill="#ffffff"/>
+<style>
+  text { font-family: Inter, "Segoe UI", Arial, sans-serif; fill: #0f172a; }
+  .title { font-size: 30px; font-weight: 600; }
+  .subtitle { font-size: 16px; fill: #475569; }
+  .label { font-size: 16px; font-weight: 600; }
+  .value { font-size: 14px; font-variant-numeric: tabular-nums; }
+  .meta, .tick { font-size: 12px; fill: #64748b; }
+  .legend { font-size: 14px; fill: #334155; }
+  .note { font-size: 14px; fill: #475569; }
+</style>
+
+<text x="60" y="60" class="title">Highest-reach missing GNU R callables</text>
+<text x="60" y="94" class="subtitle">97 analyzable manuals; ranked by download-weighted package reach</text>
+<text x="60" y="122" class="legend">Red means the name is absent from NativR's generated builtin registry; behavioral completeness is stricter than registration.</text>
+<line x1="250" y1="152" x2="250" y2="1018" stroke="#e2e8f0"/><text x="250" y="142" text-anchor="middle" class="tick">0.0%</text>
+<line x1="448.75" y1="152" x2="448.75" y2="1018" stroke="#e2e8f0"/><text x="448.75" y="142" text-anchor="middle" class="tick">9.2%</text>
+<line x1="647.5" y1="152" x2="647.5" y2="1018" stroke="#e2e8f0"/><text x="647.5" y="142" text-anchor="middle" class="tick">18.5%</text>
+<line x1="846.25" y1="152" x2="846.25" y2="1018" stroke="#e2e8f0"/><text x="846.25" y="142" text-anchor="middle" class="tick">27.7%</text>
+<line x1="1045" y1="152" x2="1045" y2="1018" stroke="#e2e8f0"/><text x="1045" y="142" text-anchor="middle" class="tick">37.0%</text>
+<text x="234" y="186" text-anchor="end" class="label">library</text>
+<rect x="250" y="170" width="795.0" height="20" rx="3" fill="#dc2626"/>
+<text x="1049.0" y="185" class="value">37.0%</text>
+<text x="250" y="206" class="meta">35 packages; 170 observed calls</text>
+<text x="234" y="229" text-anchor="end" class="label">tempfile</text>
+<rect x="250" y="213" width="573.3" height="20" rx="3" fill="#dc2626"/>
+<text x="831.3" y="228" class="value">26.7%</text>
+<text x="250" y="249" class="meta">26 packages; 69 observed calls</text>
+<text x="234" y="272" text-anchor="end" class="label">plot</text>
+<rect x="250" y="256" width="411.6" height="20" rx="3" fill="#dc2626"/>
+<text x="669.6" y="271" class="value">19.1%</text>
+<text x="250" y="292" class="meta">20 packages; 179 observed calls</text>
+<text x="234" y="315" text-anchor="end" class="label">unlink</text>
+<rect x="250" y="299" width="387.9" height="20" rx="3" fill="#dc2626"/>
+<text x="645.9" y="314" class="value">18.0%</text>
+<text x="250" y="335" class="meta">17 packages; 45 observed calls</text>
+<text x="234" y="358" text-anchor="end" class="label">system.file</text>
+<rect x="250" y="342" width="368.5" height="20" rx="3" fill="#dc2626"/>
+<text x="626.5" y="357" class="value">17.1%</text>
+<text x="250" y="378" class="meta">17 packages; 51 observed calls</text>
+<text x="234" y="401" text-anchor="end" class="label">require</text>
+<rect x="250" y="385" width="359.4" height="20" rx="3" fill="#dc2626"/>
+<text x="617.4" y="400" class="value">16.7%</text>
+<text x="250" y="421" class="meta">15 packages; 49 observed calls</text>
+<text x="234" y="444" text-anchor="end" class="label">Sys.sleep</text>
+<rect x="250" y="428" width="334.6" height="20" rx="3" fill="#dc2626"/>
+<text x="592.6" y="443" class="value">15.6%</text>
+<text x="250" y="464" class="meta">16 packages; 47 observed calls</text>
+<text x="234" y="487" text-anchor="end" class="label">return</text>
+<rect x="250" y="471" width="274.4" height="20" rx="3" fill="#dc2626"/>
+<text x="532.4" y="486" class="value">12.8%</text>
+<text x="250" y="507" class="meta">10 packages; 28 observed calls</text>
+<text x="234" y="530" text-anchor="end" class="label">R.home</text>
+<rect x="250" y="514" width="272.8" height="20" rx="3" fill="#dc2626"/>
+<text x="530.8" y="529" class="value">12.7%</text>
+<text x="250" y="550" class="meta">12 packages; 23 observed calls</text>
+<text x="234" y="573" text-anchor="end" class="label">writeLines</text>
+<rect x="250" y="557" width="272.3" height="20" rx="3" fill="#dc2626"/>
+<text x="530.3" y="572" class="value">12.7%</text>
+<text x="250" y="593" class="meta">11 packages; 33 observed calls</text>
+<text x="234" y="616" text-anchor="end" class="label">readLines</text>
+<rect x="250" y="600" width="241.2" height="20" rx="3" fill="#dc2626"/>
+<text x="499.2" y="615" class="value">11.2%</text>
+<text x="250" y="636" class="meta">12 packages; 30 observed calls</text>
+<text x="234" y="659" text-anchor="end" class="label">file</text>
+<rect x="250" y="643" width="209.2" height="20" rx="3" fill="#dc2626"/>
+<text x="467.2" y="658" class="value">9.7%</text>
+<text x="250" y="679" class="meta">8 packages; 16 observed calls</text>
+<text x="234" y="702" text-anchor="end" class="label">requireNamespace</text>
+<rect x="250" y="686" width="207.7" height="20" rx="3" fill="#dc2626"/>
+<text x="465.7" y="701" class="value">9.7%</text>
+<text x="250" y="722" class="meta">8 packages; 19 observed calls</text>
+<text x="234" y="745" text-anchor="end" class="label">close</text>
+<rect x="250" y="729" width="197.1" height="20" rx="3" fill="#dc2626"/>
+<text x="455.1" y="744" class="value">9.2%</text>
+<text x="250" y="765" class="meta">8 packages; 17 observed calls</text>
+<text x="234" y="788" text-anchor="end" class="label">tempdir</text>
+<rect x="250" y="772" width="193.4" height="20" rx="3" fill="#dc2626"/>
+<text x="451.4" y="787" class="value">9.0%</text>
+<text x="250" y="808" class="meta">9 packages; 26 observed calls</text>
+<text x="234" y="831" text-anchor="end" class="label">dev.off</text>
+<rect x="250" y="815" width="167.7" height="20" rx="3" fill="#dc2626"/>
+<text x="425.7" y="830" class="value">7.8%</text>
+<text x="250" y="851" class="meta">8 packages; 18 observed calls</text>
+<text x="234" y="874" text-anchor="end" class="label">data</text>
+<rect x="250" y="858" width="165.1" height="20" rx="3" fill="#dc2626"/>
+<text x="423.1" y="873" class="value">7.7%</text>
+<text x="250" y="894" class="meta">8 packages; 16 observed calls</text>
+<text x="234" y="917" text-anchor="end" class="label">write.csv</text>
+<rect x="250" y="901" width="151.4" height="20" rx="3" fill="#dc2626"/>
+<text x="409.4" y="916" class="value">7.0%</text>
+<text x="250" y="937" class="meta">7 packages; 15 observed calls</text>
+<text x="234" y="960" text-anchor="end" class="label">png</text>
+<rect x="250" y="944" width="117.5" height="20" rx="3" fill="#dc2626"/>
+<text x="375.5" y="959" class="value">5.5%</text>
+<text x="250" y="980" class="meta">5 packages; 7 observed calls</text>
+<text x="234" y="1003" text-anchor="end" class="label">file.exists</text>
+<rect x="250" y="987" width="116.2" height="20" rx="3" fill="#dc2626"/>
+<text x="374.2" y="1002" class="value">5.4%</text>
+<text x="250" y="1023" class="meta">5 packages; 8 observed calls</text>
+<text x="60" y="1072" class="note">Named-call syntax only; operators and indirect calls are measured elsewhere. Counts are aggregate observations, and no example source is retained.</text>
+</svg>

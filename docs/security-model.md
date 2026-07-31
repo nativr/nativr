@@ -16,5 +16,17 @@ assigned to an ordinary JavaScript prototype-bearing record. Resource limits and
 reduce accidental hangs. NativR does not claim a formally verified hostile-code sandbox; host
 applications should retain origin isolation and browser security controls.
 
+Nested `capture.output()` frames retain selected textual events only in evaluator-owned memory and
+enforce the same byte ceiling before constructing the result vector. Its `file` and connection forms
+are explicit unsupported errors, so capture cannot become an implicit filesystem escape.
+
+`utils::demo()` does not probe installed R libraries, execute package scripts, start servers, or
+perform network access. Only the empty owned catalog shape is available until package resources can
+be validated and loaded through an explicit browser-safe package layer.
+
+Graphics use typed, device-independent records rather than exposing a DOM or Canvas object to R
+code. Raster RGBA bytes share the evaluation output budget and are transferred out of the Worker;
+the runtime cannot read pixels back from the host renderer.
+
 Dependencies are locked, build scripts are explicitly approved in `pnpm-workspace.yaml`, browser
 bundles are audited for Node built-ins/dynamic code, and CI includes CodeQL and Dependabot.

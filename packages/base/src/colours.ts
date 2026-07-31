@@ -1,0 +1,129 @@
+/*
+ * Compact, independently recorded GNU R 4.6.0 public colors()/colours() result.
+ *
+ * A leading "*" expands a base name through suffixes 1..4. A leading "#" expands
+ * a base name through suffixes 0..100. This is observable catalog data only; no
+ * GNU R implementation source is embedded or consulted by the runtime.
+ */
+const COLOUR_NAME_TOKENS =
+  "white aliceblue *antiquewhite *aquamarine *azure beige *bisque black blanchedalmond *blue blueviolet *brown *burlywood *cadetblue *chartreuse *chocolate *coral cornflowerblue *cornsilk *cyan darkblue darkcyan *darkgoldenrod darkgray darkgreen darkgrey darkkhaki darkmagenta *darkolivegreen *darkorange *darkorchid darkred darksalmon *darkseagreen darkslateblue *darkslategray darkslategrey darkturquoise darkviolet *deeppink *deepskyblue dimgray dimgrey *dodgerblue *firebrick floralwhite forestgreen gainsboro ghostwhite *gold *goldenrod #gray *green greenyellow #grey *honeydew *hotpink *indianred *ivory *khaki lavender *lavenderblush lawngreen *lemonchiffon *lightblue lightcoral *lightcyan *lightgoldenrod lightgoldenrodyellow lightgray lightgreen lightgrey *lightpink *lightsalmon lightseagreen *lightskyblue lightslateblue lightslategray lightslategrey *lightsteelblue *lightyellow limegreen linen *magenta *maroon mediumaquamarine mediumblue *mediumorchid *mediumpurple mediumseagreen mediumslateblue mediumspringgreen mediumturquoise mediumvioletred midnightblue mintcream *mistyrose moccasin *navajowhite navy navyblue oldlace *olivedrab *orange *orangered *orchid palegoldenrod *palegreen *paleturquoise *palevioletred papayawhip *peachpuff peru *pink *plum powderblue *purple *red *rosybrown *royalblue saddlebrown *salmon sandybrown *seagreen *seashell *sienna *skyblue *slateblue *slategray slategrey *snow *springgreen *steelblue *tan *thistle *tomato *turquoise violet *violetred *wheat whitesmoke *yellow yellowgreen";
+
+/*
+ * One-based positions omitted by colors(distinct = TRUE). Positions 260..361
+ * are the complete grey alias family and are represented as one range.
+ */
+const DISTINCT_COLOUR_OMISSIONS = new Set([
+  9, 14, 20, 27, 48, 64, 69, 73, 74, 82, 113, 117, 122, 127, 129, 143, 153, 194, 253, 255, 363, 378,
+  389, 395, 406, 418, 425, 437, 444, 451, 454, 460, 461, 480, 486, 491, 499, 504, 516, 531, 553,
+  556, 567, 578, 580, 604, 606, 611, 623, 631, 651, 653, 657,
+]);
+
+function expandColourNames(): readonly string[] {
+  return Object.freeze(
+    COLOUR_NAME_TOKENS.split(" ").flatMap((token) => {
+      if (token.startsWith("*")) {
+        const name = token.slice(1);
+        return [name, ...Array.from({ length: 4 }, (_, index) => `${name}${index + 1}`)];
+      }
+      if (token.startsWith("#")) {
+        const name = token.slice(1);
+        return [name, ...Array.from({ length: 101 }, (_, index) => `${name}${index}`)];
+      }
+      return [token];
+    }),
+  );
+}
+
+export const R_COLOUR_NAMES = expandColourNames();
+
+export const R_DISTINCT_COLOUR_NAMES = Object.freeze(
+  R_COLOUR_NAMES.filter(
+    (_name, index) =>
+      !(index + 1 >= 260 && index + 1 <= 361) && !DISTINCT_COLOUR_OMISSIONS.has(index + 1),
+  ),
+);
+
+export type RColour = readonly [red: number, green: number, blue: number, alpha: number];
+
+/*
+ * Column-major RGB bytes observed from the public col2rgb(colors()) result.
+ * This is compact reference data aligned one-to-one with R_COLOUR_NAMES.
+ */
+const R_COLOUR_RGB_HEX =
+  "FFFFFFF0F8FFFAEBD7FFEFDBEEDFCCCDC0B08B83787FFFD47FFFD476EEC666CDAA458B74F0FFFFF0FFFFE0EEEEC1CDCD838B8BF5F5DCFFE4C4FFE4C4" +
+  "EED5B7CDB79E8B7D6B000000FFEBCD0000FF0000FF0000EE0000CD00008B8A2BE2A52A2AFF4040EE3B3BCD33338B2323DEB887FFD39BEEC591CDAA7D" +
+  "8B73555F9EA098F5FF8EE5EE7AC5CD53868B7FFF007FFF0076EE0066CD00458B00D2691EFF7F24EE7621CD661D8B4513FF7F50FF7256EE6A50CD5B45" +
+  "8B3E2F6495EDFFF8DCFFF8DCEEE8CDCDC8B18B887800FFFF00FFFF00EEEE00CDCD008B8B00008B008B8BB8860BFFB90FEEAD0ECD950C8B6508A9A9A9" +
+  "006400A9A9A9BDB76B8B008B556B2FCAFF70BCEE68A2CD5A6E8B3DFF8C00FF7F00EE7600CD66008B45009932CCBF3EFFB23AEE9A32CD68228B8B0000" +
+  "E9967A8FBC8FC1FFC1B4EEB49BCD9B698B69483D8B2F4F4F97FFFF8DEEEE79CDCD528B8B2F4F4F00CED19400D3FF1493FF1493EE1289CD10768B0A50" +
+  "00BFFF00BFFF00B2EE009ACD00688B6969696969691E90FF1E90FF1C86EE1874CD104E8BB22222FF3030EE2C2CCD26268B1A1AFFFAF0228B22DCDCDC" +
+  "F8F8FFFFD700FFD700EEC900CDAD008B7500DAA520FFC125EEB422CD9B1D8B6914BEBEBE0000000303030505050808080A0A0A0D0D0D0F0F0F121212" +
+  "1414141717171A1A1A1C1C1C1F1F1F2121212424242626262929292B2B2B2E2E2E3030303333333636363838383B3B3B3D3D3D404040424242454545" +
+  "4747474A4A4A4D4D4D4F4F4F5252525454545757575959595C5C5C5E5E5E6161616363636666666969696B6B6B6E6E6E707070737373757575787878" +
+  "7A7A7A7D7D7D7F7F7F8282828585858787878A8A8A8C8C8C8F8F8F9191919494949696969999999C9C9C9E9E9EA1A1A1A3A3A3A6A6A6A8A8A8ABABAB" +
+  "ADADADB0B0B0B3B3B3B5B5B5B8B8B8BABABABDBDBDBFBFBFC2C2C2C4C4C4C7C7C7C9C9C9CCCCCCCFCFCFD1D1D1D4D4D4D6D6D6D9D9D9DBDBDBDEDEDE" +
+  "E0E0E0E3E3E3E5E5E5E8E8E8EBEBEBEDEDEDF0F0F0F2F2F2F5F5F5F7F7F7FAFAFAFCFCFCFFFFFF00FF0000FF0000EE0000CD00008B00ADFF2FBEBEBE" +
+  "0000000303030505050808080A0A0A0D0D0D0F0F0F1212121414141717171A1A1A1C1C1C1F1F1F2121212424242626262929292B2B2B2E2E2E303030" +
+  "3333333636363838383B3B3B3D3D3D4040404242424545454747474A4A4A4D4D4D4F4F4F5252525454545757575959595C5C5C5E5E5E616161636363" +
+  "6666666969696B6B6B6E6E6E7070707373737575757878787A7A7A7D7D7D7F7F7F8282828585858787878A8A8A8C8C8C8F8F8F919191949494969696" +
+  "9999999C9C9C9E9E9EA1A1A1A3A3A3A6A6A6A8A8A8ABABABADADADB0B0B0B3B3B3B5B5B5B8B8B8BABABABDBDBDBFBFBFC2C2C2C4C4C4C7C7C7C9C9C9" +
+  "CCCCCCCFCFCFD1D1D1D4D4D4D6D6D6D9D9D9DBDBDBDEDEDEE0E0E0E3E3E3E5E5E5E8E8E8EBEBEBEDEDEDF0F0F0F2F2F2F5F5F5F7F7F7FAFAFAFCFCFC" +
+  "FFFFFFF0FFF0F0FFF0E0EEE0C1CDC1838B83FF69B4FF6EB4EE6AA7CD60908B3A62CD5C5CFF6A6AEE6363CD55558B3A3AFFFFF0FFFFF0EEEEE0CDCDC1" +
+  "8B8B83F0E68CFFF68FEEE685CDC6738B864EE6E6FAFFF0F5FFF0F5EEE0E5CDC1C58B83867CFC00FFFACDFFFACDEEE9BFCDC9A58B8970ADD8E6BFEFFF" +
+  "B2DFEE9AC0CD68838BF08080E0FFFFE0FFFFD1EEEEB4CDCD7A8B8BEEDD82FFEC8BEEDC82CDBE708B814CFAFAD2D3D3D390EE90D3D3D3FFB6C1FFAEB9" +
+  "EEA2ADCD8C958B5F65FFA07AFFA07AEE9572CD81628B574220B2AA87CEFAB0E2FFA4D3EE8DB6CD607B8B8470FF778899778899B0C4DECAE1FFBCD2EE" +
+  "A2B5CD6E7B8BFFFFE0FFFFE0EEEED1CDCDB48B8B7A32CD32FAF0E6FF00FFFF00FFEE00EECD00CD8B008BB03060FF34B3EE30A7CD29908B1C6266CDAA" +
+  "0000CDBA55D3E066FFD15FEEB452CD7A378B9370DBAB82FF9F79EE8968CD5D478B3CB3717B68EE00FA9A48D1CCC71585191970F5FFFAFFE4E1FFE4E1" +
+  "EED5D2CDB7B58B7D7BFFE4B5FFDEADFFDEADEECFA1CDB38B8B795E000080000080FDF5E66B8E23C0FF3EB3EE3A9ACD32698B22FFA500FFA500EE9A00" +
+  "CD85008B5A00FF4500FF4500EE4000CD37008B2500DA70D6FF83FAEE7AE9CD69C98B4789EEE8AA98FB989AFF9A90EE907CCD7C548B54AFEEEEBBFFFF" +
+  "AEEEEE96CDCD668B8BDB7093FF82ABEE799FCD68898B475DFFEFD5FFDAB9FFDAB9EECBADCDAF958B7765CD853FFFC0CBFFB5C5EEA9B8CD919E8B636C" +
+  "DDA0DDFFBBFFEEAEEECD96CD8B668BB0E0E6A020F09B30FF912CEE7D26CD551A8BFF0000FF0000EE0000CD00008B0000BC8F8FFFC1C1EEB4B4CD9B9B" +
+  "8B69694169E14876FF436EEE3A5FCD27408B8B4513FA8072FF8C69EE8262CD70548B4C39F4A4602E8B5754FF9F4EEE9443CD802E8B57FFF5EEFFF5EE" +
+  "EEE5DECDC5BF8B8682A0522DFF8247EE7942CD68398B472687CEEB87CEFF7EC0EE6CA6CD4A708B6A5ACD836FFF7A67EE6959CD473C8B708090C6E2FF" +
+  "B9D3EE9FB6CD6C7B8B708090FFFAFAFFFAFAEEE9E9CDC9C98B898900FF7F00FF7F00EE7600CD66008B454682B463B8FF5CACEE4F94CD36648BD2B48C" +
+  "FFA54FEE9A49CD853F8B5A2BD8BFD8FFE1FFEED2EECDB5CD8B7B8BFF6347FF6347EE5C42CD4F398B362640E0D000F5FF00E5EE00C5CD00868BEE82EE" +
+  "D02090FF3E96EE3A8CCD32788B2252F5DEB3FFE7BAEED8AECDBA968B7E66F5F5F5FFFF00FFFF00EEEE00CDCD008B8B009ACD32";
+
+const R_COLOUR_INDEX = new Map(
+  R_COLOUR_NAMES.map((name, index) => [name.toLowerCase(), index] as const),
+);
+
+export const R_DEFAULT_PALETTE: readonly RColour[] = Object.freeze([
+  [0, 0, 0, 255],
+  [223, 83, 107, 255],
+  [97, 208, 79, 255],
+  [34, 151, 230, 255],
+  [40, 226, 229, 255],
+  [205, 11, 188, 255],
+  [245, 199, 16, 255],
+  [158, 158, 158, 255],
+]);
+
+export function namedRColour(name: string): RColour | undefined {
+  const index = R_COLOUR_INDEX.get(name.toLowerCase());
+  if (index === undefined) return undefined;
+  const offset = index * 6;
+  return [
+    Number.parseInt(R_COLOUR_RGB_HEX.slice(offset, offset + 2), 16),
+    Number.parseInt(R_COLOUR_RGB_HEX.slice(offset + 2, offset + 4), 16),
+    Number.parseInt(R_COLOUR_RGB_HEX.slice(offset + 4, offset + 6), 16),
+    255,
+  ];
+}
+
+export function parseRColour(name: string): RColour | undefined {
+  if (name === "NA" || name.toLowerCase() === "transparent") return [255, 255, 255, 0];
+  const named = namedRColour(name);
+  if (named !== undefined) return named;
+  const match = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/iu.exec(name);
+  if (match === null) return undefined;
+  const source = match[1] ?? "";
+  const expanded =
+    source.length <= 4 ? [...source].map((digit) => `${digit}${digit}`).join("") : source;
+  return [
+    Number.parseInt(expanded.slice(0, 2), 16),
+    Number.parseInt(expanded.slice(2, 4), 16),
+    Number.parseInt(expanded.slice(4, 6), 16),
+    expanded.length === 8 ? Number.parseInt(expanded.slice(6, 8), 16) : 255,
+  ];
+}

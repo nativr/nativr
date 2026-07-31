@@ -1,38 +1,72 @@
 /** Current Worker wire protocol version. */
 export const PROTOCOL_VERSION = 1 as const;
 
+/** Optional exact vector names transported alongside one-dimensional values. */
+export interface RSnapshotNames {
+  readonly names?: readonly string[];
+  readonly dim?: readonly number[];
+}
+
 /** Atomic or list value schema transported through structured clone. */
 export type RValueSnapshot =
   | { readonly version: 1; readonly type: "null" }
-  | {
+  | (RSnapshotNames & {
       readonly version: 1;
       readonly type: "logical";
       readonly values: Uint8Array;
       readonly missing?: Uint8Array;
-    }
-  | {
+    })
+  | (RSnapshotNames & {
       readonly version: 1;
       readonly type: "integer";
       readonly values: Int32Array;
       readonly missing?: Uint8Array;
-    }
-  | {
+    })
+  | (RSnapshotNames & {
       readonly version: 1;
       readonly type: "double";
       readonly values: Float64Array;
       readonly missing?: Uint8Array;
-    }
-  | {
+    })
+  | (RSnapshotNames & {
+      readonly version: 1;
+      readonly type: "complex";
+      readonly real: Float64Array;
+      readonly imaginary: Float64Array;
+      readonly missing?: Uint8Array;
+    })
+  | (RSnapshotNames & {
+      readonly version: 1;
+      readonly type: "raw";
+      readonly values: Uint8Array;
+    })
+  | (RSnapshotNames & {
       readonly version: 1;
       readonly type: "character";
       readonly values: readonly string[];
       readonly missing?: Uint8Array;
-    }
-  | {
+    })
+  | (RSnapshotNames & {
       readonly version: 1;
       readonly type: "list";
       readonly values: readonly RValueSnapshot[];
-    };
+    })
+  | (RSnapshotNames & {
+      readonly version: 1;
+      readonly type: "pairlist";
+      readonly values: readonly RValueSnapshot[];
+    })
+  | {
+      readonly version: 1;
+      readonly type: "formula";
+      readonly response?: string;
+      readonly terms: readonly string[];
+      readonly variables: readonly string[];
+      readonly intercept: boolean;
+    }
+  | { readonly version: 1; readonly type: "symbol"; readonly name: string }
+  | { readonly version: 1; readonly type: "language"; readonly source: string }
+  | { readonly version: 1; readonly type: "expression"; readonly sources: readonly string[] };
 
 /** Runtime limits repeated here to keep the wire package standalone. */
 export interface ProtocolRuntimeLimits {
@@ -49,6 +83,57 @@ export interface PublicRWarning {
   readonly span?: PublicSourceSpan;
   readonly call?: string;
 }
+
+/** Text emitted by an evaluation across inline and Worker hosts. */
+export interface PublicOutputEvent {
+  readonly stream: "stdout" | "stderr" | "message";
+  readonly text: string;
+}
+
+/** Character-formatted table emitted for a browser or other host data viewer. */
+export interface PublicDataViewEvent {
+  readonly title: string;
+  readonly columns: readonly {
+    readonly name: string;
+    readonly values: readonly string[];
+  }[];
+  readonly rowNames?: readonly string[];
+}
+
+/** Device-independent drawing command returned to a browser graphics host. */
+export type PublicGraphicsEvent =
+  | { readonly kind: "new-page" }
+  | {
+      readonly kind: "window";
+      readonly xlim: readonly [number, number];
+      readonly ylim: readonly [number, number];
+    }
+  | {
+      readonly kind: "raster";
+      readonly rgba: Uint8Array;
+      readonly width: number;
+      readonly height: number;
+      readonly xleft: number;
+      readonly ybottom: number;
+      readonly xright: number;
+      readonly ytop: number;
+      readonly angle: number;
+      readonly interpolate: boolean;
+    }
+  | {
+      readonly kind: "segments";
+      readonly segments: readonly {
+        readonly x0: number;
+        readonly y0: number;
+        readonly x1: number;
+        readonly y1: number;
+        /** CSS-compatible #RRGGBBAA color. */
+        readonly color: string;
+        /** `solid` or an even-length hexadecimal dash sequence. */
+        readonly lineType: string;
+        readonly lineWidth: number;
+      }[];
+    };
 
 /** Source positions are wire-only plain records. */
 export interface PublicSourcePosition {
@@ -167,6 +252,9 @@ export interface WireEvaluationResult {
   readonly raw: RValueSnapshot;
   readonly visible: boolean;
   readonly warnings: readonly PublicRWarning[];
+  readonly output?: readonly PublicOutputEvent[];
+  readonly dataViews?: readonly PublicDataViewEvent[];
+  readonly graphics?: readonly PublicGraphicsEvent[];
   readonly elapsedMs: number;
   readonly runtimeReset: boolean;
 }
@@ -198,10 +286,8 @@ export interface WarningEvent extends ProtocolEnvelope {
 }
 
 /** Future-ready textual output event. */
-export interface OutputEvent extends ProtocolEnvelope {
+export interface OutputEvent extends ProtocolEnvelope, PublicOutputEvent {
   readonly kind: "output";
-  readonly stream: "stdout" | "stderr" | "message";
-  readonly text: string;
 }
 
 /** All valid Worker responses and events. */
@@ -272,19 +358,82 @@ export function isRValueSnapshot(value: unknown): value is RValueSnapshot {
     case "null":
       return true;
     case "logical":
-      return value.values instanceof Uint8Array && validMask(value.missing, value.values.length);
+      return (
+        value.values instanceof Uint8Array &&
+        validMask(value.missing, value.values.length) &&
+        validNames(value.names, value.values.length) &&
+        validDimensions(value.dim, value.values.length)
+      );
     case "integer":
-      return value.values instanceof Int32Array && validMask(value.missing, value.values.length);
+      return (
+        value.values instanceof Int32Array &&
+        validMask(value.missing, value.values.length) &&
+        validNames(value.names, value.values.length) &&
+        validDimensions(value.dim, value.values.length)
+      );
     case "double":
-      return value.values instanceof Float64Array && validMask(value.missing, value.values.length);
+      return (
+        value.values instanceof Float64Array &&
+        validMask(value.missing, value.values.length) &&
+        validNames(value.names, value.values.length) &&
+        validDimensions(value.dim, value.values.length)
+      );
+    case "complex":
+      return (
+        value.real instanceof Float64Array &&
+        value.imaginary instanceof Float64Array &&
+        value.real.length === value.imaginary.length &&
+        validMask(value.missing, value.real.length) &&
+        validNames(value.names, value.real.length) &&
+        validDimensions(value.dim, value.real.length)
+      );
+    case "raw":
+      return (
+        value.values instanceof Uint8Array &&
+        validNames(value.names, value.values.length) &&
+        validDimensions(value.dim, value.values.length)
+      );
     case "character":
       return (
         Array.isArray(value.values) &&
         value.values.every((item) => typeof item === "string") &&
-        validMask(value.missing, value.values.length)
+        validMask(value.missing, value.values.length) &&
+        validNames(value.names, value.values.length) &&
+        validDimensions(value.dim, value.values.length)
       );
     case "list":
-      return Array.isArray(value.values) && value.values.every(isRValueSnapshot);
+      return (
+        Array.isArray(value.values) &&
+        value.values.every(isRValueSnapshot) &&
+        validNames(value.names, value.values.length) &&
+        validDimensions(value.dim, value.values.length)
+      );
+    case "pairlist":
+      return (
+        Array.isArray(value.values) &&
+        value.values.every(isRValueSnapshot) &&
+        validNames(value.names, value.values.length) &&
+        validDimensions(value.dim, value.values.length)
+      );
+    case "formula":
+      return (
+        (value.response === undefined || validFormulaName(value.response)) &&
+        Array.isArray(value.terms) &&
+        value.terms.every(validFormulaName) &&
+        new Set(value.terms).size === value.terms.length &&
+        Array.isArray(value.variables) &&
+        value.variables.every(validFormulaName) &&
+        new Set(value.variables).size === value.variables.length &&
+        typeof value.intercept === "boolean"
+      );
+    case "symbol":
+      return typeof value.name === "string" && value.name.length > 0;
+    case "language":
+      return typeof value.source === "string" && value.source.length > 0;
+    case "expression":
+      return (
+        Array.isArray(value.sources) && value.sources.every((item) => typeof item === "string")
+      );
     default:
       return false;
   }
@@ -305,4 +454,27 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function validMask(value: unknown, length: number): boolean {
   return value === undefined || (value instanceof Uint8Array && value.length === length);
+}
+
+function validNames(value: unknown, length: number): boolean {
+  return (
+    value === undefined ||
+    (Array.isArray(value) &&
+      value.length === length &&
+      value.every((item) => typeof item === "string"))
+  );
+}
+
+function validDimensions(value: unknown, length: number): boolean {
+  return (
+    value === undefined ||
+    (Array.isArray(value) &&
+      value.length > 0 &&
+      value.every((dimension) => Number.isSafeInteger(dimension) && (dimension as number) >= 0) &&
+      value.reduce((product, dimension) => product * (dimension as number), 1) === length)
+  );
+}
+
+function validFormulaName(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0;
 }

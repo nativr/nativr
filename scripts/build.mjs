@@ -13,4 +13,11 @@ await runNode(path.join(root, "scripts", "copy-parser-assets.mjs"), [], { cwd: r
 await runNode(path.join(root, "scripts", "copy-package-metadata.mjs"), [], { cwd: root });
 await runNode(vite, ["build"], { cwd: path.join(root, "packages", "nativr") });
 await runNode(path.join(root, "scripts", "copy-parser-assets.mjs"), [], { cwd: root });
-await runNode(vite, ["build"], { cwd: path.join(root, "apps", "playground") });
+await runNode(
+  vite,
+  [
+    "build",
+    ...(process.env.NATIVR_PRESERVE_PLAYGROUND_DIST === "1" ? ["--emptyOutDir", "false"] : []),
+  ],
+  { cwd: path.join(root, "apps", "playground") },
+);

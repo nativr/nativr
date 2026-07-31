@@ -18,21 +18,40 @@ const { createR } = await import(
   pathToFileURL(path.join(root, "packages", "nativr", "dist", "index.js")).href
 );
 const assetRoot = path.join(root, "packages", "nativr", "dist", "assets");
+const runtimeWasm = await readFile(path.join(assetRoot, "web-tree-sitter.wasm"));
+const grammarWasm = await readFile(path.join(assetRoot, "tree-sitter-r.wasm"));
+const bundledEntry = (
+  await readFile(path.join(root, "packages", "nativr", "dist", "index.js"), "utf8")
+).includes("./chunks/");
 const runtime = await createR({
   execution: "inline",
   assets: {
-    treeSitterRuntimeWasm: await wasmDataUrl(path.join(assetRoot, "web-tree-sitter.wasm")),
-    rGrammarWasm: await wasmDataUrl(path.join(assetRoot, "tree-sitter-r.wasm")),
+    treeSitterRuntimeWasm: bundledEntry
+      ? new URL(`data:application/wasm;base64,${runtimeWasm.toString("base64")}`)
+      : pathToFileURL(path.join(assetRoot, "web-tree-sitter.wasm")),
+    rGrammarWasm: bundledEntry
+      ? new URL(`data:application/wasm;base64,${grammarWasm.toString("base64")}`)
+      : pathToFileURL(path.join(assetRoot, "tree-sitter-r.wasm")),
   },
 });
 let failures = 0;
+const oracleCases = cases.filter((testCase) => testCase.rOracle !== false);
 
-for (const testCase of cases) {
+for (const testCase of oracleCases) {
   await runtime.reset();
   const nativr = await runtime.evalDetailed(testCase.code);
-  const actual = snapshotCanonical(nativr.raw, nativr.visible, nativr.warnings.length > 0);
-  const oracle = await runOracle(testCase.code);
-  if (JSON.stringify(actual) !== JSON.stringify(oracle)) {
+  const actual = snapshotCanonical(
+    nativr.raw,
+    nativr.visible,
+    nativr.warnings.length > 0,
+    nativr.output.map((event) => event.text).join(""),
+  );
+  const oracle = await runOracle(
+    testCase.code,
+    testCase.rOracleWithoutCallingHandlers === true,
+    testCase.rOracleIgnoreOutput === true,
+  );
+  if (!canonicalEqual(actual, oracle, testCase.tolerance)) {
     failures += 1;
     console.error(
       `FAIL ${testCase.id}\n  R:      ${JSON.stringify(oracle)}\n  NativR: ${JSON.stringify(actual)}`,
@@ -44,15 +63,31 @@ for (const testCase of cases) {
 
 await runtime.dispose();
 if (failures > 0) process.exitCode = 1;
-else console.log(`Live R oracle: ${cases.length}/${cases.length} passed`);
+else {
+  const skipped = cases.length - oracleCases.length;
+  console.log(
+    `Live R oracle: ${oracleCases.length}/${oracleCases.length} passed; ${skipped} NativR-only representation/random cases skipped`,
+  );
+}
 
-function runOracle(code) {
+function runOracle(code, withoutCallingHandlers = false, ignoreOutput = false) {
+  const conditionSetup = withoutCallingHandlers
+    ? "before_warnings <- warnings();"
+    : "warnings <- character();";
+  const evaluation = withoutCallingHandlers
+    ? 'result <- withVisible(eval(parse(text = Sys.getenv("NATIVR_CASE")), envir = new.env(parent = globalenv()))); warning_seen <- !identical(before_warnings, warnings());'
+    : 'result <- withVisible(withCallingHandlers(eval(parse(text = Sys.getenv("NATIVR_CASE")), envir = new.env(parent = globalenv())), warning = function(w) { warnings <<- c(warnings, conditionMessage(w)); invokeRestart("muffleWarning") })); warning_seen <- length(warnings) > 0;';
   const wrapper = [
-    "warnings <- character();",
-    'result <- withVisible(withCallingHandlers(eval(parse(text = Sys.getenv("NATIVR_CASE")), envir = new.env(parent = baseenv())), warning = function(w) { warnings <<- c(warnings, conditionMessage(w)); invokeRestart("muffleWarning") }));',
+    'invisible(suppressWarnings(Sys.setlocale("LC_ALL", "C")));',
+    "options(device = function(...) pdf(NULL));",
+    conditionSetup,
+    'output_path <- tempfile(); output_connection <- file(output_path, open = "wt", encoding = "UTF-8"); sink(output_connection, type = "output"); sink(output_connection, type = "message");',
+    evaluation,
+    'sink(type = "message"); sink(type = "output"); close(output_connection); output <- readChar(output_path, nchars = file.info(output_path)$size, useBytes = TRUE); unlink(output_path); output <- gsub("\\r\\n", "\\n", output, fixed = TRUE); output_hex <- paste(sprintf("%02x", as.integer(charToRaw(enc2utf8(output)))), collapse = "");',
     "value <- result$value;",
-    'encode <- function(x) { vapply(seq_along(x), function(i) { if (is.nan(x[[i]])) "NaN" else if (is.na(x[[i]])) "NA" else if (is.logical(x[[i]])) if (x[[i]]) "TRUE" else "FALSE" else format(x[[i]], scientific = FALSE, trim = TRUE, digits = 17) }, character(1)) };',
-    'cat(typeof(value), length(value), if (result$visible) "1" else "0", paste(encode(value), collapse = ","), if (length(warnings) > 0) "1" else "0", sep = "\\t")',
+    'encode <- function(x) { vapply(seq_along(x), function(i) { if (is.na(x[[i]])) "NA" else if (is.complex(x[[i]])) paste(format(Re(x[[i]]), scientific = FALSE, trim = TRUE, digits = 17), format(Im(x[[i]]), scientific = FALSE, trim = TRUE, digits = 17), sep = ":") else if (is.nan(x[[i]])) "NaN" else if (is.logical(x[[i]])) if (x[[i]]) "TRUE" else "FALSE" else if (is.character(x[[i]])) gsub("\\r\\n", "\\n", x[[i]], fixed = TRUE) else format(x[[i]], scientific = FALSE, trim = TRUE, digits = 17) }, character(1)) };',
+    'encode_hex <- function(x) { vapply(encode(x), function(item) paste(sprintf("%02x", as.integer(charToRaw(enc2utf8(item)))), collapse = ""), character(1), USE.NAMES = FALSE) };',
+    'cat(typeof(value), length(value), if (result$visible) "1" else "0", paste(encode_hex(value), collapse = ","), if (warning_seen) "1" else "0", output_hex, sep = "\\t")',
   ].join(" ");
   return new Promise((resolve, reject) => {
     // Rscript 4.6 on Windows can crash when a multiline `-e` argument starts with a newline.
@@ -77,24 +112,37 @@ function runOracle(code) {
         reject(new Error(`R oracle failed: ${stderr}`));
         return;
       }
-      const [type, length, visible, values, warned] = stdout.trim().split("\t");
+      const [type, length, visible, valueHexes, warned, outputHex = ""] = stdout.trim().split("\t");
+      const declaredLength = Number(length);
       resolve({
         type,
-        length: Number(length),
+        length: declaredLength,
         visible: visible === "1",
-        values: values === "" ? [] : values.split(","),
+        values:
+          declaredLength === 0
+            ? []
+            : valueHexes.split(",").map((value) => Buffer.from(value, "hex").toString("utf8")),
         warned: warned === "1",
+        output: ignoreOutput ? "" : Buffer.from(outputHex, "hex").toString("utf8"),
       });
     });
   });
 }
 
-function snapshotCanonical(snapshot, visible, warned) {
+function snapshotCanonical(snapshot, visible, warned, output) {
   if (snapshot.type === "null") {
-    return { type: "NULL", length: 0, visible, values: [], warned };
+    return { type: "NULL", length: 0, visible, values: [], warned, output };
   }
   if (snapshot.type === "list") {
     throw new Error("List conformance is outside the foundation cases.");
+  }
+  if (snapshot.type === "complex") {
+    const values = [];
+    for (let index = 0; index < snapshot.real.length; index += 1) {
+      if (snapshot.missing?.[index] === 1) values.push("NA");
+      else values.push(`${String(snapshot.real[index])}:${String(snapshot.imaginary[index])}`);
+    }
+    return { type: snapshot.type, length: snapshot.real.length, visible, values, warned, output };
   }
   const values = [];
   for (let index = 0; index < snapshot.values.length; index += 1) {
@@ -104,12 +152,60 @@ function snapshotCanonical(snapshot, visible, warned) {
       values.push(snapshot.values[index] === 1 ? "TRUE" : "FALSE");
     else values.push(String(snapshot.values[index]));
   }
-  return { type: snapshot.type, length: snapshot.values.length, visible, values, warned };
+  return { type: snapshot.type, length: snapshot.values.length, visible, values, warned, output };
 }
 
-async function wasmDataUrl(file) {
-  const contents = await readFile(file);
-  return `data:application/wasm;base64,${contents.toString("base64")}`;
+function canonicalEqual(actual, oracle, tolerance = { absolute: 0, relative: 0 }) {
+  if (
+    actual.type !== oracle.type ||
+    actual.length !== oracle.length ||
+    actual.visible !== oracle.visible ||
+    actual.warned !== oracle.warned ||
+    actual.output !== oracle.output ||
+    actual.values.length !== oracle.values.length
+  ) {
+    return false;
+  }
+  if (actual.type === "double" || actual.type === "integer") {
+    return actual.values.every((value, index) =>
+      numericTokenEqual(value, oracle.values[index], tolerance),
+    );
+  }
+  if (actual.type === "complex") {
+    return actual.values.every((value, index) => {
+      const oracleValue = oracle.values[index];
+      if (value === "NA" || oracleValue === "NA") return value === oracleValue;
+      const [actualReal, actualImaginary] = value.split(":");
+      const [oracleReal, oracleImaginary] = oracleValue.split(":");
+      return (
+        numericTokenEqual(actualReal, oracleReal, tolerance) &&
+        numericTokenEqual(actualImaginary, oracleImaginary, tolerance)
+      );
+    });
+  }
+  return actual.values.every((value, index) => value === oracle.values[index]);
+}
+
+function numericTokenEqual(actual, oracle, tolerance) {
+  if (actual === oracle) return true;
+  if (actual === undefined || oracle === undefined) return false;
+  if (actual === "NA" || oracle === "NA" || actual === "NaN" || oracle === "NaN") return false;
+  const actualNumber = parseCanonicalNumber(actual);
+  const oracleNumber = parseCanonicalNumber(oracle);
+  if (actualNumber === oracleNumber) return true;
+  if (!Number.isFinite(actualNumber) || !Number.isFinite(oracleNumber)) return false;
+  const difference = Math.abs(actualNumber - oracleNumber);
+  return (
+    difference <=
+    tolerance.absolute +
+      tolerance.relative * Math.max(Math.abs(actualNumber), Math.abs(oracleNumber))
+  );
+}
+
+function parseCanonicalNumber(value) {
+  if (value === "Inf") return Number.POSITIVE_INFINITY;
+  if (value === "-Inf") return Number.NEGATIVE_INFINITY;
+  return Number(value);
 }
 
 async function findRscript() {

@@ -8,10 +8,12 @@ with:
 - [Runtime semantics](runtime-semantics.md)
 - [Parser and assets](parser.md)
 - [Compatibility contract](compatibility-contract.md)
+- [GNU R compatibility ledger](gnu-r-compatibility.md)
 - [Clean-room policy](clean-room.md)
 - [Security model](security-model.md)
 - [Development](development.md)
 - [Evidence-based feature priorities](feature-priorities.md)
+- [Pure-R package loading design](pure-r-packages.md)
 - [Roadmap](roadmap.md)
 - [Implementation status](implementation-status.md)
 

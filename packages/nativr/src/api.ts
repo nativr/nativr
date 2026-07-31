@@ -1,6 +1,9 @@
 import { PROTOCOL_VERSION, isWorkerResponse } from "@nativr/protocol";
 import type {
   CapabilityManifest,
+  PublicDataViewEvent,
+  PublicGraphicsEvent,
+  PublicOutputEvent,
   PublicRWarning,
   RValueSnapshot,
   WireEvaluationResult,
@@ -21,6 +24,8 @@ import {
 import type { JsInputValue, JsValue } from "./conversion.js";
 import type { RuntimeHost } from "./runtime-host.js";
 
+export type { PublicDataViewEvent, PublicGraphicsEvent, PublicOutputEvent } from "@nativr/protocol";
+
 /** Optional asset overrides for CDNs, unusual bundlers, or tests. */
 export interface CreateRAssets {
   readonly worker?: string | URL;
@@ -38,6 +43,8 @@ export interface CreateROptions {
   readonly debug?: boolean;
   readonly onWarning?: (warning: PublicRWarning) => void;
   readonly onOutput?: (event: PublicOutputEvent) => void;
+  readonly onDataView?: (event: PublicDataViewEvent) => void;
+  readonly onGraphics?: (event: PublicGraphicsEvent) => void;
 }
 
 /** Options for one evaluation. */
@@ -50,12 +57,6 @@ export interface AssignOptions {
   readonly transfer?: boolean;
 }
 
-/** Future-ready output event. */
-export interface PublicOutputEvent {
-  readonly stream: "stdout" | "stderr" | "message";
-  readonly text: string;
-}
-
 /** Detailed public result with ergonomic and lossless representations. */
 export interface PublicEvaluationResult {
   readonly value: JsValue;
@@ -63,6 +64,8 @@ export interface PublicEvaluationResult {
   readonly visible: boolean;
   readonly warnings: readonly PublicRWarning[];
   readonly output: readonly PublicOutputEvent[];
+  readonly dataViews: readonly PublicDataViewEvent[];
+  readonly graphics: readonly PublicGraphicsEvent[];
   readonly elapsedMs: number;
   readonly runtimeReset: boolean;
 }
@@ -130,12 +133,17 @@ class InlineSession implements NativRSession {
       const result = await this.#host.eval(code);
       const raw = valueToSnapshot(result.value);
       for (const warning of result.warnings) this.#options.onWarning?.(warning);
+      for (const output of result.output) this.#options.onOutput?.(output);
+      for (const event of result.dataViews) this.#options.onDataView?.(event);
+      for (const event of result.graphics) this.#options.onGraphics?.(event);
       return {
         value: snapshotToJs(raw),
         raw,
         visible: result.visible,
         warnings: result.warnings,
-        output: [],
+        output: result.output,
+        dataViews: result.dataViews,
+        graphics: result.graphics,
         elapsedMs: result.elapsedMs,
         runtimeReset: false,
       };
@@ -262,7 +270,10 @@ class WorkerSession implements NativRSession {
         options?.timeoutMs ?? this.#options.timeoutMs,
       );
       if (payload.kind !== "evaluation") throw protocolPayloadError("evaluation", payload.kind);
-      return publicResult(payload.result);
+      const result = publicResult(payload.result);
+      for (const event of result.dataViews) this.#options.onDataView?.(event);
+      for (const event of result.graphics) this.#options.onGraphics?.(event);
+      return result;
     });
   }
 
@@ -497,7 +508,9 @@ function publicResult(result: WireEvaluationResult): PublicEvaluationResult {
     raw: result.raw,
     visible: result.visible,
     warnings: result.warnings,
-    output: [],
+    output: result.output ?? [],
+    dataViews: result.dataViews ?? [],
+    graphics: result.graphics ?? [],
     elapsedMs: result.elapsedMs,
     runtimeReset: result.runtimeReset,
   };

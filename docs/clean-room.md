@@ -11,6 +11,10 @@ Permitted evidence:
 - black-box input/output observations from a separately installed R runtime;
 - permissively licensed dependencies after license review.
 
+Versioned public catalogs may be recorded as compact observable data when their order, values, and
+selection behavior are independently reproduced from documentation and black-box outputs. Such
+catalogs must identify provenance and must not be extracted from implementation source.
+
 Prohibited without explicit legal and maintainer review:
 
 - copying or mechanically translating GNU R or GPL package source;

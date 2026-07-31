@@ -78,6 +78,39 @@
             <pre id="result" tabindex="0" aria-live="polite">Waiting for evaluation.</pre>
           </article>
 
+          <article class="output-card graphics-card">
+            <div class="card-header compact">
+              <h2>Graphics</h2>
+              <span id="graphics-count" class="count">0</span>
+            </div>
+            <div class="graphics-stage">
+              <canvas
+                id="graphics"
+                width="640"
+                height="400"
+                aria-label="NativR browser graphics device"
+              ></canvas>
+              <p id="graphics-empty" class="empty">No graphics commands.</p>
+            </div>
+          </article>
+
+          <article class="output-card">
+            <div class="card-header compact">
+              <h2>Data viewer</h2>
+              <span id="data-view-count" class="count">0</span>
+            </div>
+            <div id="data-views" class="data-views" aria-live="polite">
+              <p class="empty">No data-view events.</p>
+            </div>
+          </article>
+
+          <article class="output-card">
+            <div class="card-header compact">
+              <h2>Console output</h2>
+            </div>
+            <pre id="console-output" tabindex="0" aria-live="polite">No textual output.</pre>
+          </article>
+
           <article class="output-card">
             <div class="card-header compact">
               <h2>Warnings</h2>

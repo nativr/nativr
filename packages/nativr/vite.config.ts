@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig, transformWithEsbuild } from "vite";
 import dts from "vite-plugin-dts";
 
 export default defineConfig({
@@ -14,7 +14,7 @@ export default defineConfig({
   ],
   worker: {
     format: "es",
-    plugins: () => [cspSafeTreeSitter()],
+    plugins: () => [cspSafeTreeSitter(), compactWorkerOutput()],
   },
   build: {
     target: "es2022",
@@ -34,6 +34,24 @@ export default defineConfig({
     emptyOutDir: true,
   },
 });
+
+function compactWorkerOutput() {
+  return {
+    name: "nativr-compact-worker-output",
+    enforce: "post" as const,
+    async renderChunk(code: string, chunk: { readonly fileName: string }) {
+      return transformWithEsbuild(code, chunk.fileName, {
+        target: "es2022",
+        format: "esm",
+        minifyIdentifiers: true,
+        minifySyntax: true,
+        minifyWhitespace: true,
+        legalComments: "none",
+        sourcemap: true,
+      });
+    },
+  };
+}
 
 function cspSafeTreeSitter() {
   return {

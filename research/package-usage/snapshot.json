@@ -1,24 +1,24 @@
 {
-  "schemaVersion": 1,
-  "detectorFingerprint": "178e76e463f49b20df3bf4d120fc6fefc079440baa5c20a7af8a921936a05c2d",
-  "collectedAt": "2026-07-29T06:26:28.784Z",
+  "schemaVersion": 2,
+  "detectorFingerprint": "1fb03e7efd8872854c7f8dd8f422538f3337d358e79df7e7c7b0abb4488a81c9",
+  "collectedAt": "2026-07-30T23:54:30.550Z",
   "sample": {
     "source": "https://cranlogs.r-pkg.org/top/last-month/100",
     "manualSourceTemplate": "https://cran.r-project.org/web/packages/{package}/refman/{package}.html",
-    "start": "2026-06-28",
-    "end": "2026-07-27",
+    "start": "2026-06-30",
+    "end": "2026-07-29",
     "requestedPackageCount": 100,
     "packageCount": 100,
     "analyzedPackageCount": 97,
-    "totalDownloads": 123957146,
-    "analyzedDownloads": 120247607,
-    "method": "Download-weighted package reach across language features detected in CRAN-generated reference-manual example blocks."
+    "totalDownloads": 127485250,
+    "analyzedDownloads": 123672820,
+    "method": "Download-weighted package reach across language features and GNU R core callable names detected in CRAN-generated reference-manual example blocks."
   },
   "packages": [
     {
       "rank": 1,
       "package": "rlang",
-      "downloads": 2635261,
+      "downloads": 2757363,
       "manualUrl": "https://cran.r-project.org/web/packages/rlang/refman/rlang.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 130,
@@ -50,8 +50,33 @@
     },
     {
       "rank": 2,
+      "package": "cli",
+      "downloads": 2344724,
+      "manualUrl": "https://cran.r-project.org/web/packages/cli/refman/cli.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 52,
+      "exampleCharacters": 11750,
+      "featureIds": [
+        "comparisons",
+        "logical-operators",
+        "subsetting",
+        "extraction",
+        "conditionals",
+        "lists",
+        "names-attributes",
+        "sequences-repetition",
+        "string-helpers",
+        "apply-family",
+        "random-numbers",
+        "namespaces",
+        "ellipsis",
+        "replacement"
+      ]
+    },
+    {
+      "rank": 3,
       "package": "vctrs",
-      "downloads": 2257916,
+      "downloads": 2338466,
       "manualUrl": "https://cran.r-project.org/web/packages/vctrs/refman/vctrs.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 61,
@@ -82,34 +107,9 @@
       ]
     },
     {
-      "rank": 3,
-      "package": "cli",
-      "downloads": 2242965,
-      "manualUrl": "https://cran.r-project.org/web/packages/cli/refman/cli.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 52,
-      "exampleCharacters": 11750,
-      "featureIds": [
-        "comparisons",
-        "logical-operators",
-        "subsetting",
-        "extraction",
-        "conditionals",
-        "lists",
-        "names-attributes",
-        "sequences-repetition",
-        "string-helpers",
-        "apply-family",
-        "random-numbers",
-        "namespaces",
-        "ellipsis",
-        "replacement"
-      ]
-    },
-    {
       "rank": 4,
       "package": "lifecycle",
-      "downloads": 2169783,
+      "downloads": 2266457,
       "manualUrl": "https://cran.r-project.org/web/packages/lifecycle/refman/lifecycle.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 6,
@@ -118,8 +118,27 @@
     },
     {
       "rank": 5,
+      "package": "Rcpp",
+      "downloads": 2161496,
+      "manualUrl": "https://cran.r-project.org/web/packages/Rcpp/refman/Rcpp.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 18,
+      "exampleCharacters": 5708,
+      "featureIds": [
+        "comparisons",
+        "subsetting",
+        "extraction",
+        "conditionals",
+        "return",
+        "loops",
+        "lists",
+        "namespaces"
+      ]
+    },
+    {
+      "rank": 6,
       "package": "ggplot2",
-      "downloads": 2097222,
+      "downloads": 2106361,
       "manualUrl": "https://cran.r-project.org/web/packages/ggplot2/refman/ggplot2.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 159,
@@ -151,28 +170,9 @@
       ]
     },
     {
-      "rank": 6,
-      "package": "Rcpp",
-      "downloads": 2084518,
-      "manualUrl": "https://cran.r-project.org/web/packages/Rcpp/refman/Rcpp.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 18,
-      "exampleCharacters": 5708,
-      "featureIds": [
-        "comparisons",
-        "subsetting",
-        "extraction",
-        "conditionals",
-        "return",
-        "loops",
-        "lists",
-        "namespaces"
-      ]
-    },
-    {
       "rank": 7,
       "package": "R6",
-      "downloads": 1971310,
+      "downloads": 2092163,
       "manualUrl": "https://cran.r-project.org/web/packages/R6/refman/R6.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 2,
@@ -195,28 +195,8 @@
     },
     {
       "rank": 8,
-      "package": "RcppEigen",
-      "downloads": 1948985,
-      "manualUrl": "https://cran.r-project.org/web/packages/RcppEigen/refman/RcppEigen.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 2,
-      "exampleCharacters": 967,
-      "featureIds": [
-        "subsetting",
-        "extraction",
-        "sequences-repetition",
-        "formulas",
-        "data-frames",
-        "matrices-arrays",
-        "statistics",
-        "random-numbers",
-        "replacement"
-      ]
-    },
-    {
-      "rank": 9,
       "package": "glue",
-      "downloads": 1943853,
+      "downloads": 2032768,
       "manualUrl": "https://cran.r-project.org/web/packages/glue/refman/glue.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 8,
@@ -234,9 +214,9 @@
       ]
     },
     {
-      "rank": 10,
+      "rank": 9,
       "package": "withr",
-      "downloads": 1921276,
+      "downloads": 1990666,
       "manualUrl": "https://cran.r-project.org/web/packages/withr/refman/withr.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 21,
@@ -258,9 +238,29 @@
       ]
     },
     {
+      "rank": 10,
+      "package": "RcppEigen",
+      "downloads": 1978110,
+      "manualUrl": "https://cran.r-project.org/web/packages/RcppEigen/refman/RcppEigen.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 2,
+      "exampleCharacters": 967,
+      "featureIds": [
+        "subsetting",
+        "extraction",
+        "sequences-repetition",
+        "formulas",
+        "data-frames",
+        "matrices-arrays",
+        "statistics",
+        "random-numbers",
+        "replacement"
+      ]
+    },
+    {
       "rank": 11,
       "package": "magrittr",
-      "downloads": 1883089,
+      "downloads": 1968504,
       "manualUrl": "https://cran.r-project.org/web/packages/magrittr/refman/magrittr.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 7,
@@ -285,7 +285,7 @@
     {
       "rank": 12,
       "package": "tibble",
-      "downloads": 1846268,
+      "downloads": 1898766,
       "manualUrl": "https://cran.r-project.org/web/packages/tibble/refman/tibble.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 15,
@@ -310,8 +310,18 @@
     },
     {
       "rank": 13,
+      "package": "cpp11",
+      "downloads": 1827906,
+      "manualUrl": "https://cran.r-project.org/web/packages/cpp11/refman/cpp11.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 3,
+      "exampleCharacters": 1485,
+      "featureIds": ["logical-operators", "conditionals", "sequences-repetition"]
+    },
+    {
+      "rank": 14,
       "package": "fs",
-      "downloads": 1766053,
+      "downloads": 1816702,
       "manualUrl": "https://cran.r-project.org/web/packages/fs/refman/fs.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 25,
@@ -329,19 +339,9 @@
       ]
     },
     {
-      "rank": 14,
-      "package": "cpp11",
-      "downloads": 1758956,
-      "manualUrl": "https://cran.r-project.org/web/packages/cpp11/refman/cpp11.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 3,
-      "exampleCharacters": 1485,
-      "featureIds": ["logical-operators", "conditionals", "sequences-repetition"]
-    },
-    {
       "rank": 15,
       "package": "pillar",
-      "downloads": 1746664,
+      "downloads": 1797184,
       "manualUrl": "https://cran.r-project.org/web/packages/pillar/refman/pillar.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 24,
@@ -367,30 +367,8 @@
     },
     {
       "rank": 16,
-      "package": "scales",
-      "downloads": 1676600,
-      "manualUrl": "https://cran.r-project.org/web/packages/scales/refman/scales.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 69,
-      "exampleCharacters": 20998,
-      "featureIds": [
-        "subsetting",
-        "extraction",
-        "conditionals",
-        "sequences-repetition",
-        "factors",
-        "string-helpers",
-        "sorting-matching",
-        "statistics",
-        "random-numbers",
-        "dates-times",
-        "namespaces"
-      ]
-    },
-    {
-      "rank": 17,
       "package": "dplyr",
-      "downloads": 1639306,
+      "downloads": 1692443,
       "manualUrl": "https://cran.r-project.org/web/packages/dplyr/refman/dplyr.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 80,
@@ -420,9 +398,31 @@
       ]
     },
     {
+      "rank": 17,
+      "package": "scales",
+      "downloads": 1684315,
+      "manualUrl": "https://cran.r-project.org/web/packages/scales/refman/scales.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 69,
+      "exampleCharacters": 20998,
+      "featureIds": [
+        "subsetting",
+        "extraction",
+        "conditionals",
+        "sequences-repetition",
+        "factors",
+        "string-helpers",
+        "sorting-matching",
+        "statistics",
+        "random-numbers",
+        "dates-times",
+        "namespaces"
+      ]
+    },
+    {
       "rank": 18,
       "package": "jsonlite",
-      "downloads": 1557576,
+      "downloads": 1631557,
       "manualUrl": "https://cran.r-project.org/web/packages/jsonlite/refman/jsonlite.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 11,
@@ -447,7 +447,7 @@
     {
       "rank": 19,
       "package": "S7",
-      "downloads": 1533881,
+      "downloads": 1577749,
       "manualUrl": "https://cran.r-project.org/web/packages/S7/refman/S7.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 25,
@@ -471,7 +471,7 @@
     {
       "rank": 20,
       "package": "gtable",
-      "downloads": 1530595,
+      "downloads": 1575047,
       "manualUrl": "https://cran.r-project.org/web/packages/gtable/refman/gtable.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 13,
@@ -490,7 +490,7 @@
     {
       "rank": 21,
       "package": "isoband",
-      "downloads": 1508404,
+      "downloads": 1552225,
       "manualUrl": "https://cran.r-project.org/web/packages/isoband/refman/isoband.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 5,
@@ -510,7 +510,7 @@
     {
       "rank": 22,
       "package": "pkgconfig",
-      "downloads": 1491346,
+      "downloads": 1552032,
       "manualUrl": "https://cran.r-project.org/web/packages/pkgconfig/refman/pkgconfig.html",
       "manualStatus": "no-examples",
       "exampleBlockCount": 0,
@@ -520,7 +520,7 @@
     {
       "rank": 23,
       "package": "bslib",
-      "downloads": 1473139,
+      "downloads": 1516675,
       "manualUrl": "https://cran.r-project.org/web/packages/bslib/refman/bslib.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 35,
@@ -546,7 +546,7 @@
     {
       "rank": 24,
       "package": "utf8",
-      "downloads": 1459250,
+      "downloads": 1513795,
       "manualUrl": "https://cran.r-project.org/web/packages/utf8/refman/utf8.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 7,
@@ -555,8 +555,28 @@
     },
     {
       "rank": 25,
+      "package": "generics",
+      "downloads": 1498659,
+      "manualUrl": "https://cran.r-project.org/web/packages/generics/refman/generics.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 3,
+      "exampleCharacters": 282,
+      "featureIds": ["subsetting", "sequences-repetition", "factors", "dates-times"]
+    },
+    {
+      "rank": 26,
+      "package": "rmarkdown",
+      "downloads": 1495456,
+      "manualUrl": "https://cran.r-project.org/web/packages/rmarkdown/refman/rmarkdown.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 26,
+      "exampleCharacters": 6095,
+      "featureIds": ["conditionals", "lists", "dates-times", "namespaces"]
+    },
+    {
+      "rank": 27,
       "package": "otel",
-      "downloads": 1453965,
+      "downloads": 1491029,
       "manualUrl": "https://cran.r-project.org/web/packages/otel/refman/otel.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 45,
@@ -564,9 +584,19 @@
       "featureIds": ["extraction", "conditionals", "lists", "sequences-repetition", "namespaces"]
     },
     {
-      "rank": 26,
+      "rank": 28,
+      "package": "viridisLite",
+      "downloads": 1469791,
+      "manualUrl": "https://cran.r-project.org/web/packages/viridisLite/refman/viridisLite.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 1,
+      "exampleCharacters": 410,
+      "featureIds": ["sequences-repetition", "data-frames", "matrices-arrays", "random-numbers"]
+    },
+    {
+      "rank": 29,
       "package": "callr",
-      "downloads": 1452609,
+      "downloads": 1469404,
       "manualUrl": "https://cran.r-project.org/web/packages/callr/refman/callr.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 14,
@@ -574,9 +604,9 @@
       "featureIds": ["extraction"]
     },
     {
-      "rank": 27,
+      "rank": 30,
       "package": "rstan",
-      "downloads": 1452421,
+      "downloads": 1466515,
       "manualUrl": "https://cran.r-project.org/web/packages/rstan/refman/rstan.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 36,
@@ -600,49 +630,9 @@
       ]
     },
     {
-      "rank": 28,
-      "package": "rmarkdown",
-      "downloads": 1451599,
-      "manualUrl": "https://cran.r-project.org/web/packages/rmarkdown/refman/rmarkdown.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 26,
-      "exampleCharacters": 6095,
-      "featureIds": ["conditionals", "lists", "dates-times", "namespaces"]
-    },
-    {
-      "rank": 29,
-      "package": "generics",
-      "downloads": 1444078,
-      "manualUrl": "https://cran.r-project.org/web/packages/generics/refman/generics.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 3,
-      "exampleCharacters": 282,
-      "featureIds": ["subsetting", "sequences-repetition", "factors", "dates-times"]
-    },
-    {
-      "rank": 30,
-      "package": "processx",
-      "downloads": 1434587,
-      "manualUrl": "https://cran.r-project.org/web/packages/processx/refman/processx.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 6,
-      "exampleCharacters": 2535,
-      "featureIds": ["subsetting", "extraction", "lists"]
-    },
-    {
       "rank": 31,
-      "package": "viridisLite",
-      "downloads": 1421559,
-      "manualUrl": "https://cran.r-project.org/web/packages/viridisLite/refman/viridisLite.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 1,
-      "exampleCharacters": 410,
-      "featureIds": ["sequences-repetition", "data-frames", "matrices-arrays", "random-numbers"]
-    },
-    {
-      "rank": 32,
       "package": "farver",
-      "downloads": 1421303,
+      "downloads": 1466422,
       "manualUrl": "https://cran.r-project.org/web/packages/farver/refman/farver.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 7,
@@ -650,9 +640,26 @@
       "featureIds": []
     },
     {
+      "rank": 32,
+      "package": "sass",
+      "downloads": 1460504,
+      "manualUrl": "https://cran.r-project.org/web/packages/sass/refman/sass.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 9,
+      "exampleCharacters": 5595,
+      "featureIds": [
+        "extraction",
+        "conditionals",
+        "lists",
+        "sequences-repetition",
+        "string-helpers",
+        "namespaces"
+      ]
+    },
+    {
       "rank": 33,
       "package": "curl",
-      "downloads": 1419669,
+      "downloads": 1453739,
       "manualUrl": "https://cran.r-project.org/web/packages/curl/refman/curl.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 17,
@@ -674,8 +681,18 @@
     },
     {
       "rank": 34,
+      "package": "processx",
+      "downloads": 1452916,
+      "manualUrl": "https://cran.r-project.org/web/packages/processx/refman/processx.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 6,
+      "exampleCharacters": 2535,
+      "featureIds": ["subsetting", "extraction", "lists"]
+    },
+    {
+      "rank": 35,
       "package": "StanHeaders",
-      "downloads": 1416852,
+      "downloads": 1439729,
       "manualUrl": "https://cran.r-project.org/web/packages/StanHeaders/refman/StanHeaders.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 1,
@@ -692,26 +709,19 @@
       ]
     },
     {
-      "rank": 35,
-      "package": "sass",
-      "downloads": 1416560,
-      "manualUrl": "https://cran.r-project.org/web/packages/sass/refman/sass.html",
+      "rank": 36,
+      "package": "RColorBrewer",
+      "downloads": 1414603,
+      "manualUrl": "https://cran.r-project.org/web/packages/RColorBrewer/refman/RColorBrewer.html",
       "manualStatus": "analyzed",
-      "exampleBlockCount": 9,
-      "exampleCharacters": 5595,
-      "featureIds": [
-        "extraction",
-        "conditionals",
-        "lists",
-        "sequences-repetition",
-        "string-helpers",
-        "namespaces"
-      ]
+      "exampleBlockCount": 1,
+      "exampleCharacters": 954,
+      "featureIds": ["subsetting", "extraction", "sequences-repetition", "matrices-arrays"]
     },
     {
-      "rank": 36,
+      "rank": 37,
       "package": "ps",
-      "downloads": 1375010,
+      "downloads": 1394960,
       "manualUrl": "https://cran.r-project.org/web/packages/ps/refman/ps.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 47,
@@ -726,19 +736,9 @@
       ]
     },
     {
-      "rank": 37,
-      "package": "RColorBrewer",
-      "downloads": 1366579,
-      "manualUrl": "https://cran.r-project.org/web/packages/RColorBrewer/refman/RColorBrewer.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 1,
-      "exampleCharacters": 954,
-      "featureIds": ["subsetting", "extraction", "sequences-repetition", "matrices-arrays"]
-    },
-    {
       "rank": 38,
       "package": "labeling",
-      "downloads": 1331517,
+      "downloads": 1378023,
       "manualUrl": "https://cran.r-project.org/web/packages/labeling/refman/labeling.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 1,
@@ -747,18 +747,8 @@
     },
     {
       "rank": 39,
-      "package": "pkgbuild",
-      "downloads": 1285743,
-      "manualUrl": "https://cran.r-project.org/web/packages/pkgbuild/refman/pkgbuild.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 6,
-      "exampleCharacters": 485,
-      "featureIds": ["extraction", "conditionals", "names-attributes", "namespaces"]
-    },
-    {
-      "rank": 40,
       "package": "purrr",
-      "downloads": 1283147,
+      "downloads": 1319342,
       "manualUrl": "https://cran.r-project.org/web/packages/purrr/refman/purrr.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 54,
@@ -787,9 +777,9 @@
       ]
     },
     {
-      "rank": 41,
+      "rank": 40,
       "package": "xfun",
-      "downloads": 1280638,
+      "downloads": 1305720,
       "manualUrl": "https://cran.r-project.org/web/packages/xfun/refman/xfun.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 90,
@@ -817,9 +807,19 @@
       ]
     },
     {
+      "rank": 41,
+      "package": "pkgbuild",
+      "downloads": 1296216,
+      "manualUrl": "https://cran.r-project.org/web/packages/pkgbuild/refman/pkgbuild.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 6,
+      "exampleCharacters": 485,
+      "featureIds": ["extraction", "conditionals", "names-attributes", "namespaces"]
+    },
+    {
       "rank": 42,
       "package": "digest",
-      "downloads": 1220286,
+      "downloads": 1269154,
       "manualUrl": "https://cran.r-project.org/web/packages/digest/refman/digest.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 6,
@@ -840,18 +840,8 @@
     },
     {
       "rank": 43,
-      "package": "desc",
-      "downloads": 1198750,
-      "manualUrl": "https://cran.r-project.org/web/packages/desc/refman/desc.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 2,
-      "exampleCharacters": 420,
-      "featureIds": ["extraction"]
-    },
-    {
-      "rank": 44,
       "package": "stringr",
-      "downloads": 1191839,
+      "downloads": 1237835,
       "manualUrl": "https://cran.r-project.org/web/packages/stringr/refman/stringr.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 36,
@@ -870,9 +860,26 @@
       ]
     },
     {
+      "rank": 44,
+      "package": "tidyselect",
+      "downloads": 1232256,
+      "manualUrl": "https://cran.r-project.org/web/packages/tidyselect/refman/tidyselect.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 4,
+      "exampleCharacters": 3513,
+      "featureIds": [
+        "logical-operators",
+        "subsetting",
+        "names-attributes",
+        "sequences-repetition",
+        "ellipsis",
+        "replacement"
+      ]
+    },
+    {
       "rank": 45,
       "package": "tidyr",
-      "downloads": 1187745,
+      "downloads": 1223012,
       "manualUrl": "https://cran.r-project.org/web/packages/tidyr/refman/tidyr.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 31,
@@ -898,51 +905,80 @@
     },
     {
       "rank": 46,
-      "package": "tidyselect",
-      "downloads": 1183687,
-      "manualUrl": "https://cran.r-project.org/web/packages/tidyselect/refman/tidyselect.html",
+      "package": "desc",
+      "downloads": 1207145,
+      "manualUrl": "https://cran.r-project.org/web/packages/desc/refman/desc.html",
       "manualStatus": "analyzed",
-      "exampleBlockCount": 4,
-      "exampleCharacters": 3513,
-      "featureIds": [
-        "logical-operators",
-        "subsetting",
-        "names-attributes",
-        "sequences-repetition",
-        "ellipsis",
-        "replacement"
-      ]
+      "exampleBlockCount": 2,
+      "exampleCharacters": 420,
+      "featureIds": ["extraction"]
     },
     {
       "rank": 47,
-      "package": "gridExtra",
-      "downloads": 1169595,
-      "manualUrl": "https://cran.r-project.org/web/packages/gridExtra/refman/gridExtra.html",
+      "package": "stringi",
+      "downloads": 1199743,
+      "manualUrl": "https://cran.r-project.org/web/packages/stringi/refman/stringi.html",
       "manualStatus": "analyzed",
-      "exampleBlockCount": 3,
-      "exampleCharacters": 1203,
+      "exampleBlockCount": 73,
+      "exampleCharacters": 28775,
       "featureIds": [
+        "comparisons",
         "subsetting",
+        "extraction",
+        "lists",
         "sequences-repetition",
+        "data-frames",
+        "factors",
         "string-helpers",
+        "sorting-matching",
         "apply-family",
-        "random-numbers"
+        "random-numbers",
+        "dates-times",
+        "namespaces"
       ]
     },
     {
       "rank": 48,
-      "package": "BH",
-      "downloads": 1158447,
-      "manualUrl": "https://cran.r-project.org/web/packages/BH/refman/BH.html",
-      "manualStatus": "no-examples",
-      "exampleBlockCount": 0,
-      "exampleCharacters": 0,
-      "featureIds": []
+      "package": "mime",
+      "downloads": 1196987,
+      "manualUrl": "https://cran.r-project.org/web/packages/mime/refman/mime.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 2,
+      "exampleCharacters": 815,
+      "featureIds": ["subsetting", "lists", "namespaces"]
     },
     {
       "rank": 49,
+      "package": "htmltools",
+      "downloads": 1191778,
+      "manualUrl": "https://cran.r-project.org/web/packages/htmltools/refman/htmltools.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 17,
+      "exampleCharacters": 6161,
+      "featureIds": [
+        "logical-operators",
+        "extraction",
+        "conditionals",
+        "lists",
+        "string-helpers",
+        "namespaces",
+        "replacement"
+      ]
+    },
+    {
+      "rank": 50,
+      "package": "fastmap",
+      "downloads": 1186299,
+      "manualUrl": "https://cran.r-project.org/web/packages/fastmap/refman/fastmap.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 1,
+      "exampleCharacters": 851,
+      "featureIds": ["extraction"]
+    },
+    {
+      "rank": 51,
       "package": "knitr",
-      "downloads": 1157074,
+      "downloads": 1181687,
       "manualUrl": "https://cran.r-project.org/web/packages/knitr/refman/knitr.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 50,
@@ -968,71 +1004,62 @@
       ]
     },
     {
-      "rank": 50,
-      "package": "htmltools",
-      "downloads": 1154108,
-      "manualUrl": "https://cran.r-project.org/web/packages/htmltools/refman/htmltools.html",
+      "rank": 52,
+      "package": "gridExtra",
+      "downloads": 1181456,
+      "manualUrl": "https://cran.r-project.org/web/packages/gridExtra/refman/gridExtra.html",
       "manualStatus": "analyzed",
-      "exampleBlockCount": 17,
-      "exampleCharacters": 6161,
+      "exampleBlockCount": 3,
+      "exampleCharacters": 1203,
       "featureIds": [
-        "logical-operators",
-        "extraction",
-        "conditionals",
-        "lists",
+        "subsetting",
+        "sequences-repetition",
         "string-helpers",
-        "namespaces",
-        "replacement"
+        "apply-family",
+        "random-numbers"
       ]
     },
     {
-      "rank": 51,
-      "package": "stringi",
-      "downloads": 1147813,
-      "manualUrl": "https://cran.r-project.org/web/packages/stringi/refman/stringi.html",
+      "rank": 53,
+      "package": "BH",
+      "downloads": 1173042,
+      "manualUrl": "https://cran.r-project.org/web/packages/BH/refman/BH.html",
+      "manualStatus": "no-examples",
+      "exampleBlockCount": 0,
+      "exampleCharacters": 0,
+      "featureIds": []
+    },
+    {
+      "rank": 54,
+      "package": "base64enc",
+      "downloads": 1143859,
+      "manualUrl": "https://cran.r-project.org/web/packages/base64enc/refman/base64enc.html",
       "manualStatus": "analyzed",
-      "exampleBlockCount": 73,
-      "exampleCharacters": 28775,
+      "exampleBlockCount": 2,
+      "exampleCharacters": 596,
+      "featureIds": ["conditionals", "sequences-repetition", "matrices-arrays"]
+    },
+    {
+      "rank": 55,
+      "package": "crayon",
+      "downloads": 1141932,
+      "manualUrl": "https://cran.r-project.org/web/packages/crayon/refman/crayon.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 19,
+      "exampleCharacters": 3758,
       "featureIds": [
         "comparisons",
         "subsetting",
         "extraction",
-        "lists",
+        "names-attributes",
         "sequences-repetition",
-        "data-frames",
-        "factors",
-        "string-helpers",
-        "sorting-matching",
-        "apply-family",
-        "random-numbers",
-        "dates-times",
-        "namespaces"
+        "string-helpers"
       ]
     },
     {
-      "rank": 52,
-      "package": "mime",
-      "downloads": 1147708,
-      "manualUrl": "https://cran.r-project.org/web/packages/mime/refman/mime.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 2,
-      "exampleCharacters": 815,
-      "featureIds": ["subsetting", "lists", "namespaces"]
-    },
-    {
-      "rank": 53,
-      "package": "fastmap",
-      "downloads": 1132038,
-      "manualUrl": "https://cran.r-project.org/web/packages/fastmap/refman/fastmap.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 1,
-      "exampleCharacters": 851,
-      "featureIds": ["extraction"]
-    },
-    {
-      "rank": 54,
+      "rank": 56,
       "package": "yaml",
-      "downloads": 1110864,
+      "downloads": 1138033,
       "manualUrl": "https://cran.r-project.org/web/packages/yaml/refman/yaml.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 5,
@@ -1050,9 +1077,9 @@
       ]
     },
     {
-      "rank": 55,
+      "rank": 57,
       "package": "evaluate",
-      "downloads": 1105343,
+      "downloads": 1132886,
       "manualUrl": "https://cran.r-project.org/web/packages/evaluate/refman/evaluate.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 6,
@@ -1060,36 +1087,9 @@
       "featureIds": ["extraction", "lists", "sequences-repetition", "namespaces", "ellipsis"]
     },
     {
-      "rank": 56,
-      "package": "base64enc",
-      "downloads": 1104851,
-      "manualUrl": "https://cran.r-project.org/web/packages/base64enc/refman/base64enc.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 2,
-      "exampleCharacters": 596,
-      "featureIds": ["conditionals", "sequences-repetition", "matrices-arrays"]
-    },
-    {
-      "rank": 57,
-      "package": "crayon",
-      "downloads": 1101546,
-      "manualUrl": "https://cran.r-project.org/web/packages/crayon/refman/crayon.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 19,
-      "exampleCharacters": 3758,
-      "featureIds": [
-        "comparisons",
-        "subsetting",
-        "extraction",
-        "names-attributes",
-        "sequences-repetition",
-        "string-helpers"
-      ]
-    },
-    {
       "rank": 58,
       "package": "cachem",
-      "downloads": 1091219,
+      "downloads": 1126464,
       "manualUrl": "https://cran.r-project.org/web/packages/cachem/refman/cachem.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 1,
@@ -1099,7 +1099,7 @@
     {
       "rank": 59,
       "package": "backports",
-      "downloads": 1090631,
+      "downloads": 1112829,
       "manualUrl": "https://cran.r-project.org/web/packages/backports/refman/backports.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 37,
@@ -1118,7 +1118,7 @@
     {
       "rank": 60,
       "package": "tinytex",
-      "downloads": 1090311,
+      "downloads": 1112034,
       "manualUrl": "https://cran.r-project.org/web/packages/tinytex/refman/tinytex.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 4,
@@ -1127,8 +1127,18 @@
     },
     {
       "rank": 61,
+      "package": "RcppParallel",
+      "downloads": 1098898,
+      "manualUrl": "https://cran.r-project.org/web/packages/RcppParallel/refman/RcppParallel.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 3,
+      "exampleCharacters": 348,
+      "featureIds": ["sequences-repetition", "namespaces"]
+    },
+    {
+      "rank": 62,
       "package": "pkgload",
-      "downloads": 1084959,
+      "downloads": 1096644,
       "manualUrl": "https://cran.r-project.org/web/packages/pkgload/refman/pkgload.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 11,
@@ -1136,19 +1146,9 @@
       "featureIds": ["conditionals", "lists"]
     },
     {
-      "rank": 62,
-      "package": "highr",
-      "downloads": 1069192,
-      "manualUrl": "https://cran.r-project.org/web/packages/highr/refman/highr.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 2,
-      "exampleCharacters": 498,
-      "featureIds": ["namespaces"]
-    },
-    {
       "rank": 63,
       "package": "memoise",
-      "downloads": 1062003,
+      "downloads": 1096109,
       "manualUrl": "https://cran.r-project.org/web/packages/memoise/refman/memoise.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 9,
@@ -1157,8 +1157,18 @@
     },
     {
       "rank": 64,
+      "package": "highr",
+      "downloads": 1093276,
+      "manualUrl": "https://cran.r-project.org/web/packages/highr/refman/highr.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 2,
+      "exampleCharacters": 498,
+      "featureIds": ["namespaces"]
+    },
+    {
+      "rank": 65,
       "package": "jquerylib",
-      "downloads": 1059746,
+      "downloads": 1087356,
       "manualUrl": "https://cran.r-project.org/web/packages/jquerylib/refman/jquerylib.html",
       "manualStatus": "no-examples",
       "exampleBlockCount": 0,
@@ -1166,9 +1176,9 @@
       "featureIds": []
     },
     {
-      "rank": 65,
+      "rank": 66,
       "package": "fontawesome",
-      "downloads": 1045061,
+      "downloads": 1072289,
       "manualUrl": "https://cran.r-project.org/web/packages/fontawesome/refman/fontawesome.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 5,
@@ -1176,9 +1186,9 @@
       "featureIds": ["conditionals"]
     },
     {
-      "rank": 66,
+      "rank": 67,
       "package": "rappdirs",
-      "downloads": 1040401,
+      "downloads": 1071381,
       "manualUrl": "https://cran.r-project.org/web/packages/rappdirs/refman/rappdirs.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 4,
@@ -1186,9 +1196,9 @@
       "featureIds": ["extraction"]
     },
     {
-      "rank": 67,
+      "rank": 68,
       "package": "testthat",
-      "downloads": 1027644,
+      "downloads": 1040421,
       "manualUrl": "https://cran.r-project.org/web/packages/testthat/refman/testthat.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 41,
@@ -1214,19 +1224,9 @@
       ]
     },
     {
-      "rank": 68,
-      "package": "RcppParallel",
-      "downloads": 1021787,
-      "manualUrl": "https://cran.r-project.org/web/packages/RcppParallel/refman/RcppParallel.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 3,
-      "exampleCharacters": 348,
-      "featureIds": ["sequences-repetition", "namespaces"]
-    },
-    {
       "rank": 69,
       "package": "checkmate",
-      "downloads": 949253,
+      "downloads": 963732,
       "manualUrl": "https://cran.r-project.org/web/packages/checkmate/refman/checkmate.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 60,
@@ -1252,7 +1252,7 @@
     {
       "rank": 70,
       "package": "abind",
-      "downloads": 922859,
+      "downloads": 941645,
       "manualUrl": "https://cran.r-project.org/web/packages/abind/refman/abind.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 5,
@@ -1268,8 +1268,46 @@
     },
     {
       "rank": 71,
+      "package": "openssl",
+      "downloads": 925846,
+      "manualUrl": "https://cran.r-project.org/web/packages/openssl/refman/openssl.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 17,
+      "exampleCharacters": 6829,
+      "featureIds": [
+        "comparisons",
+        "extraction",
+        "conditionals",
+        "lists",
+        "sequences-repetition",
+        "namespaces"
+      ]
+    },
+    {
+      "rank": 72,
+      "package": "htmlwidgets",
+      "downloads": 902421,
+      "manualUrl": "https://cran.r-project.org/web/packages/htmlwidgets/refman/htmlwidgets.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 4,
+      "exampleCharacters": 1788,
+      "featureIds": [
+        "comparisons",
+        "logical-operators",
+        "extraction",
+        "conditionals",
+        "lists",
+        "sequences-repetition",
+        "pipes",
+        "data-frames",
+        "statistics",
+        "namespaces"
+      ]
+    },
+    {
+      "rank": 73,
       "package": "matrixStats",
-      "downloads": 888558,
+      "downloads": 901775,
       "manualUrl": "https://cran.r-project.org/web/packages/matrixStats/refman/matrixStats.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 24,
@@ -1291,26 +1329,9 @@
       ]
     },
     {
-      "rank": 72,
-      "package": "openssl",
-      "downloads": 888172,
-      "manualUrl": "https://cran.r-project.org/web/packages/openssl/refman/openssl.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 17,
-      "exampleCharacters": 6829,
-      "featureIds": [
-        "comparisons",
-        "extraction",
-        "conditionals",
-        "lists",
-        "sequences-repetition",
-        "namespaces"
-      ]
-    },
-    {
-      "rank": 73,
+      "rank": 74,
       "package": "numDeriv",
-      "downloads": 882523,
+      "downloads": 898716,
       "manualUrl": "https://cran.r-project.org/web/packages/numDeriv/refman/numDeriv.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 4,
@@ -1327,9 +1348,19 @@
       ]
     },
     {
-      "rank": 74,
+      "rank": 75,
+      "package": "textshaping",
+      "downloads": 893351,
+      "manualUrl": "https://cran.r-project.org/web/packages/textshaping/refman/textshaping.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 5,
+      "exampleCharacters": 886,
+      "featureIds": ["subsetting", "extraction", "matrices-arrays", "random-numbers", "namespaces"]
+    },
+    {
+      "rank": 76,
       "package": "systemfonts",
-      "downloads": 880006,
+      "downloads": 889961,
       "manualUrl": "https://cran.r-project.org/web/packages/systemfonts/refman/systemfonts.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 21,
@@ -1346,40 +1377,19 @@
       ]
     },
     {
-      "rank": 75,
-      "package": "textshaping",
-      "downloads": 878917,
-      "manualUrl": "https://cran.r-project.org/web/packages/textshaping/refman/textshaping.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 5,
-      "exampleCharacters": 886,
-      "featureIds": ["subsetting", "extraction", "matrices-arrays", "random-numbers", "namespaces"]
-    },
-    {
-      "rank": 76,
-      "package": "htmlwidgets",
-      "downloads": 876951,
-      "manualUrl": "https://cran.r-project.org/web/packages/htmlwidgets/refman/htmlwidgets.html",
+      "rank": 77,
+      "package": "tidyverse",
+      "downloads": 878803,
+      "manualUrl": "https://cran.r-project.org/web/packages/tidyverse/refman/tidyverse.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 4,
-      "exampleCharacters": 1788,
-      "featureIds": [
-        "comparisons",
-        "logical-operators",
-        "extraction",
-        "conditionals",
-        "lists",
-        "sequences-repetition",
-        "pipes",
-        "data-frames",
-        "statistics",
-        "namespaces"
-      ]
+      "exampleCharacters": 112,
+      "featureIds": []
     },
     {
-      "rank": 77,
+      "rank": 78,
       "package": "loo",
-      "downloads": 866282,
+      "downloads": 870861,
       "manualUrl": "https://cran.r-project.org/web/packages/loo/refman/loo.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 20,
@@ -1403,46 +1413,9 @@
       ]
     },
     {
-      "rank": 78,
-      "package": "tidyverse",
-      "downloads": 862941,
-      "manualUrl": "https://cran.r-project.org/web/packages/tidyverse/refman/tidyverse.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 4,
-      "exampleCharacters": 112,
-      "featureIds": []
-    },
-    {
       "rank": 79,
-      "package": "posterior",
-      "downloads": 836518,
-      "manualUrl": "https://cran.r-project.org/web/packages/posterior/refman/posterior.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 79,
-      "exampleCharacters": 20171,
-      "featureIds": [
-        "comparisons",
-        "logical-operators",
-        "subsetting",
-        "extraction",
-        "conditionals",
-        "lists",
-        "names-attributes",
-        "sequences-repetition",
-        "formulas",
-        "data-frames",
-        "matrices-arrays",
-        "factors",
-        "string-helpers",
-        "statistics",
-        "random-numbers",
-        "namespaces"
-      ]
-    },
-    {
-      "rank": 80,
       "package": "data.table",
-      "downloads": 835089,
+      "downloads": 864145,
       "manualUrl": "https://cran.r-project.org/web/packages/data.table/refman/data.table.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 75,
@@ -1474,52 +1447,9 @@
       ]
     },
     {
-      "rank": 81,
-      "package": "distributional",
-      "downloads": 834924,
-      "manualUrl": "https://cran.r-project.org/web/packages/distributional/refman/distributional.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 55,
-      "exampleCharacters": 13999,
-      "featureIds": [
-        "subsetting",
-        "extraction",
-        "conditionals",
-        "lists",
-        "names-attributes",
-        "sequences-repetition",
-        "matrices-arrays",
-        "factors",
-        "apply-family",
-        "statistics",
-        "random-numbers",
-        "namespaces"
-      ]
-    },
-    {
-      "rank": 82,
-      "package": "ragg",
-      "downloads": 826418,
-      "manualUrl": "https://cran.r-project.org/web/packages/ragg/refman/ragg.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 8,
-      "exampleCharacters": 1061,
-      "featureIds": ["loops", "sequences-repetition"]
-    },
-    {
-      "rank": 83,
-      "package": "rprojroot",
-      "downloads": 824229,
-      "manualUrl": "https://cran.r-project.org/web/packages/rprojroot/refman/rprojroot.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 5,
-      "exampleCharacters": 699,
-      "featureIds": ["extraction"]
-    },
-    {
-      "rank": 84,
+      "rank": 80,
       "package": "shiny",
-      "downloads": 818794,
+      "downloads": 843616,
       "manualUrl": "https://cran.r-project.org/web/packages/shiny/refman/shiny.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 117,
@@ -1549,19 +1479,56 @@
       ]
     },
     {
-      "rank": 85,
-      "package": "xml2",
-      "downloads": 813313,
-      "manualUrl": "https://cran.r-project.org/web/packages/xml2/refman/xml2.html",
+      "rank": 81,
+      "package": "ragg",
+      "downloads": 843009,
+      "manualUrl": "https://cran.r-project.org/web/packages/ragg/refman/ragg.html",
       "manualStatus": "analyzed",
-      "exampleBlockCount": 24,
-      "exampleCharacters": 8097,
-      "featureIds": ["extraction", "lists", "names-attributes"]
+      "exampleBlockCount": 8,
+      "exampleCharacters": 1061,
+      "featureIds": ["loops", "sequences-repetition"]
     },
     {
-      "rank": 86,
+      "rank": 82,
+      "package": "posterior",
+      "downloads": 838867,
+      "manualUrl": "https://cran.r-project.org/web/packages/posterior/refman/posterior.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 79,
+      "exampleCharacters": 20171,
+      "featureIds": [
+        "comparisons",
+        "logical-operators",
+        "subsetting",
+        "extraction",
+        "conditionals",
+        "lists",
+        "names-attributes",
+        "sequences-repetition",
+        "formulas",
+        "data-frames",
+        "matrices-arrays",
+        "factors",
+        "string-helpers",
+        "statistics",
+        "random-numbers",
+        "namespaces"
+      ]
+    },
+    {
+      "rank": 83,
+      "package": "rprojroot",
+      "downloads": 838555,
+      "manualUrl": "https://cran.r-project.org/web/packages/rprojroot/refman/rprojroot.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 5,
+      "exampleCharacters": 699,
+      "featureIds": ["extraction"]
+    },
+    {
+      "rank": 84,
       "package": "httr",
-      "downloads": 810807,
+      "downloads": 836708,
       "manualUrl": "https://cran.r-project.org/web/packages/httr/refman/httr.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 45,
@@ -1580,9 +1547,42 @@
       ]
     },
     {
+      "rank": 85,
+      "package": "distributional",
+      "downloads": 836291,
+      "manualUrl": "https://cran.r-project.org/web/packages/distributional/refman/distributional.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 55,
+      "exampleCharacters": 13999,
+      "featureIds": [
+        "subsetting",
+        "extraction",
+        "conditionals",
+        "lists",
+        "names-attributes",
+        "sequences-repetition",
+        "matrices-arrays",
+        "factors",
+        "apply-family",
+        "statistics",
+        "random-numbers",
+        "namespaces"
+      ]
+    },
+    {
+      "rank": 86,
+      "package": "xml2",
+      "downloads": 831076,
+      "manualUrl": "https://cran.r-project.org/web/packages/xml2/refman/xml2.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 24,
+      "exampleCharacters": 8097,
+      "featureIds": ["extraction", "lists", "names-attributes"]
+    },
+    {
       "rank": 87,
       "package": "rstudioapi",
-      "downloads": 795076,
+      "downloads": 809771,
       "manualUrl": "https://cran.r-project.org/web/packages/rstudioapi/refman/rstudioapi.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 29,
@@ -1602,7 +1602,7 @@
     {
       "rank": 88,
       "package": "commonmark",
-      "downloads": 781786,
+      "downloads": 796981,
       "manualUrl": "https://cran.r-project.org/web/packages/commonmark/refman/commonmark.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 2,
@@ -1611,18 +1611,34 @@
     },
     {
       "rank": 89,
-      "package": "waldo",
-      "downloads": 765593,
-      "manualUrl": "https://cran.r-project.org/web/packages/waldo/refman/waldo.html",
+      "package": "askpass",
+      "downloads": 788206,
+      "manualUrl": "https://cran.r-project.org/web/packages/askpass/refman/askpass.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 1,
-      "exampleCharacters": 709,
-      "featureIds": ["subsetting", "lists", "names-attributes"]
+      "exampleCharacters": 71,
+      "featureIds": []
     },
     {
       "rank": 90,
+      "package": "sys",
+      "downloads": 781101,
+      "manualUrl": "https://cran.r-project.org/web/packages/sys/refman/sys.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 2,
+      "exampleCharacters": 608,
+      "featureIds": [
+        "extraction",
+        "conditionals",
+        "string-helpers",
+        "sorting-matching",
+        "namespaces"
+      ]
+    },
+    {
+      "rank": 91,
       "package": "diffobj",
-      "downloads": 764817,
+      "downloads": 777944,
       "manualUrl": "https://cran.r-project.org/web/packages/diffobj/refman/diffobj.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 27,
@@ -1645,19 +1661,19 @@
       ]
     },
     {
-      "rank": 91,
-      "package": "askpass",
-      "downloads": 753246,
-      "manualUrl": "https://cran.r-project.org/web/packages/askpass/refman/askpass.html",
+      "rank": 92,
+      "package": "waldo",
+      "downloads": 774074,
+      "manualUrl": "https://cran.r-project.org/web/packages/waldo/refman/waldo.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 1,
-      "exampleCharacters": 71,
-      "featureIds": []
+      "exampleCharacters": 709,
+      "featureIds": ["subsetting", "lists", "names-attributes"]
     },
     {
-      "rank": 92,
+      "rank": 93,
       "package": "httpuv",
-      "downloads": 748745,
+      "downloads": 770373,
       "manualUrl": "https://cran.r-project.org/web/packages/httpuv/refman/httpuv.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 12,
@@ -1665,25 +1681,9 @@
       "featureIds": ["extraction", "loops", "lists", "string-helpers", "random-numbers"]
     },
     {
-      "rank": 93,
-      "package": "sys",
-      "downloads": 745370,
-      "manualUrl": "https://cran.r-project.org/web/packages/sys/refman/sys.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 2,
-      "exampleCharacters": 608,
-      "featureIds": [
-        "extraction",
-        "conditionals",
-        "string-helpers",
-        "sorting-matching",
-        "namespaces"
-      ]
-    },
-    {
       "rank": 94,
       "package": "later",
-      "downloads": 743316,
+      "downloads": 769956,
       "manualUrl": "https://cran.r-project.org/web/packages/later/refman/later.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 2,
@@ -1693,7 +1693,7 @@
     {
       "rank": 95,
       "package": "promises",
-      "downloads": 737779,
+      "downloads": 764285,
       "manualUrl": "https://cran.r-project.org/web/packages/promises/refman/promises.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 9,
@@ -1716,18 +1716,8 @@
     },
     {
       "rank": 96,
-      "package": "brio",
-      "downloads": 730801,
-      "manualUrl": "https://cran.r-project.org/web/packages/brio/refman/brio.html",
-      "manualStatus": "analyzed",
-      "exampleBlockCount": 8,
-      "exampleCharacters": 1292,
-      "featureIds": ["names-attributes"]
-    },
-    {
-      "rank": 97,
       "package": "readxl",
-      "downloads": 728221,
+      "downloads": 741788,
       "manualUrl": "https://cran.r-project.org/web/packages/readxl/refman/readxl.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 5,
@@ -1742,19 +1732,19 @@
       ]
     },
     {
-      "rank": 98,
-      "package": "QuickJSR",
-      "downloads": 725681,
-      "manualUrl": "https://cran.r-project.org/web/packages/QuickJSR/refman/QuickJSR.html",
+      "rank": 97,
+      "package": "brio",
+      "downloads": 739550,
+      "manualUrl": "https://cran.r-project.org/web/packages/brio/refman/brio.html",
       "manualStatus": "analyzed",
-      "exampleBlockCount": 6,
-      "exampleCharacters": 683,
-      "featureIds": ["extraction"]
+      "exampleBlockCount": 8,
+      "exampleCharacters": 1292,
+      "featureIds": ["names-attributes"]
     },
     {
-      "rank": 99,
+      "rank": 98,
       "package": "zoo",
-      "downloads": 717497,
+      "downloads": 731390,
       "manualUrl": "https://cran.r-project.org/web/packages/zoo/refman/zoo.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 30,
@@ -1782,274 +1772,4122 @@
       ]
     },
     {
-      "rank": 100,
-      "package": "inline",
-      "downloads": 715964,
-      "manualUrl": "https://cran.r-project.org/web/packages/inline/refman/inline.html",
+      "rank": 99,
+      "package": "QuickJSR",
+      "downloads": 726940,
+      "manualUrl": "https://cran.r-project.org/web/packages/QuickJSR/refman/QuickJSR.html",
       "manualStatus": "analyzed",
       "exampleBlockCount": 6,
-      "exampleCharacters": 5811,
+      "exampleCharacters": 683,
+      "featureIds": ["extraction"]
+    },
+    {
+      "rank": 100,
+      "package": "bit64",
+      "downloads": 722206,
+      "manualUrl": "https://cran.r-project.org/web/packages/bit64/refman/bit64.html",
+      "manualStatus": "analyzed",
+      "exampleBlockCount": 40,
+      "exampleCharacters": 21098,
       "featureIds": [
+        "comparisons",
+        "logical-operators",
         "subsetting",
         "extraction",
         "conditionals",
+        "loops",
         "lists",
+        "names-attributes",
         "sequences-repetition",
+        "data-frames",
         "matrices-arrays",
-        "random-numbers"
+        "factors",
+        "string-helpers",
+        "sorting-matching",
+        "apply-family",
+        "statistics",
+        "random-numbers",
+        "namespaces",
+        "replacement"
       ]
     }
   ],
   "features": [
     {
-      "id": "extraction",
-      "label": "Element/member extraction [[ and $",
-      "status": "parsed",
-      "packageCount": 66,
-      "downloadCount": 83147934,
-      "packageReach": 0.680412,
-      "downloadReach": 0.691473,
+      "id": "sequences-repetition",
+      "label": "Sequences and repetition",
+      "status": "supported",
+      "packageCount": 63,
+      "downloadCount": 85430651,
+      "packageReach": 0.649485,
+      "downloadReach": 0.69078,
       "priority": "P0"
     },
     {
-      "id": "sequences-repetition",
-      "label": "Sequences and repetition",
-      "status": "unsupported",
-      "packageCount": 63,
-      "downloadCount": 82978039,
-      "packageReach": 0.649485,
-      "downloadReach": 0.69006,
+      "id": "extraction",
+      "label": "Element/member extraction [[ and $",
+      "status": "supported",
+      "packageCount": 66,
+      "downloadCount": 85413716,
+      "packageReach": 0.680412,
+      "downloadReach": 0.690643,
       "priority": "P0"
     },
     {
       "id": "subsetting",
       "label": "Vector/list subsetting [",
-      "status": "parsed",
+      "status": "supported",
       "packageCount": 56,
-      "downloadCount": 74983082,
+      "downloadCount": 77086161,
       "packageReach": 0.57732,
-      "downloadReach": 0.623572,
-      "priority": "P1"
-    },
-    {
-      "id": "lists",
-      "label": "Lists",
-      "status": "unsupported",
-      "packageCount": 57,
-      "downloadCount": 73840434,
-      "packageReach": 0.587629,
-      "downloadReach": 0.61407,
+      "downloadReach": 0.623307,
       "priority": "P1"
     },
     {
       "id": "namespaces",
       "label": "Namespace access",
-      "status": "parsed",
-      "packageCount": 55,
-      "downloadCount": 73307401,
-      "packageReach": 0.56701,
-      "downloadReach": 0.609637,
+      "status": "supported",
+      "packageCount": 56,
+      "downloadCount": 76240527,
+      "packageReach": 0.57732,
+      "downloadReach": 0.61647,
+      "priority": "P1"
+    },
+    {
+      "id": "lists",
+      "label": "Lists",
+      "status": "supported",
+      "packageCount": 57,
+      "downloadCount": 75976016,
+      "packageReach": 0.587629,
+      "downloadReach": 0.614331,
       "priority": "P1"
     },
     {
       "id": "conditionals",
       "label": "if / else",
-      "status": "parsed",
+      "status": "supported",
       "packageCount": 46,
-      "downloadCount": 60789744,
+      "downloadCount": 62571868,
       "packageReach": 0.474227,
-      "downloadReach": 0.505538,
-      "priority": "P1"
-    },
-    {
-      "id": "random-numbers",
-      "label": "Random numbers and sampling",
-      "status": "unsupported",
-      "packageCount": 40,
-      "downloadCount": 53428946,
-      "packageReach": 0.412371,
-      "downloadReach": 0.444324,
+      "downloadReach": 0.505947,
       "priority": "P1"
     },
     {
       "id": "string-helpers",
       "label": "String helpers",
-      "status": "unsupported",
-      "packageCount": 39,
-      "downloadCount": 52858280,
-      "packageReach": 0.402062,
-      "downloadReach": 0.439579,
+      "status": "supported",
+      "packageCount": 40,
+      "downloadCount": 55122581,
+      "packageReach": 0.412371,
+      "downloadReach": 0.445713,
+      "priority": "P1"
+    },
+    {
+      "id": "random-numbers",
+      "label": "Random numbers and sampling",
+      "status": "supported",
+      "packageCount": 40,
+      "downloadCount": 54914863,
+      "packageReach": 0.412371,
+      "downloadReach": 0.444033,
       "priority": "P1"
     },
     {
       "id": "comparisons",
       "label": "Comparison operators",
-      "status": "unsupported",
-      "packageCount": 39,
-      "downloadCount": 51835937,
-      "packageReach": 0.402062,
-      "downloadReach": 0.431077,
+      "status": "supported",
+      "packageCount": 40,
+      "downloadCount": 54110867,
+      "packageReach": 0.412371,
+      "downloadReach": 0.437532,
       "priority": "P1"
     },
     {
       "id": "matrices-arrays",
       "label": "Matrices, arrays, and dimensions",
-      "status": "unsupported",
+      "status": "supported",
       "packageCount": 40,
-      "downloadCount": 51523472,
+      "downloadCount": 52862557,
       "packageReach": 0.412371,
-      "downloadReach": 0.428478,
+      "downloadReach": 0.427439,
       "priority": "P1"
     },
     {
       "id": "names-attributes",
       "label": "Names and attributes",
-      "status": "unsupported",
-      "packageCount": 37,
-      "downloadCount": 47908078,
-      "packageReach": 0.381443,
-      "downloadReach": 0.398412,
-      "priority": "P2"
+      "status": "supported",
+      "packageCount": 38,
+      "downloadCount": 49897237,
+      "packageReach": 0.391753,
+      "downloadReach": 0.403462,
+      "priority": "P1"
     },
     {
       "id": "statistics",
       "label": "Descriptive statistics",
-      "status": "partial",
-      "packageCount": 30,
-      "downloadCount": 40471226,
-      "packageReach": 0.309278,
-      "downloadReach": 0.336566,
+      "status": "supported",
+      "packageCount": 31,
+      "downloadCount": 42186899,
+      "packageReach": 0.319588,
+      "downloadReach": 0.341117,
       "priority": "P2"
     },
     {
       "id": "logical-operators",
       "label": "Logical operators",
-      "status": "partial",
-      "packageCount": 28,
-      "downloadCount": 38661149,
-      "packageReach": 0.28866,
-      "downloadReach": 0.321513,
+      "status": "supported",
+      "packageCount": 29,
+      "downloadCount": 40548918,
+      "packageReach": 0.298969,
+      "downloadReach": 0.327873,
       "priority": "P2"
     },
     {
       "id": "data-frames",
       "label": "Data frames",
-      "status": "unsupported",
-      "packageCount": 27,
-      "downloadCount": 37031730,
-      "packageReach": 0.278351,
-      "downloadReach": 0.307962,
+      "status": "supported",
+      "packageCount": 28,
+      "downloadCount": 38785481,
+      "packageReach": 0.28866,
+      "downloadReach": 0.313614,
       "priority": "P2"
     },
     {
       "id": "replacement",
       "label": "Replacement assignment",
-      "status": "unsupported",
-      "packageCount": 24,
-      "downloadCount": 35002911,
-      "packageReach": 0.247423,
-      "downloadReach": 0.29109,
+      "status": "supported",
+      "packageCount": 25,
+      "downloadCount": 36857202,
+      "packageReach": 0.257732,
+      "downloadReach": 0.298022,
       "priority": "P2"
     },
     {
       "id": "dates-times",
       "label": "Dates and times",
-      "status": "unsupported",
+      "status": "supported",
       "packageCount": 23,
-      "downloadCount": 32228046,
+      "downloadCount": 33184181,
       "packageReach": 0.237113,
-      "downloadReach": 0.268014,
+      "downloadReach": 0.268322,
       "priority": "P2"
     },
     {
       "id": "apply-family",
       "label": "Apply/map family",
-      "status": "unsupported",
-      "packageCount": 24,
-      "downloadCount": 31407041,
-      "packageReach": 0.247423,
-      "downloadReach": 0.261186,
+      "status": "supported",
+      "packageCount": 25,
+      "downloadCount": 32963964,
+      "packageReach": 0.257732,
+      "downloadReach": 0.266542,
       "priority": "P2"
     },
     {
       "id": "ellipsis",
       "label": "Ellipsis arguments",
-      "status": "unsupported",
+      "status": "supported",
       "packageCount": 21,
-      "downloadCount": 29766402,
+      "downloadCount": 30717076,
       "packageReach": 0.216495,
-      "downloadReach": 0.247543,
+      "downloadReach": 0.248374,
       "priority": "P2"
     },
     {
       "id": "factors",
       "label": "Factors",
-      "status": "unsupported",
-      "packageCount": 20,
-      "downloadCount": 28394565,
-      "packageReach": 0.206186,
-      "downloadReach": 0.236134,
+      "status": "supported",
+      "packageCount": 21,
+      "downloadCount": 29866241,
+      "packageReach": 0.216495,
+      "downloadReach": 0.241494,
       "priority": "P2"
     },
     {
       "id": "loops",
       "label": "for / while / repeat",
-      "status": "parsed",
-      "packageCount": 19,
-      "downloadCount": 26250367,
-      "packageReach": 0.195876,
-      "downloadReach": 0.218303,
+      "status": "supported",
+      "packageCount": 20,
+      "downloadCount": 27802690,
+      "packageReach": 0.206186,
+      "downloadReach": 0.224808,
       "priority": "P2"
     },
     {
       "id": "formulas",
       "label": "Formulas",
-      "status": "parsed",
+      "status": "supported",
       "packageCount": 19,
-      "downloadCount": 24836558,
+      "downloadCount": 25456062,
       "packageReach": 0.195876,
-      "downloadReach": 0.206545,
+      "downloadReach": 0.205834,
       "priority": "P2"
     },
     {
       "id": "sorting-matching",
       "label": "Sorting and matching",
-      "status": "unsupported",
-      "packageCount": 12,
-      "downloadCount": 16144414,
-      "packageReach": 0.123711,
-      "downloadReach": 0.13426,
+      "status": "supported",
+      "packageCount": 13,
+      "downloadCount": 17260926,
+      "packageReach": 0.134021,
+      "downloadReach": 0.139569,
       "priority": "P3"
     },
     {
       "id": "pipes",
       "label": "Native and magrittr pipes",
-      "status": "parsed",
+      "status": "supported",
       "packageCount": 11,
-      "downloadCount": 16044032,
+      "downloadCount": 16640355,
       "packageReach": 0.113402,
-      "downloadReach": 0.133425,
+      "downloadReach": 0.134551,
       "priority": "P3"
     },
     {
       "id": "return",
       "label": "return",
-      "status": "parsed",
+      "status": "supported",
       "packageCount": 10,
-      "downloadCount": 15285888,
+      "downloadCount": 15783409,
       "packageReach": 0.103093,
-      "downloadReach": 0.12712,
+      "downloadReach": 0.127622,
       "priority": "P3"
     },
     {
       "id": "object-systems",
       "label": "S3/S4/R6/S7 object systems",
-      "status": "unsupported",
+      "status": "supported",
       "packageCount": 8,
-      "downloadCount": 12694191,
+      "downloadCount": 13168746,
       "packageReach": 0.082474,
-      "downloadReach": 0.105567,
+      "downloadReach": 0.106481,
       "priority": "P3"
+    }
+  ],
+  "calls": [
+    {
+      "name": "c",
+      "packageCount": 74,
+      "downloadCount": 97992858,
+      "occurrenceCount": 2337,
+      "packageReach": 0.762887,
+      "downloadReach": 0.792356
+    },
+    {
+      "name": "list",
+      "packageCount": 54,
+      "downloadCount": 72756539,
+      "occurrenceCount": 958,
+      "packageReach": 0.556701,
+      "downloadReach": 0.588299
+    },
+    {
+      "name": "library",
+      "packageCount": 35,
+      "downloadCount": 45728297,
+      "occurrenceCount": 170,
+      "packageReach": 0.360825,
+      "downloadReach": 0.369752
+    },
+    {
+      "name": "print",
+      "packageCount": 34,
+      "downloadCount": 42902831,
+      "occurrenceCount": 288,
+      "packageReach": 0.350515,
+      "downloadReach": 0.346906
+    },
+    {
+      "name": "cat",
+      "packageCount": 32,
+      "downloadCount": 41595691,
+      "occurrenceCount": 187,
+      "packageReach": 0.329897,
+      "downloadReach": 0.336337
+    },
+    {
+      "name": "runif",
+      "packageCount": 26,
+      "downloadCount": 36286746,
+      "occurrenceCount": 99,
+      "packageReach": 0.268041,
+      "downloadReach": 0.293409
+    },
+    {
+      "name": "data.frame",
+      "packageCount": 26,
+      "downloadCount": 36095954,
+      "occurrenceCount": 162,
+      "packageReach": 0.268041,
+      "downloadReach": 0.291867
+    },
+    {
+      "name": "str",
+      "packageCount": 29,
+      "downloadCount": 35689790,
+      "occurrenceCount": 167,
+      "packageReach": 0.298969,
+      "downloadReach": 0.288582
+    },
+    {
+      "name": "matrix",
+      "packageCount": 27,
+      "downloadCount": 35561723,
+      "occurrenceCount": 109,
+      "packageReach": 0.278351,
+      "downloadReach": 0.287547
+    },
+    {
+      "name": "rnorm",
+      "packageCount": 25,
+      "downloadCount": 34538858,
+      "occurrenceCount": 203,
+      "packageReach": 0.257732,
+      "downloadReach": 0.279276
+    },
+    {
+      "name": "tempfile",
+      "packageCount": 26,
+      "downloadCount": 32975674,
+      "occurrenceCount": 69,
+      "packageReach": 0.268041,
+      "downloadReach": 0.266636
+    },
+    {
+      "name": "paste",
+      "packageCount": 22,
+      "downloadCount": 32394143,
+      "occurrenceCount": 136,
+      "packageReach": 0.226804,
+      "downloadReach": 0.261934
+    },
+    {
+      "name": "rep",
+      "packageCount": 24,
+      "downloadCount": 31942974,
+      "occurrenceCount": 156,
+      "packageReach": 0.247423,
+      "downloadReach": 0.258286
+    },
+    {
+      "name": "head",
+      "packageCount": 21,
+      "downloadCount": 31006274,
+      "occurrenceCount": 69,
+      "packageReach": 0.216495,
+      "downloadReach": 0.250712
+    },
+    {
+      "name": "names",
+      "packageCount": 22,
+      "downloadCount": 30877599,
+      "occurrenceCount": 82,
+      "packageReach": 0.226804,
+      "downloadReach": 0.249672
+    },
+    {
+      "name": "try",
+      "packageCount": 20,
+      "downloadCount": 30465128,
+      "occurrenceCount": 143,
+      "packageReach": 0.206186,
+      "downloadReach": 0.246336
+    },
+    {
+      "name": "paste0",
+      "packageCount": 20,
+      "downloadCount": 28817616,
+      "occurrenceCount": 62,
+      "packageReach": 0.206186,
+      "downloadReach": 0.233015
+    },
+    {
+      "name": "sample",
+      "packageCount": 20,
+      "downloadCount": 27159255,
+      "occurrenceCount": 164,
+      "packageReach": 0.206186,
+      "downloadReach": 0.219606
+    },
+    {
+      "name": "length",
+      "packageCount": 22,
+      "downloadCount": 26578926,
+      "occurrenceCount": 89,
+      "packageReach": 0.226804,
+      "downloadReach": 0.214913
+    },
+    {
+      "name": "file.path",
+      "packageCount": 20,
+      "downloadCount": 24986992,
+      "occurrenceCount": 48,
+      "packageReach": 0.206186,
+      "downloadReach": 0.202041
+    },
+    {
+      "name": "lapply",
+      "packageCount": 17,
+      "downloadCount": 24337066,
+      "occurrenceCount": 55,
+      "packageReach": 0.175258,
+      "downloadReach": 0.196786
+    },
+    {
+      "name": "plot",
+      "packageCount": 20,
+      "downloadCount": 23673751,
+      "occurrenceCount": 179,
+      "packageReach": 0.206186,
+      "downloadReach": 0.191422
+    },
+    {
+      "name": "factor",
+      "packageCount": 16,
+      "downloadCount": 23131147,
+      "occurrenceCount": 150,
+      "packageReach": 0.164948,
+      "downloadReach": 0.187035
+    },
+    {
+      "name": "seq",
+      "packageCount": 16,
+      "downloadCount": 23097222,
+      "occurrenceCount": 115,
+      "packageReach": 0.164948,
+      "downloadReach": 0.186761
+    },
+    {
+      "name": "unlink",
+      "packageCount": 17,
+      "downloadCount": 22313444,
+      "occurrenceCount": 45,
+      "packageReach": 0.175258,
+      "downloadReach": 0.180423
+    },
+    {
+      "name": "nrow",
+      "packageCount": 16,
+      "downloadCount": 21715871,
+      "occurrenceCount": 52,
+      "packageReach": 0.164948,
+      "downloadReach": 0.175591
+    },
+    {
+      "name": "system.file",
+      "packageCount": 17,
+      "downloadCount": 21196216,
+      "occurrenceCount": 51,
+      "packageReach": 0.175258,
+      "downloadReach": 0.171389
+    },
+    {
+      "name": "character",
+      "packageCount": 14,
+      "downloadCount": 20698280,
+      "occurrenceCount": 22,
+      "packageReach": 0.14433,
+      "downloadReach": 0.167363
+    },
+    {
+      "name": "require",
+      "packageCount": 15,
+      "downloadCount": 20673184,
+      "occurrenceCount": 49,
+      "packageReach": 0.154639,
+      "downloadReach": 0.16716
+    },
+    {
+      "name": "as.character",
+      "packageCount": 15,
+      "downloadCount": 20094087,
+      "occurrenceCount": 43,
+      "packageReach": 0.154639,
+      "downloadReach": 0.162478
+    },
+    {
+      "name": "sum",
+      "packageCount": 14,
+      "downloadCount": 20037248,
+      "occurrenceCount": 82,
+      "packageReach": 0.14433,
+      "downloadReach": 0.162018
+    },
+    {
+      "name": "identical",
+      "packageCount": 17,
+      "downloadCount": 19944882,
+      "occurrenceCount": 155,
+      "packageReach": 0.175258,
+      "downloadReach": 0.161271
+    },
+    {
+      "name": "message",
+      "packageCount": 14,
+      "downloadCount": 19560662,
+      "occurrenceCount": 100,
+      "packageReach": 0.14433,
+      "downloadReach": 0.158165
+    },
+    {
+      "name": "Sys.sleep",
+      "packageCount": 16,
+      "downloadCount": 19247677,
+      "occurrenceCount": 47,
+      "packageReach": 0.164948,
+      "downloadReach": 0.155634
+    },
+    {
+      "name": "as.Date",
+      "packageCount": 12,
+      "downloadCount": 18542201,
+      "occurrenceCount": 98,
+      "packageReach": 0.123711,
+      "downloadReach": 0.149929
+    },
+    {
+      "name": "lm",
+      "packageCount": 12,
+      "downloadCount": 17836283,
+      "occurrenceCount": 28,
+      "packageReach": 0.123711,
+      "downloadReach": 0.144222
+    },
+    {
+      "name": "options",
+      "packageCount": 12,
+      "downloadCount": 17529315,
+      "occurrenceCount": 53,
+      "packageReach": 0.123711,
+      "downloadReach": 0.141739
+    },
+    {
+      "name": "colnames",
+      "packageCount": 12,
+      "downloadCount": 17256082,
+      "occurrenceCount": 42,
+      "packageReach": 0.123711,
+      "downloadReach": 0.13953
+    },
+    {
+      "name": "set.seed",
+      "packageCount": 13,
+      "downloadCount": 17084111,
+      "occurrenceCount": 89,
+      "packageReach": 0.134021,
+      "downloadReach": 0.13814
+    },
+    {
+      "name": "structure",
+      "packageCount": 12,
+      "downloadCount": 16967377,
+      "occurrenceCount": 24,
+      "packageReach": 0.123711,
+      "downloadReach": 0.137196
+    },
+    {
+      "name": "as.list",
+      "packageCount": 13,
+      "downloadCount": 16961244,
+      "occurrenceCount": 29,
+      "packageReach": 0.134021,
+      "downloadReach": 0.137146
+    },
+    {
+      "name": "Sys.time",
+      "packageCount": 12,
+      "downloadCount": 16839029,
+      "occurrenceCount": 32,
+      "packageReach": 0.123711,
+      "downloadReach": 0.136158
+    },
+    {
+      "name": "summary",
+      "packageCount": 12,
+      "downloadCount": 16838684,
+      "occurrenceCount": 17,
+      "packageReach": 0.123711,
+      "downloadReach": 0.136155
+    },
+    {
+      "name": "seq_along",
+      "packageCount": 12,
+      "downloadCount": 16727057,
+      "occurrenceCount": 28,
+      "packageReach": 0.123711,
+      "downloadReach": 0.135252
+    },
+    {
+      "name": "format",
+      "packageCount": 11,
+      "downloadCount": 15895365,
+      "occurrenceCount": 31,
+      "packageReach": 0.113402,
+      "downloadReach": 0.128528
+    },
+    {
+      "name": "stopifnot",
+      "packageCount": 14,
+      "downloadCount": 15801247,
+      "occurrenceCount": 125,
+      "packageReach": 0.14433,
+      "downloadReach": 0.127767
+    },
+    {
+      "name": "return",
+      "packageCount": 10,
+      "downloadCount": 15783409,
+      "occurrenceCount": 28,
+      "packageReach": 0.103093,
+      "downloadReach": 0.127622
+    },
+    {
+      "name": "R.home",
+      "packageCount": 12,
+      "downloadCount": 15692133,
+      "occurrenceCount": 23,
+      "packageReach": 0.123711,
+      "downloadReach": 0.126884
+    },
+    {
+      "name": "writeLines",
+      "packageCount": 11,
+      "downloadCount": 15660046,
+      "occurrenceCount": 33,
+      "packageReach": 0.113402,
+      "downloadReach": 0.126625
+    },
+    {
+      "name": "mean",
+      "packageCount": 11,
+      "downloadCount": 15239493,
+      "occurrenceCount": 113,
+      "packageReach": 0.113402,
+      "downloadReach": 0.123224
+    },
+    {
+      "name": "invisible",
+      "packageCount": 10,
+      "downloadCount": 14947457,
+      "occurrenceCount": 19,
+      "packageReach": 0.103093,
+      "downloadReach": 0.120863
+    },
+    {
+      "name": "interactive",
+      "packageCount": 11,
+      "downloadCount": 14928386,
+      "occurrenceCount": 107,
+      "packageReach": 0.113402,
+      "downloadReach": 0.120709
+    },
+    {
+      "name": "rbind",
+      "packageCount": 12,
+      "downloadCount": 14688665,
+      "occurrenceCount": 18,
+      "packageReach": 0.123711,
+      "downloadReach": 0.11877
+    },
+    {
+      "name": "max",
+      "packageCount": 10,
+      "downloadCount": 14677653,
+      "occurrenceCount": 30,
+      "packageReach": 0.103093,
+      "downloadReach": 0.118681
+    },
+    {
+      "name": "as.integer",
+      "packageCount": 10,
+      "downloadCount": 14663723,
+      "occurrenceCount": 23,
+      "packageReach": 0.103093,
+      "downloadReach": 0.118569
+    },
+    {
+      "name": "cbind",
+      "packageCount": 12,
+      "downloadCount": 14300035,
+      "occurrenceCount": 63,
+      "packageReach": 0.123711,
+      "downloadReach": 0.115628
+    },
+    {
+      "name": "stop",
+      "packageCount": 11,
+      "downloadCount": 14030639,
+      "occurrenceCount": 21,
+      "packageReach": 0.113402,
+      "downloadReach": 0.11345
+    },
+    {
+      "name": "readLines",
+      "packageCount": 12,
+      "downloadCount": 13876375,
+      "occurrenceCount": 30,
+      "packageReach": 0.123711,
+      "downloadReach": 0.112202
+    },
+    {
+      "name": "Sys.Date",
+      "packageCount": 9,
+      "downloadCount": 13533135,
+      "occurrenceCount": 26,
+      "packageReach": 0.092784,
+      "downloadReach": 0.109427
+    },
+    {
+      "name": "round",
+      "packageCount": 10,
+      "downloadCount": 13378784,
+      "occurrenceCount": 17,
+      "packageReach": 0.103093,
+      "downloadReach": 0.108179
+    },
+    {
+      "name": "is.null",
+      "packageCount": 8,
+      "downloadCount": 13189657,
+      "occurrenceCount": 18,
+      "packageReach": 0.082474,
+      "downloadReach": 0.10665
+    },
+    {
+      "name": "as.numeric",
+      "packageCount": 10,
+      "downloadCount": 13043766,
+      "occurrenceCount": 31,
+      "packageReach": 0.103093,
+      "downloadReach": 0.10547
+    },
+    {
+      "name": "seq_len",
+      "packageCount": 10,
+      "downloadCount": 12846895,
+      "occurrenceCount": 19,
+      "packageReach": 0.103093,
+      "downloadReach": 0.103878
+    },
+    {
+      "name": "getOption",
+      "packageCount": 10,
+      "downloadCount": 12785580,
+      "occurrenceCount": 13,
+      "packageReach": 0.103093,
+      "downloadReach": 0.103382
+    },
+    {
+      "name": "file",
+      "packageCount": 8,
+      "downloadCount": 12031714,
+      "occurrenceCount": 16,
+      "packageReach": 0.082474,
+      "downloadReach": 0.097287
+    },
+    {
+      "name": "gsub",
+      "packageCount": 8,
+      "downloadCount": 12013454,
+      "occurrenceCount": 8,
+      "packageReach": 0.082474,
+      "downloadReach": 0.097139
+    },
+    {
+      "name": "requireNamespace",
+      "packageCount": 8,
+      "downloadCount": 11945107,
+      "occurrenceCount": 19,
+      "packageReach": 0.082474,
+      "downloadReach": 0.096586
+    },
+    {
+      "name": "as.data.frame",
+      "packageCount": 9,
+      "downloadCount": 11921969,
+      "occurrenceCount": 22,
+      "packageReach": 0.092784,
+      "downloadReach": 0.096399
+    },
+    {
+      "name": "close",
+      "packageCount": 8,
+      "downloadCount": 11338074,
+      "occurrenceCount": 17,
+      "packageReach": 0.082474,
+      "downloadReach": 0.091678
+    },
+    {
+      "name": "is.na",
+      "packageCount": 8,
+      "downloadCount": 11172898,
+      "occurrenceCount": 25,
+      "packageReach": 0.082474,
+      "downloadReach": 0.090342
+    },
+    {
+      "name": "tempdir",
+      "packageCount": 9,
+      "downloadCount": 11123870,
+      "occurrenceCount": 26,
+      "packageReach": 0.092784,
+      "downloadReach": 0.089946
+    },
+    {
+      "name": "ncol",
+      "packageCount": 8,
+      "downloadCount": 11022286,
+      "occurrenceCount": 25,
+      "packageReach": 0.082474,
+      "downloadReach": 0.089125
+    },
+    {
+      "name": "local",
+      "packageCount": 6,
+      "downloadCount": 10875556,
+      "occurrenceCount": 11,
+      "packageReach": 0.061856,
+      "downloadReach": 0.087938
+    },
+    {
+      "name": "with",
+      "packageCount": 7,
+      "downloadCount": 10795006,
+      "occurrenceCount": 18,
+      "packageReach": 0.072165,
+      "downloadReach": 0.087287
+    },
+    {
+      "name": "log",
+      "packageCount": 9,
+      "downloadCount": 10773779,
+      "occurrenceCount": 21,
+      "packageReach": 0.092784,
+      "downloadReach": 0.087115
+    },
+    {
+      "name": "sprintf",
+      "packageCount": 9,
+      "downloadCount": 10630461,
+      "occurrenceCount": 21,
+      "packageReach": 0.092784,
+      "downloadReach": 0.085956
+    },
+    {
+      "name": "rownames",
+      "packageCount": 7,
+      "downloadCount": 10075848,
+      "occurrenceCount": 18,
+      "packageReach": 0.072165,
+      "downloadReach": 0.081472
+    },
+    {
+      "name": "all.equal",
+      "packageCount": 9,
+      "downloadCount": 9977087,
+      "occurrenceCount": 65,
+      "packageReach": 0.092784,
+      "downloadReach": 0.080673
+    },
+    {
+      "name": "strsplit",
+      "packageCount": 6,
+      "downloadCount": 9857187,
+      "occurrenceCount": 8,
+      "packageReach": 0.061856,
+      "downloadReach": 0.079704
+    },
+    {
+      "name": "ifelse",
+      "packageCount": 7,
+      "downloadCount": 9834969,
+      "occurrenceCount": 11,
+      "packageReach": 0.072165,
+      "downloadReach": 0.079524
+    },
+    {
+      "name": "dev.off",
+      "packageCount": 8,
+      "downloadCount": 9645463,
+      "occurrenceCount": 18,
+      "packageReach": 0.082474,
+      "downloadReach": 0.077992
+    },
+    {
+      "name": "min",
+      "packageCount": 7,
+      "downloadCount": 9643287,
+      "occurrenceCount": 17,
+      "packageReach": 0.072165,
+      "downloadReach": 0.077974
+    },
+    {
+      "name": "quote",
+      "packageCount": 6,
+      "downloadCount": 9583080,
+      "occurrenceCount": 110,
+      "packageReach": 0.061856,
+      "downloadReach": 0.077487
+    },
+    {
+      "name": "as.matrix",
+      "packageCount": 8,
+      "downloadCount": 9576376,
+      "occurrenceCount": 16,
+      "packageReach": 0.082474,
+      "downloadReach": 0.077433
+    },
+    {
+      "name": "unname",
+      "packageCount": 7,
+      "downloadCount": 9563306,
+      "occurrenceCount": 10,
+      "packageReach": 0.072165,
+      "downloadReach": 0.077327
+    },
+    {
+      "name": "as.POSIXct",
+      "packageCount": 6,
+      "downloadCount": 9521861,
+      "occurrenceCount": 26,
+      "packageReach": 0.061856,
+      "downloadReach": 0.076992
+    },
+    {
+      "name": "data",
+      "packageCount": 8,
+      "downloadCount": 9494712,
+      "occurrenceCount": 16,
+      "packageReach": 0.082474,
+      "downloadReach": 0.076773
+    },
+    {
+      "name": "rev",
+      "packageCount": 8,
+      "downloadCount": 9408993,
+      "occurrenceCount": 17,
+      "packageReach": 0.082474,
+      "downloadReach": 0.07608
+    },
+    {
+      "name": "any",
+      "packageCount": 8,
+      "downloadCount": 9347711,
+      "occurrenceCount": 13,
+      "packageReach": 0.082474,
+      "downloadReach": 0.075584
+    },
+    {
+      "name": "array",
+      "packageCount": 8,
+      "downloadCount": 9322163,
+      "occurrenceCount": 29,
+      "packageReach": 0.082474,
+      "downloadReach": 0.075378
+    },
+    {
+      "name": "integer",
+      "packageCount": 7,
+      "downloadCount": 9113834,
+      "occurrenceCount": 33,
+      "packageReach": 0.072165,
+      "downloadReach": 0.073693
+    },
+    {
+      "name": "tryCatch",
+      "packageCount": 6,
+      "downloadCount": 9041516,
+      "occurrenceCount": 11,
+      "packageReach": 0.061856,
+      "downloadReach": 0.073108
+    },
+    {
+      "name": "sqrt",
+      "packageCount": 7,
+      "downloadCount": 9011666,
+      "occurrenceCount": 17,
+      "packageReach": 0.072165,
+      "downloadReach": 0.072867
+    },
+    {
+      "name": "subset",
+      "packageCount": 7,
+      "downloadCount": 8918768,
+      "occurrenceCount": 18,
+      "packageReach": 0.072165,
+      "downloadReach": 0.072116
+    },
+    {
+      "name": "exp",
+      "packageCount": 7,
+      "downloadCount": 8883700,
+      "occurrenceCount": 31,
+      "packageReach": 0.072165,
+      "downloadReach": 0.071832
+    },
+    {
+      "name": "attr",
+      "packageCount": 7,
+      "downloadCount": 8847965,
+      "occurrenceCount": 17,
+      "packageReach": 0.072165,
+      "downloadReach": 0.071543
+    },
+    {
+      "name": "dimnames",
+      "packageCount": 7,
+      "downloadCount": 8719037,
+      "occurrenceCount": 18,
+      "packageReach": 0.072165,
+      "downloadReach": 0.070501
+    },
+    {
+      "name": "write.csv",
+      "packageCount": 7,
+      "downloadCount": 8707722,
+      "occurrenceCount": 15,
+      "packageReach": 0.072165,
+      "downloadReach": 0.070409
+    },
+    {
+      "name": "I",
+      "packageCount": 7,
+      "downloadCount": 8696459,
+      "occurrenceCount": 14,
+      "packageReach": 0.072165,
+      "downloadReach": 0.070318
+    },
+    {
+      "name": "cumsum",
+      "packageCount": 6,
+      "downloadCount": 8455011,
+      "occurrenceCount": 16,
+      "packageReach": 0.061856,
+      "downloadReach": 0.068366
+    },
+    {
+      "name": "rpois",
+      "packageCount": 6,
+      "downloadCount": 8372271,
+      "occurrenceCount": 13,
+      "packageReach": 0.061856,
+      "downloadReach": 0.067697
+    },
+    {
+      "name": "as.raw",
+      "packageCount": 8,
+      "downloadCount": 8331998,
+      "occurrenceCount": 12,
+      "packageReach": 0.082474,
+      "downloadReach": 0.067371
+    },
+    {
+      "name": "dim",
+      "packageCount": 8,
+      "downloadCount": 8181061,
+      "occurrenceCount": 40,
+      "packageReach": 0.082474,
+      "downloadReach": 0.066151
+    },
+    {
+      "name": "rm",
+      "packageCount": 6,
+      "downloadCount": 8083429,
+      "occurrenceCount": 27,
+      "packageReach": 0.061856,
+      "downloadReach": 0.065361
+    },
+    {
+      "name": "duplicated",
+      "packageCount": 6,
+      "downloadCount": 7962311,
+      "occurrenceCount": 20,
+      "packageReach": 0.061856,
+      "downloadReach": 0.064382
+    },
+    {
+      "name": "charToRaw",
+      "packageCount": 5,
+      "downloadCount": 7912364,
+      "occurrenceCount": 14,
+      "packageReach": 0.051546,
+      "downloadReach": 0.063978
+    },
+    {
+      "name": "abs",
+      "packageCount": 5,
+      "downloadCount": 7767376,
+      "occurrenceCount": 10,
+      "packageReach": 0.051546,
+      "downloadReach": 0.062806
+    },
+    {
+      "name": "do.call",
+      "packageCount": 5,
+      "downloadCount": 7659002,
+      "occurrenceCount": 9,
+      "packageReach": 0.051546,
+      "downloadReach": 0.06193
+    },
+    {
+      "name": "typeof",
+      "packageCount": 4,
+      "downloadCount": 7652417,
+      "occurrenceCount": 19,
+      "packageReach": 0.041237,
+      "downloadReach": 0.061876
+    },
+    {
+      "name": "substr",
+      "packageCount": 5,
+      "downloadCount": 7603959,
+      "occurrenceCount": 12,
+      "packageReach": 0.051546,
+      "downloadReach": 0.061484
+    },
+    {
+      "name": "median",
+      "packageCount": 7,
+      "downloadCount": 7588987,
+      "occurrenceCount": 9,
+      "packageReach": 0.072165,
+      "downloadReach": 0.061363
+    },
+    {
+      "name": "t",
+      "packageCount": 7,
+      "downloadCount": 7528356,
+      "occurrenceCount": 22,
+      "packageReach": 0.072165,
+      "downloadReach": 0.060873
+    },
+    {
+      "name": "ordered",
+      "packageCount": 6,
+      "downloadCount": 7468694,
+      "occurrenceCount": 7,
+      "packageReach": 0.061856,
+      "downloadReach": 0.060391
+    },
+    {
+      "name": "tolower",
+      "packageCount": 5,
+      "downloadCount": 7437505,
+      "occurrenceCount": 10,
+      "packageReach": 0.051546,
+      "downloadReach": 0.060139
+    },
+    {
+      "name": "nchar",
+      "packageCount": 5,
+      "downloadCount": 7384283,
+      "occurrenceCount": 16,
+      "packageReach": 0.051546,
+      "downloadReach": 0.059708
+    },
+    {
+      "name": "on.exit",
+      "packageCount": 7,
+      "downloadCount": 7331238,
+      "occurrenceCount": 12,
+      "packageReach": 0.072165,
+      "downloadReach": 0.059279
+    },
+    {
+      "name": "inherits",
+      "packageCount": 5,
+      "downloadCount": 7248733,
+      "occurrenceCount": 6,
+      "packageReach": 0.051546,
+      "downloadReach": 0.058612
+    },
+    {
+      "name": "sapply",
+      "packageCount": 7,
+      "downloadCount": 7064102,
+      "occurrenceCount": 13,
+      "packageReach": 0.072165,
+      "downloadReach": 0.057119
+    },
+    {
+      "name": "range",
+      "packageCount": 6,
+      "downloadCount": 6926755,
+      "occurrenceCount": 19,
+      "packageReach": 0.061856,
+      "downloadReach": 0.056009
+    },
+    {
+      "name": "all",
+      "packageCount": 5,
+      "downloadCount": 6899207,
+      "occurrenceCount": 10,
+      "packageReach": 0.051546,
+      "downloadReach": 0.055786
+    },
+    {
+      "name": "unlist",
+      "packageCount": 4,
+      "downloadCount": 6868552,
+      "occurrenceCount": 8,
+      "packageReach": 0.041237,
+      "downloadReach": 0.055538
+    },
+    {
+      "name": "png",
+      "packageCount": 5,
+      "downloadCount": 6756622,
+      "occurrenceCount": 7,
+      "packageReach": 0.051546,
+      "downloadReach": 0.054633
+    },
+    {
+      "name": "coef",
+      "packageCount": 5,
+      "downloadCount": 6713681,
+      "occurrenceCount": 7,
+      "packageReach": 0.051546,
+      "downloadReach": 0.054286
+    },
+    {
+      "name": "sort",
+      "packageCount": 5,
+      "downloadCount": 6701061,
+      "occurrenceCount": 13,
+      "packageReach": 0.051546,
+      "downloadReach": 0.054184
+    },
+    {
+      "name": "file.exists",
+      "packageCount": 5,
+      "downloadCount": 6682430,
+      "occurrenceCount": 8,
+      "packageReach": 0.051546,
+      "downloadReach": 0.054033
+    },
+    {
+      "name": "read.csv",
+      "packageCount": 6,
+      "downloadCount": 6616495,
+      "occurrenceCount": 11,
+      "packageReach": 0.061856,
+      "downloadReach": 0.0535
+    },
+    {
+      "name": "system.time",
+      "packageCount": 6,
+      "downloadCount": 6497655,
+      "occurrenceCount": 95,
+      "packageReach": 0.061856,
+      "downloadReach": 0.052539
+    },
+    {
+      "name": "unique",
+      "packageCount": 5,
+      "downloadCount": 6332184,
+      "occurrenceCount": 22,
+      "packageReach": 0.051546,
+      "downloadReach": 0.051201
+    },
+    {
+      "name": "dir.create",
+      "packageCount": 4,
+      "downloadCount": 6320786,
+      "occurrenceCount": 6,
+      "packageReach": 0.041237,
+      "downloadReach": 0.051109
+    },
+    {
+      "name": "parent.frame",
+      "packageCount": 5,
+      "downloadCount": 6275211,
+      "occurrenceCount": 9,
+      "packageReach": 0.051546,
+      "downloadReach": 0.05074
+    },
+    {
+      "name": "warning",
+      "packageCount": 4,
+      "downloadCount": 6250012,
+      "occurrenceCount": 8,
+      "packageReach": 0.041237,
+      "downloadReach": 0.050537
+    },
+    {
+      "name": "order",
+      "packageCount": 5,
+      "downloadCount": 6211797,
+      "occurrenceCount": 14,
+      "packageReach": 0.051546,
+      "downloadReach": 0.050228
+    },
+    {
+      "name": "quantile",
+      "packageCount": 5,
+      "downloadCount": 6196168,
+      "occurrenceCount": 60,
+      "packageReach": 0.051546,
+      "downloadReach": 0.050101
+    },
+    {
+      "name": "tail",
+      "packageCount": 6,
+      "downloadCount": 6024466,
+      "occurrenceCount": 7,
+      "packageReach": 0.061856,
+      "downloadReach": 0.048713
+    },
+    {
+      "name": "formals",
+      "packageCount": 3,
+      "downloadCount": 5959833,
+      "occurrenceCount": 4,
+      "packageReach": 0.030928,
+      "downloadReach": 0.04819
+    },
+    {
+      "name": "list.files",
+      "packageCount": 4,
+      "downloadCount": 5938103,
+      "occurrenceCount": 6,
+      "packageReach": 0.041237,
+      "downloadReach": 0.048015
+    },
+    {
+      "name": "levels",
+      "packageCount": 4,
+      "downloadCount": 5853975,
+      "occurrenceCount": 9,
+      "packageReach": 0.041237,
+      "downloadReach": 0.047334
+    },
+    {
+      "name": "substring",
+      "packageCount": 4,
+      "downloadCount": 5849603,
+      "occurrenceCount": 10,
+      "packageReach": 0.041237,
+      "downloadReach": 0.047299
+    },
+    {
+      "name": "par",
+      "packageCount": 5,
+      "downloadCount": 5748382,
+      "occurrenceCount": 23,
+      "packageReach": 0.051546,
+      "downloadReach": 0.046481
+    },
+    {
+      "name": "missing",
+      "packageCount": 3,
+      "downloadCount": 5713671,
+      "occurrenceCount": 3,
+      "packageReach": 0.030928,
+      "downloadReach": 0.0462
+    },
+    {
+      "name": "toupper",
+      "packageCount": 3,
+      "downloadCount": 5707340,
+      "occurrenceCount": 5,
+      "packageReach": 0.030928,
+      "downloadReach": 0.046149
+    },
+    {
+      "name": "gl",
+      "packageCount": 4,
+      "downloadCount": 5686722,
+      "occurrenceCount": 7,
+      "packageReach": 0.041237,
+      "downloadReach": 0.045982
+    },
+    {
+      "name": "serialize",
+      "packageCount": 5,
+      "downloadCount": 5597493,
+      "occurrenceCount": 12,
+      "packageReach": 0.051546,
+      "downloadReach": 0.04526
+    },
+    {
+      "name": "class",
+      "packageCount": 5,
+      "downloadCount": 5594661,
+      "occurrenceCount": 21,
+      "packageReach": 0.051546,
+      "downloadReach": 0.045238
+    },
+    {
+      "name": "Encoding",
+      "packageCount": 3,
+      "downloadCount": 5576878,
+      "occurrenceCount": 12,
+      "packageReach": 0.030928,
+      "downloadReach": 0.045094
+    },
+    {
+      "name": "replicate",
+      "packageCount": 3,
+      "downloadCount": 5545915,
+      "occurrenceCount": 4,
+      "packageReach": 0.030928,
+      "downloadReach": 0.044843
+    },
+    {
+      "name": "as.difftime",
+      "packageCount": 3,
+      "downloadCount": 5521440,
+      "occurrenceCount": 6,
+      "packageReach": 0.030928,
+      "downloadReach": 0.044646
+    },
+    {
+      "name": "which",
+      "packageCount": 4,
+      "downloadCount": 5290973,
+      "occurrenceCount": 6,
+      "packageReach": 0.041237,
+      "downloadReach": 0.042782
+    },
+    {
+      "name": "conditionMessage",
+      "packageCount": 4,
+      "downloadCount": 5229409,
+      "occurrenceCount": 5,
+      "packageReach": 0.041237,
+      "downloadReach": 0.042284
+    },
+    {
+      "name": "rcauchy",
+      "packageCount": 3,
+      "downloadCount": 5222887,
+      "occurrenceCount": 4,
+      "packageReach": 0.030928,
+      "downloadReach": 0.042231
+    },
+    {
+      "name": "cor",
+      "packageCount": 3,
+      "downloadCount": 5186612,
+      "occurrenceCount": 4,
+      "packageReach": 0.030928,
+      "downloadReach": 0.041938
+    },
+    {
+      "name": "basename",
+      "packageCount": 3,
+      "downloadCount": 5090173,
+      "occurrenceCount": 3,
+      "packageReach": 0.030928,
+      "downloadReach": 0.041158
+    },
+    {
+      "name": "floor",
+      "packageCount": 4,
+      "downloadCount": 5064633,
+      "occurrenceCount": 9,
+      "packageReach": 0.041237,
+      "downloadReach": 0.040952
+    },
+    {
+      "name": "switch",
+      "packageCount": 3,
+      "downloadCount": 5053895,
+      "occurrenceCount": 5,
+      "packageReach": 0.030928,
+      "downloadReach": 0.040865
+    },
+    {
+      "name": "split",
+      "packageCount": 4,
+      "downloadCount": 5021238,
+      "occurrenceCount": 18,
+      "packageReach": 0.041237,
+      "downloadReach": 0.040601
+    },
+    {
+      "name": "table",
+      "packageCount": 4,
+      "downloadCount": 5018770,
+      "occurrenceCount": 27,
+      "packageReach": 0.041237,
+      "downloadReach": 0.040581
+    },
+    {
+      "name": "transform",
+      "packageCount": 3,
+      "downloadCount": 4939010,
+      "occurrenceCount": 5,
+      "packageReach": 0.030928,
+      "downloadReach": 0.039936
+    },
+    {
+      "name": "new.env",
+      "packageCount": 2,
+      "downloadCount": 4849526,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.039213
+    },
+    {
+      "name": "dir",
+      "packageCount": 4,
+      "downloadCount": 4810810,
+      "occurrenceCount": 8,
+      "packageReach": 0.041237,
+      "downloadReach": 0.038899
+    },
+    {
+      "name": "eval",
+      "packageCount": 3,
+      "downloadCount": 4803195,
+      "occurrenceCount": 11,
+      "packageReach": 0.030928,
+      "downloadReach": 0.038838
+    },
+    {
+      "name": "double",
+      "packageCount": 4,
+      "downloadCount": 4798738,
+      "occurrenceCount": 8,
+      "packageReach": 0.041237,
+      "downloadReach": 0.038802
+    },
+    {
+      "name": "within",
+      "packageCount": 3,
+      "downloadCount": 4662949,
+      "occurrenceCount": 3,
+      "packageReach": 0.030928,
+      "downloadReach": 0.037704
+    },
+    {
+      "name": "intersect",
+      "packageCount": 4,
+      "downloadCount": 4644698,
+      "occurrenceCount": 9,
+      "packageReach": 0.041237,
+      "downloadReach": 0.037556
+    },
+    {
+      "name": "dirname",
+      "packageCount": 3,
+      "downloadCount": 4628069,
+      "occurrenceCount": 5,
+      "packageReach": 0.030928,
+      "downloadReach": 0.037422
+    },
+    {
+      "name": "as.factor",
+      "packageCount": 4,
+      "downloadCount": 4601685,
+      "occurrenceCount": 7,
+      "packageReach": 0.041237,
+      "downloadReach": 0.037209
+    },
+    {
+      "name": "Sys.getenv",
+      "packageCount": 3,
+      "downloadCount": 4592602,
+      "occurrenceCount": 16,
+      "packageReach": 0.030928,
+      "downloadReach": 0.037135
+    },
+    {
+      "name": ".libPaths",
+      "packageCount": 3,
+      "downloadCount": 4572899,
+      "occurrenceCount": 9,
+      "packageReach": 0.030928,
+      "downloadReach": 0.036976
+    },
+    {
+      "name": "image",
+      "packageCount": 3,
+      "downloadCount": 4568709,
+      "occurrenceCount": 6,
+      "packageReach": 0.030928,
+      "downloadReach": 0.036942
+    },
+    {
+      "name": "substitute",
+      "packageCount": 3,
+      "downloadCount": 4523929,
+      "occurrenceCount": 8,
+      "packageReach": 0.030928,
+      "downloadReach": 0.03658
+    },
+    {
+      "name": "expression",
+      "packageCount": 3,
+      "downloadCount": 4522066,
+      "occurrenceCount": 4,
+      "packageReach": 0.030928,
+      "downloadReach": 0.036565
+    },
+    {
+      "name": "browseURL",
+      "packageCount": 4,
+      "downloadCount": 4449558,
+      "occurrenceCount": 8,
+      "packageReach": 0.041237,
+      "downloadReach": 0.035978
+    },
+    {
+      "name": "as.logical",
+      "packageCount": 3,
+      "downloadCount": 4414599,
+      "occurrenceCount": 4,
+      "packageReach": 0.030928,
+      "downloadReach": 0.035696
+    },
+    {
+      "name": "gc",
+      "packageCount": 3,
+      "downloadCount": 4381344,
+      "occurrenceCount": 17,
+      "packageReach": 0.030928,
+      "downloadReach": 0.035427
+    },
+    {
+      "name": "sin",
+      "packageCount": 5,
+      "downloadCount": 4377681,
+      "occurrenceCount": 10,
+      "packageReach": 0.051546,
+      "downloadReach": 0.035397
+    },
+    {
+      "name": "rawToChar",
+      "packageCount": 4,
+      "downloadCount": 4356970,
+      "occurrenceCount": 8,
+      "packageReach": 0.041237,
+      "downloadReach": 0.03523
+    },
+    {
+      "name": "environment",
+      "packageCount": 2,
+      "downloadCount": 4329132,
+      "occurrenceCount": 3,
+      "packageReach": 0.020619,
+      "downloadReach": 0.035005
+    },
+    {
+      "name": "raw",
+      "packageCount": 2,
+      "downloadCount": 4211102,
+      "occurrenceCount": 4,
+      "packageReach": 0.020619,
+      "downloadReach": 0.03405
+    },
+    {
+      "name": "lines",
+      "packageCount": 4,
+      "downloadCount": 4156347,
+      "occurrenceCount": 20,
+      "packageReach": 0.041237,
+      "downloadReach": 0.033608
+    },
+    {
+      "name": "Sys.setenv",
+      "packageCount": 4,
+      "downloadCount": 4059065,
+      "occurrenceCount": 7,
+      "packageReach": 0.041237,
+      "downloadReach": 0.032821
+    },
+    {
+      "name": "filter",
+      "packageCount": 3,
+      "downloadCount": 4055390,
+      "occurrenceCount": 39,
+      "packageReach": 0.030928,
+      "downloadReach": 0.032791
+    },
+    {
+      "name": "system",
+      "packageCount": 3,
+      "downloadCount": 4036498,
+      "occurrenceCount": 5,
+      "packageReach": 0.030928,
+      "downloadReach": 0.032639
+    },
+    {
+      "name": "setdiff",
+      "packageCount": 3,
+      "downloadCount": 3913308,
+      "occurrenceCount": 6,
+      "packageReach": 0.030928,
+      "downloadReach": 0.031642
+    },
+    {
+      "name": "union",
+      "packageCount": 3,
+      "downloadCount": 3913308,
+      "occurrenceCount": 4,
+      "packageReach": 0.030928,
+      "downloadReach": 0.031642
+    },
+    {
+      "name": "log10",
+      "packageCount": 2,
+      "downloadCount": 3903545,
+      "occurrenceCount": 6,
+      "packageReach": 0.020619,
+      "downloadReach": 0.031563
+    },
+    {
+      "name": "setNames",
+      "packageCount": 3,
+      "downloadCount": 3841367,
+      "occurrenceCount": 3,
+      "packageReach": 0.030928,
+      "downloadReach": 0.031061
+    },
+    {
+      "name": "merge",
+      "packageCount": 3,
+      "downloadCount": 3701896,
+      "occurrenceCount": 48,
+      "packageReach": 0.030928,
+      "downloadReach": 0.029933
+    },
+    {
+      "name": "ave",
+      "packageCount": 3,
+      "downloadCount": 3701896,
+      "occurrenceCount": 3,
+      "packageReach": 0.030928,
+      "downloadReach": 0.029933
+    },
+    {
+      "name": "match",
+      "packageCount": 3,
+      "downloadCount": 3692712,
+      "occurrenceCount": 5,
+      "packageReach": 0.030928,
+      "downloadReach": 0.029859
+    },
+    {
+      "name": "ISOdate",
+      "packageCount": 2,
+      "downloadCount": 3674981,
+      "occurrenceCount": 3,
+      "packageReach": 0.020619,
+      "downloadReach": 0.029715
+    },
+    {
+      "name": "expand.grid",
+      "packageCount": 2,
+      "downloadCount": 3658586,
+      "occurrenceCount": 7,
+      "packageReach": 0.020619,
+      "downloadReach": 0.029583
+    },
+    {
+      "name": "ls",
+      "packageCount": 3,
+      "downloadCount": 3658125,
+      "occurrenceCount": 5,
+      "packageReach": 0.030928,
+      "downloadReach": 0.029579
+    },
+    {
+      "name": "unclass",
+      "packageCount": 2,
+      "downloadCount": 3650444,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.029517
+    },
+    {
+      "name": "hist",
+      "packageCount": 4,
+      "downloadCount": 3648750,
+      "occurrenceCount": 19,
+      "packageReach": 0.041237,
+      "downloadReach": 0.029503
+    },
+    {
+      "name": "append",
+      "packageCount": 3,
+      "downloadCount": 3637226,
+      "occurrenceCount": 3,
+      "packageReach": 0.030928,
+      "downloadReach": 0.02941
+    },
+    {
+      "name": "showClass",
+      "packageCount": 2,
+      "downloadCount": 3628011,
+      "occurrenceCount": 4,
+      "packageReach": 0.020619,
+      "downloadReach": 0.029336
+    },
+    {
+      "name": "packageVersion",
+      "packageCount": 2,
+      "downloadCount": 3623036,
+      "occurrenceCount": 3,
+      "packageReach": 0.020619,
+      "downloadReach": 0.029295
+    },
+    {
+      "name": "setClass",
+      "packageCount": 2,
+      "downloadCount": 3621508,
+      "occurrenceCount": 3,
+      "packageReach": 0.020619,
+      "downloadReach": 0.029283
+    },
+    {
+      "name": "diff",
+      "packageCount": 3,
+      "downloadCount": 3559957,
+      "occurrenceCount": 13,
+      "packageReach": 0.030928,
+      "downloadReach": 0.028785
+    },
+    {
+      "name": "as.vector",
+      "packageCount": 3,
+      "downloadCount": 3559957,
+      "occurrenceCount": 3,
+      "packageReach": 0.030928,
+      "downloadReach": 0.028785
+    },
+    {
+      "name": "cos",
+      "packageCount": 4,
+      "downloadCount": 3534672,
+      "occurrenceCount": 7,
+      "packageReach": 0.041237,
+      "downloadReach": 0.028581
+    },
+    {
+      "name": "Sys.getpid",
+      "packageCount": 3,
+      "downloadCount": 3464965,
+      "occurrenceCount": 6,
+      "packageReach": 0.030928,
+      "downloadReach": 0.028017
+    },
+    {
+      "name": "example",
+      "packageCount": 3,
+      "downloadCount": 3427304,
+      "occurrenceCount": 4,
+      "packageReach": 0.030928,
+      "downloadReach": 0.027713
+    },
+    {
+      "name": "rexp",
+      "packageCount": 3,
+      "downloadCount": 3387327,
+      "occurrenceCount": 9,
+      "packageReach": 0.030928,
+      "downloadReach": 0.027389
+    },
+    {
+      "name": "recordPlot",
+      "packageCount": 3,
+      "downloadCount": 3330416,
+      "occurrenceCount": 5,
+      "packageReach": 0.030928,
+      "downloadReach": 0.026929
+    },
+    {
+      "name": "isTRUE",
+      "packageCount": 3,
+      "downloadCount": 3325077,
+      "occurrenceCount": 3,
+      "packageReach": 0.030928,
+      "downloadReach": 0.026886
+    },
+    {
+      "name": "getwd",
+      "packageCount": 2,
+      "downloadCount": 3296386,
+      "occurrenceCount": 9,
+      "packageReach": 0.020619,
+      "downloadReach": 0.026654
+    },
+    {
+      "name": "rgb",
+      "packageCount": 3,
+      "downloadCount": 3218634,
+      "occurrenceCount": 4,
+      "packageReach": 0.030928,
+      "downloadReach": 0.026025
+    },
+    {
+      "name": "suppressWarnings",
+      "packageCount": 3,
+      "downloadCount": 3112210,
+      "occurrenceCount": 21,
+      "packageReach": 0.030928,
+      "downloadReach": 0.025165
+    },
+    {
+      "name": "gzcon",
+      "packageCount": 2,
+      "downloadCount": 3085296,
+      "occurrenceCount": 6,
+      "packageReach": 0.020619,
+      "downloadReach": 0.024947
+    },
+    {
+      "name": "vignette",
+      "packageCount": 2,
+      "downloadCount": 3025641,
+      "occurrenceCount": 5,
+      "packageReach": 0.020619,
+      "downloadReach": 0.024465
+    },
+    {
+      "name": "args",
+      "packageCount": 2,
+      "downloadCount": 3017478,
+      "occurrenceCount": 3,
+      "packageReach": 0.020619,
+      "downloadReach": 0.024399
+    },
+    {
+      "name": "pmin",
+      "packageCount": 2,
+      "downloadCount": 3011785,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.024353
+    },
+    {
+      "name": "sub",
+      "packageCount": 2,
+      "downloadCount": 2991954,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.024192
+    },
+    {
+      "name": "registerS3method",
+      "packageCount": 2,
+      "downloadCount": 2978871,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.024087
+    },
+    {
+      "name": "file.info",
+      "packageCount": 3,
+      "downloadCount": 2976915,
+      "occurrenceCount": 3,
+      "packageReach": 0.030928,
+      "downloadReach": 0.024071
+    },
+    {
+      "name": "convolve",
+      "packageCount": 2,
+      "downloadCount": 2892886,
+      "occurrenceCount": 3,
+      "packageReach": 0.020619,
+      "downloadReach": 0.023391
+    },
+    {
+      "name": "getRversion",
+      "packageCount": 2,
+      "downloadCount": 2883469,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.023315
+    },
+    {
+      "name": "aggregate",
+      "packageCount": 2,
+      "downloadCount": 2837751,
+      "occurrenceCount": 26,
+      "packageReach": 0.020619,
+      "downloadReach": 0.022946
+    },
+    {
+      "name": "hcl",
+      "packageCount": 2,
+      "downloadCount": 2837751,
+      "occurrenceCount": 6,
+      "packageReach": 0.020619,
+      "downloadReach": 0.022946
+    },
+    {
+      "name": "axis",
+      "packageCount": 3,
+      "downloadCount": 2831619,
+      "occurrenceCount": 18,
+      "packageReach": 0.030928,
+      "downloadReach": 0.022896
+    },
+    {
+      "name": "log2",
+      "packageCount": 2,
+      "downloadCount": 2828567,
+      "occurrenceCount": 5,
+      "packageReach": 0.020619,
+      "downloadReach": 0.022871
+    },
+    {
+      "name": "intToUtf8",
+      "packageCount": 2,
+      "downloadCount": 2819515,
+      "occurrenceCount": 6,
+      "packageReach": 0.020619,
+      "downloadReach": 0.022798
+    },
+    {
+      "name": "rep_len",
+      "packageCount": 2,
+      "downloadCount": 2779846,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.022477
+    },
+    {
+      "name": "identity",
+      "packageCount": 1,
+      "downloadCount": 2757363,
+      "occurrenceCount": 8,
+      "packageReach": 0.010309,
+      "downloadReach": 0.022296
+    },
+    {
+      "name": "call",
+      "packageCount": 1,
+      "downloadCount": 2757363,
+      "occurrenceCount": 5,
+      "packageReach": 0.010309,
+      "downloadReach": 0.022296
+    },
+    {
+      "name": "source",
+      "packageCount": 1,
+      "downloadCount": 2757363,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.022296
+    },
+    {
+      "name": "textConnection",
+      "packageCount": 1,
+      "downloadCount": 2757363,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.022296
+    },
+    {
+      "name": "as.formula",
+      "packageCount": 1,
+      "downloadCount": 2757363,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.022296
+    },
+    {
+      "name": "body",
+      "packageCount": 1,
+      "downloadCount": 2757363,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.022296
+    },
+    {
+      "name": "evalq",
+      "packageCount": 1,
+      "downloadCount": 2757363,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.022296
+    },
+    {
+      "name": "globalCallingHandlers",
+      "packageCount": 1,
+      "downloadCount": 2757363,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.022296
+    },
+    {
+      "name": "search",
+      "packageCount": 1,
+      "downloadCount": 2757363,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.022296
+    },
+    {
+      "name": "sys.call",
+      "packageCount": 1,
+      "downloadCount": 2757363,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.022296
+    },
+    {
+      "name": "diag",
+      "packageCount": 2,
+      "downloadCount": 2737633,
+      "occurrenceCount": 7,
+      "packageReach": 0.020619,
+      "downloadReach": 0.022136
+    },
+    {
+      "name": "force",
+      "packageCount": 2,
+      "downloadCount": 2732789,
+      "occurrenceCount": 4,
+      "packageReach": 0.020619,
+      "downloadReach": 0.022097
+    },
+    {
+      "name": "readline",
+      "packageCount": 2,
+      "downloadCount": 2595671,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.020988
+    },
+    {
+      "name": "difftime",
+      "packageCount": 2,
+      "downloadCount": 2580987,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.020869
+    },
+    {
+      "name": "url",
+      "packageCount": 2,
+      "downloadCount": 2557403,
+      "occurrenceCount": 6,
+      "packageReach": 0.020619,
+      "downloadReach": 0.020679
+    },
+    {
+      "name": "is.character",
+      "packageCount": 2,
+      "downloadCount": 2556588,
+      "occurrenceCount": 4,
+      "packageReach": 0.020619,
+      "downloadReach": 0.020672
+    },
+    {
+      "name": "unserialize",
+      "packageCount": 2,
+      "downloadCount": 2495702,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.02018
+    },
+    {
+      "name": "lag",
+      "packageCount": 2,
+      "downloadCount": 2423833,
+      "occurrenceCount": 21,
+      "packageReach": 0.020619,
+      "downloadReach": 0.019599
+    },
+    {
+      "name": "cut",
+      "packageCount": 2,
+      "downloadCount": 2423833,
+      "occurrenceCount": 5,
+      "packageReach": 0.020619,
+      "downloadReach": 0.019599
+    },
+    {
+      "name": "setequal",
+      "packageCount": 2,
+      "downloadCount": 2414649,
+      "occurrenceCount": 3,
+      "packageReach": 0.020619,
+      "downloadReach": 0.019524
+    },
+    {
+      "name": "Sys.setlocale",
+      "packageCount": 2,
+      "downloadCount": 2377940,
+      "occurrenceCount": 6,
+      "packageReach": 0.020619,
+      "downloadReach": 0.019228
+    },
+    {
+      "name": "Sys.getlocale",
+      "packageCount": 2,
+      "downloadCount": 2377940,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.019228
+    },
+    {
+      "name": "plot.new",
+      "packageCount": 2,
+      "downloadCount": 2350465,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.019006
+    },
+    {
+      "name": "deparse",
+      "packageCount": 1,
+      "downloadCount": 2344724,
+      "occurrenceCount": 3,
+      "packageReach": 0.010309,
+      "downloadReach": 0.018959
+    },
+    {
+      "name": "regmatches",
+      "packageCount": 1,
+      "downloadCount": 2344724,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.018959
+    },
+    {
+      "name": "trimws",
+      "packageCount": 1,
+      "downloadCount": 2344724,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.018959
+    },
+    {
+      "name": "gregexpr",
+      "packageCount": 1,
+      "downloadCount": 2344724,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.018959
+    },
+    {
+      "name": "packageDescription",
+      "packageCount": 1,
+      "downloadCount": 2344724,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.018959
+    },
+    {
+      "name": "stdout",
+      "packageCount": 1,
+      "downloadCount": 2344724,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.018959
+    },
+    {
+      "name": "logical",
+      "packageCount": 1,
+      "downloadCount": 2338466,
+      "occurrenceCount": 4,
+      "packageReach": 0.010309,
+      "downloadReach": 0.018908
+    },
+    {
+      "name": "rle",
+      "packageCount": 1,
+      "downloadCount": 2338466,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.018908
+    },
+    {
+      "name": "colSums",
+      "packageCount": 3,
+      "downloadCount": 2324457,
+      "occurrenceCount": 4,
+      "packageReach": 0.030928,
+      "downloadReach": 0.018795
+    },
+    {
+      "name": "which.min",
+      "packageCount": 3,
+      "downloadCount": 2317741,
+      "occurrenceCount": 4,
+      "packageReach": 0.030928,
+      "downloadReach": 0.018741
+    },
+    {
+      "name": "proc.time",
+      "packageCount": 2,
+      "downloadCount": 2259105,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.018267
+    },
+    {
+      "name": "vapply",
+      "packageCount": 2,
+      "downloadCount": 2231251,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.018042
+    },
+    {
+      "name": "rainbow",
+      "packageCount": 2,
+      "downloadCount": 2197812,
+      "occurrenceCount": 5,
+      "packageReach": 0.020619,
+      "downloadReach": 0.017771
+    },
+    {
+      "name": "rect",
+      "packageCount": 2,
+      "downloadCount": 2191894,
+      "occurrenceCount": 3,
+      "packageReach": 0.020619,
+      "downloadReach": 0.017723
+    },
+    {
+      "name": "vector",
+      "packageCount": 2,
+      "downloadCount": 2183487,
+      "occurrenceCount": 8,
+      "packageReach": 0.020619,
+      "downloadReach": 0.017655
+    },
+    {
+      "name": "complex",
+      "packageCount": 2,
+      "downloadCount": 2171119,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.017555
+    },
+    {
+      "name": "file.remove",
+      "packageCount": 2,
+      "downloadCount": 2169865,
+      "occurrenceCount": 4,
+      "packageReach": 0.020619,
+      "downloadReach": 0.017545
+    },
+    {
+      "name": "as.hexmode",
+      "packageCount": 2,
+      "downloadCount": 2133299,
+      "occurrenceCount": 3,
+      "packageReach": 0.020619,
+      "downloadReach": 0.01725
+    },
+    {
+      "name": "Filter",
+      "packageCount": 2,
+      "downloadCount": 2115491,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.017106
+    },
+    {
+      "name": "readChar",
+      "packageCount": 2,
+      "downloadCount": 2112770,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.017084
+    },
+    {
+      "name": "reorder",
+      "packageCount": 1,
+      "downloadCount": 2106361,
+      "occurrenceCount": 4,
+      "packageReach": 0.010309,
+      "downloadReach": 0.017032
+    },
+    {
+      "name": "chull",
+      "packageCount": 1,
+      "downloadCount": 2106361,
+      "occurrenceCount": 3,
+      "packageReach": 0.010309,
+      "downloadReach": 0.017032
+    },
+    {
+      "name": "terrain.colors",
+      "packageCount": 1,
+      "downloadCount": 2106361,
+      "occurrenceCount": 3,
+      "packageReach": 0.010309,
+      "downloadReach": 0.017032
+    },
+    {
+      "name": "confint",
+      "packageCount": 1,
+      "downloadCount": 2106361,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.017032
+    },
+    {
+      "name": "jitter",
+      "packageCount": 1,
+      "downloadCount": 2106361,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.017032
+    },
+    {
+      "name": "match.arg",
+      "packageCount": 1,
+      "downloadCount": 2106361,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.017032
+    },
+    {
+      "name": "qlogis",
+      "packageCount": 1,
+      "downloadCount": 2106361,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.017032
+    },
+    {
+      "name": "scale",
+      "packageCount": 1,
+      "downloadCount": 2106361,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.017032
+    },
+    {
+      "name": "aov",
+      "packageCount": 1,
+      "downloadCount": 2106361,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.017032
+    },
+    {
+      "name": "fitted",
+      "packageCount": 1,
+      "downloadCount": 2106361,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.017032
+    },
+    {
+      "name": "IQR",
+      "packageCount": 1,
+      "downloadCount": 2106361,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.017032
+    },
+    {
+      "name": "kmeans",
+      "packageCount": 1,
+      "downloadCount": 2106361,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.017032
+    },
+    {
+      "name": "predict",
+      "packageCount": 1,
+      "downloadCount": 2106361,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.017032
+    },
+    {
+      "name": "resid",
+      "packageCount": 1,
+      "downloadCount": 2106361,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.017032
+    },
+    {
+      "name": "rt",
+      "packageCount": 1,
+      "downloadCount": 2106361,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.017032
+    },
+    {
+      "name": "emptyenv",
+      "packageCount": 1,
+      "downloadCount": 2092163,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.016917
+    },
+    {
+      "name": "as.list.environment",
+      "packageCount": 1,
+      "downloadCount": 2092163,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.016917
+    },
+    {
+      "name": "debug",
+      "packageCount": 1,
+      "downloadCount": 2092163,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.016917
+    },
+    {
+      "name": "list2env",
+      "packageCount": 1,
+      "downloadCount": 2092163,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.016917
+    },
+    {
+      "name": "undebug",
+      "packageCount": 1,
+      "downloadCount": 2092163,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.016917
+    },
+    {
+      "name": "capabilities",
+      "packageCount": 2,
+      "downloadCount": 2055923,
+      "occurrenceCount": 4,
+      "packageReach": 0.020619,
+      "downloadReach": 0.016624
+    },
+    {
+      "name": "pdf",
+      "packageCount": 2,
+      "downloadCount": 2045832,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.016542
+    },
+    {
+      "name": "exists",
+      "packageCount": 2,
+      "downloadCount": 2025303,
+      "occurrenceCount": 3,
+      "packageReach": 0.020619,
+      "downloadReach": 0.016376
+    },
+    {
+      "name": "RNGkind",
+      "packageCount": 1,
+      "downloadCount": 1990666,
+      "occurrenceCount": 6,
+      "packageReach": 0.010309,
+      "downloadReach": 0.016096
+    },
+    {
+      "name": "sample.int",
+      "packageCount": 1,
+      "downloadCount": 1990666,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.016096
+    },
+    {
+      "name": "Sys.localeconv",
+      "packageCount": 1,
+      "downloadCount": 1990666,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.016096
+    },
+    {
+      "name": "attributes",
+      "packageCount": 1,
+      "downloadCount": 1990666,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.016096
+    },
+    {
+      "name": "file.create",
+      "packageCount": 1,
+      "downloadCount": 1990666,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.016096
+    },
+    {
+      "name": "file.size",
+      "packageCount": 1,
+      "downloadCount": 1990666,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.016096
+    },
+    {
+      "name": "kappa",
+      "packageCount": 1,
+      "downloadCount": 1978110,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.015995
+    },
+    {
+      "name": "model.matrix",
+      "packageCount": 1,
+      "downloadCount": 1978110,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.015995
+    },
+    {
+      "name": "xtabs",
+      "packageCount": 1,
+      "downloadCount": 1978110,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.015995
+    },
+    {
+      "name": "ts.plot",
+      "packageCount": 1,
+      "downloadCount": 1968504,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.015917
+    },
+    {
+      "name": "Sys.which",
+      "packageCount": 2,
+      "downloadCount": 1962788,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.015871
+    },
+    {
+      "name": "tan",
+      "packageCount": 2,
+      "downloadCount": 1904566,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.0154
+    },
+    {
+      "name": "make.names",
+      "packageCount": 1,
+      "downloadCount": 1898766,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.015353
+    },
+    {
+      "name": "start",
+      "packageCount": 2,
+      "downloadCount": 1873322,
+      "occurrenceCount": 9,
+      "packageReach": 0.020619,
+      "downloadReach": 0.015147
+    },
+    {
+      "name": "NextMethod",
+      "packageCount": 1,
+      "downloadCount": 1797184,
+      "occurrenceCount": 3,
+      "packageReach": 0.010309,
+      "downloadReach": 0.014532
+    },
+    {
+      "name": "as.roman",
+      "packageCount": 1,
+      "downloadCount": 1797184,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.014532
+    },
+    {
+      "name": "as.POSIXlt",
+      "packageCount": 2,
+      "downloadCount": 1771811,
+      "occurrenceCount": 3,
+      "packageReach": 0.020619,
+      "downloadReach": 0.014327
+    },
+    {
+      "name": "drop",
+      "packageCount": 2,
+      "downloadCount": 1740642,
+      "occurrenceCount": 5,
+      "packageReach": 0.020619,
+      "downloadReach": 0.014075
+    },
+    {
+      "name": "rasterImage",
+      "packageCount": 2,
+      "downloadCount": 1726669,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.013962
+    },
+    {
+      "name": "weights",
+      "packageCount": 2,
+      "downloadCount": 1709728,
+      "occurrenceCount": 22,
+      "packageReach": 0.020619,
+      "downloadReach": 0.013825
+    },
+    {
+      "name": "rbinom",
+      "packageCount": 2,
+      "downloadCount": 1709728,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.013825
+    },
+    {
+      "name": "is.data.frame",
+      "packageCount": 2,
+      "downloadCount": 1707761,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.013809
+    },
+    {
+      "name": "nzchar",
+      "packageCount": 2,
+      "downloadCount": 1707761,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.013809
+    },
+    {
+      "name": "sd",
+      "packageCount": 1,
+      "downloadCount": 1692443,
+      "occurrenceCount": 3,
+      "packageReach": 0.010309,
+      "downloadReach": 0.013685
+    },
+    {
+      "name": "colours",
+      "packageCount": 1,
+      "downloadCount": 1684315,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.013619
+    },
+    {
+      "name": "outer",
+      "packageCount": 1,
+      "downloadCount": 1684315,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.013619
+    },
+    {
+      "name": "density",
+      "packageCount": 2,
+      "downloadCount": 1675158,
+      "occurrenceCount": 94,
+      "packageReach": 0.020619,
+      "downloadReach": 0.013545
+    },
+    {
+      "name": "grep",
+      "packageCount": 2,
+      "downloadCount": 1642089,
+      "occurrenceCount": 3,
+      "packageReach": 0.020619,
+      "downloadReach": 0.013278
+    },
+    {
+      "name": "download.file",
+      "packageCount": 1,
+      "downloadCount": 1631557,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.013193
+    },
+    {
+      "name": "eigen",
+      "packageCount": 1,
+      "downloadCount": 1631557,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.013193
+    },
+    {
+      "name": "pipe",
+      "packageCount": 1,
+      "downloadCount": 1631557,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.013193
+    },
+    {
+      "name": "unz",
+      "packageCount": 1,
+      "downloadCount": 1631557,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.013193
+    },
+    {
+      "name": "apply",
+      "packageCount": 2,
+      "downloadCount": 1623981,
+      "occurrenceCount": 5,
+      "packageReach": 0.020619,
+      "downloadReach": 0.013131
+    },
+    {
+      "name": "time",
+      "packageCount": 2,
+      "downloadCount": 1595535,
+      "occurrenceCount": 43,
+      "packageReach": 0.020619,
+      "downloadReach": 0.012901
+    },
+    {
+      "name": "na.omit",
+      "packageCount": 2,
+      "downloadCount": 1595535,
+      "occurrenceCount": 9,
+      "packageReach": 0.020619,
+      "downloadReach": 0.012901
+    },
+    {
+      "name": "ceiling",
+      "packageCount": 2,
+      "downloadCount": 1595535,
+      "occurrenceCount": 4,
+      "packageReach": 0.020619,
+      "downloadReach": 0.012901
+    },
+    {
+      "name": "read.table",
+      "packageCount": 2,
+      "downloadCount": 1595535,
+      "occurrenceCount": 3,
+      "packageReach": 0.020619,
+      "downloadReach": 0.012901
+    },
+    {
+      "name": "approx",
+      "packageCount": 2,
+      "downloadCount": 1595535,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.012901
+    },
+    {
+      "name": "mapply",
+      "packageCount": 2,
+      "downloadCount": 1595535,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.012901
+    },
+    {
+      "name": "as.double",
+      "packageCount": 2,
+      "downloadCount": 1586351,
+      "occurrenceCount": 7,
+      "packageReach": 0.020619,
+      "downloadReach": 0.012827
+    },
+    {
+      "name": "object.size",
+      "packageCount": 2,
+      "downloadCount": 1586351,
+      "occurrenceCount": 3,
+      "packageReach": 0.020619,
+      "downloadReach": 0.012827
+    },
+    {
+      "name": "dput",
+      "packageCount": 2,
+      "downloadCount": 1586351,
+      "occurrenceCount": 2,
+      "packageReach": 0.020619,
+      "downloadReach": 0.012827
+    },
+    {
+      "name": "setGeneric",
+      "packageCount": 1,
+      "downloadCount": 1577749,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.012757
+    },
+    {
+      "name": "standardGeneric",
+      "packageCount": 1,
+      "downloadCount": 1577749,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.012757
+    },
+    {
+      "name": "title",
+      "packageCount": 2,
+      "downloadCount": 1565822,
+      "occurrenceCount": 7,
+      "packageReach": 0.020619,
+      "downloadReach": 0.012661
+    },
+    {
+      "name": "colorRampPalette",
+      "packageCount": 1,
+      "downloadCount": 1552225,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.012551
+    },
+    {
+      "name": "sink",
+      "packageCount": 1,
+      "downloadCount": 1513795,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.01224
+    },
+    {
+      "name": "as.ordered",
+      "packageCount": 1,
+      "downloadCount": 1498659,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.012118
+    },
+    {
+      "name": "sessionInfo",
+      "packageCount": 1,
+      "downloadCount": 1491029,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.012056
+    },
+    {
+      "name": "as.array",
+      "packageCount": 1,
+      "downloadCount": 1466515,
+      "occurrenceCount": 4,
+      "packageReach": 0.010309,
+      "downloadReach": 0.011858
+    },
+    {
+      "name": "is.array",
+      "packageCount": 1,
+      "downloadCount": 1466515,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.011858
+    },
+    {
+      "name": "nlm",
+      "packageCount": 1,
+      "downloadCount": 1466515,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.011858
+    },
+    {
+      "name": "optim",
+      "packageCount": 1,
+      "downloadCount": 1466515,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.011858
+    },
+    {
+      "name": "pairs",
+      "packageCount": 1,
+      "downloadCount": 1466515,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.011858
+    },
+    {
+      "name": "heat.colors",
+      "packageCount": 1,
+      "downloadCount": 1466422,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.011857
+    },
+    {
+      "name": "write",
+      "packageCount": 1,
+      "downloadCount": 1460504,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.011809
+    },
+    {
+      "name": "readBin",
+      "packageCount": 1,
+      "downloadCount": 1453739,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.011755
+    },
+    {
+      "name": "available.packages",
+      "packageCount": 1,
+      "downloadCount": 1453739,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.011755
+    },
+    {
+      "name": "open",
+      "packageCount": 1,
+      "downloadCount": 1453739,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.011755
+    },
+    {
+      "name": "stderr",
+      "packageCount": 1,
+      "downloadCount": 1453739,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.011755
+    },
+    {
+      "name": "barplot",
+      "packageCount": 2,
+      "downloadCount": 1453596,
+      "occurrenceCount": 3,
+      "packageReach": 0.020619,
+      "downloadReach": 0.011754
+    },
+    {
+      "name": "devAskNewPage",
+      "packageCount": 1,
+      "downloadCount": 1414603,
+      "occurrenceCount": 10,
+      "packageReach": 0.010309,
+      "downloadReach": 0.011438
+    },
+    {
+      "name": "getLoadedDLLs",
+      "packageCount": 1,
+      "downloadCount": 1394960,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.011279
+    },
+    {
+      "name": "socketConnection",
+      "packageCount": 1,
+      "downloadCount": 1394960,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.011279
+    },
+    {
+      "name": "factorial",
+      "packageCount": 1,
+      "downloadCount": 1305720,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.010558
+    },
+    {
+      "name": "file.copy",
+      "packageCount": 1,
+      "downloadCount": 1305720,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.010558
+    },
+    {
+      "name": "find.package",
+      "packageCount": 1,
+      "downloadCount": 1305720,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.010558
+    },
+    {
+      "name": "is.factor",
+      "packageCount": 1,
+      "downloadCount": 1305720,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.010558
+    },
+    {
+      "name": "l10n_info",
+      "packageCount": 1,
+      "downloadCount": 1305720,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.010558
+    },
+    {
+      "name": "lsfit",
+      "packageCount": 1,
+      "downloadCount": 1305720,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.010558
+    },
+    {
+      "name": "shQuote",
+      "packageCount": 1,
+      "downloadCount": 1305720,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.010558
+    },
+    {
+      "name": "strwrap",
+      "packageCount": 1,
+      "downloadCount": 1305720,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.010558
+    },
+    {
+      "name": "suppressMessages",
+      "packageCount": 1,
+      "downloadCount": 1305720,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.010558
+    },
+    {
+      "name": "Sys.unsetenv",
+      "packageCount": 1,
+      "downloadCount": 1305720,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.010558
+    },
+    {
+      "name": "system2",
+      "packageCount": 1,
+      "downloadCount": 1305720,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.010558
+    },
+    {
+      "name": ".Call",
+      "packageCount": 1,
+      "downloadCount": 1269154,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.010262
+    },
+    {
+      "name": "col2rgb",
+      "packageCount": 1,
+      "downloadCount": 1237835,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.010009
+    },
+    {
+      "name": "colors",
+      "packageCount": 1,
+      "downloadCount": 1237835,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.010009
+    },
+    {
+      "name": "simplify2array",
+      "packageCount": 1,
+      "downloadCount": 1199743,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.009701
+    },
+    {
+      "name": "setwd",
+      "packageCount": 1,
+      "downloadCount": 1181687,
+      "occurrenceCount": 3,
+      "packageReach": 0.010309,
+      "downloadReach": 0.009555
+    },
+    {
+      "name": "aspell",
+      "packageCount": 1,
+      "downloadCount": 1181687,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.009555
+    },
+    {
+      "name": "abline",
+      "packageCount": 1,
+      "downloadCount": 1181687,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.009555
+    },
+    {
+      "name": "browseVignettes",
+      "packageCount": 1,
+      "downloadCount": 1181687,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.009555
+    },
+    {
+      "name": "dev.control",
+      "packageCount": 1,
+      "downloadCount": 1181687,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.009555
+    },
+    {
+      "name": "lengths",
+      "packageCount": 1,
+      "downloadCount": 1132886,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.00916
+    },
+    {
+      "name": "getFromNamespace",
+      "packageCount": 1,
+      "downloadCount": 1112829,
+      "occurrenceCount": 37,
+      "packageReach": 0.010309,
+      "downloadReach": 0.008998
+    },
+    {
+      "name": "str2expression",
+      "packageCount": 1,
+      "downloadCount": 1112829,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.008998
+    },
+    {
+      "name": "str2lang",
+      "packageCount": 1,
+      "downloadCount": 1112829,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.008998
+    },
+    {
+      "name": "URLdecode",
+      "packageCount": 1,
+      "downloadCount": 1112829,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.008998
+    },
+    {
+      "name": "warningCondition",
+      "packageCount": 1,
+      "downloadCount": 1112829,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.008998
+    },
+    {
+      "name": "help",
+      "packageCount": 1,
+      "downloadCount": 1096644,
+      "occurrenceCount": 15,
+      "packageReach": 0.010309,
+      "downloadReach": 0.008867
+    },
+    {
+      "name": "as.environment",
+      "packageCount": 1,
+      "downloadCount": 963732,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.007793
+    },
+    {
+      "name": "qbinom",
+      "packageCount": 1,
+      "downloadCount": 925846,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.007486
+    },
+    {
+      "name": "qnorm",
+      "packageCount": 1,
+      "downloadCount": 925846,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.007486
+    },
+    {
+      "name": "rawToBits",
+      "packageCount": 1,
+      "downloadCount": 925846,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.007486
+    },
+    {
+      "name": "rowMeans",
+      "packageCount": 1,
+      "downloadCount": 901775,
+      "occurrenceCount": 8,
+      "packageReach": 0.010309,
+      "downloadReach": 0.007292
+    },
+    {
+      "name": "colMeans",
+      "packageCount": 1,
+      "downloadCount": 901775,
+      "occurrenceCount": 7,
+      "packageReach": 0.010309,
+      "downloadReach": 0.007292
+    },
+    {
+      "name": "weighted.mean",
+      "packageCount": 1,
+      "downloadCount": 901775,
+      "occurrenceCount": 6,
+      "packageReach": 0.010309,
+      "downloadReach": 0.007292
+    },
+    {
+      "name": "mad",
+      "packageCount": 1,
+      "downloadCount": 901775,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.007292
+    },
+    {
+      "name": "curve",
+      "packageCount": 1,
+      "downloadCount": 898716,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.007267
+    },
+    {
+      "name": "plot.window",
+      "packageCount": 1,
+      "downloadCount": 889961,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.007196
+    },
+    {
+      "name": "rbeta",
+      "packageCount": 1,
+      "downloadCount": 870861,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.007042
+    },
+    {
+      "name": "dbinom",
+      "packageCount": 1,
+      "downloadCount": 870861,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.007042
+    },
+    {
+      "name": "mat.or.vec",
+      "packageCount": 1,
+      "downloadCount": 870861,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.007042
+    },
+    {
+      "name": "droplevels",
+      "packageCount": 1,
+      "downloadCount": 864145,
+      "occurrenceCount": 4,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006987
+    },
+    {
+      "name": "seq.int",
+      "packageCount": 1,
+      "downloadCount": 864145,
+      "occurrenceCount": 3,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006987
+    },
+    {
+      "name": "as",
+      "packageCount": 1,
+      "downloadCount": 864145,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006987
+    },
+    {
+      "name": "as.name",
+      "packageCount": 1,
+      "downloadCount": 864145,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006987
+    },
+    {
+      "name": "is.list",
+      "packageCount": 1,
+      "downloadCount": 864145,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006987
+    },
+    {
+      "name": "readRDS",
+      "packageCount": 1,
+      "downloadCount": 864145,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006987
+    },
+    {
+      "name": "saveRDS",
+      "packageCount": 1,
+      "downloadCount": 864145,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006987
+    },
+    {
+      "name": "tracemem",
+      "packageCount": 1,
+      "downloadCount": 864145,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006987
+    },
+    {
+      "name": "weekdays",
+      "packageCount": 1,
+      "downloadCount": 864145,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006987
+    },
+    {
+      "name": "write.table",
+      "packageCount": 1,
+      "downloadCount": 864145,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006987
+    },
+    {
+      "name": "anyDuplicated",
+      "packageCount": 1,
+      "downloadCount": 864145,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006987
+    },
+    {
+      "name": "Im",
+      "packageCount": 1,
+      "downloadCount": 864145,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006987
+    },
+    {
+      "name": "new",
+      "packageCount": 1,
+      "downloadCount": 864145,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006987
+    },
+    {
+      "name": "Re",
+      "packageCount": 1,
+      "downloadCount": 864145,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006987
+    },
+    {
+      "name": "rep.int",
+      "packageCount": 1,
+      "downloadCount": 864145,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006987
+    },
+    {
+      "name": "representation",
+      "packageCount": 1,
+      "downloadCount": 864145,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006987
+    },
+    {
+      "name": "trunc",
+      "packageCount": 1,
+      "downloadCount": 864145,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006987
+    },
+    {
+      "name": "type.convert",
+      "packageCount": 1,
+      "downloadCount": 864145,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006987
+    },
+    {
+      "name": "update.packages",
+      "packageCount": 1,
+      "downloadCount": 864145,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006987
+    },
+    {
+      "name": "get",
+      "packageCount": 1,
+      "downloadCount": 843616,
+      "occurrenceCount": 7,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006821
+    },
+    {
+      "name": "withVisible",
+      "packageCount": 1,
+      "downloadCount": 843616,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006821
+    },
+    {
+      "name": "df",
+      "packageCount": 1,
+      "downloadCount": 843616,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006821
+    },
+    {
+      "name": "dist",
+      "packageCount": 1,
+      "downloadCount": 843616,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006821
+    },
+    {
+      "name": "normalizePath",
+      "packageCount": 1,
+      "downloadCount": 843616,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006821
+    },
+    {
+      "name": "simulate",
+      "packageCount": 1,
+      "downloadCount": 843616,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006821
+    },
+    {
+      "name": "strftime",
+      "packageCount": 1,
+      "downloadCount": 843616,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006821
+    },
+    {
+      "name": "as.raster",
+      "packageCount": 1,
+      "downloadCount": 843009,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006816
+    },
+    {
+      "name": "dev.flush",
+      "packageCount": 1,
+      "downloadCount": 843009,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006816
+    },
+    {
+      "name": "replayPlot",
+      "packageCount": 1,
+      "downloadCount": 843009,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006816
+    },
+    {
+      "name": "ppoints",
+      "packageCount": 1,
+      "downloadCount": 838867,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006783
+    },
+    {
+      "name": "chol",
+      "packageCount": 1,
+      "downloadCount": 838867,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006783
+    },
+    {
+      "name": "pnorm",
+      "packageCount": 1,
+      "downloadCount": 838867,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006783
+    },
+    {
+      "name": "rgamma",
+      "packageCount": 1,
+      "downloadCount": 838867,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006783
+    },
+    {
+      "name": "segments",
+      "packageCount": 1,
+      "downloadCount": 838867,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006783
+    },
+    {
+      "name": "glob2rx",
+      "packageCount": 1,
+      "downloadCount": 838555,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.00678
+    },
+    {
+      "name": "sQuote",
+      "packageCount": 1,
+      "downloadCount": 836708,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006765
+    },
+    {
+      "name": "family",
+      "packageCount": 1,
+      "downloadCount": 836291,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006762
+    },
+    {
+      "name": "View",
+      "packageCount": 1,
+      "downloadCount": 809771,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006548
+    },
+    {
+      "name": "setMethod",
+      "packageCount": 1,
+      "downloadCount": 777944,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.00629
+    },
+    {
+      "name": "path.expand",
+      "packageCount": 1,
+      "downloadCount": 777944,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.00629
+    },
+    {
+      "name": "setOldClass",
+      "packageCount": 1,
+      "downloadCount": 777944,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.00629
+    },
+    {
+      "name": "show",
+      "packageCount": 1,
+      "downloadCount": 777944,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.00629
+    },
+    {
+      "name": "capture.output",
+      "packageCount": 1,
+      "downloadCount": 770373,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006229
+    },
+    {
+      "name": "demo",
+      "packageCount": 1,
+      "downloadCount": 770373,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.006229
+    },
+    {
+      "name": "RNGversion",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 17,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "window",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 14,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "as.ts",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 7,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "end",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 7,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "frequency",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 6,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "ts",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 5,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "legend",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 3,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "comment",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "cycle",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "signif",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "axTicks",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "box",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "boxplot",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "deltat",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "embed",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "findInterval",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "gray.colors",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "grey",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "ISOdatetime",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "persp",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "points",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "polygon",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "replace",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "rlnorm",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "tapply",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "text",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "update",
+      "packageCount": 1,
+      "downloadCount": 731390,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.005914
+    },
+    {
+      "name": "matplot",
+      "packageCount": 1,
+      "downloadCount": 722206,
+      "occurrenceCount": 6,
+      "packageReach": 0.010309,
+      "downloadReach": 0.00584
+    },
+    {
+      "name": "is.atomic",
+      "packageCount": 1,
+      "downloadCount": 722206,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.00584
+    },
+    {
+      "name": "is.double",
+      "packageCount": 1,
+      "downloadCount": 722206,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.00584
+    },
+    {
+      "name": "rank",
+      "packageCount": 1,
+      "downloadCount": 722206,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.00584
+    },
+    {
+      "name": "var",
+      "packageCount": 1,
+      "downloadCount": 722206,
+      "occurrenceCount": 2,
+      "packageReach": 0.010309,
+      "downloadReach": 0.00584
+    },
+    {
+      "name": "aperm",
+      "packageCount": 1,
+      "downloadCount": 722206,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.00584
+    },
+    {
+      "name": "dget",
+      "packageCount": 1,
+      "downloadCount": 722206,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.00584
+    },
+    {
+      "name": "hashtab",
+      "packageCount": 1,
+      "downloadCount": 722206,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.00584
+    },
+    {
+      "name": "is.element",
+      "packageCount": 1,
+      "downloadCount": 722206,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.00584
+    },
+    {
+      "name": "is.integer",
+      "packageCount": 1,
+      "downloadCount": 722206,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.00584
+    },
+    {
+      "name": "is.numeric",
+      "packageCount": 1,
+      "downloadCount": 722206,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.00584
+    },
+    {
+      "name": "load",
+      "packageCount": 1,
+      "downloadCount": 722206,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.00584
+    },
+    {
+      "name": "rowSums",
+      "packageCount": 1,
+      "downloadCount": 722206,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.00584
+    },
+    {
+      "name": "save",
+      "packageCount": 1,
+      "downloadCount": 722206,
+      "occurrenceCount": 1,
+      "packageReach": 0.010309,
+      "downloadReach": 0.00584
     }
   ]
 }
