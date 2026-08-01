@@ -240,14 +240,17 @@ controls. They cross the Worker boundary, remain available in `evalDetailed.grap
 toward the configured output budget. Inline and Worker callbacks receive the same command shapes,
 and the Playground renders them to Canvas. Evidence covers the measured systemfonts glyph-raster,
 httr PNG-array, posterior interval-segment, zoo filled-area, zoo plot-frame, zoo grouped-boxplot,
-and zoo legend patterns. The owned device also supports `dev.cur`/`dev.list`, GNU R-shaped null
-device 1 and browser device 2 identities, `dev.off`/`graphics.off` closure, nested
-`dev.hold`/`dev.flush` levels, ordered cross-evaluation command buffering, and bounded same-session
-`recordPlot`/`replayPlot` over its own page/window/raster/segments/points/text/polygon/box/boxplot/
-legend display list. Closing flushes held commands and resets device-local `par()` values. Complete
-plot methods, multiple-device selection, file devices, axis tick/label drawing, complete
-clipping/margins, graphical parameters beyond the documented controls, external display-list
-formats, and pixel equivalence across GNU R devices are not claimed.
+and zoo legend patterns. The owned registry also supports `dev.cur`/`dev.list`, GNU R-shaped null
+device 1, simultaneous browser/PNG device identities, selected `dev.off`/`graphics.off` closure,
+nested `dev.hold`/`dev.flush` levels, per-device `par()` isolation and restoration, ordered
+cross-evaluation command buffering, and bounded same-session `recordPlot`/`replayPlot` over its own
+page/window/raster/segments/points/text/polygon/box/boxplot/ legend display list. `grDevices::png`
+uses that list to produce bounded, decompressible RGBA PNG bytes in the virtual file store,
+including transparent backgrounds, exact requested dimensions, raw-byte reads, and numbered
+multi-page targets. Closing flushes held commands and completes the current PNG page. Complete plot
+methods, non-PNG devices, axis tick/label drawing, complete clipping/margins, graphical parameters
+beyond the documented controls, external display-list formats, and pixel equivalence across GNU R
+devices are not claimed.
 
 `base::plot` and `graphics::plot.default` have differential shape evidence for the sampled rank-22
 numeric calls and package-owned S3 extension point. The generic probes class methods before entering
@@ -400,9 +403,9 @@ opaque session root and `file.exists` recognizes session files and installed-pac
 directories. `readLines`, `writeLines`, `cat`, and `utils::capture.output` consume the same handles;
 closed `capture.output` targets follow GNU R's destroy-after-use behavior. Handle identity prevents
 forging, package writes are rejected, and the map is reset with the evaluator. Host paths,
-compression, URLs, sockets, raw/binary I/O, encoding conversion on writes, independent read/write
-positions, positions beyond end of file, and the broader connection/filesystem stack are not
-claimed.
+compression, URLs, sockets, typed binary decoding/writes beyond raw `readBin`, encoding conversion
+on writes, independent read/write positions, positions beyond end of file, and the broader
+connection/filesystem stack are not claimed.
 
 `base::R.home`, `dir.create`, `dir.exists`, `list.files`/`dir`, `list.dirs`, `getwd`, `setwd`,
 `normalizePath`, `basename`, and `dirname` have public-shape differential evidence plus NativR-only
@@ -626,9 +629,10 @@ implements GNU R's interactive front-end state.
 `capabilities()` has differential coverage for the complete GNU R 4.6 capability-name set, named
 logical-vector attributes, `NULL`/empty/unknown selection, requested order and duplication, factor
 coercion, and lazy `Xchk`. All values deliberately report `FALSE`: none of the corresponding GNU R
-graphics devices, Tcl/Tk, sockets, filesystem, native profiling, localization/iconv, Cairo, ICU,
-long-double, or libcurl facilities are exposed through the network-free browser runtime. This is a
-platform non-applicability result, not emulation of the host machine's installed libraries.
+native graphics devices beyond the owned PNG path, Tcl/Tk, sockets, host filesystem, native
+profiling, localization/iconv, Cairo, ICU, long-double, or libcurl facilities are exposed through
+the network-free browser runtime. This is a platform non-applicability result, not emulation of the
+host machine's installed libraries.
 
 `.LC.categories`, `Sys.getlocale`, `Sys.setlocale`, and `Sys.localeconv` use resettable
 evaluator-owned state rather than browser or operating-system locale globals. The C profile and its

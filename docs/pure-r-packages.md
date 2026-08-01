@@ -164,7 +164,12 @@ and implemented as reusable runtime behavior. For example, the rank-80 `dev.off(
 browser-device lifecycle shared by every package, including current/list queries, held-command
 flush, close, reset, and reopen semantics. Package-specific shims are not the compatibility model.
 Rank-127 `system.time()` similarly became one lazy monotonic timing primitive, plus `proc.time()`,
-for all 95 measured calls across six packages rather than six package-specific substitutes.
+for all 95 measured calls across six packages rather than six package-specific substitutes. Rank-121
+`png()` follows the same model for seven calls across five packages: one numbered file device reuses
+the shared display list, software renderer, virtual binary store, and raw `readBin()` seam. Packages
+can therefore generate and inspect actual PNG resources without a package-specific TypeScript port.
+Font/device fidelity and unsupported graphics primitives still determine whether a particular
+plotting package is compatible.
 
 ## Explicit boundaries
 
@@ -176,8 +181,8 @@ for all 95 measured calls across six packages rather than six package-specific s
 - `file()` connections currently cover bounded text/binary-mode handles over immutable package files
   and same-session browser-memory paths, including implicit open/close, explicit `open()`/`close()`,
   `isOpen()`, `flush()`, bounded `seek()`, and `summary()`. Compressed connections, URLs, sockets,
-  host paths, raw/binary I/O, separate read/write seek positions, and the broader file API remain
-  separate work.
+  host paths, typed raw/binary decoding or writes beyond raw `readBin()`, separate read/write seek
+  positions, and the broader file API remain separate work.
 - Package resources and their parent directories can be enumerated with `list.files()`/`list.dirs()`
   or selected with `setwd()`. Relative `readLines()`, table-reader, and connection paths then
   resolve inside that immutable package root. `R.home()` and the runtime/package/session directory

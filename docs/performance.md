@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 335 KiB gzip;
+- Worker JavaScript: 341 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -474,3 +474,9 @@ Language subset 0.206 adds `system.time()` and `proc.time()` over the browser mo
 including lazy expression timing, `proc_time` metadata, scalar control validation, and bounded
 timed-error output. It adds no dependency or host process adapter. The measured Worker is 334.6 KiB
 gzip and remains within the existing 335 KiB ceiling; client and parser-Wasm budgets are unchanged.
+
+Language subset 0.207 adds the usage-ranked PNG file-device path: a numbered device registry,
+DOM-free rasterizer for the owned graphics command vocabulary, PNG chunk/checksum encoder,
+browser-standard DEFLATE with a stored-block fallback, multi-page filenames, and raw virtual-file
+reads. This adds no dependency or host renderer. The measured Worker is 340.4 KiB gzip, so the
+ceiling rises narrowly to 341 KiB; client and parser-Wasm budgets remain unchanged.

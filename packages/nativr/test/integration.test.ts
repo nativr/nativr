@@ -8182,7 +8182,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.206.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.207.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -11155,6 +11155,156 @@ describe("complete inline source-to-result vertical slice", () => {
     });
     await expect(runtime.eval("grDevices::dev.off(2:3)")).rejects.toMatchObject({
       code: "NRT3398",
+    });
+    await runtime.dispose();
+  });
+
+  it("renders bounded PNG files through the shared graphics device lifecycle", async () => {
+    const runtime = await session();
+    await expect(runtime.eval("names(formals(grDevices::png))")).resolves.toEqual([
+      "filename",
+      "width",
+      "height",
+      "units",
+      "pointsize",
+      "bg",
+      "res",
+      "family",
+      "restoreConsole",
+      "type",
+      "antialias",
+      "symbolfamily",
+    ]);
+    await expect(
+      runtime.eval(`
+        f <- formals(grDevices::png)
+        c(
+          identical(f$filename, "Rplot%03d.png"), identical(f$width, 480),
+          identical(f$height, 480), identical(f$units, "px"),
+          identical(f$pointsize, 12), identical(f$bg, "white"),
+          identical(f$res, NA), identical(f$family, "sans"),
+          identical(f$restoreConsole, TRUE),
+          identical(f$type, quote(c("windows", "cairo", "cairo-png"))),
+          identical(f$antialias, quote(c("default", "none", "cleartype", "gray", "subpixel"))),
+          identical(f$symbolfamily, "default")
+        )
+      `),
+    ).resolves.toEqual([true, true, true, true, true, true, true, true, true, true, true, true]);
+    const opened = await runtime.evalDetailed(`
+      graphics::plot.new()
+      path <- tempfile(fileext = ".png")
+      result <- withVisible(grDevices::png(
+        path, width = 96, height = 64, pointsize = 14,
+        bg = "transparent", type = "cairo"
+      ))
+      c(
+        is.null(result$value), result$visible,
+        file.exists(path), length(readBin(path, "raw", n = 32L)),
+        unname(grDevices::dev.cur()), names(grDevices::dev.list())
+      )
+    `);
+    expect(opened.value).toEqual(["TRUE", "FALSE", "TRUE", "0", "3", "NativR", "png"]);
+    expect(opened.graphics.map((event) => event.kind)).toEqual(["new-page"]);
+    await expect(runtime.eval('unname(graphics::par("ps"))')).resolves.toEqual(14);
+
+    const rendered = await runtime.evalDetailed(`
+      graphics::par(mar = c(1, 2, 3, 4))
+      plot(c(0, 1, 2), c(0, 1, 0), type = "b", main = "PNG")
+      closed <- withVisible(grDevices::dev.off())
+      bytes <- as.integer(readBin(path, "raw", n = 1000000L))
+      width <- sum(bytes[17:20] * 256 ^ (3:0))
+      height <- sum(bytes[21:24] * 256 ^ (3:0))
+      c(
+        unname(closed$value), closed$visible,
+        unname(grDevices::dev.cur()),
+        identical(bytes[1:8], c(137L, 80L, 78L, 71L, 13L, 10L, 26L, 10L)),
+        width, height, length(bytes) > 100L
+      )
+    `);
+    expect(rendered.value).toEqual([2, 1, 2, 1, 96, 64, 1]);
+    expect(rendered.graphics).toEqual([]);
+    await expect(
+      runtime.eval(`
+        c(
+          identical(graphics::par("mar"), c(5.1, 4.1, 4.1, 2.1)),
+          identical(unname(graphics::par("ps")), 12L)
+        )
+      `),
+    ).resolves.toEqual([true, true]);
+    const pngValue = await runtime.eval('readBin(path, "raw", n = 1000000L)');
+    if (!isRaw(pngValue)) throw new Error("Expected PNG bytes as a public raw value.");
+    const idat: Uint8Array[] = [];
+    let chunkOffset = 8;
+    while (chunkOffset + 12 <= pngValue.bytes.byteLength) {
+      const view = new DataView(
+        pngValue.bytes.buffer,
+        pngValue.bytes.byteOffset + chunkOffset,
+        pngValue.bytes.byteLength - chunkOffset,
+      );
+      const length = view.getUint32(0);
+      const type = new TextDecoder().decode(
+        pngValue.bytes.subarray(chunkOffset + 4, chunkOffset + 8),
+      );
+      if (type === "IDAT") {
+        idat.push(pngValue.bytes.slice(chunkOffset + 8, chunkOffset + 8 + length));
+      }
+      chunkOffset += 12 + length;
+    }
+    const compressed = new Uint8Array(idat.reduce((length, chunk) => length + chunk.length, 0));
+    let compressedOffset = 0;
+    for (const chunk of idat) {
+      compressed.set(chunk, compressedOffset);
+      compressedOffset += chunk.length;
+    }
+    const decoded = new Uint8Array(
+      await new Response(
+        new Blob([compressed]).stream().pipeThrough(new DecompressionStream("deflate")),
+      ).arrayBuffer(),
+    );
+    expect(decoded).toHaveLength(64 * (96 * 4 + 1));
+    expect(
+      Array.from(
+        { length: 96 * 64 },
+        (_, index) => decoded[index * 4 + Math.floor(index / 96) + 4],
+      ).some((alpha) => alpha !== 0),
+    ).toBe(true);
+    await expect(
+      runtime.eval(`
+        con <- file(path, open = "rb")
+        first <- readBin(con, "raw", n = 4L)
+        second <- readBin(con, "raw", n = 4L)
+        position <- seek(con)
+        close(con)
+        c(as.integer(first), as.integer(second), position)
+      `),
+    ).resolves.toEqual([137, 80, 78, 71, 13, 10, 26, 10, 8]);
+
+    await expect(
+      runtime.eval(`
+        pages <- tempfile(fileext = "-%02d.png")
+        grDevices::png(pages, width = 32, height = 24)
+        graphics::plot.new()
+        graphics::segments(0, 0, 1, 1)
+        graphics::plot.new()
+        graphics::segments(0, 1, 1, 0)
+        grDevices::dev.off()
+        first <- sub("%02d", "01", pages, fixed = TRUE)
+        second <- sub("%02d", "02", pages, fixed = TRUE)
+        c(
+          file.exists(first), file.exists(second),
+          as.integer(readBin(first, "raw", n = 8L)),
+          as.integer(readBin(second, "raw", n = 8L))
+        )
+      `),
+    ).resolves.toEqual([1, 1, 137, 80, 78, 71, 13, 10, 26, 10, 137, 80, 78, 71, 13, 10, 26, 10]);
+    await expect(runtime.eval("grDevices::png(tempfile(), width = 0)")).rejects.toMatchObject({
+      code: "NRT3400",
+    });
+    await expect(runtime.eval('grDevices::png(tempfile(), units = "in")')).rejects.toMatchObject({
+      code: "NRT3400",
+    });
+    await expect(runtime.eval('grDevices::png(tempfile(), units = "bad")')).rejects.toMatchObject({
+      code: "NRT3400",
     });
     await runtime.dispose();
   });

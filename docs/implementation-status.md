@@ -73,6 +73,14 @@ Date: 2026-07-31
   elapsed seconds, missing unavailable child-process fields, timed-error stderr output, and
   deterministic reset. Browser-unavailable CPU, child-process, and forced-GC metrics are explicit
   platform boundaries rather than invented values.
+- Usage-ranked `grDevices::png()` with a numbered browser/PNG device registry, invisible open,
+  selectable close, zero-byte target creation, `%d` multi-page filenames, pixel/resolution and
+  background validation, a DOM-free renderer for the complete owned graphics-event vocabulary,
+  per-device `par()` state, compressed RGBA PNG chunks, raw `readBin()` retrieval, and bounded
+  pixel/file allocation. Tests verify GNU R lifecycle/shape behavior, parameter isolation, PNG
+  signature and dimensions, IDAT decompression, and nontransparent plot pixels. Exact fonts,
+  anti-aliasing, color profiles, typed binary reads, and non-PNG file devices remain explicit depth
+  boundaries.
 - Browser-memory tabular I/O includes `utils::read.table`, `read.csv`, `read.csv2`, `read.delim`,
   `read.delim2`, `write.table`, `write.csv`, and `write.csv2`. The bounded parser handles
   separators, quoted fields (including doubled quotes and embedded newlines), headers, row/column
@@ -560,11 +568,11 @@ Date: 2026-07-31
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 11 files and 376 tests; aggregate V8 coverage is 84.45% statements, 72.24%
-  branches, 92.43% functions, and 85.71% lines.
+- Vitest currently passes 12 files and 379 tests; aggregate V8 coverage is 84.67% statements, 72.26%
+  branches, 92.55% functions, and 85.92% lines.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 708/708 cases. The optional black-box R oracle passes all 673
+- Checked-in conformance passes 709/709 cases. The optional black-box R oracle passes all 674
   eligible cases and explicitly skips 35 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,

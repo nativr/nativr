@@ -4,22 +4,22 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 552,
-    "overlappingNames": 537,
-    "missingReferenceNames": 1985,
+    "nativrRegisteredNames": 554,
+    "overlappingNames": 539,
+    "missingReferenceNames": 1983,
     "nativrExtensionNames": 15,
-    "nameCoverage": 0.212926
+    "nameCoverage": 0.213719
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 400, "nameCoverage": 0.292612 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 401, "nameCoverage": 0.293343 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 70, "nameCoverage": 0.150862 },
     { "package": "methods", "callableNames": 209, "overlappingNames": 9, "nameCoverage": 0.043062 },
     { "package": "utils", "callableNames": 262, "overlappingNames": 21, "nameCoverage": 0.080153 },
     {
       "package": "grDevices",
       "callableNames": 135,
-      "overlappingNames": 21,
-      "nameCoverage": 0.155556
+      "overlappingNames": 22,
+      "nameCoverage": 0.162963
     },
     {
       "package": "graphics",
@@ -390,6 +390,7 @@
     "plot.new",
     "plot.window",
     "pmin",
+    "png",
     "pnorm",
     "points",
     "polygon",
@@ -422,6 +423,7 @@
     "read.delim",
     "read.delim2",
     "read.table",
+    "readBin",
     "readLines",
     "readRDS",
     "recordPlot",
@@ -1959,7 +1961,6 @@
     "pmax.int",
     "pmin.int",
     "pnbinom",
-    "png",
     "points.default",
     "poisson",
     "poisson.test",
@@ -2116,7 +2117,6 @@
     "read.ftable",
     "read.fwf",
     "read.socket",
-    "readBin",
     "readChar",
     "readCitationFile",
     "readClipboard",

@@ -484,13 +484,26 @@ command count is bounded by `maxVectorLength`, and reset/dispose clears them. Ca
 active device return zero. The runtime and base packages contain no DOM or Canvas dependency; the
 Worker transfers commands to the public API and the Playground owns the reference Canvas renderer.
 
-`dev.cur()` and `dev.list()` expose the session's single owned browser device as device 2 and use
-GNU R's named null-device value 1 when no page is active. `dev.off(which = dev.cur())` closes device
-2, flushes held commands before removal, resets device-local `par()` state, and returns the new
-current device; unsupported device numbers are harmless no-ops, while closing null device 1 is an
-error. `graphics.off()` closes the owned device and returns invisible `NULL`. A later `plot.new()`
-opens a fresh device 2. Multiple simultaneous devices, device switching, and file-format devices are
-not part of this lifecycle.
+`dev.cur()` and `dev.list()` expose a numbered registry containing the browser display and any open
+PNG file devices, while retaining GNU R's named null-device value 1 when no device is active.
+`dev.off(which = dev.cur())` can close the current or a selected registered device, flushes held
+commands before removal, renders a pending PNG page when applicable, selects a remaining device, and
+returns that new current device. Unsupported device numbers remain harmless no-ops, while closing
+null device 1 is an error. `graphics.off()` closes every owned device and returns invisible `NULL`;
+later drawing reopens the browser device at the lowest free number. Each device owns its own
+`graphics::par()` map; opening a PNG device applies its point size without mutating the browser
+device, and closing it restores the newly selected device's parameters.
+
+`grDevices::png()` opens an invisible-returning browser-memory file device with GNU R-shaped
+formals. It resolves `px` dimensions directly or converts `in`/`cm`/`mm` dimensions using required
+resolution, validates colors and device controls, creates the page target immediately, and records
+the same page/window/raster/segment/point/text/polygon/box/boxplot/legend display list used by the
+screen renderer. A deterministic DOM-free software rasterizer composites RGBA pixels; PNG encoding
+uses the platform `CompressionStream` when available and a standards-compliant stored-DEFLATE
+fallback otherwise. Page transitions and close write bounded PNG bytes to the session store, with
+`%d`/zero-padded numbered filenames for multiple pages. Raw `readBin()` can retrieve those bytes.
+Exact GNU R font metrics, anti-aliasing modes, device color profiles, every `png()` backend/control,
+typed `readBin()` decoding, and cross-device pixel identity remain incomplete.
 
 `graphics::persp()` dispatches classed first arguments before its owned matrix default. The default
 requires increasing finite x/y coordinates and a two-dimensional real z grid, derives missing grids
@@ -618,10 +631,10 @@ claims an interactive session.
 
 `capabilities()` returns GNU R's 19-name logical-vector shape and exact `what` selection order,
 including duplicate known names and omission of unknown names. Every entry is `FALSE` because the
-network-free browser runtime does not expose GNU R graphics devices, Tcl/Tk, sockets, filesystem
-FIFOs, native profiling, native localization/iconv, Cairo, ICU, long double, or libcurl through the
-R surface. The internal `Xchk` formal is accepted without forcing, matching the observed public call
-contract.
+network-free browser runtime does not expose GNU R native screen-device capabilities, Tcl/Tk,
+sockets, host filesystem FIFOs, native profiling, native localization/iconv, Cairo, ICU, long
+double, or libcurl through the R surface. The internal `Xchk` formal is accepted without forcing,
+matching the observed public call contract.
 
 Locale inspection is deterministic and session-local. `.LC.categories` exposes the nine GNU R
 category names; `Sys.getlocale()` begins at C, `Sys.setlocale()` mutates supported state, and reset

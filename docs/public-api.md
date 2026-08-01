@@ -35,10 +35,12 @@ R code can use `tempdir()`/`tempfile()` with `file()`, `file.exists()`,
 `readLines()`/`writeLines()`, connection-aware `cat()`/`capture.output()`,
 `dput()`/`dget()`/`unlink()`, or `save()`/`load()` for bounded, same-session text and supported
 workspace serialization. `open()`/`close()` expose read/write/append modes, `seek()` controls the
-supported shared text cursor, and `isOpen()` or `summary()` reports state. Those opaque
-`nativr://session-temp/...` paths never leave the evaluator and are cleared by `reset()` or
-`dispose()`; they are not host files and cannot be passed through the public JavaScript API. The
-workspace archive is NativR canonical source rather than a GNU R `.RData` binary.
+supported shared text cursor, and `isOpen()` or `summary()` reports state. `grDevices::png()` can
+write a bounded image into the same store, while raw `readBin()` returns owned bytes; if such a raw
+value is the evaluation result, the normal public raw-value conversion exposes its copied
+`Uint8Array`. Opaque `nativr://session-temp/...` identifiers never become usable host paths and are
+cleared by `reset()` or `dispose()`. The workspace archive is NativR canonical source rather than a
+GNU R `.RData` binary.
 
 Within R, `dir.create()` can create nested session directories and `getwd()`/`setwd()` plus relative
 paths work across session files and immutable package resources. `list.files()`/`dir()` and

@@ -324,55 +324,56 @@ captures and replays that owned page/window/raster display list for ragg's measu
 call shape, including hold/flush integration and bounded command/raster storage. External GNU R
 recorded-plot formats, package reloading, `print.recordedplot`, and general graphics devices remain
 outside this increment. The higher-reach rank-80 `dev.off` gap is now closed together with
-`dev.cur`, `dev.list`, and `graphics.off`: the session exposes one browser-owned device, flushes
-held commands and resets device-local `par()` values when it closes, then opens a fresh device on
-the next plot. Multiple or file-format devices remain explicit boundaries. Rank-423 `stats::ppoints`
-now runs posterior's two measured `quantile(x, ppoints(10))` examples with documented default
-offsets, observation-vector lengths, numeric/complex offsets, recycling and attributes, lazy
-nonpositive results, and bounded allocation. Rank-424 `chol` now supplies posterior's measured
-`rvar` S3 method seam plus an independently implemented upper-triangular real-matrix default with
-optional positive-semidefinite pivot/rank metadata, data-frame coercion, dimnames, lazy dots, and
-explicit non-finite/shape/defunct-control boundaries. Rank-425 `stats::pnorm` now runs posterior's
-measured vectorized-mean probability example with recycled `q`/`mean`/`sd`, lower and upper tails,
-attributes, point-mass and missing/domain boundaries, and stable far-tail log probabilities computed
-without host statistics libraries. Rank-426 `stats::rgamma` now runs posterior's measured scalar
-rate/shape examples through the session-owned gamma sampler, with vectorized parameters, rate/scale
-equivalence, moments, degenerate limits, warnings, and deterministic reseeding. Rank-427
-`graphics::segments` now runs posterior's measured vertical credible-interval call through a
-Worker-safe vector graphics event, including endpoint defaults, recycled coordinates/styles,
-missing-value omission, Canvas rendering, and same-session record/replay. Rank-428 `utils::glob2rx`
-now runs rprojroot's measured `glob2rx("DESCRIPTION")` file-pattern call, with vectorized wildcard
-translation, documented head/tail trimming, ordinary R coercion, dropped attributes, namespace
-access, and bounded output. Rank-429 `sQuote` now runs httr's two measured request-URL logging calls
-with deterministic ASCII defaults, explicit UTF-8/TeX/custom styles, owned-value coercion, and
-session-option integration. Rank-430 `stats::family` now provides distributional's measured
-`family(dist)` S3 extension seam, including lazy dots, class-order/`NextMethod`/default dispatch,
-and explicit package-method boundaries. Rank-431 `utils::View` now maps rstudioapi's measured
-terminal-context call shape to a bounded, character-formatted data-view event available identically
-in inline and Worker execution; the Playground renders those events as read-only tables without
-importing a DOM into the runtime. Rank-433 `path.expand` now runs diffobj's measured home-path
-expression under an explicit browser-without-a-home-directory contract, while the higher-reach
-`file.path` dependency provides vectorized, deterministic path-string construction without
-consulting a host filesystem. Rank-434 `methods::setOldClass` now runs diffobj's measured `zulu`
-S3/S4 guides-method registration and links declared old-class inheritance into the bounded
-single-object S4 dispatch and coercion paths. Rank-435 `methods::show` now provides diffobj's
-measured style-display extension seam with inherited method lookup, method-result visibility, and
-bounded default text output. Rank-436 `utils::capture.output` now runs httpuv's measured
-request-inspection expression through a nested, resource-bounded in-memory output capture, with
-visible-result printing, partial-line handling, message selection, split output, and bounded
-browser-memory file/connection targets. Host filesystem targets remain an explicit boundary.
-Rank-437 `utils::demo` reproduces the empty package-demo catalog shape while making external package
-demo discovery and execution an explicit package-resource boundary. Rank-438 `RNGversion` runs zoo's
-measured R-3.5 reproducibility setup by selecting the historical Rounding sampler before `set.seed`;
-pre-R-1.7 generator families remain explicit boundaries. Ranks 439-443 add the regular time-series
-foundation: `ts()` constructs vector or matrix series, `as.ts()` and `frequency()` expose their
-sampling metadata, and `window()` slices, downsamples, or explicitly extends them. These generics
-also forward to independently supplied methods such as `window.zoo`; NativR does not claim that zoo
-itself is bundled or compatible yet. Rank 444 `graphics::legend` now runs zoo's three measured
-line/point legend shapes through a bounded Worker graphics event and the Playground Canvas renderer,
-including keyword/coordinate placement, colors, columns, titles, invisible geometry results, and
-same-session record/replay. General base graphics, arbitrary graphical parameters, and
-device-identical layout remain explicit boundaries. See the
+`dev.cur`, `dev.list`, and `graphics.off`: the session exposes a numbered device registry, flushes
+held commands when a device closes, selects a remaining device, then opens a fresh browser device on
+the next plot when needed. PNG file devices now share that registry; other device formats remain
+explicit boundaries. Rank-423 `stats::ppoints` now runs posterior's two measured
+`quantile(x, ppoints(10))` examples with documented default offsets, observation-vector lengths,
+numeric/complex offsets, recycling and attributes, lazy nonpositive results, and bounded allocation.
+Rank-424 `chol` now supplies posterior's measured `rvar` S3 method seam plus an independently
+implemented upper-triangular real-matrix default with optional positive-semidefinite pivot/rank
+metadata, data-frame coercion, dimnames, lazy dots, and explicit non-finite/shape/defunct-control
+boundaries. Rank-425 `stats::pnorm` now runs posterior's measured vectorized-mean probability
+example with recycled `q`/`mean`/`sd`, lower and upper tails, attributes, point-mass and
+missing/domain boundaries, and stable far-tail log probabilities computed without host statistics
+libraries. Rank-426 `stats::rgamma` now runs posterior's measured scalar rate/shape examples through
+the session-owned gamma sampler, with vectorized parameters, rate/scale equivalence, moments,
+degenerate limits, warnings, and deterministic reseeding. Rank-427 `graphics::segments` now runs
+posterior's measured vertical credible-interval call through a Worker-safe vector graphics event,
+including endpoint defaults, recycled coordinates/styles, missing-value omission, Canvas rendering,
+and same-session record/replay. Rank-428 `utils::glob2rx` now runs rprojroot's measured
+`glob2rx("DESCRIPTION")` file-pattern call, with vectorized wildcard translation, documented
+head/tail trimming, ordinary R coercion, dropped attributes, namespace access, and bounded output.
+Rank-429 `sQuote` now runs httr's two measured request-URL logging calls with deterministic ASCII
+defaults, explicit UTF-8/TeX/custom styles, owned-value coercion, and session-option integration.
+Rank-430 `stats::family` now provides distributional's measured `family(dist)` S3 extension seam,
+including lazy dots, class-order/`NextMethod`/default dispatch, and explicit package-method
+boundaries. Rank-431 `utils::View` now maps rstudioapi's measured terminal-context call shape to a
+bounded, character-formatted data-view event available identically in inline and Worker execution;
+the Playground renders those events as read-only tables without importing a DOM into the runtime.
+Rank-433 `path.expand` now runs diffobj's measured home-path expression under an explicit
+browser-without-a-home-directory contract, while the higher-reach `file.path` dependency provides
+vectorized, deterministic path-string construction without consulting a host filesystem. Rank-434
+`methods::setOldClass` now runs diffobj's measured `zulu` S3/S4 guides-method registration and links
+declared old-class inheritance into the bounded single-object S4 dispatch and coercion paths.
+Rank-435 `methods::show` now provides diffobj's measured style-display extension seam with inherited
+method lookup, method-result visibility, and bounded default text output. Rank-436
+`utils::capture.output` now runs httpuv's measured request-inspection expression through a nested,
+resource-bounded in-memory output capture, with visible-result printing, partial-line handling,
+message selection, split output, and bounded browser-memory file/connection targets. Host filesystem
+targets remain an explicit boundary. Rank-437 `utils::demo` reproduces the empty package-demo
+catalog shape while making external package demo discovery and execution an explicit
+package-resource boundary. Rank-438 `RNGversion` runs zoo's measured R-3.5 reproducibility setup by
+selecting the historical Rounding sampler before `set.seed`; pre-R-1.7 generator families remain
+explicit boundaries. Ranks 439-443 add the regular time-series foundation: `ts()` constructs vector
+or matrix series, `as.ts()` and `frequency()` expose their sampling metadata, and `window()` slices,
+downsamples, or explicitly extends them. These generics also forward to independently supplied
+methods such as `window.zoo`; NativR does not claim that zoo itself is bundled or compatible yet.
+Rank 444 `graphics::legend` now runs zoo's three measured line/point legend shapes through a bounded
+Worker graphics event and the Playground Canvas renderer, including keyword/coordinate placement,
+colors, columns, titles, invisible geometry results, and same-session record/replay. General base
+graphics, arbitrary graphical parameters, and device-identical layout remain explicit boundaries.
+See the
 [compatibility contract](https://github.com/nativr/nativr/blob/main/docs/compatibility-contract.md)
 for exact boundaries.
 
@@ -535,9 +536,9 @@ unchanged package code. Package resources can be enumerated or selected as a rea
 directory, while session directories can be created and removed recursively. Implicit and explicit
 connection opening, read/write/append modes, persistent cursors, `seek`, `flush`, `isOpen`,
 `summary`, destruction, and connection-aware `readLines`, `writeLines`, `cat`, and `capture.output`
-have executable coverage. URL, socket, absolute host-file, symlink, and general raw/binary
-connection operations remain explicit boundaries; serialization builtins use bounded binary-mode
-handles directly.
+have executable coverage. URL, socket, absolute host-file, symlink, and general typed raw/binary
+connection operations remain explicit boundaries; raw `readBin()` can retrieve owned bytes, while
+serialization builtins use bounded binary-mode handles directly.
 
 Measured rank 22 `plot()` now supplies the high-reach S3 extension point used by package-defined
 `plot.<class>` methods and a bounded browser-native numeric default. One-argument vectors and paired
@@ -552,6 +553,15 @@ single-evaluation path. It returns GNU R-shaped `proc_time` values, uses a monot
 clock, preserves side effects, validates `gcFirst`, and emits timed-error output before propagating
 the original condition. The adjacent `proc.time()` exposes the same named/classed shape. Browser-
 unavailable CPU and child-process counters remain explicit platform boundaries.
+
+Rank 121 `grDevices::png()` now covers all seven measured calls across five packages. It opens
+alongside the browser display, records the existing graphics command vocabulary, rasterizes it in
+the Worker without DOM or native dependencies, and writes a standards-compliant compressed RGBA PNG
+into the bounded session file store on page transition or `dev.off()`. Requested dimensions,
+transparent backgrounds, point size, numbered multi-page filenames, device return values, PNG
+signature/dimensions, decompression, and nontransparent plot pixels have executable evidence. Raw
+`readBin()` retrieves the file bytes; typed binary decoding, exact GNU R fonts/anti-aliasing/color
+management, other file devices, and pixel identity remain incomplete.
 
 Development priority is based on a reproducible analysis of documented usage in popular CRAN
 packages. The committed
