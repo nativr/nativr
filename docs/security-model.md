@@ -36,6 +36,11 @@ allocation are bounded before use. Gzip uses browser-standard streams; unsupport
 native-endian/ASCII streams, graph types, and malformed references fail without falling through to
 host libraries. Package `.rda` and `R/sysdata.rda` bytes are immutable reviewed bundle resources.
 
+Character encoding metadata is evaluator-owned data, not authority to invoke a host codec or read
+locale state. Exact stored bytes and four canonical marks are length-bounded with their vector;
+conversion uses deterministic in-process UTF-8/Latin-1 rules and never falls through to `iconv`, an
+operating-system API, or a network service.
+
 Directory operations use the same closed capability set. Session, package, and runtime roots are
 recognized structurally; `.` and `..` are normalized with an explicit no-root-escape check; and the
 working directory is always one of those owned directories. Listing cannot discover host names,

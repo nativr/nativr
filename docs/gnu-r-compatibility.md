@@ -501,6 +501,16 @@ auto labels, log/aspect layout, formula/function/time-series/raster and other co
 margins/clipping, arbitrary graphical controls, exact diagnostics, long vectors, and
 device-identical rendering remain incomplete.
 
+The character-encoding increment adds `Encoding`, `Encoding<-`, `enc2native`, and `enc2utf8`,
+raising current name overlap to 543 of 2,522. Rank-144 `Encoding` accounts for 12 observed calls
+across three sampled package manuals and 4.5% download-weighted reach. Each character element now
+owns exact bytes plus an `unknown`, `latin1`, `UTF-8`, or `bytes` mark; ASCII and missing strings
+canonicalize to `unknown`. GNU R 4.6 differential evidence covers query/replacement, exact label
+acceptance, recycling, attribute preservation, raw-byte reinterpretation, conversion, subset
+writeback evaluation count, and XDR mark/byte roundtrips. Browser-native encoding is deterministic
+UTF-8. General `iconv`, host locale codecs, normalization, malformed-byte display, and complete
+encoding-sensitive string behavior remain incomplete.
+
 ## Completion evidence
 
 The objective is complete only when:

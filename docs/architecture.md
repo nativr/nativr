@@ -30,6 +30,13 @@ owned split grouping, subsetting, function invocation, atomic promotion, array a
 allocation limits. Ragged groups and their result arrays never cross into a host dataframe,
 statistics service, or package implementation.
 
+Character vectors carry semantic JavaScript strings, exact per-element bytes, and canonical R
+encoding marks as one owned value. The runtime—not Tree-sitter, the browser locale, or a host codec—
+propagates that representation through subset/replacement and the XDR reader/writer. Base-layer
+`Encoding`, `Encoding<-`, `enc2utf8`, `enc2native`, `charToRaw`, `rawToChar`, and `c` all use the
+same storage seam. This lets package code inspect and preserve encoded data without exposing GNU R
+internals or making execution depend on a machine locale.
+
 The core deliberately has no external table, package, file, network, native statistics, or host
 graphics engine. Its initial graphics seam is a deterministic command journal: base builtins emit
 page, coordinate-window, RGBA-raster, resolved line-segment, resolved point-symbol, resolved text,

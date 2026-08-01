@@ -47,6 +47,10 @@ export type {
   RWorkspaceEntry,
 } from "./serialization.js";
 export {
+  characterBytesAt,
+  characterBytesFromValue,
+  characterEncodingAt,
+  characterValueFromBytes,
   characterVector,
   complexVector,
   dataFrameRowCount,
@@ -102,6 +106,7 @@ export type {
   RAttributes,
   RBuiltin,
   RBinding,
+  RCharacterEncoding,
   RCharacterVector,
   RComplexVector,
   RClosure,

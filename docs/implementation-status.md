@@ -11,9 +11,14 @@ Date: 2026-07-31
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 533 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 558 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
+- Character vectors own exact per-element bytes and canonical `unknown`/`latin1`/`UTF-8`/`bytes`
+  marks. `Encoding`, `Encoding<-`, `enc2utf8`, and deterministic browser-UTF-8 `enc2native` preserve
+  that state through concatenation, subsetting/replacement, raw conversion, and XDR serialization,
+  with GNU R 4.6 differential evidence. General `iconv`, host locale codecs, normalization, and
+  exhaustive encoding-sensitive string behavior remain incomplete.
 - Vector/list selection and replacement, recursive `[[`, arbitrary-dimensional column-major array
   selection/replacement, strict axis bounds, `drop`, zero-length axes, named dimension axes,
   one-dimensional array names, numeric/character coordinate-matrix array operations, common-type
@@ -568,11 +573,11 @@ Date: 2026-07-31
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 12 files and 379 tests; aggregate V8 coverage is 84.67% statements, 72.26%
-  branches, 92.55% functions, and 85.92% lines.
+- Vitest currently passes 12 files and 381 tests; aggregate V8 coverage is 84.74% statements, 72.38%
+  branches, 92.51% functions, and 86.00% lines.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 709/709 cases. The optional black-box R oracle passes all 674
+- Checked-in conformance passes 710/710 cases. The optional black-box R oracle passes all 675
   eligible cases and explicitly skips 35 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,
