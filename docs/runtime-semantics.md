@@ -1265,3 +1265,12 @@ not claimed.
 Default resource limits are 100,000 steps, 100 calls, 1,000,000 elements per vector, and 1,000,000
 output bytes. Structured resource errors reduce accidental denial of service but are not a formal
 security sandbox.
+
+`utils::browseURL()` validates one non-empty character URL and preserves GNU R's invisible return. A
+callable `browser` option/function receives a lazy original or `encodeIfNeeded`-encoded URL and its
+value becomes the invisible result; an unused callback argument does not force the encoding
+expression, while `browser = "false"` suppresses the operation. Other calls append an inert host
+request. Existing owned session/package files become a canonical path, MIME type, and byte snapshot;
+other locations remain URL strings. Simple relative paths use URL percent encoding when requested.
+Desktop process selection, host files, automatic navigation, fetching, and platform-specific browser
+diagnostics are outside this browser contract.

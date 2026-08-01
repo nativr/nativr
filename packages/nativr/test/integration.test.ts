@@ -8361,7 +8361,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.211.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.212.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -12467,6 +12467,82 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(limited.eval("View(data.frame(long_name = 1:2))")).rejects.toMatchObject({
       code: "NRL4007",
     });
+    await limited.dispose();
+  });
+
+  it("emits usage-ranked browseURL calls through an inert browser host-request journal", async () => {
+    const observed: unknown[] = [];
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      onBrowse: (event) => observed.push(event),
+    });
+
+    const external = await runtime.evalDetailed(
+      "utils::browseURL('https://example.com/report?q=1')",
+    );
+    expect(external.value).toBeNull();
+    expect(external.visible).toBe(false);
+    expect(external.browseRequests).toEqual([
+      { kind: "url", url: "https://example.com/report?q=1" },
+    ]);
+
+    const local = await runtime.evalDetailed(
+      "page <- tempfile(fileext = '.html')\nwriteLines('<h1>NativR</h1>', page)\nbrowseURL(page)",
+    );
+    expect(local.browseRequests).toHaveLength(1);
+    const file = local.browseRequests[0];
+    expect(file).toMatchObject({
+      kind: "file",
+      mimeType: "text/html;charset=utf-8",
+    });
+    if (file?.kind === "file") {
+      expect(file.url).toMatch(/^nativr:\/\/session-temp\/file0*1\.html$/u);
+      expect(new TextDecoder().decode(file.bytes)).toBe("<h1>NativR</h1>\n");
+    }
+
+    await expect(
+      runtime.eval(
+        "seen <- NULL\nanswer <- withVisible(browseURL('a b', browser = function(url) { seen <<- url; 42L }, encodeIfNeeded = TRUE))\nlist(answer$value, answer$visible, seen)",
+      ),
+    ).resolves.toEqual([42, false, "a%20b"]);
+    await expect(
+      runtime.eval("browseURL('x', browser = function(url) NULL, encodeIfNeeded = NA)"),
+    ).resolves.toBeNull();
+    await expect(
+      runtime.eval("browseURL('x', browser = function(url) url, encodeIfNeeded = NA)"),
+    ).rejects.toMatchObject({ code: "NRT3103" });
+    const suppressed = await runtime.evalDetailed(
+      "browseURL('https://example.com', browser = 'false')",
+    );
+    expect(suppressed.browseRequests).toEqual([]);
+    const encoded = await runtime.evalDetailed(
+      "browseURL('missing report.html', encodeIfNeeded = TRUE)",
+    );
+    expect(encoded.browseRequests).toEqual([{ kind: "url", url: "missing%20report.html" }]);
+    expect(observed).toEqual([
+      ...external.browseRequests,
+      ...local.browseRequests,
+      ...encoded.browseRequests,
+    ]);
+
+    await expect(runtime.eval("browseURL(character())")).rejects.toMatchObject({ code: "NRT3405" });
+    await expect(runtime.eval("browseURL('')")).rejects.toMatchObject({ code: "NRT3405" });
+    await expect(runtime.eval("browseURL('x', browser = 1)")).rejects.toMatchObject({
+      code: "NRT3405",
+    });
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxOutputBytes: 24 },
+    });
+    await expect(
+      limited.eval(
+        "page <- tempfile(fileext = '.html')\nwriteLines('this virtual file is too large', page)\nbrowseURL(page)",
+      ),
+    ).rejects.toMatchObject({ code: "NRL4007" });
     await limited.dispose();
   });
 

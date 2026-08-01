@@ -1752,6 +1752,14 @@ browser host contract: character-formatted named columns and optional row names 
 not claim GNU R's platform-specific desktop viewer, editing, complete `format.data.frame` method
 coverage, or any RStudio API implementation.
 
+`utils::browseURL` has GNU R differential evidence for callable-browser dispatch, lazy URL
+forwarding and percent encoding, invisible results, `browser = "false"`, condition validation, and
+input boundaries. NativR replaces the desktop program launch with an explicit browser host contract:
+ordinary locations appear in `evalDetailed().browseRequests`, while existing browser-memory files
+include canonical paths, MIME types, and bounded byte snapshots; `onBrowse` receives the same final
+events in inline and Worker execution. External fetching, automatic navigation, process execution,
+host files, platform browser selection, and exact verbose diagnostics are not claimed.
+
 `file.path` has GNU R differential evidence for vectorized construction, ordinary recycling,
 separator selection, owned-value coercion, missing and zero-length components, attribute removal,
 and argument errors. `path.expand` has differential evidence for strict character input, missing

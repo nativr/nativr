@@ -78,5 +78,13 @@ digest. Package archives are extracted only into a fresh temporary directory and
 inspection. Applications should retain the generated package set as a reviewed build artifact; the
 browser runtime neither downloads nor unpacks source packages.
 
+`browseURL()` grants no navigation capability. It records a bounded request only after explicit R
+code calls it. External URLs are never resolved or fetched, and virtual-file requests contain a
+fresh byte snapshot rather than a filesystem handle. Embedding hosts must allow-list schemes and
+origins, render links with `noopener`/`noreferrer`, and normally require a user gesture. The
+Playground permits user-clicked HTTP(S) targets, renders owned files in a script-disabled sandboxed
+iframe, and renders other schemes as review-only; it never evaluates URL text as JavaScript or opens
+a request automatically.
+
 Dependencies are locked, build scripts are explicitly approved in `pnpm-workspace.yaml`, browser
 bundles are audited for Node built-ins/dynamic code, and CI includes CodeQL and Dependabot.

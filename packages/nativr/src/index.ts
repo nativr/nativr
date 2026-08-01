@@ -5,6 +5,7 @@ export type {
   CreateROptions,
   EvalOptions,
   NativRSession,
+  PublicBrowseEvent,
   PublicDataViewEvent,
   PublicEvaluationResult,
   PublicGraphicsEvent,

@@ -164,7 +164,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 163,image,true,3,scales|viridisLite|RColorBrewer,6,3.1,3.7
 164,substitute,true,3,rlang|htmlwidgets|data.table,8,3.1,3.7
 165,expression,true,3,ggplot2|scales|zoo,4,3.1,3.7
-166,browseURL,false,4,xfun|htmltools|knitr|httpuv,8,4.1,3.6
+166,browseURL,true,4,xfun|htmltools|knitr|httpuv,8,4.1,3.6
 167,as.logical,true,3,rlang|openssl|zoo,4,3.1,3.6
 168,gc,false,3,rlang|matrixStats|bit64,17,3.1,3.5
 169,sin,true,5,testthat|numDeriv|data.table|ragg|zoo,10,5.2,3.5

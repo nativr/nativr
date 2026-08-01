@@ -1,6 +1,7 @@
 import { createR, isComplex, isNA, isRaw } from "@nativr/nativr";
 import type {
   NativRSession,
+  PublicBrowseEvent,
   PublicDataViewEvent,
   PublicGraphicsEvent,
   PublicOutputEvent,
@@ -76,6 +77,11 @@ twice_mean(c(1, 2, 6))`,
     label: "Browser data viewer",
     code: "measurements <- data.frame(sample = c('A', 'B', 'C'), value = c(1.2, NA, 3.4))\nView(measurements, 'Measurements')",
   },
+  {
+    id: "browse",
+    label: "Browser HTML request",
+    code: "page <- tempfile(fileext = '.html')\nwriteLines('<h1>Hello from R</h1><p>This file stayed in browser memory.</p>', page)\nbrowseURL(page)",
+  },
 ];
 
 const source = element<HTMLTextAreaElement>("source");
@@ -98,9 +104,12 @@ const graphicsCount = element<HTMLElement>("graphics-count");
 const graphicsContext = graphics.getContext("2d");
 const dataViews = element<HTMLElement>("data-views");
 const dataViewCount = element<HTMLElement>("data-view-count");
+const browseRequests = element<HTMLElement>("browse-requests");
+const browseCount = element<HTMLElement>("browse-count");
 
 let runtime: NativRSession | undefined;
 let selected = examples[1] ?? examples[0];
+let browseObjectUrls: string[] = [];
 let graphicsWindow: {
   readonly xlim: readonly [number, number];
   readonly ylim: readonly [number, number];
@@ -139,6 +148,7 @@ async function run(): Promise<void> {
   if (runtime === undefined) return;
   clearMessages();
   resetDataViews();
+  resetBrowseRequests();
   setBusy(true);
   result.textContent = "Evaluating…";
   elapsed.textContent = "—";
@@ -149,6 +159,7 @@ async function run(): Promise<void> {
     renderOutput(evaluation.output);
     renderGraphics(evaluation.graphics);
     renderDataViews(evaluation.dataViews);
+    renderBrowseRequests(evaluation.browseRequests);
     elapsed.textContent = `${evaluation.elapsedMs.toFixed(1)} ms`;
     renderWarnings(evaluation.warnings);
     setStatus("ready", "Evaluation complete");
@@ -171,6 +182,7 @@ async function reset(): Promise<void> {
     clearMessages();
     resetGraphics();
     resetDataViews();
+    resetBrowseRequests();
     setStatus("ready", "Session reset");
   } catch (error) {
     renderError(error);
@@ -184,6 +196,7 @@ async function interrupt(): Promise<void> {
     result.textContent = "Evaluation interrupted. Worker state was reset.";
     resetGraphics();
     resetDataViews();
+    resetBrowseRequests();
     setStatus("ready", "Worker restarted");
   } catch (error) {
     renderError(error);
@@ -314,6 +327,68 @@ function renderDataViews(events: readonly PublicDataViewEvent[]): void {
     scroller.append(table);
     section.append(title, scroller);
     dataViews.append(section);
+  }
+}
+
+function renderBrowseRequests(events: readonly PublicBrowseEvent[]): void {
+  resetBrowseRequests();
+  browseCount.textContent = String(events.length);
+  if (events.length === 0) return;
+  browseRequests.replaceChildren();
+  for (const event of events) {
+    const row = document.createElement("div");
+    row.className = "browse-request";
+    const label = document.createElement("code");
+    label.textContent = event.url;
+    if (event.kind === "file") {
+      const target = browseFileTarget(event);
+      const preview = document.createElement("button");
+      preview.type = "button";
+      preview.className = "browse-preview-button";
+      preview.textContent = "Preview";
+      preview.addEventListener("click", () => {
+        if (row.querySelector("iframe") !== null) return;
+        const frame = document.createElement("iframe");
+        frame.className = "browse-preview";
+        frame.title = `Sandboxed preview: ${event.url}`;
+        frame.setAttribute("sandbox", "");
+        frame.src = target;
+        row.append(frame);
+      });
+      row.append(label, preview);
+    } else {
+      const target = externalBrowseTarget(event.url);
+      if (target === undefined) {
+        const blocked = document.createElement("span");
+        blocked.textContent = "Host review required";
+        row.append(label, blocked);
+      } else {
+        const link = document.createElement("a");
+        link.href = target;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = "Open";
+        row.append(label, link);
+      }
+    }
+    browseRequests.append(row);
+  }
+}
+
+function browseFileTarget(event: Extract<PublicBrowseEvent, { readonly kind: "file" }>): string {
+  const objectUrl = URL.createObjectURL(
+    new Blob([Uint8Array.from(event.bytes)], { type: event.mimeType }),
+  );
+  browseObjectUrls.push(objectUrl);
+  return objectUrl;
+}
+
+function externalBrowseTarget(url: string): string | undefined {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.href : undefined;
+  } catch {
+    return undefined;
   }
 }
 
@@ -957,6 +1032,13 @@ function resetGraphics(): void {
 function resetDataViews(): void {
   dataViewCount.textContent = "0";
   dataViews.replaceChildren(emptyMessage("No data-view events."));
+}
+
+function resetBrowseRequests(): void {
+  for (const objectUrl of browseObjectUrls) URL.revokeObjectURL(objectUrl);
+  browseObjectUrls = [];
+  browseCount.textContent = "0";
+  browseRequests.replaceChildren(emptyMessage("No browse requests."));
 }
 
 function renderError(error: unknown): void {

@@ -6236,6 +6236,20 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "browse-url-function-dispatch-visibility-and-encoded-url",
+    "code": "seen <- NULL\nresult <- withVisible(utils::browseURL(\"a b\", browser = function(url) { seen <<- url; 42L }, encodeIfNeeded = TRUE))\nc(result$value, result$visible, seen)",
+    "expected": ["42", "FALSE", "a%20b"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "browse-url-false-suppression-and-argument-boundaries",
+    "code": "result <- withVisible(browseURL(\"https://example.com\", browser = \"false\"))\nc(is.null(result$value), result$visible, inherits(try(browseURL(character(), browser = \"false\"), silent = TRUE), \"try-error\"), inherits(try(browseURL(\"\", browser = \"false\"), silent = TRUE), \"try-error\"), inherits(try(browseURL(\"x\", browser = 1), silent = TRUE), \"try-error\"), inherits(try(browseURL(\"x\", browser = function(url) NULL, encodeIfNeeded = NA), silent = TRUE), \"try-error\"))",
+    "expected": [true, false, true, true, true, false],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "path-expand-observed-diffobj-browser-unknown-home-shape",
     "code": "file.path(path.expand(\"~\"), \"web\", \"mycss.css\")",
     "expected": "~/web/mycss.css",

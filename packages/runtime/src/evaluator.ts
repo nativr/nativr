@@ -62,6 +62,7 @@ import type {
   BuiltinDefinition,
   RBuiltin,
   RBinding,
+  RBrowseEvent,
   RClosure,
   REnvironment,
   RDataViewEvent,
@@ -86,6 +87,7 @@ export interface DetailedEvaluationResult extends EvaluationResult {
   readonly warnings: readonly RWarning[];
   readonly output: readonly ROutput[];
   readonly dataViews: readonly RDataViewEvent[];
+  readonly browseRequests: readonly RBrowseEvent[];
   readonly graphics: readonly RGraphicsEvent[];
   readonly elapsedMs: number;
 }
@@ -373,6 +375,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
     "utils",
     new Set([
       "as.roman",
+      "browseURL",
       "capture.output",
       "data",
       "demo",
@@ -498,6 +501,7 @@ export class Evaluator {
         warnings: [...context.warnings],
         output: [...context.output],
         dataViews: [...context.dataViews],
+        browseRequests: [...context.browseRequests],
         graphics: [...context.graphics],
         elapsedMs: Date.now() - start,
       };

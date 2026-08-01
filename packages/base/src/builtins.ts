@@ -581,6 +581,14 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "shape",
     builtinDemo,
   ),
+  definePackageBuiltin(
+    "utils",
+    "browseURL",
+    ["url", "browser", "encodeIfNeeded", "verbose"],
+    "behavioral",
+    builtinBrowseUrl,
+    "invisible",
+  ),
   definePackageBuiltin("utils", "URLdecode", ["URL"], "behavioral", builtinUrlDecode),
   definePackageBuiltin(
     "utils",
@@ -7704,6 +7712,153 @@ async function builtinStr2Lang(invocation: BuiltinInvocation): Promise<RValue> {
     );
   }
   return quoteAst(program.body[0] as AstNode);
+}
+
+async function builtinBrowseUrl(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = matchLazyArguments(invocation, ["url", "browser", "encodeIfNeeded", "verbose"]);
+  const urlArgument = matched.get("url");
+  if (urlArgument === undefined || urlArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'url' is missing in browseURL().");
+  }
+  const urlValue = await invocation.force(urlArgument.promise);
+  if (
+    urlValue.type !== "character" ||
+    urlValue.length !== 1 ||
+    (!isMissing(urlValue, 0) && (urlValue.values[0] ?? "").length === 0)
+  ) {
+    throw new RTypeMismatchError("NRT3405", "'url' must be a non-empty character string");
+  }
+
+  const encodeArgument = matched.get("encodeIfNeeded");
+  const browserArgument = matched.get("browser");
+  const browser =
+    browserArgument === undefined || browserArgument.promise.missing
+      ? (optionsState(invocation).get("browser") ?? R_NULL)
+      : await invocation.force(browserArgument.promise);
+
+  if (isCallable(browser)) {
+    return invocation.invokeLazy(browser, [
+      {
+        promise: browseUrlPromise(invocation, urlValue, encodeArgument),
+      },
+    ]);
+  }
+  if (browser.type === "character") {
+    if (
+      browser.length !== 1 ||
+      (!isMissing(browser, 0) && (browser.values[0] ?? "").length === 0)
+    ) {
+      throw new RTypeMismatchError("NRT3405", "'browser' must be a non-empty character string");
+    }
+    if (!isMissing(browser, 0) && (browser.values[0] ?? "") === "false") {
+      return R_NULL;
+    }
+  } else if (browser.type !== "null") {
+    throw new RTypeMismatchError("NRT3405", "'browser' must be a non-empty character string");
+  }
+
+  if (isMissing(urlValue, 0)) {
+    throw new RTypeMismatchError("NRT3405", "'url' must be a non-empty character string");
+  }
+  const encodeIfNeeded =
+    encodeArgument === undefined || encodeArgument.promise.missing
+      ? false
+      : logicalFlag(await invocation.force(encodeArgument.promise), false, "encodeIfNeeded");
+  const suppliedUrl = urlValue.values[0] ?? "";
+  const url = encodeIfNeeded ? encodeBrowseUrl(suppliedUrl) : suppliedUrl;
+  const virtualPath = browseVirtualPath(invocation, suppliedUrl);
+  if (virtualPath !== undefined && virtualTextFileExists(invocation, virtualPath)) {
+    invocation.context.writeBrowse({
+      kind: "file",
+      url: virtualPath,
+      mimeType: browseMimeType(virtualPath),
+      bytes: readVirtualBinaryFile(invocation, virtualPath, "browseURL"),
+    });
+  } else {
+    invocation.context.writeBrowse({ kind: "url", url });
+  }
+  return R_NULL;
+}
+
+function browseUrlPromise(
+  invocation: BuiltinInvocation,
+  url: RCharacterVector,
+  encodeArgument: BuiltinCallArgument | undefined,
+) {
+  if (encodeArgument === undefined || encodeArgument.promise.missing) {
+    return createForcedPromise(url, invocation.currentEnvironment());
+  }
+  const environment = createEnvironment(invocation.currentEnvironment());
+  const name = ".nativrBrowseUrlArgument";
+  const definition: BuiltinDefinition = {
+    package: "utils",
+    name,
+    kind: "regular",
+    metadata: {
+      package: "utils",
+      name,
+      compatibilityLevel: "behavioral",
+      supportedArguments: [],
+    },
+    implementation: async () => {
+      const encode = logicalFlag(
+        await invocation.force(encodeArgument.promise),
+        false,
+        "encodeIfNeeded",
+      );
+      if (!encode) return url;
+      return characterVector([isMissing(url, 0) ? "NA" : encodeBrowseUrl(url.values[0] ?? "")]);
+    },
+  };
+  setBinding(environment, name, { type: "builtin", definition });
+  const expression = invocation.parse(`${name}()`, 1).body[0];
+  if (expression === undefined) {
+    throw new Error("Internal browseURL promise invariant failed.");
+  }
+  return createPromise(expression, environment);
+}
+
+function browseVirtualPath(invocation: BuiltinInvocation, url: string): string | undefined {
+  if (/^[A-Za-z][A-Za-z0-9+.-]*:\/\//u.test(url) && !url.startsWith("nativr://")) {
+    return undefined;
+  }
+  return resolveOwnedVirtualPath(invocation, url, "browseURL");
+}
+
+function encodeBrowseUrl(url: string): string {
+  try {
+    return encodeURI(url);
+  } catch {
+    throw new RTypeMismatchError("NRT3405", "'url' contains an invalid Unicode sequence");
+  }
+}
+
+function browseMimeType(path: string): string {
+  const extension = /\.([A-Za-z0-9]+)$/u.exec(path)?.[1]?.toLowerCase();
+  switch (extension) {
+    case "htm":
+    case "html":
+      return "text/html;charset=utf-8";
+    case "svg":
+      return "image/svg+xml";
+    case "png":
+      return "image/png";
+    case "jpg":
+    case "jpeg":
+      return "image/jpeg";
+    case "gif":
+      return "image/gif";
+    case "webp":
+      return "image/webp";
+    case "pdf":
+      return "application/pdf";
+    case "txt":
+    case "r":
+    case "md":
+      return "text/plain;charset=utf-8";
+    default:
+      return "application/octet-stream";
+  }
 }
 
 async function builtinUrlDecode(invocation: BuiltinInvocation): Promise<RCharacterVector> {

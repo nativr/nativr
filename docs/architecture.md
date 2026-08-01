@@ -218,3 +218,10 @@ and sends `.R` content through the existing parser/normalized-AST evaluator in t
 environment. Text datasets and `read.table`/`write.table` variants use one owned record/field codec
 over inline text, immutable package bytes, or session connections. No package code, table content,
 or path is converted to JavaScript source or delegated to a host filesystem/parser.
+
+Navigation requests are another one-way journal beside output, data views, and graphics.
+`utils::browseURL()` either invokes a first-class R callback inside the evaluator or appends a typed
+URL/file record to the per-evaluation context. The public protocol transports it only with the final
+result; virtual-file buffers are transferred, while the host facade invokes `onBrowse`. No DOM,
+Window, network, or process object enters `base`, `runtime`, or the Worker. This keeps viewer
+support reusable for source-only packages without weakening the dependency direction or CSP model.

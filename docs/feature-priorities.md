@@ -75,16 +75,16 @@ signal.
 
 | Priority | Measured rank | Callable         | Weighted reach | Packages | Observed calls |
 | -------: | ------------: | ---------------- | -------------: | -------: | -------------: |
-|        1 |           166 | `browseURL`      |           3.6% |        4 |              8 |
-|        2 |           168 | `gc`             |           3.5% |        3 |             17 |
-|        3 |           174 | `lines`          |           3.4% |        4 |             20 |
-|        4 |           176 | `system`         |           3.3% |        3 |              5 |
-|        5 |           177 | `as.difftime`    |           3.3% |        2 |              2 |
-|        6 |           184 | `ls`             |           3.0% |        3 |              5 |
-|        7 |           186 | `hist`           |           3.0% |        4 |             19 |
-|        8 |           188 | `showClass`      |           2.9% |        2 |              4 |
-|        9 |           189 | `packageVersion` |           2.9% |        2 |              3 |
-|       10 |           194 | `Sys.getpid`     |           2.8% |        3 |              6 |
+|        1 |           168 | `gc`             |           3.5% |        3 |             17 |
+|        2 |           174 | `lines`          |           3.4% |        4 |             20 |
+|        3 |           176 | `system`         |           3.3% |        3 |              5 |
+|        4 |           177 | `as.difftime`    |           3.3% |        2 |              2 |
+|        5 |           184 | `ls`             |           3.0% |        3 |              5 |
+|        6 |           186 | `hist`           |           3.0% |        4 |             19 |
+|        7 |           188 | `showClass`      |           2.9% |        2 |              4 |
+|        8 |           189 | `packageVersion` |           2.9% |        2 |              3 |
+|        9 |           194 | `Sys.getpid`     |           2.8% |        3 |              6 |
+|       10 |           195 | `.libPaths`      |           2.8% |        2 |              6 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -111,31 +111,35 @@ it does not expose the host environment. Rank 163 `image` is now available for t
 calls across scales, viridisLite, and RColorBrewer (3.7% weighted reach). Its reusable S3/default
 path covers numeric/logical matrices, center or boundary coordinates, regular raster and irregular
 polygon grids, colour intervals, missing transparency, and one-row palette strips through the same
-Worker graphics journal; it is not a claim of complete base-graphics rendering. Rank 22 `plot` is
-now available for all 179 measured occurrences across 20 sampled package manuals, representing 19.1%
-download-weighted reach. The implementation prioritizes the common numeric vector/x-y calls and the
-S3 seam required by package-owned plot methods: point, line, both, overplotted, histogram, step, and
-no-draw geometry reuse the owned Worker/Canvas graphics journal. This is shape-level availability,
-not complete base-graphics compatibility; specialized methods, full axes/tick labels, log/aspect
-layout, margins, clipping, and arbitrary graphical controls remain declared boundaries. Rank 27
-`system.file` is now available at 17.1% weighted reach through bounded, immutable package-resource
-paths. Rank 34 `Sys.sleep` adds cooperative Worker-safe waits, while rank 52 `writeLines` and rank
-61 `readLines` add session-memory roundtrips and immutable package-text reads. Ranks 65 `file`, 69
-`close`, 71 `tempdir`, and 125 `file.exists` now share a bounded session-owned connection and path
-layer; rank 341 `open` and its adjacent `flush`, `isOpen`, and `seek` operations use the same
-handles. Ranks 48 `R.home`, 129 `dir.create`, and 135 `list.files` now share a bounded
-virtual-directory layer with `dir.exists`, `list.dirs`, `getwd`/`setwd`, `normalizePath`,
-`basename`, and `dirname`. Usage-ranked `data`, `write.csv`, and `read.csv` now use that layer for
-package data scripts, text datasets, quoted tabular input/output, and deterministic type conversion.
-Rank 80 `dev.off` now participates in a multi-device lifecycle. Rank 121 `png` covers all seven
-measured calls across five packages through a browser-owned file device, deterministic command
-rasterizer, and real PNG encoding. Rank 127 `system.time` now covers all 95 measured calls across
-six packages through lazy single evaluation, GNU R-shaped `proc_time` results, and the adjacent
-`proc.time` session clock. Grouped `split` (rank 155) and real-vector `floor` (rank 156) are now
-complete at 4.1% weighted reach each. Factor generator `gl` (rank 158, 4.1%) and a bounded
-data-frame `merge` subset (rank 161, 4.0%) are now complete. Data-mask mutation through `within`
-(rank 167, 3.8%) and vectorized real/complex trigonometry led by `sin` (rank 177, 3.6%) are now
-complete as well. After filtering out already-supported names and architecture-dependent host,
+Worker graphics journal; it is not a claim of complete base-graphics rendering. Rank 166 `browseURL`
+is now available for eight calls across xfun, htmltools, knitr, and httpuv (3.6% weighted reach). R
+callbacks and suppression remain evaluator-local; external locations become inert host requests and
+existing browser-memory report/image files cross the Worker as bounded byte snapshots. This supplies
+a reusable package viewer seam without granting network, DOM, process, or host-file access. Rank 22
+`plot` is now available for all 179 measured occurrences across 20 sampled package manuals,
+representing 19.1% download-weighted reach. The implementation prioritizes the common numeric
+vector/x-y calls and the S3 seam required by package-owned plot methods: point, line, both,
+overplotted, histogram, step, and no-draw geometry reuse the owned Worker/Canvas graphics journal.
+This is shape-level availability, not complete base-graphics compatibility; specialized methods,
+full axes/tick labels, log/aspect layout, margins, clipping, and arbitrary graphical controls remain
+declared boundaries. Rank 27 `system.file` is now available at 17.1% weighted reach through bounded,
+immutable package-resource paths. Rank 34 `Sys.sleep` adds cooperative Worker-safe waits, while rank
+52 `writeLines` and rank 61 `readLines` add session-memory roundtrips and immutable package-text
+reads. Ranks 65 `file`, 69 `close`, 71 `tempdir`, and 125 `file.exists` now share a bounded
+session-owned connection and path layer; rank 341 `open` and its adjacent `flush`, `isOpen`, and
+`seek` operations use the same handles. Ranks 48 `R.home`, 129 `dir.create`, and 135 `list.files`
+now share a bounded virtual-directory layer with `dir.exists`, `list.dirs`, `getwd`/`setwd`,
+`normalizePath`, `basename`, and `dirname`. Usage-ranked `data`, `write.csv`, and `read.csv` now use
+that layer for package data scripts, text datasets, quoted tabular input/output, and deterministic
+type conversion. Rank 80 `dev.off` now participates in a multi-device lifecycle. Rank 121 `png`
+covers all seven measured calls across five packages through a browser-owned file device,
+deterministic command rasterizer, and real PNG encoding. Rank 127 `system.time` now covers all 95
+measured calls across six packages through lazy single evaluation, GNU R-shaped `proc_time` results,
+and the adjacent `proc.time` session clock. Grouped `split` (rank 155) and real-vector `floor`
+(rank 156) are now complete at 4.1% weighted reach each. Factor generator `gl` (rank 158, 4.1%) and
+a bounded data-frame `merge` subset (rank 161, 4.0%) are now complete. Data-mask mutation through
+`within` (rank 167, 3.8%) and vectorized real/complex trigonometry led by `sin` (rank 177, 3.6%) are
+now complete as well. After filtering out already-supported names and architecture-dependent host,
 graphics, serialization, and source-loading entries, numeric-order factor coercion through
 `as.factor` (rank 187, 3.1%) and grouped transformation through `ave` (rank 188, 3.0%) are now
 complete. UTC date construction through `ISOdate` (rank 189, 3.0%) and Cartesian data-frame

@@ -117,6 +117,28 @@ await r.eval(`
 `);
 ```
 
+`utils::browseURL()` uses a separate inert host seam. `evalDetailed().browseRequests` and
+`createR({ onBrowse })` receive `{ kind: "url", url }` for ordinary locations or
+`{ kind: "file", url, mimeType, bytes }` for an existing browser-memory session/package file. File
+bytes are copied at evaluation time, cross the Worker boundary as transferables, and count toward
+`maxOutputBytes`. Nothing is fetched or opened automatically; the embedding application must apply
+its own scheme/origin policy and require user interaction where appropriate.
+
+```ts
+const requests = [];
+const r = await createR({ onBrowse: (event) => requests.push(event) });
+await r.eval(`
+  page <- tempfile(fileext = ".html")
+  writeLines("<h1>Package report</h1>", page)
+  browseURL(page)
+`);
+// requests[0].kind === "file"; the host may preview it in a sandboxed iframe.
+```
+
+GNU R's `browser = function(url) ...` extension remains inside R and receives a lazy original or
+`encodeIfNeeded`-encoded URL; `browser = "false"` suppresses the request. A character
+browser-program name is treated only as host intent because browser packages cannot spawn processes.
+
 `evalDetailed` also retains device-independent graphics commands in `graphics`.
 `createR({ onGraphics })` receives the same commands after each inline or Worker evaluation.
 `new-page` clears a host device, `window` declares its user-coordinate limits, `raster` carries an

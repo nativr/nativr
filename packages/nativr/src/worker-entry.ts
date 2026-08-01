@@ -78,6 +78,7 @@ async function handleRequest(request: WorkerRequest): Promise<void> {
               warnings: result.warnings,
               output: result.output,
               dataViews: result.dataViews,
+              browseRequests: result.browseRequests,
               graphics: result.graphics,
               elapsedMs: result.elapsedMs,
               runtimeReset: false,
@@ -85,6 +86,9 @@ async function handleRequest(request: WorkerRequest): Promise<void> {
           },
           [
             ...snapshotTransferables(raw),
+            ...result.browseRequests.flatMap((event) =>
+              event.kind === "file" ? [event.bytes.buffer as ArrayBuffer] : [],
+            ),
             ...result.graphics.flatMap((event) =>
               event.kind === "raster" ? [event.rgba.buffer as ArrayBuffer] : [],
             ),

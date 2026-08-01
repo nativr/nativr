@@ -1,6 +1,7 @@
 import { PROTOCOL_VERSION, isWorkerResponse } from "@nativr/protocol";
 import type {
   CapabilityManifest,
+  PublicBrowseEvent,
   PublicDataViewEvent,
   PublicGraphicsEvent,
   PublicOutputEvent,
@@ -25,7 +26,12 @@ import {
 import type { JsInputValue, JsValue } from "./conversion.js";
 import type { RuntimeHost } from "./runtime-host.js";
 
-export type { PublicDataViewEvent, PublicGraphicsEvent, PublicOutputEvent } from "@nativr/protocol";
+export type {
+  PublicBrowseEvent,
+  PublicDataViewEvent,
+  PublicGraphicsEvent,
+  PublicOutputEvent,
+} from "@nativr/protocol";
 export type { PureRPackageBundle, PureRPackageResource } from "@nativr/protocol";
 
 /** Optional asset overrides for CDNs, unusual bundlers, or tests. */
@@ -50,6 +56,8 @@ export interface CreateROptions {
   readonly onWarning?: (warning: PublicRWarning) => void;
   readonly onOutput?: (event: PublicOutputEvent) => void;
   readonly onDataView?: (event: PublicDataViewEvent) => void;
+  /** Receives inert navigation requests; the host decides whether and how to open them. */
+  readonly onBrowse?: (event: PublicBrowseEvent) => void;
   readonly onGraphics?: (event: PublicGraphicsEvent) => void;
 }
 
@@ -71,6 +79,7 @@ export interface PublicEvaluationResult {
   readonly warnings: readonly PublicRWarning[];
   readonly output: readonly PublicOutputEvent[];
   readonly dataViews: readonly PublicDataViewEvent[];
+  readonly browseRequests: readonly PublicBrowseEvent[];
   readonly graphics: readonly PublicGraphicsEvent[];
   readonly elapsedMs: number;
   readonly runtimeReset: boolean;
@@ -264,6 +273,7 @@ class InlineSession implements NativRSession {
       for (const warning of result.warnings) this.#options.onWarning?.(warning);
       for (const output of result.output) this.#options.onOutput?.(output);
       for (const event of result.dataViews) this.#options.onDataView?.(event);
+      for (const event of result.browseRequests) this.#options.onBrowse?.(event);
       for (const event of result.graphics) this.#options.onGraphics?.(event);
       return {
         value: snapshotToJs(raw),
@@ -272,6 +282,7 @@ class InlineSession implements NativRSession {
         warnings: result.warnings,
         output: result.output,
         dataViews: result.dataViews,
+        browseRequests: result.browseRequests,
         graphics: result.graphics,
         elapsedMs: result.elapsedMs,
         runtimeReset: false,
@@ -401,6 +412,7 @@ class WorkerSession implements NativRSession {
       if (payload.kind !== "evaluation") throw protocolPayloadError("evaluation", payload.kind);
       const result = publicResult(payload.result);
       for (const event of result.dataViews) this.#options.onDataView?.(event);
+      for (const event of result.browseRequests) this.#options.onBrowse?.(event);
       for (const event of result.graphics) this.#options.onGraphics?.(event);
       return result;
     });
@@ -643,6 +655,7 @@ function publicResult(result: WireEvaluationResult): PublicEvaluationResult {
     warnings: result.warnings,
     output: result.output ?? [],
     dataViews: result.dataViews ?? [],
+    browseRequests: result.browseRequests ?? [],
     graphics: result.graphics ?? [],
     elapsedMs: result.elapsedMs,
     runtimeReset: result.runtimeReset,

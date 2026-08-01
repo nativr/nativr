@@ -129,11 +129,17 @@ For an editable, persistent browser R console, open or copy the
 The CDN is used only to load the package and Wasm assets; R evaluation itself remains local and
 network-free.
 
+Package code may call `utils::browseURL()` without gaining network or DOM access. NativR returns an
+inert entry in `evalDetailed().browseRequests`; `createR({ onBrowse })` receives the same event.
+External URLs remain strings for an application to approve, while browser-memory HTML, images, and
+other files include a bounded byte snapshot. The Playground exposes a user-clicked reference viewer
+and never opens a request automatically.
+
 The current milestone supports all 25 feature groups measured by the repository's package-usage
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 567 registered functions, including resettable
+an initial condition/handler slice. It exposes 568 registered functions, including resettable
 session options, isolated session environment variables, deterministic non-interactive host-mode
 detection, and vectorized decimal rounding plus real/complex logarithm and exponential semantics.
 Browser-memory `read.table`/`read.csv`/ `read.delim` and `write.table`/`write.csv` paths provide

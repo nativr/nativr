@@ -2,6 +2,7 @@ import { RResourceLimitError } from "./errors.js";
 import type {
   CancellationToken,
   OperatorContext,
+  RBrowseEvent,
   RDataViewEvent,
   RGraphicsEvent,
   ROutput,
@@ -24,6 +25,7 @@ export class EvaluationContext implements OperatorContext {
   public readonly warnings: RWarning[] = [];
   public readonly output: ROutput[] = [];
   public readonly dataViews: RDataViewEvent[] = [];
+  public readonly browseRequests: RBrowseEvent[] = [];
   public readonly graphics: RGraphicsEvent[] = [];
   public steps = 0;
   public allocatedElements = 0;
@@ -131,6 +133,20 @@ export class EvaluationContext implements OperatorContext {
     }
     this.outputBytes = outputBytes;
     this.dataViews.push(event);
+  }
+
+  public writeBrowse(event: RBrowseEvent): void {
+    const bytes =
+      utf8ByteLength(event.url) +
+      (event.kind === "file" ? utf8ByteLength(event.mimeType) + event.bytes.byteLength : 0);
+    const outputBytes = this.outputBytes + bytes;
+    if (outputBytes > this.limits.maxOutputBytes) {
+      throw new RResourceLimitError("NRL4007", "Evaluation output size limit exceeded.", {
+        details: { maxOutputBytes: this.limits.maxOutputBytes, outputBytes },
+      });
+    }
+    this.outputBytes = outputBytes;
+    this.browseRequests.push(event);
   }
 
   public writeGraphics(event: RGraphicsEvent): void {

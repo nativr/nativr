@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           567 |
-| Overlapping callable names        |           552 |
-| Missing GNU R callable names      |         1,970 |
-| Name overlap                      |       21.887% |
+| NativR registered names           |           568 |
+| Overlapping callable names        |           553 |
+| Missing GNU R callable names      |         1,969 |
+| Name overlap                      |       21.927% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -536,6 +536,13 @@ formals, S3 forwarding, invisible return shape, and center-to-boundary coordinat
 Worker and Canvas tests additionally cover matrix orientation, colour mapping, missing transparency,
 regular raster commands, irregular polygon cells, and one-row palette strips. Complete axes, legacy
 interval behavior, device heuristics, and pixel-identical rendering remain incomplete.
+
+The browser-request increment adds `utils::browseURL`, raising current name overlap to 553 of 2,522.
+Rank-166 represents eight documented calls across xfun, htmltools, knitr, and httpuv. Differential
+evidence covers callable-browser forwarding, original URL text, invisible results, suppression,
+validation, and errors; NativR-owned Worker/Playground evidence covers inert external requests and
+bounded virtual HTML/file snapshots. This does not claim desktop browser launch, network access,
+host files, automatic navigation, or platform-identical diagnostics.
 
 ## Completion evidence
 

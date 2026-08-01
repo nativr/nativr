@@ -542,6 +542,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      missing transparency, one-row strips, Worker transport, and Canvas pixels have executable
      evidence. Complete axes, legacy intervals, device heuristics, and pixel identity remain later
      graphics-depth work.
+130. Usage-ranked browser requests: rank-166 `utils::browseURL` now runs the eight measured
+     xfun/htmltools/knitr/httpuv calls through an inert per-evaluation host journal. R-function
+     callbacks, suppression, invisible returns, URL validation, bounded virtual-file bytes,
+     transferable Worker transport, `onBrowse`, and a user-clicked Playground viewer have executable
+     evidence. Fetching, automatic navigation, host files, process launch, and full
+     platform-specific browser diagnostics remain deliberate host-adapter boundaries.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

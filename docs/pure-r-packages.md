@@ -197,6 +197,14 @@ grids reuse one transferable raster command, while irregular grids reuse the pol
 removes a shared pure-R dependency seam without translating any of those packages to TypeScript;
 their remaining dependencies and runtime calls still need executable evidence.
 
+Rank-166 `utils::browseURL()` supplies the same package-independent report/viewer seam for the
+measured xfun, htmltools, knitr, and httpuv calls. Unchanged package code can write HTML, SVG, PNG,
+or another asset to a session-local path and request that the embedding application present it. The
+Worker returns a bounded immutable byte snapshot; it never invokes a desktop browser, reads a host
+file, or fetches an external URL. R-function browser callbacks and `browser = "false"` continue to
+work without a host event. This removes a common rewrite while leaving navigation policy in the
+application.
+
 ## Explicit boundaries
 
 - C, C++, Fortran, Rust, Java, shared libraries, `LinkingTo`, `useDynLib`, subprocesses, system

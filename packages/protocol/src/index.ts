@@ -123,6 +123,19 @@ export interface PublicDataViewEvent {
   readonly rowNames?: readonly string[];
 }
 
+/** A navigation request that the embedding host may display, open, or reject. */
+export type PublicBrowseEvent =
+  | {
+      readonly kind: "url";
+      readonly url: string;
+    }
+  | {
+      readonly kind: "file";
+      readonly url: string;
+      readonly mimeType: string;
+      readonly bytes: Uint8Array;
+    };
+
 /** Device-independent drawing command returned to a browser graphics host. */
 export type PublicGraphicsEvent =
   | { readonly kind: "new-page" }
@@ -390,6 +403,7 @@ export interface WireEvaluationResult {
   readonly warnings: readonly PublicRWarning[];
   readonly output?: readonly PublicOutputEvent[];
   readonly dataViews?: readonly PublicDataViewEvent[];
+  readonly browseRequests?: readonly PublicBrowseEvent[];
   readonly graphics?: readonly PublicGraphicsEvent[];
   readonly elapsedMs: number;
   readonly runtimeReset: boolean;

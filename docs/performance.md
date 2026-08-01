@@ -504,3 +504,10 @@ polygon commands; S3 dispatch and all matrix/colour mapping remain inside the ex
 layers. It adds no dependency, Canvas import, or package-specific adapter. The measured Worker is
 345.8 KiB gzip, so the ceiling rises narrowly to 347 KiB; client and parser-Wasm budgets remain
 unchanged.
+
+Language subset 0.212 adds usage-ranked `utils::browseURL`, a bounded URL/file request journal, lazy
+R-function callback forwarding, final-result Worker transport, and public `onBrowse`/
+`browseRequests` surfaces. It adds no dependency, network client, DOM import, or automatic opener;
+virtual files reuse the existing byte store and cross as transferables. The measured Worker is 346.8
+KiB gzip and remains within the existing 347 KiB ceiling; client and parser-Wasm budgets are
+unchanged.

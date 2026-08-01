@@ -360,6 +360,54 @@ main {
   padding: 14px;
 }
 
+.browse-requests {
+  display: grid;
+  min-height: 56px;
+  gap: 9px;
+  padding: 14px;
+}
+
+.browse-request {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.browse-request code {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.browse-request a {
+  flex: none;
+  color: var(--green);
+  font-weight: 700;
+}
+
+.browse-preview-button {
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: var(--green);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.browse-preview {
+  flex: 0 0 100%;
+  width: 100%;
+  min-height: 180px;
+  border: 1px solid var(--line);
+  background: white;
+}
+
 .data-view + .data-view {
   margin-top: 16px;
 }

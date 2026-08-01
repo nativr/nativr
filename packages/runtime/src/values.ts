@@ -298,6 +298,21 @@ export interface RDataViewEvent {
   readonly rowNames?: readonly string[];
 }
 
+/** One browser-navigation request emitted for an explicit host decision. */
+export type RBrowseEvent =
+  | {
+      readonly kind: "url";
+      readonly url: string;
+    }
+  | {
+      readonly kind: "file";
+      /** Canonical browser-memory path retained for diagnostics and filenames. */
+      readonly url: string;
+      readonly mimeType: string;
+      /** Immutable snapshot of the virtual file at evaluation time. */
+      readonly bytes: Uint8Array;
+    };
+
 /** One resolved, device-independent line segment. */
 export interface RGraphicsSegment {
   readonly x0: number;
@@ -474,6 +489,7 @@ export interface OperatorContext {
   beginOutputCapture(streams: readonly ROutput["stream"][]): void;
   endOutputCapture(): readonly ROutput[];
   writeDataView(event: RDataViewEvent): void;
+  writeBrowse(event: RBrowseEvent): void;
   writeGraphics(event: RGraphicsEvent): void;
   pushWarningSuppression(): void;
   popWarningSuppression(): void;

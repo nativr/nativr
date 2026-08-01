@@ -11,7 +11,9 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await expect(page.locator("#result")).toHaveText('"worker"');
 
   const evaluationRequests: string[] = [];
-  page.on("request", (request) => evaluationRequests.push(request.url()));
+  page.on("request", (request) => {
+    if (/^https?:/u.test(request.url())) evaluationRequests.push(request.url());
+  });
   await page.getByRole("button", { name: "Scalar arithmetic" }).click();
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("2");
@@ -172,6 +174,20 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#console-output")).toContainText("alpha beta");
   await expect(page.locator("#console-output")).toContainText("mean = 2");
+
+  await page.getByRole("button", { name: "Browser HTML request" }).click();
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("null");
+  await expect(page.locator("#browse-count")).toHaveText("1");
+  await page.locator("#browse-requests").getByRole("button", { name: "Preview" }).click();
+  await expect(
+    page.frameLocator("#browse-requests iframe").getByRole("heading", { name: "Hello from R" }),
+  ).toBeVisible();
+
+  await page.locator("#source").fill("browseURL('javascript:document.body.textContent=1')");
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#browse-requests")).toContainText("Host review required");
+  await expect(page.locator("#browse-requests").getByRole("link")).toHaveCount(0);
 
   await page.locator("#source").fill("head(1:10, 3)\nstr(c(alpha = 1, beta = 2))");
   await page.getByRole("button", { name: /^Run/u }).click();
