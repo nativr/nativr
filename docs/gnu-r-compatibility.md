@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           554 |
-| Overlapping callable names        |           539 |
-| Missing GNU R callable names      |         1,983 |
-| Name overlap                      |       21.372% |
+| NativR registered names           |           562 |
+| Overlapping callable names        |           547 |
+| Missing GNU R callable names      |         1,975 |
+| Name overlap                      |       21.689% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -501,15 +501,23 @@ auto labels, log/aspect layout, formula/function/time-series/raster and other co
 margins/clipping, arbitrary graphical controls, exact diagnostics, long vectors, and
 device-identical rendering remain incomplete.
 
-The character-encoding increment adds `Encoding`, `Encoding<-`, `enc2native`, and `enc2utf8`,
-raising current name overlap to 543 of 2,522. Rank-144 `Encoding` accounts for 12 observed calls
-across three sampled package manuals and 4.5% download-weighted reach. Each character element now
-owns exact bytes plus an `unknown`, `latin1`, `UTF-8`, or `bytes` mark; ASCII and missing strings
-canonicalize to `unknown`. GNU R 4.6 differential evidence covers query/replacement, exact label
-acceptance, recycling, attribute preservation, raw-byte reinterpretation, conversion, subset
+The character-encoding increment added `Encoding`, `Encoding<-`, `enc2native`, and `enc2utf8`,
+raising name overlap at that increment to 543 of 2,522. Rank-144 `Encoding` accounts for 12 observed
+calls across three sampled package manuals and 4.5% download-weighted reach. Each character element
+now owns exact bytes plus an `unknown`, `latin1`, `UTF-8`, or `bytes` mark; ASCII and missing
+strings canonicalize to `unknown`. GNU R 4.6 differential evidence covers query/replacement, exact
+label acceptance, recycling, attribute preservation, raw-byte reinterpretation, conversion, subset
 writeback evaluation count, and XDR mark/byte roundtrips. Browser-native encoding is deterministic
 UTF-8. General `iconv`, host locale codecs, normalization, malformed-byte display, and complete
 encoding-sensitive string behavior remain incomplete.
+
+The Cauchy-distribution increment adds `stats::dcauchy`, `pcauchy`, `qcauchy`, and `rcauchy`,
+raising current name overlap to 547 of 2,522. Rank-149 `rcauchy` represents four documented calls
+across three sampled package manuals and 4.2% download-weighted reach. GNU R 4.6 differential
+evidence covers formals, vector recycling, attributes, seeded draw ordering, zero-scale RNG
+preservation, density/CDF/quantile values, stable ordinary/log tails, missing and invalid domains,
+warnings, and resource limits. Exhaustive libm bit identity and the wider distribution family remain
+incomplete.
 
 ## Completion evidence
 

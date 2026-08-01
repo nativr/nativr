@@ -147,7 +147,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 146,order,true,4,ggplot2|purrr|stringi|data.table,11,4.1,4.4
 147,which,true,4,vctrs|purrr|matrixStats|zoo,6,4.1,4.3
 148,conditionMessage,true,4,rlang|data.table|shiny|promises,5,4.1,4.2
-149,rcauchy,false,3,ggplot2|pillar|purrr,4,3.1,4.2
+149,rcauchy,true,3,ggplot2|pillar|purrr,4,3.1,4.2
 150,cor,true,3,magrittr|tibble|purrr,4,3.1,4.2
 151,basename,true,3,cli|StanHeaders|xfun,3,3.1,4.1
 152,floor,true,4,pillar|dplyr|shiny|zoo,9,4.1,4.1

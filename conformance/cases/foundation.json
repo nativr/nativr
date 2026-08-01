@@ -7646,5 +7646,65 @@
     ],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "cauchy-usage-ranked-random-stream-and-package-shapes",
+    "code": "set.seed(17)\nx <- round(stats::rcauchy(8, c(1, 2), c(3, 4, 5)), 12)\nset.seed(42)\nbaseline <- runif(2)\nset.seed(42)\nconstants <- rcauchy(5, 3, 0)\nafter <- runif(2)\nset.seed(42)\nggplot_shape <- rcauchy(1000)\npillar_shape <- rcauchy(20)\npurrr_shape <- rcauchy(100)\nc(x, length(rcauchy(c(7, 8))), length(rcauchy(2.9)), length(rcauchy(numeric())), identical(constants, rep(3, 5)), identical(after, baseline), length(ggplot_shape), length(pillar_shape), length(purrr_shape), any(ggplot_shape < 0), any(ggplot_shape > 0), !is.nan(mean(purrr_shape)), !is.nan(median(purrr_shape)))",
+    "expected": [
+      2.589031688785, 1.60132406894, 50.981925656325, -0.53272603492, 14.434374849253,
+      -38.818987180718, 3.280408536508, 4.665514449353, 2, 2, 0, 1, 1, 1000, 20, 100, 1, 1, 1, 1
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "cauchy-density-probability-quantile-and-tails",
+    "code": "x <- c(-3, -1, 0, 1, 3)\nordinary <- round(c(dcauchy(x), pcauchy(x), pcauchy(x, lower.tail = FALSE), qcauchy(c(.01, .25, .5, .75, .99))), 12)\nprobability_tails <- round(c(pcauchy(c(-1e300, 1e300), log.p = TRUE), pcauchy(c(-1e300, 1e300), lower.tail = FALSE, log.p = TRUE)), 12)\nlower_quantiles <- qcauchy(c(-100, -1, log(.5), -.1), log.p = TRUE)\nupper_quantiles <- qcauchy(c(-100, -1, log(.5), -.1), lower.tail = FALSE, log.p = TRUE)\nc(ordinary, probability_tails, lower_quantiles[1] < -1e40, round(lower_quantiles[2:4], 12), upper_quantiles[1] > 1e40, round(upper_quantiles[2:4], 12))",
+    "expected": [
+      0.031830988618, 0.159154943092, 0.318309886184, 0.159154943092, 0.031830988618, 0.10241638235,
+      0.25, 0.5, 0.75, 0.89758361765, 0.89758361765, 0.75, 0.5, 0.25, 0.10241638235,
+      -31.820515953774, -1, 0, 1, 31.820515953774, -691.920257784063, 0, 0, -691.920257784063, 1,
+      -0.440671091496, 0, 3.2446530285, 1, 0.440671091496, 0, -3.2446530285
+    ],
+    "expectedCompatibility": "numeric",
+    "tolerance": { "absolute": 1e-12, "relative": 1e-12 }
+  },
+  {
+    "id": "cauchy-recycling-missing-domain-attributes-and-formals",
+    "code": "random_bad <- suppressWarnings(rcauchy(8, c(NA, NaN, Inf, -Inf, 0, 1, 2, 3), c(1, 1, 1, 1, 0, -1, Inf, NaN)))\nfamily_bad <- suppressWarnings(c(dcauchy(c(0, NaN, NA), scale = c(0, 1, 1)), pcauchy(c(0, NaN, NA), scale = c(-1, 1, 1)), qcauchy(c(-.1, NaN, NA), scale = c(1, 1, 1))))\nx <- dcauchy(structure(setNames(c(.25, .75), c(\"a\", \"b\")), marker = \"yes\"))\ny <- pcauchy(.5, location = setNames(c(0, 1), c(\"x\", \"y\")))\nz <- qcauchy(c(0, .25, .5, .75, 1), location = 3, scale = 0)\nc(is.nan(random_bad), abs(random_bad[3:4]) == Inf, random_bad[5] == 0, is.nan(family_bad), is.na(family_bad[c(3, 6, 9)]) & !is.nan(family_bad[c(3, 6, 9)]), identical(names(x), c(\"a\", \"b\")), identical(attr(x, \"marker\"), \"yes\"), identical(names(y), c(\"x\", \"y\")), identical(z, rep(3, 5)), identical(names(formals(rcauchy)), c(\"n\", \"location\", \"scale\")), identical(names(formals(dcauchy)), c(\"x\", \"location\", \"scale\", \"log\")), length(dcauchy(numeric(), location = 1:3)) == 0L)",
+    "expected": [
+      true,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      false,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

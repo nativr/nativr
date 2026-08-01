@@ -1049,6 +1049,20 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("runif", ["n", "min", "max"], "shape", builtinRunif),
   defineBuiltin("rnorm", ["n", "mean", "sd"], "shape", builtinRnorm),
   definePackageBuiltin("stats", "rlnorm", ["n", "meanlog", "sdlog"], "behavioral", builtinRlnorm),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "stats",
+      "rcauchy",
+      ["n", "location", "scale"],
+      "behavioral",
+      builtinCauchyRandom,
+    ),
+    [
+      { name: "n" },
+      { name: "location", defaultValue: cauchyDefaultNumber(0) },
+      { name: "scale", defaultValue: cauchyDefaultNumber(1) },
+    ],
+  ),
   defineBuiltin("rbeta", ["n", "shape1", "shape2", "ncp"], "shape", builtinRbeta),
   definePackageBuiltin("stats", "rgamma", ["n", "shape", "rate", "scale"], "shape", builtinRgamma),
   defineBuiltin("rbinom", ["n", "size", "prob"], "shape", builtinRbinom),
@@ -1626,6 +1640,53 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("IQR", ["x", "na.rm", "type"], "numeric", builtinInterquartileRange),
   defineBuiltin("quantile", ["x", "probs", "na.rm", "names", "type"], "numeric", builtinQuantile),
   definePackageBuiltin("stats", "ppoints", ["n", "a"], "behavioral", builtinProbabilityPoints),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "stats",
+      "dcauchy",
+      ["x", "location", "scale", "log"],
+      "numeric",
+      (invocation) => builtinCauchyDistribution(invocation, "density"),
+    ),
+    [
+      { name: "x" },
+      { name: "location", defaultValue: cauchyDefaultNumber(0) },
+      { name: "scale", defaultValue: cauchyDefaultNumber(1) },
+      { name: "log", defaultValue: cauchyDefaultLogical(false) },
+    ],
+  ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "stats",
+      "pcauchy",
+      ["q", "location", "scale", "lower.tail", "log.p"],
+      "numeric",
+      (invocation) => builtinCauchyDistribution(invocation, "probability"),
+    ),
+    [
+      { name: "q" },
+      { name: "location", defaultValue: cauchyDefaultNumber(0) },
+      { name: "scale", defaultValue: cauchyDefaultNumber(1) },
+      { name: "lower.tail", defaultValue: cauchyDefaultLogical(true) },
+      { name: "log.p", defaultValue: cauchyDefaultLogical(false) },
+    ],
+  ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "stats",
+      "qcauchy",
+      ["p", "location", "scale", "lower.tail", "log.p"],
+      "numeric",
+      (invocation) => builtinCauchyDistribution(invocation, "quantile"),
+    ),
+    [
+      { name: "p" },
+      { name: "location", defaultValue: cauchyDefaultNumber(0) },
+      { name: "scale", defaultValue: cauchyDefaultNumber(1) },
+      { name: "lower.tail", defaultValue: cauchyDefaultLogical(true) },
+      { name: "log.p", defaultValue: cauchyDefaultLogical(false) },
+    ],
+  ),
   defineBuiltin(
     "qlogis",
     ["p", "location", "scale", "lower.tail", "log.p"],
@@ -14669,6 +14730,63 @@ function logNormalArgument(value: RValue, name: string): RealDistributionArgumen
     throw new RTypeMismatchError("NRT3309", `rlnorm() ${name} must be real numeric.`);
   }
   return argument;
+}
+
+async function builtinCauchyRandom(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["n", "location", "scale"]);
+  const count = required(matched, "n", "rcauchy");
+  if (isFactor(count)) {
+    throw new RTypeMismatchError("NRT3403", "rcauchy() n must be real numeric.");
+  }
+  const length = randomResultLength(count, "rcauchy");
+  const locations = cauchyNumericArgument(
+    matched.get("location") ?? doubleVector([0]),
+    "rcauchy",
+    "location",
+  );
+  const scales = cauchyNumericArgument(
+    matched.get("scale") ?? doubleVector([1]),
+    "rcauchy",
+    "scale",
+  );
+  invocation.context.allocate(length);
+  if (length === 0) return doubleVector([]);
+  if (locations.length === 0 || scales.length === 0) {
+    invocation.context.warn({ code: "NRW1003", message: "NAs produced" });
+    return doubleVector(new Float64Array(length), new Uint8Array(length).fill(1));
+  }
+
+  const random = randomState(invocation);
+  const output = new Float64Array(length);
+  let producedNaN = false;
+  for (let index = 0; index < length; index += 1) {
+    invocation.context.checkpoint();
+    const locationIndex = index % locations.length;
+    const scaleIndex = index % scales.length;
+    const location = isMissing(locations, locationIndex)
+      ? Number.NaN
+      : numberAt(locations, locationIndex);
+    const scale = isMissing(scales, scaleIndex) ? Number.NaN : numberAt(scales, scaleIndex);
+    if (
+      Number.isNaN(location) ||
+      Number.isNaN(scale) ||
+      scale < 0 ||
+      scale === Number.POSITIVE_INFINITY
+    ) {
+      output[index] = Number.NaN;
+      producedNaN = true;
+      continue;
+    }
+    if (scale === 0) {
+      output[index] = location;
+      continue;
+    }
+    output[index] = location + scale * Math.tan(Math.PI * nextRandom(random));
+  }
+  if (producedNaN) {
+    invocation.context.warn({ code: "NRW1003", message: "NAs produced" });
+  }
+  return doubleVector(output);
 }
 
 async function builtinRbeta(invocation: BuiltinInvocation): Promise<RValue> {
@@ -28222,6 +28340,201 @@ function scaleNamedVector<T extends NumericVector>(
   names: readonly string[] | undefined,
 ): T {
   return names === undefined ? value : withNames(value, names);
+}
+
+type CauchyOperation = "density" | "probability" | "quantile";
+
+function cauchyDefaultNumber(value: number): AstNode {
+  return { kind: "DoubleLiteral", value, span: SYNTHETIC_SPAN };
+}
+
+function cauchyDefaultLogical(value: boolean): AstNode {
+  return { kind: "LogicalLiteral", value, span: SYNTHETIC_SPAN };
+}
+
+async function builtinCauchyDistribution(
+  invocation: BuiltinInvocation,
+  operation: CauchyOperation,
+): Promise<RValue> {
+  const call =
+    operation === "density" ? "dcauchy" : operation === "probability" ? "pcauchy" : "qcauchy";
+  const primaryName = operation === "density" ? "x" : operation === "probability" ? "q" : "p";
+  const matched = await matchExact(
+    invocation,
+    operation === "density"
+      ? ["x", "location", "scale", "log"]
+      : [primaryName, "location", "scale", "lower.tail", "log.p"],
+  );
+  const primary = cauchyNumericArgument(required(matched, primaryName, call), call, primaryName);
+  const locations = cauchyNumericArgument(
+    matched.get("location") ?? doubleVector([0]),
+    call,
+    "location",
+  );
+  const scales = cauchyNumericArgument(matched.get("scale") ?? doubleVector([1]), call, "scale");
+  const logarithmic =
+    operation === "density"
+      ? cauchyProbabilityFlag(matched.get("log"), false, invocation, call, "log")
+      : cauchyProbabilityFlag(matched.get("log.p"), false, invocation, call, "log.p");
+  const lowerTail =
+    operation === "density"
+      ? true
+      : cauchyProbabilityFlag(matched.get("lower.tail"), true, invocation, call, "lower.tail");
+  const numericArguments = [primary, locations, scales] as const;
+  if (numericArguments.some((argument) => argument.length === 0)) return doubleVector([]);
+  const outputLength = Math.max(...numericArguments.map((argument) => argument.length));
+  const template = numericArguments.find((argument) => argument.length === outputLength) ?? primary;
+  invocation.context.allocate(outputLength);
+  const output = new Float64Array(outputLength);
+  const missing = new Uint8Array(outputLength);
+  let producedNaN = false;
+
+  for (let index = 0; index < outputLength; index += 1) {
+    invocation.context.checkpoint();
+    const primaryIndex = index % primary.length;
+    const locationIndex = index % locations.length;
+    const scaleIndex = index % scales.length;
+    if (
+      isMissing(primary, primaryIndex) ||
+      isMissing(locations, locationIndex) ||
+      isMissing(scales, scaleIndex)
+    ) {
+      missing[index] = 1;
+      continue;
+    }
+    const input = numberAt(primary, primaryIndex);
+    const location = numberAt(locations, locationIndex);
+    const scale = numberAt(scales, scaleIndex);
+    if (Number.isNaN(input) || Number.isNaN(location) || Number.isNaN(scale)) {
+      output[index] = Number.NaN;
+      continue;
+    }
+
+    let result: number;
+    if (operation === "density") {
+      result = cauchyDensity(input, location, scale, logarithmic);
+    } else if (operation === "probability") {
+      result = cauchyProbability(input, location, scale, lowerTail, logarithmic);
+    } else {
+      result = cauchyQuantile(input, location, scale, lowerTail, logarithmic);
+    }
+    if (Number.isNaN(result)) producedNaN = true;
+    output[index] = result;
+  }
+  if (producedNaN) {
+    invocation.context.warn({ code: "NRW1003", message: "NaNs produced" });
+  }
+  return {
+    ...doubleVector(output, compactMask(missing)),
+    attributes: new Map(template.attributes),
+  };
+}
+
+function cauchyNumericArgument(
+  value: RValue,
+  call: "dcauchy" | "pcauchy" | "qcauchy" | "rcauchy",
+  name: string,
+): RealDistributionArgument {
+  if (
+    (value.type !== "logical" && value.type !== "integer" && value.type !== "double") ||
+    isFactor(value)
+  ) {
+    throw new RTypeMismatchError("NRT3403", `${call}() ${name} must be real numeric.`);
+  }
+  return value;
+}
+
+function cauchyProbabilityFlag(
+  value: RValue | undefined,
+  fallback: boolean,
+  invocation: BuiltinInvocation,
+  call: "dcauchy" | "pcauchy" | "qcauchy",
+  name: "log" | "lower.tail" | "log.p",
+): boolean {
+  if (value === undefined) return fallback;
+  if (!isAtomic(value)) {
+    throw new RTypeMismatchError("NRT3403", `${call}() ${name} must be atomic.`);
+  }
+  if (value.length === 0 || isMissing(value, 0)) return true;
+  if (value.type === "character") {
+    const parsed = parseRNumber(value.values[0] ?? "");
+    if (!parsed.valid || Number.isNaN(parsed.value)) {
+      invocation.context.warn({ code: "NRW1003", message: "NAs introduced by coercion" });
+      return true;
+    }
+    return parsed.value !== 0;
+  }
+  if (value.type === "complex") {
+    const real = value.real[0] ?? 0;
+    const imaginary = value.imaginary[0] ?? 0;
+    return Number.isNaN(real) || Number.isNaN(imaginary) || real !== 0 || imaginary !== 0;
+  }
+  const numeric = value.values[0] ?? 0;
+  return Number.isNaN(numeric) || numeric !== 0;
+}
+
+function cauchyDensity(
+  input: number,
+  location: number,
+  scale: number,
+  logarithmic: boolean,
+): number {
+  if (scale <= 0) return Number.NaN;
+  const standardized = (input - location) / scale;
+  if (Number.isNaN(standardized)) return Number.NaN;
+  const logDensity = -Math.log(Math.PI) - Math.log(scale) - Math.log1p(standardized ** 2);
+  return logarithmic ? logDensity : Math.exp(logDensity);
+}
+
+function cauchyProbability(
+  input: number,
+  location: number,
+  scale: number,
+  lowerTail: boolean,
+  logarithmic: boolean,
+): number {
+  if (scale <= 0) return Number.NaN;
+  const standardized = (input - location) / scale;
+  if (Number.isNaN(standardized)) return Number.NaN;
+  if (standardized === 0) return logarithmic ? -Math.LN2 : 0.5;
+  const smallTail = Math.atan(1 / Math.abs(standardized)) / Math.PI;
+  const selectedSmallTail = lowerTail ? standardized < 0 : standardized > 0;
+  if (logarithmic) return selectedSmallTail ? Math.log(smallTail) : Math.log1p(-smallTail);
+  return selectedSmallTail ? smallTail : 1 - smallTail;
+}
+
+function cauchyQuantile(
+  input: number,
+  location: number,
+  scale: number,
+  lowerTail: boolean,
+  logarithmic: boolean,
+): number {
+  if (scale < 0 || scale === Number.POSITIVE_INFINITY) return Number.NaN;
+  const standard = cauchyStandardQuantile(input, lowerTail, logarithmic);
+  if (Number.isNaN(standard)) return Number.NaN;
+  if (scale === 0) return location;
+  return location + scale * standard;
+}
+
+function cauchyStandardQuantile(input: number, lowerTail: boolean, logarithmic: boolean): number {
+  if (logarithmic ? input > 0 : input < 0 || input > 1) return Number.NaN;
+  let probability: number;
+  if (logarithmic) {
+    if (input === Number.NEGATIVE_INFINITY)
+      return lowerTail ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY;
+    if (input === 0) return lowerTail ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
+    probability = input <= -Math.LN2 ? Math.exp(input) : -Math.expm1(input);
+  } else {
+    if (input === 0) return lowerTail ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY;
+    if (input === 1) return lowerTail ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
+    probability = input <= 0.5 ? input : 1 - input;
+  }
+  if (probability === 0) return lowerTail ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY;
+  if (probability === 0.5) return 0;
+  const magnitude = 1 / Math.tan(Math.PI * probability);
+  const lowerQuantile = (logarithmic ? input <= -Math.LN2 : input <= 0.5) ? -magnitude : magnitude;
+  return lowerTail ? lowerQuantile : -lowerQuantile;
 }
 
 async function builtinLogisticQuantile(invocation: BuiltinInvocation): Promise<RValue> {

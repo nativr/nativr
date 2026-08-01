@@ -987,6 +987,16 @@ produce missing values; either path emits one call-level warning. Infinite means
 non-negative deviation retain their zero/infinity limits. Alternative normal generators and the
 remaining log-normal distribution family are not implemented.
 
+The complete `stats::dcauchy()`/`pcauchy()`/`qcauchy()`/`rcauchy()` family vectorizes and recycles
+location and scale parameters using GNU R-shaped defaults and formals. Density, probability, and
+quantile results inherit the first longest numeric argument's metadata; stable reciprocal-angle and
+`log1p` identities retain far ordinary/log tails. Missing values propagate, invalid domains produce
+one aggregate warning, and zero-scale distribution queries follow their documented degenerate or
+undefined cases. Random generation uses one evaluator-owned uniform draw for each valid
+positive-scale result, consumes none for a zero-scale point mass, drops parameter attributes, and
+uses the scalar-or-vector `n` length rule. Empty random parameters produce missing results with one
+warning. No host entropy or host distribution routine is used.
+
 `stats::dbinom()` evaluates binomial mass on the log scale, then exponentiates only for ordinary
 probability output. Edge counts below 64 accumulate a direct log-product coefficient; larger counts
 use the owned Lanczos log-gamma approximation. Quantile, size, and probability vectors recycle to

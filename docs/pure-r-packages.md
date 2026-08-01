@@ -167,6 +167,13 @@ and serialize marked strings without a package-specific rewrite. This removes on
 it does not imply that rlang or utf8 are pure-R packages or that their native components can load
 unchanged.
 
+The same shared-runtime rule now covers rank-149 `rcauchy`, observed four times across ggplot2,
+pillar, and purrr examples (4.2% weighted reach). NativR implements the whole Cauchy family once in
+the runtime, including seeded random generation and stable density/probability/quantile operations,
+so any package-owned R code can call it without a TypeScript rewrite. This removes a common runtime
+gap; it does not mean those packages can already load, because their remaining R semantics,
+dependencies, native components, graphics, and installation metadata must each pass independently.
+
 The same rule applies to later packages: a missing callable is prioritized by measured package reach
 and implemented as reusable runtime behavior. For example, the rank-80 `dev.off()` gap led to one
 browser-device lifecycle shared by every package, including current/list queries, held-command
