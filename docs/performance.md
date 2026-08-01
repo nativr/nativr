@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 345 KiB gzip;
+- Worker JavaScript: 347 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -497,3 +497,10 @@ transport, GNU R-shaped `Sys.getenv`, `Sys.setenv`, and `Sys.unsetenv`, plus the
 `duplicated(..., fromLast = TRUE)` character seam required by unchanged `withr::with_envvar()`. It
 adds no dependency and never reads a host process environment. The measured Worker is 343.7 KiB
 gzip, so the ceiling rises narrowly to 345 KiB; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.211 adds usage-ranked `graphics::image`/`image.default` over the existing owned
+graphics journal. Regular grids reuse one transferable raster command and irregular grids reuse
+polygon commands; S3 dispatch and all matrix/colour mapping remain inside the existing runtime
+layers. It adds no dependency, Canvas import, or package-specific adapter. The measured Worker is
+345.8 KiB gzip, so the ceiling rises narrowly to 347 KiB; client and parser-Wasm budgets remain
+unchanged.

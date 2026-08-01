@@ -536,6 +536,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      execution. GNU R 4.6 differential cases cover query/mutation/coercion/formals, reset restores
      the initial snapshot, and unchanged `withr 3.0.3` executes `with_envvar()` with cleanup. Host
      environment inheritance and operating-system mutation remain intentionally unavailable.
+129. Usage-ranked image grids: rank-163 `graphics::image` and `image.default` now run the measured
+     scales, viridisLite, and RColorBrewer matrix/palette calls through a reusable S3/default path.
+     Center/boundary coordinates, regular raster and irregular polygon grids, colour intervals,
+     missing transparency, one-row strips, Worker transport, and Canvas pixels have executable
+     evidence. Complete axes, legacy intervals, device heuristics, and pixel identity remain later
+     graphics-depth work.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

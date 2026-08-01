@@ -4,11 +4,11 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 565,
-    "overlappingNames": 550,
-    "missingReferenceNames": 1972,
+    "nativrRegisteredNames": 567,
+    "overlappingNames": 552,
+    "missingReferenceNames": 1970,
     "nativrExtensionNames": 15,
-    "nameCoverage": 0.218081
+    "nameCoverage": 0.218874
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 408, "nameCoverage": 0.298464 },
@@ -24,8 +24,8 @@
     {
       "package": "graphics",
       "callableNames": 88,
-      "overlappingNames": 17,
-      "nameCoverage": 0.193182
+      "overlappingNames": 19,
+      "nameCoverage": 0.215909
     },
     { "package": "datasets", "callableNames": 0, "overlappingNames": 0, "nameCoverage": 1 }
   ],
@@ -277,6 +277,8 @@
     "identical",
     "identity",
     "ifelse",
+    "image",
+    "image.default",
     "infoRDS",
     "inherits",
     "intToBits",
@@ -1603,8 +1605,6 @@
     "icuSetCollate",
     "identify",
     "if",
-    "image",
-    "image.default",
     "implicitGeneric",
     "importIntoEnv",
     "influence",

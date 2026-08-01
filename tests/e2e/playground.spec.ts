@@ -331,6 +331,27 @@ test("runs the required Worker examples without evaluation network traffic", asy
   });
   expect(rasterPixels).toEqual([0, 0, 0, 255, 255, 255, 255, 255]);
 
+  await page.locator("#source").fill(`
+    graphics::image(
+      matrix(c(0, 1), 2, 1),
+      col = c("red", "blue"),
+      axes = FALSE,
+      ann = FALSE
+    )
+  `);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("null");
+  await expect(page.locator("#graphics-count")).toHaveText("3");
+  const imagePixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
+    const context = canvas.getContext("2d");
+    if (context === null) return [];
+    return [
+      ...context.getImageData(160, 200, 1, 1).data,
+      ...context.getImageData(480, 200, 1, 1).data,
+    ];
+  });
+  expect(imagePixels).toEqual([255, 0, 0, 255, 0, 0, 255, 255]);
+
   await page.getByRole("button", { name: "Browser data viewer" }).click();
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("null");

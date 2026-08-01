@@ -237,29 +237,36 @@ inline and Worker APIs retain stdout in `evalDetailed`; output and stored text s
 budgets. S3 print-method dispatch, global print options, line filling, labels, host files, and the
 complete connection stack are not claimed.
 
-`plot`, `plot.default`, `plot.new`, bounded `plot.window`, `axTicks`, `box`, `boxplot`, `persp`,
-`points`, `polygon`, `rasterImage`, `segments`, and `legend` provide the first browser-native
-graphics slice. Evaluation owns page and linear coordinate-window state, converts two-dimensional
-grayscale or character colors, three-/four-channel numeric/raw arrays, and packed `nativeRaster`
-integers to row-major RGBA, and emits commands for recycled raster placements, styled line segments,
-resolved point symbols and polygons, plot frames and boxplots, and resolved legend entries. Commands
-preserve raster angle/interpolation, finite coordinates, canonical colors, normalized line patterns,
-line widths, polygon fill rules, frame edges, text labels, point symbols, placement, and layout
-controls. They cross the Worker boundary, remain available in `evalDetailed.graphics`, and count
-toward the configured output budget. Inline and Worker callbacks receive the same command shapes,
-and the Playground renders them to Canvas. Evidence covers the measured systemfonts glyph-raster,
-httr PNG-array, posterior interval-segment, zoo filled-area, zoo plot-frame, zoo grouped-boxplot,
-and zoo legend patterns. The owned registry also supports `dev.cur`/`dev.list`, GNU R-shaped null
-device 1, simultaneous browser/PNG device identities, selected `dev.off`/`graphics.off` closure,
-nested `dev.hold`/`dev.flush` levels, per-device `par()` isolation and restoration, ordered
-cross-evaluation command buffering, and bounded same-session `recordPlot`/`replayPlot` over its own
-page/window/raster/segments/points/text/polygon/box/boxplot/ legend display list. `grDevices::png`
-uses that list to produce bounded, decompressible RGBA PNG bytes in the virtual file store,
-including transparent backgrounds, exact requested dimensions, raw-byte reads, and numbered
-multi-page targets. Closing flushes held commands and completes the current PNG page. Complete plot
-methods, non-PNG devices, axis tick/label drawing, complete clipping/margins, graphical parameters
-beyond the documented controls, external display-list formats, and pixel equivalence across GNU R
-devices are not claimed.
+`plot`, `plot.default`, `plot.new`, bounded `plot.window`, `axTicks`, `box`, `boxplot`, `image`,
+`image.default`, `persp`, `points`, `polygon`, `rasterImage`, `segments`, and `legend` provide the
+first browser-native graphics slice. Evaluation owns page and linear coordinate-window state,
+converts two-dimensional grayscale or character colors, three-/four-channel numeric/raw arrays, and
+packed `nativeRaster` integers to row-major RGBA, and emits commands for recycled raster placements,
+styled line segments, resolved point symbols and polygons, plot frames and boxplots, and resolved
+legend entries. Commands preserve raster angle/interpolation, finite coordinates, canonical colors,
+normalized line patterns, line widths, polygon fill rules, frame edges, text labels, point symbols,
+placement, and layout controls. They cross the Worker boundary, remain available in
+`evalDetailed.graphics`, and count toward the configured output budget. Inline and Worker callbacks
+receive the same command shapes, and the Playground renders them to Canvas. Evidence covers the
+measured systemfonts glyph-raster, httr PNG-array, posterior interval-segment, zoo filled-area, zoo
+plot-frame, zoo grouped-boxplot, and zoo legend patterns. The owned registry also supports
+`dev.cur`/`dev.list`, GNU R-shaped null device 1, simultaneous browser/PNG device identities,
+selected `dev.off`/`graphics.off` closure, nested `dev.hold`/`dev.flush` levels, per-device `par()`
+isolation and restoration, ordered cross-evaluation command buffering, and bounded same-session
+`recordPlot`/`replayPlot` over its own page/window/raster/segments/points/text/polygon/box/boxplot/
+legend display list. `grDevices::png` uses that list to produce bounded, decompressible RGBA PNG
+bytes in the virtual file store, including transparent backgrounds, exact requested dimensions,
+raw-byte reads, and numbered multi-page targets. Closing flushes held commands and completes the
+current PNG page. Complete plot methods, non-PNG devices, axis tick/label drawing, complete
+clipping/margins, graphical parameters beyond the documented controls, external display-list
+formats, and pixel equivalence across GNU R devices are not claimed.
+
+`image` has shape-level differential evidence for the rank-163 calls sampled from `scales`,
+`viridisLite`, and `RColorBrewer`. Its S3 generic preserves package-defined methods. The default
+method covers matrix orientation, center/boundary expansion, regular raster and irregular polygon
+paths, explicit colour breaks, finite `zlim`, transparent missing/non-finite cells, palette strips,
+invisible `NULL`, and GNU R-observed user-window ranges. This is not a claim of device-identical
+axes, interpolation, legacy colour intervals, or complete graphical-parameter behavior.
 
 `base::plot` and `graphics::plot.default` have differential shape evidence for the sampled rank-22
 numeric calls and package-owned S3 extension point. The generic probes class methods before entering

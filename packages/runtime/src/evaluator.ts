@@ -353,6 +353,8 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "axTicks",
       "box",
       "boxplot",
+      "image",
+      "image.default",
       "legend",
       "matplot",
       "pairs",

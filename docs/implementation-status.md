@@ -11,7 +11,7 @@ Date: 2026-07-31
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 565 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 567 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Character vectors own exact per-element bytes and canonical `unknown`/`latin1`/`UTF-8`/`bytes`
@@ -131,6 +131,11 @@ Date: 2026-07-31
   plot-frame/boxplot, and legend graphics events with bounded `plot.new()`, `plot.window()`,
   `rasterImage()`, `segments()`, `box()`, `boxplot()`, and `legend()` builtins, transferable raster
   buffers, output budgeting, and Playground Canvas rendering.
+- Usage-ranked `graphics::image`/`image.default` with S3-first package-method forwarding,
+  numeric/logical matrices, center and boundary coordinates, regular raster and irregular polygon
+  grids, explicit colour breaks/ranges, transparent missing cells, one-row palette strips, exact
+  image-style windows, invisible returns, and bounded Worker/Canvas transport. Legacy colour
+  intervals, complete axes, and device-selected raster heuristics remain explicit boundaries.
 - Usage-ranked `base::plot` plus `graphics::plot.default` with S3-first package-method forwarding,
   numeric vector/x-y/matrix/data-frame/list coordinates, point/line/both/overplotted/histogram/step/
   no-draw geometry, GNU R-shaped 4% linear range padding, common styles, panel hooks, scalar labels,

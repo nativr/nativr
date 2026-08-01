@@ -189,6 +189,14 @@ can therefore generate and inspect actual PNG resources without a package-specif
 Font/device fidelity and unsupported graphics primitives still determine whether a particular
 plotting package is compatible.
 
+Rank-163 `graphics::image()` follows that same package-independent path for the sampled `scales`,
+`viridisLite`, and `RColorBrewer` calls. The generic dispatches ordinary S3 methods; the default
+method accepts numeric/logical matrices, center or boundary coordinates, explicit colour intervals,
+missing transparent cells, one-row palette strips, and both regular and irregular grids. Regular
+grids reuse one transferable raster command, while irregular grids reuse the polygon journal. This
+removes a shared pure-R dependency seam without translating any of those packages to TypeScript;
+their remaining dependencies and runtime calls still need executable evidence.
+
 ## Explicit boundaries
 
 - C, C++, Fortran, Rust, Java, shared libraries, `LinkingTo`, `useDynLib`, subprocesses, system

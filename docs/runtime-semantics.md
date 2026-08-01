@@ -299,6 +299,16 @@ planes into row-first classed character rasters. It drops source names/dimnames,
 existing raster values unchanged. `rasterImage()` consumes those values plus supported
 matrix/array/native-raster inputs as row-major RGBA commands with recycled positions.
 
+`graphics::image()` is an S3 generic whose default method accepts positive numeric/logical matrices,
+strictly increasing center or boundary coordinates, explicit `zlim` or `breaks`, reusable R colour
+vectors, missing transparent cells, and `add`. Matrix rows map to x and columns map to y, including
+the documented bottom-up column orientation. Regular grids become one non-interpolated RGBA raster
+command; irregular grids become borderless polygon cells through the same graphics journal.
+One-row/one-column grids expand their degenerate coordinate range, and `xaxs = "i"`/`yaxs = "i"`
+retain exact cell boundaries. The measured `axes`, `ann`, `bty`, `xaxt`, `yaxt`, and scalar label
+controls are resolved before transport. Legacy `oldstyle = TRUE`, additional axis styles, complete
+tick/label layout, and device-selected raster heuristics remain explicit boundaries.
+
 `base::plot()` is an S3 generic that probes class methods without consuming `plot.default`; this
 lets application-supplied pure-R package methods own their result and visibility. The
 `graphics::plot.default()` fallback normalizes ordinary one-vector and paired x/y containers through

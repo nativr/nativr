@@ -6124,6 +6124,91 @@ describe("complete inline source-to-result vertical slice", () => {
     await limited.dispose();
   });
 
+  it("renders usage-ranked image grids through generic browser graphics commands", async () => {
+    const runtime = await createR({ execution: "inline", assets });
+    const regular = await runtime.evalDetailed(`
+      image(
+        matrix(c(0, .25, .5, .75, 1, NA), 2, 3),
+        col = c("red", "green", "blue"),
+        axes = FALSE,
+        ann = FALSE,
+        useRaster = TRUE
+      )
+    `);
+    expect(regular.value).toBeNull();
+    expect(regular.visible).toBe(false);
+    expect(regular.graphics.slice(0, 2)).toEqual([
+      { kind: "new-page" },
+      { kind: "window", xlim: [-0.5, 1.5], ylim: [-0.25, 1.25] },
+    ]);
+    const raster = regular.graphics[2];
+    expect(raster).toMatchObject({
+      kind: "raster",
+      width: 2,
+      height: 3,
+      xleft: -0.5,
+      ybottom: -0.25,
+      xright: 1.5,
+      ytop: 1.25,
+      interpolate: false,
+    });
+    if (raster?.kind === "raster") {
+      expect([...raster.rgba]).toEqual([
+        0, 0, 255, 255, 0, 0, 0, 0, 0, 255, 0, 255, 0, 0, 255, 255, 255, 0, 0, 255, 255, 0, 0, 255,
+      ]);
+    }
+
+    const irregular = await runtime.evalDetailed(`
+      image(
+        c(1, 3),
+        c(2, 5, 9),
+        matrix(1:6, 2, 3),
+        col = c("red", "green", "blue"),
+        axes = FALSE,
+        ann = FALSE
+      )
+    `);
+    expect(irregular.graphics.slice(0, 2)).toEqual([
+      { kind: "new-page" },
+      { kind: "window", xlim: [0, 4], ylim: [0.5, 11] },
+    ]);
+    const polygons = irregular.graphics[2];
+    expect(polygons?.kind).toBe("polygon");
+    if (polygons?.kind === "polygon") {
+      expect(polygons.polygons).toHaveLength(6);
+      expect(polygons.polygons.slice(0, 2)).toMatchObject([
+        { x: [0, 2, 2, 0], y: [0.5, 0.5, 3.5, 3.5], fill: "#FF0000FF" },
+        { x: [2, 4, 4, 2], y: [0.5, 0.5, 3.5, 3.5], fill: "#FF0000FF" },
+      ]);
+    }
+
+    const strip = await runtime.evalDetailed(`
+      image(
+        1:5,
+        1,
+        as.matrix(1:5),
+        col = c("#440154", "#3B528B", "#21918C", "#5EC962", "#FDE725"),
+        xlab = "palette",
+        ylab = "",
+        xaxt = "n",
+        yaxt = "n",
+        bty = "n"
+      )
+    `);
+    expect(strip.graphics[1]).toEqual({ kind: "window", xlim: [0.5, 5.5], ylim: [0.6, 1.4] });
+    expect(strip.graphics.some((event) => event.kind === "box")).toBe(false);
+    expect(strip.graphics.some((event) => event.kind === "text")).toBe(true);
+    await expect(
+      runtime.eval(
+        "image.foo <- function(x, ...) 42L\nx <- structure(matrix(1, 1, 1), class = 'foo')\nimage(x)",
+      ),
+    ).resolves.toBe(42);
+    await expect(
+      runtime.eval("image(c(1, 3), c(2, 5, 9), matrix(1:6, 2, 3), useRaster = TRUE)"),
+    ).rejects.toMatchObject({ code: "NRT3354" });
+    await runtime.dispose();
+  });
+
   it("emits browser-native raster graphics for usage-ranked package patterns", async () => {
     const observed: unknown[] = [];
     const runtime = await createR({
@@ -8276,7 +8361,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.210.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.211.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -8306,6 +8391,8 @@ describe("complete inline source-to-result vertical slice", () => {
       { name: "axTicks", compatibility: "behavioral" },
       { name: "box", compatibility: "shape" },
       { name: "boxplot", compatibility: "shape" },
+      { name: "image", compatibility: "shape" },
+      { name: "image.default", compatibility: "shape" },
       { name: "rasterImage", compatibility: "shape" },
       { name: "segments", compatibility: "shape" },
       { name: "points", compatibility: "shape" },

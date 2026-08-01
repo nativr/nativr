@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           565 |
-| Overlapping callable names        |           550 |
-| Missing GNU R callable names      |         1,972 |
-| Name overlap                      |       21.808% |
+| NativR registered names           |           567 |
+| Overlapping callable names        |           552 |
+| Missing GNU R callable names      |         1,970 |
+| Name overlap                      |       21.887% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -528,6 +528,14 @@ unsetting, and return shapes. Inline and Worker tests cover explicit initializat
 reset restoration; an unchanged `withr 3.0.3` package executes `with_envvar()` over the same seam.
 The host process environment is deliberately not inherited, and empty-string handling is the
 documented platform-neutral browser rule.
+
+The image-grid increment adds `graphics::image` and `image.default`, raising current name overlap to
+552 of 2,522. Rank-163 `image` represents six documented calls across `scales`, `viridisLite`, and
+`RColorBrewer`, or 3.7% download-weighted reach. GNU R 4.6 black-box evidence covers generic/default
+formals, S3 forwarding, invisible return shape, and center-to-boundary coordinate ranges; NativR
+Worker and Canvas tests additionally cover matrix orientation, colour mapping, missing transparency,
+regular raster commands, irregular polygon cells, and one-row palette strips. Complete axes, legacy
+interval behavior, device heuristics, and pixel-identical rendering remain incomplete.
 
 ## Completion evidence
 

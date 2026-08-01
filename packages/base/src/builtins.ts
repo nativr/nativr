@@ -1529,6 +1529,55 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "invisible",
   ),
   definePackageBuiltin("graphics", "boxplot", ["x", "..."], "shape", builtinBoxplot),
+  withBuiltinFormals(
+    definePackageBuiltin("graphics", "image", ["x", "..."], "shape", builtinImage),
+    [{ name: "x" }, { name: "..." }],
+  ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "graphics",
+      "image.default",
+      [
+        "x",
+        "y",
+        "z",
+        "zlim",
+        "xlim",
+        "ylim",
+        "col",
+        "add",
+        "xaxs",
+        "yaxs",
+        "xlab",
+        "ylab",
+        "breaks",
+        "oldstyle",
+        "useRaster",
+        "...",
+      ],
+      "shape",
+      builtinImageDefault,
+      "invisible",
+    ),
+    [
+      { name: "x" },
+      { name: "y" },
+      { name: "z" },
+      { name: "zlim" },
+      { name: "xlim" },
+      { name: "ylim" },
+      { name: "col" },
+      { name: "add" },
+      { name: "xaxs" },
+      { name: "yaxs" },
+      { name: "xlab" },
+      { name: "ylab" },
+      { name: "breaks" },
+      { name: "oldstyle" },
+      { name: "useRaster" },
+      { name: "..." },
+    ],
+  ),
   definePackageBuiltin(
     "graphics",
     "rasterImage",
@@ -21830,6 +21879,465 @@ function perspectiveWindow(
     xlim: [xMinimum - xPadding, xMaximum + xPadding],
     ylim: [yMinimum - yPadding, yMaximum + yPadding],
   };
+}
+
+const IMAGE_DEFAULT_COLOURS = Object.freeze([
+  "#FFFFC8",
+  "#FFF4B7",
+  "#FBE49A",
+  "#F8D074",
+  "#F7BA3C",
+  "#F5A100",
+  "#F28400",
+  "#ED6200",
+  "#E13C00",
+  "#C32200",
+  "#A20706",
+  "#7D0025",
+]);
+
+interface ImageGrid {
+  readonly z: RLogicalVector | RIntegerVector | RDoubleVector;
+  readonly rows: number;
+  readonly columns: number;
+  readonly x: readonly number[];
+  readonly y: readonly number[];
+  readonly xEdges: readonly number[];
+  readonly yEdges: readonly number[];
+}
+
+async function builtinImage(invocation: BuiltinInvocation): Promise<RValue> {
+  const generic = matchBuiltinArguments(invocation, ["x", "..."]);
+  const xArgument = generic.matched.get("x");
+  if (xArgument === undefined || xArgument.promise.missing) return builtinImageDefault(invocation);
+  const input = await invocation.force(xArgument.promise);
+  const dispatched = await invocation.dispatchS3IfPresent(
+    "image",
+    input,
+    invocation.arguments,
+    false,
+  );
+  return dispatched ?? builtinImageDefault(invocation);
+}
+
+async function builtinImageDefault(invocation: BuiltinInvocation): Promise<RValue> {
+  const lazy = matchLazyArgumentsWithDots(invocation, [
+    "x",
+    "y",
+    "z",
+    "zlim",
+    "xlim",
+    "ylim",
+    "col",
+    "add",
+    "xaxs",
+    "yaxs",
+    "xlab",
+    "ylab",
+    "breaks",
+    "oldstyle",
+    "useRaster",
+  ]);
+  const values = new Map<string, RValue>();
+  for (const [name, argument] of lazy.matched) {
+    if (!argument.promise.missing) values.set(name, await invocation.force(argument.promise));
+  }
+  const controls = new Map<string, RValue>();
+  const supportedControls = new Set(["ann", "axes", "bty", "main", "sub", "xaxt", "yaxt"]);
+  for (const argument of lazy.dots) {
+    if (argument.name === undefined || !supportedControls.has(argument.name)) {
+      if (!argument.promise.missing) await invocation.force(argument.promise);
+      throw new RUnsupportedFeatureError(
+        "NRU6171",
+        `image.default() graphical control '${argument.name ?? "<unnamed>"}' is outside the measured browser image subset.`,
+      );
+    }
+    if (controls.has(argument.name)) {
+      throw new REvaluationError("NRE2102", `Argument '${argument.name}' matched more than once.`);
+    }
+    if (argument.promise.missing) {
+      throw new REvaluationError(
+        "NRE2103",
+        `Argument '${argument.name}' is missing in image.default().`,
+      );
+    }
+    controls.set(argument.name, await invocation.force(argument.promise));
+  }
+
+  imageAxisStyle(values.get("xaxs"), "xaxs");
+  imageAxisStyle(values.get("yaxs"), "yaxs");
+  imageAxisStyle(controls.get("xaxt"), "xaxt", true);
+  imageAxisStyle(controls.get("yaxt"), "yaxt", true);
+  const add = logicalFlag(values.get("add"), false, "image(add=)");
+  const oldstyle = logicalFlag(values.get("oldstyle"), false, "image(oldstyle=)");
+  if (oldstyle) {
+    throw new RUnsupportedFeatureError(
+      "NRU6171",
+      "image.default(oldstyle = TRUE) awaits the legacy colour-interval convention.",
+    );
+  }
+  const grid = imageGrid(values, invocation);
+  const colors = graphicsSegmentColours(
+    values.get("col") ?? characterVector(IMAGE_DEFAULT_COLOURS),
+    invocation,
+  );
+  if (colors.length === 0) {
+    throw new RTypeMismatchError("NRT3354", "image.default(col=) must not be empty.");
+  }
+  const breaks = imageBreaks(values.get("breaks"), colors.length, invocation);
+  const zlim = imageZLimits(values.get("zlim"), grid.z, breaks);
+  const rgba = imageRgba(grid, colors, breaks, zlim, invocation);
+  const regular = imageRegularEdges(grid.xEdges) && imageRegularEdges(grid.yEdges);
+  const suppliedUseRaster = values.get("useRaster");
+  const useRaster =
+    suppliedUseRaster === undefined || suppliedUseRaster.type === "null"
+      ? regular
+      : logicalFlag(suppliedUseRaster, regular, "image(useRaster=)");
+  if (useRaster && !regular) {
+    throw new RTypeMismatchError(
+      "NRT3354",
+      "image.default(useRaster = TRUE) requires a regular grid.",
+    );
+  }
+
+  const state = add ? graphicsState(invocation, "image") : await beginGraphicsPage(invocation);
+  if (!add) {
+    state.xlim = imageWindowLimits(values.get("xlim"), grid.xEdges, "xlim");
+    state.ylim = imageWindowLimits(values.get("ylim"), grid.yEdges, "ylim");
+    writeGraphics(invocation, state, { kind: "window", xlim: state.xlim, ylim: state.ylim });
+  }
+  if (useRaster) {
+    writeGraphics(invocation, state, {
+      kind: "raster",
+      rgba,
+      width: grid.rows,
+      height: grid.columns,
+      xleft: grid.xEdges[0] ?? 0,
+      ybottom: grid.yEdges[0] ?? 0,
+      xright: grid.xEdges[grid.xEdges.length - 1] ?? 1,
+      ytop: grid.yEdges[grid.yEdges.length - 1] ?? 1,
+      angle: 0,
+      interpolate: false,
+    });
+  } else {
+    imagePolygons(invocation, state, grid, rgba);
+  }
+  if (!add) imageDecorations(invocation, state, values, controls);
+  invocation.setResultVisibility("invisible");
+  return R_NULL;
+}
+
+function imageGrid(values: ReadonlyMap<string, RValue>, invocation: BuiltinInvocation): ImageGrid {
+  const suppliedZ = values.get("z");
+  let zValue = suppliedZ;
+  let xValue = values.get("x");
+  let yValue = values.get("y");
+  if (zValue === undefined && xValue?.type === "list") {
+    const input = xValue;
+    const names = vectorNames(input);
+    const zIndex = names?.indexOf("z") ?? -1;
+    if (zIndex < 0) {
+      throw new RTypeMismatchError(
+        "NRT3354",
+        "image.default() list input requires a named 'z' component.",
+      );
+    }
+    zValue = input.values[zIndex] ?? R_NULL;
+    const xIndex = names?.indexOf("x") ?? -1;
+    const yIndex = names?.indexOf("y") ?? -1;
+    xValue = xIndex < 0 ? undefined : input.values[xIndex];
+    yValue = yIndex < 0 ? undefined : input.values[yIndex];
+  } else if (zValue === undefined) {
+    zValue = xValue;
+    xValue = undefined;
+    yValue = undefined;
+  }
+  if (
+    zValue === undefined ||
+    (zValue.type !== "logical" && zValue.type !== "integer" && zValue.type !== "double") ||
+    isFactor(zValue)
+  ) {
+    throw new RTypeMismatchError(
+      "NRT3354",
+      "image.default(z=) requires a numeric or logical matrix.",
+    );
+  }
+  const dimensions = vectorDimensions(zValue);
+  if (
+    dimensions?.length !== 2 ||
+    !dimensions.every((dimension) => Number.isSafeInteger(dimension) && dimension > 0)
+  ) {
+    throw new RTypeMismatchError(
+      "NRT3354",
+      "image.default(z=) requires a numeric or logical matrix with positive dimensions.",
+    );
+  }
+  const rows = dimensions[0] ?? 0;
+  const columns = dimensions[1] ?? 0;
+  const x = imageCoordinates(xValue, rows, "x", invocation);
+  const y = imageCoordinates(yValue, columns, "y", invocation);
+  return {
+    z: zValue,
+    rows,
+    columns,
+    x,
+    y,
+    xEdges: imageCoordinateEdges(x, rows),
+    yEdges: imageCoordinateEdges(y, columns),
+  };
+}
+
+function imageCoordinates(
+  value: RValue | undefined,
+  dimension: number,
+  name: "x" | "y",
+  invocation: BuiltinInvocation,
+): readonly number[] {
+  const coordinates =
+    value === undefined
+      ? Array.from({ length: dimension }, (_, index) =>
+          dimension === 1 ? 0 : index / (dimension - 1),
+        )
+      : graphicsNumbers(value, name);
+  if (coordinates.length !== dimension && coordinates.length !== dimension + 1) {
+    throw new RTypeMismatchError(
+      "NRT3354",
+      `dimensions of z are not length(x)(-1) times length(y)(-1) in image.default().`,
+    );
+  }
+  for (let index = 1; index < coordinates.length; index += 1) {
+    invocation.context.checkpoint();
+    if ((coordinates[index] ?? 0) <= (coordinates[index - 1] ?? 0)) {
+      throw new RTypeMismatchError(
+        "NRT3354",
+        `increasing '${name}' values expected in image.default().`,
+      );
+    }
+  }
+  return coordinates;
+}
+
+function imageCoordinateEdges(
+  coordinates: readonly number[],
+  dimension: number,
+): readonly number[] {
+  if (coordinates.length === dimension + 1) return coordinates;
+  const first = coordinates[0] ?? 0;
+  if (dimension === 1) {
+    const expansion = first === 0 ? 1 : Math.abs(first) * 0.4;
+    return [first - expansion, first + expansion];
+  }
+  const edges = Array.from({ length: dimension + 1 }, (_, index) => {
+    if (index === 0) return first - ((coordinates[1] ?? first) - first) / 2;
+    if (index === dimension) {
+      const last = coordinates[dimension - 1] ?? first;
+      return last + (last - (coordinates[dimension - 2] ?? last)) / 2;
+    }
+    return ((coordinates[index - 1] ?? first) + (coordinates[index] ?? first)) / 2;
+  });
+  return edges;
+}
+
+function imageBreaks(
+  value: RValue | undefined,
+  colorCount: number,
+  invocation: BuiltinInvocation,
+): readonly number[] | undefined {
+  if (value === undefined || value.type === "null") return undefined;
+  const source = graphicsNumbers(value, "breaks");
+  if (source.length !== colorCount + 1) {
+    throw new RTypeMismatchError(
+      "NRT3354",
+      "must have one more break than colour in image.default().",
+    );
+  }
+  const sorted = [...source].sort((left, right) => left - right);
+  if (sorted.some((entry, index) => entry !== source[index])) {
+    invocation.context.warn({
+      code: "NRW1111",
+      message: "unsorted 'breaks' will be sorted before use",
+    });
+  }
+  if (sorted.some((entry, index) => index > 0 && entry === sorted[index - 1])) {
+    throw new RTypeMismatchError("NRT3354", "'breaks' must be unique in image.default().");
+  }
+  return sorted;
+}
+
+function imageZLimits(
+  value: RValue | undefined,
+  z: RLogicalVector | RIntegerVector | RDoubleVector,
+  breaks: readonly number[] | undefined,
+): readonly [number, number] {
+  if (breaks !== undefined) {
+    return [breaks[0] ?? 0, breaks[breaks.length - 1] ?? 1];
+  }
+  if (value !== undefined && value.type !== "null") {
+    const limits = graphicsNumbers(value, "zlim");
+    if (limits.length !== 2 || limits[0] === limits[1]) {
+      throw new RTypeMismatchError("NRT3354", "invalid z limits in image.default().");
+    }
+    return [Math.min(limits[0] ?? 0, limits[1] ?? 0), Math.max(limits[0] ?? 0, limits[1] ?? 0)];
+  }
+  const finite = Array.from({ length: z.length }, (_, index) =>
+    isMissing(z, index) ? Number.NaN : (z.values[index] ?? Number.NaN),
+  ).filter(Number.isFinite);
+  if (finite.length === 0) {
+    throw new RTypeMismatchError("NRT3354", "no finite z values in image.default().");
+  }
+  return [Math.min(...finite), Math.max(...finite)];
+}
+
+function imageRgba(
+  grid: ImageGrid,
+  colors: readonly RColour[],
+  breaks: readonly number[] | undefined,
+  zlim: readonly [number, number],
+  invocation: BuiltinInvocation,
+): Uint8Array {
+  const rgba = new Uint8Array(grid.rows * grid.columns * 4);
+  invocation.context.allocate(rgba.length);
+  for (let y = 0; y < grid.columns; y += 1) {
+    for (let x = 0; x < grid.rows; x += 1) {
+      invocation.context.checkpoint();
+      const source = x + grid.rows * y;
+      const target = ((grid.columns - 1 - y) * grid.rows + x) * 4;
+      if (isMissing(grid.z, source)) continue;
+      const value = grid.z.values[source] ?? Number.NaN;
+      const colorIndex = imageColourIndex(value, colors.length, breaks, zlim);
+      if (colorIndex === undefined) continue;
+      rgba.set(colors[colorIndex] ?? [255, 255, 255, 0], target);
+    }
+  }
+  return rgba;
+}
+
+function imageColourIndex(
+  value: number,
+  colorCount: number,
+  breaks: readonly number[] | undefined,
+  zlim: readonly [number, number],
+): number | undefined {
+  if (!Number.isFinite(value)) return undefined;
+  if (breaks !== undefined) {
+    if (value < (breaks[0] ?? 0) || value > (breaks[breaks.length - 1] ?? 0)) return undefined;
+    for (let index = 0; index < colorCount; index += 1) {
+      const lower = breaks[index] ?? 0;
+      const upper = breaks[index + 1] ?? 0;
+      if ((index === 0 ? value >= lower : value > lower) && value <= upper) return index;
+    }
+    return undefined;
+  }
+  const [lower, upper] = zlim;
+  if (value < lower || value > upper) return undefined;
+  if (lower === upper) return 0;
+  return Math.min(colorCount - 1, Math.floor(((value - lower) / (upper - lower)) * colorCount));
+}
+
+function imageRegularEdges(edges: readonly number[]): boolean {
+  if (edges.length <= 2) return true;
+  const step = (edges[edges.length - 1] ?? 0) - (edges[0] ?? 0);
+  const expected = step / (edges.length - 1);
+  const tolerance = Math.max(Math.abs(expected) * 1e-10, Number.EPSILON * 16);
+  return edges.every(
+    (edge, index) => Math.abs(edge - ((edges[0] ?? 0) + expected * index)) <= tolerance,
+  );
+}
+
+function imageWindowLimits(
+  value: RValue | undefined,
+  edges: readonly number[],
+  name: "xlim" | "ylim",
+): readonly [number, number] {
+  if (value === undefined || value.type === "null") {
+    return [edges[0] ?? 0, edges[edges.length - 1] ?? 1];
+  }
+  const limits = graphicsNumbers(value, name);
+  if (limits.length !== 2 || limits[0] === limits[1]) {
+    throw new RTypeMismatchError("NRT3354", `need finite '${name}' values in image.default().`);
+  }
+  return [limits[0] ?? 0, limits[1] ?? 1];
+}
+
+function imagePolygons(
+  invocation: BuiltinInvocation,
+  state: GraphicsState,
+  grid: ImageGrid,
+  rgba: Uint8Array,
+): void {
+  const polygons: RGraphicsPolygon[] = [];
+  invocation.context.allocate(grid.rows * grid.columns * 12);
+  for (let y = 0; y < grid.columns; y += 1) {
+    for (let x = 0; x < grid.rows; x += 1) {
+      invocation.context.checkpoint();
+      const offset = ((grid.columns - 1 - y) * grid.rows + x) * 4;
+      const color: RColour = [
+        rgba[offset] ?? 0,
+        rgba[offset + 1] ?? 0,
+        rgba[offset + 2] ?? 0,
+        rgba[offset + 3] ?? 0,
+      ];
+      if (color[3] === 0) continue;
+      const left = grid.xEdges[x] ?? 0;
+      const right = grid.xEdges[x + 1] ?? left;
+      const bottom = grid.yEdges[y] ?? 0;
+      const top = grid.yEdges[y + 1] ?? bottom;
+      polygons.push({
+        x: [left, right, right, left],
+        y: [bottom, bottom, top, top],
+        fill: graphicsCssColour(color),
+        border: "#FFFFFF00",
+        lineType: "blank",
+        lineWidth: 0.01,
+        fillRule: "nonzero",
+      });
+    }
+  }
+  if (polygons.length > 0) writeGraphics(invocation, state, { kind: "polygon", polygons });
+}
+
+function imageDecorations(
+  invocation: BuiltinInvocation,
+  state: GraphicsState,
+  values: ReadonlyMap<string, RValue>,
+  controls: ReadonlyMap<string, RValue>,
+): void {
+  const axes = logicalFlag(controls.get("axes"), true, "image(axes=)");
+  if (axes) {
+    const edges = graphicsBoxEdges(controls.get("bty"));
+    if (edges.length > 0) {
+      writeGraphics(invocation, state, {
+        kind: "box",
+        edges,
+        color: "#000000FF",
+        lineType: "solid",
+        lineWidth: 1,
+      });
+    }
+  }
+  if (!logicalFlag(controls.get("ann"), true, "image(ann=)")) return;
+  const annotations = new Map<string, RValue>();
+  for (const name of ["xlab", "ylab"] as const) {
+    const label = values.get(name);
+    if (label !== undefined) annotations.set(name, label);
+  }
+  for (const name of ["main", "sub"] as const) {
+    const label = controls.get(name);
+    if (label !== undefined) annotations.set(name, label);
+  }
+  plotDefaultAnnotations(invocation, state, annotations);
+}
+
+function imageAxisStyle(value: RValue | undefined, name: string, axis = false): void {
+  if (value === undefined || value.type === "null") return;
+  const source = characterScalar(value, `image(${name}=)`);
+  const supported = axis ? ["s", "n"] : ["i"];
+  if (!supported.includes(source)) {
+    throw new RUnsupportedFeatureError(
+      "NRU6171",
+      `image.default(${name} = "${source}") awaits additional browser axis styles.`,
+    );
+  }
 }
 
 async function builtinRasterImage(invocation: BuiltinInvocation): Promise<RValue> {

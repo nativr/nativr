@@ -132,6 +132,10 @@ boundary as transferables. The package never imports the DOM; hosts decide wheth
 commands to Canvas, another device, or a test recorder. The Playground includes the reference Canvas
 renderer.
 
+High-level `graphics::image()` uses the same public command vocabulary: regular grids emit one
+`raster` event, while irregular grids emit borderless `polygon` cells. Hosts do not need a separate
+image-specific renderer.
+
 ```ts
 const graphics = [];
 const r = await createR({ onGraphics: (event) => graphics.push(event) });

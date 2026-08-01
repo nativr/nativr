@@ -7738,5 +7738,34 @@
     ],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "image-usage-ranked-grid-window-visibility-and-formals",
+    "code": "drawn <- withVisible(graphics::image(c(1, 3), c(2, 5, 9), matrix(1:6, 2, 3), col = c(\"red\", \"green\", \"blue\"), axes = FALSE, ann = FALSE))\nimage.probe <- function(x, ...) 42L\nmethod <- graphics::image(structure(matrix(1, 1, 1), class = \"probe\"))\nunlink(\"Rplots.pdf\")\nc(is.null(drawn$value), drawn$visible, method, names(formals(graphics::image)), names(formals(graphics::image.default)))",
+    "expected": [
+      "TRUE",
+      "FALSE",
+      "42",
+      "x",
+      "...",
+      "x",
+      "y",
+      "z",
+      "zlim",
+      "xlim",
+      "ylim",
+      "col",
+      "add",
+      "xaxs",
+      "yaxs",
+      "xlab",
+      "ylab",
+      "breaks",
+      "oldstyle",
+      "useRaster",
+      "..."
+    ],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]
