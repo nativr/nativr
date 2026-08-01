@@ -95,6 +95,8 @@ export interface EvaluatorOptions {
   readonly limits?: Partial<RuntimeLimits>;
   readonly parseSource?: (source: string, maxExpressions?: number) => ProgramNode;
   readonly packages?: readonly RuntimePackageDefinition[];
+  /** Recreate evaluator-owned builtin state at construction and reset. */
+  readonly initializeBuiltinState?: (state: Map<string, unknown>) => void;
 }
 
 /** One dependency imported by a normalized source-only package. */
@@ -423,6 +425,7 @@ export class Evaluator {
   readonly #builtins: readonly BuiltinDefinition[];
   readonly #limits: RuntimeLimits;
   readonly #parseSource: EvaluatorOptions["parseSource"];
+  readonly #initializeBuiltinState: EvaluatorOptions["initializeBuiltinState"];
   #emptyEnvironment: REnvironment;
   #baseEnvironment: REnvironment;
   #attachedPackagesEnvironment: REnvironment;
@@ -447,6 +450,8 @@ export class Evaluator {
     this.#builtins = builtins;
     this.#limits = { ...DEFAULT_RUNTIME_LIMITS, ...options.limits };
     this.#parseSource = options.parseSource;
+    this.#initializeBuiltinState = options.initializeBuiltinState;
+    this.#initializeBuiltinState?.(this.#builtinState);
     this.#emptyEnvironment = createEnvironment(null, true);
     this.#baseEnvironment = createEnvironment(this.#emptyEnvironment, true);
     this.#attachedPackagesEnvironment = createEnvironment(this.#baseEnvironment, true);
@@ -571,6 +576,7 @@ export class Evaluator {
     this.#attachedPackagesEnvironment = createEnvironment(this.#baseEnvironment, true);
     this.#globalEnvironment = createEnvironment(this.#attachedPackagesEnvironment, true);
     this.#builtinState.clear();
+    this.#initializeBuiltinState?.(this.#builtinState);
     this.#packageS3Methods.clear();
     for (const record of this.#packages.values()) {
       record.namespace?.bindings.clear();

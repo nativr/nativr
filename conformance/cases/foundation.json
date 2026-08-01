@@ -7706,5 +7706,37 @@
     ],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "environment-variables-usage-ranked-query-mutation-and-restoration",
+    "code": "keys <- c(\"NATIVR_ENV_A\", \"NATIVR_ENV_B\", \"NATIVR_ENV_MISSING\")\nSys.unsetenv(keys)\nbefore <- Sys.getenv(keys, unset = NA)\nset_result <- Sys.setenv(NATIVR_ENV_A = \"one\", NATIVR_ENV_B = 2)\nvalues <- Sys.getenv(keys, unset = NA)\nunset_result <- Sys.unsetenv(c(\"NATIVR_ENV_A\", \"NATIVR_ENV_MISSING\"))\nafter <- Sys.getenv(keys, unset = NA)\nSys.unsetenv(keys)\nc(is.na(before), set_result, identical(values, c(NATIVR_ENV_A = \"one\", NATIVR_ENV_B = \"2\", NATIVR_ENV_MISSING = NA_character_)), unset_result, is.na(after), after[2] == \"2\")",
+    "expected": [true, true, true, true, true, true, true, true, true, false, true, true],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "environment-variables-coercion-names-duplicates-and-formals",
+    "code": "keys <- c(\"NATIVR_ENV_A\", \"NATIVR_ENV_B\", \"NATIVR_ENV_C\", \"NA\")\nSys.unsetenv(keys)\nSys.setenv(NATIVR_ENV_A = factor(\"factor-value\"), NATIVR_ENV_B = list(\"list-value\"), NATIVR_ENV_C = NA, `NA` = \"missing-key\")\nSys.setenv(NATIVR_ENV_A = \"first\", NATIVR_ENV_A = \"last\")\nfactor_query <- Sys.getenv(factor(c(\"NATIVR_ENV_A\", \"NATIVR_ENV_B\")))\nfactor_names <- names(factor_query)\nfactor_names_match <- c(identical(typeof(factor_names), \"character\"), identical(class(factor_names), \"factor\"), identical(attr(factor_names, \"levels\"), c(\"NATIVR_ENV_A\", \"NATIVR_ENV_B\")), identical(c(unclass(factor_names)), c(\"1\", \"2\")))\nresult <- c(identical(unname(Sys.getenv(keys)), c(\"last\", \"list-value\", \"NA\", \"missing-key\")), factor_names_match, identical(unname(factor_query), c(\"last\", \"list-value\")), identical(Sys.getenv(NA), \"missing-key\"), is.null(names(Sys.getenv(\"NATIVR_ENV_A\"))), identical(names(Sys.getenv(\"NATIVR_ENV_A\", names = TRUE)), \"NATIVR_ENV_A\"), is.null(names(Sys.getenv(c(\"NATIVR_ENV_A\", \"NATIVR_ENV_B\"), names = FALSE))), identical(names(Sys.getenv(c(\"NATIVR_ENV_A\", \"NATIVR_ENV_B\"))), c(\"NATIVR_ENV_A\", \"NATIVR_ENV_B\")), identical(unname(Sys.getenv(list(\"NATIVR_ENV_A\", 2), unset = \"absent\")), c(\"last\", \"absent\")), identical(duplicated(c(\"a\", \"b\", \"a\"), fromLast = TRUE), c(TRUE, FALSE, FALSE)), identical(unique(c(\"a\", \"b\", \"a\"), fromLast = TRUE), c(\"b\", \"a\")), identical(names(formals(Sys.getenv)), c(\"x\", \"unset\", \"names\")), identical(names(formals(Sys.setenv)), \"...\"), identical(names(formals(Sys.unsetenv)), \"x\"))\nSys.unsetenv(keys)\nresult",
+    "expected": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

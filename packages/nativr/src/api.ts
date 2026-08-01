@@ -43,6 +43,8 @@ export interface CreateROptions {
   readonly limits?: Partial<RuntimeLimits>;
   /** Audited source-only package bundles available to this isolated session. */
   readonly packages?: readonly PureRPackageBundle[];
+  /** Initial session-owned environment variables; host process variables are never read implicitly. */
+  readonly environmentVariables?: Readonly<Record<string, string>>;
   readonly timeoutMs?: number;
   readonly debug?: boolean;
   readonly onWarning?: (warning: PublicRWarning) => void;
@@ -97,10 +99,15 @@ interface ResolvedAssets {
 /** Create one inline or Worker-first NativR session. */
 export async function createR(options: CreateROptions = {}): Promise<NativRSession> {
   const assets = resolveAssets(options.assets);
-  const sessionOptions: CreateROptions =
-    options.packages === undefined
-      ? options
-      : { ...options, packages: snapshotPackageBundles(options.packages) };
+  const sessionOptions: CreateROptions = {
+    ...options,
+    ...(options.packages === undefined
+      ? {}
+      : { packages: snapshotPackageBundles(options.packages) }),
+    ...(options.environmentVariables === undefined
+      ? {}
+      : { environmentVariables: snapshotEnvironmentVariables(options.environmentVariables) }),
+  };
   if (sessionOptions.execution === "inline") {
     const { RuntimeHost: InlineRuntimeHost } = await import("./runtime-host.js");
     const host = await InlineRuntimeHost.create(
@@ -110,6 +117,7 @@ export async function createR(options: CreateROptions = {}): Promise<NativRSessi
       },
       sessionOptions.limits,
       sessionOptions.packages,
+      sessionOptions.environmentVariables,
     );
     return new InlineSession(host, sessionOptions);
   }
@@ -120,6 +128,33 @@ export async function createR(options: CreateROptions = {}): Promise<NativRSessi
     );
   }
   return WorkerSession.create(assets, sessionOptions);
+}
+
+function snapshotEnvironmentVariables(
+  environmentVariables: Readonly<Record<string, string>>,
+): Readonly<Record<string, string>> {
+  if (!isUnknownRecord(environmentVariables) || Array.isArray(environmentVariables)) {
+    throw new NativRError(
+      "NRS5004",
+      "createR(environmentVariables=) requires a string-valued record.",
+    );
+  }
+  const snapshot: Record<string, string> = Object.create(null) as Record<string, string>;
+  for (const [name, value] of Object.entries(environmentVariables)) {
+    if (
+      name.length === 0 ||
+      name.includes("\0") ||
+      typeof value !== "string" ||
+      value.includes("\0")
+    ) {
+      throw new NativRError(
+        "NRS5004",
+        "Environment-variable names must be non-empty and names and values must be NUL-free strings.",
+      );
+    }
+    snapshot[name] = value;
+  }
+  return Object.freeze(snapshot);
 }
 
 function snapshotPackageBundles(
@@ -455,6 +490,9 @@ class WorkerSession implements NativRSession {
         },
         ...(this.#options.limits === undefined ? {} : { limits: this.#options.limits }),
         ...(this.#options.packages === undefined ? {} : { packages: this.#options.packages }),
+        ...(this.#options.environmentVariables === undefined
+          ? {}
+          : { environmentVariables: this.#options.environmentVariables }),
         debug: this.#options.debug === true,
       },
       [],

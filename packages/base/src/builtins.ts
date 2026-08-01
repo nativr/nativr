@@ -262,6 +262,25 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("Sys.getlocale", ["category"], "behavioral", builtinSystemGetLocale),
   defineBuiltin("Sys.setlocale", ["category", "locale"], "behavioral", builtinSystemSetLocale),
   defineBuiltin("Sys.localeconv", [], "behavioral", builtinSystemLocaleConv),
+  withBuiltinFormals(
+    defineBuiltin("Sys.getenv", ["x", "unset", "names"], "behavioral", builtinSystemGetEnvironment),
+    [
+      { name: "x", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      { name: "unset", defaultValue: { kind: "StringLiteral", value: "", span: SYNTHETIC_SPAN } },
+      {
+        name: "names",
+        defaultValue: { kind: "MissingLiteral", declaredType: "logical", span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
+  withBuiltinFormals(
+    defineBuiltin("Sys.setenv", ["..."], "behavioral", builtinSystemSetEnvironment),
+    [{ name: "..." }],
+  ),
+  withBuiltinFormals(
+    defineBuiltin("Sys.unsetenv", ["x"], "behavioral", builtinSystemUnsetEnvironment),
+    [{ name: "x" }],
+  ),
   defineBuiltin("Sys.sleep", ["time"], "behavioral", builtinSystemSleep, "regular", "invisible"),
   defineBuiltin("proc.time", [], "behavioral", builtinProcessTime),
   withBuiltinFormals(
@@ -1946,9 +1965,31 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("Sys.time", [], "shape", builtinSystemTime),
   defineBuiltin("sort", ["x", "decreasing", "na.last"], "behavioral", builtinSort),
   defineBuiltin("order", ["x", "decreasing", "na.last"], "behavioral", builtinOrder),
-  defineBuiltin("unique", ["x"], "behavioral", (invocation) => builtinDistinct(invocation, false)),
-  defineBuiltin("duplicated", ["x"], "behavioral", (invocation) =>
-    builtinDistinct(invocation, true),
+  withBuiltinFormals(
+    defineBuiltin("unique", ["x", "incomparables", "..."], "behavioral", (invocation) =>
+      builtinDistinct(invocation, false),
+    ),
+    [
+      { name: "x" },
+      {
+        name: "incomparables",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      { name: "..." },
+    ],
+  ),
+  withBuiltinFormals(
+    defineBuiltin("duplicated", ["x", "incomparables", "..."], "behavioral", (invocation) =>
+      builtinDistinct(invocation, true),
+    ),
+    [
+      { name: "x" },
+      {
+        name: "incomparables",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      { name: "..." },
+    ],
   ),
   defineBuiltin("anyDuplicated", ["x", "incomparables", "..."], "behavioral", builtinAnyDuplicated),
   defineBuiltin(
@@ -2047,6 +2088,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
 
 const OPTIONS_STATE_KEY = "base.options";
 const LOCALE_STATE_KEY = "base.locale";
+export const ENVIRONMENT_VARIABLES_STATE_KEY = "base.environmentVariables";
 const S4_CLASSES_STATE_KEY = "base.s4.classes";
 const S4_GENERICS_STATE_KEY = "base.s4.generics";
 const S4_METHODS_STATE_KEY = "base.s4.methods";
@@ -3438,6 +3480,194 @@ async function builtinSystemLocaleConv(invocation: BuiltinInvocation): Promise<R
         : C_LOCALE_CONVENTION_VALUES;
   invocation.context.allocate(values.length);
   return withNames(characterVector(values), C_LOCALE_CONVENTION_NAMES);
+}
+
+async function builtinSystemGetEnvironment(
+  invocation: BuiltinInvocation,
+): Promise<RCharacterVector> {
+  const matched = await matchExact(invocation, ["x", "unset", "names"]);
+  const requested = matched.get("x") ?? R_NULL;
+  const unset = systemEnvironmentCharacters(
+    matched.get("unset") ?? characterVector([""]),
+    invocation,
+    "unset",
+  );
+  if (unset.length !== 1) {
+    throw new RTypeMismatchError("NRT3404", "wrong type for argument");
+  }
+  const fallbackMissing = isMissing(unset, 0);
+  const fallback = fallbackMissing ? "" : (unset.values[0] ?? "");
+  const namesMode = systemEnvironmentNamesMode(matched.get("names"));
+  const state = systemEnvironmentState(invocation);
+  const entries = [...state].sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0));
+
+  if (requested.type === "null") {
+    invocation.context.allocate(entries.length);
+    const values = characterVector(entries.map(([, value]) => value));
+    if (namesMode === "false") return values;
+    return withClasses(
+      withNames(
+        values,
+        entries.map(([name]) => name),
+      ),
+      ["Dlist"],
+    );
+  }
+
+  const names = systemEnvironmentDisplayNames(requested, invocation, "x");
+  if (names.values.length === 0) {
+    invocation.context.allocate(entries.length);
+    return characterVector(entries.map(([name, value]) => `${name}=${value}`));
+  }
+  const lookup = systemEnvironmentCharacters(requested, invocation, "x");
+  const output = new Array<string>(lookup.length);
+  const missing = new Uint8Array(lookup.length);
+  for (let index = 0; index < lookup.length; index += 1) {
+    invocation.context.checkpoint();
+    const key = isMissing(lookup, index) ? "NA" : (lookup.values[index] ?? "");
+    const value = state.get(key);
+    if (value === undefined && fallbackMissing) missing[index] = 1;
+    output[index] = value ?? fallback;
+  }
+  invocation.context.allocate(output.length);
+  const result = characterVector(output, compactMask(missing));
+  const includeNames = namesMode === "true" || (output.length > 1 && namesMode !== "false");
+  if (!includeNames) return result;
+  const attributes = new Map(result.attributes);
+  let resultNames = characterVector(names.values, compactMask(names.missing));
+  if (isFactor(requested)) {
+    resultNames = withAttribute(resultNames, "levels", characterVector(factorLevels(requested)));
+    const classes = vectorClasses(requested);
+    if (classes !== undefined) resultNames = withClasses(resultNames, classes);
+  }
+  attributes.set("names", resultNames);
+  return { ...result, attributes };
+}
+
+async function builtinSystemSetEnvironment(invocation: BuiltinInvocation): Promise<RLogicalVector> {
+  if (
+    invocation.arguments.length === 0 ||
+    invocation.arguments.some(
+      (argument) => argument.name === undefined || argument.name.length === 0,
+    )
+  ) {
+    throw new REvaluationError("NRE2135", "all arguments must be named");
+  }
+  const state = systemEnvironmentState(invocation);
+  const output = new Int32Array(invocation.arguments.length).fill(1);
+  for (const argument of invocation.arguments) {
+    invocation.context.checkpoint();
+    const value = systemEnvironmentCharacters(
+      await invocation.force(argument.promise),
+      invocation,
+      argument.name ?? "",
+    );
+    if (value.length !== 1) {
+      throw new REvaluationError("NRE2136", "'names' and 'val' are of different lengths");
+    }
+    state.set(argument.name ?? "", isMissing(value, 0) ? "NA" : (value.values[0] ?? ""));
+  }
+  invocation.context.allocate(output.length);
+  return logicalVector(output);
+}
+
+async function builtinSystemUnsetEnvironment(
+  invocation: BuiltinInvocation,
+): Promise<RLogicalVector> {
+  const matched = await matchExact(invocation, ["x"]);
+  const names = systemEnvironmentCharacters(
+    required(matched, "x", "Sys.unsetenv"),
+    invocation,
+    "x",
+  );
+  const state = systemEnvironmentState(invocation);
+  const output = new Int32Array(names.length).fill(1);
+  for (let index = 0; index < names.length; index += 1) {
+    invocation.context.checkpoint();
+    state.delete(isMissing(names, index) ? "NA" : (names.values[index] ?? ""));
+  }
+  invocation.context.allocate(output.length);
+  return logicalVector(output);
+}
+
+function systemEnvironmentState(invocation: BuiltinInvocation): Map<string, string> {
+  const existing = invocation.state.get(ENVIRONMENT_VARIABLES_STATE_KEY);
+  if (existing instanceof Map) return existing as Map<string, string>;
+  const created = new Map<string, string>();
+  invocation.state.set(ENVIRONMENT_VARIABLES_STATE_KEY, created);
+  return created;
+}
+
+function systemEnvironmentCharacters(
+  value: RValue,
+  invocation: BuiltinInvocation,
+  argument: string,
+): RCharacterVector {
+  if (value.type === "null") return characterVector([]);
+  if (isAtomic(value)) return coerceAtomicToCharacter(value, invocation);
+  if (value.type === "list" || value.type === "pairlist") {
+    const output = value.values.map((entry) => globListElementText(entry));
+    invocation.context.allocate(output.length);
+    return characterVector(output);
+  }
+  throw new RTypeMismatchError(
+    "NRT3404",
+    `Sys.getenv() '${argument}' cannot be coerced to character.`,
+  );
+}
+
+function systemEnvironmentDisplayNames(
+  value: RValue,
+  invocation: BuiltinInvocation,
+  argument: string,
+): { readonly values: readonly string[]; readonly missing: Uint8Array } {
+  if (isAtomic(value)) {
+    const values = Array.from({ length: value.length }, (_, index) =>
+      isMissing(value, index) ? "" : stringAt(value, index),
+    );
+    const missing = new Uint8Array(value.length);
+    for (let index = 0; index < value.length; index += 1) {
+      if (isMissing(value, index)) missing[index] = 1;
+    }
+    return { values, missing };
+  }
+  if (value.type === "list" || value.type === "pairlist") {
+    const values = value.values.map((entry) => globListElementText(entry));
+    const missing = new Uint8Array(values.length);
+    for (let index = 0; index < value.values.length; index += 1) {
+      const entry = value.values[index];
+      if (entry !== undefined && isAtomic(entry) && entry.length === 1 && isMissing(entry, 0)) {
+        missing[index] = 1;
+        values[index] = "";
+      }
+    }
+    invocation.context.allocate(values.length);
+    return { values, missing };
+  }
+  throw new RTypeMismatchError(
+    "NRT3404",
+    `Sys.getenv() '${argument}' cannot be coerced to character.`,
+  );
+}
+
+function systemEnvironmentNamesMode(value: RValue | undefined): "true" | "false" | "other" {
+  if (
+    value?.type === "logical" &&
+    value.length === 1 &&
+    !isMissing(value, 0) &&
+    value.values[0] === 1
+  ) {
+    return "true";
+  }
+  if (
+    value?.type === "logical" &&
+    value.length === 1 &&
+    !isMissing(value, 0) &&
+    value.values[0] === 0
+  ) {
+    return "false";
+  }
+  return "other";
 }
 
 async function builtinSystemSleep(invocation: BuiltinInvocation): Promise<RValue> {
@@ -12974,6 +13204,12 @@ async function builtinNames(invocation: BuiltinInvocation): Promise<RValue> {
     );
   }
   const seconds = isPosixLt(value) ? value.values[0] : undefined;
+  const namedValue = seconds !== undefined && isVector(seconds) ? seconds : value;
+  const namesAttribute = namedValue.attributes.get("names");
+  if (namesAttribute?.type === "character") {
+    invocation.context.allocate(namesAttribute.length);
+    return namesAttribute;
+  }
   const names =
     seconds !== undefined && isVector(seconds)
       ? effectiveSequenceNames(seconds)
@@ -33722,17 +33958,37 @@ async function builtinDistinct(
   invocation: BuiltinInvocation,
   duplicated: boolean,
 ): Promise<RValue> {
-  const matched = await matchExact(invocation, ["x"]);
-  const input = required(matched, "x", duplicated ? "duplicated" : "unique");
+  const { matched, dots } = matchBuiltinArguments(invocation, ["x", "incomparables", "..."]);
+  const inputArgument = matched.get("x");
+  if (inputArgument === undefined || inputArgument.promise.missing) {
+    throw new REvaluationError(
+      "NRE2103",
+      `Argument 'x' is missing in ${duplicated ? "duplicated" : "unique"}().`,
+    );
+  }
+  const input = await invocation.force(inputArgument.promise);
   if (!isAtomic(input)) {
     throw new RTypeMismatchError("NRT3141", "unique()/duplicated() require an atomic vector.");
   }
+  const fromLastArguments = dots.filter((argument) => argument.name === "fromLast");
+  if (fromLastArguments.length > 1) {
+    throw new REvaluationError("NRE2102", "Argument 'fromLast' matched more than once.");
+  }
+  const fromLastArgument = fromLastArguments[0];
+  const fromLast =
+    fromLastArgument === undefined
+      ? false
+      : anyDuplicatedFlag(await invocation.force(fromLastArgument.promise), invocation);
   const seen = new Set<string>();
   const selected: number[] = [];
   const flags = new Uint8Array(input.length);
-  for (let index = 0; index < input.length; index += 1) {
+  for (
+    let index = fromLast ? input.length - 1 : 0;
+    fromLast ? index >= 0 : index < input.length;
+    index += fromLast ? -1 : 1
+  ) {
     invocation.context.checkpoint();
-    const key = atomicMatchKey(input, index, false);
+    const key = atomicMatchKey(input, index, input.type === "character");
     if (seen.has(key)) flags[index] = 1;
     else {
       seen.add(key);
@@ -33743,6 +33999,7 @@ async function builtinDistinct(
     invocation.context.allocate(input.length);
     return logicalVector(flags);
   }
+  if (fromLast) selected.reverse();
   return subsetVector(input, integerVector(selected), invocation.context);
 }
 

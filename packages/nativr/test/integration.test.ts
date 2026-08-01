@@ -7638,6 +7638,100 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("owns configurable session environment variables with GNU R query and mutation shapes", async () => {
+    const initialEnvironment = { SEEDED: "seed", EMPTY: "", "A+C": "plus" };
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      environmentVariables: initialEnvironment,
+    });
+    initialEnvironment.SEEDED = "mutated-after-create";
+
+    await expect(runtime.eval("names(formals(Sys.getenv))")).resolves.toEqual([
+      "x",
+      "unset",
+      "names",
+    ]);
+    await expect(runtime.eval("names(formals(Sys.setenv))")).resolves.toEqual("...");
+    await expect(runtime.eval("names(formals(Sys.unsetenv))")).resolves.toEqual("x");
+    await expect(
+      runtime.eval(`
+        all <- Sys.getenv()
+        flattened <- Sys.getenv(character())
+        c(
+          Sys.getenv("SEEDED"),
+          Sys.getenv(c("SEEDED", "MISSING"), unset = NA),
+          is.null(names(Sys.getenv("SEEDED"))),
+          identical(names(Sys.getenv("SEEDED", names = TRUE)), "SEEDED"),
+          identical(names(all), c("A+C", "EMPTY", "SEEDED")),
+          identical(class(all), "Dlist"),
+          identical(flattened, c("A+C=plus", "EMPTY=", "SEEDED=seed"))
+        )
+      `),
+    ).resolves.toEqual(["seed", "seed", NA, "TRUE", "TRUE", "TRUE", "TRUE", "TRUE"]);
+
+    const set = await runtime.evalDetailed(
+      `Sys.setenv(NATIVR_A = "one", NATIVR_B = 2, EMPTY_SET = "")`,
+    );
+    expect(set.value).toEqual([true, true, true]);
+    expect(set.visible).toBe(true);
+    await expect(
+      runtime.eval(`
+        Sys.setenv(NATIVR_A = factor("factor-value"), NATIVR_C = list("list-value"))
+        Sys.setenv(NATIVR_A = "first", NATIVR_A = "last")
+        factor_query <- Sys.getenv(factor(c("NATIVR_A", "SEEDED")))
+        c(
+          Sys.getenv(c("NATIVR_A", "NATIVR_B", "NATIVR_C", "EMPTY_SET")),
+          factor_query,
+          names(factor_query),
+          Sys.getenv(list("NATIVR_A", 2), unset = "absent")
+        )
+      `),
+    ).resolves.toEqual(["last", "2", "list-value", "", "last", "seed", "1", "2", "last", "absent"]);
+    await expect(runtime.eval(`Sys.unsetenv(c("NATIVR_A", "DOES_NOT_EXIST"))`)).resolves.toEqual([
+      true,
+      true,
+    ]);
+    await expect(
+      runtime.eval(`Sys.getenv(c("NATIVR_A", "EMPTY_SET"), unset = NA, names = FALSE)`),
+    ).resolves.toEqual([NA, ""]);
+    await expect(runtime.eval("Sys.setenv()")).rejects.toMatchObject({ code: "NRE2135" });
+    await expect(runtime.eval(`Sys.setenv("unnamed")`)).rejects.toMatchObject({ code: "NRE2135" });
+    await expect(runtime.eval(`Sys.setenv(BAD = c("a", "b"))`)).rejects.toMatchObject({
+      code: "NRE2136",
+    });
+    await expect(runtime.eval("Sys.getenv('MISSING', unset = character())")).rejects.toMatchObject({
+      code: "NRT3404",
+    });
+
+    await runtime.reset();
+    await expect(
+      runtime.eval(`c(Sys.getenv("SEEDED"), Sys.getenv("NATIVR_B", unset = "gone"))`),
+    ).resolves.toEqual(["seed", "gone"]);
+    await runtime.dispose();
+
+    const isolated = await createR({ execution: "inline", assets });
+    await expect(
+      isolated.eval(`c(length(Sys.getenv()), inherits(Sys.getenv(), "Dlist"))`),
+    ).resolves.toEqual([0, 1]);
+    await isolated.dispose();
+
+    await expect(
+      createR({
+        execution: "inline",
+        assets,
+        environmentVariables: { BAD: 1 as never },
+      }),
+    ).rejects.toMatchObject({ code: "NRS5004" });
+    await expect(
+      createR({
+        execution: "inline",
+        assets,
+        environmentVariables: { "": "bad" },
+      }),
+    ).rejects.toMatchObject({ code: "NRS5004" });
+  });
+
   it("reports deterministic browser locale categories and monetary conventions", async () => {
     const runtime = await session();
     const names = [
@@ -8182,7 +8276,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.209.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.210.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

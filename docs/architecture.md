@@ -22,6 +22,12 @@ The default session owns a module Worker and a global environment. Requests are 
 mode dynamically loads the same semantic host and exists for tests and constrained environments; it
 can block its calling thread.
 
+Construction-time host adapters are explicit inputs to that composition root. In particular,
+`environmentVariables` is validated and snapshotted by `@nativr/nativr`, transported as inert
+strings by `@nativr/protocol`, and installed as fresh evaluator state by the runtime host. The base
+environment builtins read only that state. Reset re-runs the state initializer, so inline and Worker
+sessions have identical restoration and isolation without granting access to a process environment.
+
 High-level helpers reuse semantic runtime primitives instead of maintaining parallel behavior.
 `base::replace`, for example, delegates to the same immutable one-dimensional subset-replacement
 engine used by direct `x[index] <- value` evaluation, so coercion, recycling, attributes, extension,

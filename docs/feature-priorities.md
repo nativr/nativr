@@ -73,18 +73,18 @@ excluded; this prevents package-owned functions from being mislabeled as GNU R c
 The primary ranking remains download-weighted package reach; raw occurrence counts are a secondary
 signal.
 
-| Priority | Measured rank | Callable      | Weighted reach | Packages | Observed calls |
-| -------: | ------------: | ------------- | -------------: | -------: | -------------: |
-|        1 |           162 | `Sys.getenv`  |           3.7% |        3 |             16 |
-|        2 |           163 | `image`       |           3.7% |        3 |              6 |
-|        3 |           166 | `browseURL`   |           3.6% |        4 |              8 |
-|        4 |           168 | `gc`          |           3.5% |        3 |             17 |
-|        5 |           174 | `lines`       |           3.4% |        4 |             20 |
-|        6 |           175 | `Sys.setenv`  |           3.3% |        4 |              7 |
-|        7 |           176 | `system`      |           3.3% |        3 |              5 |
-|        8 |           177 | `as.difftime` |           3.3% |        2 |              2 |
-|        9 |           184 | `ls`          |           3.0% |        3 |              5 |
-|       10 |           186 | `hist`        |           3.0% |        4 |             19 |
+| Priority | Measured rank | Callable         | Weighted reach | Packages | Observed calls |
+| -------: | ------------: | ---------------- | -------------: | -------: | -------------: |
+|        1 |           163 | `image`          |           3.7% |        3 |              6 |
+|        2 |           166 | `browseURL`      |           3.6% |        4 |              8 |
+|        3 |           168 | `gc`             |           3.5% |        3 |             17 |
+|        4 |           174 | `lines`          |           3.4% |        4 |             20 |
+|        5 |           176 | `system`         |           3.3% |        3 |              5 |
+|        6 |           177 | `as.difftime`    |           3.3% |        2 |              2 |
+|        7 |           184 | `ls`             |           3.0% |        3 |              5 |
+|        8 |           186 | `hist`           |           3.0% |        4 |             19 |
+|        9 |           188 | `showClass`      |           2.9% |        2 |              4 |
+|       10 |           189 | `packageVersion` |           2.9% |        2 |              3 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -103,29 +103,33 @@ an assertion that those packages' native components are supported. Rank 149 `rca
 complete for four calls across ggplot2, pillar, and purrr (4.2% weighted reach), together with
 `dcauchy`, `pcauchy`, and `qcauchy`. The shared distribution path covers seeded random-stream
 consumption, vectorized parameters, stable probability tails, formals, and missing/domain behavior
-without package-specific rewrites. Rank 22 `plot` is now available for all 179 measured occurrences
-across 20 sampled package manuals, representing 19.1% download-weighted reach. The implementation
-prioritizes the common numeric vector/x-y calls and the S3 seam required by package-owned plot
-methods: point, line, both, overplotted, histogram, step, and no-draw geometry reuse the owned
-Worker/Canvas graphics journal. This is shape-level availability, not complete base-graphics
-compatibility; specialized methods, full axes/tick labels, log/aspect layout, margins, clipping, and
-arbitrary graphical controls remain declared boundaries. Rank 27 `system.file` is now available at
-17.1% weighted reach through bounded, immutable package-resource paths. Rank 34 `Sys.sleep` adds
-cooperative Worker-safe waits, while rank 52 `writeLines` and rank 61 `readLines` add session-memory
-roundtrips and immutable package-text reads. Ranks 65 `file`, 69 `close`, 71 `tempdir`, and 125
-`file.exists` now share a bounded session-owned connection and path layer; rank 341 `open` and its
-adjacent `flush`, `isOpen`, and `seek` operations use the same handles. Ranks 48 `R.home`, 129
-`dir.create`, and 135 `list.files` now share a bounded virtual-directory layer with `dir.exists`,
-`list.dirs`, `getwd`/`setwd`, `normalizePath`, `basename`, and `dirname`. Usage-ranked `data`,
-`write.csv`, and `read.csv` now use that layer for package data scripts, text datasets, quoted
-tabular input/output, and deterministic type conversion. Rank 80 `dev.off` now participates in a
-multi-device lifecycle. Rank 121 `png` covers all seven measured calls across five packages through
-a browser-owned file device, deterministic command rasterizer, and real PNG encoding. Rank 127
-`system.time` now covers all 95 measured calls across six packages through lazy single evaluation,
-GNU R-shaped `proc_time` results, and the adjacent `proc.time` session clock. Grouped `split`
-(rank 155) and real-vector `floor` (rank 156) are now complete at 4.1% weighted reach each. Factor
-generator `gl` (rank 158, 4.1%) and a bounded data-frame `merge` subset (rank 161, 4.0%) are now
-complete. Data-mask mutation through `within` (rank 167, 3.8%) and vectorized real/complex
+without package-specific rewrites. Rank 162 `Sys.getenv` is now available for all 16 measured calls
+across withr, xfun, and pkgbuild (3.7% weighted reach), together with rank 175 `Sys.setenv` across
+xfun, memoise, openssl, and zoo (3.3%) and adjacent `Sys.unsetenv`. The shared session-state path is
+Worker-safe, resettable, and sufficient for unchanged `withr::with_envvar()` mutation/restoration;
+it does not expose the host environment. Rank 22 `plot` is now available for all 179 measured
+occurrences across 20 sampled package manuals, representing 19.1% download-weighted reach. The
+implementation prioritizes the common numeric vector/x-y calls and the S3 seam required by
+package-owned plot methods: point, line, both, overplotted, histogram, step, and no-draw geometry
+reuse the owned Worker/Canvas graphics journal. This is shape-level availability, not complete
+base-graphics compatibility; specialized methods, full axes/tick labels, log/aspect layout, margins,
+clipping, and arbitrary graphical controls remain declared boundaries. Rank 27 `system.file` is now
+available at 17.1% weighted reach through bounded, immutable package-resource paths. Rank 34
+`Sys.sleep` adds cooperative Worker-safe waits, while rank 52 `writeLines` and rank 61 `readLines`
+add session-memory roundtrips and immutable package-text reads. Ranks 65 `file`, 69 `close`, 71
+`tempdir`, and 125 `file.exists` now share a bounded session-owned connection and path layer; rank
+341 `open` and its adjacent `flush`, `isOpen`, and `seek` operations use the same handles. Ranks 48
+`R.home`, 129 `dir.create`, and 135 `list.files` now share a bounded virtual-directory layer with
+`dir.exists`, `list.dirs`, `getwd`/`setwd`, `normalizePath`, `basename`, and `dirname`. Usage-ranked
+`data`, `write.csv`, and `read.csv` now use that layer for package data scripts, text datasets,
+quoted tabular input/output, and deterministic type conversion. Rank 80 `dev.off` now participates
+in a multi-device lifecycle. Rank 121 `png` covers all seven measured calls across five packages
+through a browser-owned file device, deterministic command rasterizer, and real PNG encoding. Rank
+127 `system.time` now covers all 95 measured calls across six packages through lazy single
+evaluation, GNU R-shaped `proc_time` results, and the adjacent `proc.time` session clock. Grouped
+`split` (rank 155) and real-vector `floor` (rank 156) are now complete at 4.1% weighted reach each.
+Factor generator `gl` (rank 158, 4.1%) and a bounded data-frame `merge` subset (rank 161, 4.0%) are
+now complete. Data-mask mutation through `within` (rank 167, 3.8%) and vectorized real/complex
 trigonometry led by `sin` (rank 177, 3.6%) are now complete as well. After filtering out
 already-supported names and architecture-dependent host, graphics, serialization, and source-loading
 entries, numeric-order factor coercion through `as.factor` (rank 187, 3.1%) and grouped

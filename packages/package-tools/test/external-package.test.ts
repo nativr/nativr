@@ -110,6 +110,7 @@ it.runIf(runExternal)(
       });
       runtime = await createR({
         execution: "inline",
+        environmentVariables: { NATIVR_WITHR: "outside" },
         assets: {
           treeSitterRuntimeWasm: new URL(
             "../../parser/assets/web-tree-sitter.wasm",
@@ -127,6 +128,15 @@ it.runIf(runExternal)(
           c(before, inside, getOption("digits"))
         `),
       ).resolves.toEqual([7, 3, 7]);
+      await expect(
+        runtime.eval(`
+          inside <- withr::with_envvar(
+            c(NATIVR_WITHR = "inside", NATIVR_ADDED = "temporary"),
+            c(Sys.getenv("NATIVR_WITHR"), Sys.getenv("NATIVR_ADDED"))
+          )
+          c(inside, Sys.getenv("NATIVR_WITHR"), Sys.getenv("NATIVR_ADDED", unset = "restored"))
+        `),
+      ).resolves.toEqual(["inside", "temporary", "outside", "restored"]);
     } finally {
       await runtime?.dispose();
     }

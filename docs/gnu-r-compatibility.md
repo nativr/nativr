@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           562 |
-| Overlapping callable names        |           547 |
-| Missing GNU R callable names      |         1,975 |
-| Name overlap                      |       21.689% |
+| NativR registered names           |           565 |
+| Overlapping callable names        |           550 |
+| Missing GNU R callable names      |         1,972 |
+| Name overlap                      |       21.808% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -518,6 +518,16 @@ evidence covers formals, vector recycling, attributes, seeded draw ordering, zer
 preservation, density/CDF/quantile values, stable ordinary/log tails, missing and invalid domains,
 warnings, and resource limits. Exhaustive libm bit identity and the wider distribution family remain
 incomplete.
+
+The session-environment increment adds `base::Sys.getenv`, `Sys.setenv`, and `Sys.unsetenv`, raising
+current name overlap to 550 of 2,522. The usage snapshot ranks `Sys.getenv` at 162 with 16 calls
+across three packages and 3.7% download-weighted reach, and `Sys.setenv` at 175 with seven calls
+across four packages and 3.3% reach. GNU R 4.6 differential evidence covers exact formals, all- and
+selected-variable queries, naming/coercion quirks, missing fallbacks, ordered and duplicate writes,
+unsetting, and return shapes. Inline and Worker tests cover explicit initialization, isolation, and
+reset restoration; an unchanged `withr 3.0.3` package executes `with_envvar()` over the same seam.
+The host process environment is deliberately not inherited, and empty-string handling is the
+documented platform-neutral browser rule.
 
 ## Completion evidence
 

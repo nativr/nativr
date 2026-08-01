@@ -633,6 +633,15 @@ lookups evaluate `default` lazily, and runtime reset restores the defaults. `dig
 feed the browser-safe print formatter. The complete GNU R option catalog and every downstream option
 consumer are not yet implemented.
 
+`Sys.getenv()`, `Sys.setenv()`, and `Sys.unsetenv()` use a separate evaluator-owned string map.
+`createR({ environmentVariables })` is the only host-to-session admission path; the input is
+snapshotted, each Worker receives its own copy, and neither Node `process.env` nor browser globals
+are consulted. Queries preserve GNU R's scalar/multiple-name rules, `unset = NA`, all-variable
+`Dlist` shape, coercion, and factor-name attributes. Named setters apply in order, duplicate names
+use the last value, and unset returns one logical result per request. Reset reconstructs the initial
+map, while disposal drops it. Empty values remain explicit entries as a deterministic
+platform-neutral browser rule rather than inheriting operating-system-specific `setenv` behavior.
+
 `interactive()` deterministically returns `FALSE`. NativR evaluations run as inline or Worker
 requests rather than through GNU R's terminal read-eval-print loop, so the browser runtime never
 claims an interactive session.

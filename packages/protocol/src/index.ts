@@ -327,6 +327,7 @@ export interface InitRequest extends ProtocolEnvelope {
   };
   readonly limits?: Partial<ProtocolRuntimeLimits>;
   readonly packages?: readonly PureRPackageBundle[];
+  readonly environmentVariables?: Readonly<Record<string, string>>;
   readonly debug: boolean;
 }
 
@@ -439,6 +440,8 @@ export function isWorkerRequest(value: unknown): value is WorkerRequest {
         typeof value.assets.rGrammarWasm === "string" &&
         (value.packages === undefined ||
           (Array.isArray(value.packages) && value.packages.every(isPureRPackageBundle))) &&
+        (value.environmentVariables === undefined ||
+          isEnvironmentVariableRecord(value.environmentVariables)) &&
         typeof value.debug === "boolean"
       );
     case "eval":
@@ -587,6 +590,20 @@ function isEnvelope(value: unknown): value is Record<string, unknown> & Protocol
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
+}
+
+function isEnvironmentVariableRecord(value: unknown): value is Readonly<Record<string, string>> {
+  return (
+    isRecord(value) &&
+    !Array.isArray(value) &&
+    Object.entries(value).every(
+      ([name, entry]) =>
+        name.length > 0 &&
+        !name.includes("\0") &&
+        typeof entry === "string" &&
+        !entry.includes("\0"),
+    )
+  );
 }
 
 function isPureRPackageBundle(value: unknown): value is PureRPackageBundle {

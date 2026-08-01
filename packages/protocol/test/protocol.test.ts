@@ -115,6 +115,7 @@ describe("Worker protocol guards", () => {
           rSources: [{ path: "R/square.R", source: "square <- function(x) x ^ 2" }],
         },
       ],
+      environmentVariables: { SEEDED: "value", EMPTY: "" },
       debug: false,
     },
     {
@@ -151,6 +152,26 @@ describe("Worker protocol guards", () => {
         kind: "init",
         assets: { treeSitterRuntimeWasm: "runtime.wasm", rGrammarWasm: "r.wasm" },
         packages: [{ description: "bad", namespace: "", rSources: [{ path: 1, source: "" }] }],
+        debug: false,
+      }),
+    ).toBe(false);
+    expect(
+      isWorkerRequest({
+        protocolVersion: 1,
+        id: "x",
+        kind: "init",
+        assets: { treeSitterRuntimeWasm: "runtime.wasm", rGrammarWasm: "r.wasm" },
+        environmentVariables: { BAD: 1 },
+        debug: false,
+      }),
+    ).toBe(false);
+    expect(
+      isWorkerRequest({
+        protocolVersion: 1,
+        id: "x",
+        kind: "init",
+        assets: { treeSitterRuntimeWasm: "runtime.wasm", rGrammarWasm: "r.wasm" },
+        environmentVariables: { "": "bad" },
         debug: false,
       }),
     ).toBe(false);

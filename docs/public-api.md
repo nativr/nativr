@@ -21,6 +21,20 @@ await r.dispose();
 Sessions expose `eval`, `evalDetailed`, `evalRaw`, `assign`, `get`, `call`, `capabilities`, `reset`,
 `interrupt`, and `dispose`. Operations mutate one session in submission order.
 
+Applications may explicitly seed session-owned environment variables without exposing the browser or
+Node host environment:
+
+```ts
+const r = await createR({ environmentVariables: { API_MODE: "browser" } });
+await r.eval('Sys.setenv(TEMP_FLAG = "active")');
+await r.eval('Sys.getenv(c("API_MODE", "TEMP_FLAG"))');
+await r.reset(); // restores API_MODE and removes TEMP_FLAG
+```
+
+The options record is snapshotted at construction and sent through the Worker initialization
+protocol. `Sys.getenv()`, `Sys.setenv()`, and `Sys.unsetenv()` operate only on that isolated map;
+they never read or mutate `process.env`, browser globals, or another NativR session.
+
 `evalDetailed` returns textual `print()`/`cat()` output as ordered
 `{ stream: "stdout" | "stderr" | "message", text }` events. `createR({ onOutput })` receives the
 same events in both inline and Worker execution, while the detailed result retains them for

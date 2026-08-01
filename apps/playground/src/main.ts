@@ -123,7 +123,10 @@ source.addEventListener("keydown", (event) => {
 async function initialize(): Promise<void> {
   setStatus("loading", "Loading parser + Worker…");
   try {
-    runtime = await createR({ packages: [playgroundPackage] });
+    runtime = await createR({
+      packages: [playgroundPackage],
+      environmentVariables: { NATIVR_PLAYGROUND: "worker" },
+    });
     enableControls(true);
     setStatus("ready", "Runtime ready");
   } catch (error) {

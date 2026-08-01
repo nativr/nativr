@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.209.0",
+  "languageSubsetVersion": "0.210.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -108,6 +108,9 @@
         { "name": "Sys.getlocale", "compatibility": "behavioral" },
         { "name": "Sys.setlocale", "compatibility": "behavioral" },
         { "name": "Sys.localeconv", "compatibility": "behavioral" },
+        { "name": "Sys.getenv", "compatibility": "behavioral" },
+        { "name": "Sys.setenv", "compatibility": "behavioral" },
+        { "name": "Sys.unsetenv", "compatibility": "behavioral" },
         { "name": "Sys.sleep", "compatibility": "behavioral" },
         { "name": "proc.time", "compatibility": "behavioral" },
         { "name": "system.time", "compatibility": "behavioral" },
