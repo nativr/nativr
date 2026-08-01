@@ -162,6 +162,15 @@ matching, namespace access, and resource bounds have coverage. Alternative norma
 identity outside the documented Inversion path, long vectors, exact platform diagnostics, and the
 `dlnorm`/`plnorm`/`qlnorm` family remain unsupported.
 
+The usage-ranked `stats::rcauchy` path and adjacent `dcauchy`/`pcauchy`/`qcauchy` family have GNU R
+4.6 differential evidence for ggplot2's 1,000-draw examples, pillar's 20-value display example, and
+purrr's 100-value invocation example. Coverage includes exact formals, scalar-versus-vector `n`,
+parameter recycling, fixed-seed ordering, zero-scale point masses without RNG advancement, canonical
+density/CDF/quantile values, stable ordinary/log lower and upper tails, longest-input metadata,
+missing/NaN/domain behavior, warnings, namespace lookup, and resource bounds. The random path owns
+its uniform stream and transform. Exhaustive platform-libm bit identity, long vectors, non-numeric
+class methods, and the wider distribution catalog remain incomplete.
+
 `stats::dbinom` has differential numeric evidence for loo's measured
 `dbinom(data_i$y, size = data_i$K, prob = draws, log = TRUE)` likelihood shape. The vectorized path
 recycles real quantiles, sizes, and probabilities; preserves the longest input's metadata; handles

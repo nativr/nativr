@@ -87,15 +87,18 @@ library. The public `stats::rgamma` path reuses the same rejection sampler that 
 beta, chi-squared, and Student-t draws, without introducing a second RNG or host distribution
 service. `stats::rlnorm` similarly exponentiates the same session-owned Inversion normal stream
 after vectorized log-scale parameter validation, preserving fixed-seed ordering without a parallel
-random engine. Browser-independent text adapters also remain in the base layer: `utils::glob2rx`
-coerces owned values and translates glob metacharacters directly into R regular-expression text,
-while `sQuote` wraps coerced text using deterministic C-locale, explicit Unicode/TeX, or
-caller-supplied quote pairs. Neither asks the host filesystem, shell, locale, URL APIs, or a
-JavaScript regular-expression engine to interpret its input. Simple shape constructors remain in the
-same owned base layer: `mat.or.vec` allocates zero-filled typed arrays and attaches runtime
-dimensions directly, without delegating to a host matrix library. Primitive `seq.int` similarly
-selects integer or double typed storage after bounded, checkpointed sequence generation and routes
-classed first arguments through the evaluator's existing `seq` S3 dispatch seam. Explicit
+random engine. The Cauchy family stays on that owned path too: `rcauchy` transforms one uniform draw
+per valid positive-scale result, while `dcauchy`, `pcauchy`, and `qcauchy` use direct browser-native
+numeric formulas and stable tail identities. No host statistics service or native distribution
+library participates. Browser-independent text adapters also remain in the base layer:
+`utils::glob2rx` coerces owned values and translates glob metacharacters directly into R
+regular-expression text, while `sQuote` wraps coerced text using deterministic C-locale, explicit
+Unicode/TeX, or caller-supplied quote pairs. Neither asks the host filesystem, shell, locale, URL
+APIs, or a JavaScript regular-expression engine to interpret its input. Simple shape constructors
+remain in the same owned base layer: `mat.or.vec` allocates zero-filled typed arrays and attaches
+runtime dimensions directly, without delegating to a host matrix library. Primitive `seq.int`
+similarly selects integer or double typed storage after bounded, checkpointed sequence generation
+and routes classed first arguments through the evaluator's existing `seq` S3 dispatch seam. Explicit
 `methods::setAs` declarations live in a separate evaluator-session coercion map; `methods::as`
 resolves owned source classes and their declared parents before invoking a registered R closure or a
 core `as.<Class>` constructor. `methods::setOldClass` records S3 class chains in the same

@@ -133,7 +133,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 558 registered functions, including resettable
+an initial condition/handler slice. It exposes 562 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Browser-memory `read.table`/`read.csv`/
 `read.delim` and `write.table`/`write.csv` paths provide quoted text-table interchange without host
@@ -569,6 +569,13 @@ package manuals (4.5% download-weighted reach). Character vectors retain exact p
 serialization. `Encoding<-`, `enc2utf8()`, and deterministic browser-UTF-8 `enc2native()` reuse the
 same owned representation. General `iconv`, host locale encodings, and arbitrary malformed-byte
 behavior remain explicit boundaries.
+
+Rank 149 `stats::rcauchy()` now covers four measured calls across ggplot2, pillar, and purrr (4.2%
+download-weighted reach). It shares the evaluator-owned seeded uniform stream with the complete
+`dcauchy()`/`pcauchy()`/`qcauchy()` family, including vector recycling, stable ordinary/log tails,
+degenerate scales, missing/domain warnings, and GNU R-shaped formals. This is reusable distribution
+infrastructure for package R code; it does not imply that those packages or their dependency graphs
+are fully compatible.
 
 Development priority is based on a reproducible analysis of documented usage in popular CRAN
 packages. The committed

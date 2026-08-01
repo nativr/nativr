@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.208.0",
+  "languageSubsetVersion": "0.209.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -541,6 +541,7 @@
       "referenceVersion": "R 4.6.x documented behavior",
       "functions": [
         { "name": "rlnorm", "compatibility": "behavioral" },
+        { "name": "rcauchy", "compatibility": "behavioral" },
         { "name": "rgamma", "compatibility": "shape" },
         { "name": "ts", "compatibility": "behavioral" },
         { "name": "as.ts", "compatibility": "behavioral" },
@@ -552,6 +553,9 @@
         { "name": "mad", "compatibility": "numeric" },
         { "name": "family", "compatibility": "shape" },
         { "name": "ppoints", "compatibility": "behavioral" },
+        { "name": "dcauchy", "compatibility": "numeric" },
+        { "name": "pcauchy", "compatibility": "numeric" },
+        { "name": "qcauchy", "compatibility": "numeric" },
         { "name": "pnorm", "compatibility": "numeric" },
         { "name": "weighted.mean", "compatibility": "behavioral" },
         { "name": "weighted.mean.default", "compatibility": "numeric" },

@@ -526,6 +526,11 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      serialization. Browser-native encoding is deterministic UTF-8; general `iconv`, host locale
      codecs, normalization, malformed-byte display, and exhaustive encoding-aware string behavior
      remain later compatibility depth.
+127. Owned Cauchy distribution family: rank-149 `stats::rcauchy` now runs the measured ggplot2,
+     pillar, and purrr result shapes over the evaluator-owned uniform stream. Adjacent `dcauchy`,
+     `pcauchy`, and `qcauchy` share vectorized location/scale validation, stable ordinary/log tails,
+     GNU R-shaped missing/domain warnings, metadata, and exact formals. Wider distribution coverage,
+     long-vector behavior, and exhaustive browser-libm identity remain compatibility-depth work.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

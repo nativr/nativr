@@ -8182,7 +8182,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.208.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.209.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -8730,6 +8730,148 @@ describe("complete inline source-to-result vertical slice", () => {
       limits: { maxVectorLength: 8 },
     });
     await expect(limited.eval("rlnorm(9)")).rejects.toMatchObject({ code: "NRL4002" });
+    await limited.dispose();
+  });
+
+  it("runs the usage-ranked Cauchy family through the owned random stream", async () => {
+    const runtime = await session();
+    await expect(runtime.eval("names(formals(stats::rcauchy))")).resolves.toEqual([
+      "n",
+      "location",
+      "scale",
+    ]);
+    await expect(runtime.eval("names(formals(stats::dcauchy))")).resolves.toEqual([
+      "x",
+      "location",
+      "scale",
+      "log",
+    ]);
+    await expect(
+      runtime.eval(`
+        set.seed(17)
+        round(stats::rcauchy(8, c(1, 2), c(3, 4, 5)), 12)
+      `),
+    ).resolves.toEqual([
+      2.589031688785, 1.60132406894, 50.981925656325, -0.53272603492, 14.434374849253,
+      -38.818987180718, 3.280408536508, 4.665514449353,
+    ]);
+    await expect(
+      runtime.eval(`
+        set.seed(42)
+        ggplot_shape <- rcauchy(1000)
+        pillar_shape <- rcauchy(20)
+        purrr_shape <- rcauchy(100)
+        c(
+          length(ggplot_shape), length(pillar_shape), length(purrr_shape),
+          any(ggplot_shape < 0), any(ggplot_shape > 0),
+          !is.nan(mean(purrr_shape)), !is.nan(median(purrr_shape))
+        )
+      `),
+    ).resolves.toEqual([1000, 20, 100, 1, 1, 1, 1]);
+    await expect(
+      runtime.eval(`
+        set.seed(42)
+        baseline <- runif(2)
+        set.seed(42)
+        constants <- rcauchy(5, 3, 0)
+        after <- runif(2)
+        c(constants, identical(after, baseline))
+      `),
+    ).resolves.toEqual([3, 3, 3, 3, 3, 1]);
+    await expect(
+      runtime.eval(
+        "c(length(rcauchy(c(7, 8), 1, 2)), length(rcauchy(2.9)), length(rcauchy(numeric())), is.null(names(rcauchy(setNames(1, 'n'), setNames(2, 'l'), setNames(3, 's')))))",
+      ),
+    ).resolves.toEqual([2, 2, 0, 1]);
+
+    const invalidRandom = await runtime.evalDetailed(`
+      rcauchy(
+        8,
+        c(NA, NaN, Inf, -Inf, 0, 1, 2, 3),
+        c(1, 1, 1, 1, 0, -1, Inf, NaN)
+      )
+    `);
+    expect(invalidRandom.value).toEqual([
+      Number.NaN,
+      Number.NaN,
+      Number.POSITIVE_INFINITY,
+      Number.NEGATIVE_INFINITY,
+      0,
+      Number.NaN,
+      Number.NaN,
+      Number.NaN,
+    ]);
+    expect(invalidRandom.warnings).toEqual([{ code: "NRW1003", message: "NAs produced" }]);
+    const emptyRandom = await runtime.evalDetailed("rcauchy(3, numeric())");
+    expect(emptyRandom.value).toEqual([NA, NA, NA]);
+    expect(emptyRandom.warnings).toEqual([{ code: "NRW1003", message: "NAs produced" }]);
+
+    await expect(
+      runtime.eval(`
+        x <- c(-3, -1, 0, 1, 3)
+        round(c(
+          dcauchy(x), pcauchy(x), pcauchy(x, lower.tail = FALSE),
+          qcauchy(c(.01, .25, .5, .75, .99))
+        ), 12)
+      `),
+    ).resolves.toEqual([
+      0.031830988618, 0.159154943092, 0.318309886184, 0.159154943092, 0.031830988618, 0.10241638235,
+      0.25, 0.5, 0.75, 0.89758361765, 0.89758361765, 0.75, 0.5, 0.25, 0.10241638235,
+      -31.820515953774, -1, 0, 1, 31.820515953774,
+    ]);
+    await expect(
+      runtime.eval(`
+        x <- dcauchy(structure(setNames(c(.25, .75), c("a", "b")), marker = "yes"))
+        y <- pcauchy(.5, location = setNames(c(0, 1), c("x", "y")))
+        z <- qcauchy(c(0, .25, .5, .75, 1), location = 3, scale = 0)
+        c(names(x), attr(x, "marker"), names(y), z)
+      `),
+    ).resolves.toEqual(["a", "b", "yes", "x", "y", "3", "3", "3", "3", "3"]);
+    const invalidFamily = await runtime.evalDetailed(`
+      c(
+        dcauchy(c(0, NaN, NA), scale = c(0, 1, 1)),
+        pcauchy(c(0, NaN, NA), scale = c(-1, 1, 1)),
+        qcauchy(c(-.1, NaN, NA), scale = c(1, 1, 1))
+      )
+    `);
+    expect(invalidFamily.value).toEqual([
+      Number.NaN,
+      Number.NaN,
+      NA,
+      Number.NaN,
+      Number.NaN,
+      NA,
+      Number.NaN,
+      Number.NaN,
+      NA,
+    ]);
+    expect(invalidFamily.warnings).toEqual([
+      { code: "NRW1003", message: "NaNs produced" },
+      { code: "NRW1003", message: "NaNs produced" },
+      { code: "NRW1003", message: "NaNs produced" },
+    ]);
+    const coercedFlags = await runtime.evalDetailed(
+      `c(dcauchy(0, log = "0"), dcauchy(0, log = "1"), dcauchy(0, log = "bad"))`,
+    );
+    expect(coercedFlags.value).toEqual([1 / Math.PI, -Math.log(Math.PI), -Math.log(Math.PI)]);
+    expect(coercedFlags.warnings).toEqual([
+      { code: "NRW1003", message: "NAs introduced by coercion" },
+    ]);
+    await expect(runtime.eval("dcauchy(numeric(), location = 1:3)")).resolves.toEqual([]);
+    await expect(runtime.eval("rcauchy(-1)")).rejects.toMatchObject({ code: "NRT3308" });
+    await expect(runtime.eval("rcauchy(1, factor('a'))")).rejects.toMatchObject({
+      code: "NRT3403",
+    });
+    await expect(runtime.eval("dcauchy('0')")).rejects.toMatchObject({ code: "NRT3403" });
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 8 },
+    });
+    await expect(limited.eval("rcauchy(9)")).rejects.toMatchObject({ code: "NRL4002" });
+    await expect(limited.eval("dcauchy(1:9)")).rejects.toMatchObject({ code: "NRL4002" });
     await limited.dispose();
   });
 
