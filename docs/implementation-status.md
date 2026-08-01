@@ -11,7 +11,7 @@ Date: 2026-07-31
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 562 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 565 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Character vectors own exact per-element bytes and canonical `unknown`/`latin1`/`UTF-8`/`bytes`
@@ -62,7 +62,12 @@ Date: 2026-07-31
 - Unchanged external-package execution is pinned for `pkgconfig 2.0.3`, `generics 0.1.4`, and
   `withr 3.0.3`. The latest proof covers package-owned S3 dispatch and a generated `with_options()`
   wrapper using call/formal/environment replacement, `bquote`, dynamic caller frames, hooks, and
-  state restoration without translating or patching package code.
+  state restoration, plus `with_envvar()` mutation and cleanup through session-owned environment
+  variables, without translating or patching package code.
+- Session environment variables are explicit, isolated runtime state. `createR()` snapshots an
+  optional string map for inline or Worker execution; GNU R-shaped `Sys.getenv()`, `Sys.setenv()`,
+  and `Sys.unsetenv()` query and mutate it, while reset restores the original map and host process
+  variables remain inaccessible.
 - Browser-owned text I/O through `readLines()`/`writeLines()` covers same-session temporary files,
   immutable package text, GNU R line endings, separators, NUL/incomplete-line behavior, byte limits,
   and stdout events without host filesystem access. Session-owned `file()` handles add implicit and
@@ -577,11 +582,11 @@ Date: 2026-07-31
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 12 files and 382 tests; aggregate V8 coverage is 84.72% statements, 72.30%
-  branches, 92.54% functions, and 85.98% lines.
+- Vitest currently passes 12 files and 383 tests; aggregate V8 coverage is 84.79% statements, 72.42%
+  branches, 92.55% functions, and 86.07% lines.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 713/713 cases. The optional black-box R oracle passes all 678
+- Checked-in conformance passes 715/715 cases. The optional black-box R oracle passes all 680
   eligible cases and explicitly skips 35 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,

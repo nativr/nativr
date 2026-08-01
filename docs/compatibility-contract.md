@@ -633,6 +633,17 @@ validation for common numeric/printing options. `digits` and `max.print` affect 
 partial option-name matching, every GNU R validation rule, and full propagation to all consumers are
 not claimed.
 
+Session environment variables support GNU R-shaped `Sys.getenv()`, `Sys.setenv()`, and
+`Sys.unsetenv()` over an evaluator-owned map. Differential evidence covers exact formals, `x = NULL`
+Dlist and `character(0)` `NAME=value` queries, scalar versus vector naming, `unset = NA`,
+atomic/list/factor coercion, missing keys, ordered duplicate setters, true-vector returns, and
+factor name attributes. `createR({ environmentVariables })` is validated and snapshotted for both
+inline and Worker execution; independent sessions do not share mutations and reset reconstructs the
+initial map. The unchanged `withr 3.0.3` source package executes `with_envvar()` and restores an
+existing value while deleting a temporary one. Reading or mutating the host process environment is
+not supported, and empty string values remain explicit entries instead of following a host OS's
+`setenv` convention.
+
 `interactive()` always returns `FALSE`: browser and Worker evaluations are request-driven and have
 no terminal read-eval-print loop. This is a deliberate platform result, not a claim that NativR
 implements GNU R's interactive front-end state.

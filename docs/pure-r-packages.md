@@ -156,8 +156,11 @@ On macOS or Linux, set the same variable for the command with
 Failures in these external tests become feature-discovery evidence. They have identified general
 runtime seams such as `utils::packageName()`, call-rooted replacement, `bquote()`, closure-like
 builtin formals, list-backed environments, dynamic `parent.frame()`, hook registration, and
-session-scoped `graphics::par()`. Each seam was implemented once in the runtime; none of the three
-packages was patched or translated.
+session-scoped `graphics::par()`. The unchanged `withr 3.0.3` proof now also executes
+`withr::with_envvar()` against session-owned `Sys.getenv`/`Sys.setenv`/`Sys.unsetenv`, including
+restoring an existing value and removing a temporary value. This additionally exercised GNU R's
+`duplicated(..., fromLast = TRUE)` character path. Each seam was implemented once in the runtime;
+none of the three packages was patched or translated.
 
 The same shared-runtime rule now covers the highest-reach missing text seam: rank-144 `Encoding`
 appears 12 times across the sampled rlang, utf8, and xfun manuals (4.5% weighted reach). NativR now

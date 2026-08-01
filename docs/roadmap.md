@@ -531,6 +531,11 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      `pcauchy`, and `qcauchy` share vectorized location/scale validation, stable ordinary/log tails,
      GNU R-shaped missing/domain warnings, metadata, and exact formals. Wider distribution coverage,
      long-vector behavior, and exhaustive browser-libm identity remain compatibility-depth work.
+128. Session-owned environment variables: ranks 162 `Sys.getenv` and 175 `Sys.setenv`, plus adjacent
+     `Sys.unsetenv`, now operate on an explicitly configured per-session map in inline and Worker
+     execution. GNU R 4.6 differential cases cover query/mutation/coercion/formals, reset restores
+     the initial snapshot, and unchanged `withr 3.0.3` executes `with_envvar()` with cleanup. Host
+     environment inheritance and operating-system mutation remain intentionally unavailable.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

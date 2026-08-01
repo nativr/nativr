@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 341 KiB gzip;
+- Worker JavaScript: 345 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -491,3 +491,9 @@ owned vector semantics, stable numeric tail identities, and the evaluator's exis
 stream. It adds no dependency, host entropy, native numeric library, or second random engine. The
 measured Worker is 342.7 KiB gzip and remains within the 343 KiB ceiling; client and parser-Wasm
 budgets are unchanged.
+
+Language subset 0.210 adds session-owned environment-variable state, Worker initialization and reset
+transport, GNU R-shaped `Sys.getenv`, `Sys.setenv`, and `Sys.unsetenv`, plus the
+`duplicated(..., fromLast = TRUE)` character seam required by unchanged `withr::with_envvar()`. It
+adds no dependency and never reads a host process environment. The measured Worker is 343.7 KiB
+gzip, so the ceiling rises narrowly to 345 KiB; client and parser-Wasm budgets remain unchanged.

@@ -1,9 +1,11 @@
 # Security model
 
 Evaluated R source can access only installed runtime values and builtins. It has no binding for
-`window`, `document`, `globalThis`, fetch, storage, filesystem APIs, environment variables, module
-loading, arbitrary host functions, or network sockets. The bootstrap runtime emits no telemetry and
-performs no evaluation-time network request.
+`window`, `document`, `globalThis`, fetch, storage, filesystem APIs, the host process environment,
+module loading, arbitrary host functions, or network sockets. `createR({ environmentVariables })`
+may admit an explicit string map into one evaluator-owned session; `Sys.getenv()`, `Sys.setenv()`,
+and `Sys.unsetenv()` can inspect or mutate only that map, and reset restores the construction-time
+snapshot. The bootstrap runtime emits no telemetry and performs no evaluation-time network request.
 
 NativR interprets normalized AST nodes. It does not generate JavaScript or call
 `eval`/`new Function`. A build-time CSP guard removes generic Emscripten EM_ASM/EM_JS dynamic-code

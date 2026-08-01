@@ -6,6 +6,10 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.goto("/");
   await expect(page.getByText("Runtime ready")).toBeVisible();
 
+  await page.locator("#source").fill('Sys.getenv("NATIVR_PLAYGROUND")');
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText('"worker"');
+
   const evaluationRequests: string[] = [];
   page.on("request", (request) => evaluationRequests.push(request.url()));
   await page.getByRole("button", { name: "Scalar arithmetic" }).click();
