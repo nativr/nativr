@@ -73,52 +73,52 @@ excluded; this prevents package-owned functions from being mislabeled as GNU R c
 The primary ranking remains download-weighted package reach; raw occurrence counts are a secondary
 signal.
 
-| Priority | Measured rank | Callable     | Weighted reach | Packages | Observed calls |
-| -------: | ------------: | ------------ | -------------: | -------: | -------------: |
-|        1 |           121 | `png`        |           5.5% |        5 |              7 |
-|        2 |           144 | `Encoding`   |           4.5% |        3 |             12 |
-|        3 |           149 | `rcauchy`    |           4.2% |        3 |              4 |
-|        4 |           162 | `Sys.getenv` |           3.7% |        3 |             16 |
-|        5 |           163 | `image`      |           3.7% |        3 |              6 |
-|        6 |           166 | `browseURL`  |           3.6% |        4 |              8 |
-|        7 |           168 | `gc`         |           3.5% |        3 |             17 |
-|        8 |           174 | `lines`      |           3.4% |        4 |             20 |
-|        9 |           175 | `Sys.setenv` |           3.3% |        4 |              7 |
-|       10 |           176 | `system`     |           3.3% |        3 |              5 |
+| Priority | Measured rank | Callable      | Weighted reach | Packages | Observed calls |
+| -------: | ------------: | ------------- | -------------: | -------: | -------------: |
+|        1 |           144 | `Encoding`    |           4.5% |        3 |             12 |
+|        2 |           149 | `rcauchy`     |           4.2% |        3 |              4 |
+|        3 |           162 | `Sys.getenv`  |           3.7% |        3 |             16 |
+|        4 |           163 | `image`       |           3.7% |        3 |              6 |
+|        5 |           166 | `browseURL`   |           3.6% |        4 |              8 |
+|        6 |           168 | `gc`          |           3.5% |        3 |             17 |
+|        7 |           174 | `lines`       |           3.4% |        4 |             20 |
+|        8 |           175 | `Sys.setenv`  |           3.3% |        4 |              7 |
+|        9 |           176 | `system`      |           3.3% |        3 |              5 |
+|       10 |           177 | `as.difftime` |           3.3% |        2 |              2 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
 behavior. The previous leaders `library`, `require`, `requireNamespace`, `tempfile`, `unlink`,
 `plot`, `Sys.sleep`, `writeLines`, `readLines`, `file`, `close`, `tempdir`, `file.exists`, `R.home`,
 `dir.create`, and `list.files` now have executable browser-memory/package-bundle/graphics paths. The
-remaining leaders divide across graphics/device architecture (`png`, `image`, `lines`),
-serialization/encoding, browser capability adapters, and distributions. Dynamic caller lookup
-through `parent.frame` and matrix transpose through `t` are now complete. Closure `formals`
-inspection (rank 135, 4.8% weighted reach) and lazy `replicate` evaluation (rank 148, 4.5% weighted
-reach) are now complete as well. Rank 22 `plot` is now available for all 179 measured occurrences
-across 20 sampled package manuals, representing 19.1% download-weighted reach. The implementation
-prioritizes the common numeric vector/x-y calls and the S3 seam required by package-owned plot
-methods: point, line, both, overplotted, histogram, step, and no-draw geometry reuse the owned
-Worker/Canvas graphics journal. This is shape-level availability, not complete base-graphics
-compatibility; specialized methods, full axes/tick labels, log/aspect layout, margins, clipping, and
-arbitrary graphical controls remain declared boundaries. Rank 27 `system.file` is now available at
-17.1% weighted reach through bounded, immutable package-resource paths. Rank 34 `Sys.sleep` adds
-cooperative Worker-safe waits, while rank 52 `writeLines` and rank 61 `readLines` add session-memory
-roundtrips and immutable package-text reads. Ranks 65 `file`, 69 `close`, 71 `tempdir`, and 125
-`file.exists` now share a bounded session-owned connection and path layer; rank 341 `open` and its
-adjacent `flush`, `isOpen`, and `seek` operations use the same handles. Ranks 48 `R.home`, 129
-`dir.create`, and 135 `list.files` now share a bounded virtual-directory layer with `dir.exists`,
-`list.dirs`, `getwd`/`setwd`, `normalizePath`, `basename`, and `dirname`. Usage-ranked `data`,
-`write.csv`, and `read.csv` now use that layer for package data scripts, text datasets, quoted
-tabular input/output, and deterministic type conversion. Rank 80 `dev.off` is now complete through
-the single browser-device lifecycle, so the generated callable figure advances `png` to the
-highest-reach absent core name. Rank 127 `system.time` now covers all 95 measured calls across six
-packages through lazy single evaluation, GNU R-shaped `proc_time` results, and the adjacent
-`proc.time` session clock. Grouped `split` (rank 155) and real-vector `floor` (rank 156) are now
-complete at 4.1% weighted reach each. Factor generator `gl` (rank 158, 4.1%) and a bounded
-data-frame `merge` subset (rank 161, 4.0%) are now complete. Data-mask mutation through `within`
-(rank 167, 3.8%) and vectorized real/complex trigonometry led by `sin` (rank 177, 3.6%) are now
-complete as well. After filtering out already-supported names and architecture-dependent host,
+remaining leaders divide across encoding, graphics (`image`, `lines`), serialization/encoding,
+browser capability adapters, and distributions. Dynamic caller lookup through `parent.frame` and
+matrix transpose through `t` are now complete. Closure `formals` inspection (rank 135, 4.8% weighted
+reach) and lazy `replicate` evaluation (rank 148, 4.5% weighted reach) are now complete as well.
+Rank 22 `plot` is now available for all 179 measured occurrences across 20 sampled package manuals,
+representing 19.1% download-weighted reach. The implementation prioritizes the common numeric
+vector/x-y calls and the S3 seam required by package-owned plot methods: point, line, both,
+overplotted, histogram, step, and no-draw geometry reuse the owned Worker/Canvas graphics journal.
+This is shape-level availability, not complete base-graphics compatibility; specialized methods,
+full axes/tick labels, log/aspect layout, margins, clipping, and arbitrary graphical controls remain
+declared boundaries. Rank 27 `system.file` is now available at 17.1% weighted reach through bounded,
+immutable package-resource paths. Rank 34 `Sys.sleep` adds cooperative Worker-safe waits, while rank
+52 `writeLines` and rank 61 `readLines` add session-memory roundtrips and immutable package-text
+reads. Ranks 65 `file`, 69 `close`, 71 `tempdir`, and 125 `file.exists` now share a bounded
+session-owned connection and path layer; rank 341 `open` and its adjacent `flush`, `isOpen`, and
+`seek` operations use the same handles. Ranks 48 `R.home`, 129 `dir.create`, and 135 `list.files`
+now share a bounded virtual-directory layer with `dir.exists`, `list.dirs`, `getwd`/`setwd`,
+`normalizePath`, `basename`, and `dirname`. Usage-ranked `data`, `write.csv`, and `read.csv` now use
+that layer for package data scripts, text datasets, quoted tabular input/output, and deterministic
+type conversion. Rank 80 `dev.off` now participates in a multi-device lifecycle. Rank 121 `png`
+covers all seven measured calls across five packages through a browser-owned file device,
+deterministic command rasterizer, and real PNG encoding. Rank 127 `system.time` now covers all 95
+measured calls across six packages through lazy single evaluation, GNU R-shaped `proc_time` results,
+and the adjacent `proc.time` session clock. Grouped `split` (rank 155) and real-vector `floor`
+(rank 156) are now complete at 4.1% weighted reach each. Factor generator `gl` (rank 158, 4.1%) and
+a bounded data-frame `merge` subset (rank 161, 4.0%) are now complete. Data-mask mutation through
+`within` (rank 167, 3.8%) and vectorized real/complex trigonometry led by `sin` (rank 177, 3.6%) are
+now complete as well. After filtering out already-supported names and architecture-dependent host,
 graphics, serialization, and source-loading entries, numeric-order factor coercion through
 `as.factor` (rank 187, 3.1%) and grouped transformation through `ave` (rank 188, 3.0%) are now
 complete. UTC date construction through `ISOdate` (rank 189, 3.0%) and Cartesian data-frame
@@ -457,11 +457,12 @@ pale-yellow sequence, including deterministic hexadecimal bytes, optional alpha,
 count truncation, name removal, and empty outputs. This follows the
 [GNU R palette contract](https://stat.ethz.ch/R-manual/R-devel/library/grDevices/html/palettes.html).
 The related `rainbow`, `terrain.colors`, `topo.colors`, `cm.colors`, `hcl.colors`, `palette`, and
-device color-management surfaces are separate compatibility work. Ranks 345 through 353 (`write`,
-`readBin`, `available.packages`, `open`, `stderr`, `barplot`, `devAskNewPage`, `getLoadedDLLs`, and
-`socketConnection`) require browser host adapters, network/package repositories, graphics devices,
-connections, or native-library state and therefore remain explicit architecture-blocked items. Rank
-354 `factorial` is now complete for xfun's
+device color-management surfaces are separate compatibility work. In ranks 345 through 353, `open`
+now uses the virtual connection layer and `readBin` can retrieve raw bytes from owned binary files;
+typed binary decoding remains incomplete. The remaining `write`, `available.packages`, `stderr`,
+`barplot`, `devAskNewPage`, `getLoadedDLLs`, and `socketConnection` surfaces require broader browser
+adapters, repositories, graphics, connections, or native-library state. Rank 354 `factorial` is now
+complete for xfun's
 [`factorial(10)` example](https://cran.r-project.org/web/packages/xfun/refman/xfun.html),
 representing 1,305,720 downloads and 1.1% reach. The independent implementation uses direct products
 for finite non-negative integers and a bounded Lanczos gamma approximation elsewhere, while
@@ -1307,8 +1308,9 @@ ties:
      browser-memory files and immutable installed-package resources. GNU R differential cases cover
      implicit opens, explicit read/write/append modes, persistent cursors, summaries, destruction,
      `readLines`, `writeLines`, `cat`, and `utils::capture.output`; forged handles, package writes,
-     and host paths are rejected. Compression, URLs, sockets, raw/binary I/O, and the wider
-     filesystem remain separate host-adapter work.
+     and host paths are rejected. Raw `readBin()` retrieval now covers owned binary files; typed
+     binary decoding/writes, URLs, sockets, compression outside the serialization/PNG seams, and the
+     wider filesystem remain separate host-adapter work.
 136. Browser-owned directories and relative paths: ranks 48 `base::R.home`, 129 `base::dir.create`,
      and 135 `base::list.files`, with `dir.exists`, `dir`, `list.dirs`, `getwd`, `setwd`,
      `normalizePath`, `basename`, and `dirname`, expose bounded session, package, and runtime roots.

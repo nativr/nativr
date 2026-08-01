@@ -175,6 +175,14 @@ destroys records on `close()` or session reset. `readLines()`, `writeLines()`, `
 read-only. This preserves the normal pure-R connection protocol without adding Node built-ins, DOM
 objects, filesystem resolution, network access, or a second execution backend.
 
+The PNG device composes existing owned seams instead of introducing a host renderer. A numbered
+device records the same normalized graphics events used by Worker callbacks and replay plots; a
+DOM-free software rasterizer converts those events to RGBA; an independent PNG encoder writes
+IHDR/IDAT/IEND chunks through browser-standard DEFLATE or a stored-DEFLATE fallback; and the result
+enters the session byte store. Raw `readBin()` reads that store back into an R raw vector. Thus
+package code can create a real image file while device commands, pixels, compression, paths, and
+resource limits remain under evaluator control.
+
 GNU R serialization is an independent runtime codec layered over the same byte store. It reads and
 writes documented XDR v2/v3 streams, recognizes `RDX2`/`RDX3` workspaces, and uses browser-standard
 compression streams for gzip. The codec translates supported serialized values directly into

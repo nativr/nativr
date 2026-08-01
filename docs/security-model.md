@@ -57,6 +57,12 @@ code. Raster RGBA bytes share the evaluation output budget and are transferred o
 legend labels remain inert strings rather than HTML, segment and legend payloads share the same
 budget, and the runtime cannot read pixels back from the host renderer.
 
+PNG output does not grant a Canvas, DOM, download, or host-file capability. The Worker rasterizes
+only validated graphics records into a freshly allocated bounded RGBA buffer, emits fixed PNG chunk
+types with independently computed checksums, compresses inert bytes, and writes only to a normalized
+session path. Pixel count and encoded size are checked against runtime limits; raw `readBin()` can
+read owned bytes but cannot resolve a host path or mutate immutable package resources.
+
 `@nativr/package-tools` is a Node-only build tool and is not reachable from evaluated R. It bounds
 repository responses, archive entries, path depth, file counts, per-file bytes, total bytes, and
 dependency count; rejects links, special files, traversal paths, native code, and install hooks;

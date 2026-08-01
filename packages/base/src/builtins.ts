@@ -139,6 +139,7 @@ import {
   studentTQuantile,
 } from "./student-t.js";
 import { WEIGHTED_MEAN_BUILTIN_SPECS } from "./weighted-mean.js";
+import { renderGraphicsPng } from "./png-device.js";
 
 const SYNTHETIC_SPAN: SourceSpan = Object.freeze({
   start: Object.freeze({ offset: 0, line: 1, column: 1 }),
@@ -292,6 +293,12 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     ["description", "open", "blocking", "encoding", "raw", "method"],
     "behavioral",
     builtinFile,
+  ),
+  defineBuiltin(
+    "readBin",
+    ["con", "what", "n", "size", "signed", "endian"],
+    "shape",
+    builtinReadBin,
   ),
   defineBuiltin(
     "open",
@@ -1178,6 +1185,102 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   definePackageBuiltin("grDevices", "colors", ["distinct"], "behavioral", builtinColours),
   definePackageBuiltin("grDevices", "colours", ["distinct"], "behavioral", builtinColours),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "grDevices",
+      "png",
+      [
+        "filename",
+        "width",
+        "height",
+        "units",
+        "pointsize",
+        "bg",
+        "res",
+        "family",
+        "restoreConsole",
+        "type",
+        "antialias",
+        "symbolfamily",
+      ],
+      "behavioral",
+      builtinPng,
+      "invisible",
+      "regular",
+    ),
+    [
+      {
+        name: "filename",
+        defaultValue: { kind: "StringLiteral", value: "Rplot%03d.png", span: SYNTHETIC_SPAN },
+      },
+      { name: "width", defaultValue: { kind: "DoubleLiteral", value: 480, span: SYNTHETIC_SPAN } },
+      { name: "height", defaultValue: { kind: "DoubleLiteral", value: 480, span: SYNTHETIC_SPAN } },
+      { name: "units", defaultValue: { kind: "StringLiteral", value: "px", span: SYNTHETIC_SPAN } },
+      {
+        name: "pointsize",
+        defaultValue: { kind: "DoubleLiteral", value: 12, span: SYNTHETIC_SPAN },
+      },
+      { name: "bg", defaultValue: { kind: "StringLiteral", value: "white", span: SYNTHETIC_SPAN } },
+      {
+        name: "res",
+        defaultValue: { kind: "MissingLiteral", declaredType: "logical", span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "family",
+        defaultValue: { kind: "StringLiteral", value: "sans", span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "restoreConsole",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "type",
+        defaultValue: callAst("c", [
+          {
+            value: { kind: "StringLiteral", value: "windows", span: SYNTHETIC_SPAN },
+            span: SYNTHETIC_SPAN,
+          },
+          {
+            value: { kind: "StringLiteral", value: "cairo", span: SYNTHETIC_SPAN },
+            span: SYNTHETIC_SPAN,
+          },
+          {
+            value: { kind: "StringLiteral", value: "cairo-png", span: SYNTHETIC_SPAN },
+            span: SYNTHETIC_SPAN,
+          },
+        ]),
+      },
+      {
+        name: "antialias",
+        defaultValue: callAst("c", [
+          {
+            value: { kind: "StringLiteral", value: "default", span: SYNTHETIC_SPAN },
+            span: SYNTHETIC_SPAN,
+          },
+          {
+            value: { kind: "StringLiteral", value: "none", span: SYNTHETIC_SPAN },
+            span: SYNTHETIC_SPAN,
+          },
+          {
+            value: { kind: "StringLiteral", value: "cleartype", span: SYNTHETIC_SPAN },
+            span: SYNTHETIC_SPAN,
+          },
+          {
+            value: { kind: "StringLiteral", value: "gray", span: SYNTHETIC_SPAN },
+            span: SYNTHETIC_SPAN,
+          },
+          {
+            value: { kind: "StringLiteral", value: "subpixel", span: SYNTHETIC_SPAN },
+            span: SYNTHETIC_SPAN,
+          },
+        ]),
+      },
+      {
+        name: "symbolfamily",
+        defaultValue: { kind: "StringLiteral", value: "default", span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
   definePackageBuiltin("grDevices", "dev.hold", ["level"], "behavioral", (invocation) =>
     builtinDeviceHoldFlush(invocation, "hold"),
   ),
@@ -1918,6 +2021,18 @@ interface VirtualTextConnection {
 }
 
 interface GraphicsState {
+  readonly number: number;
+  readonly name: "NativR" | "png";
+  readonly kind: "browser" | "png";
+  readonly parameters: GraphicsParametersState;
+  readonly png?: {
+    readonly filenamePattern: string;
+    readonly width: number;
+    readonly height: number;
+    readonly background: string;
+    readonly pointsize: number;
+    page: number;
+  };
   active: boolean;
   xlim: readonly [number, number];
   ylim: readonly [number, number];
@@ -1926,6 +2041,11 @@ interface GraphicsState {
   pendingBytes: number;
   displayList: RGraphicsEvent[];
   displayListBytes: number;
+}
+
+interface GraphicsRegistry {
+  current: number;
+  readonly devices: Map<number, GraphicsState>;
 }
 
 interface ProcessTimeState {
@@ -3800,6 +3920,83 @@ async function builtinFile(invocation: BuiltinInvocation): Promise<RIntegerVecto
     }
   }
   return handle;
+}
+
+async function builtinReadBin(invocation: BuiltinInvocation): Promise<RRawVector> {
+  const matched = await matchExact(invocation, ["con", "what", "n", "size", "signed", "endian"]);
+  const source = required(matched, "con", "readBin");
+  const what = matched.get("what");
+  const rawRequested =
+    what?.type === "raw" ||
+    (what?.type === "character" &&
+      what.length > 0 &&
+      !isMissing(what, 0) &&
+      what.values[0] === "raw");
+  if (!rawRequested) {
+    throw new RUnsupportedFeatureError(
+      "NRU6192",
+      "readBin() currently supports raw byte results; numeric and character decoding remain incomplete.",
+    );
+  }
+  const count = readBinCount(matched.get("n"));
+  const size = matched.get("size");
+  if (size !== undefined && size.type !== "null") {
+    if (
+      !isAtomic(size) ||
+      size.type === "complex" ||
+      size.type === "character" ||
+      (size.length > 0 && !isMissing(size, 0) && (size.values[0] ?? 1) !== 1)
+    ) {
+      throw new RUnsupportedFeatureError(
+        "NRU6192",
+        "readBin(size=) is unavailable for non-raw element widths.",
+      );
+    }
+  }
+  logicalFlag(matched.get("signed"), true, "signed");
+  const endian = pngCharacter(matched.get("endian"), "little", "endian");
+  if (!["native", "swap", "little", "big"].includes(endian)) {
+    throw new RTypeMismatchError("NRT3401", "invalid 'endian' argument");
+  }
+
+  let bytes: Uint8Array;
+  let start = 0;
+  let connection: VirtualTextConnection | undefined;
+  if (source.type === "raw") {
+    bytes = Uint8Array.from(source.values);
+  } else if (isVirtualTextConnectionHandle(source)) {
+    connection = requireVirtualTextConnection(invocation, source);
+    if (connection.open && !virtualConnectionCanRead(connection.mode)) {
+      throw new REvaluationError("NRE2240", "cannot read from this connection");
+    }
+    bytes = readVirtualBinaryFile(invocation, connection.path, "readBin");
+    start = connection.open ? connection.cursor : 0;
+  } else {
+    bytes = readVirtualBinaryFile(invocation, filePathScalar(source, "readBin"), "readBin");
+  }
+  const end = Math.min(bytes.byteLength, start + count);
+  const result = bytes.slice(start, end);
+  invocation.context.allocate(result.byteLength);
+  if (connection?.open === true) connection.cursor = end;
+  return rawVector(result);
+}
+
+function readBinCount(value: RValue | undefined): number {
+  if (value === undefined) return 1;
+  if (
+    !isAtomic(value) ||
+    value.type === "character" ||
+    value.type === "complex" ||
+    value.length === 0 ||
+    isMissing(value, 0)
+  ) {
+    throw new RTypeMismatchError("NRT3401", "invalid 'n' argument");
+  }
+  const count = value.values[0] ?? Number.NaN;
+  if (!Number.isFinite(count) || count < 0 || !Number.isSafeInteger(Math.trunc(count))) {
+    throw new RTypeMismatchError("NRT3401", "invalid 'n' argument");
+  }
+  return Math.trunc(count);
 }
 
 async function builtinOpen(invocation: BuiltinInvocation): Promise<RValue> {
@@ -18841,7 +19038,7 @@ async function builtinDrop(invocation: BuiltinInvocation): Promise<RValue> {
 
 async function builtinPlotNew(invocation: BuiltinInvocation): Promise<RValue> {
   await matchExact(invocation, []);
-  beginGraphicsPage(invocation);
+  await beginGraphicsPage(invocation);
   return R_NULL;
 }
 
@@ -18898,6 +19095,11 @@ function defaultGraphicsParameters(): GraphicsParametersState {
 }
 
 function graphicsParametersState(invocation: BuiltinInvocation): GraphicsParametersState {
+  const active = activeGraphicsState(invocation);
+  if (active !== undefined) {
+    invocation.state.set(GRAPHICS_PARAMETERS_STATE_KEY, active.parameters);
+    return active.parameters;
+  }
   const existing = invocation.state.get(GRAPHICS_PARAMETERS_STATE_KEY);
   if (existing instanceof Map) return existing as GraphicsParametersState;
   const created = defaultGraphicsParameters();
@@ -19117,7 +19319,7 @@ async function builtinPlotDefault(invocation: BuiltinInvocation): Promise<RValue
     controls.set(argument.name, await invocation.force(argument.promise));
   }
 
-  const state = beginGraphicsPage(invocation);
+  const state = await beginGraphicsPage(invocation);
   state.xlim = xlim;
   state.ylim = ylim;
   writeGraphics(invocation, state, { kind: "window", xlim, ylim });
@@ -19380,21 +19582,22 @@ function plotDefaultAnnotations(
   if (labels.length > 0) writeGraphics(invocation, state, { kind: "text", labels });
 }
 
-function beginGraphicsPage(invocation: BuiltinInvocation): GraphicsState {
+async function beginGraphicsPage(invocation: BuiltinInvocation): Promise<GraphicsState> {
   const existing = activeGraphicsState(invocation);
-  const state: GraphicsState = existing ?? {
-    active: true,
-    xlim: [0, 1],
-    ylim: [0, 1],
-    holdLevel: 0,
-    pending: [],
-    pendingBytes: 0,
-    displayList: [],
-    displayListBytes: 0,
-  };
+  const state = existing ?? createBrowserGraphicsState(invocation);
+  if (state.kind === "png" && state.displayList.some((event) => event.kind === "new-page")) {
+    await renderPngPage(invocation, state);
+    const png = state.png;
+    if (png === undefined) throw new Error("Internal PNG device invariant failed.");
+    png.page += 1;
+    writeVirtualBinaryFile(
+      invocation,
+      pngPageFilename(png.filenamePattern, png.page),
+      new Uint8Array(),
+    );
+  }
   state.xlim = [0, 1];
   state.ylim = [0, 1];
-  invocation.state.set(GRAPHICS_STATE_KEY, state);
   writeGraphics(invocation, state, { kind: "new-page" });
   return state;
 }
@@ -19548,7 +19751,7 @@ async function builtinMatplot(invocation: BuiltinInvocation): Promise<RValue> {
   const transformed = matplotCoordinates(x, y, seriesCount, log, invocation);
   const xlim = matplotWindowLimits(values.get("xlim"), transformed.x, log.x, "xlim");
   const ylim = matplotWindowLimits(values.get("ylim"), transformed.y, log.y, "ylim");
-  const state = beginGraphicsPage(invocation);
+  const state = await beginGraphicsPage(invocation);
   state.xlim = xlim;
   state.ylim = ylim;
   writeGraphics(invocation, state, { kind: "window", xlim, ylim });
@@ -20327,7 +20530,7 @@ async function builtinBoxplot(invocation: BuiltinInvocation): Promise<RValue> {
   if (add) {
     state = graphicsState(invocation, "boxplot");
   } else {
-    state = beginGraphicsPage(invocation);
+    state = await beginGraphicsPage(invocation);
     const limits = boxplotWindow(event);
     state.xlim = limits.xlim;
     state.ylim = limits.ylim;
@@ -20788,7 +20991,7 @@ async function builtinPerspective(invocation: BuiltinInvocation): Promise<RValue
     invocation,
   );
   const window = perspectiveWindow(x, y, surface.values, xlim, ylim, zlim, matrix);
-  const state = beginGraphicsPage(invocation);
+  const state = await beginGraphicsPage(invocation);
   state.xlim = window.xlim;
   state.ylim = window.ylim;
   writeGraphics(invocation, state, { kind: "window", ...window });
@@ -22441,6 +22644,196 @@ function legendTopLeft(
   return [horizontal, vertical];
 }
 
+async function builtinPng(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, [
+    "filename",
+    "width",
+    "height",
+    "units",
+    "pointsize",
+    "bg",
+    "res",
+    "family",
+    "restoreConsole",
+    "type",
+    "antialias",
+    "symbolfamily",
+  ]);
+  const filename = pngFilename(matched.get("filename"));
+  const width = pngPositiveNumber(matched.get("width"), 480, "width");
+  const height = pngPositiveNumber(matched.get("height"), 480, "height");
+  const units = pngChoice(matched.get("units"), "px", ["px", "in", "cm", "mm"], "units");
+  const resolution = pngResolution(matched.get("res"), units);
+  const pixelWidth = pngPixelDimension(width, units, resolution, "width");
+  const pixelHeight = pngPixelDimension(height, units, resolution, "height");
+  const pointsize = pngPositiveNumber(matched.get("pointsize"), 12, "pointsize");
+  const backgroundSource = pngCharacter(matched.get("bg"), "white", "bg");
+  const background = parseRColour(backgroundSource);
+  if (background === undefined) {
+    throw new RTypeMismatchError(
+      "NRT3400",
+      backgroundSource.startsWith("#")
+        ? "invalid RGB specification"
+        : `invalid color name '${backgroundSource}'`,
+    );
+  }
+  pngCharacter(matched.get("family"), "sans", "family");
+  pngCharacter(matched.get("symbolfamily"), "default", "symbolfamily");
+  if (matched.get("restoreConsole") !== undefined) {
+    logicalFlag(matched.get("restoreConsole"), true, "restoreConsole");
+  }
+  pngChoice(matched.get("type"), "windows", ["windows", "cairo", "cairo-png"], "type");
+  pngChoice(
+    matched.get("antialias"),
+    "default",
+    ["default", "none", "cleartype", "gray", "subpixel"],
+    "antialias",
+  );
+
+  const resolvedPattern = requireVirtualTextPath(invocation, filename, "png");
+  const registry = graphicsRegistry(invocation);
+  const number = nextGraphicsDeviceNumber(registry);
+  const parameters = defaultGraphicsParameters();
+  parameters.set("ps", integerVector([Math.round(pointsize)]));
+  const state: GraphicsState = {
+    number,
+    name: "png",
+    kind: "png",
+    parameters,
+    png: {
+      filenamePattern: resolvedPattern,
+      width: pixelWidth,
+      height: pixelHeight,
+      background: graphicsCssColour(background),
+      pointsize,
+      page: 1,
+    },
+    active: true,
+    xlim: [0, 1],
+    ylim: [0, 1],
+    holdLevel: 0,
+    pending: [],
+    pendingBytes: 0,
+    displayList: [],
+    displayListBytes: 0,
+  };
+  registry.devices.set(number, state);
+  registry.current = number;
+  invocation.state.set(GRAPHICS_PARAMETERS_STATE_KEY, parameters);
+  writeVirtualBinaryFile(invocation, pngPageFilename(resolvedPattern, 1), new Uint8Array());
+  return R_NULL;
+}
+
+function pngFilename(value: RValue | undefined): string {
+  if (value === undefined) return "Rplot%03d.png";
+  if (value.type !== "character" || value.length === 0) {
+    throw new RTypeMismatchError("NRT3400", "invalid 'filename' argument");
+  }
+  return isMissing(value, 0) ? "NA" : (value.values[0] ?? "");
+}
+
+function pngCharacter(value: RValue | undefined, fallback: string, name: string): string {
+  if (value === undefined) return fallback;
+  if (value.type !== "character" || value.length === 0 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3400", `invalid '${name}' argument`);
+  }
+  return value.values[0] ?? "";
+}
+
+function pngChoice(
+  value: RValue | undefined,
+  fallback: string,
+  choices: readonly string[],
+  name: string,
+): string {
+  const source = pngCharacter(value, fallback, name);
+  if (choices.includes(source)) return source;
+  const partial = choices.filter((choice) => choice.startsWith(source));
+  if (partial.length === 1) return partial[0] ?? source;
+  throw new RTypeMismatchError(
+    "NRT3400",
+    `'arg' should be one of ${choices.map((choice) => `"${choice}"`).join(", ")}`,
+  );
+}
+
+function pngPositiveNumber(value: RValue | undefined, fallback: number, name: string): number {
+  if (value === undefined) return fallback;
+  if (
+    !isAtomic(value) ||
+    value.type === "character" ||
+    value.type === "complex" ||
+    value.length === 0 ||
+    isMissing(value, 0)
+  ) {
+    throw new RTypeMismatchError("NRT3400", `invalid '${name}' argument`);
+  }
+  const number = value.values[0] ?? Number.NaN;
+  if (!Number.isFinite(number) || number <= 0) {
+    throw new RTypeMismatchError("NRT3400", `invalid '${name}' or 'height'`);
+  }
+  return number;
+}
+
+function pngResolution(value: RValue | undefined, units: string): number | undefined {
+  if (
+    value === undefined ||
+    value.type === "null" ||
+    (isAtomic(value) && (value.length === 0 || isMissing(value, 0)))
+  ) {
+    if (units !== "px") {
+      throw new RTypeMismatchError("NRT3400", `'res' must be specified unless 'units = "px"'`);
+    }
+    return undefined;
+  }
+  return pngPositiveNumber(value, 72, "res");
+}
+
+function pngPixelDimension(
+  value: number,
+  units: string,
+  resolution: number | undefined,
+  name: string,
+): number {
+  const pixels =
+    units === "px"
+      ? value
+      : units === "in"
+        ? value * (resolution ?? 72)
+        : units === "cm"
+          ? (value / 2.54) * (resolution ?? 72)
+          : (value / 25.4) * (resolution ?? 72);
+  const rounded = Math.round(pixels);
+  if (!Number.isSafeInteger(rounded) || rounded <= 0 || rounded > 2_147_483_647) {
+    throw new RTypeMismatchError("NRT3400", `invalid '${name}' or 'height'`);
+  }
+  return rounded;
+}
+
+function pngPageFilename(pattern: string, page: number): string {
+  let output = "";
+  for (let index = 0; index < pattern.length; index += 1) {
+    const character = pattern[index] ?? "";
+    if (character !== "%") {
+      output += character;
+      continue;
+    }
+    if (pattern[index + 1] === "%") {
+      output += "%";
+      index += 1;
+      continue;
+    }
+    const match = /^(?:0(\d+))?d/u.exec(pattern.slice(index + 1));
+    if (match === null) {
+      output += "%";
+      continue;
+    }
+    const width = Number.parseInt(match[1] ?? "0", 10);
+    output += String(page).padStart(width, "0");
+    index += match[0].length;
+  }
+  return output;
+}
+
 async function builtinDeviceHoldFlush(
   invocation: BuiltinInvocation,
   operation: "hold" | "flush",
@@ -22461,39 +22854,51 @@ async function builtinDeviceHoldFlush(
 
 async function builtinDeviceCurrent(invocation: BuiltinInvocation): Promise<RValue> {
   await matchExact(invocation, []);
-  return currentDeviceValue(activeGraphicsState(invocation) !== undefined);
+  return currentDeviceValue(activeGraphicsState(invocation));
 }
 
 async function builtinDeviceList(invocation: BuiltinInvocation): Promise<RValue> {
   await matchExact(invocation, []);
-  return activeGraphicsState(invocation) === undefined
-    ? R_NULL
-    : withNames(integerVector([2]), ["NativR"]);
+  const registry = existingGraphicsRegistry(invocation);
+  if (registry === undefined || registry.devices.size === 0) return R_NULL;
+  const devices = [...registry.devices.values()].sort((left, right) => left.number - right.number);
+  return withNames(
+    integerVector(devices.map((device) => device.number)),
+    devices.map((device) => device.name),
+  );
 }
 
 async function builtinDeviceOff(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["which"]);
+  const registry = graphicsRegistry(invocation);
   const state = activeGraphicsState(invocation);
   const supplied = matched.get("which");
-  const target =
-    supplied === undefined ? (state === undefined ? 1 : 2) : deviceNumber(supplied, invocation);
+  const target = supplied === undefined ? (state?.number ?? 1) : deviceNumber(supplied, invocation);
 
   if (target === 1) {
     throw new REvaluationError("NRE2197", "cannot shut down device 1 (the null device)");
   }
-  if (state !== undefined && target === 2) closeGraphicsDevice(invocation, state);
-  return currentDeviceValue(activeGraphicsState(invocation) !== undefined);
+  const selected = registry.devices.get(target);
+  if (selected === undefined) return currentDeviceValue(activeGraphicsState(invocation));
+  await closeGraphicsDevice(invocation, selected);
+  return currentDeviceValue(activeGraphicsState(invocation));
 }
 
 async function builtinGraphicsOff(invocation: BuiltinInvocation): Promise<RValue> {
   await matchExact(invocation, []);
-  const state = activeGraphicsState(invocation);
-  if (state !== undefined) closeGraphicsDevice(invocation, state);
+  const registry = existingGraphicsRegistry(invocation);
+  if (registry !== undefined) {
+    for (const state of [...registry.devices.values()].sort(
+      (left, right) => right.number - left.number,
+    )) {
+      await closeGraphicsDevice(invocation, state);
+    }
+  }
   return R_NULL;
 }
 
-function currentDeviceValue(active: boolean): RIntegerVector {
-  return withNames(integerVector([active ? 2 : 1]), [active ? "NativR" : "null device"]);
+function currentDeviceValue(active: GraphicsState | undefined): RIntegerVector {
+  return withNames(integerVector([active?.number ?? 1]), [active?.name ?? "null device"]);
 }
 
 function deviceNumber(value: RValue, invocation: BuiltinInvocation): number {
@@ -22518,10 +22923,60 @@ function deviceNumber(value: RValue, invocation: BuiltinInvocation): number {
   return coerced.values[0] ?? 0;
 }
 
-function closeGraphicsDevice(invocation: BuiltinInvocation, state: GraphicsState): void {
+async function closeGraphicsDevice(
+  invocation: BuiltinInvocation,
+  state: GraphicsState,
+): Promise<void> {
   if (state.pending.length > 0) flushGraphics(invocation, state);
-  invocation.state.delete(GRAPHICS_STATE_KEY);
-  invocation.state.delete(GRAPHICS_PARAMETERS_STATE_KEY);
+  if (state.kind === "png" && state.displayList.some((event) => event.kind === "new-page")) {
+    await renderPngPage(invocation, state);
+  }
+  const registry = graphicsRegistry(invocation);
+  registry.devices.delete(state.number);
+  state.active = false;
+  if (registry.current === state.number) {
+    registry.current = Math.max(1, ...registry.devices.keys());
+  }
+  if (registry.devices.size === 0) {
+    invocation.state.delete(GRAPHICS_STATE_KEY);
+    invocation.state.delete(GRAPHICS_PARAMETERS_STATE_KEY);
+  } else {
+    const current = registry.devices.get(registry.current);
+    if (current !== undefined) {
+      invocation.state.set(GRAPHICS_PARAMETERS_STATE_KEY, current.parameters);
+    }
+  }
+}
+
+async function renderPngPage(invocation: BuiltinInvocation, state: GraphicsState): Promise<void> {
+  const png = state.png;
+  if (state.kind !== "png" || png === undefined) {
+    throw new Error("Internal PNG device invariant failed.");
+  }
+  const pixels = png.width * png.height;
+  if (!Number.isSafeInteger(pixels) || pixels > invocation.context.limits.maxVectorLength) {
+    throw new RResourceLimitError("NRL4002", "PNG device pixel limit exceeded.", {
+      details: { maxVectorLength: invocation.context.limits.maxVectorLength, requested: pixels },
+    });
+  }
+  invocation.context.allocate(pixels);
+  const bytes = await renderGraphicsPng({
+    width: png.width,
+    height: png.height,
+    background: png.background,
+    pointsize: png.pointsize,
+    events: state.displayList,
+    checkpoint: () => invocation.context.checkpoint(),
+  });
+  if (bytes.byteLength > invocation.context.limits.maxOutputBytes) {
+    throw new RResourceLimitError("NRL4007", "PNG file size limit exceeded.", {
+      details: {
+        maxOutputBytes: invocation.context.limits.maxOutputBytes,
+        outputBytes: bytes.byteLength,
+      },
+    });
+  }
+  writeVirtualBinaryFile(invocation, pngPageFilename(png.filenamePattern, png.page), bytes);
 }
 
 function deviceHoldLevel(
@@ -22591,17 +23046,7 @@ async function builtinReplayPlot(invocation: BuiltinInvocation): Promise<RValue>
   const commands = commandValues.values.map((value) => graphicsEventFromValue(value, invocation));
   let state = activeGraphicsState(invocation);
   if (state === undefined) {
-    state = {
-      active: true,
-      xlim: [0, 1],
-      ylim: [0, 1],
-      holdLevel: 0,
-      pending: [],
-      pendingBytes: 0,
-      displayList: [],
-      displayListBytes: 0,
-    };
-    invocation.state.set(GRAPHICS_STATE_KEY, state);
+    state = createBrowserGraphicsState(invocation);
   } else {
     state.displayList = [];
     state.displayListBytes = 0;
@@ -23611,26 +24056,67 @@ function graphicsState(invocation: BuiltinInvocation, call: string): GraphicsSta
 }
 
 function activeGraphicsState(invocation: BuiltinInvocation): GraphicsState | undefined {
+  const registry = existingGraphicsRegistry(invocation);
+  return registry?.devices.get(registry.current);
+}
+
+function existingGraphicsRegistry(invocation: BuiltinInvocation): GraphicsRegistry | undefined {
   const state = invocation.state.get(GRAPHICS_STATE_KEY);
   if (
     typeof state !== "object" ||
     state === null ||
-    !("active" in state) ||
-    state.active !== true ||
-    !("holdLevel" in state) ||
-    typeof state.holdLevel !== "number" ||
-    !("pending" in state) ||
-    !Array.isArray(state.pending) ||
-    !("pendingBytes" in state) ||
-    typeof state.pendingBytes !== "number" ||
-    !("displayList" in state) ||
-    !Array.isArray(state.displayList) ||
-    !("displayListBytes" in state) ||
-    typeof state.displayListBytes !== "number"
+    !("current" in state) ||
+    typeof state.current !== "number" ||
+    !("devices" in state) ||
+    !(state.devices instanceof Map)
   ) {
     return undefined;
   }
-  return state as GraphicsState;
+  return state as GraphicsRegistry;
+}
+
+function graphicsRegistry(invocation: BuiltinInvocation): GraphicsRegistry {
+  const existing = existingGraphicsRegistry(invocation);
+  if (existing !== undefined) return existing;
+  const created: GraphicsRegistry = { current: 1, devices: new Map() };
+  invocation.state.set(GRAPHICS_STATE_KEY, created);
+  return created;
+}
+
+function nextGraphicsDeviceNumber(registry: GraphicsRegistry): number {
+  for (let number = 2; number <= 63; number += 1) {
+    if (!registry.devices.has(number)) return number;
+  }
+  throw new REvaluationError("NRE2197", "too many open devices");
+}
+
+function createBrowserGraphicsState(invocation: BuiltinInvocation): GraphicsState {
+  const registry = graphicsRegistry(invocation);
+  const number = nextGraphicsDeviceNumber(registry);
+  const existingParameters =
+    registry.devices.size === 0 ? invocation.state.get(GRAPHICS_PARAMETERS_STATE_KEY) : undefined;
+  const parameters =
+    existingParameters instanceof Map
+      ? (existingParameters as GraphicsParametersState)
+      : defaultGraphicsParameters();
+  const state: GraphicsState = {
+    number,
+    name: "NativR",
+    kind: "browser",
+    parameters,
+    active: true,
+    xlim: [0, 1],
+    ylim: [0, 1],
+    holdLevel: 0,
+    pending: [],
+    pendingBytes: 0,
+    displayList: [],
+    displayListBytes: 0,
+  };
+  registry.devices.set(number, state);
+  registry.current = number;
+  invocation.state.set(GRAPHICS_PARAMETERS_STATE_KEY, parameters);
+  return state;
 }
 
 function writeGraphics(
@@ -23658,9 +24144,9 @@ function writeGraphics(
     });
   }
 
-  if (state.holdLevel === 0) {
+  if (state.holdLevel === 0 && state.kind === "browser") {
     invocation.context.writeGraphics(event);
-  } else {
+  } else if (state.holdLevel > 0) {
     if (state.pending.length >= invocation.context.limits.maxVectorLength) {
       throw new RResourceLimitError("NRL4002", "Held graphics command limit exceeded.", {
         details: {
@@ -23774,7 +24260,9 @@ function graphicsTextByteLength(value: string): number {
 }
 
 function flushGraphics(invocation: BuiltinInvocation, state: GraphicsState): void {
-  for (const event of state.pending) invocation.context.writeGraphics(event);
+  if (state.kind === "browser") {
+    for (const event of state.pending) invocation.context.writeGraphics(event);
+  }
   state.pending = [];
   state.pendingBytes = 0;
 }

@@ -473,7 +473,8 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      temporary text and immutable package resources. Implicit/explicit lifecycle, read/write/append
      modes, cursors, summaries, destruction, connection-aware line I/O, `cat`, and
      `utils::capture.output` have GNU R differential evidence. Host files, compression, URLs,
-     sockets, raw/binary I/O, and the full filesystem remain later layers.
+     sockets, typed raw/binary I/O, and the full filesystem remain later layers; raw `readBin()`
+     retrieval from owned binary files is now available.
 119. Package data and delimited tables: usage-ranked `utils::data`, `write.csv`, and `read.csv`,
      together with `read.table`/`read.csv2`/`read.delim*` and `write.table`/`write.csv2`, discover
      and execute package `data/*.R`, import package text datasets, decode XDR v2/v3 gzip
@@ -511,6 +512,14 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      names/class/missingness, monotonic elapsed time, timed-error output, and reset behavior for all
      95 measured calls across six packages. Process CPU, child-process accounting, forced host GC,
      and class-specific printing remain explicit platform/runtime work.
+125. Browser PNG file device: rank-121 `grDevices::png` now opens a numbered device alongside the
+     browser display, records the shared graphics command vocabulary, rasterizes it without DOM or
+     native dependencies, and writes a standards-compliant RGBA PNG to the bounded session file
+     store on page transition or `dev.off()`. Pixel dimensions, transparent backgrounds, point size,
+     per-device `par()` isolation/restoration, numbered multi-page filenames, device selection, PNG
+     signature/dimensions, decompression, and raw-byte retrieval have executable evidence. Exact GNU
+     R font metrics, anti-aliasing, color profiles, every device parameter, and pixel identity
+     remain graphics-depth work.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

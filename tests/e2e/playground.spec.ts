@@ -73,6 +73,23 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await expect(page.locator("#result")).toHaveText("null");
   await expect(page.locator("#graphics-count")).toHaveText("6");
 
+  await page.locator("#source").fill(`
+    path <- tempfile(fileext = ".png")
+    grDevices::png(path, width = 64, height = 48, bg = "transparent")
+    graphics::plot.new()
+    graphics::segments(0, 0, 1, 1)
+    grDevices::dev.off()
+    bytes <- as.integer(readBin(path, "raw", n = 1000000L))
+    c(
+      bytes[1:8],
+      sum(bytes[17:20] * 256 ^ (3:0)),
+      sum(bytes[21:24] * 256 ^ (3:0)),
+      length(bytes) > 100L
+    )
+  `);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("[137, 80, 78, 71, 13, 10, 26, 10, 64, 48, 1]");
+
   await page.locator("#source").fill('x <- setNames(seq(10, 20, by = 10), c("a", "b"))\nx[["b"]]');
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("20");
