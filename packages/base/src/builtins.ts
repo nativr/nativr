@@ -246,6 +246,33 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "invisible",
   ),
   withBuiltinFormals(
+    defineBuiltin("gc", ["verbose", "reset", "full"], "behavioral", builtinGarbageCollection),
+    [
+      {
+        name: "verbose",
+        defaultValue: {
+          kind: "CallExpression",
+          callee: { kind: "Identifier", name: "getOption", span: SYNTHETIC_SPAN },
+          arguments: [
+            {
+              value: { kind: "StringLiteral", value: "verbose", span: SYNTHETIC_SPAN },
+              span: SYNTHETIC_SPAN,
+            },
+          ],
+          span: SYNTHETIC_SPAN,
+        },
+      },
+      {
+        name: "reset",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      { name: "full", defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN } },
+    ],
+  ),
+  withBuiltinFormals(defineBuiltin("gcinfo", ["verbose"], "api", builtinGarbageCollectionInfo), [
+    { name: "verbose" },
+  ]),
+  withBuiltinFormals(
     defineBuiltin("gctorture2", ["step", "wait", "inhibit_release"], "api", builtinGcTorture2),
     [
       { name: "step" },
@@ -2153,6 +2180,7 @@ const S4_COERCIONS_STATE_KEY = "base.s4.coercions";
 const GRAPHICS_STATE_KEY = "graphics.device";
 const GRAPHICS_PARAMETERS_STATE_KEY = "graphics.parameters";
 const GC_TORTURE_STATE_KEY = "base.gctorture2";
+const GC_INFO_STATE_KEY = "base.gcinfo";
 const PROCESS_TIME_STATE_KEY = "base.processTime";
 const HOOKS_STATE_KEY = "base.hooks";
 const VIRTUAL_TEXT_FILES_STATE_KEY = "base.virtualTextFiles";
@@ -3776,8 +3804,8 @@ async function builtinSystemTiming(invocation: BuiltinInvocation): Promise<RValu
     throw new REvaluationError("NRE2103", "Argument 'expr' is missing in system.time().");
   }
   const gcFirst = matched.get("gcFirst");
-  if (gcFirst !== undefined) {
-    systemTimeGcFirst(await invocation.force(gcFirst.promise));
+  if (gcFirst === undefined || systemTimeGcFirst(await invocation.force(gcFirst.promise))) {
+    invocation.memoryStatistics(false, true);
   }
 
   const start = monotonicMilliseconds();
@@ -3794,6 +3822,89 @@ async function builtinSystemTiming(invocation: BuiltinInvocation): Promise<RValu
     throw error;
   }
   return processTimeValue(elapsedSeconds(start, monotonicMilliseconds()), invocation);
+}
+
+async function builtinGarbageCollection(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["verbose", "reset", "full"]);
+  const verbose = gcControlFlag(
+    matched.get("verbose") ?? optionsState(invocation).get("verbose"),
+    false,
+  );
+  const reset = gcControlFlag(matched.get("reset"), false);
+  const full = gcControlFlag(matched.get("full"), true);
+  const statistics = invocation.memoryStatistics(reset, full);
+  if (verbose) writeGarbageCollectionMessage(statistics, invocation);
+  invocation.context.allocate(12);
+  const values = [
+    statistics.nodeCells.used,
+    statistics.vectorCells.used,
+    memoryMegabytes(statistics.nodeCells.used, 56),
+    memoryMegabytes(statistics.vectorCells.used, 8),
+    statistics.nodeCells.trigger,
+    statistics.vectorCells.trigger,
+    memoryMegabytes(statistics.nodeCells.trigger, 56),
+    memoryMegabytes(statistics.vectorCells.trigger, 8),
+    statistics.nodeCells.maxUsed,
+    statistics.vectorCells.maxUsed,
+    memoryMegabytes(statistics.nodeCells.maxUsed, 56),
+    memoryMegabytes(statistics.vectorCells.maxUsed, 8),
+  ];
+  return withAttribute(
+    withDimensions(doubleVector(values), [2, 6]),
+    "dimnames",
+    listValue([
+      characterVector(["Ncells", "Vcells"]),
+      characterVector(["used", "(Mb)", "gc trigger", "(Mb)", "max used", "(Mb)"]),
+    ]),
+  );
+}
+
+async function builtinGarbageCollectionInfo(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["verbose"]);
+  const value = required(matched, "verbose", "gcinfo");
+  const previous = invocation.state.get(GC_INFO_STATE_KEY) === true;
+  invocation.state.set(GC_INFO_STATE_KEY, gcControlFlag(value, false));
+  return logicalVector([previous]);
+}
+
+function gcControlFlag(value: RValue | undefined, fallback: boolean): boolean {
+  if (value === undefined) return fallback;
+  if (value.type === "null" || (isAtomic(value) && value.length === 0)) return true;
+  if (!isAtomic(value)) {
+    throw new RTypeMismatchError("NRT3405", "invalid logical argument to garbage collection");
+  }
+  if (isMissing(value, 0)) return true;
+  if (value.type === "character") return parseRLogical(value.values[0] ?? "") ?? true;
+  if (value.type === "complex") {
+    return (value.real[0] ?? 0) !== 0 || (value.imaginary[0] ?? 0) !== 0;
+  }
+  return (value.values[0] ?? 0) !== 0;
+}
+
+function memoryMegabytes(cells: number, bytesPerCell: number): number {
+  return Math.ceil((cells * bytesPerCell * 10) / (1_024 * 1_024)) / 10;
+}
+
+function writeGarbageCollectionMessage(
+  statistics: ReturnType<BuiltinInvocation["memoryStatistics"]>,
+  invocation: BuiltinInvocation,
+): void {
+  const minorCollections = statistics.collection - statistics.fullCollections;
+  const nodePercent = Math.round(
+    (statistics.nodeCells.used * 100) / Math.max(1, statistics.nodeCells.trigger),
+  );
+  const vectorPercent = Math.round(
+    (statistics.vectorCells.used * 100) / Math.max(1, statistics.vectorCells.trigger),
+  );
+  invocation.context.writeOutput({
+    stream: "message",
+    text:
+      [
+        `Garbage collection ${statistics.collection} = ${minorCollections}+0+${statistics.fullCollections} (level ${statistics.level}) ... `,
+        `${memoryMegabytes(statistics.nodeCells.used, 56).toFixed(1)} Mbytes of cons cells used (${nodePercent}%)`,
+        `${memoryMegabytes(statistics.vectorCells.used, 8).toFixed(1)} Mbytes of vectors used (${vectorPercent}%)`,
+      ].join("\n") + "\n",
+  });
 }
 
 function systemTimeGcFirst(value: RValue): boolean {
@@ -6478,6 +6589,7 @@ function optionsState(invocation: BuiltinInvocation): Map<string, RValue> {
     ["timeout", integerVector([60])],
     ["ts.eps", doubleVector([Math.sqrt(Number.EPSILON)])],
     ["useFancyQuotes", logicalVector([false])],
+    ["verbose", logicalVector([false])],
     ["warn", integerVector([0])],
     ["width", integerVector([80])],
   ]);

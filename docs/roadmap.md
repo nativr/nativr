@@ -548,6 +548,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      transferable Worker transport, `onBrowse`, and a user-clicked Playground viewer have executable
      evidence. Fetching, automatic navigation, host files, process launch, and full
      platform-specific browser diagnostics remain deliberate host-adapter boundaries.
+131. Browser-owned memory census: rank-168 `base::gc` and adjacent `gcinfo` now expose GNU R's
+     closure-like formals, named 2-by-6 report, resettable high-water state, full/partial counters,
+     and verbose message shape over the reachable NativR R-value graph. The same silent path now
+     backs `system.time(gcFirst = TRUE)`. Exact GNU allocator counts, automatic host-GC messages,
+     weak-reference finalization, and forced JavaScript collection remain explicit runtime-depth
+     boundaries.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

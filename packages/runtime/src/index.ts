@@ -134,6 +134,8 @@ export type {
   RLanguage,
   RSymbol,
   RuntimeLimits,
+  RuntimeMemoryAreaStatistics,
+  RuntimeMemoryStatistics,
   RuntimeOperators,
   RValue,
   RVector,

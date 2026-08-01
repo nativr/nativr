@@ -176,6 +176,7 @@ export interface BuiltinInvocation {
   readonly arguments: readonly BuiltinCallArgument[];
   readonly context: OperatorContext;
   readonly state: Map<string, unknown>;
+  memoryStatistics(reset: boolean, full: boolean): RuntimeMemoryStatistics;
   setResultVisibility(visibility: "visible" | "invisible"): void;
   force(promise: RPromise): Promise<RValue>;
   forceDetailed(promise: RPromise): Promise<{ readonly value: RValue; readonly visible: boolean }>;
@@ -238,6 +239,22 @@ export interface BuiltinInvocation {
     includeDefault?: boolean,
   ): Promise<RValue | undefined>;
   nextMethod(generic?: string): Promise<RValue>;
+}
+
+/** One row of browser-owned memory statistics exposed through base::gc(). */
+export interface RuntimeMemoryAreaStatistics {
+  readonly used: number;
+  readonly trigger: number;
+  readonly maxUsed: number;
+}
+
+/** A deterministic census of the runtime-owned R graph, never the host JavaScript heap. */
+export interface RuntimeMemoryStatistics {
+  readonly nodeCells: RuntimeMemoryAreaStatistics;
+  readonly vectorCells: RuntimeMemoryAreaStatistics;
+  readonly collection: number;
+  readonly fullCollections: number;
+  readonly level: 0 | 2;
 }
 
 /** One independently registered base-language builtin. */

@@ -453,9 +453,19 @@ names, missing child-process fields, and elapsed wall time. Expression errors em
 `Timing stopped at:` stderr event before the original catchable condition continues. The adjacent
 `proc.time()` exposes a nondecreasing session-relative elapsed clock with the same result shape.
 Browsers expose neither process CPU accounting nor child processes, so `user.self` and `sys.self`
-are truthfully zero and both child fields are `NA`; `gcFirst = TRUE` cannot request host garbage
-collection and is a validated no-op. Exact scheduler resolution, CPU accounting, child-process
-accounting, and GNU R's class-specific print/summary formatting are not claimed.
+are truthfully zero and both child fields are `NA`; `gcFirst = TRUE` performs a silent census of the
+NativR-owned R graph but cannot request host garbage collection. Exact scheduler resolution, CPU
+accounting, child-process accounting, and GNU R's class-specific print/summary formatting are not
+claimed.
+
+`base::gc` has behavioral differential evidence for its closure-like defaults, control coercion,
+visible double matrix, dimensions, row/column labels, resettable maxima, and verbose message shape.
+`Ncells` counts reachable NativR runtime objects plus binding/attribute links; `Vcells` counts owned
+payload bytes in eight-byte units. The `(Mb)` columns use GNU R's 56-byte node and eight-byte vector
+display factors. Reporting triggers are adaptive NativR census thresholds, not JavaScript-engine
+collection thresholds. `base::gcinfo` preserves its formals and previous-flag result, but automatic
+host collection messages, weak-reference finalizers, exact GNU allocator counts, and forced host GC
+are not claimed.
 
 `base::save` and `load` extend the same session-owned resource seam with behavioral differential
 evidence for bit64's observed workspace roundtrip. `save` selects direct object expressions and/or

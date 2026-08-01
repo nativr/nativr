@@ -75,16 +75,16 @@ signal.
 
 | Priority | Measured rank | Callable         | Weighted reach | Packages | Observed calls |
 | -------: | ------------: | ---------------- | -------------: | -------: | -------------: |
-|        1 |           168 | `gc`             |           3.5% |        3 |             17 |
-|        2 |           174 | `lines`          |           3.4% |        4 |             20 |
-|        3 |           176 | `system`         |           3.3% |        3 |              5 |
-|        4 |           177 | `as.difftime`    |           3.3% |        2 |              2 |
-|        5 |           184 | `ls`             |           3.0% |        3 |              5 |
-|        6 |           186 | `hist`           |           3.0% |        4 |             19 |
-|        7 |           188 | `showClass`      |           2.9% |        2 |              4 |
-|        8 |           189 | `packageVersion` |           2.9% |        2 |              3 |
-|        9 |           194 | `Sys.getpid`     |           2.8% |        3 |              6 |
-|       10 |           195 | `.libPaths`      |           2.8% |        2 |              6 |
+|        1 |           174 | `lines`          |           3.4% |        4 |             20 |
+|        2 |           176 | `system`         |           3.3% |        3 |              5 |
+|        3 |           177 | `as.difftime`    |           3.3% |        2 |              2 |
+|        4 |           184 | `ls`             |           3.0% |        3 |              5 |
+|        5 |           186 | `hist`           |           3.0% |        4 |             19 |
+|        6 |           188 | `showClass`      |           2.9% |        2 |              4 |
+|        7 |           189 | `packageVersion` |           2.9% |        2 |              3 |
+|        8 |           194 | `Sys.getpid`     |           2.8% |        3 |              6 |
+|        9 |           195 | `.libPaths`      |           2.8% |        2 |              6 |
+|       10 |           196 | `example`        |           2.8% |        3 |              4 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -115,7 +115,11 @@ Worker graphics journal; it is not a claim of complete base-graphics rendering. 
 is now available for eight calls across xfun, htmltools, knitr, and httpuv (3.6% weighted reach). R
 callbacks and suppression remain evaluator-local; external locations become inert host requests and
 existing browser-memory report/image files cross the Worker as bounded byte snapshots. This supplies
-a reusable package viewer seam without granting network, DOM, process, or host-file access. Rank 22
+a reusable package viewer seam without granting network, DOM, process, or host-file access. Rank 168
+`gc` is now available for 17 calls across rlang, matrixStats, and bit64 (3.5% weighted reach). The
+no-argument cleanup/benchmark path, GNU R-shaped report matrix, resettable high-water values,
+verbose output, adjacent `gcinfo`, and `system.time(gcFirst)` share a deterministic traversal of the
+reachable NativR graph; this is not a claim to inspect or force the browser JavaScript heap. Rank 22
 `plot` is now available for all 179 measured occurrences across 20 sampled package manuals,
 representing 19.1% download-weighted reach. The implementation prioritizes the common numeric
 vector/x-y calls and the S3 seam required by package-owned plot methods: point, line, both,

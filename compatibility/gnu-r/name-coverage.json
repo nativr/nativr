@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 568,
-    "overlappingNames": 553,
-    "missingReferenceNames": 1969,
+    "nativrRegisteredNames": 570,
+    "overlappingNames": 555,
+    "missingReferenceNames": 1967,
     "nativrExtensionNames": 15,
-    "nameCoverage": 0.21927
+    "nameCoverage": 0.220063
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 408, "nameCoverage": 0.298464 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 410, "nameCoverage": 0.299927 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 74, "nameCoverage": 0.159483 },
     { "package": "methods", "callableNames": 209, "overlappingNames": 9, "nameCoverage": 0.043062 },
     { "package": "utils", "callableNames": 262, "overlappingNames": 22, "nameCoverage": 0.083969 },
@@ -253,6 +253,8 @@
     "format.hexmode",
     "formula",
     "frequency",
+    "gc",
+    "gcinfo",
     "gctorture2",
     "get",
     "get0",
@@ -1479,9 +1481,7 @@
     "functionBody<-",
     "gamma",
     "gaussian",
-    "gc",
     "gc.time",
-    "gcinfo",
     "gctorture",
     "generic.skeleton",
     "getAllConnections",

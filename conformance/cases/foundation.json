@@ -7781,5 +7781,12 @@
     ],
     "expectedCompatibility": "shape",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "garbage-collection-usage-ranked-shape-controls-and-state",
+    "code": "report <- gc(reset = TRUE)\nstates <- c(gcinfo(TRUE), gcinfo(FALSE), gcinfo(FALSE))\nfmls <- formals(gc)\nc(typeof(report) == \"double\", identical(dim(report), c(2L, 6L)), identical(rownames(report), c(\"Ncells\", \"Vcells\")), identical(colnames(report), c(\"used\", \"(Mb)\", \"gc trigger\", \"(Mb)\", \"max used\", \"(Mb)\")), all(report[, \"used\"] > 0), all(report[, \"gc trigger\"] >= report[, \"used\"]), identical(report[, \"used\"], report[, \"max used\"]), identical(names(fmls), c(\"verbose\", \"reset\", \"full\")), identical(fmls[[\"verbose\"]], quote(getOption(\"verbose\"))), identical(fmls[[\"reset\"]], FALSE), identical(fmls[[\"full\"]], TRUE), identical(states, c(FALSE, TRUE, FALSE)), identical(names(formals(gcinfo)), \"verbose\"))",
+    "expected": [true, true, true, true, true, true, true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

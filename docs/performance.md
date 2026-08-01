@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 347 KiB gzip;
+- Worker JavaScript: 349 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -511,3 +511,9 @@ R-function callback forwarding, final-result Worker transport, and public `onBro
 virtual files reuse the existing byte store and cross as transferables. The measured Worker is 346.8
 KiB gzip and remains within the existing 347 KiB ceiling; client and parser-Wasm budgets are
 unchanged.
+
+Language subset 0.213 adds usage-ranked `base::gc`, adjacent `gcinfo`, and one dependency-free
+reachable-graph census shared with `system.time(gcFirst = TRUE)`. The traversal counts only owned R
+runtime objects and payload storage, uses cycle guards, and imports no host heap profiler or GC
+adapter. The measured Worker is 348.3 KiB gzip, so the ceiling rises narrowly to 349 KiB; client and
+parser-Wasm budgets remain unchanged.

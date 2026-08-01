@@ -1876,6 +1876,75 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("reports usage-ranked garbage collection from the browser-owned R object graph", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        report <- gc(reset = TRUE)
+        fmls <- formals(gc)
+        c(
+          typeof(report) == "double",
+          identical(dim(report), c(2L, 6L)),
+          identical(rownames(report), c("Ncells", "Vcells")),
+          identical(colnames(report), c(
+            "used", "(Mb)", "gc trigger", "(Mb)", "max used", "(Mb)"
+          )),
+          all(report[, "used"] > 0),
+          all(report[, "gc trigger"] >= report[, "used"]),
+          identical(report[, "used"], report[, "max used"]),
+          identical(names(fmls), c("verbose", "reset", "full")),
+          identical(fmls[["verbose"]], quote(getOption("verbose"))),
+          identical(fmls[["reset"]], FALSE),
+          identical(fmls[["full"]], TRUE),
+          identical(getOption("verbose"), FALSE)
+        )
+      `),
+    ).resolves.toEqual(Array.from({ length: 12 }, () => true));
+
+    await expect(
+      runtime.eval(`
+        before <- gc(reset = TRUE)
+        x <- double(10000)
+        after <- gc(full = FALSE)
+        rm(x)
+        reclaimed <- gc()
+        c(
+          after["Vcells", "used"] > before["Vcells", "used"],
+          after["Vcells", "max used"] >= after["Vcells", "used"],
+          reclaimed["Vcells", "used"] < after["Vcells", "used"],
+          reclaimed["Vcells", "max used"] >= after["Vcells", "used"]
+        )
+      `),
+    ).resolves.toEqual([true, true, true, true]);
+
+    await expect(runtime.eval("c(gcinfo(TRUE), gcinfo(FALSE), gcinfo(FALSE))")).resolves.toEqual([
+      false,
+      true,
+      false,
+    ]);
+    const verbose = await runtime.evalDetailed("gc(verbose = TRUE)");
+    expect(verbose.output).toHaveLength(1);
+    expect(verbose.output[0]).toMatchObject({ stream: "message" });
+    expect(verbose.output[0]?.text).toMatch(
+      /^Garbage collection \d+ = \d+\+0\+\d+ \(level 2\) \.\.\. \n\d+\.\d Mbytes of cons cells used \(\d+%\)\n\d+\.\d Mbytes of vectors used \(\d+%\)\n$/u,
+    );
+    const collection = (result: typeof verbose): number =>
+      Number.parseInt(
+        /Garbage collection (\d+)/u.exec(result.output[0]?.text ?? "")?.[1] ?? "",
+        10,
+      );
+    const firstCollection = collection(verbose);
+    await runtime.eval("system.time(NULL, gcFirst = FALSE)");
+    const afterSkippedCollection = collection(await runtime.evalDetailed("gc(verbose = TRUE)"));
+    expect(afterSkippedCollection).toBe(firstCollection + 1);
+    await runtime.eval("system.time(NULL)");
+    const afterDefaultCollection = collection(await runtime.evalDetailed("gc(verbose = TRUE)"));
+    expect(afterDefaultCollection).toBe(afterSkippedCollection + 2);
+    await expect(runtime.eval("gcinfo()")).rejects.toMatchObject({ code: "NRE2103" });
+    await expect(runtime.eval("gc(nope = TRUE)")).rejects.toMatchObject({ code: "NRE2101" });
+    await runtime.dispose();
+  });
+
   it("restores bit64's usage-ranked save/load workspace through session memory", async () => {
     const runtime = await session();
     await expect(
@@ -8361,7 +8430,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.212.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.213.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

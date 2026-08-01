@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.212.0",
+  "languageSubsetVersion": "0.213.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -104,6 +104,8 @@
         { "name": "packageEvent", "compatibility": "behavioral" },
         { "name": "getHook", "compatibility": "behavioral" },
         { "name": "setHook", "compatibility": "behavioral" },
+        { "name": "gc", "compatibility": "behavioral" },
+        { "name": "gcinfo", "compatibility": "api" },
         { "name": "gctorture2", "compatibility": "api" },
         { "name": "Sys.getlocale", "compatibility": "behavioral" },
         { "name": "Sys.setlocale", "compatibility": "behavioral" },

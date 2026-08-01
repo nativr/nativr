@@ -139,80 +139,81 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 568 registered functions, including resettable
+an initial condition/handler slice. It exposes 570 registered functions, including resettable
 session options, isolated session environment variables, deterministic non-interactive host-mode
-detection, and vectorized decimal rounding plus real/complex logarithm and exponential semantics.
-Browser-memory `read.table`/`read.csv`/ `read.delim` and `write.table`/`write.csv` paths provide
-quoted text-table interchange without host filesystem access. Data-mask and local-environment
-evaluation preserve result visibility, while `all.equal` provides bounded tolerant recursive
-comparison and `ifelse` provides lazy vectorized branch selection. Missing-aware `any`/`all` logical
-summaries cover atomic and list inputs, while `subset` provides lazy vector/list/matrix/data-frame
-selection expressions. Environment removal, core value reversal, cumulative numeric summaries,
-function-exit cleanup, `AsIs` class marking, closure-body inspection, and recursive list flattening
-extend the frequency-ranked surface. Closure `formals` inspection and lazy repeated evaluation
-through `replicate`, real-vector `floor`, grouped `split`, factor-pattern generation through `gl`,
-and bounded data-frame joins through `merge` follow the same measured priority data. List/data-frame
-mutation through `within` and vectorized real/complex `sin` continue that frequency-ranked sequence.
-Numeric-order factor coercion through `as.factor` and grouped transformation through `ave` are the
-next completed entries from the same ranking. Vectorized UTC/GMT construction through `ISOdate` and
-Cartesian data-frame generation through `expand.grid` are the next completed pair. Type-promoting
-insertion through `append` and vectorized real/complex `cos` follow, with stable `intersect`,
-`setdiff`, and `union` completing the next measured family and parallel minimum selection through
-`pmin` following it. The frequency-ranked model path now includes `lm`, `aov`, treatment-coded model
-matrices, prediction and accessors, while `IQR` and all nine `quantile` algorithms cover the next
-isolated descriptive-statistics entry. Central Student-t probabilities and quantiles now support
-weighted QR covariance, `vcov`, `confint`, and residual degrees of freedom for that model path.
-Usage-ranked `kmeans` adds an independently implemented browser-native clustering path with explicit
-or session-random initial centers and the documented Hartigan-Wong, Lloyd/Forgy, and MacQueen
-algorithm choices. Circular, open, and filtering convolution now follows the same ranking through an
-owned complex radix-2/Bluestein Fourier backend. Usage-ranked hexadecimal integer modes add
-validated numeric/character construction, signed 32-bit formatting, class-preserving subsetting,
-printing, and bitwise operations. Environment-to-list conversion now follows the same usage ranking
-with local binding enumeration, hidden-name and ordering controls, lazy-promise forcing, and S3
-dispatch. Browser host-capability reporting follows with GNU R's named selection shape and
-deterministic `FALSE` values for unavailable graphics, profiling, network, and native facilities.
-Usage-ranked `kappa` adds owned QR-based estimates, exact 2-norm condition numbers, direct
-one-/infinity-norm paths, triangular controls, and `qr`/`lm` S3 methods without a host
-linear-algebra dependency. The next measured callable, `xtabs`, now cross-tabulates formula-selected
-factor, character, and numeric axes with weighted or matrix responses, subsets, missing-value
-controls, and GNU R-shaped table metadata. Usage-ranked `RNGkind` now covers the sampled kind-query
-surface, default Mersenne-Twister/Inversion selection, and both discrete samplers; the fixed-seed
-uniform sequence has black-box GNU R evidence. Rank-296 `sample.int` then adds the exact fixed-seed
-integer-sampling path used by `withr`, including `.Machine$integer.max`, replacement,
-no-replacement, hash, weighted, and large-population modes. The next usage-ranked locale slice adds
-session-local `Sys.getlocale`, `Sys.setlocale`, and `Sys.localeconv` behavior for the deterministic
-C profile and the `it_IT`/`en_US` monetary profiles observed in `withr`, without reading host locale
-state. Rank-303 `tan` then runs the expressions observed in `testthat` and `data.table`, backed by
-the base `pi` constant and vectorized real/complex, missing-value, metadata, and non-finite warning
-semantics. Rank-304 `make.names` now runs tibble's measured formula-based custom name repair with
-GNU R-compatible C-locale syntax, reserved-word, underscore, missing-name, and uniqueness rules.
-Rank-305 `start` adds row-based and regular-time-series origin coordinates, `ts.eps` grid
-recognition, negative periods, decimal fallbacks, and package-defined S3 method dispatch. Rank-307
-`as.roman` runs pillar's measured `utils::as.roman(seq_len(nrow(x)))` row-identifier path with
-integer-backed Roman values and canonical character formatting. Rank-308 `as.POSIXlt` now runs
-testthat's measured `as.POSIXlt(Sys.time())`/`length()` path and zoo's month-day extraction with an
-owned 11-component POSIXlt representation, UTC/GMT calendar decomposition, fractional seconds,
-missing values, and S3 dispatch. Rank-309 `drop` now runs matrixStats' singleton-set validations and
-posterior's explicit rvar array reduction while preserving surviving dimension names, custom
-classes, and non-shape attributes. Rank-310 `rasterImage` now runs the measured systemfonts
-`nativeRaster` and httr RGB(A)-array shapes through device-independent Worker graphics events, with
-`plot.new`/`plot.window` state and a real Playground canvas renderer. Every claim has an explicit
-boundary. Rank-311 `weights` now supplies the GNU R `stats` generic, list/pairlist default component
-lookup, `na.exclude` restoration, weighted/unweighted `lm` access, and package-owned S3 method
-dispatch for the measured `loo` and `posterior` call shapes. NativR does not reproduce those
-packages' methods; it provides the generic protocol they extend. Rank-313 `colours` now runs scales'
-measured catalog call through the complete ordered 657-name GNU R 4.6.0 catalog, including the
-502-name `distinct = TRUE` result, the `colors` alias, and registered `grDevices::` lookup. Rank-314
-`outer` now runs scales' measured radial-matrix expression and covers vector/array Cartesian
-products, concatenated dimensions and dimension names, character or callable `FUN`, lazy forwarded
-dots, and the `%o%` operator. Rank-316 `nzchar` now runs data.table's captured-group converter and
-Shiny's nonempty-input guard, with atomic/list coercion, `keepNA`, primitive argument boundaries,
-and attribute-free logical results. Rank-317 `density` now supplies the S3 generic boundary needed
-by posterior and distributional plus a bounded, independently implemented Gaussian numeric default
-with grids, weights, missing-value removal, and the `nrd0` bandwidth selector. Rank-319 `setequal`
-now covers base vector/factor/list set equality and dplyr's two measured data-frame row-set
-examples; tibble row selection retains its non-dropping class behavior. Rank-322 `eigen` now runs
-jsonlite's measured 3-by-3 decomposition through independent symmetric Jacobi and bounded asymmetric
+detection, browser-owned `gc()` memory censuses, and vectorized decimal rounding plus real/complex
+logarithm and exponential semantics. Browser-memory `read.table`/`read.csv`/ `read.delim` and
+`write.table`/`write.csv` paths provide quoted text-table interchange without host filesystem
+access. Data-mask and local-environment evaluation preserve result visibility, while `all.equal`
+provides bounded tolerant recursive comparison and `ifelse` provides lazy vectorized branch
+selection. Missing-aware `any`/`all` logical summaries cover atomic and list inputs, while `subset`
+provides lazy vector/list/matrix/data-frame selection expressions. Environment removal, core value
+reversal, cumulative numeric summaries, function-exit cleanup, `AsIs` class marking, closure-body
+inspection, and recursive list flattening extend the frequency-ranked surface. Closure `formals`
+inspection and lazy repeated evaluation through `replicate`, real-vector `floor`, grouped `split`,
+factor-pattern generation through `gl`, and bounded data-frame joins through `merge` follow the same
+measured priority data. List/data-frame mutation through `within` and vectorized real/complex `sin`
+continue that frequency-ranked sequence. Numeric-order factor coercion through `as.factor` and
+grouped transformation through `ave` are the next completed entries from the same ranking.
+Vectorized UTC/GMT construction through `ISOdate` and Cartesian data-frame generation through
+`expand.grid` are the next completed pair. Type-promoting insertion through `append` and vectorized
+real/complex `cos` follow, with stable `intersect`, `setdiff`, and `union` completing the next
+measured family and parallel minimum selection through `pmin` following it. The frequency-ranked
+model path now includes `lm`, `aov`, treatment-coded model matrices, prediction and accessors, while
+`IQR` and all nine `quantile` algorithms cover the next isolated descriptive-statistics entry.
+Central Student-t probabilities and quantiles now support weighted QR covariance, `vcov`, `confint`,
+and residual degrees of freedom for that model path. Usage-ranked `kmeans` adds an independently
+implemented browser-native clustering path with explicit or session-random initial centers and the
+documented Hartigan-Wong, Lloyd/Forgy, and MacQueen algorithm choices. Circular, open, and filtering
+convolution now follows the same ranking through an owned complex radix-2/Bluestein Fourier backend.
+Usage-ranked hexadecimal integer modes add validated numeric/character construction, signed 32-bit
+formatting, class-preserving subsetting, printing, and bitwise operations. Environment-to-list
+conversion now follows the same usage ranking with local binding enumeration, hidden-name and
+ordering controls, lazy-promise forcing, and S3 dispatch. Browser host-capability reporting follows
+with GNU R's named selection shape and deterministic `FALSE` values for unavailable graphics,
+profiling, network, and native facilities. Usage-ranked `kappa` adds owned QR-based estimates, exact
+2-norm condition numbers, direct one-/infinity-norm paths, triangular controls, and `qr`/`lm` S3
+methods without a host linear-algebra dependency. The next measured callable, `xtabs`, now
+cross-tabulates formula-selected factor, character, and numeric axes with weighted or matrix
+responses, subsets, missing-value controls, and GNU R-shaped table metadata. Usage-ranked `RNGkind`
+now covers the sampled kind-query surface, default Mersenne-Twister/Inversion selection, and both
+discrete samplers; the fixed-seed uniform sequence has black-box GNU R evidence. Rank-296
+`sample.int` then adds the exact fixed-seed integer-sampling path used by `withr`, including
+`.Machine$integer.max`, replacement, no-replacement, hash, weighted, and large-population modes. The
+next usage-ranked locale slice adds session-local `Sys.getlocale`, `Sys.setlocale`, and
+`Sys.localeconv` behavior for the deterministic C profile and the `it_IT`/`en_US` monetary profiles
+observed in `withr`, without reading host locale state. Rank-303 `tan` then runs the expressions
+observed in `testthat` and `data.table`, backed by the base `pi` constant and vectorized
+real/complex, missing-value, metadata, and non-finite warning semantics. Rank-304 `make.names` now
+runs tibble's measured formula-based custom name repair with GNU R-compatible C-locale syntax,
+reserved-word, underscore, missing-name, and uniqueness rules. Rank-305 `start` adds row-based and
+regular-time-series origin coordinates, `ts.eps` grid recognition, negative periods, decimal
+fallbacks, and package-defined S3 method dispatch. Rank-307 `as.roman` runs pillar's measured
+`utils::as.roman(seq_len(nrow(x)))` row-identifier path with integer-backed Roman values and
+canonical character formatting. Rank-308 `as.POSIXlt` now runs testthat's measured
+`as.POSIXlt(Sys.time())`/`length()` path and zoo's month-day extraction with an owned 11-component
+POSIXlt representation, UTC/GMT calendar decomposition, fractional seconds, missing values, and S3
+dispatch. Rank-309 `drop` now runs matrixStats' singleton-set validations and posterior's explicit
+rvar array reduction while preserving surviving dimension names, custom classes, and non-shape
+attributes. Rank-310 `rasterImage` now runs the measured systemfonts `nativeRaster` and httr
+RGB(A)-array shapes through device-independent Worker graphics events, with `plot.new`/`plot.window`
+state and a real Playground canvas renderer. Every claim has an explicit boundary. Rank-311
+`weights` now supplies the GNU R `stats` generic, list/pairlist default component lookup,
+`na.exclude` restoration, weighted/unweighted `lm` access, and package-owned S3 method dispatch for
+the measured `loo` and `posterior` call shapes. NativR does not reproduce those packages' methods;
+it provides the generic protocol they extend. Rank-313 `colours` now runs scales' measured catalog
+call through the complete ordered 657-name GNU R 4.6.0 catalog, including the 502-name
+`distinct = TRUE` result, the `colors` alias, and registered `grDevices::` lookup. Rank-314 `outer`
+now runs scales' measured radial-matrix expression and covers vector/array Cartesian products,
+concatenated dimensions and dimension names, character or callable `FUN`, lazy forwarded dots, and
+the `%o%` operator. Rank-316 `nzchar` now runs data.table's captured-group converter and Shiny's
+nonempty-input guard, with atomic/list coercion, `keepNA`, primitive argument boundaries, and
+attribute-free logical results. Rank-317 `density` now supplies the S3 generic boundary needed by
+posterior and distributional plus a bounded, independently implemented Gaussian numeric default with
+grids, weights, missing-value removal, and the `nrd0` bandwidth selector. Rank-319 `setequal` now
+covers base vector/factor/list set equality and dplyr's two measured data-frame row-set examples;
+tibble row selection retains its non-dropping class behavior. Rank-322 `eigen` now runs jsonlite's
+measured 3-by-3 decomposition through independent symmetric Jacobi and bounded asymmetric
 real/complex eigenpair paths. Rank-325 `colSums` now runs loo's two fold-table totals and zoo's
 non-missing-column mask, with logical/integer/double/complex arrays, numeric data frames, `na.rm`,
 generalized `dims`, and retained output names. Rank-326 `time` now runs data.table's decade-spaced
@@ -559,6 +560,12 @@ single-evaluation path. It returns GNU R-shaped `proc_time` values, uses a monot
 clock, preserves side effects, validates `gcFirst`, and emits timed-error output before propagating
 the original condition. The adjacent `proc.time()` exposes the same named/classed shape. Browser-
 unavailable CPU and child-process counters remain explicit platform boundaries.
+
+Rank 168 `gc()` now covers 17 measured calls across `rlang`, `matrixStats`, and `bit64`. It returns
+GNU R's named 2×6 `Ncells`/`Vcells` report from a deterministic traversal of the reachable NativR
+R-value graph, with `verbose`, high-water `reset`, full/partial census accounting, and adjacent
+`gcinfo()` state. These are NativR-owned payload cells; the browser's JavaScript heap collector is
+neither measured nor controlled.
 
 Rank 121 `grDevices::png()` now covers all seven measured calls across five packages. It opens
 alongside the browser display, records the existing graphics command vocabulary, rasterizes it in

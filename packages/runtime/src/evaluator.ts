@@ -9,6 +9,7 @@ import type {
 } from "@nativr/ast";
 
 import { EvaluationContext, DEFAULT_RUNTIME_LIMITS } from "./context.js";
+import { censusRuntimeMemory } from "./memory.js";
 import {
   createEnvironment,
   createForcedPromise,
@@ -71,6 +72,7 @@ import type {
   ROutput,
   RPromise,
   RuntimeLimits,
+  RuntimeMemoryStatistics,
   RuntimeOperators,
   RValue,
   RWarning,
@@ -445,6 +447,10 @@ export class Evaluator {
   #searchPath = [...DEFAULT_SEARCH_PATH];
   #disposed = false;
   #activeCancellation: { cancelled: boolean } | undefined;
+  #memoryMaxUsed = { nodeCells: 0, vectorCells: 0 };
+  #memoryTrigger = { nodeCells: 0, vectorCells: 0 };
+  #memoryCollections = 0;
+  #memoryFullCollections = 0;
 
   public constructor(
     operators: RuntimeOperators,
@@ -591,6 +597,10 @@ export class Evaluator {
       record.attached = false;
     }
     this.#searchPath = [...DEFAULT_SEARCH_PATH];
+    this.#memoryMaxUsed = { nodeCells: 0, vectorCells: 0 };
+    this.#memoryTrigger = { nodeCells: 0, vectorCells: 0 };
+    this.#memoryCollections = 0;
+    this.#memoryFullCollections = 0;
   }
 
   /** Release this session and reject future operations. */
@@ -1748,6 +1758,7 @@ export class Evaluator {
         ),
         context,
         state: this.#builtinState,
+        memoryStatistics: (reset, full) => this.#memoryStatistics(reset, full, context),
         setResultVisibility: (visibility) => {
           resultVisibility = visibility;
         },
@@ -2727,6 +2738,52 @@ export class Evaluator {
     return this.#globalEnvironment;
   }
 
+  #memoryStatistics(
+    reset: boolean,
+    full: boolean,
+    context: EvaluationContext,
+  ): RuntimeMemoryStatistics {
+    const census = censusRuntimeMemory(
+      [
+        this.#globalEnvironment,
+        this.#builtinState,
+        this.#controlFrames,
+        this.#closureCallFrames,
+        this.#activeGlobalCallingHandlers,
+        this.#packageS3Methods,
+        ...[...this.#packages.values()].map((record) => record.namespace),
+      ],
+      () => context.checkpoint(),
+    );
+    this.#memoryCollections += 1;
+    if (full) this.#memoryFullCollections += 1;
+    this.#memoryMaxUsed = reset
+      ? { ...census }
+      : {
+          nodeCells: Math.max(this.#memoryMaxUsed.nodeCells, census.nodeCells),
+          vectorCells: Math.max(this.#memoryMaxUsed.vectorCells, census.vectorCells),
+        };
+    this.#memoryTrigger = {
+      nodeCells: memoryReportingTrigger(census.nodeCells, this.#memoryTrigger.nodeCells),
+      vectorCells: memoryReportingTrigger(census.vectorCells, this.#memoryTrigger.vectorCells),
+    };
+    return Object.freeze({
+      nodeCells: Object.freeze({
+        used: census.nodeCells,
+        trigger: this.#memoryTrigger.nodeCells,
+        maxUsed: this.#memoryMaxUsed.nodeCells,
+      }),
+      vectorCells: Object.freeze({
+        used: census.vectorCells,
+        trigger: this.#memoryTrigger.vectorCells,
+        maxUsed: this.#memoryMaxUsed.vectorCells,
+      }),
+      collection: this.#memoryCollections,
+      fullCollections: this.#memoryFullCollections,
+      level: full ? 2 : 0,
+    });
+  }
+
   #installBuiltins(): void {
     for (const definition of this.#builtins) {
       const builtin: RBuiltin = { type: "builtin", definition };
@@ -3206,4 +3263,10 @@ function collectFormulaVariables(node: AstNode, output: Set<string>): void {
     default:
       throw unsupported("formula variable language form", node.span);
   }
+}
+
+function memoryReportingTrigger(used: number, previous: number): number {
+  if (previous >= used) return previous;
+  const target = Math.max(1_024, Math.ceil(used * 1.5));
+  return Math.min(Number.MAX_SAFE_INTEGER, Math.ceil(target / 1_024) * 1_024);
 }

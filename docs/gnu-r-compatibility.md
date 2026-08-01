@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           568 |
-| Overlapping callable names        |           553 |
-| Missing GNU R callable names      |         1,969 |
-| Name overlap                      |       21.927% |
+| NativR registered names           |           570 |
+| Overlapping callable names        |           555 |
+| Missing GNU R callable names      |         1,967 |
+| Name overlap                      |       22.006% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -543,6 +543,14 @@ evidence covers callable-browser forwarding, original URL text, invisible result
 validation, and errors; NativR-owned Worker/Playground evidence covers inert external requests and
 bounded virtual HTML/file snapshots. This does not claim desktop browser launch, network access,
 host files, automatic navigation, or platform-identical diagnostics.
+
+The browser-memory increment adds usage-ranked `base::gc` and adjacent `gcinfo`, raising current
+name overlap to 555 of 2,522. Rank 168 represents 17 documented calls across `rlang`, `matrixStats`,
+and `bit64`, or 3.5% download-weighted reach; all observed calls use the ordinary no-argument path
+for weak-reference examples, benchmark preparation, or cleanup after `rm()`. GNU R 4.6 black-box
+evidence covers formals, matrix type/dimensions/dimnames, reset maxima, controls, previous-flag
+state, and verbose output. NativR measures only its reachable R-value graph, shares that census with
+`system.time(gcFirst = TRUE)`, and does not claim host JavaScript heap counts or forced collection.
 
 ## Completion evidence
 
