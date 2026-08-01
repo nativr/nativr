@@ -520,6 +520,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      signature/dimensions, decompression, and raw-byte retrieval have executable evidence. Exact GNU
      R font metrics, anti-aliasing, color profiles, every device parameter, and pixel identity
      remain graphics-depth work.
+126. Owned character encodings: rank-144 `base::Encoding`, adjacent `Encoding<-`, `enc2utf8`, and
+     `enc2native` now preserve exact per-string bytes plus `unknown`/`latin1`/`UTF-8`/`bytes` marks
+     through vector construction, concatenation, subset replacement, raw conversion, and GNU R XDR
+     serialization. Browser-native encoding is deterministic UTF-8; general `iconv`, host locale
+     codecs, normalization, malformed-byte display, and exhaustive encoding-aware string behavior
+     remain later compatibility depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

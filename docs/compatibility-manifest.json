@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.207.0",
+  "languageSubsetVersion": "0.208.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -362,6 +362,10 @@
         { "name": "gsub", "compatibility": "behavioral" },
         { "name": "sub", "compatibility": "behavioral" },
         { "name": "strsplit", "compatibility": "behavioral" },
+        { "name": "Encoding", "compatibility": "behavioral" },
+        { "name": "Encoding<-", "compatibility": "behavioral" },
+        { "name": "enc2native", "compatibility": "behavioral" },
+        { "name": "enc2utf8", "compatibility": "behavioral" },
         { "name": "strwrap", "compatibility": "behavioral" },
         { "name": "substring", "compatibility": "behavioral" },
         { "name": "substr", "compatibility": "behavioral" },

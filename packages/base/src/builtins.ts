@@ -5,6 +5,9 @@ import {
   RTypeMismatchError,
   RUnsupportedFeatureError,
   R_NULL,
+  characterBytesAt,
+  characterEncodingAt,
+  characterValueFromBytes,
   characterVector,
   complexVector,
   createEnvironment,
@@ -57,6 +60,7 @@ import type {
   BuiltinInvocation,
   RBuiltin,
   RBinding,
+  RCharacterEncoding,
   RCharacterVector,
   RComplexVector,
   RDoubleVector,
@@ -1141,6 +1145,19 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     (invocation) => builtinStringSubstitute(invocation, false),
   ),
   defineBuiltin("strsplit", ["x", "split", "fixed"], "behavioral", builtinStrsplit),
+  withBuiltinFormals(defineBuiltin("Encoding", ["x"], "behavioral", builtinEncoding), [
+    { name: "x" },
+  ]),
+  withBuiltinFormals(
+    defineBuiltin("Encoding<-", ["x", "value"], "behavioral", builtinEncodingReplacement),
+    [{ name: "x" }, { name: "value" }],
+  ),
+  defineBuiltin("enc2native", ["x"], "behavioral", (invocation) =>
+    builtinEncodingConversion(invocation, "native"),
+  ),
+  defineBuiltin("enc2utf8", ["x"], "behavioral", (invocation) =>
+    builtinEncodingConversion(invocation, "UTF-8"),
+  ),
   defineBuiltin(
     "strwrap",
     ["x", "width", "indent", "exdent", "prefix", "simplify", "initial"],
@@ -2299,15 +2316,25 @@ function combineAtomicEntries(
 
   if (type === "character") {
     const output: string[] = [];
+    const encodings: RCharacterEncoding[] = [];
+    const byteValues: Uint8Array[] = [];
     for (const vector of vectors) {
       for (let index = 0; index < vector.length; index += 1) {
         invocation.context.checkpoint();
         if (isMissing(vector, index)) mask[offset] = 1;
         output.push(stringAt(vector, index));
+        encodings.push(
+          vector.type === "character" ? characterEncodingAt(vector, index) : "unknown",
+        );
+        byteValues.push(
+          vector.type === "character"
+            ? characterBytesAt(vector, index)
+            : encodeUtf8(stringAt(vector, index)),
+        );
         offset += 1;
       }
     }
-    return attachNames(characterVector(output, compactMask(mask)), names);
+    return attachNames(characterVector(output, compactMask(mask), encodings, byteValues), names);
   }
   if (type === "double") {
     const output = new Float64Array(length);
@@ -3522,7 +3549,7 @@ async function builtinPathExpand(invocation: BuiltinInvocation): Promise<RCharac
   invocation.context.allocate(path.length);
   // A browser runtime has no process home directory. GNU R documents unchanged input when the
   // home directory is unknown, so this owned implementation intentionally performs no host lookup.
-  return characterVector(path.values, path.missing);
+  return characterVector(path.values, path.missing, path.encodings, path.byteValues);
 }
 
 async function builtinRHome(invocation: BuiltinInvocation): Promise<RCharacterVector> {
@@ -10875,6 +10902,10 @@ function coerceAtomicToCharacter(
   input: AtomicVector,
   invocation: BuiltinInvocation,
 ): RCharacterVector {
+  if (input.type === "character") {
+    invocation.context.allocate(input.length);
+    return characterVector(input.values, input.missing, input.encodings, input.byteValues);
+  }
   const output = new Array<string>(input.length);
   const missing = new Uint8Array(input.length);
   for (let index = 0; index < input.length; index += 1) {
@@ -12259,10 +12290,16 @@ async function builtinRawToChar(invocation: BuiltinInvocation): Promise<RValue> 
   const multiple = logicalFlag(matched.get("multiple"), false, "multiple");
   if (multiple) {
     invocation.context.allocate(input.length);
-    return characterVector(Array.from(input.values, (value) => decodeUtf8(Uint8Array.of(value))));
+    const byteValues = Array.from(input.values, (value) => Uint8Array.of(value));
+    return characterVector(
+      byteValues.map((bytes) => decodeUtf8(bytes)),
+      undefined,
+      byteValues.map(() => "unknown"),
+      byteValues,
+    );
   }
   invocation.context.allocate(1);
-  return characterVector([decodeUtf8(input.values)]);
+  return characterVector([decodeUtf8(input.values)], undefined, ["unknown"], [input.values]);
 }
 
 async function builtinCharToRaw(invocation: BuiltinInvocation): Promise<RValue> {
@@ -12274,7 +12311,7 @@ async function builtinCharToRaw(invocation: BuiltinInvocation): Promise<RValue> 
       "charToRaw() requires one non-missing character value.",
     );
   }
-  const output = encodeUtf8(input.values[0] ?? "");
+  const output = characterBytesAt(input, 0);
   invocation.context.allocate(output.length);
   return rawVector(output);
 }
@@ -18115,7 +18152,78 @@ async function builtinSubstring(
       .join("");
   });
   invocation.context.allocate(length);
-  return characterVector(output, compactMask(missing));
+  return characterVector(
+    output,
+    compactMask(missing),
+    output.map((_, index) => characterEncodingAt(input, index % input.length)),
+  );
+}
+
+async function builtinEncoding(invocation: BuiltinInvocation): Promise<RCharacterVector> {
+  const matched = await matchExact(invocation, ["x"]);
+  const input = required(matched, "x", "Encoding");
+  if (input.type !== "character") {
+    throw new RTypeMismatchError("NRT3402", "a character vector argument expected");
+  }
+  invocation.context.allocate(input.length);
+  return characterVector(input.encodings);
+}
+
+async function builtinEncodingReplacement(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["x", "value"]);
+  const input = required(matched, "x", "Encoding<-");
+  const replacement = required(matched, "value", "Encoding<-");
+  if (input.type !== "character") {
+    throw new RTypeMismatchError("NRT3402", "a character vector argument expected");
+  }
+  if (replacement.type !== "character") {
+    throw new RTypeMismatchError("NRT3402", "a character vector 'value' expected");
+  }
+  if (replacement.length === 0) {
+    throw new RTypeMismatchError("NRT3402", "'value' must be of positive length");
+  }
+  const encodings = Array.from({ length: input.length }, (_, index): RCharacterEncoding => {
+    const source = index % replacement.length;
+    if (isMissing(replacement, source)) return "unknown";
+    const requested = replacement.values[source] ?? "";
+    return requested === "UTF-8" || requested === "latin1" || requested === "bytes"
+      ? requested
+      : "unknown";
+  });
+  const byteValues = input.byteValues.map((bytes) => Uint8Array.from(bytes));
+  const values = byteValues.map((bytes, index) =>
+    characterValueFromBytes(bytes, encodings[index] ?? "unknown"),
+  );
+  invocation.context.allocate(input.length);
+  return {
+    ...characterVector(values, input.missing, encodings, byteValues),
+    attributes: input.attributes,
+  };
+}
+
+async function builtinEncodingConversion(
+  invocation: BuiltinInvocation,
+  target: "native" | "UTF-8",
+): Promise<RValue> {
+  const matched = await matchExact(invocation, ["x"]);
+  const input = required(matched, "x", target === "native" ? "enc2native" : "enc2utf8");
+  if (input.type !== "character") {
+    throw new RTypeMismatchError("NRT3402", "argument is not a character vector");
+  }
+  const encodings = input.values.map((_, index): RCharacterEncoding => {
+    const current = characterEncodingAt(input, index);
+    return current === "bytes" ? "bytes" : "UTF-8";
+  });
+  const byteValues = input.values.map((value, index) =>
+    characterEncodingAt(input, index) === "bytes"
+      ? characterBytesAt(input, index)
+      : encodeUtf8(value),
+  );
+  invocation.context.allocate(input.length);
+  return {
+    ...characterVector(input.values, input.missing, encodings, byteValues),
+    attributes: input.attributes,
+  };
 }
 
 async function builtinChartr(invocation: BuiltinInvocation): Promise<RValue> {

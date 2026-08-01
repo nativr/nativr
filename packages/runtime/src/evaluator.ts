@@ -1399,6 +1399,18 @@ export class Evaluator {
       throw unsupported("non-identifier replacement functions", target.callee.span);
     }
     const objectArgument = target.arguments[0];
+    if (objectArgument?.value.kind === "SubsetExpression") {
+      await this.#applyCallReplacementToSubset(
+        target,
+        objectArgument,
+        replacement,
+        environment,
+        context,
+        nonLocal,
+        span,
+      );
+      return;
+    }
     if (objectArgument?.value.kind !== "Identifier") {
       throw unsupported("nested replacement assignment", span);
     }
@@ -1412,6 +1424,100 @@ export class Evaluator {
       });
     }
     const object = await this.#force(binding, context);
+    const updated = await this.#invokeReplacementFunction(
+      target,
+      objectArgument,
+      object,
+      replacement,
+      environment,
+      context,
+      span,
+    );
+    setBinding(targetEnvironment, objectName, updated);
+  }
+
+  async #applyCallReplacementToSubset(
+    target: CallExpressionNode,
+    objectArgument: CallExpressionNode["arguments"][number],
+    replacement: RValue,
+    environment: REnvironment,
+    context: EvaluationContext,
+    nonLocal: boolean,
+    span: SourceSpan,
+  ): Promise<void> {
+    const subset = objectArgument.value as SubsetExpressionNode;
+    const path: SubsetExpressionNode[] = [];
+    let root: AstNode = subset;
+    while (root.kind === "SubsetExpression") {
+      path.unshift(root);
+      root = root.target;
+    }
+    if (root.kind !== "Identifier" && root.kind !== "CallExpression") {
+      throw unsupported("replacement paths without an identifier root", span);
+    }
+    let targetEnvironment: REnvironment | undefined;
+    let current: RValue;
+    if (root.kind === "Identifier") {
+      targetEnvironment = this.#assignmentEnvironment(environment, root.name, nonLocal, span);
+      const binding = lookupBinding(targetEnvironment, root.name);
+      if (binding === undefined) {
+        throw new REvaluationError("NRE2001", `Object '${root.name}' not found.`, {
+          span: root.span,
+          details: { symbol: root.name },
+        });
+      }
+      current = await this.#force(binding, context);
+    } else {
+      current = await this.#evaluateValue(root, environment, context);
+    }
+    const operations: PreparedSubsetOperation[] = [];
+    for (const node of path) {
+      const operation = await this.#prepareNestedSubsetOperation(
+        current,
+        node,
+        environment,
+        context,
+      );
+      operations.push(operation);
+      current = await this.#extractPreparedSubset(operation, context);
+    }
+    let updated = await this.#invokeReplacementFunction(
+      target,
+      objectArgument,
+      current,
+      replacement,
+      environment,
+      context,
+      span,
+    );
+    for (let offset = operations.length - 1; offset >= 0; offset -= 1) {
+      const operation = await this.#prepareNestedSubsetOperation(
+        (operations[offset] as PreparedSubsetOperation).target,
+        path[offset] as SubsetExpressionNode,
+        environment,
+        context,
+      );
+      updated = this.#applyPreparedSubsetReplacement(operation, updated, context);
+    }
+    if (root.kind === "Identifier") {
+      setBinding(targetEnvironment as REnvironment, root.name, updated);
+    } else {
+      await this.#applyCallReplacement(root, updated, environment, context, nonLocal, span);
+    }
+  }
+
+  async #invokeReplacementFunction(
+    target: CallExpressionNode,
+    objectArgument: CallExpressionNode["arguments"][number],
+    object: RValue,
+    replacement: RValue,
+    environment: REnvironment,
+    context: EvaluationContext,
+    span: SourceSpan,
+  ): Promise<RValue> {
+    if (target.callee.kind !== "Identifier") {
+      throw unsupported("non-identifier replacement functions", target.callee.span);
+    }
     const replacementName = `${target.callee.name}<-`;
     const callableBinding = lookupBinding(environment, replacementName);
     if (callableBinding === undefined) {
@@ -1430,7 +1536,7 @@ export class Evaluator {
       promise: createForcedPromise(object, environment),
       span: objectArgument.span,
     };
-    const updated = await this.#invokeCallable(
+    return this.#invokeCallable(
       callable,
       [
         firstArgument,
@@ -1443,7 +1549,6 @@ export class Evaluator {
       ],
       context,
     );
-    setBinding(targetEnvironment, objectName, updated);
   }
 
   async #evaluateCall(

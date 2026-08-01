@@ -1,6 +1,9 @@
 import { REvaluationError, RTypeMismatchError, RUnsupportedFeatureError } from "./errors.js";
 import {
   R_NULL,
+  characterBytesAt,
+  characterBytesFromValue,
+  characterEncodingAt,
   characterVector,
   complexVector,
   dataFrameRowCount,
@@ -27,6 +30,7 @@ import {
 } from "./values.js";
 import type {
   OperatorContext,
+  RCharacterEncoding,
   RCharacterVector,
   RComplexVector,
   RDoubleVector,
@@ -333,7 +337,12 @@ function scalarSubscript(
     case "double":
       return doubleVector([index.values[position] ?? 0]);
     case "character":
-      return characterVector([index.values[position] ?? ""]);
+      return characterVector(
+        [index.values[position] ?? ""],
+        undefined,
+        [characterEncodingAt(index, position)],
+        [characterBytesAt(index, position)],
+      );
   }
 }
 
@@ -989,6 +998,31 @@ function subsetDataFrameCoordinates(
           return atomicString(cell.column, cell.row);
         }),
         mask,
+        cells.map((cell): RCharacterEncoding => {
+          if (cell === undefined) return "unknown";
+          if (cell.column.type === "character") {
+            return characterEncodingAt(cell.column, cell.row);
+          }
+          if (isFactor(cell.column)) {
+            const levels = cell.column.attributes.get("levels");
+            const level = (cell.column.values[cell.row] ?? 0) - 1;
+            return levels?.type === "character" ? characterEncodingAt(levels, level) : "unknown";
+          }
+          return "unknown";
+        }),
+        cells.map((cell) => {
+          if (cell?.column.type === "character") {
+            return characterBytesAt(cell.column, cell.row);
+          }
+          if (cell !== undefined && isFactor(cell.column)) {
+            const levels = cell.column.attributes.get("levels");
+            const level = (cell.column.values[cell.row] ?? 0) - 1;
+            if (levels?.type === "character") return characterBytesAt(levels, level);
+          }
+          return characterBytesFromValue(
+            cell === undefined ? "" : atomicString(cell.column, cell.row),
+          );
+        }),
       );
   }
 }
@@ -1582,6 +1616,12 @@ function subsetAtomic(
       value = characterVector(
         selected.map((position) => (position === undefined ? "" : (target.values[position] ?? ""))),
         mask,
+        selected.map((position) =>
+          position === undefined ? "unknown" : characterEncodingAt(target, position),
+        ),
+        selected.map((position) =>
+          position === undefined ? new Uint8Array() : characterBytesAt(target, position),
+        ),
       );
       break;
   }
@@ -1607,14 +1647,22 @@ function replaceAtomic(
   let output: AtomicVector;
   if (type === "character") {
     const values = Array.from({ length: resultLength }, (_, index) => atomicString(target, index));
+    const encodings = Array.from({ length: resultLength }, (_, index) =>
+      atomicCharacterEncoding(target, index),
+    );
+    const byteValues = Array.from({ length: resultLength }, (_, index) =>
+      atomicCharacterBytes(target, index),
+    );
     for (let index = 0; index < selected.length; index += 1) {
       const destination = selected[index] ?? 0;
       const source = index % replacement.length;
       missing[destination] = isMissing(replacement, source) ? 1 : 0;
       values[destination] = atomicString(replacement, source);
+      encodings[destination] = atomicCharacterEncoding(replacement, source);
+      byteValues[destination] = atomicCharacterBytes(replacement, source);
       context.checkpoint();
     }
-    output = characterVector(values, compactMask(missing));
+    output = characterVector(values, compactMask(missing), encodings, byteValues);
   } else if (type === "complex") {
     const values = Array.from({ length: resultLength }, (_, index) => atomicComplex(target, index));
     for (let index = 0; index < selected.length; index += 1) {
@@ -1772,6 +1820,16 @@ function atomicString(value: AtomicVector, index: number): string {
     return `${String(real)}${imaginary < 0 ? "" : "+"}${String(imaginary)}i`;
   }
   return String(value.values[index] ?? 0);
+}
+
+function atomicCharacterEncoding(value: AtomicVector, index: number): RCharacterEncoding {
+  return value.type === "character" ? characterEncodingAt(value, index) : "unknown";
+}
+
+function atomicCharacterBytes(value: AtomicVector, index: number): Uint8Array {
+  return value.type === "character"
+    ? characterBytesAt(value, index)
+    : characterBytesFromValue(atomicString(value, index));
 }
 
 function atomicComplex(

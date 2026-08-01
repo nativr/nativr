@@ -3,8 +3,10 @@
 Atomic scalars are length-one vectors. Logical, integer, double, and parallel-real/imaginary complex
 vectors use typed storage plus an independent missing mask, so R NA and IEEE NaN remain distinct.
 Raw vectors use byte storage and, like GNU R raw values, have no NA representation. Character
-vectors use immutable string storage and the same mask rule. Lists and attributes are immutable
-values; environment bindings are mutable references to those values.
+vectors use immutable string storage and the same mask rule. Each character element also owns its
+exact byte sequence and one canonical R encoding mark (`unknown`, `latin1`, `UTF-8`, or `bytes`).
+ASCII and missing strings are always marked `unknown`. Lists and attributes are immutable values;
+environment bindings are mutable references to those values.
 
 `rawToBits()` expands each raw byte into eight raw 0/1 values, least-significant bit first. It drops
 input attributes, maps an empty raw vector to an empty raw vector, and rejects non-raw inputs before
@@ -41,8 +43,14 @@ coercion, core component helpers, indexing/replacement, and Worker transport; th
 mathematics surface is not yet implemented.
 
 Raw values support construction/coercion, concatenation, comparison, bytewise `!`/`&`/`|`,
-selection/replacement, shifts, integer-bit expansion, UTF-8 character conversion, and Worker
-transport. Encoding-sensitive behavior outside UTF-8 remains incomplete.
+selection/replacement, shifts, integer-bit expansion, exact character-byte conversion, and Worker
+transport. `Encoding()` and `Encoding<-` query or replace per-element marks without discarding the
+stored bytes; valid replacement labels recycle without warning, while unrecognized labels become
+`unknown`. `enc2utf8()` converts Latin-1-marked text to UTF-8 bytes and preserves byte-marked text;
+`enc2native()` uses UTF-8 as NativR's deterministic browser-native encoding. Subsetting,
+replacement, concatenation, attributes, and XDR serialization preserve marks and bytes. General
+`iconv`, locale-dependent native encodings, Unicode normalization, malformed-sequence display, and
+every encoding-sensitive string operation remain incomplete.
 
 `base::replace(x, list, values)` forces its three arguments, leaves `x` unchanged, and returns the
 result of the runtime's immutable one-dimensional subset replacement. Numeric/logical/character

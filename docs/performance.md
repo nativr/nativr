@@ -480,3 +480,8 @@ DOM-free rasterizer for the owned graphics command vocabulary, PNG chunk/checksu
 browser-standard DEFLATE with a stored-block fallback, multi-page filenames, and raw virtual-file
 reads. This adds no dependency or host renderer. The measured Worker is 340.4 KiB gzip, so the
 ceiling rises narrowly to 341 KiB; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.208 adds exact byte storage and canonical encoding marks to character vectors,
+plus `Encoding`, `Encoding<-`, `enc2utf8`, and `enc2native` over the same representation. It adds no
+dependency, host locale lookup, or external codec. The measured Worker is 341.8 KiB gzip, so the
+ceiling rises narrowly to 343 KiB; client and parser-Wasm budgets remain unchanged.

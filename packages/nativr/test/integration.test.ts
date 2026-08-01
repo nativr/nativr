@@ -8182,7 +8182,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.207.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.208.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -11306,6 +11306,93 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(runtime.eval('grDevices::png(tempfile(), units = "bad")')).rejects.toMatchObject({
       code: "NRT3400",
     });
+    await runtime.dispose();
+  });
+
+  it("tracks exact per-string encoding marks and bytes across replacement and serialization", async () => {
+    const runtime = await session();
+    await expect(runtime.eval("names(formals(Encoding))")).resolves.toEqual("x");
+    await expect(runtime.eval("names(formals(`Encoding<-`))")).resolves.toEqual(["x", "value"]);
+    await expect(
+      runtime.eval(`Encoding(c("ascii", "\\u00e9", "\\u4f60\\u597d", NA_character_))`),
+    ).resolves.toEqual(["unknown", "UTF-8", "UTF-8", "unknown"]);
+
+    await runtime.eval(`
+      encoded <- structure(
+        c("ascii", "\\u00e9", "\\u4f60"),
+        names = c("A", "B", "C"), dim = c(3L, 1L), class = "encoded_probe"
+      )
+      Encoding(encoded) <- c("latin1", "UTF-8")
+    `);
+    await expect(runtime.eval("Encoding(encoded)")).resolves.toEqual([
+      "unknown",
+      "UTF-8",
+      "latin1",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          as.integer(charToRaw(encoded[[2L]])),
+          as.integer(charToRaw(encoded[[3L]])),
+          identical(names(encoded), c("A", "B", "C")),
+          identical(dim(encoded), c(3L, 1L)),
+          inherits(encoded, "encoded_probe")
+        )
+      `),
+    ).resolves.toEqual([195, 169, 228, 189, 160, 1, 1, 1]);
+
+    await runtime.eval(`
+      replacement_calls <- 0L
+      replacement_index <- function() { replacement_calls <<- replacement_calls + 1L; 2L }
+      Encoding(encoded[replacement_index()]) <- "bytes"
+    `);
+    await expect(runtime.eval("c(Encoding(encoded), replacement_calls)")).resolves.toEqual([
+      "unknown",
+      "bytes",
+      "latin1",
+      "2",
+    ]);
+    await expect(runtime.eval("encoded[[2L]]")).resolves.toBe("Ã©");
+    await expect(runtime.eval("as.integer(charToRaw(encoded[[2L]]))")).resolves.toEqual([195, 169]);
+
+    await expect(
+      runtime.eval(`
+        latin <- "\\u00e9"
+        Encoding(latin) <- "latin1"
+        converted <- enc2utf8(latin)
+        c(converted, Encoding(converted), as.integer(charToRaw(converted)))
+      `),
+    ).resolves.toEqual(["Ã©", "UTF-8", "195", "131", "194", "169"]);
+    await expect(
+      runtime.eval(`
+        binary <- "\\u00e9"
+        Encoding(binary) <- "bytes"
+        converted <- enc2native(binary)
+        c(identical(converted, binary), Encoding(converted), as.integer(charToRaw(converted)))
+      `),
+    ).resolves.toEqual(["TRUE", "bytes", "195", "169"]);
+
+    await expect(
+      runtime.eval(`
+        source <- rep("\\u00e9", 4L)
+        Encoding(source) <- c("UTF-8", "latin1", "bytes", "unknown")
+        restored <- unserialize(serialize(source, NULL, version = 2L))
+        c(Encoding(restored), as.integer(charToRaw(restored[[3L]])))
+      `),
+    ).resolves.toEqual(["UTF-8", "latin1", "bytes", "unknown", "195", "169"]);
+    await expect(runtime.eval("Encoding(1:3)")).rejects.toMatchObject({ code: "NRT3402" });
+    await expect(runtime.eval("Encoding(character())")).resolves.toEqual([]);
+    await expect(
+      runtime.eval(`
+        labels <- rep("\\u00e9", 4L)
+        Encoding(labels) <- c("utf-8", "Latin1", NA_character_, "UTF-8")
+        Encoding(labels)
+      `),
+    ).resolves.toEqual(["unknown", "unknown", "unknown", "UTF-8"]);
+    await expect(
+      runtime.eval("empty_mark <- 'x'; Encoding(empty_mark) <- character()"),
+    ).rejects.toMatchObject({ code: "NRT3402" });
+    await expect(runtime.eval("`Encoding<-`('x', 1L)")).rejects.toMatchObject({ code: "NRT3402" });
     await runtime.dispose();
   });
 

@@ -601,7 +601,9 @@ lists and pairlists, factors and arbitrary owned attributes, normalized language
 environments, and closures. The documented `num.eq`, `single.NA`, `attrib.as.set`,
 `ignore.environment`, and `ignore.srcref` switches affect comparison. `ignore.bytecode` and
 `extptr.as.ref` are accepted but are operationally irrelevant until bytecode and external-pointer
-value domains exist; character encoding marks and every GNU R NaN payload are not yet representable.
+value domains exist. Character encoding marks and exact bytes are now represented, although
+`identical` does not yet promise every GNU R encoding-cache corner; every GNU R NaN payload is also
+not yet representable.
 
 The initial condition contract covers lazy `try` capture with classed error values, `tryCatch`
 error/condition handlers plus `finally`, `stop`, logical-vector `stopifnot`, structured `warning`,
@@ -1118,8 +1120,9 @@ raw vectors. Exact runs, infinities, signed-zero equality, empty typed inputs, a
 run boundaries for every NA or NaN value have differential coverage. Result lengths use integer
 storage, result values preserve the input atomic storage type, and input names are dropped.
 Attributes other than names, including matrix dimensions and factor classes, plus recursive inputs
-are rejected consistently with the covered GNU R behavior. Long-vector lengths beyond JavaScript's
-safe integer range, every character-encoding mark, and exotic NaN payload identity are not claimed.
+are rejected consistently with the covered GNU R behavior. Character run values retain their owned
+bytes and marks through ordinary extraction. Long-vector lengths beyond JavaScript's safe integer
+range, exhaustive encoding-cache identity, and exotic NaN payload identity are not claimed.
 
 `diff` computes repeated, positive whole-number lagged differences for logical, integer, double, and
 complex vectors. Logical results use integer storage; integer overflow produces missing values and
@@ -1418,8 +1421,13 @@ least-significant-bit-first byte order, eight raw outputs per byte, attribute re
 and strict input validation. `intToUtf8` converts coercible scalar code-point inputs to combined or
 elementwise browser-native Unicode strings, including zero omission, missing/invalid points,
 supplementary-plane characters, and GNU R's opt-in adjacent surrogate-pair handling. Character
-conversion is explicitly UTF-8 rather than locale-dependent; native encoding tags and
-locale-specific malformed-sequence behavior are not claimed.
+conversion uses exact owned bytes rather than a host codec. Character vectors carry per-element
+`unknown`, `latin1`, `UTF-8`, or `bytes` marks; ASCII and missing values canonicalize to `unknown`.
+`Encoding`, `Encoding<-`, `enc2utf8`, and `enc2native` have GNU R 4.6 differential evidence for
+query, exact accepted labels, unrecognized-label fallback, positive-length replacement recycling,
+attribute preservation, bytes reinterpretation, and byte-mark preservation. General `iconv`, locale
+databases, platform-native encodings other than deterministic browser UTF-8, Unicode normalization,
+malformed-sequence display, and complete encoding-aware string semantics are not claimed.
 
 Core storage inspection covers `typeof`, `mode`, `is.null`, atomic storage predicates, `is.numeric`,
 `is.atomic`, `is.list`, `is.function`, `is.environment`, and bounded `is.vector` mode/attribute

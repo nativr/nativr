@@ -48,10 +48,16 @@ export interface RRawVector extends RVectorBase {
 }
 
 /** A character vector with an independent missing mask. */
+export type RCharacterEncoding = "unknown" | "latin1" | "UTF-8" | "bytes";
+
 export interface RCharacterVector extends RVectorBase {
   readonly type: "character";
   readonly values: readonly string[];
   readonly missing?: Uint8Array;
+  /** Per-element declared encoding marks; ASCII and missing strings are always `unknown`. */
+  readonly encodings: readonly RCharacterEncoding[];
+  /** Exact encoded bytes retained across declarative encoding changes and serialization. */
+  readonly byteValues: readonly Uint8Array[];
 }
 
 /** The singleton R NULL value. */
@@ -575,9 +581,105 @@ export function rawVector(values: ArrayLike<number>): RRawVector {
 export function characterVector(
   values: readonly string[],
   missing?: ArrayLike<number>,
+  encodings?: readonly RCharacterEncoding[],
+  byteValues?: readonly Uint8Array[],
 ): RCharacterVector {
   const storage = Object.freeze([...values]);
-  return withMask({ type: "character", values: storage, length: storage.length }, missing);
+  if (encodings !== undefined && encodings.length !== storage.length) {
+    throw new RTypeMismatchError("NRT3013", "Character encodings must match vector length.", {
+      details: { vectorLength: storage.length, encodingLength: encodings.length },
+    });
+  }
+  if (byteValues !== undefined && byteValues.length !== storage.length) {
+    throw new RTypeMismatchError("NRT3013", "Character byte values must match vector length.", {
+      details: { vectorLength: storage.length, byteValueLength: byteValues.length },
+    });
+  }
+  const mask =
+    missing === undefined ? undefined : Uint8Array.from(missing, (value) => (value ? 1 : 0));
+  if (mask !== undefined && mask.length !== storage.length) {
+    throw new RTypeMismatchError("NRT3001", "A missing mask must match vector length.", {
+      details: { vectorLength: storage.length, maskLength: mask.length },
+    });
+  }
+  const marks = Object.freeze(
+    storage.map((value, index): RCharacterEncoding => {
+      if (mask?.[index] === 1 || isAsciiString(value)) return "unknown";
+      return encodings?.[index] ?? "UTF-8";
+    }),
+  );
+  const bytes = Object.freeze(
+    storage.map((value, index) => {
+      if (mask?.[index] === 1) return new Uint8Array();
+      const supplied = byteValues?.[index];
+      if (supplied !== undefined) return Uint8Array.from(supplied);
+      return characterBytesFromValue(value, marks[index] ?? "unknown");
+    }),
+  );
+  return {
+    type: "character",
+    values: storage,
+    encodings: marks,
+    byteValues: bytes,
+    length: storage.length,
+    ...(mask === undefined ? {} : { missing: mask }),
+    attributes: EMPTY_ATTRIBUTES,
+  };
+}
+
+/** Read one canonical declared encoding mark. */
+export function characterEncodingAt(value: RCharacterVector, index: number): RCharacterEncoding {
+  return value.encodings[index] ?? "unknown";
+}
+
+/** Return a defensive copy of one string's exact encoded bytes. */
+export function characterBytesAt(value: RCharacterVector, index: number): Uint8Array {
+  return Uint8Array.from(value.byteValues[index] ?? new Uint8Array());
+}
+
+/** Encode one semantic string under the browser runtime's owned UTF-8/single-byte model. */
+export function characterBytesFromValue(
+  value: string,
+  encoding: RCharacterEncoding = "unknown",
+): Uint8Array {
+  if (encoding === "latin1" || encoding === "bytes") return encodeSingleByteString(value);
+  const Encoder = (
+    globalThis as unknown as {
+      readonly TextEncoder: new () => { readonly encode: (input: string) => Uint8Array };
+    }
+  ).TextEncoder;
+  return new Encoder().encode(value);
+}
+
+/** Interpret exact bytes under one of R's declared encoding marks in the browser's UTF-8 locale. */
+export function characterValueFromBytes(bytes: Uint8Array, encoding: RCharacterEncoding): string {
+  if (encoding === "latin1" || encoding === "bytes") {
+    let output = "";
+    for (let offset = 0; offset < bytes.length; offset += 8_192) {
+      output += String.fromCodePoint(...bytes.subarray(offset, offset + 8_192));
+    }
+    return output;
+  }
+  const Decoder = (
+    globalThis as unknown as {
+      readonly TextDecoder: new (
+        label: string,
+        options: { readonly fatal: boolean },
+      ) => { readonly decode: (input: Uint8Array) => string };
+    }
+  ).TextDecoder;
+  return new Decoder("utf-8", { fatal: false }).decode(bytes);
+}
+
+function isAsciiString(value: string): boolean {
+  for (let index = 0; index < value.length; index += 1) {
+    if (value.charCodeAt(index) > 0x7f) return false;
+  }
+  return true;
+}
+
+function encodeSingleByteString(value: string): Uint8Array {
+  return Uint8Array.from(Array.from(value, (character) => character.codePointAt(0) ?? 0));
 }
 
 /** Construct an immutable R list with optional exact element names. */

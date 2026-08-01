@@ -159,6 +159,14 @@ builtin formals, list-backed environments, dynamic `parent.frame()`, hook regist
 session-scoped `graphics::par()`. Each seam was implemented once in the runtime; none of the three
 packages was patched or translated.
 
+The same shared-runtime rule now covers the highest-reach missing text seam: rank-144 `Encoding`
+appears 12 times across the sampled rlang, utf8, and xfun manuals (4.5% weighted reach). NativR now
+stores exact bytes and R encoding marks per character element and exposes `Encoding`, `Encoding<-`,
+`enc2utf8`, and `enc2native`. Package-owned R code can therefore query, change, subset, concatenate,
+and serialize marked strings without a package-specific rewrite. This removes one reusable blocker;
+it does not imply that rlang or utf8 are pure-R packages or that their native components can load
+unchanged.
+
 The same rule applies to later packages: a missing callable is prioritized by measured package reach
 and implemented as reusable runtime behavior. For example, the rank-80 `dev.off()` gap led to one
 browser-device lifecycle shared by every package, including current/list queries, held-command
@@ -195,6 +203,9 @@ plotting package is compatible.
   data indexes/aliases, installed-package `.rdx`/`.rdb` lazy-load databases, and full lazy-data
   behavior remain explicit boundaries.
 - Bytecode is not loaded. Original R source is parsed into the owned AST.
+- Character encoding marks and exact bytes survive the owned vector and XDR paths. Browser-native
+  text is deterministically UTF-8; general `iconv`, host locale encodings, malformed-byte display,
+  and every encoding-sensitive string primitive remain separate compatibility work.
 - The packager defaults to the deterministic `unix` source variant. Packages with platform-specific
   `R/` code can select `--source-platform windows`; the chosen variant is recorded in the artifact.
 - `Suggests` is optional unless `--include-suggests` is requested. `Enhances` is not a required

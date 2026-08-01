@@ -4,6 +4,8 @@ import {
   EvaluationContext,
   RResourceLimitError,
   RUnsupportedFeatureError,
+  characterBytesAt,
+  characterEncodingAt,
   characterVector,
   decodeRSerialization,
   decodeRSerializationFile,
@@ -26,6 +28,8 @@ const FIXTURES = {
     "580a0000000200040600000203000000000e000000053ff80000000000007ff00000000007a27ff80000000000007ff0000000000000fff0000000000000",
   character:
     "580a00000002000406000002030000000010000000030004000900000001610000800900000002c3a900000009ffffffff",
+  characterEncodings:
+    "580a00000002000406000002030000000010000000040000800900000002c3a90000400900000002c3a90000200900000002c3a90000000900000002c3a9",
   list: "580a00000002000406000002030000000213000000020000000d00000001000000010000001000000001000400090000000178000004020000000100040009000000056e616d65730000001000000002000400090000000161000400090000000162000000fe",
   dataFrame:
     "580a00000002000406000002030000000313000000020000000d0000000200000001000000020000001000000002000400090000000178000400090000000179000004020000000100040009000000056e616d6573000000100000000200040009000000016100040009000000016200000402000000010004000900000005636c6173730000001000000001000400090000000a646174612e6672616d6500000402000000010004000900000009726f772e6e616d65730000000d0000000280000000fffffffe000000fe",
@@ -73,6 +77,21 @@ describe("GNU R serialization decoder", () => {
       type: "character",
       values: ["1", "2"],
     });
+  });
+
+  it("preserves observable UTF-8, latin1, bytes, and native character marks", () => {
+    const observed = decodeRSerialization(hex(FIXTURES.characterEncodings), context()).value;
+    expect(observed.type).toBe("character");
+    if (observed.type !== "character") return;
+    expect(
+      Array.from({ length: observed.length }, (_, index) => characterEncodingAt(observed, index)),
+    ).toEqual(["UTF-8", "latin1", "bytes", "unknown"]);
+    for (let index = 0; index < observed.length; index += 1) {
+      expect(Array.from(characterBytesAt(observed, index))).toEqual([0xc3, 0xa9]);
+    }
+    expect(toHex(encodeRSerialization(observed, context(), {}, { version: 2 }))).toBe(
+      FIXTURES.characterEncodings,
+    );
   });
 
   it("decodes named save() workspaces and version-3 compact integer ALTREP", async () => {

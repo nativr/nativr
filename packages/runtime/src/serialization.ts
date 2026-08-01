@@ -1,6 +1,8 @@
 import { REvaluationError, RResourceLimitError, RUnsupportedFeatureError } from "./errors.js";
 import {
   R_NULL,
+  characterBytesAt,
+  characterEncodingAt,
   characterVector,
   complexVector,
   doubleVector,
@@ -14,6 +16,7 @@ import {
 } from "./values.js";
 import type {
   RAttributes,
+  RCharacterEncoding,
   RCharacterVector,
   REnvironment,
   RList,
@@ -454,7 +457,12 @@ class XdrSerializationWriter {
       this.#writeVectorHeader(STRSXP, value);
       this.#writeLength(value.length);
       for (let index = 0; index < value.length; index += 1) {
-        this.#writeCharacterScalar(value.values[index] ?? "", isMissing(value, index));
+        this.#writeCharacterScalar(
+          value.values[index] ?? "",
+          isMissing(value, index),
+          characterEncodingAt(value, index),
+          characterBytesAt(value, index),
+        );
       }
       this.#writeTrailingAttributes(value, depth + 1);
       return;
@@ -542,15 +550,30 @@ class XdrSerializationWriter {
     this.#writePairlistNode(values, names, attributes, index + 1, depth + 1);
   }
 
-  #writeCharacterScalar(value: string, missing: boolean): void {
+  #writeCharacterScalar(
+    value: string,
+    missing: boolean,
+    encoding: RCharacterEncoding = "UTF-8",
+    encodedBytes?: Uint8Array,
+  ): void {
     if (missing) {
       this.#writeUint32(CHARSXP);
       this.#writeInt32(-1);
       return;
     }
-    const bytes = encodeUtf8(value);
+    const bytes = encodedBytes ?? encodeUtf8(value);
     const ascii = bytes.every((byte) => byte <= 0x7f);
-    this.#writeUint32(CHARSXP | ((ascii ? 64 : 8) << 12));
+    const gp =
+      ascii || encoding === "unknown"
+        ? ascii
+          ? 64
+          : 0
+        : encoding === "UTF-8"
+          ? 8
+          : encoding === "latin1"
+            ? 4
+            : 2;
+    this.#writeUint32(CHARSXP | (gp << 12));
     this.#writeLength(bytes.byteLength);
     this.#writeBytes(bytes);
   }
@@ -797,8 +820,11 @@ class XdrSerializationReader {
     if (length < 0) throw new REvaluationError("NRE2247", "Invalid serialized string length.");
     this.#context.allocate(length);
     const gp = flags >>> 12;
-    const encoding = (gp & 8) !== 0 ? "utf8" : (gp & 4) !== 0 ? "latin1" : "native";
-    return characterVector([this.#decodeBytes(this.#readBytes(length), encoding)]);
+    const encoding: RCharacterEncoding =
+      (gp & 8) !== 0 ? "UTF-8" : (gp & 4) !== 0 ? "latin1" : (gp & 2) !== 0 ? "bytes" : "unknown";
+    const decoder = encoding === "UTF-8" ? "utf8" : encoding === "unknown" ? "native" : encoding;
+    const bytes = this.#readBytes(length);
+    return characterVector([this.#decodeBytes(bytes, decoder)], undefined, [encoding], [bytes]);
   }
 
   #readIntegerVector(type: number, flags: number, depth: number): RVector {
@@ -877,6 +903,8 @@ class XdrSerializationReader {
     const length = this.#readLength("character vector");
     this.#context.allocate(length);
     const values: string[] = [];
+    const encodings: RCharacterEncoding[] = [];
+    const byteValues: Uint8Array[] = [];
     const missing = new Uint8Array(length);
     let hasMissing = false;
     for (let index = 0; index < length; index += 1) {
@@ -888,12 +916,16 @@ class XdrSerializationReader {
         missing[index] = 1;
         hasMissing = true;
         values.push("");
+        encodings.push("unknown");
+        byteValues.push(new Uint8Array());
       } else {
         values.push(entry.values[0] ?? "");
+        encodings.push(characterEncodingAt(entry, 0));
+        byteValues.push(characterBytesAt(entry, 0));
       }
     }
     return this.#readTrailingAttributes(
-      characterVector(values, hasMissing ? missing : undefined),
+      characterVector(values, hasMissing ? missing : undefined, encodings, byteValues),
       flags,
       depth,
     );
@@ -1097,9 +1129,9 @@ class XdrSerializationReader {
     return true;
   }
 
-  #decodeBytes(bytes: Uint8Array, encoding: "utf8" | "latin1" | "native"): string {
+  #decodeBytes(bytes: Uint8Array, encoding: "utf8" | "latin1" | "bytes" | "native"): string {
     const selected = encoding === "native" ? this.#nativeEncoding.toLowerCase() : encoding;
-    if (selected === "latin1" || selected === "iso-8859-1") {
+    if (selected === "latin1" || selected === "iso-8859-1" || selected === "bytes") {
       let output = "";
       for (let offset = 0; offset < bytes.length; offset += 8_192) {
         output += String.fromCodePoint(...bytes.subarray(offset, offset + 8_192));

@@ -133,7 +133,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 533 registered functions, including resettable
+an initial condition/handler slice. It exposes 558 registered functions, including resettable
 session options, deterministic non-interactive host-mode detection, and vectorized decimal rounding
 plus real/complex logarithm and exponential semantics. Browser-memory `read.table`/`read.csv`/
 `read.delim` and `write.table`/`write.csv` paths provide quoted text-table interchange without host
@@ -562,6 +562,13 @@ transparent backgrounds, point size, numbered multi-page filenames, device retur
 signature/dimensions, decompression, and nontransparent plot pixels have executable evidence. Raw
 `readBin()` retrieves the file bytes; typed binary decoding, exact GNU R fonts/anti-aliasing/color
 management, other file devices, and pixel identity remain incomplete.
+
+Rank 144 `Encoding()` now covers the highest-reach missing callable: 12 measured calls across three
+package manuals (4.5% download-weighted reach). Character vectors retain exact per-element bytes and
+`unknown`/`latin1`/`UTF-8`/`bytes` marks through subsetting, replacement, concatenation, and XDR
+serialization. `Encoding<-`, `enc2utf8()`, and deterministic browser-UTF-8 `enc2native()` reuse the
+same owned representation. General `iconv`, host locale encodings, and arbitrary malformed-byte
+behavior remain explicit boundaries.
 
 Development priority is based on a reproducible analysis of documented usage in popular CRAN
 packages. The committed

@@ -175,6 +175,12 @@ Raw vectors become `{ __nativr__: "raw", bytes: Uint8Array }` records and `isRaw
 shape. Passing the same record to `assign` or `call` preserves the raw type; a bare `Uint8Array`
 continues to mean an integer input for backward compatibility.
 
+Inside an R session, character elements retain exact bytes and R encoding marks for `Encoding`, raw
+conversion, subset/replacement, and XDR serialization. Friendly `eval` and the current version-1
+`evalRaw` character snapshot intentionally return Unicode string values only; they do not expose or
+round-trip internal encoding metadata through JavaScript. Use R-side `charToRaw`, `Encoding`, or
+serialization when byte/mark identity is required.
+
 Inputs include scalar numbers, booleans, strings, null, homogeneous arrays, supported TypedArrays,
 `NA` inside arrays, complex records, homogeneous arrays of complex records, raw records, and
 symbol/language/expression records. `assign(..., { transfer: true })` may detach a transferable
