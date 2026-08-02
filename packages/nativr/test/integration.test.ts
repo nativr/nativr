@@ -1570,6 +1570,56 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("reports usage-ranked GNU R-shaped metadata for owned virtual files", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        path <- tempfile(fileext = ".txt")
+        writeLines(c("ab", "c"), path)
+        root <- dirname(path)
+        before <- file.info(c(path, root, "missing", NA_character_), extra_cols = FALSE)
+        readLines(path)
+        after <- file.info(path, extra_cols = TRUE)
+        empty <- file.info(character(), extra_cols = FALSE)
+        stopifnot(
+          identical(names(before), c("size", "isdir", "mode", "mtime", "ctime", "atime")),
+          identical(names(after), c(
+            "size", "isdir", "mode", "mtime", "ctime", "atime",
+            "uid", "gid", "uname", "grname"
+          )),
+          before$size[1] == 5,
+          before$isdir[1] == FALSE,
+          before$size[2] == 0,
+          before$isdir[2] == TRUE,
+          as.integer(before$mode[1]) == 438L,
+          as.integer(before$mode[2]) == 511L,
+          inherits(before$mode, "octmode"),
+          inherits(before$mtime, "POSIXct"),
+          all(is.na(before$size[3:4])),
+          all(is.na(before$isdir[3:4])),
+          all(is.na(before$mode[3:4])),
+          all(is.na(before$mtime[3:4])),
+          after$atime >= before$atime[1],
+          file.size(path) == 5,
+          as.integer(file.mode(path)) == 438L,
+          identical(file.mtime(path), after$mtime),
+          identical(dim(empty), c(0L, 6L)),
+          unlink(path) == 0L,
+          is.na(file.size(path))
+        )
+        names(formals(file.info))
+      `),
+    ).resolves.toEqual(["...", "extra_cols"]);
+    await expect(runtime.eval("file.info(1)")).rejects.toMatchObject({ code: "NRT3361" });
+    await expect(runtime.eval("file.info(extra_cols = FALSE)")).rejects.toMatchObject({
+      code: "NRT3361",
+    });
+    await expect(runtime.eval("file.info('x', extra_cols = NA)")).rejects.toMatchObject({
+      code: "NRT3355",
+    });
+    await runtime.dispose();
+  });
+
   it("manages browser-owned directories, relative paths, and deterministic runtime roots", async () => {
     const runtime = await session();
     const result = await runtime.evalDetailed(`
@@ -2455,6 +2505,13 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(
       runtime.eval("readLines(system.file('extdata', 'config.json', package = 'nativrfixture'))"),
     ).resolves.toBe('{"scale":2}');
+    await expect(
+      runtime.eval(`
+        path <- system.file("extdata", "config.json", package = "nativrfixture")
+        info <- file.info(path, extra_cols = FALSE)
+        c(info$size, info$isdir, as.integer(info$mode), file.size(path))
+      `),
+    ).resolves.toEqual([12, 0, 292, 12]);
     await expect(
       runtime.eval(
         "readLines(system.file('extdata', 'line-endings.txt', package = 'nativrfixture'))",
@@ -9336,7 +9393,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.227.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.228.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

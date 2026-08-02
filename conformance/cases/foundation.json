@@ -8162,5 +8162,40 @@
     ],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "file-info-usage-ranked-missing-shape-classes-wrappers-and-formals",
+    "code": "missing <- file.info(c(\"nativr-no-such\", \"nativr-no-such\", NA_character_), extra_cols = FALSE)\nempty <- file.info(character(), extra_cols = FALSE)\nc(names(missing), typeof(missing$size), typeof(missing$isdir), typeof(missing$mode), class(missing$mode), class(missing$mtime), nrow(missing), ncol(missing), all(is.na(missing$size)), all(is.na(missing$isdir)), all(is.na(missing$mode)), all(is.na(missing$mtime)), identical(attr(missing, \"row.names\"), c(\"nativr-no-such\", \"nativr-no-such\", NA_character_)), nrow(empty), ncol(empty), names(formals(file.info)), names(formals(file.mode)), inherits(file.mode(\"nativr-no-such\"), \"octmode\"), inherits(file.mtime(\"nativr-no-such\"), \"POSIXct\"), is.na(file.size(\"nativr-no-such\")))",
+    "expected": [
+      "size",
+      "isdir",
+      "mode",
+      "mtime",
+      "ctime",
+      "atime",
+      "double",
+      "logical",
+      "integer",
+      "octmode",
+      "POSIXct",
+      "POSIXt",
+      "3",
+      "6",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "0",
+      "6",
+      "...",
+      "extra_cols",
+      "...",
+      "TRUE",
+      "TRUE",
+      "TRUE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

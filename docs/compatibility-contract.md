@@ -466,8 +466,17 @@ integration coverage for the virtual directory boundary. The runtime owns a stat
 immutable package trees, a mutable session tree, and one current directory. Relative paths apply to
 line, table, serialization, workspace, and connection operations; normalization of `.` and `..`
 cannot escape an owned root. Recursive creation/removal is session-only. Host paths, symlinks,
-permissions, file metadata, mounts, platform separators, and host current-directory behavior are not
-claimed.
+native permissions/ownership, mounts, platform separators, and host current-directory behavior are
+not claimed.
+
+Usage-ranked `base::file.info`, together with `file.mode`, `file.mtime`, and `file.size`, has GNU R
+4.6 differential evidence for formals, the stable six-column frame, zero rows, duplicate and missing
+paths/row names, storage types, `octmode`/`POSIXct` classes, and wrapper results. NativR-owned files
+report encoded byte sizes and evaluator-local write/read timestamps; directories and immutable
+package resources report deterministic virtual modes and metadata. `extra_cols = TRUE` adds portable
+`uid`, `gid`, `uname`, and `grname` columns whose values are missing because no host identity is
+exposed. Host stat calls, links, ACLs, native owners, executable classification, and platform-exact
+timestamps are not claimed.
 
 `utils::read.table`, `read.csv`, `read.csv2`, `read.delim`, and `read.delim2` have behavioral
 differential evidence for bounded browser-memory text, headers, quoted separators and doubled

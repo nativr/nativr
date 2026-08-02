@@ -683,6 +683,16 @@ Source-only package `.onLoad()` registration runs inline and in the default Work
 loads roll registration changes back. Delayed registration for an unloaded suggested package and
 complete S3 method discovery remain incomplete.
 
+The virtual-file-metadata increment raises current name overlap to 588 of 2,522. Measured rank 209
+`base::file.info` represents three calls across digest, data.table, and shiny, or 2.4%
+download-weighted reach; adjacent `file.mode`, `file.mtime`, and `file.size` share the
+implementation. GNU R 4.6 black-box evidence covers formals, stable column names and storage
+classes, zero-row results, duplicate/missing paths and row names, `octmode`/`POSIXct` classes, and
+wrapper results. NativR-only evidence covers exact UTF-8/binary byte sizes, writable-directory
+modes, owned modification/access timestamps, immutable package resources, and the default Worker.
+Host paths, native identities/ACLs, links, executable classification, and platform timestamp
+fidelity remain outside the browser runtime.
+
 ## Completion evidence
 
 The objective is complete only when:

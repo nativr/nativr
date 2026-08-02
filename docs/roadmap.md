@@ -641,6 +641,13 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      participate in namespace-load rollback and reset; inline and default Worker packages have
      evidence. Delayed registration for unloaded suggested packages, group-generic metadata, and
      complete method discovery remain compatibility depth.
+145. Usage-ranked virtual file metadata: rank-209 `base::file.info`, plus `file.mode`, `file.mtime`,
+     and `file.size`, now report GNU R-shaped metadata for bounded session files/directories and
+     immutable package resources. Exact byte sizes, directory flags, `octmode` permissions,
+     `POSIXct` times, missing and duplicate rows, portable extra columns, formals, source-only
+     package calls, and default Worker execution have evidence. Host files, native ownership/ACLs,
+     links, platform executable classification, and native timestamp fidelity remain host-adapter
+     depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

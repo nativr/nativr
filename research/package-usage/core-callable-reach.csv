@@ -207,7 +207,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 206,pmin,true,2,dplyr|purrr,2,2.1,2.4
 207,sub,true,2,isoband|StanHeaders,2,2.1,2.4
 208,registerS3method,true,2,pillar|knitr,2,2.1,2.4
-209,file.info,false,3,digest|data.table|shiny,3,3.1,2.4
+209,file.info,true,3,digest|data.table|shiny,3,3.1,2.4
 210,match,true,2,ggplot2|data.table,3,2.1,2.4
 211,convolve,true,2,Rcpp|zoo,3,2.1,2.3
 212,getRversion,true,2,S7|xfun,2,2.1,2.3
@@ -286,7 +286,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 285,Sys.localeconv,true,1,withr,2,1.0,1.6
 286,attributes,true,1,withr,1,1.0,1.6
 287,file.create,false,1,withr,1,1.0,1.6
-288,file.size,false,1,withr,1,1.0,1.6
+288,file.size,true,1,withr,1,1.0,1.6
 289,kappa,true,1,RcppEigen,1,1.0,1.6
 290,model.matrix,true,1,RcppEigen,1,1.0,1.6
 291,xtabs,true,1,RcppEigen,1,1.0,1.6

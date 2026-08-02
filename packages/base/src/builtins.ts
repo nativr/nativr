@@ -458,6 +458,34 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("isOpen", ["con", "rw"], "behavioral", builtinIsOpen),
   defineBuiltin("seek", ["con", "where", "origin", "rw"], "behavioral", builtinSeek),
   defineBuiltin("file.exists", ["..."], "shape", builtinFileExists),
+  withBuiltinFormals(
+    defineBuiltin("file.info", ["...", "extra_cols"], "behavioral", builtinFileInfo),
+    [
+      { name: "..." },
+      {
+        name: "extra_cols",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
+  withBuiltinFormals(
+    defineBuiltin("file.mode", ["..."], "behavioral", (invocation) =>
+      builtinFileInfoColumn(invocation, "mode"),
+    ),
+    [{ name: "..." }],
+  ),
+  withBuiltinFormals(
+    defineBuiltin("file.mtime", ["..."], "behavioral", (invocation) =>
+      builtinFileInfoColumn(invocation, "mtime"),
+    ),
+    [{ name: "..." }],
+  ),
+  withBuiltinFormals(
+    defineBuiltin("file.size", ["..."], "behavioral", (invocation) =>
+      builtinFileInfoColumn(invocation, "size"),
+    ),
+    [{ name: "..." }],
+  ),
   defineBuiltin("dir.exists", ["paths"], "behavioral", builtinDirectoryExists),
   defineBuiltin(
     "dir.create",
@@ -2600,11 +2628,18 @@ interface VirtualTextFileState {
   readonly files: Map<string, string>;
   readonly binaryFiles: Map<string, Uint8Array>;
   readonly directories: Set<string>;
+  readonly metadata: Map<string, VirtualFileMetadata>;
   readonly connections: Map<number, VirtualTextConnection>;
   workingDirectory: string;
   nextId: number;
   nextConnectionId: number;
   bytes: number;
+}
+
+interface VirtualFileMetadata {
+  readonly modified: number;
+  readonly changed: number;
+  readonly accessed: number;
 }
 
 type VirtualTextConnectionMode = "r" | "w" | "a" | "r+" | "w+" | "a+";
@@ -5800,6 +5835,232 @@ async function builtinFileExists(invocation: BuiltinInvocation): Promise<RLogica
   return logicalVector(values);
 }
 
+type FileInfoColumn = "size" | "mode" | "mtime";
+
+interface FlattenedFileInfoPaths {
+  readonly paths: readonly string[];
+  readonly missing: readonly number[];
+  readonly rowNames: readonly string[] | undefined;
+}
+
+interface OwnedVirtualFileInfo {
+  readonly size: number;
+  readonly directory: boolean;
+  readonly mode: number;
+  readonly modified: number;
+  readonly changed: number;
+  readonly accessed: number;
+}
+
+async function builtinFileInfo(invocation: BuiltinInvocation): Promise<RList> {
+  let extraColumns = true;
+  let sawExtraColumns = false;
+  const pathArguments: BuiltinCallArgument[] = [];
+  for (const argument of invocation.arguments) {
+    if (argument.name !== "extra_cols") {
+      pathArguments.push(argument);
+      continue;
+    }
+    if (sawExtraColumns) {
+      throw new REvaluationError("NRE2102", "Argument 'extra_cols' matched more than once.");
+    }
+    extraColumns = fileInfoExtraColumns(await invocation.force(argument.promise));
+    sawExtraColumns = true;
+  }
+  return createFileInfoFrame(
+    invocation,
+    await flattenFileInfoPaths(invocation, pathArguments),
+    extraColumns,
+  );
+}
+
+async function builtinFileInfoColumn(
+  invocation: BuiltinInvocation,
+  column: FileInfoColumn,
+): Promise<RVector> {
+  const frame = createFileInfoFrame(
+    invocation,
+    await flattenFileInfoPaths(invocation, invocation.arguments),
+    false,
+  );
+  const index = column === "size" ? 0 : column === "mode" ? 2 : 3;
+  return frame.values[index] as RVector;
+}
+
+function fileInfoExtraColumns(value: RValue): boolean {
+  if (
+    value.type === "null" ||
+    !isAtomic(value) ||
+    value.length === 0 ||
+    isMissing(value, 0) ||
+    value.type === "character" ||
+    value.type === "raw"
+  ) {
+    throw new RTypeMismatchError("NRT3355", "invalid 'extra_cols' argument");
+  }
+  return value.type === "complex"
+    ? (value.real[0] ?? 0) !== 0 || (value.imaginary[0] ?? 0) !== 0
+    : numberAt(value, 0) !== 0;
+}
+
+async function flattenFileInfoPaths(
+  invocation: BuiltinInvocation,
+  arguments_: readonly BuiltinCallArgument[],
+): Promise<FlattenedFileInfoPaths> {
+  if (arguments_.length === 0) {
+    throw new RTypeMismatchError("NRT3361", "invalid filename argument");
+  }
+  const paths: string[] = [];
+  const missing: number[] = [];
+  const flattenedNames: string[] = [];
+  let hasNames = false;
+  for (const argument of arguments_) {
+    const value = await invocation.force(argument.promise);
+    if (value.type !== "character") {
+      throw new RTypeMismatchError("NRT3361", "invalid filename argument");
+    }
+    const names = vectorNames(value);
+    for (let index = 0; index < value.length; index += 1) {
+      invocation.context.checkpoint();
+      paths.push(value.values[index] ?? "");
+      missing.push(isMissing(value, index) ? 1 : 0);
+      const elementName = names?.[index] ?? "";
+      let flattenedName = elementName;
+      if (argument.name !== undefined) {
+        flattenedName =
+          elementName.length > 0
+            ? `${argument.name}.${elementName}`
+            : value.length === 1
+              ? argument.name
+              : `${argument.name}${index + 1}`;
+      }
+      flattenedNames.push(flattenedName);
+      if (flattenedName.length > 0) hasNames = true;
+    }
+  }
+  invocation.context.allocate(paths.length);
+  return { paths, missing, rowNames: hasNames ? flattenedNames : undefined };
+}
+
+function createFileInfoFrame(
+  invocation: BuiltinInvocation,
+  input: FlattenedFileInfoPaths,
+  extraColumns: boolean,
+): RList {
+  const size: number[] = [];
+  const directory: (boolean | number)[] = [];
+  const mode: number[] = [];
+  const modified: number[] = [];
+  const changed: number[] = [];
+  const accessed: number[] = [];
+  const missing: number[] = [];
+  for (let index = 0; index < input.paths.length; index += 1) {
+    invocation.context.checkpoint();
+    const info =
+      input.missing[index] === 1
+        ? undefined
+        : ownedVirtualFileInfo(invocation, input.paths[index] ?? "");
+    const absent = info === undefined;
+    missing.push(absent ? 1 : 0);
+    size.push(info?.size ?? 0);
+    directory.push(info?.directory ?? false);
+    mode.push(info?.mode ?? 0);
+    modified.push(info?.modified ?? 0);
+    changed.push(info?.changed ?? 0);
+    accessed.push(info?.accessed ?? 0);
+  }
+  const mask = compactMask(Uint8Array.from(missing));
+  const columns: RVector[] = [
+    doubleVector(size, mask),
+    logicalVector(directory, mask),
+    withClasses(integerVector(mode, mask), ["octmode"]),
+    withClasses(doubleVector(modified, mask), ["POSIXct", "POSIXt"]),
+    withClasses(doubleVector(changed, mask), ["POSIXct", "POSIXt"]),
+    withClasses(doubleVector(accessed, mask), ["POSIXct", "POSIXt"]),
+  ];
+  const names = ["size", "isdir", "mode", "mtime", "ctime", "atime"];
+  if (extraColumns) {
+    const unavailable = compactMask(Uint8Array.from({ length: input.paths.length }, () => 1));
+    columns.push(
+      integerVector(
+        Array.from({ length: input.paths.length }, () => 0),
+        unavailable,
+      ),
+      integerVector(
+        Array.from({ length: input.paths.length }, () => 0),
+        unavailable,
+      ),
+      characterVector(
+        Array.from({ length: input.paths.length }, () => ""),
+        unavailable,
+      ),
+      characterVector(
+        Array.from({ length: input.paths.length }, () => ""),
+        unavailable,
+      ),
+    );
+    names.push("uid", "gid", "uname", "grname");
+  }
+  invocation.context.allocate(columns.length * input.paths.length);
+  let frame = dataFrameValue(columns, names, input.paths);
+  let rowNames = characterVector(input.paths, compactMask(Uint8Array.from(input.missing)));
+  if (input.rowNames !== undefined) rowNames = withNames(rowNames, input.rowNames);
+  frame = withAttribute(frame, "row.names", rowNames);
+  return frame;
+}
+
+function ownedVirtualFileInfo(
+  invocation: BuiltinInvocation,
+  suppliedPath: string,
+): OwnedVirtualFileInfo | undefined {
+  let path: string;
+  try {
+    path = resolveOwnedVirtualPath(invocation, suppliedPath, "file.info");
+  } catch {
+    return undefined;
+  }
+  const state = virtualTextFileState(invocation);
+  const metadata = state.metadata.get(path);
+  const text = state.files.get(path);
+  if (text !== undefined) {
+    return virtualFileInfo(virtualTextByteLength(text), false, 0o666, metadata);
+  }
+  const binary = state.binaryFiles.get(path);
+  if (binary !== undefined) return virtualFileInfo(binary.byteLength, false, 0o666, metadata);
+  if (virtualDirectoryExists(invocation, path)) {
+    const writable = path === VIRTUAL_TEMP_ROOT || path.startsWith(`${VIRTUAL_TEMP_ROOT}/`);
+    return virtualFileInfo(0, true, writable ? 0o777 : 0o555, metadata);
+  }
+  const packageFile = invocation.packageFile(path);
+  if (packageFile === undefined) return undefined;
+  const size =
+    packageFile.encoding === "text"
+      ? virtualTextByteLength(packageFile.data)
+      : base64DecodedLength(packageFile.data);
+  return virtualFileInfo(size, false, 0o444, undefined);
+}
+
+function virtualFileInfo(
+  size: number,
+  directory: boolean,
+  mode: number,
+  metadata: VirtualFileMetadata | undefined,
+): OwnedVirtualFileInfo {
+  return {
+    size,
+    directory,
+    mode,
+    modified: metadata?.modified ?? 0,
+    changed: metadata?.changed ?? 0,
+    accessed: metadata?.accessed ?? 0,
+  };
+}
+
+function base64DecodedLength(value: string): number {
+  const padding = value.endsWith("==") ? 2 : value.endsWith("=") ? 1 : 0;
+  return (value.length / 4) * 3 - padding;
+}
+
 async function builtinDirectoryExists(invocation: BuiltinInvocation): Promise<RLogicalVector> {
   const matched = await matchExact(invocation, ["paths"]);
   const input = required(matched, "paths", "dir.exists");
@@ -6406,10 +6667,12 @@ function readVirtualTextFile(
 ): string {
   path = resolveOwnedVirtualPath(invocation, path, "readLines");
   if (path.startsWith(`${VIRTUAL_TEMP_ROOT}/`)) {
-    const source = virtualTextFileState(invocation).files.get(path);
+    const state = virtualTextFileState(invocation);
+    const source = state.files.get(path);
     if (source === undefined) {
       throw new REvaluationError("NRE2195", `Cannot open virtual text file '${path}'.`);
     }
+    touchVirtualFile(state, path, "read");
     return source;
   }
   const packageFile = invocation.packageFile(path);
@@ -6570,8 +6833,10 @@ async function builtinUnlink(invocation: BuiltinInvocation): Promise<RIntegerVec
       if (file.startsWith(prefix)) deleteVirtualFile(state, file);
     }
     for (const directory of [...state.directories]) {
-      if (directory === resolved || directory.startsWith(prefix))
+      if (directory === resolved || directory.startsWith(prefix)) {
         state.directories.delete(directory);
+        state.metadata.delete(directory);
+      }
     }
   }
   return integerVector([failed ? 1 : 0]);
@@ -6598,10 +6863,7 @@ async function builtinDget(invocation: BuiltinInvocation): Promise<RValue> {
   let path = characterScalar(required(matched, "file", "dget"), "file");
   logicalFlag(matched.get("keep.source"), false, "keep.source");
   path = requireVirtualTextPath(invocation, path, "dget");
-  const source = virtualTextFileState(invocation).files.get(path);
-  if (source === undefined) {
-    throw new REvaluationError("NRE2195", `Cannot open virtual text file '${path}'.`);
-  }
+  const source = readVirtualTextFile(invocation, path, "utf8");
   const program = invocation.parse(source);
   if (program.body.length === 0) {
     throw new REvaluationError("NRE2195", `Virtual text file '${path}' is empty.`);
@@ -6860,11 +7122,15 @@ function readVirtualBinaryFile(
   if (path.startsWith(`${VIRTUAL_TEMP_ROOT}/`)) {
     const state = virtualTextFileState(invocation);
     const binary = state.binaryFiles.get(path);
-    if (binary !== undefined) return Uint8Array.from(binary);
+    if (binary !== undefined) {
+      touchVirtualFile(state, path, "read");
+      return Uint8Array.from(binary);
+    }
     const text = state.files.get(path);
     if (text === undefined) {
       throw new REvaluationError("NRE2195", `Cannot open virtual binary file '${path}'.`);
     }
+    touchVirtualFile(state, path, "read");
     return encodeUtf8Bytes(text);
   }
   const packageFile = invocation.packageFile(path);
@@ -7136,6 +7402,8 @@ function virtualTextFileState(invocation: BuiltinInvocation): VirtualTextFileSta
     existing.binaryFiles instanceof Map &&
     "directories" in existing &&
     existing.directories instanceof Set &&
+    "metadata" in existing &&
+    existing.metadata instanceof Map &&
     "connections" in existing &&
     existing.connections instanceof Map &&
     "workingDirectory" in existing &&
@@ -7149,10 +7417,15 @@ function virtualTextFileState(invocation: BuiltinInvocation): VirtualTextFileSta
   ) {
     return existing as VirtualTextFileState;
   }
+  const createdAt = virtualFileTimestamp();
+  const metadata = new Map<string, VirtualFileMetadata>();
+  metadata.set(VIRTUAL_TEMP_ROOT, virtualFileMetadata(createdAt));
+  metadata.set(NATIVR_PACKAGE_LIBRARY_PATH, virtualFileMetadata(0));
   const created: VirtualTextFileState = {
     files: new Map(),
     binaryFiles: new Map(),
     directories: new Set([VIRTUAL_TEMP_ROOT, NATIVR_PACKAGE_LIBRARY_PATH]),
+    metadata,
     connections: new Map(),
     workingDirectory: VIRTUAL_TEMP_ROOT,
     nextId: 1,
@@ -7161,6 +7434,33 @@ function virtualTextFileState(invocation: BuiltinInvocation): VirtualTextFileSta
   };
   invocation.state.set(VIRTUAL_TEXT_FILES_STATE_KEY, created);
   return created;
+}
+
+function virtualFileTimestamp(): number {
+  return Date.now() / 1_000;
+}
+
+function virtualFileMetadata(timestamp: number): VirtualFileMetadata {
+  return { modified: timestamp, changed: timestamp, accessed: timestamp };
+}
+
+function touchVirtualFile(state: VirtualTextFileState, path: string, kind: "read" | "write"): void {
+  const timestamp = virtualFileTimestamp();
+  const existing = state.metadata.get(path);
+  state.metadata.set(
+    path,
+    kind === "read"
+      ? {
+          modified: existing?.modified ?? timestamp,
+          changed: existing?.changed ?? timestamp,
+          accessed: timestamp,
+        }
+      : {
+          modified: timestamp,
+          changed: timestamp,
+          accessed: existing?.accessed ?? timestamp,
+        },
+  );
 }
 
 function virtualMustWork(value: RValue | undefined): boolean | undefined {
@@ -7378,7 +7678,10 @@ function createVirtualDirectory(
       },
     });
   }
-  for (const directory of missing.reverse()) state.directories.add(directory);
+  for (const directory of missing.reverse()) {
+    state.directories.add(directory);
+    state.metadata.set(directory, virtualFileMetadata(virtualFileTimestamp()));
+  }
   invocation.context.allocate(missing.length);
   return true;
 }
@@ -7475,6 +7778,7 @@ function writeVirtualTextFile(invocation: BuiltinInvocation, path: string, sourc
   state.files.set(path, source);
   state.binaryFiles.delete(path);
   state.bytes = bytes;
+  touchVirtualFile(state, path, "write");
 }
 
 function writeVirtualBinaryFile(
@@ -7510,6 +7814,7 @@ function writeVirtualBinaryFile(
   state.files.delete(path);
   state.binaryFiles.set(path, stored);
   state.bytes = total;
+  touchVirtualFile(state, path, "write");
 }
 
 function deleteVirtualTextFile(state: VirtualTextFileState, path: string): void {
@@ -7522,9 +7827,11 @@ function deleteVirtualTextFile(state: VirtualTextFileState, path: string): void 
 function deleteVirtualFile(state: VirtualTextFileState, path: string): void {
   deleteVirtualTextFile(state, path);
   const binary = state.binaryFiles.get(path);
-  if (binary === undefined) return;
-  state.binaryFiles.delete(path);
-  state.bytes -= binary.byteLength;
+  if (binary !== undefined) {
+    state.binaryFiles.delete(path);
+    state.bytes -= binary.byteLength;
+  }
+  state.metadata.delete(path);
 }
 
 function destroyVirtualTextConnection(

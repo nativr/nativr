@@ -39,6 +39,10 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText('"worker-dynamic:6"');
 
+  await page.locator("#source").fill("nativrdemo::resource_size()");
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("14");
+
   await page
     .locator("#source")
     .fill(

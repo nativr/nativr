@@ -138,8 +138,9 @@ normalized AST. The runtime then provides:
 10. stable positive session identity through `Sys.getpid()` without exposing a host process;
 11. bounded immutable resource lookup through `system.file()` and text access through `readLines()`
     or session-owned file connections;
-12. browser-memory `tempdir()`/`tempfile()` paths, `file.exists()`, stateful text connections, and
-    connection-aware `readLines()`, `writeLines()`, `cat()`, and `capture.output()`;
+12. browser-memory `tempdir()`/`tempfile()` paths, `file.exists()`, `file.info()` and its metadata
+    wrappers, stateful text connections, and connection-aware `readLines()`, `writeLines()`,
+    `cat()`, and `capture.output()`;
 13. `utils::data()` discovery and loading for package `data/*.R`, `.csv`, `.tab`, and `.txt`
     resources plus GNU R XDR/gzip `.rda`/`.RData` workspaces, including target environments and
     overwrite protection;
@@ -212,6 +213,13 @@ registration replaces the previous entry, an ordinary visible `generic.class` fu
 dispatch precedence, and a failed load rolls back registrations from that attempt. The inline
 package fixture and default Worker example both execute this path, so packages using dynamic S3
 registration do not need those methods rewritten as runtime builtins.
+
+Package source may inspect bundled resources with `file.info()`, `file.size()`, `file.mode()`, or
+`file.mtime()`. The result uses exact packaged byte sizes, read-only virtual modes, classed
+timestamps, and missing rows for unavailable resources; the Playground package executes this path
+inside the default Worker. These calls never expose a developer checkout or host filesystem, and
+packages that require native owners, ACLs, links, or host-path metadata still need an explicit host
+adapter.
 
 ```sh
 $env:NATIVR_EXTERNAL_PACKAGE_SMOKE="1"

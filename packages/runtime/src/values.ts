@@ -849,8 +849,7 @@ export function isDataFrame(value: RValue): value is RList {
   return (
     classes?.type === "character" &&
     classes.values.includes("data.frame") &&
-    rowNames?.type === "character" &&
-    rowNames.missing === undefined
+    rowNames?.type === "character"
   );
 }
 

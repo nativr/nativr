@@ -420,6 +420,14 @@ owned directory, including a read-only package directory. Dot segments are norma
 allowing traversal above their root. Absolute host paths, links, permissions, mounts, and host
 working-directory state are never consulted.
 
+`file.info(..., extra_cols = TRUE)` queries only those owned roots. Its first six columns use GNU
+R's `double`, `logical`, `octmode`, and `POSIXct` shapes; unavailable paths produce missing rows and
+`file.mode`, `file.mtime`, and `file.size` select the corresponding columns. Session text and binary
+files expose exact encoded byte sizes and update evaluator-owned modification/status/access times;
+session directories use writable virtual modes. Immutable runtime/package trees use deterministic
+read-only modes and timestamps, and portable extra owner columns are `NA` because the browser has no
+host user identity. No stat call, host path, ACL, link, or ambient filesystem capability is used.
+
 `utils::read.table` and its CSV/delimited variants consume that same text layer or inline `text=`.
 The owned bounded scanner recognizes LF/CRLF/CR records, explicit or whitespace separators, quoted
 fields, doubled quotes, embedded quoted newlines, comments, skipped/blank lines, filling, headers,
