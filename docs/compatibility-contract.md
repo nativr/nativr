@@ -1522,14 +1522,19 @@ callable from an ordinary list, `force()` and `forceAndCall()` expose selective 
 Environment `$`/character-`[[` access, `get`, `get0`, `exists`, `assign`, `list2env`,
 `as.environment`, and `environmentName` cover initial binding and conversion behavior, including
 inherited lookup and GNU R's eager evaluation of an explicitly supplied `get0(ifnotfound=)` value.
-`as.list` performs custom S3 dispatch, while `as.list.environment` enumerates only local bindings,
-supports `all.names` and `sorted`, returns an attribute-free empty list when appropriate, and forces
-selected promises in result order. Non-hashed environments retain reverse binding order and hashed
-environments retain deterministic insertion order when sorting is disabled. `search()` exposes the
-deterministic standard nine-entry GNU R startup path and resets with the session. Attached-package
-lookup mutation, `attach`, `detach`, `searchpaths`, locked/active bindings, search-path environment
-mutation, exact GNU R hash-bucket order, active-binding enumeration, `do.call(quote = TRUE)`, and
-pairlist call arguments remain outside this increment. `typeof`, `mode`, `length`, `lengths`,
+Numeric and exact-name `as.environment()` selectors resolve the standard search list, with stable
+supported-export package environments and parent links. `ls` and its identical `objects` alias
+enumerate only local bindings without forcing promises, honor caller/explicit/search-list selection,
+hidden-name and pattern filtering, and deterministic sorted or unhashed order, and expose the exact
+GNU R 4.6 formals. `as.list` performs custom S3 dispatch, while `as.list.environment` enumerates
+only local bindings, supports `all.names` and `sorted`, returns an attribute-free empty list when
+appropriate, and forces selected promises in result order. Non-hashed environments retain reverse
+binding order and hashed environments retain deterministic insertion order when sorting is disabled.
+`search()` exposes the deterministic standard nine-entry GNU R startup path and resets with the
+session. Attached-package lookup mutation, `attach`, `detach`, `searchpaths`, locked/active
+bindings, search-path environment mutation, exact GNU R hash-bucket order, active-binding
+enumeration, locale collation and GNU TRE regexp edge cases, `do.call(quote = TRUE)`, and pairlist
+call arguments remain outside this increment. `typeof`, `mode`, `length`, `lengths`,
 `is.symbol`/`is.name`, `is.expression`, `is.language`, `is.call`, `is.recursive`, and the Worker
 boundary cover this value surface. Public snapshots contain only a stable name or R-like source
 string, never Tree-sitter or normalized-AST nodes. Pairlists have their own runtime and wire type,

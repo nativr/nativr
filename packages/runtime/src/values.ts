@@ -209,6 +209,8 @@ export interface BuiltinInvocation {
   systemCall(which: number): RLanguage | RNull;
   systemCommand(request: RSystemCommandRequest): Promise<RSystemCommandResult>;
   searchPath(): readonly string[];
+  searchEnvironment(identifier: number | string): REnvironment | undefined;
+  environmentName(environment: REnvironment): string | undefined;
   loadPackage(
     name: string,
     attach: boolean,

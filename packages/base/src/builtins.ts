@@ -960,6 +960,8 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   defineBuiltin("as.environment", ["x"], "behavioral", builtinAsEnvironment),
   defineBuiltin("environmentName", ["env"], "behavioral", builtinEnvironmentName),
+  defineListObjectsBuiltin("ls"),
+  defineListObjectsBuiltin("objects"),
   defineBuiltin("is.symbol", ["x"], "behavioral", (invocation) =>
     builtinTypePredicate(invocation, "is.symbol", (value) => value.type === "symbol"),
   ),
@@ -2478,6 +2480,53 @@ function withUnsupportedBehavior(
       unsupportedBehavior: Object.freeze([...unsupportedBehavior]),
     },
   };
+}
+
+function defineListObjectsBuiltin(name: "ls" | "objects"): BuiltinDefinition {
+  return withUnsupportedBehavior(
+    withBuiltinFormals(
+      defineBuiltin(
+        name,
+        ["name", "pos", "envir", "all.names", "pattern", "sorted"],
+        "behavioral",
+        builtinListObjects,
+      ),
+      [
+        { name: "name" },
+        {
+          name: "pos",
+          defaultValue: { kind: "IntegerLiteral", value: -1, span: SYNTHETIC_SPAN },
+        },
+        {
+          name: "envir",
+          defaultValue: {
+            kind: "CallExpression",
+            callee: { kind: "Identifier", name: "as.environment", span: SYNTHETIC_SPAN },
+            arguments: [
+              {
+                value: { kind: "Identifier", name: "pos", span: SYNTHETIC_SPAN },
+                span: SYNTHETIC_SPAN,
+              },
+            ],
+            span: SYNTHETIC_SPAN,
+          },
+        },
+        {
+          name: "all.names",
+          defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+        },
+        { name: "pattern" },
+        {
+          name: "sorted",
+          defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+        },
+      ],
+    ),
+    [
+      "sorting uses deterministic browser string order rather than locale collation",
+      "regular expressions use the documented browser RegExp subset",
+    ],
+  );
 }
 
 async function builtinArithmeticOperator(
@@ -10546,16 +10595,109 @@ async function builtinEnvironmentName(invocation: BuiltinInvocation): Promise<RV
   if (value.type !== "environment") {
     throw new RTypeMismatchError("NRT3215", "environmentName() requires an environment.");
   }
-  const name =
-    value === invocation.globalEnvironment()
-      ? "R_GlobalEnv"
-      : value === invocation.baseEnvironment()
-        ? "base"
-        : value === invocation.emptyEnvironment()
-          ? "R_EmptyEnv"
-          : "";
+  const name = invocation.environmentName(value) ?? "";
   invocation.context.allocate(1);
   return characterVector([name]);
+}
+
+async function builtinListObjects(invocation: BuiltinInvocation): Promise<RCharacterVector> {
+  const matched = matchLazyArguments(invocation, [
+    "name",
+    "pos",
+    "envir",
+    "all.names",
+    "pattern",
+    "sorted",
+  ]);
+  const environment = await listObjectsEnvironment(invocation, matched);
+  const allNames = await environmentListFlag(invocation, matched.get("all.names"), false);
+  const sorted = await environmentListFlag(invocation, matched.get("sorted"), true);
+  const bindingNames =
+    environment === invocation.baseEnvironment()
+      ? await invocation.namespaceExports("base")
+      : [...environment.bindings.keys()];
+  let names = [...bindingNames].filter((bindingName) => allNames || !bindingName.startsWith("."));
+  if (sorted) {
+    names.sort((left, right) => (left < right ? -1 : left > right ? 1 : 0));
+  } else if (!environment.hashed) {
+    names.reverse();
+  }
+
+  const patternArgument = matched.get("pattern");
+  if (patternArgument !== undefined) {
+    const pattern = await invocation.force(patternArgument.promise);
+    if (pattern.type !== "character" || pattern.length === 0) {
+      throw new RTypeMismatchError("NRT3255", "Invalid 'pattern' argument in ls().");
+    }
+    if (pattern.length > 1) {
+      invocation.context.warn({
+        code: "NRW1019",
+        message: "argument 'pattern' has length > 1 and only the first element will be used",
+      });
+    }
+    if (isMissing(pattern, 0)) {
+      invocation.context.allocate(names.length);
+      return characterVector(
+        names.map(() => ""),
+        names.map(() => 1),
+      );
+    }
+    const expression = compileBrowserPattern(pattern.values[0] ?? "", false, false, false);
+    names = names.filter((bindingName) => expression.test(bindingName));
+  }
+  invocation.context.allocate(names.length);
+  return characterVector(names);
+}
+
+async function listObjectsEnvironment(
+  invocation: BuiltinInvocation,
+  matched: ReadonlyMap<string, BuiltinCallArgument>,
+): Promise<REnvironment> {
+  const envirArgument = matched.get("envir");
+  if (envirArgument !== undefined) {
+    const value = await invocation.force(envirArgument.promise);
+    if (value.type !== "environment") {
+      throw new RTypeMismatchError("NRT3215", "Invalid 'envir' argument in ls().");
+    }
+    return value;
+  }
+
+  const nameArgument = matched.get("name");
+  if (nameArgument !== undefined) {
+    return listObjectsSelector(await invocation.force(nameArgument.promise), invocation, "name");
+  }
+
+  const posArgument = matched.get("pos");
+  if (posArgument === undefined) return invocation.currentEnvironment();
+  return listObjectsSelector(await invocation.force(posArgument.promise), invocation, "pos");
+}
+
+function listObjectsSelector(
+  value: RValue,
+  invocation: BuiltinInvocation,
+  argument: "name" | "pos",
+): REnvironment {
+  if (value.type === "environment" || value.type === "list") {
+    return asEnvironmentValue(value, invocation, argument);
+  }
+  if (
+    (value.type === "integer" || value.type === "double") &&
+    value.length === 1 &&
+    !isMissing(value, 0)
+  ) {
+    const position = Math.trunc(value.values[0] ?? 0);
+    if (position === -1) return invocation.currentEnvironment();
+    const environment = invocation.searchEnvironment(position);
+    if (environment !== undefined) return environment;
+    throw new REvaluationError("NRE2250", "Invalid 'pos' argument in ls().");
+  }
+  if (value.type === "character" && value.length === 1 && !isMissing(value, 0)) {
+    const searchName = value.values[0] ?? "";
+    const environment = invocation.searchEnvironment(searchName);
+    if (environment !== undefined) return environment;
+    throw new REvaluationError("NRE2251", `No item called '${searchName}' is on the search list.`);
+  }
+  throw new REvaluationError("NRE2250", `Invalid '${argument}' argument in ls().`);
 }
 
 async function forcedBindingName(
@@ -10611,19 +10753,12 @@ function asEnvironmentValue(
   ) {
     const position = Math.trunc(value.values[0] ?? 0);
     if (position === -1) return invocation.currentEnvironment();
-    if (position === 1) return invocation.globalEnvironment();
+    const environment = invocation.searchEnvironment(position);
+    if (environment !== undefined) return environment;
   }
   if (value.type === "character" && value.length === 1 && !isMissing(value, 0)) {
-    switch (value.values[0]) {
-      case ".GlobalEnv":
-      case "R_GlobalEnv":
-        return invocation.globalEnvironment();
-      case "base":
-      case "package:base":
-        return invocation.baseEnvironment();
-      case "R_EmptyEnv":
-        return invocation.emptyEnvironment();
-    }
+    const environment = invocation.searchEnvironment(value.values[0] ?? "");
+    if (environment !== undefined) return environment;
   }
   throw new RTypeMismatchError(
     "NRT3215",
@@ -13612,8 +13747,9 @@ async function builtinAsListEnvironment(invocation: BuiltinInvocation): Promise<
 async function environmentListFlag(
   invocation: BuiltinInvocation,
   argument: BuiltinCallArgument | undefined,
+  fallback = false,
 ): Promise<boolean> {
-  if (argument === undefined) return false;
+  if (argument === undefined) return fallback;
   const value = await invocation.force(argument.promise);
   if (!isAtomic(value) || value.length === 0 || isMissing(value, 0)) return false;
   if (value.type === "character") return parseRLogical(value.values[0] ?? "") ?? false;

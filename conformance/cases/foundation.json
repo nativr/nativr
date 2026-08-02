@@ -439,6 +439,38 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "ls-bindings-hidden-pattern-and-order",
+    "code": "e <- new.env(parent = emptyenv(), hash = FALSE)\ne$z <- 3L\ne$.hidden <- 4L\ne$a <- 1L\ne$a.b <- 2L\nc(identical(ls(e), c(\"a\", \"a.b\", \"z\")), identical(ls(e, all.names = TRUE, sorted = FALSE), c(\"a.b\", \"a\", \".hidden\", \"z\")), identical(ls(e, pattern = \"^a\"), c(\"a\", \"a.b\")))",
+    "expected": [true, true, true],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "ls-lazy-local-alias-and-formals",
+    "code": "tracker <- new.env()\ntracker$n <- 0L\ne <- new.env(parent = emptyenv())\ndelayedAssign(\"bad\", { tracker$n <- tracker$n + 1L; stop(\"forced\") }, assign.env = e)\nf <- function(x, ..., z = 3L) { y <- 1L; ls() }\nc(identical(ls(e), \"bad\"), tracker$n, identical(f(1L, hidden = 2L), c(\"x\", \"y\", \"z\")), identical(ls, objects), names(formals(ls)))",
+    "expected": [
+      "TRUE",
+      "0",
+      "TRUE",
+      "TRUE",
+      "name",
+      "pos",
+      "envir",
+      "all.names",
+      "pattern",
+      "sorted"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "ls-search-list-environments",
+    "code": "c(environmentName(as.environment(2)), environmentName(as.environment(\"package:stats\")), identical(as.environment(2), as.environment(\"package:stats\")), identical(as.environment(\"package:base\"), baseenv()), \"median\" %in% ls(2), environmentName(parent.env(as.environment(2))))",
+    "expected": ["package:stats", "package:stats", "TRUE", "TRUE", "TRUE", "package:graphics"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "stable-sort",
     "code": "sort(c(3, NA, 1, 2))",
     "expected": [1, 2, 3],

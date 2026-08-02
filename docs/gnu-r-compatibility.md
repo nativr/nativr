@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           574 |
-| Overlapping callable names        |           559 |
-| Missing GNU R callable names      |         1,963 |
-| Name overlap                      |       22.165% |
+| NativR registered names           |           576 |
+| Overlapping callable names        |           561 |
+| Missing GNU R callable names      |         1,961 |
+| Name overlap                      |       22.244% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -580,6 +580,15 @@ partial unit names, preserves names and attributes, and reports fractional recyc
 24-hour C-locale parsing is browser-owned; arbitrary locale-specific `%X`, named-zone date parsing,
 POSIXlt conversion, leap-second databases, and the complete difftime method/arithmetic family remain
 incomplete.
+
+The environment-introspection increment adds usage-ranked `base::ls` and its identical
+`base::objects` alias, raising current name overlap to 561 of 2,522. Rank 184 represents five
+documented calls across callr, rstan, and bit64, or 3.0% download-weighted reach. GNU R 4.6
+black-box evidence covers exact formals, caller and explicit environments, numeric and exact-name
+search-list selection, hidden bindings, deterministic sorted and unhashed order, patterns, alias
+identity, and non-forcing promise enumeration. Search-list package environments expose only NativR's
+implemented exports; browser RegExp syntax, browser string collation, active bindings, and exact
+hash-bucket enumeration remain incomplete.
 
 ## Completion evidence
 

@@ -16,7 +16,7 @@ NeedsCompilation: no`,
   namespace: `
 importFrom(stats, median)
 importFrom(utils, packageName)
-export(square, centered, duration, new_score, describe, package_state, package_name)
+export(square, centered, duration, new_score, describe, package_state, package_name, namespace_names)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -43,6 +43,7 @@ plot.score <- function(x, ..., marker = "package-plot") c(marker, sum(x), list(.
 lines.score <- function(x, ..., marker = "package-lines") c(marker, sum(x), list(...)$extra)
 package_state <- function() .package_state
 package_name <- function() packageName()
+namespace_names <- function(pattern = "") ls(envir = environment(namespace_names), pattern = pattern, all.names = TRUE)
 hidden_helper <- function(x) x + 100
 `,
     },
@@ -2311,12 +2312,17 @@ describe("complete inline source-to-result vertical slice", () => {
       ),
     ).resolves.toEqual(["2", "hours", "difftime"]);
     await expect(runtime.eval("nativrfixture::package_name()")).resolves.toBe("nativrfixture");
+    await expect(runtime.eval("nativrfixture::namespace_names('^package_')")).resolves.toEqual([
+      "package_name",
+      "package_state",
+    ]);
     await expect(runtime.eval("utils::packageName()")).resolves.toBe(null);
     await expect(runtime.eval("nativrfixture:::hidden_helper(1)")).resolves.toBe(101);
     await expect(runtime.eval("nativrfixture::hidden_helper(1)")).rejects.toMatchObject({
       code: "NRE2211",
     });
 
+    await runtime.eval("stats_environment <- as.environment(2); NULL");
     const attached = await runtime.evalDetailed("library(nativrfixture)");
     expect(attached.visible).toBe(false);
     expect(attached.value).toEqual([
@@ -2329,6 +2335,11 @@ describe("complete inline source-to-result vertical slice", () => {
       "methods",
       "base",
     ]);
+    await expect(
+      runtime.eval(
+        "c(identical(stats_environment, as.environment(3)), environmentName(as.environment(2)), packageName(as.environment(2)), 'square' %in% ls(2))",
+      ),
+    ).resolves.toEqual(["TRUE", "package:nativrfixture", "nativrfixture", "TRUE"]);
     await expect(runtime.eval("square(5)")).resolves.toBe(25);
     await expect(runtime.eval("package_state()")).resolves.toBe("attached:nativrfixture");
     await expect(runtime.eval("describe(new_score(1:3))")).resolves.toBe(
@@ -2344,6 +2355,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "centered",
       "describe",
       "duration",
+      "namespace_names",
       "new_score",
       "package_name",
       "package_state",
@@ -8735,7 +8747,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.216.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.217.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -14191,7 +14203,7 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(runtime.eval("list2env(list(extra = 5), envir = e)\ne$extra")).resolves.toBe(5);
     await expect(
       runtime.eval(
-        'c(environmentName(e), environmentName(emptyenv()), environmentName(as.environment("base")), environmentName(as.environment(-1)))',
+        'c(environmentName(e), environmentName(emptyenv()), environmentName(as.environment("package:base")), environmentName(as.environment(-1)))',
       ),
     ).resolves.toEqual(["", "R_EmptyEnv", "base", "R_GlobalEnv"]);
     await expect(
@@ -14224,7 +14236,10 @@ describe("complete inline source-to-result vertical slice", () => {
       code: "NRT3215",
     });
     await expect(runtime.eval("list2env(list(1))")).rejects.toMatchObject({ code: "NRT3215" });
-    await expect(runtime.eval("as.environment(2)")).rejects.toMatchObject({ code: "NRT3215" });
+    await expect(runtime.eval("environmentName(as.environment(2))")).resolves.toBe("package:stats");
+    await expect(runtime.eval('as.environment("base")')).rejects.toMatchObject({
+      code: "NRT3215",
+    });
     await expect(runtime.eval("environmentName(1)")).rejects.toMatchObject({ code: "NRT3215" });
     await runtime.dispose();
   });
@@ -14251,6 +14266,39 @@ describe("complete inline source-to-result vertical slice", () => {
         "e <- new.env(parent = emptyenv())\ndelayedAssign('bad', stop('promise exploded'), assign.env = e)\nas.list(e)",
       ),
     ).rejects.toMatchObject({ message: "promise exploded" });
+    await runtime.dispose();
+  });
+
+  it("lists environment bindings without forcing promises and resolves search-list environments", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(
+        "e <- new.env(parent = emptyenv(), hash = FALSE)\ne$z <- 3L\ne$.hidden <- 4L\ne$a <- 1L\ne$a.b <- 2L\nc(identical(ls(e), c('a', 'a.b', 'z')), identical(ls(e, all.names = TRUE, sorted = FALSE), c('a.b', 'a', '.hidden', 'z')), identical(ls(e, pattern = '^a'), c('a', 'a.b')), identical(ls, objects), identical(names(formals(ls)), c('name', 'pos', 'envir', 'all.names', 'pattern', 'sorted')))",
+      ),
+    ).resolves.toEqual([true, true, true, true, true]);
+    await expect(
+      runtime.eval(
+        "tracker <- new.env()\ntracker$n <- 0L\ne <- new.env(parent = emptyenv())\ndelayedAssign('bad', { tracker$n <- tracker$n + 1L; stop('forced') }, assign.env = e)\nc(identical(ls(e), 'bad'), tracker$n)",
+      ),
+    ).resolves.toEqual([1, 0]);
+    await expect(
+      runtime.eval(
+        "f <- function(x, ..., z = 3L) { y <- 1L; ls() }\nc(identical(f(1L, hidden = 2L), c('x', 'y', 'z')), environmentName(as.environment(2)), environmentName(as.environment('package:stats')), identical(as.environment(2), as.environment('package:stats')), identical(as.environment('package:base'), baseenv()), 'median' %in% ls(2), 'lines' %in% ls('package:graphics'), environmentName(parent.env(as.environment(2))))",
+      ),
+    ).resolves.toEqual([
+      "TRUE",
+      "package:stats",
+      "package:stats",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "package:graphics",
+    ]);
+    await expect(runtime.eval("ls(pos = 0)")).rejects.toMatchObject({ code: "NRE2250" });
+    await expect(runtime.eval("ls('not-on-search-list')")).rejects.toMatchObject({
+      code: "NRE2251",
+    });
     await runtime.dispose();
   });
 

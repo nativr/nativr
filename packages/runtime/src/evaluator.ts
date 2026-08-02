@@ -454,6 +454,8 @@ export class Evaluator {
   readonly #packages = new Map<string, RuntimePackageRecord>();
   readonly #packageS3Methods = new Map<string, RBinding>();
   #searchPath = [...DEFAULT_SEARCH_PATH];
+  readonly #searchEnvironments = new Map<string, REnvironment>();
+  readonly #searchEnvironmentNames = new Map<number, string>();
   #disposed = false;
   #activeCancellation: { cancelled: boolean } | undefined;
   #memoryMaxUsed = { nodeCells: 0, vectorCells: 0 };
@@ -607,6 +609,7 @@ export class Evaluator {
       record.attached = false;
     }
     this.#searchPath = [...DEFAULT_SEARCH_PATH];
+    this.#invalidateSearchEnvironments(true);
     this.#memoryMaxUsed = { nodeCells: 0, vectorCells: 0 };
     this.#memoryTrigger = { nodeCells: 0, vectorCells: 0 };
     this.#memoryCollections = 0;
@@ -624,6 +627,7 @@ export class Evaluator {
       this.#emptyEnvironment.bindings.clear();
       this.#builtinState.clear();
       this.#packageS3Methods.clear();
+      this.#invalidateSearchEnvironments(true);
       for (const record of this.#packages.values()) record.namespace?.bindings.clear();
       this.#packages.clear();
     }
@@ -1841,6 +1845,8 @@ export class Evaluator {
           return this.#systemCommand(request);
         },
         searchPath: () => Object.freeze([...this.#searchPath]),
+        searchEnvironment: (identifier) => this.#searchEnvironment(identifier),
+        environmentName: (environment) => this.#environmentName(environment),
         loadPackage: async (name, attach) => this.#loadPackage(name, attach, context),
         isNamespaceLoaded: (name) =>
           REGISTERED_NAMESPACE_EXPORTS.has(name) ||
@@ -2390,6 +2396,7 @@ export class Evaluator {
         `package:${name}`,
         ...this.#searchPath.slice(1).filter((entry) => entry !== `package:${name}`),
       ];
+      this.#attachSearchEnvironment(name);
       record.attached = true;
     }
     return { name, version: record.definition.version, namespace, record };
@@ -2451,8 +2458,7 @@ export class Evaluator {
   async #namespaceExports(name: string, context: EvaluationContext): Promise<readonly string[]> {
     const staticExports = REGISTERED_NAMESPACE_EXPORTS.get(name);
     if (staticExports !== undefined) {
-      const names =
-        staticExports === "all" ? [...this.#baseEnvironment.bindings.keys()] : [...staticExports];
+      const names = this.#registeredNamespaceExportNames(name, staticExports);
       context.allocate(names.length);
       return Object.freeze(names.sort());
     }
@@ -2555,10 +2561,108 @@ export class Evaluator {
       for (const [name, record] of this.#packages) {
         if (record.namespace === current) return name;
       }
+      const searchName = this.#searchEnvironmentNames.get(current.id);
+      if (searchName?.startsWith("package:")) return searchName.slice("package:".length);
       if (current === this.#baseEnvironment) return "base";
       current = current.parent;
     }
     return undefined;
+  }
+
+  #registeredNamespaceExportNames(name: string, exports: ReadonlySet<string> | "all"): string[] {
+    if (exports !== "all") return [...exports];
+    const names = this.#builtins
+      .filter((definition) => definition.metadata.package === name)
+      .map((definition) => definition.name);
+    if (name === "base") {
+      names.push("pi", "letters", ".Machine", ".LC.categories");
+    }
+    return [...new Set(names)];
+  }
+
+  #invalidateSearchEnvironments(clearNames = false): void {
+    this.#searchEnvironments.clear();
+    if (clearNames) this.#searchEnvironmentNames.clear();
+  }
+
+  #attachSearchEnvironment(name: string): void {
+    if (this.#searchEnvironments.size === 0) return;
+    const parentEntry = this.#searchPath[2];
+    const parent =
+      parentEntry === undefined
+        ? this.#baseEnvironment
+        : (this.#searchEnvironments.get(parentEntry) ?? this.#baseEnvironment);
+    const environment = createEnvironment(parent, true);
+    const record = this.#packages.get(name);
+    if (record?.namespace !== undefined) {
+      for (const exportedName of record.definition.exports) {
+        const binding = record.namespace.bindings.get(exportedName);
+        if (binding !== undefined) setBinding(environment, exportedName, binding);
+      }
+    }
+    const entry = `package:${name}`;
+    this.#searchEnvironments.set(entry, environment);
+    this.#searchEnvironmentNames.set(environment.id, entry);
+  }
+
+  #searchEnvironment(identifier: number | string): REnvironment | undefined {
+    let entry: string | undefined;
+    if (typeof identifier === "number") {
+      const position = Math.trunc(identifier);
+      if (!Number.isFinite(position) || position < 1 || position > this.#searchPath.length) {
+        return undefined;
+      }
+      entry = this.#searchPath[position - 1];
+    } else {
+      entry = this.#searchPath.includes(identifier) ? identifier : undefined;
+    }
+    if (entry === undefined) return undefined;
+    if (entry === ".GlobalEnv") return this.#globalEnvironment;
+    this.#ensureSearchEnvironments();
+    return this.#searchEnvironments.get(entry);
+  }
+
+  #environmentName(environment: REnvironment): string | undefined {
+    if (environment === this.#globalEnvironment) return "R_GlobalEnv";
+    if (environment === this.#baseEnvironment) return "base";
+    if (environment === this.#emptyEnvironment) return "R_EmptyEnv";
+    this.#ensureSearchEnvironments();
+    return this.#searchEnvironmentNames.get(environment.id);
+  }
+
+  #ensureSearchEnvironments(): void {
+    if (this.#searchEnvironments.size > 0) return;
+    let parent = this.#emptyEnvironment;
+    for (let index = this.#searchPath.length - 1; index >= 1; index -= 1) {
+      const entry = this.#searchPath[index];
+      if (entry === undefined) continue;
+      if (entry === "package:base") {
+        this.#searchEnvironments.set(entry, this.#baseEnvironment);
+        this.#searchEnvironmentNames.set(this.#baseEnvironment.id, "base");
+        parent = this.#baseEnvironment;
+        continue;
+      }
+      const environment = createEnvironment(parent, true);
+      if (entry.startsWith("package:")) {
+        const name = entry.slice("package:".length);
+        const staticExports = REGISTERED_NAMESPACE_EXPORTS.get(name);
+        const record = this.#packages.get(name);
+        const source = staticExports === undefined ? record?.namespace : this.#baseEnvironment;
+        const exports =
+          staticExports === undefined
+            ? (record?.definition.exports ?? [])
+            : this.#registeredNamespaceExportNames(name, staticExports);
+        if (source !== undefined) {
+          for (const exportedName of exports) {
+            const binding = source.bindings.get(exportedName);
+            if (binding !== undefined) setBinding(environment, exportedName, binding);
+          }
+        }
+      }
+      this.#searchEnvironments.set(entry, environment);
+      this.#searchEnvironmentNames.set(environment.id, entry === "package:base" ? "base" : entry);
+      parent = environment;
+    }
   }
 
   async #dispatchS3IfPresent(
@@ -2810,6 +2914,8 @@ export class Evaluator {
     }
     const colors = this.#baseEnvironment.bindings.get("colors");
     if (colors !== undefined) setBinding(this.#baseEnvironment, "colours", colors);
+    const listObjects = this.#baseEnvironment.bindings.get("ls");
+    if (listObjects !== undefined) setBinding(this.#baseEnvironment, "objects", listObjects);
     setBinding(this.#baseEnvironment, "pi", doubleVector([Math.PI]));
     setBinding(
       this.#baseEnvironment,

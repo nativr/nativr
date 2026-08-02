@@ -534,3 +534,9 @@ The usage-ranked time-interval increment adds one shared constructor, determinis
 parser, automatic unit selection, and expanded `difftime` recycling/metadata behavior without a
 timezone database or host dependency. The measured Worker is 351.8 KiB gzip, so the ceiling rises
 narrowly to 353 KiB; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.217 adds usage-ranked `ls`/`objects` and lazily materialized supported-export
+views of the search list. Enumeration copies binding references but never forces promises, adds no
+dependency or host capability, and invalidates its small environment cache only when a package is
+attached or the session resets. The measured Worker is 352.7 KiB gzip within the existing 353 KiB
+ceiling; client and parser-Wasm budgets remain unchanged.

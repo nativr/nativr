@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.216.0",
+  "languageSubsetVersion": "0.217.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -235,6 +235,8 @@
         { "name": "list2env", "compatibility": "behavioral" },
         { "name": "as.environment", "compatibility": "behavioral" },
         { "name": "environmentName", "compatibility": "behavioral" },
+        { "name": "ls", "compatibility": "behavioral" },
+        { "name": "objects", "compatibility": "behavioral" },
         { "name": "is.symbol", "compatibility": "behavioral" },
         { "name": "is.name", "compatibility": "behavioral" },
         { "name": "is.language", "compatibility": "behavioral" },

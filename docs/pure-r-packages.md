@@ -223,6 +223,15 @@ primitive, not compatibility for all of vctrs or scales; named-zone date parsing
 formats, POSIXlt conversion, native dependencies, and every other package call remain independent
 gates.
 
+Rank-184 `base::ls()` removes a namespace and call-frame introspection seam measured in callr,
+rstan, and bit64. Source-only package functions can enumerate their own closure namespace or a local
+frame, filter hidden names or a pattern, and inspect attached search-list environments without
+forcing delayed bindings. The checked-in fixture exports `namespace_names()` unchanged and executes
+it through the normal namespace loader. This is reusable package infrastructure, not a claim that
+rstan's native code or every package metaprogramming pattern is supported; active bindings, exact
+hash-bucket order, locale collation, and the full package/search-path mutation API remain separate
+gates.
+
 Rank-166 `utils::browseURL()` supplies the same package-independent report/viewer seam for the
 measured xfun, htmltools, knitr, and httpuv calls. Unchanged package code can write HTML, SVG, PNG,
 or another asset to a session-local path and request that the embedding application present it. The

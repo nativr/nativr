@@ -11,7 +11,7 @@ Date: 2026-08-01
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 574 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 576 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Character vectors own exact per-element bytes and canonical `unknown`/`latin1`/`UTF-8`/`bytes`
@@ -36,15 +36,21 @@ Date: 2026-08-01
   attributes. The connected `difftime` path adds automatic/minute/hour/week units, partial unit
   matching, name retention, and fractional-recycling warnings; named-zone date parsing, arbitrary
   locale `%X`, POSIXlt conversion, and the complete difftime method family remain incomplete.
+- Usage-ranked `ls` plus its identical `objects` alias enumerate local bindings without forcing lazy
+  promises, including hidden-name filtering, patterns, sorted/unhashed ordering, exact GNU R 4.6
+  formals, caller frames, and numeric or named search-list environments. This lets unchanged pure-R
+  package code inspect its namespace and local call frames. Browser regular expressions, locale
+  collation, active bindings, and exact hash-bucket order remain bounded compatibility surfaces.
 - Native and magrittr-style pipes, richer normalized formulas, registered namespaces, S3 dispatch,
   bounded S4 registration, R6 construction, and vctrs class construction.
 - Owned symbol/language/expression values, non-forcing `quote()`/`expression()`, bounded
   normalized-AST `eval()`/`substitute()`, canonical `match.call()` reconstruction, initial call
   construction/deparsing, language predicates, and stable public snapshots without parser-node
   exposure.
-- Explicit global/base/empty/current/closure environments, child creation, parent traversal, and
-  lexical evaluation, plus mutable `$`/`[[` bindings, lookup, assignment, existence checks, list
-  conversion, environment naming, delayed bindings, and explicit promise forcing.
+- Explicit global/base/empty/current/closure and named search-list environments, child creation,
+  parent traversal, and lexical evaluation, plus mutable `$`/`[[` bindings, lookup, assignment,
+  existence checks, list conversion, environment naming, delayed bindings, and explicit promise
+  forcing.
 - Owned pairlists with tags, type/mode/predicate behavior, list/vector/expression coercion,
   constructor mode, indexing, replacement type transitions, attributes, classes, dimensions,
   dimension names, Worker transport, and non-forcing `alist()` syntax capture.

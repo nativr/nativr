@@ -574,6 +574,13 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      unit names, result names, and fractional-recycling warnings. Locale-specific `%X`, named-zone
      date parsing, POSIXlt conversion, leap-second databases, and the complete difftime method and
      arithmetic family remain date-time compatibility depth.
+135. Usage-ranked environment introspection: rank-184 `base::ls` now runs all five measured calls
+     across callr, rstan, and bit64, with an identical `objects` alias, exact GNU R 4.6 formals,
+     caller/explicit/search-list environment selection, hidden-name and pattern filtering,
+     deterministic ordering, and non-forcing binding enumeration. A source-only package fixture
+     exercises the same implementation inside its namespace. Active bindings, exact hash-bucket
+     order, locale collation, browser/GNU regexp differences, and search-path mutation remain
+     environment compatibility depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means
