@@ -135,6 +135,13 @@ redirect targets, bound response time and size, and avoid forwarding secrets to 
 destinations. The Playground adapter serves one embedded allow-listed fixture and performs no
 network request.
 
+`unz()` grants neither network nor filesystem authority. It reads only bytes already admitted as an
+immutable package resource or session-owned file, locates one exact member without path extraction,
+and rejects encrypted, multi-disk, ZIP64, malformed, unsupported, over-count, over-size, or
+CRC-mismatched archives. Central/local offsets and decompressed output are checked against evaluator
+limits before the result enters the private connection store; member names are never interpreted as
+paths, so traversal text cannot create or overwrite a file.
+
 PNG and PDF output is encoded from the bounded NativR graphics journal into the session-owned
 virtual file store. The encoders do not invoke native libraries, load fonts, read host files, fetch
 resources, evaluate generated code, or expose DOM objects. Raster dimensions, journal growth,

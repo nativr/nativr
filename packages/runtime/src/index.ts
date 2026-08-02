@@ -34,6 +34,7 @@ export { deparseAst } from "./language.js";
 export {
   compressGzipBytes,
   decodeRBase64Resource,
+  decompressDeflateRawBytes,
   decompressGzipBytes,
   decodeRSerialization,
   decodeRSerializationFile,

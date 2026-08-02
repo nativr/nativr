@@ -243,8 +243,25 @@ export async function decompressGzipBytes(
   bytes: Uint8Array,
   context: OperatorContext,
 ): Promise<Uint8Array> {
+  return decompressBrowserStreamBytes(bytes, context, "gzip", "gzip");
+}
+
+/** Decompress one bounded raw-DEFLATE stream, as used by ordinary ZIP members. */
+export async function decompressDeflateRawBytes(
+  bytes: Uint8Array,
+  context: OperatorContext,
+): Promise<Uint8Array> {
+  return decompressBrowserStreamBytes(bytes, context, "deflate-raw", "ZIP member");
+}
+
+async function decompressBrowserStreamBytes(
+  bytes: Uint8Array,
+  context: OperatorContext,
+  format: "gzip" | "deflate-raw",
+  label: string,
+): Promise<Uint8Array> {
   if (bytes.byteLength > context.limits.maxOutputBytes) {
-    throw new RResourceLimitError("NRL4007", "Compressed gzip input limit exceeded.", {
+    throw new RResourceLimitError("NRL4007", `Compressed ${label} input limit exceeded.`, {
       details: { maxOutputBytes: context.limits.maxOutputBytes, outputBytes: bytes.byteLength },
     });
   }
@@ -262,17 +279,17 @@ export async function decompressGzipBytes(
   if (host.Blob === undefined || host.DecompressionStream === undefined) {
     throw new RUnsupportedFeatureError(
       "NRU6192",
-      "gzip decompression requires the browser DecompressionStream API.",
+      `${label} decompression requires the browser DecompressionStream API.`,
     );
   }
   let reader: Reader;
   try {
     reader = new host.Blob([bytes])
       .stream()
-      .pipeThrough(new host.DecompressionStream("gzip"))
+      .pipeThrough(new host.DecompressionStream(format))
       .getReader();
   } catch {
-    throw new REvaluationError("NRE2247", "Cannot open gzip-compressed data.");
+    throw new REvaluationError("NRE2247", `Cannot open compressed ${label} data.`);
   }
   const chunks: Uint8Array[] = [];
   let length = 0;
@@ -285,7 +302,7 @@ export async function decompressGzipBytes(
       length += chunk.value.byteLength;
       if (length > context.limits.maxOutputBytes) {
         await reader.cancel("limit");
-        throw new RResourceLimitError("NRL4007", "Decompressed gzip data limit exceeded.", {
+        throw new RResourceLimitError("NRL4007", `Decompressed ${label} data limit exceeded.`, {
           details: { maxOutputBytes: context.limits.maxOutputBytes, outputBytes: length },
         });
       }
@@ -293,7 +310,7 @@ export async function decompressGzipBytes(
     }
   } catch (error) {
     if (error instanceof RResourceLimitError) throw error;
-    throw new REvaluationError("NRE2247", "Invalid gzip-compressed data.");
+    throw new REvaluationError("NRE2247", `Invalid compressed ${label} data.`);
   }
   context.allocate(length);
   const output = new Uint8Array(length);

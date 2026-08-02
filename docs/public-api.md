@@ -152,14 +152,15 @@ constraints, S3 registrations, `.onLoad()`, and `.onAttach()` use the runtime's 
 closure model. `system.file()` returns opaque `nativr://package/...` paths for immutable package
 metadata, retained R source, and packaged resources; `readLines()` and read-only `file()`
 connections can read their text, and `gzcon()` can unwrap packaged gzip bytes, without granting
-host-filesystem or network access. `reset()` unloads and detaches packages while retaining the
-supplied catalog so later namespace access can load it again. `utils::data()` discovers direct
-package `data/*.R`, `.csv`, `.tab`, `.txt`, `.rda`, and `.RData` resources and loads them into the
-requested R environment. `.R` scripts use the package's declared UTF-8/Latin-1 encoding and the
-ordinary normalized-AST evaluator; binary workspaces use the bounded GNU R XDR v2/v3 and gzip
-decoder. A packaged `R/sysdata.rda` is loaded into its namespace before R source evaluation.
-Installed `.rdx`/`.rdb` lazy-load databases and unsupported serialized object types/compressors
-remain explicit boundaries.
+host-filesystem or network access. `unz()` can likewise expose one bounded stored/DEFLATE member of
+a packaged or session-owned ZIP through the ordinary connection readers without extracting it.
+`reset()` unloads and detaches packages while retaining the supplied catalog so later namespace
+access can load it again. `utils::data()` discovers direct package `data/*.R`, `.csv`, `.tab`,
+`.txt`, `.rda`, and `.RData` resources and loads them into the requested R environment. `.R` scripts
+use the package's declared UTF-8/Latin-1 encoding and the ordinary normalized-AST evaluator; binary
+workspaces use the bounded GNU R XDR v2/v3 and gzip decoder. A packaged `R/sysdata.rda` is loaded
+into its namespace before R source evaluation. Installed `.rdx`/`.rdb` lazy-load databases and
+unsupported serialized object types/compressors remain explicit boundaries.
 
 `@nativr/package-tools` is the build-time installer for standard source directories, `.tar.gz`
 archives, and CRAN-like repositories. It resolves required dependencies and emits integrity-locked

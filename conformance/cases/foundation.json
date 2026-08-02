@@ -8581,6 +8581,36 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "unz-connection-usage-ranked-formals-class-summary-and-lazy-close",
+    "code": "f <- formals(unz)\ncon <- unz(\"nativr-missing.zip\", \"member.txt\")\ndetails <- summary(con)\nclosed <- withVisible(close(con))\nc(class(con), names(f), details$class, details$mode, details$opened, details[[\"can read\"]], details[[\"can write\"]], identical(f$open, \"\"), identical(f$encoding, quote(getOption(\"encoding\"))), is.null(closed$value), closed$visible)",
+    "expected": [
+      "unz",
+      "connection",
+      "description",
+      "filename",
+      "open",
+      "encoding",
+      "unz",
+      "r",
+      "closed",
+      "yes",
+      "yes",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "FALSE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "unz-connection-usage-ranked-scalar-coercion-and-constructor-boundaries",
+    "code": "description <- function(archive, member) { con <- unz(archive, member); on.exit(close(con)); summary(con)$description }\nc(description(1, TRUE), description(NA, factor(\"x\")), inherits(try(unz(character(), character()), silent = TRUE), \"try-error\"), inherits(try(unz(NULL, NULL), silent = TRUE), \"try-error\"), inherits(try(unz(c(\"a\", \"b\"), \"x\"), silent = TRUE), \"try-error\"), inherits(try(unz(\"a\", c(\"x\", \"y\")), silent = TRUE), \"try-error\"), inherits(try(unz(\"a\", \"x\", c(\"r\", \"rb\")), silent = TRUE), \"try-error\"), inherits(try(unz(\"a\", \"x\", \"w+\"), silent = TRUE), \"try-error\"), inherits(try(unz(\"a\", \"x\", \"a+\"), silent = TRUE), \"try-error\"))",
+    "expected": ["1:TRUE", "NA:x", "TRUE", "TRUE", "TRUE", "TRUE", "TRUE", "TRUE", "TRUE"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "source-usage-ranked-text-connection-local-return-visibility-and-formals",
     "code": "load_local <- function() { con <- textConnection(c(\"x <- 1L\", \"x + 2L\")); on.exit(close(con)); sourced <- withVisible(source(con, local = TRUE)); c(sourced$value$value, sourced$value$visible, sourced$visible, x) }\ncon <- textConnection(\"1 + 1\")\nclasses <- class(con)\nclose(con)\nc(load_local(), exists(\"x\", globalenv(), inherits = FALSE), classes, names(formals(textConnection)), names(formals(source)))",
     "expected": [

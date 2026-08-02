@@ -91,15 +91,16 @@ console.log(await r.eval('c(class(stdout()), isOpen(stdout(), "write"), isatty(s
 The loader supports isolated namespaces, dependency/import loading and version checks, package
 metadata/source/resources through virtual `system.file()` paths, classed `packageDescription()`
 queries, bounded `readLines()`, standard stdout/stderr connections, read-only `file()` connections,
-input `textConnection()` plus `source()` into selected environments, package `data/*.R`/text/`.rda`
-loading through `data()`, and `R/sysdata.rda` namespace initialization, installed vignette discovery
-through `vignette()`, plus exports, `pkg::name`, `pkg:::name`, S3 registrations, `.onLoad()`,
-`.onAttach()`, `library()`, `require()`, and `requireNamespace()` in inline and Worker execution.
-Arbitrary pure-R source packages can enter this pipeline, but that is not a claim that every package
-already executes: all dependencies, data formats, namespace directives, and R features it uses must
-also be supported. Unchanged, digest-pinned `pkgconfig 2.0.3`, `generics 0.1.4`, and `withr 3.0.3`
-source packages now provide end-to-end external proofs: package resources, package-owned S3
-dispatch, and generated state-restoring wrappers all execute without patching the packages. See the
+stored/DEFLATE ZIP-member resources through read-only `unz()` connections, input `textConnection()`
+plus `source()` into selected environments, package `data/*.R`/text/`.rda` loading through `data()`,
+and `R/sysdata.rda` namespace initialization, installed vignette discovery through `vignette()`,
+plus exports, `pkg::name`, `pkg:::name`, S3 registrations, `.onLoad()`, `.onAttach()`, `library()`,
+`require()`, and `requireNamespace()` in inline and Worker execution. Arbitrary pure-R source
+packages can enter this pipeline, but that is not a claim that every package already executes: all
+dependencies, data formats, namespace directives, and R features it uses must also be supported.
+Unchanged, digest-pinned `pkgconfig 2.0.3`, `generics 0.1.4`, and `withr 3.0.3` source packages now
+provide end-to-end external proofs: package resources, package-owned S3 dispatch, and generated
+state-restoring wrappers all execute without patching the packages. See the
 [complete bundle example](examples/pure-r-package.ts) and
 [package-loading contract](docs/pure-r-packages.md).
 

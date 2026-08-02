@@ -267,6 +267,13 @@ stdout bytes into the record, while a write buffers bytes and submits exact text
 connection consumers then operate without knowing about Worker transport or processes. No new wire
 event, shell, executable search, host file, or package-specific execution backend is introduced.
 
+ZIP-member connections compose the same store without another filesystem or package backend.
+`base::unz()` keeps an archive path plus exact member name in a lazy record, validates a bounded
+single-disk non-ZIP64 central directory, and copies a stored or raw-DEFLATE member into its private
+byte file after size and CRC checks. Package resources and session files therefore feed the same
+line/raw/source/table/serialization/gzip consumers; no entry is extracted to a path and no new
+Worker protocol event is required.
+
 The PNG device composes existing owned seams instead of introducing a host renderer. A numbered
 device records the same normalized graphics events used by Worker callbacks and replay plots; a
 DOM-free software rasterizer converts those events to RGBA; an independent PNG encoder writes

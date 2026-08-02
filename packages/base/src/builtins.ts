@@ -153,6 +153,7 @@ import {
 import { WEIGHTED_MEAN_BUILTIN_SPECS } from "./weighted-mean.js";
 import { renderGraphicsPng } from "./png-device.js";
 import { renderGraphicsPdf } from "./pdf-device.js";
+import { extractZipMember } from "./zip.js";
 
 const SYNTHETIC_SPAN: SourceSpan = Object.freeze({
   start: Object.freeze({ offset: 0, line: 1, column: 1 }),
@@ -437,6 +438,15 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     defineBuiltin("pipe", ["description", "open", "encoding"], "behavioral", builtinPipe),
     [
       { name: "description" },
+      { name: "open", defaultValue: { kind: "StringLiteral", value: "", span: SYNTHETIC_SPAN } },
+      { name: "encoding", defaultValue: getOptionDefaultAst("encoding") },
+    ],
+  ),
+  withBuiltinFormals(
+    defineBuiltin("unz", ["description", "filename", "open", "encoding"], "behavioral", builtinUnz),
+    [
+      { name: "description" },
+      { name: "filename" },
       { name: "open", defaultValue: { kind: "StringLiteral", value: "", span: SYNTHETIC_SPAN } },
       { name: "encoding", defaultValue: getOptionDefaultAst("encoding") },
     ],
@@ -3275,6 +3285,7 @@ interface VirtualTextConnection {
   gzip?: VirtualGzipConnection;
   url?: { readonly request: RUrlRequest; loaded: boolean };
   pipe?: VirtualPipeConnection;
+  zip?: VirtualZipMemberConnection;
 }
 
 interface VirtualPipeConnection {
@@ -3288,6 +3299,12 @@ interface VirtualGzipConnection {
   readonly allowNonCompressed: boolean;
   contents?: Uint8Array;
   dirty: boolean;
+}
+
+interface VirtualZipMemberConnection {
+  readonly archiveDescription: string;
+  readonly filename: string;
+  loaded: boolean;
 }
 
 interface GraphicsState {
@@ -6372,6 +6389,89 @@ async function builtinPipe(invocation: BuiltinInvocation): Promise<RIntegerVecto
   return handle;
 }
 
+async function builtinUnz(invocation: BuiltinInvocation): Promise<RIntegerVector> {
+  const matched = await matchExact(invocation, ["description", "filename", "open", "encoding"]);
+  const description = unzCharacterScalar(required(matched, "description", "unz"));
+  const filename = unzCharacterScalar(required(matched, "filename", "unz"));
+  if (description.includes("\0") || filename.includes("\0")) {
+    throw new RTypeMismatchError("NRT3406", "embedded nul in string");
+  }
+  const encoding = virtualTextEncoding(matched.get("encoding"), "unz");
+  const requested = virtualConnectionMode(matched.get("open"), "r", "unz");
+  if (requested.mode !== "r" && requested.mode !== "r+") {
+    warnUnzReadOnly(invocation);
+    throw new REvaluationError("NRE2250", "cannot open the connection");
+  }
+
+  const state = virtualTextFileState(invocation);
+  if (virtualUserConnectionCount(state) >= invocation.context.limits.maxVectorLength) {
+    throw new RResourceLimitError("NRL4002", "Virtual connection count limit exceeded.", {
+      details: {
+        maxVectorLength: invocation.context.limits.maxVectorLength,
+        requested: virtualUserConnectionCount(state) + 1,
+      },
+    });
+  }
+  if (!Number.isSafeInteger(state.nextConnectionId) || state.nextConnectionId > 2_147_483_647) {
+    throw new RResourceLimitError("NRL4002", "Virtual connection identifier limit exceeded.");
+  }
+
+  const id = state.nextConnectionId;
+  state.nextConnectionId += 1;
+  const path = nextVirtualTempPath(state, "unz-connection-", ".bin");
+  invocation.context.allocate(1);
+  const handle = withClasses(integerVector([id]), ["unz", "connection"]);
+  const connection: VirtualTextConnection = {
+    id,
+    handle,
+    description: `${description}:${filename}`,
+    path,
+    packageFile: false,
+    privateFile: true,
+    blocking: true,
+    encoding,
+    open: false,
+    mode: "r",
+    displayMode: "r",
+    text: "text",
+    cursor: 0,
+    zip: { archiveDescription: description, filename, loaded: false },
+  };
+  state.connections.set(id, connection);
+  if (requested.specified) {
+    try {
+      await ensureZipConnection(invocation, connection);
+      openVirtualTextConnection(invocation, connection, requested, false);
+    } catch (error) {
+      destroyVirtualTextConnection(state, connection);
+      throw error;
+    }
+  }
+  return handle;
+}
+
+function unzCharacterScalar(value: RValue): string {
+  if (isAtomic(value)) {
+    if (value.length !== 1) {
+      throw new RTypeMismatchError("NRT3412", "invalid 'description' argument");
+    }
+    if (isMissing(value, 0)) return "NA";
+    if (isFactor(value)) return factorLevels(value)[(value.values[0] ?? 0) - 1] ?? "";
+    return stringAt(value, 0);
+  }
+  if ((value.type === "list" || value.type === "pairlist") && value.length === 1) {
+    return unzCharacterScalar(value.values[0] ?? R_NULL);
+  }
+  throw new RTypeMismatchError("NRT3412", "invalid 'description' argument");
+}
+
+function warnUnzReadOnly(invocation: BuiltinInvocation): void {
+  invocation.context.warn({
+    code: "NRW1138",
+    message: "unz connections can only be opened for reading",
+  });
+}
+
 async function builtinUrl(invocation: BuiltinInvocation): Promise<RIntegerVector> {
   const matched = await matchExact(invocation, [
     "description",
@@ -6696,7 +6796,49 @@ async function ensureInputConnection(
   connection: VirtualTextConnection,
 ): Promise<void> {
   await ensureUrlConnection(invocation, connection);
+  await ensureZipConnection(invocation, connection);
   if (virtualConnectionCanRead(connection.mode)) await ensurePipeConnection(invocation, connection);
+}
+
+async function ensureZipConnection(
+  invocation: BuiltinInvocation,
+  connection: VirtualTextConnection,
+): Promise<void> {
+  const zip = connection.zip;
+  if (zip === undefined) return;
+  const state = virtualTextFileState(invocation);
+  if (zip.loaded && connection.open) return;
+  if (zip.loaded) {
+    deleteVirtualFile(state, connection.path);
+    zip.loaded = false;
+  }
+  let archive: Uint8Array;
+  try {
+    archive = readVirtualBinaryFile(invocation, zip.archiveDescription, "unz");
+  } catch (error) {
+    if (error instanceof NativRError && error.code === "NRE2195") {
+      invocation.context.warn({
+        code: "NRW1138",
+        message: `cannot open zip file '${zip.archiveDescription}'`,
+      });
+      throw new REvaluationError("NRE2250", "cannot open the connection");
+    }
+    throw error;
+  }
+  try {
+    const member = await extractZipMember(archive, zip.filename, invocation.context);
+    writeVirtualBinaryFile(invocation, connection.path, member);
+    zip.loaded = true;
+  } catch (error) {
+    if (error instanceof NativRError && error.code === "NRE2257") {
+      invocation.context.warn({
+        code: "NRW1138",
+        message: `cannot locate file '${zip.filename}' in zip file '${zip.archiveDescription}'`,
+      });
+      throw new REvaluationError("NRE2250", "cannot open the connection");
+    }
+    throw error;
+  }
 }
 
 async function builtinTextConnection(invocation: BuiltinInvocation): Promise<RIntegerVector> {
@@ -6773,7 +6915,7 @@ async function builtinGzcon(invocation: BuiltinInvocation): Promise<RIntegerVect
   );
   const text = coercibleLogicalFlag(matched.get("text"), false, "text");
   const canRead = virtualConnectionCanRead(connection.mode);
-  const canWrite = virtualConnectionCanWrite(connection.mode);
+  const canWrite = virtualConnectionCanWriteRecord(connection);
   if (canRead && canWrite) {
     throw new REvaluationError("NRE2249", "can only use read- or write- binary connections");
   }
@@ -7308,7 +7450,7 @@ async function builtinCloseAllConnections(invocation: BuiltinInvocation): Promis
     if (
       connection.pipe !== undefined &&
       !connection.pipe.executed &&
-      virtualConnectionCanWrite(connection.mode)
+      virtualConnectionCanWriteRecord(connection)
     ) {
       await executePipeWriteConnection(invocation, connection);
     }
@@ -7329,6 +7471,10 @@ async function builtinOpen(invocation: BuiltinInvocation): Promise<RValue> {
       "NRU6206",
       "pipe() currently supports one-way read or write connections.",
     );
+  }
+  if (connection.zip !== undefined && mode.mode !== "r" && mode.mode !== "r+") {
+    warnUnzReadOnly(invocation);
+    throw new REvaluationError("NRE2250", "cannot open the connection");
   }
   if (virtualConnectionCanRead(mode.mode)) await ensureInputConnection(invocation, connection);
   connection.blocking = coercibleLogicalFlag(
@@ -7355,11 +7501,12 @@ async function builtinClose(invocation: BuiltinInvocation): Promise<RValue> {
   }
   const state = virtualTextFileState(invocation);
   const wasOpen = connection.open;
+  const wasZip = connection.zip !== undefined;
   await finalizeGzipConnection(invocation, connection);
   if (
     connection.pipe !== undefined &&
     !connection.pipe.executed &&
-    virtualConnectionCanWrite(connection.mode)
+    virtualConnectionCanWriteRecord(connection)
   ) {
     await executePipeWriteConnection(invocation, connection);
   }
@@ -7367,6 +7514,7 @@ async function builtinClose(invocation: BuiltinInvocation): Promise<RValue> {
   const pipeStatus = connection.pipe?.status;
   destroyVirtualTextConnection(state, connection);
   if (pipeStatus !== undefined) return pipeExecuted === true ? integerVector([pipeStatus]) : R_NULL;
+  if (wasZip) return R_NULL;
   return wasOpen ? integerVector([0]) : R_NULL;
 }
 
@@ -7384,7 +7532,7 @@ async function builtinIsOpen(invocation: BuiltinInvocation): Promise<RLogicalVec
     connection.open &&
     (access === "" ||
       (access === "read" && virtualConnectionCanRead(connection.mode)) ||
-      (access === "write" && virtualConnectionCanWrite(connection.mode)));
+      (access === "write" && virtualConnectionCanWriteRecord(connection)));
   invocation.context.allocate(1);
   return logicalVector([result]);
 }
@@ -7395,7 +7543,7 @@ async function builtinSeek(invocation: BuiltinInvocation): Promise<RDoubleVector
   if (connection.standard !== undefined) {
     throw new REvaluationError("NRE2252", "'seek' not enabled for this connection");
   }
-  if (connection.pipe !== undefined) {
+  if (connection.pipe !== undefined || connection.zip !== undefined) {
     throw new REvaluationError("NRE2252", "'seek' not enabled for this connection");
   }
   if (!connection.open) throw new REvaluationError("NRE2239", "connection is not open");
@@ -7403,7 +7551,7 @@ async function builtinSeek(invocation: BuiltinInvocation): Promise<RDoubleVector
   if (access === "read" && !virtualConnectionCanRead(connection.mode)) {
     throw new REvaluationError("NRE2240", "connection is not open for reading");
   }
-  if (access === "write" && !virtualConnectionCanWrite(connection.mode)) {
+  if (access === "write" && !virtualConnectionCanWriteRecord(connection)) {
     throw new REvaluationError("NRE2240", "connection is not open for writing");
   }
 
@@ -8170,7 +8318,7 @@ async function builtinWriteLines(invocation: BuiltinInvocation): Promise<RValue>
   if (isVirtualTextConnectionHandle(connectionValue)) {
     const connection = requireVirtualTextConnection(invocation, connectionValue);
     if (connection.open) {
-      if (!virtualConnectionCanWrite(connection.mode)) {
+      if (!virtualConnectionCanWriteRecord(connection)) {
         throw new REvaluationError("NRE2240", "cannot write to this connection");
       }
       writeVirtualTextConnection(invocation, connection, source);
@@ -8336,6 +8484,10 @@ function virtualConnectionCanWrite(mode: VirtualTextConnectionMode): boolean {
   return mode === "w" || mode === "a" || mode.endsWith("+");
 }
 
+function virtualConnectionCanWriteRecord(connection: VirtualTextConnection): boolean {
+  return connection.zip === undefined && virtualConnectionCanWrite(connection.mode);
+}
+
 function virtualConnectionAccess(value: RValue | undefined, call: string): "" | "read" | "write" {
   if (value === undefined) return "";
   const requested = virtualConnectionCharacter(value, "rw", call);
@@ -8408,6 +8560,10 @@ function openVirtualTextConnection(
       "pipe() currently supports one-way read or write connections.",
     );
   }
+  if (connection.zip !== undefined && requested.mode !== "r" && requested.mode !== "r+") {
+    warnUnzReadOnly(invocation);
+    throw new REvaluationError("NRE2250", "cannot open the connection");
+  }
   const canRead = virtualConnectionCanRead(requested.mode);
   const canWrite = virtualConnectionCanWrite(requested.mode);
   if (canWrite && connection.url !== undefined) {
@@ -8460,6 +8616,9 @@ async function writeClosedVirtualTextConnection(
   if (connection.url !== undefined) {
     throw new RUnsupportedFeatureError("NRU6197", "url() connections are read-only.");
   }
+  if (connection.zip !== undefined) {
+    throw new REvaluationError("NRE2240", "cannot write to this connection");
+  }
   if (connection.pipe !== undefined) {
     connection.pipe.executed = false;
     connection.pipe.status = 0;
@@ -8492,6 +8651,9 @@ function writeVirtualTextConnection(
   }
   if (connection.url !== undefined) {
     throw new RUnsupportedFeatureError("NRU6197", "url() connections are read-only.");
+  }
+  if (connection.zip !== undefined) {
+    throw new REvaluationError("NRE2240", "cannot write to this connection");
   }
   if (connection.gzip !== undefined) {
     writeGzipConnectionBytes(
@@ -8535,8 +8697,11 @@ async function writeVirtualTextTarget(
         `${call}() cannot write to a url() connection.`,
       );
     }
+    if (connection.zip !== undefined) {
+      throw new REvaluationError("NRE2240", "cannot write to this connection");
+    }
     if (connection.open) {
-      if (!virtualConnectionCanWrite(connection.mode)) {
+      if (!virtualConnectionCanWriteRecord(connection)) {
         throw new REvaluationError("NRE2240", "cannot write to this connection");
       }
       writeVirtualTextConnection(invocation, connection, source);
@@ -8971,6 +9136,9 @@ async function writeSerializationTarget(
         `${call}() cannot write to a url() connection.`,
       );
     }
+    if (connection.zip !== undefined) {
+      throw new REvaluationError("NRE2240", "cannot write to this connection");
+    }
     if (connection.packageFile) {
       throw new RUnsupportedFeatureError(
         "NRU6181",
@@ -8978,7 +9146,7 @@ async function writeSerializationTarget(
       );
     }
     if (connection.open) {
-      if (!virtualConnectionCanWrite(connection.mode)) {
+      if (!virtualConnectionCanWriteRecord(connection)) {
         throw new REvaluationError("NRE2240", "cannot write to this connection");
       }
       if (connection.text !== "binary") {
@@ -37701,7 +37869,7 @@ function virtualConnectionSummaryFields(
     ? virtualConnectionCanRead(connection.mode)
     : virtualTextFileExists(invocation, connection.path) || !connection.packageFile;
   const canWrite = connection.open
-    ? virtualConnectionCanWrite(connection.mode)
+    ? virtualConnectionCanWriteRecord(connection)
     : !connection.packageFile && connection.url === undefined;
   return {
     description: connection.description,
@@ -37712,9 +37880,11 @@ function virtualConnectionSummaryFields(
           ? "pipe"
           : connection.gzip !== undefined
             ? "gzcon"
-            : connection.url === undefined
-              ? "file"
-              : `url-${connection.url.request.method === "default" ? "libcurl" : connection.url.request.method}`,
+            : connection.zip !== undefined
+              ? "unz"
+              : connection.url === undefined
+                ? "file"
+                : `url-${connection.url.request.method === "default" ? "libcurl" : connection.url.request.method}`,
     mode: connection.displayMode,
     text: connection.text,
     isopen: connection.open ? "opened" : "closed",

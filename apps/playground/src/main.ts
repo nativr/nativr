@@ -82,6 +82,11 @@ twice_mean(c(1, 2, 6))`,
     code: "nativrdemo::package_summary()",
   },
   {
+    id: "package-archive",
+    label: "Pure-R package ZIP member",
+    code: 'nativrdemo::archive_lines("notes.txt")',
+  },
+  {
     id: "standard-output",
     label: "Standard output connection",
     code: "nativrdemo::standard_output()",

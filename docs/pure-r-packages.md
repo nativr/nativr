@@ -208,6 +208,9 @@ normalized AST. The runtime then provides:
 23. lazy one-way `base::pipe()` connections over an explicit `createR({ systemCommand })` policy,
     reusable by unchanged package line/raw/source/table/serialization reads and exact buffered text
     writes without granting an ambient browser shell.
+24. read-only `base::unz()` connections for exact stored or DEFLATE members in immutable package
+    resources or session-owned ZIP files, reusable by the existing line/raw/source/table/
+    serialization stack without extracting paths or granting host-filesystem access.
 
 Package source, metadata, resource counts, and encoded bytes are bounded before parsing. Package
 evaluation then consumes the ordinary step, call-depth, allocation, and output budgets.
@@ -384,6 +387,13 @@ Worker execution and reuses the shared line/raw/table/serialization consumers. T
 package-specific TypeScript rewrite for the measured jsonlite call and future packages using the
 same shape. It does not make arbitrary commands, duplex streams, native tools, or shell behavior
 available: each embedding application must admit exact commands, and omitted policies fail closed.
+
+Rank-314 `base::unz()` supplies a package-independent archive-resource seam. Unchanged source-only
+packages can keep calls such as `readLines(unz(system.file(...), "member.txt"))`; NativR resolves
+one exact member, checks its bounds and CRC, and feeds copied bytes into the ordinary connection
+consumers. This is also reusable after `download.file()` writes a ZIP to the session tree. It is not
+runtime `install.packages()`: dependency resolution and source-package admission remain the
+deterministic build-time installer's responsibility.
 
 Rank-293 `base::Sys.which()` lets pure-R packages perform those presence checks without translating
 their R source or probing the embedding machine. `createR({ executablePaths })` supplies the exact

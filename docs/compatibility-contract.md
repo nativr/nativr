@@ -513,6 +513,15 @@ level control, so compressed-byte or compression-ratio identity is not claimed. 
 transports, sockets, seek/pushback in compressed streams, concatenated-member fidelity, and typed
 binary I/O remain separate capabilities.
 
+Usage-ranked `base::unz` has GNU R 4.6 behavioral differential evidence for its four formals and
+defaults, scalar coercion boundaries, `c("unz", "connection")` class, closed summary, and invisible
+`NULL` close. NativR-only evidence covers exact stored and raw-DEFLATE members, implicit restart and
+explicit cursor behavior, text/raw reads, package resources, `download.file()` session archives,
+read-only `r+`, missing members, CRC/malformed/unsupported forms, resource limits, pure-R package
+calls, Worker execution, and Playground use. It extracts no paths and grants no archive, network, or
+host-filesystem authority. Encryption, multi-disk/ZIP64 archives, additional compression methods,
+seeking, writing, and platform-exact diagnostics remain outside this slice.
+
 Usage-ranked `base::readChar` has GNU R 4.6 behavioral differential evidence for digest's
 `readChar(path, file.info(path)$size)` and Shiny's `readChar(path, 1000)` calls, exact formals,
 raw-vector input, ASCII character/byte widths, vectorized/zero/fractional lengths, EOF, attribute

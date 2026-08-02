@@ -867,7 +867,18 @@ bytes, exact write stdin, stderr and nonzero statuses, limits, default denial, u
 package use, Worker transport, and Playground use. The runtime adds no shell or process authority:
 the embedding host must explicitly allow each request through `systemCommand`. Duplex/interactive
 streams, seeking, binary stdin containing NUL, executable discovery, and platform shell semantics
-remain compatibility depth. Rank 314 `base::unz` is the next measured unresolved callable.
+remain compatibility depth.
+
+The ZIP-member increment raises current name overlap to 622 of 2,522. Rank 314 `base::unz` covers
+jsonlite's measured archive-member call. GNU R 4.6 black-box evidence covers exact formals/defaults,
+scalar coercion boundaries, class, closed summary, and invisible `NULL` close. NativR-only evidence
+covers stored and raw-DEFLATE members, closed restarts and open cursors, raw/text reads, immutable
+package resources, downloaded session archives, read-only update mode, missing/corrupt/unsupported
+archives, resource limits, unchanged pure-R package calls, Worker transport, and Playground use. No
+member is extracted to a path and no network or host-filesystem authority is added. Encryption,
+ZIP64, multi-disk archives, other compression methods, seeking, writing, runtime installation, and
+platform-exact diagnostics remain compatibility depth. Rank 324 `base::object.size` is the next
+measured unresolved callable.
 
 ## Completion evidence
 

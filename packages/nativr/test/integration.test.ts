@@ -30,7 +30,7 @@ importFrom(graphics, axis, plot.new, plot.window, rect)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median, ts.plot)
 importFrom(utils, download.file, packageDescription, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, plot_series, find_tools, create_file, remove_files, fixed_text, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, pipe_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output)
+export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, plot_series, find_tools, create_file, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, pipe_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -95,6 +95,12 @@ fixed_text <- function() {
   result <- c(readChar(resource, file.info(resource)$size), readChar(bookmark, 1000L))
   file.remove(bookmark)
   result
+}
+archive_lines <- function(member = "notes.txt") {
+  archive <- system.file("extdata", "archive.zip", package = "nativrfixture")
+  con <- unz(archive, member)
+  on.exit(close(con))
+  readLines(con)
 }
 axis_ticks <- function() {
   plot.new()
@@ -168,6 +174,10 @@ hidden_helper <- function(x) x + 100
     { path: "extdata/invalid-utf8.txt", data: "/w==" },
     { path: "extdata/lines.txt.gz", data: "H4sIAAAAAAAACkvMKchI5EpKLUnkAgBuUDBuCwAAAA==" },
     { path: "extdata/truncated.gz", data: "H4sIAAAAAA==" },
+    {
+      path: "extdata/archive.zip",
+      data: "UEsDBAoAAAAAAOuOAl1uUDBuCwAAAAsAAAAJAAAAbm90ZXMudHh0YWxwaGEKYmV0YQpQSwMEFAAAAAgA644CXYPf7MgpAAAAHAIAAAwAAAByZXBlYXRlZC50eHRLLErOyCxLVUjOzy1ILMlMyszJLKlUSEksSVRIpLIUF7UNHLWLtnYBAFBLAQIeAwoAAAAAAOuOAl1uUDBuCwAAAAsAAAAJAAAAAAAAAAEAAACkgQAAAABub3Rlcy50eHRQSwECHgMUAAAACADrjgJdg9/syCkAAAAcAgAADAAAAAAAAAABAAAApIEyAAAAcmVwZWF0ZWQudHh0UEsFBgAAAAACAAIAcQAAAIUAAAAAAA==",
+    },
     {
       path: "extdata/value.rds",
       data: "H4sIAAAAAAAABovgYmBgYGJgYQOSzCCmMJjPwMALpRkbGMBAAKKOgRMkVsHA0ABiMB1eycDAAlYGlWLNS8xNLUZXnwhjJAGJfwBKuY0SdAAAAA==",
@@ -2621,6 +2631,156 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("reads stored and deflated ZIP members through usage-ranked unz() connections", async () => {
+    const zipBody = Uint8Array.from(
+      atob(
+        "UEsDBAoAAAAAAOuOAl1uUDBuCwAAAAsAAAAJAAAAbm90ZXMudHh0YWxwaGEKYmV0YQpQSwMEFAAAAAgA644CXYPf7MgpAAAAHAIAAAwAAAByZXBlYXRlZC50eHRLLErOyCxLVUjOzy1ILMlMyszJLKlUSEksSVRIpLIUF7UNHLWLtnYBAFBLAQIeAwoAAAAAAOuOAl1uUDBuCwAAAAsAAAAJAAAAAAAAAAEAAACkgQAAAABub3Rlcy50eHRQSwECHgMUAAAACADrjgJdg9/syCkAAAAcAgAADAAAAAAAAAABAAAApIEyAAAAcmVwZWF0ZWQudHh0UEsFBgAAAAACAAIAcQAAAIUAAAAAAA==",
+      ),
+      (character) => character.charCodeAt(0),
+    );
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [pureRFixture],
+      url: () => ({ body: zipBody }),
+    });
+
+    await expect(
+      runtime.eval(`
+        f <- formals(unz)
+        c(
+          names(f), identical(f$open, ""),
+          identical(f$encoding, quote(getOption("encoding")))
+        )
+      `),
+    ).resolves.toEqual(["description", "filename", "open", "encoding", "TRUE", "TRUE"]);
+
+    await expect(
+      runtime.eval(`
+        archive <- system.file("extdata", "archive.zip", package = "nativrfixture")
+        con <- unz(archive, "notes.txt")
+        details <- summary(con)
+        first <- readLines(con, n = 1L)
+        restarted <- readLines(con, n = 1L)
+        closed <- withVisible(close(con))
+        c(
+          class(con), details$class, details$mode, details$text, details$opened,
+          details[["can read"]], details[["can write"]], first, restarted,
+          is.null(closed$value), closed$visible
+        )
+      `),
+    ).resolves.toEqual([
+      "unz",
+      "connection",
+      "unz",
+      "r",
+      "text",
+      "closed",
+      "yes",
+      "yes",
+      "alpha",
+      "alpha",
+      "TRUE",
+      "FALSE",
+    ]);
+
+    await expect(
+      runtime.eval(`
+        archive <- system.file("extdata", "archive.zip", package = "nativrfixture")
+        con <- unz(archive, "notes.txt", "r")
+        first <- readLines(con, n = 1L)
+        second <- readLines(con, n = 1L)
+        details <- summary(con)
+        closed <- withVisible(close(con))
+        c(
+          first, second, details$opened, details[["can read"]], details[["can write"]],
+          is.null(closed$value), closed$visible
+        )
+      `),
+    ).resolves.toEqual(["alpha", "beta", "opened", "yes", "no", "TRUE", "FALSE"]);
+
+    await expect(runtime.eval('nativrfixture::archive_lines("notes.txt")')).resolves.toEqual([
+      "alpha",
+      "beta",
+    ]);
+    await expect(
+      runtime.eval(`
+        lines <- nativrfixture::archive_lines("repeated.txt")
+        c(length(lines), length(unique(lines)), lines[1])
+      `),
+    ).resolves.toEqual([
+      "5",
+      "1",
+      "archive compatibility data archive compatibility data archive compatibility data archive compatibility data",
+    ]);
+    await expect(
+      runtime.eval(`
+        archive <- system.file("extdata", "archive.zip", package = "nativrfixture")
+        con <- unz(archive, "notes.txt", "rb")
+        value <- rawToChar(readBin(con, "raw", 99L))
+        close(con)
+        value
+      `),
+    ).resolves.toBe("alpha\nbeta\n");
+    await expect(
+      runtime.eval(`
+        path <- tempfile(fileext = ".zip")
+        utils::download.file("https://data.nativr.invalid/archive.zip", path, quiet = TRUE, mode = "wb")
+        con <- unz(path, "notes.txt", "r")
+        value <- readLines(con)
+        close(con)
+        unlink(path)
+        value
+      `),
+    ).resolves.toEqual(["alpha", "beta"]);
+
+    await expect(
+      runtime.eval(`
+        archive <- system.file("extdata", "archive.zip", package = "nativrfixture")
+        con <- unz(archive, "notes.txt", "r+")
+        result <- c(
+          isOpen(con, "read"), isOpen(con, "write"),
+          inherits(try(writeLines("blocked", con), silent = TRUE), "try-error"),
+          inherits(try(seek(con), silent = TRUE), "try-error")
+        )
+        close(con)
+        result
+      `),
+    ).resolves.toEqual([true, false, true, true]);
+
+    const missing = await runtime.evalDetailed(`
+      archive <- system.file("extdata", "archive.zip", package = "nativrfixture")
+      inherits(try(readLines(unz(archive, "missing.txt")), silent = TRUE), "try-error")
+    `);
+    expect(missing.value).toBe(true);
+    expect(missing.warnings).toHaveLength(1);
+    expect(missing.warnings[0]).toMatchObject({ code: "NRW1138" });
+    await expect(runtime.eval('unz("missing.zip", "member.txt"); NULL')).resolves.toBeNull();
+    await expect(runtime.eval('unz(c("a.zip", "b.zip"), "x")')).rejects.toMatchObject({
+      code: "NRT3412",
+    });
+    await expect(
+      runtime.eval(`
+        archive <- system.file("extdata", "archive.zip", package = "nativrfixture")
+        unz(archive, "notes.txt", "w")
+      `),
+    ).rejects.toMatchObject({ code: "NRE2250" });
+    await expect(
+      runtime.eval(`
+        archive <- system.file("extdata", "archive.zip", package = "nativrfixture")
+        unz(archive, "notes.txt", "w+")
+      `),
+    ).rejects.toMatchObject({ code: "NRE2250" });
+    await expect(
+      runtime.eval(`
+        archive <- system.file("extdata", "archive.zip", package = "nativrfixture")
+        con <- unz(archive, "notes.txt")
+        open(con, "a+")
+      `),
+    ).rejects.toMatchObject({ code: "NRE2250" });
+    await runtime.dispose();
+  });
+
   it("routes cat() and capture.output() through virtual file connections", async () => {
     const runtime = await session();
     await expect(
@@ -3502,6 +3662,7 @@ describe("complete inline source-to-result vertical slice", () => {
       runtime.eval("x <- withVisible(lines(new_score(1:3), extra = 8)); c(x$value, x$visible)"),
     ).resolves.toEqual(["package-lines", "6", "8", "TRUE"]);
     await expect(runtime.eval('sort(getNamespaceExports("nativrfixture"))')).resolves.toEqual([
+      "archive_lines",
       "ask_value",
       "axis_ticks",
       "centered",
@@ -11137,7 +11298,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.247.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.248.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

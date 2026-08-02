@@ -760,7 +760,14 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      summary, unused close and validation plus lazy/explicit reads, buffered writes, exact statuses,
      pure-R package calls, Worker transport, Playground use, and resource limits have evidence.
      Duplex/interactive streaming, seeking, NUL-containing binary stdin, host discovery, and shell
-     semantics remain compatibility depth; rank-314 `base::unz` is next.
+     semantics remain compatibility depth.
+160. Usage-ranked ZIP-member connection: rank-314 `base::unz` reads one exact stored or DEFLATE
+     member from immutable package resources or session-owned archives through the existing private
+     connection store. GNU R formals/defaults, coercion, class, summary, and close behavior plus
+     closed restart, open cursors, raw/text reads, `download.file()` composition, pure-R package,
+     Worker, Playground, CRC/malformed input, and bounds have evidence. Encryption, ZIP64,
+     multi-disk archives, other codecs, seeking, writing, and runtime package installation remain
+     compatibility depth; rank-324 `base::object.size` is the next measured unresolved callable.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

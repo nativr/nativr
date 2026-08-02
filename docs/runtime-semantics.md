@@ -466,6 +466,14 @@ when `close()` destroys the wrapper, matching GNU R's zero-byte-before-close beh
 stream API does not expose compression-level selection, so `level` is range-checked but byte
 identity is not promised. No URL, socket, host file, or ambient network capability is introduced.
 
+`unz(description, filename, open = "", encoding = getOption("encoding"))` creates a lazy, read-only
+`c("unz", "connection")` record over one exact member of an immutable package resource or
+session-owned ZIP file. Stored and raw-DEFLATE members share the normal closed-operation or open
+persistent-cursor behavior used by line/raw/source/table/serialization readers. The parser bounds
+the archive, member count, compressed ranges, and output; validates filenames, sizes, and CRC32; and
+rejects encrypted, multi-disk, ZIP64, and unknown-compression forms. Seeking and writing are not
+enabled, and no archive entry becomes a virtual or host path.
+
 `readChar(con, nchars, useBytes = FALSE)` consumes fixed-width fields from a raw vector or the same
 owned package/session/file/URL/gzip byte sources. Character mode validates UTF-8 and counts Unicode
 scalar values; byte mode retains exact field bytes. Zero-width fields do not consume input, a
