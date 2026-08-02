@@ -150,6 +150,20 @@ External URLs remain strings for an application to approve, while browser-memory
 other files include a bounded byte snapshot. The Playground exposes a user-clicked reference viewer
 and never opens a request automatically.
 
+Pure-R package feature checks can use `Sys.which()` without exposing the machine's PATH. Admit only
+the virtual or host tools the application intends to advertise:
+
+```js
+const r = await createR({
+  executablePaths: { pandoc: "nativr://host/bin/pandoc" },
+});
+console.log(await r.eval('Sys.which(c("pandoc", "git"))'));
+// ["nativr://host/bin/pandoc", ""]
+```
+
+The map is copied into the Worker and is empty by default. Advertising a tool does not authorize
+execution; `systemCommand` remains a separate explicit policy.
+
 Package code may also call `base::system()`, but NativR has no default shell. Applications that need
 a specific external feature can pass `createR({ systemCommand })`, inspect and allow-list the typed
 request, then return `{ status, stdout, stderr }`; the same asynchronous policy works through the

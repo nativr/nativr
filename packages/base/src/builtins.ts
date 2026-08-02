@@ -323,6 +323,9 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     defineBuiltin("Sys.unsetenv", ["x"], "behavioral", builtinSystemUnsetEnvironment),
     [{ name: "x" }],
   ),
+  withBuiltinFormals(defineBuiltin("Sys.which", ["names"], "behavioral", builtinSystemWhich), [
+    { name: "names" },
+  ]),
   defineBuiltin("Sys.sleep", ["time"], "behavioral", builtinSystemSleep, "regular", "invisible"),
   withBuiltinFormals(
     withUnsupportedBehavior(
@@ -3173,6 +3176,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
 const OPTIONS_STATE_KEY = "base.options";
 const LOCALE_STATE_KEY = "base.locale";
 export const ENVIRONMENT_VARIABLES_STATE_KEY = "base.environmentVariables";
+export const EXECUTABLE_PATHS_STATE_KEY = "base.executablePaths";
 const S4_CLASSES_STATE_KEY = "base.s4.classes";
 const S4_GENERICS_STATE_KEY = "base.s4.generics";
 const S4_METHODS_STATE_KEY = "base.s4.methods";
@@ -5151,6 +5155,66 @@ async function builtinSystemUnsetEnvironment(
   }
   invocation.context.allocate(output.length);
   return logicalVector(output);
+}
+
+async function builtinSystemWhich(invocation: BuiltinInvocation): Promise<RCharacterVector> {
+  const matched = await matchExact(invocation, ["names"]);
+  const requested = systemWhichCharacters(required(matched, "names", "Sys.which"), invocation);
+  const executablePaths = systemWhichState(invocation);
+  const output = new Array<string>(requested.length);
+  const missing = new Uint8Array(requested.length);
+  for (let index = 0; index < requested.length; index += 1) {
+    invocation.context.checkpoint();
+    if (isMissing(requested, index)) {
+      missing[index] = 1;
+      output[index] = "";
+    } else {
+      output[index] = executablePaths.get(requested.values[index] ?? "") ?? "";
+    }
+  }
+  invocation.context.allocate(output.length);
+  return withAttribute(
+    characterVector(output, compactMask(missing)),
+    "names",
+    characterVector(
+      requested.values.map((name, index) => (isMissing(requested, index) ? "NA" : name)),
+    ),
+  );
+}
+
+function systemWhichCharacters(value: RValue, invocation: BuiltinInvocation): RCharacterVector {
+  if (value.type === "null") return characterVector([]);
+  if (isAtomic(value)) return coerceAtomicToCharacter(value, invocation);
+  if (value.type === "list" || value.type === "pairlist") {
+    const output = value.values.map((entry) => globListElementText(entry));
+    invocation.context.allocate(output.length);
+    return characterVector(output);
+  }
+  if (value.type === "symbol" || value.type === "language") {
+    return asVectorLanguageCharacter(value, invocation);
+  }
+  if (value.type === "expression") {
+    const output = value.values.map((node) => {
+      const text = asVectorLanguageCharacterNode(node);
+      return node.kind === "BinaryExpression" && text.startsWith("(") && text.endsWith(")")
+        ? text.slice(1, -1)
+        : text;
+    });
+    invocation.context.allocate(output.length);
+    return characterVector(output);
+  }
+  throw new RTypeMismatchError(
+    "NRT3405",
+    `cannot coerce type '${value.type}' to vector of type 'character'`,
+  );
+}
+
+function systemWhichState(invocation: BuiltinInvocation): Map<string, string> {
+  const existing = invocation.state.get(EXECUTABLE_PATHS_STATE_KEY);
+  if (existing instanceof Map) return existing as Map<string, string>;
+  const created = new Map<string, string>();
+  invocation.state.set(EXECUTABLE_PATHS_STATE_KEY, created);
+  return created;
 }
 
 function systemEnvironmentState(invocation: BuiltinInvocation): Map<string, string> {

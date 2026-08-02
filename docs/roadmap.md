@@ -742,6 +742,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      current `par("usr")` window, and crosses pure-R package and default Worker paths. Multi-panel
      `plot.ts`, irregular indexes, arbitrary graphical parameters, complete axis/margin layout, and
      device-exact output remain compatibility depth.
+157. Usage-ranked executable discovery: rank-293 `base::Sys.which` checks a snapshotted
+     `createR({ executablePaths })` name-to-path allow-list shared by inline, Worker, Playground,
+     and unchanged pure-R package calls. Missing tools return named empty strings without probing a
+     host PATH or filesystem; coercion, duplicates, missing values, formals, reset, and malformed
+     option inputs have executable evidence. Platform PATH/PATHEXT rules, filesystem resolution, GNU
+     closure identity, and missing names attributes remain compatibility depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

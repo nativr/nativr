@@ -179,6 +179,7 @@ async function initialize(): Promise<void> {
     runtime = await createR({
       packages: [playgroundPackage],
       environmentVariables: { NATIVR_PLAYGROUND: "worker" },
+      executablePaths: { "nativr-echo": "nativr://host/bin/nativr-echo" },
       systemCommand: playgroundSystemCommand,
       readline: playgroundReadline,
       url: playgroundUrl,

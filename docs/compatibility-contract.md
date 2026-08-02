@@ -615,6 +615,17 @@ selection, executable discovery, quoting, environment inheritance, signals, real
 enforcement, and the presence or behavior of any external program are host-defined and are not
 claimed by the browser runtime.
 
+`base::Sys.which` has GNU R 4.6 differential evidence for visible named character results, empty and
+repeated queries, missing values, factor/list/pairlist/symbol/call/expression coercion, exact
+`names` formal matching, and malformed-input boundaries. Browser semantics are explicit rather than
+ambient: `createR({ executablePaths })` snapshots a name-to-resolved-path allow-list for inline and
+Worker sessions, default sessions report tools absent, reset restores the map, and unchanged pure-R
+package/Playground calls reuse it. It never invokes `systemCommand`, scans PATH/PATHEXT, reads the
+filesystem, or guesses platform extensions. GNU R reports the function as a closure and permits an
+`NA_character_` output name for a missing query; NativR currently reports a builtin and encodes that
+single name as `"NA"`. Host path discovery, canonicalization, executable permissions, and those two
+representation differences remain outside the behavioral claim.
+
 `base::gc` has behavioral differential evidence for its closure-like defaults, control coercion,
 visible double matrix, dimensions, row/column labels, resettable maxima, and verbose message shape.
 `Ncells` counts reachable NativR runtime objects plus binding/attribute links; `Vcells` counts owned

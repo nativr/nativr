@@ -69,6 +69,8 @@ export interface CreateROptions {
   readonly packages?: readonly PureRPackageBundle[];
   /** Initial session-owned environment variables; host process variables are never read implicitly. */
   readonly environmentVariables?: Readonly<Record<string, string>>;
+  /** Explicit executable-name allow-list used by Sys.which(); no host PATH is read implicitly. */
+  readonly executablePaths?: Readonly<Record<string, string>>;
   /** Explicit allow-list seam for system(); omitted by default, so R code has no shell capability. */
   readonly systemCommand?: SystemCommandHandler;
   /** Host-owned line input used by readline(); omitted sessions remain non-interactive. */
@@ -160,6 +162,9 @@ export async function createR(options: CreateROptions = {}): Promise<NativRSessi
     ...(options.environmentVariables === undefined
       ? {}
       : { environmentVariables: snapshotEnvironmentVariables(options.environmentVariables) }),
+    ...(options.executablePaths === undefined
+      ? {}
+      : { executablePaths: snapshotExecutablePaths(options.executablePaths) }),
   };
   if (sessionOptions.execution === "inline") {
     const { RuntimeHost: InlineRuntimeHost } = await import("./runtime-host.js");
@@ -175,6 +180,7 @@ export async function createR(options: CreateROptions = {}): Promise<NativRSessi
       sessionOptions.limits,
       sessionOptions.packages,
       sessionOptions.environmentVariables,
+      sessionOptions.executablePaths,
       systemCommand === undefined
         ? undefined
         : async (request) =>
@@ -231,6 +237,31 @@ function snapshotEnvironmentVariables(
       throw new NativRError(
         "NRS5004",
         "Environment-variable names must be non-empty and names and values must be NUL-free strings.",
+      );
+    }
+    snapshot[name] = value;
+  }
+  return Object.freeze(snapshot);
+}
+
+function snapshotExecutablePaths(
+  executablePaths: Readonly<Record<string, string>>,
+): Readonly<Record<string, string>> {
+  if (!isUnknownRecord(executablePaths) || Array.isArray(executablePaths)) {
+    throw new NativRError("NRS5008", "createR(executablePaths=) requires a string-valued record.");
+  }
+  const snapshot: Record<string, string> = Object.create(null) as Record<string, string>;
+  for (const [name, value] of Object.entries(executablePaths)) {
+    if (
+      name.length === 0 ||
+      name.includes("\0") ||
+      typeof value !== "string" ||
+      value.length === 0 ||
+      value.includes("\0")
+    ) {
+      throw new NativRError(
+        "NRS5008",
+        "Executable names and paths must be non-empty, NUL-free strings.",
       );
     }
     snapshot[name] = value;
@@ -719,6 +750,9 @@ class WorkerSession implements NativRSession {
         ...(this.#options.environmentVariables === undefined
           ? {}
           : { environmentVariables: this.#options.environmentVariables }),
+        ...(this.#options.executablePaths === undefined
+          ? {}
+          : { executablePaths: this.#options.executablePaths }),
         ...(this.#options.readline === undefined ? {} : { readline: true }),
         ...(this.#options.url === undefined ? {} : { url: true }),
         debug: this.#options.debug === true,

@@ -687,3 +687,10 @@ and device journal. Equal-frequency union allocates one preflighted rectangular 
 dependency, protocol event, DOM/device access, generated-code path, or package-specific translation.
 The measured Worker is 383.8 KiB gzip, so the ceiling rises narrowly from 383 KiB to 384 KiB; client
 and parser-Wasm budgets remain unchanged.
+
+Language subset 0.245 adds usage-ranked `base::Sys.which` through a construction-time immutable
+string map transported with the existing Worker initialization request. Lookup is linear only in the
+requested vector and uses the evaluator-owned `Map`; it performs no PATH scan, filesystem call,
+process launch, network request, or package-specific translation. The measured Worker is 384.2 KiB
+gzip, so the ceiling rises narrowly from 384 KiB to 385 KiB; client and parser-Wasm budgets remain
+unchanged.

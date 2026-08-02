@@ -5,7 +5,9 @@ Evaluated R source can access only installed runtime values and builtins. It has
 module loading, arbitrary host functions, or network sockets. `createR({ environmentVariables })`
 may admit an explicit string map into one evaluator-owned session; `Sys.getenv()`, `Sys.setenv()`,
 and `Sys.unsetenv()` can inspect or mutate only that map, and reset restores the construction-time
-snapshot. The bootstrap runtime emits no telemetry and performs no evaluation-time network request.
+snapshot. `createR({ executablePaths })` may separately admit an immutable executable-name/path
+allow-list for `Sys.which()`; it does not inspect PATH, PATHEXT, filesystem state, or grant process
+execution. The bootstrap runtime emits no telemetry and performs no evaluation-time network request.
 
 NativR interprets normalized AST nodes. It does not generate JavaScript or call
 `eval`/`new Function`. A build-time CSP guard removes generic Emscripten EM_ASM/EM_JS dynamic-code

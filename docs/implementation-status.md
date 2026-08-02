@@ -107,6 +107,11 @@ Date: 2026-08-02
   optional string map for inline or Worker execution; GNU R-shaped `Sys.getenv()`, `Sys.setenv()`,
   and `Sys.unsetenv()` query and mutate it, while reset restores the original map and host process
   variables remain inaccessible.
+- Usage-ranked `Sys.which()` uses a separate snapshotted `createR({ executablePaths })` allow-list.
+  Default sessions discover no tools; admitted names return their explicit path in inline, Worker,
+  Playground, and unchanged pure-R package calls, with GNU R-shaped coercion, duplicate ordering,
+  missing results, exact formals, reset, and validation evidence. It never scans host PATH/PATHEXT
+  or the filesystem. GNU closure identity and missing values inside names attributes remain gaps.
 - Browser-owned text I/O through `readLines()`/`writeLines()` covers same-session temporary files,
   immutable package text, GNU R line endings, separators, NUL/incomplete-line behavior, byte limits,
   and stdout events without host filesystem access. Session-owned `file()` handles add implicit and
@@ -728,10 +733,10 @@ Date: 2026-08-02
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 13 files and 433 tests, with three explicitly skipped tests.
+- Vitest currently passes 13 files and 434 tests, with three explicitly skipped tests.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 788/788 cases. The optional black-box R oracle passes all 749
+- Checked-in conformance passes 791/791 cases. The optional black-box R oracle passes all 752
   eligible cases and explicitly skips 39 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,

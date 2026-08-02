@@ -8930,5 +8930,59 @@
     "expected": [true, true, true, true],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "sys-which-missing-tools-visibility-formals-and-empty-shape",
+    "code": "shown <- withVisible(Sys.which(c(\"nativr-definitely-missing\", \"nativr-definitely-missing\", \"\")))\nc(shown$visible, unname(shown$value), names(shown$value), names(formals(Sys.which)), identical(Sys.which(character()), setNames(character(), character())))",
+    "expected": [
+      "TRUE",
+      "",
+      "",
+      "",
+      "nativr-definitely-missing",
+      "nativr-definitely-missing",
+      "",
+      "names",
+      "TRUE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "sys-which-factor-list-expression-symbol-and-call-coercion",
+    "code": "values <- c(Sys.which(factor(c(\"nativr-no-a\", \"nativr-no-b\"))), Sys.which(list(\"nativr-no-c\", 2, NA)), Sys.which(expression(nativr_no_d, 1 + 2)), Sys.which(quote(nativr_no_e)), Sys.which(quote(f(1, 2))))\nc(unname(values), names(values))",
+    "expected": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "nativr-no-a",
+      "nativr-no-b",
+      "nativr-no-c",
+      "2",
+      "NA",
+      "nativr_no_d",
+      "1 + 2",
+      "nativr_no_e",
+      "f",
+      "1",
+      "2"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "sys-which-missing-value-and-input-boundaries",
+    "code": "c(is.na(unname(Sys.which(NA_character_))), inherits(try(Sys.which(), silent = TRUE), \"try-error\"), inherits(try(Sys.which(globalenv()), silent = TRUE), \"try-error\"), inherits(try(Sys.which(x = \"nativr-no-a\"), silent = TRUE), \"try-error\"), inherits(try(Sys.which(\"nativr-no-a\", TRUE), silent = TRUE), \"try-error\"))",
+    "expected": [true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

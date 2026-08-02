@@ -361,6 +361,15 @@ needs one, `createR({ systemCommand })` can approve that exact command and retur
 across inline or Worker execution. No handler means no process authority, and a successful package
 bundle still cannot claim that arbitrary external programs exist.
 
+Rank-293 `base::Sys.which()` lets pure-R packages perform those presence checks without translating
+their R source or probing the embedding machine. `createR({ executablePaths })` supplies the exact
+approved name/path pairs, while an omitted map makes every ordinary query unavailable. The same
+snapshot crosses inline and Worker initialization, survives reset, and is consumed by the checked-in
+source-only fixture and Playground package. Advertising a path does not itself authorize `system()`;
+an application that wants execution must separately configure `systemCommand` with a matching
+policy. This keeps package feature detection reusable without turning package installation into
+ambient shell access.
+
 Rank-230 `base::readline()` is a second explicit host seam used by curl's email prompt and crayon's
 no-prompt example. An application can provide `createR({ readline })`; unchanged package R code then
 awaits that single-line callback in inline or Worker mode, and `interactive()` reflects its

@@ -386,6 +386,8 @@ export interface InitRequest extends ProtocolEnvelope {
   readonly limits?: Partial<ProtocolRuntimeLimits>;
   readonly packages?: readonly PureRPackageBundle[];
   readonly environmentVariables?: Readonly<Record<string, string>>;
+  /** Explicit executable names and resolved paths available to base::Sys.which(). */
+  readonly executablePaths?: Readonly<Record<string, string>>;
   /** Whether the embedding facade configured an interactive readline handler. */
   readonly readline?: boolean;
   /** Whether the embedding facade configured an explicit URL transport. */
@@ -568,6 +570,7 @@ export function isWorkerRequest(value: unknown): value is WorkerRequest {
           (Array.isArray(value.packages) && value.packages.every(isPureRPackageBundle))) &&
         (value.environmentVariables === undefined ||
           isEnvironmentVariableRecord(value.environmentVariables)) &&
+        (value.executablePaths === undefined || isExecutablePathRecord(value.executablePaths)) &&
         (value.readline === undefined || typeof value.readline === "boolean") &&
         (value.url === undefined || typeof value.url === "boolean") &&
         typeof value.debug === "boolean"
@@ -761,6 +764,21 @@ function isEnvironmentVariableRecord(value: unknown): value is Readonly<Record<s
         name.length > 0 &&
         !name.includes("\0") &&
         typeof entry === "string" &&
+        !entry.includes("\0"),
+    )
+  );
+}
+
+function isExecutablePathRecord(value: unknown): value is Readonly<Record<string, string>> {
+  return (
+    isRecord(value) &&
+    !Array.isArray(value) &&
+    Object.entries(value).every(
+      ([name, entry]) =>
+        name.length > 0 &&
+        !name.includes("\0") &&
+        typeof entry === "string" &&
+        entry.length > 0 &&
         !entry.includes("\0"),
     )
   );

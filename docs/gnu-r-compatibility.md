@@ -838,7 +838,18 @@ inputs, incompatible frequencies, and invalid `gpars`. NativR-only event asserti
 segments and points, style recycling, expression labels, resource preflight, pure-R namespace use,
 default Worker transport, and Canvas pixels without a magrittr adapter. Multi-panel `plot.ts`,
 irregular indexes, complete axes/margins, arbitrary graphical parameters, and device-exact rendering
-remain compatibility depth. Rank 293 `base::Sys.which` is now the next measured unresolved callable.
+remain compatibility depth.
+
+The executable-discovery increment raises current name overlap to 619 of 2,522. Rank 293
+`base::Sys.which` covers the two measured knitr/sys checks at 1.6% download-weighted reach. GNU R
+4.6 differential evidence covers visible named results, empty/duplicate/missing queries,
+factor/list/pairlist/language coercion, exact `names` formal matching, and invalid inputs.
+NativR-only evidence proves snapshotted `createR({ executablePaths })` admission, default-deny
+behavior, reset/isolation, pure-R package execution, Worker transport, Playground use, and malformed
+host-map rejection. No package adapter, PATH scan, filesystem access, or process invocation is
+involved. Host PATH/PATHEXT and executable-bit rules, path canonicalization, GNU closure identity,
+and an `NA_character_` value inside the names attribute remain compatibility depth. Rank 311
+`utils::download.file` is now the next measured unresolved callable.
 
 ## Completion evidence
 

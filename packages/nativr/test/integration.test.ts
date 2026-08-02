@@ -30,7 +30,7 @@ importFrom(graphics, axis, plot.new, plot.window, rect)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median, ts.plot)
 importFrom(utils, packageDescription, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, plot_series, create_file, remove_files, fixed_text, axis_ticks, sourced_value, ask_value, remote_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output)
+export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, plot_series, find_tools, create_file, remove_files, fixed_text, axis_ticks, sourced_value, ask_value, remote_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -75,6 +75,7 @@ plot_series <- function(z) {
   ts.plot(z)
   invisible(length(z))
 }
+find_tools <- function(names) Sys.which(names)
 create_file <- function() {
   path <- tempfile()
   created <- file.create(path)
@@ -3340,6 +3341,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "duration",
       "dynamic_describe",
       "filtered_flow",
+      "find_tools",
       "fixed_text",
       "hcl_colours",
       "histogram_counts",
@@ -10001,6 +10003,76 @@ describe("complete inline source-to-result vertical slice", () => {
     ).rejects.toMatchObject({ code: "NRS5004" });
   });
 
+  it("resolves only explicitly admitted executable paths with GNU R Sys.which shapes", async () => {
+    const executablePaths = {
+      bash: "/approved/bin/bash",
+      "nativr-echo": "nativr://host/bin/nativr-echo",
+      "C:/approved/tool.exe": "C:/approved/tool.exe",
+    };
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [pureRFixture],
+      executablePaths,
+    });
+    executablePaths.bash = "/mutated/after/create";
+
+    await expect(runtime.eval("names(formals(Sys.which))")).resolves.toBe("names");
+    await runtime.eval(`found <- Sys.which(c(alias = "bash", "missing", "bash", NA_character_))`);
+    await expect(runtime.eval("unname(found)")).resolves.toEqual([
+      "/approved/bin/bash",
+      "",
+      "/approved/bin/bash",
+      NA,
+    ]);
+    await expect(runtime.eval("names(found)")).resolves.toEqual(["bash", "missing", "bash", "NA"]);
+    await expect(runtime.eval("is.na(found)")).resolves.toEqual([false, false, false, true]);
+    await expect(
+      runtime.eval("identical(Sys.which(character()), setNames(character(), character()))"),
+    ).resolves.toBe(true);
+    await expect(runtime.eval("unname(Sys.which(factor(c('bash', 'missing'))))")).resolves.toEqual([
+      "/approved/bin/bash",
+      "",
+    ]);
+    await expect(runtime.eval("unname(Sys.which(list('bash', 2, NA)))")).resolves.toEqual([
+      "/approved/bin/bash",
+      "",
+      "",
+    ]);
+    await expect(runtime.eval("unname(Sys.which(expression(bash, 1 + 2)))")).resolves.toEqual([
+      "/approved/bin/bash",
+      "",
+    ]);
+    await expect(runtime.eval("unname(Sys.which(quote(bash)))")).resolves.toBe(
+      "/approved/bin/bash",
+    );
+    await expect(runtime.eval("unname(Sys.which(quote(f(1, 2))))")).resolves.toEqual(["", "", ""]);
+    await expect(runtime.eval("Sys.which(na = 'bash')")).resolves.toBe("/approved/bin/bash");
+    await expect(runtime.eval("Sys.which(x = 'bash')")).rejects.toMatchObject({ code: "NRE2101" });
+    await expect(runtime.eval("Sys.which()")).rejects.toMatchObject({ code: "NRE2103" });
+    await expect(runtime.eval("Sys.which(globalenv())")).rejects.toMatchObject({
+      code: "NRT3405",
+    });
+    await expect(
+      runtime.eval("nativrfixture::find_tools(c('nativr-echo', 'missing'))"),
+    ).resolves.toEqual(["nativr://host/bin/nativr-echo", ""]);
+
+    await runtime.reset();
+    await expect(runtime.eval("unname(Sys.which('bash'))")).resolves.toBe("/approved/bin/bash");
+    await runtime.dispose();
+
+    const isolated = await createR({ execution: "inline", assets });
+    await expect(isolated.eval("unname(Sys.which(c('bash', 'R')))")).resolves.toEqual(["", ""]);
+    await isolated.dispose();
+
+    await expect(
+      createR({ execution: "inline", assets, executablePaths: { bash: "" } }),
+    ).rejects.toMatchObject({ code: "NRS5008" });
+    await expect(
+      createR({ execution: "inline", assets, executablePaths: { bash: 1 as never } }),
+    ).rejects.toMatchObject({ code: "NRS5008" });
+  });
+
   it("reports deterministic browser locale categories and monetary conventions", async () => {
     const runtime = await session();
     const names = [
@@ -10783,7 +10855,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.244.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.245.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

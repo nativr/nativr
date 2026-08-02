@@ -10,6 +10,10 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText('"worker"');
 
+  await page.locator("#source").fill("nativrdemo::find_tools(c('nativr-echo', 'missing'))");
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText('["nativr://host/bin/nativr-echo", ""]');
+
   const evaluationRequests: string[] = [];
   page.on("request", (request) => {
     if (/^https?:/u.test(request.url())) evaluationRequests.push(request.url());

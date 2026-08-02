@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.244.0",
+  "languageSubsetVersion": "0.245.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -115,6 +115,7 @@
         { "name": "Sys.getenv", "compatibility": "behavioral" },
         { "name": "Sys.setenv", "compatibility": "behavioral" },
         { "name": "Sys.unsetenv", "compatibility": "behavioral" },
+        { "name": "Sys.which", "compatibility": "behavioral" },
         { "name": "Sys.sleep", "compatibility": "behavioral" },
         { "name": "system", "compatibility": "behavioral" },
         { "name": "proc.time", "compatibility": "behavioral" },

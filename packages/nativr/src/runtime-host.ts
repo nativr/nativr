@@ -1,4 +1,9 @@
-import { baseBuiltins, ENVIRONMENT_VARIABLES_STATE_KEY, jsReferenceOperators } from "@nativr/base";
+import {
+  baseBuiltins,
+  ENVIRONMENT_VARIABLES_STATE_KEY,
+  EXECUTABLE_PATHS_STATE_KEY,
+  jsReferenceOperators,
+} from "@nativr/base";
 import { createParser } from "@nativr/parser";
 import type { NativRParser, ParserAssets } from "@nativr/parser";
 import { DEFAULT_RUNTIME_LIMITS, Evaluator, RParseError } from "@nativr/runtime";
@@ -35,6 +40,7 @@ export class RuntimeHost {
     limits?: Partial<RuntimeLimits>,
     packages: readonly PureRPackageBundle[] = [],
     environmentVariables: Readonly<Record<string, string>> = {},
+    executablePaths: Readonly<Record<string, string>> = {},
     systemCommand?: (
       request: RSystemCommandRequest,
     ) => Promise<RSystemCommandResult> | RSystemCommandResult,
@@ -59,6 +65,7 @@ export class RuntimeHost {
         ...(urlRequest === undefined ? {} : { urlRequest }),
         initializeBuiltinState: (state) => {
           state.set(ENVIRONMENT_VARIABLES_STATE_KEY, new Map(Object.entries(environmentVariables)));
+          state.set(EXECUTABLE_PATHS_STATE_KEY, new Map(Object.entries(executablePaths)));
         },
       });
       return new RuntimeHost(parser, evaluator);

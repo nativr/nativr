@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 634,
-    "overlappingNames": 618,
-    "missingReferenceNames": 1904,
+    "nativrRegisteredNames": 635,
+    "overlappingNames": 619,
+    "missingReferenceNames": 1903,
     "nativrExtensionNames": 16,
-    "nameCoverage": 0.245044
+    "nameCoverage": 0.24544
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 450, "nameCoverage": 0.329188 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 451, "nameCoverage": 0.32992 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 76, "nameCoverage": 0.163793 },
     {
       "package": "methods",
@@ -84,6 +84,7 @@
     "Sys.sleep",
     "Sys.time",
     "Sys.unsetenv",
+    "Sys.which",
     "URLdecode",
     "UseMethod",
     "View",
@@ -923,7 +924,6 @@
     "Sys.setLanguage",
     "Sys.timezone",
     "Sys.umask",
-    "Sys.which",
     "Tailcall",
     "TukeyHSD",
     "Type1Font",

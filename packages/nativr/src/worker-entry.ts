@@ -88,6 +88,7 @@ async function handleRequest(request: WorkerRequest): Promise<void> {
         request.limits,
         request.packages,
         request.environmentVariables,
+        request.executablePaths,
         requestSystemCommand,
         request.readline === true ? requestReadline : undefined,
         request.url === true ? requestUrl : undefined,

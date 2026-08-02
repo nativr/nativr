@@ -73,18 +73,18 @@ excluded; this prevents package-owned functions from being mislabeled as GNU R c
 The primary ranking remains download-weighted package reach; raw occurrence counts are a secondary
 signal.
 
-| Priority | Measured rank | Callable        | Weighted reach | Packages | Observed calls |
-| -------: | ------------: | --------------- | -------------: | -------: | -------------: |
-|        1 |           277 | `debug`         |           1.7% |        1 |              1 |
-|        2 |           279 | `undebug`       |           1.7% |        1 |              1 |
-|        3 |           281 | `pdf`           |           1.7% |        2 |              2 |
-|        4 |           287 | `file.create`   |           1.6% |        1 |              1 |
-|        5 |           292 | `ts.plot`       |           1.6% |        1 |              1 |
-|        6 |           293 | `Sys.which`     |           1.6% |        2 |              2 |
-|        7 |           311 | `download.file` |           1.3% |        1 |              1 |
-|        8 |           313 | `pipe`          |           1.3% |        1 |              1 |
-|        9 |           314 | `unz`           |           1.3% |        1 |              1 |
-|       10 |           324 | `object.size`   |           1.3% |        2 |              3 |
+| Priority | Measured rank | Callable             | Weighted reach | Packages | Observed calls |
+| -------: | ------------: | -------------------- | -------------: | -------: | -------------: |
+|        1 |           311 | `download.file`      |           1.3% |        1 |              1 |
+|        2 |           313 | `pipe`               |           1.3% |        1 |              1 |
+|        3 |           314 | `unz`                |           1.3% |        1 |              1 |
+|        4 |           324 | `object.size`        |           1.3% |        2 |              3 |
+|        5 |           328 | `title`              |           1.3% |        2 |              7 |
+|        6 |           330 | `sink`               |           1.2% |        1 |              2 |
+|        7 |           338 | `write`              |           1.2% |        1 |              1 |
+|        8 |           340 | `available.packages` |           1.2% |        1 |              1 |
+|        9 |           343 | `barplot`            |           1.2% |        2 |              3 |
+|       10 |           344 | `devAskNewPage`      |           1.1% |        1 |             10 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -193,21 +193,22 @@ rank 277 `base::debug` and rank 279 `base::undebug` now run R6's measured method
 calls through shared function-object state and the existing Worker readline seam. Rank 281
 `grDevices::pdf` now covers knitr's recording device and data.table's file-backed plot. Rank 287
 `base::file.create` now covers withr's deferred-cleanup setup. Rank 292 `stats::ts.plot` now runs
-magrittr's measured exposition-pipe example. The next measured unresolved callable is rank 293
-`base::Sys.which`. Rank 144 `Encoding` is also complete for all 12 observed calls across rlang,
-utf8, and xfun (4.5% weighted reach), together with adjacent `Encoding<-`, `enc2utf8`, and
-`enc2native`. The shared character representation preserves exact bytes and canonical R marks
-through subset/replacement, concatenation, raw conversion, and XDR serialization; this is reusable
-package infrastructure, not an assertion that those packages' native components are supported. Rank
-149 `rcauchy` is now complete for four calls across ggplot2, pillar, and purrr (4.2% weighted
-reach), together with `dcauchy`, `pcauchy`, and `qcauchy`. The shared distribution path covers
-seeded random-stream consumption, vectorized parameters, stable probability tails, formals, and
-missing/domain behavior without package-specific rewrites. Rank 162 `Sys.getenv` is now available
-for all 16 measured calls across withr, xfun, and pkgbuild (3.7% weighted reach), together with rank
-175 `Sys.setenv` across xfun, memoise, openssl, and zoo (3.3%) and adjacent `Sys.unsetenv`. The
-shared session-state path is Worker-safe, resettable, and sufficient for unchanged
-`withr::with_envvar()` mutation/restoration; it does not expose the host environment. Rank 163
-`image` is now available for the six measured calls across scales, viridisLite, and RColorBrewer
+magrittr's measured exposition-pipe example. Rank 293 `base::Sys.which` now covers the two measured
+knitr/sys executable-presence checks through an explicit session allow-list. The next measured
+unresolved callable is rank 311 `utils::download.file`. Rank 144 `Encoding` is also complete for all
+12 observed calls across rlang, utf8, and xfun (4.5% weighted reach), together with adjacent
+`Encoding<-`, `enc2utf8`, and `enc2native`. The shared character representation preserves exact
+bytes and canonical R marks through subset/replacement, concatenation, raw conversion, and XDR
+serialization; this is reusable package infrastructure, not an assertion that those packages' native
+components are supported. Rank 149 `rcauchy` is now complete for four calls across ggplot2, pillar,
+and purrr (4.2% weighted reach), together with `dcauchy`, `pcauchy`, and `qcauchy`. The shared
+distribution path covers seeded random-stream consumption, vectorized parameters, stable probability
+tails, formals, and missing/domain behavior without package-specific rewrites. Rank 162 `Sys.getenv`
+is now available for all 16 measured calls across withr, xfun, and pkgbuild (3.7% weighted reach),
+together with rank 175 `Sys.setenv` across xfun, memoise, openssl, and zoo (3.3%) and adjacent
+`Sys.unsetenv`. The shared session-state path is Worker-safe, resettable, and sufficient for
+unchanged `withr::with_envvar()` mutation/restoration; it does not expose the host environment. Rank
+163 `image` is now available for the six measured calls across scales, viridisLite, and RColorBrewer
 (3.7% weighted reach). Its reusable S3/default path covers numeric/logical matrices, center or
 boundary coordinates, regular raster and irregular polygon grids, colour intervals, missing
 transparency, and one-row palette strips through the same Worker graphics journal; it is not a claim
@@ -1621,6 +1622,13 @@ ties:
      transport, and Canvas rendering have evidence. The broader `plot.ts` multi-panel method,
      irregular indexes, every graphical parameter, exact axes/margins, and device-identical pixels
      remain compatibility depth.
+157. Explicit executable discovery: rank-293 `base::Sys.which` represents two measured knitr/sys
+     checks at 1.6% download-weighted reach. `createR({ executablePaths })` snapshots a NUL-free
+     executable-name-to-path allow-list for inline or Worker sessions; default sessions expose no
+     ambient PATH, package code receives named empty strings for absent tools, reset restores the
+     initial map, and ordinary atomic/list/language coercion follows GNU R 4.6 black-box evidence.
+     Host PATH/PATHEXT scanning, filesystem existence, platform path normalization, GNU closure
+     identity, and an `NA` value in the names attribute remain compatibility depth.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

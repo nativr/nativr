@@ -845,6 +845,16 @@ use the last value, and unset returns one logical result per request. Reset reco
 map, while disposal drops it. Empty values remain explicit entries as a deterministic
 platform-neutral browser rule rather than inheriting operating-system-specific `setenv` behavior.
 
+`Sys.which(names)` uses an independent construction-time executable map. Only
+`createR({ executablePaths })` can admit name/path pairs; the record is validated, snapshotted,
+copied through Worker initialization, and restored on reset. Queries coerce atomic, factor, list,
+pairlist, symbol, call, and expression inputs to command text, preserve order and duplicates, return
+one named path or empty string per command, and keep missing query values missing. Default sessions
+therefore report every non-missing tool as absent without consulting PATH, PATHEXT, browser globals,
+the host filesystem, or `systemCommand`. The current generic names representation encodes the name
+of a missing query as the literal `"NA"`; GNU R keeps an `NA_character_` name. Host-specific search,
+path canonicalization, executable-bit checks, and GNU closure identity remain explicit depth.
+
 `readline(prompt)` is non-interactive by default: it emits the prompt with a trailing newline and
 returns a visible empty character scalar, while `interactive()` returns `FALSE`. Supplying
 `createR({ readline })` authorizes a line-input adapter for that session, makes `interactive()`

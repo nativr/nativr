@@ -35,6 +35,24 @@ The options record is snapshotted at construction and sent through the Worker in
 protocol. `Sys.getenv()`, `Sys.setenv()`, and `Sys.unsetenv()` operate only on that isolated map;
 they never read or mutate `process.env`, browser globals, or another NativR session.
 
+Executable discovery is a separate data-only allow-list. It lets unchanged package code check for
+host-approved tools without giving R code a PATH scanner or process capability:
+
+```ts
+const r = await createR({
+  executablePaths: {
+    pandoc: "nativr://host/bin/pandoc",
+  },
+});
+
+await r.eval('Sys.which(c("pandoc", "git"))');
+// ["nativr://host/bin/pandoc", ""]
+```
+
+The map is snapshotted and works identically through inline and default Worker execution. It is not
+derived from `systemCommand`; applications that both advertise and execute a tool should enforce the
+same allow-list in both options.
+
 `base::system()` is available through an explicit, asynchronous host policy. NativR never chooses a
 shell or process API and the option is absent by default. An embedding application may allow-list
 virtual commands, a sandboxed service, or a platform-specific process runner and return bounded text
@@ -42,6 +60,7 @@ plus an exit status:
 
 ```ts
 const r = await createR({
+  executablePaths: { "report-version": "nativr://host/bin/report-version" },
   systemCommand: async (request) => {
     if (request.command !== "report-version") {
       return { status: 127, errorMessage: "command is not allowed", failedToStart: true };
@@ -49,6 +68,7 @@ const r = await createR({
     return { status: 0, stdout: "reporter 1.0\n" };
   },
 });
+await r.eval('Sys.which("report-version")'); // "nativr://host/bin/report-version"
 await r.eval('system("report-version", intern = TRUE)'); // "reporter 1.0"
 ```
 
