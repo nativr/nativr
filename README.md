@@ -190,7 +190,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 620 registered functions, including resettable
+an initial condition/handler slice. It exposes 624 registered functions, including resettable
 session options, isolated session environment variables, deterministic non-interactive host-mode
 detection, browser-owned `gc()` memory censuses, an S3-first `graphics::lines()` path over the
 existing Worker/Canvas journal, usage-ranked numeric and character time-interval construction
@@ -305,21 +305,22 @@ objective/gradient BFGS example with named and scaled parameters, lazy forwarded
 numerical-gradient fallback, optional Hessians, call counts, and GNU R-shaped convergence results.
 Rank-343 `pairs` now supplies rstan's measured `pairs.stanfit` S3 extension point with lazy plotting
 arguments, while the broader default scatterplot-matrix device remains explicit future graphics
-work. Rank-344 `heat.colors` now provides the measured `grDevices` sequential palette with
-deterministic hexadecimal output, optional alpha, reversal, numeric count coercion, and empty-result
-boundaries. Rank-354 `factorial` now runs xfun's measured `factorial(10)` example and extends it
-with vectorized integer and non-integer gamma values, missingness, non-finite boundaries, warnings,
-and attribute retention. Rank-359 `lsfit` now runs xfun's measured least-squares example through the
-owned QR solver, with matrix predictors, weights, intercept control, complete-case handling, rank
-metadata, and explicit multi-response boundaries. Rank-361 `strwrap` now runs xfun's measured
-paragraph-wrapping example with vectorized text, paragraph boundaries, prefixes, indentation,
-sentence spacing, and simplified or list-shaped results. Rank-360 `shQuote` remains browser
-host-shell adapter work. A ranking audit also closed the earlier rank-207 `rgb` gap, and rank-366
-`col2rgb` now runs stringr's measured named-color-to-hex helper across the complete owned color
-catalog, numeric palette indices, hexadecimal alpha forms, transparent values, matrix metadata, and
-reverse RGB formatting. Rank-368 `simplify2array` now runs stringi's two measured list-shape
-examples, with scalar/vector simplification, common-type promotion, list matrices, retained names
-and higher-dimensional array metadata, and explicit exception controls. Ranks 376/377
+work. Rank-344 `heat.colors` and the higher-priority rank-252 `rainbow` now share a browser-native
+classic HSV palette path with `terrain.colors`, `topo.colors`, and `cm.colors`, including
+deterministic RGB(A), hue wrapping, vector recycling, reversal, numeric count coercion, and
+empty-result boundaries. Rank-354 `factorial` now runs xfun's measured `factorial(10)` example and
+extends it with vectorized integer and non-integer gamma values, missingness, non-finite boundaries,
+warnings, and attribute retention. Rank-359 `lsfit` now runs xfun's measured least-squares example
+through the owned QR solver, with matrix predictors, weights, intercept control, complete-case
+handling, rank metadata, and explicit multi-response boundaries. Rank-361 `strwrap` now runs xfun's
+measured paragraph-wrapping example with vectorized text, paragraph boundaries, prefixes,
+indentation, sentence spacing, and simplified or list-shaped results. Rank-360 `shQuote` remains
+browser host-shell adapter work. A ranking audit also closed the earlier rank-207 `rgb` gap, and
+rank-366 `col2rgb` now runs stringr's measured named-color-to-hex helper across the complete owned
+color catalog, numeric palette indices, hexadecimal alpha forms, transparent values, matrix
+metadata, and reverse RGB formatting. Rank-368 `simplify2array` now runs stringi's two measured
+list-shape examples, with scalar/vector simplification, common-type promotion, list matrices,
+retained names and higher-dimensional array metadata, and explicit exception controls. Ranks 376/377
 `str2expression` and `str2lang` now parse backports' measured source strings through the owned
 Tree-sitter/normalized-AST path into NativR expression, language, symbol, and atomic values. The
 source-bundle loader now supplies private-namespace lookup, although backports itself is not yet a

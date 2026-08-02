@@ -2009,12 +2009,55 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "behavioral",
     builtinGrayColors,
   ),
-  definePackageBuiltin(
-    "grDevices",
-    "heat.colors",
-    ["n", "alpha", "rev"],
-    "behavioral",
-    builtinHeatColors,
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "grDevices",
+      "heat.colors",
+      ["n", "alpha", "rev"],
+      "behavioral",
+      builtinHeatColors,
+    ),
+    classicPaletteFormals(),
+  ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "grDevices",
+      "rainbow",
+      ["n", "s", "v", "start", "end", "alpha", "rev"],
+      "behavioral",
+      builtinRainbow,
+    ),
+    rainbowFormals(),
+  ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "grDevices",
+      "terrain.colors",
+      ["n", "alpha", "rev"],
+      "behavioral",
+      builtinTerrainColors,
+    ),
+    classicPaletteFormals(),
+  ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "grDevices",
+      "topo.colors",
+      ["n", "alpha", "rev"],
+      "behavioral",
+      builtinTopoColors,
+    ),
+    classicPaletteFormals(),
+  ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "grDevices",
+      "cm.colors",
+      ["n", "alpha", "rev"],
+      "behavioral",
+      builtinCmColors,
+    ),
+    classicPaletteFormals(),
   ),
   defineBuiltin("plot", ["x", "..."], "shape", builtinPlot),
   ...defineHistogramBuiltins(),
@@ -3131,6 +3174,66 @@ function withBuiltinFormals(
       })),
     ),
   };
+}
+
+function classicPaletteFormals(): readonly FunctionParameter[] {
+  return [
+    { name: "n", span: SYNTHETIC_SPAN },
+    { name: "alpha", span: SYNTHETIC_SPAN },
+    {
+      name: "rev",
+      defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      span: SYNTHETIC_SPAN,
+    },
+  ];
+}
+
+function rainbowFormals(): readonly FunctionParameter[] {
+  const one: AstNode = { kind: "DoubleLiteral", value: 1, span: SYNTHETIC_SPAN };
+  return [
+    { name: "n", span: SYNTHETIC_SPAN },
+    { name: "s", defaultValue: one, span: SYNTHETIC_SPAN },
+    { name: "v", defaultValue: one, span: SYNTHETIC_SPAN },
+    {
+      name: "start",
+      defaultValue: { kind: "DoubleLiteral", value: 0, span: SYNTHETIC_SPAN },
+      span: SYNTHETIC_SPAN,
+    },
+    {
+      name: "end",
+      defaultValue: {
+        kind: "BinaryExpression",
+        operator: "/",
+        left: {
+          kind: "CallExpression",
+          callee: { kind: "Identifier", name: "max", span: SYNTHETIC_SPAN },
+          arguments: [
+            { value: one, span: SYNTHETIC_SPAN },
+            {
+              value: {
+                kind: "BinaryExpression",
+                operator: "-",
+                left: { kind: "Identifier", name: "n", span: SYNTHETIC_SPAN },
+                right: one,
+                span: SYNTHETIC_SPAN,
+              },
+              span: SYNTHETIC_SPAN,
+            },
+          ],
+          span: SYNTHETIC_SPAN,
+        },
+        right: { kind: "Identifier", name: "n", span: SYNTHETIC_SPAN },
+        span: SYNTHETIC_SPAN,
+      },
+      span: SYNTHETIC_SPAN,
+    },
+    { name: "alpha", span: SYNTHETIC_SPAN },
+    {
+      name: "rev",
+      defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      span: SYNTHETIC_SPAN,
+    },
+  ];
 }
 
 function getOptionDefaultAst(name: string, fallback?: AstNode): AstNode {
@@ -23046,54 +23149,285 @@ function paletteLogicalFlag(value: RValue | undefined, fallback: boolean, name: 
 
 async function builtinHeatColors(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["n", "alpha", "rev"]);
-  const input = required(matched, "n", "heat.colors");
-  if (
-    (input.type !== "logical" && input.type !== "integer" && input.type !== "double") ||
-    input.length === 0 ||
-    isMissing(input, 0) ||
-    !Number.isFinite(input.values[0] ?? Number.NaN)
-  ) {
-    throw new RTypeMismatchError("NRT3293", "heat.colors() 'n' must start with one finite number.");
-  }
-  const length = Math.max(0, Math.trunc(input.values[0] ?? 0));
-  const alphaValue = matched.get("alpha");
-  let alphaSuffix = "";
-  if (alphaValue !== undefined && alphaValue.type !== "null") {
-    if (
-      (alphaValue.type !== "logical" &&
-        alphaValue.type !== "integer" &&
-        alphaValue.type !== "double") ||
-      alphaValue.length !== 1 ||
-      isMissing(alphaValue, 0)
-    ) {
-      throw new RTypeMismatchError(
-        "NRT3293",
-        "heat.colors() 'alpha' must be NULL or one number in [0, 1].",
-      );
-    }
-    const alpha = alphaValue.values[0] ?? Number.NaN;
-    if (!Number.isFinite(alpha) || alpha < 0 || alpha > 1) {
-      throw new RTypeMismatchError(
-        "NRT3293",
-        "heat.colors() 'alpha' must be NULL or one number in [0, 1].",
-      );
-    }
-    alphaSuffix = colorByte(alpha * 255);
-  }
+  const length = classicPaletteLength(required(matched, "n", "heat.colors"), invocation);
+  if (length === 0) return characterVector([]);
+  const alpha = classicPaletteAlpha(matched.get("alpha"), invocation, "heat.colors");
   const reverse = logicalFlag(matched.get("rev"), false, "rev");
-  invocation.context.allocate(length);
   const paleCount = Math.floor(length / 4);
   const hueCount = length - paleCount;
-  const colors = Array.from({ length }, (_, index) => {
-    if (index < hueCount) {
-      const green = hueCount <= 1 ? 0 : (255 * index) / (hueCount - 1);
-      return `#FF${colorByte(green)}00${alphaSuffix}`;
+  const hue = [
+    ...linearRange(0, 1 / 6, hueCount),
+    ...Array.from({ length: paleCount }, () => 1 / 6),
+  ];
+  const saturation = [
+    ...Array.from({ length: hueCount }, () => 1),
+    ...Array.from({ length: paleCount }, (_, index) => 1 - (index + 1) / (2 * paleCount)),
+  ];
+  return classicHsvPalette(
+    invocation,
+    hue,
+    saturation,
+    Array.from({ length }, () => 1),
+    alpha,
+    reverse,
+  );
+}
+
+async function builtinRainbow(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["n", "s", "v", "start", "end", "alpha", "rev"]);
+  const length = classicPaletteLength(required(matched, "n", "rainbow"), invocation);
+  if (length === 0) return characterVector([]);
+  const saturation = classicPaletteNumericVector(matched.get("s"), 1, invocation, "rainbow", "s");
+  const value = classicPaletteNumericVector(matched.get("v"), 1, invocation, "rainbow", "v");
+  if (saturation.length === 0 || value.length === 0) return characterVector([]);
+  validateClassicPaletteUnitRange(saturation, "rainbow", "s", invocation);
+  validateClassicPaletteUnitRange(value, "rainbow", "v", invocation);
+  const start = classicPaletteScalar(matched.get("start"), 0, "rainbow", "start");
+  let end = classicPaletteScalar(
+    matched.get("end"),
+    Math.max(1, length - 1) / length,
+    "rainbow",
+    "end",
+  );
+  if (start < 0 || start > 1 || end < 0 || end > 1 || start === end) {
+    throw new RTypeMismatchError(
+      "NRT3293",
+      "rainbow() 'start' and 'end' must be distinct and in [0, 1].",
+    );
+  }
+  if (start > end) end += 1;
+  const hue = linearRange(start, end, length);
+  const alpha = classicPaletteAlpha(matched.get("alpha"), invocation, "rainbow");
+  const reverse = logicalFlag(matched.get("rev"), false, "rev");
+  const outputLength = Math.max(length, saturation.length, value.length);
+  return classicHsvPalette(
+    invocation,
+    Array.from({ length: outputLength }, (_, index) => hue[index % hue.length] ?? 0),
+    Array.from(
+      { length: outputLength },
+      (_, index) => saturation.values[index % saturation.length] ?? Number.NaN,
+    ),
+    Array.from(
+      { length: outputLength },
+      (_, index) => value.values[index % value.length] ?? Number.NaN,
+    ),
+    alpha,
+    reverse,
+  );
+}
+
+async function builtinTerrainColors(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["n", "alpha", "rev"]);
+  const length = classicPaletteLength(required(matched, "n", "terrain.colors"), invocation);
+  if (length === 0) return characterVector([]);
+  const greenCount = Math.floor(length / 2);
+  const earthCount = length - greenCount;
+  const hue = linearRange(1 / 3, 1 / 6, greenCount);
+  const saturation = Array.from({ length: greenCount }, () => 1);
+  const value = linearRange(0.65, 0.9, greenCount);
+  for (let index = 0; index < earthCount; index += 1) {
+    const position = (index + 1) / earthCount;
+    hue.push((1 / 6) * (1 - position));
+    saturation.push(1 - position);
+    value.push(0.9 + 0.05 * position);
+  }
+  return classicHsvPalette(
+    invocation,
+    hue,
+    saturation,
+    value,
+    classicPaletteAlpha(matched.get("alpha"), invocation, "terrain.colors"),
+    logicalFlag(matched.get("rev"), false, "rev"),
+  );
+}
+
+async function builtinTopoColors(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["n", "alpha", "rev"]);
+  const length = classicPaletteLength(required(matched, "n", "topo.colors"), invocation);
+  if (length === 0) return characterVector([]);
+  const shortCount = Math.floor(length / 3);
+  const blueCount = length - 2 * shortCount;
+  const hue = [
+    ...linearRange(43 / 60, 31 / 60, blueCount),
+    ...linearRange(23 / 60, 11 / 60, shortCount),
+    ...linearRange(10 / 60, 6 / 60, shortCount),
+  ];
+  const saturation = [
+    ...Array.from({ length: blueCount + shortCount }, () => 1),
+    ...linearRange(1, 0.3, shortCount),
+  ];
+  return classicHsvPalette(
+    invocation,
+    hue,
+    saturation,
+    Array.from({ length }, () => 1),
+    classicPaletteAlpha(matched.get("alpha"), invocation, "topo.colors"),
+    logicalFlag(matched.get("rev"), false, "rev"),
+  );
+}
+
+async function builtinCmColors(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["n", "alpha", "rev"]);
+  const length = classicPaletteLength(required(matched, "n", "cm.colors"), invocation);
+  if (length === 0) return characterVector([]);
+  const hue: number[] = [];
+  const saturation: number[] = [];
+  if (length === 1) {
+    hue.push(1 / 2);
+    saturation.push(1 / 2);
+  } else if (length % 2 === 1) {
+    const half = Math.floor(length / 2);
+    for (let index = 0; index < length; index += 1) {
+      hue.push(index <= half ? 1 / 2 : 5 / 6);
+      saturation.push((Math.abs(index - half) / half) * 0.5);
     }
-    const paleIndex = index - hueCount + 1;
-    const blue = (255 * paleIndex) / (2 * paleCount);
-    return `#FFFF${colorByte(blue)}${alphaSuffix}`;
+  } else {
+    const half = length / 2;
+    for (let index = 0; index < length; index += 1) {
+      const distance = index < half ? half - index : index - half + 1;
+      hue.push(index < half ? 1 / 2 : 5 / 6);
+      saturation.push((distance / half) * 0.5);
+    }
+  }
+  return classicHsvPalette(
+    invocation,
+    hue,
+    saturation,
+    Array.from({ length }, () => 1),
+    classicPaletteAlpha(matched.get("alpha"), invocation, "cm.colors"),
+    logicalFlag(matched.get("rev"), false, "rev"),
+  );
+}
+
+function classicPaletteLength(value: RValue, invocation: BuiltinInvocation): number {
+  if (!isAtomic(value) || value.length === 0) {
+    throw new RTypeMismatchError("NRT3293", "palette 'n' must start with one finite number.");
+  }
+  const numeric = coerceAtomicToDouble(value, invocation);
+  const first = numeric.values[0] ?? Number.NaN;
+  if (isMissing(numeric, 0) || !Number.isFinite(first)) {
+    throw new RTypeMismatchError("NRT3293", "palette 'n' must start with one finite number.");
+  }
+  return Math.max(0, Math.trunc(first));
+}
+
+function classicPaletteNumericVector(
+  value: RValue | undefined,
+  fallback: number,
+  invocation: BuiltinInvocation,
+  fn: string,
+  name: string,
+): RDoubleVector {
+  if (value === undefined) return doubleVector([fallback]);
+  if (value.type === "null") return doubleVector([]);
+  if (!isAtomic(value)) {
+    throw new RTypeMismatchError("NRT3293", `${fn}() '${name}' must be numeric.`);
+  }
+  return coerceAtomicToDouble(value, invocation);
+}
+
+function classicPaletteScalar(
+  value: RValue | undefined,
+  fallback: number,
+  fn: string,
+  name: string,
+): number {
+  if (value === undefined) return fallback;
+  if (!isAtomic(value) || value.length !== 1 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3293", `${fn}() '${name}' must be one finite number.`);
+  }
+  const result = numberAt(value, 0);
+  if (!Number.isFinite(result)) {
+    throw new RTypeMismatchError("NRT3293", `${fn}() '${name}' must be one finite number.`);
+  }
+  return result;
+}
+
+function classicPaletteAlpha(
+  value: RValue | undefined,
+  invocation: BuiltinInvocation,
+  fn: string,
+): RDoubleVector | undefined {
+  if (value === undefined || value.type === "null") return undefined;
+  if (!isAtomic(value) || value.length === 0) {
+    throw new RTypeMismatchError("NRT3293", `${fn}() 'alpha' must contain values in [0, 1].`);
+  }
+  const alpha = coerceAtomicToDouble(value, invocation);
+  validateClassicPaletteUnitRange(alpha, fn, "alpha", invocation);
+  return alpha;
+}
+
+function validateClassicPaletteUnitRange(
+  value: RDoubleVector,
+  fn: string,
+  name: string,
+  invocation: BuiltinInvocation,
+): void {
+  for (let index = 0; index < value.length; index += 1) {
+    const candidate = value.values[index] ?? Number.NaN;
+    if (isMissing(value, index) || !Number.isFinite(candidate) || candidate < 0 || candidate > 1) {
+      throw new RTypeMismatchError("NRT3293", `${fn}() '${name}' must contain values in [0, 1].`);
+    }
+    invocation.context.checkpoint();
+  }
+}
+
+function linearRange(start: number, end: number, length: number): number[] {
+  if (length <= 0) return [];
+  if (length === 1) return [start];
+  return Array.from({ length }, (_, index) => {
+    if (index === 0) return start;
+    if (index === length - 1) return end;
+    return start + ((end - start) * index) / (length - 1);
+  });
+}
+
+function classicHsvPalette(
+  invocation: BuiltinInvocation,
+  hue: readonly number[],
+  saturation: readonly number[],
+  value: readonly number[],
+  alpha: RDoubleVector | undefined,
+  reverse: boolean,
+): RCharacterVector {
+  const length = Math.max(hue.length, saturation.length, value.length);
+  invocation.context.allocate(length);
+  const colors = Array.from({ length }, (_, index) => {
+    invocation.context.checkpoint();
+    const suffix =
+      alpha === undefined ? "" : colorByte((alpha.values[index % alpha.length] ?? 1) * 255);
+    return `${hsvHex(
+      hue[index % hue.length] ?? 0,
+      saturation[index % saturation.length] ?? 0,
+      value[index % value.length] ?? 0,
+    )}${suffix}`;
   });
   return characterVector(reverse ? colors.reverse() : colors);
+}
+
+function hsvHex(hue: number, saturation: number, value: number): string {
+  const normalizedHue = hue >= 0 && hue < 1 ? hue : ((hue % 1) + 1) % 1;
+  const rawSector = normalizedHue * 6;
+  const nearestSector = Math.round(rawSector);
+  const sector = Math.abs(rawSector - nearestSector) < 1e-12 ? nearestSector : rawSector;
+  const sectorIndex = Math.floor(sector) % 6;
+  const fraction = sector - Math.floor(sector);
+  const low = value * (1 - saturation);
+  const falling = value * (1 - saturation * fraction);
+  const rising = value * (1 - saturation * (1 - fraction));
+  const channels: readonly [number, number, number] =
+    sectorIndex === 0
+      ? [value, rising, low]
+      : sectorIndex === 1
+        ? [falling, value, low]
+        : sectorIndex === 2
+          ? [low, value, rising]
+          : sectorIndex === 3
+            ? [low, falling, value]
+            : sectorIndex === 4
+              ? [rising, low, value]
+              : [value, low, falling];
+  return `#${channels.map((channel) => colorByte(channel * 255)).join("")}`;
 }
 
 function colorByte(value: number): string {

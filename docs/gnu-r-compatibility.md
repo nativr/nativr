@@ -760,6 +760,16 @@ connection catalogs, close-all preservation, unforgeable handles, unchanged pure
 and default Worker stdout/stderr events. Streaming stdin, sink diversion, pushback, terminal
 negotiation, and host descriptors remain incomplete.
 
+The classic-palette increment raises current name overlap to 608 of 2,522. Rank 252
+`grDevices::rainbow` covers five measured calls across farver and zoo at 1.8% download-weighted
+reach; rank 262 `terrain.colors` covers ggplot2's three measured calls at 1.7%, and the shared owned
+HSV path also closes adjacent `topo.colors` and `cm.colors`. GNU R 4.6 differential evidence covers
+default and custom sequences, byte rounding, wrapped hue ranges, saturation/value and alpha
+recycling, reversal, count coercion, empty values, exact formals, and invalid boundaries. The same
+implementation runs unchanged from a source-only package namespace. `hcl.colors`, palette state,
+device color management, and complete plotting-package compatibility remain separate work. The next
+measured unresolved callable is rank 253 `graphics::rect`.
+
 ## Completion evidence
 
 The objective is complete only when:

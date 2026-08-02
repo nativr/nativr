@@ -73,18 +73,18 @@ excluded; this prevents package-owned functions from being mislabeled as GNU R c
 The primary ranking remains download-weighted package reach; raw occurrence counts are a secondary
 signal.
 
-| Priority | Measured rank | Callable         | Weighted reach | Packages | Observed calls |
-| -------: | ------------: | ---------------- | -------------: | -------: | -------------: |
-|        1 |           252 | `rainbow`        |           1.8% |        2 |              5 |
-|        2 |           253 | `rect`           |           1.8% |        2 |              3 |
-|        3 |           256 | `file.remove`    |           1.8% |        2 |              4 |
-|        4 |           259 | `readChar`       |           1.7% |        2 |              2 |
-|        5 |           262 | `terrain.colors` |           1.7% |        1 |              3 |
-|        6 |           277 | `debug`          |           1.7% |        1 |              1 |
-|        7 |           279 | `undebug`        |           1.7% |        1 |              1 |
-|        8 |           281 | `pdf`            |           1.7% |        2 |              2 |
-|        9 |           287 | `file.create`    |           1.6% |        1 |              1 |
-|       10 |           292 | `ts.plot`        |           1.6% |        1 |              1 |
+| Priority | Measured rank | Callable        | Weighted reach | Packages | Observed calls |
+| -------: | ------------: | --------------- | -------------: | -------: | -------------: |
+|        1 |           253 | `rect`          |           1.8% |        2 |              3 |
+|        2 |           256 | `file.remove`   |           1.8% |        2 |              4 |
+|        3 |           259 | `readChar`      |           1.7% |        2 |              2 |
+|        4 |           277 | `debug`         |           1.7% |        1 |              1 |
+|        5 |           279 | `undebug`       |           1.7% |        1 |              1 |
+|        6 |           281 | `pdf`           |           1.7% |        2 |              2 |
+|        7 |           287 | `file.create`   |           1.6% |        1 |              1 |
+|        8 |           292 | `ts.plot`       |           1.6% |        1 |              1 |
+|        9 |           293 | `Sys.which`     |           1.6% |        2 |              2 |
+|       10 |           311 | `download.file` |           1.3% |        1 |              1 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -177,15 +177,19 @@ retained once at install time and can be inspected without loading the package n
 complete for cli's terminal selection and inspection shape, together with adjacent standard
 connections and the later rank-342 `stderr` occurrence. Stable terminal handles, access summaries,
 false embedded-session TTY detection, connection catalogs, pure-R package calls, and bounded Worker
-stdout/stderr routing share the existing connection registry. The next measured unresolved callable
-is rank 252 `grDevices::rainbow`. Rank 144 `Encoding` is also complete for all 12 observed calls
-across rlang, utf8, and xfun (4.5% weighted reach), together with adjacent `Encoding<-`, `enc2utf8`,
-and `enc2native`. The shared character representation preserves exact bytes and canonical R marks
-through subset/replacement, concatenation, raw conversion, and XDR serialization; this is reusable
-package infrastructure, not an assertion that those packages' native components are supported. Rank
-149 `rcauchy` is now complete for four calls across ggplot2, pillar, and purrr (4.2% weighted
-reach), together with `dcauchy`, `pcauchy`, and `qcauchy`. The shared distribution path covers
-seeded random-stream consumption, vectorized parameters, stable probability tails, formals, and
+stdout/stderr routing share the existing connection registry. Rank 252 `grDevices::rainbow` is now
+complete for five measured calls across farver and zoo (1.8% weighted reach). The same owned HSV
+conversion closes rank 262 `terrain.colors` for ggplot2's three measured calls and the adjacent
+`topo.colors`/`cm.colors` family, with byte-exact palettes, alpha recycling, hue wrapping, reversal,
+pure-R package calls, and GNU R 4.6 evidence. The next measured unresolved callable is rank 253
+`graphics::rect`. Rank 144 `Encoding` is also complete for all 12 observed calls across rlang, utf8,
+and xfun (4.5% weighted reach), together with adjacent `Encoding<-`, `enc2utf8`, and `enc2native`.
+The shared character representation preserves exact bytes and canonical R marks through
+subset/replacement, concatenation, raw conversion, and XDR serialization; this is reusable package
+infrastructure, not an assertion that those packages' native components are supported. Rank 149
+`rcauchy` is now complete for four calls across ggplot2, pillar, and purrr (4.2% weighted reach),
+together with `dcauchy`, `pcauchy`, and `qcauchy`. The shared distribution path covers seeded
+random-stream consumption, vectorized parameters, stable probability tails, formals, and
 missing/domain behavior without package-specific rewrites. Rank 162 `Sys.getenv` is now available
 for all 16 measured calls across withr, xfun, and pkgbuild (3.7% weighted reach), together with rank
 175 `Sys.setenv` across xfun, memoise, openssl, and zoo (3.3%) and adjacent `Sys.unsetenv`. The
@@ -595,13 +599,13 @@ now complete for the measured `rstan` reference-manual call, representing 1,466,
 pale-yellow sequence, including deterministic hexadecimal bytes, optional alpha, reversal, numeric
 count truncation, name removal, and empty outputs. This follows the
 [GNU R palette contract](https://stat.ethz.ch/R-manual/R-devel/library/grDevices/html/palettes.html).
-The related `rainbow`, `terrain.colors`, `topo.colors`, `cm.colors`, `hcl.colors`, `palette`, and
-device color-management surfaces are separate compatibility work. In ranks 345 through 353, `open`
-now uses the virtual connection layer and `readBin` can retrieve raw bytes from owned binary files;
-typed binary decoding remains incomplete. The remaining `write`, `available.packages`, `stderr`,
-`barplot`, `devAskNewPage`, `getLoadedDLLs`, and `socketConnection` surfaces require broader browser
-adapters, repositories, graphics, connections, or native-library state. Rank 354 `factorial` is now
-complete for xfun's
+The related `hcl.colors`, `palette`, and device color-management surfaces are separate compatibility
+work; `rainbow`, `terrain.colors`, `topo.colors`, and `cm.colors` are covered by the later shared
+HSV increment. In ranks 345 through 353, `open` now uses the virtual connection layer and `readBin`
+can retrieve raw bytes from owned binary files; typed binary decoding remains incomplete. The
+remaining `write`, `available.packages`, `stderr`, `barplot`, `devAskNewPage`, `getLoadedDLLs`, and
+`socketConnection` surfaces require broader browser adapters, repositories, graphics, connections,
+or native-library state. Rank 354 `factorial` is now complete for xfun's
 [`factorial(10)` example](https://cran.r-project.org/web/packages/xfun/refman/xfun.html),
 representing 1,305,720 downloads and 1.1% reach. The independent implementation uses direct products
 for finite non-negative integers and a bounded Lanczos gamma approximation elsewhere, while
@@ -1306,9 +1310,10 @@ ties:
 95. Scatterplot-matrix method dispatch: `graphics::pairs()` runs rstan's measured `pairs.stanfit`
     extension shape, forwarding the classed object and lazy labels, panels, parameter selection,
     condition, and graphical arguments without reproducing package-owned plotting logic.
-96. Sequential heat palette: `grDevices::heat.colors()` runs the measured palette call with
-    deterministic hexadecimal output, alpha suffixes, reversal, numeric-count truncation, and
-    explicit invalid-input boundaries.
+96. Classic HSV palettes: `grDevices::heat.colors()` runs the measured heat call, while the
+    higher-priority `rainbow()` and adjacent `terrain.colors()`, `topo.colors()`, and `cm.colors()`
+    share byte-exact HSV conversion, alpha recycling, reversal, hue wrapping, numeric-count
+    truncation, pure-R package execution, and explicit invalid-input boundaries.
 97. Factorials: `factorial()` runs xfun's measured scalar call and vectorizes an independent direct
     product/Lanczos path across integer, fractional, missing, non-finite, and attributed real
     inputs.

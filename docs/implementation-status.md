@@ -11,7 +11,7 @@ Date: 2026-08-02
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 620 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 624 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Character vectors own exact per-element bytes and canonical `unknown`/`latin1`/`UTF-8`/`bytes`
@@ -416,6 +416,10 @@ Date: 2026-08-02
 - Usage-ranked `grDevices::heat.colors` with the measured sequential palette shape, exact
   red-to-yellow/pale-yellow hexadecimal generation, optional alpha, reversal, numeric count
   coercion, empty outputs, and explicit invalid-input boundaries.
+- Usage-ranked `grDevices::rainbow` plus the adjacent `terrain.colors`, `topo.colors`, and
+  `cm.colors` classic HSV family, with byte-exact RGB(A), hue wrapping, vector recycling, optional
+  alpha, reversal, count coercion, empty outputs, namespace access, pure-R package execution, and
+  GNU R 4.6 differential evidence.
 - Usage-ranked `grDevices::gray`/`grey` and `gray.colors`/`grey.colors` with zoo's two measured
   calls, byte-exact RGB(A) output, documented gamma correction, alpha recycling, reversal,
   descending endpoints, alias behavior, atomic gray-level coercion, attribute removal, and bounded

@@ -30,7 +30,7 @@ importFrom(graphics, axis, plot.new, plot.window)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median)
 importFrom(utils, packageDescription, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, axis_ticks, sourced_value, ask_value, remote_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output)
+export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, axis_ticks, sourced_value, ask_value, remote_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -60,6 +60,12 @@ centered <- function(x) x - median(x)
 duration <- function(x, units = "secs") as.difftime(x, units = units)
 histogram_counts <- function(x, breaks = "Sturges") hist(x, breaks = breaks, plot = FALSE)$counts
 hcl_colours <- function() grDevices::hcl(c(0, 0, 260), c = c(100, 0, 100), l = c(50, 90, 50), alpha = .3)
+classic_palettes <- function(n = 3) c(
+  grDevices::rainbow(n),
+  grDevices::terrain.colors(n),
+  grDevices::topo.colors(n),
+  grDevices::cm.colors(n)
+)
 axis_ticks <- function() {
   plot.new()
   plot.window(c(0, 4), c(0, 4))
@@ -2928,6 +2934,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "axis_ticks",
       "centered",
       "class_summary",
+      "classic_palettes",
       "describe",
       "duration",
       "dynamic_describe",
@@ -3562,6 +3569,113 @@ describe("complete inline source-to-result vertical slice", () => {
       code: "NRT3293",
     });
     await runtime.dispose();
+  });
+
+  it("generates the frequency-ranked classic HSV palette family", async () => {
+    const runtime = await session();
+    await expect(runtime.eval("grDevices::rainbow(5)")).resolves.toEqual([
+      "#FF0000",
+      "#CCFF00",
+      "#00FF66",
+      "#0066FF",
+      "#CC00FF",
+    ]);
+    await expect(runtime.eval("rainbow(c(3, 9))")).resolves.toEqual([
+      "#FF0000",
+      "#00FF00",
+      "#0000FF",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          identical(names(formals(grDevices::rainbow)), c("n", "s", "v", "start", "end", "alpha", "rev")),
+          abs(eval(formals(grDevices::rainbow)[["end"]], list(n = 3)) - 2 / 3) < 1e-15,
+          identical(formals(grDevices::rainbow)[["s"]], 1),
+          identical(formals(grDevices::rainbow)[["v"]], 1),
+          identical(formals(grDevices::rainbow)[["start"]], 0),
+          identical(formals(grDevices::rainbow)[["rev"]], FALSE),
+          identical(names(formals(grDevices::terrain.colors)), c("n", "alpha", "rev")),
+          identical(formals(grDevices::terrain.colors)[["rev"]], FALSE)
+        )
+      `),
+    ).resolves.toEqual([true, true, true, true, true, true, true, true]);
+    await expect(
+      runtime.eval("rainbow(5, start = 0.7, end = 0.1, alpha = c(0.2, 0.8), rev = TRUE)"),
+    ).resolves.toEqual(["#FF990033", "#FF0000CC", "#FF009933", "#CC00FFCC", "#3300FF33"]);
+    await expect(runtime.eval("terrain.colors(8)")).resolves.toEqual([
+      "#00A600",
+      "#3EBB00",
+      "#8BD000",
+      "#E6E600",
+      "#E9BD3A",
+      "#ECB176",
+      "#EFC2B3",
+      "#F2F2F2",
+    ]);
+    await expect(runtime.eval("topo.colors(8, alpha = 0.5)")).resolves.toEqual([
+      "#4C00FF80",
+      "#0019FF80",
+      "#0080FF80",
+      "#00E5FF80",
+      "#00FF4D80",
+      "#E6FF0080",
+      "#FFFF0080",
+      "#FFE0B380",
+    ]);
+    await expect(runtime.eval("cm.colors(8, rev = TRUE)")).resolves.toEqual([
+      "#FF80FF",
+      "#FF9FFF",
+      "#FFBFFF",
+      "#FFDFFF",
+      "#DFFFFF",
+      "#BFFFFF",
+      "#9FFFFF",
+      "#80FFFF",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          rainbow(3, s = c(0.2, 0.8)),
+          terrain.colors(1),
+          topo.colors(1),
+          cm.colors(1),
+          length(rainbow(0)),
+          length(terrain.colors(-1))
+        )
+      `),
+    ).resolves.toEqual([
+      "#FFCCCC",
+      "#33FF33",
+      "#CCCCFF",
+      "#F2F2F2",
+      "#4C00FF",
+      "#80FFFF",
+      "0",
+      "0",
+    ]);
+    for (const source of [
+      "rainbow()",
+      "rainbow(3, start = 0.2, end = 0.2)",
+      "rainbow(3, s = 2)",
+      "terrain.colors(3, alpha = NA_real_)",
+      "topo.colors(3, rev = NA)",
+      "cm.colors(numeric())",
+    ]) {
+      await expect(runtime.eval(source), source).rejects.toMatchObject({
+        code:
+          source === "rainbow()" ? "NRE2103" : source.includes("rev = NA") ? "NRT3103" : "NRT3293",
+      });
+    }
+    await runtime.dispose();
+
+    const packaged = await createR({ execution: "inline", assets, packages: [pureRFixture] });
+    await expect(packaged.eval("nativrfixture::classic_palettes(1)")).resolves.toEqual([
+      "#FF0000",
+      "#F2F2F2",
+      "#4C00FF",
+      "#80FFFF",
+    ]);
+    await packaged.dispose();
   });
 
   it("generates zoo's frequency-ranked gamma-corrected gray palettes and levels", async () => {
@@ -9903,7 +10017,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.236.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.237.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

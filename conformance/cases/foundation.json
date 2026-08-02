@@ -5448,7 +5448,7 @@
   },
   {
     "id": "hcl-observed-ggplot2-raster-colors",
-    "code": "rainbow <- matrix(hcl(seq(0, 360, length.out = 50 * 50), 80, 70), nrow = 50)\nc(dim(rainbow), rainbow[c(1, 625, 1250, 1875, 2500)], hcl(seq(0, 360, length.out = 10), 80, 70))",
+    "code": "hcl_rainbow <- matrix(hcl(seq(0, 360, length.out = 50 * 50), 80, 70), nrow = 50)\nc(dim(hcl_rainbow), hcl_rainbow[c(1, 625, 1250, 1875, 2500)], hcl(seq(0, 360, length.out = 10), 80, 70))",
     "expected": [
       "50",
       "50",
@@ -5795,6 +5795,73 @@
     "id": "heat-colors-coercion-empty-and-input-boundaries",
     "code": "c(heat.colors(3.9), length(heat.colors(0)), length(heat.colors(-1)), is.null(names(heat.colors(setNames(3, \"n\")))), inherits(try(heat.colors(3, alpha = 2), silent = TRUE), \"try-error\"), inherits(try(heat.colors(3, rev = NA), silent = TRUE), \"try-error\"))",
     "expected": ["#FF0000", "#FF8000", "#FFFF00", "0", "0", "TRUE", "TRUE", "TRUE"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "rainbow-observed-farver-zoo-palette-shape",
+    "code": "c(grDevices::rainbow(5), rainbow(5, start = 0.7, end = 0.1, alpha = c(0.2, 0.8), rev = TRUE))",
+    "expected": [
+      "#FF0000",
+      "#CCFF00",
+      "#00FF66",
+      "#0066FF",
+      "#CC00FF",
+      "#FF990033",
+      "#FF0000CC",
+      "#FF009933",
+      "#CC00FFCC",
+      "#3300FF33"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "classic-hsv-palettes-observed-package-shapes",
+    "code": "c(terrain.colors(5), topo.colors(5), cm.colors(5))",
+    "expected": [
+      "#00A600",
+      "#E6E600",
+      "#EAB64E",
+      "#EEB99F",
+      "#F2F2F2",
+      "#4C00FF",
+      "#004CFF",
+      "#00E5FF",
+      "#00FF4D",
+      "#FFFF00",
+      "#80FFFF",
+      "#BFFFFF",
+      "#FFFFFF",
+      "#FFBFFF",
+      "#FF80FF"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "classic-hsv-palettes-recycling-empty-and-input-boundaries",
+    "code": "c(rainbow(3, s = c(0.2, 0.8)), terrain.colors(1), topo.colors(1), cm.colors(1), length(rainbow(0)), length(terrain.colors(-1)), inherits(try(rainbow(3, start = 0.2, end = 0.2), silent = TRUE), \"try-error\"), inherits(try(rainbow(3, s = 2), silent = TRUE), \"try-error\"), inherits(try(topo.colors(3, alpha = NA_real_), silent = TRUE), \"try-error\"))",
+    "expected": [
+      "#FFCCCC",
+      "#33FF33",
+      "#CCCCFF",
+      "#F2F2F2",
+      "#4C00FF",
+      "#80FFFF",
+      "0",
+      "0",
+      "TRUE",
+      "TRUE",
+      "TRUE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "classic-hsv-palettes-exact-formals",
+    "code": "c(identical(names(formals(grDevices::rainbow)), c(\"n\", \"s\", \"v\", \"start\", \"end\", \"alpha\", \"rev\")), identical(names(formals(grDevices::terrain.colors)), c(\"n\", \"alpha\", \"rev\")))",
+    "expected": [true, true],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
   },

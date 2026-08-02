@@ -250,7 +250,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 249,which.min,true,3,data.table|zoo|bit64,4,3.1,1.9
 250,proc.time,true,2,ps|data.table,2,2.1,1.8
 251,vapply,true,2,ps|distributional,2,2.1,1.8
-252,rainbow,false,2,farver|zoo,5,2.1,1.8
+252,rainbow,true,2,farver|zoo,5,2.1,1.8
 253,rect,false,2,sass|zoo,3,2.1,1.8
 254,vector,true,2,purrr|data.table,8,2.1,1.8
 255,complex,true,2,StanHeaders|zoo,2,2.1,1.8
@@ -260,7 +260,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 259,readChar,false,2,digest|shiny,2,2.1,1.7
 260,reorder,true,1,ggplot2,4,1.0,1.7
 261,chull,true,1,ggplot2,3,1.0,1.7
-262,terrain.colors,false,1,ggplot2,3,1.0,1.7
+262,terrain.colors,true,1,ggplot2,3,1.0,1.7
 263,confint,true,1,ggplot2,2,1.0,1.7
 264,jitter,true,1,ggplot2,2,1.0,1.7
 265,match.arg,true,1,ggplot2,2,1.0,1.7

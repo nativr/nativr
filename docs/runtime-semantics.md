@@ -723,12 +723,13 @@ channels, optional alpha and result names, `maxColorValue`, and three-/four-colu
 frame input. The default palette is deterministic session data in this slice; palette mutation,
 wide-gamut spaces, and device profiles remain outside it.
 
-`heat.colors()` independently generates the registered `grDevices` sequential heat palette. It uses
-deterministic byte-rounded red-to-yellow and pale-yellow segments, returns uppercase hexadecimal
-colors, optionally appends a recycled alpha byte, and can reverse the finished sequence. Numeric `n`
-is truncated, names are discarded, and non-positive counts return an empty character vector. Other
-palette families, palette mutation, broad color-space conversion, device profiles, and rendering
-interpretation are separate surfaces.
+`rainbow()`, `heat.colors()`, `terrain.colors()`, `topo.colors()`, and `cm.colors()` share an owned
+HSV-to-RGB path while independently constructing each documented classic palette. Results use
+deterministic uppercase RGB(A) bytes, recycle optional alpha, reverse only after color generation,
+truncate numeric `n`, discard input names, and return an empty character vector for non-positive
+counts. `rainbow()` additionally recycles saturation/value vectors and wraps a descending hue range
+through red. HCL palette catalogs, palette mutation, broad color-space conversion, device profiles,
+and rendering interpretation are separate surfaces.
 
 `gray()` and its `grey()` alias coerce supported atomic gray levels, require finite values in
 `[0, 1]`, recycle a nonempty optional alpha vector across the level vector, drop source attributes,
@@ -736,8 +737,8 @@ and emit uppercase RGB or RGBA hexadecimal bytes. `gray.colors()` and `grey.colo
 compute the documented `seq(start^gamma, end^gamma)^(1/gamma)` palette, including default/custom or
 descending endpoints, zero/fractional counts, gamma zero/negative behavior, alpha composition, and
 final reversal. All loops and result allocations are charged to the runtime limits. Vector-valued
-start/end/gamma controls, alpha longer than a direct level input, host color profiles, and the other
-palette families are separate surfaces.
+start/end/gamma controls, alpha longer than a direct level input, host color profiles, and HCL
+palette catalogs are separate surfaces.
 
 `outer()` constructs repeated column-major Cartesian inputs in the runtime, resolves character or
 callable `FUN` values through the caller environment, and forwards ellipsis promises without forcing

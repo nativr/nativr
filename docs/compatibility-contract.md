@@ -714,9 +714,11 @@ separate surfaces.
 
 `grDevices::heat.colors` has differential evidence for the measured sequential palette, exact
 red-to-yellow and pale-yellow hexadecimal bytes, optional alpha, reversal, count truncation, names,
-zero/negative counts, and invalid scalar inputs. It is independently generated and does not claim
-palette families beyond the separately documented gray palette, palette state, general color
-conversion, or device-specific rendering.
+zero/negative counts, and invalid scalar inputs. The shared classic HSV path also gives
+`grDevices::rainbow`, `terrain.colors`, `topo.colors`, and `cm.colors` GNU R 4.6 evidence for
+byte-exact default/custom sequences, recycled saturation/value or alpha vectors, wrapped hue ranges,
+reversal, namespace access, and zero/invalid boundaries. It does not claim `hcl.colors`, palette
+state, general color conversion, or device-specific rendering.
 
 `grDevices::gray`/`grey` and `gray.colors`/`grey.colors` have differential evidence for zoo's
 measured `gray.colors(2, start = 0.7)` and `grey(7:1/8)` calls. Covered behavior includes uppercase

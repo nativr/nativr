@@ -1,5 +1,32 @@
 # Roadmap
 
+## Primary strategy: complete the shared R substrate, then reuse package source
+
+NativR's compatibility goal is Base R first and package reuse second. The runtime should implement
+language semantics plus the documented `base`, `methods`, `stats`, `utils`, `graphics`, and
+`grDevices` contracts once, then execute unchanged pure-R package source through the ordinary
+package loader. Package-specific TypeScript rewrites are not the scaling strategy.
+
+The practical target for “arbitrary pure-R packages” is an install pipeline that accepts any
+standard source package, resolves its dependency closure, and either loads it unchanged or reports
+the first concrete unsupported contract. Success still depends on all transitive code staying inside
+the implemented R, namespace, data, resource, and host-adapter surface; “pure R” alone is not a
+compatibility guarantee. Priority is therefore determined by measured package reach: each shared
+Base R gap is implemented once, differential-tested against GNU R, and credited to every package
+whose unchanged source can then pass it.
+
+The remaining package-system foundation is ordered as follows:
+
+1. broaden Base R and recommended-package semantics by measured package reach;
+2. finish namespace directives, S3 and S4 registration/dispatch, package hooks, and dependency
+   resolution needed by real source packages;
+3. cover portable source-package data and resource formats, while keeping installed lazy-load
+   databases and native code as separately declared compatibility layers;
+4. continuously run unchanged public pure-R packages and publish executable pass/blocker evidence.
+
+This changes neither the clean-room boundary nor the completion standard below: full compatibility
+is claimed only when the inventory and cross-browser differential evidence support it.
+
 ## Completed: browser-native foundation
 
 The Worker-first vertical slice, normalized parser, typed vectors, missingness, closures, promises,
@@ -368,8 +395,8 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      through the shared `gray`/`grey` and `gray.colors`/`grey.colors` implementation, including
      deterministic RGB(A) bytes, gamma interpolation, alpha recycling, reversal, descending
      endpoints, aliases, namespace access, attribute removal, errors, and allocation limits.
-     Vector-valued palette controls, device profiles, and other palette families remain explicit
-     boundaries.
+     Vector-valued gray-palette controls, device profiles, and HCL palette catalogs remain explicit
+     boundaries; the classic HSV palette family is covered separately.
 101. Frequency-ranked POSIXct construction: `base::ISOdatetime` runs zoo's measured five-date
      POSIXct index through the shared `ISOdate` calendar path with required clock fields, component
      recycling, fractional seconds, UTC/GMT and empty-zone labels, deterministic browser UTC
@@ -666,6 +693,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      direct and pure-R package calls, default Worker routing, and false embedded-session TTY
      detection have evidence. Streaming stdin, sink diversion, terminal negotiation, pushback, and
      host file descriptors remain compatibility depth.
+149. Usage-ranked classic palettes: rank-252 `grDevices::rainbow`, rank-262 `terrain.colors`, and
+     adjacent `topo.colors`/`cm.colors` now share an independent browser-native HSV conversion path
+     with the existing `heat.colors`. GNU R 4.6 differential evidence covers byte-exact sequences,
+     hue wrapping, saturation/value and alpha recycling, reversal, formals, count/error boundaries,
+     source-only package namespaces, and the default Worker Playground. HCL palette catalogs,
+     mutable palette state, profiles, and device color management remain compatibility depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

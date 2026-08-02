@@ -228,6 +228,11 @@ No package source is checked into this repository. Together these tests exercise
 installation, runtime package files, namespace loading, metaprogramming, dynamic caller frames,
 closure-formal replacement, and reusable state-management behavior.
 
+The checked-in source-only fixture also exports a function that calls `grDevices::rainbow`,
+`terrain.colors`, `topo.colors`, and `cm.colors` through its namespace. This is a small executable
+example of the Base-first strategy: one shared runtime implementation becomes available to package
+code without translating or wrapping that package function in TypeScript.
+
 Package-defined constructor and wrapper code may also inspect callable signatures through
 `args(fun)`. The runtime returns a fresh closure with matching formals and a `NULL` body, including
 registered builtin/operator usage metadata; the inline source-package fixture and the Playground's

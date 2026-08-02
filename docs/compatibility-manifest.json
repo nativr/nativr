@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.236.0",
+  "languageSubsetVersion": "0.237.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -665,6 +665,10 @@
         { "name": "gray.colors", "compatibility": "behavioral" },
         { "name": "grey.colors", "compatibility": "behavioral" },
         { "name": "heat.colors", "compatibility": "behavioral" },
+        { "name": "rainbow", "compatibility": "behavioral" },
+        { "name": "terrain.colors", "compatibility": "behavioral" },
+        { "name": "topo.colors", "compatibility": "behavioral" },
+        { "name": "cm.colors", "compatibility": "behavioral" },
         { "name": "nclass.Sturges", "compatibility": "behavioral" },
         { "name": "nclass.scott", "compatibility": "numeric" },
         { "name": "nclass.FD", "compatibility": "numeric" }
