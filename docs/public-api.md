@@ -74,11 +74,12 @@ R code can use `tempdir()`/`tempfile()` with `file()`, `file.exists()`,
 `dput()`/`dget()`/`unlink()`, or `save()`/`load()` for bounded, same-session text and supported
 workspace serialization. `open()`/`close()` expose read/write/append modes, `seek()` controls the
 supported shared text cursor, and `isOpen()` or `summary()` reports state. `grDevices::png()` can
-write a bounded image into the same store, while raw `readBin()` returns owned bytes; if such a raw
-value is the evaluation result, the normal public raw-value conversion exposes its copied
-`Uint8Array`. Opaque `nativr://session-temp/...` identifiers never become usable host paths and are
-cleared by `reset()` or `dispose()`. The workspace archive is NativR canonical source rather than a
-GNU R `.RData` binary.
+write a bounded image into the same store. `gzcon()` can wrap an owned file connection for bounded
+browser-native gzip text/raw reads or close-time writes, while raw `readBin()` returns owned bytes;
+if such a raw value is the evaluation result, the normal public raw-value conversion exposes its
+copied `Uint8Array`. Opaque `nativr://session-temp/...` identifiers never become usable host paths
+and are cleared by `reset()` or `dispose()`. The workspace archive is NativR canonical source rather
+than a GNU R `.RData` binary.
 
 Within R, `dir.create()` can create nested session directories and `getwd()`/`setwd()` plus relative
 paths work across session files and immutable package resources. `list.files()`/`dir()` and
@@ -100,14 +101,15 @@ namespace without attaching it; `library(pkg)` attaches its exports. Imports, de
 constraints, S3 registrations, `.onLoad()`, and `.onAttach()` use the runtime's environment and
 closure model. `system.file()` returns opaque `nativr://package/...` paths for immutable package
 metadata, retained R source, and packaged resources; `readLines()` and read-only `file()`
-connections can read their text without granting host-filesystem access. `reset()` unloads and
-detaches packages while retaining the supplied catalog so later namespace access can load it again.
-`utils::data()` discovers direct package `data/*.R`, `.csv`, `.tab`, `.txt`, `.rda`, and `.RData`
-resources and loads them into the requested R environment. `.R` scripts use the package's declared
-UTF-8/Latin-1 encoding and the ordinary normalized-AST evaluator; binary workspaces use the bounded
-GNU R XDR v2/v3 and gzip decoder. A packaged `R/sysdata.rda` is loaded into its namespace before R
-source evaluation. Installed `.rdx`/`.rdb` lazy-load databases and unsupported serialized object
-types/compressors remain explicit boundaries.
+connections can read their text, and `gzcon()` can unwrap packaged gzip bytes, without granting
+host-filesystem or network access. `reset()` unloads and detaches packages while retaining the
+supplied catalog so later namespace access can load it again. `utils::data()` discovers direct
+package `data/*.R`, `.csv`, `.tab`, `.txt`, `.rda`, and `.RData` resources and loads them into the
+requested R environment. `.R` scripts use the package's declared UTF-8/Latin-1 encoding and the
+ordinary normalized-AST evaluator; binary workspaces use the bounded GNU R XDR v2/v3 and gzip
+decoder. A packaged `R/sysdata.rda` is loaded into its namespace before R source evaluation.
+Installed `.rdx`/`.rdb` lazy-load databases and unsupported serialized object types/compressors
+remain explicit boundaries.
 
 `@nativr/package-tools` is the build-time installer for standard source directories, `.tar.gz`
 archives, and CRAN-like repositories. It resolves required dependencies and emits integrity-locked

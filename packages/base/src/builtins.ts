@@ -9,6 +9,7 @@ import {
   characterEncodingAt,
   characterValueFromBytes,
   characterVector,
+  compressGzipBytes,
   complexVector,
   createEnvironment,
   createForcedPromise,
@@ -20,6 +21,7 @@ import {
   decodeRSerialization,
   decodeRSerializationFile,
   decodeRWorkspaceFile,
+  decompressGzipBytes,
   deparseAst,
   doubleVector,
   encodeRSerialization,
@@ -416,6 +418,26 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     ["description", "open", "blocking", "encoding", "raw", "method"],
     "behavioral",
     builtinFile,
+  ),
+  withBuiltinFormals(
+    defineBuiltin(
+      "gzcon",
+      ["con", "level", "allowNonCompressed", "text"],
+      "behavioral",
+      builtinGzcon,
+    ),
+    [
+      { name: "con" },
+      { name: "level", defaultValue: { kind: "DoubleLiteral", value: 6, span: SYNTHETIC_SPAN } },
+      {
+        name: "allowNonCompressed",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "text",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+    ],
   ),
   defineBuiltin(
     "readBin",
@@ -2543,8 +2565,8 @@ type VirtualTextConnectionMode = "r" | "w" | "a" | "r+" | "w+" | "a+";
 
 interface VirtualTextConnection {
   readonly id: number;
-  readonly handle: RIntegerVector;
-  readonly description: string;
+  handle: RIntegerVector;
+  description: string;
   readonly path: string;
   readonly packageFile: boolean;
   readonly privateFile: boolean;
@@ -2555,6 +2577,14 @@ interface VirtualTextConnection {
   displayMode: string;
   text: "text" | "binary";
   cursor: number;
+  gzip?: VirtualGzipConnection;
+}
+
+interface VirtualGzipConnection {
+  readonly level: number;
+  readonly allowNonCompressed: boolean;
+  contents?: Uint8Array;
+  dirty: boolean;
 }
 
 interface GraphicsState {
@@ -5338,6 +5368,193 @@ async function builtinFile(invocation: BuiltinInvocation): Promise<RIntegerVecto
   return handle;
 }
 
+async function builtinGzcon(invocation: BuiltinInvocation): Promise<RIntegerVector> {
+  const matched = await matchExact(invocation, ["con", "level", "allowNonCompressed", "text"]);
+  const connection = requireVirtualTextConnection(invocation, required(matched, "con", "gzcon"));
+  if (connection.gzip !== undefined) {
+    invocation.context.warn({ code: "NRW1119", message: "this is already a 'gzcon' connection" });
+    return connection.handle;
+  }
+
+  const level = gzipCompressionLevel(matched.get("level"));
+  const allowNonCompressed = coercibleLogicalFlag(
+    matched.get("allowNonCompressed"),
+    true,
+    "allowNonCompressed",
+  );
+  const text = coercibleLogicalFlag(matched.get("text"), false, "text");
+  const canRead = virtualConnectionCanRead(connection.mode);
+  const canWrite = virtualConnectionCanWrite(connection.mode);
+  if (canRead && canWrite) {
+    throw new REvaluationError("NRE2249", "can only use read- or write- binary connections");
+  }
+  if (connection.open && connection.text === "text") {
+    invocation.context.warn({
+      code: "NRW1120",
+      message: "using a text-mode 'file' connection may not work correctly",
+    });
+  }
+
+  const originalDescription = connection.description;
+  const originalHandle = connection.handle;
+  const originalDisplayMode = connection.displayMode;
+  const originalText = connection.text;
+  const originalCursor = connection.cursor;
+  const gzip: VirtualGzipConnection = {
+    level,
+    allowNonCompressed,
+    dirty: canWrite && connection.mode === "w",
+    ...(canWrite && connection.mode === "w" ? { contents: new Uint8Array(0) } : {}),
+  };
+  connection.gzip = gzip;
+  connection.description = `gzcon(${originalDescription})`;
+  connection.displayMode = `${connection.mode}${connection.mode.endsWith("+") ? "" : "b"}`;
+  connection.text = text ? "text" : "binary";
+  connection.cursor = 0;
+  const handle = withClasses(integerVector([connection.id]), ["gzcon", "connection"]);
+  connection.handle = handle;
+
+  try {
+    if (virtualTextFileExists(invocation, connection.path)) {
+      if (canRead || connection.mode === "a")
+        await readGzipConnectionContents(invocation, connection);
+      if (connection.mode === "a") gzip.dirty = true;
+    }
+  } catch (error) {
+    delete connection.gzip;
+    connection.handle = originalHandle;
+    connection.description = originalDescription;
+    connection.displayMode = originalDisplayMode;
+    connection.text = originalText;
+    connection.cursor = originalCursor;
+    throw error;
+  }
+  return handle;
+}
+
+function gzipCompressionLevel(value: RValue | undefined): number {
+  if (
+    value === undefined ||
+    !isAtomic(value) ||
+    value.type === "character" ||
+    value.type === "complex" ||
+    value.length === 0 ||
+    isMissing(value, 0)
+  ) {
+    if (value === undefined) return 6;
+    throw new RTypeMismatchError("NRT3356", "'level' must be one of 0 ... 9");
+  }
+  const numeric = value.values[0] ?? Number.NaN;
+  const level = Math.trunc(numeric);
+  if (!Number.isFinite(numeric) || level < 0 || level > 9) {
+    throw new RTypeMismatchError("NRT3356", "'level' must be one of 0 ... 9");
+  }
+  return level;
+}
+
+async function readGzipConnectionContents(
+  invocation: BuiltinInvocation,
+  connection: VirtualTextConnection,
+): Promise<Uint8Array> {
+  const gzip = connection.gzip;
+  if (gzip === undefined) {
+    return readVirtualBinaryFile(invocation, connection.path, "gzcon");
+  }
+  if (gzip.contents !== undefined) return gzip.contents;
+  const source = readVirtualBinaryFile(invocation, connection.path, "gzcon");
+  if (source[0] === 0x1f && source[1] === 0x8b) {
+    gzip.contents = await decompressGzipBytes(source, invocation.context);
+  } else {
+    if (!gzip.allowNonCompressed) {
+      invocation.context.warn({
+        code: "NRW1121",
+        message: "file stream does not have gzip magic number",
+      });
+    }
+    gzip.contents = Uint8Array.from(source);
+  }
+  return gzip.contents;
+}
+
+async function finalizeGzipConnection(
+  invocation: BuiltinInvocation,
+  connection: VirtualTextConnection,
+): Promise<void> {
+  const gzip = connection.gzip;
+  if (gzip === undefined || !gzip.dirty) return;
+  if (connection.packageFile) {
+    throw new RUnsupportedFeatureError(
+      "NRU6181",
+      "gzcon() package files are immutable in the browser runtime.",
+    );
+  }
+  const compressed = await compressGzipBytes(
+    gzip.contents ?? new Uint8Array(0),
+    invocation.context,
+  );
+  writeVirtualBinaryFile(invocation, connection.path, compressed);
+  gzip.dirty = false;
+}
+
+function writeGzipConnectionBytes(
+  invocation: BuiltinInvocation,
+  connection: VirtualTextConnection,
+  source: Uint8Array,
+): void {
+  const gzip = connection.gzip;
+  if (gzip === undefined) return;
+  const existing = gzip.contents ?? new Uint8Array(0);
+  const append = connection.mode === "a";
+  const cursor = append ? existing.byteLength : Math.min(connection.cursor, existing.byteLength);
+  const replaced = append ? 0 : Math.min(source.byteLength, existing.byteLength - cursor);
+  const length = existing.byteLength - replaced + source.byteLength;
+  if (length > invocation.context.limits.maxOutputBytes) {
+    throw new RResourceLimitError("NRL4007", "Uncompressed gzcon data limit exceeded.", {
+      details: { maxOutputBytes: invocation.context.limits.maxOutputBytes, outputBytes: length },
+    });
+  }
+  const updated = new Uint8Array(length);
+  updated.set(existing.subarray(0, cursor), 0);
+  updated.set(source, cursor);
+  updated.set(existing.subarray(cursor + replaced), cursor + source.byteLength);
+  gzip.contents = updated;
+  gzip.dirty = true;
+  connection.cursor = cursor + source.byteLength;
+}
+
+function decodeVirtualTextBytes(
+  bytes: Uint8Array,
+  encoding: VirtualTextEncoding,
+  label: string,
+): string {
+  if (encoding === "latin1") return decodeLatin1Bytes(bytes);
+  try {
+    const Decoder = (
+      globalThis as unknown as {
+        readonly TextDecoder: new (
+          label: string,
+          options: { readonly fatal: boolean },
+        ) => { readonly decode: (input: Uint8Array) => string };
+      }
+    ).TextDecoder;
+    return new Decoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    throw new REvaluationError("NRE2237", `gzcon stream '${label}' is not valid UTF-8 text.`);
+  }
+}
+
+function encodeVirtualTextBytes(source: string, encoding: VirtualTextEncoding): Uint8Array {
+  if (encoding === "utf8") return encodeUtf8Bytes(source);
+  const codePoints = Array.from(source, (entry) => entry.codePointAt(0) ?? 0);
+  if (codePoints.some((codePoint) => codePoint > 0xff)) {
+    throw new RUnsupportedFeatureError(
+      "NRU6182",
+      "gzcon() cannot encode this character in Latin-1.",
+    );
+  }
+  return Uint8Array.from(codePoints);
+}
+
 async function builtinReadBin(invocation: BuiltinInvocation): Promise<RRawVector> {
   const matched = await matchExact(invocation, ["con", "what", "n", "size", "signed", "endian"]);
   const source = required(matched, "con", "readBin");
@@ -5385,7 +5602,10 @@ async function builtinReadBin(invocation: BuiltinInvocation): Promise<RRawVector
     if (connection.open && !virtualConnectionCanRead(connection.mode)) {
       throw new REvaluationError("NRE2240", "cannot read from this connection");
     }
-    bytes = readVirtualBinaryFile(invocation, connection.path, "readBin");
+    bytes =
+      connection.gzip === undefined
+        ? readVirtualBinaryFile(invocation, connection.path, "readBin")
+        : await readGzipConnectionContents(invocation, connection);
     start = connection.open ? connection.cursor : 0;
   } else {
     bytes = readVirtualBinaryFile(invocation, filePathScalar(source, "readBin"), "readBin");
@@ -5439,6 +5659,7 @@ async function builtinClose(invocation: BuiltinInvocation): Promise<RValue> {
     }
   }
   const state = virtualTextFileState(invocation);
+  await finalizeGzipConnection(invocation, connection);
   destroyVirtualTextConnection(state, connection);
   return connection.open ? integerVector([0]) : R_NULL;
 }
@@ -5709,7 +5930,19 @@ async function builtinReadLines(invocation: BuiltinInvocation): Promise<RCharact
   }
   if (count === 0) return characterVector([]);
 
-  const source = readVirtualTextFile(invocation, path, encoding);
+  const gzipStart = connection?.gzip === undefined ? undefined : connection.cursor;
+  const source =
+    connection?.gzip === undefined
+      ? readVirtualTextFile(invocation, path, encoding)
+      : decodeVirtualTextBytes(
+          await readGzipConnectionContents(invocation, connection),
+          encoding,
+          label,
+        );
+  if (connection?.gzip !== undefined && gzipStart !== undefined) {
+    const bytes = await readGzipConnectionContents(invocation, connection);
+    start = decodeVirtualTextBytes(bytes.subarray(0, gzipStart), encoding, label).length;
+  }
   if (virtualTextByteLength(source) > invocation.context.limits.maxOutputBytes) {
     throw new RResourceLimitError("NRL4007", "Virtual text-file read limit exceeded.", {
       details: {
@@ -5719,7 +5952,14 @@ async function builtinReadLines(invocation: BuiltinInvocation): Promise<RCharact
     });
   }
   const result = splitVirtualTextLines(invocation, source, start, count, warn, skipNul, label);
-  if (connection?.open) connection.cursor = start + result.consumed;
+  if (connection?.open) {
+    connection.cursor =
+      connection.gzip === undefined
+        ? start + result.consumed
+        : (gzipStart ?? 0) +
+          encodeVirtualTextBytes(source.slice(start, start + result.consumed), connection.encoding)
+            .byteLength;
+  }
   if (!ok && count > 0 && result.lines.length < count) {
     throw new REvaluationError("NRE2236", "too few lines read in readLines");
   }
@@ -5940,7 +6180,7 @@ function virtualSeekPosition(value: RValue | undefined): number | undefined {
 function isVirtualTextConnectionHandle(value: RValue): value is RIntegerVector {
   if (value.type !== "integer" || value.length !== 1 || isMissing(value, 0)) return false;
   const classes = vectorClasses(value);
-  return classes?.includes("connection") === true && classes.includes("file");
+  return classes?.includes("connection") === true;
 }
 
 function requireVirtualTextConnection(
@@ -6027,6 +6267,14 @@ function writeVirtualTextConnection(
   connection: VirtualTextConnection,
   source: string,
 ): void {
+  if (connection.gzip !== undefined) {
+    writeGzipConnectionBytes(
+      invocation,
+      connection,
+      encodeVirtualTextBytes(source, connection.encoding),
+    );
+    return;
+  }
   if (connection.packageFile) {
     throw new RUnsupportedFeatureError(
       "NRU6181",
@@ -6323,7 +6571,7 @@ async function builtinUnserialize(invocation: BuiltinInvocation): Promise<RValue
   const matched = await matchExact(invocation, ["connection", "refhook"]);
   validateSerializationRefHook(matched.get("refhook"), "unserialize");
   const source = required(matched, "connection", "unserialize");
-  const bytes = serializationInputBytes(invocation, source, "unserialize");
+  const bytes = await serializationInputBytes(invocation, source, "unserialize");
   return decodeRSerialization(bytes, invocation.context, serializationEnvironments(invocation))
     .value;
 }
@@ -6360,7 +6608,7 @@ async function builtinReadRds(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["file", "refhook"]);
   validateSerializationRefHook(matched.get("refhook"), "readRDS");
   const source = required(matched, "file", "readRDS");
-  const bytes = serializationInputBytes(invocation, source, "readRDS");
+  const bytes = await serializationInputBytes(invocation, source, "readRDS");
   return (
     await decodeRSerializationFile(bytes, invocation.context, serializationEnvironments(invocation))
   ).value;
@@ -6394,7 +6642,7 @@ async function builtinSaveRds(invocation: BuiltinInvocation): Promise<RValue> {
 async function builtinInfoRds(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["file"]);
   const source = required(matched, "file", "infoRDS");
-  const bytes = serializationInputBytes(invocation, source, "infoRDS");
+  const bytes = await serializationInputBytes(invocation, source, "infoRDS");
   const { metadata } = await decodeRSerializationFile(
     bytes,
     invocation.context,
@@ -6493,6 +6741,10 @@ function writeSerializationTarget(
         throw new REvaluationError("NRE2247", `${call}() requires a binary connection.`);
       }
     }
+    if (connection.gzip !== undefined) {
+      writeGzipConnectionBytes(invocation, connection, bytes);
+      return;
+    }
     writeVirtualBinaryFile(invocation, connection.path, bytes);
     if (connection.open) connection.cursor = bytes.byteLength;
     return;
@@ -6517,11 +6769,11 @@ function serializationEnvironments(invocation: BuiltinInvocation) {
   } as const;
 }
 
-function serializationInputBytes(
+async function serializationInputBytes(
   invocation: BuiltinInvocation,
   source: RValue,
   call: "unserialize" | "readRDS" | "infoRDS",
-): Uint8Array {
+): Promise<Uint8Array> {
   if (source.type === "raw") return Uint8Array.from(source.values);
   if (isVirtualTextConnectionHandle(source)) {
     const connection = requireVirtualTextConnection(invocation, source);
@@ -6531,7 +6783,10 @@ function serializationInputBytes(
     if (connection.open && connection.text !== "binary") {
       throw new REvaluationError("NRE2247", `${call}() requires a binary connection.`);
     }
-    const bytes = readVirtualBinaryFile(invocation, connection.path, call);
+    const bytes =
+      connection.gzip === undefined
+        ? readVirtualBinaryFile(invocation, connection.path, call)
+        : await readGzipConnectionContents(invocation, connection);
     if (connection.open) connection.cursor = bytes.byteLength;
     return bytes;
   }
@@ -32607,7 +32862,7 @@ async function builtinSummary(invocation: BuiltinInvocation): Promise<RValue> {
     return listValue(
       [
         characterVector([connection.description]),
-        characterVector(["file"]),
+        characterVector([connection.gzip === undefined ? "file" : "gzcon"]),
         characterVector([connection.displayMode]),
         characterVector([connection.text]),
         characterVector([connection.open ? "opened" : "closed"]),

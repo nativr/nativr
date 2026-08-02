@@ -75,16 +75,16 @@ signal.
 
 | Priority | Measured rank | Callable           | Weighted reach | Packages | Observed calls |
 | -------: | ------------: | ------------------ | -------------: | -------: | -------------: |
-|        1 |           196 | `example`          |           2.8% |        3 |              4 |
-|        2 |           203 | `gzcon`            |           2.5% |        2 |              6 |
-|        3 |           204 | `vignette`         |           2.4% |        2 |              5 |
-|        4 |           205 | `args`             |           2.4% |        2 |              3 |
-|        5 |           208 | `registerS3method` |           2.4% |        2 |              2 |
-|        6 |           209 | `file.info`        |           2.4% |        3 |              3 |
-|        7 |           214 | `hcl`              |           2.3% |        2 |              6 |
-|        8 |           215 | `axis`             |           2.3% |        3 |             18 |
-|        9 |           221 | `source`           |           2.2% |        1 |              2 |
-|       10 |           222 | `textConnection`   |           2.2% |        1 |              2 |
+|        1 |           204 | `vignette`         |           2.4% |        2 |              5 |
+|        2 |           205 | `args`             |           2.4% |        2 |              3 |
+|        3 |           208 | `registerS3method` |           2.4% |        2 |              2 |
+|        4 |           209 | `file.info`        |           2.4% |        3 |              3 |
+|        5 |           214 | `hcl`              |           2.3% |        2 |              6 |
+|        6 |           215 | `axis`             |           2.3% |        3 |             18 |
+|        7 |           221 | `source`           |           2.2% |        1 |              2 |
+|        8 |           222 | `textConnection`   |           2.2% |        1 |              2 |
+|        9 |           230 | `readline`         |           2.1% |        2 |              2 |
+|       10 |           232 | `url`              |           2.1% |        2 |              6 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -114,7 +114,7 @@ order, retains only existing normalized browser directories, appends the runtime
 filters source-bundle discovery, accepts explicit virtual `lib.loc`, and supplies package-hook
 `libname`. Unchanged `withr 3.0.3` executes and restores `with_libpaths()` through this path. Host
 library discovery, startup `R_LIBS*` expansion, runtime downloads, and multiple installed versions
-remain incomplete. The next measured unresolved callable is rank 196 `example`. Rank 144 `Encoding`
+remain incomplete. The next measured unresolved callable is rank 204 `vignette`. Rank 144 `Encoding`
 is also complete for all 12 observed calls across rlang, utf8, and xfun (4.5% weighted reach),
 together with adjacent `Encoding<-`, `enc2utf8`, and `enc2native`. The shared character
 representation preserves exact bytes and canonical R marks through subset/replacement,
@@ -1385,8 +1385,8 @@ ties:
      implicit opens, explicit read/write/append modes, persistent cursors, summaries, destruction,
      `readLines`, `writeLines`, `cat`, and `utils::capture.output`; forged handles, package writes,
      and host paths are rejected. Raw `readBin()` retrieval now covers owned binary files; typed
-     binary decoding/writes, URLs, sockets, compression outside the serialization/PNG seams, and the
-     wider filesystem remain separate host-adapter work.
+     binary decoding/writes, URLs, sockets, compressed seeking, and the wider filesystem remain
+     separate host-adapter work. Rank-203 `gzcon` now adds browser-native gzip wrapping below.
 136. Browser-owned directories and relative paths: ranks 48 `base::R.home`, 129 `base::dir.create`,
      and 135 `base::list.files`, with `dir.exists`, `dir`, `list.dirs`, `getwd`, `setwd`,
      `normalizePath`, `basename`, and `dirname`, expose bounded session, package, and runtime roots.
@@ -1408,6 +1408,13 @@ ties:
      unchanged package examples into executable gap discovery. Interactive HTML/help databases,
      prompting, exact source/echo formatting, RNG restoration, abort recovery, and examples that
      need still unsupported runtime features remain compatibility depth.
+139. Gzip connections: rank-203 `base::gzcon` represents six calls across jsonlite and curl at 2.5%
+     download-weighted reach. It wraps evaluator-owned package/session connections with bounded
+     browser-standard gzip streams, GNU R-shaped connection classes/summaries, raw and text reads,
+     noncompressed pass-through warnings, close-time writes, exact formal names, package resource
+     evidence, and a Worker roundtrip. This supplies the reusable compression layer used by package
+     R code; `url()`/curl transports, sockets, typed `readBin`/`writeBin`, seeking within compressed
+     streams, and compression-level byte identity remain separate capabilities.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

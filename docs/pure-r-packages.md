@@ -134,7 +134,9 @@ normalized AST. The runtime then provides:
     package namespace before its R source is evaluated.
 16. `utils::example()` lookup by topic or alias across loaded/installed bundles, optional virtual
     `package` and `lib.loc` selection, package loading, local/global execution, `give.lines`, and
-    explicit `run.dontrun` / `run.donttest` controls.
+    explicit `run.dontrun` / `run.donttest` controls;
+17. `base::gzcon()` wrapping of immutable package resources or session files for bounded gzip text
+    and raw reads plus close-time writes through browser-standard streams.
 
 Package source, metadata, resource counts, and encoded bytes are bounded before parsing. Package
 evaluation then consumes the ordinary step, call-depth, allocation, and output budgets.
@@ -311,9 +313,10 @@ loader.
   blockers.
 - `file()` connections currently cover bounded text/binary-mode handles over immutable package files
   and same-session browser-memory paths, including implicit open/close, explicit `open()`/`close()`,
-  `isOpen()`, `flush()`, bounded `seek()`, and `summary()`. Compressed connections, URLs, sockets,
-  host paths, typed raw/binary decoding or writes beyond raw `readBin()`, separate read/write seek
-  positions, and the broader file API remain separate work.
+  `isOpen()`, `flush()`, bounded `seek()`, and `summary()`. `gzcon()` adds gzip wrapping for those
+  owned connections without granting transport or filesystem authority. URLs, sockets, host paths,
+  typed raw/binary decoding or writes beyond raw `readBin()`, seek/pushback within compressed
+  streams, separate read/write seek positions, and the broader file API remain separate work.
 - Package resources and their parent directories can be enumerated with `list.files()`/`list.dirs()`
   or selected with `setwd()`. Relative `readLines()`, table-reader, and connection paths then
   resolve inside that immutable package root. `R.home()` and the runtime/package/session directory

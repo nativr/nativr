@@ -64,6 +64,20 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await expect(page.locator("#result")).toHaveText('["worker", "TRUE", "0"]');
 
   await page.locator("#source").fill(`
+    path <- tempfile(fileext = ".gz")
+    output <- gzcon(file(path, "wb"), text = TRUE)
+    writeLines(c("worker", "gzip"), output)
+    close(output)
+    magic <- as.integer(readBin(path, "raw", n = 3L))
+    input <- gzcon(file(path, "rb"), text = TRUE)
+    lines <- readLines(input)
+    close(input)
+    c(magic, lines, unlink(path))
+  `);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText('["31", "139", "8", "worker", "gzip", "0"]');
+
+  await page.locator("#source").fill(`
     path <- tempfile(fileext = ".csv")
     write.csv(data.frame(label = c("a,b", "c"), value = c(1L, NA_integer_)), path, row.names = FALSE)
     table <- read.csv(path)

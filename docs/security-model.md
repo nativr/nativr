@@ -23,14 +23,16 @@ enforce the same byte ceiling before constructing a result vector or writing a s
 target. File-connection targets resolve only through the evaluator's opaque session map, so capture
 cannot become an implicit filesystem escape.
 
-`tempdir()`, `tempfile()`, `file()`, `file.exists()`, line I/O, `cat()`, `capture.output()`,
-`dput()`, `dget()`, and `unlink()` expose only opaque session-memory or immutable package paths. The
-mutable file/connection maps are owned by the evaluator, cleared on reset/disposal, limited by
-output-byte and vector budgets, and never resolve a path through browser or operating-system APIs.
-Connection records use object identity as well as an integer slot, so user-constructed classed
-integers cannot forge a live handle. `dget()` can parse only text previously produced by the same
-session's bounded serializer. `readLines()` and read-only connections may additionally decode
-reviewed package-bundle bytes; package writes and host paths are rejected before lookup.
+`tempdir()`, `tempfile()`, `file()`, `gzcon()`, `file.exists()`, line I/O, `cat()`,
+`capture.output()`, `dput()`, `dget()`, and `unlink()` expose only opaque session-memory or
+immutable package paths. The mutable file/connection maps are owned by the evaluator, cleared on
+reset/disposal, limited by output-byte and vector budgets, and never resolve a path through browser
+or operating-system APIs. Connection records use object identity as well as an integer slot, so
+user-constructed classed integers cannot forge a live handle. `dget()` can parse only text
+previously produced by the same session's bounded serializer. `readLines()` and read-only
+connections may additionally decode reviewed package-bundle bytes; `gzcon()` admits only bytes
+already reachable through such a handle, bounds both compressed and decompressed representations,
+and uses browser-standard streams. Package writes and host paths are rejected before lookup.
 
 GNU R XDR serialization is decoded directly from raw vectors or the same closed virtual-file
 capability set. Input bytes, decompressed bytes, nesting, vector lengths, references, and result

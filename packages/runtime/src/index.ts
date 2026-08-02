@@ -32,7 +32,9 @@ export type {
 } from "./evaluator.js";
 export { deparseAst } from "./language.js";
 export {
+  compressGzipBytes,
   decodeRBase64Resource,
+  decompressGzipBytes,
   decodeRSerialization,
   decodeRSerializationFile,
   decodeRWorkspaceFile,

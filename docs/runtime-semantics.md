@@ -403,6 +403,14 @@ either session text or immutable package files resolved through `system.file()`.
 `file()` connections provide operation-scoped or persistent cursor access; host paths and other
 connection classes are rejected before any host API can be reached.
 
+`gzcon(con, level = 6, allowNonCompressed = TRUE, text = FALSE)` replaces a valid evaluator-owned
+file handle with a `c("gzcon", "connection")` handle over the same record. Reads unwrap bounded gzip
+bytes (or pass ordinary bytes through, warning when requested); `readLines()` and raw `readBin()`
+share the decompressed cursor. Writes retain bounded uncompressed bytes and emit one gzip stream
+when `close()` destroys the wrapper, matching GNU R's zero-byte-before-close behavior. The browser
+stream API does not expose compression-level selection, so `level` is range-checked but byte
+identity is not promised. No URL, socket, host file, or ambient network capability is introduced.
+
 The same map owns a bounded directory tree and current working directory. `R.home()` identifies a
 static `nativr://runtime` shape; `tempdir()` identifies the mutable session root; and package roots
 come only from supplied bundles. `dir.create()` and recursive `unlink()` mutate session directories,
@@ -419,8 +427,9 @@ row/column names, missing strings, and syntactic name repair. Columns pass throu
 deterministic `utils::type.convert` ladder used by package code. `write.table` and its CSV variants
 serialize owned atomic matrices, lists, and data frames with explicit row/header conventions,
 missing markers, decimal separators, and escape/double quote modes. Files remain evaluator memory;
-compressed streams, host paths, URLs, arbitrary encodings, `colClasses`, and the complete GNU R
-scanner are outside this slice.
+automatic compressed-path detection, host paths, URLs, arbitrary encodings, `colClasses`, and the
+complete GNU R scanner are outside this slice. Callers can explicitly unwrap an owned connection
+through `gzcon()` where a reader accepts a connection.
 
 The independent binary serializer reads and writes GNU R's documented XDR version-2/version-3 stream
 shape for owned atomic storage, explicit missing masks versus ordinary `NaN`, infinities, complex

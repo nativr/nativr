@@ -101,12 +101,13 @@ Date: 2026-08-02
   immutable package text, GNU R line endings, separators, NUL/incomplete-line behavior, byte limits,
   and stdout events without host filesystem access. Session-owned `file()` handles add implicit and
   explicit open/close, read/write/append modes, persistent cursors, bounded `seek()`, `flush()`,
-  `isOpen()`, `summary()`, invalid-handle rejection, `tempdir()`, and `file.exists()`. An owned
-  directory tree adds `R.home()`, `dir.create()`/`dir.exists()`, `list.files()`/`dir()`,
-  `list.dirs()`, `getwd()`/`setwd()`, `normalizePath()`, `basename()`, and `dirname()`; relative
-  paths resolve only within the current session, package, or runtime root. `Sys.sleep()` adds
-  interruptible asynchronous waits for package retry/polling code without blocking the Worker event
-  loop.
+  `isOpen()`, `summary()`, invalid-handle rejection, `tempdir()`, and `file.exists()`. Usage-ranked
+  `gzcon()` wraps the same handles with bounded browser-standard gzip text/raw reads and close-time
+  writes, including immutable package resources and Worker execution. An owned directory tree adds
+  `R.home()`, `dir.create()`/`dir.exists()`, `list.files()`/`dir()`, `list.dirs()`,
+  `getwd()`/`setwd()`, `normalizePath()`, `basename()`, and `dirname()`; relative paths resolve only
+  within the current session, package, or runtime root. `Sys.sleep()` adds interruptible
+  asynchronous waits for package retry/polling code without blocking the Worker event loop.
 - Usage-ranked `system.time()` plus adjacent `proc.time()` with one lazy expression evaluation,
   closure-like formals, validated `gcFirst`, visible named/classed `proc_time` results, monotonic
   elapsed seconds, missing unavailable child-process fields, timed-error stderr output, and

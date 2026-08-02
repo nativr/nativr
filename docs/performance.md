@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 362 KiB gzip;
+- Worker JavaScript: 363 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -579,3 +579,10 @@ manifest. Rd extraction remains in the Node-only packager; the Worker adds only 
 virtual-library discovery, skipped-block preparation, and normalized-AST execution over existing
 package/resource/evaluator paths. The measured Worker is 361.4 KiB gzip, so the ceiling rises
 narrowly to 362 KiB; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.224 adds usage-ranked `base::gzcon` over the existing evaluator-owned connection
+and byte-store seams. Generic gzip helpers are shared with serialization and use only browser
+`CompressionStream`/`DecompressionStream`; the Worker adds bounded wrapper state, validation,
+text/raw cursor handling, and close-time emission without a dependency, protocol event, network
+transport, or package-specific adapter. The measured Worker is 362.5 KiB gzip, so the ceiling rises
+narrowly to 363 KiB; client and parser-Wasm budgets remain unchanged.

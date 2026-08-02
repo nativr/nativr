@@ -7759,6 +7759,33 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "gzcon-formals",
+    "code": "names(formals(gzcon))",
+    "expected": ["con", "level", "allowNonCompressed", "text"],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "gzcon-browser-gzip-write-read-roundtrip",
+    "code": "path <- tempfile(fileext = \".gz\")\noutput <- gzcon(file(path, \"wb\"), level = 9, text = TRUE)\nwriteLines(c(\"one\", \"two\"), output)\nflush(output)\nbefore <- length(readBin(path, \"raw\", n = 99L))\nclose(output)\nmagic <- as.integer(readBin(path, \"raw\", n = 3L))\ninput <- gzcon(file(path, \"rb\"), text = TRUE)\ndetails <- summary(input)\nvalue <- readLines(input)\nclose(input)\nc(before, magic, class(input), details$class, details$mode, details$text, value, unlink(path))",
+    "expected": [
+      "0",
+      "31",
+      "139",
+      "8",
+      "gzcon",
+      "connection",
+      "gzcon",
+      "rb",
+      "text",
+      "one",
+      "two",
+      "0"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "file-empty-description-private-connection",
     "code": "con <- file()\nwriteLines(\"private\", con)\nseek(con, 0)\nvalue <- readLines(con)\ndetails <- summary(con)\nclosed <- withVisible(close(con))\nc(value, details$description, details$mode, details$text, details$opened, is.integer(closed$value), closed$value, closed$visible)",
     "expected": ["private", "", "w+", "text", "opened", "TRUE", "0", "FALSE"],

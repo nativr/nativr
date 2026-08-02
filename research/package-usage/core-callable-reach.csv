@@ -201,7 +201,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 200,getwd,true,2,withr|xfun,9,2.1,2.7
 201,rgb,true,3,stringr|crayon|posterior,4,3.1,2.6
 202,suppressWarnings,true,3,bslib|data.table|zoo,21,3.1,2.5
-203,gzcon,false,2,jsonlite|curl,6,2.1,2.5
+203,gzcon,true,2,jsonlite|curl,6,2.1,2.5
 204,vignette,false,2,Rcpp|data.table,5,2.1,2.4
 205,args,false,2,S7|StanHeaders,3,2.1,2.4
 206,pmin,true,2,dplyr|purrr,2,2.1,2.4

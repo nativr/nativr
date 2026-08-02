@@ -219,8 +219,11 @@ descriptors. R receives only a classed integer handle; the session map additiona
 original value identity, owns open mode and cursor state, bounds handle count and stored bytes, and
 destroys records on `close()` or session reset. `readLines()`, `writeLines()`, `cat()`, and
 `capture.output()` route through one connection writer/reader, while package-backed records are
-read-only. This preserves the normal pure-R connection protocol without adding Node built-ins, DOM
-objects, filesystem resolution, network access, or a second execution backend.
+read-only. `gzcon()` replaces the visible handle for the same record and inserts a bounded
+decompressed-byte buffer; raw/text readers consume that buffer and writers emit gzip through the
+runtime's shared browser-standard stream helpers only when the wrapper closes. This preserves the
+normal pure-R connection protocol without adding Node built-ins, DOM objects, filesystem resolution,
+network access, or a second execution backend.
 
 The PNG device composes existing owned seams instead of introducing a host renderer. A numbered
 device records the same normalized graphics events used by Worker callbacks and replay plots; a

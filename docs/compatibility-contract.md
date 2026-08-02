@@ -444,10 +444,21 @@ connection summaries; access queries; flush/close visibility; and destruction. `
 opaque session root and `file.exists` recognizes session files and installed-package files or
 directories. `readLines`, `writeLines`, `cat`, and `utils::capture.output` consume the same handles;
 closed `capture.output` targets follow GNU R's destroy-after-use behavior. Handle identity prevents
-forging, package writes are rejected, and the map is reset with the evaluator. Host paths,
-compression, URLs, sockets, typed binary decoding/writes beyond raw `readBin`, encoding conversion
-on writes, independent read/write positions, positions beyond end of file, and the broader
+forging, package writes are rejected, and the map is reset with the evaluator. Host paths, URLs,
+sockets, typed binary decoding/writes beyond raw `readBin`, encoding conversion on writes,
+independent read/write positions, positions beyond end of file, and the broader
 connection/filesystem stack are not claimed.
+
+Usage-ranked `base::gzcon` has GNU R 4.6 behavioral differential evidence for its four formal names,
+`c("gzcon", "connection")` handle shape, connection summary, gzip magic, text write/read roundtrips,
+close-time emission, raw decompression, and `allowNonCompressed = FALSE` warning plus pass-through.
+It mutates the evaluator connection record and invalidates the superseded file handle, so all
+subsequent I/O traverses one bounded decompressed byte buffer. Immutable package gzip resources and
+same-session files use browser-standard `CompressionStream`/`DecompressionStream` in both inline and
+Worker execution. The `level` range is validated, but the browser API does not expose GNU zlib's
+level control, so compressed-byte or compression-ratio identity is not claimed. URL/curl transports,
+sockets, seek/pushback in compressed streams, concatenated-member fidelity, and typed binary I/O
+remain separate capabilities.
 
 `base::R.home`, `dir.create`, `dir.exists`, `list.files`/`dir`, `list.dirs`, `getwd`, `setwd`,
 `normalizePath`, `basename`, and `dirname` have public-shape differential evidence plus NativR-only

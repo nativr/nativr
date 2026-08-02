@@ -66,6 +66,8 @@ hidden_helper <- function(x) x + 100
     { path: "extdata/nul.txt", data: "YQBiCg==" },
     { path: "extdata/latin1.txt", data: "6Qo=" },
     { path: "extdata/invalid-utf8.txt", data: "/w==" },
+    { path: "extdata/lines.txt.gz", data: "H4sIAAAAAAAACkvMKchI5EpKLUnkAgBuUDBuCwAAAA==" },
+    { path: "extdata/truncated.gz", data: "H4sIAAAAAA==" },
     {
       path: "extdata/value.rds",
       data: "H4sIAAAAAAAABovgYmBgYGJgYQOSzCCmMJjPwMALpRkbGMBAAKKOgRMkVsHA0ABiMB1eycDAAlYGlWLNS8xNLUZXnwhjJAGJfwBKuY0SdAAAAA==",
@@ -1784,6 +1786,100 @@ describe("complete inline source-to-result vertical slice", () => {
     await limited.eval("close(limited_connection); replacement_connection <- file()");
     await limited.eval("close(replacement_connection)");
     await limited.dispose();
+  });
+
+  it("wraps package and session connections with browser-native gzip streams", async () => {
+    const runtime = await createR({ execution: "inline", assets, packages: [pureRFixture] });
+    await expect(
+      runtime.eval(`
+        underlying <- file(system.file("extdata", "lines.txt.gz", package = "nativrfixture"), "rb")
+        con <- gzcon(underlying, text = TRUE)
+        details <- summary(con)
+        lines <- readLines(con)
+        old_rejected <- inherits(try(isOpen(underlying), silent = TRUE), "try-error")
+        closed <- withVisible(close(con))
+        c(
+          class(con), details$class, details$mode, details$text, details$opened,
+          details[["can read"]], details[["can write"]], lines, old_rejected,
+          is.integer(closed$value), closed$value, closed$visible
+        )
+      `),
+    ).resolves.toEqual([
+      "gzcon",
+      "connection",
+      "gzcon",
+      "rb",
+      "text",
+      "opened",
+      "yes",
+      "no",
+      "alpha",
+      "beta",
+      "TRUE",
+      "TRUE",
+      "0",
+      "FALSE",
+    ]);
+
+    await expect(
+      runtime.eval(`
+        con <- gzcon(file(system.file("extdata", "lines.txt.gz", package = "nativrfixture"), "rb"))
+        bytes <- readBin(con, "raw", n = 99L)
+        close(con)
+        rawToChar(bytes)
+      `),
+    ).resolves.toBe("alpha\nbeta\n");
+
+    const passThrough = await runtime.evalDetailed(`
+      path <- tempfile()
+      writeLines(c("plain", "text"), path)
+      con <- gzcon(file(path, "rb"), allowNonCompressed = FALSE, text = TRUE)
+      value <- readLines(con)
+      close(con)
+      unlink(path)
+      value
+    `);
+    expect(passThrough.value).toEqual(["plain", "text"]);
+    expect(passThrough.warnings).toEqual([
+      { code: "NRW1121", message: "file stream does not have gzip magic number" },
+    ]);
+
+    await expect(
+      runtime.eval(`
+        path <- tempfile(fileext = ".gz")
+        con <- gzcon(file(path, "wb"), level = 9, text = TRUE)
+        writeLines(c("one", "two"), con)
+        flush(con)
+        before <- length(readBin(path, "raw", n = 99L))
+        close(con)
+        magic <- as.integer(readBin(path, "raw", n = 3L))
+        input <- gzcon(file(path, "rb"), text = TRUE)
+        value <- readLines(input)
+        close(input)
+        c(before, magic, value, unlink(path))
+      `),
+    ).resolves.toEqual(["0", "31", "139", "8", "one", "two", "0"]);
+
+    await expect(runtime.eval("gzcon(1)")).rejects.toMatchObject({ code: "NRE2238" });
+    await expect(
+      runtime.eval('path <- tempfile(); con <- file(path, "w+"); gzcon(con)'),
+    ).rejects.toMatchObject({ code: "NRE2249" });
+    await expect(
+      runtime.eval(`
+        original <- file(
+          system.file("extdata", "truncated.gz", package = "nativrfixture"),
+          "rb"
+        )
+        gzcon(original)
+      `),
+    ).rejects.toMatchObject({ code: "NRE2247" });
+    await expect(runtime.eval("c(class(original), isOpen(original))")).resolves.toEqual([
+      "file",
+      "connection",
+      "TRUE",
+    ]);
+    await runtime.eval("close(original)");
+    await runtime.dispose();
   });
 
   it("routes cat() and capture.output() through virtual file connections", async () => {
@@ -9182,7 +9278,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.223.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.224.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

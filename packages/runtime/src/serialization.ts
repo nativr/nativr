@@ -130,7 +130,7 @@ export async function encodeRSerializationFile(
   options: RSerializationWriteOptions & { readonly compress?: boolean } = {},
 ): Promise<Uint8Array> {
   const bytes = encodeRSerialization(value, context, environments, options);
-  return options.compress === true ? compressGzip(bytes, context) : bytes;
+  return options.compress === true ? compressGzipBytes(bytes, context) : bytes;
 }
 
 /** Decompress a supported file wrapper and decode its serialized object. */
@@ -210,7 +210,7 @@ async function unwrapRCompression(
   bytes: Uint8Array,
   context: OperatorContext,
 ): Promise<Uint8Array> {
-  if (bytes[0] === 0x1f && bytes[1] === 0x8b) return decompressGzip(bytes, context);
+  if (bytes[0] === 0x1f && bytes[1] === 0x8b) return decompressGzipBytes(bytes, context);
   if (bytes[0] === 0x42 && bytes[1] === 0x5a && bytes[2] === 0x68) {
     throw new RUnsupportedFeatureError(
       "NRU6192",
@@ -238,7 +238,16 @@ async function unwrapRCompression(
   return bytes;
 }
 
-async function decompressGzip(bytes: Uint8Array, context: OperatorContext): Promise<Uint8Array> {
+/** Decompress a bounded gzip byte stream using the browser-standard stream API. */
+export async function decompressGzipBytes(
+  bytes: Uint8Array,
+  context: OperatorContext,
+): Promise<Uint8Array> {
+  if (bytes.byteLength > context.limits.maxOutputBytes) {
+    throw new RResourceLimitError("NRL4007", "Compressed gzip input limit exceeded.", {
+      details: { maxOutputBytes: context.limits.maxOutputBytes, outputBytes: bytes.byteLength },
+    });
+  }
   type Reader = {
     read(): Promise<{ readonly done: boolean; readonly value?: Uint8Array }>;
     cancel(reason?: unknown): Promise<void>;
@@ -253,7 +262,7 @@ async function decompressGzip(bytes: Uint8Array, context: OperatorContext): Prom
   if (host.Blob === undefined || host.DecompressionStream === undefined) {
     throw new RUnsupportedFeatureError(
       "NRU6192",
-      "gzip-compressed R serialization requires the browser DecompressionStream API.",
+      "gzip decompression requires the browser DecompressionStream API.",
     );
   }
   let reader: Reader;
@@ -263,7 +272,7 @@ async function decompressGzip(bytes: Uint8Array, context: OperatorContext): Prom
       .pipeThrough(new host.DecompressionStream("gzip"))
       .getReader();
   } catch {
-    throw new REvaluationError("NRE2247", "Cannot open gzip-compressed R serialization.");
+    throw new REvaluationError("NRE2247", "Cannot open gzip-compressed data.");
   }
   const chunks: Uint8Array[] = [];
   let length = 0;
@@ -276,7 +285,7 @@ async function decompressGzip(bytes: Uint8Array, context: OperatorContext): Prom
       length += chunk.value.byteLength;
       if (length > context.limits.maxOutputBytes) {
         await reader.cancel("limit");
-        throw new RResourceLimitError("NRL4007", "Decompressed serialization limit exceeded.", {
+        throw new RResourceLimitError("NRL4007", "Decompressed gzip data limit exceeded.", {
           details: { maxOutputBytes: context.limits.maxOutputBytes, outputBytes: length },
         });
       }
@@ -284,7 +293,7 @@ async function decompressGzip(bytes: Uint8Array, context: OperatorContext): Prom
     }
   } catch (error) {
     if (error instanceof RResourceLimitError) throw error;
-    throw new REvaluationError("NRE2247", "Invalid gzip-compressed R serialization.");
+    throw new REvaluationError("NRE2247", "Invalid gzip-compressed data.");
   }
   context.allocate(length);
   const output = new Uint8Array(length);
@@ -296,7 +305,16 @@ async function decompressGzip(bytes: Uint8Array, context: OperatorContext): Prom
   return output;
 }
 
-async function compressGzip(bytes: Uint8Array, context: OperatorContext): Promise<Uint8Array> {
+/** Compress a bounded byte stream as gzip using the browser-standard stream API. */
+export async function compressGzipBytes(
+  bytes: Uint8Array,
+  context: OperatorContext,
+): Promise<Uint8Array> {
+  if (bytes.byteLength > context.limits.maxOutputBytes) {
+    throw new RResourceLimitError("NRL4007", "Uncompressed gzip input limit exceeded.", {
+      details: { maxOutputBytes: context.limits.maxOutputBytes, outputBytes: bytes.byteLength },
+    });
+  }
   type Reader = {
     read(): Promise<{ readonly done: boolean; readonly value?: Uint8Array }>;
     cancel(reason?: unknown): Promise<void>;
@@ -311,7 +329,7 @@ async function compressGzip(bytes: Uint8Array, context: OperatorContext): Promis
   if (host.Blob === undefined || host.CompressionStream === undefined) {
     throw new RUnsupportedFeatureError(
       "NRU6192",
-      "gzip R serialization requires the browser CompressionStream API.",
+      "gzip compression requires the browser CompressionStream API.",
     );
   }
   const reader = new host.Blob([bytes])
@@ -328,7 +346,7 @@ async function compressGzip(bytes: Uint8Array, context: OperatorContext): Promis
     length += chunk.value.byteLength;
     if (length > context.limits.maxOutputBytes) {
       await reader.cancel("limit");
-      throw new RResourceLimitError("NRL4007", "Compressed serialization limit exceeded.", {
+      throw new RResourceLimitError("NRL4007", "Compressed gzip data limit exceeded.", {
         details: { maxOutputBytes: context.limits.maxOutputBytes, outputBytes: length },
       });
     }

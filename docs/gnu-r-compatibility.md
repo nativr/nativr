@@ -648,6 +648,16 @@ Playground executes a packaged example. Interactive HTML/help databases, prompti
 Rd/source/echo formatting, RNG restoration, abort recovery, core-package examples, and examples that
 reach unsupported semantics remain incomplete.
 
+The gzip-connection increment raises current name overlap to 581 of 2,522. Measured rank 203
+`base::gzcon` represents six calls across jsonlite and curl, or 2.5% download-weighted reach. GNU R
+4.6 black-box evidence covers exact formals, replacement handle/classes and summary shape, text/raw
+decompression, non-gzip pass-through warnings, zero bytes before close, gzip magic after close, and
+write/read roundtrips. Package-resource and browser Worker cases use the same bounded
+`CompressionStream`/`DecompressionStream` path. This removes a reusable pure-R package compression
+gap, but does not implement the `url()`/curl transports used by some measured examples, compressed
+seeking/pushback, typed binary I/O, concatenated-member fidelity, or zlib compression-level byte
+identity.
+
 ## Completion evidence
 
 The objective is complete only when:
