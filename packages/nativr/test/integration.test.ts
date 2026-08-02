@@ -7317,35 +7317,6 @@ describe("complete inline source-to-result vertical slice", () => {
       },
     ]);
 
-    const styled = await runtime.evalDetailed(
-      "rect(c(0, 2), 2, c(1, 3), 3, col = c('red', 'blue', 'yellow'))",
-    );
-    expect(styled.graphics).toEqual([
-      {
-        kind: "polygon",
-        polygons: [
-          {
-            x: [0, 1, 1, 0],
-            y: [2, 2, 3, 3],
-            fill: "#FF0000FF",
-            border: "#00FF00FF",
-            lineType: "44",
-            lineWidth: 2,
-            fillRule: "nonzero",
-          },
-          {
-            x: [2, 3, 3, 2],
-            y: [2, 2, 3, 3],
-            fill: "#0000FFFF",
-            border: "#00FF00FF",
-            lineType: "44",
-            lineWidth: 2,
-            fillRule: "nonzero",
-          },
-        ],
-      },
-    ]);
-
     const noFill = await runtime.evalDetailed(
       "polygon(matrix(c(1, 2, 2, 1, 1, 1, 2, 2), ncol = 2), density = 0, col = 'yellow', border = 'blue')",
     );
@@ -7448,6 +7419,35 @@ describe("complete inline source-to-result vertical slice", () => {
             y: [0, 0, 1, 1],
             fill: "#FF0000FF",
             border: "#FFFFFF00",
+            lineType: "44",
+            lineWidth: 2,
+            fillRule: "nonzero",
+          },
+        ],
+      },
+    ]);
+
+    const styled = await runtime.evalDetailed(
+      "rect(c(0, 2), 2, c(1, 3), 3, col = c('red', 'blue', 'yellow'))",
+    );
+    expect(styled.graphics).toEqual([
+      {
+        kind: "polygon",
+        polygons: [
+          {
+            x: [0, 1, 1, 0],
+            y: [2, 2, 3, 3],
+            fill: "#FF0000FF",
+            border: "#00FF00FF",
+            lineType: "44",
+            lineWidth: 2,
+            fillRule: "nonzero",
+          },
+          {
+            x: [2, 3, 3, 2],
+            y: [2, 2, 3, 3],
+            fill: "#0000FFFF",
+            border: "#00FF00FF",
             lineType: "44",
             lineWidth: 2,
             fillRule: "nonzero",
