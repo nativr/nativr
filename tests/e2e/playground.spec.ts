@@ -75,6 +75,15 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText('["worker", "bridge"]');
 
+  await page.getByRole("button", { name: "Browser readline input" }).click();
+  page.once("dialog", async (dialog) => {
+    expect(dialog.type()).toBe("prompt");
+    expect(dialog.message()).toBe("Your name: ");
+    await dialog.accept("\t browser user \t");
+  });
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText('"Hello, browser user"');
+
   await page.locator("#source").fill("system('blocked', intern = TRUE)");
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("Evaluation failed.");

@@ -138,6 +138,12 @@ export interface PublicSystemCommandResult {
   readonly timedOut?: boolean;
 }
 
+/** One terminal-style line request emitted to an explicitly configured host. */
+export interface PublicReadlineRequest {
+  /** Already truncated GNU R-style prompt text; an empty string means no prompt. */
+  readonly prompt: string;
+}
+
 /** Character-formatted table emitted for a browser or other host data viewer. */
 export interface PublicDataViewEvent {
   readonly title: string;
@@ -368,6 +374,8 @@ export interface InitRequest extends ProtocolEnvelope {
   readonly limits?: Partial<ProtocolRuntimeLimits>;
   readonly packages?: readonly PureRPackageBundle[];
   readonly environmentVariables?: Readonly<Record<string, string>>;
+  /** Whether the embedding facade configured an interactive readline handler. */
+  readonly readline?: boolean;
   readonly debug: boolean;
 }
 
@@ -422,6 +430,16 @@ export type SystemCommandResultRequest = ProtocolEnvelope &
       }
   );
 
+/** Resolve a terminal-line request emitted while Worker evaluation is suspended. */
+export type ReadlineResultRequest = ProtocolEnvelope &
+  (
+    | { readonly kind: "readline-result"; readonly value: string }
+    | {
+        readonly kind: "readline-result";
+        readonly error: { readonly code: string; readonly message: string };
+      }
+  );
+
 /** All valid Worker requests. */
 export type WorkerRequest =
   | InitRequest
@@ -432,7 +450,8 @@ export type WorkerRequest =
   | CapabilitiesRequest
   | ResetRequest
   | DisposeRequest
-  | SystemCommandResultRequest;
+  | SystemCommandResultRequest
+  | ReadlineResultRequest;
 
 /** Evaluation data returned internally to the public facade. */
 export interface WireEvaluationResult {
@@ -484,9 +503,15 @@ export interface SystemCommandEvent extends ProtocolEnvelope {
   readonly request: PublicSystemCommandRequest;
 }
 
+/** A correlated terminal-line request handled by the embedding facade. */
+export interface ReadlineEvent extends ProtocolEnvelope {
+  readonly kind: "readline";
+  readonly request: PublicReadlineRequest;
+}
+
 /** All valid Worker responses and events. */
 export type WorkerResponse =
-  SuccessResponse | ErrorResponse | WarningEvent | OutputEvent | SystemCommandEvent;
+  SuccessResponse | ErrorResponse | WarningEvent | OutputEvent | SystemCommandEvent | ReadlineEvent;
 
 /** Guard a finite protocol request before dispatch. */
 export function isWorkerRequest(value: unknown): value is WorkerRequest {
@@ -506,6 +531,7 @@ export function isWorkerRequest(value: unknown): value is WorkerRequest {
           (Array.isArray(value.packages) && value.packages.every(isPureRPackageBundle))) &&
         (value.environmentVariables === undefined ||
           isEnvironmentVariableRecord(value.environmentVariables)) &&
+        (value.readline === undefined || typeof value.readline === "boolean") &&
         typeof value.debug === "boolean"
       );
     case "eval":
@@ -531,6 +557,16 @@ export function isWorkerRequest(value: unknown): value is WorkerRequest {
           typeof value.error.code === "string" &&
           typeof value.error.message === "string" &&
           value.result === undefined)
+      );
+    case "readline-result":
+      return (
+        (typeof value.value === "string" &&
+          !/[\0\r\n]/u.test(value.value) &&
+          value.error === undefined) ||
+        (isRecord(value.error) &&
+          typeof value.error.code === "string" &&
+          typeof value.error.message === "string" &&
+          value.value === undefined)
       );
     default:
       return false;
@@ -560,6 +596,8 @@ export function isWorkerResponse(value: unknown): value is WorkerResponse {
       return typeof value.text === "string" && typeof value.stream === "string";
     case "system-command":
       return isSystemCommandRequest(value.request);
+    case "readline":
+      return isReadlineRequest(value.request);
     default:
       return false;
   }
@@ -700,6 +738,10 @@ function isSystemCommandRequest(value: unknown): value is PublicSystemCommandReq
     value.timeoutSeconds >= 0 &&
     typeof value.receiveConsoleSignals === "boolean"
   );
+}
+
+function isReadlineRequest(value: unknown): value is PublicReadlineRequest {
+  return isRecord(value) && typeof value.prompt === "string" && !value.prompt.includes("\0");
 }
 
 function isSystemCommandResult(value: unknown): value is PublicSystemCommandResult {

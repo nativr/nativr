@@ -143,6 +143,19 @@ request, then return `{ status, stdout, stderr }`; the same asynchronous policy 
 default Worker. Without it, command execution fails closed. Native compilation such as `R CMD SHLIB`
 remains outside the pure-R package contract.
 
+Pure-R packages that prompt through `readline()` can use an equally explicit browser input seam:
+
+```js
+const r = await createR({
+  readline: ({ prompt }) => window.prompt(prompt) ?? "",
+});
+```
+
+The same callback works through the default Worker and may return a promise for a custom dialog.
+Without it, `readline()` follows non-interactive R behavior and returns `""`; providing it makes
+`interactive()` report `TRUE`. Returned leading/trailing spaces and tabs are trimmed as in R, while
+multiline, NUL-containing, or oversized host results are rejected.
+
 The current milestone supports all 25 feature groups measured by the repository's package-usage
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe

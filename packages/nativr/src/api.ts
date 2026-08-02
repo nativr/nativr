@@ -5,6 +5,7 @@ import type {
   PublicDataViewEvent,
   PublicGraphicsEvent,
   PublicOutputEvent,
+  PublicReadlineRequest,
   PublicRWarning,
   PublicSystemCommandRequest,
   PublicSystemCommandResult,
@@ -15,6 +16,7 @@ import type {
   WorkerResponse,
   WorkerSuccessPayload,
   SystemCommandResultRequest,
+  ReadlineResultRequest,
 } from "@nativr/protocol";
 import {
   DEFAULT_RUNTIME_LIMITS,
@@ -39,6 +41,7 @@ export type {
   PublicDataViewEvent,
   PublicGraphicsEvent,
   PublicOutputEvent,
+  PublicReadlineRequest,
   PublicSystemCommandRequest,
   PublicSystemCommandResult,
 } from "@nativr/protocol";
@@ -63,6 +66,8 @@ export interface CreateROptions {
   readonly environmentVariables?: Readonly<Record<string, string>>;
   /** Explicit allow-list seam for system(); omitted by default, so R code has no shell capability. */
   readonly systemCommand?: SystemCommandHandler;
+  /** Host-owned line input used by readline(); omitted sessions remain non-interactive. */
+  readonly readline?: ReadlineHandler;
   readonly timeoutMs?: number;
   readonly debug?: boolean;
   readonly onWarning?: (warning: PublicRWarning) => void;
@@ -77,6 +82,9 @@ export interface CreateROptions {
 export type SystemCommandHandler = (
   request: PublicSystemCommandRequest,
 ) => PublicSystemCommandResult | Promise<PublicSystemCommandResult>;
+
+/** Host-owned line input used only when R code calls readline(). */
+export type ReadlineHandler = (request: PublicReadlineRequest) => string | Promise<string>;
 
 /** Options for one evaluation. */
 export interface EvalOptions {
@@ -146,6 +154,7 @@ export async function createR(options: CreateROptions = {}): Promise<NativRSessi
   if (sessionOptions.execution === "inline") {
     const { RuntimeHost: InlineRuntimeHost } = await import("./runtime-host.js");
     const systemCommand = sessionOptions.systemCommand;
+    const readline = sessionOptions.readline;
     const host = await InlineRuntimeHost.create(
       {
         treeSitterRuntimeWasm: assets.treeSitterRuntimeWasm,
@@ -161,6 +170,14 @@ export async function createR(options: CreateROptions = {}): Promise<NativRSessi
             executeSystemCommandHandler(
               systemCommand,
               request,
+              sessionOptions.limits?.maxOutputBytes ?? DEFAULT_RUNTIME_LIMITS.maxOutputBytes,
+            ),
+      readline === undefined
+        ? undefined
+        : async (prompt) =>
+            executeReadlineHandler(
+              readline,
+              { prompt },
               sessionOptions.limits?.maxOutputBytes ?? DEFAULT_RUNTIME_LIMITS.maxOutputBytes,
             ),
     );
@@ -343,6 +360,43 @@ async function executeSystemCommandHandler(
   } catch (error) {
     if (error instanceof NativRError) throw error;
     throw new NativRError("NRE2250", error instanceof Error ? error.message : String(error));
+  }
+}
+
+function validateReadlineResult(
+  value: unknown,
+  maxOutputBytes = DEFAULT_RUNTIME_LIMITS.maxOutputBytes,
+): string {
+  if (
+    typeof value !== "string" ||
+    value.includes("\0") ||
+    value.includes("\r") ||
+    value.includes("\n")
+  ) {
+    throw new NativRError(
+      "NRS5006",
+      "createR({ readline }) must return one NUL-free line without newline characters.",
+    );
+  }
+  const inputBytes = new TextEncoder().encode(value).byteLength;
+  if (inputBytes > maxOutputBytes) {
+    throw new RResourceLimitError("NRL4007", "Readline input size limit exceeded.", {
+      details: { maxOutputBytes, inputBytes },
+    });
+  }
+  return value;
+}
+
+async function executeReadlineHandler(
+  handler: ReadlineHandler,
+  request: PublicReadlineRequest,
+  maxOutputBytes: number,
+): Promise<string> {
+  try {
+    return validateReadlineResult(await handler(request), maxOutputBytes);
+  } catch (error) {
+    if (error instanceof NativRError) throw error;
+    throw new NativRError("NRE2254", error instanceof Error ? error.message : String(error));
   }
 }
 
@@ -609,6 +663,7 @@ class WorkerSession implements NativRSession {
         ...(this.#options.environmentVariables === undefined
           ? {}
           : { environmentVariables: this.#options.environmentVariables }),
+        ...(this.#options.readline === undefined ? {} : { readline: true }),
         debug: this.#options.debug === true,
       },
       [],
@@ -691,6 +746,10 @@ class WorkerSession implements NativRSession {
       void this.#handleSystemCommand(worker, response.id, response.request);
       return;
     }
+    if (response.kind === "readline") {
+      void this.#handleReadline(worker, response.id, response.request);
+      return;
+    }
     const pending = this.#pending.get(response.id);
     if (pending === undefined) return;
     this.#pending.delete(response.id);
@@ -730,6 +789,40 @@ class WorkerSession implements NativRSession {
         kind: "system-command-result",
         error: {
           code: error instanceof NativRError ? error.code : "NRE2250",
+          message: error instanceof Error ? error.message : String(error),
+        },
+      };
+    }
+    worker.postMessage(response);
+  }
+
+  async #handleReadline(worker: Worker, id: string, request: PublicReadlineRequest): Promise<void> {
+    let response: ReadlineResultRequest;
+    try {
+      const handler = this.#options.readline;
+      if (handler === undefined) {
+        throw new NativRError(
+          "NRU6195",
+          "readline() requires an explicit createR({ readline }) host capability.",
+        );
+      }
+      response = {
+        protocolVersion: PROTOCOL_VERSION,
+        id,
+        kind: "readline-result",
+        value: await executeReadlineHandler(
+          handler,
+          request,
+          this.#options.limits?.maxOutputBytes ?? DEFAULT_RUNTIME_LIMITS.maxOutputBytes,
+        ),
+      };
+    } catch (error) {
+      response = {
+        protocolVersion: PROTOCOL_VERSION,
+        id,
+        kind: "readline-result",
+        error: {
+          code: error instanceof NativRError ? error.code : "NRE2254",
           message: error instanceof Error ? error.message : String(error),
         },
       };

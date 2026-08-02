@@ -306,6 +306,13 @@ needs one, `createR({ systemCommand })` can approve that exact command and retur
 across inline or Worker execution. No handler means no process authority, and a successful package
 bundle still cannot claim that arbitrary external programs exist.
 
+Rank-230 `base::readline()` is a second explicit host seam used by curl's email prompt and crayon's
+no-prompt example. An application can provide `createR({ readline })`; unchanged package R code then
+awaits that single-line callback in inline or Worker mode, and `interactive()` reflects its
+availability. Without a callback, R's non-interactive prompt plus empty-result behavior is retained.
+This avoids rewriting interactive package helpers while keeping dialog rendering, cancellation,
+credential policy, and any secret admission under application control.
+
 Rank-177 `base::as.difftime()` removes the next shared seam for the two measured vctrs/scales calls.
 Numeric and character interval construction, automatic and explicit units, names, missing values,
 attributes, and the connected `difftime()` recycling/unit behavior live in `base`, so package source

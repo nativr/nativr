@@ -238,6 +238,12 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("getOption", ["x", "default"], "behavioral", builtinGetOption),
   defineBuiltin("sQuote", ["x", "q"], "behavioral", builtinSingleQuote),
   defineBuiltin("interactive", [], "behavioral", builtinInteractive),
+  withBuiltinFormals(defineBuiltin("readline", ["prompt"], "behavioral", builtinReadline), [
+    {
+      name: "prompt",
+      defaultValue: { kind: "StringLiteral", value: "", span: SYNTHETIC_SPAN },
+    },
+  ]),
   defineBuiltin("capabilities", ["what", "Xchk"], "behavioral", builtinCapabilities),
   defineBuiltin("Sys.getpid", [], "behavioral", builtinSystemGetPid),
   defineBuiltin("packageEvent", ["pkgname", "event"], "behavioral", builtinPackageEvent),
@@ -4230,7 +4236,34 @@ async function builtinGetOption(invocation: BuiltinInvocation): Promise<RValue> 
 
 async function builtinInteractive(invocation: BuiltinInvocation): Promise<RValue> {
   await matchExact(invocation, []);
-  return logicalVector([false]);
+  return logicalVector([invocation.isInteractive()]);
+}
+
+async function builtinReadline(invocation: BuiltinInvocation): Promise<RCharacterVector> {
+  const matched = await matchExact(invocation, ["prompt"]);
+  const prompt = readlinePrompt(matched.get("prompt"));
+  const displayedPrompt = Array.from(prompt).slice(0, 256).join("");
+  if (displayedPrompt.length > 0 || !invocation.isInteractive()) {
+    invocation.context.writeOutput({
+      stream: "stdout",
+      text: `${displayedPrompt}${invocation.isInteractive() ? "" : "\n"}`,
+    });
+  }
+  const response = await invocation.readline(displayedPrompt);
+  invocation.context.allocate(1);
+  return characterVector([response.replace(/^[ \t]+|[ \t]+$/gu, "")]);
+}
+
+function readlinePrompt(value: RValue | undefined): string {
+  if (value === undefined || value.type === "null" || (isVector(value) && value.length === 0)) {
+    return "";
+  }
+  if (!isAtomic(value)) {
+    throw new RTypeMismatchError("NRT3410", "readline(prompt=) must be coercible to character.");
+  }
+  if (isMissing(value, 0)) return "NA";
+  if (isFactor(value)) return factorLevels(value)[(value.values[0] ?? 0) - 1] ?? "";
+  return stringAt(value, 0);
 }
 
 function builtinSystemGetPid(invocation: BuiltinInvocation): RIntegerVector {

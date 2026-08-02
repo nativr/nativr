@@ -122,6 +122,11 @@ Date: 2026-08-02
   stderr, status/warning, timeout, and failure shapes; a pure-R package function executes through
   the same seam. The default runtime has no shell or process authority, and all executable lookup,
   quoting, environment, signal, and cancellation semantics remain host policy.
+- Usage-ranked `readline()` with GNU R 4.6 non-interactive prompt/empty-result behavior and an
+  explicit asynchronous `readline` host adapter. Inline and Worker sessions share validated
+  single-line input, R whitespace trimming, a 256-character prompt bound, resource limits, and
+  capability-aware `interactive()`; an unchanged pure-R package function and Playground browser
+  dialog execute through the same seam.
 - Usage-ranked `gc()` traverses the reachable NativR value graph into GNU R's named 2-by-6
   `Ncells`/`Vcells` report, maintains resettable session high-water values and full/partial census
   counts, emits bounded verbose messages, and shares its collection seam with

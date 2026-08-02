@@ -59,6 +59,22 @@ exchange while the R evaluation is suspended. With no handler, `system()` fails 
 handler, not NativR, owns allow-listing, quoting, environment isolation, cancellation, and actual
 process semantics.
 
+`base::readline()` uses a separate line-oriented host adapter. This enables unchanged pure-R package
+prompts without exposing DOM objects to R or the Worker:
+
+```ts
+const r = await createR({
+  readline: async ({ prompt }) => showApplicationPrompt(prompt),
+});
+```
+
+The handler receives a copied `{ prompt }` record and must return one string without NUL or newline
+characters. NativR applies R's leading/trailing space-and-tab trimming and charges UTF-8 input bytes
+to `maxOutputBytes`. The callback may be asynchronous; a correlated protocol exchange suspends only
+the current Worker evaluation. A configured handler makes `interactive()` return `TRUE`. With no
+handler, `interactive()` is `FALSE`, `readline()` emits its prompt with the non-interactive newline,
+and returns `""` without contacting the host.
+
 `evalDetailed` returns textual `print()`/`cat()` output as ordered
 `{ stream: "stdout" | "stderr" | "message", text }` events. `createR({ onOutput })` receives the
 same events in both inline and Worker execution, while the detailed result retains them for

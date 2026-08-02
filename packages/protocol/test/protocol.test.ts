@@ -117,6 +117,7 @@ describe("Worker protocol guards", () => {
         },
       ],
       environmentVariables: { SEEDED: "value", EMPTY: "" },
+      readline: true,
       debug: false,
     },
     {
@@ -156,6 +157,18 @@ describe("Worker protocol guards", () => {
       kind: "system-command-result",
       error: { code: "NRU6194", message: "denied" },
     },
+    {
+      protocolVersion: 1,
+      id: "readline-result",
+      kind: "readline-result",
+      value: "answer",
+    },
+    {
+      protocolVersion: 1,
+      id: "readline-error",
+      kind: "readline-result",
+      error: { code: "NRE2254", message: "cancelled" },
+    },
   ])("accepts request kind $kind", (request) => {
     expect(isWorkerRequest(request)).toBe(true);
   });
@@ -181,8 +194,34 @@ describe("Worker protocol guards", () => {
         id: "x",
         kind: "init",
         assets: { treeSitterRuntimeWasm: "runtime.wasm", rGrammarWasm: "r.wasm" },
+        readline: "yes",
+        debug: false,
+      }),
+    ).toBe(false);
+    expect(
+      isWorkerRequest({
+        protocolVersion: 1,
+        id: "x",
+        kind: "init",
+        assets: { treeSitterRuntimeWasm: "runtime.wasm", rGrammarWasm: "r.wasm" },
         packages: [{ description: "bad", namespace: "", rSources: [{ path: 1, source: "" }] }],
         debug: false,
+      }),
+    ).toBe(false);
+    expect(
+      isWorkerRequest({
+        protocolVersion: 1,
+        id: "x",
+        kind: "readline-result",
+        value: "bad\0line",
+      }),
+    ).toBe(false);
+    expect(
+      isWorkerRequest({
+        protocolVersion: 1,
+        id: "x",
+        kind: "readline-result",
+        value: "two\nlines",
       }),
     ).toBe(false);
     expect(
@@ -290,6 +329,12 @@ describe("Worker protocol guards", () => {
         receiveConsoleSignals: true,
       },
     },
+    {
+      protocolVersion: 1,
+      id: "readline",
+      kind: "readline",
+      request: { prompt: "Name: " },
+    },
   ])("accepts response kind $kind", (response) => {
     expect(isWorkerResponse(response)).toBe(true);
   });
@@ -308,6 +353,14 @@ describe("Worker protocol guards", () => {
         id: "x",
         kind: "system-command",
         request: { command: "probe" },
+      }),
+    ).toBe(false);
+    expect(
+      isWorkerResponse({
+        protocolVersion: 1,
+        id: "x",
+        kind: "readline",
+        request: { prompt: 1 },
       }),
     ).toBe(false);
   });

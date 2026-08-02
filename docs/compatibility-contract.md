@@ -753,9 +753,14 @@ existing value while deleting a temporary one. Reading or mutating the host proc
 not supported, and empty string values remain explicit entries instead of following a host OS's
 `setenv` convention.
 
-`interactive()` always returns `FALSE`: browser and Worker evaluations are request-driven and have
-no terminal read-eval-print loop. This is a deliberate platform result, not a claim that NativR
-implements GNU R's interactive front-end state.
+`readline()` has GNU R 4.6 formals, visible scalar return, 256-character prompt bound, prompt
+coercion, and leading/trailing space-and-tab trimming. In the default non-interactive session it
+prints the prompt plus newline, returns `""`, and `interactive()` is `FALSE`. An explicit
+`createR({ readline })` callback enables asynchronous inline and Worker input, makes `interactive()`
+`TRUE`, and is exercised from an unchanged source-only package function and the browser Playground.
+The host result must be one NUL-free line within the session byte budget. EOF distinctions, terminal
+editing/history, password masking, nested browser dialogs, and GNU R's complete front-end state are
+not claimed.
 
 `capabilities()` has differential coverage for the complete GNU R 4.6 capability-name set, named
 logical-vector attributes, `NULL`/empty/unknown selection, requested order and duplication, factor

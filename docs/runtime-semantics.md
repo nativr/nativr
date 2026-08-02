@@ -758,9 +758,13 @@ use the last value, and unset returns one logical result per request. Reset reco
 map, while disposal drops it. Empty values remain explicit entries as a deterministic
 platform-neutral browser rule rather than inheriting operating-system-specific `setenv` behavior.
 
-`interactive()` deterministically returns `FALSE`. NativR evaluations run as inline or Worker
-requests rather than through GNU R's terminal read-eval-print loop, so the browser runtime never
-claims an interactive session.
+`readline(prompt)` is non-interactive by default: it emits the prompt with a trailing newline and
+returns a visible empty character scalar, while `interactive()` returns `FALSE`. Supplying
+`createR({ readline })` authorizes a line-input adapter for that session, makes `interactive()`
+return `TRUE`, and lets evaluation await one inline or Worker-correlated host response. Prompts are
+coerced and limited to 256 characters; returned leading/trailing spaces and tabs are removed.
+Multiline, NUL-containing, and oversized host values are rejected before they enter runtime state.
+This models the interaction capability used by package R code, not GNU R's terminal REPL.
 
 `capabilities()` returns GNU R's 19-name logical-vector shape and exact `what` selection order,
 including duplicate known names and omission of unknown names. Every entry is `FALSE` because the

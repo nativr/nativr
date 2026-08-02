@@ -102,5 +102,12 @@ bound stdout/stderr and execution time, reject shell metacharacter composition u
 supported, and treat package-provided command text as untrusted input. The Playground handler is a
 single virtual echo command and never touches an operating-system process.
 
+`readline()` grants only a construction-time, line-oriented callback when the application supplies
+`readline`. The Worker sends inert prompt text and accepts one validated string result; R code never
+receives a DOM handle or arbitrary JavaScript function. Hosts must treat package prompts as
+untrusted display text, avoid rendering them as HTML, bound or cancel their UI, and return no
+secrets unless the calling R code is trusted. Newlines, NUL characters, and results beyond the
+session output-byte budget are rejected. The default runtime never opens a dialog or reads stdin.
+
 Dependencies are locked, build scripts are explicitly approved in `pnpm-workspace.yaml`, browser
 bundles are audited for Node built-ins/dynamic code, and CI includes CodeQL and Dependabot.

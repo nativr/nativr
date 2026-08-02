@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { createR, isComplex, isNA, isRaw, NA, RRuntimeDisposedError } from "../src/index.js";
-import type { PublicSystemCommandRequest, PureRPackageBundle } from "../src/index.js";
+import type {
+  PublicReadlineRequest,
+  PublicSystemCommandRequest,
+  PureRPackageBundle,
+} from "../src/index.js";
 
 const assets = {
   treeSitterRuntimeWasm: new URL("../../parser/assets/web-tree-sitter.wasm", import.meta.url),
@@ -18,7 +22,7 @@ importFrom(graphics, axis, plot.new, plot.window)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median)
 importFrom(utils, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, axis_ticks, sourced_value, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, installed_version, namespace_names, process_id, library_paths)
+export(square, centered, duration, histogram_counts, hcl_colours, axis_ticks, sourced_value, ask_value, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, installed_version, namespace_names, process_id, library_paths)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -58,6 +62,7 @@ sourced_value <- function() {
   on.exit(close(con))
   source(con, local = TRUE)$value
 }
+ask_value <- function(prompt = "Package input: ") readline(prompt)
 class_summary <- function() capture.output(showClass("NativRFixtureClass"))
 signature_names <- function(fun = square) names(formals(args(fun)))
 new_score <- function(x) structure(x, class = c("score", "numeric"))
@@ -2793,6 +2798,7 @@ describe("complete inline source-to-result vertical slice", () => {
       runtime.eval("x <- withVisible(lines(new_score(1:3), extra = 8)); c(x$value, x$visible)"),
     ).resolves.toEqual(["package-lines", "6", "8", "TRUE"]);
     await expect(runtime.eval('sort(getNamespaceExports("nativrfixture"))')).resolves.toEqual([
+      "ask_value",
       "axis_ticks",
       "centered",
       "class_summary",
@@ -8638,6 +8644,56 @@ describe("complete inline source-to-result vertical slice", () => {
     await limited.dispose();
   });
 
+  it("routes readline through an explicit host capability while preserving non-interactive defaults", async () => {
+    const nonInteractive = await createR({ execution: "inline", assets });
+    const defaultResult = await nonInteractive.evalDetailed(
+      'c(readline("Question: "), interactive(), names(formals(readline)), formals(readline)$prompt)',
+    );
+    expect(defaultResult.value).toEqual(["", "FALSE", "prompt", ""]);
+    expect(defaultResult.output).toEqual([{ stream: "stdout", text: "Question: \n" }]);
+    await nonInteractive.dispose();
+
+    const requests: PublicReadlineRequest[] = [];
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [pureRFixture],
+      readline: (request) => {
+        requests.push(request);
+        return "\t package answer \t";
+      },
+    });
+    const packageResult = await runtime.evalDetailed(
+      'c(interactive(), nativrfixture::ask_value("Package question: "))',
+    );
+    expect(packageResult.value).toEqual(["TRUE", "package answer"]);
+    expect(packageResult.output).toEqual([{ stream: "stdout", text: "Package question: " }]);
+    expect(requests).toEqual([{ prompt: "Package question: " }]);
+
+    const longPrompt = await runtime.evalDetailed(`readline(paste(rep("x", 300), collapse = ""))`);
+    expect(longPrompt.value).toBe("package answer");
+    expect(requests.at(-1)?.prompt).toHaveLength(256);
+    expect(longPrompt.output[0]?.text).toHaveLength(256);
+    await runtime.dispose();
+
+    const invalid = await createR({
+      execution: "inline",
+      assets,
+      readline: () => "two\nlines",
+    });
+    await expect(invalid.eval("readline()")).rejects.toMatchObject({ code: "NRS5006" });
+    await invalid.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxOutputBytes: 3 },
+      readline: () => "four",
+    });
+    await expect(limited.eval("readline()")).rejects.toMatchObject({ code: "NRL4007" });
+    await limited.dispose();
+  });
+
   it("keeps frequency-prioritized options as resettable session state", async () => {
     const runtime = await session();
     await expect(
@@ -9501,7 +9557,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.231.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.232.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

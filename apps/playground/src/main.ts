@@ -5,6 +5,7 @@ import type {
   PublicDataViewEvent,
   PublicGraphicsEvent,
   PublicOutputEvent,
+  PublicReadlineRequest,
   PublicRWarning,
   PublicSystemCommandRequest,
   PublicSystemCommandResult,
@@ -68,6 +69,11 @@ twice_mean(c(1, 2, 6))`,
     id: "system-host",
     label: "Explicit host command",
     code: "system('nativr-echo', intern = TRUE, input = c('worker', 'bridge'))",
+  },
+  {
+    id: "readline-host",
+    label: "Browser readline input",
+    code: 'name <- nativrdemo::ask_user("Your name: ")\npaste0("Hello, ", name)',
   },
   {
     id: "plot",
@@ -148,6 +154,7 @@ async function initialize(): Promise<void> {
       packages: [playgroundPackage],
       environmentVariables: { NATIVR_PLAYGROUND: "worker" },
       systemCommand: playgroundSystemCommand,
+      readline: playgroundReadline,
     });
     enableControls(true);
     setStatus("ready", "Runtime ready");
@@ -155,6 +162,10 @@ async function initialize(): Promise<void> {
     setStatus("error", "Initialization failed");
     renderError(error);
   }
+}
+
+function playgroundReadline(request: PublicReadlineRequest): string {
+  return window.prompt(request.prompt) ?? "";
 }
 
 function playgroundSystemCommand(request: PublicSystemCommandRequest): PublicSystemCommandResult {

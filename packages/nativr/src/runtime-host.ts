@@ -36,6 +36,7 @@ export class RuntimeHost {
     systemCommand?: (
       request: RSystemCommandRequest,
     ) => Promise<RSystemCommandResult> | RSystemCommandResult,
+    readline?: (prompt: string) => Promise<string> | string,
   ): Promise<RuntimeHost> {
     const parser = await createParser(assets);
     try {
@@ -51,6 +52,7 @@ export class RuntimeHost {
         parseSource: (source, maxExpressions) => parseProgram(parser, source, maxExpressions),
         packages: packageDefinitions,
         ...(systemCommand === undefined ? {} : { systemCommand }),
+        ...(readline === undefined ? {} : { readline }),
         initializeBuiltinState: (state) => {
           state.set(ENVIRONMENT_VARIABLES_STATE_KEY, new Map(Object.entries(environmentVariables)));
         },

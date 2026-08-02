@@ -28,6 +28,14 @@ strings by `@nativr/protocol`, and installed as fresh evaluator state by the run
 environment builtins read only that state. Reset re-runs the state initializer, so inline and Worker
 sessions have identical restoration and isolation without granting access to a process environment.
 
+Line input follows the same explicit boundary. A configured `readline` callback is represented in
+the initialization message by a capability boolean, not a function. When R calls `readline()`, the
+Worker emits a correlated inert `{ prompt }` event and suspends that evaluation until the facade
+returns one validated string or error. Inline mode calls the same validated adapter directly. With
+no adapter, the evaluator remains non-interactive and never contacts the host. Thus package R code
+can reuse browser UI supplied by the application without importing DOM APIs into `base`, `runtime`,
+or the Worker.
+
 High-level helpers reuse semantic runtime primitives instead of maintaining parallel behavior.
 `base::replace`, for example, delegates to the same immutable one-dimensional subset-replacement
 engine used by direct `x[index] <- value` evaluation, so coercion, recycling, attributes, extension,

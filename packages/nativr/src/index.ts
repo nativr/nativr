@@ -10,10 +10,12 @@ export type {
   PublicEvaluationResult,
   PublicGraphicsEvent,
   PublicOutputEvent,
+  PublicReadlineRequest,
   PublicSystemCommandRequest,
   PublicSystemCommandResult,
   PureRPackageBundle,
   PureRPackageResource,
+  ReadlineHandler,
   SystemCommandHandler,
 } from "./api.js";
 export { isComplex, isExpression, isLanguage, isNA, isRaw, isSymbol, NA } from "./conversion.js";

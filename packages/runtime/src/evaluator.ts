@@ -107,6 +107,8 @@ export interface EvaluatorOptions {
   readonly sessionProcessId?: number;
   /** Recreate evaluator-owned builtin state at construction and reset. */
   readonly initializeBuiltinState?: (state: Map<string, unknown>) => void;
+  /** Explicit terminal-line capability. Undefined preserves non-interactive GNU R behavior. */
+  readonly readline?: (prompt: string) => Promise<string> | string;
   /** Explicit host capability. Undefined means that no operating-system command may run. */
   readonly systemCommand?: (
     request: RSystemCommandRequest,
@@ -471,6 +473,7 @@ export class Evaluator {
   readonly #limits: RuntimeLimits;
   readonly #parseSource: EvaluatorOptions["parseSource"];
   readonly #initializeBuiltinState: EvaluatorOptions["initializeBuiltinState"];
+  readonly #readline: EvaluatorOptions["readline"];
   readonly #systemCommand: EvaluatorOptions["systemCommand"];
   readonly #sessionProcessId: number;
   #emptyEnvironment: REnvironment;
@@ -506,6 +509,7 @@ export class Evaluator {
     this.#limits = { ...DEFAULT_RUNTIME_LIMITS, ...options.limits };
     this.#parseSource = options.parseSource;
     this.#initializeBuiltinState = options.initializeBuiltinState;
+    this.#readline = options.readline;
     this.#systemCommand = options.systemCommand;
     this.#sessionProcessId = options.sessionProcessId ?? allocateRuntimeSessionProcessId();
     if (
@@ -1883,6 +1887,8 @@ export class Evaluator {
         },
         currentCall: () => (call === undefined ? R_NULL : { type: "language", expression: call }),
         systemCall: (which) => this.#systemCall(which),
+        isInteractive: () => this.#readline !== undefined,
+        readline: async (prompt) => (this.#readline === undefined ? "" : this.#readline(prompt)),
         systemCommand: async (request) => {
           if (this.#systemCommand === undefined) {
             throw new RUnsupportedFeatureError(

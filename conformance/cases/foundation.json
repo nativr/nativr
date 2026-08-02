@@ -1789,6 +1789,14 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "readline-noninteractive-formals-output-and-visible-empty-result",
+    "code": "answer <- withVisible(readline(\"Ask: \"))\nblank <- readline()\nc(answer$value, blank, answer$visible, interactive(), names(formals(readline)), identical(formals(readline)$prompt, \"\"))",
+    "expected": ["", "", "TRUE", "FALSE", "prompt", "TRUE"],
+    "expectedOutput": "Ask: \n\n",
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "browser-capabilities-complete-name-and-shape-contract",
     "code": "c(names(capabilities()), typeof(capabilities()), length(capabilities()), names(attributes(capabilities())))",
     "expected": [

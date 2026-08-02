@@ -215,6 +215,8 @@ export interface BuiltinInvocation {
   parentFrame(offset: number): REnvironment;
   currentCall(): RLanguage | RNull;
   systemCall(which: number): RLanguage | RNull;
+  isInteractive(): boolean;
+  readline(prompt: string): Promise<string>;
   systemCommand(request: RSystemCommandRequest): Promise<RSystemCommandResult>;
   searchPath(): readonly string[];
   libraryPaths(): readonly string[];

@@ -228,7 +228,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 227,search,true,1,rlang,1,1.0,2.2
 228,sys.call,true,1,rlang,1,1.0,2.2
 229,force,true,2,magrittr|promises,4,2.1,2.2
-230,readline,false,2,curl|crayon,2,2.1,2.1
+230,readline,true,2,curl|crayon,2,2.1,2.1
 231,difftime,true,2,fs|promises,2,2.1,2.1
 232,url,false,2,jsonlite|openssl,6,2.1,2.1
 233,is.character,true,2,dplyr|data.table,4,2.1,2.1
