@@ -58,6 +58,7 @@ resource <- system.file("extdata", "demo.json", package = "nativrdemo")
 stopifnot(resource == "nativr://package/nativrdemo/extdata/demo.json")
 stopifnot(readLines(resource) == '{"demo":true}')
 stopifnot(resource_size() == 14)
+stopifnot(identical(event_colours(), c("#D33F6A4D", "#E2E2E24D", "#4A6FE34D")))
 stopifnot(dynamic_summary(structure(1:3, class = "demo")) == "worker-dynamic:6")
 twice_mean(c(1, 2, 6))`,
   },

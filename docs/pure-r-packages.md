@@ -221,6 +221,12 @@ inside the default Worker. These calls never expose a developer checkout or host
 packages that require native owners, ACLs, links, or host-path metadata still need an explicit host
 adapter.
 
+Package source can call shared browser-native graphics utilities rather than receiving package-
+specific rewrites. The fixture and default Worker now execute `grDevices::hcl()` from unchanged R
+source, including recycled CIE-LUV coordinates and alpha transparency. This proves the ordinary
+namespace/call path for that callable; packages still fail explicitly when they reach an unsupported
+graphics helper, device feature, native routine, or host color-management facility.
+
 ```sh
 $env:NATIVR_EXTERNAL_PACKAGE_SMOKE="1"
 pnpm vitest run packages/package-tools/test/external-package.test.ts

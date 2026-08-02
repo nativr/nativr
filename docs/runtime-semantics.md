@@ -663,6 +663,13 @@ choice matching, and empty or singleton outputs have differential evidence. Conv
 sRGB/D65 transforms and never consults CSS, Canvas, or a host color service. Spline interpolation,
 standalone `colorRamp`, and device color profiles remain outside this slice.
 
+`hcl()` is a registered `grDevices` builtin with GNU R-shaped defaults and formals. It recycles hue,
+chroma, luminance, and optional alpha vectors, converts polar CIE-LUV coordinates through a fixed
+D65 white point into sRGB, and emits deterministic uppercase RGB(A) bytes. Non-finite color
+coordinates become missing colors; finite chroma/luminance/alpha ranges are validated.
+`fixup = TRUE` clips out-of-gamut sRGB channels, while `FALSE` returns a missing color. The path is
+pure browser arithmetic and does not consult Canvas, CSS, ICC profiles, locale, network, or GNU R.
+
 `col2rgb()` converts every owned catalog name, transparent/missing specifications, short or long
 RGB(A) hexadecimal strings, and positive default-palette indices to a named three- or four-row
 integer matrix. Input names become column names, and factors use their labels. `rgb()` performs the

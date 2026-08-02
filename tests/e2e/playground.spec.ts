@@ -43,6 +43,10 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("14");
 
+  await page.locator("#source").fill("nativrdemo::event_colours()");
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText('["#D33F6A4D", "#E2E2E24D", "#4A6FE34D"]');
+
   await page
     .locator("#source")
     .fill(

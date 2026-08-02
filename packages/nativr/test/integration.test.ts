@@ -11,13 +11,13 @@ const assets = {
 const pureRFixture: PureRPackageBundle = {
   description: `Package: nativrfixture
 Version: 0.1.0
-Imports: methods, stats, utils
+Imports: grDevices, methods, stats, utils
 NeedsCompilation: no`,
   namespace: `
 importFrom(methods, setClass, showClass)
 importFrom(stats, median)
 importFrom(utils, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, installed_version, namespace_names, process_id, library_paths)
+export(square, centered, duration, histogram_counts, hcl_colours, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, installed_version, namespace_names, process_id, library_paths)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -46,6 +46,7 @@ square <- function(x) x ^ 2
 centered <- function(x) x - median(x)
 duration <- function(x, units = "secs") as.difftime(x, units = units)
 histogram_counts <- function(x, breaks = "Sturges") hist(x, breaks = breaks, plot = FALSE)$counts
+hcl_colours <- function() grDevices::hcl(c(0, 0, 260), c = c(100, 0, 100), l = c(50, 90, 50), alpha = .3)
 class_summary <- function() capture.output(showClass("NativRFixtureClass"))
 signature_names <- function(fun = square) names(formals(args(fun)))
 new_score <- function(x) structure(x, class = c("score", "numeric"))
@@ -2627,6 +2628,11 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(runtime.eval("nativrfixture::histogram_counts(1:10)")).resolves.toEqual([
       2, 2, 2, 2, 2,
     ]);
+    await expect(runtime.eval("nativrfixture::hcl_colours()")).resolves.toEqual([
+      "#D33F6A4D",
+      "#E2E2E24D",
+      "#4A6FE34D",
+    ]);
     await expect(runtime.eval("nativrfixture::class_summary()")).resolves.toEqual([
       'Class "NativRFixtureClass" [package "nativrfixture"]',
       "",
@@ -2693,6 +2699,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "describe",
       "duration",
       "dynamic_describe",
+      "hcl_colours",
       "histogram_counts",
       "installed_version",
       "library_paths",
@@ -9393,7 +9400,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.228.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.229.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -10874,6 +10881,79 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(
       runtime.eval("colorRampPalette(c('red', 'blue'), interpolate = 'spline')"),
     ).rejects.toMatchObject({ code: "NRU6147" });
+    await runtime.dispose();
+  });
+
+  it("converts usage-ranked polar CIE-LUV colors through grDevices hcl", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(
+        "rainbow <- matrix(hcl(seq(0, 360, length.out = 50 * 50), 80, 70), nrow = 50)\nc(dim(rainbow), rainbow[c(1, 625, 1250, 1875, 2500)], hcl(seq(0, 360, length.out = 10), 80, 70))",
+      ),
+    ).resolves.toEqual([
+      "50",
+      "50",
+      "#FE86A1",
+      "#ABB300",
+      "#00C8B4",
+      "#AC9FFF",
+      "#FE86A1",
+      "#FE86A1",
+      "#E89A54",
+      "#BAAE00",
+      "#6DBF45",
+      "#00C793",
+      "#00C5D1",
+      "#46B4F9",
+      "#C297FF",
+      "#F682DD",
+      "#FE86A1",
+    ]);
+    await expect(
+      runtime.eval(
+        "bytes <- col2rgb(hcl(seq(0, 360, length.out = 50 * 50), 80, 70))\ni <- seq_len(ncol(bytes))\nc(sum(bytes[1, ]), sum(bytes[2, ]), sum(bytes[3, ]), sum(bytes[1, ] * i), sum(bytes[2, ] * i), sum(bytes[3, ] * i)) + 0",
+      ),
+    ).resolves.toEqual([352931, 419313, 385631, 442613853, 511247910, 596742312]);
+    await expect(
+      runtime.eval(
+        "c(hcl(c(0, 0, 260), c = c(100, 0, 100), l = c(50, 90, 50), alpha = .3), hcl(0, 0, 90), hcl(0, 80, 70))",
+      ),
+    ).resolves.toEqual(["#D33F6A4D", "#E2E2E24D", "#4A6FE34D", "#E2E2E2", "#FE86A1"]);
+    await expect(
+      runtime.eval(
+        "c(hcl(), hcl(c(0, 120, 240), alpha = c(0, .5, 1)), hcl(c(30, 120, 210, 300), c = 20, l = 90, fixup = FALSE), hcl(c(0, 60, 120, 180, 240, 300), c = 200, l = 50))",
+      ),
+    ).resolves.toEqual([
+      "#FFC5D0",
+      "#FFC5D000",
+      "#BBDEB180",
+      "#B8D8F8FF",
+      "#F9DDD4",
+      "#D4E8CE",
+      "#C8E8F0",
+      "#F0DCF5",
+      "#FF005A",
+      "#B86A00",
+      "#009800",
+      "#00B38D",
+      "#009CFF",
+      "#FF00FF",
+    ]);
+    await expect(
+      runtime.eval(
+        "c(hcl(c(0, NA, NaN, Inf, -Inf)), hcl(0, c = 200, l = 50, fixup = FALSE), hcl(0, c = 0, l = c(0, 50, 100), fixup = FALSE))",
+      ),
+    ).resolves.toEqual(["#FFC5D0", NA, NA, NA, NA, NA, "#000000", "#777777", "#FFFFFF"]);
+    await expect(runtime.eval("names(formals(hcl))")).resolves.toEqual([
+      "h",
+      "c",
+      "l",
+      "alpha",
+      "fixup",
+    ]);
+    await expect(runtime.eval("hcl(0, c = -1)")).rejects.toMatchObject({ code: "NRT3407" });
+    await expect(runtime.eval("hcl(0, l = 101)")).rejects.toMatchObject({ code: "NRT3407" });
+    await expect(runtime.eval("hcl(0, alpha = 1.1)")).rejects.toMatchObject({ code: "NRT3407" });
     await runtime.dispose();
   });
 

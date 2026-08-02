@@ -1575,6 +1575,25 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
       definition.implementation,
     ),
   ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "grDevices",
+      "hcl",
+      ["h", "c", "l", "alpha", "fixup"],
+      "behavioral",
+      builtinHcl,
+    ),
+    [
+      { name: "h", defaultValue: { kind: "DoubleLiteral", value: 0, span: SYNTHETIC_SPAN } },
+      { name: "c", defaultValue: { kind: "DoubleLiteral", value: 35, span: SYNTHETIC_SPAN } },
+      { name: "l", defaultValue: { kind: "DoubleLiteral", value: 85, span: SYNTHETIC_SPAN } },
+      { name: "alpha" },
+      {
+        name: "fixup",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
   definePackageBuiltin("grDevices", "col2rgb", ["col", "alpha"], "behavioral", builtinCol2Rgb),
   definePackageBuiltin(
     "grDevices",
@@ -28962,6 +28981,147 @@ function graphicsCssColour(color: RColour): string {
     .map((channel) => channel.toString(16).padStart(2, "0"))
     .join("")
     .toUpperCase()}`;
+}
+
+const HCL_XYZ_TO_SRGB = [
+  [3.240479, -1.53715, -0.498535],
+  [-0.969256, 1.875992, 0.041556],
+  [0.055648, -0.204043, 1.057311],
+] as const;
+const HCL_WHITE_U = 0.1978398;
+const HCL_WHITE_V = 0.4683363;
+
+async function builtinHcl(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["h", "c", "l", "alpha", "fixup"]);
+  const hue = hclNumericVector(matched.get("h") ?? doubleVector([0]), invocation, "h");
+  const chroma = hclNumericVector(matched.get("c") ?? doubleVector([35]), invocation, "c");
+  const luminance = hclNumericVector(matched.get("l") ?? doubleVector([85]), invocation, "l");
+  const alphaValue = matched.get("alpha");
+  const alpha =
+    alphaValue === undefined || alphaValue.type === "null"
+      ? undefined
+      : hclNumericVector(alphaValue, invocation, "alpha");
+  const fixup = hclFixup(matched.get("fixup"));
+  validateHclRange(chroma, "c", 0, Number.POSITIVE_INFINITY, invocation);
+  validateHclRange(luminance, "l", 0, 100, invocation);
+  if (alpha !== undefined) validateHclRange(alpha, "alpha", 0, 1, invocation);
+  if (hue.length === 0 || chroma.length === 0 || luminance.length === 0 || alpha?.length === 0) {
+    return characterVector([]);
+  }
+
+  const length = Math.max(hue.length, chroma.length, luminance.length, alpha?.length ?? 0);
+  const missing = new Uint8Array(length);
+  invocation.context.allocate(length);
+  const colors = Array.from({ length }, (_, index) => {
+    invocation.context.checkpoint();
+    const hIndex = index % hue.length;
+    const cIndex = index % chroma.length;
+    const lIndex = index % luminance.length;
+    const h = hue.values[hIndex] ?? Number.NaN;
+    const c = chroma.values[cIndex] ?? Number.NaN;
+    const l = luminance.values[lIndex] ?? Number.NaN;
+    if (
+      isMissing(hue, hIndex) ||
+      isMissing(chroma, cIndex) ||
+      isMissing(luminance, lIndex) ||
+      !Number.isFinite(h) ||
+      !Number.isFinite(c) ||
+      !Number.isFinite(l)
+    ) {
+      missing[index] = 1;
+      return "";
+    }
+    const channels = hclToSrgb(h, c, l);
+    if (!fixup && channels.some((channel) => channel < -1e-4 || channel > 1 + 1e-4)) {
+      missing[index] = 1;
+      return "";
+    }
+    const suffix =
+      alpha === undefined ? "" : colorByte(hclAlpha(alpha, index % alpha.length) * 255);
+    return `#${channels
+      .map((channel) => colorByte(Math.max(0, Math.min(1, channel)) * 255))
+      .join("")}${suffix}`;
+  });
+  return characterVector(colors, compactMask(missing));
+}
+
+function hclNumericVector(
+  value: RValue,
+  invocation: BuiltinInvocation,
+  name: string,
+): RDoubleVector {
+  if (value.type === "null") return doubleVector([]);
+  if (isAtomic(value)) return coerceAtomicToDouble(atomicWithoutAttributes(value), invocation);
+  if (value.type === "list" || value.type === "pairlist") {
+    if (value.length === 0) return doubleVector([]);
+    const entries = value.values.map((entry) => {
+      if (!isAtomic(entry) || entry.length !== 1) {
+        throw new RTypeMismatchError("NRT3407", `'${name}' cannot be coerced to type 'double'.`);
+      }
+      return { value: entry };
+    });
+    const combined = combineAtomicEntries(entries, invocation, "hcl");
+    if (isAtomic(combined)) return coerceAtomicToDouble(combined, invocation);
+  }
+  throw new RTypeMismatchError("NRT3407", `'${name}' cannot be coerced to type 'double'.`);
+}
+
+function validateHclRange(
+  value: RDoubleVector,
+  name: string,
+  minimum: number,
+  maximum: number,
+  invocation: BuiltinInvocation,
+): void {
+  for (let index = 0; index < value.length; index += 1) {
+    invocation.context.checkpoint();
+    if (isMissing(value, index)) continue;
+    const candidate = value.values[index] ?? Number.NaN;
+    if (!Number.isFinite(candidate)) continue;
+    if (candidate < minimum || candidate > maximum) {
+      throw new RTypeMismatchError("NRT3407", "invalid hcl color");
+    }
+  }
+}
+
+function hclAlpha(value: RDoubleVector, index: number): number {
+  if (isMissing(value, index)) return 1;
+  const alpha = value.values[index] ?? Number.NaN;
+  return Number.isFinite(alpha) ? alpha : 1;
+}
+
+function hclFixup(value: RValue | undefined): boolean {
+  if (value === undefined || value.type === "null") return true;
+  if (isAtomic(value)) {
+    if (value.length === 0 || isMissing(value, 0)) return true;
+    if (value.type === "character") return parseRLogical(value.values[0] ?? "") !== false;
+    if (value.type === "complex") {
+      return (value.real[0] ?? Number.NaN) !== 0 || (value.imaginary[0] ?? Number.NaN) !== 0;
+    }
+    return (value.values[0] ?? Number.NaN) !== 0;
+  }
+  if (value.type === "list" || value.type === "pairlist") {
+    if (value.length === 0) return true;
+    if (value.length === 1) return hclFixup(value.values[0]);
+  }
+  throw new RTypeMismatchError("NRT3407", "invalid 'fixup' value");
+}
+
+function hclToSrgb(hue: number, chroma: number, luminance: number): readonly number[] {
+  if (luminance === 0) return [0, 0, 0];
+  const radians = (hue * Math.PI) / 180;
+  const uPrime = (chroma * Math.cos(radians)) / (13 * luminance) + HCL_WHITE_U;
+  const vPrime = (chroma * Math.sin(radians)) / (13 * luminance) + HCL_WHITE_V;
+  const y = luminance > 7.999592 ? ((luminance + 16) / 116) ** 3 : luminance / 903.3;
+  const xyz = [
+    (y * 9 * uPrime) / (4 * vPrime),
+    y,
+    (y * (12 - 3 * uPrime - 20 * vPrime)) / (4 * vPrime),
+  ];
+  return HCL_XYZ_TO_SRGB.map((row) => {
+    const linear = row[0] * xyz[0]! + row[1] * xyz[1]! + row[2] * xyz[2]!;
+    return linear <= 0.0031308 ? 12.92 * linear : 1.055 * linear ** (1 / 2.4) - 0.055;
+  });
 }
 
 async function builtinColours(invocation: BuiltinInvocation): Promise<RValue> {

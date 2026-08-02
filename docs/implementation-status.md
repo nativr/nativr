@@ -350,6 +350,9 @@ Date: 2026-08-02
 - Usage-ranked `grDevices::colorRampPalette` with isoband's two measured 21-color Lab Viridis calls,
   an owned returned palette function, linear RGB/Lab interpolation, bias, alpha, namespace access,
   and byte-exact GNU R black-box results.
+- Usage-ranked `grDevices::hcl` with all six measured ggplot2/zoo raster and event-color calls,
+  browser-native polar CIE-LUV/D65-to-sRGB conversion, vector recycling, alpha, missing/non-finite
+  coordinates, gamut fixup, exact formals, and source-only package/Worker execution.
 - Usage-ranked `utils::sessionInfo` with otel's measured `$platform` lookup, a deterministic
   browser-native platform descriptor, R 4.6 compatibility-target metadata, current session
   locale/RNG kinds, attached core packages, UTC time-zone reporting, and classed list shape.
@@ -651,11 +654,10 @@ Date: 2026-08-02
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 12 files and 392 tests; aggregate V8 coverage is 84.49% statements, 72.14%
-  branches, 92.38% functions, and 85.79% lines.
+- Vitest currently passes 12 files and 410 tests, with three explicitly skipped tests.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 742/742 cases. The optional black-box R oracle passes all 707
+- Checked-in conformance passes 753/753 cases. The optional black-box R oracle passes all 718
   eligible cases and explicitly skips 35 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,

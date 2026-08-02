@@ -212,7 +212,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 211,convolve,true,2,Rcpp|zoo,3,2.1,2.3
 212,getRversion,true,2,S7|xfun,2,2.1,2.3
 213,aggregate,true,2,ggplot2|zoo,26,2.1,2.3
-214,hcl,false,2,ggplot2|zoo,6,2.1,2.3
+214,hcl,true,2,ggplot2|zoo,6,2.1,2.3
 215,axis,false,3,labeling|zoo|bit64,18,3.1,2.3
 216,log2,true,2,ggplot2|bit64,5,2.1,2.3
 217,intToUtf8,true,2,utf8|xfun,6,2.1,2.3

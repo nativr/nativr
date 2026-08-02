@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.228.0",
+  "languageSubsetVersion": "0.229.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -624,6 +624,7 @@
       "referenceVersion": "R 4.6.x documented behavior",
       "functions": [
         { "name": "colorRampPalette", "compatibility": "numeric" },
+        { "name": "hcl", "compatibility": "behavioral" },
         { "name": "col2rgb", "compatibility": "behavioral" },
         { "name": "rgb", "compatibility": "behavioral" },
         { "name": "colors", "compatibility": "behavioral" },

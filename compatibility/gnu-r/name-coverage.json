@@ -4,11 +4,11 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 604,
-    "overlappingNames": 588,
-    "missingReferenceNames": 1934,
+    "nativrRegisteredNames": 605,
+    "overlappingNames": 589,
+    "missingReferenceNames": 1933,
     "nativrExtensionNames": 16,
-    "nameCoverage": 0.233148
+    "nameCoverage": 0.233545
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 431, "nameCoverage": 0.315289 },
@@ -23,8 +23,8 @@
     {
       "package": "grDevices",
       "callableNames": 135,
-      "overlappingNames": 25,
-      "nameCoverage": 0.185185
+      "overlappingNames": 26,
+      "nameCoverage": 0.192593
     },
     {
       "package": "graphics",
@@ -295,6 +295,7 @@
     "grey.colors",
     "gsub",
     "gzcon",
+    "hcl",
     "head",
     "heat.colors",
     "hist",
@@ -1605,7 +1606,6 @@
     "hashtab",
     "hat",
     "hatvalues",
-    "hcl",
     "hcl.colors",
     "hcl.pals",
     "hclust",

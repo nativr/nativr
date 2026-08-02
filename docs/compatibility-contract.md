@@ -667,6 +667,15 @@ interpolation with browser-native arithmetic; the observed palette is byte-ident
 657 catalog names are now accepted as color inputs. Spline interpolation, standalone `colorRamp`,
 wide-gamut/device profiles, and exhaustive out-of-gamut rounding remain outside this bounded slice.
 
+`grDevices::hcl` has differential evidence for all six measured ggplot2/zoo calls, including a
+2,500-color raster vector, a ten-color strip, translucent threshold colors, and opaque neutral/high-
+chroma colors. The browser-owned polar CIE-LUV/D65-to-sRGB path covers vector recycling, default and
+exact formals, optional/recycled alpha, zero-length inputs, missing/non-finite coordinates, finite
+range validation, clamped gamut fixup, and `NA` for out-of-gamut colors when `fixup = FALSE`.
+Source-only package and default Worker execution use the same registered callable. ICC profiles,
+device-dependent color management, `hcl.colors`, and the broader color-conversion API remain
+separate compatibility depth.
+
 `grDevices::col2rgb` has differential evidence for stringr's measured named-color-to-hex helper, the
 complete 657-name catalog, short and long RGB(A) hexadecimal forms, transparent and missing values,
 factor labels, default-palette numeric indices, row/column names, alpha selection, empty inputs, and

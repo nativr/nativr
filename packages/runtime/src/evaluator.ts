@@ -361,6 +361,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "grey.colors",
       "graphics.off",
       "heat.colors",
+      "hcl",
       "is.raster",
       "nclass.FD",
       "nclass.Sturges",

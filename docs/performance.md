@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 365 KiB gzip;
+- Worker JavaScript: 366 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -592,3 +592,9 @@ Language subset 0.228 adds usage-ranked `base::file.info` and its `file.mode`, `
 directory, package-resource, and timestamp state without a host-filesystem adapter or dependency.
 The measured Worker is 364.8 KiB gzip, so the ceiling rises narrowly to 365 KiB; client and
 parser-Wasm budgets remain unchanged.
+
+Language subset 0.229 adds usage-ranked `grDevices::hcl` through a compact polar CIE-LUV/D65-to-
+sRGB conversion shared by direct, source-only package, and Worker calls. It adds no dependency,
+Canvas/CSS path, color-profile adapter, protocol event, or package-specific implementation. The
+measured Worker is 365.7 KiB gzip, so the ceiling rises narrowly to 366 KiB; client and parser-Wasm
+budgets remain unchanged.

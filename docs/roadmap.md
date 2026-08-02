@@ -648,6 +648,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      package calls, and default Worker execution have evidence. Host files, native ownership/ACLs,
      links, platform executable classification, and native timestamp fidelity remain host-adapter
      depth.
+146. Usage-ranked perceptual color conversion: rank-214 `grDevices::hcl` now executes all six
+     measured ggplot2/zoo calls through an independent polar CIE-LUV/D65-to-sRGB conversion.
+     Recycling, alpha, missing/non-finite values, gamut fixup, exact formals, invalid ranges,
+     source-only package calls, and default Worker execution have differential evidence. ICC
+     profiles, device-dependent color management, `hcl.colors`, and the wider color-conversion API
+     remain graphics compatibility depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means
