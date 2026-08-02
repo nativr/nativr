@@ -610,6 +610,22 @@ export interface OperatorContext {
   allocate(elements: number): void;
 }
 
+/** Session-owned seam for routing output before it reaches one evaluation's public result. */
+export interface RuntimeOutputRouter {
+  /** Return true when the event should also remain visible to the embedding host. */
+  routeOutput(output: ROutput, limits: RuntimeLimits): boolean;
+}
+
+/** Session-state slot shared by the evaluator and output-routing base builtins such as sink(). */
+export const OUTPUT_ROUTER_STATE_KEY = "runtime.outputRouter";
+
+/** Resolve a structurally valid session output router without coupling runtime to base. */
+export function runtimeOutputRouter(
+  state: ReadonlyMap<string, unknown>,
+): RuntimeOutputRouter | undefined {
+  return state.get(OUTPUT_ROUTER_STATE_KEY) as RuntimeOutputRouter | undefined;
+}
+
 /** Session-state slot shared by the evaluator and the base condition builtins. */
 export const GLOBAL_CALLING_HANDLERS_STATE_KEY = "runtime.globalCallingHandlers";
 

@@ -1991,8 +1991,8 @@ capture, visible expression printing, block visibility, partial and empty lines,
 message-stream selection, unique type prefixes, split duplication, namespace access, argument
 errors, and byte limits are covered. The measured `cat` path also verifies GNU R's
 newline-containing separator terminator rule. Both functions now target bounded browser-memory paths
-and file connections with differential evidence. Host files, warning/error sinks, arbitrary print
-methods, and the complete connection/sink stack are not claimed.
+and file connections with differential evidence. Host files and arbitrary print methods are not
+claimed; the later rank-330 increment supplies the stateful output/message sink stack.
 
 Formula values record response, variables, expanded terms, interactions, transformations, and
 intercept state without exposing Tree-sitter nodes. `as.formula` accepts one character expression or
@@ -2072,7 +2072,16 @@ methods display contract.
 expression printing, partial-line reconstruction, nested calls, `split`, argument matching, result
 visibility, and httpuv's measured `str(as.list(req))` capture. Captured events remain private until
 returned as a character vector or re-emitted by `split`; both capture storage and public output are
-bounded. Filesystem/connection output and the complete warning/error sink protocol are not claimed.
+bounded. Browser-memory path and owned connection targets use the same writer as `cat()`.
+
+Usage-ranked `base::sink()` and `sink.number()` have GNU R 4.6 black-box evidence for exact
+formals/defaults, invisible `NULL` restoration, 19 nested output diversions, `split` tee ordering,
+append mode, cross-evaluation and post-error persistence, message connection replacement, and
+closed/already-open connection lifecycle. `capture.output()` shares the same ordered router, so
+nesting is determined by creation order rather than by two competing capture systems. Output is
+buffered within `maxOutputBytes` and committed on restoration. Reading, closing, or externally
+mutating an active sink target, host filesystem paths, native file descriptors, and platform-exact
+console diagnostics remain outside the browser contract.
 
 `utils::demo` has GNU R differential evidence for the empty package catalog returned by
 `demo(package = character())`, including its `packageIQR` class, fields, zero-row results matrix,

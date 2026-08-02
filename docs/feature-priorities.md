@@ -75,16 +75,16 @@ signal.
 
 | Priority | Measured rank | Callable             | Weighted reach | Packages | Observed calls |
 | -------: | ------------: | -------------------- | -------------: | -------: | -------------: |
-|        1 |           313 | `pipe`               |           1.3% |        1 |              1 |
-|        2 |           314 | `unz`                |           1.3% |        1 |              1 |
-|        3 |           324 | `object.size`        |           1.3% |        2 |              3 |
-|        4 |           328 | `title`              |           1.3% |        2 |              7 |
-|        5 |           330 | `sink`               |           1.2% |        1 |              2 |
-|        6 |           338 | `write`              |           1.2% |        1 |              1 |
-|        7 |           340 | `available.packages` |           1.2% |        1 |              1 |
-|        8 |           343 | `barplot`            |           1.2% |        2 |              3 |
-|        9 |           344 | `devAskNewPage`      |           1.1% |        1 |             10 |
-|       10 |           345 | `getLoadedDLLs`      |           1.1% |        1 |              1 |
+|        1 |           338 | `write`              |           1.2% |        1 |              1 |
+|        2 |           340 | `available.packages` |           1.2% |        1 |              1 |
+|        3 |           343 | `barplot`            |           1.2% |        2 |              3 |
+|        4 |           344 | `devAskNewPage`      |           1.1% |        1 |             10 |
+|        5 |           345 | `getLoadedDLLs`      |           1.1% |        1 |              1 |
+|        6 |           346 | `socketConnection`   |           1.1% |        1 |              1 |
+|        7 |           348 | `file.copy`          |           1.1% |        1 |              1 |
+|        8 |           349 | `find.package`       |           1.1% |        1 |              1 |
+|        9 |           351 | `l10n_info`          |           1.1% |        1 |              1 |
+|       10 |           353 | `shQuote`            |           1.1% |        1 |              1 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -200,7 +200,8 @@ private connection store; rank 314 `unz` now supplies bounded stored/DEFLATE pac
 ZIP-member connections. Rank 324 `object.size` now supplies deterministic owned-object accounting
 for data.table and bit64. Rank 328 `title` now supplies shared plot annotations for all seven
 measured Shiny/bit64 calls, including unchanged pure-R package and Worker rendering paths; rank 330
-`sink` is next. Rank 144 `Encoding` is also complete for all 12 observed calls across rlang, utf8,
+`sink` now supplies persistent output/message diversions for utf8's two measured calls; rank 338
+`write` is next. Rank 144 `Encoding` is also complete for all 12 observed calls across rlang, utf8,
 and xfun (4.5% weighted reach), together with adjacent `Encoding<-`, `enc2utf8`, and `enc2native`.
 The shared character representation preserves exact bytes and canonical R marks through
 subset/replacement, concatenation, raw conversion, and XDR serialization; this is reusable package
@@ -481,9 +482,11 @@ evidence; encryption, ZIP64, multi-disk archives, other codecs, seeking, and wri
 boundaries. Rank 324 `object.size` is now complete for data.table/bit64's three measured calls,
 including GNU R 4.6-shaped vector/list/attribute sizes and object-size unit formatting. Rank 328
 `title` is complete for Shiny/bit64's seven measured annotations through shared `par()` styles,
-Worker text events, browser/file devices, and unchanged source-only package code; rank 330 `sink` is
-the next usage-ranked unresolved callable. Rank 316 `colSums` is now complete for three observed
-calls across [`loo`](https://cran.r-project.org/web/packages/loo/refman/loo.html) and
+Worker text events, browser/file devices, and unchanged source-only package code. Rank 330 `sink` is
+complete for utf8's two measured redirection calls, with reusable session stack, split, message,
+connection, pure-R package, and Worker evidence; rank 338 `write` is the next usage-ranked
+unresolved callable. Rank 316 `colSums` is now complete for three observed calls across
+[`loo`](https://cran.r-project.org/web/packages/loo/refman/loo.html) and
 [`zoo`](https://cran.r-project.org/web/packages/zoo/refman/zoo.html), representing 1,601,512
 snapshot downloads and 1.3% download reach. Loo calls `colSums(tab_10)` and `colSums(tab_9)` on
 integer fold tables; zoo selects usable columns with `colSums(!is.na(za)) > 0`. NativR covers
@@ -1645,6 +1648,13 @@ ties:
      initial map, and ordinary atomic/list/language coercion follows GNU R 4.6 black-box evidence.
      Host PATH/PATHEXT scanning, filesystem existence, platform path normalization, GNU closure
      identity, and an `NA` value in the names attribute remain compatibility depth.
+158. Persistent output diversion: rank-330 `base::sink` represents utf8's two measured calls at 1.2%
+     download-weighted reach. A session-owned router composes `sink()` and `capture.output()` by
+     creation order, retains 19 nested output frames across evaluations and errors, tees split
+     output, routes one replaceable message connection, and preserves automatically opened versus
+     already-open connection lifecycle. GNU R 4.6 formals, restoration, append mode, pure-R package
+     execution, default Worker execution, conformance, and output limits have evidence. Host paths,
+     native descriptors, and interaction with an active target remain compatibility depth.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

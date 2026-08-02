@@ -59,6 +59,7 @@ import {
   withoutAttribute,
   withoutClasses,
   GLOBAL_CALLING_HANDLERS_STATE_KEY,
+  OUTPUT_ROUTER_STATE_KEY,
 } from "@nativr/runtime";
 import type {
   BuiltinCallArgument,
@@ -86,6 +87,7 @@ import type {
   RLanguage,
   RList,
   RLogicalVector,
+  ROutput,
   RPairlist,
   RRawVector,
   RSystemCommandResult,
@@ -93,6 +95,8 @@ import type {
   RUrlRequest,
   RValue,
   RVector,
+  RuntimeLimits,
+  RuntimeOutputRouter,
 } from "@nativr/runtime";
 import { assertNever } from "@nativr/ast";
 import type { AstNode, CallArgument, FunctionParameter, SourceSpan } from "@nativr/ast";
@@ -593,6 +597,31 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     { name: "what" },
   ]),
   defineBuiltin("getAllConnections", [], "behavioral", builtinGetAllConnections),
+  withBuiltinFormals(
+    defineBuiltin(
+      "sink",
+      ["file", "append", "type", "split"],
+      "behavioral",
+      builtinSink,
+      "regular",
+      "invisible",
+    ),
+    [
+      { name: "file", defaultValue: nullAst() },
+      {
+        name: "append",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      { name: "type", defaultValue: outputMessageChoiceAst() },
+      {
+        name: "split",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
+  withBuiltinFormals(defineBuiltin("sink.number", ["type"], "behavioral", builtinSinkNumber), [
+    { name: "type", defaultValue: outputMessageChoiceAst() },
+  ]),
   withBuiltinFormals(
     defineBuiltin("showConnections", ["all"], "behavioral", builtinShowConnections),
     [
@@ -3330,6 +3359,22 @@ interface VirtualTextFileState {
   nextId: number;
   nextConnectionId: number;
   bytes: number;
+}
+
+interface SinkFrame {
+  readonly target: RValue | undefined;
+  readonly connection: VirtualTextConnection | undefined;
+  readonly connectionWasOpen: boolean;
+  readonly split: boolean;
+  readonly chunks: ROutput[];
+  bytes: number;
+}
+
+interface SinkState extends RuntimeOutputRouter {
+  readonly kind: "base.sink";
+  readonly output: SinkFrame[];
+  message: SinkFrame | undefined;
+  bufferedBytes: number;
 }
 
 interface VirtualFileMetadata {
@@ -13754,6 +13799,18 @@ function nullAst(): AstNode {
   return { kind: "NullLiteral", span: SYNTHETIC_SPAN };
 }
 
+function outputMessageChoiceAst(): AstNode {
+  return {
+    kind: "CallExpression",
+    callee: { kind: "Identifier", name: "c", span: SYNTHETIC_SPAN },
+    arguments: ["output", "message"].map((value) => ({
+      value: { kind: "StringLiteral" as const, value, span: SYNTHETIC_SPAN },
+      span: SYNTHETIC_SPAN,
+    })),
+    span: SYNTHETIC_SPAN,
+  };
+}
+
 async function builtinSwitch(invocation: BuiltinInvocation): Promise<RValue> {
   const exactExpressionIndexes = invocation.arguments.flatMap((argument, index) =>
     argument.name === "EXPR" ? [index] : [],
@@ -21297,11 +21354,15 @@ async function builtinCaptureOutput(invocation: BuiltinInvocation): Promise<RVal
     }
   }
 
-  invocation.context.beginOutputCapture(type === "output" ? ["stdout"] : ["message", "stderr"]);
-  let captured: readonly {
-    readonly stream: "stdout" | "stderr" | "message";
-    readonly text: string;
-  }[];
+  const state = sinkState(invocation);
+  if (type === "output" && state.output.length >= 19) {
+    throw new REvaluationError("NRE2362", "sink stack is full");
+  }
+  const frame = sinkFrame(undefined, undefined, true, split);
+  const previousMessageFrame = state.message;
+  if (type === "output") state.output.push(frame);
+  else state.message = frame;
+  let captured: readonly ROutput[];
   try {
     for (const expression of expressions) {
       const result = await invocation.forceDetailed(expression.promise);
@@ -21316,15 +21377,12 @@ async function builtinCaptureOutput(invocation: BuiltinInvocation): Promise<RVal
         invocation.context.writeOutput({ stream: "stdout", text: `${text}\n` });
       }
     }
-    captured = invocation.context.endOutputCapture();
+    captured = [...frame.chunks];
   } catch (error) {
-    invocation.context.endOutputCapture();
+    removeCaptureSinkFrame(state, frame, type, previousMessageFrame);
     throw error;
   }
-
-  if (split) {
-    for (const output of captured) invocation.context.writeOutput(output);
-  }
+  removeCaptureSinkFrame(state, frame, type, previousMessageFrame);
   if (file !== undefined && file.type !== "null") {
     await writeVirtualTextTarget(
       invocation,
@@ -21353,6 +21411,201 @@ function captureOutputType(value: RValue | undefined): "output" | "message" {
     "NRT3342",
     "capture.output(type=) must uniquely match 'output' or 'message'.",
   );
+}
+
+async function builtinSink(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["file", "append", "type", "split"]);
+  const file = matched.get("file") ?? R_NULL;
+  const append = coercibleLogicalFlag(matched.get("append"), false, "append");
+  const type = outputConnectionType(matched.get("type"), "sink");
+  const split = coercibleLogicalFlag(matched.get("split"), false, "split");
+  const state = sinkState(invocation);
+
+  if (type === "message" && split) {
+    throw new REvaluationError("NRE2360", "cannot split the message connection");
+  }
+  if (file.type === "null") {
+    if (type === "output") {
+      const frame = state.output.pop();
+      if (frame !== undefined) await flushSinkFrame(invocation, state, frame);
+    } else if (state.message === undefined) {
+      invocation.context.warn({ code: "NRW1127", message: "no sink to remove" });
+    } else {
+      const frame = state.message;
+      state.message = undefined;
+      await flushSinkFrame(invocation, state, frame);
+    }
+    return R_NULL;
+  }
+
+  if (type === "message") {
+    if (!isVirtualTextConnectionHandle(file)) {
+      throw new REvaluationError("NRE2361", "'file' must be NULL or an already open connection");
+    }
+    const connection = requireVirtualTextConnection(invocation, file);
+    if (!connection.open || !virtualConnectionCanWriteRecord(connection)) {
+      throw new REvaluationError("NRE2361", "'file' must be NULL or an already open connection");
+    }
+    if (state.message !== undefined) {
+      const previous = state.message;
+      state.message = undefined;
+      await flushSinkFrame(invocation, state, previous);
+    }
+    state.message = sinkFrame(file, connection, true, false);
+    return R_NULL;
+  }
+
+  if (state.output.length >= 19) {
+    throw new REvaluationError("NRE2362", "sink stack is full");
+  }
+  let connection: VirtualTextConnection | undefined;
+  let connectionWasOpen = false;
+  if (isVirtualTextConnectionHandle(file)) {
+    connection = requireVirtualTextConnection(invocation, file);
+    connectionWasOpen = connection.open;
+    if (connection.open) {
+      if (!virtualConnectionCanWriteRecord(connection)) {
+        throw new REvaluationError("NRE2240", "cannot write to this connection");
+      }
+    } else {
+      openVirtualTextConnection(
+        invocation,
+        connection,
+        { mode: "w", displayMode: "wt", text: "text" },
+        false,
+      );
+    }
+  } else {
+    await writeVirtualTextTarget(invocation, file, "", append, "sink");
+  }
+  state.output.push(sinkFrame(file, connection, connectionWasOpen, split));
+  return R_NULL;
+}
+
+async function builtinSinkNumber(invocation: BuiltinInvocation): Promise<RIntegerVector> {
+  const matched = await matchExact(invocation, ["type"]);
+  const type = outputConnectionType(matched.get("type"), "sink.number");
+  const state = sinkState(invocation);
+  invocation.context.allocate(1);
+  return integerVector([
+    type === "output" ? state.output.length : (state.message?.connection?.id ?? 2),
+  ]);
+}
+
+function outputConnectionType(
+  value: RValue | undefined,
+  call: "sink" | "sink.number",
+): "output" | "message" {
+  if (value === undefined) return "output";
+  const requested = characterScalar(value, "type");
+  if (requested.length > 0 && "output".startsWith(requested)) return "output";
+  if (requested.length > 0 && "message".startsWith(requested)) return "message";
+  throw new RTypeMismatchError(
+    "NRT3370",
+    `${call}(type=) must uniquely match 'output' or 'message'.`,
+  );
+}
+
+function sinkState(invocation: BuiltinInvocation): SinkState {
+  const existing = invocation.state.get(OUTPUT_ROUTER_STATE_KEY);
+  if (typeof existing === "object" && existing !== null && "kind" in existing) {
+    return existing as SinkState;
+  }
+  const created: SinkState = {
+    kind: "base.sink",
+    output: [],
+    message: undefined,
+    bufferedBytes: 0,
+    routeOutput(output, limits) {
+      return routeSinkOutput(created, output, limits);
+    },
+  };
+  invocation.state.set(OUTPUT_ROUTER_STATE_KEY, created);
+  return created;
+}
+
+function sinkFrame(
+  target: RValue | undefined,
+  connection: VirtualTextConnection | undefined,
+  connectionWasOpen: boolean,
+  split: boolean,
+): SinkFrame {
+  return { target, connection, connectionWasOpen, split, chunks: [], bytes: 0 };
+}
+
+function routeSinkOutput(state: SinkState, output: ROutput, limits: RuntimeLimits): boolean {
+  if (output.stream === "message" || output.stream === "stderr") {
+    if (state.message === undefined) return true;
+    appendSinkOutput(state, state.message, output, limits);
+    return false;
+  }
+  for (let index = state.output.length - 1; index >= 0; index -= 1) {
+    const frame = state.output[index];
+    if (frame === undefined) continue;
+    appendSinkOutput(state, frame, output, limits);
+    if (!frame.split) return false;
+  }
+  return true;
+}
+
+function appendSinkOutput(
+  state: SinkState,
+  frame: SinkFrame,
+  output: ROutput,
+  limits: RuntimeLimits,
+): void {
+  const bytes = virtualTextByteLength(output.text);
+  const outputBytes = state.bufferedBytes + bytes;
+  if (outputBytes > limits.maxOutputBytes) {
+    throw new RResourceLimitError("NRL4007", "Evaluation output size limit exceeded.", {
+      details: { maxOutputBytes: limits.maxOutputBytes, outputBytes },
+    });
+  }
+  frame.chunks.push(output);
+  frame.bytes += bytes;
+  state.bufferedBytes = outputBytes;
+}
+
+async function flushSinkFrame(
+  invocation: BuiltinInvocation,
+  state: SinkState,
+  frame: SinkFrame,
+): Promise<void> {
+  state.bufferedBytes = Math.max(0, state.bufferedBytes - frame.bytes);
+  const source = frame.chunks.map((output) => output.text).join("");
+  frame.chunks.length = 0;
+  frame.bytes = 0;
+  if (frame.target === undefined) return;
+  await writeVirtualTextTarget(invocation, frame.target, source, true, "sink");
+  const connection = frame.connection;
+  if (connection === undefined || frame.connectionWasOpen || connection.standard !== undefined) {
+    return;
+  }
+  await finalizeGzipConnection(invocation, connection);
+  if (
+    connection.pipe !== undefined &&
+    !connection.pipe.executed &&
+    virtualConnectionCanWriteRecord(connection)
+  ) {
+    await executePipeWriteConnection(invocation, connection);
+  }
+  connection.open = false;
+}
+
+function removeCaptureSinkFrame(
+  state: SinkState,
+  frame: SinkFrame,
+  type: "output" | "message",
+  previousMessageFrame: SinkFrame | undefined,
+): void {
+  state.bufferedBytes = Math.max(0, state.bufferedBytes - frame.bytes);
+  frame.bytes = 0;
+  if (type === "output") {
+    const index = state.output.lastIndexOf(frame);
+    if (index >= 0) state.output.splice(index, 1);
+  } else if (state.message === frame) {
+    state.message = previousMessageFrame;
+  }
 }
 
 function capturedOutputLines(output: readonly { readonly text: string }[]): readonly string[] {

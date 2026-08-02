@@ -6,6 +6,7 @@ import type {
   RDataViewEvent,
   RGraphicsEvent,
   ROutput,
+  RuntimeOutputRouter,
   RWarning,
   RuntimeLimits,
 } from "./values.js";
@@ -38,10 +39,16 @@ export class EvaluationContext implements OperatorContext {
     readonly output: ROutput[];
     bytes: number;
   }[] = [];
+  readonly #outputRouter: (() => RuntimeOutputRouter | undefined) | undefined;
 
-  public constructor(limits: RuntimeLimits, cancellation: CancellationToken) {
+  public constructor(
+    limits: RuntimeLimits,
+    cancellation: CancellationToken,
+    outputRouter?: () => RuntimeOutputRouter | undefined,
+  ) {
     this.limits = limits;
     this.cancellation = cancellation;
+    this.#outputRouter = outputRouter;
   }
 
   public checkpoint(cost = 1): void {
@@ -92,6 +99,10 @@ export class EvaluationContext implements OperatorContext {
       capture.output.push(output);
       return;
     }
+    const outputRouter = this.#outputRouter?.();
+    if (outputRouter !== undefined && !outputRouter.routeOutput(output, this.limits)) {
+      return;
+    }
     const outputBytes = this.outputBytes + bytes;
     if (outputBytes > this.limits.maxOutputBytes) {
       throw new RResourceLimitError("NRL4007", "Evaluation output size limit exceeded.", {
@@ -103,11 +114,7 @@ export class EvaluationContext implements OperatorContext {
   }
 
   public beginOutputCapture(streams: readonly ROutput["stream"][]): void {
-    this.#outputCaptures.push({
-      streams: new Set(streams),
-      output: [],
-      bytes: 0,
-    });
+    this.#outputCaptures.push({ streams: new Set(streams), output: [], bytes: 0 });
   }
 
   public endOutputCapture(): readonly ROutput[] {

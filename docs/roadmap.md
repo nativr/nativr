@@ -778,8 +778,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      arguments and active `par()` styles into the shared text display-list event. All seven measured
      Shiny/bit64 calls, unchanged source-only package code, Worker delivery, browser rendering,
      record/replay, PNG, and PDF use one implementation path. Plotmath and exact device-specific
-     margins remain compatibility depth; rank-330 `base::sink` is the next measured unresolved
-     callable.
+     margins remain compatibility depth.
+163. Usage-ranked persistent output diversion: rank-330 `base::sink` and `sink.number` share one
+     ordered session router with `capture.output`, preserving nested output frames, split tees,
+     message routing, connection lifecycle, and restoration across evaluations/errors. The two
+     measured utf8 calls plus source-package and Worker paths have executable evidence; rank-338
+     `base::write` is the next measured unresolved callable.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

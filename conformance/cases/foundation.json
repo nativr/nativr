@@ -9131,5 +9131,40 @@
     "expected": [true, false, true],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "sink-usage-ranked-formals-visibility-depth-and-file-output",
+    "code": "f <- formals(sink)\nn <- formals(sink.number)\npath <- tempfile()\npushed <- withVisible(sink(path))\ncat(\"redirected\\n\")\ndepth <- sink.number()\npopped <- withVisible(sink())\nc(names(f), names(n), identical(f$file, NULL), identical(f$append, FALSE), identical(f$type, c(\"output\", \"message\")), identical(f$split, FALSE), identical(n$type, c(\"output\", \"message\")), is.null(pushed$value), pushed$visible, is.null(popped$value), popped$visible, depth, readLines(path), sink.number(), sink.number(\"message\"))",
+    "expected": [
+      "file",
+      "append",
+      "type",
+      "split",
+      "type",
+      "TRUE",
+      "TRUE",
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "1",
+      "redirected",
+      "0",
+      "2"
+    ],
+    "rOracleWithoutSinks": true,
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "sink-usage-ranked-nesting-split-message-and-connection-lifecycle",
+    "code": "first <- tempfile(); second <- tempfile()\npublic <- capture.output({ sink(first); cat(\"a\\n\"); sink(second, split = TRUE); cat(\"b\\n\"); sink(); cat(\"c\\n\"); sink(); cat(\"d\\n\") })\nmessage_path <- tempfile(); con <- file(message_path, open = \"wt\")\nbefore <- sink.number(\"message\"); sink(con, type = \"message\"); active <- sink.number(\"message\"); message(\"hello\"); sink(type = \"message\"); after <- sink.number(\"message\"); remains_open <- isOpen(con); close(con)\nc(public, \"<first>\", readLines(first), \"<second>\", readLines(second), before, active, after, remains_open, readLines(message_path))",
+    "expected": ["d", "<first>", "a", "b", "c", "<second>", "b", "2", "3", "2", "TRUE", "hello"],
+    "rOracleWithoutSinks": true,
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

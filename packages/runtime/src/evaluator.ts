@@ -49,6 +49,7 @@ import {
   vectorDimensions,
   withClasses,
   GLOBAL_CALLING_HANDLERS_STATE_KEY,
+  runtimeOutputRouter,
 } from "./values.js";
 import {
   extractListMember,
@@ -594,7 +595,9 @@ export class Evaluator {
     this.#ensureActive();
     const cancellation = { cancelled: false };
     this.#activeCancellation = cancellation;
-    const context = new EvaluationContext(this.#limits, cancellation);
+    const context = new EvaluationContext(this.#limits, cancellation, () =>
+      runtimeOutputRouter(this.#builtinState),
+    );
     const start = Date.now();
     try {
       const result = await this.#evaluateNode(program, this.#globalEnvironment, context);
@@ -656,7 +659,9 @@ export class Evaluator {
         details: { symbol: name },
       });
     }
-    const context = new EvaluationContext(this.#limits, { cancelled: false });
+    const context = new EvaluationContext(this.#limits, { cancelled: false }, () =>
+      runtimeOutputRouter(this.#builtinState),
+    );
     return this.#force(binding, context);
   }
 
@@ -667,7 +672,9 @@ export class Evaluator {
     if (binding === undefined) {
       throw new REvaluationError("NRE2001", `Object '${name}' not found.`);
     }
-    const context = new EvaluationContext(this.#limits, { cancelled: false });
+    const context = new EvaluationContext(this.#limits, { cancelled: false }, () =>
+      runtimeOutputRouter(this.#builtinState),
+    );
     const callable = await this.#force(binding, context);
     const promises = values.map((value) => createForcedPromise(value, this.#globalEnvironment));
     return this.#invokeCallable(

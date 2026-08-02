@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.250.0",
+  "languageSubsetVersion": "0.251.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -143,6 +143,8 @@
         { "name": "isatty", "compatibility": "behavioral" },
         { "name": "getConnection", "compatibility": "behavioral" },
         { "name": "getAllConnections", "compatibility": "behavioral" },
+        { "name": "sink", "compatibility": "behavioral" },
+        { "name": "sink.number", "compatibility": "behavioral" },
         { "name": "showConnections", "compatibility": "behavioral" },
         { "name": "closeAllConnections", "compatibility": "behavioral" },
         { "name": "gzcon", "compatibility": "behavioral" },

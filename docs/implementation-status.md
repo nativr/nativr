@@ -192,7 +192,10 @@ Date: 2026-08-02
   events, `evalDetailed` retention, output-budget accounting, and Playground console rendering.
   `utils::capture.output()` adds nested in-memory stdout/message capture, visible-result printing,
   partial-line preservation, split output, and bounded browser-memory path/connection targets;
-  `cat()` uses the same connection writer. Host filesystem output remains an explicit boundary.
+  `cat()` uses the same connection writer. Usage-ranked `sink()`/`sink.number()` add a persistent
+  19-level output diversion stack, split tees, one message-connection slot, connection lifecycle,
+  and shared ordering with `capture.output()` across separate evaluations and errors. Host
+  filesystem output remains an explicit boundary.
 - `utils::demo()` returns GNU R's empty `packageIQR` catalog shape when no package library is
   selected. External package demo discovery and execution remain an explicit package-resource
   boundary.

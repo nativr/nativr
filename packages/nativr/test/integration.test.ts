@@ -30,7 +30,7 @@ importFrom(graphics, axis, plot.new, plot.window, rect, title)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median, ts.plot)
 importFrom(utils, download.file, packageDescription, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, plot_series, annotated_plot, find_tools, create_file, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, pipe_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output)
+export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, plot_series, annotated_plot, find_tools, create_file, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, pipe_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output, sink_lines)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -167,6 +167,13 @@ standard_output <- function() {
   writeLines("package-output", out)
   details <- summary(out)
   c(class(out), details$class, isOpen(out, "write"), isatty(out), identical(out, getConnection(1L)))
+}
+sink_lines <- function() {
+  path <- tempfile()
+  sink(path)
+  cat("pure-R package sink\\n")
+  sink()
+  readLines(path)
 }
 hidden_helper <- function(x) x + 100
 `,
@@ -2432,6 +2439,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "TRUE",
     ]);
     expect(packageCall.output).toEqual([{ stream: "stdout", text: "package-output\n" }]);
+    await expect(runtime.eval("nativrfixture::sink_lines()")).resolves.toBe("pure-R package sink");
     await runtime.dispose();
   });
 
@@ -3769,6 +3777,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "remote_lines",
       "remove_files",
       "signature_names",
+      "sink_lines",
       "sourced_value",
       "square",
       "standard_output",
@@ -11375,7 +11384,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.250.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.251.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -16447,6 +16456,126 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(limited.eval('capture.output(cat("123456"))')).rejects.toMatchObject({
       code: "NRL4007",
     });
+    await limited.dispose();
+  });
+
+  it("persists GNU-compatible sink diversions across browser evaluations", async () => {
+    const runtime = await session();
+    const started = await runtime.evalDetailed(`
+      path <- tempfile()
+      visible <- withVisible(sink(path))
+      cat("one\\n")
+    `);
+    expect(started.output).toEqual([]);
+    await expect(runtime.eval("sink.number()")).resolves.toBe(1);
+    const continued = await runtime.evalDetailed('cat("two\\n")');
+    expect(continued.output).toEqual([]);
+    await expect(runtime.eval("sink(); readLines(path)")).resolves.toEqual(["one", "two"]);
+    await expect(runtime.eval("c(visible$visible, is.null(visible$value))")).resolves.toEqual([
+      false,
+      true,
+    ]);
+    await expect(
+      runtime.eval(`
+        append.path <- tempfile(); writeLines("old", append.path)
+        sink(append.path, append = TRUE); cat("new\\n"); sink()
+        readLines(append.path)
+      `),
+    ).resolves.toEqual(["old", "new"]);
+
+    const nested = await runtime.evalDetailed(`
+      first <- tempfile(); second <- tempfile()
+      sink(first); cat("a\\n")
+      sink(second, split = TRUE); cat("b\\n")
+      sink(); cat("c\\n"); sink(); cat("d\\n")
+      list(readLines(first), readLines(second), sink.number())
+    `);
+    expect(nested.value).toEqual([["a", "b", "c"], "b", 0]);
+    expect(nested.output).toEqual([{ stream: "stdout", text: "d\n" }]);
+    await expect(
+      runtime.eval(`
+        first <- tempfile(); second <- tempfile()
+        public <- capture.output({
+          sink(first); cat("a\\n")
+          sink(second, split = TRUE); cat("b\\n")
+          sink(); cat("c\\n"); sink(); cat("d\\n")
+        })
+        list(public, readLines(first), readLines(second))
+      `),
+    ).resolves.toEqual(["d", ["a", "b", "c"], "b"]);
+
+    await expect(
+      runtime.eval(`
+        closed.path <- tempfile(); closed <- file(closed.path)
+        before <- isOpen(closed); sink(closed); during <- isOpen(closed)
+        cat("closed\\n"); sink()
+        c(before, during, isOpen(closed), readLines(closed.path))
+      `),
+    ).resolves.toEqual(["FALSE", "TRUE", "FALSE", "closed"]);
+    await expect(
+      runtime.eval(`
+        open.path <- tempfile(); opened <- file(open.path, open = "wt")
+        sink(opened); cat("open\\n"); sink()
+        result <- c(isOpen(opened), readLines(open.path)); close(opened); result
+      `),
+    ).resolves.toEqual(["TRUE", "open"]);
+
+    const messageResult = await runtime.evalDetailed(`
+      message.path <- tempfile(); messages <- file(message.path, open = "wt")
+      before <- sink.number("message")
+      sink(messages, type = "message")
+      active <- sink.number("message")
+      message("redirected")
+      sink(type = "message")
+      result <- c(before, active, sink.number("message"), readLines(message.path))
+      close(messages)
+      result
+    `);
+    expect(messageResult.value).toEqual(["2", "5", "2", "redirected"]);
+    expect(messageResult.output).toEqual([]);
+    await expect(
+      runtime.eval(`
+        first.message.path <- tempfile(); second.message.path <- tempfile()
+        first.message <- file(first.message.path, open = "wt")
+        second.message <- file(second.message.path, open = "wt")
+        sink(first.message, type = "message"); message("first")
+        sink(second.message, type = "message"); message("second")
+        sink(type = "message"); close(first.message); close(second.message)
+        list(readLines(first.message.path), readLines(second.message.path))
+      `),
+    ).resolves.toEqual(["first", "second"]);
+
+    await expect(runtime.eval('sink(tempfile(), type = "message")')).rejects.toMatchObject({
+      code: "NRE2361",
+    });
+    await expect(
+      runtime.eval(
+        'messages <- file(tempfile(), open = "wt"); sink(messages, type = "message", split = TRUE)',
+      ),
+    ).rejects.toMatchObject({ code: "NRE2360" });
+    await expect(runtime.eval('sink(type = "invalid")')).rejects.toMatchObject({
+      code: "NRT3370",
+    });
+    const emptyMessage = await runtime.evalDetailed('sink(type = "message")');
+    expect(emptyMessage.warnings).toEqual([{ code: "NRW1127", message: "no sink to remove" }]);
+
+    await runtime.eval('error.path <- tempfile(); sink(error.path); cat("before\\n")');
+    await expect(runtime.eval('stop("boom")')).rejects.toMatchObject({ code: "NRE2300" });
+    await runtime.eval('cat("after\\n"); sink()');
+    await expect(runtime.eval("readLines(error.path)")).resolves.toEqual(["before", "after"]);
+    await expect(runtime.eval("for (i in 1:19) sink(tempfile()); sink.number()")).resolves.toBe(19);
+    await expect(runtime.eval("sink(tempfile())")).rejects.toMatchObject({ code: "NRE2362" });
+    await expect(runtime.eval("while (sink.number() > 0) sink(); sink.number()")).resolves.toBe(0);
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxOutputBytes: 5 },
+    });
+    await limited.eval("path <- tempfile(); sink(path)");
+    await expect(limited.eval('cat("123456")')).rejects.toMatchObject({ code: "NRL4007" });
+    await limited.eval("sink()");
     await limited.dispose();
   });
 

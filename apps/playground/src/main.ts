@@ -92,6 +92,11 @@ twice_mean(c(1, 2, 6))`,
     code: "nativrdemo::standard_output()",
   },
   {
+    id: "package-sink",
+    label: "Pure-R package output sink",
+    code: "nativrdemo::sink_lines()",
+  },
+  {
     id: "system-host",
     label: "Explicit host command",
     code: "system('nativr-echo', intern = TRUE, input = c('worker', 'bridge'))",

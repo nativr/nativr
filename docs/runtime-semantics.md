@@ -1444,15 +1444,25 @@ character vector. Browsers have no runtime home directory, so NativR follows R's
 unknown-home rule and leaves leading tildes unchanged. These functions construct path text only:
 they do not normalize, resolve, inspect, or access a host filesystem.
 
-`utils::capture.output()` evaluates its dots lazily inside a nested output-journal capture. The
+`utils::capture.output()` evaluates its dots lazily inside the session output-router stack. The
 `output` mode captures stdout and prints each visible expression result with the owned formatter;
 the `message` mode captures message/stderr events while leaving stdout public. Captured chunks are
 normalized into character lines without losing a final intentional blank line. Output-mode
-`split = TRUE` re-emits the same events after capture, and every capture has an independent
-`maxOutputBytes` bound. With `file = NULL` it returns character lines; a supported session path or
-file connection receives the exact captured chunks. Closed connection targets are destroyed after
-use as GNU R does. Host files, warning/error sink behavior, arbitrary class-specific top-level
-printing, and the complete connection stack are outside this increment.
+`split = TRUE` tees the same events to the next older frame or public output, and all buffered
+frames share the session's `maxOutputBytes` bound. With `file = NULL` it returns character lines; a
+supported session path or file connection receives the exact captured chunks. Closed connection
+targets are destroyed after use as GNU R does.
+
+`base::sink(file = NULL, append = FALSE, type = c("output", "message"), split = FALSE)` uses that
+same router. Output diversions form GNU R's 19-entry user stack, persist across evaluations and
+errors, and restore in last-in-first-out order; `split = TRUE` tees through older diversions.
+Message diversion is one replaceable slot, accepts only an already-open writable connection, and
+routes both message and stderr events. `sink.number()` reports output depth or the active message
+connection number (2 when absent). Character targets are bounded session paths, automatically opened
+output connections are closed but remain valid after restoration, and already-open connections
+remain open. Buffered text is committed when a frame is removed, so reading or closing its target
+while active is deliberately outside the supported interaction boundary. Host paths, ambient file
+descriptors, and byte-for-byte native console buffering are not exposed.
 
 `utils::demo()` constructs the empty `packageIQR` catalog entirely from owned values when
 `package = character()` and no library location is supplied. It does not scan an operating-system R

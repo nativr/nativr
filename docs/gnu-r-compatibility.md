@@ -226,8 +226,10 @@ remain incomplete.
 The rank-436 increment adds GNU R differential evidence for `utils::capture.output` through httpuv's
 measured request-inspection call. It covers nested in-memory stream capture, visible results,
 partial lines, message selection, split output, namespace and argument behavior, resource limits,
-and the adjacent newline-terminating `cat` shape. Files, connections, arbitrary print methods,
-warning/error sinks, and the full connection stack remain incomplete.
+and the adjacent newline-terminating `cat` shape. Browser-memory files and owned connections are
+supported; arbitrary print methods and host filesystem targets remain incomplete. The later rank-330
+increment adds persistent output/message diversion through `base::sink` and `sink.number`, including
+nested restoration, split tees, connection lifecycle, and cross-evaluation state.
 
 The rank-437 increment adds GNU R differential evidence for the empty `utils::demo()` package
 catalog's `packageIQR` structure and an explicit browser boundary for external package demo scripts.

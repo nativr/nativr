@@ -88,6 +88,8 @@ export {
   functionDebugRegistry,
   FUNCTION_DEBUG_STATE_KEY,
   GLOBAL_CALLING_HANDLERS_STATE_KEY,
+  OUTPUT_ROUTER_STATE_KEY,
+  runtimeOutputRouter,
 } from "./values.js";
 export {
   extractListMember,
@@ -149,6 +151,7 @@ export type {
   RLanguage,
   RSymbol,
   RuntimeLimits,
+  RuntimeOutputRouter,
   RuntimeMemoryAreaStatistics,
   RuntimeMemoryStatistics,
   RuntimeOperators,

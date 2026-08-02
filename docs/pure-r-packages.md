@@ -211,6 +211,9 @@ normalized AST. The runtime then provides:
 24. read-only `base::unz()` connections for exact stored or DEFLATE members in immutable package
     resources or session-owned ZIP files, reusable by the existing line/raw/source/table/
     serialization stack without extracting paths or granting host-filesystem access.
+25. persistent `base::sink()` output diversions, split tees, message routing, and `sink.number()`
+    inspection over the same bounded session files/connections. The unchanged package fixture and
+    default Worker package both write and read a sink target without JavaScript shims.
 
 Package source, metadata, resource counts, and encoded bytes are bounded before parsing. Package
 evaluation then consumes the ordinary step, call-depth, allocation, and output budgets.

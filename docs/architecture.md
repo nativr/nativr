@@ -135,10 +135,12 @@ session-owned class map, allowing bounded S4 generic and coercion lookup to trav
 old-style inheritance without consulting an R installation, host class registry, or package code.
 `methods::show` consumes that same map for single-object display dispatch; package-defined methods
 write through the bounded output journal, while the fallback formats only owned values and never
-opens a pager or terminal device. The output journal also supports nested, stream-selective capture
-frames for `utils::capture.output`. Captured text remains evaluator-owned until it becomes a bounded
-character result or is explicitly duplicated by `split = TRUE`; it never enters a host file or
-connection. The `stats::family` entry is another deliberately thin generic seam: it routes owned
+opens a pager or terminal device. A session-owned output router sits between that journal and each
+evaluation's public result. `utils::capture.output()` and `base::sink()` share its ordered frames,
+so the most recently created capture or diversion wins even when package code nests the two.
+Persistent output frames survive separate `r.eval()` calls, while file and connection writes remain
+in the base layer over the bounded virtual store; runtime knows only the dependency-neutral router
+interface. The `stats::family` entry is another deliberately thin generic seam: it routes owned
 class metadata through the same evaluator S3 stack but does not embed distributional's package-owned
 method or objects. Regular time-series values follow the same boundary. `stats::ts` creates only
 owned vectors/matrices and `tsp` metadata; `as.ts`, `frequency`, `deltat`, `stats::cycle`, and

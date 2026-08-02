@@ -316,12 +316,12 @@ shape through the bounded session-local class/generic/method registry, including
 `ANY`, and call-context errors. Rank-335 `colorRampPalette` now runs isoband's two measured 21-color
 Viridis palette calls through registered `grDevices::` access. The returned first-class palette
 function uses independent linear RGB or CIE Lab interpolation with bias and alpha controls; the
-measured Lab output matches GNU R byte-for-byte. Rank-336 `sink` remains incomplete: the standard
-connection registry now exists, but diversion stacks, splitting, and nested restoration still need
-their own semantics. Rank-337 `sessionInfo` now runs otel's measured `utils::sessionInfo()$platform`
-path with an owned, deterministic browser-platform descriptor, target R version, locale, RNG kinds,
-attached core packages, and a classed GNU R-shaped result. Rank-338 `as.ordered` now runs generics'
-measured `as.ordered(letters[1:5])` example through the existing owned factor representation, with
+measured Lab output matches GNU R byte-for-byte. Usage-ranked `sink()` now adds persistent output
+diversion stacks, split tees, message routing, and nested restoration over the standard connection
+registry. Rank-337 `sessionInfo` now runs otel's measured `utils::sessionInfo()$platform` path with
+an owned, deterministic browser-platform descriptor, target R version, locale, RNG kinds, attached
+core packages, and a classed GNU R-shaped result. Rank-338 `as.ordered` now runs generics' measured
+`as.ordered(letters[1:5])` example through the existing owned factor representation, with
 ordered-factor identity, unused-level removal, names, and package-defined S3 forwarding. Rank-339
 `as.array` now supplies rstan's measured package-method extension point: class-specific methods
 receive the original object and lazy dots, while `as.array.default` adds a one-dimensional extent to
@@ -453,19 +453,20 @@ method lookup, method-result visibility, and bounded default text output. Rank-4
 `utils::capture.output` now runs httpuv's measured request-inspection expression through a nested,
 resource-bounded in-memory output capture, with visible-result printing, partial-line handling,
 message selection, split output, and bounded browser-memory file/connection targets. Host filesystem
-targets remain an explicit boundary. Rank-437 `utils::demo` reproduces the empty package-demo
-catalog shape while making external package demo discovery and execution an explicit
-package-resource boundary. Rank-438 `RNGversion` runs zoo's measured R-3.5 reproducibility setup by
-selecting the historical Rounding sampler before `set.seed`; pre-R-1.7 generator families remain
-explicit boundaries. Ranks 439-443 add the regular time-series foundation: `ts()` constructs vector
-or matrix series, `as.ts()` and `frequency()` expose their sampling metadata, and `window()` slices,
-downsamples, or explicitly extends them. These generics also forward to independently supplied
-methods such as `window.zoo`; NativR does not claim that zoo itself is bundled or compatible yet.
-Rank 444 `graphics::legend` now runs zoo's three measured line/point legend shapes through a bounded
-Worker graphics event and the Playground Canvas renderer, including keyword/coordinate placement,
-colors, columns, titles, invisible geometry results, and same-session record/replay. General base
-graphics, arbitrary graphical parameters, and device-identical layout remain explicit boundaries.
-See the
+targets remain an explicit boundary. It shares an ordered session router with `base::sink()`, so
+package-created diversions persist across evaluations and errors. Rank-437 `utils::demo` reproduces
+the empty package-demo catalog shape while making external package demo discovery and execution an
+explicit package-resource boundary. Rank-438 `RNGversion` runs zoo's measured R-3.5 reproducibility
+setup by selecting the historical Rounding sampler before `set.seed`; pre-R-1.7 generator families
+remain explicit boundaries. Ranks 439-443 add the regular time-series foundation: `ts()` constructs
+vector or matrix series, `as.ts()` and `frequency()` expose their sampling metadata, and `window()`
+slices, downsamples, or explicitly extends them. These generics also forward to independently
+supplied methods such as `window.zoo`; NativR does not claim that zoo itself is bundled or
+compatible yet. Rank 444 `graphics::legend` now runs zoo's three measured line/point legend shapes
+through a bounded Worker graphics event and the Playground Canvas renderer, including
+keyword/coordinate placement, colors, columns, titles, invisible geometry results, and same-session
+record/replay. General base graphics, arbitrary graphical parameters, and device-identical layout
+remain explicit boundaries. See the
 [compatibility contract](https://github.com/nativr/nativr/blob/main/docs/compatibility-contract.md)
 for exact boundaries.
 
@@ -730,6 +731,13 @@ browser graphics journal. Main, subtitle, and axis labels use active `par()` sty
 `col`/`cex`/`font` overrides, and the same text events drive Worker callbacks, browser Canvas,
 record/replay, PNG, and PDF. The source-only package fixture imports and calls `title` unchanged,
 demonstrating the intended Base-R-foundation-to-package extension model.
+
+Rank 330 `base::sink()` now covers utf8's two measured output-redirection calls and the broader GNU
+R stack semantics they rely on. Output diversions persist across `r.eval()` calls and errors, nest
+up to 19 levels, tee with `split = TRUE`, and restore owned file/connection targets
+deterministically; message sinks use one replaceable open-connection slot. The source-only package
+fixture and default Worker Playground execute the same API unchanged. Host filesystem targets remain
+unavailable.
 
 Rank 121 `grDevices::png()` now covers all seven measured calls across five packages. It opens
 alongside the browser display, records the existing graphics command vocabulary, rasterizes it in
