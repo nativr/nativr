@@ -2301,6 +2301,31 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     builtinPlotDefault,
   ),
   definePackageBuiltin("graphics", "plot.new", [], "behavioral", builtinPlotNew, "invisible"),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "graphics",
+      "title",
+      ["main", "sub", "xlab", "ylab", "line", "outer", "..."],
+      "behavioral",
+      builtinGraphicsTitle,
+      "invisible",
+    ),
+    [
+      { name: "main", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      { name: "sub", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      { name: "xlab", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      { name: "ylab", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      {
+        name: "line",
+        defaultValue: { kind: "MissingLiteral", declaredType: "logical", span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "outer",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      { name: "..." },
+    ],
+  ),
   definePackageBuiltin(
     "graphics",
     "plot.window",
@@ -26434,60 +26459,258 @@ function plotDefaultGeometry(
   if (points.length > 0) writeGraphics(invocation, state, { kind: "points", points });
 }
 
+interface GraphicsTitleStyle {
+  readonly color?: RValue;
+  readonly size?: RValue;
+  readonly font?: RValue;
+}
+
+interface GraphicsTitleAnnotation {
+  readonly labels: readonly string[];
+  readonly style: GraphicsTitleStyle;
+}
+
+async function builtinGraphicsTitle(invocation: BuiltinInvocation): Promise<RValue> {
+  const lazy = matchLazyArgumentsWithDots(invocation, [
+    "main",
+    "sub",
+    "xlab",
+    "ylab",
+    "line",
+    "outer",
+  ]);
+  const values = new Map<string, RValue>();
+  for (const [name, argument] of lazy.matched) {
+    if (!argument.promise.missing) values.set(name, await invocation.force(argument.promise));
+  }
+
+  const controls = new Map<string, RValue>();
+  const recognized = new Set([
+    "adj",
+    "cex.main",
+    "cex.sub",
+    "cex.lab",
+    "col.main",
+    "col.sub",
+    "col.lab",
+    "font.main",
+    "font.sub",
+    "font.lab",
+    "family",
+    "mgp",
+    "mex",
+    "xpd",
+    // GNU R accepts these general parameters here but title-specific parameters win.
+    "cex",
+    "col",
+    "font",
+  ]);
+  for (const argument of lazy.dots) {
+    if (argument.promise.missing) continue;
+    const value = await invocation.force(argument.promise);
+    if (argument.name === undefined || !recognized.has(argument.name)) {
+      invocation.context.warn({
+        code: "NRW1139",
+        message: `"${argument.name ?? ""}" is not a graphical parameter`,
+      });
+      continue;
+    }
+    controls.set(argument.name, value);
+  }
+
+  const state = graphicsState(invocation, "title");
+  const line = graphicsTitleLine(values.get("line"));
+  const outer = graphicsTitleLogical(values.get("outer"), false);
+  renderGraphicsTitle(invocation, state, values, controls, line, outer);
+  invocation.setResultVisibility("invisible");
+  return R_NULL;
+}
+
+function graphicsTitleLine(value: RValue | undefined): number | undefined {
+  if (value === undefined || value.type === "null" || !isAtomic(value) || value.length === 0) {
+    return undefined;
+  }
+  if (isMissing(value, 0)) return undefined;
+  const line = Number(stringAt(value, 0));
+  return Number.isFinite(line) ? line : undefined;
+}
+
+function graphicsTitleLogical(value: RValue | undefined, fallback: boolean): boolean {
+  if (value === undefined || value.type === "null" || !isAtomic(value) || value.length === 0) {
+    return fallback;
+  }
+  if (isMissing(value, 0)) return fallback;
+  if (value.type === "character") return parseRLogical(value.values[0] ?? "") === true;
+  if (value.type === "complex") {
+    return (value.real[0] ?? 0) !== 0 || (value.imaginary[0] ?? 0) !== 0;
+  }
+  return (value.values[0] ?? 0) !== 0;
+}
+
+function graphicsTitleAnnotation(
+  value: RValue | undefined,
+  invocation: BuiltinInvocation,
+  call: string,
+): GraphicsTitleAnnotation {
+  if (value === undefined || value.type === "null") return { labels: [], style: {} };
+  if (value.type === "list") {
+    if (value.length === 0) return { labels: [], style: {} };
+    const names = vectorNames(value);
+    const style: { color?: RValue; size?: RValue; font?: RValue } = {};
+    for (let index = 1; index < value.length; index += 1) {
+      const name = names?.[index] ?? "";
+      const component = value.values[index] ?? R_NULL;
+      if (name === "col") style.color = component;
+      else if (name === "cex") style.size = component;
+      else if (name === "font") style.font = component;
+      else if (name !== "") {
+        throw new RTypeMismatchError("NRT3411", "invalid graphics parameter");
+      }
+    }
+    return {
+      labels: graphicsTitleLabels(value.values[0] ?? R_NULL, invocation, call),
+      style,
+    };
+  }
+  return { labels: graphicsTitleLabels(value, invocation, call), style: {} };
+}
+
+function graphicsTitleLabels(
+  value: RValue,
+  invocation: BuiltinInvocation,
+  call: string,
+): readonly string[] {
+  if (value.type === "null") return [];
+  if (value.type === "symbol") return [value.name];
+  if (value.type === "language") return [deparseAst(value.expression)];
+  if (value.type === "expression") return value.values.map(deparseAst);
+  if (!isAtomic(value)) {
+    throw new RTypeMismatchError("NRT3411", `${call} must be a graphics annotation value.`);
+  }
+  const text = value.type === "character" ? value : coerceAtomicToCharacter(value, invocation);
+  return Array.from({ length: text.length }, (_, index) =>
+    isMissing(text, index) ? "" : (text.values[index] ?? ""),
+  );
+}
+
+function graphicsTitleScalarNumber(value: RValue | undefined, fallback: number): number {
+  if (value === undefined || value.type === "null" || !isAtomic(value) || value.length === 0) {
+    return fallback;
+  }
+  if (isMissing(value, 0)) return fallback;
+  const number = Number(stringAt(value, 0));
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function graphicsTitleFont(value: RValue | undefined, fallback: 1 | 2 | 3 | 4): 1 | 2 | 3 | 4 {
+  const font = graphicsTitleScalarNumber(value, fallback);
+  if (!Number.isInteger(font) || font < 1 || font > 4) {
+    throw new RUnsupportedFeatureError(
+      "NRU6199",
+      "title(font=) currently supports plain, bold, italic, and bold-italic faces 1 through 4.",
+    );
+  }
+  return font as 1 | 2 | 3 | 4;
+}
+
+function graphicsTitleColour(
+  value: RValue | undefined,
+  fallback: RValue | undefined,
+  invocation: BuiltinInvocation,
+): string {
+  const selected = value ?? fallback ?? characterVector(["black"]);
+  const colors = graphicsSegmentColours(selected, invocation);
+  return graphicsCssColour(colors[0] ?? ([0, 0, 0, 255] as const));
+}
+
+function renderGraphicsTitle(
+  invocation: BuiltinInvocation,
+  state: GraphicsState,
+  values: ReadonlyMap<string, RValue>,
+  controls: ReadonlyMap<string, RValue>,
+  line: number | undefined,
+  outer: boolean,
+): void {
+  const parameters = state.parameters;
+  const xMiddle = (state.xlim[0] + state.xlim[1]) / 2;
+  const yMiddle = (state.ylim[0] + state.ylim[1]) / 2;
+  const adjustment = graphicsTitleScalarNumber(controls.get("adj") ?? parameters.get("adj"), 0.5);
+  const familyValue = controls.get("family") ?? parameters.get("family");
+  const family =
+    familyValue?.type === "character" && familyValue.length > 0 && !isMissing(familyValue, 0)
+      ? (familyValue.values[0] ?? "")
+      : "";
+  const baseSize = graphicsTitleScalarNumber(parameters.get("cex"), 1);
+  const labels: RGraphicsText[] = [];
+  const add = (
+    name: "main" | "sub" | "xlab" | "ylab",
+    x: number,
+    y: number,
+    rotation: number,
+    defaultVerticalAdjustment: number,
+    parameterStem: "main" | "sub" | "lab",
+    defaultSize: number,
+    defaultFont: 1 | 2,
+  ): void => {
+    const annotation = graphicsTitleAnnotation(values.get(name), invocation, `title(${name}=)`);
+    const color = graphicsTitleColour(
+      annotation.style.color ?? controls.get(`col.${parameterStem}`),
+      parameters.get(`col.${parameterStem}`),
+      invocation,
+    );
+    const size =
+      baseSize *
+      graphicsTitleScalarNumber(
+        annotation.style.size ??
+          controls.get(`cex.${parameterStem}`) ??
+          parameters.get(`cex.${parameterStem}`),
+        defaultSize,
+      );
+    const font = graphicsTitleFont(
+      annotation.style.font ??
+        controls.get(`font.${parameterStem}`) ??
+        parameters.get(`font.${parameterStem}`),
+      defaultFont,
+    );
+    const lineAdjustment =
+      line === undefined
+        ? defaultVerticalAdjustment
+        : name === "main"
+          ? 0.2 + line * 0.5
+          : -(0.2 + line * 0.5);
+    const outerAdjustment = outer ? lineAdjustment + (lineAdjustment < 0 ? -1 : 1) : lineAdjustment;
+    for (let index = 0; index < annotation.labels.length; index += 1) {
+      const label = annotation.labels[index] ?? "";
+      if (label.length === 0) continue;
+      labels.push({
+        x,
+        y,
+        label,
+        color,
+        size,
+        font,
+        family,
+        rotation,
+        horizontalAdjustment: adjustment,
+        verticalAdjustment: outerAdjustment + index * (name === "main" ? 1 : -1),
+        offset: 0.5,
+      });
+    }
+  };
+  add("main", xMiddle, state.ylim[1], 0, 1.2, "main", 1.2, 2);
+  add("sub", xMiddle, state.ylim[0], 0, -0.2, "sub", 1, 1);
+  add("xlab", xMiddle, state.ylim[0], 0, -1.2, "lab", 1, 1);
+  add("ylab", state.xlim[0], yMiddle, 90, -1.2, "lab", 1, 1);
+  invocation.context.allocate(labels.length * 8);
+  if (labels.length > 0) writeGraphics(invocation, state, { kind: "text", labels });
+}
+
 function plotDefaultAnnotations(
   invocation: BuiltinInvocation,
   state: GraphicsState,
   values: ReadonlyMap<string, RValue>,
 ): void {
-  const label = (name: string): string | undefined => {
-    const value = values.get(name);
-    if (value === undefined || value.type === "null") return undefined;
-    if (value.type !== "character" || value.length !== 1 || isMissing(value, 0)) {
-      throw new RUnsupportedFeatureError(
-        "NRU6170",
-        `plot.default(${name}=) currently accepts one character label or NULL.`,
-      );
-    }
-    return value.values[0] ?? "";
-  };
-  const main = label("main");
-  const sub = label("sub");
-  const xlab = label("xlab");
-  const ylab = label("ylab");
-  const xMiddle = (state.xlim[0] + state.xlim[1]) / 2;
-  const yMiddle = (state.ylim[0] + state.ylim[1]) / 2;
-  const labels: RGraphicsText[] = [];
-  const add = (
-    text: string | undefined,
-    x: number,
-    y: number,
-    rotation: number,
-    horizontalAdjustment: number,
-    verticalAdjustment: number,
-    size: number,
-    font: 1 | 2,
-  ): void => {
-    if (text === undefined || text.length === 0) return;
-    labels.push({
-      x,
-      y,
-      label: text,
-      color: "#000000FF",
-      size,
-      font,
-      family: "",
-      rotation,
-      horizontalAdjustment,
-      verticalAdjustment,
-      offset: 0.5,
-    });
-  };
-  add(main, xMiddle, state.ylim[1], 0, 0.5, 1.2, 1.2, 2);
-  add(sub, xMiddle, state.ylim[0], 0, 0.5, -0.2, 1, 1);
-  add(xlab, xMiddle, state.ylim[0], 0, 0.5, -1.2, 1, 1);
-  add(ylab, state.xlim[0], yMiddle, 90, 0.5, -1.2, 1, 1);
-  invocation.context.allocate(labels.length * 8);
-  if (labels.length > 0) writeGraphics(invocation, state, { kind: "text", labels });
+  renderGraphicsTitle(invocation, state, values, new Map(), undefined, false);
 }
 
 async function beginGraphicsPage(invocation: BuiltinInvocation): Promise<GraphicsState> {

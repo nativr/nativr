@@ -773,8 +773,13 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      lists/pairlists, attributes, language objects, closures, and environment boundaries. The
      length-one double `object_size` result plus legacy/IEC/SI formatting and printing have exact
      differential evidence and run unchanged in the measured data.table/bit64 call surface. It is
-     not JavaScript heap telemetry and does not claim native/external allocation sizes; rank-328
-     `graphics::title` is the next measured unresolved callable.
+     not JavaScript heap telemetry and does not claim native/external allocation sizes.
+162. Usage-ranked reusable plot annotation: rank-328 `graphics::title` normalizes GNU R-shaped title
+     arguments and active `par()` styles into the shared text display-list event. All seven measured
+     Shiny/bit64 calls, unchanged source-only package code, Worker delivery, browser rendering,
+     record/replay, PNG, and PDF use one implementation path. Plotmath and exact device-specific
+     margins remain compatibility depth; rank-330 `base::sink` is the next measured unresolved
+     callable.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

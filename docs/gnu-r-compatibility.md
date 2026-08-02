@@ -886,8 +886,16 @@ within-character-vector sharing, recursively counted list/pairlist children, att
 exclusion boundary, and legacy/IEC/SI formatting and invisible printing. NativR uses an independent
 traversal of owned values and normalized syntax; it never reports the JavaScript heap as R memory.
 External pointers, native package allocations, other platform word sizes, and broader host-object
-attribution remain compatibility depth. Rank 328 `graphics::title` is the next measured unresolved
-callable.
+attribution remain compatibility depth.
+
+The title-annotation increment raises current name overlap to 624 of 2,522. Rank 328
+`graphics::title` covers all seven measured Shiny/bit64 calls. GNU R 4.6 black-box evidence covers
+the exact signature/defaults, invisible result, active-plot requirement, character/numeric/logical,
+language/expression/list annotations, list-local styles, session title parameters, named graphical
+controls, line/outer inputs, and unknown-parameter behavior. NativR emits the existing owned text
+event for Worker/Canvas, record/replay, PNG, PDF, and unchanged pure-R package calls. Plotmath glyph
+layout and platform-exact margin/font metrics remain compatibility depth. Rank 330 `base::sink` is
+the next measured unresolved callable.
 
 ## Completion evidence
 

@@ -26,11 +26,11 @@ Imports: grDevices, graphics, methods, stats, utils
 Encoding: UTF-8
 NeedsCompilation: no`,
   namespace: `
-importFrom(graphics, axis, plot.new, plot.window, rect)
+importFrom(graphics, axis, plot.new, plot.window, rect, title)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median, ts.plot)
 importFrom(utils, download.file, packageDescription, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, plot_series, find_tools, create_file, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, pipe_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output)
+export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, plot_series, annotated_plot, find_tools, create_file, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, pipe_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -74,6 +74,12 @@ usage_rectangles <- function() {
 plot_series <- function(z) {
   ts.plot(z)
   invisible(length(z))
+}
+annotated_plot <- function(label = "package title") {
+  plot.new()
+  plot.window(c(0, 1), c(0, 1))
+  title(label)
+  invisible(label)
 }
 find_tools <- function(names) Sys.which(names)
 create_file <- function() {
@@ -3732,6 +3738,7 @@ describe("complete inline source-to-result vertical slice", () => {
       runtime.eval("x <- withVisible(lines(new_score(1:3), extra = 8)); c(x$value, x$visible)"),
     ).resolves.toEqual(["package-lines", "6", "8", "TRUE"]);
     await expect(runtime.eval('sort(getNamespaceExports("nativrfixture"))')).resolves.toEqual([
+      "annotated_plot",
       "archive_lines",
       "ask_value",
       "axis_ticks",
@@ -11368,7 +11375,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.249.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.250.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -11396,6 +11403,7 @@ describe("complete inline source-to-result vertical slice", () => {
       { name: "par", compatibility: "behavioral" },
       { name: "plot.default", compatibility: "shape" },
       { name: "plot.new", compatibility: "behavioral" },
+      { name: "title", compatibility: "behavioral" },
       { name: "plot.window", compatibility: "shape" },
       { name: "matplot", compatibility: "shape" },
       { name: "axTicks", compatibility: "behavioral" },
@@ -14696,6 +14704,89 @@ describe("complete inline source-to-result vertical slice", () => {
     expect(unknown.warnings).toEqual([
       { code: "NRW1128", message: '"not-a-par" is not a graphical parameter' },
     ]);
+    await runtime.dispose();
+  });
+
+  it("draws usage-ranked titles through package code and the Worker graphics protocol", async () => {
+    const observed: unknown[] = [];
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [pureRFixture],
+      onGraphics: (event) => observed.push(event),
+    });
+    const drawn = await runtime.evalDetailed(`
+      plot.new()
+      plot.window(c(0, 10), c(0, 20))
+      visible <- withVisible(graphics::title(
+        main = list("main", col = "red", cex = 1.5, font = 3),
+        sub = "sub", xlab = "x", ylab = "y",
+        col.sub = "blue", col.lab = "green", family = "serif", adj = 0.25
+      ))
+      c(is.null(visible$value), visible$visible)
+    `);
+    expect(drawn.value).toEqual([true, false]);
+    expect(drawn.graphics.map((event) => event.kind)).toEqual(["new-page", "window", "text"]);
+    const text = drawn.graphics[2];
+    expect(text?.kind).toBe("text");
+    if (text?.kind === "text") {
+      expect(text.labels.map((label) => label.label)).toEqual(["main", "sub", "x", "y"]);
+      expect(text.labels.map((label) => label.color)).toEqual([
+        "#FF0000FF",
+        "#0000FFFF",
+        "#00FF00FF",
+        "#00FF00FF",
+      ]);
+      expect(text.labels[0]).toMatchObject({
+        x: 5,
+        y: 20,
+        size: 1.5,
+        font: 3,
+        family: "serif",
+        horizontalAdjustment: 0.25,
+      });
+      expect(text.labels[3]).toMatchObject({ x: 0, y: 10, rotation: 90 });
+    }
+    expect(observed).toEqual(drawn.graphics);
+
+    await runtime.eval("recorded_title <- recordPlot()\ndev.hold()");
+    const replayed = await runtime.evalDetailed("replayPlot(recorded_title)\ndev.flush()");
+    expect(replayed.graphics.map((event) => event.kind)).toEqual(["new-page", "window", "text"]);
+    expect(replayed.graphics[2]).toEqual(text);
+
+    const packaged = await runtime.evalDetailed("nativrfixture::annotated_plot('from package')");
+    expect(packaged.value).toBe("from package");
+    expect(packaged.visible).toBe(false);
+    expect(packaged.graphics.at(-1)).toMatchObject({
+      kind: "text",
+      labels: [{ label: "from package" }],
+    });
+    await expect(
+      runtime.eval(`
+        f <- formals(graphics::title)
+        c(names(f), identical(f$main, NULL), identical(f$sub, NULL),
+          identical(f$xlab, NULL), identical(f$ylab, NULL), is.na(f$line),
+          identical(f$outer, FALSE))
+      `),
+    ).resolves.toEqual([
+      "main",
+      "sub",
+      "xlab",
+      "ylab",
+      "line",
+      "outer",
+      "...",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    await runtime.reset();
+    await expect(runtime.eval("graphics::title('before')")).rejects.toMatchObject({
+      code: "NRE2190",
+    });
     await runtime.dispose();
   });
 

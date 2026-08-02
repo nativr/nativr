@@ -2193,3 +2193,11 @@ Deliberate current exclusions include GNU R/webR embedding, browser-time package
 universal package execution, generated JavaScript execution, the complete graphics-device/base-
 graphics stack, filesystem access, runtime network access, locale-specific raw encodings, and the
 unimplemented remainder of complex mathematics.
+
+Usage-ranked `graphics::title()` has GNU R 4.6 black-box evidence for its exact formals/defaults,
+invisible `NULL` result, pre-plot error, annotation coercion, list-local style overrides, unknown
+graphics-parameter boundary, session `par()` state, explicit line/outer placement, and the
+main/subtitle/axis-label style families. Its normalized text events execute through inline, Worker,
+record/replay, Canvas, PNG, and PDF paths, including unchanged source-only package code. Browser
+plotmath glyph layout, exact device-specific margin metrics, Hershey fonts, and the rest of the
+base-graphics layout engine remain compatibility depth.

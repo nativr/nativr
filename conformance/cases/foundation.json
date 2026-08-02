@@ -9103,5 +9103,33 @@
     "expected": ["0.1 Kb", "56 B", "TRUE", "TRUE", "TRUE", "TRUE"],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "graphics-title-usage-ranked-formals-and-defaults",
+    "code": "f <- formals(graphics::title)\nc(names(f), identical(f$main, NULL), identical(f$sub, NULL), identical(f$xlab, NULL), identical(f$ylab, NULL), is.na(f$line), identical(f$outer, FALSE))",
+    "expected": [
+      "main",
+      "sub",
+      "xlab",
+      "ylab",
+      "line",
+      "outer",
+      "...",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "graphics-title-usage-ranked-annotation-coercion-visibility-and-list-boundary",
+    "code": "plot.new(); plot.window(c(0, 1), c(0, 1))\nvisible <- withVisible(graphics::title(main = list(\"main\", col = \"red\", cex = 1.5, font = 3), sub = 1:2, xlab = TRUE, ylab = quote(axis_name), line = 2, outer = FALSE))\nc(is.null(visible$value), visible$visible, inherits(try(graphics::title(main = list(\"bad\", bogus = 1)), silent = TRUE), \"try-error\"))",
+    "expected": [true, false, true],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

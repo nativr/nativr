@@ -319,3 +319,9 @@ the Worker emits a correlated request, suspends only that evaluation, and resolv
 immediate response message that bypasses the ordinary serialized operation queue. Neither runtime
 nor protocol imports Node process APIs or parses a shell command. Missing policy fails closed, and
 the embedding host remains the sole authority for allow-lists, execution, and cancellation.
+
+Title annotations are deliberately not a second graphics renderer. `graphics::title()` normalizes
+annotation values and session `par()` state into the existing owned `text` display-list event.
+Browser Canvas, PNG, PDF, record/replay, inline callbacks, and the Worker protocol therefore consume
+one event shape. Source-only packages resolve the callable through ordinary NAMESPACE imports; no
+package name or translated JavaScript enters the graphics layer.

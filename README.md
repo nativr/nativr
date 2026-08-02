@@ -725,6 +725,12 @@ attributes, language objects, and closures, and excludes environment bindings wh
 environment object's own footprint. `format()` and `print()` support legacy, IEC, and SI units. This
 estimates owned R objects; it does not claim to measure the JavaScript heap.
 
+Rank 328 `graphics::title()` now covers all seven measured Shiny/bit64 calls through the shared
+browser graphics journal. Main, subtitle, and axis labels use active `par()` styles or list-local
+`col`/`cex`/`font` overrides, and the same text events drive Worker callbacks, browser Canvas,
+record/replay, PNG, and PDF. The source-only package fixture imports and calls `title` unchanged,
+demonstrating the intended Base-R-foundation-to-package extension model.
+
 Rank 121 `grDevices::png()` now covers all seven measured calls across five packages. It opens
 alongside the browser display, records the existing graphics command vocabulary, rasterizes it in
 the Worker without DOM or native dependencies, and writes a standards-compliant compressed RGBA PNG

@@ -1528,3 +1528,12 @@ inspected and closed with invisible `NULL`. Text/UTF-8 or Latin-1 byte projectio
 line/raw/source/table/serialization consumers, and unchanged pure-R package calls reuse the normal
 connection machinery. Duplex modes, interactive streaming/flush, seeking, command parsing, ambient
 program discovery, and NUL-containing binary stdin remain explicit host/runtime boundaries.
+
+`graphics::title(main = NULL, sub = NULL, xlab = NULL, ylab = NULL, line = NA, outer = FALSE, ...)`
+requires an active plot and returns invisible `NULL`. Character/numeric/logical annotations,
+symbols, language, expression vectors, and title lists normalize into owned text labels. A title
+list may override `col`, `cex`, and `font`; named title-specific graphical controls override the
+active device's `par()` values without mutating them. Browser callbacks, Worker transport,
+display-list replay, PNG, and PDF share the same text event. Expressions currently use deterministic
+normalized deparse text; mathematical plotmath glyph construction and exact platform font/margin
+metrics remain explicit depth work.

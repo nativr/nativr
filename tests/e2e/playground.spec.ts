@@ -728,6 +728,29 @@ test("runs the required Worker examples without evaluation network traffic", asy
   });
   expect(textPixels).toBeGreaterThan(0);
 
+  await page.locator("#source").fill("nativrdemo::annotated_plot('PACKAGE')");
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText('"PACKAGE"');
+  await expect(page.locator("#graphics-count")).toHaveText("3");
+  const titlePixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
+    const context = canvas.getContext("2d");
+    if (context === null) return 0;
+    const pixels = context.getImageData(0, 0, canvas.width, 80).data;
+    let red = 0;
+    for (let index = 0; index < pixels.length; index += 4) {
+      if (
+        (pixels[index] ?? 0) > 160 &&
+        (pixels[index + 1] ?? 0) < 80 &&
+        (pixels[index + 2] ?? 0) < 80 &&
+        (pixels[index + 3] ?? 0) > 0
+      ) {
+        red += 1;
+      }
+    }
+    return red;
+  });
+  expect(titlePixels).toBeGreaterThan(0);
+
   await page.locator("#source").fill(`
     plot.new()
     plot.window(c(0, 4), c(0, 4))

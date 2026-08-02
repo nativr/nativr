@@ -326,7 +326,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 325,dput,true,2,data.table|bit64,2,2.1,1.3
 326,setGeneric,true,1,S7,1,1.0,1.3
 327,standardGeneric,true,1,S7,1,1.0,1.3
-328,title,false,2,shiny|bit64,7,2.1,1.3
+328,title,true,2,shiny|bit64,7,2.1,1.3
 329,colorRampPalette,true,1,isoband,2,1.0,1.3
 330,sink,false,1,utf8,2,1.0,1.2
 331,sessionInfo,true,1,otel,1,1.0,1.2

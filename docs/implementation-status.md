@@ -744,6 +744,9 @@ Date: 2026-08-02
   metadata, and explicit unsupported coercion boundaries.
 - Usage-ranked `standardGeneric` with S7's measured S4 generic declaration, explicit and `ANY`
   methods, argument/default/dots forwarding, and bounded missing-method/out-of-context behavior.
+- Usage-ranked `graphics::title()` with all seven measured Shiny/bit64 calls, active `par()` title
+  styles, annotation/list coercion, Worker text events, browser and PNG/PDF rendering, display-list
+  replay, and an unchanged source-only package import/call path.
 - Reproducible top-100 CRAN usage snapshot, feature and core-callable CSV tables, three checked-in
   SVG figures, and one executable acceptance case for every measured feature group.
 - Clean-room policy, CSP/browser bundle guards, bundle budgets, conformance, package smoke tests,
@@ -753,10 +756,10 @@ Date: 2026-08-02
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 14 files and 442 tests, with three explicitly skipped tests.
+- Vitest currently passes 14 files and 443 tests, with three explicitly skipped tests.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 800/800 cases. The optional black-box R oracle passes all 761
+- Checked-in conformance passes 802/802 cases. The optional black-box R oracle passes all 763
   eligible cases and explicitly skips 39 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,

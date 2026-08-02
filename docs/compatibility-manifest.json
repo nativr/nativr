@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.249.0",
+  "languageSubsetVersion": "0.250.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -624,6 +624,7 @@
         { "name": "par", "compatibility": "behavioral" },
         { "name": "plot.default", "compatibility": "shape" },
         { "name": "plot.new", "compatibility": "behavioral" },
+        { "name": "title", "compatibility": "behavioral" },
         { "name": "plot.window", "compatibility": "shape" },
         { "name": "matplot", "compatibility": "shape" },
         { "name": "axTicks", "compatibility": "behavioral" },

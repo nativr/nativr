@@ -527,6 +527,11 @@ loader.
   shared bounded time grid, missing union cells split paths, and styles/annotations traverse the
   normal Worker/Canvas graphics path. Irregular index packages and multi-panel `plot.ts` still need
   their broader shared runtime foundations before they can be claimed.
+- `graphics::title()` covers the seven measured Shiny/bit64 calls and is imported by the executable
+  source-only fixture through ordinary NAMESPACE metadata. Package functions can add styled plot
+  titles without source translation; their events cross the same Worker/Canvas and file-device paths
+  as direct calls. Plotmath glyph layout and the unimplemented remainder of base graphics are still
+  capability-manifest boundaries.
 - Package `data/*.R` scripts execute through the same parser and normalized AST as package source;
   `.csv`, `.tab`, and `.txt` datasets load into owned data frames. XDR v2/v3 `.rda`/`.RData` and
   gzip wrappers use the independent bounded serialization decoder, and `R/sysdata.rda` enters the
