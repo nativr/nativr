@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.248.0",
+  "languageSubsetVersion": "0.249.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -691,6 +691,9 @@
       "name": "utils",
       "referenceVersion": "R 4.6.x documented behavior",
       "functions": [
+        { "name": "object.size", "compatibility": "behavioral" },
+        { "name": "format.object_size", "compatibility": "behavioral" },
+        { "name": "print.object_size", "compatibility": "behavioral" },
         { "name": "packageName", "compatibility": "behavioral" },
         { "name": "packageDescription", "compatibility": "behavioral" },
         { "name": "packageVersion", "compatibility": "behavioral" },

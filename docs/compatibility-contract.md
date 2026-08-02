@@ -522,6 +522,14 @@ calls, Worker execution, and Playground use. It extracts no paths and grants no 
 host-filesystem authority. Encryption, multi-disk/ZIP64 archives, additional compression methods,
 seeking, writing, and platform-exact diagnostics remain outside this slice.
 
+Usage-ranked `utils::object.size` has GNU R 4.6 behavioral differential evidence for its exact
+single formal, length-one double `object_size` result, 64-bit allocation buckets for atomic vectors,
+within-vector character sharing, recursively counted lists and pairlists, attributes, environment
+boundary, and legacy/IEC/SI `format` and `print` units. NativR reports its owned R value model,
+never the browser JavaScript heap. Associated environment bindings, host objects, platform word
+sizes other than the documented 64-bit model, and byte identity for unsupported external/native
+objects remain outside this slice.
+
 Usage-ranked `base::readChar` has GNU R 4.6 behavioral differential evidence for digest's
 `readChar(path, file.info(path)$size)` and Shiny's `readChar(path, 1000)` calls, exact formals,
 raw-vector input, ASCII character/byte widths, vectorized/zero/fractional lengths, EOF, attribute

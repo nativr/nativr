@@ -197,8 +197,9 @@ magrittr's measured exposition-pipe example. Rank 293 `base::Sys.which` now cove
 knitr/sys executable-presence checks through an explicit session allow-list. Rank 311
 `download.file` uses the byte URL seam; rank 313 `pipe` now reuses the explicit command seam and
 private connection store; rank 314 `unz` now supplies bounded stored/DEFLATE package and session
-ZIP-member connections. Rank 324 `object.size` is next. Rank 144 `Encoding` is also complete for all
-12 observed calls across rlang, utf8, and xfun (4.5% weighted reach), together with adjacent
+ZIP-member connections. Rank 324 `object.size` now supplies deterministic owned-object accounting
+for data.table and bit64; rank 328 `title` is next. Rank 144 `Encoding` is also complete for all 12
+observed calls across rlang, utf8, and xfun (4.5% weighted reach), together with adjacent
 `Encoding<-`, `enc2utf8`, and `enc2native`. The shared character representation preserves exact
 bytes and canonical R marks through subset/replacement, concatenation, raw conversion, and XDR
 serialization; this is reusable package infrastructure, not an assertion that those packages' native
@@ -475,9 +476,10 @@ complete for jsonlite's measured archive-member call and exposes exact stored/DE
 package or session ZIP bytes through the ordinary connection stack. Bounds, CRC, closed/open
 cursors, raw/text reads, pure-R package use, downloaded archives, and Worker execution have
 evidence; encryption, ZIP64, multi-disk archives, other codecs, seeking, and writes remain explicit
-boundaries. Rank 324 `object.size` is the next usage-ranked unresolved callable; rank 316 `colSums`
-is now complete for three observed calls across
-[`loo`](https://cran.r-project.org/web/packages/loo/refman/loo.html) and
+boundaries. Rank 324 `object.size` is now complete for data.table/bit64's three measured calls,
+including GNU R 4.6-shaped vector/list/attribute sizes and object-size unit formatting; rank 328
+`title` is the next usage-ranked unresolved callable. Rank 316 `colSums` is now complete for three
+observed calls across [`loo`](https://cran.r-project.org/web/packages/loo/refman/loo.html) and
 [`zoo`](https://cran.r-project.org/web/packages/zoo/refman/zoo.html), representing 1,601,512
 snapshot downloads and 1.3% download reach. Loo calls `colSums(tab_10)` and `colSums(tab_9)` on
 integer fold tables; zoo selects usable columns with `colSums(!is.na(za)) > 0`. NativR covers

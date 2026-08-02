@@ -322,7 +322,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 321,approx,true,2,data.table|zoo,2,2.1,1.3
 322,mapply,true,2,data.table|zoo,2,2.1,1.3
 323,as.double,true,2,data.table|bit64,7,2.1,1.3
-324,object.size,false,2,data.table|bit64,3,2.1,1.3
+324,object.size,true,2,data.table|bit64,3,2.1,1.3
 325,dput,true,2,data.table|bit64,2,2.1,1.3
 326,setGeneric,true,1,S7,1,1.0,1.3
 327,standardGeneric,true,1,S7,1,1.0,1.3

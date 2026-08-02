@@ -149,6 +149,10 @@ Date: 2026-08-02
   cursors, text/raw reads, pure-R package calls, downloaded session archives, Worker, and Playground
   execution have evidence. No entry is extracted to a path; encryption, ZIP64, multi-disk archives,
   other compression methods, seeking, and writes remain explicit boundaries.
+- Usage-ranked `utils::object.size()` supplies GNU R 4.6-shaped deterministic 64-bit accounting for
+  atomic vectors, within-vector character sharing, recursive lists/pairlists, attributes, language
+  objects, closures, and environment boundaries, plus legacy/IEC/SI formatting and printing. It
+  estimates owned R objects and never presents browser heap telemetry as R memory.
 - Usage-ranked `readline()` with GNU R 4.6 non-interactive prompt/empty-result behavior and an
   explicit asynchronous `readline` host adapter. Inline and Worker sessions share validated
   single-line input, R whitespace trimming, a 256-character prompt bound, resource limits, and
@@ -749,10 +753,10 @@ Date: 2026-08-02
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 14 files and 440 tests, with three explicitly skipped tests.
+- Vitest currently passes 14 files and 442 tests, with three explicitly skipped tests.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 797/797 cases. The optional black-box R oracle passes all 758
+- Checked-in conformance passes 800/800 cases. The optional black-box R oracle passes all 761
   eligible cases and explicitly skips 39 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,

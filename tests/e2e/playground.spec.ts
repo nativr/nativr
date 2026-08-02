@@ -27,6 +27,14 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("3");
 
+  await page
+    .locator("#source")
+    .fill(
+      's <- utils::object.size(double(1000))\nc(unclass(s), format(s, units = "auto", standard = "IEC"))',
+    );
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText('["8048", "7.9 KiB"]');
+
   await page.getByRole("button", { name: "Function + closure" }).click();
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("16");

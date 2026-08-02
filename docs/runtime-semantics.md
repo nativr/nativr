@@ -474,6 +474,14 @@ the archive, member count, compressed ranges, and output; validates filenames, s
 rejects encrypted, multi-disk, ZIP64, and unknown-compression forms. Seeking and writing are not
 enabled, and no archive entry becomes a virtual or host path.
 
+`utils::object.size(x)` returns a visible length-one double with class `object_size`. The estimate
+uses GNU R 4.6's documented 64-bit allocation shape: a 48-byte vector header, bounded payload
+buckets, 56-byte nodes/tags, recursive attributes and list children, within-vector character-string
+sharing, and normalized language/formal traversal. Repeated list children are counted each time;
+environment bindings and closure environments are not followed. `format.object_size` and
+`print.object_size` provide legacy binary, IEC, and SI unit selection with automatic scaling. The
+result describes NativR's R object graph and is intentionally unrelated to host heap telemetry.
+
 `readChar(con, nchars, useBytes = FALSE)` consumes fixed-width fields from a raw vector or the same
 owned package/session/file/URL/gzip byte sources. Character mode validates UTF-8 and counts Unicode
 scalar values; byte mode retains exact field bytes. Zero-width fields do not consume input, a

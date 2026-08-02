@@ -26,6 +26,7 @@ import {
   doubleVector,
   encodeRSerialization,
   encodeRSerializationFile,
+  estimateRObjectSize,
   factorLevels,
   factorValue,
   extractVectorElement,
@@ -284,6 +285,53 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
         defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
       },
       { name: "full", defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN } },
+    ],
+  ),
+  withBuiltinFormals(
+    definePackageBuiltin("utils", "object.size", ["x"], "behavioral", builtinObjectSize),
+    [{ name: "x" }],
+  ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "utils",
+      "format.object_size",
+      ["x", "units", "standard", "digits", "..."],
+      "behavioral",
+      builtinFormatObjectSize,
+    ),
+    [
+      { name: "x" },
+      { name: "units", defaultValue: { kind: "StringLiteral", value: "b", span: SYNTHETIC_SPAN } },
+      {
+        name: "standard",
+        defaultValue: { kind: "StringLiteral", value: "auto", span: SYNTHETIC_SPAN },
+      },
+      { name: "digits", defaultValue: { kind: "IntegerLiteral", value: 1, span: SYNTHETIC_SPAN } },
+      { name: "..." },
+    ],
+  ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "utils",
+      "print.object_size",
+      ["x", "quote", "units", "standard", "digits", "..."],
+      "behavioral",
+      builtinPrintObjectSize,
+      "invisible",
+    ),
+    [
+      { name: "x" },
+      {
+        name: "quote",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      { name: "units", defaultValue: { kind: "StringLiteral", value: "b", span: SYNTHETIC_SPAN } },
+      {
+        name: "standard",
+        defaultValue: { kind: "StringLiteral", value: "auto", span: SYNTHETIC_SPAN },
+      },
+      { name: "digits", defaultValue: { kind: "IntegerLiteral", value: 1, span: SYNTHETIC_SPAN } },
+      { name: "..." },
     ],
   ),
   withBuiltinFormals(defineBuiltin("gcinfo", ["verbose"], "api", builtinGarbageCollectionInfo), [
@@ -5638,6 +5686,154 @@ async function builtinGarbageCollection(invocation: BuiltinInvocation): Promise<
       characterVector(["used", "(Mb)", "gc trigger", "(Mb)", "max used", "(Mb)"]),
     ]),
   );
+}
+
+async function builtinObjectSize(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["x"]);
+  const value = required(matched, "x", "object.size");
+  invocation.context.allocate(1);
+  return withClasses(
+    doubleVector([estimateRObjectSize(value, () => invocation.context.checkpoint())]),
+    ["object_size"],
+  );
+}
+
+type ObjectSizeStandard = "legacy" | "IEC" | "SI";
+
+const OBJECT_SIZE_UNITS: Readonly<Record<ObjectSizeStandard, readonly string[]>> = Object.freeze({
+  legacy: Object.freeze(["b", "Kb", "Mb", "Gb", "Tb", "Pb"]),
+  IEC: Object.freeze(["B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"]),
+  SI: Object.freeze(["B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB", "RB", "QB"]),
+});
+
+function partialObjectSizeChoice(
+  value: string,
+  choices: readonly string[],
+  argument: string,
+): string {
+  const exact = choices.find((choice) => choice === value);
+  if (exact !== undefined) return exact;
+  const partial = choices.filter((choice) => choice.startsWith(value));
+  if (value.length > 0 && partial.length === 1) return partial[0]!;
+  throw new REvaluationError(
+    "NRE2130",
+    `${argument} should be one of ${choices.map((choice) => JSON.stringify(choice)).join(", ")}.`,
+  );
+}
+
+function objectSizeFormatText(
+  bytes: number,
+  unitsValue: RValue | undefined,
+  standardValue: RValue | undefined,
+  digitsValue: RValue | undefined,
+): string {
+  const allUnits = [
+    "auto",
+    ...new Set([
+      ...OBJECT_SIZE_UNITS.legacy,
+      "B",
+      "KB",
+      "MB",
+      "GB",
+      "TB",
+      "PB",
+      ...OBJECT_SIZE_UNITS.IEC,
+      ...OBJECT_SIZE_UNITS.SI,
+    ]),
+  ];
+  const units = partialObjectSizeChoice(
+    unitsValue === undefined ? "b" : characterScalar(unitsValue, "units"),
+    allUnits,
+    "units",
+  );
+  const requestedStandard = partialObjectSizeChoice(
+    standardValue === undefined ? "auto" : characterScalar(standardValue, "standard"),
+    ["auto", "legacy", "IEC", "SI"],
+    "standard",
+  );
+  const digits =
+    digitsValue === undefined || digitsValue.type === "null"
+      ? 1
+      : Math.trunc(numericScalar(digitsValue, "digits"));
+  let standard: ObjectSizeStandard;
+  if (requestedStandard !== "auto") standard = requestedStandard as ObjectSizeStandard;
+  else if (units.endsWith("iB")) standard = "IEC";
+  else if (units.endsWith("b")) standard = "legacy";
+  else {
+    if (units === "kB") {
+      throw new REvaluationError("NRE2130", "For SI units, specify 'standard = \"SI\"'.");
+    }
+    standard = "legacy";
+  }
+  const base = standard === "SI" ? 1_000 : 1_024;
+  const map = OBJECT_SIZE_UNITS[standard];
+  let power: number;
+  if (units === "auto") {
+    power = bytes <= 0 ? 0 : Math.min(Math.floor(Math.log(bytes) / Math.log(base)), map.length - 1);
+  } else {
+    power = map.findIndex((unit) => unit.toUpperCase() === units.toUpperCase());
+    if (power < 0) {
+      throw new REvaluationError(
+        "NRE2130",
+        `Unit '${units}' is not part of standard '${standard}'.`,
+      );
+    }
+  }
+  const unit = power === 0 && standard === "legacy" ? "bytes" : map[power]!;
+  return `${formatRNumber(roundNumber(bytes / base ** power, digits))} ${unit}`;
+}
+
+async function objectSizeMethodArguments(invocation: BuiltinInvocation): Promise<{
+  readonly matched: Map<string, RValue>;
+  readonly dots: readonly BuiltinCallArgument[];
+}> {
+  const lazy = matchLazyArgumentsWithDots(invocation, ["x", "units", "standard", "digits"]);
+  const matched = new Map<string, RValue>();
+  for (const [name, argument] of lazy.matched) {
+    matched.set(name, await invocation.force(argument.promise));
+  }
+  return { matched, dots: lazy.dots };
+}
+
+async function builtinFormatObjectSize(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched } = await objectSizeMethodArguments(invocation);
+  const value = required(matched, "x", "format.object_size");
+  const bytes = numericScalar(value, "x");
+  return characterVector([
+    objectSizeFormatText(
+      bytes,
+      matched.get("units"),
+      matched.get("standard"),
+      matched.get("digits"),
+    ),
+  ]);
+}
+
+async function builtinPrintObjectSize(invocation: BuiltinInvocation): Promise<RValue> {
+  const lazy = matchLazyArgumentsWithDots(invocation, [
+    "x",
+    "quote",
+    "units",
+    "standard",
+    "digits",
+  ]);
+  const matched = new Map<string, RValue>();
+  for (const [name, argument] of lazy.matched) {
+    matched.set(name, await invocation.force(argument.promise));
+  }
+  const value = required(matched, "x", "print.object_size");
+  const text = objectSizeFormatText(
+    numericScalar(value, "x"),
+    matched.get("units"),
+    matched.get("standard"),
+    matched.get("digits"),
+  );
+  const quote = logicalFlag(matched.get("quote"), false, "quote");
+  invocation.context.writeOutput({
+    stream: "stdout",
+    text: `${quote ? JSON.stringify(text) : text}\n`,
+  });
+  return value;
 }
 
 async function builtinGarbageCollectionInfo(invocation: BuiltinInvocation): Promise<RValue> {
@@ -20875,6 +21071,11 @@ async function builtinFormat(invocation: BuiltinInvocation): Promise<RValue> {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in format().");
   }
   const candidate = await invocation.force(inputArgument.promise);
+  const dispatched = await invocation.dispatchS3IfPresent("format", candidate, [
+    inputArgument,
+    ...invocation.arguments.filter((argument) => argument !== inputArgument),
+  ]);
+  if (dispatched !== undefined) return dispatched;
   if (isHexmodeValue(candidate)) return formatHexmode(invocation);
   if (isRomanValue(candidate)) return formatRoman(invocation);
   if (isNumericVersionValue(candidate)) return numericVersionStrings(candidate, invocation);

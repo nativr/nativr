@@ -3266,6 +3266,76 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("reports usage-ranked object sizes with GNU R 4.6 vector, graph, and display semantics", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        shared <- double(10)
+        c(
+          object.size(NULL), object.size(logical()), object.size(FALSE),
+          object.size(integer(3)), object.size(double(9)), object.size(raw(65)),
+          object.size(c("a", "a")), object.size(c("a", "b")),
+          object.size(list(shared, shared)),
+          object.size(structure(1:3, names = c("a", "b", "c"))),
+          object.size(as.pairlist(list(a = 1L, b = 2)))
+        )
+      `),
+    ).resolves.toEqual([0, 48, 56, 64, 176, 176, 120, 176, 416, 424, 336]);
+
+    await expect(
+      runtime.eval(`
+        e <- new.env(parent = emptyenv())
+        e$x <- double(1000)
+        f <- function(x) x + 1
+        s <- utils::object.size(double(1000))
+        c(
+          typeof(s), class(s), unclass(s), object.size(e), object.size(f),
+          format(s), format(s, units = "auto"),
+          format(s, units = "auto", standard = "IEC"),
+          format(s, units = "auto", standard = "SI"),
+          names(formals(utils::object.size)),
+          names(formals(format.object_size)),
+          names(formals(print.object_size))
+        )
+      `),
+    ).resolves.toEqual([
+      "double",
+      "object_size",
+      "8048",
+      "56",
+      "560",
+      "8048 bytes",
+      "7.9 Kb",
+      "7.9 KiB",
+      "8 kB",
+      "x",
+      "x",
+      "units",
+      "standard",
+      "digits",
+      "...",
+      "x",
+      "quote",
+      "units",
+      "standard",
+      "digits",
+      "...",
+    ]);
+
+    const printed = await runtime.evalDetailed(`
+      s <- object.size(double(1000))
+      shown <- withVisible(print(s, units = "auto"))
+      c(shown$visible, identical(shown$value, s))
+    `);
+    expect(printed.value).toEqual([false, true]);
+    expect(printed.output).toEqual([{ stream: "stdout", text: "7.9 Kb\n" }]);
+    await expect(runtime.eval("object.size()")).rejects.toMatchObject({ code: "NRE2103" });
+    await expect(
+      runtime.eval('format(object.size(1), units = "KiB", standard = "legacy")'),
+    ).rejects.toMatchObject({ code: "NRE2130" });
+    await runtime.dispose();
+  });
+
   it("restores bit64's usage-ranked save/load workspace through session memory", async () => {
     const runtime = await session();
     await expect(
@@ -11298,7 +11368,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.248.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.249.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

@@ -767,7 +767,14 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      closed restart, open cursors, raw/text reads, `download.file()` composition, pure-R package,
      Worker, Playground, CRC/malformed input, and bounds have evidence. Encryption, ZIP64,
      multi-disk archives, other codecs, seeking, writing, and runtime package installation remain
-     compatibility depth; rank-324 `base::object.size` is the next measured unresolved callable.
+     compatibility depth.
+161. Usage-ranked owned-object accounting: rank-324 `utils::object.size` applies an independently
+     specified GNU R 4.6-shaped 64-bit layout to vectors, within-vector character sharing, recursive
+     lists/pairlists, attributes, language objects, closures, and environment boundaries. The
+     length-one double `object_size` result plus legacy/IEC/SI formatting and printing have exact
+     differential evidence and run unchanged in the measured data.table/bit64 call surface. It is
+     not JavaScript heap telemetry and does not claim native/external allocation sizes; rank-328
+     `graphics::title` is the next measured unresolved callable.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

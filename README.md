@@ -718,6 +718,13 @@ R-value graph, with `verbose`, high-water `reset`, full/partial census accountin
 `gcinfo()` state. These are NativR-owned payload cells; the browser's JavaScript heap collector is
 neither measured nor controlled.
 
+Rank 324 `utils::object.size()` now covers the three measured calls in `data.table` and `bit64`
+without package-specific rewrites. It returns a length-one double of class `object_size`, applies a
+deterministic GNU R 4.6-shaped 64-bit layout to atomic vectors, character sharing, lists, pairlists,
+attributes, language objects, and closures, and excludes environment bindings while retaining the
+environment object's own footprint. `format()` and `print()` support legacy, IEC, and SI units. This
+estimates owned R objects; it does not claim to measure the JavaScript heap.
+
 Rank 121 `grDevices::png()` now covers all seven measured calls across five packages. It opens
 alongside the browser display, records the existing graphics command vocabulary, rasterizes it in
 the Worker without DOM or native dependencies, and writes a standards-compliant compressed RGBA PNG

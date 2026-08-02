@@ -4,11 +4,11 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 638,
-    "overlappingNames": 622,
-    "missingReferenceNames": 1900,
-    "nativrExtensionNames": 16,
-    "nameCoverage": 0.24663
+    "nativrRegisteredNames": 641,
+    "overlappingNames": 623,
+    "missingReferenceNames": 1899,
+    "nativrExtensionNames": 18,
+    "nameCoverage": 0.247026
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 453, "nameCoverage": 0.331383 },
@@ -19,7 +19,7 @@
       "overlappingNames": 10,
       "nameCoverage": 0.047847
     },
-    { "package": "utils", "callableNames": 262, "overlappingNames": 28, "nameCoverage": 0.10687 },
+    { "package": "utils", "callableNames": 262, "overlappingNames": 29, "nameCoverage": 0.110687 },
     {
       "package": "grDevices",
       "callableNames": 135,
@@ -425,6 +425,7 @@
     "numeric",
     "numeric_version",
     "nzchar",
+    "object.size",
     "objects",
     "on.exit",
     "open",
@@ -1917,7 +1918,6 @@
     "numToInts",
     "numericDeriv",
     "numhash",
-    "object.size",
     "offset",
     "old.packages",
     "oldClass",
@@ -2568,9 +2568,11 @@
     "as.raster.matrix",
     "as.raster.numeric",
     "as.raster.raw",
+    "format.object_size",
     "new_class",
     "new_vctr",
     "plot.histogram",
+    "print.object_size",
     "tibble",
     "tribble",
     "type.convert.data.frame",

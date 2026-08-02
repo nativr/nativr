@@ -10,10 +10,15 @@ import {
   complexVector,
   deparseAst,
   doubleVector,
+  estimateRObjectSize,
   forcePromise,
   integerVector,
+  characterVector,
+  listValue,
   lookupBinding,
+  pairlistValue,
   setBinding,
+  withNames,
 } from "../src/index.js";
 
 const span = {
@@ -23,6 +28,40 @@ const span = {
 const expression: AstNode = { kind: "DoubleLiteral", value: 1, span };
 
 describe("runtime foundations", () => {
+  it("estimates GNU R-shaped 64-bit object storage without measuring the host heap", () => {
+    const size = (value: Parameters<typeof estimateRObjectSize>[0]) =>
+      estimateRObjectSize(value, () => undefined);
+    expect(size(integerVector([]))).toBe(48);
+    expect(size(integerVector([1, 2, 3]))).toBe(64);
+    expect(size(doubleVector(Array.from({ length: 9 }, () => 0)))).toBe(176);
+    expect(size(characterVector(["a", "a"]))).toBe(120);
+    expect(size(characterVector(["a", "b"]))).toBe(176);
+    expect(size(characterVector([""], [1]))).toBe(56);
+
+    const shared = doubleVector(Array.from({ length: 10 }, () => 0));
+    expect(size(listValue([shared, shared]))).toBe(416);
+    expect(size(withNames(integerVector([1, 2, 3]), ["a", "b", "c"]))).toBe(424);
+    expect(size(pairlistValue([integerVector([1]), doubleVector([2])], ["a", "b"]))).toBe(336);
+
+    const environment = createEnvironment(null);
+    setBinding(environment, "payload", doubleVector(Array.from({ length: 1_000 }, () => 0)));
+    expect(size(environment)).toBe(56);
+    expect(
+      size({
+        type: "closure",
+        parameters: [{ name: "x", span }],
+        body: {
+          kind: "BinaryExpression",
+          operator: "+",
+          left: { kind: "Identifier", name: "x", span },
+          right: { kind: "DoubleLiteral", value: 1, span },
+          span,
+        },
+        environment,
+      }),
+    ).toBe(560);
+  });
+
   it("validates missing-mask invariants", () => {
     expect(() => doubleVector([1, 2], [1])).toThrow(/missing mask/u);
     expect(doubleVector([1, Number.NaN], [1, 0]).missing).toEqual(new Uint8Array([1, 0]));

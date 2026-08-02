@@ -9072,5 +9072,36 @@
     "expected": [true, true, true, true, true, true, true],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "object-size-usage-ranked-vector-character-pairlist-and-attribute-layout",
+    "code": "shared <- double(10)\nc(object.size(NULL), object.size(logical()), object.size(FALSE), object.size(integer(3)), object.size(double(9)), object.size(raw(65)), object.size(c(\"a\", \"a\")), object.size(c(\"a\", \"b\")), object.size(list(shared, shared)), object.size(structure(1:3, names = c(\"a\", \"b\", \"c\"))), object.size(as.pairlist(list(a = 1L, b = 2))))",
+    "expected": [0, 48, 56, 64, 176, 176, 120, 176, 416, 424, 336],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "object-size-usage-ranked-class-formals-format-units-and-environment-boundary",
+    "code": "e <- new.env(parent = emptyenv())\ne$x <- double(1000)\ns <- utils::object.size(double(1000))\nc(typeof(s), class(s), unclass(s), object.size(e), format(s), format(s, units = \"auto\"), format(s, units = \"auto\", standard = \"IEC\"), format(s, units = \"auto\", standard = \"SI\"), names(formals(utils::object.size)))",
+    "expected": [
+      "double",
+      "object_size",
+      "8048",
+      "56",
+      "8048 bytes",
+      "7.9 Kb",
+      "7.9 KiB",
+      "8 kB",
+      "x"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "object-size-usage-ranked-format-and-call-boundaries",
+    "code": "s <- object.size(1)\nc(format(s, units = \"KB\"), format(s, units = \"B\", standard = \"IEC\"), inherits(try(object.size(), silent = TRUE), \"try-error\"), inherits(try(object.size(1, 2), silent = TRUE), \"try-error\"), inherits(try(format(s, units = \"KiB\", standard = \"legacy\"), silent = TRUE), \"try-error\"), inherits(try(format(s, units = \"kB\"), silent = TRUE), \"try-error\"))",
+    "expected": ["0.1 Kb", "56 B", "TRUE", "TRUE", "TRUE", "TRUE"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

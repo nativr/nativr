@@ -395,6 +395,14 @@ consumers. This is also reusable after `download.file()` writes a ZIP to the ses
 runtime `install.packages()`: dependency resolution and source-package admission remain the
 deterministic build-time installer's responsibility.
 
+Rank-324 `utils::object.size()` supplies package code with a reusable object-footprint estimate
+instead of a package-specific memory helper. The three measured `data.table`/`bit64` calls can keep
+their ordinary R syntax and receive the same class, byte unit, common 64-bit vector/list/attribute
+layout, and display methods as the GNU R 4.6 black-box cases. The estimate is deterministic across
+inline and Worker sessions and does not expose JavaScript heap internals. Native allocations,
+external pointers, package C/C++ objects, and platform-specific headers remain separate package
+compatibility gates.
+
 Rank-293 `base::Sys.which()` lets pure-R packages perform those presence checks without translating
 their R source or probing the embedding machine. `createR({ executablePaths })` supplies the exact
 approved name/path pairs, while an omitted map makes every ordinary query unavailable. The same

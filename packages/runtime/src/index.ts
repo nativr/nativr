@@ -31,6 +31,7 @@ export type {
   RuntimeS3Method,
 } from "./evaluator.js";
 export { deparseAst } from "./language.js";
+export { censusRuntimeMemory, estimateRObjectSize } from "./memory.js";
 export {
   compressGzipBytes,
   decodeRBase64Resource,

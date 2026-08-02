@@ -877,8 +877,17 @@ package resources, downloaded session archives, read-only update mode, missing/c
 archives, resource limits, unchanged pure-R package calls, Worker transport, and Playground use. No
 member is extracted to a path and no network or host-filesystem authority is added. Encryption,
 ZIP64, multi-disk archives, other compression methods, seeking, writing, runtime installation, and
-platform-exact diagnostics remain compatibility depth. Rank 324 `base::object.size` is the next
-measured unresolved callable.
+platform-exact diagnostics remain compatibility depth.
+
+The object-size increment raises current name overlap to 623 of 2,522. Rank 324 `utils::object.size`
+covers the three measured data.table/bit64 calls. GNU R 4.6 black-box evidence covers the single
+formal, double `object_size` class, exact common 64-bit vector allocation buckets,
+within-character-vector sharing, recursively counted list/pairlist children, attributes, environment
+exclusion boundary, and legacy/IEC/SI formatting and invisible printing. NativR uses an independent
+traversal of owned values and normalized syntax; it never reports the JavaScript heap as R memory.
+External pointers, native package allocations, other platform word sizes, and broader host-object
+attribution remain compatibility depth. Rank 328 `graphics::title` is the next measured unresolved
+callable.
 
 ## Completion evidence
 

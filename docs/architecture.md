@@ -274,6 +274,13 @@ byte file after size and CRC checks. Package resources and session files therefo
 line/raw/source/table/serialization/gzip consumers; no entry is extracted to a path and no new
 Worker protocol event is required.
 
+Object-size reporting is another owned-runtime service rather than a host probe. The runtime walks
+one NativR value using a deterministic 64-bit R object layout, including vector allocation buckets,
+attributes, pairlist tags, normalized language nodes, and closure formals/body. It deliberately does
+not inspect the JavaScript heap, follow environment bindings, or ask the Worker host for memory
+data. Repeated list children are counted repeatedly while equal strings share storage only within
+one character vector, matching the documented attribution boundary used by `utils::object.size()`.
+
 The PNG device composes existing owned seams instead of introducing a host renderer. A numbered
 device records the same normalized graphics events used by Worker callbacks and replay plots; a
 DOM-free software rasterizer converts those events to RGBA; an independent PNG encoder writes
