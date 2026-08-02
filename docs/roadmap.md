@@ -335,8 +335,8 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
 94. Frequency-ranked linear axis ticks: `graphics::axTicks` runs zoo's measured secondary-axis
     lookup through owned `plot.window` state and explicit `axp` parameters, including forward and
     reversed 1/2/5-power-of-ten ranges, lazy linear arguments, namespace access, validation, and
-    allocation limits. Logarithmic axes and complete base-graphics axis drawing remain separate
-    work.
+    allocation limits. Logarithmic ticks and exact floating-point boundary identity remain separate
+    work; the later usage-ranked `axis` increment supplies bounded linear drawing.
 95. Frequency-ranked plot frames: `graphics::box` runs zoo's measured redraw through a bounded
     plot-region graphics event with all documented `bty` edge shapes, resolved `col`/`fg`, line
     styles, positive widths, Worker/Canvas rendering, and same-session record/replay. Figure and
@@ -654,6 +654,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      source-only package calls, and default Worker execution have differential evidence. ICC
      profiles, device-dependent color management, `hcl.colors`, and the wider color-conversion API
      remain graphics compatibility depth.
+147. Usage-ranked linear axes: rank-215 `graphics::axis` now executes all 18 measured labeling, zoo,
+     and bit64 calls through the owned window and segment/text journal. Explicit/default sorted
+     ticks, sides 1:4, character/numeric/no labels, secondary axes, measured style controls, exact
+     formals, source-only package calls, and default Worker rendering have evidence.
+     Logarithmic/date axes, outer margins, plotmath, collision layout, font metrics, and
+     device-pixel identity remain graphics compatibility depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

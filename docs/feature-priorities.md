@@ -75,16 +75,16 @@ signal.
 
 | Priority | Measured rank | Callable             | Weighted reach | Packages | Observed calls |
 | -------: | ------------: | -------------------- | -------------: | -------: | -------------: |
-|        1 |           215 | `axis`               |           2.3% |        3 |             18 |
-|        2 |           221 | `source`             |           2.2% |        1 |              2 |
-|        3 |           222 | `textConnection`     |           2.2% |        1 |              2 |
-|        4 |           230 | `readline`           |           2.1% |        2 |              2 |
-|        5 |           232 | `url`                |           2.1% |        2 |              6 |
-|        6 |           239 | `filter`             |           1.9% |        2 |              2 |
-|        7 |           245 | `packageDescription` |           1.9% |        1 |              1 |
-|        8 |           246 | `stdout`             |           1.9% |        1 |              1 |
-|        9 |           252 | `rainbow`            |           1.8% |        2 |              5 |
-|       10 |           253 | `rect`               |           1.8% |        2 |              3 |
+|        1 |           221 | `source`             |           2.2% |        1 |              2 |
+|        2 |           222 | `textConnection`     |           2.2% |        1 |              2 |
+|        3 |           230 | `readline`           |           2.1% |        2 |              2 |
+|        4 |           232 | `url`                |           2.1% |        2 |              6 |
+|        5 |           239 | `filter`             |           1.9% |        2 |              2 |
+|        6 |           245 | `packageDescription` |           1.9% |        1 |              1 |
+|        7 |           246 | `stdout`             |           1.9% |        1 |              1 |
+|        8 |           252 | `rainbow`            |           1.8% |        2 |              5 |
+|        9 |           253 | `rect`               |           1.8% |        2 |              3 |
+|       10 |           256 | `file.remove`        |           1.8% |        2 |              4 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -144,21 +144,27 @@ conversion covers ggplot2's 2,500-cell and 10-cell raster palettes plus zoo's op
 event colors, with vector recycling, missing/non-finite coordinates, alpha bytes, gamut fixup, exact
 formals, and invalid-range boundaries. Source-only package and default Worker proofs use the same
 callable without package-specific rewrites or host color services. This is deterministic sRGB
-conversion, not complete color management, ICC profiles, or every HCL palette helper. The next
-measured unresolved callable is rank 215 `axis`. Rank 144 `Encoding` is also complete for all 12
-observed calls across rlang, utf8, and xfun (4.5% weighted reach), together with adjacent
-`Encoding<-`, `enc2utf8`, and `enc2native`. The shared character representation preserves exact
-bytes and canonical R marks through subset/replacement, concatenation, raw conversion, and XDR
-serialization; this is reusable package infrastructure, not an assertion that those packages' native
-components are supported. Rank 149 `rcauchy` is now complete for four calls across ggplot2, pillar,
-and purrr (4.2% weighted reach), together with `dcauchy`, `pcauchy`, and `qcauchy`. The shared
-distribution path covers seeded random-stream consumption, vectorized parameters, stable probability
-tails, formals, and missing/domain behavior without package-specific rewrites. Rank 162 `Sys.getenv`
-is now available for all 16 measured calls across withr, xfun, and pkgbuild (3.7% weighted reach),
-together with rank 175 `Sys.setenv` across xfun, memoise, openssl, and zoo (3.3%) and adjacent
-`Sys.unsetenv`. The shared session-state path is Worker-safe, resettable, and sufficient for
-unchanged `withr::with_envvar()` mutation/restoration; it does not expose the host environment. Rank
-163 `image` is now available for the six measured calls across scales, viridisLite, and RColorBrewer
+conversion, not complete color management, ICC profiles, or every HCL palette helper. Rank 215
+`graphics::axis` is now complete for all 18 measured calls across labeling, zoo, and bit64 (2.3%
+download-weighted reach). Explicit or current-window linear ticks, sorted return locations,
+character/numeric/no-label modes, sides 1:4, secondary axes, `tcl`, `cex.axis`, exact formals,
+source-only package execution, and default Worker rendering share the existing bounded segment/text
+journal. This is a reusable linear-axis primitive, not complete margin layout, collision avoidance,
+plotmath, logarithmic axes, or device-identical font metrics. The next measured unresolved callable
+is rank 221 `source`. Rank 144 `Encoding` is also complete for all 12 observed calls across rlang,
+utf8, and xfun (4.5% weighted reach), together with adjacent `Encoding<-`, `enc2utf8`, and
+`enc2native`. The shared character representation preserves exact bytes and canonical R marks
+through subset/replacement, concatenation, raw conversion, and XDR serialization; this is reusable
+package infrastructure, not an assertion that those packages' native components are supported. Rank
+149 `rcauchy` is now complete for four calls across ggplot2, pillar, and purrr (4.2% weighted
+reach), together with `dcauchy`, `pcauchy`, and `qcauchy`. The shared distribution path covers
+seeded random-stream consumption, vectorized parameters, stable probability tails, formals, and
+missing/domain behavior without package-specific rewrites. Rank 162 `Sys.getenv` is now available
+for all 16 measured calls across withr, xfun, and pkgbuild (3.7% weighted reach), together with rank
+175 `Sys.setenv` across xfun, memoise, openssl, and zoo (3.3%) and adjacent `Sys.unsetenv`. The
+shared session-state path is Worker-safe, resettable, and sufficient for unchanged
+`withr::with_envvar()` mutation/restoration; it does not expose the host environment. Rank 163
+`image` is now available for the six measured calls across scales, viridisLite, and RColorBrewer
 (3.7% weighted reach). Its reusable S3/default path covers numeric/logical matrices, center or
 boundary coordinates, regular raster and irregular polygon grids, colour intervals, missing
 transparency, and one-row palette strips through the same Worker graphics journal; it is not a claim
@@ -876,28 +882,29 @@ outside the claim. Rank 448 `axTicks` is now complete for zoo's measured seconda
 representing 731,390 downloads, one measured call, and 0.6% weighted reach. The owned linear path
 derives horizontal or vertical ticks from `plot.window()` state, supports explicit `axp`, ascending
 and descending axes, coercible sides, lazy `usr`/`nintLog`, namespace access, and allocation limits.
-Logarithmic axes, `par("xaxp"/"yaxp")`, complete `pretty` boundary identity, and axis drawing remain
-explicit boundaries; a separate session-local `par()` subset now covers common query, update, and
-restoration patterns. Rank 449 `box` is now complete for zoo's measured plot-frame redraw,
-representing 731,390 downloads, one measured call, and 0.6% weighted reach. The owned plot-region
-path resolves all documented `bty` edge shapes, `col`/`fg`, line type, and positive width before a
-bounded event crosses the Worker boundary and reaches Canvas or same-session record/replay. Figure,
-inner, and outer regions require a future margin/layout model. Rank 450 `boxplot` is now complete
-for zoo's measured grouped-series call, representing 731,390 downloads, one measured call, and 0.6%
-weighted reach. The owned S3/default path computes Tukey statistics for vector, list, and matrix
-groups and carries resolved boxes, whiskers, notches, and outliers through Worker/Canvas and
-same-session record/replay. Formula/data-frame methods, logarithmic axes, arbitrary `pars`, complete
-annotation/axes, and device-identical layout remain explicit boundaries. Rank 451 `deltat` is now
-complete for zoo's measured regular-series sampling-interval call, representing 731,390 downloads,
-one measured call, and 0.6% weighted reach. The generic forwards lazy dots to package methods such
-as `deltat.zoo`; its owned default returns one or the reciprocal of validated `tsp` frequency. Zoo's
-irregular-series inference and package methods remain package-owned. Rank 452 `embed` is now
-complete for zoo's measured lagged-window dependency, representing 731,390 downloads, one measured
-call, and 0.6% weighted reach. The owned path produces current-to-past column-major windows for
-supported vectors and multivariate matrices with source-type preservation, attribute removal,
-fractional-vector behavior, GNU R matrix coercions, and pre-allocation result limits. Factor
-vectors, data frames, expression vectors, raw/list matrices, and fractional nonempty-matrix
-dimensions remain explicit boundaries. Rank 453 `findInterval` is now complete for
+Logarithmic axes, `par("xaxp"/"yaxp")`, and complete `pretty` boundary identity remain explicit
+boundaries; a separate session-local `par()` subset covers common query/update/restoration patterns,
+and the later rank-215 `axis` increment supplies bounded linear drawing. Rank 449 `box` is now
+complete for zoo's measured plot-frame redraw, representing 731,390 downloads, one measured call,
+and 0.6% weighted reach. The owned plot-region path resolves all documented `bty` edge shapes,
+`col`/`fg`, line type, and positive width before a bounded event crosses the Worker boundary and
+reaches Canvas or same-session record/replay. Figure, inner, and outer regions require a future
+margin/layout model. Rank 450 `boxplot` is now complete for zoo's measured grouped-series call,
+representing 731,390 downloads, one measured call, and 0.6% weighted reach. The owned S3/default
+path computes Tukey statistics for vector, list, and matrix groups and carries resolved boxes,
+whiskers, notches, and outliers through Worker/Canvas and same-session record/replay.
+Formula/data-frame methods, logarithmic axes, arbitrary `pars`, complete annotation/axes, and
+device-identical layout remain explicit boundaries. Rank 451 `deltat` is now complete for zoo's
+measured regular-series sampling-interval call, representing 731,390 downloads, one measured call,
+and 0.6% weighted reach. The generic forwards lazy dots to package methods such as `deltat.zoo`; its
+owned default returns one or the reciprocal of validated `tsp` frequency. Zoo's irregular-series
+inference and package methods remain package-owned. Rank 452 `embed` is now complete for zoo's
+measured lagged-window dependency, representing 731,390 downloads, one measured call, and 0.6%
+weighted reach. The owned path produces current-to-past column-major windows for supported vectors
+and multivariate matrices with source-type preservation, attribute removal, fractional-vector
+behavior, GNU R matrix coercions, and pre-allocation result limits. Factor vectors, data frames,
+expression vectors, raw/list matrices, and fractional nonempty-matrix dimensions remain explicit
+boundaries. Rank 453 `findInterval` is now complete for
 [zoo's](https://cran.r-project.org/web/packages/zoo/refman/zoo.html) measured irregular-Date
 rolling-window width expression, representing 731,390 downloads, one measured call, and 0.6%
 weighted reach. The owned

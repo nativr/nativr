@@ -11,13 +11,14 @@ const assets = {
 const pureRFixture: PureRPackageBundle = {
   description: `Package: nativrfixture
 Version: 0.1.0
-Imports: grDevices, methods, stats, utils
+Imports: grDevices, graphics, methods, stats, utils
 NeedsCompilation: no`,
   namespace: `
+importFrom(graphics, axis, plot.new, plot.window)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median)
 importFrom(utils, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, installed_version, namespace_names, process_id, library_paths)
+export(square, centered, duration, histogram_counts, hcl_colours, axis_ticks, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, installed_version, namespace_names, process_id, library_paths)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -47,6 +48,11 @@ centered <- function(x) x - median(x)
 duration <- function(x, units = "secs") as.difftime(x, units = units)
 histogram_counts <- function(x, breaks = "Sturges") hist(x, breaks = breaks, plot = FALSE)$counts
 hcl_colours <- function() grDevices::hcl(c(0, 0, 260), c = c(100, 0, 100), l = c(50, 90, 50), alpha = .3)
+axis_ticks <- function() {
+  plot.new()
+  plot.window(c(0, 4), c(0, 4))
+  axis(1, at = 1:3, labels = c("one", "two", "three"))
+}
 class_summary <- function() capture.output(showClass("NativRFixtureClass"))
 signature_names <- function(fun = square) names(formals(args(fun)))
 new_score <- function(x) structure(x, class = c("score", "numeric"))
@@ -2633,6 +2639,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "#E2E2E24D",
       "#4A6FE34D",
     ]);
+    await expect(runtime.eval("nativrfixture::axis_ticks()")).resolves.toEqual([1, 2, 3]);
     await expect(runtime.eval("nativrfixture::class_summary()")).resolves.toEqual([
       'Class "NativRFixtureClass" [package "nativrfixture"]',
       "",
@@ -2694,6 +2701,7 @@ describe("complete inline source-to-result vertical slice", () => {
       runtime.eval("x <- withVisible(lines(new_score(1:3), extra = 8)); c(x$value, x$visible)"),
     ).resolves.toEqual(["package-lines", "6", "8", "TRUE"]);
     await expect(runtime.eval('sort(getNamespaceExports("nativrfixture"))')).resolves.toEqual([
+      "axis_ticks",
       "centered",
       "class_summary",
       "describe",
@@ -9400,7 +9408,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.229.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.230.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -9431,6 +9439,7 @@ describe("complete inline source-to-result vertical slice", () => {
       { name: "plot.window", compatibility: "shape" },
       { name: "matplot", compatibility: "shape" },
       { name: "axTicks", compatibility: "behavioral" },
+      { name: "axis", compatibility: "behavioral" },
       { name: "box", compatibility: "shape" },
       { name: "boxplot", compatibility: "shape" },
       { name: "image", compatibility: "shape" },
@@ -12603,6 +12612,105 @@ describe("complete inline source-to-result vertical slice", () => {
     expect(unknown.warnings).toEqual([
       { code: "NRW1128", message: '"not-a-par" is not a graphical parameter' },
     ]);
+    await runtime.dispose();
+  });
+
+  it("draws usage-ranked linear axes for labeling, zoo, and bit64 call shapes", async () => {
+    const runtime = await session();
+    const defaults = await runtime.evalDetailed(`
+      plot.new()
+      plot.window(c(0, 10), c(-2, 2))
+      axis(1)
+    `);
+    expect(defaults.value).toEqual([0, 2, 4, 6, 8, 10]);
+    expect(defaults.visible).toBe(false);
+    expect(defaults.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "window",
+      "segments",
+      "text",
+    ]);
+    const defaultSegments = defaults.graphics[2];
+    expect(defaultSegments?.kind).toBe("segments");
+    if (defaultSegments?.kind === "segments") {
+      expect(defaultSegments.segments).toHaveLength(7);
+      expect(defaultSegments.segments[0]).toMatchObject({ x0: 0, y0: -2, x1: 10, y1: -2 });
+    }
+
+    const explicit = await runtime.evalDetailed(`
+      axis(1, at = c(3, 1, 2), labels = c("three", "one", "two"), tcl = -0.7, cex.axis = 0.7)
+    `);
+    expect(explicit.value).toEqual([1, 2, 3]);
+    expect(explicit.visible).toBe(false);
+    expect(explicit.graphics.map((event) => event.kind)).toEqual(["segments", "text"]);
+    const explicitText = explicit.graphics[1];
+    expect(explicitText?.kind).toBe("text");
+    if (explicitText?.kind === "text") {
+      expect(explicitText.labels.map((label) => label.label)).toEqual(["one", "two", "three"]);
+      expect(explicitText.labels.every((label) => label.size === 0.7)).toBe(true);
+    }
+
+    const zoo = await runtime.evalDetailed(
+      "axis(side = 4, at = c(-2, 0, 2), labels = c('low', 'zero', 'high'))",
+    );
+    expect(zoo.value).toEqual([-2, 0, 2]);
+    expect(zoo.graphics.map((event) => event.kind)).toEqual(["segments", "text"]);
+    const ticksOnly = await runtime.evalDetailed("axis(1, at = 1:3, labels = FALSE, tcl = -1)");
+    expect(ticksOnly.graphics.map((event) => event.kind)).toEqual(["segments"]);
+    const labelsOnly = await runtime.evalDetailed(
+      "axis(1, at = 1:3, tick = FALSE, lwd = 0, lwd.ticks = 0)",
+    );
+    expect(labelsOnly.value).toEqual([1, 2, 3]);
+    expect(labelsOnly.graphics.map((event) => event.kind)).toEqual(["text"]);
+    const suppressed = await runtime.evalDetailed(
+      "axis(1, at = 1:3, labels = FALSE, lwd = 0, lwd.ticks = 0)",
+    );
+    expect(suppressed.value).toEqual([1, 2, 3]);
+    expect(suppressed.graphics).toEqual([]);
+
+    await expect(
+      runtime.eval(`
+        f <- formals(graphics::axis)
+        c(names(f), identical(f$at, NULL), identical(f$labels, TRUE),
+          identical(f$tick, TRUE), identical(f$lty, "solid"), identical(f$lwd, 1))
+      `),
+    ).resolves.toEqual([
+      "side",
+      "at",
+      "labels",
+      "tick",
+      "line",
+      "pos",
+      "outer",
+      "font",
+      "lty",
+      "lwd",
+      "lwd.ticks",
+      "col",
+      "col.ticks",
+      "hadj",
+      "padj",
+      "gap.axis",
+      "...",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    await expect(runtime.eval("axis(5, at = 1)")).rejects.toMatchObject({ code: "NRT3408" });
+    await expect(runtime.eval("axis(1, at = 1:3, labels = c('a', 'b'))")).rejects.toMatchObject({
+      code: "NRT3408",
+    });
+    await expect(runtime.eval("axis(1, labels = c('a', 'b'))")).rejects.toMatchObject({
+      code: "NRT3408",
+    });
+    await expect(runtime.eval("axis(1, at = 1, outer = TRUE)")).rejects.toMatchObject({
+      code: "NRU6197",
+    });
+    await expect(runtime.eval("axis(1, at = numeric())")).resolves.toBeNull();
+    await runtime.reset();
+    await expect(runtime.eval("axis(1)")).rejects.toMatchObject({ code: "NRE2190" });
     await runtime.dispose();
   });
 

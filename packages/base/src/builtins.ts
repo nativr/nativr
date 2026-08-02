@@ -1890,6 +1890,86 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "behavioral",
     builtinAxisTicks,
   ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "graphics",
+      "axis",
+      [
+        "side",
+        "at",
+        "labels",
+        "tick",
+        "line",
+        "pos",
+        "outer",
+        "font",
+        "lty",
+        "lwd",
+        "lwd.ticks",
+        "col",
+        "col.ticks",
+        "hadj",
+        "padj",
+        "gap.axis",
+        "...",
+      ],
+      "behavioral",
+      builtinGraphicsAxis,
+      "invisible",
+    ),
+    [
+      { name: "side" },
+      { name: "at", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      {
+        name: "labels",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "tick",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "line",
+        defaultValue: { kind: "MissingLiteral", declaredType: "logical", span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "pos",
+        defaultValue: { kind: "MissingLiteral", declaredType: "logical", span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "outer",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "font",
+        defaultValue: { kind: "MissingLiteral", declaredType: "logical", span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "lty",
+        defaultValue: { kind: "StringLiteral", value: "solid", span: SYNTHETIC_SPAN },
+      },
+      { name: "lwd", defaultValue: { kind: "DoubleLiteral", value: 1, span: SYNTHETIC_SPAN } },
+      {
+        name: "lwd.ticks",
+        defaultValue: { kind: "Identifier", name: "lwd", span: SYNTHETIC_SPAN },
+      },
+      { name: "col", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      { name: "col.ticks", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      {
+        name: "hadj",
+        defaultValue: { kind: "MissingLiteral", declaredType: "logical", span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "padj",
+        defaultValue: { kind: "MissingLiteral", declaredType: "logical", span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "gap.axis",
+        defaultValue: { kind: "MissingLiteral", declaredType: "logical", span: SYNTHETIC_SPAN },
+      },
+      { name: "..." },
+    ],
+  ),
   definePackageBuiltin(
     "graphics",
     "box",
@@ -24193,6 +24273,390 @@ function linearAxisParameters(
   const upper = roundedUpper === 0 ? 0 : roundedUpper;
   const intervals = Math.max(0, Math.round((upper - lower) / step));
   return reversed ? [upper, lower, intervals] : [lower, upper, intervals];
+}
+
+interface GraphicsAxisEntry {
+  readonly value: number;
+  readonly missing: boolean;
+  readonly labelIndex: number;
+}
+
+async function builtinGraphicsAxis(invocation: BuiltinInvocation): Promise<RValue> {
+  const lazy = matchLazyArgumentsWithDots(invocation, [
+    "side",
+    "at",
+    "labels",
+    "tick",
+    "line",
+    "pos",
+    "outer",
+    "font",
+    "lty",
+    "lwd",
+    "lwd.ticks",
+    "col",
+    "col.ticks",
+    "hadj",
+    "padj",
+    "gap.axis",
+  ]);
+  const value = async (name: string): Promise<RValue | undefined> => {
+    const argument = lazy.matched.get(name);
+    if (argument === undefined || argument.promise.missing) return undefined;
+    return invocation.force(argument.promise);
+  };
+  const sideValue = await value("side");
+  if (sideValue === undefined || !isAtomic(sideValue)) {
+    throw new REvaluationError("NRE2103", "Argument 'side' is missing in axis().");
+  }
+  const sideVector = coerceAtomicToInteger(sideValue, invocation);
+  const side =
+    sideVector.length === 0 || isMissing(sideVector, 0) ? Number.NaN : (sideVector.values[0] ?? 0);
+  if (!Number.isFinite(side) || side < 1 || side > 4) {
+    throw new RTypeMismatchError(
+      "NRT3408",
+      `invalid axis number ${Number.isFinite(side) ? side : "NA"}`,
+    );
+  }
+  const state = graphicsState(invocation, "axis");
+  const atArgument = lazy.matched.get("at");
+  const atSupplied = atArgument !== undefined && !atArgument.promise.missing;
+  const atValue = await value("at");
+  let entries: GraphicsAxisEntry[];
+  if (!atSupplied || atValue === undefined || atValue.type === "null") {
+    const parameters = linearAxisParameters(side === 1 || side === 3 ? state.xlim : state.ylim);
+    const intervals = Math.floor(Math.abs(parameters[2]) + 0.25);
+    const step = intervals === 0 ? 0 : (parameters[1] - parameters[0]) / intervals;
+    entries = Array.from({ length: intervals + 1 }, (_, index) => ({
+      value:
+        index === intervals
+          ? parameters[1]
+          : Number((parameters[0] + step * index).toPrecision(15)),
+      missing: false,
+      labelIndex: index,
+    }));
+  } else {
+    if (!isAtomic(atValue)) {
+      throw new RTypeMismatchError("NRT3408", "axis() 'at' must be coercible to numeric.");
+    }
+    const numeric = coerceAtomicToDouble(atValue, invocation);
+    entries = Array.from({ length: numeric.length }, (_, index) => ({
+      value: numeric.values[index] ?? Number.NaN,
+      missing: isMissing(numeric, index),
+      labelIndex: index,
+    })).sort((left, right) => graphicsAxisOrder(left, right));
+  }
+  if (entries.length === 0) return R_NULL;
+
+  const labelsArgument = lazy.matched.get("labels");
+  const labelsSupplied = labelsArgument !== undefined && !labelsArgument.promise.missing;
+  const labelsValue = await value("labels");
+  if (
+    labelsSupplied &&
+    !atSupplied &&
+    labelsValue !== undefined &&
+    labelsValue.type !== "null" &&
+    labelsValue.type !== "logical"
+  ) {
+    throw new RTypeMismatchError("NRT3408", "'labels' is supplied and not 'at'");
+  }
+  const labels = graphicsAxisLabels(labelsValue, entries.length, invocation);
+  const tick = graphicsAxisFlag(await value("tick"), true);
+  if (graphicsAxisFlag(await value("outer"), false)) {
+    throw new RUnsupportedFeatureError(
+      "NRU6197",
+      "axis(outer = TRUE) awaits browser outer-margin graphics state.",
+    );
+  }
+
+  const controls = new Map<string, RValue>();
+  for (const name of [
+    "line",
+    "pos",
+    "font",
+    "lty",
+    "lwd",
+    "lwd.ticks",
+    "col",
+    "col.ticks",
+    "hadj",
+    "padj",
+    "gap.axis",
+  ]) {
+    const supplied = await value(name);
+    if (supplied !== undefined) controls.set(name, supplied);
+  }
+  for (const argument of lazy.dots) {
+    if (argument.promise.missing) continue;
+    const supplied = await invocation.force(argument.promise);
+    const name = argument.name;
+    if (
+      name === "tcl" ||
+      name === "tck" ||
+      name === "cex.axis" ||
+      name === "col.axis" ||
+      name === "font.axis" ||
+      name === "las" ||
+      name === "family" ||
+      name === "fg" ||
+      name === "xpd"
+    ) {
+      controls.set(name, supplied);
+      continue;
+    }
+    throw new RUnsupportedFeatureError(
+      "NRU6197",
+      `axis() graphical control '${name ?? "<unnamed>"}' is outside the measured browser subset.`,
+    );
+  }
+  drawGraphicsAxis(invocation, state, side, entries, labels, tick, controls);
+  const missing = new Uint8Array(entries.length);
+  const result = new Float64Array(entries.length);
+  for (let index = 0; index < entries.length; index += 1) {
+    const entry = entries[index]!;
+    result[index] = entry.value;
+    if (entry.missing) missing[index] = 1;
+  }
+  invocation.context.allocate(entries.length * 8);
+  return doubleVector(result, compactMask(missing));
+}
+
+function graphicsAxisOrder(left: GraphicsAxisEntry, right: GraphicsAxisEntry): number {
+  if (left.missing !== right.missing) return left.missing ? 1 : -1;
+  const leftNan = Number.isNaN(left.value);
+  const rightNan = Number.isNaN(right.value);
+  if (leftNan !== rightNan) return leftNan ? 1 : -1;
+  return left.value - right.value;
+}
+
+function graphicsAxisFlag(value: RValue | undefined, fallback: boolean): boolean {
+  if (value === undefined || value.type === "null") return fallback;
+  if (!isAtomic(value) || value.length === 0 || isMissing(value, 0)) return fallback;
+  if (value.type === "character") return parseRLogical(value.values[0] ?? "") ?? fallback;
+  if (value.type === "complex") {
+    return (value.real[0] ?? 0) !== 0 || (value.imaginary[0] ?? 0) !== 0;
+  }
+  return (value.values[0] ?? 0) !== 0;
+}
+
+function graphicsAxisLabels(
+  value: RValue | undefined,
+  length: number,
+  invocation: BuiltinInvocation,
+): readonly string[] | undefined {
+  if (value === undefined || value.type === "null") return [];
+  if (value.type === "logical") {
+    if (value.length === 0 || isMissing(value, 0) || value.values[0] === 1) return [];
+    return undefined;
+  }
+  let labels: readonly string[];
+  if (isFactor(value)) {
+    const levels = factorLevels(value);
+    labels = Array.from({ length: value.length }, (_, index) =>
+      isMissing(value, index) ? "NA" : (levels[(value.values[index] ?? 0) - 1] ?? "NA"),
+    );
+  } else if (isAtomic(value)) {
+    labels = Array.from({ length: value.length }, (_, index) =>
+      isMissing(value, index)
+        ? "NA"
+        : value.type === "double"
+          ? formatPrintNumber(value.values[index] ?? 0, 7)
+          : stringAt(value, index),
+    );
+  } else {
+    throw new RUnsupportedFeatureError(
+      "NRU6197",
+      "axis(labels=) currently supports logical, atomic, and factor labels.",
+    );
+  }
+  if (labels.length === 0) return [];
+  if (labels.length !== length) {
+    throw new RTypeMismatchError(
+      "NRT3408",
+      `'at' and 'labels' lengths differ, ${length} != ${labels.length}`,
+    );
+  }
+  invocation.context.allocate(labels.reduce((total, label) => total + label.length, 0));
+  return labels;
+}
+
+function drawGraphicsAxis(
+  invocation: BuiltinInvocation,
+  state: GraphicsState,
+  side: number,
+  entries: readonly GraphicsAxisEntry[],
+  suppliedLabels: readonly string[] | undefined,
+  tick: boolean,
+  controls: ReadonlyMap<string, RValue>,
+): void {
+  const horizontal = side === 1 || side === 3;
+  const limits = horizontal ? state.xlim : state.ylim;
+  const lower = Math.min(limits[0], limits[1]);
+  const upper = Math.max(limits[0], limits[1]);
+  const drawable = entries.filter(
+    (entry) =>
+      !entry.missing &&
+      Number.isFinite(entry.value) &&
+      entry.value >= lower &&
+      entry.value <= upper,
+  );
+  const parameters = state.parameters;
+  const positionValue = controls.get("pos");
+  const suppliedPosition =
+    positionValue !== undefined &&
+    isAtomic(positionValue) &&
+    positionValue.length > 0 &&
+    !isMissing(positionValue, 0)
+      ? numberAt(coerceAtomicToDouble(positionValue, invocation), 0)
+      : undefined;
+  const position =
+    suppliedPosition !== undefined && Number.isFinite(suppliedPosition)
+      ? suppliedPosition
+      : horizontal
+        ? side === 1
+          ? state.ylim[0]
+          : state.ylim[1]
+        : side === 2
+          ? state.xlim[0]
+          : state.xlim[1];
+  const lineTypes = graphicsSegmentLineTypes(controls.get("lty"));
+  const lineType = lineTypes[0] ?? "solid";
+  const lineWidth = graphicsAxisLineWidth(controls.get("lwd"), invocation, 1);
+  const tickWidth = graphicsAxisLineWidth(
+    controls.get("lwd.ticks") ?? controls.get("lwd"),
+    invocation,
+    lineWidth,
+  );
+  const lineColor =
+    graphicsBoxColour(controls.get("col"), invocation) ??
+    graphicsBoxColour(controls.get("fg") ?? parameters.get("fg"), invocation) ??
+    ([0, 0, 0, 255] as const);
+  const tickColor = graphicsBoxColour(controls.get("col.ticks"), invocation) ?? lineColor;
+  const segments: RGraphicsSegment[] = [];
+  if (tick && drawable.length > 0) {
+    const first = drawable[0]!.value;
+    const last = drawable[drawable.length - 1]!.value;
+    if (lineWidth !== undefined && lineType !== "blank" && lineColor[3] !== 0) {
+      segments.push(
+        horizontal
+          ? {
+              x0: first,
+              y0: position,
+              x1: last,
+              y1: position,
+              color: graphicsCssColour(lineColor),
+              lineType,
+              lineWidth,
+            }
+          : {
+              x0: position,
+              y0: first,
+              x1: position,
+              y1: last,
+              color: graphicsCssColour(lineColor),
+              lineType,
+              lineWidth,
+            },
+      );
+    }
+    if (tickWidth !== undefined && lineType !== "blank" && tickColor[3] !== 0) {
+      const tclValue = controls.get("tcl") ?? parameters.get("tcl");
+      const tcl = tclValue === undefined ? -0.5 : numericScalar(tclValue, "tcl");
+      const perpendicularSpan = horizontal
+        ? Math.abs(state.ylim[1] - state.ylim[0])
+        : Math.abs(state.xlim[1] - state.xlim[0]);
+      const length = perpendicularSpan * 0.02 * Math.max(0, Math.abs(tcl) / 0.5);
+      const direction = side === 1 || side === 2 ? 1 : -1;
+      for (const entry of drawable) {
+        segments.push(
+          horizontal
+            ? {
+                x0: entry.value,
+                y0: position,
+                x1: entry.value,
+                y1: position + direction * length,
+                color: graphicsCssColour(tickColor),
+                lineType,
+                lineWidth: tickWidth,
+              }
+            : {
+                x0: position,
+                y0: entry.value,
+                x1: position + direction * length,
+                y1: entry.value,
+                color: graphicsCssColour(tickColor),
+                lineType,
+                lineWidth: tickWidth,
+              },
+        );
+      }
+    }
+  }
+  if (segments.length > 0) writeGraphics(invocation, state, { kind: "segments", segments });
+  if (suppliedLabels === undefined) return;
+
+  const labels =
+    suppliedLabels.length === 0
+      ? entries.map((entry) => (entry.missing ? "NA" : formatPrintNumber(entry.value, 7)))
+      : entries.map((entry) => suppliedLabels[entry.labelIndex] ?? "");
+  const size = numericScalar(
+    controls.get("cex.axis") ?? parameters.get("cex.axis") ?? doubleVector([1]),
+    "cex.axis",
+  );
+  const fontValue =
+    controls.get("font") ?? controls.get("font.axis") ?? parameters.get("font.axis");
+  const fontNumber =
+    fontValue === undefined ? 1 : Math.trunc(numericScalar(fontValue, "font.axis"));
+  const font = fontNumber >= 1 && fontNumber <= 4 ? (fontNumber as 1 | 2 | 3 | 4) : 1;
+  const familyValue = controls.get("family") ?? parameters.get("family");
+  const family = familyValue === undefined ? "" : characterScalar(familyValue, "family");
+  const labelColor =
+    graphicsBoxColour(controls.get("col.axis") ?? parameters.get("col.axis"), invocation) ??
+    ([0, 0, 0, 255] as const);
+  const lasValue = controls.get("las") ?? parameters.get("las");
+  const las = lasValue === undefined ? 0 : Math.trunc(numericScalar(lasValue, "las"));
+  const rotation = las === 2 ? 90 : las === 1 || las === 3 ? 0 : horizontal ? 0 : 90;
+  const text: RGraphicsText[] = [];
+  for (let index = 0; index < entries.length; index += 1) {
+    const entry = entries[index]!;
+    if (
+      entry.missing ||
+      !Number.isFinite(entry.value) ||
+      entry.value < lower ||
+      entry.value > upper
+    )
+      continue;
+    const label = labels[index] ?? "";
+    if (label.length === 0) continue;
+    text.push({
+      x: horizontal ? entry.value : position,
+      y: horizontal ? position : entry.value,
+      label,
+      color: graphicsCssColour(labelColor),
+      size,
+      font,
+      family,
+      rotation,
+      horizontalAdjustment: side === 2 ? 0 : side === 4 ? 1 : 0.5,
+      verticalAdjustment: side === 1 ? -0.25 : side === 3 ? 1.1 : 0.35,
+      offset: 0.5,
+    });
+  }
+  if (text.length > 0) writeGraphics(invocation, state, { kind: "text", labels: text });
+}
+
+function graphicsAxisLineWidth(
+  value: RValue | undefined,
+  invocation: BuiltinInvocation,
+  fallback: number | undefined,
+): number | undefined {
+  if (value === undefined || value.type === "null") return fallback;
+  if (!isAtomic(value) || value.length === 0 || isMissing(value, 0)) return fallback;
+  const width = coerceAtomicToDouble(value, invocation).values[0] ?? Number.NaN;
+  if (!Number.isFinite(width)) {
+    throw new RTypeMismatchError("NRT3408", "axis() line widths must be finite.");
+  }
+  return width <= 0 ? undefined : width;
 }
 
 async function builtinGraphicsBox(invocation: BuiltinInvocation): Promise<RValue> {

@@ -183,8 +183,8 @@ Date: 2026-08-02
 - Usage-ranked `base::plot` plus `graphics::plot.default` with S3-first package-method forwarding,
   numeric vector/x-y/matrix/data-frame/list coordinates, point/line/both/overplotted/histogram/step/
   no-draw geometry, GNU R-shaped 4% linear range padding, common styles, panel hooks, scalar labels,
-  invisible default returns, bounded Worker/Canvas output, and display-list replay. Complete axis
-  ticks/labels, logarithmic or fixed-aspect layout, specialized core methods, margins/clipping, and
+  invisible default returns, bounded Worker/Canvas output, and display-list replay. Automatic axes,
+  logarithmic or fixed-aspect layout, specialized core methods, margins/clipping, and
   device-identical rendering remain explicit boundaries.
 - Usage-ranked `graphics::lines` plus exported `lines.default` with S3-first package-method
   forwarding, shared vector/matrix/data-frame/list/complex coordinate normalization, all nine plot
@@ -215,6 +215,12 @@ Date: 2026-08-02
   state-derived horizontal/vertical pretty ticks, explicit `axp`, forward/reversed axes, coercible
   sides, lazy linear-only arguments, namespace access, and allocation limits. Logarithmic ticks
   remain an explicit unsupported boundary.
+- Usage-ranked `graphics::axis` for all 18 measured labeling/zoo/bit64 calls, including sides 1:4,
+  explicit or window-derived sorted linear ticks, character/numeric/default/no labels, secondary
+  axes, measured styles, exact formals, invisible return locations, pure-R package calls, and
+  bounded Worker/Canvas/PNG/record-replay output through existing segment/text events. Logarithmic
+  and date axes, outer margins, plotmath, exact collision layout, and font/pixel identity remain
+  explicit boundaries.
 - Usage-ranked `graphics::box` for zoo's measured plot-frame redraw, including all plot-region `bty`
   edge shapes, `col`/`fg` precedence, normalized line types, positive widths, invisible returns,
   Worker transport, Canvas pixels, output accounting, and same-session display-list replay. Figure
@@ -654,10 +660,10 @@ Date: 2026-08-02
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 12 files and 410 tests, with three explicitly skipped tests.
+- Vitest currently passes 12 files and 411 tests, with three explicitly skipped tests.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 753/753 cases. The optional black-box R oracle passes all 718
+- Checked-in conformance passes 757/757 cases. The optional black-box R oracle passes all 722
   eligible cases and explicitly skips 35 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,

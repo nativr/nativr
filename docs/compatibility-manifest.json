@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.229.0",
+  "languageSubsetVersion": "0.230.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -603,6 +603,7 @@
         { "name": "plot.window", "compatibility": "shape" },
         { "name": "matplot", "compatibility": "shape" },
         { "name": "axTicks", "compatibility": "behavioral" },
+        { "name": "axis", "compatibility": "behavioral" },
         { "name": "box", "compatibility": "shape" },
         { "name": "boxplot", "compatibility": "shape" },
         { "name": "image", "compatibility": "shape" },

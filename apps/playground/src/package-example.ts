@@ -5,12 +5,13 @@ export const playgroundPackage: PureRPackageBundle = {
   description: `Package: nativrdemo
 Version: 0.1.0
 NeedsCompilation: no`,
-  namespace: "export(twice_mean, signature_names, dynamic_summary, resource_size, event_colours)",
+  namespace:
+    "export(twice_mean, signature_names, dynamic_summary, resource_size, event_colours, custom_axis)",
   rSources: [
     {
       path: "R/twice-mean.R",
       source:
-        'twice_mean <- function(x) 2 * mean(x)\nsignature_names <- function(fun = twice_mean) names(formals(args(fun)))\ndynamic_summary <- function(x, ...) UseMethod("dynamic_summary")\ndynamic_summary.demo <- function(x, ...) paste0("worker-dynamic:", sum(x))\nresource_size <- function() file.size(system.file("extdata", "demo.json", package = "nativrdemo"))\nevent_colours <- function() grDevices::hcl(c(0, 0, 260), c = c(100, 0, 100), l = c(50, 90, 50), alpha = .3)\n.onLoad <- function(...) registerS3method("dynamic_summary", "demo", "dynamic_summary.demo")',
+        'twice_mean <- function(x) 2 * mean(x)\nsignature_names <- function(fun = twice_mean) names(formals(args(fun)))\ndynamic_summary <- function(x, ...) UseMethod("dynamic_summary")\ndynamic_summary.demo <- function(x, ...) paste0("worker-dynamic:", sum(x))\nresource_size <- function() file.size(system.file("extdata", "demo.json", package = "nativrdemo"))\nevent_colours <- function() grDevices::hcl(c(0, 0, 260), c = c(100, 0, 100), l = c(50, 90, 50), alpha = .3)\ncustom_axis <- function() { graphics::plot.new(); graphics::plot.window(c(0, 4), c(0, 4)); graphics::axis(1, at = 1:3, labels = c("one", "two", "three")) }\n.onLoad <- function(...) registerS3method("dynamic_summary", "demo", "dynamic_summary.demo")',
     },
   ],
   resources: [

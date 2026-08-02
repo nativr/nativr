@@ -258,9 +258,8 @@ page/window/raster/segments/points/text/polygon/box/boxplot/ legend display list
 uses that list to produce bounded, decompressible RGBA PNG bytes in the virtual file store,
 including transparent backgrounds, exact requested dimensions, raw-byte reads, and numbered
 multi-page targets. Closing flushes held commands and completes the current PNG page. Complete plot
-methods, non-PNG devices, axis tick/label drawing, complete clipping/margins, graphical parameters
-beyond the documented controls, external display-list formats, and pixel equivalence across GNU R
-devices are not claimed.
+methods, non-PNG devices, complete clipping/margins, graphical parameters beyond the documented
+controls, external display-list formats, and pixel equivalence across GNU R devices are not claimed.
 
 `image` has shape-level differential evidence for the rank-163 calls sampled from `scales`,
 `viridisLite`, and `RColorBrewer`. Its S3 generic preserves package-defined methods. The default
@@ -281,7 +280,7 @@ omitted and split paths. `panel.first` and `panel.last` are forced around the da
 `axes`/`frame.plot` control the owned frame, and supplied scalar character main/sub/x/y labels
 become bounded text commands. The default returns invisible `NULL` through inline and Worker
 sessions and participates in hold/flush and display-list replay. Automatic expression-derived
-labels, tick marks and tick labels, logarithmic or fixed-aspect axes, complete axis-gap layout,
+labels, automatic axis generation, logarithmic or fixed-aspect axes, complete axis-gap layout,
 formula/function/time-series/raster and other specialized methods, arbitrary graphical parameters,
 margins/clipping, and device-identical pixels remain outside this shape-level claim.
 
@@ -306,8 +305,18 @@ x limits and sides 2/4 from the current y limits; common ranges use independentl
 conversion and can run without an active device when `log = FALSE`. Linear `usr` and `nintLog`
 remain lazy, unique partial argument matching and namespace access are covered, and result
 allocation is bounded. Complete `pretty` equivalence for every floating-point boundary,
-`par("xaxp"/"yaxp")`, logarithmic axes and `grDevices::axisTicks`, axis drawing, and device-specific
-graphical parameters beyond the documented session subset are not claimed.
+`par("xaxp"/"yaxp")`, logarithmic axes and `grDevices::axisTicks`, and device-specific graphical
+parameters beyond the documented session subset are not claimed.
+
+`graphics::axis` has differential and browser-host evidence for all 18 measured calls across
+labeling, zoo, and bit64. Sides 1:4 accept explicit sorted numeric locations or reuse the owned
+linear window ticks; character, numeric, default, empty, and `labels = FALSE` modes preserve the
+invisible GNU R-shaped return. Axis lines, recycled tick geometry, and resolved text labels reuse
+the existing bounded segment/text journal, including secondary axes, `tcl`, `cex.axis`, colors, line
+styles, font controls, pure-R package calls, Worker transport, Canvas/PNG rendering, and
+display-list replay. Exact formals, empty input, non-finite drawing omission, label-length errors,
+and invalid sides have GNU R 4.6 evidence. Logarithmic/date axes, plotmath, outer margins, exact
+label collision/gap layout, device font metrics, and pixel identity remain explicit depth.
 
 `graphics::box` has differential return/visibility evidence for zoo's measured `box()` redraw and
 browser-host evidence for the resulting frame. `which = "plot"` accepts its documented unique
