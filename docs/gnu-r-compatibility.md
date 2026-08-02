@@ -817,8 +817,18 @@ empty targets, valid PDF headers, page trees, content streams, cross-reference/t
 structure, metadata controls, standard font resources, compressed and uncompressed content, one-file
 multi-page output, numbered page files, raw reads, and output limits. Custom/embedded fonts,
 arbitrary encoding maps, exact glyph metrics and kerning, complete PDF controls, and byte-identical
-output remain compatibility depth. Rank 287 `base::file.create` is now the next unresolved
-browser-owned filesystem callable.
+output remain compatibility depth.
+
+The file-creation increment raises current name overlap to 617 of 2,522. Rank 287
+`base::file.create` covers withr's measured tempfile/deferred-cleanup setup at 1.6%
+download-weighted reach. GNU R 4.6 differential evidence covers exact formals and exact-only
+trailing-control matching, first-argument validation, later atomic coercion, vector flattening,
+attribute removal, existing-file truncation, visible per-path logical results, missing paths,
+warning suppression, and validation before mutation. NativR-only package, immutable-resource,
+host-boundary, resource-limit, and default-Worker evidence runs through the ordinary virtual
+filesystem without a withr-specific adapter. Recursive parent creation, host paths, native
+permissions/umasks, links/devices, platform-exact diagnostics, and persistence remain compatibility
+depth. Rank 292 `graphics::ts.plot` is now the next measured unresolved callable.
 
 ## Completion evidence
 

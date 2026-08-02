@@ -442,6 +442,10 @@ Date: 2026-08-02
   invisible device opening, `pdf(NULL)` plus `recordPlot`, valid browser-native PDF object/xref
   structure, base-14 fonts, metadata, alpha graphics states, optional Flate compression, one-file
   multi-page and numbered single-page output, virtual-file lifecycle, raw reads, and Worker proof.
+- Usage-ranked `base::file.create` for withr's measured deferred-cleanup setup: zero-byte creation
+  and truncation, exact dots/`showWarnings` matching, first-character and later-atomic coercion,
+  vectorized visible results, silent missing values, bounded per-path warnings, preflight before
+  mutation, pure-R package execution, Worker transport, and resource limits.
 - Usage-ranked `grDevices::gray`/`grey` and `gray.colors`/`grey.colors` with zoo's two measured
   calls, byte-exact RGB(A) output, documented gamma correction, alpha recycling, reversal,
   descending endpoints, alias behavior, atomic gray-level coercion, attribute removal, and bounded
@@ -718,10 +722,10 @@ Date: 2026-08-02
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 13 files and 431 tests, with three explicitly skipped tests.
+- Vitest currently passes 13 files and 432 tests, with three explicitly skipped tests.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 783/783 cases. The optional black-box R oracle passes all 744
+- Checked-in conformance passes 785/785 cases. The optional black-box R oracle passes all 746
   eligible cases and explicitly skips 39 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,

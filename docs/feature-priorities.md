@@ -190,22 +190,23 @@ density, clipping/log axes, coordinate-class conversion, and device-exact joins 
 depth. Rank 256 `base::file.remove` is now complete for xfun and data.table's four measured cleanup
 calls. Rank 259 `base::readChar` now runs digest and Shiny's two measured fixed-width file reads;
 rank 277 `base::debug` and rank 279 `base::undebug` now run R6's measured method-instrumentation
-calls through shared function-object state and the existing Worker readline seam. The next measured
-rank 281 `grDevices::pdf` now covers knitr's recording device and data.table's file-backed plot. The
-next measured unresolved callable is rank 287 `base::file.create`. Rank 144 `Encoding` is also
-complete for all 12 observed calls across rlang, utf8, and xfun (4.5% weighted reach), together with
-adjacent `Encoding<-`, `enc2utf8`, and `enc2native`. The shared character representation preserves
-exact bytes and canonical R marks through subset/replacement, concatenation, raw conversion, and XDR
-serialization; this is reusable package infrastructure, not an assertion that those packages' native
-components are supported. Rank 149 `rcauchy` is now complete for four calls across ggplot2, pillar,
-and purrr (4.2% weighted reach), together with `dcauchy`, `pcauchy`, and `qcauchy`. The shared
-distribution path covers seeded random-stream consumption, vectorized parameters, stable probability
-tails, formals, and missing/domain behavior without package-specific rewrites. Rank 162 `Sys.getenv`
-is now available for all 16 measured calls across withr, xfun, and pkgbuild (3.7% weighted reach),
-together with rank 175 `Sys.setenv` across xfun, memoise, openssl, and zoo (3.3%) and adjacent
-`Sys.unsetenv`. The shared session-state path is Worker-safe, resettable, and sufficient for
-unchanged `withr::with_envvar()` mutation/restoration; it does not expose the host environment. Rank
-163 `image` is now available for the six measured calls across scales, viridisLite, and RColorBrewer
+calls through shared function-object state and the existing Worker readline seam. Rank 281
+`grDevices::pdf` now covers knitr's recording device and data.table's file-backed plot. Rank 287
+`base::file.create` now covers withr's deferred-cleanup setup. The next measured unresolved callable
+is rank 292 `graphics::ts.plot`. Rank 144 `Encoding` is also complete for all 12 observed calls
+across rlang, utf8, and xfun (4.5% weighted reach), together with adjacent `Encoding<-`, `enc2utf8`,
+and `enc2native`. The shared character representation preserves exact bytes and canonical R marks
+through subset/replacement, concatenation, raw conversion, and XDR serialization; this is reusable
+package infrastructure, not an assertion that those packages' native components are supported. Rank
+149 `rcauchy` is now complete for four calls across ggplot2, pillar, and purrr (4.2% weighted
+reach), together with `dcauchy`, `pcauchy`, and `qcauchy`. The shared distribution path covers
+seeded random-stream consumption, vectorized parameters, stable probability tails, formals, and
+missing/domain behavior without package-specific rewrites. Rank 162 `Sys.getenv` is now available
+for all 16 measured calls across withr, xfun, and pkgbuild (3.7% weighted reach), together with rank
+175 `Sys.setenv` across xfun, memoise, openssl, and zoo (3.3%) and adjacent `Sys.unsetenv`. The
+shared session-state path is Worker-safe, resettable, and sufficient for unchanged
+`withr::with_envvar()` mutation/restoration; it does not expose the host environment. Rank 163
+`image` is now available for the six measured calls across scales, viridisLite, and RColorBrewer
 (3.7% weighted reach). Its reusable S3/default path covers numeric/logical matrices, center or
 boundary coordinates, regular raster and irregular polygon grids, colour intervals, missing
 transparency, and one-row palette strips through the same Worker graphics journal; it is not a claim
@@ -1603,6 +1604,13 @@ ties:
      compression, raw reads, exact formals and visibility, and default Worker execution. Embedded
      fonts, arbitrary encoding maps, exact metrics/kerning, full device controls, and byte identity
      with GNU R remain compatibility depth.
+155. Session-owned file creation: rank-287 `base::file.create` represents withr's one measured call
+     at 1.6% download-weighted reach. It creates or truncates zero-byte session files with exact
+     dots/`showWarnings` matching, first-character/later-atomic argument rules, validation before
+     mutation, vectorized visible logical results, silent missing paths, per-path warnings, package
+     and Worker execution, and file/result resource bounds. Recursive parents, host files,
+     permissions/umasks, links, devices, platform-exact diagnostics, and persistence remain
+     compatibility depth.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

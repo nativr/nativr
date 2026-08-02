@@ -729,6 +729,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      standard fonts, metadata, compression, raw reads, resource bounds, and Worker execution.
      Embedded fonts, arbitrary encodings, exact glyph metrics/kerning, full PDF controls, and
      byte-identical output remain compatibility depth.
+155. Usage-ranked file creation: rank-287 `base::file.create` runs withr's measured tempfile plus
+     deferred-`unlink()` pattern over the existing session-owned filesystem. GNU R 4.6 evidence
+     covers exact formals/matching, vector flattening, coercion, truncation, result shape, missing
+     paths, warning suppression, and preflight errors; package and Worker evidence crosses the same
+     path. Recursive parents, host paths, native permissions/umasks, links/devices, platform-exact
+     diagnostics, and persistence remain compatibility depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

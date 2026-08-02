@@ -489,6 +489,15 @@ session directories use writable virtual modes. Immutable runtime/package trees 
 read-only modes and timestamps, and portable extra owner columns are `NA` because the browser has no
 host user identity. No stat call, host path, ACL, link, or ambient filesystem capability is used.
 
+`file.create(..., showWarnings = TRUE)` uses the same mutable session tree. It preflights every
+argument before mutation, requires a character first dots value, coerces later atomic values after
+attribute removal, expands vectors in order, and creates or truncates each successful path to zero
+bytes. The result drops input attributes. Missing filenames return `FALSE` silently; other failures
+emit one warning per path only when the first coercible `showWarnings` element is true. Named
+`showWarnings` matching is exact because it follows dots, so `showW = FALSE` remains a filename.
+Parents must already be session directories. Immutable package/runtime resources and host paths
+remain unwritable, and evaluator limits bound path count, files, bytes, allocation, and steps.
+
 `utils::read.table` and its CSV/delimited variants consume that same text layer or inline `text=`.
 The owned bounded scanner recognizes LF/CRLF/CR records, explicit or whitespace separators, quoted
 fields, doubled quotes, embedded quoted newlines, comments, skipped/blank lines, filling, headers,

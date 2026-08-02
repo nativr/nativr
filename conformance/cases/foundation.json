@@ -8866,5 +8866,48 @@
     "rOracle": false,
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "file-create-withr-measured-lifecycle-truncation-visibility-and-formals",
+    "code": "path <- tempfile()\nopened <- withVisible(file.create(path))\nbefore <- c(file.exists(path), file.size(path))\nwriteLines(\"content\", path)\ntruncated <- file.create(path)\nafter <- c(file.size(path), length(readBin(path, \"raw\", n = 100L)))\nremoved <- unlink(path)\nf <- formals(file.create)\nc(opened$value, opened$visible, is.null(attributes(opened$value)), before, truncated, after, removed, names(f), identical(f$showWarnings, TRUE))",
+    "expected": [
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "1",
+      "0",
+      "TRUE",
+      "0",
+      "0",
+      "0",
+      "...",
+      "showWarnings",
+      "TRUE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "file-create-dots-coercion-attributes-partial-name-and-missing-paths",
+    "code": "root <- tempfile(\"file-create-\")\ndir.create(root)\nshaped <- matrix(setNames(c(file.path(root, \"a\"), file.path(root, \"b\")), c(\"x\", \"y\")), 1)\nvalues <- file.create(shaped, 3L, factor(\"ignored\"), NULL)\npartial <- file.create(file.path(root, \"partial\"), showW = FALSE)\nmissing <- file.create(c(NA_character_, \"\"), showWarnings = FALSE)\nresult <- c(values, is.null(attributes(values)), partial, missing, file.exists(file.path(root, c(\"a\", \"b\", \"partial\"))), file.exists(c(\"3\", \"1\", \"FALSE\")))\nunlink(c(\"3\", \"1\", \"FALSE\"))\nunlink(root, recursive = TRUE)\nresult",
+    "expected": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

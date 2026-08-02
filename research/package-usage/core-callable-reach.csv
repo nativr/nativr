@@ -285,7 +285,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 284,sample.int,true,1,withr,2,1.0,1.6
 285,Sys.localeconv,true,1,withr,2,1.0,1.6
 286,attributes,true,1,withr,1,1.0,1.6
-287,file.create,false,1,withr,1,1.0,1.6
+287,file.create,true,1,withr,1,1.0,1.6
 288,file.size,true,1,withr,1,1.0,1.6
 289,kappa,true,1,RcppEigen,1,1.0,1.6
 290,model.matrix,true,1,RcppEigen,1,1.0,1.6

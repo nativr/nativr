@@ -435,6 +435,16 @@ differential roundtrip coverage. `dput` and `unlink` return invisibly, missing v
 deterministically, and file count, stored UTF-8 bytes, serialization depth, allocation, and
 evaluation steps are bounded.
 
+Usage-ranked `base::file.create(..., showWarnings = TRUE)` creates or truncates zero-byte files only
+inside the mutable session tree. Exact-only matching leaves partial names in dots, the first
+filename argument must be character, later atomic arguments are stripped of attributes and coerced,
+and all filename arguments are validated before mutation. Results are one visible unclassed logical
+per flattened path; missing names fail silently, while empty, parentless, directory, immutable, and
+host paths produce bounded per-path warnings when requested. Existing open readers observe the
+truncated owned file as GNU R does. File count, result length, storage, and steps remain bounded.
+Parent creation is deliberately not recursive, and host permissions, umasks, ACLs, links, devices,
+platform-exact diagnostics, and host persistence are outside this browser-memory contract.
+
 This is a browser-memory compatibility slice, not host filesystem emulation. Relative paths are
 accepted only when the current directory belongs to a NativR-owned root; absolute host paths and
 unsupported connections are rejected. Only the default `dput(control=)` set is accepted;

@@ -30,7 +30,7 @@ importFrom(graphics, axis, plot.new, plot.window, rect)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median)
 importFrom(utils, packageDescription, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, remove_files, fixed_text, axis_ticks, sourced_value, ask_value, remote_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output)
+export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, create_file, remove_files, fixed_text, axis_ticks, sourced_value, ask_value, remote_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -70,6 +70,12 @@ usage_rectangles <- function() {
   plot.new()
   plot.window(c(0, 1), c(0, 1))
   rect(c(0, 0.5), c(0, 0.5), c(0.5, 1), c(0.5, 1), col = "#00000044", border = NA)
+}
+create_file <- function() {
+  path <- tempfile()
+  created <- file.create(path)
+  result <- c(created, file.exists(path), file.size(path), unlink(path))
+  result
 }
 remove_files <- function() {
   paths <- c(tempfile(), tempfile())
@@ -1780,6 +1786,137 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("creates withr's usage-ranked temporary file with GNU R-shaped truncation and warnings", async () => {
+    const runtime = await session();
+    const measured = await runtime.evalDetailed(`
+      path <- tempfile()
+      opened <- withVisible(file.create(path))
+      before <- c(file.exists(path), file.size(path))
+      writeLines("content", path)
+      con <- file(path, "r")
+      truncated <- file.create(path)
+      after <- c(
+        file.size(path),
+        length(readBin(path, "raw", n = 100L)),
+        length(readLines(con))
+      )
+      close(con)
+      removed <- unlink(path)
+      f <- formals(file.create)
+      c(
+        opened$value, opened$visible, is.null(attributes(opened$value)),
+        before, truncated, after, removed,
+        names(f), identical(f$showWarnings, TRUE)
+      )
+    `);
+    expect(measured.value).toEqual([
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "1",
+      "0",
+      "TRUE",
+      "0",
+      "0",
+      "0",
+      "0",
+      "...",
+      "showWarnings",
+      "TRUE",
+    ]);
+    expect(measured.warnings).toEqual([]);
+
+    const shapes = await runtime.evalDetailed(`
+      root <- tempfile("file-create-")
+      dir.create(root)
+      shaped <- matrix(setNames(c(file.path(root, "a"), file.path(root, "b")), c("x", "y")), 1)
+      values <- file.create(shaped, 3L, factor("ignored"), NULL)
+      partial <- file.create(file.path(root, "partial"), showW = FALSE)
+      missing <- file.create(c(NA_character_, ""), showWarnings = FALSE)
+      result <- c(
+        values, is.null(attributes(values)),
+        partial, missing,
+        file.exists(file.path(root, c("a", "b", "partial"))),
+        file.exists(c("3", "1", "FALSE"))
+      )
+      unlink(c("3", "1", "FALSE"))
+      unlink(root, recursive = TRUE)
+      result
+    `);
+    expect(shapes.value).toEqual([
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+    ]);
+    expect(shapes.warnings).toEqual([]);
+
+    const failures = await runtime.evalDetailed(`
+      root <- tempfile("file-create-fail-")
+      dir.create(root)
+      directory <- file.path(root, "directory")
+      dir.create(directory)
+      invalid <- file.path(root, "missing", "child")
+      result <- file.create(c(invalid, "", directory, "/host-file", NA_character_))
+      quiet <- file.create(invalid, showWarnings = FALSE)
+      preserved <- file.path(root, "preserved")
+      preflight <- inherits(try(file.create(preserved, list("invalid")), silent = TRUE), "try-error")
+      kept <- !file.exists(preserved)
+      unlink(root, recursive = TRUE)
+      c(result, quiet, preflight, kept)
+    `);
+    expect(failures.value).toEqual([false, false, false, false, false, false, true, true]);
+    expect(failures.warnings).toHaveLength(4);
+    expect(failures.warnings.every((warning) => warning.code === "NRW1136")).toBe(true);
+    expect(failures.warnings.map((warning) => warning.message)).toEqual([
+      expect.stringContaining("No such file or directory"),
+      "cannot create file '', reason 'Invalid argument'",
+      expect.stringContaining("Permission denied"),
+      expect.stringContaining("Permission denied"),
+    ]);
+    await expect(runtime.eval("file.create()")).rejects.toMatchObject({ code: "NRT3361" });
+    await expect(runtime.eval("file.create(NULL)")).rejects.toMatchObject({ code: "NRT3361" });
+    await expect(runtime.eval("file.create(1L)")).rejects.toMatchObject({ code: "NRT3361" });
+    await runtime.dispose();
+
+    const packaged = await createR({ execution: "inline", assets, packages: [pureRFixture] });
+    await expect(packaged.eval("nativrfixture::create_file()")).resolves.toEqual([1, 1, 0, 0]);
+    const immutable = await packaged.evalDetailed(`
+      path <- system.file("extdata", "config.json", package = "nativrfixture")
+      c(file.create(path), file.exists(path), readLines(path))
+    `);
+    expect(immutable.value).toEqual(["FALSE", "TRUE", '{"scale":2}']);
+    expect(immutable.warnings).toEqual([
+      {
+        code: "NRW1136",
+        message:
+          "cannot create file 'nativr://package/nativrfixture/extdata/config.json', reason 'Permission denied'",
+      },
+    ]);
+    await packaged.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 3 },
+    });
+    await expect(limited.eval("file.create(rep(tempfile(), 4L))")).rejects.toMatchObject({
+      code: "NRL4002",
+    });
+    await limited.dispose();
+  });
+
   it("removes xfun and data.table's usage-ranked temporary files with per-path results", async () => {
     const runtime = await session();
     const removed = await runtime.evalDetailed(`
@@ -3194,6 +3331,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "centered",
       "class_summary",
       "classic_palettes",
+      "create_file",
       "describe",
       "duration",
       "dynamic_describe",
@@ -10524,7 +10662,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.242.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.243.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

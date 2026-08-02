@@ -590,6 +590,16 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("isOpen", ["con", "rw"], "behavioral", builtinIsOpen),
   defineBuiltin("seek", ["con", "where", "origin", "rw"], "behavioral", builtinSeek),
   defineBuiltin("file.exists", ["..."], "shape", builtinFileExists),
+  withBuiltinFormals(
+    defineBuiltin("file.create", ["...", "showWarnings"], "behavioral", builtinFileCreate),
+    [
+      { name: "..." },
+      {
+        name: "showWarnings",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
   withBuiltinFormals(defineBuiltin("file.remove", ["..."], "behavioral", builtinFileRemove), [
     { name: "..." },
   ]),
@@ -7015,6 +7025,164 @@ async function builtinFileExists(invocation: BuiltinInvocation): Promise<RLogica
   }
   invocation.context.allocate(values.length);
   return logicalVector(values);
+}
+
+interface FileCreatePath {
+  readonly supplied: string;
+  readonly missing: boolean;
+}
+
+async function builtinFileCreate(invocation: BuiltinInvocation): Promise<RLogicalVector> {
+  const { matched, dots } = matchLeadingDotsArguments(invocation, ["showWarnings"]);
+  if (dots.length === 0) {
+    throw new RTypeMismatchError("NRT3361", "invalid filename argument");
+  }
+  const paths: FileCreatePath[] = [];
+  for (let argumentIndex = 0; argumentIndex < dots.length; argumentIndex += 1) {
+    const value = await invocation.force(dots[argumentIndex]!.promise);
+    if (argumentIndex === 0 && value.type !== "character") {
+      throw new RTypeMismatchError("NRT3361", "invalid filename argument");
+    }
+    if (argumentIndex > 0 && value.type === "null") continue;
+    if (!isAtomic(value)) {
+      throw new RTypeMismatchError("NRT3361", "invalid filename argument");
+    }
+    const plain = atomicWithoutAttributes(value);
+    const characters =
+      plain.type === "character" ? plain : coerceAtomicToCharacter(plain, invocation);
+    for (let index = 0; index < characters.length; index += 1) {
+      invocation.context.checkpoint();
+      paths.push({
+        supplied: characters.values[index] ?? "",
+        missing: isMissing(characters, index),
+      });
+    }
+  }
+  if (paths.length > invocation.context.limits.maxVectorLength) {
+    throw new RResourceLimitError("NRL4002", "file.create() result length limit exceeded.", {
+      details: {
+        maxVectorLength: invocation.context.limits.maxVectorLength,
+        requested: paths.length,
+      },
+    });
+  }
+  const warningArgument = matched.get("showWarnings");
+  const showWarnings = fileCreateWarningsFlag(
+    warningArgument === undefined ? undefined : await invocation.force(warningArgument.promise),
+  );
+  invocation.context.allocate(paths.length);
+  const state = virtualTextFileState(invocation);
+  const resolved = paths.map((path) => fileCreateResolvedPath(invocation, path));
+  const newFiles = new Set(
+    resolved.flatMap((entry) =>
+      entry.path !== undefined &&
+      entry.writable &&
+      entry.parentExists &&
+      !entry.directory &&
+      !state.files.has(entry.path) &&
+      !state.binaryFiles.has(entry.path)
+        ? [entry.path]
+        : [],
+    ),
+  );
+  const requestedFiles = state.files.size + state.binaryFiles.size + newFiles.size;
+  if (requestedFiles > invocation.context.limits.maxVectorLength) {
+    throw new RResourceLimitError("NRL4002", "Virtual file count limit exceeded.", {
+      details: {
+        maxVectorLength: invocation.context.limits.maxVectorLength,
+        requested: requestedFiles,
+      },
+    });
+  }
+
+  const created: boolean[] = [];
+  for (const entry of resolved) {
+    invocation.context.checkpoint();
+    if (entry.path !== undefined && entry.writable && entry.parentExists && !entry.directory) {
+      writeVirtualBinaryFile(invocation, entry.path, new Uint8Array());
+      created.push(true);
+      continue;
+    }
+    created.push(false);
+    if (!showWarnings || entry.missing) continue;
+    invocation.context.warn({
+      code: "NRW1136",
+      message: `cannot create file '${entry.supplied}', reason '${entry.reason}'`,
+    });
+  }
+  return logicalVector(created);
+}
+
+interface ResolvedFileCreatePath extends FileCreatePath {
+  readonly path?: string;
+  readonly writable: boolean;
+  readonly parentExists: boolean;
+  readonly directory: boolean;
+  readonly reason: "Invalid argument" | "No such file or directory" | "Permission denied";
+}
+
+function fileCreateResolvedPath(
+  invocation: BuiltinInvocation,
+  input: FileCreatePath,
+): ResolvedFileCreatePath {
+  if (input.missing) {
+    return {
+      ...input,
+      writable: false,
+      parentExists: false,
+      directory: false,
+      reason: "Invalid argument",
+    };
+  }
+  if (input.supplied.length === 0) {
+    return {
+      ...input,
+      writable: false,
+      parentExists: false,
+      directory: false,
+      reason: "Invalid argument",
+    };
+  }
+  let path: string;
+  try {
+    path = resolveOwnedVirtualPath(invocation, input.supplied, "file.create");
+  } catch {
+    return {
+      ...input,
+      writable: false,
+      parentExists: false,
+      directory: false,
+      reason: "Permission denied",
+    };
+  }
+  const state = virtualTextFileState(invocation);
+  const parent = sessionVirtualParent(path);
+  const writable = path.startsWith(`${VIRTUAL_TEMP_ROOT}/`);
+  const parentExists = parent !== undefined && state.directories.has(parent);
+  const directory = virtualDirectoryExists(invocation, path);
+  return {
+    ...input,
+    path,
+    writable,
+    parentExists,
+    directory,
+    reason: directory || !writable ? "Permission denied" : "No such file or directory",
+  };
+}
+
+function fileCreateWarningsFlag(value: RValue | undefined): boolean {
+  if (value === undefined) return true;
+  if (value.type === "null" || !isAtomic(value) || value.length === 0 || isMissing(value, 0)) {
+    return false;
+  }
+  if (value.type === "character") return parseRLogical(value.values[0] ?? "") ?? false;
+  if (value.type === "complex") {
+    const real = value.real[0] ?? Number.NaN;
+    const imaginary = value.imaginary[0] ?? Number.NaN;
+    return !Number.isNaN(real) && !Number.isNaN(imaginary) && (real !== 0 || imaginary !== 0);
+  }
+  const scalar = value.values[0];
+  return typeof scalar === "number" ? !Number.isNaN(scalar) && scalar !== 0 : scalar === true;
 }
 
 async function builtinFileRemove(invocation: BuiltinInvocation): Promise<RLogicalVector> {

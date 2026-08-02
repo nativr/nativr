@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.242.0",
+  "languageSubsetVersion": "0.243.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -151,6 +151,7 @@
         { "name": "isOpen", "compatibility": "behavioral" },
         { "name": "seek", "compatibility": "behavioral" },
         { "name": "file.exists", "compatibility": "shape" },
+        { "name": "file.create", "compatibility": "behavioral" },
         { "name": "file.remove", "compatibility": "behavioral" },
         { "name": "file.info", "compatibility": "behavioral" },
         { "name": "file.mode", "compatibility": "behavioral" },

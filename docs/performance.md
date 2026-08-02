@@ -673,3 +673,10 @@ adapter, generated-code path, or package-specific translation. Compressed/uncomp
 final document bytes remain subject to evaluator checkpoints and output limits. The measured Worker
 is 381.9 KiB gzip, so the ceiling rises narrowly from 377 KiB to 382 KiB; client and parser-Wasm
 budgets remain unchanged.
+
+Language subset 0.243 adds usage-ranked `base::file.create` as a thin mutation over the existing
+virtual path, directory, binary-file, metadata, and resource-accounting state. Validation and file
+count preflight allocate only bounded path/result arrays; successful files reuse the zero-byte
+binary writer. It adds no dependency, protocol event, filesystem/network adapter, generated-code
+path, or package-specific translation. The measured Worker is 382.3 KiB gzip, so the ceiling rises
+narrowly from 382 KiB to 383 KiB; client and parser-Wasm budgets remain unchanged.

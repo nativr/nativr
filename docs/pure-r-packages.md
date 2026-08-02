@@ -460,6 +460,12 @@ loader.
   delete closed mutable session files and returns one logical result per path; immutable package
   resources, open connections, directories, wildcard literals, and host paths remain unavailable and
   produce bounded warnings. This lets package cleanup code run without exposing a host filesystem.
+- `file.create()` supports withr's measured deferred-cleanup setup: package R code can create a
+  zero-byte tempfile, verify it, and schedule ordinary `unlink()` cleanup without translation.
+  Vectorized paths, existing-file truncation, later-argument coercion, exact `showWarnings`
+  matching, per-path results/warnings, Worker execution, and resource preflight share the ordinary
+  virtual filesystem. Parent directories must exist, and package/runtime resources plus host paths
+  remain read-only or unavailable.
 - Package `data/*.R` scripts execute through the same parser and normalized AST as package source;
   `.csv`, `.tab`, and `.txt` datasets load into owned data frames. XDR v2/v3 `.rda`/`.RData` and
   gzip wrappers use the independent bounded serialization decoder, and `R/sysdata.rda` enters the

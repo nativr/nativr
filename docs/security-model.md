@@ -133,5 +133,11 @@ resources, evaluate generated code, or expose DOM objects. Raster dimensions, jo
 compression work, and final bytes remain subject to evaluator limits; applications must still treat
 package-selected filenames and rendered document content as untrusted data when exporting it.
 
+`file.create()` grants no host-filesystem capability. It resolves relative and absolute virtual
+identifiers through the owned-path normalizer and mutates only descendants of the session-temp root;
+host, runtime, and package paths return bounded failures. Filename vectors are validated and file
+count limits are checked before mutation, preventing invalid later arguments or resource overflow
+from leaving a partially created batch.
+
 Dependencies are locked, build scripts are explicitly approved in `pnpm-workspace.yaml`, browser
 bundles are audited for Node built-ins/dynamic code, and CI includes CodeQL and Dependabot.
