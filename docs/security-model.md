@@ -127,5 +127,11 @@ Hosts must allow-list schemes and origins, validate redirect targets, bound resp
 and avoid forwarding secrets to package-selected destinations. The Playground adapter serves one
 embedded allow-listed fixture and performs no network request.
 
+PNG and PDF output is encoded from the bounded NativR graphics journal into the session-owned
+virtual file store. The encoders do not invoke native libraries, load fonts, read host files, fetch
+resources, evaluate generated code, or expose DOM objects. Raster dimensions, journal growth,
+compression work, and final bytes remain subject to evaluator limits; applications must still treat
+package-selected filenames and rendered document content as untrusted data when exporting it.
+
 Dependencies are locked, build scripts are explicitly approved in `pnpm-workspace.yaml`, browser
 bundles are audited for Node built-ins/dynamic code, and CI includes CodeQL and Dependabot.

@@ -235,6 +235,21 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("[137, 80, 78, 71, 13, 10, 26, 10, 64, 48, 1]");
 
+  await page.locator("#source").fill(`
+    path <- tempfile(fileext = ".pdf")
+    grDevices::pdf(
+      path, width = 2, height = 2,
+      compress = FALSE, timestamp = FALSE, producer = FALSE
+    )
+    graphics::plot.new()
+    graphics::segments(0, 0, 1, 1)
+    grDevices::dev.off()
+    bytes <- as.integer(readBin(path, "raw", n = 1000000L))
+    c(bytes[1:8], length(bytes) > 400L)
+  `);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("[37, 80, 68, 70, 45, 49, 46, 52, 1]");
+
   await page.locator("#source").fill('x <- setNames(seq(10, 20, by = 10), c("a", "b"))\nx[["b"]]');
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("20");

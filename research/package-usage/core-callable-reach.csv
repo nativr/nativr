@@ -279,7 +279,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 278,list2env,true,1,R6,1,1.0,1.7
 279,undebug,true,1,R6,1,1.0,1.7
 280,capabilities,true,2,htmltools|data.table,4,2.1,1.7
-281,pdf,false,2,knitr|data.table,2,2.1,1.7
+281,pdf,true,2,knitr|data.table,2,2.1,1.7
 282,exists,true,2,knitr|shiny,3,2.1,1.6
 283,RNGkind,true,1,withr,6,1.0,1.6
 284,sample.int,true,1,withr,2,1.0,1.6

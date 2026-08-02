@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 376 KiB gzip;
+- Worker JavaScript: 382 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -664,4 +664,12 @@ Language subset 0.241 adds usage-ranked `base::debug`/`undebug` plus `debugonce`
 through weak function-object registries and the existing evaluator call/readline paths. It adds no
 dependency, protocol event, DOM surface, generated-code path, or package-specific translation. The
 measured Worker is 376.7 KiB gzip, so the ceiling rises narrowly to 377 KiB; client and parser-Wasm
+budgets remain unchanged.
+
+Language subset 0.242 adds usage-ranked `grDevices::pdf` as a direct serializer over the existing
+bounded graphics journal and virtual byte store. The owned PDF object/xref builder and reuse of the
+PNG zlib helper add no dependency, DOM surface, native library, protocol event, filesystem/network
+adapter, generated-code path, or package-specific translation. Compressed/uncompressed content and
+final document bytes remain subject to evaluator checkpoints and output limits. The measured Worker
+is 381.9 KiB gzip, so the ceiling rises narrowly from 377 KiB to 382 KiB; client and parser-Wasm
 budgets remain unchanged.

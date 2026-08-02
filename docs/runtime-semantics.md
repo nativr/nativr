@@ -656,7 +656,7 @@ active device return zero. The runtime and base packages contain no DOM or Canva
 Worker transfers commands to the public API and the Playground owns the reference Canvas renderer.
 
 `dev.cur()` and `dev.list()` expose a numbered registry containing the browser display and any open
-PNG file devices, while retaining GNU R's named null-device value 1 when no device is active.
+PNG or PDF file devices, while retaining GNU R's named null-device value 1 when no device is active.
 `dev.off(which = dev.cur())` can close the current or a selected registered device, flushes held
 commands before removal, renders a pending PNG page when applicable, selects a remaining device, and
 returns that new current device. Unsupported device numbers remain harmless no-ops, while closing
@@ -675,6 +675,17 @@ fallback otherwise. Page transitions and close write bounded PNG bytes to the se
 `%d`/zero-padded numbered filenames for multiple pages. Raw `readBin()` can retrieve those bytes.
 Exact GNU R font metrics, anti-aliasing modes, device color profiles, every `png()` backend/control,
 typed `readBin()` decoding, and cross-device pixel identity remain incomplete.
+
+`grDevices::pdf()` opens the same owned registry with GNU R 4.6-shaped formals and an invisible
+`NULL` result. `file = NULL` records graphics without creating a path; otherwise the virtual target
+exists empty until a page transition or close. One-file mode accumulates pages into one PDF, while
+`onefile = FALSE` expands `%d` patterns into independent page files. The DOM-free encoder writes a
+PDF header, page tree, base-14 Helvetica/Times/Courier resources, content streams, alpha states,
+metadata, cross-reference table, trailer, and EOF marker. Compression uses browser
+`CompressionStream("deflate")` when available and the existing standards-compliant stored-DEFLATE
+fallback otherwise. Page and output bytes remain under normal evaluator limits. Custom font maps,
+non-single-byte encodings, font embedding, exact kerning/glyph metrics, dingbat substitution,
+color-profile management, and GNU R byte-identical output remain explicit boundaries.
 
 `graphics::persp()` dispatches classed first arguments before its owned matrix default. The default
 requires increasing finite x/y coordinates and a two-dimensional real z grid, derives missing grids

@@ -438,6 +438,10 @@ Date: 2026-08-02
   persistent and one-shot marks, invisible returns and warnings, string lookup, ordinary and package
   closures, primitive functions, non-interactive tracing, and Worker-safe
   `next`/`continue`/`finish`/`Q` commands through the explicit readline host capability.
+- Usage-ranked `grDevices::pdf` for knitr's recording-only and data.table's file-backed calls:
+  invisible device opening, `pdf(NULL)` plus `recordPlot`, valid browser-native PDF object/xref
+  structure, base-14 fonts, metadata, alpha graphics states, optional Flate compression, one-file
+  multi-page and numbered single-page output, virtual-file lifecycle, raw reads, and Worker proof.
 - Usage-ranked `grDevices::gray`/`grey` and `gray.colors`/`grey.colors` with zoo's two measured
   calls, byte-exact RGB(A) output, documented gamma correction, alpha recycling, reversal,
   descending endpoints, alias behavior, atomic gray-level coercion, attribute removal, and bounded
@@ -714,11 +718,11 @@ Date: 2026-08-02
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 12 files and 427 tests, with three explicitly skipped tests.
+- Vitest currently passes 12 files and 429 tests, with three explicitly skipped tests.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 778/778 cases. The optional black-box R oracle passes all 741
-  eligible cases and explicitly skips 37 NativR-owned
+- Checked-in conformance passes 783/783 cases. The optional black-box R oracle passes all 744
+  eligible cases and explicitly skips 39 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,
   expanded matrix, weighted sampling, S3, and R6 paths with no evaluation-time network requests.

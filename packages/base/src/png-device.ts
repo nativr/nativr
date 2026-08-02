@@ -695,7 +695,7 @@ async function encodePng(width: number, height: number, rgba: Uint8Array): Promi
   ]);
 }
 
-async function deflateZlib(source: Uint8Array): Promise<Uint8Array> {
+export async function deflateZlib(source: Uint8Array): Promise<Uint8Array> {
   type Reader = { read(): Promise<{ readonly done: boolean; readonly value?: Uint8Array }> };
   type Compression = {
     readonly readable: { getReader(): Reader };

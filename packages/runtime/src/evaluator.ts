@@ -380,6 +380,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "nclass.FD",
       "nclass.Sturges",
       "nclass.scott",
+      "pdf",
       "png",
       "recordPlot",
       "rainbow",

@@ -191,10 +191,11 @@ depth. Rank 256 `base::file.remove` is now complete for xfun and data.table's fo
 calls. Rank 259 `base::readChar` now runs digest and Shiny's two measured fixed-width file reads;
 rank 277 `base::debug` and rank 279 `base::undebug` now run R6's measured method-instrumentation
 calls through shared function-object state and the existing Worker readline seam. The next measured
-unresolved callable is rank 281 `grDevices::pdf`. Rank 144 `Encoding` is also complete for all 12
-observed calls across rlang, utf8, and xfun (4.5% weighted reach), together with adjacent
-`Encoding<-`, `enc2utf8`, and `enc2native`. The shared character representation preserves exact
-bytes and canonical R marks through subset/replacement, concatenation, raw conversion, and XDR
+rank 281 `grDevices::pdf` now covers knitr's recording device and data.table's file-backed plot. The
+next measured unresolved callable is rank 287 `base::file.create`. Rank 144 `Encoding` is also
+complete for all 12 observed calls across rlang, utf8, and xfun (4.5% weighted reach), together with
+adjacent `Encoding<-`, `enc2utf8`, and `enc2native`. The shared character representation preserves
+exact bytes and canonical R marks through subset/replacement, concatenation, raw conversion, and XDR
 serialization; this is reusable package infrastructure, not an assertion that those packages' native
 components are supported. Rank 149 `rcauchy` is now complete for four calls across ggplot2, pillar,
 and purrr (4.2% weighted reach), together with `dcauchy`, `pcauchy`, and `qcauchy`. The shared
@@ -1595,6 +1596,13 @@ ties:
      NUL/UTF-8 boundaries, exact formals, pure-R namespace execution, default Worker transport, and
      resource limits. Host files, native locale codecs, streaming stdin, and the adjacent
      `writeChar` surface remain compatibility depth.
+154. Browser-native PDF device: rank-281 `grDevices::pdf` represents two measured calls across knitr
+     and data.table at 1.7% download-weighted reach. `pdf(NULL)` supplies the recording-only
+     lifecycle needed by `recordPlot()`, while file-backed devices write valid bounded PDF object
+     graphs with multi-page/numbered output, base-14 fonts, metadata, alpha states, optional Flate
+     compression, raw reads, exact formals and visibility, and default Worker execution. Embedded
+     fonts, arbitrary encoding maps, exact metrics/kerning, full device controls, and byte identity
+     with GNU R remain compatibility depth.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

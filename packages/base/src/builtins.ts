@@ -151,6 +151,7 @@ import {
 } from "./student-t.js";
 import { WEIGHTED_MEAN_BUILTIN_SPECS } from "./weighted-mean.js";
 import { renderGraphicsPng } from "./png-device.js";
+import { renderGraphicsPdf } from "./pdf-device.js";
 
 const SYNTHETIC_SPAN: SourceSpan = Object.freeze({
   start: Object.freeze({ offset: 0, line: 1, column: 1 }),
@@ -1874,6 +1875,41 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   withBuiltinFormals(
     definePackageBuiltin(
       "grDevices",
+      "pdf",
+      [
+        "file",
+        "width",
+        "height",
+        "onefile",
+        "family",
+        "title",
+        "fonts",
+        "version",
+        "paper",
+        "encoding",
+        "bg",
+        "fg",
+        "pointsize",
+        "pagecentre",
+        "colormodel",
+        "useDingbats",
+        "useKerning",
+        "fillOddEven",
+        "compress",
+        "timestamp",
+        "producer",
+        "author",
+      ],
+      "behavioral",
+      builtinPdf,
+      "invisible",
+      "regular",
+    ),
+    pdfFormals(),
+  ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "grDevices",
       "png",
       [
         "filename",
@@ -3177,9 +3213,33 @@ interface VirtualGzipConnection {
 
 interface GraphicsState {
   readonly number: number;
-  readonly name: "NativR" | "png";
-  readonly kind: "browser" | "png";
+  readonly name: "NativR" | "pdf" | "png";
+  readonly kind: "browser" | "pdf" | "png";
   readonly parameters: GraphicsParametersState;
+  readonly pdf?: {
+    readonly filenamePattern: string | null;
+    readonly onefile: boolean;
+    readonly pageWidth: number;
+    readonly pageHeight: number;
+    readonly region: {
+      readonly x: number;
+      readonly y: number;
+      readonly width: number;
+      readonly height: number;
+    };
+    readonly background: string;
+    readonly pointsize: number;
+    readonly family: "sans" | "serif" | "mono";
+    readonly title: string;
+    readonly author: string;
+    readonly version: string;
+    readonly colorModel: "srgb" | "gray" | "cmyk";
+    readonly compress: boolean;
+    readonly timestamp: boolean;
+    readonly producer: boolean;
+    readonly pages: RGraphicsEvent[][];
+    page: number;
+  };
   readonly png?: {
     readonly filenamePattern: string;
     readonly width: number;
@@ -3302,6 +3362,44 @@ function debugFunctionFormals(): readonly {
     { name: "text", defaultValue: { kind: "StringLiteral", value: "", span: SYNTHETIC_SPAN } },
     { name: "condition", defaultValue: nullAst() },
     { name: "signature", defaultValue: nullAst() },
+  ];
+}
+
+function pdfFormals(): readonly { readonly name: string; readonly defaultValue?: AstNode }[] {
+  return [
+    {
+      name: "file",
+      defaultValue: {
+        kind: "IfExpression",
+        condition: { kind: "Identifier", name: "onefile", span: SYNTHETIC_SPAN },
+        consequence: { kind: "StringLiteral", value: "Rplots.pdf", span: SYNTHETIC_SPAN },
+        alternative: { kind: "StringLiteral", value: "Rplot%03d.pdf", span: SYNTHETIC_SPAN },
+        span: SYNTHETIC_SPAN,
+      },
+    },
+    ...[
+      "width",
+      "height",
+      "onefile",
+      "family",
+      "title",
+      "fonts",
+      "version",
+      "paper",
+      "encoding",
+      "bg",
+      "fg",
+      "pointsize",
+      "pagecentre",
+      "colormodel",
+      "useDingbats",
+      "useKerning",
+      "fillOddEven",
+      "compress",
+      "timestamp",
+      "producer",
+      "author",
+    ].map((name) => ({ name })),
   ];
 }
 
@@ -25401,6 +25499,8 @@ async function beginGraphicsPage(invocation: BuiltinInvocation): Promise<Graphic
       pngPageFilename(png.filenamePattern, png.page),
       new Uint8Array(),
     );
+  } else if (state.kind === "pdf" && state.displayList.some((event) => event.kind === "new-page")) {
+    await finalizePdfPage(invocation, state, false);
   }
   state.xlim = [0, 1];
   state.ylim = [0, 1];
@@ -29485,6 +29585,273 @@ function legendTopLeft(
   return [horizontal, vertical];
 }
 
+async function builtinPdf(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, [
+    "file",
+    "width",
+    "height",
+    "onefile",
+    "family",
+    "title",
+    "fonts",
+    "version",
+    "paper",
+    "encoding",
+    "bg",
+    "fg",
+    "pointsize",
+    "pagecentre",
+    "colormodel",
+    "useDingbats",
+    "useKerning",
+    "fillOddEven",
+    "compress",
+    "timestamp",
+    "producer",
+    "author",
+  ]);
+  const onefile = logicalFlag(matched.get("onefile"), true, "onefile");
+  const filename = pdfFilename(matched.get("file"), onefile);
+  const width = pdfDimension(matched.get("width"), 7, "width");
+  const height = pdfDimension(matched.get("height"), 7, "height");
+  const family = pngCharacter(matched.get("family"), "Helvetica", "family");
+  const title = pngCharacter(matched.get("title"), "R Graphics Output", "title");
+  const author = pngCharacter(matched.get("author"), "", "author");
+  const versionSource = pngCharacter(matched.get("version"), "1.4", "version");
+  const version = pdfVersion(versionSource, invocation);
+  const paper = pdfPaper(pngCharacter(matched.get("paper"), "special", "paper"));
+  const encoding = pngCharacter(matched.get("encoding"), "default", "encoding");
+  if (!["default", "ISOLatin1.enc", "WinAnsi.enc"].includes(encoding)) {
+    throw new RUnsupportedFeatureError(
+      "NRU6206",
+      `pdf(encoding = '${encoding}') is outside the current single-byte encoding subset.`,
+    );
+  }
+  const backgroundSource = pngCharacter(matched.get("bg"), "transparent", "bg");
+  const foregroundSource = pngCharacter(matched.get("fg"), "black", "fg");
+  const background = parseRColour(backgroundSource);
+  const foreground = parseRColour(foregroundSource);
+  if (background === undefined || foreground === undefined) {
+    throw new RTypeMismatchError("NRT3401", "invalid PDF device color");
+  }
+  const pointsize = pngPositiveNumber(matched.get("pointsize"), 12, "pointsize");
+  const pagecentre = logicalFlag(matched.get("pagecentre"), true, "pagecentre");
+  const colorModelSource = pdfChoice(
+    matched.get("colormodel"),
+    "srgb",
+    ["srgb", "gray", "grey", "cmyk"],
+    "colormodel",
+  );
+  const colorModel: "srgb" | "gray" | "cmyk" =
+    colorModelSource === "cmyk" ? "cmyk" : colorModelSource === "srgb" ? "srgb" : "gray";
+  logicalFlag(matched.get("useDingbats"), false, "useDingbats");
+  logicalFlag(matched.get("useKerning"), true, "useKerning");
+  logicalFlag(matched.get("fillOddEven"), false, "fillOddEven");
+  const compress = logicalFlag(matched.get("compress"), true, "compress");
+  const timestamp = logicalFlag(matched.get("timestamp"), true, "timestamp");
+  const producer = logicalFlag(matched.get("producer"), true, "producer");
+  const fonts = matched.get("fonts");
+  if (fonts !== undefined && fonts.type !== "null" && fonts.type !== "character") {
+    throw new RTypeMismatchError("NRT3401", "invalid 'fonts' argument");
+  }
+  if (fonts?.type === "character" && fonts.values.length > 0) {
+    throw new RUnsupportedFeatureError(
+      "NRU6206",
+      "pdf(fonts = ...) requires a PDF font mapping outside the current base-14 subset.",
+    );
+  }
+  if (!pdfFontFamilySupported(family)) {
+    throw new RUnsupportedFeatureError(
+      "NRU6206",
+      `pdf(family = '${family}') requires a PDF font mapping outside the current base-14 subset.`,
+    );
+  }
+
+  const geometry = pdfGeometry(width, height, paper, pagecentre);
+  const resolvedPattern =
+    filename === null ? null : requireVirtualTextPath(invocation, filename, "pdf");
+  const registry = graphicsRegistry(invocation);
+  const number = nextGraphicsDeviceNumber(registry);
+  const parameters = defaultGraphicsParameters();
+  parameters.set("ps", integerVector([Math.round(pointsize)]));
+  parameters.set("family", characterVector([pdfGraphicsFamily(family)]));
+  parameters.set("bg", characterVector([backgroundSource]));
+  parameters.set("fg", characterVector([foregroundSource]));
+  parameters.set("col", characterVector([foregroundSource]));
+  const state: GraphicsState = {
+    number,
+    name: "pdf",
+    kind: "pdf",
+    parameters,
+    pdf: {
+      filenamePattern: resolvedPattern,
+      onefile,
+      pageWidth: geometry.pageWidth * 72,
+      pageHeight: geometry.pageHeight * 72,
+      region: {
+        x: geometry.regionX * 72,
+        y: geometry.regionY * 72,
+        width: geometry.regionWidth * 72,
+        height: geometry.regionHeight * 72,
+      },
+      background: graphicsCssColour(background),
+      pointsize,
+      family: pdfGraphicsFamily(family),
+      title,
+      author,
+      version,
+      colorModel,
+      compress,
+      timestamp,
+      producer,
+      pages: [],
+      page: 1,
+    },
+    active: true,
+    xlim: [0, 1],
+    ylim: [0, 1],
+    holdLevel: 0,
+    pending: [],
+    pendingBytes: 0,
+    displayList: [],
+    displayListBytes: 0,
+  };
+  registry.devices.set(number, state);
+  registry.current = number;
+  invocation.state.set(GRAPHICS_PARAMETERS_STATE_KEY, parameters);
+  if (resolvedPattern !== null) {
+    writeVirtualBinaryFile(
+      invocation,
+      onefile ? resolvedPattern : pngPageFilename(resolvedPattern, 1),
+      new Uint8Array(),
+    );
+  }
+  return R_NULL;
+}
+
+function pdfFilename(value: RValue | undefined, onefile: boolean): string | null {
+  if (value === undefined) return onefile ? "Rplots.pdf" : "Rplot%03d.pdf";
+  if (value.type === "null") return null;
+  if (value.type !== "character" || value.length === 0 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3401", "invalid 'file' argument");
+  }
+  const filename = value.values[0] ?? "";
+  if (filename === "") throw new RTypeMismatchError("NRT3401", "invalid 'file' argument");
+  return filename;
+}
+
+function pdfDimension(value: RValue | undefined, fallback: number, name: string): number {
+  if (value === undefined) return fallback;
+  if (
+    !isAtomic(value) ||
+    value.type === "character" ||
+    value.type === "complex" ||
+    value.length === 0 ||
+    isMissing(value, 0)
+  ) {
+    throw new RTypeMismatchError("NRT3401", `invalid '${name}' argument`);
+  }
+  const number = value.values[0] ?? Number.NaN;
+  if (!Number.isFinite(number) || number < 0) {
+    throw new RTypeMismatchError("NRT3401", `invalid '${name}' argument`);
+  }
+  return number;
+}
+
+function pdfChoice(
+  value: RValue | undefined,
+  fallback: string,
+  choices: readonly string[],
+  name: string,
+): string {
+  const source = pngCharacter(value, fallback, name);
+  const normalized = source.toLowerCase();
+  if (choices.includes(normalized)) return normalized;
+  const partial = choices.filter((choice) => choice.startsWith(normalized));
+  if (partial.length === 1) return partial[0] ?? normalized;
+  throw new RTypeMismatchError("NRT3401", `invalid '${name}' argument`);
+}
+
+function pdfVersion(value: string, invocation: BuiltinInvocation): string {
+  if (!/^(?:1\.[2-7]|2\.0)$/u.test(value)) {
+    throw new RTypeMismatchError("NRT3401", "invalid PDF version");
+  }
+  if (Number.parseFloat(value) < 1.4) {
+    invocation.context.warn({ code: "NRW1135", message: "increasing the PDF version to 1.4" });
+    return "1.4";
+  }
+  return value;
+}
+
+type PdfPaper = "special" | "a4" | "letter" | "legal" | "executive" | "a4r" | "usr";
+
+function pdfPaper(value: string): PdfPaper {
+  const normalized = value.toLowerCase();
+  if (normalized === "default") return "a4";
+  if (normalized === "us") return "letter";
+  if (["special", "a4", "letter", "legal", "executive", "a4r", "usr"].includes(normalized)) {
+    return normalized as PdfPaper;
+  }
+  throw new RTypeMismatchError("NRT3401", "invalid 'paper' argument");
+}
+
+function pdfGeometry(
+  width: number,
+  height: number,
+  paper: PdfPaper,
+  centred: boolean,
+): {
+  readonly pageWidth: number;
+  readonly pageHeight: number;
+  readonly regionX: number;
+  readonly regionY: number;
+  readonly regionWidth: number;
+  readonly regionHeight: number;
+} {
+  const sizes: Record<Exclude<PdfPaper, "special">, readonly [number, number]> = {
+    a4: [8.2677165354, 11.692913386],
+    letter: [8.5, 11],
+    legal: [8.5, 14],
+    executive: [7.25, 10.5],
+    a4r: [11.692913386, 8.2677165354],
+    usr: [11, 8.5],
+  };
+  if (paper === "special") {
+    if (width < 0.1 || height < 0.1) {
+      throw new RTypeMismatchError("NRT3401", "invalid 'width' or 'height'");
+    }
+    return {
+      pageWidth: width,
+      pageHeight: height,
+      regionX: 0,
+      regionY: 0,
+      regionWidth: width,
+      regionHeight: height,
+    };
+  }
+  const [pageWidth, pageHeight] = sizes[paper];
+  const regionWidth = width < 0.1 || width > pageWidth - 0.5 ? pageWidth - 0.5 : width;
+  const regionHeight = height < 0.1 || height > pageHeight - 0.5 ? pageHeight - 0.5 : height;
+  return {
+    pageWidth,
+    pageHeight,
+    regionX: centred ? (pageWidth - regionWidth) / 2 : 0,
+    regionY: centred ? (pageHeight - regionHeight) / 2 : 0,
+    regionWidth,
+    regionHeight,
+  };
+}
+
+function pdfFontFamilySupported(value: string): boolean {
+  return ["Helvetica", "sans", "Times", "serif", "Courier", "mono"].includes(value);
+}
+
+function pdfGraphicsFamily(value: string): "sans" | "serif" | "mono" {
+  if (value === "Times" || value === "serif") return "serif";
+  if (value === "Courier" || value === "mono") return "mono";
+  return "sans";
+}
+
 async function builtinPng(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, [
     "filename",
@@ -29771,6 +30138,8 @@ async function closeGraphicsDevice(
   if (state.pending.length > 0) flushGraphics(invocation, state);
   if (state.kind === "png" && state.displayList.some((event) => event.kind === "new-page")) {
     await renderPngPage(invocation, state);
+  } else if (state.kind === "pdf") {
+    await finalizePdfPage(invocation, state, true);
   }
   const registry = graphicsRegistry(invocation);
   registry.devices.delete(state.number);
@@ -29787,6 +30156,80 @@ async function closeGraphicsDevice(
       invocation.state.set(GRAPHICS_PARAMETERS_STATE_KEY, current.parameters);
     }
   }
+}
+
+async function finalizePdfPage(
+  invocation: BuiltinInvocation,
+  state: GraphicsState,
+  closing: boolean,
+): Promise<void> {
+  const pdf = state.pdf;
+  if (state.kind !== "pdf" || pdf === undefined) {
+    throw new Error("Internal PDF device invariant failed.");
+  }
+  const events = state.displayList.some((event) => event.kind === "new-page")
+    ? [...state.displayList]
+    : ([{ kind: "new-page" }] satisfies RGraphicsEvent[]);
+  if (pdf.onefile) {
+    pdf.pages.push(events);
+    if (closing && pdf.filenamePattern !== null) {
+      await writePdfDocument(invocation, state, pdf.filenamePattern, pdf.pages);
+    }
+  } else if (pdf.filenamePattern !== null) {
+    await writePdfDocument(invocation, state, pngPageFilename(pdf.filenamePattern, pdf.page), [
+      events,
+    ]);
+  }
+  state.displayList = [];
+  state.displayListBytes = 0;
+  if (!closing) {
+    pdf.page += 1;
+    if (!pdf.onefile && pdf.filenamePattern !== null) {
+      writeVirtualBinaryFile(
+        invocation,
+        pngPageFilename(pdf.filenamePattern, pdf.page),
+        new Uint8Array(),
+      );
+    }
+  }
+}
+
+async function writePdfDocument(
+  invocation: BuiltinInvocation,
+  state: GraphicsState,
+  filename: string,
+  pages: readonly (readonly RGraphicsEvent[])[],
+): Promise<void> {
+  const pdf = state.pdf;
+  if (state.kind !== "pdf" || pdf === undefined) {
+    throw new Error("Internal PDF device invariant failed.");
+  }
+  const bytes = await renderGraphicsPdf({
+    pageWidth: pdf.pageWidth,
+    pageHeight: pdf.pageHeight,
+    region: pdf.region,
+    background: pdf.background,
+    pointsize: pdf.pointsize,
+    family: pdf.family,
+    title: pdf.title,
+    author: pdf.author,
+    version: pdf.version,
+    colorModel: pdf.colorModel,
+    compress: pdf.compress,
+    timestamp: pdf.timestamp,
+    producer: pdf.producer,
+    pages,
+    checkpoint: () => invocation.context.checkpoint(),
+  });
+  if (bytes.byteLength > invocation.context.limits.maxOutputBytes) {
+    throw new RResourceLimitError("NRL4007", "PDF file size limit exceeded.", {
+      details: {
+        maxOutputBytes: invocation.context.limits.maxOutputBytes,
+        outputBytes: bytes.byteLength,
+      },
+    });
+  }
+  writeVirtualBinaryFile(invocation, filename, bytes);
 }
 
 async function renderPngPage(invocation: BuiltinInvocation, state: GraphicsState): Promise<void> {

@@ -8821,5 +8821,50 @@
     "rOracle": false,
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "pdf-null-recording-device-visibility-lifecycle-and-formals",
+    "code": "opened <- withVisible(grDevices::pdf(NULL))\ngraphics::plot.new()\ngraphics::plot.window(c(0, 1), c(0, 1))\ngraphics::segments(0, 0, 1, 1)\nrecorded <- grDevices::recordPlot()\nclosed <- withVisible(grDevices::dev.off())\nc(is.null(opened$value), opened$visible, typeof(recorded), mode(recorded), class(recorded), unname(closed$value), closed$visible, names(formals(grDevices::pdf)))",
+    "expected": [
+      "TRUE",
+      "FALSE",
+      "list",
+      "list",
+      "recordedplot",
+      "1",
+      "TRUE",
+      "file",
+      "width",
+      "height",
+      "onefile",
+      "family",
+      "title",
+      "fonts",
+      "version",
+      "paper",
+      "encoding",
+      "bg",
+      "fg",
+      "pointsize",
+      "pagecentre",
+      "colormodel",
+      "useDingbats",
+      "useKerning",
+      "fillOddEven",
+      "compress",
+      "timestamp",
+      "producer",
+      "author"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "pdf-browser-owned-multipage-file-structure",
+    "code": "path <- tempfile(fileext = \".pdf\")\nopened <- withVisible(grDevices::pdf(path, width = 3, height = 2, compress = FALSE, timestamp = FALSE, producer = FALSE, title = \"NativR PDF\"))\nbefore <- c(file.exists(path), length(readBin(path, \"raw\", n = 8L)))\ngraphics::plot.new()\ngraphics::segments(0, 0, 1, 1)\ngraphics::plot.new()\ngraphics::points(0.5, 0.5, pch = 19)\nclosed <- withVisible(grDevices::dev.off())\nbytes <- as.integer(readBin(path, \"raw\", n = 1000000L))\nc(is.null(opened$value), opened$visible, before, unname(closed$value), closed$visible, identical(bytes[1:8], c(37L, 80L, 68L, 70L, 45L, 49L, 46L, 52L)), length(bytes) > 400L)",
+    "expected": [1, 0, 1, 0, 1, 1, 1, 1],
+    "rOracle": false,
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

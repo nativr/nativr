@@ -10524,7 +10524,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.241.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.242.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -14169,6 +14169,158 @@ describe("complete inline source-to-result vertical slice", () => {
       code: "NRT3400",
     });
     await runtime.dispose();
+  });
+
+  it("writes browser-native PDF files and supports recording-only PDF devices", async () => {
+    const runtime = await session();
+    await expect(runtime.eval("names(formals(grDevices::pdf))")).resolves.toEqual([
+      "file",
+      "width",
+      "height",
+      "onefile",
+      "family",
+      "title",
+      "fonts",
+      "version",
+      "paper",
+      "encoding",
+      "bg",
+      "fg",
+      "pointsize",
+      "pagecentre",
+      "colormodel",
+      "useDingbats",
+      "useKerning",
+      "fillOddEven",
+      "compress",
+      "timestamp",
+      "producer",
+      "author",
+    ]);
+    await expect(
+      runtime.eval(`
+        opened <- withVisible(grDevices::pdf(NULL))
+        graphics::plot.new()
+        graphics::plot.window(c(0, 1), c(0, 1))
+        graphics::segments(0, 0, 1, 1)
+        recorded <- grDevices::recordPlot()
+        closed <- withVisible(grDevices::dev.off())
+        c(
+          is.null(opened$value), opened$visible,
+          typeof(recorded), mode(recorded), class(recorded),
+          unname(closed$value), closed$visible
+        )
+      `),
+    ).resolves.toEqual(["TRUE", "FALSE", "list", "list", "recordedplot", "1", "TRUE"]);
+
+    const opened = await runtime.eval(`
+      path <- tempfile(fileext = ".pdf")
+      visible <- withVisible(grDevices::pdf(
+        path, width = 3, height = 2, title = "NativR PDF",
+        author = "NativR", compress = FALSE, timestamp = FALSE, producer = FALSE
+      ))
+      c(
+        is.null(visible$value), visible$visible, file.exists(path),
+        length(readBin(path, "raw", n = 8L)),
+        unname(grDevices::dev.cur()), names(grDevices::dev.list())
+      )
+    `);
+    expect(opened).toEqual(["TRUE", "FALSE", "TRUE", "0", "2", "pdf"]);
+    await runtime.eval(`
+      graphics::plot.new()
+      graphics::plot.window(c(0, 2), c(0, 2))
+      graphics::segments(0, 0, 2, 2, col = "red", lwd = 2)
+      graphics::text(1, 1, "page one")
+      graphics::plot.new()
+      graphics::plot.window(c(0, 1), c(0, 1))
+      graphics::points(c(0.25, 0.75), c(0.75, 0.25), pch = 19)
+      closed <- withVisible(grDevices::dev.off())
+    `);
+    await expect(runtime.eval("c(unname(closed$value), closed$visible)")).resolves.toEqual([1, 1]);
+    const pdfValue = await runtime.eval('readBin(path, "raw", n = 1000000L)');
+    if (!isRaw(pdfValue)) throw new Error("Expected PDF bytes as a public raw value.");
+    const pdf = new TextDecoder("windows-1252").decode(pdfValue.bytes);
+    expect(pdf.startsWith("%PDF-1.4\n%NativR\n")).toBe(true);
+    expect(pdf).toContain("/MediaBox [0 0 216 144]");
+    expect(pdf).toContain("/Count 2");
+    expect(pdf).toContain("/Title (NativR PDF)");
+    expect(pdf).toContain("/Author (NativR)");
+    expect(pdf).not.toContain("/Producer");
+    expect(pdf).not.toContain("/CreationDate");
+    expect(pdf).toContain("page one");
+    expect(pdf).toContain("xref\n");
+    expect(pdf.endsWith("%%EOF\n")).toBe(true);
+
+    await runtime.eval(`
+      compressed.path <- tempfile(fileext = ".pdf")
+      grDevices::pdf(compressed.path, width = 2, height = 2)
+      graphics::plot.new()
+      graphics::text(0.5, 0.5, "compressed page")
+      grDevices::dev.off()
+    `);
+    const compressedValue = await runtime.eval('readBin(compressed.path, "raw", n = 1000000L)');
+    if (!isRaw(compressedValue)) throw new Error("Expected compressed PDF bytes.");
+    const findBytes = (needle: Uint8Array, start = 0): number => {
+      outer: for (
+        let index = start;
+        index <= compressedValue.bytes.length - needle.length;
+        index += 1
+      ) {
+        for (let offset = 0; offset < needle.length; offset += 1) {
+          if (compressedValue.bytes[index + offset] !== needle[offset]) continue outer;
+        }
+        return index;
+      }
+      return -1;
+    };
+    const streamMarker = new TextEncoder().encode("stream\n");
+    const endMarker = new TextEncoder().encode("\nendstream");
+    const streamStart = findBytes(streamMarker);
+    const streamEnd = findBytes(endMarker, streamStart + streamMarker.length);
+    expect(streamStart).toBeGreaterThan(0);
+    expect(streamEnd).toBeGreaterThan(streamStart);
+    const decompressed = new TextDecoder().decode(
+      new Uint8Array(
+        await new Response(
+          new Blob([compressedValue.bytes.slice(streamStart + streamMarker.length, streamEnd)])
+            .stream()
+            .pipeThrough(new DecompressionStream("deflate")),
+        ).arrayBuffer(),
+      ),
+    );
+    expect(decompressed).toContain("compressed page");
+
+    await expect(
+      runtime.eval(`
+        pages <- tempfile(fileext = "-%02d.pdf")
+        grDevices::pdf(pages, width = 2, height = 2, onefile = FALSE, compress = FALSE)
+        graphics::plot.new()
+        graphics::segments(0, 0, 1, 1)
+        graphics::plot.new()
+        graphics::segments(0, 1, 1, 0)
+        grDevices::dev.off()
+        first <- sub("%02d", "01", pages, fixed = TRUE)
+        second <- sub("%02d", "02", pages, fixed = TRUE)
+        c(
+          file.exists(first), file.exists(second),
+          as.integer(readBin(first, "raw", n = 8L)),
+          as.integer(readBin(second, "raw", n = 8L))
+        )
+      `),
+    ).resolves.toEqual([1, 1, 37, 80, 68, 70, 45, 49, 46, 52, 37, 80, 68, 70, 45, 49, 46, 52]);
+    await expect(
+      runtime.eval('grDevices::pdf(tempfile(), family = "Computer Modern")'),
+    ).rejects.toMatchObject({ code: "NRU6206" });
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxOutputBytes: 64 },
+    });
+    await limited.eval("grDevices::pdf(tempfile(), compress = FALSE)");
+    await expect(limited.eval("grDevices::dev.off()")).rejects.toMatchObject({ code: "NRL4007" });
+    await limited.dispose();
   });
 
   it("tracks exact per-string encoding marks and bytes across replacement and serialization", async () => {

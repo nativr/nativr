@@ -722,6 +722,13 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      lookup; inline/package/Worker evidence covers one-shot consumption and bounded
      next/continue/finish/Q prompts. Arbitrary browser expressions, nested stepping, `browser()`,
      global debugging state, and S4 signature tracing remain compatibility depth.
+154. Usage-ranked browser PDF: rank-281 `grDevices::pdf` runs knitr's `pdf(NULL)` record-plot setup
+     and data.table's file-backed plotting call over the shared owned graphics journal. GNU R 4.6
+     evidence covers formals, visibility, recording lifecycle and device closure; NativR-owned
+     evidence covers valid PDF headers/object graphs/xref/trailers, multi-page and numbered files,
+     standard fonts, metadata, compression, raw reads, resource bounds, and Worker execution.
+     Embedded fonts, arbitrary encodings, exact glyph metrics/kerning, full PDF controls, and
+     byte-identical output remain compatibility depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

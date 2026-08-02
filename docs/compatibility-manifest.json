@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.241.0",
+  "languageSubsetVersion": "0.242.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -650,6 +650,7 @@
         { "name": "rgb", "compatibility": "behavioral" },
         { "name": "colors", "compatibility": "behavioral" },
         { "name": "colours", "compatibility": "behavioral" },
+        { "name": "pdf", "compatibility": "behavioral" },
         { "name": "png", "compatibility": "behavioral" },
         { "name": "dev.hold", "compatibility": "behavioral" },
         { "name": "dev.flush", "compatibility": "behavioral" },

@@ -446,6 +446,11 @@ loader.
   rewriting those closures. Marks follow the shared function object, and `debugonce()` invocations
   can cross the default Worker through the explicit readline adapter. The present browser command
   subset does not yet include arbitrary expressions, nested stepping, `browser()`, or S4 signatures.
+- `pdf(NULL)` now supports knitr's measured record/replay setup, and file-backed `pdf()` supports
+  data.table's measured grouped-plot output without package-specific rewrites. Pure-R packages can
+  therefore call the ordinary `grDevices` API and reuse the same graphics journal as the browser,
+  PNG, and Worker paths. Custom/embedded fonts, broad encoding tables, device-exact metrics, and
+  package code that depends on unsupported graphics primitives remain explicit compatibility gates.
 - Package resources and their parent directories can be enumerated with `list.files()`/`list.dirs()`
   or selected with `setwd()`. Relative `readLines()`, table-reader, and connection paths then
   resolve inside that immutable package root. `R.home()` and the runtime/package/session directory

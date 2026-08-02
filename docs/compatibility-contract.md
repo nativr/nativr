@@ -250,16 +250,21 @@ remain available in `evalDetailed.graphics`, and count toward the configured out
 and Worker callbacks receive the same command shapes, and the Playground renders them to Canvas.
 Evidence covers the measured systemfonts glyph-raster, httr PNG-array, posterior interval-segment,
 zoo filled-area, zoo plot-frame, zoo grouped-boxplot, and zoo legend patterns. The owned registry
-also supports `dev.cur`/`dev.list`, GNU R-shaped null device 1, simultaneous browser/PNG device
+also supports `dev.cur`/`dev.list`, GNU R-shaped null device 1, simultaneous browser/PNG/PDF device
 identities, selected `dev.off`/`graphics.off` closure, nested `dev.hold`/`dev.flush` levels,
 per-device `par()` isolation and restoration, ordered cross-evaluation command buffering, and
 bounded same-session `recordPlot`/`replayPlot` over its own
-page/window/raster/segments/points/text/polygon/box/boxplot/ legend display list. `grDevices::png`
+page/window/raster/segments/points/text/polygon/box/boxplot/legend display list. `grDevices::png`
 uses that list to produce bounded, decompressible RGBA PNG bytes in the virtual file store,
 including transparent backgrounds, exact requested dimensions, raw-byte reads, and numbered
-multi-page targets. Closing flushes held commands and completes the current PNG page. Complete plot
-methods, non-PNG devices, complete clipping/margins, graphical parameters beyond the documented
-controls, external display-list formats, and pixel equivalence across GNU R devices are not claimed.
+multi-page targets. Usage-ranked `grDevices::pdf` uses the same device journal to produce a bounded,
+self-contained PDF with a valid object graph, cross-reference table, metadata, standard base-14 font
+families, alpha graphics states, optional Flate compression, multi-page `onefile` output, and
+numbered single-page targets. `pdf(NULL)` retains the display list for knitr-style `recordPlot()`
+without creating a file. Closing flushes held commands and completes the active file device.
+Complete plot methods, embedded/custom fonts, arbitrary encodings, device-exact text metrics,
+complete clipping/margins and graphical parameters, external display-list formats, and pixel or byte
+equivalence with GNU R devices are not claimed.
 
 `image` has shape-level differential evidence for the rank-163 calls sampled from `scales`,
 `viridisLite`, and `RColorBrewer`. Its S3 generic preserves package-defined methods. The default

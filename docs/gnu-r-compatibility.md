@@ -807,8 +807,18 @@ reported by `isdebugged` or removed by `undebug`. NativR-only inline, source-onl
 Worker evidence covers invocation, one-shot consumption, non-interactive tracing, and bounded
 next/continue/finish/Q prompts through the existing readline bridge. Arbitrary Browse expressions,
 nested stepping, `browser()`, global debugging state, and S4 signature tracing remain compatibility
-depth. The next measured unresolved callable is rank 281 `grDevices::pdf`; rank 287
-`base::file.create` is the next unresolved browser-owned filesystem callable.
+depth.
+
+The browser-PDF increment raises current name overlap to 616 of 2,522. Rank 281 `grDevices::pdf`
+covers knitr's recording-only device and data.table's file-backed plot at 1.7% download-weighted
+reach. GNU R 4.6 differential evidence covers all 22 formal names, invisible opening, `pdf(NULL)`,
+`recordPlot()` shape, and device closure. NativR-only inline and Worker evidence validates immediate
+empty targets, valid PDF headers, page trees, content streams, cross-reference/trailer/EOF
+structure, metadata controls, standard font resources, compressed and uncompressed content, one-file
+multi-page output, numbered page files, raw reads, and output limits. Custom/embedded fonts,
+arbitrary encoding maps, exact glyph metrics and kerning, complete PDF controls, and byte-identical
+output remain compatibility depth. Rank 287 `base::file.create` is now the next unresolved
+browser-owned filesystem callable.
 
 ## Completion evidence
 

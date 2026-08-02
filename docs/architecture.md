@@ -76,7 +76,9 @@ disposing the evaluator drops that private journal. A second bounded, session-ow
 records emitted page/window/raster/segments/points/text/polygon/box/boxplot/legend commands.
 `recordPlot` snapshots that list into NativR-owned runtime values, and `replayPlot` decodes only
 that format back through the same graphics journal; neither operation serializes a host device nor
-depends on GNU R's private recorded-plot representation. Coordinate and style recycling for
+depends on GNU R's private recorded-plot representation. The PNG rasterizer and PDF serializer are
+independent consumers of that same journal: they write only bounded session-owned bytes and add no
+DOM, host-filesystem, network, GNU R, or webR dependency. Coordinate and style recycling for
 `graphics::segments` is resolved inside `@nativr/base`; the runtime and protocol see only finite
 endpoints, canonical colors, line-widths, and line-type patterns. `graphics::points` resolves
 coordinate containers, symbol codes, literal characters, colors, fills, sizes, widths, and omission
