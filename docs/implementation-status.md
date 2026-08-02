@@ -149,6 +149,12 @@ Date: 2026-08-02
   copied bounded responses, lazy one-request connection state, and downstream `readLines()`, raw
   `readBin()`, `source()`, table/serialization, and `gzcon()` reuse. The default runtime remains
   network-free; origin, redirect, credential, timeout, and cache policy belongs to the host.
+- Usage-ranked `utils::download.file()` composes that explicit byte adapter with session-owned
+  files. GNU R 4.6 formals, preflight validation, invisible statuses, paired-vector `retvals`, exact
+  replacement bytes, named headers, pure-R namespace calls, failure atomicity, default-deny inline
+  behavior, and Worker/Playground execution have evidence. Host paths, ambient fetch, append modes,
+  progress, redirects, caching, and platform downloader processes remain outside the browser
+  contract.
 - Usage-ranked `gc()` traverses the reachable NativR value graph into GNU R's named 2-by-6
   `Ncells`/`Vcells` report, maintains resettable session high-water values and full/partial census
   counts, emits bounded verbose messages, and shares its collection seam with
@@ -736,7 +742,7 @@ Date: 2026-08-02
 - Vitest currently passes 13 files and 434 tests, with three explicitly skipped tests.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 791/791 cases. The optional black-box R oracle passes all 752
+- Checked-in conformance passes 793/793 cases. The optional black-box R oracle passes all 754
   eligible cases and explicitly skips 39 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,

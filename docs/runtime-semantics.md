@@ -1491,3 +1491,13 @@ request. Existing owned session/package files become a canonical path, MIME type
 other locations remain URL strings. Simple relative paths use URL percent encoding when requested.
 Desktop process selection, host files, automatic navigation, fetching, and platform-specific browser
 diagnostics are outside this browser contract.
+
+`utils::download.file(url, destfile, ...)` accepts one or more paired character URLs and
+destinations, validates logical controls and named headers, and supports replacement `w`/`wb` modes.
+A successful scalar call returns invisible `0L`; a vector call attaches the per-request integer
+`retvals` vector. `method = "auto"` normalizes to the explicit URL adapter's `default` method. Every
+destination must resolve below the mutable browser-session temp root and every parent must exist
+before the first request is issued. Each complete copied `Uint8Array` replaces its target atomically
+through the shared byte-store accounting. There is no ambient transport, host path, partial response
+stream, progress display, append mode, or cache implementation; those policies and effects remain
+with the application callback.

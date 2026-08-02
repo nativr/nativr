@@ -182,6 +182,11 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await expect(page.locator("#result")).toHaveText('["worker-url", "package-connection"]');
   expect(evaluationRequests).toEqual([]);
 
+  await page.getByRole("button", { name: "Pure-R package download" }).click();
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText('["0", "worker-url", "package-connection"]');
+  expect(evaluationRequests).toEqual([]);
+
   await page.locator("#source").fill("system('blocked', intern = TRUE)");
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("Evaluation failed.");

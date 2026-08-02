@@ -1095,6 +1095,33 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     builtinBrowseUrl,
     "invisible",
   ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "utils",
+      "download.file",
+      ["url", "destfile", "method", "quiet", "mode", "cacheOK", "extra", "headers", "..."],
+      "behavioral",
+      builtinDownloadFile,
+      "invisible",
+    ),
+    [
+      { name: "url" },
+      { name: "destfile" },
+      { name: "method" },
+      {
+        name: "quiet",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      { name: "mode", defaultValue: { kind: "StringLiteral", value: "w", span: SYNTHETIC_SPAN } },
+      {
+        name: "cacheOK",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+      { name: "extra", defaultValue: getOptionDefaultAst("download.file.extra") },
+      { name: "headers", defaultValue: nullAst() },
+      { name: "..." },
+    ],
+  ),
   definePackageBuiltin("utils", "URLdecode", ["URL"], "behavioral", builtinUrlDecode),
   definePackageBuiltin(
     "utils",
@@ -6338,6 +6365,89 @@ async function builtinUrl(invocation: BuiltinInvocation): Promise<RIntegerVector
     }
   }
   return handle;
+}
+
+async function builtinDownloadFile(invocation: BuiltinInvocation): Promise<RIntegerVector> {
+  const matched = await matchExact(invocation, [
+    "url",
+    "destfile",
+    "method",
+    "quiet",
+    "mode",
+    "cacheOK",
+    "extra",
+    "headers",
+    "...",
+  ]);
+  const urls = required(matched, "url", "download.file");
+  const destinations = required(matched, "destfile", "download.file");
+  if (urls.type !== "character" || urls.length === 0) {
+    throw new RTypeMismatchError("NRT3411", "'url' must be a non-empty character vector");
+  }
+  if (destinations.type !== "character" || destinations.length === 0) {
+    throw new RTypeMismatchError("NRT3411", "invalid 'destfile' argument");
+  }
+  if (urls.length !== destinations.length) {
+    throw new RTypeMismatchError("NRT3411", "lengths of 'url' and 'destfile' must match");
+  }
+
+  coercibleLogicalFlag(matched.get("quiet"), false, "quiet");
+  coercibleLogicalFlag(matched.get("cacheOK"), true, "cacheOK");
+  const mode = characterScalar(matched.get("mode") ?? characterVector(["w"]), "mode");
+  if (mode !== "w" && mode !== "wb") {
+    throw new RUnsupportedFeatureError(
+      "NRU6197",
+      "download.file() currently supports replacement modes 'w' and 'wb'.",
+    );
+  }
+  const methodText = characterScalar(
+    matched.get("method") ?? characterVector(["default"]),
+    "method",
+  );
+  const normalizedMethod = methodText === "auto" ? "default" : methodText;
+  if (!["default", "internal", "libcurl", "wininet"].includes(normalizedMethod)) {
+    throw new RUnsupportedFeatureError(
+      "NRU6197",
+      `download.file() method '${methodText}' is unavailable in the browser runtime.`,
+    );
+  }
+  const method = normalizedMethod as RUrlRequest["method"];
+  const headers = urlRequestHeaders(matched.get("headers"));
+  const resolvedDestinations: string[] = [];
+  const requestUrls: string[] = [];
+  for (let index = 0; index < urls.length; index += 1) {
+    invocation.context.checkpoint();
+    const url = isMissing(urls, index) ? "NA" : (urls.values[index] ?? "");
+    if (/[\0\r\n]/u.test(url)) {
+      throw new RTypeMismatchError(
+        "NRT3411",
+        "download.file() URLs must be single-line NUL-free text",
+      );
+    }
+    requestUrls.push(url);
+    const destination = isMissing(destinations, index) ? "NA" : (destinations.values[index] ?? "");
+    const path = requireVirtualTextPath(invocation, destination, "download.file");
+    const state = virtualTextFileState(invocation);
+    const parent = sessionVirtualParent(path);
+    if (parent === undefined || !state.directories.has(parent) || state.directories.has(path)) {
+      throw new REvaluationError("NRE2195", `Cannot open virtual binary file '${path}'.`);
+    }
+    resolvedDestinations.push(path);
+  }
+
+  for (let index = 0; index < requestUrls.length; index += 1) {
+    invocation.context.checkpoint();
+    const result = await invocation.urlRequest({
+      url: requestUrls[index] ?? "",
+      method,
+      headers,
+    });
+    writeVirtualBinaryFile(invocation, resolvedDestinations[index] ?? "", result.body);
+  }
+  const status = integerVector([0]);
+  return requestUrls.length === 1
+    ? status
+    : withAttribute(status, "retvals", integerVector(requestUrls.map(() => 0)));
 }
 
 function urlRequestHeaders(value: RValue | undefined): RUrlRequest["headers"] {

@@ -254,6 +254,13 @@ accepts a copied `url-result` byte buffer. The bytes then enter the same bounded
 all subsequent line/raw/source/table/serialization/gzip reads use existing connection paths. The
 runtime never imports `fetch` or embeds a network policy; omitted adapters fail closed.
 
+`utils::download.file()` composes that same request capability with the mutable session file tree.
+It validates every URL, header, mode, and destination before making the first request, delegates
+only typed request data, and atomically replaces each destination after a complete bounded response
+arrives. The operation adds neither a second transport nor host-path access. It is a reusable
+runtime primitive for package resource downloads, while repository resolution, archive admission,
+dependency locking, and package activation remain separate package-manager responsibilities.
+
 The PNG device composes existing owned seams instead of introducing a host renderer. A numbered
 device records the same normalized graphics events used by Worker callbacks and replay plots; a
 DOM-free software rasterizer converts those events to RGBA; an independent PNG encoder writes

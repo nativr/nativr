@@ -18,6 +18,16 @@ acceptance test. Package-specific runtime rewrites are avoided; a package-specif
 considered only when the package intentionally depends on an external capability that R code alone
 cannot provide.
 
+That gives NativR a two-layer compatibility target:
+
+1. implement the Base R and recommended-package language/API substrate once, with black-box GNU R
+   evidence for each claimed behavior;
+2. admit and execute unchanged source-only packages through one generic installer and loader.
+
+This is how package coverage can grow much faster than the TypeScript codebase. It cannot make a
+package's compiled C/C++/Fortran/JVM code portable; those packages require a separately reviewed
+Wasm ABI or explicit host capability and remain outside the source-only promise.
+
 ```text
 CRAN-like source package
   -> bounded archive + license inspection
@@ -115,9 +125,9 @@ The runtime sends only the URL, selected R method, and validated named headers t
 copies and bounds the returned `Uint8Array`, stores it in the session byte store on first read, and
 then uses the same cursor and connection code as package resources. There is no default `fetch`, so
 redirects, authentication, cookies, CORS behavior, caching, and allowed origins remain application
-policy. This is especially useful for unchanged pure-R packages that call `readLines(url(...))` or
-`gzcon(url(...))`; packages using libcurl native APIs or compiled download code remain outside the
-source-only contract.
+policy. This is especially useful for unchanged pure-R packages that call `readLines(url(...))`,
+`gzcon(url(...))`, or `utils::download.file()` into a session-owned path; packages using libcurl
+native APIs or compiled download code remain outside the source-only contract.
 
 ## Artifact contract
 
@@ -186,10 +196,13 @@ normalized AST. The runtime then provides:
 19. lazy read-only `base::url()` connections backed by an explicit `createR({ url })` byte adapter,
     reusable by line, raw, source, table, serialization, and gzip readers without exposing host
     networking to package code.
-20. stable `stdin()`/`stdout()`/`stderr()` terminal handles, bounded stdout/stderr Worker routing,
+20. `utils::download.file()` over the same explicit byte adapter, with vectorized preflight,
+    browser-memory destinations, replacement modes, GNU R-shaped status values, and no ambient
+    network or host filesystem.
+21. stable `stdin()`/`stdout()`/`stderr()` terminal handles, bounded stdout/stderr Worker routing,
     and package-visible `isatty()`/connection-catalog introspection without granting host file
     descriptors or claiming an interactive TTY.
-21. regular time-series plotting through exported `stats::ts.plot()`, including equal-frequency
+22. regular time-series plotting through exported `stats::ts.plot()`, including equal-frequency
     union, gap-aware line/point geometry, bounded `gpars`, package expression labels, and the same
     Worker graphics journal used by application R code.
 

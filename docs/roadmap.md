@@ -748,6 +748,13 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      host PATH or filesystem; coercion, duplicates, missing values, formals, reset, and malformed
      option inputs have executable evidence. Platform PATH/PATHEXT rules, filesystem resolution, GNU
      closure identity, and missing names attributes remain compatibility depth.
+158. Usage-ranked package resource download: rank-311 `utils::download.file` composes the explicit
+     `createR({ url })` byte capability with the browser-session file tree for jsonlite's measured
+     call and unchanged pure-R package code. Exact formals/defaults, preflight, paired vectors,
+     invisible statuses/`retvals`, named headers, replacement bytes, failure atomicity, Worker, and
+     Playground paths have evidence. Ambient network, host files, redirects/cache/progress, external
+     downloader processes, append/partial-file modes, and `install.packages()` remain compatibility
+     depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

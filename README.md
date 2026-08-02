@@ -109,6 +109,12 @@ shared R/core contract once, and reruns unchanged packages to reveal the next bl
 package can be submitted to the installer" is already the input contract; "every pure-R package
 runs" remains the evidence-driven compatibility goal rather than a present claim.
 
+The long-term layering is intentional: first make the Base R and recommended-package substrate as
+complete as executable evidence permits, then let ordinary package-owned R closures provide the
+larger ecosystem. A source-only package should need no NativR-specific rewrite. Packages containing
+C, C++, Fortran, JVM code, system libraries, or external processes need a separate reviewed Wasm or
+host-capability layer; Base R compatibility alone cannot make those binaries browser-native.
+
 ### One-file browser example
 
 Save this as `index.html` and serve it from any static web server. This CDN example uses inline
@@ -201,10 +207,12 @@ const r = await createR({
 });
 ```
 
-The same asynchronous adapter works through the default Worker. Returned bytes enter a bounded,
-read-only R connection and can be consumed by `readLines()`, raw `readBin()`, `source()`, table and
+The same asynchronous adapter works through the default Worker. Returned bytes enter the bounded
+session store and can be consumed by `url()` connections or written to a browser-memory file with
+`utils::download.file()`, then read by `readLines()`, raw `readBin()`, `source()`, table and
 serialization readers, or `gzcon()`. This removes a common package-I/O rewrite, but it deliberately
-does not grant package code unrestricted browser networking.
+does not grant package code unrestricted browser networking. `download.file()` is package runtime
+I/O; it does not yet make `install.packages()` available inside the browser.
 
 The current milestone supports all 25 feature groups measured by the repository's package-usage
 study, including structured data, the measured vector-helper surface, native and magrittr-style

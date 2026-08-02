@@ -75,16 +75,16 @@ signal.
 
 | Priority | Measured rank | Callable             | Weighted reach | Packages | Observed calls |
 | -------: | ------------: | -------------------- | -------------: | -------: | -------------: |
-|        1 |           311 | `download.file`      |           1.3% |        1 |              1 |
-|        2 |           313 | `pipe`               |           1.3% |        1 |              1 |
-|        3 |           314 | `unz`                |           1.3% |        1 |              1 |
-|        4 |           324 | `object.size`        |           1.3% |        2 |              3 |
-|        5 |           328 | `title`              |           1.3% |        2 |              7 |
-|        6 |           330 | `sink`               |           1.2% |        1 |              2 |
-|        7 |           338 | `write`              |           1.2% |        1 |              1 |
-|        8 |           340 | `available.packages` |           1.2% |        1 |              1 |
-|        9 |           343 | `barplot`            |           1.2% |        2 |              3 |
-|       10 |           344 | `devAskNewPage`      |           1.1% |        1 |             10 |
+|        1 |           313 | `pipe`               |           1.3% |        1 |              1 |
+|        2 |           314 | `unz`                |           1.3% |        1 |              1 |
+|        3 |           324 | `object.size`        |           1.3% |        2 |              3 |
+|        4 |           328 | `title`              |           1.3% |        2 |              7 |
+|        5 |           330 | `sink`               |           1.2% |        1 |              2 |
+|        6 |           338 | `write`              |           1.2% |        1 |              1 |
+|        7 |           340 | `available.packages` |           1.2% |        1 |              1 |
+|        8 |           343 | `barplot`            |           1.2% |        2 |              3 |
+|        9 |           344 | `devAskNewPage`      |           1.1% |        1 |             10 |
+|       10 |           345 | `getLoadedDLLs`      |           1.1% |        1 |              1 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -194,11 +194,11 @@ calls through shared function-object state and the existing Worker readline seam
 `grDevices::pdf` now covers knitr's recording device and data.table's file-backed plot. Rank 287
 `base::file.create` now covers withr's deferred-cleanup setup. Rank 292 `stats::ts.plot` now runs
 magrittr's measured exposition-pipe example. Rank 293 `base::Sys.which` now covers the two measured
-knitr/sys executable-presence checks through an explicit session allow-list. The next measured
-unresolved callable is rank 311 `utils::download.file`. Rank 144 `Encoding` is also complete for all
-12 observed calls across rlang, utf8, and xfun (4.5% weighted reach), together with adjacent
-`Encoding<-`, `enc2utf8`, and `enc2native`. The shared character representation preserves exact
-bytes and canonical R marks through subset/replacement, concatenation, raw conversion, and XDR
+knitr/sys executable-presence checks through an explicit session allow-list. Rank 311
+`download.file` uses the byte URL seam; rank 313 `pipe` is next. Rank 144 `Encoding` is also
+complete for all 12 observed calls across rlang, utf8, and xfun (4.5% weighted reach), together with
+adjacent `Encoding<-`, `enc2utf8`, and `enc2native`. The shared character representation preserves
+exact bytes and canonical R marks through subset/replacement, concatenation, raw conversion, and XDR
 serialization; this is reusable package infrastructure, not an assertion that those packages' native
 components are supported. Rank 149 `rcauchy` is now complete for four calls across ggplot2, pillar,
 and purrr (4.2% weighted reach), together with `dcauchy`, `pcauchy`, and `qcauchy`. The shared
@@ -453,10 +453,10 @@ covers GNU R's base atomic, factor, list, NULL, common-type, duplicate, NA, and 
 rules. Tibble rectangular selection now retains tibble class and does not drop a single selected
 column, allowing the measured `df1[3:1, ]` expression to remain a table. Arbitrary dplyr methods,
 grouped or remote tables, namespace/package loading, pairlists, locale-specific encodings, and
-exhaustive recursive-object identity remain outside this increment. Rank 320 `grep` is already
-registered. Rank 321 `download.file` is deliberately not the next implementation target because a
-general network/file downloader conflicts with the current network-free browser runtime boundary;
-rank 322 `eigen` is now complete for jsonlite's `lapply(eigen(matrix(-rnorm(9), 3)), round, 3)`
+exhaustive recursive-object identity remain outside this increment. Rank 310 `grep` is already
+registered. Rank 311 `download.file` now uses the explicit byte adapter and bounded session-owned
+files without weakening the default network-free browser boundary, or adding ambient host access;
+rank 312 `eigen` is now complete for jsonlite's `lapply(eigen(matrix(-rnorm(9), 3)), round, 3)`
 serialization fixture, representing 1,601,911 snapshot downloads and 1.3% download reach. NativR
 computes real symmetric matrices of arbitrary owned order with an independent Jacobi rotation path,
 including normalized eigenvectors, decreasing eigenvalues, automatic or explicit symmetry,
@@ -465,8 +465,8 @@ order one through three use independent characteristic roots and complex null-sp
 covering jsonlite's exact random 3-by-3 shape and GNU R's small complex-pair examples. Complex input
 matrices, non-symmetric order above three, defective and ill-conditioned exhaustive cases, LAPACK
 convergence/rounding identity, and eigenvector phase/sign identity remain explicit boundaries. Ranks
-323 `pipe` and 324 `unz` require connection/filesystem host architecture and remain deferred; rank
-325 `colSums` is now complete for three observed calls across
+313 `pipe` and 314 `unz` remain future connection and archive-depth work after the increment; rank
+316 `colSums` is now complete for three observed calls across
 [`loo`](https://cran.r-project.org/web/packages/loo/refman/loo.html) and
 [`zoo`](https://cran.r-project.org/web/packages/zoo/refman/zoo.html), representing 1,601,512
 snapshot downloads and 1.3% download reach. Loo calls `colSums(tab_10)` and `colSums(tab_9)` on
@@ -475,7 +475,7 @@ logical, integer, double, and complex arrays of rank two or greater, numeric dat
 column-local `NA`/`NaN` removal, generalized `dims`, empty reductions, and output
 names/dimensions/dimnames. The bare-bones `.colSums`, the row/mean family, arbitrary external matrix
 classes, extended-precision long-vector accumulation, and platform-specific `NA` versus `NaN`
-precedence remain outside this increment. Rank 326 `time` is now complete for 25 observed calls
+precedence remain outside this increment. Rank 317 `time` is now complete for 25 observed calls
 across [`data.table`](https://cran.r-project.org/web/packages/data.table/refman/data.table.html) and
 [`zoo`](https://cran.r-project.org/web/packages/zoo/refman/zoo.html), representing 1,583,147
 snapshot downloads and 1.3% download reach. Data.table converts `time(uspop)` into integer years;

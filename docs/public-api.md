@@ -214,6 +214,30 @@ GNU R's `browser = function(url) ...` extension remains inside R and receives a 
 `encodeIfNeeded`-encoded URL; `browser = "false"` suppresses the request. A character
 browser-program name is treated only as host intent because browser packages cannot spawn processes.
 
+The independent `createR({ url })` byte adapter also backs both read-only `url()` connections and
+session-file downloads:
+
+```ts
+const r = await createR({
+  url: async ({ url }) => {
+    if (!url.startsWith("https://data.example/")) throw new Error("URL denied");
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return { body: new Uint8Array(await response.arrayBuffer()) };
+  },
+});
+
+await r.eval(`
+  path <- tempfile(fileext = ".csv")
+  utils::download.file("https://data.example/input.csv", path, quiet = TRUE, mode = "wb")
+  read.csv(path)
+`);
+```
+
+The destination is a browser-memory session path, not a host path. The default session has no URL
+adapter and fails closed. Redirects, credentials, caching, and origin policy remain entirely with
+the application.
+
 `evalDetailed` also retains device-independent graphics commands in `graphics`.
 `createR({ onGraphics })` receives the same commands after each inline or Worker evaluation.
 `new-page` clears a host device, `window` declares its user-coordinate limits, `raster` carries an

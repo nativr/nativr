@@ -694,3 +694,10 @@ requested vector and uses the evaluator-owned `Map`; it performs no PATH scan, f
 process launch, network request, or package-specific translation. The measured Worker is 384.2 KiB
 gzip, so the ceiling rises narrowly from 384 KiB to 385 KiB; client and parser-Wasm budgets remain
 unchanged.
+
+Language subset 0.246 adds usage-ranked `utils::download.file` by composing the existing typed URL
+request callback with the session-owned binary-file writer. Preflight allocates only bounded URL and
+destination arrays; response copying and aggregate file storage reuse existing output accounting. It
+adds no dependency, protocol event, ambient network/filesystem operation, generated-code path, or
+package-specific translation. The measured Worker is 384.6 KiB gzip within the existing 385 KiB
+ceiling; client and parser-Wasm budgets remain unchanged.

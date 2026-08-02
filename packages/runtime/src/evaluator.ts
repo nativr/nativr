@@ -428,6 +428,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "compareVersion",
       "data",
       "demo",
+      "download.file",
       "example",
       "glob2rx",
       "packageName",

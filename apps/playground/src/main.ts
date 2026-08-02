@@ -102,6 +102,11 @@ twice_mean(c(1, 2, 6))`,
     code: 'nativrdemo::remote_lines("https://data.nativr.invalid/lines")',
   },
   {
+    id: "download-host",
+    label: "Pure-R package download",
+    code: 'nativrdemo::download_resource("https://data.nativr.invalid/lines")',
+  },
+  {
     id: "plot",
     label: "Numeric R plot",
     code: "plot(1:5, c(1, 4, 2, 5, 3), type = 'b', col = 'blue', pch = 21, bg = 'white', main = 'NativR plot')",

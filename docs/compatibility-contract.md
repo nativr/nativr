@@ -626,6 +626,17 @@ filesystem, or guesses platform extensions. GNU R reports the function as a clos
 single name as `"NA"`. Host path discovery, canonicalization, executable permissions, and those two
 representation differences remain outside the behavioral claim.
 
+`utils::download.file` has GNU R 4.6 differential evidence for its nine formals, missing/default
+shape, preflight URL/destination length checks, logical controls, and named-header validation.
+Black-box probes additionally establish invisible integer `0L`, paired-vector `retvals`, and exact
+replacement bytes for `w` and `wb`. The browser implementation sends copied URL, normalized method,
+and headers only through an explicit `createR({ url })` adapter, writes complete bounded bodies to
+preflighted session-owned files, and leaves an existing destination untouched when the request
+fails. `auto` maps to the adapter's `default` method; `default`, `internal`, `libcurl`, and
+`wininet` remain typed policy hints rather than built-in transports. Default sessions fail closed.
+Host paths, ambient fetch, redirects, credentials, cache semantics, progress output, append modes,
+external `curl`/`wget`, partial-file retention, and status-code policy remain explicit boundaries.
+
 `base::gc` has behavioral differential evidence for its closure-like defaults, control coercion,
 visible double matrix, dimensions, row/column labels, resettable maxima, and verbose message shape.
 `Ncells` counts reachable NativR runtime objects plus binding/attribute links; `Vcells` counts owned

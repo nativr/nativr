@@ -121,13 +121,16 @@ untrusted display text, avoid rendering them as HTML, bound or cancel their UI, 
 secrets unless the calling R code is trusted. Newlines, NUL characters, and results beyond the
 session output-byte budget are rejected. The default runtime never opens a dialog or reads stdin.
 
-`url()` is likewise inert unless the application supplies `createR({ url })`. The callback receives
-only copied URL/method/header data and must return a `Uint8Array`; the facade copies and charges the
-bytes to the session output limit before the Worker can expose them to R. NativR does not call
-`fetch`, follow redirects, attach cookies, consult ambient credentials, or choose trusted origins.
-Hosts must allow-list schemes and origins, validate redirect targets, bound response time and size,
-and avoid forwarding secrets to package-selected destinations. The Playground adapter serves one
-embedded allow-listed fixture and performs no network request.
+`url()` and `utils::download.file()` are likewise inert unless the application supplies
+`createR({ url })`. The callback receives only copied URL/method/header data and must return a
+`Uint8Array`; the facade copies and charges the bytes to the session output limit before the Worker
+can expose them to R. `download.file()` additionally preflights all destinations, writes only under
+the session-owned temp tree, and replaces a file only after the complete response has passed host
+and virtual-store limits. NativR does not call `fetch`, follow redirects, attach cookies, consult
+ambient credentials, or choose trusted origins. Hosts must allow-list schemes and origins, validate
+redirect targets, bound response time and size, and avoid forwarding secrets to package-selected
+destinations. The Playground adapter serves one embedded allow-listed fixture and performs no
+network request.
 
 PNG and PDF output is encoded from the bounded NativR graphics journal into the session-owned
 virtual file store. The encoders do not invoke native libraries, load fonts, read host files, fetch

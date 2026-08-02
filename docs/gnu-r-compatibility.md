@@ -848,8 +848,17 @@ NativR-only evidence proves snapshotted `createR({ executablePaths })` admission
 behavior, reset/isolation, pure-R package execution, Worker transport, Playground use, and malformed
 host-map rejection. No package adapter, PATH scan, filesystem access, or process invocation is
 involved. Host PATH/PATHEXT and executable-bit rules, path canonicalization, GNU closure identity,
-and an `NA_character_` value inside the names attribute remain compatibility depth. Rank 311
-`utils::download.file` is now the next measured unresolved callable.
+and an `NA_character_` value inside the names attribute remain compatibility depth.
+
+The download increment raises current name overlap to 620 of 2,522. Rank 311 `utils::download.file`
+covers jsonlite's measured call while supplying a package-independent resource path for source-only
+packages. GNU R 4.6 black-box evidence covers exact formals/defaults, preflight argument boundaries,
+invisible scalar status, paired vector downloads, `retvals`, and replacement bytes. NativR-only
+evidence covers copied request data, named headers, `auto` mapping, session-owned destinations,
+failure atomicity, pure-R namespaces, default-deny behavior, Worker transport, and Playground use.
+Ambient networking, host files, redirect/cache policy, progress display, platform downloader
+processes, append modes, and HTTP status interpretation remain outside the browser contract. Rank
+313 `base::pipe` is now the next measured unresolved callable.
 
 ## Completion evidence
 

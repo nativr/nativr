@@ -8984,5 +8984,34 @@
     "expected": [true, true, true, true, true],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "download-file-formals-and-defaults",
+    "code": "f <- formals(utils::download.file)\nc(names(f), identical(f$quiet, FALSE), identical(f$mode, \"w\"), identical(f$cacheOK, TRUE), identical(f$extra, quote(getOption(\"download.file.extra\"))), is.null(f$headers))",
+    "expected": [
+      "url",
+      "destfile",
+      "method",
+      "quiet",
+      "mode",
+      "cacheOK",
+      "extra",
+      "headers",
+      "...",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "download-file-preflight-input-boundaries",
+    "code": "c(inherits(try(utils::download.file(character(), tempfile(), quiet = TRUE), silent = TRUE), \"try-error\"), inherits(try(utils::download.file(\"x\", character(), quiet = TRUE), silent = TRUE), \"try-error\"), inherits(try(utils::download.file(c(\"x\", \"y\"), tempfile(), quiet = TRUE), silent = TRUE), \"try-error\"), inherits(try(utils::download.file(\"x\", tempfile(), quiet = NA), silent = TRUE), \"try-error\"), inherits(try(utils::download.file(\"x\", tempfile(), quiet = TRUE, cacheOK = NA), silent = TRUE), \"try-error\"), inherits(try(utils::download.file(\"x\", tempfile(), quiet = TRUE, headers = \"value\"), silent = TRUE), \"try-error\"), inherits(try(utils::download.file(\"x\", tempfile(), quiet = TRUE, headers = c(Name = NA_character_)), silent = TRUE), \"try-error\"))",
+    "expected": [true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

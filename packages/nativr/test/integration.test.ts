@@ -29,8 +29,8 @@ NeedsCompilation: no`,
 importFrom(graphics, axis, plot.new, plot.window, rect)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median, ts.plot)
-importFrom(utils, packageDescription, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, plot_series, find_tools, create_file, remove_files, fixed_text, axis_ticks, sourced_value, ask_value, remote_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output)
+importFrom(utils, download.file, packageDescription, packageName, packageVersion)
+export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, plot_series, find_tools, create_file, remove_files, fixed_text, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -111,6 +111,12 @@ remote_lines <- function(address, headers = NULL) {
   con <- url(address, headers = headers)
   on.exit(close(con))
   readLines(con)
+}
+download_resource <- function(address) {
+  path <- tempfile(fileext = ".txt")
+  on.exit(unlink(path))
+  status <- download.file(address, path, quiet = TRUE, mode = "wb")
+  c(status, readLines(path))
 }
 filtered_flow <- function(x, coefficient = 0.8) stats::filter(x, coefficient, method = "r")
 class_summary <- function() capture.output(showClass("NativRFixtureClass"))
@@ -3338,6 +3344,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "classic_palettes",
       "create_file",
       "describe",
+      "download_resource",
       "duration",
       "dynamic_describe",
       "filtered_flow",
@@ -9746,6 +9753,36 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(
       offline.eval('readLines(url("https://data.nativr.invalid/lines"))'),
     ).rejects.toMatchObject({ code: "NRU6196" });
+    await expect(
+      offline.eval(
+        'utils::download.file("https://data.nativr.invalid/file", tempfile(), quiet = TRUE)',
+      ),
+    ).rejects.toMatchObject({ code: "NRU6196" });
+    await expect(
+      offline.eval(`
+        f <- formals(utils::download.file)
+        c(
+          names(f), identical(f$quiet, FALSE), identical(f$mode, "w"),
+          identical(f$cacheOK, TRUE), identical(f$extra, quote(getOption("download.file.extra"))),
+          is.null(f$headers)
+        )
+      `),
+    ).resolves.toEqual([
+      "url",
+      "destfile",
+      "method",
+      "quiet",
+      "mode",
+      "cacheOK",
+      "extra",
+      "headers",
+      "...",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
     await offline.dispose();
 
     const requests: PublicUrlRequest[] = [];
@@ -9759,6 +9796,7 @@ describe("complete inline source-to-result vertical slice", () => {
       packages: [pureRFixture],
       url: (request) => {
         requests.push(request);
+        if (request.url.endsWith("/failure")) throw new Error("fixture download failure");
         if (request.url.endsWith("/lines.txt.gz")) return { body: gzipBody };
         return { body: new TextEncoder().encode("alpha\nbeta\n") };
       },
@@ -9781,6 +9819,76 @@ describe("complete inline source-to-result vertical slice", () => {
         ],
       },
     ]);
+    const downloadPath = await runtime.eval("download_path <- tempfile(fileext = '.txt')");
+    const download = await runtime.evalDetailed(`
+      utils::download.file(
+        "https://data.nativr.invalid/download",
+        download_path,
+        quiet = TRUE,
+        mode = "wb",
+        headers = c(Accept = "text/plain")
+      )
+    `);
+    expect(download.value).toBe(0);
+    expect(download.visible).toBe(false);
+    await expect(
+      runtime.eval("c(readLines(download_path), as.integer(readBin(download_path, 'raw', 11L)))"),
+    ).resolves.toEqual([
+      "alpha",
+      "beta",
+      "97",
+      "108",
+      "112",
+      "104",
+      "97",
+      "10",
+      "98",
+      "101",
+      "116",
+      "97",
+      "10",
+    ]);
+    expect(requests.at(-1)).toEqual({
+      url: "https://data.nativr.invalid/download",
+      method: "default",
+      headers: [{ name: "Accept", value: "text/plain" }],
+    });
+    await expect(
+      runtime.eval(`
+        paths <- c(tempfile(), tempfile())
+        status <- utils::download.file(
+          c("https://data.nativr.invalid/one", "https://data.nativr.invalid/two"),
+          paths,
+          method = "auto",
+          quiet = TRUE,
+          mode = "w"
+        )
+        c(status, attr(status, "retvals"), file.size(paths), unlink(paths))
+      `),
+    ).resolves.toEqual([0, 0, 0, 11, 11, 0]);
+    const requestsBeforeInvalidDestination = requests.length;
+    await expect(
+      runtime.eval(`
+        utils::download.file(
+          "https://data.nativr.invalid/not-requested",
+          file.path(tempfile(), "missing", "file"),
+          quiet = TRUE
+        )
+      `),
+    ).rejects.toMatchObject({ code: "NRE2195" });
+    expect(requests).toHaveLength(requestsBeforeInvalidDestination);
+    await runtime.eval('writeLines("preserved", download_path)');
+    await expect(
+      runtime.eval(
+        'utils::download.file("https://data.nativr.invalid/failure", download_path, quiet = TRUE)',
+      ),
+    ).rejects.toThrow("fixture download failure");
+    await expect(runtime.eval("readLines(download_path)")).resolves.toEqual("preserved");
+    await expect(
+      runtime.eval(
+        'nativrfixture::download_resource("https://data.nativr.invalid/package-download")',
+      ),
+    ).resolves.toEqual(["0", "alpha", "beta"]);
     await expect(
       runtime.eval(`
         con <- url("https://data.nativr.invalid/cursor", open = "r")
@@ -9799,6 +9907,8 @@ describe("complete inline source-to-result vertical slice", () => {
         value
       `),
     ).resolves.toEqual(["alpha", "beta"]);
+    await runtime.reset();
+    await expect(runtime.eval(`file.exists(${JSON.stringify(downloadPath)})`)).resolves.toBe(false);
     await runtime.dispose();
 
     const invalid = await createR({
@@ -9820,6 +9930,12 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(
       limited.eval('readBin(url("https://data.nativr.invalid/large", open = "rb"), "raw", 4L)'),
     ).rejects.toMatchObject({ code: "NRL4007" });
+    await expect(
+      limited.eval(
+        'utils::download.file("https://data.nativr.invalid/large", "limited", quiet = TRUE)',
+      ),
+    ).rejects.toMatchObject({ code: "NRL4007" });
+    await expect(limited.eval('file.exists("limited")')).resolves.toBe(false);
     await limited.dispose();
   });
 
@@ -10855,7 +10971,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.245.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.246.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

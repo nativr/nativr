@@ -53,6 +53,14 @@ Admission and execution compatibility are separate. `packaging: "ready"` means t
 is safe to represent; `execution: "unchecked"` remains until actual namespace loading and
 package-specific executable tests pass.
 
+The compatibility investment is therefore foundation-first: implement Base R and recommended package
+semantics once, then execute package-owned R closures unchanged. A future browser-facing
+`install.packages()` may orchestrate the same bounded repository resolver and artifact builder
+through an explicit application capability, but it must feed this exact artifact/loader contract; it
+must not introduce an ambient network client, host library tree, or package-specific evaluator.
+`utils::download.file()` is reusable byte/file infrastructure for that future orchestration, not by
+itself a package installer.
+
 ## Consequences
 
 Pure-R package functions can execute without TypeScript rewrites when their language and core API
