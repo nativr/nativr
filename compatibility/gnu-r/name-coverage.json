@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 626,
-    "overlappingNames": 610,
-    "missingReferenceNames": 1912,
+    "nativrRegisteredNames": 627,
+    "overlappingNames": 611,
+    "missingReferenceNames": 1911,
     "nativrExtensionNames": 16,
-    "nameCoverage": 0.241872
+    "nameCoverage": 0.242268
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 444, "nameCoverage": 0.324799 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 445, "nameCoverage": 0.32553 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 75, "nameCoverage": 0.161638 },
     {
       "package": "methods",
@@ -485,6 +485,7 @@
     "read.delim2",
     "read.table",
     "readBin",
+    "readChar",
     "readLines",
     "readRDS",
     "readline",
@@ -2137,7 +2138,6 @@
     "read.ftable",
     "read.fwf",
     "read.socket",
-    "readChar",
     "readCitationFile",
     "readClipboard",
     "readRegistry",

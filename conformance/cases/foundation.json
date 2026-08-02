@@ -8470,6 +8470,62 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "read-char-digest-shiny-path-results-visibility-and-formals",
+    "code": "digest_path <- tempfile(); bookmark <- tempfile()\ncat(\"digest-input\", file = digest_path); cat(\"bookmark-time\", file = bookmark)\nvalue <- withVisible(readChar(digest_path, file.info(digest_path)$size))\nresult <- c(value$value, readChar(bookmark, 1000L), value$visible, names(formals(readChar)), file.remove(c(digest_path, bookmark)))\nresult",
+    "expected": [
+      "digest-input",
+      "bookmark-time",
+      "TRUE",
+      "con",
+      "nchars",
+      "useBytes",
+      "TRUE",
+      "TRUE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "read-char-utf8-byte-fields-lengths-and-attribute-removal",
+    "code": "bytes <- as.raw(c(195, 169, 120, 240, 159, 152, 128))\nchars <- readChar(bytes, c(1, 1, 1))\nfields <- readChar(bytes, rep(1L, 7), useBytes = TRUE)\nshaped <- structure(c(0, 2.9, 99), names = c(\"zero\", \"two\", \"rest\"), dim = c(3, 1))\nlengths <- readChar(charToRaw(\"abcdef\"), shaped)\ninvalid_utf8 <- if (inherits(try(readChar(as.raw(195), 1L), silent = TRUE), \"try-error\")) \"TRUE\" else \"FALSE\"\nc(length(chars), as.integer(charToRaw(chars[1])), as.integer(charToRaw(chars[2])), as.integer(charToRaw(chars[3])), Encoding(chars), as.integer(charToRaw(fields[1])), as.integer(charToRaw(fields[2])), fields[3], as.integer(charToRaw(fields[4])), as.integer(charToRaw(fields[5])), as.integer(charToRaw(fields[6])), as.integer(charToRaw(fields[7])), lengths, is.null(attributes(lengths)), invalid_utf8)",
+    "expected": [
+      "3",
+      "195",
+      "169",
+      "120",
+      "240",
+      "159",
+      "152",
+      "128",
+      "unknown",
+      "unknown",
+      "unknown",
+      "195",
+      "169",
+      "x",
+      "240",
+      "159",
+      "152",
+      "128",
+      "",
+      "ab",
+      "cdef",
+      "TRUE",
+      "TRUE"
+    ],
+    "rOracle": false,
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "read-char-connection-cursors-warnings-and-invalid-boundaries",
+    "code": "path <- tempfile(); cat(\"abcdef\", file = path)\nclosed <- file(path); closed_value <- readChar(closed, c(2L, 9L)); closed_after <- isOpen(closed)\ncon <- file(path, \"rb\"); first <- readChar(con, 2L); second <- readChar(con, c(1L, 9L)); position <- seek(con, NA); close(con)\ntext <- file(path, \"r\"); text_value <- readChar(text, 2L); close(text); file.remove(path)\ninvalid <- c(if (inherits(try(readChar(as.raw(c(65, 0, 66)), 3L), silent = TRUE), \"try-error\")) \"TRUE\" else \"FALSE\", if (inherits(try(readChar(charToRaw(\"abc\"), -1L), silent = TRUE), \"try-error\")) \"TRUE\" else \"FALSE\", as.character(length(readChar(raw(), c(0L, 1L, 0L)))))\nc(closed_value, if (closed_after) \"TRUE\" else \"FALSE\", first, second, position, text_value, invalid)",
+    "expected": ["ab", "cdef", "FALSE", "ab", "c", "def", "6", "ab", "TRUE", "TRUE", "1"],
+    "expectedWarning": true,
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "url-connection-usage-ranked-formals-class-and-closed-summary",
     "code": "con <- url(\"https://data.nativr.invalid/lines\")\ndetails <- summary(con)\nresult <- c(class(con), names(formals(url)), details$class, details$mode, details$opened, details[[\"can read\"]], details[[\"can write\"]], identical(formals(url)$open, \"\"), identical(formals(url)$blocking, TRUE), identical(formals(url)$encoding, quote(getOption(\"encoding\"))), identical(formals(url)$method, quote(getOption(\"url.method\", \"default\"))), is.null(formals(url)$headers))\nclose(con)\nresult",
     "expected": [

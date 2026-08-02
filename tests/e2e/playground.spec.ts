@@ -91,6 +91,10 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("[true, true, true, true, false, false]");
 
+  await page.locator("#source").fill("nativrdemo::fixed_text()");
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText('["{\\"demo\\":true}\\n", "bookmarked"]');
+
   await page.locator("#source").fill("nativrdemo::custom_axis()");
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("[1, 2, 3]");

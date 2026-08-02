@@ -438,6 +438,10 @@ loader.
   owned connections without granting transport or filesystem authority. URLs, sockets, host paths,
   typed raw/binary decoding or writes beyond raw `readBin()`, seek/pushback within compressed
   streams, separate read/write seek positions, and the broader file API remain separate work.
+- `readChar()` covers digest's whole-file and Shiny's bookmark-file fixed-width reads over package
+  resources, session files, raw vectors, and owned file/URL/gzip connections. UTF-8 character and
+  exact-byte widths, cursors, EOF, warnings, invalid input, and resource limits are shared runtime
+  behavior rather than package-specific rewrites.
 - Package resources and their parent directories can be enumerated with `list.files()`/`list.dirs()`
   or selected with `setwd()`. Relative `readLines()`, table-reader, and connection paths then
   resolve inside that immutable package root. `R.home()` and the runtime/package/session directory

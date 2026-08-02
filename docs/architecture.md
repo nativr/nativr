@@ -233,6 +233,11 @@ runtime's shared browser-standard stream helpers only when the wrapper closes. T
 normal pure-R connection protocol without adding Node built-ins, DOM objects, filesystem resolution,
 network access, or a second execution backend.
 
+`readChar()` is another consumer of this same record: it slices fixed-width fields by validated
+UTF-8 scalar count or exact byte count, advances the existing cursor only for open connections, and
+returns NativR character values with preserved source bytes. Raw vectors, package resources, session
+files, URL results, and decompressed gzip contents therefore share one implementation.
+
 URL input extends that connection map through a narrow two-way capability. `base::url()` creates a
 lazy read-only record containing only validated request data. On first open or read, inline
 composition calls the explicit host adapter, while the Worker emits a correlated `url` event and

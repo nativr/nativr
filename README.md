@@ -658,6 +658,11 @@ serialization builtins use bounded binary-mode handles directly.
 It removes only closed, mutable session files; open connections, directories, immutable package
 resources, wildcard strings, and host paths fail without granting filesystem authority.
 
+`readChar()` now runs digest's full-file and Shiny's bookmark-file call shapes over the same owned
+bytes. It accepts raw vectors, package/session paths, and file, URL, or gzip connections; supports
+UTF-8 character counts or exact byte counts; advances open binary cursors; and preserves closed
+connection lifecycle. It does not expose host files or ambient network access.
+
 `stdin()`, `stdout()`, and `stderr()` are stable `c("terminal", "connection")` handles numbered 0,
 1, and 2. Package code can inspect them with `summary()`, `isOpen()`, `isatty()`, `getConnection()`,
 `getAllConnections()`, and `showConnections()`; writes to stdout/stderr become bounded ordered

@@ -563,6 +563,17 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "shape",
     builtinReadBin,
   ),
+  withBuiltinFormals(
+    defineBuiltin("readChar", ["con", "nchars", "useBytes"], "behavioral", builtinReadChar),
+    [
+      { name: "con" },
+      { name: "nchars" },
+      {
+        name: "useBytes",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
   defineBuiltin(
     "open",
     ["con", "open", "blocking"],
@@ -6432,6 +6443,182 @@ async function builtinReadBin(invocation: BuiltinInvocation): Promise<RRawVector
   invocation.context.allocate(result.byteLength);
   if (connection?.open === true) connection.cursor = end;
   return rawVector(result);
+}
+
+async function builtinReadChar(invocation: BuiltinInvocation): Promise<RCharacterVector> {
+  const matched = await matchExact(invocation, ["con", "nchars", "useBytes"]);
+  const source = required(matched, "con", "readChar");
+  const requested = readCharLengths(required(matched, "nchars", "readChar"), invocation);
+  const useBytes = coercibleLogicalFlag(matched.get("useBytes"), false, "useBytes");
+  if (requested.length > invocation.context.limits.maxVectorLength) {
+    throw new RResourceLimitError("NRL4002", "readChar() result length limit exceeded.", {
+      details: {
+        maxVectorLength: invocation.context.limits.maxVectorLength,
+        requested: requested.length,
+      },
+    });
+  }
+
+  let bytes: Uint8Array;
+  let cursor = 0;
+  let connection: VirtualTextConnection | undefined;
+  if (source.type === "raw") {
+    bytes = Uint8Array.from(source.values);
+  } else if (isVirtualTextConnectionHandle(source)) {
+    connection = requireVirtualTextConnection(invocation, source);
+    if (connection.standard !== undefined) {
+      if (connection.standard === "stdin") {
+        throw new RUnsupportedFeatureError(
+          "NRU6202",
+          "readChar(stdin()) requires a browser streaming-input adapter.",
+        );
+      }
+      throw new REvaluationError("NRE2240", "cannot read from this connection");
+    }
+    await ensureUrlConnection(invocation, connection);
+    if (connection.open && !virtualConnectionCanRead(connection.mode)) {
+      throw new REvaluationError("NRE2240", "cannot read from this connection");
+    }
+    if (connection.open && connection.text !== "binary") {
+      invocation.context.warn({
+        code: "NRW1133",
+        message: "text connection used with readChar(), results may be incorrect",
+      });
+    }
+    bytes =
+      connection.gzip === undefined
+        ? readVirtualBinaryFile(invocation, connection.path, "readChar")
+        : await readGzipConnectionContents(invocation, connection);
+    cursor = connection.open ? connection.cursor : 0;
+  } else {
+    bytes = readVirtualBinaryFile(invocation, filePathScalar(source, "readChar"), "readChar");
+  }
+
+  const values: string[] = [];
+  const byteValues: Uint8Array[] = [];
+  let outputBytes = 0;
+  for (let index = 0; index < requested.length; index += 1) {
+    invocation.context.checkpoint();
+    if (isMissing(requested, index) || (requested.values[index] ?? -1) < 0) {
+      throw new RTypeMismatchError("NRT3403", "invalid 'nchars' argument");
+    }
+    const count = requested.values[index] ?? 0;
+    if (count > 0 && cursor >= bytes.byteLength) break;
+    const end = useBytes
+      ? Math.min(bytes.byteLength, cursor + count)
+      : readCharUtf8End(bytes, cursor, count);
+    const field = bytes.slice(cursor, end);
+    cursor = end;
+    if (connection?.open === true) connection.cursor = cursor;
+    const nul = field.indexOf(0);
+    if (nul >= 0) {
+      throw new REvaluationError(
+        "NRE2255",
+        `embedded nul in string: '${readCharDiagnosticField(field)}'`,
+      );
+    }
+    outputBytes += field.byteLength;
+    if (outputBytes > invocation.context.limits.maxOutputBytes) {
+      throw new RResourceLimitError("NRL4007", "readChar() output byte limit exceeded.", {
+        details: {
+          maxOutputBytes: invocation.context.limits.maxOutputBytes,
+          outputBytes,
+        },
+      });
+    }
+    values.push(useBytes ? characterValueFromBytes(field, "bytes") : decodeReadCharUtf8(field));
+    byteValues.push(field);
+  }
+  invocation.context.allocate(values.length);
+  return characterVector(
+    values,
+    undefined,
+    values.map(() => "unknown"),
+    byteValues,
+  );
+}
+
+function readCharLengths(value: RValue, invocation: BuiltinInvocation): RIntegerVector {
+  if (value.type === "null") return integerVector([]);
+  if (isAtomic(value)) return coerceAtomicToInteger(value, invocation);
+  if (value.type !== "list" && value.type !== "pairlist") {
+    throw new RTypeMismatchError("NRT3403", "invalid 'nchars' argument");
+  }
+  const values = new Int32Array(value.length);
+  const missing = new Uint8Array(value.length);
+  for (let index = 0; index < value.length; index += 1) {
+    const element = value.values[index] ?? R_NULL;
+    if (!isAtomic(element) || element.length !== 1) {
+      throw new RTypeMismatchError("NRT3403", "invalid 'nchars' argument");
+    }
+    const coerced = coerceAtomicToInteger(element, invocation);
+    if (isMissing(coerced, 0)) missing[index] = 1;
+    else values[index] = coerced.values[0] ?? 0;
+  }
+  invocation.context.allocate(value.length);
+  return integerVector(values, compactMask(missing));
+}
+
+function readCharUtf8End(bytes: Uint8Array, start: number, count: number): number {
+  let cursor = start;
+  let characters = 0;
+  while (cursor < bytes.byteLength && characters < count) {
+    const first = bytes[cursor] ?? 0;
+    let width: number;
+    if (first <= 0x7f) width = 1;
+    else if (first >= 0xc2 && first <= 0xdf) width = 2;
+    else if (first >= 0xe0 && first <= 0xef) width = 3;
+    else if (first >= 0xf0 && first <= 0xf4) width = 4;
+    else throw new REvaluationError("NRE2255", "invalid UTF-8 input in readChar()");
+    if (cursor + width > bytes.byteLength) {
+      throw new REvaluationError("NRE2255", "invalid UTF-8 input in readChar()");
+    }
+    for (let offset = 1; offset < width; offset += 1) {
+      const continuation = bytes[cursor + offset] ?? 0;
+      if (continuation < 0x80 || continuation > 0xbf) {
+        throw new REvaluationError("NRE2255", "invalid UTF-8 input in readChar()");
+      }
+    }
+    const second = bytes[cursor + 1] ?? 0;
+    if (
+      (first === 0xe0 && second < 0xa0) ||
+      (first === 0xed && second > 0x9f) ||
+      (first === 0xf0 && second < 0x90) ||
+      (first === 0xf4 && second > 0x8f)
+    ) {
+      throw new REvaluationError("NRE2255", "invalid UTF-8 input in readChar()");
+    }
+    cursor += width;
+    characters += 1;
+  }
+  return cursor;
+}
+
+function decodeReadCharUtf8(bytes: Uint8Array): string {
+  const Decoder = (
+    globalThis as unknown as {
+      readonly TextDecoder: new (
+        label: string,
+        options: { readonly fatal: boolean },
+      ) => { readonly decode: (input: Uint8Array) => string };
+    }
+  ).TextDecoder;
+  try {
+    return new Decoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    throw new REvaluationError("NRE2255", "invalid UTF-8 input in readChar()");
+  }
+}
+
+function readCharDiagnosticField(bytes: Uint8Array): string {
+  let output = "";
+  for (const byte of bytes) {
+    if (byte === 0) output += "\\0";
+    else if (byte >= 0x20 && byte <= 0x7e && byte !== 0x27 && byte !== 0x5c) {
+      output += String.fromCodePoint(byte);
+    } else output += `\\x${byte.toString(16).padStart(2, "0")}`;
+  }
+  return output;
 }
 
 function readBinCount(value: RValue | undefined): number {

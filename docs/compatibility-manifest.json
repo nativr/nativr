@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.239.0",
+  "languageSubsetVersion": "0.240.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -144,6 +144,7 @@
         { "name": "closeAllConnections", "compatibility": "behavioral" },
         { "name": "gzcon", "compatibility": "behavioral" },
         { "name": "readBin", "compatibility": "shape" },
+        { "name": "readChar", "compatibility": "behavioral" },
         { "name": "open", "compatibility": "behavioral" },
         { "name": "close", "compatibility": "behavioral" },
         { "name": "flush", "compatibility": "behavioral" },

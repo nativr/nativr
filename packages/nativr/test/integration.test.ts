@@ -30,7 +30,7 @@ importFrom(graphics, axis, plot.new, plot.window, rect)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median)
 importFrom(utils, packageDescription, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, remove_files, axis_ticks, sourced_value, ask_value, remote_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output)
+export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, remove_files, fixed_text, axis_ticks, sourced_value, ask_value, remote_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -76,6 +76,14 @@ remove_files <- function() {
   writeLines("package", paths[1])
   writeLines("cleanup", paths[2])
   c(file.exists(paths), file.remove(paths), file.exists(paths))
+}
+fixed_text <- function() {
+  resource <- system.file("extdata", "config.json", package = "nativrfixture")
+  bookmark <- tempfile()
+  cat("bookmarked", file = bookmark)
+  result <- c(readChar(resource, file.info(resource)$size), readChar(bookmark, 1000L))
+  file.remove(bookmark)
+  result
 }
 axis_ticks <- function() {
   plot.new()
@@ -1877,6 +1885,141 @@ describe("complete inline source-to-result vertical slice", () => {
     await limited.dispose();
   });
 
+  it("reads digest and Shiny's usage-ranked fixed-width text from owned bytes", async () => {
+    const runtime = await session();
+    const measured = await runtime.evalDetailed(`
+      package_path <- "nativr://session-temp/digest.txt"
+      cat("digest-input", file = package_path)
+      bookmark <- tempfile()
+      cat("bookmark-time", file = bookmark)
+      value <- withVisible(readChar(package_path, file.info(package_path)$size))
+      c(
+        value$value,
+        readChar(bookmark, 1000L),
+        value$visible,
+        names(formals(readChar)),
+        file.remove(c(package_path, bookmark))
+      )
+    `);
+    expect(measured.value).toEqual([
+      "digest-input",
+      "bookmark-time",
+      "TRUE",
+      "con",
+      "nchars",
+      "useBytes",
+      "TRUE",
+      "TRUE",
+    ]);
+    expect(measured.warnings).toEqual([]);
+
+    await expect(
+      runtime.eval(`
+        bytes <- as.raw(c(195, 169, 120, 240, 159, 152, 128))
+        chars <- readChar(bytes, c(1, 1, 1))
+        fields <- readChar(bytes, rep(1L, 7), useBytes = TRUE)
+        c(
+          chars,
+          Encoding(chars),
+          as.integer(charToRaw(fields[1])),
+          as.integer(charToRaw(fields[2])),
+          fields[3],
+          as.integer(charToRaw(fields[4])),
+          as.integer(charToRaw(fields[5])),
+          as.integer(charToRaw(fields[6])),
+          as.integer(charToRaw(fields[7]))
+        )
+      `),
+    ).resolves.toEqual([
+      "é",
+      "x",
+      "😀",
+      "unknown",
+      "unknown",
+      "unknown",
+      "195",
+      "169",
+      "x",
+      "240",
+      "159",
+      "152",
+      "128",
+    ]);
+    await expect(
+      runtime.eval(`
+        x <- structure(c(0, 2.9, 99), names = c("zero", "two", "rest"), dim = c(3, 1))
+        value <- readChar(charToRaw("abcdef"), x)
+        c(value, is.null(attributes(value)), length(readChar(raw(), c(0L, 1L, 0L))))
+      `),
+    ).resolves.toEqual(["", "ab", "cdef", "TRUE", "1"]);
+
+    const connection = await runtime.evalDetailed(`
+      path <- tempfile()
+      cat("abcdef", file = path)
+      closed <- file(path)
+      closed_value <- readChar(closed, c(2L, 9L))
+      closed_after <- isOpen(closed)
+      con <- file(path, "rb")
+      first <- readChar(con, 2L)
+      second <- readChar(con, c(1L, 9L))
+      position <- seek(con, NA)
+      close(con)
+      text <- file(path, "r")
+      text_value <- readChar(text, 2L)
+      close(text)
+      file.remove(path)
+      c(closed_value, closed_after, first, second, position, text_value)
+    `);
+    expect(connection.value).toEqual(["ab", "cdef", "FALSE", "ab", "c", "def", "6", "ab"]);
+    expect(connection.warnings).toEqual([
+      {
+        code: "NRW1133",
+        message: "text connection used with readChar(), results may be incorrect",
+      },
+    ]);
+
+    await expect(runtime.eval("readChar(as.raw(c(65, 0, 66)), 3L)")).rejects.toMatchObject({
+      code: "NRE2255",
+    });
+    await expect(runtime.eval("readChar(as.raw(195), 1L)")).rejects.toMatchObject({
+      code: "NRE2255",
+    });
+    await expect(runtime.eval("readChar(charToRaw('abc'), -1L)")).rejects.toMatchObject({
+      code: "NRT3403",
+    });
+    await expect(runtime.eval("readChar(charToRaw('abc'), NA_integer_)")).rejects.toMatchObject({
+      code: "NRT3403",
+    });
+    await runtime.dispose();
+
+    const packaged = await createR({ execution: "inline", assets, packages: [pureRFixture] });
+    await expect(packaged.eval("nativrfixture::fixed_text()")).resolves.toEqual([
+      '{"scale":2}\n',
+      "bookmarked",
+    ]);
+    await packaged.dispose();
+
+    const limitedVector = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 2 },
+    });
+    await expect(
+      limitedVector.eval("readChar(charToRaw('abc'), rep(1L, 3))"),
+    ).rejects.toMatchObject({ code: "NRL4002" });
+    await limitedVector.dispose();
+
+    const limitedOutput = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 16, maxOutputBytes: 8 },
+    });
+    await expect(limitedOutput.eval("readChar(charToRaw('123456789'), 9L)")).rejects.toMatchObject({
+      code: "NRL4007",
+    });
+    await limitedOutput.dispose();
+  });
+
   it("manages browser-owned directories, relative paths, and deterministic runtime roots", async () => {
     const runtime = await session();
     const result = await runtime.evalDetailed(`
@@ -3055,6 +3198,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "duration",
       "dynamic_describe",
       "filtered_flow",
+      "fixed_text",
       "hcl_colours",
       "histogram_counts",
       "installed_version",
@@ -10290,7 +10434,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.239.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.240.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

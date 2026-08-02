@@ -257,7 +257,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 256,file.remove,true,2,xfun|data.table,4,2.1,1.8
 257,as.hexmode,true,2,digest|data.table,3,2.1,1.7
 258,Filter,true,2,xfun|rstudioapi,2,2.1,1.7
-259,readChar,false,2,digest|shiny,2,2.1,1.7
+259,readChar,true,2,digest|shiny,2,2.1,1.7
 260,reorder,true,1,ggplot2,4,1.0,1.7
 261,chull,true,1,ggplot2,3,1.0,1.7
 262,terrain.colors,true,1,ggplot2,3,1.0,1.7

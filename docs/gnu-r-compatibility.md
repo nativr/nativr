@@ -788,6 +788,17 @@ literals, and host paths stay protected. Native filesystem permissions/diagnosti
 expansion remain separate compatibility depth. The next measured unresolved callable is rank 259
 `base::readChar`.
 
+The fixed-width text-input increment raises current name overlap to 611 of 2,522. Rank 259
+`base::readChar` covers digest's whole-file and Shiny's bookmark-file examples at 1.7%
+download-weighted reach. GNU R 4.6 differential evidence covers exact formals, raw vectors, ASCII
+character/byte widths, vectorized/zero/fractional lengths, EOF and partial fields, attribute
+removal, open cursor and closed lifecycle behavior, text-mode warnings, and invalid NUL/length
+inputs. NativR-only browser-UTF-8 evidence covers scalar widths, exact arbitrary byte fields, and
+invalid UTF-8; package and Worker evidence crosses immutable resources, session files, file/URL/gzip
+connections, and resource bounds without a package-specific path. Host files, native locale codecs,
+streaming stdin, `writeChar`, and platform-exact diagnostics remain compatibility depth. The next
+measured unresolved callable is rank 277 `base::debug`.
+
 ## Completion evidence
 
 The objective is complete only when:

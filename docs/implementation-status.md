@@ -11,7 +11,7 @@ Date: 2026-08-02
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 626 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 627 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Character vectors own exact per-element bytes and canonical `unknown`/`latin1`/`UTF-8`/`bytes`
@@ -429,6 +429,10 @@ Date: 2026-08-02
   coercion, validation before mutation, package-namespace and Worker execution, and resource bounds.
   Only closed mutable session files are removed; open connections, directories, immutable resources,
   wildcard literals, and host paths remain protected.
+- Usage-ranked `base::readChar` for digest and Shiny's measured fixed-width file reads, including
+  raw vectors, package/session paths, file/URL/gzip connections, UTF-8 character and exact-byte
+  counts, vector lengths, EOF/zero fields, cursor/lifecycle behavior, text-mode warnings, invalid
+  NUL/UTF-8 input, exact formals, pure-R package and Worker execution, and resource bounds.
 - Usage-ranked `grDevices::gray`/`grey` and `gray.colors`/`grey.colors` with zoo's two measured
   calls, byte-exact RGB(A) output, documented gamma correction, alpha recycling, reversal,
   descending endpoints, alias behavior, atomic gray-level coercion, attribute removal, and bounded
@@ -705,11 +709,11 @@ Date: 2026-08-02
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 12 files and 426 tests, with three explicitly skipped tests.
+- Vitest currently passes 12 files and 427 tests, with three explicitly skipped tests.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 775/775 cases. The optional black-box R oracle passes all 739
-  eligible cases and explicitly skips 36 NativR-owned
+- Checked-in conformance passes 778/778 cases. The optional black-box R oracle passes all 741
+  eligible cases and explicitly skips 37 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,
   expanded matrix, weighted sampling, S3, and R6 paths with no evaluation-time network requests.

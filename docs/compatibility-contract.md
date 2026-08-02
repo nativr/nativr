@@ -488,6 +488,16 @@ level control, so compressed-byte or compression-ratio identity is not claimed. 
 transports, sockets, seek/pushback in compressed streams, concatenated-member fidelity, and typed
 binary I/O remain separate capabilities.
 
+Usage-ranked `base::readChar` has GNU R 4.6 behavioral differential evidence for digest's
+`readChar(path, file.info(path)$size)` and Shiny's `readChar(path, 1000)` calls, exact formals,
+raw-vector input, ASCII character/byte widths, vectorized/zero/fractional lengths, EOF, attribute
+removal, visible results, and invalid NUL/length boundaries. Browser-owned executable evidence
+separately covers deterministic UTF-8 scalar widths, exact arbitrary byte fields, and invalid UTF-8.
+Closed file connections open only for the operation and remain closed; open readable connections
+advance one byte cursor; open text mode warns; package/session paths and URL/gzip records reuse the
+same bounded byte store. Host paths, streaming stdin, native non-UTF-8 locale codecs, `writeChar`,
+and platform-exact connection diagnostics are not claimed.
+
 `base::R.home`, `dir.create`, `dir.exists`, `list.files`/`dir`, `list.dirs`, `getwd`, `setwd`,
 `normalizePath`, `basename`, and `dirname` have public-shape differential evidence plus NativR-only
 integration coverage for the virtual directory boundary. The runtime owns a static runtime tree,

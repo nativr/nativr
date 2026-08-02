@@ -710,6 +710,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      resources, open handles, and resource bounds have evidence. Host filesystems, wildcard
      expansion, directory removal, and native platform diagnostics remain outside this browser-owned
      contract.
+152. Usage-ranked fixed-width text input: rank-259 `base::readChar` runs digest's whole-file and
+     Shiny's bookmark-file examples over the existing virtual byte and connection layer. Character
+     versus byte widths, vector lengths, EOF, open/closed cursors, package/session files, URL/gzip
+     composition, pure-R namespaces, Worker execution, invalid input, and resource bounds have GNU R
+     4.6 evidence. Host files, native locale codecs, streaming stdin, and `writeChar` remain
+     compatibility depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

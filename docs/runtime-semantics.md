@@ -454,6 +454,14 @@ when `close()` destroys the wrapper, matching GNU R's zero-byte-before-close beh
 stream API does not expose compression-level selection, so `level` is range-checked but byte
 identity is not promised. No URL, socket, host file, or ambient network capability is introduced.
 
+`readChar(con, nchars, useBytes = FALSE)` consumes fixed-width fields from a raw vector or the same
+owned package/session/file/URL/gzip byte sources. Character mode validates UTF-8 and counts Unicode
+scalar values; byte mode retains exact field bytes. Zero-width fields do not consume input, a
+positive request at EOF stops the result, and a partial final field is returned. Open readable
+connections advance their byte cursor after each field, while closed connections are read
+operation-scoped and remain closed. Embedded NUL, invalid UTF-8, negative/missing widths, result
+length, and total output bytes fail within the ordinary evaluator limits.
+
 The same map owns a bounded directory tree and current working directory. `R.home()` identifies a
 static `nativr://runtime` shape; `tempdir()` identifies the mutable session root; and package roots
 come only from supplied bundles. `dir.create()` and recursive `unlink()` mutate session directories,
