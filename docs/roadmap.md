@@ -699,6 +699,17 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      hue wrapping, saturation/value and alpha recycling, reversal, formals, count/error boundaries,
      source-only package namespaces, and the default Worker Playground. HCL palette catalogs,
      mutable palette state, profiles, and device color management remain compatibility depth.
+150. Usage-ranked rectangles: rank-253 `graphics::rect` projects recycled coordinate/style vectors
+     into the existing polygon journal for sass and zoo's measured calls. Missing/non-finite
+     omission, exact formals and visibility, source-only packages, Worker transport, Canvas/PNG, and
+     record/replay have evidence; positive hatching, clipping/log axes, coordinate classes, and
+     device-pixel identity remain compatibility depth.
+151. Usage-ranked file removal: rank-256 `base::file.remove` runs xfun and data.table's four
+     measured cleanup calls over closed session-owned files. GNU R-shaped per-path results,
+     warnings, coercion, mutation ordering, package execution, Worker transport, immutable
+     resources, open handles, and resource bounds have evidence. Host filesystems, wildcard
+     expansion, directory removal, and native platform diagnostics remain outside this browser-owned
+     contract.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

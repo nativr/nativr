@@ -254,7 +254,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 253,rect,true,2,sass|zoo,3,2.1,1.8
 254,vector,true,2,purrr|data.table,8,2.1,1.8
 255,complex,true,2,StanHeaders|zoo,2,2.1,1.8
-256,file.remove,false,2,xfun|data.table,4,2.1,1.8
+256,file.remove,true,2,xfun|data.table,4,2.1,1.8
 257,as.hexmode,true,2,digest|data.table,3,2.1,1.7
 258,Filter,true,2,xfun|rstudioapi,2,2.1,1.7
 259,readChar,false,2,digest|shiny,2,2.1,1.7

@@ -778,6 +778,16 @@ and record/replay paths without a package-specific implementation. Positive hatc
 coordinate classes, clipping/log axes, arbitrary graphics parameters, and device-identical joins
 remain incomplete. The next measured unresolved callable is rank 256 `base::file.remove`.
 
+The file-removal increment raises current name overlap to 610 of 2,522. Rank 256 `base::file.remove`
+covers four measured cleanup calls across xfun and data.table at 1.8% download-weighted reach. GNU R
+4.6 differential evidence covers exact formals, visible per-path logical results, attribute removal,
+later-argument atomic coercion, validation before mutation, zero-length inputs, duplicate and
+missing paths, and per-failure warnings. NativR-only package and Worker evidence proves that closed
+session files can be removed while package resources, open connections, directories, wildcard
+literals, and host paths stay protected. Native filesystem permissions/diagnostics and `Sys.glob`
+expansion remain separate compatibility depth. The next measured unresolved callable is rank 259
+`base::readChar`.
+
 ## Completion evidence
 
 The objective is complete only when:

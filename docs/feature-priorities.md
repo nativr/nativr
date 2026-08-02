@@ -75,16 +75,16 @@ signal.
 
 | Priority | Measured rank | Callable        | Weighted reach | Packages | Observed calls |
 | -------: | ------------: | --------------- | -------------: | -------: | -------------: |
-|        1 |           256 | `file.remove`   |           1.8% |        2 |              4 |
-|        2 |           259 | `readChar`      |           1.7% |        2 |              2 |
-|        3 |           277 | `debug`         |           1.7% |        1 |              1 |
-|        4 |           279 | `undebug`       |           1.7% |        1 |              1 |
-|        5 |           281 | `pdf`           |           1.7% |        2 |              2 |
-|        6 |           287 | `file.create`   |           1.6% |        1 |              1 |
-|        7 |           292 | `ts.plot`       |           1.6% |        1 |              1 |
-|        8 |           293 | `Sys.which`     |           1.6% |        2 |              2 |
-|        9 |           311 | `download.file` |           1.3% |        1 |              1 |
-|       10 |           313 | `pipe`          |           1.3% |        1 |              1 |
+|        1 |           259 | `readChar`      |           1.7% |        2 |              2 |
+|        2 |           277 | `debug`         |           1.7% |        1 |              1 |
+|        3 |           279 | `undebug`       |           1.7% |        1 |              1 |
+|        4 |           281 | `pdf`           |           1.7% |        2 |              2 |
+|        5 |           287 | `file.create`   |           1.6% |        1 |              1 |
+|        6 |           292 | `ts.plot`       |           1.6% |        1 |              1 |
+|        7 |           293 | `Sys.which`     |           1.6% |        2 |              2 |
+|        8 |           311 | `download.file` |           1.3% |        1 |              1 |
+|        9 |           313 | `pipe`          |           1.3% |        1 |              1 |
+|       10 |           314 | `unz`           |           1.3% |        1 |              1 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -187,7 +187,8 @@ common longest length; missing/non-finite rectangles are omitted, transparent fi
 `par()` line defaults flow through the existing polygon journal, and exact formals, visibility,
 record/replay, pure-R package, Worker, and Canvas paths have executable evidence. Positive hatch
 density, clipping/log axes, coordinate-class conversion, and device-exact joins remain explicit
-depth. The next measured unresolved callable is rank 256 `base::file.remove`. Rank 144 `Encoding` is
+depth. Rank 256 `base::file.remove` is now complete for xfun and data.table's four measured cleanup
+calls; the next measured unresolved callable is rank 259 `base::readChar`. Rank 144 `Encoding` is
 also complete for all 12 observed calls across rlang, utf8, and xfun (4.5% weighted reach), together
 with adjacent `Encoding<-`, `enc2utf8`, and `enc2native`. The shared character representation
 preserves exact bytes and canonical R marks through subset/replacement, concatenation, raw
@@ -302,33 +303,33 @@ surface. Independent whitespace trimming through `trimws` (rank 251, 1.9%) is no
 Ranks 253–255 require package-metadata, connection, or process-timing host contracts, while rank 256
 `vapply` is already supported. Time-series endpoint inspection through `end` (rank 257, 1.8%) is now
 complete. Ranks 258–259 belong to graphics/color architecture; ranks 260 `complex` and 261 `vector`
-are already supported, while rank 262 `file.remove` requires a filesystem host contract. Grouped
-factor reordering through `reorder` (rank 263, 1.7%) and planar convex-hull selection through
-`chull` (rank 264, 1.7%) are now complete. Rank 265 `terrain.colors` belongs to color-generation
-architecture. Model covariance plus central Student-t probabilities now complete `confint` (rank
-266, 1.7%). Session-local numeric perturbation through `jitter` (rank 267, 1.7%) and argument-choice
-normalization through `match.arg` (rank 268, 1.7%) are complete. Stable logistic quantiles through
-`qlogis` (rank 269, 1.7%) and matrix centering/scaling through `scale` (rank 270, 1.7%) are complete
-too. The model architecture completes `aov` and `fitted` (ranks 271–272), and `IQR` (rank 273)
-covers interquartile ranges through all nine GNU R quantile algorithms. Numeric clustering through
-`kmeans` (rank 274, 1.7%) is now complete for the documented bounded algorithms and data shapes.
-Ranks 275–278 (`log2`, `predict`, `resid`, and `rt`) are already supported. Circular, open, and
-filtering convolution through `convolve` (rank 225, 2.3%) is now complete, and rank 279 `Filter` is
-already supported. Hexadecimal integer modes through `as.hexmode` (rank 280, 1.7%) are now complete
-together with their formatting, printing, selection, and bitwise method chain. Ranks 281 `axis`, 282
-`readChar`, 283 `debug`, and 285 `undebug` depend on graphics, connection, or interactive-debug host
-architecture; rank 284 `emptyenv` is already supported. Rank 286 `as.list.environment` is the next
-isolated browser-safe callable and is now complete with S3 dispatch, local binding enumeration,
-hidden-name and sorting controls, hash-aware unsorted order, and lazy-promise forcing. Rank 287
-`list2env` is already supported. Rank 288 `capabilities` is now complete: the four sampled calls
-query `cairo` or `profmem`, and the browser runtime truthfully reports both unavailable while
-preserving GNU R's full named selection shape. Ranks 289 `pdf` and 290 `title` require graphics-host
-architecture, rank 291 `exists` is already supported, and rank 292 `kappa` is now complete with QR
-estimates, exact 2-norm results, direct one-/infinity-norm paths, triangular controls, and `qr`/`lm`
-dispatch. Rank 293 `model.matrix` is already supported. Rank 294 `xtabs` is now complete for the
-sampled RcppEigen factor-table call plus weighted/matrix responses, subsets, missing-value controls,
-unused levels, and table metadata. Rank 295 `RNGkind` is now complete for the six sampled query
-calls in the
+are already supported, while the current rank-256 `file.remove` now uses the owned session-file
+contract without exposing a host filesystem. Grouped factor reordering through `reorder` (rank 263,
+1.7%) and planar convex-hull selection through `chull` (rank 264, 1.7%) are now complete. Rank 265
+`terrain.colors` belongs to color-generation architecture. Model covariance plus central Student-t
+probabilities now complete `confint` (rank 266, 1.7%). Session-local numeric perturbation through
+`jitter` (rank 267, 1.7%) and argument-choice normalization through `match.arg` (rank 268, 1.7%) are
+complete. Stable logistic quantiles through `qlogis` (rank 269, 1.7%) and matrix centering/scaling
+through `scale` (rank 270, 1.7%) are complete too. The model architecture completes `aov` and
+`fitted` (ranks 271–272), and `IQR` (rank 273) covers interquartile ranges through all nine GNU R
+quantile algorithms. Numeric clustering through `kmeans` (rank 274, 1.7%) is now complete for the
+documented bounded algorithms and data shapes. Ranks 275–278 (`log2`, `predict`, `resid`, and `rt`)
+are already supported. Circular, open, and filtering convolution through `convolve` (rank 225, 2.3%)
+is now complete, and rank 279 `Filter` is already supported. Hexadecimal integer modes through
+`as.hexmode` (rank 280, 1.7%) are now complete together with their formatting, printing, selection,
+and bitwise method chain. Ranks 281 `axis`, 282 `readChar`, 283 `debug`, and 285 `undebug` depend on
+graphics, connection, or interactive-debug host architecture; rank 284 `emptyenv` is already
+supported. Rank 286 `as.list.environment` is the next isolated browser-safe callable and is now
+complete with S3 dispatch, local binding enumeration, hidden-name and sorting controls, hash-aware
+unsorted order, and lazy-promise forcing. Rank 287 `list2env` is already supported. Rank 288
+`capabilities` is now complete: the four sampled calls query `cairo` or `profmem`, and the browser
+runtime truthfully reports both unavailable while preserving GNU R's full named selection shape.
+Ranks 289 `pdf` and 290 `title` require graphics-host architecture, rank 291 `exists` is already
+supported, and rank 292 `kappa` is now complete with QR estimates, exact 2-norm results, direct
+one-/infinity-norm paths, triangular controls, and `qr`/`lm` dispatch. Rank 293 `model.matrix` is
+already supported. Rank 294 `xtabs` is now complete for the sampled RcppEigen factor-table call plus
+weighted/matrix responses, subsets, missing-value controls, unused levels, and table metadata. Rank
+295 `RNGkind` is now complete for the six sampled query calls in the
 [`withr` reference manual](https://cran.r-project.org/web/packages/withr/refman/withr.html) plus
 partial/default kind selection, prior-state return and visibility, warnings, the default
 Mersenne-Twister/Inversion pair, and both discrete samplers. Rank 296 `sample.int` is now complete
@@ -1575,6 +1576,13 @@ ties:
      execution, default Worker transport, and Playground Canvas rendering have evidence. Positive
      hatch density, coordinate classes, clipping/log axes, arbitrary graphical parameters, and
      device-identical joins remain compatibility depth.
+152. Per-path file removal: rank-256 `base::file.remove` represents four measured calls across xfun
+     and data.table at 1.8% download-weighted reach. It removes closed session-owned files with one
+     visible logical result per path and a bounded warning for each failure. GNU R formals, argument
+     validation/coercion, attribute removal, duplicate/missing paths, immutable package resources,
+     open connections, namespace execution, default Worker transport, and resource limits have
+     evidence. Host files, wildcard expansion, directory removal, and native platform error text
+     remain compatibility depth.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

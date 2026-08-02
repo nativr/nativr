@@ -30,7 +30,7 @@ importFrom(graphics, axis, plot.new, plot.window, rect)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median)
 importFrom(utils, packageDescription, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, axis_ticks, sourced_value, ask_value, remote_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output)
+export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, remove_files, axis_ticks, sourced_value, ask_value, remote_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -70,6 +70,12 @@ usage_rectangles <- function() {
   plot.new()
   plot.window(c(0, 1), c(0, 1))
   rect(c(0, 0.5), c(0, 0.5), c(0.5, 1), c(0.5, 1), col = "#00000044", border = NA)
+}
+remove_files <- function() {
+  paths <- c(tempfile(), tempfile())
+  writeLines("package", paths[1])
+  writeLines("cleanup", paths[2])
+  c(file.exists(paths), file.remove(paths), file.exists(paths))
 }
 axis_ticks <- function() {
   plot.new()
@@ -1766,6 +1772,111 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("removes xfun and data.table's usage-ranked temporary files with per-path results", async () => {
+    const runtime = await session();
+    const removed = await runtime.evalDetailed(`
+      paths <- c(tempfile(), tempfile(), tempfile())
+      writeLines("first", paths[1])
+      writeLines("second", paths[2])
+      writeLines("third", paths[3])
+      shaped <- matrix(setNames(paths[1:2], c("a", "b")), nrow = 1)
+      value <- withVisible(file.remove(shaped, extra = paths[3]))
+      c(
+        value$value,
+        value$visible,
+        is.null(attributes(value$value)),
+        file.exists(paths)
+      )
+    `);
+    expect(removed.value).toEqual([true, true, true, true, true, false, false, false]);
+    expect(removed.warnings).toEqual([]);
+
+    const failures = await runtime.evalDetailed(`
+      root <- tempfile("file-remove-")
+      dir.create(root)
+      locked <- file.path(root, "locked.txt")
+      writeLines("locked", locked)
+      con <- file(locked, "r")
+      missing <- file.path(root, "missing.txt")
+      value <- withVisible(file.remove(c(
+        locked, missing, NA_character_, root, "/host-file.txt", file.path(root, "*.txt")
+      )))
+      result <- c(value$value, value$visible, file.exists(locked), dir.exists(root), readLines(con))
+      close(con)
+      unlink(root, recursive = TRUE)
+      result
+    `);
+    expect(failures.value).toEqual([
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "locked",
+    ]);
+    expect(failures.warnings).toHaveLength(6);
+    expect(failures.warnings.every((warning) => warning.code === "NRW1132")).toBe(true);
+
+    const coerced = await runtime.evalDetailed(`
+      path <- tempfile()
+      writeLines("coerce", path)
+      c(file.remove(path, 1L), file.exists(path), names(formals(file.remove)))
+    `);
+    expect(coerced.value).toEqual(["TRUE", "FALSE", "FALSE", "..."]);
+    expect(coerced.warnings).toEqual([
+      { code: "NRW1132", message: "cannot remove file '1', reason 'No such file or directory'" },
+    ]);
+    await expect(
+      runtime.eval(`
+        path <- tempfile()
+        writeLines("preserved", path)
+        invalid <- inherits(try(file.remove(factor(path)), silent = TRUE), "try-error")
+        c(invalid, file.exists(path), unlink(path))
+      `),
+    ).resolves.toEqual([1, 1, 0]);
+    await expect(runtime.eval("file.remove(character())")).resolves.toEqual([]);
+    await expect(runtime.eval("file.remove()")).rejects.toMatchObject({ code: "NRT3356" });
+    await expect(runtime.eval("file.remove(NULL)")).rejects.toMatchObject({ code: "NRT3356" });
+    await runtime.dispose();
+
+    const packaged = await createR({ execution: "inline", assets, packages: [pureRFixture] });
+    await expect(packaged.eval("nativrfixture::remove_files()")).resolves.toEqual([
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+    ]);
+    const immutable = await packaged.evalDetailed(`
+      path <- system.file("extdata", "config.json", package = "nativrfixture")
+      c(file.remove(path), file.exists(path), readLines(path))
+    `);
+    expect(immutable.value).toEqual(["FALSE", "TRUE", '{"scale":2}']);
+    expect(immutable.warnings).toEqual([
+      {
+        code: "NRW1132",
+        message:
+          "cannot remove file 'nativr://package/nativrfixture/extdata/config.json', reason 'Permission denied'",
+      },
+    ]);
+    await packaged.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 3 },
+    });
+    await expect(limited.eval("file.remove(rep('missing', 4))")).rejects.toMatchObject({
+      code: "NRL4002",
+    });
+    await limited.dispose();
+  });
+
   it("manages browser-owned directories, relative paths, and deterministic runtime roots", async () => {
     const runtime = await session();
     const result = await runtime.evalDetailed(`
@@ -2956,6 +3067,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "package_state",
       "process_id",
       "remote_lines",
+      "remove_files",
       "signature_names",
       "sourced_value",
       "square",
@@ -10178,7 +10290,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.238.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.239.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

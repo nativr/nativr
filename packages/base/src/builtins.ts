@@ -576,6 +576,9 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("isOpen", ["con", "rw"], "behavioral", builtinIsOpen),
   defineBuiltin("seek", ["con", "where", "origin", "rw"], "behavioral", builtinSeek),
   defineBuiltin("file.exists", ["..."], "shape", builtinFileExists),
+  withBuiltinFormals(defineBuiltin("file.remove", ["..."], "behavioral", builtinFileRemove), [
+    { name: "..." },
+  ]),
   withBuiltinFormals(
     defineBuiltin("file.info", ["...", "extra_cols"], "behavioral", builtinFileInfo),
     [
@@ -6676,6 +6679,81 @@ async function builtinFileExists(invocation: BuiltinInvocation): Promise<RLogica
   }
   invocation.context.allocate(values.length);
   return logicalVector(values);
+}
+
+async function builtinFileRemove(invocation: BuiltinInvocation): Promise<RLogicalVector> {
+  if (invocation.arguments.length === 0) {
+    throw new RTypeMismatchError("NRT3356", "invalid first filename");
+  }
+  const paths: string[] = [];
+  for (let argumentIndex = 0; argumentIndex < invocation.arguments.length; argumentIndex += 1) {
+    const value = await invocation.force(invocation.arguments[argumentIndex]!.promise);
+    if (argumentIndex === 0) {
+      if (value.type !== "character") {
+        throw new RTypeMismatchError("NRT3356", "invalid first filename");
+      }
+      for (let index = 0; index < value.length; index += 1) {
+        paths.push(isMissing(value, index) ? "" : (value.values[index] ?? ""));
+      }
+      continue;
+    }
+    if (value.type === "null") continue;
+    if (!isAtomic(value)) {
+      throw new RTypeMismatchError("NRT3356", "invalid first filename");
+    }
+    const plain = atomicWithoutAttributes(value);
+    const characters =
+      plain.type === "character" ? plain : coerceAtomicToCharacter(plain, invocation);
+    for (let index = 0; index < characters.length; index += 1) {
+      paths.push(isMissing(characters, index) ? "" : (characters.values[index] ?? ""));
+    }
+  }
+
+  if (paths.length > invocation.context.limits.maxVectorLength) {
+    throw new RResourceLimitError("NRL4002", "file.remove() result length limit exceeded.", {
+      details: {
+        maxVectorLength: invocation.context.limits.maxVectorLength,
+        requested: paths.length,
+      },
+    });
+  }
+  invocation.context.allocate(paths.length);
+  const state = virtualTextFileState(invocation);
+  const removed: boolean[] = [];
+  for (const path of paths) {
+    invocation.context.checkpoint();
+    let resolved: string | undefined;
+    try {
+      if (path.length > 0) resolved = resolveOwnedVirtualPath(invocation, path, "file.remove");
+    } catch {
+      resolved = undefined;
+    }
+    const exists =
+      resolved !== undefined && (state.files.has(resolved) || state.binaryFiles.has(resolved));
+    const open =
+      resolved !== undefined &&
+      [...state.connections.values()].some(
+        (connection) => connection.open && connection.path === resolved,
+      );
+    const writable = resolved?.startsWith(`${VIRTUAL_TEMP_ROOT}/`) ?? false;
+    const success = exists && writable && !open;
+    removed.push(success);
+    if (success && resolved !== undefined) {
+      deleteVirtualFile(state, resolved);
+      continue;
+    }
+    const protectedPath =
+      resolved !== undefined &&
+      (open ||
+        state.directories.has(resolved) ||
+        runtimeVirtualDirectoryExists(resolved) ||
+        packageVirtualPathExists(invocation, resolved));
+    invocation.context.warn({
+      code: "NRW1132",
+      message: `cannot remove file '${path}', reason '${protectedPath ? "Permission denied" : "No such file or directory"}'`,
+    });
+  }
+  return logicalVector(removed);
 }
 
 type FileInfoColumn = "size" | "mode" | "mtime";

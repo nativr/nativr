@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 625,
-    "overlappingNames": 609,
-    "missingReferenceNames": 1913,
+    "nativrRegisteredNames": 626,
+    "overlappingNames": 610,
+    "missingReferenceNames": 1912,
     "nativrExtensionNames": 16,
-    "nameCoverage": 0.241475
+    "nameCoverage": 0.241872
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 443, "nameCoverage": 0.324067 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 444, "nameCoverage": 0.324799 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 75, "nameCoverage": 0.161638 },
     {
       "package": "methods",
@@ -260,6 +260,7 @@
     "file.mode",
     "file.mtime",
     "file.path",
+    "file.remove",
     "file.size",
     "filter",
     "findInterval",
@@ -1462,7 +1463,6 @@
     "file.create",
     "file.edit",
     "file.link",
-    "file.remove",
     "file.rename",
     "file.show",
     "file.symlink",

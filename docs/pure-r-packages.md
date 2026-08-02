@@ -12,6 +12,12 @@ browser, evaluates its `R/*.R` files through the normalized AST runtime, and reu
 closures normally. When execution stops on a missing base/stats/utils primitive, that primitive is
 implemented once for every package that needs it.
 
+This is the deliberate minimum-engineering path: maximize the shared Base R/recommended-package
+substrate, keep the installer package-agnostic, and use unchanged package execution as the
+acceptance test. Package-specific runtime rewrites are avoided; a package-specific host adapter is
+considered only when the package intentionally depends on an external capability that R code alone
+cannot provide.
+
 ```text
 CRAN-like source package
   -> bounded archive + license inspection
@@ -437,6 +443,10 @@ loader.
   resolve inside that immutable package root. `R.home()` and the runtime/package/session directory
   trees are virtual NativR identifiers; they do not reveal or depend on an operating-system
   installation.
+- `file.remove()` supports the per-file cleanup pattern measured in xfun and data.table. It can
+  delete closed mutable session files and returns one logical result per path; immutable package
+  resources, open connections, directories, wildcard literals, and host paths remain unavailable and
+  produce bounded warnings. This lets package cleanup code run without exposing a host filesystem.
 - Package `data/*.R` scripts execute through the same parser and normalized AST as package source;
   `.csv`, `.tab`, and `.txt` datasets load into owned data frames. XDR v2/v3 `.rda`/`.RData` and
   gzip wrappers use the independent bounded serialization decoder, and `R/sysdata.rda` enters the

@@ -420,6 +420,13 @@ through the normal Tree-sitter R parser, normalized AST, and evaluator in the ca
 stored-byte budget is `maxOutputBytes`; entry counts, traversal, recursion, and reconstructed values
 also consume the normal resource limits.
 
+`file.remove(...)` validates all arguments before mutation, returns a visible logical value for each
+path, and warns once for every failure. The first argument must be character; later atomic arguments
+use ordinary character coercion. Only closed ordinary session files are removed. Directories, open
+connections, immutable runtime/package files, wildcard literals, missing paths, and host paths fail
+deterministically. Wildcard expansion remains an explicit `Sys.glob()` concern, matching R's
+separation between globbing and removal.
+
 `writeLines(text, path)` truncates a session text file and writes the selected separator after every
 character element; missing strings render as `NA`. With no connection argument it emits the same
 bounded stdout events as other textual output. `readLines(path)` recognizes LF, CRLF, and CR,

@@ -87,6 +87,10 @@ test("runs the required Worker examples without evaluation network traffic", asy
   });
   expect(rectanglePixels).toBeGreaterThan(100);
 
+  await page.locator("#source").fill("nativrdemo::remove_files()");
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("[true, true, true, true, false, false]");
+
   await page.locator("#source").fill("nativrdemo::custom_axis()");
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("[1, 2, 3]");

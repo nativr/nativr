@@ -506,6 +506,15 @@ package resources report deterministic virtual modes and metadata. `extra_cols =
 exposed. Host stat calls, links, ACLs, native owners, executable classification, and platform-exact
 timestamps are not claimed.
 
+Usage-ranked `base::file.remove` has GNU R 4.6 differential evidence for its `...` formals, visible
+per-path logical results, attribute removal, later-argument atomic coercion, zero-length arguments,
+validation before mutation, and one warning per failed removal. NativR removes only closed ordinary
+files in the mutable session tree. Open connections, directories, immutable runtime/package
+resources, missing paths, wildcard literals, and host paths remain unchanged and return `FALSE`;
+glob expansion and recursive directory removal remain separate `Sys.glob` and `unlink`
+responsibilities. Browser-owned failure reasons are deterministic rather than claims about Windows
+or Unix native diagnostics.
+
 `utils::read.table`, `read.csv`, `read.csv2`, `read.delim`, and `read.delim2` have behavioral
 differential evidence for bounded browser-memory text, headers, quoted separators and doubled
 quotes, missing strings, syntactic names, row names, and logical/integer/double conversion.

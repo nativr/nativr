@@ -8448,6 +8448,28 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "file-remove-xfun-data-table-vector-results-visibility-and-formals",
+    "code": "paths <- c(tempfile(), tempfile())\nwriteLines(\"first\", paths[1])\nwriteLines(\"second\", paths[2])\nshaped <- matrix(setNames(paths, c(\"a\", \"b\")), nrow = 1)\nremoved <- withVisible(file.remove(shaped))\nc(removed$value, removed$visible, is.null(attributes(removed$value)), file.exists(paths), names(formals(file.remove)))",
+    "expected": ["TRUE", "TRUE", "TRUE", "TRUE", "FALSE", "FALSE", "..."],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "file-remove-missing-literal-wildcard-and-directory-failures",
+    "code": "root <- tempfile(\"file-remove-\")\ndir.create(root)\nchild <- file.path(root, \"child.txt\")\nwriteLines(\"child\", child)\nremoved <- file.remove(c(file.path(root, \"missing.txt\"), NA_character_, root, file.path(root, \"*.txt\")))\nkept <- c(dir.exists(root), file.exists(child))\nunlink(root, recursive = TRUE)\nc(removed, kept)",
+    "expected": [false, false, false, false, true, true],
+    "expectedWarning": true,
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "file-remove-first-argument-coercion-and-empty-boundaries",
+    "code": "a <- tempfile(); b <- tempfile(); preserved <- tempfile()\nwriteLines(\"a\", a); writeLines(\"b\", b); writeLines(\"preserved\", preserved)\nfirst_empty <- file.remove(character(), a)\ncoerced <- suppressWarnings(file.remove(b, 1L))\nfactor_error <- inherits(try(file.remove(factor(preserved)), silent = TRUE), \"try-error\")\nresult <- c(first_empty, coerced, factor_error, file.exists(preserved), inherits(try(file.remove(), silent = TRUE), \"try-error\"), inherits(try(file.remove(NULL), silent = TRUE), \"try-error\"), length(file.remove(character())) == 0L)\nunlink(preserved)\nresult",
+    "expected": [true, true, false, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "url-connection-usage-ranked-formals-class-and-closed-summary",
     "code": "con <- url(\"https://data.nativr.invalid/lines\")\ndetails <- summary(con)\nresult <- c(class(con), names(formals(url)), details$class, details$mode, details$opened, details[[\"can read\"]], details[[\"can write\"]], identical(formals(url)$open, \"\"), identical(formals(url)$blocking, TRUE), identical(formals(url)$encoding, quote(getOption(\"encoding\"))), identical(formals(url)$method, quote(getOption(\"url.method\", \"default\"))), is.null(formals(url)$headers))\nclose(con)\nresult",
     "expected": [

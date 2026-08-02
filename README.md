@@ -103,6 +103,12 @@ dispatch, and generated state-restoring wrappers all execute without patching th
 [complete bundle example](examples/pure-r-package.ts) and
 [package-loading contract](docs/pure-r-packages.md).
 
+The compatibility strategy is therefore **Base R once, package source many times**. NativR does not
+plan to port each package function to TypeScript. It measures common package usage, implements the
+shared R/core contract once, and reruns unchanged packages to reveal the next blocker. "Any pure-R
+package can be submitted to the installer" is already the input contract; "every pure-R package
+runs" remains the evidence-driven compatibility goal rather than a present claim.
+
 ### One-file browser example
 
 Save this as `index.html` and serve it from any static web server. This CDN example uses inline
@@ -647,6 +653,10 @@ connection opening, read/write/append modes, persistent cursors, `seek`, `flush`
 have executable coverage. URL, socket, absolute host-file, symlink, and general typed raw/binary
 connection operations remain explicit boundaries; raw `readBin()` can retrieve owned bytes, while
 serialization builtins use bounded binary-mode handles directly.
+
+`file.remove()` supplies the per-path logical result and warning shape used by xfun and data.table.
+It removes only closed, mutable session files; open connections, directories, immutable package
+resources, wildcard strings, and host paths fail without granting filesystem authority.
 
 `stdin()`, `stdout()`, and `stderr()` are stable `c("terminal", "connection")` handles numbered 0,
 1, and 2. Package code can inspect them with `summary()`, `isOpen()`, `isatty()`, `getConnection()`,

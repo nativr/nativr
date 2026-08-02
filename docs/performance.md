@@ -647,3 +647,9 @@ existing polygon journal. Inline, pure-R package, Worker, Canvas, PNG, and recor
 the same coordinate/color/style normalization without a dependency, new protocol event, host
 adapter, or package-specific translation. The measured Worker is 374.5 KiB gzip, so the ceiling
 rises narrowly to 375 KiB; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.239 adds usage-ranked `base::file.remove` over the existing virtual file,
+directory, and connection registries. It adds no dependency, protocol event, filesystem adapter, or
+package-specific translation: each path is resolved entirely inside the evaluator-owned tree and
+only closed mutable session files can be deleted. The measured Worker is 374.8 KiB gzip within the
+existing 375 KiB ceiling; client and parser-Wasm budgets remain unchanged.
