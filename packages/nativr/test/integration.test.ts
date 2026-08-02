@@ -30,7 +30,7 @@ importFrom(graphics, axis, plot.new, plot.window, rect)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median, ts.plot)
 importFrom(utils, download.file, packageDescription, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, plot_series, find_tools, create_file, remove_files, fixed_text, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output)
+export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, plot_series, find_tools, create_file, remove_files, fixed_text, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, pipe_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -117,6 +117,11 @@ download_resource <- function(address) {
   on.exit(unlink(path))
   status <- download.file(address, path, quiet = TRUE, mode = "wb")
   c(status, readLines(path))
+}
+pipe_lines <- function(command) {
+  con <- pipe(command)
+  on.exit(close(con))
+  readLines(con)
 }
 filtered_flow <- function(x, coefficient = 0.8) stats::filter(x, coefficient, method = "r")
 class_summary <- function() capture.output(showClass("NativRFixtureClass"))
@@ -2702,12 +2707,14 @@ describe("complete inline source-to-result vertical slice", () => {
     expect(captured.value).toEqual(["alpha", "beta", "character", "TRUE"]);
     expect(captured.output).toEqual([{ stream: "stderr", text: "note\n" }]);
     expect(requests[0]).toEqual({
+      operation: "system",
       command: "capture",
       intern: true,
       ignoreStdout: false,
       ignoreStderr: false,
       wait: true,
       input: ["one", "two"],
+      inputText: null,
       showOutputOnConsole: true,
       minimized: false,
       invisible: true,
@@ -2798,6 +2805,164 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(limited.eval("system('x', intern = TRUE)")).rejects.toMatchObject({
       code: "NRL4007",
     });
+    expect(limitedCalls).toBe(1);
+    await limited.dispose();
+  });
+
+  it("provides usage-ranked pipe() connections through the bounded host-command capability", async () => {
+    const requests: PublicSystemCommandRequest[] = [];
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [pureRFixture],
+      systemCommand: (request) => {
+        requests.push(request);
+        if (request.operation !== "pipe") {
+          return { status: 127, failedToStart: true, errorMessage: "pipe test only" };
+        }
+        switch (request.command) {
+          case "pipe-read":
+            return { status: 0, stdout: "alpha\r\nbeta\n", stderr: "pipe-note\n" };
+          case "pipe-fail":
+            return { status: 7, stdout: "failed-output\n" };
+          case "pipe-write":
+            return { status: 0 };
+          case "pipe-write-fail":
+            return { status: 9 };
+          default:
+            return {
+              status: 127,
+              failedToStart: true,
+              errorMessage: `command not allowed: ${request.command}`,
+            };
+        }
+      },
+    });
+
+    await expect(
+      runtime.eval(`
+        con <- pipe("not-executed")
+        info <- summary(con)
+        closed <- withVisible(close(con))
+        c(
+          class(con), info$class, info$mode, info$opened,
+          info$\`can read\`, info$\`can write\`, closed$value, closed$visible
+        )
+      `),
+    ).resolves.toEqual(["pipe", "connection", "pipe", "r", "closed", "yes", "yes", "FALSE"]);
+    expect(requests).toHaveLength(0);
+
+    const implicit = await runtime.evalDetailed(`
+      con <- pipe("pipe-read")
+      before <- isOpen(con)
+      lines <- readLines(con)
+      after <- isOpen(con)
+      closed <- withVisible(close(con))
+      c(before, lines, after, closed$value, closed$visible)
+    `);
+    expect(implicit.value).toEqual(["FALSE", "alpha", "beta", "FALSE", "0", "FALSE"]);
+    expect(implicit.output).toEqual([{ stream: "stderr", text: "pipe-note\n" }]);
+    expect(requests[0]).toEqual({
+      operation: "pipe",
+      command: "pipe-read",
+      intern: true,
+      ignoreStdout: false,
+      ignoreStderr: false,
+      wait: true,
+      input: null,
+      inputText: null,
+      showOutputOnConsole: true,
+      minimized: false,
+      invisible: true,
+      timeoutSeconds: 0,
+      receiveConsoleSignals: true,
+    });
+
+    await expect(
+      runtime.eval(`
+        con <- pipe("pipe-read", "r")
+        first <- readLines(con, n = 1L)
+        second <- readLines(con, n = 1L)
+        opened <- isOpen(con)
+        status <- close(con)
+        c(first, second, opened, status)
+      `),
+    ).resolves.toEqual(["alpha", "beta", "TRUE", "0"]);
+    await expect(
+      runtime.eval(`
+        con <- pipe("pipe-fail", "r")
+        lines <- readLines(con)
+        status <- close(con)
+        c(lines, status)
+      `),
+    ).resolves.toEqual(["failed-output", "7"]);
+
+    await expect(
+      runtime.eval(`
+        con <- pipe("pipe-write", "w")
+        writeLines(c("beta", "alpha"), con)
+        status <- close(con)
+        status
+      `),
+    ).resolves.toBe(0);
+    expect(requests.at(-1)).toMatchObject({
+      operation: "pipe",
+      command: "pipe-write",
+      intern: false,
+      input: null,
+      inputText: "beta\nalpha\n",
+    });
+    await expect(
+      runtime.eval(`
+        con <- pipe("pipe-write-fail")
+        writeLines("payload", con)
+        close(con)
+      `),
+    ).resolves.toBe(9);
+    expect(requests.at(-1)).toMatchObject({ inputText: "payload\n" });
+
+    await expect(runtime.eval('nativrfixture::pipe_lines("pipe-read")')).resolves.toEqual([
+      "alpha",
+      "beta",
+    ]);
+    await expect(
+      runtime.eval('rawToChar(readBin(pipe("pipe-read", "rb"), "raw", 5L))'),
+    ).resolves.toBe("alpha");
+    await expect(runtime.eval('pipe("pipe-read", "r+")')).rejects.toMatchObject({
+      code: "NRU6206",
+    });
+    const beforeUnsupportedOpen = requests.length;
+    await expect(runtime.eval('con <- pipe("pipe-read"); open(con, "r+")')).rejects.toMatchObject({
+      code: "NRU6206",
+    });
+    expect(requests).toHaveLength(beforeUnsupportedOpen);
+    await expect(
+      runtime.eval('con <- pipe("pipe-read", "r"); seek(con); close(con)'),
+    ).rejects.toMatchObject({ code: "NRE2252" });
+    await runtime.dispose();
+
+    const closed = await session();
+    await expect(closed.eval('con <- pipe("anything"); close(con)')).resolves.toBeNull();
+    await expect(closed.eval('readLines(pipe("anything"))')).rejects.toMatchObject({
+      code: "NRU6194",
+    });
+    await closed.dispose();
+
+    let limitedCalls = 0;
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxOutputBytes: 8 },
+      systemCommand: () => {
+        limitedCalls += 1;
+        return { status: 0, stdout: "too much output" };
+      },
+    });
+    await expect(limited.eval('readLines(pipe("123456789"))')).rejects.toMatchObject({
+      code: "NRL4007",
+    });
+    expect(limitedCalls).toBe(0);
+    await expect(limited.eval('readLines(pipe("x"))')).rejects.toMatchObject({ code: "NRL4007" });
     expect(limitedCalls).toBe(1);
     await limited.dispose();
   });
@@ -3360,6 +3525,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "package_metadata",
       "package_name",
       "package_state",
+      "pipe_lines",
       "plot_series",
       "process_id",
       "remote_lines",
@@ -10971,7 +11137,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.246.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.247.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

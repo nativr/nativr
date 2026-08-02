@@ -755,6 +755,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      Playground paths have evidence. Ambient network, host files, redirects/cache/progress, external
      downloader processes, append/partial-file modes, and `install.packages()` remain compatibility
      depth.
+159. Usage-ranked command connection: rank-313 `base::pipe` composes the default-deny
+     `createR({ systemCommand })` capability with private bounded connections. GNU R formals, class,
+     summary, unused close and validation plus lazy/explicit reads, buffered writes, exact statuses,
+     pure-R package calls, Worker transport, Playground use, and resource limits have evidence.
+     Duplex/interactive streaming, seeking, NUL-containing binary stdin, host discovery, and shell
+     semantics remain compatibility depth; rank-314 `base::unz` is next.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

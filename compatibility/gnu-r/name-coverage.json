@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 636,
-    "overlappingNames": 620,
-    "missingReferenceNames": 1902,
+    "nativrRegisteredNames": 637,
+    "overlappingNames": 621,
+    "missingReferenceNames": 1901,
     "nativrExtensionNames": 16,
-    "nameCoverage": 0.245837
+    "nameCoverage": 0.246233
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 451, "nameCoverage": 0.32992 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 452, "nameCoverage": 0.330651 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 76, "nameCoverage": 0.163793 },
     {
       "package": "methods",
@@ -450,6 +450,7 @@
     "pcauchy",
     "pdf",
     "persp",
+    "pipe",
     "plot",
     "plot.default",
     "plot.new",
@@ -1970,7 +1971,6 @@
     "pico",
     "pictex",
     "pie",
-    "pipe",
     "plclust",
     "plnorm",
     "plogis",

@@ -92,6 +92,11 @@ twice_mean(c(1, 2, 6))`,
     code: "system('nativr-echo', intern = TRUE, input = c('worker', 'bridge'))",
   },
   {
+    id: "pipe-package",
+    label: "Pure-R package pipe",
+    code: "nativrdemo::pipe_lines('nativr-lines')",
+  },
+  {
     id: "readline-host",
     label: "Browser readline input",
     code: 'name <- nativrdemo::ask_user("Your name: ")\npaste0("Hello, ", name)',
@@ -209,7 +214,10 @@ function playgroundUrl(request: PublicUrlRequest): { readonly body: Uint8Array }
 }
 
 function playgroundSystemCommand(request: PublicSystemCommandRequest): PublicSystemCommandResult {
-  if (request.command !== "nativr-echo") {
+  if (request.operation === "pipe" && request.command === "nativr-lines") {
+    return { status: 0, stdout: "pipe-worker\npackage-pipe\n" };
+  }
+  if (request.operation !== "system" || request.command !== "nativr-echo") {
     return {
       status: 127,
       errorMessage: `Playground command is not allow-listed: ${request.command}`,

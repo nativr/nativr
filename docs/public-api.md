@@ -62,7 +62,7 @@ plus an exit status:
 const r = await createR({
   executablePaths: { "report-version": "nativr://host/bin/report-version" },
   systemCommand: async (request) => {
-    if (request.command !== "report-version") {
+    if (request.operation !== "system" || request.command !== "report-version") {
       return { status: 127, errorMessage: "command is not allowed", failedToStart: true };
     }
     return { status: 0, stdout: "reporter 1.0\n" };
@@ -72,12 +72,19 @@ await r.eval('Sys.which("report-version")'); // "nativr://host/bin/report-versio
 await r.eval('system("report-version", intern = TRUE)'); // "reporter 1.0"
 ```
 
-The request includes GNU R 4.6's controls, input lines, and timeout value. The result accepts
-`status`, optional `stdout`/`stderr`, `errorMessage`, `failedToStart`, and `timedOut`. Inline
-execution calls the same handler directly; Worker execution uses a correlated request/result
-exchange while the R evaluation is suspended. With no handler, `system()` fails with `NRU6194`. The
-handler, not NativR, owns allow-listing, quoting, environment isolation, cancellation, and actual
-process semantics.
+The request has an `operation` discriminator. A `system` request includes GNU R 4.6's controls,
+line-oriented `input`, and timeout value. A `pipe` read sends `inputText: null`; a pipe write sends
+the exact buffered stdin text in `inputText`. The result accepts `status`, optional
+`stdout`/`stderr`, `errorMessage`, `failedToStart`, and `timedOut`. Inline execution calls the same
+handler directly; Worker execution uses a correlated request/result exchange while the R evaluation
+is suspended. With no handler, `system()` and an executing `pipe()` fail with `NRU6194`. A
+constructed but unused pipe remains inert and can be closed normally. The handler, not NativR, owns
+allow-listing, quoting, environment isolation, cancellation, and actual process semantics.
+
+The same policy can expose a selected command as a normal R connection, including from unchanged
+pure-R package code: `readLines(pipe("approved-report"))`. Open write pipes buffer R output and pass
+it as exact text when closed. The current adapter is one-shot and one-way; duplex `r+`, interactive
+streaming, shell discovery, and NUL-containing binary stdin are not claimed.
 
 `base::readline()` uses a separate line-oriented host adapter. This enables unchanged pure-R package
 prompts without exposing DOM objects to R or the Worker:

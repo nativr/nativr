@@ -87,7 +87,7 @@ export interface CreateROptions {
   readonly onGraphics?: (event: PublicGraphicsEvent) => void;
 }
 
-/** Host-owned policy and execution function used only when R code calls system(). */
+/** Host-owned policy used only when R code executes system() or a pipe() connection. */
 export type SystemCommandHandler = (
   request: PublicSystemCommandRequest,
 ) => PublicSystemCommandResult | Promise<PublicSystemCommandResult>;
@@ -864,7 +864,7 @@ class WorkerSession implements NativRSession {
       if (handler === undefined) {
         throw new NativRError(
           "NRU6194",
-          "system() requires an explicit createR({ systemCommand }) host capability.",
+          "system()/pipe() requires an explicit createR({ systemCommand }) host capability.",
         );
       }
       response = {

@@ -113,14 +113,17 @@ export interface PublicOutputEvent {
   readonly text: string;
 }
 
-/** A command that R code asks an embedding host to execute explicitly. */
+/** A system() or pipe() command that R code asks an embedding host to execute explicitly. */
 export interface PublicSystemCommandRequest {
+  readonly operation: "system" | "pipe";
   readonly command: string;
   readonly intern: boolean;
   readonly ignoreStdout: boolean;
   readonly ignoreStderr: boolean;
   readonly wait: boolean;
   readonly input: readonly string[] | null;
+  /** Exact pipe stdin text; system(input=) continues to use line-oriented `input`. */
+  readonly inputText: string | null;
   readonly showOutputOnConsole: boolean;
   readonly minimized: boolean;
   readonly invisible: boolean;
@@ -787,6 +790,7 @@ function isExecutablePathRecord(value: unknown): value is Readonly<Record<string
 function isSystemCommandRequest(value: unknown): value is PublicSystemCommandRequest {
   return (
     isRecord(value) &&
+    (value.operation === "system" || value.operation === "pipe") &&
     typeof value.command === "string" &&
     !value.command.includes("\0") &&
     typeof value.intern === "boolean" &&
@@ -796,6 +800,8 @@ function isSystemCommandRequest(value: unknown): value is PublicSystemCommandReq
     (value.input === null ||
       (Array.isArray(value.input) &&
         value.input.every((line) => typeof line === "string" && !line.includes("\0")))) &&
+    (value.inputText === null ||
+      (typeof value.inputText === "string" && !value.inputText.includes("\0"))) &&
     typeof value.showOutputOnConsole === "boolean" &&
     typeof value.minimized === "boolean" &&
     typeof value.invisible === "boolean" &&

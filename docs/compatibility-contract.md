@@ -615,6 +615,16 @@ selection, executable discovery, quoting, environment inheritance, signals, real
 enforcement, and the presence or behavior of any external program are host-defined and are not
 claimed by the browser runtime.
 
+`base::pipe` has GNU R 4.6 differential evidence for its three closure-like formals, default
+expressions, class, closed summary, invisible `NULL` from an unused close, and invalid constructor
+boundaries. NativR-only integration evidence covers lazy and explicit reads, persistent open
+cursors, CRLF line normalization, stderr events, raw reads, exact text stdin, nonzero close status,
+resource limits, default denial, unchanged pure-R package use, Worker transport, and Playground use.
+It composes the existing `systemCommand` request/result seam rather than adding ambient process
+authority. The current adapter is one-shot and one-way: duplex `r+`, interactive flush/streaming,
+seeking, host executable discovery, shell semantics, and binary stdin containing NUL are not
+claimed.
+
 `base::Sys.which` has GNU R 4.6 differential evidence for visible named character results, empty and
 repeated queries, missing values, factor/list/pairlist/symbol/call/expression coercion, exact
 `names` formal matching, and malformed-input boundaries. Browser semantics are explicit rather than

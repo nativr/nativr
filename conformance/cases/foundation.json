@@ -8552,6 +8552,35 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "pipe-connection-usage-ranked-formals-class-summary-and-unused-close",
+    "code": "f <- formals(pipe)\ncon <- pipe(\"nativr-never-run\")\ndetails <- summary(con)\nclosed <- withVisible(close(con))\nc(class(con), names(f), details$class, details$mode, details$opened, details[[\"can read\"]], details[[\"can write\"]], identical(f$open, \"\"), identical(f$encoding, quote(getOption(\"encoding\"))), is.integer(closed$value), closed$value, closed$visible)",
+    "expected": [
+      "pipe",
+      "connection",
+      "description",
+      "open",
+      "encoding",
+      "pipe",
+      "r",
+      "closed",
+      "yes",
+      "yes",
+      "TRUE",
+      "TRUE",
+      "FALSE",
+      "FALSE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "pipe-connection-usage-ranked-invalid-constructor-boundaries",
+    "code": "c(inherits(try(pipe(character()), silent = TRUE), \"try-error\"), inherits(try(pipe(NULL), silent = TRUE), \"try-error\"), inherits(try(pipe(1), silent = TRUE), \"try-error\"), inherits(try(pipe(NA_character_), silent = TRUE), \"try-error\"), inherits(try(pipe(\"x\", c(\"r\", \"w\")), silent = TRUE), \"try-error\"))",
+    "expected": [true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "source-usage-ranked-text-connection-local-return-visibility-and-formals",
     "code": "load_local <- function() { con <- textConnection(c(\"x <- 1L\", \"x + 2L\")); on.exit(close(con)); sourced <- withVisible(source(con, local = TRUE)); c(sourced$value$value, sourced$value$visible, sourced$visible, x) }\ncon <- textConnection(\"1 + 1\")\nclasses <- class(con)\nclose(con)\nc(load_local(), exists(\"x\", globalenv(), inherits = FALSE), classes, names(formals(textConnection)), names(formals(source)))",
     "expected": [

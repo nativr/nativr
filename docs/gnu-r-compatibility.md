@@ -857,8 +857,17 @@ invisible scalar status, paired vector downloads, `retvals`, and replacement byt
 evidence covers copied request data, named headers, `auto` mapping, session-owned destinations,
 failure atomicity, pure-R namespaces, default-deny behavior, Worker transport, and Playground use.
 Ambient networking, host files, redirect/cache policy, progress display, platform downloader
-processes, append modes, and HTTP status interpretation remain outside the browser contract. Rank
-313 `base::pipe` is now the next measured unresolved callable.
+processes, append modes, and HTTP status interpretation remain outside the browser contract.
+
+The pipe increment raises current name overlap to 621 of 2,522. Rank 313 `base::pipe` covers
+jsonlite's measured call while adding a package-independent command connection. GNU R 4.6 black-box
+evidence covers exact formals/defaults, class, closed summary, invisible `NULL` on unused close, and
+invalid constructor inputs. NativR-only evidence covers lazy and explicit reads, open cursors, raw
+bytes, exact write stdin, stderr and nonzero statuses, limits, default denial, unchanged pure-R
+package use, Worker transport, and Playground use. The runtime adds no shell or process authority:
+the embedding host must explicitly allow each request through `systemCommand`. Duplex/interactive
+streams, seeking, binary stdin containing NUL, executable discovery, and platform shell semantics
+remain compatibility depth. Rank 314 `base::unz` is the next measured unresolved callable.
 
 ## Completion evidence
 

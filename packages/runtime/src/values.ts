@@ -367,14 +367,16 @@ export interface ROutput {
   readonly text: string;
 }
 
-/** One explicit request to an embedding host for an operating-system command. */
+/** One explicit system() or pipe() request to an embedding host command policy. */
 export interface RSystemCommandRequest {
+  readonly operation: "system" | "pipe";
   readonly command: string;
   readonly intern: boolean;
   readonly ignoreStdout: boolean;
   readonly ignoreStderr: boolean;
   readonly wait: boolean;
   readonly input: readonly string[] | null;
+  readonly inputText: string | null;
   readonly showOutputOnConsole: boolean;
   readonly minimized: boolean;
   readonly invisible: boolean;

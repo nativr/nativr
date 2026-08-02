@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.246.0",
+  "languageSubsetVersion": "0.247.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -133,6 +133,7 @@
         { "name": "system.file", "compatibility": "shape" },
         { "name": "tempfile", "compatibility": "shape" },
         { "name": "file", "compatibility": "behavioral" },
+        { "name": "pipe", "compatibility": "behavioral" },
         { "name": "url", "compatibility": "behavioral" },
         { "name": "textConnection", "compatibility": "behavioral" },
         { "name": "stdin", "compatibility": "behavioral" },

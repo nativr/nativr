@@ -205,6 +205,9 @@ normalized AST. The runtime then provides:
 22. regular time-series plotting through exported `stats::ts.plot()`, including equal-frequency
     union, gap-aware line/point geometry, bounded `gpars`, package expression labels, and the same
     Worker graphics journal used by application R code.
+23. lazy one-way `base::pipe()` connections over an explicit `createR({ systemCommand })` policy,
+    reusable by unchanged package line/raw/source/table/serialization reads and exact buffered text
+    writes without granting an ambient browser shell.
 
 Package source, metadata, resource counts, and encoded bytes are bounded before parsing. Package
 evaluation then consumes the ordinary step, call-depth, allocation, and output budgets.
@@ -374,6 +377,14 @@ needs one, `createR({ systemCommand })` can approve that exact command and retur
 across inline or Worker execution. No handler means no process authority, and a successful package
 bundle still cannot claim that arbitrary external programs exist.
 
+Rank-313 `base::pipe()` exposes the same opt-in command policy through R's ordinary connection
+protocol. A source-only package can keep `readLines(pipe(command))`, `source(pipe(command))`, or a
+text write pipe in its R code; NativR routes only an allow-listed, copied request through inline or
+Worker execution and reuses the shared line/raw/table/serialization consumers. This avoids a
+package-specific TypeScript rewrite for the measured jsonlite call and future packages using the
+same shape. It does not make arbitrary commands, duplex streams, native tools, or shell behavior
+available: each embedding application must admit exact commands, and omitted policies fail closed.
+
 Rank-293 `base::Sys.which()` lets pure-R packages perform those presence checks without translating
 their R source or probing the embedding machine. `createR({ executablePaths })` supplies the exact
 approved name/path pairs, while an omitted map makes every ordinary query unavailable. The same
@@ -447,10 +458,11 @@ loader.
 
 - C, C++, Fortran, Rust, Java, shared libraries, `LinkingTo`, `useDynLib`, subprocesses, system
   libraries, sockets, and native graphics require separate audited Wasm or host adapters.
-- `system()` exposes only an explicit embedding-host request/response contract. The browser runtime
-  has no default shell, command search path, inherited environment, or executable filesystem. A host
-  adapter can support selected package features, but it does not make a package containing native
-  code a pure-R package.
+- `system()` and `pipe()` expose only an explicit embedding-host request/response contract. The
+  browser runtime has no default shell, command search path, inherited environment, or executable
+  filesystem. A host adapter can support selected package features, but it does not make a package
+  containing native code a pure-R package. Pipe execution is currently one-shot and one-way rather
+  than interactive or duplex.
 - `configure`, `configure.win`, `cleanup`, and `cleanup.win` are not executed.
 - The current NAMESPACE parser supports `export`, `import`, `importFrom`, and `S3method`, while
   package code can call `registerS3method()` once its generic is available. Delayed registration
@@ -460,9 +472,10 @@ loader.
 - `file()` connections currently cover bounded text/binary-mode handles over immutable package files
   and same-session browser-memory paths, including implicit open/close, explicit `open()`/`close()`,
   `isOpen()`, `flush()`, bounded `seek()`, and `summary()`. `gzcon()` adds gzip wrapping for those
-  owned connections without granting transport or filesystem authority. URLs, sockets, host paths,
-  typed raw/binary decoding or writes beyond raw `readBin()`, seek/pushback within compressed
-  streams, separate read/write seek positions, and the broader file API remain separate work.
+  owned connections without granting transport or filesystem authority. Explicit URL and one-way
+  command adapters compose the same registry; sockets, host paths, duplex/interactive pipes, typed
+  binary writes containing NUL, seek/pushback within compressed streams, separate read/write seek
+  positions, and the broader file API remain separate work.
 - `readChar()` covers digest's whole-file and Shiny's bookmark-file fixed-width reads over package
   resources, session files, raw vectors, and owned file/URL/gzip connections. UTF-8 character and
   exact-byte widths, cursors, EOF, warnings, invalid input, and resource limits are shared runtime

@@ -261,6 +261,12 @@ arrives. The operation adds neither a second transport nor host-path access. It 
 runtime primitive for package resource downloads, while repository resolution, archive admission,
 dependency locking, and package activation remain separate package-manager responsibilities.
 
+Command pipes compose the existing command request with that same private connection storage.
+`base::pipe()` creates an inert record; a read asks the explicit host policy once and writes copied
+stdout bytes into the record, while a write buffers bytes and submits exact text on close. Existing
+connection consumers then operate without knowing about Worker transport or processes. No new wire
+event, shell, executable search, host file, or package-specific execution backend is introduced.
+
 The PNG device composes existing owned seams instead of introducing a host renderer. A numbered
 device records the same normalized graphics events used by Worker callbacks and replay plots; a
 DOM-free software rasterizer converts those events to RGBA; an independent PNG encoder writes

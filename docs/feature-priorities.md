@@ -195,10 +195,11 @@ calls through shared function-object state and the existing Worker readline seam
 `base::file.create` now covers withr's deferred-cleanup setup. Rank 292 `stats::ts.plot` now runs
 magrittr's measured exposition-pipe example. Rank 293 `base::Sys.which` now covers the two measured
 knitr/sys executable-presence checks through an explicit session allow-list. Rank 311
-`download.file` uses the byte URL seam; rank 313 `pipe` is next. Rank 144 `Encoding` is also
-complete for all 12 observed calls across rlang, utf8, and xfun (4.5% weighted reach), together with
-adjacent `Encoding<-`, `enc2utf8`, and `enc2native`. The shared character representation preserves
-exact bytes and canonical R marks through subset/replacement, concatenation, raw conversion, and XDR
+`download.file` uses the byte URL seam; rank 313 `pipe` now reuses the explicit command seam and
+private connection store. Rank 314 `unz` is next. Rank 144 `Encoding` is also complete for all 12
+observed calls across rlang, utf8, and xfun (4.5% weighted reach), together with adjacent
+`Encoding<-`, `enc2utf8`, and `enc2native`. The shared character representation preserves exact
+bytes and canonical R marks through subset/replacement, concatenation, raw conversion, and XDR
 serialization; this is reusable package infrastructure, not an assertion that those packages' native
 components are supported. Rank 149 `rcauchy` is now complete for four calls across ggplot2, pillar,
 and purrr (4.2% weighted reach), together with `dcauchy`, `pcauchy`, and `qcauchy`. The shared
@@ -464,10 +465,13 @@ including normalized eigenvectors, decreasing eigenvalues, automatic or explicit
 order one through three use independent characteristic roots and complex null-space eigenvectors,
 covering jsonlite's exact random 3-by-3 shape and GNU R's small complex-pair examples. Complex input
 matrices, non-symmetric order above three, defective and ill-conditioned exhaustive cases, LAPACK
-convergence/rounding identity, and eigenvector phase/sign identity remain explicit boundaries. Ranks
-313 `pipe` and 314 `unz` remain future connection and archive-depth work after the increment; rank
-316 `colSums` is now complete for three observed calls across
-[`loo`](https://cran.r-project.org/web/packages/loo/refman/loo.html) and
+convergence/rounding identity, and eigenvector phase/sign identity remain explicit boundaries. Rank
+313 `pipe` is now complete for jsonlite's measured source-only call through lazy/explicit read and
+buffered write connections over the default-deny `systemCommand` capability. It reuses ordinary
+line/raw/source/table/serialization consumers, exact close statuses, pure-R namespaces, and Worker
+execution; duplex streaming and ambient processes remain outside the contract. Rank 314 `unz`
+remains the next archive-depth gap; rank 316 `colSums` is now complete for three observed calls
+across [`loo`](https://cran.r-project.org/web/packages/loo/refman/loo.html) and
 [`zoo`](https://cran.r-project.org/web/packages/zoo/refman/zoo.html), representing 1,601,512
 snapshot downloads and 1.3% download reach. Loo calls `colSums(tab_10)` and `colSums(tab_9)` on
 integer fold tables; zoo selects usable columns with `colSums(!is.na(za)) > 0`. NativR covers

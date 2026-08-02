@@ -106,13 +106,16 @@ Playground permits user-clicked HTTP(S) targets, renders owned files in a script
 iframe, and renders other schemes as review-only; it never evaluates URL text as JavaScript or opens
 a request automatically.
 
-`system()` grants no process capability unless the application supplies `systemCommand`. The runtime
-validates and copies a data-only request; Worker transport correlates one data-only result; and
-returned text is charged to the normal output budget. No command is parsed, searched, or run by
-NativR. Hosts must use an exact allow-list, avoid ambient credentials and inherited environment,
-bound stdout/stderr and execution time, reject shell metacharacter composition unless deliberately
-supported, and treat package-provided command text as untrusted input. The Playground handler is a
-single virtual echo command and never touches an operating-system process.
+`system()` and `pipe()` grant no process capability unless the application supplies `systemCommand`.
+Constructing or closing an unused pipe performs no host call. The runtime validates and copies a
+data-only request; Worker transport correlates one data-only result; and returned text is charged to
+the normal output budget. No command is parsed, searched, or run by NativR. Hosts must use an exact
+allow-list, avoid ambient credentials and inherited environment, bound stdout/stderr and execution
+time, reject shell metacharacter composition unless deliberately supported, and treat
+package-provided command text as untrusted input. Pipe writes expose exact package-selected stdin
+text to that callback, so hosts must bound it and must never concatenate it into a shell command.
+The Playground handler is a fixed virtual fixture policy and never touches an operating-system
+process.
 
 `readline()` grants only a construction-time, line-oriented callback when the application supplies
 `readline`. The Worker sends inert prompt text and accepts one validated string result; R code never

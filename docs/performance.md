@@ -701,3 +701,10 @@ destination arrays; response copying and aggregate file storage reuse existing o
 adds no dependency, protocol event, ambient network/filesystem operation, generated-code path, or
 package-specific translation. The measured Worker is 384.6 KiB gzip within the existing 385 KiB
 ceiling; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.247 adds usage-ranked `base::pipe` by composing the existing command callback with
+the private connection store. Lazy reads copy bounded stdout once; open writes reuse the existing
+file buffer and submit exact text on close. The path adds no dependency, protocol event, ambient
+process/filesystem access, generated-code execution, or package-specific translation. The measured
+Worker is 385.6 KiB gzip, so the ceiling rises narrowly from 385 KiB to 386 KiB; client and
+parser-Wasm budgets remain unchanged.

@@ -1501,3 +1501,14 @@ before the first request is issued. Each complete copied `Uint8Array` replaces i
 through the shared byte-store accounting. There is no ambient transport, host path, partial response
 stream, progress display, append mode, or cache implementation; those policies and effects remain
 with the application callback.
+
+`base::pipe(description, open = "", encoding = getOption("encoding"))` creates a private lazy
+`c("pipe", "connection")` record. A read executes only through the explicit `systemCommand` adapter,
+stores its stdout in the bounded connection byte store, exposes stderr as output events, and
+preserves the completed status for invisible `close()`. An open write connection buffers exact text
+and submits it as `inputText` on close; writing to a closed pipe performs the same one-shot exchange
+immediately. Without an adapter, execution fails closed, while an unused closed pipe can still be
+inspected and closed with invisible `NULL`. Text/UTF-8 or Latin-1 byte projection, binary reads,
+line/raw/source/table/serialization consumers, and unchanged pure-R package calls reuse the normal
+connection machinery. Duplex modes, interactive streaming/flush, seeking, command parsing, ambient
+program discovery, and NUL-containing binary stdin remain explicit host/runtime boundaries.

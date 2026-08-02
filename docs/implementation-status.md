@@ -139,6 +139,11 @@ Date: 2026-08-02
   stderr, status/warning, timeout, and failure shapes; a pure-R package function executes through
   the same seam. The default runtime has no shell or process authority, and all executable lookup,
   quoting, environment, signal, and cancellation semantics remain host policy.
+- Usage-ranked `pipe()` composes the same explicit host policy with the private connection store.
+  Lazy/explicit text and binary reads, exact text writes, stderr/output/status propagation, normal
+  close/summary/class behavior, resource limits, default denial, pure-R package calls, and Worker/
+  Playground execution have evidence. Duplex/interactive streams, seeking, shell discovery, and
+  NUL-containing binary stdin remain explicit boundaries.
 - Usage-ranked `readline()` with GNU R 4.6 non-interactive prompt/empty-result behavior and an
   explicit asynchronous `readline` host adapter. Inline and Worker sessions share validated
   single-line input, R whitespace trimming, a 256-character prompt bound, resource limits, and
