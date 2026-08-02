@@ -666,6 +666,14 @@ outputs, while the default Worker discovers them through immutable virtual packa
 Development-vignette rendering, installed lazy help databases, print/viewer dispatch, and the
 measured packages' native code remain incomplete.
 
+The callable-introspection increment raises current name overlap to 583 of 2,522. Measured rank 205
+`base::args` represents three calls across S7 and StanHeaders, or 2.4% download-weighted reach. GNU
+R 4.6 black-box evidence covers closure defaults and ellipsis, documented primitive signatures,
+character-name resolution, global result environments, `NULL` bodies, unresolved names, and silent
+non-function results. Source-only package fixtures exercise the same path inline and in the default
+Worker. This is reusable support for package-generated constructors and wrappers, not evidence for
+the complete S7 system or StanHeaders' native routines.
+
 ## Completion evidence
 
 The objective is complete only when:

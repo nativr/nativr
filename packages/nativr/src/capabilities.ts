@@ -6,7 +6,7 @@ import type { CapabilityManifest } from "@nativr/protocol";
 export const CAPABILITIES = Object.freeze({
   nativrVersion: "0.1.1",
   protocolVersion: PROTOCOL_VERSION,
-  languageSubsetVersion: "0.225.0",
+  languageSubsetVersion: "0.226.0",
   syntax: {
     literals: "supported",
     assignment: "supported",

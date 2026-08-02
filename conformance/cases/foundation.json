@@ -8120,5 +8120,27 @@
     "expected": [true, true, true, true, true, true, true, true, true, true, true, false],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "args-usage-ranked-closure-primitive-string-and-null-boundaries",
+    "code": "f <- function(x, y = 2L, ...) x\nsignature <- args(f)\nc(typeof(signature), names(formals(signature)), identical(formals(signature)[[\"y\"]], 2L), identical(body(signature), NULL), identical(environment(signature), globalenv()), names(formals(args(`+`))), names(formals(args(c))), names(formals(args(\"mean\"))), is.null(args(1)), is.null(args(character())))",
+    "expected": [
+      "closure",
+      "x",
+      "y",
+      "...",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "e1",
+      "e2",
+      "...",
+      "x",
+      "...",
+      "TRUE",
+      "TRUE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

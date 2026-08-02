@@ -203,7 +203,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 202,suppressWarnings,true,3,bslib|data.table|zoo,21,3.1,2.5
 203,gzcon,true,2,jsonlite|curl,6,2.1,2.5
 204,vignette,true,2,Rcpp|data.table,5,2.1,2.4
-205,args,false,2,S7|StanHeaders,3,2.1,2.4
+205,args,true,2,S7|StanHeaders,3,2.1,2.4
 206,pmin,true,2,dplyr|purrr,2,2.1,2.4
 207,sub,true,2,isoband|StanHeaders,2,2.1,2.4
 208,registerS3method,false,2,pillar|knitr,2,2.1,2.4

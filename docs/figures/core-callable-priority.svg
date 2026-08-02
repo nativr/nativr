@@ -21,85 +21,85 @@
 <line x1="647.5" y1="152" x2="647.5" y2="1018" stroke="#e2e8f0"/><text x="647.5" y="142" text-anchor="middle" class="tick">1.2%</text>
 <line x1="846.25" y1="152" x2="846.25" y2="1018" stroke="#e2e8f0"/><text x="846.25" y="142" text-anchor="middle" class="tick">1.8%</text>
 <line x1="1045" y1="152" x2="1045" y2="1018" stroke="#e2e8f0"/><text x="1045" y="142" text-anchor="middle" class="tick">2.4%</text>
-<text x="234" y="186" text-anchor="end" class="label">args</text>
+<text x="234" y="186" text-anchor="end" class="label">registerS3method</text>
 <rect x="250" y="170" width="795.0" height="20" rx="3" fill="#dc2626"/>
 <text x="1049.0" y="185" class="value">2.4%</text>
-<text x="250" y="206" class="meta">2 packages; 3 observed calls</text>
-<text x="234" y="229" text-anchor="end" class="label">registerS3method</text>
-<rect x="250" y="213" width="784.8" height="20" rx="3" fill="#dc2626"/>
-<text x="1042.8" y="228" class="value">2.4%</text>
-<text x="250" y="249" class="meta">2 packages; 2 observed calls</text>
-<text x="234" y="272" text-anchor="end" class="label">file.info</text>
-<rect x="250" y="256" width="784.3" height="20" rx="3" fill="#dc2626"/>
-<text x="1042.3" y="271" class="value">2.4%</text>
-<text x="250" y="292" class="meta">3 packages; 3 observed calls</text>
-<text x="234" y="315" text-anchor="end" class="label">hcl</text>
-<rect x="250" y="299" width="747.7" height="20" rx="3" fill="#dc2626"/>
-<text x="1005.7" y="314" class="value">2.3%</text>
-<text x="250" y="335" class="meta">2 packages; 6 observed calls</text>
-<text x="234" y="358" text-anchor="end" class="label">axis</text>
-<rect x="250" y="342" width="746.0" height="20" rx="3" fill="#dc2626"/>
-<text x="1004.0" y="357" class="value">2.3%</text>
-<text x="250" y="378" class="meta">3 packages; 18 observed calls</text>
-<text x="234" y="401" text-anchor="end" class="label">source</text>
-<rect x="250" y="385" width="726.5" height="20" rx="3" fill="#dc2626"/>
-<text x="984.5" y="400" class="value">2.2%</text>
+<text x="250" y="206" class="meta">2 packages; 2 observed calls</text>
+<text x="234" y="229" text-anchor="end" class="label">file.info</text>
+<rect x="250" y="213" width="794.5" height="20" rx="3" fill="#dc2626"/>
+<text x="1049.0" y="228" class="value">2.4%</text>
+<text x="250" y="249" class="meta">3 packages; 3 observed calls</text>
+<text x="234" y="272" text-anchor="end" class="label">hcl</text>
+<rect x="250" y="256" width="757.3" height="20" rx="3" fill="#dc2626"/>
+<text x="1015.3" y="271" class="value">2.3%</text>
+<text x="250" y="292" class="meta">2 packages; 6 observed calls</text>
+<text x="234" y="315" text-anchor="end" class="label">axis</text>
+<rect x="250" y="299" width="755.7" height="20" rx="3" fill="#dc2626"/>
+<text x="1013.7" y="314" class="value">2.3%</text>
+<text x="250" y="335" class="meta">3 packages; 18 observed calls</text>
+<text x="234" y="358" text-anchor="end" class="label">source</text>
+<rect x="250" y="342" width="735.9" height="20" rx="3" fill="#dc2626"/>
+<text x="993.9" y="357" class="value">2.2%</text>
+<text x="250" y="378" class="meta">1 packages; 2 observed calls</text>
+<text x="234" y="401" text-anchor="end" class="label">textConnection</text>
+<rect x="250" y="385" width="735.9" height="20" rx="3" fill="#dc2626"/>
+<text x="993.9" y="400" class="value">2.2%</text>
 <text x="250" y="421" class="meta">1 packages; 2 observed calls</text>
-<text x="234" y="444" text-anchor="end" class="label">textConnection</text>
-<rect x="250" y="428" width="726.5" height="20" rx="3" fill="#dc2626"/>
-<text x="984.5" y="443" class="value">2.2%</text>
-<text x="250" y="464" class="meta">1 packages; 2 observed calls</text>
-<text x="234" y="487" text-anchor="end" class="label">readline</text>
-<rect x="250" y="471" width="683.9" height="20" rx="3" fill="#dc2626"/>
-<text x="941.9" y="486" class="value">2.1%</text>
-<text x="250" y="507" class="meta">2 packages; 2 observed calls</text>
-<text x="234" y="530" text-anchor="end" class="label">url</text>
-<rect x="250" y="514" width="673.8" height="20" rx="3" fill="#dc2626"/>
-<text x="931.8" y="529" class="value">2.1%</text>
-<text x="250" y="550" class="meta">2 packages; 6 observed calls</text>
-<text x="234" y="573" text-anchor="end" class="label">filter</text>
-<rect x="250" y="557" width="622.5" height="20" rx="3" fill="#dc2626"/>
-<text x="880.5" y="572" class="value">1.9%</text>
-<text x="250" y="593" class="meta">2 packages; 2 observed calls</text>
-<text x="234" y="616" text-anchor="end" class="label">packageDescription</text>
-<rect x="250" y="600" width="617.7" height="20" rx="3" fill="#dc2626"/>
-<text x="875.7" y="615" class="value">1.9%</text>
+<text x="234" y="444" text-anchor="end" class="label">readline</text>
+<rect x="250" y="428" width="692.7" height="20" rx="3" fill="#dc2626"/>
+<text x="950.7" y="443" class="value">2.1%</text>
+<text x="250" y="464" class="meta">2 packages; 2 observed calls</text>
+<text x="234" y="487" text-anchor="end" class="label">url</text>
+<rect x="250" y="471" width="682.5" height="20" rx="3" fill="#dc2626"/>
+<text x="940.5" y="486" class="value">2.1%</text>
+<text x="250" y="507" class="meta">2 packages; 6 observed calls</text>
+<text x="234" y="530" text-anchor="end" class="label">filter</text>
+<rect x="250" y="514" width="630.6" height="20" rx="3" fill="#dc2626"/>
+<text x="888.6" y="529" class="value">1.9%</text>
+<text x="250" y="550" class="meta">2 packages; 2 observed calls</text>
+<text x="234" y="573" text-anchor="end" class="label">packageDescription</text>
+<rect x="250" y="557" width="625.7" height="20" rx="3" fill="#dc2626"/>
+<text x="883.7" y="572" class="value">1.9%</text>
+<text x="250" y="593" class="meta">1 packages; 1 observed calls</text>
+<text x="234" y="616" text-anchor="end" class="label">stdout</text>
+<rect x="250" y="600" width="625.7" height="20" rx="3" fill="#dc2626"/>
+<text x="883.7" y="615" class="value">1.9%</text>
 <text x="250" y="636" class="meta">1 packages; 1 observed calls</text>
-<text x="234" y="659" text-anchor="end" class="label">stdout</text>
-<rect x="250" y="643" width="617.7" height="20" rx="3" fill="#dc2626"/>
-<text x="875.7" y="658" class="value">1.9%</text>
-<text x="250" y="679" class="meta">1 packages; 1 observed calls</text>
-<text x="234" y="702" text-anchor="end" class="label">rainbow</text>
-<rect x="250" y="686" width="579.0" height="20" rx="3" fill="#dc2626"/>
-<text x="837.0" y="701" class="value">1.8%</text>
-<text x="250" y="722" class="meta">2 packages; 5 observed calls</text>
-<text x="234" y="745" text-anchor="end" class="label">rect</text>
-<rect x="250" y="729" width="577.5" height="20" rx="3" fill="#dc2626"/>
-<text x="835.5" y="744" class="value">1.8%</text>
-<text x="250" y="765" class="meta">2 packages; 3 observed calls</text>
-<text x="234" y="788" text-anchor="end" class="label">file.remove</text>
-<rect x="250" y="772" width="571.7" height="20" rx="3" fill="#dc2626"/>
-<text x="829.7" y="787" class="value">1.8%</text>
-<text x="250" y="808" class="meta">2 packages; 4 observed calls</text>
-<text x="234" y="831" text-anchor="end" class="label">readChar</text>
-<rect x="250" y="815" width="556.7" height="20" rx="3" fill="#dc2626"/>
-<text x="814.7" y="830" class="value">1.7%</text>
-<text x="250" y="851" class="meta">2 packages; 2 observed calls</text>
-<text x="234" y="874" text-anchor="end" class="label">terrain.colors</text>
-<rect x="250" y="858" width="555.0" height="20" rx="3" fill="#dc2626"/>
-<text x="813.0" y="873" class="value">1.7%</text>
-<text x="250" y="894" class="meta">1 packages; 3 observed calls</text>
-<text x="234" y="917" text-anchor="end" class="label">debug</text>
-<rect x="250" y="901" width="551.2" height="20" rx="3" fill="#dc2626"/>
-<text x="809.2" y="916" class="value">1.7%</text>
+<text x="234" y="659" text-anchor="end" class="label">rainbow</text>
+<rect x="250" y="643" width="586.5" height="20" rx="3" fill="#dc2626"/>
+<text x="844.5" y="658" class="value">1.8%</text>
+<text x="250" y="679" class="meta">2 packages; 5 observed calls</text>
+<text x="234" y="702" text-anchor="end" class="label">rect</text>
+<rect x="250" y="686" width="585.0" height="20" rx="3" fill="#dc2626"/>
+<text x="843.0" y="701" class="value">1.8%</text>
+<text x="250" y="722" class="meta">2 packages; 3 observed calls</text>
+<text x="234" y="745" text-anchor="end" class="label">file.remove</text>
+<rect x="250" y="729" width="579.1" height="20" rx="3" fill="#dc2626"/>
+<text x="837.1" y="744" class="value">1.8%</text>
+<text x="250" y="765" class="meta">2 packages; 4 observed calls</text>
+<text x="234" y="788" text-anchor="end" class="label">readChar</text>
+<rect x="250" y="772" width="563.9" height="20" rx="3" fill="#dc2626"/>
+<text x="821.9" y="787" class="value">1.7%</text>
+<text x="250" y="808" class="meta">2 packages; 2 observed calls</text>
+<text x="234" y="831" text-anchor="end" class="label">terrain.colors</text>
+<rect x="250" y="815" width="562.1" height="20" rx="3" fill="#dc2626"/>
+<text x="820.1" y="830" class="value">1.7%</text>
+<text x="250" y="851" class="meta">1 packages; 3 observed calls</text>
+<text x="234" y="874" text-anchor="end" class="label">debug</text>
+<rect x="250" y="858" width="558.4" height="20" rx="3" fill="#dc2626"/>
+<text x="816.4" y="873" class="value">1.7%</text>
+<text x="250" y="894" class="meta">1 packages; 1 observed calls</text>
+<text x="234" y="917" text-anchor="end" class="label">undebug</text>
+<rect x="250" y="901" width="558.4" height="20" rx="3" fill="#dc2626"/>
+<text x="816.4" y="916" class="value">1.7%</text>
 <text x="250" y="937" class="meta">1 packages; 1 observed calls</text>
-<text x="234" y="960" text-anchor="end" class="label">undebug</text>
-<rect x="250" y="944" width="551.2" height="20" rx="3" fill="#dc2626"/>
-<text x="809.2" y="959" class="value">1.7%</text>
-<text x="250" y="980" class="meta">1 packages; 1 observed calls</text>
-<text x="234" y="1003" text-anchor="end" class="label">pdf</text>
-<rect x="250" y="987" width="539.0" height="20" rx="3" fill="#dc2626"/>
-<text x="797.0" y="1002" class="value">1.7%</text>
-<text x="250" y="1023" class="meta">2 packages; 2 observed calls</text>
+<text x="234" y="960" text-anchor="end" class="label">pdf</text>
+<rect x="250" y="944" width="546.0" height="20" rx="3" fill="#dc2626"/>
+<text x="804.0" y="959" class="value">1.7%</text>
+<text x="250" y="980" class="meta">2 packages; 2 observed calls</text>
+<text x="234" y="1003" text-anchor="end" class="label">file.create</text>
+<rect x="250" y="987" width="531.3" height="20" rx="3" fill="#dc2626"/>
+<text x="789.3" y="1002" class="value">1.6%</text>
+<text x="250" y="1023" class="meta">1 packages; 1 observed calls</text>
 <text x="60" y="1072" class="note">Named-call syntax only; operators and indirect calls are measured elsewhere. Counts are aggregate observations, and no example source is retained.</text>
 </svg>

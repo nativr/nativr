@@ -1011,6 +1011,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("deparse", ["expr"], "shape", builtinDeparse),
   defineBuiltin("deparse1", ["expr"], "shape", builtinDeparse),
   defineBuiltin("body", ["fun"], "behavioral", builtinBody),
+  defineBuiltin("args", ["name"], "behavioral", builtinArgs),
   defineBuiltin("formals", ["fun"], "behavioral", builtinFormals),
   defineBuiltin("formals<-", ["fun", "value"], "behavioral", builtinFormalsReplacement),
   defineBuiltin("length", ["x"], "behavioral", builtinLength),
@@ -1273,7 +1274,10 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     builtinCumulative(invocation, "minimum"),
   ),
   defineBuiltin("sum", ["...", "na.rm"], "numeric", builtinSum),
-  defineBuiltin("mean", ["x", "na.rm"], "behavioral", builtinMean),
+  withBuiltinFormals(defineBuiltin("mean", ["x", "na.rm"], "behavioral", builtinMean), [
+    { name: "x" },
+    { name: "..." },
+  ]),
   defineBuiltin("sqrt", ["x"], "numeric", (invocation) => builtinMath(invocation, "sqrt")),
   defineBuiltin("abs", ["x"], "numeric", (invocation) => builtinMath(invocation, "abs")),
   defineBuiltin("round", ["x", "digits"], "numeric", builtinRound),
@@ -10878,11 +10882,54 @@ async function builtinBody(invocation: BuiltinInvocation): Promise<RValue> {
     value = binding.type === "promise" ? await invocation.force(binding) : binding;
   }
   if (value.type === "closure") {
+    if (value.body.kind === "NullLiteral") return R_NULL;
     return { type: "language", expression: value.body } satisfies RLanguage;
   }
   if (value.type === "builtin") return R_NULL;
   invocation.context.warn({ code: "NRW1013", message: "argument is not a function" });
   return R_NULL;
+}
+
+async function lookupCallableByName(invocation: BuiltinInvocation, name: string): Promise<RValue> {
+  let environment: REnvironment | null = invocation.currentEnvironment();
+  while (environment !== null) {
+    const binding = environment.bindings.get(name);
+    if (binding !== undefined) {
+      const value = binding.type === "promise" ? await invocation.force(binding) : binding;
+      if (value.type === "closure" || value.type === "builtin") return value;
+    }
+    environment = environment.parent;
+  }
+  throw new REvaluationError("NRE2001", `Could not find function '${name}'.`);
+}
+
+async function builtinArgs(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["name"]);
+  let value = required(matched, "name", "args");
+  if (value.type === "character") {
+    if (value.length !== 1) return R_NULL;
+    value = await lookupCallableByName(invocation, characterScalar(value, "name"));
+  }
+
+  const parameters =
+    value.type === "closure"
+      ? value.parameters
+      : value.type === "builtin"
+        ? (value.definition.formals ??
+          value.definition.metadata.supportedArguments.map((name) => ({
+            name,
+            span: SYNTHETIC_SPAN,
+          })))
+        : undefined;
+  if (parameters === undefined) return R_NULL;
+
+  invocation.context.allocate(parameters.length + 1);
+  return {
+    type: "closure",
+    parameters: Object.freeze([...parameters]),
+    body: { kind: "NullLiteral", span: SYNTHETIC_SPAN },
+    environment: invocation.globalEnvironment(),
+  };
 }
 
 async function builtinFormals(invocation: BuiltinInvocation): Promise<RValue> {

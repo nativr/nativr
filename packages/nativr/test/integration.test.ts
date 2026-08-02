@@ -17,7 +17,7 @@ NeedsCompilation: no`,
 importFrom(methods, setClass, showClass)
 importFrom(stats, median)
 importFrom(utils, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, class_summary, new_score, describe, package_state, package_name, package_libname, installed_version, namespace_names, process_id, library_paths)
+export(square, centered, duration, histogram_counts, class_summary, signature_names, new_score, describe, package_state, package_name, package_libname, installed_version, namespace_names, process_id, library_paths)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -45,6 +45,7 @@ centered <- function(x) x - median(x)
 duration <- function(x, units = "secs") as.difftime(x, units = units)
 histogram_counts <- function(x, breaks = "Sturges") hist(x, breaks = breaks, plot = FALSE)$counts
 class_summary <- function() capture.output(showClass("NativRFixtureClass"))
+signature_names <- function(fun = square) names(formals(args(fun)))
 new_score <- function(x) structure(x, class = c("score", "numeric"))
 describe.score <- function(x, ...) paste0(.package_state, ":", sum(x))
 plot.score <- function(x, ..., marker = "package-plot") c(marker, sum(x), list(...)$extra)
@@ -717,6 +718,51 @@ describe("complete inline source-to-result vertical slice", () => {
     ).resolves.toEqual([2, 1]);
     await expect(runtime.eval("length(replicate(0, stop('not evaluated')))")).resolves.toBe(0);
     await expect(runtime.eval("replicate(2.9, 1)")).resolves.toEqual([1, 1]);
+    await runtime.dispose();
+  });
+
+  it("reconstructs callable signatures through usage-ranked args", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        f <- function(x, y = 2L, ...) x
+        signature <- args(f)
+        c(
+          typeof(signature),
+          names(formals(signature)),
+          identical(formals(signature)[["y"]], 2L),
+          identical(body(signature), NULL),
+          identical(environment(signature), globalenv()),
+          names(formals(args(\`+\`))),
+          names(formals(args(c))),
+          names(formals(args("mean")))
+        )
+      `),
+    ).resolves.toEqual([
+      "closure",
+      "x",
+      "y",
+      "...",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "e1",
+      "e2",
+      "...",
+      "x",
+      "...",
+    ]);
+    await expect(runtime.eval("c(is.null(args(1)), is.null(args(character())))")).resolves.toEqual([
+      true,
+      true,
+    ]);
+    await expect(runtime.evalDetailed("args(1)")).resolves.toMatchObject({
+      value: null,
+      warnings: [],
+    });
+    await expect(runtime.eval('args("nativr_no_such_function")')).rejects.toMatchObject({
+      code: "NRE2001",
+    });
     await runtime.dispose();
   });
 
@@ -2526,6 +2572,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "Name:      value     label",
       "Class:   integer character",
     ]);
+    await expect(runtime.eval("nativrfixture::signature_names()")).resolves.toBe("x");
     await expect(
       runtime.eval(
         "x <- nativrfixture::duration(2, 'hours'); c(unclass(x), attr(x, 'units'), class(x))",
@@ -2588,6 +2635,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "package_name",
       "package_state",
       "process_id",
+      "signature_names",
       "square",
     ]);
     await expect(runtime.eval('requireNamespace("does.not.exist", quietly = TRUE)')).resolves.toBe(
@@ -9278,7 +9326,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.225.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.226.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

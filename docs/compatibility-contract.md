@@ -1971,6 +1971,15 @@ indexes/aliases, broader NAMESPACE and S4 registration, bytecode, compiled code,
 connections, unsupported serialized types/compressors, license-policy decisions, and R CMD check
 behavior remain outside this slice.
 
+Usage-ranked `base::args()` has GNU R 4.6 differential evidence for ordinary closures, registered
+builtins, first-class operators, character function names, default expressions, ellipsis, global
+result environments, `NULL` bodies, unresolved-name errors, and silent non-function results. The
+returned value is a new owned closure and never exposes parser or Tree-sitter nodes. Source-only
+package fixtures execute the same path inline and through the default Worker, supporting package
+code that inspects generated constructors and wrappers without rewriting that code. This does not
+make undocumented primitive usage, the complete S7 protocol, or packages with native code
+compatible.
+
 Deliberate current exclusions include GNU R/webR embedding, browser-time package installation,
 universal package execution, generated JavaScript execution, the complete graphics-device/base-
 graphics stack, filesystem access, runtime network access, locale-specific raw encodings, and the

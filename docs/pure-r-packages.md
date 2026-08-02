@@ -198,6 +198,13 @@ No package source is checked into this repository. Together these tests exercise
 installation, runtime package files, namespace loading, metaprogramming, dynamic caller frames,
 closure-formal replacement, and reusable state-management behavior.
 
+Package-defined constructor and wrapper code may also inspect callable signatures through
+`args(fun)`. The runtime returns a fresh closure with matching formals and a `NULL` body, including
+registered builtin/operator usage metadata; the inline source-package fixture and the Playground's
+default Worker both execute this path. It removes one common introspection gap, but package loading
+still stops at the first unsupported R semantic, namespace directive, data representation, or
+native-code dependency.
+
 ```sh
 $env:NATIVR_EXTERNAL_PACKAGE_SMOKE="1"
 pnpm vitest run packages/package-tools/test/external-package.test.ts

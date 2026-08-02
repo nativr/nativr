@@ -5,11 +5,12 @@ export const playgroundPackage: PureRPackageBundle = {
   description: `Package: nativrdemo
 Version: 0.1.0
 NeedsCompilation: no`,
-  namespace: "export(twice_mean)",
+  namespace: "export(twice_mean, signature_names)",
   rSources: [
     {
       path: "R/twice-mean.R",
-      source: "twice_mean <- function(x) 2 * mean(x)",
+      source:
+        "twice_mean <- function(x) 2 * mean(x)\nsignature_names <- function(fun = twice_mean) names(formals(args(fun)))",
     },
   ],
   resources: [

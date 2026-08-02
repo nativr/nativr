@@ -627,6 +627,13 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      missing-topic behavior, and default Worker execution have evidence. Rendering raw development
      vignettes, lazy help databases, print/viewer methods, and document fidelity remain
      package-system and host-adapter depth.
+143. Usage-ranked callable introspection: rank-205 `base::args` now returns GNU R-shaped signature
+     closures for ordinary functions, registered builtins, first-class operators, and character
+     names, with `NULL` bodies and global result environments. Non-functions and non-scalar
+     character values return `NULL`; unresolved scalar names fail. Source-only package calls run
+     unchanged in inline and default Worker sessions. Broader S7 behavior, compiled StanHeaders
+     routines, undocumented primitive signatures, and the remaining introspection surface stay
+     compatibility depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

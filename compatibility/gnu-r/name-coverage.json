@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 598,
-    "overlappingNames": 582,
-    "missingReferenceNames": 1940,
+    "nativrRegisteredNames": 599,
+    "overlappingNames": 583,
+    "missingReferenceNames": 1939,
     "nativrExtensionNames": 16,
-    "nameCoverage": 0.230769
+    "nameCoverage": 0.231166
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 425, "nameCoverage": 0.3109 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 426, "nameCoverage": 0.311631 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 74, "nameCoverage": 0.159483 },
     {
       "package": "methods",
@@ -105,6 +105,7 @@
     "append",
     "apply",
     "approx",
+    "args",
     "array",
     "as",
     "as.Date",
@@ -984,7 +985,6 @@
     "ar.ols",
     "ar.yw",
     "aregexec",
-    "args",
     "argsAnywhere",
     "arima",
     "arima.sim",
