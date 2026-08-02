@@ -114,6 +114,15 @@ substitution lookup, alternate `match.call` definitions/calls/environments, full
 indexing/attributes, list/data-frame evaluation environments, source-reference preservation, or
 file/connection-driven parsing.
 
+`textConnection()` supplies an always-open, session-owned input connection backed by a copied
+character vector. `source()` reads such connections or browser-owned virtual/package paths, parses
+the complete program before running any expression, and then evaluates sequentially in the global,
+caller, or explicit environment. It returns an invisible named list containing the last value and
+its visibility; bounded echo and visible-result printing use ordinary runtime output and S3 print
+dispatch. `chdir = TRUE` temporarily selects the source file's virtual directory. Output text
+connections, network URLs, host paths, source-reference retention, abort continuation, and exact
+console deparse layout remain unsupported.
+
 Identifier and direct replacement assignment accept `<-`, `=`, `->`, `<<-`, and `->>`. Non-local
 assignment searches lexical parents and falls back to the global environment without mutating locked
 built-in bindings.

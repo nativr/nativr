@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 606,
-    "overlappingNames": 590,
-    "missingReferenceNames": 1932,
+    "nativrRegisteredNames": 608,
+    "overlappingNames": 592,
+    "missingReferenceNames": 1930,
     "nativrExtensionNames": 16,
-    "nameCoverage": 0.233941
+    "nameCoverage": 0.234734
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 431, "nameCoverage": 0.315289 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 433, "nameCoverage": 0.316752 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 74, "nameCoverage": 0.159483 },
     {
       "package": "methods",
@@ -543,6 +543,7 @@
     "simplify2array",
     "sin",
     "sort",
+    "source",
     "split",
     "sprintf",
     "sqrt",
@@ -580,6 +581,7 @@
     "tempdir",
     "tempfile",
     "text",
+    "textConnection",
     "time",
     "tolower",
     "toupper",
@@ -2302,7 +2304,6 @@
     "sort_by.data.frame",
     "sort_by.default",
     "sortedXyData",
-    "source",
     "spec.ar",
     "spec.pgram",
     "spec.taper",
@@ -2412,7 +2413,6 @@
     "testInheritedMethods",
     "testVirtual",
     "text.default",
-    "textConnection",
     "textConnectionValue",
     "tiff",
     "timestamp",

@@ -18,7 +18,7 @@ importFrom(graphics, axis, plot.new, plot.window)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median)
 importFrom(utils, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, axis_ticks, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, installed_version, namespace_names, process_id, library_paths)
+export(square, centered, duration, histogram_counts, hcl_colours, axis_ticks, sourced_value, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, installed_version, namespace_names, process_id, library_paths)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -52,6 +52,11 @@ axis_ticks <- function() {
   plot.new()
   plot.window(c(0, 4), c(0, 4))
   axis(1, at = 1:3, labels = c("one", "two", "three"))
+}
+sourced_value <- function() {
+  con <- textConnection("value <- 40L; value + 2L")
+  on.exit(close(con))
+  source(con, local = TRUE)$value
 }
 class_summary <- function() capture.output(showClass("NativRFixtureClass"))
 signature_names <- function(fun = square) names(formals(args(fun)))
@@ -1577,6 +1582,92 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("sources complete R programs from text connections into the selected environment", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        con <- textConnection(c("x <- 1", "x + 2"))
+        sourced <- withVisible(source(con, local = TRUE))
+        closed <- close(con)
+        c(
+          sourced$value$value,
+          sourced$value$visible,
+          sourced$visible,
+          x,
+          identical(closed, 0L),
+          identical(class(con), c("textConnection", "connection"))
+        )
+      `),
+    ).resolves.toEqual([3, 1, 0, 1, 1, 1]);
+
+    await expect(
+      runtime.eval(`
+        load_local <- function() {
+          con <- textConnection("local_value <- 7; local_value * 6")
+          on.exit(close(con))
+          result <- source(con, local = TRUE)
+          c(result$value, result$visible, local_value)
+        }
+        c(load_local(), exists("local_value"))
+      `),
+    ).resolves.toEqual([42, 1, 7, 0]);
+
+    await expect(
+      runtime.eval(`
+        con <- textConnection("global_value <- 11")
+        load_global <- function() source(con)
+        loaded <- load_global()
+        close(con)
+        c(global_value, loaded$value, loaded$visible)
+      `),
+    ).resolves.toEqual([11, 11, 0]);
+
+    await expect(
+      runtime.eval(
+        "target <- new.env(); result <- source(exprs = expression(answer <- 20, answer + 22), local = target); c(result$value, result$visible, target$answer)",
+      ),
+    ).resolves.toEqual([42, 1, 20]);
+
+    await expect(
+      runtime.eval(`
+        root <- tempfile("source-dir-")
+        dir.create(root)
+        writeLines("nested-value", file.path(root, "value.txt"))
+        writeLines("loaded <- readLines('value.txt'); loaded", file.path(root, "loader.R"))
+        before <- getwd()
+        target <- new.env()
+        result <- source(file.path(root, "loader.R"), local = target, chdir = TRUE)
+        cleaned <- unlink(root, recursive = TRUE)
+        c(result$value, result$visible, target$loaded, identical(getwd(), before), cleaned)
+      `),
+    ).resolves.toEqual(["nested-value", "TRUE", "nested-value", "TRUE", "0"]);
+
+    const echoed = await runtime.evalDetailed(`
+      con <- textConnection("echo_value <- 2; echo_value + 5")
+      result <- source(con, echo = TRUE, local = TRUE)
+      close(con)
+      result$value
+    `);
+    expect(echoed.value).toBe(7);
+    expect(echoed.output.map((entry) => entry.text).join("")).toContain("> ");
+    expect(echoed.output.map((entry) => entry.text).join("")).toContain("[1] 7\n");
+
+    await expect(
+      runtime.eval(`
+        con <- textConnection(c("atomic_value <- 1", "broken )"))
+        tryCatch(source(con, local = TRUE), error = function(error) NULL)
+        close(con)
+        exists("atomic_value")
+      `),
+    ).resolves.toBe(false);
+    await expect(
+      runtime.eval("source(textConnection('1'), catch.aborts = TRUE)"),
+    ).rejects.toMatchObject({
+      code: "NRU6202",
+    });
+    await runtime.dispose();
+  });
+
   it("reports usage-ranked GNU R-shaped metadata for owned virtual files", async () => {
     const runtime = await session();
     await expect(
@@ -2640,6 +2731,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "#4A6FE34D",
     ]);
     await expect(runtime.eval("nativrfixture::axis_ticks()")).resolves.toEqual([1, 2, 3]);
+    await expect(runtime.eval("nativrfixture::sourced_value()")).resolves.toBe(42);
     await expect(runtime.eval("nativrfixture::class_summary()")).resolves.toEqual([
       'Class "NativRFixtureClass" [package "nativrfixture"]',
       "",
@@ -2718,6 +2810,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "package_state",
       "process_id",
       "signature_names",
+      "sourced_value",
       "square",
     ]);
     await expect(runtime.eval('requireNamespace("does.not.exist", quietly = TRUE)')).resolves.toBe(
@@ -9408,7 +9501,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.230.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.231.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

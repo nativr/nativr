@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.230.0",
+  "languageSubsetVersion": "0.231.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -131,6 +131,7 @@
         { "name": "system.file", "compatibility": "shape" },
         { "name": "tempfile", "compatibility": "shape" },
         { "name": "file", "compatibility": "behavioral" },
+        { "name": "textConnection", "compatibility": "behavioral" },
         { "name": "gzcon", "compatibility": "behavioral" },
         { "name": "readBin", "compatibility": "shape" },
         { "name": "open", "compatibility": "behavioral" },
@@ -182,6 +183,7 @@
         { "name": "identical", "compatibility": "behavioral" },
         { "name": "all.equal", "compatibility": "numeric" },
         { "name": "parse", "compatibility": "behavioral" },
+        { "name": "source", "compatibility": "behavioral" },
         { "name": "str2expression", "compatibility": "behavioral" },
         { "name": "str2lang", "compatibility": "behavioral" },
         { "name": "eval", "compatibility": "behavioral" },

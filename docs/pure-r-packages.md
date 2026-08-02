@@ -229,6 +229,14 @@ and text cross the default Worker graphics journal. This proves the ordinary nam
 those callables; packages still fail explicitly when they reach an unsupported graphics helper,
 device feature, native routine, or host color-management facility.
 
+Package source may also load generated or bundled R text without translation. Input
+`textConnection()` objects copy character vectors into bounded session memory, and `source()` fully
+parses the program before evaluating it sequentially in the global, calling, or explicitly supplied
+environment. The return value records the last value and its visibility, and measured echo/printing
+behavior works through the same output channel in inline and Worker execution. The package fixture
+executes this path unchanged. This does not yet provide output text connections, URLs, host-file
+access, retained source references, or continuation after aborting errors.
+
 ```sh
 $env:NATIVR_EXTERNAL_PACKAGE_SMOKE="1"
 pnpm vitest run packages/package-tools/test/external-package.test.ts

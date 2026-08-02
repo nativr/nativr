@@ -421,6 +421,58 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   withBuiltinFormals(
     defineBuiltin(
+      "textConnection",
+      ["object", "open", "local", "name", "encoding"],
+      "behavioral",
+      builtinTextConnection,
+    ),
+    [
+      { name: "object" },
+      { name: "open", defaultValue: { kind: "StringLiteral", value: "r", span: SYNTHETIC_SPAN } },
+      {
+        name: "local",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "name",
+        defaultValue: {
+          kind: "CallExpression",
+          callee: { kind: "Identifier", name: "deparse1", span: SYNTHETIC_SPAN },
+          arguments: [
+            {
+              value: {
+                kind: "CallExpression",
+                callee: { kind: "Identifier", name: "substitute", span: SYNTHETIC_SPAN },
+                arguments: [
+                  {
+                    value: { kind: "Identifier", name: "object", span: SYNTHETIC_SPAN },
+                    span: SYNTHETIC_SPAN,
+                  },
+                ],
+                span: SYNTHETIC_SPAN,
+              },
+              span: SYNTHETIC_SPAN,
+            },
+          ],
+          span: SYNTHETIC_SPAN,
+        },
+      },
+      {
+        name: "encoding",
+        defaultValue: {
+          kind: "CallExpression",
+          callee: { kind: "Identifier", name: "c", span: SYNTHETIC_SPAN },
+          arguments: ["", "bytes", "UTF-8"].map((value) => ({
+            value: { kind: "StringLiteral" as const, value, span: SYNTHETIC_SPAN },
+            span: SYNTHETIC_SPAN,
+          })),
+          span: SYNTHETIC_SPAN,
+        },
+      },
+    ],
+  ),
+  withBuiltinFormals(
+    defineBuiltin(
       "gzcon",
       ["con", "level", "allowNonCompressed", "text"],
       "behavioral",
@@ -1019,6 +1071,80 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     ["file", "n", "text", "prompt", "keep.source", "srcfile", "encoding"],
     "behavioral",
     builtinParse,
+  ),
+  withBuiltinFormals(
+    defineBuiltin(
+      "source",
+      [
+        "file",
+        "local",
+        "echo",
+        "print.eval",
+        "exprs",
+        "spaced",
+        "verbose",
+        "prompt.echo",
+        "max.deparse.length",
+        "width.cutoff",
+        "deparseCtrl",
+        "chdir",
+        "catch.aborts",
+        "encoding",
+        "continue.echo",
+        "skip.echo",
+        "keep.source",
+      ],
+      "behavioral",
+      builtinSource,
+      "regular",
+      "invisible",
+    ),
+    [
+      { name: "file" },
+      {
+        name: "local",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      { name: "echo", defaultValue: { kind: "Identifier", name: "verbose", span: SYNTHETIC_SPAN } },
+      {
+        name: "print.eval",
+        defaultValue: { kind: "Identifier", name: "echo", span: SYNTHETIC_SPAN },
+      },
+      { name: "exprs" },
+      {
+        name: "spaced",
+        defaultValue: { kind: "Identifier", name: "use_file", span: SYNTHETIC_SPAN },
+      },
+      { name: "verbose", defaultValue: getOptionDefaultAst("verbose") },
+      { name: "prompt.echo", defaultValue: getOptionDefaultAst("prompt") },
+      {
+        name: "max.deparse.length",
+        defaultValue: { kind: "DoubleLiteral", value: 150, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "width.cutoff",
+        defaultValue: { kind: "IntegerLiteral", value: 60, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "deparseCtrl",
+        defaultValue: { kind: "StringLiteral", value: "showAttributes", span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "chdir",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "catch.aborts",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      { name: "encoding", defaultValue: getOptionDefaultAst("encoding") },
+      { name: "continue.echo", defaultValue: getOptionDefaultAst("continue") },
+      {
+        name: "skip.echo",
+        defaultValue: { kind: "DoubleLiteral", value: 0, span: SYNTHETIC_SPAN },
+      },
+      { name: "keep.source", defaultValue: getOptionDefaultAst("keep.source") },
+    ],
   ),
   defineBuiltin("str2expression", ["text"], "behavioral", builtinStr2Expression),
   defineBuiltin("str2lang", ["s"], "behavioral", builtinStr2Lang),
@@ -2882,6 +3008,20 @@ function withBuiltinFormals(
         span: SYNTHETIC_SPAN,
       })),
     ),
+  };
+}
+
+function getOptionDefaultAst(name: string): AstNode {
+  return {
+    kind: "CallExpression",
+    callee: { kind: "Identifier", name: "getOption", span: SYNTHETIC_SPAN },
+    arguments: [
+      {
+        value: { kind: "StringLiteral", value: name, span: SYNTHETIC_SPAN },
+        span: SYNTHETIC_SPAN,
+      },
+    ],
+    span: SYNTHETIC_SPAN,
   };
 }
 
@@ -5548,6 +5688,57 @@ async function builtinFile(invocation: BuiltinInvocation): Promise<RIntegerVecto
   return handle;
 }
 
+async function builtinTextConnection(invocation: BuiltinInvocation): Promise<RIntegerVector> {
+  const matched = await matchExact(invocation, ["object", "open", "local", "name", "encoding"]);
+  const object = required(matched, "object", "textConnection");
+  const requested = virtualConnectionMode(matched.get("open"), "r", "textConnection");
+  if (requested.mode !== "r" || requested.text !== "text") {
+    throw new RUnsupportedFeatureError(
+      "NRU6201",
+      "textConnection() currently supports browser-memory input connections opened for text reading.",
+    );
+  }
+  coercibleLogicalFlag(matched.get("local"), false, "local");
+  if (object.type !== "character") {
+    throw new RTypeMismatchError("NRT3408", "textConnection() input must be a character vector.");
+  }
+  const nameValue = matched.get("name");
+  const description = nameValue === undefined ? "object" : characterScalar(nameValue, "name");
+  const encoding = virtualTextEncoding(matched.get("encoding"), "textConnection");
+  const source = Array.from({ length: object.length }, (_, index) =>
+    isMissing(object, index) ? "NA" : (object.values[index] ?? ""),
+  ).join("\n");
+  const state = virtualTextFileState(invocation);
+  if (state.connections.size >= invocation.context.limits.maxVectorLength) {
+    throw new RResourceLimitError("NRL4002", "Virtual connection count limit exceeded.");
+  }
+  if (!Number.isSafeInteger(state.nextConnectionId) || state.nextConnectionId > 2_147_483_647) {
+    throw new RResourceLimitError("NRL4002", "Virtual connection identifier limit exceeded.");
+  }
+  const path = nextVirtualTempPath(state, "text-connection-", ".txt");
+  writeVirtualTextFile(invocation, path, source);
+  const id = state.nextConnectionId;
+  state.nextConnectionId += 1;
+  invocation.context.allocate(1);
+  const handle = withClasses(integerVector([id]), ["textConnection", "connection"]);
+  state.connections.set(id, {
+    id,
+    handle,
+    description,
+    path,
+    packageFile: false,
+    privateFile: true,
+    blocking: true,
+    encoding,
+    open: true,
+    mode: "r",
+    displayMode: "r",
+    text: "text",
+    cursor: 0,
+  });
+  return handle;
+}
+
 async function builtinGzcon(invocation: BuiltinInvocation): Promise<RIntegerVector> {
   const matched = await matchExact(invocation, ["con", "level", "allowNonCompressed", "text"]);
   const connection = requireVirtualTextConnection(invocation, required(matched, "con", "gzcon"));
@@ -6483,7 +6674,7 @@ function virtualTextEncoding(value: RValue | undefined, call: string): VirtualTe
     throw new RTypeMismatchError("NRT3355", "invalid 'encoding' argument");
   }
   const normalized = (value.values[0] ?? "").toLowerCase().replaceAll("-", "");
-  if (normalized === "unknown" || normalized === "utf8") return "utf8";
+  if (normalized === "" || normalized === "unknown" || normalized === "utf8") return "utf8";
   if (normalized === "latin1" || normalized === "bytes") return "latin1";
   throw new RUnsupportedFeatureError(
     "NRU6182",
@@ -9736,6 +9927,214 @@ async function builtinParse(invocation: BuiltinInvocation): Promise<RExpression>
   const program = invocation.parse(parseTextSource(text), maxExpressions);
   invocation.context.allocate(program.body.length);
   return { type: "expression", values: Object.freeze([...program.body]) };
+}
+
+async function builtinSource(invocation: BuiltinInvocation): Promise<RList> {
+  const callerEnvironment =
+    invocation.arguments[0]?.promise.environment ?? invocation.currentEnvironment();
+  const matched = await matchExact(invocation, [
+    "file",
+    "local",
+    "echo",
+    "print.eval",
+    "exprs",
+    "spaced",
+    "verbose",
+    "prompt.echo",
+    "max.deparse.length",
+    "width.cutoff",
+    "deparseCtrl",
+    "chdir",
+    "catch.aborts",
+    "encoding",
+    "continue.echo",
+    "skip.echo",
+    "keep.source",
+  ]);
+  const file = matched.get("file");
+  const expressions = matched.get("exprs");
+  if (file === undefined && expressions === undefined) {
+    throw new REvaluationError("NRE2103", "Argument 'file' is missing in source().");
+  }
+
+  const environment = sourceEnvironment(matched.get("local"), callerEnvironment, invocation);
+  const verbose = coercibleLogicalFlag(
+    matched.get("verbose") ?? optionsState(invocation).get("verbose"),
+    false,
+    "verbose",
+  );
+  const echo = coercibleLogicalFlag(matched.get("echo"), verbose, "echo");
+  const printEvaluation = coercibleLogicalFlag(matched.get("print.eval"), echo, "print.eval");
+  const prompt = sourceCharacterControl(
+    matched.get("prompt.echo") ?? optionsState(invocation).get("prompt"),
+    "> ",
+    "prompt.echo",
+  );
+  sourceCharacterControl(
+    matched.get("continue.echo") ?? optionsState(invocation).get("continue"),
+    "+ ",
+    "continue.echo",
+  );
+  const maxDeparseLength = sourceNonNegativeInteger(
+    matched.get("max.deparse.length"),
+    150,
+    "max.deparse.length",
+  );
+  sourceNonNegativeInteger(matched.get("width.cutoff"), 60, "width.cutoff");
+  sourceNonNegativeInteger(matched.get("skip.echo"), 0, "skip.echo");
+  if (coercibleLogicalFlag(matched.get("catch.aborts"), false, "catch.aborts")) {
+    throw new RUnsupportedFeatureError(
+      "NRU6202",
+      "source(catch.aborts = TRUE) continuation after errors is not implemented.",
+    );
+  }
+  const keepSource = matched.get("keep.source") ?? optionsState(invocation).get("keep.source");
+  if (keepSource !== undefined && parseKeepSource(keepSource)) {
+    throw new RUnsupportedFeatureError(
+      "NRU6134",
+      "source(keep.source = TRUE) source-reference attributes are not implemented.",
+    );
+  }
+
+  let sourcePath: string | undefined;
+  let nodes: readonly AstNode[];
+  if (expressions !== undefined) {
+    nodes = sourceExpressionNodes(expressions);
+  } else {
+    const loaded = await sourceInput(
+      invocation,
+      required(matched, "file", "source"),
+      matched.get("encoding"),
+    );
+    sourcePath = loaded.path;
+    nodes = invocation.parse(loaded.source).body;
+  }
+
+  const chdir = coercibleLogicalFlag(matched.get("chdir"), false, "chdir");
+  const state = virtualTextFileState(invocation);
+  const previousDirectory = state.workingDirectory;
+  if (chdir) {
+    if (sourcePath === undefined) {
+      throw new REvaluationError("NRE2253", "source(chdir = TRUE) requires a file path.");
+    }
+    state.workingDirectory = sourcePath.slice(0, sourcePath.lastIndexOf("/"));
+  }
+
+  let lastValue: RValue = R_NULL;
+  let lastVisible = false;
+  try {
+    for (const node of nodes) {
+      invocation.context.checkpoint();
+      if (echo) {
+        const deparsed = deparseAst(node);
+        const displayed =
+          deparsed.length <= maxDeparseLength
+            ? deparsed
+            : `${deparsed.slice(0, maxDeparseLength)} .... [TRUNCATED] `;
+        invocation.context.writeOutput({ stream: "stdout", text: `\n${prompt}${displayed}\n` });
+      }
+      const result = await invocation.evaluateDetailed(
+        { type: "language", expression: node },
+        environment,
+      );
+      lastValue = result.value;
+      lastVisible = result.visible;
+      if (printEvaluation && result.visible) {
+        const print = await lookupCallableByName(invocation, "print");
+        await invocation.invoke(print, [{ value: result.value }]);
+      }
+    }
+  } finally {
+    state.workingDirectory = previousDirectory;
+  }
+  invocation.context.allocate(2);
+  invocation.setResultVisibility("invisible");
+  return listValue([lastValue, logicalVector([lastVisible])], ["value", "visible"]);
+}
+
+function sourceEnvironment(
+  value: RValue | undefined,
+  caller: REnvironment,
+  invocation: BuiltinInvocation,
+): REnvironment {
+  if (value === undefined) return invocation.globalEnvironment();
+  if (value.type === "environment") return value;
+  if (value.type === "logical" && value.length === 1 && !isMissing(value, 0)) {
+    return value.values[0] === 1 ? caller : invocation.globalEnvironment();
+  }
+  throw new RTypeMismatchError("NRT3409", "source(local=) must be TRUE, FALSE, or an environment.");
+}
+
+function sourceExpressionNodes(value: RValue): readonly AstNode[] {
+  if (value.type === "expression") return value.values;
+  if (value.type === "language") return [value.expression];
+  if (value.type === "list") {
+    return value.values.map((entry) => {
+      if (entry.type !== "language") {
+        throw new RTypeMismatchError("NRT3409", "source(exprs=) list entries must be calls.");
+      }
+      return entry.expression;
+    });
+  }
+  throw new RTypeMismatchError(
+    "NRT3409",
+    "source(exprs=) must be an expression, call, or list of calls.",
+  );
+}
+
+async function sourceInput(
+  invocation: BuiltinInvocation,
+  file: RValue,
+  encodingValue: RValue | undefined,
+): Promise<{ readonly source: string; readonly path?: string }> {
+  const encoding = virtualTextEncoding(encodingValue, "source");
+  if (isVirtualTextConnectionHandle(file)) {
+    const connection = requireVirtualTextConnection(invocation, file);
+    if (connection.open && !virtualConnectionCanRead(connection.mode)) {
+      throw new REvaluationError("NRE2240", "cannot read from this connection");
+    }
+    const complete =
+      connection.gzip === undefined
+        ? readVirtualTextFile(invocation, connection.path, encoding)
+        : decodeVirtualTextBytes(
+            await readGzipConnectionContents(invocation, connection),
+            encoding,
+            connection.description,
+          );
+    const start = connection.open ? connection.cursor : 0;
+    if (connection.open) connection.cursor = complete.length;
+    return { source: complete.slice(start) };
+  }
+  const suppliedPath = filePathScalar(file, "source");
+  const path = resolveOwnedVirtualPath(invocation, suppliedPath, "source");
+  return { source: readVirtualTextFile(invocation, path, encoding), path };
+}
+
+function sourceCharacterControl(value: RValue | undefined, fallback: string, name: string): string {
+  if (value === undefined) return fallback;
+  return characterScalar(value, name);
+}
+
+function sourceNonNegativeInteger(
+  value: RValue | undefined,
+  fallback: number,
+  name: string,
+): number {
+  if (value === undefined) return fallback;
+  if (
+    !isAtomic(value) ||
+    value.type === "character" ||
+    value.type === "complex" ||
+    value.length !== 1 ||
+    isMissing(value, 0)
+  ) {
+    throw new RTypeMismatchError("NRT3409", `source(${name}=) must be one non-negative number.`);
+  }
+  const numeric = value.values[0] ?? Number.NaN;
+  if (!Number.isFinite(numeric) || numeric < 0) {
+    throw new RTypeMismatchError("NRT3409", `source(${name}=) must be one non-negative number.`);
+  }
+  return Math.trunc(numeric);
 }
 
 async function builtinStr2Expression(invocation: BuiltinInvocation): Promise<RExpression> {

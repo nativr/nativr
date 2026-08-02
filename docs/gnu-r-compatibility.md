@@ -710,6 +710,16 @@ Browser-owned evidence covers line/tick/text commands, measured styles, pure-R p
 the default Worker, Canvas/PNG rendering, and record/replay. Logarithmic/date axes, outer margins,
 plotmath, exact collision layout, font metrics, and device-pixel identity remain incomplete.
 
+The dynamic-source increment raises current name overlap to 592 of 2,522. Measured ranks 221
+`base::source` and 222 `base::textConnection` represent rlang's two
+`source(textConnection(...), echo = TRUE, local = TRUE)` calls, or 2.2% download-weighted reach. GNU
+R 4.6 black-box evidence covers exact formal names, connection classes, caller/global/explicit
+environments, complete-parse-before-execution behavior, sequential side effects, invisible named
+return shape, last-result visibility, and echo printing. Browser-owned evidence adds virtual package
+paths, bounded storage/output, unchanged pure-R package execution, and the default Worker. Output
+text connections, URL/host-file input, retained source references, `catch.aborts = TRUE`, and
+byte-identical console deparsing remain incomplete.
+
 ## Completion evidence
 
 The objective is complete only when:

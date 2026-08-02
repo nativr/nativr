@@ -56,6 +56,10 @@ Date: 2026-08-02
   dimension names, Worker transport, and non-forcing `alist()` syntax capture.
 - Text-driven parsing into owned expression vectors, bounded early `n` termination, and
   parser-validated public symbol/language/expression input records.
+- Usage-ranked `base::source()` and input `textConnection()` fully pre-parse browser-owned text,
+  evaluate sequentially in global/caller/explicit environments, preserve final value visibility, and
+  support bounded echo/printing inside pure-R packages and the default Worker. Output text
+  connections, URLs, host paths, source references, and abort recovery remain explicit boundaries.
 - Backtick-delimited names normalize to their underlying R binding names, including operator names.
 - Worker-first and inline public APIs, versioned snapshots/protocol, and a runnable Vite playground.
 - Build-time installation of standard pure-R source directories, tarballs, and CRAN-like repository
@@ -660,10 +664,10 @@ Date: 2026-08-02
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 12 files and 411 tests, with three explicitly skipped tests.
+- Vitest currently passes 12 files and 412 tests, with three explicitly skipped tests.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 757/757 cases. The optional black-box R oracle passes all 722
+- Checked-in conformance passes 758/758 cases. The optional black-box R oracle passes all 723
   eligible cases and explicitly skips 35 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,

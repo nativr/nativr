@@ -51,6 +51,10 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("[1, 2, 3]");
 
+  await page.locator("#source").fill("nativrdemo::sourced_value()");
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("42");
+
   await page
     .locator("#source")
     .fill(

@@ -1343,6 +1343,17 @@ They reuse the owned parser and never expose its implementation nodes. Source re
 metadata, exact parser diagnostic text, files/connections, and backports' private namespace
 retrieval through `getFromNamespace` remain separate compatibility surfaces.
 
+`textConnection` copies a character vector into a bounded, always-open input connection owned by the
+evaluator session. `source` accepts that connection, a browser-memory path, an immutable package
+resource path, or an already-built expression/call container. The complete program is parsed before
+any expression runs; evaluation is sequential in the global, caller, or explicit environment, and
+the invisible named result retains the last value plus its visibility. Measured echo and visible
+result printing use bounded runtime output and ordinary S3 print dispatch. Exact formal names,
+connection classes, cursor consumption, local/global assignment, parse atomicity, virtual `chdir`,
+package execution, and Worker execution have evidence. Output text connections, URL/host-file input,
+source-reference retention, abort recovery, exact echo deparsing, and every encoding remain outside
+this increment.
+
 `utils::URLdecode` has GNU R differential evidence for backports' measured `URLdecode("ab%20cd")`
 call and NativR executable coverage for vectorized hexadecimal case, reserved characters, literal
 plus signs, UTF-8 multibyte sequences, missing/empty/NULL values, attribute removal, NUL

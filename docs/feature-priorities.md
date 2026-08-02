@@ -75,16 +75,16 @@ signal.
 
 | Priority | Measured rank | Callable             | Weighted reach | Packages | Observed calls |
 | -------: | ------------: | -------------------- | -------------: | -------: | -------------: |
-|        1 |           221 | `source`             |           2.2% |        1 |              2 |
-|        2 |           222 | `textConnection`     |           2.2% |        1 |              2 |
-|        3 |           230 | `readline`           |           2.1% |        2 |              2 |
-|        4 |           232 | `url`                |           2.1% |        2 |              6 |
-|        5 |           239 | `filter`             |           1.9% |        2 |              2 |
-|        6 |           245 | `packageDescription` |           1.9% |        1 |              1 |
-|        7 |           246 | `stdout`             |           1.9% |        1 |              1 |
-|        8 |           252 | `rainbow`            |           1.8% |        2 |              5 |
-|        9 |           253 | `rect`               |           1.8% |        2 |              3 |
-|       10 |           256 | `file.remove`        |           1.8% |        2 |              4 |
+|        1 |           230 | `readline`           |           2.1% |        2 |              2 |
+|        2 |           232 | `url`                |           2.1% |        2 |              6 |
+|        3 |           239 | `filter`             |           1.9% |        2 |              2 |
+|        4 |           245 | `packageDescription` |           1.9% |        1 |              1 |
+|        5 |           246 | `stdout`             |           1.9% |        1 |              1 |
+|        6 |           252 | `rainbow`            |           1.8% |        2 |              5 |
+|        7 |           253 | `rect`               |           1.8% |        2 |              3 |
+|        8 |           256 | `file.remove`        |           1.8% |        2 |              4 |
+|        9 |           259 | `readChar`           |           1.7% |        2 |              2 |
+|       10 |           262 | `terrain.colors`     |           1.7% |        1 |              3 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -150,10 +150,16 @@ download-weighted reach). Explicit or current-window linear ticks, sorted return
 character/numeric/no-label modes, sides 1:4, secondary axes, `tcl`, `cex.axis`, exact formals,
 source-only package execution, and default Worker rendering share the existing bounded segment/text
 journal. This is a reusable linear-axis primitive, not complete margin layout, collision avoidance,
-plotmath, logarithmic axes, or device-identical font metrics. The next measured unresolved callable
-is rank 221 `source`. Rank 144 `Encoding` is also complete for all 12 observed calls across rlang,
-utf8, and xfun (4.5% weighted reach), together with adjacent `Encoding<-`, `enc2utf8`, and
-`enc2native`. The shared character representation preserves exact bytes and canonical R marks
+plotmath, logarithmic axes, or device-identical font metrics. Ranks 221 `base::source` and 222
+`base::textConnection` are now complete for rlang's two measured dynamic-trace examples (2.2%
+download-weighted reach). Browser-memory character vectors become owned input connections; source
+code is fully parsed before sequential evaluation in the global, caller, or explicit environment,
+with GNU R-shaped final value/visibility, echo/printing, exact formals, pure-R package execution,
+and default Worker evidence. Output text connections, URLs, host files, source-reference retention,
+abort recovery, and byte-exact echo formatting remain separate depth. The next measured unresolved
+callable is rank 230 `readline`. Rank 144 `Encoding` is also complete for all 12 observed calls
+across rlang, utf8, and xfun (4.5% weighted reach), together with adjacent `Encoding<-`, `enc2utf8`,
+and `enc2native`. The shared character representation preserves exact bytes and canonical R marks
 through subset/replacement, concatenation, raw conversion, and XDR serialization; this is reusable
 package infrastructure, not an assertion that those packages' native components are supported. Rank
 149 `rcauchy` is now complete for four calls across ggplot2, pillar, and purrr (4.2% weighted
@@ -1484,6 +1490,13 @@ ties:
      alpha, missing/non-finite coordinates, gamut fixup, exact formals, finite range errors, pure-R
      package execution, and default Worker evidence. ICC/device color management, `hcl.colors`, and
      broader conversion helpers remain compatibility depth.
+145. Dynamic source loading: ranks 221 `base::source` and 222 `base::textConnection` run rlang's two
+     measured `source(textConnection(...), echo = TRUE, local = TRUE)` calls through browser-owned
+     text, the normalized AST, and the ordinary evaluator. Complete pre-parse, environment
+     selection, sequential side effects, final value/visibility, echo/printing, connection
+     lifecycle, exact formals, package namespace execution, Worker transport, errors, and resource
+     limits have executable evidence. Output connections, URLs/host files, source references,
+     `catch.aborts = TRUE`, and exact console formatting remain explicit boundaries.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

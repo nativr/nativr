@@ -8337,5 +8337,42 @@
     ],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "source-usage-ranked-text-connection-local-return-visibility-and-formals",
+    "code": "load_local <- function() { con <- textConnection(c(\"x <- 1L\", \"x + 2L\")); on.exit(close(con)); sourced <- withVisible(source(con, local = TRUE)); c(sourced$value$value, sourced$value$visible, sourced$visible, x) }\ncon <- textConnection(\"1 + 1\")\nclasses <- class(con)\nclose(con)\nc(load_local(), exists(\"x\", globalenv(), inherits = FALSE), classes, names(formals(textConnection)), names(formals(source)))",
+    "expected": [
+      "3",
+      "1",
+      "0",
+      "1",
+      "FALSE",
+      "textConnection",
+      "connection",
+      "object",
+      "open",
+      "local",
+      "name",
+      "encoding",
+      "file",
+      "local",
+      "echo",
+      "print.eval",
+      "exprs",
+      "spaced",
+      "verbose",
+      "prompt.echo",
+      "max.deparse.length",
+      "width.cutoff",
+      "deparseCtrl",
+      "chdir",
+      "catch.aborts",
+      "encoding",
+      "continue.echo",
+      "skip.echo",
+      "keep.source"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]
