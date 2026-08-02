@@ -730,6 +730,16 @@ evidence that jsonlite or openssl's native components run. Network fetch, redire
 cookies, CORS, timeouts, caching, and origin trust are explicit host policy; native libcurl and
 writable URL connections remain incomplete.
 
+The time-series-filter increment raises current name overlap to 595 of 2,522. Measured rank 239
+`stats::filter` has one genuine GNU R core use in zoo's documented recursive log-normal-flow
+example; the usage collector's jsonlite hit resolves to dplyr after package attachment and is an
+audited lexical false positive. GNU R 4.6 black-box evidence covers centered, trailing, and circular
+convolution; ordinary and initialized recursion; vector and matrix series; missing propagation;
+time-series metadata; exact formals; partial methods; and invalid controls. Source-only package and
+Worker Playground tests execute the same owned implementation without package-specific rewrites.
+Data-frame coercion, complex filters, irregular-series methods, and native algorithm identity remain
+incomplete.
+
 ## Completion evidence
 
 The objective is complete only when:

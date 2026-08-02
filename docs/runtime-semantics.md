@@ -178,6 +178,15 @@ measured GNU R vector behavior; nonempty matrices require an integer dimension. 
 classed non-`ts` vectors, factor vectors, data frames, expression vectors, higher arrays, raw/list
 matrices, and the complete result length fail or are limited before allocation.
 
+`stats::filter()` operates on owned regular time-series data. Convolution supports `sides = 1` or
+`2`, optional circular indexing, empty coefficient vectors, and independent matrix columns;
+unavailable boundary windows and windows containing `NA` or `NaN` produce `NA`. Recursive mode uses
+each coefficient against prior output, accepts one initial history value per coefficient, and
+propagates missing history forward. Results are double `ts` or `mts` values with validated or
+row-based `tsp` metadata. Atomic vectors and two-dimensional matrices are supported; data-frame
+coercion, complex filters, higher arrays, and irregular-series package methods remain outside this
+path.
+
 `base::findInterval(x, vec, ...)` flattens supported atomic inputs through the runtime's double
 coercion path, validates `vec` as weakly increasing with no missing values by default, and returns
 an unattributed integer vector with one interval index per `x` value. The default uses left-closed,

@@ -19,7 +19,7 @@ const wasmFiles = [
 const wasmRaw = await rawTotal(wasmFiles);
 const budgets = [
   ["statically loaded public client", clientGzip, 150 * 1024, "gzip"],
-  ["Worker JavaScript", workerGzip, 371 * 1024, "gzip"],
+  ["Worker JavaScript", workerGzip, 372 * 1024, "gzip"],
   ["combined parser Wasm", wasmRaw, 1.5 * 1024 * 1024, "raw"],
 ];
 let failed = false;

@@ -316,6 +316,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "cycle",
       "deltat",
       "embed",
+      "filter",
       "frequency",
       "ts",
       "update",

@@ -23,7 +23,7 @@ importFrom(graphics, axis, plot.new, plot.window)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median)
 importFrom(utils, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, axis_ticks, sourced_value, ask_value, remote_lines, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, installed_version, namespace_names, process_id, library_paths)
+export(square, centered, duration, histogram_counts, hcl_colours, axis_ticks, sourced_value, ask_value, remote_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, installed_version, namespace_names, process_id, library_paths)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -69,6 +69,7 @@ remote_lines <- function(address, headers = NULL) {
   on.exit(close(con))
   readLines(con)
 }
+filtered_flow <- function(x, coefficient = 0.8) stats::filter(x, coefficient, method = "r")
 class_summary <- function() capture.output(showClass("NativRFixtureClass"))
 signature_names <- function(fun = square) names(formals(args(fun)))
 new_score <- function(x) structure(x, class = c("score", "numeric"))
@@ -2811,6 +2812,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "describe",
       "duration",
       "dynamic_describe",
+      "filtered_flow",
       "hcl_colours",
       "histogram_counts",
       "installed_version",
@@ -9681,7 +9683,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.233.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.234.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -12236,6 +12238,129 @@ describe("complete inline source-to-result vertical slice", () => {
     });
     await expect(runtime.eval("convolve(1:2, 3:4, conj = NA)")).rejects.toMatchObject({
       code: "NRT3269",
+    });
+    await runtime.dispose();
+  });
+
+  it("filters univariate and multivariate time series with convolution and recursion", async () => {
+    const runtime = await createR({ execution: "inline", assets, packages: [pureRFixture] });
+    await expect(
+      runtime.eval(`
+        centered <- stats::filter(1:6, c(1, 2, 3))
+        trailing <- filter(1:6, c(1, 2, 3), sides = 1)
+        circular <- filter(1:6, c(1, 2, 3), circular = TRUE)
+        c(centered, trailing, circular, start(centered), end(centered), frequency(centered), class(centered))
+      `),
+    ).resolves.toEqual([
+      NA,
+      "10",
+      "16",
+      "22",
+      "28",
+      NA,
+      NA,
+      NA,
+      "10",
+      "16",
+      "22",
+      "28",
+      "22",
+      "10",
+      "16",
+      "22",
+      "28",
+      "28",
+      "1",
+      "1",
+      "6",
+      "1",
+      "1",
+      "ts",
+    ]);
+    await expect(
+      runtime.eval(`
+        matrix_result <- filter(matrix(1:12, 6, 2), c(1, 1), sides = 1)
+        c(matrix_result, dim(matrix_result), class(matrix_result))
+      `),
+    ).resolves.toEqual([
+      NA,
+      "3",
+      "5",
+      "7",
+      "9",
+      "11",
+      NA,
+      "15",
+      "17",
+      "19",
+      "21",
+      "23",
+      "6",
+      "2",
+      "mts",
+      "ts",
+    ]);
+    await expect(
+      runtime.eval(`
+        measured <- nativrfixture::filtered_flow(1:6)
+        initialized <- filter(1:4, c(.5, .25), method = "recursive", init = c(10, 20))
+        f <- formals(stats::filter)
+        c(round(measured, 6), initialized, names(f), identical(f$method, quote(c("convolution", "recursive"))), identical(f$sides, 2L), identical(f$circular, FALSE), is.null(f$init))
+      `),
+    ).resolves.toEqual([
+      "1",
+      "2.8",
+      "5.24",
+      "8.192",
+      "11.5536",
+      "15.24288",
+      "11",
+      "10",
+      "10.75",
+      "11.875",
+      "x",
+      "filter",
+      "method",
+      "sides",
+      "circular",
+      "init",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    await expect(
+      runtime.eval(`
+        convolution <- filter(c(1, NA, 3, 4, 5), c(1, 1), sides = 1)
+        recursive <- filter(c(1, NaN, 3), .5, method = "r")
+        c(is.na(convolution), is.nan(convolution), is.na(recursive), is.nan(recursive))
+      `),
+    ).resolves.toEqual([
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+    ]);
+    await expect(runtime.eval("filter(1:3, c(1, NA))")).rejects.toMatchObject({
+      code: "NRT3412",
+    });
+    await expect(
+      runtime.eval("filter(1:3, c(.5, .2), method = 'r', init = 1)"),
+    ).rejects.toMatchObject({ code: "NRT3412" });
+    await expect(runtime.eval("filter(1:3, 1, sides = 0)")).rejects.toMatchObject({
+      code: "NRT3412",
     });
     await runtime.dispose();
   });

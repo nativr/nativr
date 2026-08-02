@@ -11,7 +11,7 @@ Date: 2026-08-02
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 595 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 611 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Character vectors own exact per-element bytes and canonical `unknown`/`latin1`/`UTF-8`/`bytes`
@@ -179,6 +179,12 @@ Date: 2026-08-02
   fractional-vector dimensions, vector storage preservation, GNU R matrix coercions, and
   source-attribute removal. Factor vectors, data frames, expression vectors, raw/list matrices,
   higher arrays, arbitrary non-`ts` vector classes, and fractional dimensions on nonempty matrices
+  remain explicit boundaries.
+- Usage-ranked `stats::filter()` runs zoo's genuine measured recursive-flow expression and supports
+  owned convolution/recursive algorithms, one- and two-sided or circular boundaries, vector and
+  matrix series, `tsp`/`ts`/`mts` metadata, missing propagation, recursive initial history, and GNU
+  R formals. A source-only package and default Worker Playground execute the same path. Data-frame
+  coercion, complex filtering, irregular-series package methods, and native algorithm identity
   remain explicit boundaries.
 - Usage-ranked `base::findInterval()` runs zoo's irregular-Date rolling-window width expression
   through checkpointed binary search, including duplicate/infinite breakpoints, missing queries,

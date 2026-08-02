@@ -64,11 +64,12 @@ const r = await createR({
   packages: [
     {
       description: "Package: demo\nVersion: 0.1.0\nNeedsCompilation: no",
-      namespace: "export(twice_mean)",
+      namespace: "export(twice_mean, filtered_flow)",
       rSources: [
         {
           path: "R/twice-mean.R",
-          source: "twice_mean <- function(x) 2 * mean(x)",
+          source:
+            'twice_mean <- function(x) 2 * mean(x)\nfiltered_flow <- function(x) stats::filter(x, .8, method = "r")',
         },
       ],
     },
@@ -77,6 +78,8 @@ const r = await createR({
 
 await r.eval("library(demo)");
 console.log(await r.eval("twice_mean(c(1, 2, 6))")); // 6
+console.log(await r.eval("round(filtered_flow(1:6), 6)"));
+// [1, 2.8, 5.24, 8.192, 11.5536, 15.24288]
 console.log(await r.eval('readLines(system.file("DESCRIPTION", package = "demo"), n = 1)'));
 // "Package: demo"
 ```
@@ -183,7 +186,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 596 registered functions, including resettable
+an initial condition/handler slice. It exposes 611 registered functions, including resettable
 session options, isolated session environment variables, deterministic non-interactive host-mode
 detection, browser-owned `gc()` memory censuses, an S3-first `graphics::lines()` path over the
 existing Worker/Canvas journal, usage-ranked numeric and character time-interval construction

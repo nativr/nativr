@@ -2313,6 +2313,38 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   definePackageBuiltin("stats", "deltat", ["x", "..."], "behavioral", builtinDeltaTime),
   definePackageBuiltin("stats", "cycle", ["x", "..."], "behavioral", builtinCycle),
   definePackageBuiltin("stats", "embed", ["x", "dimension"], "behavioral", builtinEmbed),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "stats",
+      "filter",
+      ["x", "filter", "method", "sides", "circular", "init"],
+      "behavioral",
+      builtinTimeSeriesFilter,
+    ),
+    [
+      { name: "x" },
+      { name: "filter" },
+      {
+        name: "method",
+        defaultValue: callAst("c", [
+          {
+            value: { kind: "StringLiteral", value: "convolution", span: SYNTHETIC_SPAN },
+            span: SYNTHETIC_SPAN,
+          },
+          {
+            value: { kind: "StringLiteral", value: "recursive", span: SYNTHETIC_SPAN },
+            span: SYNTHETIC_SPAN,
+          },
+        ]),
+      },
+      { name: "sides", defaultValue: { kind: "IntegerLiteral", value: 2, span: SYNTHETIC_SPAN } },
+      {
+        name: "circular",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      { name: "init", defaultValue: nullAst() },
+    ],
+  ),
   definePackageBuiltin(
     "stats",
     "window",
@@ -32210,6 +32242,226 @@ function timeSeriesDataShape(
     );
   }
   return { data: value, rows, series };
+}
+
+async function builtinTimeSeriesFilter(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = matchLazyArguments(invocation, [
+    "x",
+    "filter",
+    "method",
+    "sides",
+    "circular",
+    "init",
+  ]);
+  const source = await forceRequiredTimeSeriesFilterArgument(matched, "x", invocation);
+  if (!isAtomic(source)) {
+    throw new RTypeMismatchError("NRT3412", "filter() requires an atomic vector or matrix.");
+  }
+  const shape = timeSeriesDataShape(source, "ts");
+  const series = validatedTimeSeries(source, shape.rows, "filter", true);
+  const data = coerceAtomicToDouble(source, invocation);
+  const coefficientsValue = await forceRequiredTimeSeriesFilterArgument(
+    matched,
+    "filter",
+    invocation,
+  );
+  if (!isAtomic(coefficientsValue)) {
+    throw new RTypeMismatchError("NRT3412", "'filter' must be an atomic vector.");
+  }
+  const coefficients = coerceAtomicToDouble(coefficientsValue, invocation);
+  for (let index = 0; index < coefficients.length; index += 1) {
+    if (isMissing(coefficients, index) || Number.isNaN(coefficients.values[index])) {
+      throw new RTypeMismatchError("NRT3412", "missing values in 'filter'");
+    }
+  }
+  const method = timeSeriesFilterMethod(
+    await forceOptionalTimeSeriesFilterArgument(matched, "method", invocation),
+  );
+  const output =
+    method === "recursive"
+      ? await recursiveTimeSeriesFilter(invocation, matched, data, coefficients, shape)
+      : await convolutionTimeSeriesFilter(invocation, matched, data, coefficients, shape);
+  let result: RVector = output;
+  if (shape.series > 1) result = withDimensions(result, [shape.rows, shape.series]);
+  result = withClasses(result, shape.series > 1 ? ["mts", "ts"] : ["ts"]);
+  invocation.context.allocate(3);
+  return withAttribute(result, "tsp", doubleVector([series.start, series.end, series.frequency]));
+}
+
+async function forceRequiredTimeSeriesFilterArgument(
+  matched: ReadonlyMap<string, BuiltinCallArgument>,
+  name: "x" | "filter",
+  invocation: BuiltinInvocation,
+): Promise<RValue> {
+  const argument = matched.get(name);
+  if (argument === undefined || argument.promise.missing) {
+    throw new REvaluationError("NRE2103", `Argument '${name}' is missing in filter().`);
+  }
+  return invocation.force(argument.promise);
+}
+
+async function forceOptionalTimeSeriesFilterArgument(
+  matched: ReadonlyMap<string, BuiltinCallArgument>,
+  name: "method" | "sides" | "circular" | "init",
+  invocation: BuiltinInvocation,
+): Promise<RValue | undefined> {
+  const argument = matched.get(name);
+  if (argument === undefined) return undefined;
+  if (argument.promise.missing) {
+    throw new REvaluationError("NRE2103", `Argument '${name}' is missing in filter().`);
+  }
+  return invocation.force(argument.promise);
+}
+
+function timeSeriesFilterMethod(value: RValue | undefined): "convolution" | "recursive" {
+  if (value === undefined) return "convolution";
+  if (value.type !== "character" || value.length !== 1 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3412", "'arg' must be of length 1");
+  }
+  const requested = value.values[0] ?? "";
+  const choices = ["convolution", "recursive"] as const;
+  const exact = choices.find((choice) => choice === requested);
+  const candidates =
+    exact === undefined ? choices.filter((choice) => choice.startsWith(requested)) : [exact];
+  const selected = candidates.length === 1 ? candidates[0] : undefined;
+  if (selected === undefined) {
+    throw new RTypeMismatchError("NRT3412", `'arg' should be one of "convolution", "recursive"`);
+  }
+  return selected;
+}
+
+async function convolutionTimeSeriesFilter(
+  invocation: BuiltinInvocation,
+  matched: ReadonlyMap<string, BuiltinCallArgument>,
+  data: RDoubleVector,
+  coefficients: RDoubleVector,
+  shape: { readonly rows: number; readonly series: number },
+): Promise<RDoubleVector> {
+  const sidesValue = await forceOptionalTimeSeriesFilterArgument(matched, "sides", invocation);
+  const sides = sidesValue === undefined ? 2 : timeSeriesFilterSide(sidesValue, invocation);
+  const circularValue = await forceOptionalTimeSeriesFilterArgument(
+    matched,
+    "circular",
+    invocation,
+  );
+  const circular =
+    circularValue === undefined ? false : timeSeriesFilterCircular(circularValue, invocation);
+  const values = new Float64Array(data.length);
+  const missing = new Uint8Array(data.length);
+  const offset = sides === 2 ? Math.floor(coefficients.length / 2) : 0;
+  invocation.context.allocate(data.length);
+  for (let seriesIndex = 0; seriesIndex < shape.series; seriesIndex += 1) {
+    const base = seriesIndex * shape.rows;
+    for (let row = 0; row < shape.rows; row += 1) {
+      invocation.context.checkpoint();
+      let sum = 0;
+      let unavailable = false;
+      for (
+        let coefficientIndex = 0;
+        coefficientIndex < coefficients.length;
+        coefficientIndex += 1
+      ) {
+        let sourceRow = row + offset - coefficientIndex;
+        if (circular) {
+          sourceRow = ((sourceRow % shape.rows) + shape.rows) % shape.rows;
+        } else if (sourceRow < 0 || sourceRow >= shape.rows) {
+          unavailable = true;
+          break;
+        }
+        const sourceIndex = base + sourceRow;
+        const sourceValue = data.values[sourceIndex] ?? 0;
+        if (isMissing(data, sourceIndex) || Number.isNaN(sourceValue)) {
+          unavailable = true;
+          break;
+        }
+        sum += (coefficients.values[coefficientIndex] ?? 0) * sourceValue;
+      }
+      const outputIndex = base + row;
+      if (unavailable) missing[outputIndex] = 1;
+      else values[outputIndex] = sum;
+    }
+  }
+  return doubleVector(values, compactMask(missing));
+}
+
+function timeSeriesFilterSide(value: RValue, invocation: BuiltinInvocation): 1 | 2 {
+  if (!isAtomic(value) || value.length !== 1 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3412", "argument 'sides' must be 1 or 2");
+  }
+  const numeric = coerceAtomicToDouble(value, invocation);
+  const side = numeric.values[0];
+  if (side !== 1 && side !== 2) {
+    throw new RTypeMismatchError("NRT3412", "argument 'sides' must be 1 or 2");
+  }
+  return side;
+}
+
+function timeSeriesFilterCircular(value: RValue, invocation: BuiltinInvocation): boolean {
+  if (
+    value.type !== "logical" ||
+    value.length !== 1 ||
+    isMissing(value, 0) ||
+    Number.isNaN(value.values[0])
+  ) {
+    throw new RTypeMismatchError("NRT3412", "'circular' must be logical and not NA");
+  }
+  invocation.context.checkpoint();
+  return value.values[0] !== 0;
+}
+
+async function recursiveTimeSeriesFilter(
+  invocation: BuiltinInvocation,
+  matched: ReadonlyMap<string, BuiltinCallArgument>,
+  data: RDoubleVector,
+  coefficients: RDoubleVector,
+  shape: { readonly rows: number; readonly series: number },
+): Promise<RDoubleVector> {
+  if (coefficients.length === 0) {
+    throw new RTypeMismatchError("NRT3412", "cannot assign 'tsp' to zero-length vector");
+  }
+  const initValue = await forceOptionalTimeSeriesFilterArgument(matched, "init", invocation);
+  let initial: RDoubleVector;
+  if (initValue === undefined || initValue.type === "null") {
+    invocation.context.allocate(coefficients.length);
+    initial = doubleVector(new Float64Array(coefficients.length));
+  } else if (isAtomic(initValue)) {
+    initial = coerceAtomicToDouble(initValue, invocation);
+    if (initial.length !== coefficients.length) {
+      throw new RTypeMismatchError("NRT3412", "length of 'init' must equal length of 'filter'");
+    }
+  } else {
+    throw new RTypeMismatchError("NRT3412", "invalid 'init' argument");
+  }
+  const values = new Float64Array(data.length);
+  const missing = new Uint8Array(data.length);
+  invocation.context.allocate(data.length);
+  for (let seriesIndex = 0; seriesIndex < shape.series; seriesIndex += 1) {
+    const base = seriesIndex * shape.rows;
+    for (let row = 0; row < shape.rows; row += 1) {
+      invocation.context.checkpoint();
+      const inputIndex = base + row;
+      let unavailable = isMissing(data, inputIndex) || Number.isNaN(data.values[inputIndex]);
+      let sum = data.values[inputIndex] ?? 0;
+      for (
+        let coefficientIndex = 0;
+        coefficientIndex < coefficients.length;
+        coefficientIndex += 1
+      ) {
+        const priorRow = row - coefficientIndex - 1;
+        const priorIndex = priorRow >= 0 ? base + priorRow : coefficientIndex - row;
+        const prior = priorRow >= 0 ? values[priorIndex] : initial.values[priorIndex];
+        const priorMissing =
+          priorRow >= 0
+            ? missing[priorIndex] === 1 || Number.isNaN(prior)
+            : isMissing(initial, priorIndex) || Number.isNaN(prior);
+        if (priorMissing) unavailable = true;
+        sum += (coefficients.values[coefficientIndex] ?? 0) * (prior ?? 0);
+      }
+      if (unavailable) missing[inputIndex] = 1;
+      else values[inputIndex] = sum;
+    }
+  }
+  return doubleVector(values, compactMask(missing));
 }
 
 function timeSeriesPositiveScalar(value: RValue, name: string, call: string): number {

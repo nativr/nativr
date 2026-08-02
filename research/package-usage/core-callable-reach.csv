@@ -237,7 +237,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 236,as.factor,true,2,bslib|data.table,5,2.1,1.9
 237,Sys.setlocale,true,2,utf8|data.table,6,2.1,1.9
 238,Sys.getlocale,true,2,utf8|data.table,2,2.1,1.9
-239,filter,false,2,jsonlite|zoo,2,2.1,1.9
+239,filter,true,2,jsonlite|zoo,2,2.1,1.9
 240,plot.new,true,2,sass|systemfonts,2,2.1,1.9
 241,deparse,true,1,cli,3,1.0,1.9
 242,regmatches,true,1,cli,2,1.0,1.9

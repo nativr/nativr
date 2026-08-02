@@ -1210,6 +1210,14 @@ frames, arbitrary classed vectors other than `ts`, expression vectors, higher-ra
 matrices, and fractional dimensions on nonempty matrices are rejected; long-vector storage and
 undocumented edge diagnostics are not claimed.
 
+`stats::filter` implements the documented convolution and recursive methods for atomic vectors and
+two-dimensional matrices. Differential evidence covers zoo's measured recursive coefficient,
+ordinary and initialized recursion, centered/trailing/circular convolution, independent matrix
+columns, `NA`/`NaN` propagation, exact formals, partial method matching, and `ts`/`mts` plus `tsp`
+result metadata. Missing coefficients and invalid controls fail before allocation. Data-frame
+`as.ts` coercion, complex input, higher arrays, long vectors, irregular-series methods, warning and
+error text identity, and native floating-point implementation identity are not claimed.
+
 `base::findInterval` returns interval indices for supported atomic `x` and `vec` inputs after
 flattened double coercion. Differential evidence covers zoo's measured irregular-Date rolling-width
 expression, default and left-open boundaries, rightmost closure, `all.inside`, duplicate/empty/

@@ -75,16 +75,16 @@ signal.
 
 | Priority | Measured rank | Callable             | Weighted reach | Packages | Observed calls |
 | -------: | ------------: | -------------------- | -------------: | -------: | -------------: |
-|        1 |           239 | `filter`             |           1.9% |        2 |              2 |
-|        2 |           245 | `packageDescription` |           1.9% |        1 |              1 |
-|        3 |           246 | `stdout`             |           1.9% |        1 |              1 |
-|        4 |           252 | `rainbow`            |           1.8% |        2 |              5 |
-|        5 |           253 | `rect`               |           1.8% |        2 |              3 |
-|        6 |           256 | `file.remove`        |           1.8% |        2 |              4 |
-|        7 |           259 | `readChar`           |           1.7% |        2 |              2 |
-|        8 |           262 | `terrain.colors`     |           1.7% |        1 |              3 |
-|        9 |           277 | `debug`              |           1.7% |        1 |              1 |
-|       10 |           279 | `undebug`            |           1.7% |        1 |              1 |
+|        1 |           245 | `packageDescription` |           1.9% |        1 |              1 |
+|        2 |           246 | `stdout`             |           1.9% |        1 |              1 |
+|        3 |           252 | `rainbow`            |           1.8% |        2 |              5 |
+|        4 |           253 | `rect`               |           1.8% |        2 |              3 |
+|        5 |           256 | `file.remove`        |           1.8% |        2 |              4 |
+|        6 |           259 | `readChar`           |           1.7% |        2 |              2 |
+|        7 |           262 | `terrain.colors`     |           1.7% |        1 |              3 |
+|        8 |           277 | `debug`              |           1.7% |        1 |              1 |
+|        9 |           279 | `undebug`            |           1.7% |        1 |              1 |
+|       10 |           281 | `pdf`                |           1.7% |        2 |              2 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -164,9 +164,14 @@ unchanged source-only package and the Playground use the same seam; browser UI, 
 secret policy remain host-owned. Rank 232 `base::url` is now complete for six calls across jsonlite
 and openssl (2.1% download-weighted reach). Lazy read-only connections use an explicit bounded
 inline/Worker byte adapter; `readLines`, raw `readBin`, `source`, tables, serialization, and `gzcon`
-reuse the result without package-specific rewrites or ambient network access. The next measured
-unresolved callable is rank 239 `stats::filter`. Rank 144 `Encoding` is also complete for all 12
-observed calls across rlang, utf8, and xfun (4.5% weighted reach), together with adjacent
+reuse the result without package-specific rewrites or ambient network access. Rank 239
+`stats::filter` is now complete for the genuine zoo recursive-flow example plus convolution,
+circular boundaries, multivariate series, missing values, recursive initial state, and exact
+formals. The collector's second `filter` hit is a jsonlite example that has attached dplyr, so its
+unqualified call is a documented lexical false positive rather than evidence for `stats::filter`;
+the aggregate row remains unchanged to keep the committed snapshot reproducible. The next measured
+unresolved callable is rank 245 `utils::packageDescription`. Rank 144 `Encoding` is also complete
+for all 12 observed calls across rlang, utf8, and xfun (4.5% weighted reach), together with adjacent
 `Encoding<-`, `enc2utf8`, and `enc2native`. The shared character representation preserves exact
 bytes and canonical R marks through subset/replacement, concatenation, raw conversion, and XDR
 serialization; this is reusable package infrastructure, not an assertion that those packages' native
@@ -1518,6 +1523,15 @@ ties:
      zero-network Playground example have executable evidence. The runtime has no ambient network
      authority: HTTP status, redirects, authentication, cookies, CORS, caching, cancellation, origin
      policy, native libcurl, and writable URL connections remain host or compatibility depth.
+148. Time-series filtering: rank-239 `stats::filter` has one genuine measured core call in zoo's
+     recursive log-normal flow example. The owned implementation covers convolution and recursive
+     methods, one- or two-sided and circular convolution, vector and multivariate matrix series,
+     `tsp`/`ts`/`mts` results, missing propagation, recursive `init`, partial method matching, and
+     GNU R formals. An unchanged source-only package and the default Worker Playground use the same
+     function without translation. Data-frame coercion, complex filtering, irregular zoo indexes,
+     and exact native implementation details remain compatibility depth. The snapshot's jsonlite
+     occurrence resolves to dplyr after attachment and is retained only as an auditable collector
+     limitation.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

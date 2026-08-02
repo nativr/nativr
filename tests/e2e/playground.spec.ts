@@ -31,6 +31,10 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("6");
 
+  await page.getByRole("button", { name: "Recursive time-series filter" }).click();
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("[1, 2.8, 5.24, 8.192, 11.5536, 15.24288]");
+
   await page.locator("#source").fill("nativrdemo::signature_names()");
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText('"x"');

@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.233.0",
+  "languageSubsetVersion": "0.234.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -579,6 +579,7 @@
         { "name": "deltat", "compatibility": "behavioral" },
         { "name": "cycle", "compatibility": "behavioral" },
         { "name": "embed", "compatibility": "behavioral" },
+        { "name": "filter", "compatibility": "behavioral" },
         { "name": "window", "compatibility": "behavioral" },
         { "name": "mad", "compatibility": "numeric" },
         { "name": "family", "compatibility": "shape" },

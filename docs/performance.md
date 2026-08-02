@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 371 KiB gzip;
+- Worker JavaScript: 372 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -617,3 +617,9 @@ URL/method/header requests and copied byte results only when the embedding host 
 there is no fetch dependency, ambient network authority, or package-specific adapter. The measured
 Worker is 370.1 KiB gzip, so the ceiling rises narrowly to 371 KiB; client and parser-Wasm budgets
 remain unchanged.
+
+Language subset 0.234 adds usage-ranked `stats::filter` through checkpointed loops over the existing
+owned double-vector and regular-time-series representations. Convolution and recursive modes share
+the same implementation across direct, pure-R package, and Worker calls without a dependency,
+protocol event, host adapter, or package-specific translation. The measured Worker is 371.1 KiB
+gzip, so the ceiling rises narrowly to 372 KiB; client and parser-Wasm budgets remain unchanged.
