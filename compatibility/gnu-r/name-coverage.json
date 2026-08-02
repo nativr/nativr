@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 599,
-    "overlappingNames": 583,
-    "missingReferenceNames": 1939,
+    "nativrRegisteredNames": 600,
+    "overlappingNames": 584,
+    "missingReferenceNames": 1938,
     "nativrExtensionNames": 16,
-    "nameCoverage": 0.231166
+    "nameCoverage": 0.231562
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 426, "nameCoverage": 0.311631 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 427, "nameCoverage": 0.312363 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 74, "nameCoverage": 0.159483 },
     {
       "package": "methods",
@@ -474,6 +474,7 @@
     "readRDS",
     "recordPlot",
     "regexpr",
+    "registerS3method",
     "regmatches",
     "remove",
     "reorder",
@@ -2140,7 +2141,6 @@
     "reg.finalizer",
     "regexec",
     "registerImplicitGenerics",
-    "registerS3method",
     "registerS3methods",
     "regmatches<-",
     "relevel",

@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.226.0",
+  "languageSubsetVersion": "0.227.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -546,6 +546,7 @@
         { "name": "unclass", "compatibility": "behavioral" },
         { "name": "UseMethod", "compatibility": "behavioral" },
         { "name": "NextMethod", "compatibility": "behavioral" },
+        { "name": "registerS3method", "compatibility": "behavioral" },
         { "name": "setClass", "compatibility": "shape" },
         { "name": "setGeneric", "compatibility": "shape" },
         { "name": "standardGeneric", "compatibility": "shape" },

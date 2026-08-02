@@ -205,6 +205,14 @@ default Worker both execute this path. It removes one common introspection gap, 
 still stops at the first unsupported R semantic, namespace directive, data representation, or
 native-code dependency.
 
+Package `.onLoad()` hooks may dynamically register hidden S3 methods with
+`registerS3method(generic, class, method)`, using either a function or a method name resolved inside
+the package namespace. Registrations are scoped to the generic's definition environment, repeated
+registration replaces the previous entry, an ordinary visible `generic.class` function keeps
+dispatch precedence, and a failed load rolls back registrations from that attempt. The inline
+package fixture and default Worker example both execute this path, so packages using dynamic S3
+registration do not need those methods rewritten as runtime builtins.
+
 ```sh
 $env:NATIVR_EXTERNAL_PACKAGE_SMOKE="1"
 pnpm vitest run packages/package-tools/test/external-package.test.ts
@@ -336,10 +344,11 @@ loader.
   adapter can support selected package features, but it does not make a package containing native
   code a pure-R package.
 - `configure`, `configure.win`, `cleanup`, and `cleanup.win` are not executed.
-- The current NAMESPACE parser supports `export`, `import`, `importFrom`, and `S3method`. Imported
-  S4 construction/introspection functions can run from ordinary package R source, but S4
-  registration directives, `exportPattern`, conditional declarations, and other directives remain
-  blockers.
+- The current NAMESPACE parser supports `export`, `import`, `importFrom`, and `S3method`, while
+  package code can call `registerS3method()` once its generic is available. Delayed registration
+  against an unloaded suggested package, S4 registration directives, `exportPattern`, conditional
+  declarations, and other directives remain blockers. Imported S4 construction/introspection
+  functions can run from ordinary package R source, but this is not complete S4 package support.
 - `file()` connections currently cover bounded text/binary-mode handles over immutable package files
   and same-session browser-memory paths, including implicit open/close, explicit `open()`/`close()`,
   `isOpen()`, `flush()`, bounded `seek()`, and `summary()`. `gzcon()` adds gzip wrapping for those

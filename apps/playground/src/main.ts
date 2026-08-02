@@ -57,6 +57,7 @@ const examples: readonly Example[] = [
 resource <- system.file("extdata", "demo.json", package = "nativrdemo")
 stopifnot(resource == "nativr://package/nativrdemo/extdata/demo.json")
 stopifnot(readLines(resource) == '{"demo":true}')
+stopifnot(dynamic_summary(structure(1:3, class = "demo")) == "worker-dynamic:6")
 twice_mean(c(1, 2, 6))`,
   },
   {

@@ -674,6 +674,15 @@ non-function results. Source-only package fixtures exercise the same path inline
 Worker. This is reusable support for package-generated constructors and wrappers, not evidence for
 the complete S7 system or StanHeaders' native routines.
 
+The dynamic-S3-registration increment raises current name overlap to 584 of 2,522. Measured rank 208
+`base::registerS3method` represents two calls across pillar and knitr, or 2.4% download-weighted
+reach. GNU R 4.6 black-box evidence covers its four formals and `parent.frame()` default, invisible
+`NULL`, hidden function and string methods, replacement, visible-method precedence,
+generic-definition-environment isolation, base generics, invalid methods, and missing generics.
+Source-only package `.onLoad()` registration runs inline and in the default Worker, while failed
+loads roll registration changes back. Delayed registration for an unloaded suggested package and
+complete S3 method discovery remain incomplete.
+
 ## Completion evidence
 
 The objective is complete only when:

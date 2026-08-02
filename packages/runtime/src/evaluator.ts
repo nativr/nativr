@@ -241,6 +241,7 @@ interface ClosureCallFrame {
 
 interface S3DispatchFrame {
   readonly generic: string;
+  readonly genericEnvironment: REnvironment;
   readonly classes: readonly string[];
   readonly classIndex: number;
   readonly arguments: ClosureCallFrame["arguments"];
@@ -480,7 +481,8 @@ export class Evaluator {
   readonly #builtinState = new Map<string, unknown>();
   readonly #activeGlobalCallingHandlers = new Set<RValue>();
   readonly #packages = new Map<string, RuntimePackageRecord>();
-  readonly #packageS3Methods = new Map<string, RBinding>();
+  readonly #registeredS3Methods = new Map<string, RBinding>();
+  readonly #s3RegistrationTransactions: Map<string, RBinding | undefined>[] = [];
   #searchPath = [...DEFAULT_SEARCH_PATH];
   #libraryPaths = [...DEFAULT_LIBRARY_PATHS];
   readonly #searchEnvironments = new Map<string, REnvironment>();
@@ -641,7 +643,8 @@ export class Evaluator {
     this.#globalEnvironment = createEnvironment(this.#attachedPackagesEnvironment, true);
     this.#builtinState.clear();
     this.#initializeBuiltinState?.(this.#builtinState);
-    this.#packageS3Methods.clear();
+    this.#registeredS3Methods.clear();
+    this.#s3RegistrationTransactions.length = 0;
     for (const record of this.#packages.values()) {
       record.namespace?.bindings.clear();
       record.namespace = undefined;
@@ -667,7 +670,8 @@ export class Evaluator {
       this.#baseEnvironment.bindings.clear();
       this.#emptyEnvironment.bindings.clear();
       this.#builtinState.clear();
-      this.#packageS3Methods.clear();
+      this.#registeredS3Methods.clear();
+      this.#s3RegistrationTransactions.length = 0;
       this.#invalidateSearchEnvironments(true);
       for (const record of this.#packages.values()) record.namespace?.bindings.clear();
       this.#packages.clear();
@@ -1927,6 +1931,8 @@ export class Evaluator {
           validateBindingName(name);
           setBinding(this.#globalEnvironment, name, value);
         },
+        registerS3Method: async (generic, className, method, environment) =>
+          this.#registerS3Method(generic, className, method, environment, context),
         dispatchS3: async (generic, object) => this.#dispatchS3(generic, object, context),
         dispatchS3IfPresent: async (generic, object, arguments_, includeDefault) => {
           const result = await this.#dispatchS3IfPresentResult(
@@ -2281,6 +2287,42 @@ export class Evaluator {
     return call === undefined ? R_NULL : { type: "language", expression: call };
   }
 
+  #s3RegistrationKey(environment: REnvironment, generic: string, className: string): string {
+    return `${environment.id}:${generic}.${className}`;
+  }
+
+  #setRegisteredS3Method(key: string, method: RBinding): void {
+    const transaction = this.#s3RegistrationTransactions.at(-1);
+    if (transaction !== undefined && !transaction.has(key)) {
+      transaction.set(key, this.#registeredS3Methods.get(key));
+    }
+    this.#registeredS3Methods.set(key, method);
+  }
+
+  async #registerS3Method(
+    generic: string,
+    className: string,
+    method: RBinding,
+    environment: REnvironment,
+    context: EvaluationContext,
+  ): Promise<void> {
+    const genericBinding = lookupBinding(environment, generic);
+    if (genericBinding === undefined) {
+      throw new REvaluationError("NRE2001", `object '${generic}' not found`);
+    }
+    const genericValue = await this.#force(genericBinding, context);
+    const genericEnvironment =
+      genericValue.type === "closure"
+        ? genericValue.environment
+        : genericValue.type === "builtin"
+          ? this.#baseEnvironment
+          : environment;
+    this.#setRegisteredS3Method(
+      this.#s3RegistrationKey(genericEnvironment, generic, className),
+      method,
+    );
+  }
+
   async #dispatchS3(
     generic: string,
     object: RValue | undefined,
@@ -2316,7 +2358,14 @@ export class Evaluator {
         ...arguments_.slice(1),
       ];
     }
-    return this.#invokeS3Method(generic, runtimeClassNames(dispatchObject), 0, arguments_, context);
+    return this.#invokeS3Method(
+      generic,
+      callFrame?.closure.environment ?? this.#baseEnvironment,
+      runtimeClassNames(dispatchObject),
+      0,
+      arguments_,
+      context,
+    );
   }
 
   async #loadPackage(
@@ -2376,6 +2425,10 @@ export class Evaluator {
     if (record.namespace === undefined) {
       record.loading = true;
       const replacedMethods = new Map<string, RBinding | undefined>();
+      let loadFailed = false;
+      let loadError: unknown;
+      let registrationStackInvariantFailed: boolean;
+      this.#s3RegistrationTransactions.push(replacedMethods);
       try {
         for (const dependency of record.definition.dependencies) {
           context.checkpoint();
@@ -2435,24 +2488,27 @@ export class Evaluator {
               `Package '${name}' registers missing S3 method '${method.method}'.`,
             );
           }
-          const key = `${method.generic}.${method.class}`;
-          if (!replacedMethods.has(key)) {
-            replacedMethods.set(key, this.#packageS3Methods.get(key));
-          }
-          this.#packageS3Methods.set(key, binding);
+          await this.#registerS3Method(method.generic, method.class, binding, namespace, context);
         }
         await this.#invokePackageHook(record, ".onLoad", context);
       } catch (error) {
         for (const [key, previous] of replacedMethods) {
-          if (previous === undefined) this.#packageS3Methods.delete(key);
-          else this.#packageS3Methods.set(key, previous);
+          if (previous === undefined) this.#registeredS3Methods.delete(key);
+          else this.#registeredS3Methods.set(key, previous);
         }
         record.namespace?.bindings.clear();
         record.namespace = undefined;
-        throw error;
+        loadFailed = true;
+        loadError = error;
       } finally {
+        registrationStackInvariantFailed =
+          this.#s3RegistrationTransactions.pop() !== replacedMethods;
         record.loading = false;
       }
+      if (registrationStackInvariantFailed) {
+        throw new Error("Internal S3 registration transaction stack invariant failed.");
+      }
+      if (loadFailed) throw loadError;
     }
     const namespace = record.namespace;
     if (namespace === undefined) {
@@ -2809,6 +2865,7 @@ export class Evaluator {
           ];
     return this.#invokeS3MethodIfPresentResult(
       generic,
+      this.#baseEnvironment,
       runtimeClassNames(object),
       0,
       methodArguments,
@@ -2824,6 +2881,7 @@ export class Evaluator {
     }
     return this.#invokeS3Method(
       generic ?? frame.generic,
+      frame.genericEnvironment,
       frame.classes,
       frame.classIndex + 1,
       frame.arguments,
@@ -2833,6 +2891,7 @@ export class Evaluator {
 
   async #invokeS3Method(
     generic: string,
+    genericEnvironment: REnvironment,
     classes: readonly string[],
     startIndex: number,
     arguments_: ClosureCallFrame["arguments"],
@@ -2840,6 +2899,7 @@ export class Evaluator {
   ): Promise<RValue> {
     const result = await this.#invokeS3MethodIfPresent(
       generic,
+      genericEnvironment,
       classes,
       startIndex,
       arguments_,
@@ -2854,6 +2914,7 @@ export class Evaluator {
 
   async #invokeS3MethodIfPresent(
     generic: string,
+    genericEnvironment: REnvironment,
     classes: readonly string[],
     startIndex: number,
     arguments_: ClosureCallFrame["arguments"],
@@ -2863,6 +2924,7 @@ export class Evaluator {
     return (
       await this.#invokeS3MethodIfPresentResult(
         generic,
+        genericEnvironment,
         classes,
         startIndex,
         arguments_,
@@ -2874,6 +2936,7 @@ export class Evaluator {
 
   async #invokeS3MethodIfPresentResult(
     generic: string,
+    genericEnvironment: REnvironment,
     classes: readonly string[],
     startIndex: number,
     arguments_: ClosureCallFrame["arguments"],
@@ -2886,11 +2949,14 @@ export class Evaluator {
       const methodName = className === undefined ? `${generic}.default` : `${generic}.${className}`;
       const binding =
         lookupBinding(this.#globalEnvironment, methodName) ??
-        this.#packageS3Methods.get(methodName);
+        this.#registeredS3Methods.get(
+          this.#s3RegistrationKey(genericEnvironment, generic, className ?? "default"),
+        );
       if (binding === undefined) continue;
       const callable = await this.#force(binding, context);
       const dispatchFrame: S3DispatchFrame = {
         generic,
+        genericEnvironment,
         classes,
         classIndex: index,
         arguments: arguments_,
@@ -3011,7 +3077,7 @@ export class Evaluator {
         this.#controlFrames,
         this.#closureCallFrames,
         this.#activeGlobalCallingHandlers,
-        this.#packageS3Methods,
+        this.#registeredS3Methods,
         ...[...this.#packages.values()].map((record) => record.namespace),
       ],
       () => context.checkpoint(),

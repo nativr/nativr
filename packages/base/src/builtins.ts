@@ -2473,6 +2473,30 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("unclass", ["x"], "behavioral", builtinUnclass),
   defineBuiltin("UseMethod", ["generic", "object"], "behavioral", builtinUseMethod),
   defineBuiltin("NextMethod", ["generic"], "behavioral", builtinNextMethod),
+  withBuiltinFormals(
+    defineBuiltin(
+      "registerS3method",
+      ["genname", "class", "method", "envir"],
+      "behavioral",
+      builtinRegisterS3Method,
+      "regular",
+      "invisible",
+    ),
+    [
+      { name: "genname" },
+      { name: "class" },
+      { name: "method" },
+      {
+        name: "envir",
+        defaultValue: {
+          kind: "CallExpression",
+          callee: { kind: "Identifier", name: "parent.frame", span: SYNTHETIC_SPAN },
+          arguments: [],
+          span: SYNTHETIC_SPAN,
+        },
+      },
+    ],
+  ),
   definePackageBuiltin(
     "methods",
     "as",
@@ -18121,6 +18145,11 @@ async function builtinPrint(invocation: BuiltinInvocation): Promise<RValue> {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in print().");
   }
   const candidate = await invocation.force(inputArgument.promise);
+  const dispatched = await invocation.dispatchS3IfPresent("print", candidate, [
+    inputArgument,
+    ...invocation.arguments.filter((argument) => argument !== inputArgument),
+  ]);
+  if (dispatched !== undefined) return dispatched;
   if (isHexmodeValue(candidate)) return printHexmode(invocation);
   if (isNumericVersionValue(candidate)) {
     const text = formatPrintedNumericVersion(candidate, invocation);
@@ -39213,6 +39242,49 @@ async function builtinNextMethod(invocation: BuiltinInvocation): Promise<RValue>
       ? undefined
       : characterScalar(supplied, "generic"),
   );
+}
+
+async function builtinRegisterS3Method(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["genname", "class", "method", "envir"]);
+  const generic = characterScalar(required(matched, "genname", "registerS3method"), "genname");
+  const classValue = required(matched, "class", "registerS3method");
+  let className: string;
+  if (classValue.type === "null") {
+    className = "";
+  } else if (isAtomic(classValue) && classValue.length > 0) {
+    if (classValue.length > 1) {
+      invocation.context.warn({
+        code: "NRW1019",
+        message: "only the first element is used as variable name",
+      });
+    }
+    className = isMissing(classValue, 0) ? "NA" : stringAt(classValue, 0);
+  } else {
+    throw new RTypeMismatchError(
+      "NRT3367",
+      "registerS3method(class=) must be coercible to a class name.",
+    );
+  }
+
+  const environment =
+    matched.get("envir") === undefined
+      ? invocation.currentEnvironment()
+      : asEnvironmentValue(matched.get("envir") as RValue, invocation, "envir");
+  let method = required(matched, "method", "registerS3method");
+  if (method.type === "character") {
+    const methodName = characterScalar(method, "method");
+    const binding = lookupBinding(environment, methodName);
+    if (binding === undefined) {
+      throw new REvaluationError("NRE2001", `object '${methodName}' not found`);
+    }
+    method = binding.type === "promise" ? await invocation.force(binding) : binding;
+  }
+  if (!isCallable(method)) {
+    throw new RTypeMismatchError("NRT3367", "bad method");
+  }
+
+  await invocation.registerS3Method(generic, className, method, environment);
+  return R_NULL;
 }
 
 async function builtinSetAs(invocation: BuiltinInvocation): Promise<RValue> {

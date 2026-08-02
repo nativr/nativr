@@ -75,16 +75,16 @@ signal.
 
 | Priority | Measured rank | Callable             | Weighted reach | Packages | Observed calls |
 | -------: | ------------: | -------------------- | -------------: | -------: | -------------: |
-|        1 |           208 | `registerS3method`   |           2.4% |        2 |              2 |
-|        2 |           209 | `file.info`          |           2.4% |        3 |              3 |
-|        3 |           214 | `hcl`                |           2.3% |        2 |              6 |
-|        4 |           215 | `axis`               |           2.3% |        3 |             18 |
-|        5 |           221 | `source`             |           2.2% |        1 |              2 |
-|        6 |           222 | `textConnection`     |           2.2% |        1 |              2 |
-|        7 |           230 | `readline`           |           2.1% |        2 |              2 |
-|        8 |           232 | `url`                |           2.1% |        2 |              6 |
-|        9 |           239 | `filter`             |           1.9% |        2 |              2 |
-|       10 |           245 | `packageDescription` |           1.9% |        1 |              1 |
+|        1 |           209 | `file.info`          |           2.4% |        3 |              3 |
+|        2 |           214 | `hcl`                |           2.3% |        2 |              6 |
+|        3 |           215 | `axis`               |           2.3% |        3 |             18 |
+|        4 |           221 | `source`             |           2.2% |        1 |              2 |
+|        5 |           222 | `textConnection`     |           2.2% |        1 |              2 |
+|        6 |           230 | `readline`           |           2.1% |        2 |              2 |
+|        7 |           232 | `url`                |           2.1% |        2 |              6 |
+|        8 |           239 | `filter`             |           1.9% |        2 |              2 |
+|        9 |           245 | `packageDescription` |           1.9% |        1 |              1 |
+|       10 |           246 | `stdout`             |           1.9% |        1 |              1 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -125,10 +125,17 @@ download-weighted reach). It reconstructs closure defaults and ellipsis, documen
 operator signatures, string lookup, global closure environment, `NULL` bodies, and silent
 non-function boundaries. A source-only package fixture and the default Worker Playground execute the
 same introspection path. This unblocks constructor/wrapper inspection; it does not claim S7's
-complete object system or StanHeaders' compiled code. The next measured unresolved callable is rank
-208 `registerS3method`. Rank 144 `Encoding` is also complete for all 12 observed calls across rlang,
-utf8, and xfun (4.5% weighted reach), together with adjacent `Encoding<-`, `enc2utf8`, and
-`enc2native`. The shared character representation preserves exact bytes and canonical R marks
+complete object system or StanHeaders' compiled code. Rank 208 `base::registerS3method` is now
+complete for two observed calls across pillar and knitr (2.4% download-weighted reach). Registered
+functions may stay hidden, string method names resolve at registration time, repeated registrations
+replace prior entries, and visible call-site methods retain precedence. Registries are isolated by
+the generic's definition environment, include base builtins, reset with the session, and roll back
+if a package `.onLoad()` fails. Source-only package and default Worker proofs exercise that
+lifecycle without global implementation bindings. Delayed optional-package hooks and the broader
+`methods()`/`getS3method()` inspection surface remain separate depth. The next measured unresolved
+callable is rank 209 `file.info`. Rank 144 `Encoding` is also complete for all 12 observed calls
+across rlang, utf8, and xfun (4.5% weighted reach), together with adjacent `Encoding<-`, `enc2utf8`,
+and `enc2native`. The shared character representation preserves exact bytes and canonical R marks
 through subset/replacement, concatenation, raw conversion, and XDR serialization; this is reusable
 package infrastructure, not an assertion that those packages' native components are supported. Rank
 149 `rcauchy` is now complete for four calls across ggplot2, pillar, and purrr (4.2% weighted
@@ -1439,6 +1446,12 @@ ties:
      non-function results have GNU R differential evidence. Source-only inline and Worker package
      calls prove the reusable loader seam; S7's wider protocols and StanHeaders' native routines
      remain outside this slice.
+142. Dynamic S3 registration: rank-208 `base::registerS3method` represents two calls across pillar
+     and knitr at 2.4% download-weighted reach. Hidden closure or string-named methods, replacement,
+     visible-method precedence, base and closure generic-definition environments, exact formals,
+     invisible return, reset, and failed-package-load rollback have executable evidence. A package
+     `.onLoad()` uses the path inline and in the default Worker. Delayed registration for an
+     unloaded suggested package and complete S3 introspection remain package-system depth.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

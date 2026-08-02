@@ -251,6 +251,12 @@ export interface BuiltinInvocation {
   matchCall(expandDots: boolean): RLanguage;
   callerFormalDefault(name: string): Promise<RValue | undefined>;
   define(name: string, value: RValue): void;
+  registerS3Method(
+    generic: string,
+    className: string,
+    method: RValue,
+    environment: REnvironment,
+  ): Promise<void>;
   dispatchS3(generic: string, object?: RValue): Promise<RValue>;
   dispatchS3IfPresent(
     generic: string,

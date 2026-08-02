@@ -634,6 +634,13 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      unchanged in inline and default Worker sessions. Broader S7 behavior, compiled StanHeaders
      routines, undocumented primitive signatures, and the remaining introspection surface stay
      compatibility depth.
+144. Usage-ranked dynamic S3 registration: rank-208 `base::registerS3method` now stores hidden
+     function or resolved string methods against the generic's definition environment, replaces
+     earlier registrations, preserves visible call-site precedence, supports base and closure
+     generics, and returns invisible `NULL` with GNU R-shaped formals. Package `.onLoad()` mutations
+     participate in namespace-load rollback and reset; inline and default Worker packages have
+     evidence. Delayed registration for unloaded suggested packages, group-generic metadata, and
+     complete method discovery remain compatibility depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

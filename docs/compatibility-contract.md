@@ -1980,6 +1980,16 @@ code that inspects generated constructors and wrappers without rewriting that co
 make undocumented primitive usage, the complete S7 protocol, or packages with native code
 compatible.
 
+Usage-ranked `base::registerS3method()` has GNU R 4.6 differential evidence for function and
+character method references, hidden namespace methods, replacement, visible-method precedence,
+generic-definition-environment isolation, base generics, formals, invisible results, and invalid
+generic or method errors. Registrations made by package source or `.onLoad()` use the same owned,
+environment-scoped registry as declarative `S3method` entries. Failed package loads roll their
+registrations back, while reset and disposal clear them. Inline and default-Worker package fixtures
+execute the same dynamic-registration path. Delayed registration against an unavailable suggested
+package, the complete S3 method table API, and broader NAMESPACE registration directives are not
+claimed.
+
 Deliberate current exclusions include GNU R/webR embedding, browser-time package installation,
 universal package execution, generated JavaScript execution, the complete graphics-device/base-
 graphics stack, filesystem access, runtime network access, locale-specific raw encodings, and the

@@ -8142,5 +8142,25 @@
     ],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "register-s3-method-usage-ranked-hidden-replacement-precedence-and-formals",
+    "code": "gen <- eval(quote(function(x, ...) UseMethod(\"gen\")), globalenv())\nx <- structure(1L, class = \"probe\")\nfirst <- function(x, ...) \"registered-first\"\nsecond <- function(x, ...) \"registered-second\"\nregistration <- withVisible(registerS3method(\"gen\", \"probe\", first))\nfirst_value <- gen(x)\nregisterS3method(\"gen\", \"probe\", second)\nsecond_value <- gen(x)\ngen.probe <- function(x, ...) \"visible\"\nvisible_value <- gen(x)\nrm(gen.probe)\nrestored_value <- gen(x)\nhidden_value <- local({ hidden_method <- function(x, ...) \"hidden-string\"; registerS3method(\"gen\", \"hidden\", \"hidden_method\"); gen(structure(2L, class = \"hidden\")) })\nc(is.null(registration$value), registration$visible, first_value, second_value, visible_value, restored_value, hidden_value, names(formals(registerS3method)), identical(formals(registerS3method)$envir, quote(parent.frame())))",
+    "expected": [
+      "TRUE",
+      "FALSE",
+      "registered-first",
+      "registered-second",
+      "visible",
+      "registered-second",
+      "hidden-string",
+      "genname",
+      "class",
+      "method",
+      "envir",
+      "TRUE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

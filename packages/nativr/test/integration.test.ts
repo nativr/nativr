@@ -17,7 +17,7 @@ NeedsCompilation: no`,
 importFrom(methods, setClass, showClass)
 importFrom(stats, median)
 importFrom(utils, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, class_summary, signature_names, new_score, describe, package_state, package_name, package_libname, installed_version, namespace_names, process_id, library_paths)
+export(square, centered, duration, histogram_counts, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, installed_version, namespace_names, process_id, library_paths)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -31,9 +31,11 @@ S3method(lines, score)
 .onLoad <- function(libname, pkgname) {
   .package_state <<- paste0("loaded:", pkgname)
   .package_libname <<- libname
+  registerS3method("dynamic_describe", "score", "dynamic_describe.score")
 }
 .onAttach <- function(libname, pkgname) .package_state <<- paste0("attached:", pkgname)
 describe <- function(x, ...) UseMethod("describe")
+dynamic_describe <- function(x, ...) UseMethod("dynamic_describe")
 setClass("NativRFixtureClass", representation(value = "integer", label = "character"))
 `,
     },
@@ -48,6 +50,7 @@ class_summary <- function() capture.output(showClass("NativRFixtureClass"))
 signature_names <- function(fun = square) names(formals(args(fun)))
 new_score <- function(x) structure(x, class = c("score", "numeric"))
 describe.score <- function(x, ...) paste0(.package_state, ":", sum(x))
+dynamic_describe.score <- function(x, ...) paste0("dynamic:", sum(x))
 plot.score <- function(x, ..., marker = "package-plot") c(marker, sum(x), list(...)$extra)
 lines.score <- function(x, ..., marker = "package-lines") c(marker, sum(x), list(...)$extra)
 package_state <- function() .package_state
@@ -146,14 +149,17 @@ const pureRSysdataFixture: PureRPackageBundle = {
 };
 
 const failingS3Package: PureRPackageBundle = {
-  description: "Package: nativrfailing\nVersion: 0.1.0",
-  namespace: "S3method(describe, score)",
+  description: "Package: nativrfailing\nVersion: 0.1.0\nImports: nativrfixture (>= 0.1.0)",
+  namespace: "importFrom(nativrfixture, dynamic_describe)",
   rSources: [
     {
       path: "R/failing.R",
       source: `
-describe.score <- function(x, ...) "wrong method"
-.onLoad <- function(libname, pkgname) stop("intentional load failure")
+dynamic_describe.score <- function(x, ...) "wrong method"
+.onLoad <- function(libname, pkgname) {
+  registerS3method("dynamic_describe", "score", "dynamic_describe.score")
+  stop("intentional load failure")
+}
 `,
     },
   ],
@@ -2581,6 +2587,9 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(runtime.eval("nativrfixture::package_name()")).resolves.toBe("nativrfixture");
     await expect(runtime.eval("nativrfixture::installed_version()")).resolves.toBe("0.1.0");
     await expect(runtime.eval("nativrfixture::process_id() == Sys.getpid()")).resolves.toBe(true);
+    await expect(
+      runtime.eval("nativrfixture::dynamic_describe(nativrfixture::new_score(1:3))"),
+    ).resolves.toBe("dynamic:6");
     await expect(runtime.eval("nativrfixture::namespace_names('^package_')")).resolves.toEqual([
       "package_libname",
       "package_name",
@@ -2626,6 +2635,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "class_summary",
       "describe",
       "duration",
+      "dynamic_describe",
       "histogram_counts",
       "installed_version",
       "library_paths",
@@ -2648,12 +2658,12 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(runtime.eval('"package:nativrfixture" %in% search()')).resolves.toBe(false);
     await expect(
       runtime.eval(`
-        before <- nativrfixture::describe(nativrfixture::new_score(1:3))
-        failed <- inherits(try(nativrfailing:::describe.score(1), silent = TRUE), "try-error")
-        after <- nativrfixture::describe(nativrfixture::new_score(1:3))
+        before <- nativrfixture::dynamic_describe(nativrfixture::new_score(1:3))
+        failed <- inherits(try(nativrfailing:::dynamic_describe.score(1), silent = TRUE), "try-error")
+        after <- nativrfixture::dynamic_describe(nativrfixture::new_score(1:3))
         c(before, failed, after)
       `),
-    ).resolves.toEqual(["loaded:nativrfixture:6", "TRUE", "loaded:nativrfixture:6"]);
+    ).resolves.toEqual(["dynamic:6", "TRUE", "dynamic:6"]);
     await runtime.dispose();
 
     const limited = await createR({
@@ -9326,7 +9336,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.226.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.227.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -14083,6 +14093,90 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(
       runtime.eval("set.seed(2)\nsort(sample(1:3, 2, prob = c(1, 0, 1)))"),
     ).resolves.toEqual([1, 3]);
+    await runtime.dispose();
+  });
+
+  it("dynamically registers usage-ranked S3 methods by generic definition environment", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        gen <- function(x, ...) UseMethod("gen")
+        x <- structure(1L, class = "probe")
+        first <- function(x, ...) "registered-first"
+        second <- function(x, ...) "registered-second"
+        first_registration <- withVisible(registerS3method("gen", "probe", first))
+        first_value <- gen(x)
+        registerS3method("gen", "probe", second)
+        second_value <- gen(x)
+        gen.probe <- function(x, ...) "visible"
+        visible_value <- gen(x)
+        rm(gen.probe)
+        restored_value <- gen(x)
+        hidden_value <- local({
+          hidden_method <- function(x, ...) "hidden-string"
+          registerS3method("gen", "hidden", "hidden_method")
+          gen(structure(2L, class = "hidden"))
+        })
+        c(
+          is.null(first_registration$value), first_registration$visible,
+          first_value, second_value, visible_value, restored_value, hidden_value,
+          names(formals(registerS3method)),
+          identical(formals(registerS3method)$envir, quote(parent.frame()))
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "FALSE",
+      "registered-first",
+      "registered-second",
+      "visible",
+      "registered-second",
+      "hidden-string",
+      "genname",
+      "class",
+      "method",
+      "envir",
+      "TRUE",
+    ]);
+
+    await expect(
+      runtime.eval(`
+        left <- new.env(parent = baseenv())
+        right <- new.env(parent = baseenv())
+        left$gen <- eval(quote(function(x, ...) UseMethod("gen")), left)
+        right$gen <- eval(quote(function(x, ...) UseMethod("gen")), right)
+        registerS3method("gen", "probe", function(x, ...) "left", envir = left)
+        registerS3method("gen", "probe", function(x, ...) "right", envir = right)
+        c(
+          eval(quote(gen(structure(1L, class = "probe"))), left),
+          eval(quote(gen(structure(1L, class = "probe"))), right)
+        )
+      `),
+    ).resolves.toEqual(["left", "right"]);
+    await expect(
+      runtime.eval(`
+        registerS3method(
+          "print", "dynamic_probe", function(x, ...) "base-registered", envir = baseenv()
+        )
+        print(structure(1L, class = "dynamic_probe"))
+      `),
+    ).resolves.toBe("base-registered");
+    await expect(
+      runtime.evalDetailed(`
+        gen <- function(x) UseMethod("gen")
+        registerS3method("gen", c("first", "ignored"), function(x) 1L)
+      `),
+    ).resolves.toMatchObject({
+      value: null,
+      visible: false,
+      warnings: [{ code: "NRW1019", message: "only the first element is used as variable name" }],
+    });
+    await expect(
+      runtime.eval('registerS3method("missing_generic", "probe", function(x) x)'),
+    ).rejects.toMatchObject({ code: "NRE2001" });
+    await expect(
+      runtime.eval('gen <- function(x) UseMethod("gen"); registerS3method("gen", "probe", 1L)'),
+    ).rejects.toMatchObject({ code: "NRT3367" });
     await runtime.dispose();
   });
 

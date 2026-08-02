@@ -472,6 +472,15 @@ separate component-count ordering. Arbitrary `lib.loc` discovery, mutable instal
 component extraction/replacement, summary methods, and the complete numeric-version S3 family are
 not yet supported.
 
+Dynamic `registerS3method()` entries use the same owned S3 registry as declarative NAMESPACE
+methods. The registry key includes the generic's definition environment, so independent namespaces
+may define the same generic/class pair without cross-dispatch. Function values and character method
+names are retained without creating visible `generic.class` bindings; later registration replaces
+the same key, while a visible call-site method still wins. Namespace-load transactions restore all
+changed entries when `.onLoad()` fails, and reset clears the registry. Delayed registration against
+an unloaded suggested-package namespace and complete method-table introspection are not yet
+supported.
+
 Unchanged external packages can construct wrapper closures from package-owned source: nested
 replacement rebuilds call roots through `formals<-`, closure enclosures can be replaced through
 `environment<-`, mixed language/list `c()` inputs feed `as.call()`, and `bquote()` substitutes `.()`
