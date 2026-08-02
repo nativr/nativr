@@ -41,6 +41,13 @@ test("runs the required Worker examples without evaluation network traffic", asy
     '["nativrdemo", "0.1.0", "Browser-Native R Demo", "Apache-2.0", "nativrdemo"]',
   );
 
+  await page.getByRole("button", { name: "Standard output connection" }).click();
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText(
+    '["terminal", "connection", "terminal", "TRUE", "FALSE", "TRUE"]',
+  );
+  await expect(page.locator("#console-output")).toHaveText("package-worker-output");
+
   await page.locator("#source").fill("nativrdemo::signature_names()");
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText('"x"');

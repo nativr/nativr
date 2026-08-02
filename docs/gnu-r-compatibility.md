@@ -751,6 +751,15 @@ artifact, and the default Worker Playground executes the same path. Host librari
 installed trees, complete core-package prose, arbitrary codecs, and description print/citation/date
 methods remain incomplete.
 
+The standard-connection increment raises current name overlap to 604 of 2,522. Measured rank 246
+`base::stdout` is cli's 1.9% download-weighted terminal-selection call; adjacent `stderr` also
+removes curl's later rank-342 gap. GNU R 4.6 differential evidence covers stable integer terminal
+descriptors, class and identity, summary/access fields, exact formals, embedded-session TTY state,
+flush visibility, and open/close/seek errors. Browser-owned cases additionally cover user/standard
+connection catalogs, close-all preservation, unforgeable handles, unchanged pure-R package calls,
+and default Worker stdout/stderr events. Streaming stdin, sink diversion, pushback, terminal
+negotiation, and host descriptors remain incomplete.
+
 ## Completion evidence
 
 The objective is complete only when:

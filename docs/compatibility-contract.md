@@ -458,6 +458,16 @@ sockets, typed binary decoding/writes beyond raw `readBin`, encoding conversion 
 independent read/write positions, positions beyond end of file, and the broader
 connection/filesystem stack beyond the explicit URL adapter are not claimed.
 
+`base::stdin()`, `stdout()`, and `stderr()` expose stable integer terminal connections 0, 1, and 2.
+GNU R differential evidence covers class, identity, unclassed descriptor, summary fields, access
+queries, false embedded-session `isatty()`, exact formals, invisible `flush()`, and the errors from
+opening, closing, or seeking standard handles. `writeLines()` and `cat()` send explicit stdout or
+stderr targets through bounded ordered runtime output. `getConnection()`, `getAllConnections()`,
+`showConnections()`, and `closeAllConnections()` use the same unforgeable session registry; the last
+operation preserves standard handles while invalidating user connections. Browser streaming stdin,
+terminal capability negotiation, sink diversion/splitting, pushback, and host file descriptors
+remain outside this contract.
+
 Usage-ranked `base::url` has GNU R 4.6 behavioral differential evidence for its six formal names,
 defaults, `c("url", "connection")` handle, and closed `url-libcurl` summary. A construction-time
 `createR({ url })` capability carries validated URL, method, and named-header data across inline or

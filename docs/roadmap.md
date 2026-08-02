@@ -660,6 +660,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      formals, source-only package calls, and default Worker rendering have evidence.
      Logarithmic/date axes, outer margins, plotmath, collision layout, font metrics, and
      device-pixel identity remain graphics compatibility depth.
+148. Usage-ranked standard connections: rank-246 `base::stdout` and adjacent `stdin`, `stderr`,
+     `isatty`, connection lookup/catalog, and close-all lifecycle now use stable unforgeable
+     terminal descriptors over the existing output journal. GNU R object/introspection behavior,
+     direct and pure-R package calls, default Worker routing, and false embedded-session TTY
+     detection have evidence. Streaming stdin, sink diversion, terminal negotiation, pushback, and
+     host file descriptors remain compatibility depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

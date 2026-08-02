@@ -30,7 +30,7 @@ importFrom(graphics, axis, plot.new, plot.window)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median)
 importFrom(utils, packageDescription, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, axis_ticks, sourced_value, ask_value, remote_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths)
+export(square, centered, duration, histogram_counts, hcl_colours, axis_ticks, sourced_value, ask_value, remote_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -103,6 +103,12 @@ installed_version <- function(package = "nativrfixture") as.character(packageVer
 namespace_names <- function(pattern = "") ls(envir = environment(namespace_names), pattern = pattern, all.names = TRUE)
 process_id <- function() Sys.getpid()
 library_paths <- function() .libPaths()
+standard_output <- function() {
+  out <- stdout()
+  writeLines("package-output", out)
+  details <- summary(out)
+  c(class(out), details$class, isOpen(out, "write"), isatty(out), identical(out, getConnection(1L)))
+}
 hidden_helper <- function(x) x + 100
 `,
     },
@@ -1911,6 +1917,90 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("models standard terminal connections across direct and package output", async () => {
+    const runtime = await createR({ execution: "inline", assets, packages: [pureRFixture] });
+    const direct = await runtime.evalDetailed(`
+      out <- stdout()
+      err <- stderr()
+      input <- stdin()
+      details <- summary(out)
+      writeLines(c("alpha", "beta"), out, sep = "|")
+      cat("diagnostic", file = err)
+      user <- file(tempfile(), "w")
+      shown_open <- showConnections()
+      shown_all <- showConnections(all = TRUE)
+      ids <- getAllConnections()
+      closed <- withVisible(closeAllConnections())
+      c(
+        typeof(out), class(out), unclass(out), identical(out, stdout()),
+        details$description, details$class, details$mode, details$text,
+        details$opened, details[["can read"]], details[["can write"]],
+        isOpen(input, "read"), isOpen(out, "read"), isOpen(out, "write"),
+        isatty(out), identical(getConnection("1"), out), ids,
+        dim(shown_open), rownames(shown_open), dim(shown_all), rownames(shown_all),
+        is.null(closed$value), closed$visible,
+        inherits(try(isOpen(user), silent = TRUE), "try-error"),
+        inherits(try(open(out), silent = TRUE), "try-error"),
+        inherits(try(close(err), silent = TRUE), "try-error"),
+        inherits(try(seek(out), silent = TRUE), "try-error")
+      )
+    `);
+    expect(direct.output).toEqual([
+      { stream: "stdout", text: "alpha|beta|" },
+      { stream: "stderr", text: "diagnostic" },
+    ]);
+    expect(direct.value).toEqual([
+      "integer",
+      "terminal",
+      "connection",
+      "1",
+      "TRUE",
+      "stdout",
+      "terminal",
+      "w",
+      "text",
+      "opened",
+      "no",
+      "yes",
+      "TRUE",
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "TRUE",
+      "0",
+      "1",
+      "2",
+      "3",
+      "1",
+      "7",
+      "3",
+      "4",
+      "7",
+      "0",
+      "1",
+      "2",
+      "3",
+      "TRUE",
+      "FALSE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+
+    const packageCall = await runtime.evalDetailed("nativrfixture::standard_output()");
+    expect(packageCall.value).toEqual([
+      "terminal",
+      "connection",
+      "terminal",
+      "TRUE",
+      "FALSE",
+      "TRUE",
+    ]);
+    expect(packageCall.output).toEqual([{ stream: "stdout", text: "package-output\n" }]);
+    await runtime.dispose();
+  });
+
   it("keeps GNU R-style file connections stateful, bounded, and unforgeable", async () => {
     const runtime = await session();
     await expect(
@@ -2857,6 +2947,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "signature_names",
       "sourced_value",
       "square",
+      "standard_output",
     ]);
     await expect(runtime.eval('requireNamespace("does.not.exist", quietly = TRUE)')).resolves.toBe(
       false,
@@ -9812,7 +9903,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.235.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.236.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

@@ -75,16 +75,16 @@ signal.
 
 | Priority | Measured rank | Callable         | Weighted reach | Packages | Observed calls |
 | -------: | ------------: | ---------------- | -------------: | -------: | -------------: |
-|        1 |           246 | `stdout`         |           1.9% |        1 |              1 |
-|        2 |           252 | `rainbow`        |           1.8% |        2 |              5 |
-|        3 |           253 | `rect`           |           1.8% |        2 |              3 |
-|        4 |           256 | `file.remove`    |           1.8% |        2 |              4 |
-|        5 |           259 | `readChar`       |           1.7% |        2 |              2 |
-|        6 |           262 | `terrain.colors` |           1.7% |        1 |              3 |
-|        7 |           277 | `debug`          |           1.7% |        1 |              1 |
-|        8 |           279 | `undebug`        |           1.7% |        1 |              1 |
-|        9 |           281 | `pdf`            |           1.7% |        2 |              2 |
-|       10 |           287 | `file.create`    |           1.6% |        1 |              1 |
+|        1 |           252 | `rainbow`        |           1.8% |        2 |              5 |
+|        2 |           253 | `rect`           |           1.8% |        2 |              3 |
+|        3 |           256 | `file.remove`    |           1.8% |        2 |              4 |
+|        4 |           259 | `readChar`       |           1.7% |        2 |              2 |
+|        5 |           262 | `terrain.colors` |           1.7% |        1 |              3 |
+|        6 |           277 | `debug`          |           1.7% |        1 |              1 |
+|        7 |           279 | `undebug`        |           1.7% |        1 |              1 |
+|        8 |           281 | `pdf`            |           1.7% |        2 |              2 |
+|        9 |           287 | `file.create`    |           1.6% |        1 |              1 |
+|       10 |           292 | `ts.plot`        |           1.6% |        1 |              1 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -173,8 +173,12 @@ the aggregate row remains unchanged to keep the committed snapshot reproducible.
 `utils::packageDescription` is now complete for cli's full DESCRIPTION-object call shape, selected
 fields, missing fields/packages, file metadata, and exact formals. Validated bundle metadata is
 retained once at install time and can be inspected without loading the package namespace; unchanged
-`pkgconfig 2.0.3` and the Worker Playground exercise the same path. The next measured unresolved
-callable is rank 246 `base::stdout`. Rank 144 `Encoding` is also complete for all 12 observed calls
+`pkgconfig 2.0.3` and the Worker Playground exercise the same path. Rank 246 `base::stdout` is now
+complete for cli's terminal selection and inspection shape, together with adjacent standard
+connections and the later rank-342 `stderr` occurrence. Stable terminal handles, access summaries,
+false embedded-session TTY detection, connection catalogs, pure-R package calls, and bounded Worker
+stdout/stderr routing share the existing connection registry. The next measured unresolved callable
+is rank 252 `grDevices::rainbow`. Rank 144 `Encoding` is also complete for all 12 observed calls
 across rlang, utf8, and xfun (4.5% weighted reach), together with adjacent `Encoding<-`, `enc2utf8`,
 and `enc2native`. The shared character representation preserves exact bytes and canonical R marks
 through subset/replacement, concatenation, raw conversion, and XDR serialization; this is reusable
@@ -1545,6 +1549,13 @@ ties:
      artifact metadata, and the default Worker Playground uses the same path. Host libraries,
      malformed installed trees, complete core DESCRIPTION prose, arbitrary `iconv` codecs, and
      package-description print/citation/date methods remain compatibility depth.
+150. Standard terminal connections: rank-246 `base::stdout` represents cli's one measured terminal
+     selection call at 1.9% download-weighted reach; adjacent `stderr` removes curl's later rank-342
+     occurrence. Stable `stdin`/`stdout`/`stderr` descriptors, class/identity/summary, access
+     queries, false embedded-browser `isatty`, exact formals, flush and invalid lifecycle
+     operations, user/standard catalogs, close-all behavior, pure-R package execution, and default
+     Worker stdout/stderr routing have evidence. Streaming stdin, `sink`, pushback, terminal
+     negotiation, and host descriptors remain compatibility depth.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

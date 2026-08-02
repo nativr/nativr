@@ -180,6 +180,9 @@ normalized AST. The runtime then provides:
 19. lazy read-only `base::url()` connections backed by an explicit `createR({ url })` byte adapter,
     reusable by line, raw, source, table, serialization, and gzip readers without exposing host
     networking to package code.
+20. stable `stdin()`/`stdout()`/`stderr()` terminal handles, bounded stdout/stderr Worker routing,
+    and package-visible `isatty()`/connection-catalog introspection without granting host file
+    descriptors or claiming an interactive TTY.
 
 Package source, metadata, resource counts, and encoded bytes are bounded before parsing. Package
 evaluation then consumes the ordinary step, call-depth, allocation, and output budgets.

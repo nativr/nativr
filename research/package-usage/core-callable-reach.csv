@@ -244,7 +244,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 243,trimws,true,1,cli,2,1.0,1.9
 244,gregexpr,true,1,cli,1,1.0,1.9
 245,packageDescription,true,1,cli,1,1.0,1.9
-246,stdout,false,1,cli,1,1.0,1.9
+246,stdout,true,1,cli,1,1.0,1.9
 247,logical,true,1,vctrs,4,1.0,1.9
 248,rle,true,1,vctrs,1,1.0,1.9
 249,which.min,true,3,data.table|zoo|bit64,4,3.1,1.9
@@ -340,7 +340,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 339,readBin,true,1,curl,2,1.0,1.2
 340,available.packages,false,1,curl,1,1.0,1.2
 341,open,true,1,curl,1,1.0,1.2
-342,stderr,false,1,curl,1,1.0,1.2
+342,stderr,true,1,curl,1,1.0,1.2
 343,barplot,false,2,zoo|bit64,3,2.1,1.2
 344,devAskNewPage,false,1,RColorBrewer,10,1.0,1.1
 345,getLoadedDLLs,false,1,ps,1,1.0,1.1

@@ -78,6 +78,11 @@ twice_mean(c(1, 2, 6))`,
     code: "nativrdemo::package_summary()",
   },
   {
+    id: "standard-output",
+    label: "Standard output connection",
+    code: "nativrdemo::standard_output()",
+  },
+  {
     id: "system-host",
     label: "Explicit host command",
     code: "system('nativr-echo', intern = TRUE, input = c('worker', 'bridge'))",

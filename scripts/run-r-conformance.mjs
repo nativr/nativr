@@ -50,6 +50,7 @@ for (const testCase of oracleCases) {
     testCase.code,
     testCase.rOracleWithoutCallingHandlers === true,
     testCase.rOracleIgnoreOutput === true,
+    testCase.rOracleWithoutSinks === true,
   );
   if (!canonicalEqual(actual, oracle, testCase.tolerance)) {
     failures += 1;
@@ -70,20 +71,32 @@ else {
   );
 }
 
-function runOracle(code, withoutCallingHandlers = false, ignoreOutput = false) {
+function runOracle(
+  code,
+  withoutCallingHandlers = false,
+  ignoreOutput = false,
+  withoutSinks = false,
+) {
   const conditionSetup = withoutCallingHandlers
     ? "before_warnings <- warnings();"
     : "warnings <- character();";
   const evaluation = withoutCallingHandlers
     ? 'result <- withVisible(eval(parse(text = Sys.getenv("NATIVR_CASE")), envir = new.env(parent = globalenv()))); warning_seen <- !identical(before_warnings, warnings());'
     : 'result <- withVisible(withCallingHandlers(eval(parse(text = Sys.getenv("NATIVR_CASE")), envir = new.env(parent = globalenv())), warning = function(w) { warnings <<- c(warnings, conditionMessage(w)); invokeRestart("muffleWarning") })); warning_seen <- length(warnings) > 0;';
+  const outputSetup = withoutSinks
+    ? 'output <- "";'
+    : 'output_path <- tempfile(); output_connection <- file(output_path, open = "wt", encoding = "UTF-8"); sink(output_connection, type = "output"); sink(output_connection, type = "message");';
+  const outputTeardown = withoutSinks
+    ? ""
+    : 'sink(type = "message"); sink(type = "output"); close(output_connection); output <- readChar(output_path, nchars = file.info(output_path)$size, useBytes = TRUE); unlink(output_path); output <- gsub("\\r\\n", "\\n", output, fixed = TRUE);';
   const wrapper = [
     'invisible(suppressWarnings(Sys.setlocale("LC_ALL", "C")));',
     "options(device = function(...) pdf(NULL));",
     conditionSetup,
-    'output_path <- tempfile(); output_connection <- file(output_path, open = "wt", encoding = "UTF-8"); sink(output_connection, type = "output"); sink(output_connection, type = "message");',
+    outputSetup,
     evaluation,
-    'sink(type = "message"); sink(type = "output"); close(output_connection); output <- readChar(output_path, nchars = file.info(output_path)$size, useBytes = TRUE); unlink(output_path); output <- gsub("\\r\\n", "\\n", output, fixed = TRUE); output_hex <- paste(sprintf("%02x", as.integer(charToRaw(enc2utf8(output)))), collapse = "");',
+    outputTeardown,
+    'output_hex <- paste(sprintf("%02x", as.integer(charToRaw(enc2utf8(output)))), collapse = "");',
     "value <- result$value;",
     'encode <- function(x) { vapply(seq_along(x), function(i) { if (is.na(x[[i]])) "NA" else if (is.complex(x[[i]])) paste(format(Re(x[[i]]), scientific = FALSE, trim = TRUE, digits = 17), format(Im(x[[i]]), scientific = FALSE, trim = TRUE, digits = 17), sep = ":") else if (is.nan(x[[i]])) "NaN" else if (is.logical(x[[i]])) if (x[[i]]) "TRUE" else "FALSE" else if (is.character(x[[i]])) gsub("\\r\\n", "\\n", x[[i]], fixed = TRUE) else format(x[[i]], scientific = FALSE, trim = TRUE, digits = 17) }, character(1)) };',
     'encode_hex <- function(x) { vapply(encode(x), function(item) paste(sprintf("%02x", as.integer(charToRaw(enc2utf8(item)))), collapse = ""), character(1), USE.NAMES = FALSE) };',

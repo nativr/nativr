@@ -428,6 +428,17 @@ either session text or immutable package files resolved through `system.file()`.
 `file()` connections provide operation-scoped or persistent cursor access; host paths and other
 connection classes are rejected before any host API can be reached.
 
+`stdin()`, `stdout()`, and `stderr()` return stable session-owned integer handles 0, 1, and 2 with
+classes `c("terminal", "connection")`. They are always open text connections with the documented
+read/write directions and cannot be opened, closed, or sought. `writeLines()` and `cat()` route
+explicit stdout/stderr targets into the same bounded ordered output journal used by implicit console
+output, including Worker transport and capture. `summary()`, `isOpen()`, `flush()`, `isatty()`,
+`getConnection()`, `getAllConnections()`, `showConnections()`, and `closeAllConnections()` share the
+ordinary connection registry; closing all connections destroys only user-created records.
+Browser/Worker sessions report `isatty()` as false. Streaming
+`readLines(stdin())`/`readBin(stdin())` remains unavailable until an explicit bounded host-input
+adapter exists.
+
 `gzcon(con, level = 6, allowNonCompressed = TRUE, text = FALSE)` replaces a valid evaluator-owned
 file handle with a `c("gzcon", "connection")` handle over the same record. Reads unwrap bounded gzip
 bytes (or pass ordinary bytes through, warning when requested); `readLines()` and raw `readBin()`

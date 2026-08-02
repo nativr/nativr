@@ -11,7 +11,7 @@ Date: 2026-08-02
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 612 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 620 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Character vectors own exact per-element bytes and canonical `unknown`/`latin1`/`UTF-8`/`bytes`
@@ -118,6 +118,12 @@ Date: 2026-08-02
   `getwd()`/`setwd()`, `normalizePath()`, `basename()`, and `dirname()`; relative paths resolve only
   within the current session, package, or runtime root. `Sys.sleep()` adds interruptible
   asynchronous waits for package retry/polling code without blocking the Worker event loop.
+- Usage-ranked `stdout()` and adjacent `stdin()`/`stderr()` expose stable terminal connection
+  descriptors through the same registry. Explicit output targets route to bounded inline/Worker
+  events; `isatty()`, `getConnection()`, `getAllConnections()`, `showConnections()`,
+  `closeAllConnections()`, `summary()`, `isOpen()`, and `flush()` provide GNU R-shaped package
+  introspection and lifecycle behavior. The browser is non-TTY and streaming stdin remains an
+  explicit host-adapter gap.
 - Usage-ranked `system.time()` plus adjacent `proc.time()` with one lazy expression evaluation,
   closure-like formals, validated `gcFirst`, visible named/classed `proc_time` results, monotonic
   elapsed seconds, missing unavailable child-process fields, timed-error stderr output, and

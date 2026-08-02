@@ -504,6 +504,39 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
       },
     ],
   ),
+  defineBuiltin("stdin", [], "behavioral", (invocation) =>
+    builtinStandardConnection(invocation, "stdin"),
+  ),
+  defineBuiltin("stdout", [], "behavioral", (invocation) =>
+    builtinStandardConnection(invocation, "stdout"),
+  ),
+  defineBuiltin("stderr", [], "behavioral", (invocation) =>
+    builtinStandardConnection(invocation, "stderr"),
+  ),
+  withBuiltinFormals(defineBuiltin("isatty", ["con"], "behavioral", builtinIsATTY), [
+    { name: "con" },
+  ]),
+  withBuiltinFormals(defineBuiltin("getConnection", ["what"], "behavioral", builtinGetConnection), [
+    { name: "what" },
+  ]),
+  defineBuiltin("getAllConnections", [], "behavioral", builtinGetAllConnections),
+  withBuiltinFormals(
+    defineBuiltin("showConnections", ["all"], "behavioral", builtinShowConnections),
+    [
+      {
+        name: "all",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
+  defineBuiltin(
+    "closeAllConnections",
+    [],
+    "behavioral",
+    builtinCloseAllConnections,
+    "regular",
+    "invisible",
+  ),
   withBuiltinFormals(
     defineBuiltin(
       "gzcon",
@@ -2963,6 +2996,7 @@ interface VirtualTextConnection {
   readonly path: string;
   readonly packageFile: boolean;
   readonly privateFile: boolean;
+  readonly standard?: "stdin" | "stdout" | "stderr";
   blocking: boolean;
   encoding: VirtualTextEncoding;
   open: boolean;
@@ -5743,11 +5777,11 @@ async function builtinFile(invocation: BuiltinInvocation): Promise<RIntegerVecto
   if (method !== undefined) virtualConnectionCharacter(method, "method", "file");
 
   const state = virtualTextFileState(invocation);
-  if (state.connections.size >= invocation.context.limits.maxVectorLength) {
+  if (virtualUserConnectionCount(state) >= invocation.context.limits.maxVectorLength) {
     throw new RResourceLimitError("NRL4002", "Virtual connection count limit exceeded.", {
       details: {
         maxVectorLength: invocation.context.limits.maxVectorLength,
-        requested: state.connections.size + 1,
+        requested: virtualUserConnectionCount(state) + 1,
       },
     });
   }
@@ -5840,7 +5874,7 @@ async function builtinUrl(invocation: BuiltinInvocation): Promise<RIntegerVector
   }
 
   const state = virtualTextFileState(invocation);
-  if (state.connections.size >= invocation.context.limits.maxVectorLength) {
+  if (virtualUserConnectionCount(state) >= invocation.context.limits.maxVectorLength) {
     throw new RResourceLimitError("NRL4002", "Virtual connection count limit exceeded.");
   }
   if (!Number.isSafeInteger(state.nextConnectionId) || state.nextConnectionId > 2_147_483_647) {
@@ -5934,7 +5968,7 @@ async function builtinTextConnection(invocation: BuiltinInvocation): Promise<RIn
     isMissing(object, index) ? "NA" : (object.values[index] ?? ""),
   ).join("\n");
   const state = virtualTextFileState(invocation);
-  if (state.connections.size >= invocation.context.limits.maxVectorLength) {
+  if (virtualUserConnectionCount(state) >= invocation.context.limits.maxVectorLength) {
     throw new RResourceLimitError("NRL4002", "Virtual connection count limit exceeded.");
   }
   if (!Number.isSafeInteger(state.nextConnectionId) || state.nextConnectionId > 2_147_483_647) {
@@ -5967,6 +6001,12 @@ async function builtinTextConnection(invocation: BuiltinInvocation): Promise<RIn
 async function builtinGzcon(invocation: BuiltinInvocation): Promise<RIntegerVector> {
   const matched = await matchExact(invocation, ["con", "level", "allowNonCompressed", "text"]);
   const connection = requireVirtualTextConnection(invocation, required(matched, "con", "gzcon"));
+  if (connection.standard !== undefined) {
+    throw new RUnsupportedFeatureError(
+      "NRU6203",
+      "gzcon() cannot replace a browser standard connection.",
+    );
+  }
   await ensureUrlConnection(invocation, connection);
   if (connection.gzip !== undefined) {
     invocation.context.warn({ code: "NRW1119", message: "this is already a 'gzcon' connection" });
@@ -6196,6 +6236,15 @@ async function builtinReadBin(invocation: BuiltinInvocation): Promise<RRawVector
     bytes = Uint8Array.from(source.values);
   } else if (isVirtualTextConnectionHandle(source)) {
     connection = requireVirtualTextConnection(invocation, source);
+    if (connection.standard !== undefined) {
+      if (connection.standard === "stdin") {
+        throw new RUnsupportedFeatureError(
+          "NRU6202",
+          "readBin(stdin()) requires a browser streaming-input adapter.",
+        );
+      }
+      throw new REvaluationError("NRE2240", "cannot read from this connection");
+    }
     await ensureUrlConnection(invocation, connection);
     if (connection.open && !virtualConnectionCanRead(connection.mode)) {
       throw new REvaluationError("NRE2240", "cannot read from this connection");
@@ -6233,9 +6282,112 @@ function readBinCount(value: RValue | undefined): number {
   return Math.trunc(count);
 }
 
+async function builtinStandardConnection(
+  invocation: BuiltinInvocation,
+  standard: "stdin" | "stdout" | "stderr",
+): Promise<RIntegerVector> {
+  await matchExact(invocation, []);
+  const id = standard === "stdin" ? 0 : standard === "stdout" ? 1 : 2;
+  const connection = virtualTextFileState(invocation).connections.get(id);
+  if (connection === undefined || connection.standard !== standard) {
+    throw new REvaluationError("NRE2250", `standard connection '${standard}' is unavailable`);
+  }
+  return connection.handle;
+}
+
+async function builtinIsATTY(invocation: BuiltinInvocation): Promise<RLogicalVector> {
+  const matched = await matchExact(invocation, ["con"]);
+  requireVirtualTextConnection(invocation, required(matched, "con", "isatty"));
+  invocation.context.allocate(1);
+  // A Worker or embedded browser console is an output transport, not an interactive terminal.
+  return logicalVector([false]);
+}
+
+async function builtinGetConnection(invocation: BuiltinInvocation): Promise<RIntegerVector> {
+  const matched = await matchExact(invocation, ["what"]);
+  const value = required(matched, "what", "getConnection");
+  if (!isAtomic(value) || value.length !== 1 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3414", "invalid connection number");
+  }
+  let numeric: number;
+  if (value.type === "character") {
+    const parsed = parseRNumber(value.values[0] ?? "");
+    if (!parsed.valid) throw new RTypeMismatchError("NRT3414", "invalid connection number");
+    numeric = parsed.value;
+  } else if (value.type === "complex") {
+    if ((value.imaginary[0] ?? 0) !== 0) {
+      throw new RTypeMismatchError("NRT3414", "invalid connection number");
+    }
+    numeric = value.real[0] ?? Number.NaN;
+  } else {
+    numeric = value.values[0] ?? Number.NaN;
+  }
+  const id = Math.trunc(numeric);
+  if (!Number.isFinite(numeric) || !Number.isSafeInteger(id)) {
+    throw new RTypeMismatchError("NRT3414", "invalid connection number");
+  }
+  const connection = virtualTextFileState(invocation).connections.get(id);
+  if (connection === undefined) {
+    throw new REvaluationError("NRE2251", `there is no connection ${id}`);
+  }
+  return connection.handle;
+}
+
+async function builtinGetAllConnections(invocation: BuiltinInvocation): Promise<RIntegerVector> {
+  await matchExact(invocation, []);
+  const ids = [...virtualTextFileState(invocation).connections.keys()].sort(
+    (left, right) => left - right,
+  );
+  invocation.context.allocate(ids.length);
+  return integerVector(ids);
+}
+
+async function builtinShowConnections(invocation: BuiltinInvocation): Promise<RCharacterVector> {
+  const matched = await matchExact(invocation, ["all"]);
+  const includeAll = coercibleLogicalFlag(matched.get("all"), false, "all");
+  const connections = [...virtualTextFileState(invocation).connections.values()]
+    .filter((connection) => includeAll || (connection.standard === undefined && connection.open))
+    .sort((left, right) => left.id - right.id);
+  const columns = ["description", "class", "mode", "text", "isopen", "can read", "can write"];
+  const values = columns.flatMap((column) =>
+    connections.map((connection) => {
+      const summary = virtualConnectionSummaryFields(invocation, connection);
+      return summary[column as keyof typeof summary];
+    }),
+  );
+  invocation.context.allocate(values.length + columns.length + connections.length);
+  return withAttribute(
+    withDimensions(characterVector(values), [connections.length, columns.length]),
+    "dimnames",
+    listValue([
+      connections.length === 0
+        ? R_NULL
+        : characterVector(connections.map((connection) => String(connection.id))),
+      characterVector(columns),
+    ]),
+  );
+}
+
+async function builtinCloseAllConnections(invocation: BuiltinInvocation): Promise<RValue> {
+  await matchExact(invocation, []);
+  const state = virtualTextFileState(invocation);
+  const connections = [...state.connections.values()]
+    .filter((connection) => connection.standard === undefined)
+    .sort((left, right) => left.id - right.id);
+  for (const connection of connections) {
+    invocation.context.checkpoint();
+    await finalizeGzipConnection(invocation, connection);
+    destroyVirtualTextConnection(state, connection);
+  }
+  return R_NULL;
+}
+
 async function builtinOpen(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["con", "open", "blocking"]);
   const connection = requireVirtualTextConnection(invocation, required(matched, "con", "open"));
+  if (connection.standard !== undefined) {
+    throw new REvaluationError("NRE2250", "cannot open standard connections");
+  }
   const mode = virtualConnectionMode(matched.get("open"), connection.mode, "open");
   if (virtualConnectionCanRead(mode.mode)) await ensureUrlConnection(invocation, connection);
   connection.blocking = coercibleLogicalFlag(
@@ -6250,6 +6402,9 @@ async function builtinOpen(invocation: BuiltinInvocation): Promise<RValue> {
 async function builtinClose(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["con", "type"]);
   const connection = requireVirtualTextConnection(invocation, required(matched, "con", "close"));
+  if (connection.standard !== undefined) {
+    throw new REvaluationError("NRE2250", "cannot close standard connections");
+  }
   const type = matched.get("type");
   if (type !== undefined) {
     const selected = virtualConnectionCharacter(type, "type", "close");
@@ -6285,6 +6440,9 @@ async function builtinIsOpen(invocation: BuiltinInvocation): Promise<RLogicalVec
 async function builtinSeek(invocation: BuiltinInvocation): Promise<RDoubleVector> {
   const matched = await matchExact(invocation, ["con", "where", "origin", "rw"]);
   const connection = requireVirtualTextConnection(invocation, required(matched, "con", "seek"));
+  if (connection.standard !== undefined) {
+    throw new REvaluationError("NRE2252", "'seek' not enabled for this connection");
+  }
   if (!connection.open) throw new REvaluationError("NRE2239", "connection is not open");
   const access = virtualConnectionAccess(matched.get("rw"), "seek");
   if (access === "read" && !virtualConnectionCanRead(connection.mode)) {
@@ -6738,6 +6896,15 @@ async function builtinReadLines(invocation: BuiltinInvocation): Promise<RCharact
   let connection: VirtualTextConnection | undefined;
   if (isVirtualTextConnectionHandle(connectionValue)) {
     connection = requireVirtualTextConnection(invocation, connectionValue);
+    if (connection.standard !== undefined) {
+      if (connection.standard === "stdin") {
+        throw new RUnsupportedFeatureError(
+          "NRU6202",
+          "readLines(stdin()) requires a browser streaming-input adapter.",
+        );
+      }
+      throw new REvaluationError("NRE2240", "cannot read from this connection");
+    }
     await ensureUrlConnection(invocation, connection);
     if (connection.open && !virtualConnectionCanRead(connection.mode)) {
       throw new REvaluationError("NRE2240", "cannot read from this connection");
@@ -7089,6 +7256,9 @@ function writeClosedVirtualTextConnection(
   connection: VirtualTextConnection,
   source: string,
 ): void {
+  if (connection.standard !== undefined) {
+    throw new REvaluationError("NRE2250", "standard connections are always open");
+  }
   if (connection.url !== undefined) {
     throw new RUnsupportedFeatureError("NRU6197", "url() connections are read-only.");
   }
@@ -7106,6 +7276,15 @@ function writeVirtualTextConnection(
   connection: VirtualTextConnection,
   source: string,
 ): void {
+  if (connection.standard !== undefined) {
+    if (connection.standard === "stdin") {
+      throw new REvaluationError("NRE2240", "cannot write to this connection");
+    }
+    if (source.length > 0) {
+      invocation.context.writeOutput({ stream: connection.standard, text: source });
+    }
+    return;
+  }
   if (connection.url !== undefined) {
     throw new RUnsupportedFeatureError("NRU6197", "url() connections are read-only.");
   }
@@ -7974,12 +8153,36 @@ function virtualTextFileState(invocation: BuiltinInvocation): VirtualTextFileSta
   const metadata = new Map<string, VirtualFileMetadata>();
   metadata.set(VIRTUAL_TEMP_ROOT, virtualFileMetadata(createdAt));
   metadata.set(NATIVR_PACKAGE_LIBRARY_PATH, virtualFileMetadata(0));
+  const connections = new Map<number, VirtualTextConnection>();
+  for (const [id, standard, mode] of [
+    [0, "stdin", "r"],
+    [1, "stdout", "w"],
+    [2, "stderr", "w"],
+  ] as const) {
+    const handle = withClasses(integerVector([id]), ["terminal", "connection"]);
+    connections.set(id, {
+      id,
+      handle,
+      description: standard,
+      path: `nativr://runtime/connection/${standard}`,
+      packageFile: false,
+      privateFile: false,
+      standard,
+      blocking: true,
+      encoding: "utf8",
+      open: true,
+      mode,
+      displayMode: mode,
+      text: "text",
+      cursor: 0,
+    });
+  }
   const created: VirtualTextFileState = {
     files: new Map(),
     binaryFiles: new Map(),
     directories: new Set([VIRTUAL_TEMP_ROOT, NATIVR_PACKAGE_LIBRARY_PATH]),
     metadata,
-    connections: new Map(),
+    connections,
     workingDirectory: VIRTUAL_TEMP_ROOT,
     nextId: 1,
     nextConnectionId: 3,
@@ -8391,8 +8594,19 @@ function destroyVirtualTextConnection(
   state: VirtualTextFileState,
   connection: VirtualTextConnection,
 ): void {
+  if (connection.standard !== undefined) {
+    throw new REvaluationError("NRE2250", "cannot close standard connections");
+  }
   state.connections.delete(connection.id);
   if (connection.privateFile) deleteVirtualFile(state, connection.path);
+}
+
+function virtualUserConnectionCount(state: VirtualTextFileState): number {
+  let count = 0;
+  for (const connection of state.connections.values()) {
+    if (connection.standard === undefined) count += 1;
+  }
+  return count;
 }
 
 function validateDputControl(value: RValue | undefined): void {
@@ -35093,33 +35307,58 @@ async function builtinCovariance(
   return doubleVector([result]);
 }
 
+function virtualConnectionSummaryFields(
+  invocation: BuiltinInvocation,
+  connection: VirtualTextConnection,
+): {
+  readonly description: string;
+  readonly class: string;
+  readonly mode: string;
+  readonly text: string;
+  readonly isopen: string;
+  readonly "can read": string;
+  readonly "can write": string;
+} {
+  const canRead = connection.open
+    ? virtualConnectionCanRead(connection.mode)
+    : virtualTextFileExists(invocation, connection.path) || !connection.packageFile;
+  const canWrite = connection.open
+    ? virtualConnectionCanWrite(connection.mode)
+    : !connection.packageFile && connection.url === undefined;
+  return {
+    description: connection.description,
+    class:
+      connection.standard !== undefined
+        ? "terminal"
+        : connection.gzip !== undefined
+          ? "gzcon"
+          : connection.url === undefined
+            ? "file"
+            : `url-${connection.url.request.method === "default" ? "libcurl" : connection.url.request.method}`,
+    mode: connection.displayMode,
+    text: connection.text,
+    isopen: connection.open ? "opened" : "closed",
+    "can read": canRead ? "yes" : "no",
+    "can write": canWrite ? "yes" : "no",
+  };
+}
+
 async function builtinSummary(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["object"]);
   const object = required(matched, "object", "summary");
   if (isVirtualTextConnectionHandle(object)) {
     const connection = requireVirtualTextConnection(invocation, object);
-    const canRead = connection.open
-      ? virtualConnectionCanRead(connection.mode)
-      : virtualTextFileExists(invocation, connection.path) || !connection.packageFile;
-    const canWrite = connection.open
-      ? virtualConnectionCanWrite(connection.mode)
-      : !connection.packageFile && connection.url === undefined;
+    const summary = virtualConnectionSummaryFields(invocation, connection);
     invocation.context.allocate(7);
     return listValue(
       [
-        characterVector([connection.description]),
-        characterVector([
-          connection.gzip !== undefined
-            ? "gzcon"
-            : connection.url === undefined
-              ? "file"
-              : `url-${connection.url.request.method === "default" ? "libcurl" : connection.url.request.method}`,
-        ]),
-        characterVector([connection.displayMode]),
-        characterVector([connection.text]),
-        characterVector([connection.open ? "opened" : "closed"]),
-        characterVector([canRead ? "yes" : "no"]),
-        characterVector([canWrite ? "yes" : "no"]),
+        characterVector([summary.description]),
+        characterVector([summary.class]),
+        characterVector([summary.mode]),
+        characterVector([summary.text]),
+        characterVector([summary.isopen]),
+        characterVector([summary["can read"]]),
+        characterVector([summary["can write"]]),
       ],
       ["description", "class", "mode", "text", "opened", "can read", "can write"],
     );

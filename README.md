@@ -84,20 +84,22 @@ console.log(await r.eval('readLines(system.file("DESCRIPTION", package = "demo")
 // "Package: demo"
 console.log(await r.eval('utils::packageDescription("demo", fields = "Version")'));
 // "0.1.0"
+console.log(await r.eval('c(class(stdout()), isOpen(stdout(), "write"), isatty(stdout()))'));
+// ["terminal", "connection", "TRUE", "FALSE"]
 ```
 
 The loader supports isolated namespaces, dependency/import loading and version checks, package
 metadata/source/resources through virtual `system.file()` paths, classed `packageDescription()`
-queries, bounded `readLines()`, and read-only `file()` connections, input `textConnection()` plus
-`source()` into selected environments, package `data/*.R`/text/`.rda` loading through `data()`, and
-`R/sysdata.rda` namespace initialization, installed vignette discovery through `vignette()`, plus
-exports, `pkg::name`, `pkg:::name`, S3 registrations, `.onLoad()`, `.onAttach()`, `library()`,
-`require()`, and `requireNamespace()` in inline and Worker execution. Arbitrary pure-R source
-packages can enter this pipeline, but that is not a claim that every package already executes: all
-dependencies, data formats, namespace directives, and R features it uses must also be supported.
-Unchanged, digest-pinned `pkgconfig 2.0.3`, `generics 0.1.4`, and `withr 3.0.3` source packages now
-provide end-to-end external proofs: package resources, package-owned S3 dispatch, and generated
-state-restoring wrappers all execute without patching the packages. See the
+queries, bounded `readLines()`, standard stdout/stderr connections, read-only `file()` connections,
+input `textConnection()` plus `source()` into selected environments, package `data/*.R`/text/`.rda`
+loading through `data()`, and `R/sysdata.rda` namespace initialization, installed vignette discovery
+through `vignette()`, plus exports, `pkg::name`, `pkg:::name`, S3 registrations, `.onLoad()`,
+`.onAttach()`, `library()`, `require()`, and `requireNamespace()` in inline and Worker execution.
+Arbitrary pure-R source packages can enter this pipeline, but that is not a claim that every package
+already executes: all dependencies, data formats, namespace directives, and R features it uses must
+also be supported. Unchanged, digest-pinned `pkgconfig 2.0.3`, `generics 0.1.4`, and `withr 3.0.3`
+source packages now provide end-to-end external proofs: package resources, package-owned S3
+dispatch, and generated state-restoring wrappers all execute without patching the packages. See the
 [complete bundle example](examples/pure-r-package.ts) and
 [package-loading contract](docs/pure-r-packages.md).
 
@@ -188,7 +190,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 612 registered functions, including resettable
+an initial condition/handler slice. It exposes 620 registered functions, including resettable
 session options, isolated session environment variables, deterministic non-interactive host-mode
 detection, browser-owned `gc()` memory censuses, an S3-first `graphics::lines()` path over the
 existing Worker/Canvas journal, usage-ranked numeric and character time-interval construction
@@ -285,86 +287,87 @@ shape through the bounded session-local class/generic/method registry, including
 `ANY`, and call-context errors. Rank-335 `colorRampPalette` now runs isoband's two measured 21-color
 Viridis palette calls through registered `grDevices::` access. The returned first-class palette
 function uses independent linear RGB or CIE Lab interpolation with bias and alpha controls; the
-measured Lab output matches GNU R byte-for-byte. Rank-336 `sink` is explicitly deferred until the
-browser connection/filesystem adapter exists; rank-337 `sessionInfo` now runs otel's measured
-`utils::sessionInfo()$platform` path with an owned, deterministic browser-platform descriptor,
-target R version, locale, RNG kinds, attached core packages, and a classed GNU R-shaped result.
-Rank-338 `as.ordered` now runs generics' measured `as.ordered(letters[1:5])` example through the
-existing owned factor representation, with ordered-factor identity, unused-level removal, names, and
-package-defined S3 forwarding. Rank-339 `as.array` now supplies rstan's measured package-method
-extension point: class-specific methods receive the original object and lazy dots, while
-`as.array.default` adds a one-dimensional extent to atomic vectors, lists, factors, and pairlists,
-promotes vector names to dimension names, preserves unrelated attributes, and returns existing
-arrays unchanged. Rank-341 `nlm` now runs rstan's measured analytic-gradient objective shape through
-registered `stats::` access, lazy forwarded objective arguments, finite-difference or supplied
-derivatives, bounded BFGS minimization, optional Hessians, and GNU R-shaped convergence results.
-Rank-342 `optim` now runs rstan's separate objective/gradient BFGS example with named and scaled
-parameters, lazy forwarded arguments, numerical-gradient fallback, optional Hessians, call counts,
-and GNU R-shaped convergence results. Rank-343 `pairs` now supplies rstan's measured `pairs.stanfit`
-S3 extension point with lazy plotting arguments, while the broader default scatterplot-matrix device
-remains explicit future graphics work. Rank-344 `heat.colors` now provides the measured `grDevices`
-sequential palette with deterministic hexadecimal output, optional alpha, reversal, numeric count
-coercion, and empty-result boundaries. Rank-354 `factorial` now runs xfun's measured `factorial(10)`
-example and extends it with vectorized integer and non-integer gamma values, missingness, non-finite
-boundaries, warnings, and attribute retention. Rank-359 `lsfit` now runs xfun's measured
-least-squares example through the owned QR solver, with matrix predictors, weights, intercept
-control, complete-case handling, rank metadata, and explicit multi-response boundaries. Rank-361
-`strwrap` now runs xfun's measured paragraph-wrapping example with vectorized text, paragraph
-boundaries, prefixes, indentation, sentence spacing, and simplified or list-shaped results. Rank-360
-`shQuote` remains browser host-shell adapter work. A ranking audit also closed the earlier rank-207
-`rgb` gap, and rank-366 `col2rgb` now runs stringr's measured named-color-to-hex helper across the
-complete owned color catalog, numeric palette indices, hexadecimal alpha forms, transparent values,
-matrix metadata, and reverse RGB formatting. Rank-368 `simplify2array` now runs stringi's two
-measured list-shape examples, with scalar/vector simplification, common-type promotion, list
-matrices, retained names and higher-dimensional array metadata, and explicit exception controls.
-Ranks 376/377 `str2expression` and `str2lang` now parse backports' measured source strings through
-the owned Tree-sitter/normalized-AST path into NativR expression, language, symbol, and atomic
-values. The source-bundle loader now supplies private-namespace lookup, although backports itself is
-not yet a verified compatible package. Rank-378 `utils::URLdecode` now runs backports' direct
-percent-decoding example with vectorized ASCII and UTF-8 byte decoding, deterministic missing/empty
-handling, and explicit browser-string boundaries for malformed byte input. Rank-379
-`warningCondition` now runs backports' measured custom-condition construction and covers owned
-message/call/additional-field lists, custom class prefixes, condition-message extraction, and the
-class-selective suppression call shape. Ranks 382/383 `stats::qbinom` and `stats::qnorm` now run
-openssl's measured uniform-to-binomial and uniform-to-normal transforms through owned,
-browser-native quantile algorithms, including vectorized distribution parameters, tail/log
-probabilities, recycling, metadata, and explicit numeric bounds. Rank-384 `rawToBits` now runs
-openssl's measured random-byte bit expansion with GNU R's least-significant-bit-first order over the
-owned raw vector model. Ranks 385/386 `rowMeans` and `colMeans` now run matrixStats' measured
-matrix-subset validation paths and cover generalized array dimensions, numeric data frames, complex
-values, missing-value removal, retained axis names, and empty reductions. Rank-387
-`stats::weighted.mean` now runs matrixStats' six reference comparisons with numeric/complex weights,
-zero-weight omission, missing-value rules, non-finite results, and S3 dispatch. Rank-388
-`stats::mad` now supplies matrixStats' two reference values plus center/constant controls, ordinary,
-low, and high medians, missing-value removal, and strict real-numeric boundaries. Rank-391
-`stats::rbeta` now runs loo's two measured beta-posterior calls with recycled central/non-central
-parameters, deterministic session RNG state, stable log-gamma ratios, limit distributions, and
-missing/invalid argument handling. Rank-392 `stats::dbinom` now completes the same loo example's
-vectorized log-likelihood call with recycled parameters, stable log probabilities, metadata, missing
-values, and GNU R-shaped domain warnings. Rank-393 `base::mat.or.vec` now runs loo's measured
-`mat.or.vec(10, 3)` scratch-matrix allocation with double zero storage, vector-versus-matrix branch
-behavior, truncated nonnegative extents, zero-sized dimensions, and explicit invalid-input
-boundaries. Rank-395 primitive `base::seq.int` now runs data.table's three rolling-window index
-calls, with one-argument length semantics, ascending/descending steps, `length.out`/`along.with`,
-integer/double result selection, S3 `seq` dispatch, and finite allocation guards. Rank-396
-`methods::as` now runs data.table's measured IDate and ITime conversion checks through a
-session-local `setAs` registry. Explicit source-class inheritance, identity coercions, core
-`as.<Class>` constructor fallback, namespace access, invisible registration, and bounded errors are
-covered. NativR supplies the package-extension mechanism; it does not claim to bundle or support
-data.table's classes and methods. Rank-402 `weekdays` then runs data.table's two measured IDate
-labeling calls through the inherited `Date` method, with deterministic C-locale names, recycled
-abbreviation controls, UTC/GMT POSIXt support, custom S3 dispatch, names, missing/non-finite values,
-and explicit invalid-input boundaries. Rank-403 `write.table` remains deferred pending a
-browser-owned connection/filesystem adapter. Rank-404 `anyDuplicated` now supplies the S3 generic
-and default/data-frame methods used by data.table's measured `by = c("A", "B")` duplicate-row check,
-with first-position results, reverse scans, missing-value distinctions, incomparables, factors,
-lists, frames, names, and package-defined methods. Rank-408 `rep.int` now runs data.table's measured
-adaptive-window tail construction with scalar or element-wise counts, numeric coercion, attribute
-removal, factor metadata, atomic/list/expression results, S3 methods, and allocation guards.
-Rank-409 `methods::representation` now runs data.table's measured legacy S4 slot declaration,
-returning the validated parent/slot list consumed by `setClass`; duplicate declarations, missing
-arguments, backtick slot names, and class-string boundaries have differential evidence. Rank-410
-`trunc` now supplies the direct and Math-group S3 extension seam used by data.table's measured
+measured Lab output matches GNU R byte-for-byte. Rank-336 `sink` remains incomplete: the standard
+connection registry now exists, but diversion stacks, splitting, and nested restoration still need
+their own semantics. Rank-337 `sessionInfo` now runs otel's measured `utils::sessionInfo()$platform`
+path with an owned, deterministic browser-platform descriptor, target R version, locale, RNG kinds,
+attached core packages, and a classed GNU R-shaped result. Rank-338 `as.ordered` now runs generics'
+measured `as.ordered(letters[1:5])` example through the existing owned factor representation, with
+ordered-factor identity, unused-level removal, names, and package-defined S3 forwarding. Rank-339
+`as.array` now supplies rstan's measured package-method extension point: class-specific methods
+receive the original object and lazy dots, while `as.array.default` adds a one-dimensional extent to
+atomic vectors, lists, factors, and pairlists, promotes vector names to dimension names, preserves
+unrelated attributes, and returns existing arrays unchanged. Rank-341 `nlm` now runs rstan's
+measured analytic-gradient objective shape through registered `stats::` access, lazy forwarded
+objective arguments, finite-difference or supplied derivatives, bounded BFGS minimization, optional
+Hessians, and GNU R-shaped convergence results. Rank-342 `optim` now runs rstan's separate
+objective/gradient BFGS example with named and scaled parameters, lazy forwarded arguments,
+numerical-gradient fallback, optional Hessians, call counts, and GNU R-shaped convergence results.
+Rank-343 `pairs` now supplies rstan's measured `pairs.stanfit` S3 extension point with lazy plotting
+arguments, while the broader default scatterplot-matrix device remains explicit future graphics
+work. Rank-344 `heat.colors` now provides the measured `grDevices` sequential palette with
+deterministic hexadecimal output, optional alpha, reversal, numeric count coercion, and empty-result
+boundaries. Rank-354 `factorial` now runs xfun's measured `factorial(10)` example and extends it
+with vectorized integer and non-integer gamma values, missingness, non-finite boundaries, warnings,
+and attribute retention. Rank-359 `lsfit` now runs xfun's measured least-squares example through the
+owned QR solver, with matrix predictors, weights, intercept control, complete-case handling, rank
+metadata, and explicit multi-response boundaries. Rank-361 `strwrap` now runs xfun's measured
+paragraph-wrapping example with vectorized text, paragraph boundaries, prefixes, indentation,
+sentence spacing, and simplified or list-shaped results. Rank-360 `shQuote` remains browser
+host-shell adapter work. A ranking audit also closed the earlier rank-207 `rgb` gap, and rank-366
+`col2rgb` now runs stringr's measured named-color-to-hex helper across the complete owned color
+catalog, numeric palette indices, hexadecimal alpha forms, transparent values, matrix metadata, and
+reverse RGB formatting. Rank-368 `simplify2array` now runs stringi's two measured list-shape
+examples, with scalar/vector simplification, common-type promotion, list matrices, retained names
+and higher-dimensional array metadata, and explicit exception controls. Ranks 376/377
+`str2expression` and `str2lang` now parse backports' measured source strings through the owned
+Tree-sitter/normalized-AST path into NativR expression, language, symbol, and atomic values. The
+source-bundle loader now supplies private-namespace lookup, although backports itself is not yet a
+verified compatible package. Rank-378 `utils::URLdecode` now runs backports' direct percent-decoding
+example with vectorized ASCII and UTF-8 byte decoding, deterministic missing/empty handling, and
+explicit browser-string boundaries for malformed byte input. Rank-379 `warningCondition` now runs
+backports' measured custom-condition construction and covers owned message/call/additional-field
+lists, custom class prefixes, condition-message extraction, and the class-selective suppression call
+shape. Ranks 382/383 `stats::qbinom` and `stats::qnorm` now run openssl's measured
+uniform-to-binomial and uniform-to-normal transforms through owned, browser-native quantile
+algorithms, including vectorized distribution parameters, tail/log probabilities, recycling,
+metadata, and explicit numeric bounds. Rank-384 `rawToBits` now runs openssl's measured random-byte
+bit expansion with GNU R's least-significant-bit-first order over the owned raw vector model. Ranks
+385/386 `rowMeans` and `colMeans` now run matrixStats' measured matrix-subset validation paths and
+cover generalized array dimensions, numeric data frames, complex values, missing-value removal,
+retained axis names, and empty reductions. Rank-387 `stats::weighted.mean` now runs matrixStats' six
+reference comparisons with numeric/complex weights, zero-weight omission, missing-value rules,
+non-finite results, and S3 dispatch. Rank-388 `stats::mad` now supplies matrixStats' two reference
+values plus center/constant controls, ordinary, low, and high medians, missing-value removal, and
+strict real-numeric boundaries. Rank-391 `stats::rbeta` now runs loo's two measured beta-posterior
+calls with recycled central/non-central parameters, deterministic session RNG state, stable
+log-gamma ratios, limit distributions, and missing/invalid argument handling. Rank-392
+`stats::dbinom` now completes the same loo example's vectorized log-likelihood call with recycled
+parameters, stable log probabilities, metadata, missing values, and GNU R-shaped domain warnings.
+Rank-393 `base::mat.or.vec` now runs loo's measured `mat.or.vec(10, 3)` scratch-matrix allocation
+with double zero storage, vector-versus-matrix branch behavior, truncated nonnegative extents,
+zero-sized dimensions, and explicit invalid-input boundaries. Rank-395 primitive `base::seq.int` now
+runs data.table's three rolling-window index calls, with one-argument length semantics,
+ascending/descending steps, `length.out`/`along.with`, integer/double result selection, S3 `seq`
+dispatch, and finite allocation guards. Rank-396 `methods::as` now runs data.table's measured IDate
+and ITime conversion checks through a session-local `setAs` registry. Explicit source-class
+inheritance, identity coercions, core `as.<Class>` constructor fallback, namespace access, invisible
+registration, and bounded errors are covered. NativR supplies the package-extension mechanism; it
+does not claim to bundle or support data.table's classes and methods. Rank-402 `weekdays` then runs
+data.table's two measured IDate labeling calls through the inherited `Date` method, with
+deterministic C-locale names, recycled abbreviation controls, UTC/GMT POSIXt support, custom S3
+dispatch, names, missing/non-finite values, and explicit invalid-input boundaries. Rank-403
+`write.table` now writes bounded browser-owned files and connections with GNU R-shaped delimited
+formatting. Rank-404 `anyDuplicated` supplies the S3 generic and default/data-frame methods used by
+data.table's measured `by = c("A", "B")` duplicate-row check, with first-position results, reverse
+scans, missing-value distinctions, incomparables, factors, lists, frames, names, and package-defined
+methods. Rank-408 `rep.int` now runs data.table's measured adaptive-window tail construction with
+scalar or element-wise counts, numeric coercion, attribute removal, factor metadata,
+atomic/list/expression results, S3 methods, and allocation guards. Rank-409
+`methods::representation` now runs data.table's measured legacy S4 slot declaration, returning the
+validated parent/slot list consumed by `setClass`; duplicate declarations, missing arguments,
+backtick slot names, and class-string boundaries have differential evidence. Rank-410 `trunc` now
+supplies the direct and Math-group S3 extension seam used by data.table's measured
 `trunc(seqtimes, "hours")` call, plus owned toward-zero real-vector behavior, retained attributes,
 eager default dots, and bounded type/missingness errors. Rank-411 `utils::type.convert` now runs
 data.table's measured split-column conversion with recursive list/data-frame methods and an owned
@@ -635,6 +638,12 @@ connection opening, read/write/append modes, persistent cursors, `seek`, `flush`
 have executable coverage. URL, socket, absolute host-file, symlink, and general typed raw/binary
 connection operations remain explicit boundaries; raw `readBin()` can retrieve owned bytes, while
 serialization builtins use bounded binary-mode handles directly.
+
+`stdin()`, `stdout()`, and `stderr()` are stable `c("terminal", "connection")` handles numbered 0,
+1, and 2. Package code can inspect them with `summary()`, `isOpen()`, `isatty()`, `getConnection()`,
+`getAllConnections()`, and `showConnections()`; writes to stdout/stderr become bounded ordered
+Worker output events. The embedded browser is deliberately not reported as a TTY, and streaming
+reads from `stdin()` still require a future explicit host adapter.
 
 Measured rank 22 `plot()` now supplies the high-reach S3 extension point used by package-defined
 `plot.<class>` methods and a bounded browser-native numeric default. One-argument vectors and paired

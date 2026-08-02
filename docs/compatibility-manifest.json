@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.235.0",
+  "languageSubsetVersion": "0.236.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -134,6 +134,14 @@
         { "name": "file", "compatibility": "behavioral" },
         { "name": "url", "compatibility": "behavioral" },
         { "name": "textConnection", "compatibility": "behavioral" },
+        { "name": "stdin", "compatibility": "behavioral" },
+        { "name": "stdout", "compatibility": "behavioral" },
+        { "name": "stderr", "compatibility": "behavioral" },
+        { "name": "isatty", "compatibility": "behavioral" },
+        { "name": "getConnection", "compatibility": "behavioral" },
+        { "name": "getAllConnections", "compatibility": "behavioral" },
+        { "name": "showConnections", "compatibility": "behavioral" },
+        { "name": "closeAllConnections", "compatibility": "behavioral" },
         { "name": "gzcon", "compatibility": "behavioral" },
         { "name": "readBin", "compatibility": "shape" },
         { "name": "open", "compatibility": "behavioral" },
