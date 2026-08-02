@@ -26,11 +26,11 @@ Imports: grDevices, graphics, methods, stats, utils
 Encoding: UTF-8
 NeedsCompilation: no`,
   namespace: `
-importFrom(graphics, axis, plot.new, plot.window)
+importFrom(graphics, axis, plot.new, plot.window, rect)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median)
 importFrom(utils, packageDescription, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, axis_ticks, sourced_value, ask_value, remote_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output)
+export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, axis_ticks, sourced_value, ask_value, remote_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -66,6 +66,11 @@ classic_palettes <- function(n = 3) c(
   grDevices::topo.colors(n),
   grDevices::cm.colors(n)
 )
+usage_rectangles <- function() {
+  plot.new()
+  plot.window(c(0, 1), c(0, 1))
+  rect(c(0, 0.5), c(0, 0.5), c(0.5, 1), c(0.5, 1), col = "#00000044", border = NA)
+}
 axis_ticks <- function() {
   plot.new()
   plot.window(c(0, 4), c(0, 4))
@@ -2955,6 +2960,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "sourced_value",
       "square",
       "standard_output",
+      "usage_rectangles",
     ]);
     await expect(runtime.eval('requireNamespace("does.not.exist", quietly = TRUE)')).resolves.toBe(
       false,
@@ -7311,6 +7317,35 @@ describe("complete inline source-to-result vertical slice", () => {
       },
     ]);
 
+    const styled = await runtime.evalDetailed(
+      "rect(c(0, 2), 2, c(1, 3), 3, col = c('red', 'blue', 'yellow'))",
+    );
+    expect(styled.graphics).toEqual([
+      {
+        kind: "polygon",
+        polygons: [
+          {
+            x: [0, 1, 1, 0],
+            y: [2, 2, 3, 3],
+            fill: "#FF0000FF",
+            border: "#00FF00FF",
+            lineType: "44",
+            lineWidth: 2,
+            fillRule: "nonzero",
+          },
+          {
+            x: [2, 3, 3, 2],
+            y: [2, 2, 3, 3],
+            fill: "#0000FFFF",
+            border: "#00FF00FF",
+            lineType: "44",
+            lineWidth: 2,
+            fillRule: "nonzero",
+          },
+        ],
+      },
+    ]);
+
     const noFill = await runtime.evalDetailed(
       "polygon(matrix(c(1, 2, 2, 1, 1, 1, 2, 2), ncol = 2), density = 0, col = 'yellow', border = 'blue')",
     );
@@ -7373,6 +7408,132 @@ describe("complete inline source-to-result vertical slice", () => {
       code: "NRL4002",
     });
     await limited.dispose();
+  });
+
+  it("draws sass and zoo's usage-ranked rectangles through pure R packages and graphics replay", async () => {
+    const runtime = await session();
+    const measured = await runtime.evalDetailed(`
+      plot.new()
+      plot.window(c(0, 4), c(0, 4))
+      par(fg = "green", lty = "dashed", lwd = 2)
+      visible <- withVisible(graphics::rect(
+        c(0, 2, NA, Inf),
+        0,
+        c(1, 3, 4),
+        1,
+        col = c("#00000044", "red", "blue", "yellow"),
+        border = c(NA, NULL),
+        xpd = TRUE
+      ))
+      c(is.null(visible$value), visible$visible)
+    `);
+    expect(measured.value).toEqual([true, false]);
+    expect(measured.graphics).toEqual([
+      { kind: "new-page" },
+      { kind: "window", xlim: [0, 4], ylim: [0, 4] },
+      {
+        kind: "polygon",
+        polygons: [
+          {
+            x: [0, 1, 1, 0],
+            y: [0, 0, 1, 1],
+            fill: "#00000044",
+            border: "#FFFFFF00",
+            lineType: "44",
+            lineWidth: 2,
+            fillRule: "nonzero",
+          },
+          {
+            x: [2, 3, 3, 2],
+            y: [0, 0, 1, 1],
+            fill: "#FF0000FF",
+            border: "#FFFFFF00",
+            lineType: "44",
+            lineWidth: 2,
+            fillRule: "nonzero",
+          },
+        ],
+      },
+    ]);
+
+    const noFill = await runtime.evalDetailed(
+      "rect(0, 0, 1, 1, density = 0, col = 'yellow', border = 'blue', lty = 'dotted', lwd = 3)",
+    );
+    expect(noFill.graphics).toEqual([
+      {
+        kind: "polygon",
+        polygons: [
+          {
+            x: [0, 1, 1, 0],
+            y: [0, 0, 1, 1],
+            fill: "#FFFFFF00",
+            border: "#0000FFFF",
+            lineType: "13",
+            lineWidth: 3,
+            fillRule: "nonzero",
+          },
+        ],
+      },
+    ]);
+    await runtime.eval("recorded <- recordPlot()\ndev.hold()");
+    const replayed = await runtime.evalDetailed("replayPlot(recorded)\ndev.flush()");
+    expect(replayed.graphics.at(-1)).toEqual(noFill.graphics[0]);
+    await expect(runtime.eval("rect(numeric(), 0, 1, 1)")).rejects.toMatchObject({
+      code: "NRT3348",
+    });
+    await expect(runtime.eval("rect(0, 0, 1, 1, density = 10)")).rejects.toMatchObject({
+      code: "NRU6165",
+    });
+    await expect(runtime.eval("rect(0, 0, 1, 1, foo = 1)")).rejects.toMatchObject({
+      code: "NRU6165",
+    });
+    await expect(
+      runtime.eval(`
+        f <- formals(graphics::rect)
+        c(
+          names(f),
+          identical(f$density, NULL),
+          identical(f$angle, 45),
+          is.na(f$col),
+          identical(f$border, NULL),
+          deparse(f$lty),
+          deparse(f$lwd)
+        )
+      `),
+    ).resolves.toEqual([
+      "xleft",
+      "ybottom",
+      "xright",
+      "ytop",
+      "density",
+      "angle",
+      "col",
+      "border",
+      "lty",
+      "lwd",
+      "...",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      'par("lty")',
+      'par("lwd")',
+    ]);
+    await runtime.reset();
+    await expect(runtime.eval("rect(0, 0, 1, 1)")).rejects.toMatchObject({ code: "NRE2190" });
+    await runtime.dispose();
+
+    const packaged = await createR({ execution: "inline", assets, packages: [pureRFixture] });
+    const packageResult = await packaged.evalDetailed("nativrfixture::usage_rectangles()");
+    expect(packageResult).toMatchObject({ value: null, visible: false });
+    expect(packageResult.graphics.at(-1)).toMatchObject({
+      kind: "polygon",
+      polygons: [
+        { fill: "#00000044", border: "#FFFFFF00" },
+        { fill: "#00000044", border: "#FFFFFF00" },
+      ],
+    });
+    await packaged.dispose();
   });
 
   it("renders usage-ranked image grids through generic browser graphics commands", async () => {
@@ -10017,7 +10178,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.237.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.238.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -10060,6 +10221,7 @@ describe("complete inline source-to-result vertical slice", () => {
       { name: "points", compatibility: "shape" },
       { name: "text", compatibility: "shape" },
       { name: "polygon", compatibility: "shape" },
+      { name: "rect", compatibility: "shape" },
       { name: "legend", compatibility: "shape" },
       { name: "persp", compatibility: "shape" },
       { name: "pairs", compatibility: "shape" },

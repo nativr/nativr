@@ -593,6 +593,19 @@ owned-device errors have coverage. Positive hatch density, coordinate classes be
 storage, clipping/log axes, device-specific dash metrics, arbitrary graphical `...`, exact
 diagnostics, and cross-device pixel identity remain unsupported.
 
+`graphics::rect` has differential evidence for sass and zoo's three measured calls. Its four
+coordinate arguments accept coercible atomic or scalar-list values, choose the number of rectangles
+from the longest coordinate vector, and recycle shorter coordinates without a warning; style-vector
+lengths do not create additional rectangles. Missing/non-finite coordinate tuples are omitted,
+all-empty coordinates return invisible `NULL`, and mixed empty/nonempty coordinates are rejected.
+Fill/border colors, line types, and line widths recycle per rectangle; `border = NULL` uses the
+current foreground, `border = NA` suppresses the stroke, `density = 0` suppresses the fill, and
+negative, missing, or `NULL` density selects a solid fill. Exact formals retain `par("lty")` and
+`par("lwd")` defaults. Rectangles reuse the bounded polygon event, so inline/package/Worker calls,
+Canvas/PNG rendering, held journals, and display-list record/replay share one implementation.
+Positive hatch density, general coordinate classes, clipping/log axes, device-exact joins and dash
+metrics, and arbitrary graphical parameters are not claimed.
+
 `graphics::segments` has differential evidence for posterior's measured
 `segments(seq_along(theta), y0 = q5, y1 = q95)` vertical-interval shape. Exactly one of `x1` or `y1`
 may be omitted and then defaults to the corresponding start coordinate; omitting both is an error.

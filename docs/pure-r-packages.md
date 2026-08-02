@@ -268,9 +268,12 @@ Package source can call shared browser-native graphics utilities rather than rec
 specific rewrites. The fixture and default Worker now execute `grDevices::hcl()` from unchanged R
 source, including recycled CIE-LUV coordinates and alpha transparency. They also create a linear
 plot window and call `graphics::axis()` with explicit character labels; the same axis line, ticks,
-and text cross the default Worker graphics journal. This proves the ordinary namespace/call path for
-those callables; packages still fail explicitly when they reach an unsupported graphics helper,
-device feature, native routine, or host color-management facility.
+and text cross the default Worker graphics journal. The package fixture additionally runs sass's
+measured vectorized `graphics::rect()` shape with alpha fill and `border = NA`; it reuses the
+generic polygon event through inline/package/Worker/Canvas paths rather than translating the package
+or adding a package adapter. This proves the ordinary namespace/call path for those callables;
+packages still fail explicitly when they reach an unsupported graphics helper, device feature,
+native routine, or host color-management facility.
 
 Package source may also load generated or bundled R text without translation. Input
 `textConnection()` objects copy character vectors into bounded session memory, and `source()` fully

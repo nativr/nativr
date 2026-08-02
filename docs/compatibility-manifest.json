@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.237.0",
+  "languageSubsetVersion": "0.238.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -628,6 +628,7 @@
         { "name": "points", "compatibility": "shape" },
         { "name": "text", "compatibility": "shape" },
         { "name": "polygon", "compatibility": "shape" },
+        { "name": "rect", "compatibility": "shape" },
         { "name": "legend", "compatibility": "shape" },
         { "name": "persp", "compatibility": "shape" },
         { "name": "pairs", "compatibility": "shape" }

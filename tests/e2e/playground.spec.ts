@@ -68,6 +68,25 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText('["#FF0000", "#F2F2F2", "#4C00FF", "#80FFFF"]');
 
+  await page.locator("#source").fill("nativrdemo::usage_rectangles()");
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("null");
+  await expect(page.locator("#graphics-count")).toHaveText("3");
+  const rectanglePixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
+    const context = canvas.getContext("2d");
+    if (context === null) return 0;
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    let translucentBlack = 0;
+    for (let index = 0; index < pixels.length; index += 4) {
+      const red = pixels[index] ?? 255;
+      const green = pixels[index + 1] ?? 255;
+      const blue = pixels[index + 2] ?? 255;
+      if (red >= 150 && red < 245 && red === green && green === blue) translucentBlack += 1;
+    }
+    return translucentBlack;
+  });
+  expect(rectanglePixels).toBeGreaterThan(100);
+
   await page.locator("#source").fill("nativrdemo::custom_axis()");
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("[1, 2, 3]");

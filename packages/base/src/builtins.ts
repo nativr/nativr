@@ -2334,6 +2334,70 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     builtinPolygon,
     "invisible",
   ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "graphics",
+      "rect",
+      [
+        "xleft",
+        "ybottom",
+        "xright",
+        "ytop",
+        "density",
+        "angle",
+        "col",
+        "border",
+        "lty",
+        "lwd",
+        "...",
+      ],
+      "shape",
+      builtinRect,
+      "invisible",
+    ),
+    [
+      { name: "xleft" },
+      { name: "ybottom" },
+      { name: "xright" },
+      { name: "ytop" },
+      { name: "density", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      { name: "angle", defaultValue: { kind: "DoubleLiteral", value: 45, span: SYNTHETIC_SPAN } },
+      {
+        name: "col",
+        defaultValue: { kind: "MissingLiteral", declaredType: "logical", span: SYNTHETIC_SPAN },
+      },
+      { name: "border", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      {
+        name: "lty",
+        defaultValue: {
+          kind: "CallExpression",
+          callee: { kind: "Identifier", name: "par", span: SYNTHETIC_SPAN },
+          arguments: [
+            {
+              value: { kind: "StringLiteral", value: "lty", span: SYNTHETIC_SPAN },
+              span: SYNTHETIC_SPAN,
+            },
+          ],
+          span: SYNTHETIC_SPAN,
+        },
+      },
+      {
+        name: "lwd",
+        defaultValue: {
+          kind: "CallExpression",
+          callee: { kind: "Identifier", name: "par", span: SYNTHETIC_SPAN },
+          arguments: [
+            {
+              value: { kind: "StringLiteral", value: "lwd", span: SYNTHETIC_SPAN },
+              span: SYNTHETIC_SPAN,
+            },
+          ],
+          span: SYNTHETIC_SPAN,
+        },
+      },
+      { name: "..." },
+    ],
+  ),
   definePackageBuiltin(
     "graphics",
     "legend",
@@ -28386,6 +28450,125 @@ async function builtinPolygon(invocation: BuiltinInvocation): Promise<RValue> {
   return R_NULL;
 }
 
+async function builtinRect(invocation: BuiltinInvocation): Promise<RValue> {
+  const lazy = matchLazyArgumentsWithDots(invocation, [
+    "xleft",
+    "ybottom",
+    "xright",
+    "ytop",
+    "density",
+    "angle",
+    "col",
+    "border",
+    "lty",
+    "lwd",
+  ]);
+  const state = graphicsState(invocation, "rect");
+  const values = new Map<string, RValue>();
+  for (const [name, argument] of lazy.matched) {
+    if (argument.promise.missing) {
+      if (name === "xleft" || name === "ybottom" || name === "xright" || name === "ytop") {
+        throw new REvaluationError("NRE2103", `Argument '${name}' is missing in rect().`);
+      }
+      continue;
+    }
+    values.set(name, await invocation.force(argument.promise));
+  }
+  for (const name of ["xleft", "ybottom", "xright", "ytop"] as const) {
+    if (!values.has(name)) {
+      throw new REvaluationError("NRE2103", `Argument '${name}' is missing in rect().`);
+    }
+  }
+  for (const argument of lazy.dots) {
+    if (!argument.promise.missing) await invocation.force(argument.promise);
+    if (
+      argument.name !== "xpd" &&
+      argument.name !== "lend" &&
+      argument.name !== "ljoin" &&
+      argument.name !== "lmitre"
+    ) {
+      throw new RUnsupportedFeatureError(
+        "NRU6165",
+        `rect() graphical control '${argument.name ?? "<unnamed>"}' is outside the current browser rectangle subset.`,
+      );
+    }
+  }
+
+  const coordinates = ["xleft", "ybottom", "xright", "ytop"].map((name) =>
+    graphicsRectCoordinates(values.get(name) ?? R_NULL, invocation, name),
+  );
+  const coordinateLengths = coordinates.map((coordinate) => coordinate.length);
+  const hasEmptyCoordinate = coordinateLengths.includes(0);
+  const hasNonemptyCoordinate = coordinateLengths.some((length) => length > 0);
+  if (hasEmptyCoordinate && hasNonemptyCoordinate) {
+    throw new RTypeMismatchError(
+      "NRT3348",
+      "rect() cannot mix zero-length and non-zero-length coordinates.",
+    );
+  }
+  if (!hasNonemptyCoordinate) return R_NULL;
+
+  const density = graphicsPolygonDensity(values.get("density"), "rect");
+  graphicsPolygonAngles(values.get("angle"), "rect");
+  const fills = graphicsPolygonColours(values.get("col"), [255, 255, 255, 0], invocation, false);
+  const foreground =
+    graphicsBoxColour(state.parameters.get("fg"), invocation) ?? ([0, 0, 0, 255] as const);
+  const borders = graphicsPolygonColours(values.get("border"), foreground, invocation, true);
+  const lineTypes = graphicsPolygonLineTypes(values.get("lty") ?? state.parameters.get("lty"));
+  const lineWidths = graphicsPointLineWidths(values.get("lwd") ?? state.parameters.get("lwd"));
+  const count = Math.max(...coordinateLengths);
+  const polygons: RGraphicsPolygon[] = [];
+  invocation.context.allocate(count * 16);
+  for (let index = 0; index < count; index += 1) {
+    invocation.context.checkpoint();
+    const left = coordinates[0]?.[index % (coordinates[0]?.length ?? 1)];
+    const bottom = coordinates[1]?.[index % (coordinates[1]?.length ?? 1)];
+    const right = coordinates[2]?.[index % (coordinates[2]?.length ?? 1)];
+    const top = coordinates[3]?.[index % (coordinates[3]?.length ?? 1)];
+    if (left === undefined || bottom === undefined || right === undefined || top === undefined) {
+      continue;
+    }
+    const densityMode = density[index % density.length] ?? "solid";
+    const fill =
+      densityMode === "none"
+        ? ([255, 255, 255, 0] as const)
+        : (fills[index % fills.length] ?? ([255, 255, 255, 0] as const));
+    let border = borders[index % borders.length] ?? ([255, 255, 255, 0] as const);
+    let lineType = lineTypes[index % lineTypes.length] ?? "solid";
+    let lineWidth = lineWidths[index % lineWidths.length];
+    if (lineType === "blank" || lineWidth === undefined) {
+      border = [255, 255, 255, 0];
+      lineType = "solid";
+      lineWidth = 1;
+    }
+    if (fill[3] === 0 && border[3] === 0) continue;
+    polygons.push({
+      x: [left, right, right, left],
+      y: [bottom, bottom, top, top],
+      fill: graphicsCssColour(fill),
+      border: graphicsCssColour(border),
+      lineType,
+      lineWidth,
+      fillRule: "nonzero",
+    });
+  }
+  if (polygons.length > 0) writeGraphics(invocation, state, { kind: "polygon", polygons });
+  return R_NULL;
+}
+
+function graphicsRectCoordinates(
+  value: RValue,
+  invocation: BuiltinInvocation,
+  name: string,
+): readonly (number | undefined)[] {
+  const numeric = hclNumericVector(value, invocation, name);
+  return Array.from({ length: numeric.length }, (_, index) => {
+    if (isMissing(numeric, index)) return undefined;
+    const coordinate = numeric.values[index] ?? Number.NaN;
+    return Number.isFinite(coordinate) ? coordinate : undefined;
+  });
+}
+
 function graphicsPolygonRuns(
   coordinates: {
     readonly x: RDoubleVector;
@@ -28420,7 +28603,10 @@ function graphicsPolygonRuns(
   return runs;
 }
 
-function graphicsPolygonDensity(value: RValue | undefined): readonly ("solid" | "none")[] {
+function graphicsPolygonDensity(
+  value: RValue | undefined,
+  call = "polygon",
+): readonly ("solid" | "none")[] {
   if (value === undefined || value.type === "null") return ["solid"];
   if (
     (value.type !== "logical" &&
@@ -28429,7 +28615,7 @@ function graphicsPolygonDensity(value: RValue | undefined): readonly ("solid" | 
       value.type !== "raw") ||
     isFactor(value)
   ) {
-    throw new RTypeMismatchError("NRT3348", "polygon(density=) requires a numeric vector or NULL.");
+    throw new RTypeMismatchError("NRT3348", `${call}(density=) requires a numeric vector or NULL.`);
   }
   if (value.length === 0) return ["solid"];
   return Array.from({ length: value.length }, (_, index) => {
@@ -28438,20 +28624,20 @@ function graphicsPolygonDensity(value: RValue | undefined): readonly ("solid" | 
     if (!Number.isFinite(density)) {
       throw new RTypeMismatchError(
         "NRT3348",
-        "polygon(density=) must contain finite values or NA.",
+        `${call}(density=) must contain finite values or NA.`,
       );
     }
     if (density > 0) {
       throw new RUnsupportedFeatureError(
         "NRU6165",
-        "polygon() line-density shading awaits browser hatch-pattern support.",
+        `${call}() line-density shading awaits browser hatch-pattern support.`,
       );
     }
     return density === 0 ? "none" : "solid";
   });
 }
 
-function graphicsPolygonAngles(value: RValue | undefined): void {
+function graphicsPolygonAngles(value: RValue | undefined, call = "polygon"): void {
   if (value === undefined || value.type === "null") return;
   if (
     (value.type !== "logical" &&
@@ -28460,12 +28646,12 @@ function graphicsPolygonAngles(value: RValue | undefined): void {
       value.type !== "raw") ||
     isFactor(value)
   ) {
-    throw new RTypeMismatchError("NRT3348", "polygon(angle=) requires a numeric vector.");
+    throw new RTypeMismatchError("NRT3348", `${call}(angle=) requires a numeric vector.`);
   }
   for (let index = 0; index < value.length; index += 1) {
     if (isMissing(value, index)) continue;
     if (!Number.isFinite(value.values[index] ?? Number.NaN)) {
-      throw new RTypeMismatchError("NRT3348", "polygon(angle=) must contain finite values or NA.");
+      throw new RTypeMismatchError("NRT3348", `${call}(angle=) must contain finite values or NA.`);
     }
   }
 }

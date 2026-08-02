@@ -561,6 +561,14 @@ The same command supports held graphics, display-list replay, and Canvas renderi
 density, coordinate classes beyond owned numeric storage, clipping/log axes, exact device dash
 metrics, and arbitrary graphical parameters remain explicit boundaries.
 
+Rank 253 `graphics::rect` now runs sass and zoo's measured interval/background rectangles. Four
+coordinate vectors recycle to their common longest length, missing/non-finite rectangles are
+omitted, and fill/border colors plus line styles recycle independently. Transparent fills,
+`border = NA`, current `par()` defaults, zero/negative density, invisible results, pure-R package
+calls, Worker transfer, Canvas/PNG rendering, and display-list replay all reuse the existing bounded
+polygon command. Positive hatch density, general coordinate classes, clipping/log axes, and
+device-identical joins remain explicit boundaries.
+
 Rank 460 `base::replace` now runs zoo's measured missing-run fill helper through NativR's existing
 immutable `[` replacement engine. It covers numeric/logical/character subscripts, ordinary
 recycling, names and extension, atomic type promotion, matrices, factors, lists, pairlists, owned

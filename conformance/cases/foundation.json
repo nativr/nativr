@@ -7594,6 +7594,40 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "rect-sass-zoo-coordinate-style-recycling-visibility-and-formals",
+    "code": "plot.new()\nplot.window(c(0, 4), c(0, 4))\npar(fg = \"green\", lty = \"dashed\", lwd = 2)\nr <- withVisible(graphics::rect(c(0, 2, NA, Inf), 0, c(1, 3, 4), 1, col = c(\"#00000044\", \"red\", \"blue\", \"yellow\"), border = NA, xpd = TRUE))\nf <- formals(graphics::rect)\nc(is.null(r$value), r$visible, names(f), identical(f$density, NULL), identical(f$angle, 45), is.na(f$col), identical(f$border, NULL), deparse(f$lty), deparse(f$lwd))",
+    "expected": [
+      "TRUE",
+      "FALSE",
+      "xleft",
+      "ybottom",
+      "xright",
+      "ytop",
+      "density",
+      "angle",
+      "col",
+      "border",
+      "lty",
+      "lwd",
+      "...",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "par(\"lty\")",
+      "par(\"lwd\")"
+    ],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "rect-empty-missing-density-and-plot-boundaries",
+    "code": "before <- inherits(try(rect(0, 0, 1, 1), silent = TRUE), \"try-error\")\nplot.new()\nplot.window(c(0, 4), c(0, 4))\nempty <- withVisible(rect(numeric(), numeric(), numeric(), numeric()))\nmissing <- withVisible(rect(c(0, NA, Inf), 0, c(1, 2), 1, col = \"red\", border = NA))\nnone <- withVisible(rect(0, 0, 1, 1, density = 0, col = \"yellow\"))\nsolid <- withVisible(rect(0, 0, 1, 1, density = -1, col = \"yellow\"))\nmixed <- inherits(try(rect(numeric(), 0, 1, 1), silent = TRUE), \"try-error\")\nc(before, is.null(empty$value), empty$visible, is.null(missing$value), missing$visible, is.null(none$value), none$visible, is.null(solid$value), solid$visible, mixed)",
+    "expected": [true, true, false, true, false, true, false, true, false, true],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "replace-zoo-observed-fill-helper-and-input-immutability",
     "code": "x <- c(NA, 10, NA, NA, 20, NA)\nf <- function(x) replace(x, 1:min(length(x)), 3)\nc(f(x), x[2], x[5], sum(is.na(x)))",
     "expected": [3, 3, 3, 3, 3, 3, 10, 20, 4],

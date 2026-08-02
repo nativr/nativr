@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 374 KiB gzip;
+- Worker JavaScript: 375 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -641,3 +641,9 @@ and `cm.colors` through one compact HSV conversion and palette-sequence path sha
 source-only package, and Worker calls. It adds no dependency, protocol event, Canvas/CSS path, color
 profile, or package-specific translation. The measured Worker is 373.9 KiB gzip, so the ceiling
 rises narrowly to 374 KiB; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.238 adds usage-ranked `graphics::rect` by projecting recycled rectangles into the
+existing polygon journal. Inline, pure-R package, Worker, Canvas, PNG, and record/replay paths share
+the same coordinate/color/style normalization without a dependency, new protocol event, host
+adapter, or package-specific translation. The measured Worker is 374.5 KiB gzip, so the ceiling
+rises narrowly to 375 KiB; client and parser-Wasm budgets remain unchanged.

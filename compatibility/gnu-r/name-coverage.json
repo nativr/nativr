@@ -4,11 +4,11 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 624,
-    "overlappingNames": 608,
-    "missingReferenceNames": 1914,
+    "nativrRegisteredNames": 625,
+    "overlappingNames": 609,
+    "missingReferenceNames": 1913,
     "nativrExtensionNames": 16,
-    "nameCoverage": 0.241079
+    "nameCoverage": 0.241475
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 443, "nameCoverage": 0.324067 },
@@ -29,8 +29,8 @@
     {
       "package": "graphics",
       "callableNames": 88,
-      "overlappingNames": 24,
-      "nameCoverage": 0.272727
+      "overlappingNames": 25,
+      "nameCoverage": 0.284091
     },
     { "package": "datasets", "callableNames": 0, "overlappingNames": 0, "nameCoverage": 1 }
   ],
@@ -488,6 +488,7 @@
     "readRDS",
     "readline",
     "recordPlot",
+    "rect",
     "regexpr",
     "registerS3method",
     "regmatches",
@@ -2144,7 +2145,6 @@
     "reconcilePropertiesAndPrototype",
     "recordGraphics",
     "recover",
-    "rect",
     "rect.hclust",
     "reformulate",
     "reg.finalizer",

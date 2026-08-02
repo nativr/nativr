@@ -767,8 +767,16 @@ HSV path also closes adjacent `topo.colors` and `cm.colors`. GNU R 4.6 different
 default and custom sequences, byte rounding, wrapped hue ranges, saturation/value and alpha
 recycling, reversal, count coercion, empty values, exact formals, and invalid boundaries. The same
 implementation runs unchanged from a source-only package namespace. `hcl.colors`, palette state,
-device color management, and complete plotting-package compatibility remain separate work. The next
-measured unresolved callable is rank 253 `graphics::rect`.
+device color management, and complete plotting-package compatibility remain separate work.
+
+The rectangle increment raises current name overlap to 609 of 2,522. Rank 253 `graphics::rect`
+covers sass and zoo's three measured calls at 1.8% download-weighted reach. GNU R 4.6 differential
+evidence covers its exact formals, invisible `NULL`, coordinate-only length selection and recycling,
+empty-vector errors, missing/non-finite omission, fill/border/line recycling, `par()` defaults, and
+zero/negative density behavior. The same event crosses inline, pure-R package, Worker, Canvas, PNG,
+and record/replay paths without a package-specific implementation. Positive hatch density,
+coordinate classes, clipping/log axes, arbitrary graphics parameters, and device-identical joins
+remain incomplete. The next measured unresolved callable is rank 256 `base::file.remove`.
 
 ## Completion evidence
 
