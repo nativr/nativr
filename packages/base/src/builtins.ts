@@ -545,7 +545,61 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "regular",
     "invisible",
   ),
+  withBuiltinFormals(
+    defineBuiltin("numeric_version", ["x", "strict"], "behavioral", builtinNumericVersion),
+    [
+      { name: "x" },
+      {
+        name: "strict",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
+  withBuiltinFormals(
+    defineBuiltin(
+      "package_version",
+      ["x", "strict"],
+      "behavioral",
+      builtinPackageVersionConstructor,
+    ),
+    [
+      { name: "x" },
+      {
+        name: "strict",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
+  withBuiltinFormals(
+    defineBuiltin("R_system_version", ["x", "strict"], "behavioral", builtinRSystemVersion),
+    [
+      { name: "x" },
+      {
+        name: "strict",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
+  defineBuiltin("getRversion", [], "behavioral", builtinGetRVersion),
+  defineBuiltin("as.numeric_version", ["x"], "behavioral", builtinAsNumericVersion),
+  defineBuiltin("as.package_version", ["x"], "behavioral", builtinAsPackageVersion),
+  defineBuiltin("is.numeric_version", ["x"], "behavioral", builtinIsNumericVersion),
+  defineBuiltin("is.package_version", ["x"], "behavioral", builtinIsPackageVersion),
   definePackageBuiltin("utils", "packageName", ["env"], "behavioral", builtinPackageName),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "utils",
+      "packageVersion",
+      ["pkg", "lib.loc"],
+      "behavioral",
+      builtinInstalledPackageVersion,
+    ),
+    [
+      { name: "pkg" },
+      { name: "lib.loc", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+    ],
+  ),
+  definePackageBuiltin("utils", "compareVersion", ["a", "b"], "behavioral", builtinCompareVersion),
   definePackageBuiltin("utils", "sessionInfo", ["package"], "shape", builtinSessionInfo),
   definePackageBuiltin(
     "utils",
@@ -2805,6 +2859,17 @@ async function builtinBinaryOperator(
       invocation.context,
     );
   }
+  if (
+    ["<", "<=", ">", ">=", "==", "!="].includes(operator) &&
+    (isNumericVersionValue(values[0] ?? R_NULL) || isNumericVersionValue(values[1] ?? R_NULL))
+  ) {
+    return compareNumericVersionOperands(
+      values[0] ?? R_NULL,
+      values[1] ?? R_NULL,
+      operator,
+      invocation,
+    );
+  }
   return jsReferenceOperators.binary(
     invocation.context,
     operator,
@@ -2818,6 +2883,9 @@ async function builtinC(invocation: BuiltinInvocation): Promise<RValue> {
   for (const argument of invocation.arguments) {
     const value = await invocation.force(argument.promise);
     entries.push(argument.name === undefined ? { value } : { name: argument.name, value });
+  }
+  if (entries.some((entry) => isNumericVersionValue(entry.value))) {
+    return combineNumericVersionValues(entries, invocation);
   }
   if (entries.some((entry) => entry.value.type !== "null" && !isAtomic(entry.value))) {
     return combineListEntries(entries, invocation);
@@ -7016,6 +7084,311 @@ function virtualTextByteLength(value: string): number {
   let bytes = 0;
   for (const character of value) bytes += utf8ByteLength(character.codePointAt(0) ?? 0);
   return bytes;
+}
+
+type NumericVersionKind = "numeric" | "package" | "system";
+
+function numericVersionClasses(kind: NumericVersionKind): readonly string[] {
+  if (kind === "system") return ["R_system_version", "package_version", "numeric_version"];
+  if (kind === "package") return ["package_version", "numeric_version"];
+  return ["numeric_version"];
+}
+
+function isNumericVersionValue(value: RValue): value is RList {
+  return value.type === "list" && (vectorClasses(value) ?? []).includes("numeric_version");
+}
+
+function parseNumericVersionText(
+  text: string,
+  kind: NumericVersionKind,
+): readonly number[] | undefined {
+  if (!/^[0-9]+(?:[.-][0-9]+)*$/u.test(text)) return undefined;
+  const parts = text.split(/[.-]/u).map(Number);
+  if (kind === "package" && parts.length < 2) return undefined;
+  if (kind === "system" && parts.length !== 3) return undefined;
+  if (parts.some((part) => !Number.isSafeInteger(part) || part > 2_147_483_647)) return undefined;
+  return parts;
+}
+
+function numericVersionValue(
+  input: RCharacterVector,
+  kind: NumericVersionKind,
+  strict: boolean,
+  invocation: BuiltinInvocation,
+): RList {
+  const values = Array.from({ length: input.length }, (_, index) => {
+    invocation.context.checkpoint();
+    if (isMissing(input, index)) return integerVector([]);
+    const text = input.values[index] ?? "";
+    const parts = parseNumericVersionText(text, kind);
+    if (parts === undefined) {
+      if (strict) {
+        throw new REvaluationError("NRE2244", `invalid version specification '${text}'`);
+      }
+      return integerVector([]);
+    }
+    return integerVector(parts);
+  });
+  invocation.context.allocate(values.length * 2 + 1);
+  const output = withClasses(listValue(values), numericVersionClasses(kind));
+  const names = vectorNames(input);
+  return names === undefined ? output : withNames(output, names);
+}
+
+function requiredVersionCharacter(value: RValue, argumentName: string): RCharacterVector {
+  if (value.type !== "character") {
+    throw new RTypeMismatchError(
+      "NRT3354",
+      `invalid non-character version specification '${argumentName}' (type: ${value.type})`,
+    );
+  }
+  return value;
+}
+
+async function constructNumericVersion(
+  invocation: BuiltinInvocation,
+  kind: NumericVersionKind,
+  functionName: string,
+): Promise<RValue> {
+  const matched = await matchExact(invocation, ["x", "strict"]);
+  const input = required(matched, "x", functionName);
+  const strict = logicalFlag(matched.get("strict"), true, "strict");
+  return numericVersionValue(requiredVersionCharacter(input, "x"), kind, strict, invocation);
+}
+
+async function builtinNumericVersion(invocation: BuiltinInvocation): Promise<RValue> {
+  return constructNumericVersion(invocation, "numeric", "numeric_version");
+}
+
+async function builtinPackageVersionConstructor(invocation: BuiltinInvocation): Promise<RValue> {
+  return constructNumericVersion(invocation, "package", "package_version");
+}
+
+async function builtinRSystemVersion(invocation: BuiltinInvocation): Promise<RValue> {
+  return constructNumericVersion(invocation, "system", "R_system_version");
+}
+
+function numericVersionStrings(value: RList, invocation: BuiltinInvocation): RCharacterVector {
+  const strings: string[] = [];
+  const missing = new Uint8Array(value.length);
+  for (let index = 0; index < value.length; index += 1) {
+    invocation.context.checkpoint();
+    const entry = value.values[index];
+    if (entry?.type !== "integer" || entry.length === 0) {
+      missing[index] = 1;
+      strings.push("");
+      continue;
+    }
+    strings.push([...entry.values].join("."));
+  }
+  invocation.context.allocate(value.length);
+  const output = characterVector(strings, compactMask(missing));
+  const names = vectorNames(value);
+  return names === undefined ? output : withNames(output, names);
+}
+
+function numericVersionOperandParts(
+  value: RValue,
+  invocation: BuiltinInvocation,
+): readonly (readonly number[] | undefined)[] {
+  if (isNumericVersionValue(value)) {
+    return value.values.map((entry) => {
+      invocation.context.checkpoint();
+      if (entry.type !== "integer" || entry.length === 0) return undefined;
+      return [...entry.values];
+    });
+  }
+  if (value.type !== "character") {
+    throw new RTypeMismatchError("NRT3355", `invalid version specification (type: ${value.type})`);
+  }
+  return Array.from({ length: value.length }, (_, index) => {
+    invocation.context.checkpoint();
+    if (isMissing(value, index)) return undefined;
+    const text = value.values[index] ?? "";
+    const parsed = parseNumericVersionText(text, "numeric");
+    if (parsed === undefined) {
+      throw new REvaluationError("NRE2244", `invalid version specification '${text}'`);
+    }
+    return parsed;
+  });
+}
+
+function compareNumericVersionOperands(
+  left: RValue,
+  right: RValue,
+  operator: string,
+  invocation: BuiltinInvocation,
+): RLogicalVector {
+  const lhs = numericVersionOperandParts(left, invocation);
+  const rhs = numericVersionOperandParts(right, invocation);
+  const length = recycledLength(invocation.context, lhs.length, rhs.length);
+  const values = new Uint8Array(length);
+  const missing = new Uint8Array(length);
+  for (let index = 0; index < length; index += 1) {
+    invocation.context.checkpoint();
+    const leftParts = lhs[index % lhs.length];
+    const rightParts = rhs[index % rhs.length];
+    if (leftParts === undefined || rightParts === undefined) {
+      missing[index] = 1;
+      continue;
+    }
+    const comparison = compareVersionParts(leftParts, rightParts, true);
+    const result =
+      operator === "<"
+        ? comparison < 0
+        : operator === "<="
+          ? comparison <= 0
+          : operator === ">"
+            ? comparison > 0
+            : operator === ">="
+              ? comparison >= 0
+              : operator === "=="
+                ? comparison === 0
+                : comparison !== 0;
+    values[index] = result ? 1 : 0;
+  }
+  invocation.context.allocate(length);
+  const output = logicalVector(values, compactMask(missing));
+  const names =
+    left.type === "list" && left.length === length
+      ? vectorNames(left)
+      : right.type === "list" && right.length === length
+        ? vectorNames(right)
+        : undefined;
+  return names === undefined ? output : withNames(output, names);
+}
+
+function combineNumericVersionValues(
+  entries: readonly { readonly name?: string; readonly value: RValue }[],
+  invocation: BuiltinInvocation,
+): RValue {
+  const flattened = combineListEntries(entries, invocation);
+  const parts = flattened.values.map((entry) => {
+    invocation.context.checkpoint();
+    if (entry.type === "integer") return entry;
+    if (entry.type === "character" && entry.length === 1) {
+      if (isMissing(entry, 0)) return integerVector([]);
+      const text = entry.values[0] ?? "";
+      const parsed = parseNumericVersionText(text, "numeric");
+      if (parsed !== undefined) return integerVector(parsed);
+      throw new REvaluationError("NRE2244", `invalid version specification '${text}'`);
+    }
+    throw new RTypeMismatchError("NRT3355", `invalid version specification (type: ${entry.type})`);
+  });
+  const packageClass = entries
+    .filter((entry) => entry.value.type !== "null")
+    .every(
+      (entry) =>
+        isNumericVersionValue(entry.value) &&
+        (vectorClasses(entry.value) ?? []).includes("package_version"),
+    );
+  invocation.context.allocate(parts.length + 1);
+  return withClasses(
+    listValue(parts, vectorNames(flattened)),
+    numericVersionClasses(packageClass ? "package" : "numeric"),
+  );
+}
+
+function formatPrintedNumericVersion(value: RList, invocation: BuiltinInvocation): string {
+  const strings = numericVersionStrings(value, invocation);
+  if (strings.length === 0) return "<0 elements>";
+  const tokens = Array.from({ length: strings.length }, (_, index) =>
+    isMissing(strings, index) ? "<NA>" : `'${strings.values[index] ?? ""}'`,
+  );
+  if (tokens.length === 1) return `[1] ${tokens[0] ?? ""}`;
+  const width = Math.max(...tokens.map((token) => token.length));
+  return `[1] ${tokens.map((token) => token.padEnd(width)).join(" ")}`;
+}
+
+function builtinGetRVersion(invocation: BuiltinInvocation): RValue {
+  invocation.context.allocate(3);
+  return withClasses(listValue([integerVector([4, 6, 0])]), numericVersionClasses("system"));
+}
+
+async function builtinAsNumericVersion(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["x"]);
+  const input = required(matched, "x", "as.numeric_version");
+  if (isNumericVersionValue(input)) return input;
+  return numericVersionValue(requiredVersionCharacter(input, "x"), "numeric", true, invocation);
+}
+
+async function builtinAsPackageVersion(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["x"]);
+  const input = required(matched, "x", "as.package_version");
+  if (isNumericVersionValue(input) && (vectorClasses(input) ?? []).includes("package_version")) {
+    return input;
+  }
+  return numericVersionValue(requiredVersionCharacter(input, "x"), "package", true, invocation);
+}
+
+async function builtinIsNumericVersion(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["x"]);
+  return logicalVector([isNumericVersionValue(required(matched, "x", "is.numeric_version"))]);
+}
+
+async function builtinIsPackageVersion(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["x"]);
+  const input = required(matched, "x", "is.package_version");
+  return logicalVector([
+    isNumericVersionValue(input) && (vectorClasses(input) ?? []).includes("package_version"),
+  ]);
+}
+
+async function builtinInstalledPackageVersion(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["pkg", "lib.loc"]);
+  const packageValue = required(matched, "pkg", "packageVersion");
+  let packageName: string;
+  if (isFactor(packageValue) && packageValue.length === 1 && !isMissing(packageValue, 0)) {
+    packageName = stringAt(packageValue, 0);
+  } else {
+    packageName = characterScalar(packageValue, "pkg");
+  }
+  const library = matched.get("lib.loc");
+  const version =
+    library === undefined || library.type === "null"
+      ? invocation.installedPackageVersion(packageName)
+      : undefined;
+  if (version === undefined) {
+    throw new REvaluationError("NRE2221", `there is no package called '${packageName}'`, {
+      details: { package: packageName },
+    });
+  }
+  return numericVersionValue(characterVector([version]), "package", true, invocation);
+}
+
+function compareVersionParts(
+  left: readonly number[],
+  right: readonly number[],
+  missingAsZero: boolean,
+): number {
+  const length = Math.max(left.length, right.length);
+  for (let index = 0; index < length; index += 1) {
+    if (!missingAsZero && index >= left.length) return -1;
+    if (!missingAsZero && index >= right.length) return 1;
+    const lhs = left[index] ?? 0;
+    const rhs = right[index] ?? 0;
+    if (lhs < rhs) return -1;
+    if (lhs > rhs) return 1;
+  }
+  return 0;
+}
+
+async function builtinCompareVersion(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["a", "b"]);
+  const leftText = characterScalar(required(matched, "a", "compareVersion"), "a");
+  const rightText = characterScalar(required(matched, "b", "compareVersion"), "b");
+  const left = parseNumericVersionText(leftText, "numeric");
+  const right = parseNumericVersionText(rightText, "numeric");
+  if (left === undefined || right === undefined) {
+    throw new REvaluationError("NRE2244", "NAs introduced by coercion");
+  }
+  const commonLength = Math.min(left.length, right.length);
+  for (let index = 0; index < commonLength; index += 1) {
+    const lhs = left[index] ?? 0;
+    const rhs = right[index] ?? 0;
+    if (lhs !== rhs) return doubleVector([lhs < rhs ? -1 : 1]);
+  }
+  return integerVector([left.length < right.length ? -1 : left.length > right.length ? 1 : 0]);
 }
 
 async function builtinPackageName(invocation: BuiltinInvocation): Promise<RValue> {
@@ -12173,6 +12546,7 @@ async function builtinAsCharacter(invocation: BuiltinInvocation): Promise<RValue
   const input = await invocation.force(argument.promise);
   if (isHexmodeValue(input)) return asCharacterHexmode(invocation);
   if (isRomanValue(input)) return asCharacterRoman(invocation);
+  if (isNumericVersionValue(input)) return numericVersionStrings(input, invocation);
   if (input.type === "null") return characterVector([]);
   if (!isAtomic(input)) {
     throw new RTypeMismatchError("NRT3197", "as.character() requires NULL or an atomic vector.");
@@ -17070,6 +17444,7 @@ async function builtinFormat(invocation: BuiltinInvocation): Promise<RValue> {
   const candidate = await invocation.force(inputArgument.promise);
   if (isHexmodeValue(candidate)) return formatHexmode(invocation);
   if (isRomanValue(candidate)) return formatRoman(invocation);
+  if (isNumericVersionValue(candidate)) return numericVersionStrings(candidate, invocation);
   const matched = await matchExact(invocation, [
     "x",
     "trim",
@@ -17140,6 +17515,11 @@ async function builtinPrint(invocation: BuiltinInvocation): Promise<RValue> {
   }
   const candidate = await invocation.force(inputArgument.promise);
   if (isHexmodeValue(candidate)) return printHexmode(invocation);
+  if (isNumericVersionValue(candidate)) {
+    const text = formatPrintedNumericVersion(candidate, invocation);
+    invocation.context.writeOutput({ stream: "stdout", text: `${text}\n` });
+    return candidate;
+  }
   const matched = await matchExact(invocation, [
     "x",
     "digits",

@@ -452,11 +452,22 @@ attachment, and exported bindings enter the attached-package search environment 
 `library()`. Reset clears namespaces, hooks, attachment state, S3 registrations, and search entries
 but retains the immutable bundle catalog for deterministic reload. Source size, source count,
 dependency cycles, imports, exports, and lifecycle evaluation all remain resource-checked. Unchanged
-external packages can construct wrapper closures from package-owned source: nested replacement
-rebuilds call roots through `formals<-`, closure enclosures can be replaced through `environment<-`,
-mixed language/list `c()` inputs feed `as.call()`, and `bquote()` substitutes `.()` expressions
-against explicit environments or list-backed masks. Dynamic `parent.frame()` uses the actual
-call-site environment, while `packageEvent()` plus `setHook()`/`getHook()` provide a session
+`utils::packageVersion(pkg)` consults that immutable catalog and therefore does not load or attach
+the requested namespace. Core namespaces expose the runtime's documented `4.6.0` compatibility
+identity; installed bundles expose their validated DESCRIPTION version. `getRversion()` uses the
+same component representation with class chain `R_system_version`, `package_version`, and
+`numeric_version`. Version constructors normalize dots and hyphens into integer components,
+represent missing entries explicitly, and support character formatting, printing, concatenation, and
+vectorized relational operators with trailing-zero padding. `utils::compareVersion()` preserves its
+separate component-count ordering. Arbitrary `lib.loc` discovery, mutable installed metadata,
+component extraction/replacement, summary methods, and the complete numeric-version S3 family are
+not yet supported.
+
+Unchanged external packages can construct wrapper closures from package-owned source: nested
+replacement rebuilds call roots through `formals<-`, closure enclosures can be replaced through
+`environment<-`, mixed language/list `c()` inputs feed `as.call()`, and `bquote()` substitutes `.()`
+expressions against explicit environments or list-backed masks. Dynamic `parent.frame()` uses the
+actual call-site environment, while `packageEvent()` plus `setHook()`/`getHook()` provide a session
 registry. These semantics are executable through the pinned `withr 3.0.3` `with_options()` proof
 rather than inferred from successful parsing. `gctorture2()` exposes only its documented
 argument/formal and previous-state API for wrapper construction; it does not and cannot force a

@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.219.0",
+  "languageSubsetVersion": "0.220.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -153,6 +153,14 @@
         { "name": "infoRDS", "compatibility": "shape" },
         { "name": "save", "compatibility": "behavioral" },
         { "name": "load", "compatibility": "behavioral" },
+        { "name": "numeric_version", "compatibility": "behavioral" },
+        { "name": "package_version", "compatibility": "behavioral" },
+        { "name": "R_system_version", "compatibility": "behavioral" },
+        { "name": "getRversion", "compatibility": "behavioral" },
+        { "name": "as.numeric_version", "compatibility": "behavioral" },
+        { "name": "as.package_version", "compatibility": "behavioral" },
+        { "name": "is.numeric_version", "compatibility": "behavioral" },
+        { "name": "is.package_version", "compatibility": "behavioral" },
         { "name": "try", "compatibility": "behavioral" },
         { "name": "tryCatch", "compatibility": "behavioral" },
         { "name": "globalCallingHandlers", "compatibility": "behavioral" },
@@ -643,6 +651,8 @@
       "referenceVersion": "R 4.6.x documented behavior",
       "functions": [
         { "name": "packageName", "compatibility": "behavioral" },
+        { "name": "packageVersion", "compatibility": "behavioral" },
+        { "name": "compareVersion", "compatibility": "behavioral" },
         { "name": "sessionInfo", "compatibility": "shape" },
         { "name": "capture.output", "compatibility": "behavioral" },
         { "name": "data", "compatibility": "behavioral" },

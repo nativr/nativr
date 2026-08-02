@@ -8,6 +8,9 @@ import {
   isMissing,
   logicalVector,
   rawVector,
+  vectorClasses,
+  vectorNames,
+  withNames,
 } from "@nativr/runtime";
 import type {
   OperatorContext,
@@ -16,6 +19,7 @@ import type {
   RDoubleVector,
   RIntegerVector,
   RLogicalVector,
+  RList,
   RRawVector,
   RuntimeOperators,
   RValue,
@@ -124,6 +128,9 @@ export const jsReferenceOperators: RuntimeOperators = {
     }
     if (operator === ":") return createUnitSequence(context, left, right);
     if (["<", "<=", ">", ">=", "==", "!="].includes(operator)) {
+      if (isNumericVersionValue(left) || isNumericVersionValue(right)) {
+        return compareNumericVersionVectors(context, operator, left, right);
+      }
       return compareVectors(context, operator, left, right);
     }
     if (operator === "&" || operator === "|") {
@@ -225,6 +232,92 @@ export const jsReferenceOperators: RuntimeOperators = {
     return integerVector(values, compactMask(missing));
   },
 };
+
+function isNumericVersionValue(value: RValue): value is RList {
+  return value.type === "list" && (vectorClasses(value) ?? []).includes("numeric_version");
+}
+
+function numericVersionParts(
+  value: RValue,
+  context: OperatorContext,
+): readonly (readonly number[] | undefined)[] {
+  if (isNumericVersionValue(value)) {
+    return value.values.map((entry) => {
+      context.checkpoint();
+      if (entry.type !== "integer" || entry.length === 0) return undefined;
+      return [...entry.values];
+    });
+  }
+  if (value.type !== "character") {
+    throw new RTypeMismatchError("NRT3355", `invalid version specification (type: ${value.type})`);
+  }
+  return Array.from({ length: value.length }, (_, index) => {
+    context.checkpoint();
+    if (isMissing(value, index)) return undefined;
+    const text = value.values[index] ?? "";
+    if (!/^[0-9]+(?:[.-][0-9]+)*$/u.test(text)) {
+      throw new RTypeMismatchError("NRT3355", `invalid version specification '${text}'`);
+    }
+    return text.split(/[.-]/u).map(Number);
+  });
+}
+
+function compareNumericVersionParts(left: readonly number[], right: readonly number[]): number {
+  const length = Math.max(left.length, right.length);
+  for (let index = 0; index < length; index += 1) {
+    const lhs = left[index] ?? 0;
+    const rhs = right[index] ?? 0;
+    if (lhs < rhs) return -1;
+    if (lhs > rhs) return 1;
+  }
+  return 0;
+}
+
+function compareNumericVersionVectors(
+  context: OperatorContext,
+  operator: string,
+  left: RValue,
+  right: RValue,
+): RLogicalVector {
+  const lhs = numericVersionParts(left, context);
+  const rhs = numericVersionParts(right, context);
+  const length = recycledLength(context, lhs.length, rhs.length);
+  const values = new Uint8Array(length);
+  const missing = new Uint8Array(length);
+  for (let index = 0; index < length; index += 1) {
+    context.checkpoint();
+    const leftParts = lhs[index % lhs.length];
+    const rightParts = rhs[index % rhs.length];
+    if (leftParts === undefined || rightParts === undefined) {
+      missing[index] = 1;
+      continue;
+    }
+    const comparison = compareNumericVersionParts(leftParts, rightParts);
+    const result =
+      operator === "<"
+        ? comparison < 0
+        : operator === "<="
+          ? comparison <= 0
+          : operator === ">"
+            ? comparison > 0
+            : operator === ">="
+              ? comparison >= 0
+              : operator === "=="
+                ? comparison === 0
+                : comparison !== 0;
+    values[index] = result ? 1 : 0;
+  }
+  context.allocate(length);
+  const mask = missing.some((item) => item !== 0) ? missing : undefined;
+  const output = logicalVector(values, mask);
+  const names =
+    isNumericVersionValue(left) && left.length === length
+      ? vectorNames(left)
+      : isNumericVersionValue(right) && right.length === length
+        ? vectorNames(right)
+        : undefined;
+  return names === undefined ? output : withNames(output, names);
+}
 
 function compareVectors(
   context: OperatorContext,

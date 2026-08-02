@@ -185,6 +185,14 @@ network access; and base `readLines()` performs bounded text decoding. Session w
 evaluator-owned namespace, so package resources cannot be mutated and no host path crosses the
 `base -> runtime` boundary.
 
+Installed-version lookup is a narrower read-only seam over those definitions. The runtime invocation
+context exposes only `installedPackageVersion(name)`, not the bundle object or loader internals;
+`@nativr/base` turns that validated string into owned numeric-version values. Consequently
+`packageVersion()` can satisfy package dependency guards before load without creating a namespace,
+performing I/O, or reversing the `base -> runtime` dependency. Core-package compatibility identity
+uses the same seam. Future library indexes can implement this query behind the facade without
+changing version comparison semantics.
+
 An evaluator-owned directory index sits over the same identifiers. It supplies static runtime and
 package directories, mutable session directories, a resettable current working directory, and
 root-bounded dot-segment normalization. Directory listing and relative-path resolution therefore

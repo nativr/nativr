@@ -5454,6 +5454,77 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "package-version-observed-ggplot-grid-condition-and-shape",
+    "code": "v <- utils::packageVersion(\"stats\")\nc(typeof(v), length(v), class(v), as.character(v), format(v), v >= \"3.6\", v == \"4.6.0.0\", \"5.0\" > v, is.package_version(v), is.numeric_version(v))",
+    "expected": [
+      "list",
+      "1",
+      "package_version",
+      "numeric_version",
+      "4.6.0",
+      "4.6.0",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "get-r-version-observed-package-condition-shape",
+    "code": "r <- getRversion()\nc(class(r), as.character(r), r >= \"4.6\", r < \"5.0\")",
+    "expected": ["R_system_version", "package_version", "numeric_version", "4.6.0", "TRUE", "TRUE"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "numeric-package-version-vectors-comparison-and-missing-shapes",
+    "code": "x <- package_version(c(a = \"1.2-4\", b = \"1.2-3\", c = \"2.1\"))\ny <- numeric_version(c(\"1\", \"1.0\", \"1.0-1\", NA))\nc(as.character(x), x < c(\"1.4-2.3\", \"1.2.3\", \"2.0\"), names(x), as.character(y), is.na(as.character(package_version(\"bad\", strict = FALSE))))",
+    "expected": [
+      "1.2.4",
+      "1.2.3",
+      "2.1",
+      "TRUE",
+      "FALSE",
+      "FALSE",
+      "a",
+      "b",
+      "c",
+      "1",
+      "1.0",
+      "1.0.1",
+      { "__nativr__": "NA" },
+      "TRUE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "compare-version-component-length-order",
+    "code": "c(utils::compareVersion(\"1.0\", \"1.0.0\"), compareVersion(\"1.0-0\", \"1.0.0\"), compareVersion(\"7.2-0\", \"7.1-12\"))",
+    "expected": [-1, 0, 1],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "package-version-print-formals-and-invalid-boundaries",
+    "code": "text <- capture.output(print(package_version(c(\"1.2.3\", \"2.0\", NA))))\nc(text, names(formals(utils::packageVersion)), names(formals(package_version)), inherits(try(package_version(\"1\"), silent = TRUE), \"try-error\"), inherits(try(numeric_version(1.2), silent = TRUE), \"try-error\"), inherits(try(packageVersion(\"does.not.exist\"), silent = TRUE), \"try-error\"))",
+    "expected": [
+      "[1] '1.2.3' '2.0'   <NA>   ",
+      "pkg",
+      "lib.loc",
+      "x",
+      "strict",
+      "TRUE",
+      "TRUE",
+      "TRUE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "as-ordered-observed-generics-character-vector",
     "code": "x <- as.ordered(letters[1:5])\nc(as.integer(x), as.character(x), levels(x), class(x))",
     "expected": [

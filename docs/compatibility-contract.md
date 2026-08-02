@@ -1892,6 +1892,16 @@ internals, `S3method`, `.onLoad`, `.onAttach`, `library`, `require`, `requireNam
 queries, `utils::packageName`, immutable `system.file` virtual paths, attachment search-path
 entries, bounded text reads for DESCRIPTION/NAMESPACE/R source/resources, and reset/reload behavior.
 
+Installed-version lookup has GNU R 4.6 black-box evidence.
+`utils::packageVersion(pkg, lib.loc = NULL)` returns a length-one classed package version for core
+namespaces and validated pure-R bundle definitions without forcing namespace initialization; absent
+packages fail with the package-named error. `getRversion()`, `numeric_version()`,
+`package_version()`, character conversion, formatting, printing, concatenation, missing propagation,
+padded vectorized relational comparison, and `utils::compareVersion()` share one owned component
+parser. Explicit unsupported boundaries include host library discovery, non-`NULL` library
+locations, the complete numeric-version indexing, replacement, summary, ordering, data-frame, and S3
+method surface, and any inference that version visibility proves package execution compatibility.
+
 The Node-only `@nativr/package-tools` build path accepts standard source directories and `.tar.gz`
 archives, or resolves required `Depends`/`Imports` from a CRAN-like `PACKAGES` index. It enforces
 archive/file/byte/package limits, rejects links, native/JVM code, install hooks, `LinkingTo`,

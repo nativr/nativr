@@ -187,7 +187,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 186,hist,true,4,testthat|openssl|shiny|posterior,19,4.1,3.0
 187,append,true,3,curl|purrr|data.table,3,3.1,2.9
 188,showClass,true,2,Rcpp|rstan,4,2.1,2.9
-189,packageVersion,false,2,ggplot2|bslib,3,2.1,2.9
+189,packageVersion,true,2,ggplot2|bslib,3,2.1,2.9
 190,setClass,true,2,rlang|data.table,3,2.1,2.9
 191,diff,true,3,ggplot2|zoo|bit64,13,3.1,2.9
 192,as.vector,true,3,ggplot2|zoo|bit64,3,3.1,2.9
@@ -210,7 +210,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 209,file.info,false,3,digest|data.table|shiny,3,3.1,2.4
 210,match,true,2,ggplot2|data.table,3,2.1,2.4
 211,convolve,true,2,Rcpp|zoo,3,2.1,2.3
-212,getRversion,false,2,S7|xfun,2,2.1,2.3
+212,getRversion,true,2,S7|xfun,2,2.1,2.3
 213,aggregate,true,2,ggplot2|zoo,26,2.1,2.3
 214,hcl,false,2,ggplot2|zoo,6,2.1,2.3
 215,axis,false,3,labeling|zoo|bit64,18,3.1,2.3

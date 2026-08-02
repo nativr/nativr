@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           583 |
-| Overlapping callable names        |           567 |
-| Missing GNU R callable names      |         1,956 |
-| Name overlap                      |       22.443% |
+| NativR registered names           |           593 |
+| Overlapping callable names        |           577 |
+| Missing GNU R callable names      |         1,945 |
+| Name overlap                      |       22.879% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -607,6 +607,16 @@ known subclasses, custom property labels, errors, output capture, and invisible 
 source-only package fixture imports the same methods functions and declares/queries its class during
 normal namespace loading. Native Rcpp/rstan classes and the complete S4 metadata, validity,
 multiple-dispatch, cache, and console-wrapping domains remain incomplete.
+
+The package-version increment raises current name overlap to 577 of 2,522. Measured rank 189
+`utils::packageVersion` represents three calls across ggplot2 and bslib, or 2.9% download-weighted
+reach; adjacent rank 212 `getRversion` represents two calls across two packages. GNU R 4.6 black-box
+evidence covers component storage, class chains, constructors, missing values, printing/formatting,
+concatenation, padded vectorized comparisons, `compareVersion`'s distinct component-count ordering,
+formals, errors, and non-forcing installed-package lookup. The unchanged source-only fixture reads
+its own DESCRIPTION version before and after namespace initialization. Arbitrary library paths, the
+complete numeric-version method family, and execution compatibility for any merely visible bundle
+remain incomplete.
 
 ## Completion evidence
 

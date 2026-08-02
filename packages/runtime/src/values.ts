@@ -215,6 +215,7 @@ export interface BuiltinInvocation {
     name: string,
     attach: boolean,
   ): Promise<{ readonly name: string; readonly version: string }>;
+  installedPackageVersion(name: string): string | undefined;
   isNamespaceLoaded(name: string): boolean;
   loadedNamespaces(): readonly string[];
   namespaceExports(name: string): Promise<readonly string[]>;

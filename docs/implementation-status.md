@@ -11,7 +11,7 @@ Date: 2026-08-02
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 583 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 593 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Character vectors own exact per-element bytes and canonical `unknown`/`latin1`/`UTF-8`/`bytes`
@@ -70,6 +70,12 @@ Date: 2026-08-02
   the namespace before source evaluation. Native code, installed `.rdx`/`.rdb` lazy-load databases,
   unsupported serialized object types/compressors, broader NAMESPACE directives, and universal
   package execution remain explicit boundaries.
+- Usage-ranked `utils::packageVersion()` reads core or validated bundle versions without loading a
+  namespace. Shared `numeric_version`, `package_version`, and `R_system_version` values preserve
+  integer components, missing entries, printing/formatting, concatenation, and padded vectorized
+  comparisons; `getRversion()` and `utils::compareVersion()` use the same parser. Arbitrary library
+  paths, DESCRIPTION objects, version replacement/indexing, the complete numeric-version method
+  family, and execution compatibility for a merely discoverable package remain explicit gaps.
 - Unchanged external-package execution is pinned for `pkgconfig 2.0.3`, `generics 0.1.4`, and
   `withr 3.0.3`. The latest proof covers package-owned S3 dispatch and a generated `with_options()`
   wrapper using call/formal/environment replacement, `bquote`, dynamic caller frames, hooks, and

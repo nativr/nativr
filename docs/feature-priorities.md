@@ -75,16 +75,16 @@ signal.
 
 | Priority | Measured rank | Callable           | Weighted reach | Packages | Observed calls |
 | -------: | ------------: | ------------------ | -------------: | -------: | -------------: |
-|        1 |           189 | `packageVersion`   |           2.9% |        2 |              3 |
-|        2 |           194 | `Sys.getpid`       |           2.8% |        3 |              6 |
-|        3 |           195 | `.libPaths`        |           2.8% |        2 |              6 |
-|        4 |           196 | `example`          |           2.8% |        3 |              4 |
-|        5 |           203 | `gzcon`            |           2.5% |        2 |              6 |
-|        6 |           204 | `vignette`         |           2.4% |        2 |              5 |
-|        7 |           205 | `args`             |           2.4% |        2 |              3 |
-|        8 |           208 | `registerS3method` |           2.4% |        2 |              2 |
-|        9 |           209 | `file.info`        |           2.4% |        3 |              3 |
-|       10 |           212 | `getRversion`      |           2.3% |        2 |              2 |
+|        1 |           194 | `Sys.getpid`       |           2.8% |        3 |              6 |
+|        2 |           195 | `.libPaths`        |           2.8% |        2 |              6 |
+|        3 |           196 | `example`          |           2.8% |        3 |              4 |
+|        4 |           203 | `gzcon`            |           2.5% |        2 |              6 |
+|        5 |           204 | `vignette`         |           2.4% |        2 |              5 |
+|        6 |           205 | `args`             |           2.4% |        2 |              3 |
+|        7 |           208 | `registerS3method` |           2.4% |        2 |              2 |
+|        8 |           209 | `file.info`        |           2.4% |        3 |              3 |
+|        9 |           214 | `hcl`              |           2.3% |        2 |              6 |
+|       10 |           215 | `axis`             |           2.3% |        3 |             18 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -100,10 +100,14 @@ calls, representing 2.9% download-weighted reach. The implementation reuses `set
 `representation` metadata for namespace ownership, inherited slots/parents, virtual classes, known
 subclasses, output capture, and invisible return behavior. An unchanged source-only package fixture
 imports and exercises the same path; this is evidence for the shared S4 seam, not for Rcpp/rstan's
-native components or the complete methods package. Rank 144 `Encoding` is also complete for all 12
-observed calls across rlang, utf8, and xfun (4.5% weighted reach), together with adjacent
-`Encoding<-`, `enc2utf8`, and `enc2native`. The shared character representation preserves exact
-bytes and canonical R marks through subset/replacement, concatenation, raw conversion, and XDR
+native components or the complete methods package. Rank 189 `utils::packageVersion` is now complete
+for three calls across ggplot2 and bslib (2.9% weighted reach), together with adjacent rank 212
+`getRversion`. Both reuse one component-based version representation and the immutable installed
+bundle registry, including a source-only package self-version proof that does not force namespace
+loading. The next measured unresolved callable is rank 194 `Sys.getpid`. Rank 144 `Encoding` is also
+complete for all 12 observed calls across rlang, utf8, and xfun (4.5% weighted reach), together with
+adjacent `Encoding<-`, `enc2utf8`, and `enc2native`. The shared character representation preserves
+exact bytes and canonical R marks through subset/replacement, concatenation, raw conversion, and XDR
 serialization; this is reusable package infrastructure, not an assertion that those packages' native
 components are supported. Rank 149 `rcauchy` is now complete for four calls across ggplot2, pillar,
 and purrr (4.2% weighted reach), together with `dcauchy`, `pcauchy`, and `qcauchy`. The shared

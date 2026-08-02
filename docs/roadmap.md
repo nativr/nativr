@@ -594,6 +594,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      captured output, invisible return behavior, and unchanged source-package reuse have evidence.
      Native external classes, full class representations, validity, unions, multiple dispatch, cache
      behavior, and exact wide-console wrapping remain object-system compatibility depth.
+138. Usage-ranked installed-version metadata: rank-189 `utils::packageVersion` and adjacent rank-212
+     `getRversion` now share owned numeric-version component storage, GNU R-shaped class chains,
+     formatting/printing, concatenation, missing propagation, vectorized comparisons, and
+     `compareVersion`. Bundle lookup is read-only and does not load a namespace; the source-only
+     fixture verifies its own DESCRIPTION version unchanged. Host library discovery, arbitrary
+     `lib.loc`, and the complete numeric-version S3 method family remain compatibility depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

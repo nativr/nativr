@@ -100,16 +100,18 @@ normalized AST. The runtime then provides:
 5. `.onLoad()` and `.onAttach()` lifecycle hooks;
 6. `library`, `require`, `requireNamespace`, namespace queries, attachment search paths, and reset;
 7. package identity lookup through documented `utils::packageName()` semantics;
-8. bounded immutable resource lookup through `system.file()` and text access through `readLines()`
+8. package-version lookup through `utils::packageVersion()` without loading the namespace, using
+   validated DESCRIPTION metadata and shared comparable `package_version` values;
+9. bounded immutable resource lookup through `system.file()` and text access through `readLines()`
    or session-owned file connections;
-9. browser-memory `tempdir()`/`tempfile()` paths, `file.exists()`, stateful text connections, and
-   connection-aware `readLines()`, `writeLines()`, `cat()`, and `capture.output()`;
-10. `utils::data()` discovery and loading for package `data/*.R`, `.csv`, `.tab`, and `.txt`
+10. browser-memory `tempdir()`/`tempfile()` paths, `file.exists()`, stateful text connections, and
+    connection-aware `readLines()`, `writeLines()`, `cat()`, and `capture.output()`;
+11. `utils::data()` discovery and loading for package `data/*.R`, `.csv`, `.tab`, and `.txt`
     resources plus GNU R XDR/gzip `.rda`/`.RData` workspaces, including target environments and
     overwrite protection;
-11. bounded `read.table()`/`read.csv()`/`read.delim()` and `write.table()`/`write.csv()` text-table
+12. bounded `read.table()`/`read.csv()`/`read.delim()` and `write.table()`/`write.csv()` text-table
     paths over package files, session files, connections, or inline `text=` input.
-12. bounded GNU R XDR version-2/version-3 and gzip decoding for `R/sysdata.rda`, loaded into the
+13. bounded GNU R XDR version-2/version-3 and gzip decoding for `R/sysdata.rda`, loaded into the
     package namespace before its R source is evaluated.
 
 Package source, metadata, resource counts, and encoded bytes are bounded before parsing. Package

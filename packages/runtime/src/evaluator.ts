@@ -393,10 +393,12 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "as.roman",
       "browseURL",
       "capture.output",
+      "compareVersion",
       "data",
       "demo",
       "glob2rx",
       "packageName",
+      "packageVersion",
       "read.csv",
       "read.csv2",
       "read.delim",
@@ -1854,6 +1856,10 @@ export class Evaluator {
         searchEnvironment: (identifier) => this.#searchEnvironment(identifier),
         environmentName: (environment) => this.#environmentName(environment),
         loadPackage: async (name, attach) => this.#loadPackage(name, attach, context),
+        installedPackageVersion: (name) =>
+          REGISTERED_NAMESPACE_EXPORTS.has(name)
+            ? "4.6.0"
+            : this.#packages.get(name)?.definition.version,
         isNamespaceLoaded: (name) =>
           REGISTERED_NAMESPACE_EXPORTS.has(name) ||
           this.#packages.get(name)?.namespace !== undefined,

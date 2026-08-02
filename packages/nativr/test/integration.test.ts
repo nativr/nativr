@@ -16,8 +16,8 @@ NeedsCompilation: no`,
   namespace: `
 importFrom(methods, setClass, showClass)
 importFrom(stats, median)
-importFrom(utils, packageName)
-export(square, centered, duration, histogram_counts, class_summary, new_score, describe, package_state, package_name, namespace_names)
+importFrom(utils, packageName, packageVersion)
+export(square, centered, duration, histogram_counts, class_summary, new_score, describe, package_state, package_name, installed_version, namespace_names)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -47,6 +47,7 @@ plot.score <- function(x, ..., marker = "package-plot") c(marker, sum(x), list(.
 lines.score <- function(x, ..., marker = "package-lines") c(marker, sum(x), list(...)$extra)
 package_state <- function() .package_state
 package_name <- function() packageName()
+installed_version <- function(package = "nativrfixture") as.character(packageVersion(package))
 namespace_names <- function(pattern = "") ls(envir = environment(namespace_names), pattern = pattern, all.names = TRUE)
 hidden_helper <- function(x) x + 100
 `,
@@ -2300,6 +2301,11 @@ describe("complete inline source-to-result vertical slice", () => {
       runtime.eval("system.file('missing', package = 'nativrfixture', mustWork = TRUE)"),
     ).rejects.toMatchObject({ code: "NRE2234" });
     await expect(runtime.eval('isNamespaceLoaded("nativrfixture")')).resolves.toBe(false);
+    await expect(
+      runtime.eval(
+        'v <- utils::packageVersion("nativrfixture"); c(as.character(v), class(v), isNamespaceLoaded("nativrfixture"))',
+      ),
+    ).resolves.toEqual(["0.1.0", "package_version", "numeric_version", "FALSE"]);
     await expect(runtime.eval('requireNamespace("nativrconsumer", quietly = TRUE)')).resolves.toBe(
       true,
     );
@@ -2327,6 +2333,7 @@ describe("complete inline source-to-result vertical slice", () => {
       ),
     ).resolves.toEqual(["2", "hours", "difftime"]);
     await expect(runtime.eval("nativrfixture::package_name()")).resolves.toBe("nativrfixture");
+    await expect(runtime.eval("nativrfixture::installed_version()")).resolves.toBe("0.1.0");
     await expect(runtime.eval("nativrfixture::namespace_names('^package_')")).resolves.toEqual([
       "package_name",
       "package_state",
@@ -2372,6 +2379,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "describe",
       "duration",
       "histogram_counts",
+      "installed_version",
       "namespace_names",
       "new_score",
       "package_name",
@@ -8516,6 +8524,89 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("reports installed package and target R versions through comparable version objects", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        v <- utils::packageVersion("stats")
+        r <- getRversion()
+        c(
+          typeof(v), length(v), class(v), as.character(v), format(v),
+          v >= "3.6", v == "4.6.0.0", "5.0" > v,
+          class(r), as.character(r), r >= "4.6",
+          is.package_version(v), is.numeric_version(v)
+        )
+      `),
+    ).resolves.toEqual([
+      "list",
+      "1",
+      "package_version",
+      "numeric_version",
+      "4.6.0",
+      "4.6.0",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "R_system_version",
+      "package_version",
+      "numeric_version",
+      "4.6.0",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    await expect(
+      runtime.eval(`
+        x <- package_version(c(a = "1.2-4", b = "1.2-3", c = "2.1"))
+        y <- numeric_version(c("1", "1.0", "1.0-1", NA))
+        c(
+          as.character(x), x < c("1.4-2.3", "1.2.3", "2.0"), names(x),
+          as.character(y), is.na(as.character(package_version("bad", strict = FALSE))),
+          class(c(package_version("1.2"), package_version("2.3"))),
+          as.character(c(package_version("1.2"), "2.3"))
+        )
+      `),
+    ).resolves.toEqual([
+      "1.2.4",
+      "1.2.3",
+      "2.1",
+      "TRUE",
+      "FALSE",
+      "FALSE",
+      "a",
+      "b",
+      "c",
+      "1",
+      "1.0",
+      "1.0.1",
+      NA,
+      "TRUE",
+      "package_version",
+      "numeric_version",
+      "1.2",
+      "2.3",
+    ]);
+    await expect(
+      runtime.eval(
+        'c(utils::compareVersion("1.0", "1.0.0"), compareVersion("1.0-0", "1.0.0"), compareVersion("7.2-0", "7.1-12"))',
+      ),
+    ).resolves.toEqual([-1, 0, 1]);
+    await expect(
+      runtime.eval('capture.output(print(package_version(c("1.2.3", "2.0", NA))))'),
+    ).resolves.toBe("[1] '1.2.3' '2.0'   <NA>   ");
+    await expect(runtime.eval("names(formals(utils::packageVersion))")).resolves.toEqual([
+      "pkg",
+      "lib.loc",
+    ]);
+    await expect(runtime.eval("names(formals(package_version))")).resolves.toEqual(["x", "strict"]);
+    await expect(runtime.eval('package_version("1")')).rejects.toMatchObject({ code: "NRE2244" });
+    await expect(runtime.eval("numeric_version(1.2)")).rejects.toMatchObject({ code: "NRT3354" });
+    await expect(runtime.eval('packageVersion("does.not.exist")')).rejects.toMatchObject({
+      code: "NRE2221",
+    });
+    await runtime.dispose();
+  });
+
   it("returns the canonical NA marker and distinguishes NaN", async () => {
     const runtime = await session();
     const missing = await runtime.eval("mean(c(1, NA, 3))");
@@ -8927,7 +9018,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.219.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.220.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
