@@ -29,6 +29,7 @@ export class RuntimeHost {
   /** Initialize the parser assets and one independent evaluator. */
   public static async create(
     assets: ParserAssets,
+    sessionProcessId: number | undefined,
     limits?: Partial<RuntimeLimits>,
     packages: readonly PureRPackageBundle[] = [],
     environmentVariables: Readonly<Record<string, string>> = {},
@@ -46,6 +47,7 @@ export class RuntimeHost {
       );
       const evaluator = new Evaluator(jsReferenceOperators, baseBuiltins, {
         limits: effectiveLimits,
+        ...(sessionProcessId === undefined ? {} : { sessionProcessId }),
         parseSource: (source, maxExpressions) => parseProgram(parser, source, maxExpressions),
         packages: packageDefinitions,
         ...(systemCommand === undefined ? {} : { systemCommand }),

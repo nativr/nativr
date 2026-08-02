@@ -178,6 +178,13 @@ supported profiles, so Worker results do not vary with the browser or operating-
 probing or claiming the user's native operating system or a GNU R installation. Future backends
 attach behind stable operator IDs rather than duplicating package-specific algorithms.
 
+Session process identity follows the same rule. The facade allocates one positive integer before
+choosing inline or Worker execution, sends it as an optional protocol-v1 initialization field, and
+the evaluator retains it outside resettable builtin state. `Sys.getpid()` therefore remains stable
+across reset and Worker replacement without inspecting Node, Worker, browser, or OS process state.
+The protocol keeps a local fallback for older clients; independent page realms and actual process
+management remain explicitly outside this ownership boundary.
+
 Package-file access follows the same ownership rule. The facade retains DESCRIPTION, NAMESPACE,
 ordered `R/*.R` text, and base64 resources in immutable runtime definitions. `system.file()` creates
 opaque virtual identifiers; the evaluator resolves exact identifiers without URL, filesystem, or

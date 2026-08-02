@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           593 |
-| Overlapping callable names        |           577 |
-| Missing GNU R callable names      |         1,945 |
-| Name overlap                      |       22.879% |
+| NativR registered names           |           594 |
+| Overlapping callable names        |           578 |
+| Missing GNU R callable names      |         1,944 |
+| Name overlap                      |       22.918% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -617,6 +617,14 @@ formals, errors, and non-forcing installed-package lookup. The unchanged source-
 its own DESCRIPTION version before and after namespace initialization. Arbitrary library paths, the
 complete numeric-version method family, and execution compatibility for any merely visible bundle
 remain incomplete.
+
+The session-identity increment raises current name overlap to 578 of 2,522. Measured rank 194
+`Sys.getpid` represents six calls across ps, xfun, and promises, or 2.8% download-weighted reach.
+GNU R 4.6 black-box evidence covers its zero formals, positive scalar integer shape, repeated-call
+stability, and unused-argument error. NativR-only integration covers distinct concurrent facade
+sessions, reset/Worker-restart preservation, protocol validation, and unchanged source-package use.
+The identity is not an OS PID; ps process handles, cross-page global uniqueness, parent/child
+relationships, process enumeration, signals, and host process accounting remain incomplete.
 
 ## Completion evidence
 

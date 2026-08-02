@@ -145,7 +145,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 593 registered functions, including resettable
+an initial condition/handler slice. It exposes 594 registered functions, including resettable
 session options, isolated session environment variables, deterministic non-interactive host-mode
 detection, browser-owned `gc()` memory censuses, an S3-first `graphics::lines()` path over the
 existing Worker/Canvas journal, usage-ranked numeric and character time-interval construction
@@ -444,6 +444,13 @@ version, source-only bundles report their validated DESCRIPTION version, and the
 values, vectorized comparisons, `getRversion()`, and `utils::compareVersion()`. This is package
 dependency infrastructure, not a claim that arbitrary library locations, every numeric-version S3
 method, or every package whose version can be queried is already executable.
+
+Measured rank 194 `Sys.getpid()` now returns a stable positive integer owned by the NativR session.
+Concurrent sessions created through one facade realm receive distinct identities, inline and Worker
+execution use the same path, reset and Worker restart preserve the identity, and unchanged pure-R
+package code can consume it. This is deliberately not a host operating-system PID: browser tabs,
+native process enumeration, parent/child processes, signals, and ps-compatible process handles
+remain outside the runtime's authority.
 
 Rank 451 `stats::deltat` now runs zoo's measured regular-series sampling-interval call. The generic
 forwards classed values and lazy dots to package methods, while its owned default returns the

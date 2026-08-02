@@ -75,16 +75,16 @@ signal.
 
 | Priority | Measured rank | Callable           | Weighted reach | Packages | Observed calls |
 | -------: | ------------: | ------------------ | -------------: | -------: | -------------: |
-|        1 |           194 | `Sys.getpid`       |           2.8% |        3 |              6 |
-|        2 |           195 | `.libPaths`        |           2.8% |        2 |              6 |
-|        3 |           196 | `example`          |           2.8% |        3 |              4 |
-|        4 |           203 | `gzcon`            |           2.5% |        2 |              6 |
-|        5 |           204 | `vignette`         |           2.4% |        2 |              5 |
-|        6 |           205 | `args`             |           2.4% |        2 |              3 |
-|        7 |           208 | `registerS3method` |           2.4% |        2 |              2 |
-|        8 |           209 | `file.info`        |           2.4% |        3 |              3 |
-|        9 |           214 | `hcl`              |           2.3% |        2 |              6 |
-|       10 |           215 | `axis`             |           2.3% |        3 |             18 |
+|        1 |           195 | `.libPaths`        |           2.8% |        2 |              6 |
+|        2 |           196 | `example`          |           2.8% |        3 |              4 |
+|        3 |           203 | `gzcon`            |           2.5% |        2 |              6 |
+|        4 |           204 | `vignette`         |           2.4% |        2 |              5 |
+|        5 |           205 | `args`             |           2.4% |        2 |              3 |
+|        6 |           208 | `registerS3method` |           2.4% |        2 |              2 |
+|        7 |           209 | `file.info`        |           2.4% |        3 |              3 |
+|        8 |           214 | `hcl`              |           2.3% |        2 |              6 |
+|        9 |           215 | `axis`             |           2.3% |        3 |             18 |
+|       10 |           221 | `source`           |           2.2% |        1 |              2 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -104,20 +104,25 @@ native components or the complete methods package. Rank 189 `utils::packageVersi
 for three calls across ggplot2 and bslib (2.9% weighted reach), together with adjacent rank 212
 `getRversion`. Both reuse one component-based version representation and the immutable installed
 bundle registry, including a source-only package self-version proof that does not force namespace
-loading. The next measured unresolved callable is rank 194 `Sys.getpid`. Rank 144 `Encoding` is also
-complete for all 12 observed calls across rlang, utf8, and xfun (4.5% weighted reach), together with
-adjacent `Encoding<-`, `enc2utf8`, and `enc2native`. The shared character representation preserves
-exact bytes and canonical R marks through subset/replacement, concatenation, raw conversion, and XDR
-serialization; this is reusable package infrastructure, not an assertion that those packages' native
-components are supported. Rank 149 `rcauchy` is now complete for four calls across ggplot2, pillar,
-and purrr (4.2% weighted reach), together with `dcauchy`, `pcauchy`, and `qcauchy`. The shared
-distribution path covers seeded random-stream consumption, vectorized parameters, stable probability
-tails, formals, and missing/domain behavior without package-specific rewrites. Rank 162 `Sys.getenv`
-is now available for all 16 measured calls across withr, xfun, and pkgbuild (3.7% weighted reach),
-together with rank 175 `Sys.setenv` across xfun, memoise, openssl, and zoo (3.3%) and adjacent
-`Sys.unsetenv`. The shared session-state path is Worker-safe, resettable, and sufficient for
-unchanged `withr::with_envvar()` mutation/restoration; it does not expose the host environment. Rank
-163 `image` is now available for the six measured calls across scales, viridisLite, and RColorBrewer
+loading. Rank 194 `Sys.getpid` is now complete for six measured calls across ps, xfun, and promises
+(2.8% weighted reach). The browser-owned positive session identity is stable across calls, reset,
+and Worker replacement, distinct across concurrent facade sessions, and available unchanged inside
+the source-only package fixture. It deliberately does not claim ps's native process-handle equality
+or global uniqueness across independent page realms. The next measured unresolved callable is rank
+195 `.libPaths`. Rank 144 `Encoding` is also complete for all 12 observed calls across rlang, utf8,
+and xfun (4.5% weighted reach), together with adjacent `Encoding<-`, `enc2utf8`, and `enc2native`.
+The shared character representation preserves exact bytes and canonical R marks through
+subset/replacement, concatenation, raw conversion, and XDR serialization; this is reusable package
+infrastructure, not an assertion that those packages' native components are supported. Rank 149
+`rcauchy` is now complete for four calls across ggplot2, pillar, and purrr (4.2% weighted reach),
+together with `dcauchy`, `pcauchy`, and `qcauchy`. The shared distribution path covers seeded
+random-stream consumption, vectorized parameters, stable probability tails, formals, and
+missing/domain behavior without package-specific rewrites. Rank 162 `Sys.getenv` is now available
+for all 16 measured calls across withr, xfun, and pkgbuild (3.7% weighted reach), together with rank
+175 `Sys.setenv` across xfun, memoise, openssl, and zoo (3.3%) and adjacent `Sys.unsetenv`. The
+shared session-state path is Worker-safe, resettable, and sufficient for unchanged
+`withr::with_envvar()` mutation/restoration; it does not expose the host environment. Rank 163
+`image` is now available for the six measured calls across scales, viridisLite, and RColorBrewer
 (3.7% weighted reach). Its reusable S3/default path covers numeric/logical matrices, center or
 boundary coordinates, regular raster and irregular polygon grids, colour intervals, missing
 transparency, and one-row palette strips through the same Worker graphics journal; it is not a claim

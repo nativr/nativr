@@ -101,6 +101,8 @@ export interface EvaluatorOptions {
   readonly limits?: Partial<RuntimeLimits>;
   readonly parseSource?: (source: string, maxExpressions?: number) => ProgramNode;
   readonly packages?: readonly RuntimePackageDefinition[];
+  /** Positive session identity supplied by the embedding facade for Sys.getpid(). */
+  readonly sessionProcessId?: number;
   /** Recreate evaluator-owned builtin state at construction and reset. */
   readonly initializeBuiltinState?: (state: Map<string, unknown>) => void;
   /** Explicit host capability. Undefined means that no operating-system command may run. */
@@ -442,6 +444,14 @@ class NextSignal extends Error {
   }
 }
 
+let nextRuntimeSessionProcessId = 1;
+
+function allocateRuntimeSessionProcessId(): number {
+  const processId = nextRuntimeSessionProcessId;
+  nextRuntimeSessionProcessId = processId === 2_147_483_647 ? 1 : processId + 1;
+  return processId;
+}
+
 /** One independent mutable R-like session. */
 export class Evaluator {
   readonly #operators: RuntimeOperators;
@@ -450,6 +460,7 @@ export class Evaluator {
   readonly #parseSource: EvaluatorOptions["parseSource"];
   readonly #initializeBuiltinState: EvaluatorOptions["initializeBuiltinState"];
   readonly #systemCommand: EvaluatorOptions["systemCommand"];
+  readonly #sessionProcessId: number;
   #emptyEnvironment: REnvironment;
   #baseEnvironment: REnvironment;
   #attachedPackagesEnvironment: REnvironment;
@@ -482,6 +493,17 @@ export class Evaluator {
     this.#parseSource = options.parseSource;
     this.#initializeBuiltinState = options.initializeBuiltinState;
     this.#systemCommand = options.systemCommand;
+    this.#sessionProcessId = options.sessionProcessId ?? allocateRuntimeSessionProcessId();
+    if (
+      !Number.isInteger(this.#sessionProcessId) ||
+      this.#sessionProcessId <= 0 ||
+      this.#sessionProcessId > 2_147_483_647
+    ) {
+      throw new REvaluationError(
+        "NRE2253",
+        "The evaluator session process identity must be a positive 32-bit integer.",
+      );
+    }
     this.#initializeBuiltinState?.(this.#builtinState);
     this.#emptyEnvironment = createEnvironment(null, true);
     this.#baseEnvironment = createEnvironment(this.#emptyEnvironment, true);
@@ -1780,6 +1802,7 @@ export class Evaluator {
         ),
         context,
         state: this.#builtinState,
+        sessionProcessId: this.#sessionProcessId,
         memoryStatistics: (reset, full) => this.#memoryStatistics(reset, full, context),
         setResultVisibility: (visibility) => {
           resultVisibility = visibility;

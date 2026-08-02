@@ -176,6 +176,8 @@ export interface BuiltinInvocation {
   readonly arguments: readonly BuiltinCallArgument[];
   readonly context: OperatorContext;
   readonly state: Map<string, unknown>;
+  /** Stable positive identity for this evaluator session; it is not a host operating-system PID. */
+  readonly sessionProcessId: number;
   memoryStatistics(reset: boolean, full: boolean): RuntimeMemoryStatistics;
   setResultVisibility(visibility: "visible" | "invisible"): void;
   force(promise: RPromise): Promise<RValue>;

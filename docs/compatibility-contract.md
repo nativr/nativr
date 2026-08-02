@@ -484,6 +484,14 @@ NativR-owned R graph but cannot request host garbage collection. Exact scheduler
 accounting, child-process accounting, and GNU R's class-specific print/summary formatting are not
 claimed.
 
+`base::Sys.getpid` has GNU R 4.6 differential evidence for its zero formals, positive scalar integer
+shape, repeated-call stability, and unused-argument error. NativR assigns the identity before inline
+or Worker initialization, preserves it across reset and Worker replacement, and distinguishes
+concurrent sessions created by one facade realm. An unchanged source-only package function observes
+the same value. It is not a host PID: global uniqueness across independent page realms, process
+handles, parent/child relationships, enumeration, signals, and ps's native-process equivalence are
+not claimed.
+
 `base::system` has GNU R 4.6 differential evidence for its 11 closure-like formals and preflight
 validation. With `createR({ systemCommand })`, behavioral integration evidence covers captured line
 output, stderr events, nonzero status attributes/warnings, ordinary and asynchronous return codes,

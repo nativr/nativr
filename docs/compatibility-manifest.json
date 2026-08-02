@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.220.0",
+  "languageSubsetVersion": "0.221.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -101,6 +101,7 @@
         { "name": "sQuote", "compatibility": "behavioral" },
         { "name": "interactive", "compatibility": "behavioral" },
         { "name": "capabilities", "compatibility": "behavioral" },
+        { "name": "Sys.getpid", "compatibility": "behavioral" },
         { "name": "packageEvent", "compatibility": "behavioral" },
         { "name": "getHook", "compatibility": "behavioral" },
         { "name": "setHook", "compatibility": "behavioral" },

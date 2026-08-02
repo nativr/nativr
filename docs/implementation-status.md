@@ -11,7 +11,7 @@ Date: 2026-08-02
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 593 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 594 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Character vectors own exact per-element bytes and canonical `unknown`/`latin1`/`UTF-8`/`bytes`
@@ -76,6 +76,11 @@ Date: 2026-08-02
   comparisons; `getRversion()` and `utils::compareVersion()` use the same parser. Arbitrary library
   paths, DESCRIPTION objects, version replacement/indexing, the complete numeric-version method
   family, and execution compatibility for a merely discoverable package remain explicit gaps.
+- Usage-ranked `Sys.getpid()` exposes one positive integer identity per NativR session. It is stable
+  across calls, reset, and Worker restart; concurrently created facade sessions are distinct; and an
+  unchanged source-only package calls it through the ordinary base namespace. The identifier is not
+  a host PID, and cross-page global uniqueness, process handles, parents/children, enumeration,
+  signals, and native ps semantics remain explicit browser-platform boundaries.
 - Unchanged external-package execution is pinned for `pkgconfig 2.0.3`, `generics 0.1.4`, and
   `withr 3.0.3`. The latest proof covers package-owned S3 dispatch and a generated `with_options()`
   wrapper using call/formal/environment replacement, `bquote`, dynamic caller frames, hooks, and

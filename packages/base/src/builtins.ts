@@ -235,6 +235,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("sQuote", ["x", "q"], "behavioral", builtinSingleQuote),
   defineBuiltin("interactive", [], "behavioral", builtinInteractive),
   defineBuiltin("capabilities", ["what", "Xchk"], "behavioral", builtinCapabilities),
+  defineBuiltin("Sys.getpid", [], "behavioral", builtinSystemGetPid),
   defineBuiltin("packageEvent", ["pkgname", "event"], "behavioral", builtinPackageEvent),
   defineBuiltin("getHook", ["hookName"], "behavioral", builtinGetHook),
   defineBuiltin(
@@ -3753,6 +3754,14 @@ async function builtinGetOption(invocation: BuiltinInvocation): Promise<RValue> 
 async function builtinInteractive(invocation: BuiltinInvocation): Promise<RValue> {
   await matchExact(invocation, []);
   return logicalVector([false]);
+}
+
+function builtinSystemGetPid(invocation: BuiltinInvocation): RIntegerVector {
+  if (invocation.arguments.length > 0) {
+    throw new REvaluationError("NRE2101", "Sys.getpid() does not accept arguments.");
+  }
+  invocation.context.allocate(1);
+  return integerVector([invocation.sessionProcessId]);
 }
 
 const BROWSER_CAPABILITY_NAMES = Object.freeze([

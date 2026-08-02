@@ -508,6 +508,14 @@ resettable session origin, never decreases within a session, and returns the sam
 shape. Browser JavaScript does not expose forced host garbage collection, process CPU counters, or
 child-process counters, so those operations are not fabricated.
 
+`Sys.getpid()` returns a positive signed-32-bit integer allocated by the NativR facade for one
+session. The value is stable across evaluations, `reset()`, and automatic Worker replacement; two
+concurrent sessions created in the same facade realm receive distinct values. A legacy protocol-v1
+client that does not send the optional identity receives an evaluator-local fallback. The value is
+session identity only, never a browser, Node, Worker, or operating-system process identifier.
+Independent page realms cannot coordinate the counter, and the runtime exposes no parent process,
+process enumeration, signaling, native handle, or CPU-accounting authority.
+
 `graphics::polygon()` accepts the same owned coordinate containers but does not dispatch: paired
 vectors, two-column matrices/data frames, complex coordinates, and named `list(x, y)` become
 device-independent closed paths. Missing or non-finite pairs split separate polygons. Fill/border

@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 593,
-    "overlappingNames": 577,
-    "missingReferenceNames": 1945,
+    "nativrRegisteredNames": 594,
+    "overlappingNames": 578,
+    "missingReferenceNames": 1944,
     "nativrExtensionNames": 16,
-    "nameCoverage": 0.228787
+    "nameCoverage": 0.229183
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 422, "nameCoverage": 0.308705 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 423, "nameCoverage": 0.309437 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 74, "nameCoverage": 0.159483 },
     {
       "package": "methods",
@@ -76,6 +76,7 @@
     "Sys.Date",
     "Sys.getenv",
     "Sys.getlocale",
+    "Sys.getpid",
     "Sys.localeconv",
     "Sys.setenv",
     "Sys.setlocale",
@@ -875,7 +876,6 @@
     "SweaveHooks",
     "SweaveSyntConv",
     "Sys.chmod",
-    "Sys.getpid",
     "Sys.glob",
     "Sys.info",
     "Sys.junction",

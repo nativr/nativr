@@ -359,6 +359,8 @@ export interface ProtocolEnvelope {
 /** Worker initialization request. */
 export interface InitRequest extends ProtocolEnvelope {
   readonly kind: "init";
+  /** Browser-owned positive session identity; never a host operating-system process ID. */
+  readonly sessionProcessId?: number;
   readonly assets: {
     readonly treeSitterRuntimeWasm: string;
     readonly rGrammarWasm: string;
@@ -492,6 +494,11 @@ export function isWorkerRequest(value: unknown): value is WorkerRequest {
   switch (value.kind) {
     case "init":
       return (
+        (value.sessionProcessId === undefined ||
+          (typeof value.sessionProcessId === "number" &&
+            Number.isInteger(value.sessionProcessId) &&
+            value.sessionProcessId > 0 &&
+            value.sessionProcessId <= 2_147_483_647)) &&
         isRecord(value.assets) &&
         typeof value.assets.treeSitterRuntimeWasm === "string" &&
         typeof value.assets.rGrammarWasm === "string" &&

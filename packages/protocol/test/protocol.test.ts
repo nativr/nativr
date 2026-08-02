@@ -107,6 +107,7 @@ describe("Worker protocol guards", () => {
       protocolVersion: 1,
       id: "init",
       kind: "init",
+      sessionProcessId: 1729,
       assets: { treeSitterRuntimeWasm: "runtime.wasm", rGrammarWasm: "r.wasm" },
       packages: [
         {
@@ -124,6 +125,13 @@ describe("Worker protocol guards", () => {
       kind: "assign",
       name: "x",
       value: { version: 1, type: "integer", values: new Int32Array([1]) },
+    },
+    {
+      protocolVersion: 1,
+      id: "legacy-init",
+      kind: "init",
+      assets: { treeSitterRuntimeWasm: "runtime.wasm", rGrammarWasm: "r.wasm" },
+      debug: false,
     },
     { protocolVersion: 1, id: "get", kind: "get", name: "x" },
     {
@@ -157,6 +165,16 @@ describe("Worker protocol guards", () => {
     expect(isWorkerRequest({ protocolVersion: 1, id: "", kind: "reset" })).toBe(false);
     expect(isWorkerRequest({ protocolVersion: 1, id: "x", kind: "unknown" })).toBe(false);
     expect(isWorkerRequest({ protocolVersion: 1, id: "x", kind: "init", assets: {} })).toBe(false);
+    expect(
+      isWorkerRequest({
+        protocolVersion: 1,
+        id: "x",
+        kind: "init",
+        sessionProcessId: 0,
+        assets: { treeSitterRuntimeWasm: "runtime.wasm", rGrammarWasm: "r.wasm" },
+        debug: false,
+      }),
+    ).toBe(false);
     expect(
       isWorkerRequest({
         protocolVersion: 1,

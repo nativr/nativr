@@ -5525,6 +5525,13 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "system-process-id-shape-stability-and-formals",
+    "code": "pid <- Sys.getpid()\nc(typeof(pid), length(pid), pid > 0L, identical(pid, Sys.getpid()), length(formals(Sys.getpid)))",
+    "expected": ["integer", "1", "TRUE", "TRUE", "0"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "as-ordered-observed-generics-character-vector",
     "code": "x <- as.ordered(letters[1:5])\nc(as.integer(x), as.character(x), levels(x), class(x))",
     "expected": [

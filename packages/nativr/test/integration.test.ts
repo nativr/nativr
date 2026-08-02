@@ -17,7 +17,7 @@ NeedsCompilation: no`,
 importFrom(methods, setClass, showClass)
 importFrom(stats, median)
 importFrom(utils, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, class_summary, new_score, describe, package_state, package_name, installed_version, namespace_names)
+export(square, centered, duration, histogram_counts, class_summary, new_score, describe, package_state, package_name, installed_version, namespace_names, process_id)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -49,6 +49,7 @@ package_state <- function() .package_state
 package_name <- function() packageName()
 installed_version <- function(package = "nativrfixture") as.character(packageVersion(package))
 namespace_names <- function(pattern = "") ls(envir = environment(namespace_names), pattern = pattern, all.names = TRUE)
+process_id <- function() Sys.getpid()
 hidden_helper <- function(x) x + 100
 `,
     },
@@ -2334,6 +2335,7 @@ describe("complete inline source-to-result vertical slice", () => {
     ).resolves.toEqual(["2", "hours", "difftime"]);
     await expect(runtime.eval("nativrfixture::package_name()")).resolves.toBe("nativrfixture");
     await expect(runtime.eval("nativrfixture::installed_version()")).resolves.toBe("0.1.0");
+    await expect(runtime.eval("nativrfixture::process_id() == Sys.getpid()")).resolves.toBe(true);
     await expect(runtime.eval("nativrfixture::namespace_names('^package_')")).resolves.toEqual([
       "package_name",
       "package_state",
@@ -2384,6 +2386,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "new_score",
       "package_name",
       "package_state",
+      "process_id",
       "square",
     ]);
     await expect(runtime.eval('requireNamespace("does.not.exist", quietly = TRUE)')).resolves.toBe(
@@ -8524,6 +8527,27 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("reports a stable positive identity that distinguishes concurrent NativR sessions", async () => {
+    const first = await session();
+    const second = await session();
+    const firstProcessId = await first.eval("Sys.getpid()");
+    const secondProcessId = await second.eval("Sys.getpid()");
+    expect(Number.isInteger(firstProcessId)).toBe(true);
+    expect(Number.isInteger(secondProcessId)).toBe(true);
+    expect(firstProcessId).not.toBe(secondProcessId);
+    await expect(
+      first.eval(`
+        pid <- Sys.getpid()
+        c(typeof(pid), length(pid), pid > 0L, identical(pid, Sys.getpid()), length(formals(Sys.getpid)))
+      `),
+    ).resolves.toEqual(["integer", "1", "TRUE", "TRUE", "0"]);
+    await first.reset();
+    await expect(first.eval("Sys.getpid()")).resolves.toBe(firstProcessId);
+    await expect(first.eval("Sys.getpid(1)")).rejects.toMatchObject({ code: "NRE2101" });
+    await first.dispose();
+    await second.dispose();
+  });
+
   it("reports installed package and target R versions through comparable version objects", async () => {
     const runtime = await session();
     await expect(
@@ -9053,7 +9077,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.220.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.221.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

@@ -560,3 +560,9 @@ metadata is read through the existing immutable bundle facade without loading a 
 dependency, protocol event, host library search, or second execution backend is added. The measured
 Worker is 358.7 KiB gzip, so the ceiling rises narrowly to 359 KiB; client and parser-Wasm budgets
 remain unchanged.
+
+Language subset 0.221 adds usage-ranked `Sys.getpid` plus one positive session-identity field shared
+by inline and Worker initialization. The evaluator retains the integer outside resettable builtin
+state, and the optional protocol-v1 field preserves compatibility with older clients without adding
+a host process probe, dependency, event, or adapter. The measured Worker is 358.9 KiB gzip within
+the existing 359 KiB ceiling; client and parser-Wasm budgets remain unchanged.

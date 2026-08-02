@@ -122,9 +122,18 @@ interface ResolvedAssets {
   readonly rGrammarWasm: URL;
 }
 
+let nextSessionProcessId = 1;
+
+function allocateSessionProcessId(): number {
+  const processId = nextSessionProcessId;
+  nextSessionProcessId = processId === 2_147_483_647 ? 1 : processId + 1;
+  return processId;
+}
+
 /** Create one inline or Worker-first NativR session. */
 export async function createR(options: CreateROptions = {}): Promise<NativRSession> {
   const assets = resolveAssets(options.assets);
+  const sessionProcessId = allocateSessionProcessId();
   const sessionOptions: CreateROptions = {
     ...options,
     ...(options.packages === undefined
@@ -142,6 +151,7 @@ export async function createR(options: CreateROptions = {}): Promise<NativRSessi
         treeSitterRuntimeWasm: assets.treeSitterRuntimeWasm,
         rGrammarWasm: assets.rGrammarWasm,
       },
+      sessionProcessId,
       sessionOptions.limits,
       sessionOptions.packages,
       sessionOptions.environmentVariables,
@@ -162,7 +172,7 @@ export async function createR(options: CreateROptions = {}): Promise<NativRSessi
       "Worker execution is unavailable in this host; use execution: 'inline' explicitly.",
     );
   }
-  return WorkerSession.create(assets, sessionOptions);
+  return WorkerSession.create(assets, sessionOptions, sessionProcessId);
 }
 
 function snapshotEnvironmentVariables(
@@ -460,25 +470,33 @@ type WorkerRequestBody = WorkerRequest extends infer Request
 class WorkerSession implements NativRSession {
   readonly #assets: ResolvedAssets;
   readonly #options: CreateROptions;
+  readonly #sessionProcessId: number;
   #worker: Worker;
   #pending = new Map<string, PendingRequest>();
   #nextId = 1;
   #disposed = false;
   #queue: Promise<void> = Promise.resolve();
 
-  private constructor(worker: Worker, assets: ResolvedAssets, options: CreateROptions) {
+  private constructor(
+    worker: Worker,
+    assets: ResolvedAssets,
+    options: CreateROptions,
+    sessionProcessId: number,
+  ) {
     this.#worker = worker;
     this.#assets = assets;
     this.#options = options;
+    this.#sessionProcessId = sessionProcessId;
     this.#attachWorker(worker);
   }
 
   public static async create(
     assets: ResolvedAssets,
     options: CreateROptions,
+    sessionProcessId: number,
   ): Promise<WorkerSession> {
     const worker = createRuntimeWorker(assets.worker);
-    const session = new WorkerSession(worker, assets, options);
+    const session = new WorkerSession(worker, assets, options, sessionProcessId);
     await session.#initialize();
     return session;
   }
@@ -581,6 +599,7 @@ class WorkerSession implements NativRSession {
     const payload = await this.#request(
       {
         kind: "init",
+        sessionProcessId: this.#sessionProcessId,
         assets: {
           treeSitterRuntimeWasm: String(this.#assets.treeSitterRuntimeWasm),
           rGrammarWasm: String(this.#assets.rGrammarWasm),

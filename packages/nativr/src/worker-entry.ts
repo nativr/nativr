@@ -54,6 +54,7 @@ async function handleRequest(request: WorkerRequest): Promise<void> {
       debug = request.debug;
       host = await RuntimeHost.create(
         request.assets,
+        request.sessionProcessId,
         request.limits,
         request.packages,
         request.environmentVariables,

@@ -671,6 +671,11 @@ test("runs the required Worker examples without evaluation network traffic", asy
 test("surfaces recycling warnings and reset clears assigned state", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByText("Runtime ready")).toBeVisible();
+  await page.locator("#source").fill("Sys.getpid()");
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText(/^[1-9]\d*$/u);
+  const processId = await page.locator("#result").textContent();
+  expect(Number(processId)).toBeGreaterThan(0);
   await page.getByRole("button", { name: "Recycling warning" }).click();
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("[11, 22, 13]");
@@ -680,8 +685,12 @@ test("surfaces recycling warnings and reset clears assigned state", async ({ pag
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("2.5");
   await page.getByRole("button", { name: "Reset session" }).click();
+  await expect(page.getByText("Session reset", { exact: true })).toBeVisible();
   await expect(page.locator("#graphics-empty")).toBeVisible();
   await page.getByRole("button", { name: "Scalar arithmetic" }).click();
+  await page.locator("#source").fill("c(Sys.getpid(), 314159L)");
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText(`[${processId ?? ""}, 314159]`);
   await page.locator("#source").fill("mean(x)");
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#errors")).toContainText("NRE2001");

@@ -600,6 +600,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      `compareVersion`. Bundle lookup is read-only and does not load a namespace; the source-only
      fixture verifies its own DESCRIPTION version unchanged. Host library discovery, arbitrary
      `lib.loc`, and the complete numeric-version S3 method family remain compatibility depth.
+139. Usage-ranked session identity: rank-194 `Sys.getpid` now returns a positive scalar integer with
+     GNU R-shaped zero formals and same-session stability. The facade allocates distinct identities
+     to concurrent inline/Worker sessions, the protocol preserves them across reset or Worker
+     replacement, and unchanged source-package code observes the same value. OS process handles,
+     independent-page global uniqueness, process trees, signals, and ps-native equivalence remain
+     browser-platform compatibility depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means
