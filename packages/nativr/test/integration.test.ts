@@ -17,7 +17,7 @@ NeedsCompilation: no`,
 importFrom(methods, setClass, showClass)
 importFrom(stats, median)
 importFrom(utils, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, class_summary, new_score, describe, package_state, package_name, installed_version, namespace_names, process_id)
+export(square, centered, duration, histogram_counts, class_summary, new_score, describe, package_state, package_name, package_libname, installed_version, namespace_names, process_id, library_paths)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -27,7 +27,11 @@ S3method(lines, score)
       path: "R/00-generics.R",
       source: `
 .package_state <- "cold"
-.onLoad <- function(libname, pkgname) .package_state <<- paste0("loaded:", pkgname)
+.package_libname <- NA_character_
+.onLoad <- function(libname, pkgname) {
+  .package_state <<- paste0("loaded:", pkgname)
+  .package_libname <<- libname
+}
 .onAttach <- function(libname, pkgname) .package_state <<- paste0("attached:", pkgname)
 describe <- function(x, ...) UseMethod("describe")
 setClass("NativRFixtureClass", representation(value = "integer", label = "character"))
@@ -47,9 +51,11 @@ plot.score <- function(x, ..., marker = "package-plot") c(marker, sum(x), list(.
 lines.score <- function(x, ..., marker = "package-lines") c(marker, sum(x), list(...)$extra)
 package_state <- function() .package_state
 package_name <- function() packageName()
+package_libname <- function() .package_libname
 installed_version <- function(package = "nativrfixture") as.character(packageVersion(package))
 namespace_names <- function(pattern = "") ls(envir = environment(namespace_names), pattern = pattern, all.names = TRUE)
 process_id <- function() Sys.getpid()
+library_paths <- function() .libPaths()
 hidden_helper <- function(x) x + 100
 `,
     },
@@ -2181,6 +2187,102 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("maintains virtual library paths and uses them for source-only package discovery", async () => {
+    const runtime = await createR({ execution: "inline", assets, packages: [pureRFixture] });
+
+    await expect(runtime.eval("c(.Library, length(.Library.site), .libPaths())")).resolves.toEqual([
+      "nativr://runtime/library",
+      "0",
+      "nativr://package",
+      "nativr://runtime/library",
+    ]);
+    await expect(
+      runtime.eval(`
+        f <- formals(.libPaths)
+        getter <- withVisible(.libPaths(include.site = stop("must stay lazy")))
+        c(
+          identical(names(f), c("new", "include.site")),
+          identical(f$include.site, TRUE),
+          getter$visible,
+          identical(getter$value, .libPaths())
+        )
+      `),
+    ).resolves.toEqual([true, true, true, true]);
+    await expect(runtime.eval(".libPaths(NULL)")).rejects.toMatchObject({ code: "NRT3338" });
+    await expect(runtime.eval(".libPaths(factor('nativr://package'))")).rejects.toMatchObject({
+      code: "NRT3338",
+    });
+    await expect(
+      runtime.eval(".libPaths('nativr://package', include.site = logical())"),
+    ).rejects.toMatchObject({ code: "NRT3355" });
+    await expect(
+      runtime.eval(".libPaths('nativr://package', include.site = c(TRUE, FALSE))"),
+    ).rejects.toMatchObject({ code: "NRT3355" });
+
+    const globResult = await runtime.evalDetailed(`
+      library_root <- tempfile("libraries-")
+      dir.create(file.path(library_root, "a"), recursive = TRUE)
+      dir.create(file.path(library_root, "b"), recursive = TRUE)
+      .libPaths(file.path(library_root, "*"), include.site = FALSE)
+    `);
+    expect(globResult.visible).toBe(false);
+    await expect(runtime.eval("basename(.libPaths())")).resolves.toEqual(["a", "b", "library"]);
+
+    const setResult = await runtime.evalDetailed(`
+      .libPaths(c(
+        file.path(library_root, "b"),
+        file.path(library_root, "a"),
+        file.path(library_root, "b"),
+        file.path(library_root, "missing"),
+        NA_character_
+      ), include.site = FALSE)
+    `);
+    expect(setResult.visible).toBe(false);
+    await expect(runtime.eval("basename(.libPaths())")).resolves.toEqual(["b", "a", "library"]);
+    await expect(runtime.eval('require("nativrfixture", quietly = TRUE)')).resolves.toBe(false);
+    await expect(runtime.eval("nativrfixture::square(3)")).rejects.toMatchObject({
+      code: "NRE2221",
+    });
+    await expect(runtime.eval('system.file(package = "nativrfixture")')).resolves.toBe("");
+    await expect(
+      runtime.eval('system.file(package = "nativrfixture", lib.loc = "nativr://package")'),
+    ).resolves.toBe("nativr://package/nativrfixture");
+    await expect(runtime.eval('utils::packageVersion("nativrfixture")')).rejects.toMatchObject({
+      code: "NRE2221",
+    });
+    await expect(
+      runtime.eval(
+        'as.character(utils::packageVersion("nativrfixture", lib.loc = "nativr://package"))',
+      ),
+    ).resolves.toBe("0.1.0");
+    await expect(
+      runtime.eval(
+        'requireNamespace("nativrfixture", lib.loc = "nativr://package", quietly = TRUE)',
+      ),
+    ).resolves.toBe(true);
+    await expect(runtime.eval("nativrfixture::package_libname()")).resolves.toBe(
+      "nativr://package",
+    );
+    await expect(runtime.eval("basename(nativrfixture::library_paths())")).resolves.toEqual([
+      "b",
+      "a",
+      "library",
+    ]);
+    await runtime.eval(".libPaths(character(), include.site = FALSE)");
+    await expect(runtime.eval("nativrfixture::square(3)")).resolves.toBe(9);
+    await expect(runtime.eval("library(nativrfixture)\npackage_state()")).resolves.toBe(
+      "attached:nativrfixture",
+    );
+
+    await runtime.reset();
+    await expect(runtime.eval(".libPaths()")).resolves.toEqual([
+      "nativr://package",
+      "nativr://runtime/library",
+    ]);
+    await expect(runtime.eval('isNamespaceLoaded("nativrfixture")')).resolves.toBe(false);
+    await runtime.dispose();
+  });
+
   it("loads source-only R package bundles with namespaces, imports, hooks, and S3 methods", async () => {
     const runtime = await createR({
       execution: "inline",
@@ -2337,6 +2439,7 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(runtime.eval("nativrfixture::installed_version()")).resolves.toBe("0.1.0");
     await expect(runtime.eval("nativrfixture::process_id() == Sys.getpid()")).resolves.toBe(true);
     await expect(runtime.eval("nativrfixture::namespace_names('^package_')")).resolves.toEqual([
+      "package_libname",
       "package_name",
       "package_state",
     ]);
@@ -2382,8 +2485,10 @@ describe("complete inline source-to-result vertical slice", () => {
       "duration",
       "histogram_counts",
       "installed_version",
+      "library_paths",
       "namespace_names",
       "new_score",
+      "package_libname",
       "package_name",
       "package_state",
       "process_id",
@@ -9077,7 +9182,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.221.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.222.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

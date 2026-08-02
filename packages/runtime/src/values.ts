@@ -2,6 +2,12 @@ import type { AstNode, FunctionParameter, ProgramNode } from "@nativr/ast";
 
 import { RTypeMismatchError } from "./errors.js";
 
+/** Browser-owned library containing source-only package bundles supplied by the host. */
+export const NATIVR_PACKAGE_LIBRARY_PATH = "nativr://package";
+
+/** Browser-owned library containing the runtime's registered base and recommended namespaces. */
+export const NATIVR_SYSTEM_LIBRARY_PATH = "nativr://runtime/library";
+
 /** Attribute storage prepared for names, dimensions, class, and later extensions. */
 export type RAttributes = ReadonlyMap<string, RValue>;
 
@@ -211,17 +217,24 @@ export interface BuiltinInvocation {
   systemCall(which: number): RLanguage | RNull;
   systemCommand(request: RSystemCommandRequest): Promise<RSystemCommandResult>;
   searchPath(): readonly string[];
+  libraryPaths(): readonly string[];
+  setLibraryPaths(paths: readonly string[]): void;
   searchEnvironment(identifier: number | string): REnvironment | undefined;
   environmentName(environment: REnvironment): string | undefined;
   loadPackage(
     name: string,
     attach: boolean,
+    libraryPaths?: readonly string[],
   ): Promise<{ readonly name: string; readonly version: string }>;
-  installedPackageVersion(name: string): string | undefined;
+  installedPackageVersion(name: string, libraryPaths?: readonly string[]): string | undefined;
   isNamespaceLoaded(name: string): boolean;
   loadedNamespaces(): readonly string[];
   namespaceExports(name: string): Promise<readonly string[]>;
-  packageResourcePath(name: string, path: string): string | undefined;
+  packageResourcePath(
+    name: string,
+    path: string,
+    libraryPaths?: readonly string[],
+  ): string | undefined;
   packageResourcePaths(name: string, prefix: string): readonly string[] | undefined;
   packageFile(path: string):
     | {

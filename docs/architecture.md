@@ -185,6 +185,14 @@ across reset and Worker replacement without inspecting Node, Worker, browser, or
 The protocol keeps a local fallback for older clients; independent page realms and actual process
 management remain explicitly outside this ownership boundary.
 
+Package library paths are evaluator-owned session state. `nativr://package` is the immutable library
+of audited source bundles supplied at initialization, while `nativr://runtime/library` is the
+registered core library. Base `.libPaths()` resolves and normalizes only browser-owned virtual
+directories before updating that state; the evaluator then applies the same order to namespace
+operators, package loading, metadata, resources, and explicit virtual `lib.loc` overrides. Reset
+restores the two default roots. No host path, environment-derived R library, or network repository
+is inspected implicitly.
+
 Package-file access follows the same ownership rule. The facade retains DESCRIPTION, NAMESPACE,
 ordered `R/*.R` text, and base64 resources in immutable runtime definitions. `system.file()` creates
 opaque virtual identifiers; the evaluator resolves exact identifiers without URL, filesystem, or

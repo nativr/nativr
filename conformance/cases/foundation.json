@@ -8071,5 +8071,12 @@
     "expected": [true, true, true, true, true, true, true, true, true, true, true, true, true],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "library-paths-usage-ranked-state-normalization-visibility-and-formals",
+    "code": "old <- .libPaths()\nroot <- tempfile(\"libpaths-\")\ndir.create(file.path(root, \"a\"), recursive = TRUE)\ndir.create(file.path(root, \"b\"), recursive = TRUE)\nset <- withVisible(.libPaths(c(file.path(root, \"b\"), file.path(root, \"a\"), file.path(root, \"b\"), file.path(root, \"missing\"), NA_character_), include.site = FALSE))\ncurrent <- .libPaths()\ngetter <- withVisible(.libPaths(include.site = stop(\"must stay lazy\")))\nempty <- withVisible(.libPaths(character(), include.site = FALSE))\n.libPaths(old, include.site = FALSE)\nunlink(root, recursive = TRUE)\nfmls <- formals(.libPaths)\nc(identical(names(fmls), c(\"new\", \"include.site\")), identical(fmls$include.site, TRUE), !set$visible, identical(basename(set$value[1:2]), c(\"b\", \"a\")), length(unique(set$value)) == length(set$value), identical(set$value, current), getter$visible, !empty$visible, identical(basename(tail(empty$value, 1L)), \"library\"), length(empty$value) >= 1L)",
+    "expected": [true, true, true, true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

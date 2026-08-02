@@ -37,6 +37,8 @@ import {
   lookupBinding,
   logicalVector,
   missingValue,
+  NATIVR_PACKAGE_LIBRARY_PATH,
+  NATIVR_SYSTEM_LIBRARY_PATH,
   pairlistValue,
   rawVector,
   replaceVectorSubset,
@@ -382,6 +384,16 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     ],
   ),
   defineBuiltin("R.home", ["component"], "shape", builtinRHome),
+  withBuiltinFormals(
+    defineBuiltin(".libPaths", ["new", "include.site"], "behavioral", builtinLibraryPaths),
+    [
+      { name: "new" },
+      {
+        name: "include.site",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
   defineBuiltin("path.expand", ["path"], "shape", builtinPathExpand),
   defineBuiltin("basename", ["path"], "behavioral", builtinBaseName),
   defineBuiltin("dirname", ["path"], "behavioral", builtinDirName),
@@ -2401,6 +2413,7 @@ const VIRTUAL_RUNTIME_COMPONENTS = Object.freeze([
   "modules",
   "share",
 ]);
+const VIRTUAL_SITE_LIBRARY_PATHS: readonly string[] = Object.freeze([]);
 interface VirtualTextFileState {
   readonly files: Map<string, string>;
   readonly binaryFiles: Map<string, Uint8Array>;
@@ -4677,6 +4690,136 @@ async function builtinPathExpand(invocation: BuiltinInvocation): Promise<RCharac
   return characterVector(path.values, path.missing, path.encodings, path.byteValues);
 }
 
+async function builtinLibraryPaths(invocation: BuiltinInvocation): Promise<RCharacterVector> {
+  const matched = matchLazyArguments(invocation, ["new", "include.site"]);
+  const newArgument = matched.get("new");
+  if (newArgument === undefined) {
+    const current = invocation.libraryPaths();
+    invocation.context.allocate(current.length);
+    return characterVector(current);
+  }
+
+  const supplied = await invocation.force(newArgument.promise);
+  if (supplied.type !== "character") {
+    throw new RTypeMismatchError("NRT3338", "invalid 'path' argument");
+  }
+  const includeSiteArgument = matched.get("include.site");
+  const includeSite =
+    includeSiteArgument === undefined
+      ? true
+      : libraryIncludeSite(await invocation.force(includeSiteArgument.promise));
+  const paths = normalizeVirtualLibraryLocations(invocation, supplied, ".libPaths");
+  const next = uniqueStrings([
+    ...paths,
+    ...(includeSite ? VIRTUAL_SITE_LIBRARY_PATHS : []),
+    NATIVR_SYSTEM_LIBRARY_PATH,
+  ]);
+  invocation.setLibraryPaths(next);
+  invocation.setResultVisibility("invisible");
+  invocation.context.allocate(next.length);
+  return characterVector(next);
+}
+
+function libraryIncludeSite(value: RValue): boolean {
+  if (value.type === "null" || !isAtomic(value) || value.length === 0) {
+    throw new RTypeMismatchError("NRT3355", "argument is of length zero");
+  }
+  if (value.length > 1) {
+    throw new RTypeMismatchError("NRT3355", "the condition has length > 1");
+  }
+  if (isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3355", "missing value where TRUE/FALSE needed");
+  }
+  return coercibleLogicalFlag(value, true, "include.site");
+}
+
+function normalizeVirtualLibraryLocations(
+  invocation: BuiltinInvocation,
+  value: RCharacterVector,
+  call: string,
+): readonly string[] {
+  const paths: string[] = [];
+  for (let index = 0; index < value.length; index += 1) {
+    invocation.context.checkpoint();
+    if (isMissing(value, index)) continue;
+    const supplied = value.values[index] ?? "";
+    let normalized: string;
+    try {
+      normalized = resolveOwnedVirtualPath(invocation, supplied, call);
+    } catch (error) {
+      if (error instanceof NativRError && error.code.startsWith("NRU")) continue;
+      throw error;
+    }
+    if (/[*?[\]]/u.test(normalized)) {
+      paths.push(...expandVirtualDirectoryGlob(invocation, normalized));
+    } else if (virtualDirectoryExists(invocation, normalized)) {
+      paths.push(normalized);
+    }
+  }
+  return uniqueStrings(paths);
+}
+
+function libraryLocationArgument(
+  invocation: BuiltinInvocation,
+  value: RValue | undefined,
+  call: string,
+): readonly string[] | undefined {
+  if (value === undefined || value.type === "null") return undefined;
+  if (value.type !== "character") {
+    throw new RTypeMismatchError("NRT3338", `invalid 'lib.loc' argument in ${call}()`);
+  }
+  return normalizeVirtualLibraryLocations(invocation, value, call);
+}
+
+function uniqueStrings(values: readonly string[]): string[] {
+  return [...new Set(values)];
+}
+
+function expandVirtualDirectoryGlob(invocation: BuiltinInvocation, pattern: string): string[] {
+  const expression = virtualGlobExpression(pattern);
+  return virtualDirectoryCandidates(invocation)
+    .filter((path) => expression.test(path))
+    .sort();
+}
+
+function virtualDirectoryCandidates(invocation: BuiltinInvocation): string[] {
+  const state = virtualTextFileState(invocation);
+  return uniqueStrings([
+    ...state.directories,
+    VIRTUAL_RUNTIME_ROOT,
+    ...VIRTUAL_RUNTIME_COMPONENTS.map((component) => `${VIRTUAL_RUNTIME_ROOT}/${component}`),
+    NATIVR_PACKAGE_LIBRARY_PATH,
+  ]);
+}
+
+function virtualGlobExpression(pattern: string): RegExp {
+  let source = "^";
+  for (let index = 0; index < pattern.length; index += 1) {
+    const character = pattern[index] ?? "";
+    if (character === "*") {
+      source += "[^/]*";
+      continue;
+    }
+    if (character === "?") {
+      source += "[^/]";
+      continue;
+    }
+    if (character === "[") {
+      const close = pattern.indexOf("]", index + 1);
+      if (close > index + 1) {
+        const body = pattern.slice(index + 1, close);
+        const negated = body.startsWith("!") || body.startsWith("^");
+        const content = (negated ? body.slice(1) : body).replaceAll("\\", "\\\\");
+        source += `[${negated ? "^" : ""}${content}]`;
+        index = close;
+        continue;
+      }
+    }
+    source += character.replace(/[\\^$.*+?()[\]{}|]/gu, "\\$&");
+  }
+  return new RegExp(`${source}$`, "u");
+}
+
 async function builtinRHome(invocation: BuiltinInvocation): Promise<RCharacterVector> {
   const matched = await matchExact(invocation, ["component"]);
   const value = matched.get("component");
@@ -4878,7 +5021,14 @@ async function builtinSystemFile(invocation: BuiltinInvocation): Promise<RCharac
         : stringAt(packageValue, 0)
       : "";
   const libLocation = matched.get("lib.loc");
-  if (libLocation !== undefined) await invocation.force(libLocation.promise);
+  const libraryPaths =
+    libLocation === undefined
+      ? undefined
+      : libraryLocationArgument(
+          invocation,
+          await invocation.force(libLocation.promise),
+          "system.file",
+        );
   const mustWork = await lazyLogicalFlag(invocation, matched.get("mustWork"), false, "mustWork");
   const components: { readonly values: readonly string[]; readonly missing: Uint8Array }[] = [];
   for (const argument of dots) {
@@ -4922,7 +5072,7 @@ async function builtinSystemFile(invocation: BuiltinInvocation): Promise<RCharac
       if (!valid) break;
     }
     if (!valid) continue;
-    const path = invocation.packageResourcePath(packageName, parts.join("/"));
+    const path = invocation.packageResourcePath(packageName, parts.join("/"), libraryPaths);
     if (path !== undefined) paths.push(path);
   }
   if (paths.length === 0) return systemFileNotFound(invocation, mustWork);
@@ -6587,7 +6737,7 @@ function virtualTextFileState(invocation: BuiltinInvocation): VirtualTextFileSta
   const created: VirtualTextFileState = {
     files: new Map(),
     binaryFiles: new Map(),
-    directories: new Set([VIRTUAL_TEMP_ROOT]),
+    directories: new Set([VIRTUAL_TEMP_ROOT, NATIVR_PACKAGE_LIBRARY_PATH]),
     connections: new Map(),
     workingDirectory: VIRTUAL_TEMP_ROOT,
     nextId: 1,
@@ -6690,6 +6840,7 @@ function resolveOwnedVirtualPath(
       call,
     );
   }
+  if (path === NATIVR_PACKAGE_LIBRARY_PATH) return NATIVR_PACKAGE_LIBRARY_PATH;
   if (
     path.length === 0 ||
     path.startsWith("/") ||
@@ -6753,6 +6904,7 @@ function requireVirtualTextPath(invocation: BuiltinInvocation, path: string, cal
 
 function runtimeVirtualDirectoryExists(path: string): boolean {
   return (
+    path === NATIVR_PACKAGE_LIBRARY_PATH ||
     path === VIRTUAL_RUNTIME_ROOT ||
     VIRTUAL_RUNTIME_COMPONENTS.some((component) => path === `${VIRTUAL_RUNTIME_ROOT}/${component}`)
   );
@@ -7353,10 +7505,8 @@ async function builtinInstalledPackageVersion(invocation: BuiltinInvocation): Pr
     packageName = characterScalar(packageValue, "pkg");
   }
   const library = matched.get("lib.loc");
-  const version =
-    library === undefined || library.type === "null"
-      ? invocation.installedPackageVersion(packageName)
-      : undefined;
+  const libraryPaths = libraryLocationArgument(invocation, library, "packageVersion");
+  const version = invocation.installedPackageVersion(packageName, libraryPaths);
   if (version === undefined) {
     throw new REvaluationError("NRE2221", `there is no package called '${packageName}'`, {
       details: { package: packageName },
@@ -10760,8 +10910,8 @@ async function builtinLibrary(invocation: BuiltinInvocation): Promise<RValue> {
     "attach.required",
   ]);
   const packageName = await packageArgumentName(invocation, matched, "library");
-  await validatePackageAttachControls(invocation, matched, "library");
-  await invocation.loadPackage(packageName, true);
+  const libraryPaths = await validatePackageAttachControls(invocation, matched, "library");
+  await invocation.loadPackage(packageName, true, libraryPaths);
   const packages = invocation
     .searchPath()
     .flatMap((entry) => (entry.startsWith("package:") ? [entry.slice("package:".length)] : []));
@@ -10779,9 +10929,9 @@ async function builtinRequire(invocation: BuiltinInvocation): Promise<RLogicalVe
   ]);
   const packageName = await packageArgumentName(invocation, matched, "require");
   const quietly = await lazyLogicalFlag(invocation, matched.get("quietly"), false, "quietly");
-  await validatePackageAttachControls(invocation, matched, "require");
+  const libraryPaths = await validatePackageAttachControls(invocation, matched, "require");
   try {
-    await invocation.loadPackage(packageName, true);
+    await invocation.loadPackage(packageName, true, libraryPaths);
     invocation.context.allocate(1);
     return logicalVector([true]);
   } catch (error) {
@@ -10799,7 +10949,15 @@ async function builtinRequire(invocation: BuiltinInvocation): Promise<RLogicalVe
 
 async function builtinRequireNamespace(invocation: BuiltinInvocation): Promise<RLogicalVector> {
   const { matched, dots } = matchLazyArgumentsWithDots(invocation, ["package", "quietly"]);
-  if (dots.length > 0) {
+  const libraryArguments = dots.filter((argument) => argument.name === "lib.loc");
+  const unsupportedDots = dots.filter((argument) => argument.name !== "lib.loc");
+  if (libraryArguments.length > 1) {
+    throw new REvaluationError(
+      "NRE2102",
+      "formal argument 'lib.loc' matched by multiple actual arguments",
+    );
+  }
+  if (unsupportedDots.length > 0) {
     throw new RUnsupportedFeatureError(
       "NRU6178",
       "requireNamespace(...) version checks are not implemented in the source-bundle slice.",
@@ -10811,8 +10969,17 @@ async function builtinRequireNamespace(invocation: BuiltinInvocation): Promise<R
   }
   const packageName = characterScalar(await invocation.force(packageArgument.promise), "package");
   const quietly = await lazyLogicalFlag(invocation, matched.get("quietly"), false, "quietly");
+  const libraryArgument = libraryArguments[0];
+  const libraryPaths =
+    libraryArgument === undefined
+      ? undefined
+      : libraryLocationArgument(
+          invocation,
+          await invocation.force(libraryArgument.promise),
+          "requireNamespace",
+        );
   try {
-    await invocation.loadPackage(packageName, false);
+    await invocation.loadPackage(packageName, false, libraryPaths);
     invocation.context.allocate(1);
     return logicalVector([true]);
   } catch (error) {
@@ -10878,16 +11045,12 @@ async function validatePackageAttachControls(
   invocation: BuiltinInvocation,
   matched: ReadonlyMap<string, BuiltinCallArgument>,
   call: "library" | "require",
-): Promise<void> {
+): Promise<readonly string[] | undefined> {
   const libraryLocation = matched.get("lib.loc");
+  let libraryPaths: readonly string[] | undefined;
   if (libraryLocation !== undefined) {
     const value = await invocation.force(libraryLocation.promise);
-    if (value.type !== "null") {
-      throw new RUnsupportedFeatureError(
-        "NRU6179",
-        `${call}(lib.loc=) cannot inspect a host package library; supply bundles to createR().`,
-      );
-    }
+    libraryPaths = libraryLocationArgument(invocation, value, call);
   }
   for (const name of [
     "logical.return",
@@ -10910,6 +11073,7 @@ async function validatePackageAttachControls(
       );
     }
   }
+  return libraryPaths;
 }
 
 async function builtinSystemCall(invocation: BuiltinInvocation): Promise<RValue> {

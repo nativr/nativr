@@ -516,6 +516,16 @@ session identity only, never a browser, Node, Worker, or operating-system proces
 Independent page realms cannot coordinate the counter, and the runtime exposes no parent process,
 process enumeration, signaling, native handle, or CPU-accounting authority.
 
+`.libPaths()` returns the evaluator session's ordered package-library roots. The default is
+`c("nativr://package", "nativr://runtime/library")`; the first root contains immutable supplied
+source bundles and the second is `.Library` for registered runtime namespaces. A setter expands
+relative browser-owned paths, applies supported virtual globbing, retains existing directories,
+normalizes separators and dot segments, removes duplicates, appends `.Library`, and returns the new
+path invisibly. A getter is visible and does not force `include.site`; `.Library.site` is currently
+empty. Reset restores the default. Package discovery and explicit virtual `lib.loc` use the same
+state, while already loaded namespaces remain usable as in R. Host paths, startup environment
+variables, repository downloads, and native installed-package layouts are never consulted.
+
 `graphics::polygon()` accepts the same owned coordinate containers but does not dispatch: paired
 vectors, two-column matrices/data frames, complex coordinates, and named `list(x, y)` become
 device-independent closed paths. Missing or non-finite pairs split separate polygons. Fill/border

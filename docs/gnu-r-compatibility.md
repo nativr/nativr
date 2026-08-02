@@ -614,9 +614,9 @@ reach; adjacent rank 212 `getRversion` represents two calls across two packages.
 evidence covers component storage, class chains, constructors, missing values, printing/formatting,
 concatenation, padded vectorized comparisons, `compareVersion`'s distinct component-count ordering,
 formals, errors, and non-forcing installed-package lookup. The unchanged source-only fixture reads
-its own DESCRIPTION version before and after namespace initialization. Arbitrary library paths, the
-complete numeric-version method family, and execution compatibility for any merely visible bundle
-remain incomplete.
+its own DESCRIPTION version before and after namespace initialization. Duplicate package versions,
+the complete numeric-version method family, and execution compatibility for any merely visible
+bundle remain incomplete.
 
 The session-identity increment raises current name overlap to 578 of 2,522. Measured rank 194
 `Sys.getpid` represents six calls across ps, xfun, and promises, or 2.8% download-weighted reach.
@@ -625,6 +625,17 @@ stability, and unused-argument error. NativR-only integration covers distinct co
 sessions, reset/Worker-restart preservation, protocol validation, and unchanged source-package use.
 The identity is not an OS PID; ps process handles, cross-page global uniqueness, parent/child
 relationships, process enumeration, signals, and host process accounting remain incomplete.
+
+The library-path increment raises current name overlap to 579 of 2,522. Measured rank 195
+`.libPaths` represents six calls across withr and callr, or 2.8% download-weighted reach. GNU R 4.6
+black-box evidence covers exact formals, visible non-forcing getter, invisible setter, character and
+logical validation, missing/nonexistent filtering, normalization, input-order deduplication,
+mandatory `.Library` inclusion, and resettable state. NativR integration maps audited bundles to
+`nativr://package`, registered namespaces to `nativr://runtime/library`, applies the active or
+explicit virtual `lib.loc` to loading, namespace lookup, versions, and resources, and passes the
+bundle root to lifecycle hooks. Unchanged `withr 3.0.3` executes and restores `with_libpaths()`.
+Startup `R_LIBS*` expansion, host library discovery, runtime repository installation, duplicate
+versions across roots, installed lazy-load databases, and binary packages remain incomplete.
 
 ## Completion evidence
 

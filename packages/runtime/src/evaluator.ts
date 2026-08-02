@@ -40,6 +40,8 @@ import {
   listValue,
   logicalVector,
   missingValue,
+  NATIVR_PACKAGE_LIBRARY_PATH,
+  NATIVR_SYSTEM_LIBRARY_PATH,
   R_NULL,
   vectorClasses,
   vectorDimensions,
@@ -204,6 +206,11 @@ const DEFAULT_SEARCH_PATH = Object.freeze([
   "package:methods",
   "Autoloads",
   "package:base",
+]);
+
+const DEFAULT_LIBRARY_PATHS = Object.freeze([
+  NATIVR_PACKAGE_LIBRARY_PATH,
+  NATIVR_SYSTEM_LIBRARY_PATH,
 ]);
 
 interface ExitHandler {
@@ -473,6 +480,7 @@ export class Evaluator {
   readonly #packages = new Map<string, RuntimePackageRecord>();
   readonly #packageS3Methods = new Map<string, RBinding>();
   #searchPath = [...DEFAULT_SEARCH_PATH];
+  #libraryPaths = [...DEFAULT_LIBRARY_PATHS];
   readonly #searchEnvironments = new Map<string, REnvironment>();
   readonly #searchEnvironmentNames = new Map<number, string>();
   #disposed = false;
@@ -639,6 +647,7 @@ export class Evaluator {
       record.attached = false;
     }
     this.#searchPath = [...DEFAULT_SEARCH_PATH];
+    this.#libraryPaths = [...DEFAULT_LIBRARY_PATHS];
     this.#invalidateSearchEnvironments(true);
     this.#memoryMaxUsed = { nodeCells: 0, vectorCells: 0 };
     this.#memoryTrigger = { nodeCells: 0, vectorCells: 0 };
@@ -1876,13 +1885,16 @@ export class Evaluator {
           return this.#systemCommand(request);
         },
         searchPath: () => Object.freeze([...this.#searchPath]),
+        libraryPaths: () => Object.freeze([...this.#libraryPaths]),
+        setLibraryPaths: (paths) => {
+          this.#libraryPaths = [...paths];
+        },
         searchEnvironment: (identifier) => this.#searchEnvironment(identifier),
         environmentName: (environment) => this.#environmentName(environment),
-        loadPackage: async (name, attach) => this.#loadPackage(name, attach, context),
-        installedPackageVersion: (name) =>
-          REGISTERED_NAMESPACE_EXPORTS.has(name)
-            ? "4.6.0"
-            : this.#packages.get(name)?.definition.version,
+        loadPackage: async (name, attach, libraryPaths) =>
+          this.#loadPackage(name, attach, context, libraryPaths),
+        installedPackageVersion: (name, libraryPaths) =>
+          this.#installedPackageVersion(name, libraryPaths),
         isNamespaceLoaded: (name) =>
           REGISTERED_NAMESPACE_EXPORTS.has(name) ||
           this.#packages.get(name)?.namespace !== undefined,
@@ -1894,7 +1906,8 @@ export class Evaluator {
               .map(([name]) => name),
           ]),
         namespaceExports: async (name) => this.#namespaceExports(name, context),
-        packageResourcePath: (name, path) => this.#packageResourcePath(name, path),
+        packageResourcePath: (name, path, libraryPaths) =>
+          this.#packageResourcePath(name, path, libraryPaths),
         packageResourcePaths: (name, prefix) => {
           const paths = this.#packageResourcePaths(name, prefix);
           if (paths !== undefined) context.allocate(paths.length);
@@ -2307,6 +2320,7 @@ export class Evaluator {
     name: string,
     attach: boolean,
     context: EvaluationContext,
+    libraryPaths?: readonly string[],
   ): Promise<{
     readonly name: string;
     readonly version: string;
@@ -2343,6 +2357,14 @@ export class Evaluator {
         details: { package: name },
       });
     }
+    if (
+      record.namespace === undefined &&
+      !(libraryPaths ?? this.#libraryPaths).includes(NATIVR_PACKAGE_LIBRARY_PATH)
+    ) {
+      throw new REvaluationError("NRE2221", `There is no installed package called '${name}'.`, {
+        details: { package: name, libraryPaths: libraryPaths ?? this.#libraryPaths },
+      });
+    }
     if (record.loading) {
       throw new REvaluationError("NRE2222", `Package dependency cycle while loading '${name}'.`, {
         details: { package: name },
@@ -2354,7 +2376,12 @@ export class Evaluator {
       try {
         for (const dependency of record.definition.dependencies) {
           context.checkpoint();
-          const loadedDependency = await this.#loadPackage(dependency.package, false, context);
+          const loadedDependency = await this.#loadPackage(
+            dependency.package,
+            false,
+            context,
+            libraryPaths,
+          );
           if (!runtimePackageDependencySatisfied(loadedDependency.version, dependency)) {
             const constraint = dependency.constraint;
             throw new REvaluationError(
@@ -2369,7 +2396,7 @@ export class Evaluator {
         const importsEnvironment = createEnvironment(this.#baseEnvironment, true);
         for (const import_ of record.definition.imports) {
           context.checkpoint();
-          const dependency = await this.#loadPackage(import_.package, false, context);
+          const dependency = await this.#loadPackage(import_.package, false, context, libraryPaths);
           const names = import_.names ?? (await this.#namespaceExports(import_.package, context));
           context.allocate(names.length);
           for (const importedName of names) {
@@ -2488,7 +2515,12 @@ export class Evaluator {
     await this.#invokeCallable(
       callable,
       [
-        { promise: createForcedPromise(characterVector([""]), this.#globalEnvironment) },
+        {
+          promise: createForcedPromise(
+            characterVector([NATIVR_PACKAGE_LIBRARY_PATH]),
+            this.#globalEnvironment,
+          ),
+        },
         {
           promise: createForcedPromise(
             characterVector([record.definition.name]),
@@ -2518,15 +2550,43 @@ export class Evaluator {
     return Object.freeze([...record.definition.exports]);
   }
 
-  #packageResourcePath(name: string, resourcePath: string): string | undefined {
+  #installedPackageVersion(name: string, libraryPaths?: readonly string[]): string | undefined {
+    const effectivePaths = libraryPaths ?? this.#libraryPaths;
+    if (REGISTERED_NAMESPACE_EXPORTS.has(name)) {
+      return effectivePaths.includes(NATIVR_SYSTEM_LIBRARY_PATH) ? "4.6.0" : undefined;
+    }
+    const record = this.#packages.get(name);
+    if (record === undefined) return undefined;
+    if (
+      (libraryPaths !== undefined || record.namespace === undefined) &&
+      !effectivePaths.includes(NATIVR_PACKAGE_LIBRARY_PATH)
+    ) {
+      return undefined;
+    }
+    return record.definition.version;
+  }
+
+  #packageResourcePath(
+    name: string,
+    resourcePath: string,
+    libraryPaths?: readonly string[],
+  ): string | undefined {
     const normalizedPath = resourcePath.replace(/^\/+|\/+$/gu, "");
     if (REGISTERED_NAMESPACE_EXPORTS.has(name)) {
+      if (!(libraryPaths ?? this.#libraryPaths).includes(NATIVR_SYSTEM_LIBRARY_PATH))
+        return undefined;
       return normalizedPath.length === 0
         ? `nativr://package/${encodeURIComponent(name)}`
         : undefined;
     }
     const record = this.#packages.get(name);
     if (record === undefined) return undefined;
+    if (
+      (libraryPaths !== undefined || record.namespace === undefined) &&
+      !(libraryPaths ?? this.#libraryPaths).includes(NATIVR_PACKAGE_LIBRARY_PATH)
+    ) {
+      return undefined;
+    }
     if (
       normalizedPath.length > 0 &&
       !record.definition.textResources.some(
@@ -2620,7 +2680,7 @@ export class Evaluator {
       .filter((definition) => definition.metadata.package === name)
       .map((definition) => definition.name);
     if (name === "base") {
-      names.push("pi", "letters", ".Machine", ".LC.categories");
+      names.push("pi", "letters", ".Machine", ".LC.categories", ".Library", ".Library.site");
     }
     return [...new Set(names)];
   }
@@ -2988,6 +3048,8 @@ export class Evaluator {
       characterVector(Array.from({ length: 26 }, (_, index) => String.fromCharCode(97 + index))),
     );
     setBinding(this.#baseEnvironment, ".Machine", machineConstants());
+    setBinding(this.#baseEnvironment, ".Library", characterVector([NATIVR_SYSTEM_LIBRARY_PATH]));
+    setBinding(this.#baseEnvironment, ".Library.site", characterVector([]));
     setBinding(
       this.#baseEnvironment,
       ".LC.categories",

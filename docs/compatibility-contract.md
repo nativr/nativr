@@ -492,6 +492,17 @@ the same value. It is not a host PID: global uniqueness across independent page 
 handles, parent/child relationships, enumeration, signals, and ps's native-process equivalence are
 not claimed.
 
+`base::.libPaths` has GNU R 4.6 differential evidence for its `new`/`include.site` formals,
+non-forcing getter, getter/setter visibility, character validation, missing/nonexistent filtering,
+normalization, order-preserving deduplication, mandatory base-library suffix, and resettable state.
+The browser-owned bundle library and runtime library are exposed through locked `.Library` and
+`.Library.site`-compatible base bindings. Integration evidence proves that default and explicit
+virtual `lib.loc` lookup affect `library`, `require`, `requireNamespace`, `pkg::`, `packageVersion`,
+and `system.file`, lifecycle hooks receive the bundle root, and unchanged `withr 3.0.3` restores the
+state. Host library trees, startup `R_LIBS*` expansion, runtime repository installation, duplicate
+installed versions, native binaries, and every package that happens to be discoverable are not
+claimed.
+
 `base::system` has GNU R 4.6 differential evidence for its 11 closure-like formals and preflight
 validation. With `createR({ systemCommand })`, behavioral integration evidence covers captured line
 output, stderr events, nonzero status attributes/warnings, ordinary and asynchronous return codes,

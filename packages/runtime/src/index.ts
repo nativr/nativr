@@ -67,6 +67,8 @@ export {
   listValue,
   logicalVector,
   missingValue,
+  NATIVR_PACKAGE_LIBRARY_PATH,
+  NATIVR_SYSTEM_LIBRARY_PATH,
   pairlistValue,
   rawVector,
   R_NULL,

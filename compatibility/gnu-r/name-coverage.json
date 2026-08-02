@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 594,
-    "overlappingNames": 578,
-    "missingReferenceNames": 1944,
+    "nativrRegisteredNames": 595,
+    "overlappingNames": 579,
+    "missingReferenceNames": 1943,
     "nativrExtensionNames": 16,
-    "nameCoverage": 0.229183
+    "nameCoverage": 0.22958
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 423, "nameCoverage": 0.309437 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 424, "nameCoverage": 0.310168 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 74, "nameCoverage": 0.159483 },
     {
       "package": "methods",
@@ -47,6 +47,7 @@
     "*",
     "+",
     "-",
+    ".libPaths",
     "/",
     ":",
     "<",
@@ -712,7 +713,6 @@
     ".isOpen",
     ".kappa_tri",
     ".kronecker",
-    ".libPaths",
     ".linearGradientPattern",
     ".lm.fit",
     ".makeMessage",

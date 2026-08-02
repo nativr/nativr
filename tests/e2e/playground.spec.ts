@@ -684,6 +684,9 @@ test("surfaces recycling warnings and reset clears assigned state", async ({ pag
   await page.getByRole("button", { name: "JavaScript assignment" }).click();
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("2.5");
+  await page.locator("#source").fill(".libPaths(character(), include.site = FALSE)");
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText('"nativr://runtime/library"');
   await page.getByRole("button", { name: "Reset session" }).click();
   await expect(page.getByText("Session reset", { exact: true })).toBeVisible();
   await expect(page.locator("#graphics-empty")).toBeVisible();
@@ -691,6 +694,11 @@ test("surfaces recycling warnings and reset clears assigned state", async ({ pag
   await page.locator("#source").fill("c(Sys.getpid(), 314159L)");
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText(`[${processId ?? ""}, 314159]`);
+  await page.locator("#source").fill(".libPaths()");
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText(
+    '["nativr://package", "nativr://runtime/library"]',
+  );
   await page.locator("#source").fill("mean(x)");
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#errors")).toContainText("NRE2001");

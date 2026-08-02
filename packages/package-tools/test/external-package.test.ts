@@ -137,6 +137,21 @@ it.runIf(runExternal)(
           c(inside, Sys.getenv("NATIVR_WITHR"), Sys.getenv("NATIVR_ADDED", unset = "restored"))
         `),
       ).resolves.toEqual(["inside", "temporary", "outside", "restored"]);
+      await expect(
+        runtime.eval(`
+          before <- .libPaths()
+          temporary_library <- tempfile("withr-library-")
+          dir.create(temporary_library)
+          inside <- withr::with_libpaths(temporary_library, .libPaths())
+          after <- .libPaths()
+          c(
+            identical(inside[1], normalizePath(temporary_library)),
+            identical(tail(inside, 1), .Library),
+            identical(after, before),
+            unlink(temporary_library, recursive = TRUE) == 0L
+          )
+        `),
+      ).resolves.toEqual([true, true, true, true]);
     } finally {
       await runtime?.dispose();
     }

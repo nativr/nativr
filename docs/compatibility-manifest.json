@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.221.0",
+  "languageSubsetVersion": "0.222.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -119,6 +119,7 @@
         { "name": "proc.time", "compatibility": "behavioral" },
         { "name": "system.time", "compatibility": "behavioral" },
         { "name": "R.home", "compatibility": "shape" },
+        { "name": ".libPaths", "compatibility": "behavioral" },
         { "name": "path.expand", "compatibility": "shape" },
         { "name": "basename", "compatibility": "behavioral" },
         { "name": "dirname", "compatibility": "behavioral" },

@@ -606,6 +606,13 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      replacement, and unchanged source-package code observes the same value. OS process handles,
      independent-page global uniqueness, process trees, signals, and ps-native equivalence remain
      browser-platform compatibility depth.
+140. Usage-ranked library search paths: rank-195 `.libPaths` now maintains normalized, deduplicated,
+     resettable browser-owned library roots and exposes GNU R-shaped getter/setter visibility and
+     formals. Source-bundle discovery, explicit virtual `lib.loc`, namespace operators, package
+     metadata/resources, and lifecycle-hook `libname` values consume the same state. Unchanged
+     `withr 3.0.3` executes `with_libpaths()` and restores it. Host filesystem libraries, startup
+     environment expansion, runtime repository installation, duplicate versions, and binary package
+     trees remain package-system compatibility depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

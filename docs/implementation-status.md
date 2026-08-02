@@ -11,7 +11,7 @@ Date: 2026-08-02
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 594 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 595 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Character vectors own exact per-element bytes and canonical `unknown`/`latin1`/`UTF-8`/`bytes`
@@ -81,6 +81,11 @@ Date: 2026-08-02
   unchanged source-only package calls it through the ordinary base namespace. The identifier is not
   a host PID, and cross-page global uniqueness, process handles, parents/children, enumeration,
   signals, and native ps semantics remain explicit browser-platform boundaries.
+- Usage-ranked `.libPaths()` owns normalized, deduplicated, resettable browser library roots for
+  supplied source bundles and registered core namespaces. Default/explicit virtual `lib.loc`
+  controls package loading, namespace operators, version/resource discovery, and lifecycle hook
+  locations; unchanged `withr 3.0.3` runs `with_libpaths()` and restores state. Host library scans,
+  startup `R_LIBS*`, runtime downloads, multiple installed versions, and binary trees remain gaps.
 - Unchanged external-package execution is pinned for `pkgconfig 2.0.3`, `generics 0.1.4`, and
   `withr 3.0.3`. The latest proof covers package-owned S3 dispatch and a generated `with_options()`
   wrapper using call/formal/environment replacement, `bquote`, dynamic caller frames, hooks, and
@@ -643,7 +648,7 @@ Date: 2026-08-02
   branches, 92.38% functions, and 85.79% lines.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 726/726 cases. The optional black-box R oracle passes all 691
+- Checked-in conformance passes 742/742 cases. The optional black-box R oracle passes all 707
   eligible cases and explicitly skips 35 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,
