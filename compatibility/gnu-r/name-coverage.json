@@ -4,11 +4,11 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 597,
-    "overlappingNames": 581,
-    "missingReferenceNames": 1941,
+    "nativrRegisteredNames": 598,
+    "overlappingNames": 582,
+    "missingReferenceNames": 1940,
     "nativrExtensionNames": 16,
-    "nameCoverage": 0.230373
+    "nameCoverage": 0.230769
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 425, "nameCoverage": 0.3109 },
@@ -19,7 +19,7 @@
       "overlappingNames": 10,
       "nameCoverage": 0.047847
     },
-    { "package": "utils", "callableNames": 262, "overlappingNames": 25, "nameCoverage": 0.09542 },
+    { "package": "utils", "callableNames": 262, "overlappingNames": 26, "nameCoverage": 0.099237 },
     {
       "package": "grDevices",
       "callableNames": 135,
@@ -595,6 +595,7 @@
     "var",
     "vcov",
     "vector",
+    "vignette",
     "warning",
     "warningCondition",
     "weekdays",
@@ -2490,7 +2491,6 @@
     "variable.names",
     "varimax",
     "vi",
-    "vignette",
     "warnErrList",
     "warnings",
     "weighted.residuals",

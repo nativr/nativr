@@ -188,6 +188,160 @@ describe("pure-R package packager", () => {
     }
   });
 
+  it("indexes installed R Markdown vignettes and exposes GNU R-shaped discovery", async () => {
+    const packageRoot = await fixturePackage();
+    const docRoot = path.join(packageRoot, "inst", "doc");
+    await mkdir(docRoot, { recursive: true });
+    await writeFile(
+      path.join(docRoot, "browser-guide.Rmd"),
+      [
+        "---",
+        'title: "Using demopkg in a browser"',
+        "output: html_document",
+        "---",
+        "",
+        "This independently authored fixture documents `square()`.",
+        "",
+      ].join("\n"),
+    );
+    await writeFile(
+      path.join(docRoot, "browser-guide.html"),
+      "<!doctype html><title>Using demopkg in a browser</title><p>Guide</p>\n",
+    );
+    await writeFile(path.join(docRoot, "browser-guide.R"), "square(4)\n");
+
+    const artifact = await packPackage(packageRoot);
+    const manifestResource = artifact.bundle.resources.find(
+      (resource) => resource.path === ".nativr/vignettes-v1.json",
+    );
+    expect(manifestResource).toBeDefined();
+    expect(
+      JSON.parse(Buffer.from(manifestResource?.data ?? "", "base64").toString("utf8")),
+    ).toEqual({
+      format: "nativr-package-vignettes",
+      formatVersion: 1,
+      vignettes: [
+        {
+          topic: "browser-guide",
+          title: "Using demopkg in a browser",
+          file: "browser-guide.Rmd",
+          r: "browser-guide.R",
+          output: "browser-guide.html",
+        },
+      ],
+    });
+    expect(artifact.bundle.resources.map((resource) => resource.path)).toEqual(
+      expect.arrayContaining([
+        "doc/browser-guide.Rmd",
+        "doc/browser-guide.R",
+        "doc/browser-guide.html",
+      ]),
+    );
+
+    const runtime = await createR({
+      execution: "inline",
+      assets: {
+        treeSitterRuntimeWasm: new URL("../../parser/assets/web-tree-sitter.wasm", import.meta.url),
+        rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+      },
+      packages: [artifact.bundle],
+    });
+    try {
+      await expect(runtime.eval("dim(utils::vignette(all = FALSE)$results)")).resolves.toEqual([
+        0, 4,
+      ]);
+      await expect(
+        runtime.eval('class(utils::vignette("browser-guide", package = "demopkg"))'),
+      ).resolves.toBe("vignette");
+      await expect(
+        runtime.eval(
+          'v <- utils::vignette("browser-guide", package = "demopkg"); c(v$Package, v$Dir, v$Topic, v$File, v$Title, v$R, v$PDF)',
+        ),
+      ).resolves.toEqual([
+        "demopkg",
+        "nativr://package/demopkg",
+        "browser-guide",
+        "browser-guide.Rmd",
+        "Using demopkg in a browser",
+        "browser-guide.R",
+        "browser-guide.html",
+      ]);
+      await expect(
+        runtime.eval(
+          "v <- utils::vignette(demopkg::`browser-guide`); c(v$Topic, v$Title, class(v))",
+        ),
+      ).resolves.toEqual(["browser-guide", "Using demopkg in a browser", "vignette"]);
+      await expect(
+        runtime.eval(
+          'x <- utils::vignette(package = "demopkg"); c(class(x), x$type, x$title, dim(x$results))',
+        ),
+      ).resolves.toEqual(["packageIQR", "vignette", "Vignettes", "1", "4"]);
+      await expect(
+        runtime.eval('x <- utils::vignette(package = "demopkg"); c(x$results)'),
+      ).resolves.toEqual([
+        "demopkg",
+        "nativr://package",
+        "browser-guide",
+        "Using demopkg in a browser (source, html)",
+      ]);
+      await runtime.eval("library(demopkg)");
+      await expect(runtime.eval("dim(utils::vignette(all = FALSE)$results)")).resolves.toEqual([
+        1, 4,
+      ]);
+      await expect(
+        runtime.eval('utils::vignette("definitely-missing", package = "demopkg")'),
+      ).resolves.toBe("vignette 'definitely-missing' not found");
+    } finally {
+      await runtime.dispose();
+    }
+  });
+
+  it("reserves generated package documentation manifest paths", async () => {
+    for (const name of ["examples-v1.json", "vignettes-v1.json"]) {
+      const packageRoot = await fixturePackage();
+      const metadataRoot = path.join(packageRoot, "inst", ".nativr");
+      await mkdir(metadataRoot, { recursive: true });
+      await writeFile(path.join(metadataRoot, name), "{}\n");
+      await expect(inspectPackage(packageRoot)).rejects.toThrow(
+        `Package resource path '.nativr/${name}' is reserved.`,
+      );
+    }
+  });
+
+  it("indexes Sweave and prebuilt PDF-as-is vignette source shapes", async () => {
+    const packageRoot = await fixturePackage();
+    const docRoot = path.join(packageRoot, "inst", "doc");
+    await mkdir(docRoot, { recursive: true });
+    await writeFile(
+      path.join(docRoot, "sweave-guide.Rnw"),
+      "%\\VignetteIndexEntry{A Sweave guide}\n\\documentclass{article}\n",
+    );
+    await writeFile(path.join(docRoot, "sweave-guide.pdf"), "%PDF fixture\n");
+    await writeFile(path.join(docRoot, "prebuilt-reference.pdf.asis"), "% prebuilt\n");
+    await writeFile(path.join(docRoot, "prebuilt-reference.pdf"), "%PDF fixture\n");
+
+    const artifact = await inspectPackage(packageRoot);
+    const resource = artifact.bundle.resources.find(
+      (candidate) => candidate.path === ".nativr/vignettes-v1.json",
+    );
+    expect(JSON.parse(Buffer.from(resource?.data ?? "", "base64").toString("utf8"))).toMatchObject({
+      vignettes: [
+        {
+          topic: "sweave-guide",
+          title: "A Sweave guide",
+          file: "sweave-guide.Rnw",
+          output: "sweave-guide.pdf",
+        },
+        {
+          topic: "prebuilt-reference",
+          title: "prebuilt-reference",
+          file: "prebuilt-reference.pdf.asis",
+          output: "prebuilt-reference.pdf",
+        },
+      ],
+    });
+  });
+
   it("retains GNU R sysdata workspaces and loads them into the package namespace", async () => {
     const packageRoot = await fixturePackage();
     await writeFile(

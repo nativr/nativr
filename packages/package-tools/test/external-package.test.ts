@@ -119,8 +119,25 @@ it.runIf(runExternal)(
         compatibility: { packaging: "ready", execution: "unchecked" },
         integrity: {
           algorithm: "sha256",
-          value: "d22e95403b6ce2c1f5d2ac4333af8383ca69d710277cda1ac90c04af11b354d8",
+          value: "f6c848a7a1a4a60a3ae1237316c308ef50016c843e9548c3a36ce2caae7d3605",
         },
+      });
+      const vignetteResource = installed.artifacts[0]?.bundle.resources.find(
+        (resource) => resource.path === ".nativr/vignettes-v1.json",
+      );
+      expect(vignetteResource).toBeDefined();
+      expect(
+        JSON.parse(Buffer.from(vignetteResource?.data ?? "", "base64").toString("utf8")),
+      ).toMatchObject({
+        vignettes: [
+          {
+            topic: "withr",
+            title: "Changing and restoring state",
+            file: "withr.Rmd",
+            r: "withr.R",
+            output: "withr.html",
+          },
+        ],
       });
       runtime = await createR({
         execution: "inline",
@@ -135,6 +152,19 @@ it.runIf(runExternal)(
         packages: installed.bundles,
       });
       await expect(runtime.eval('requireNamespace("withr", quietly = TRUE)')).resolves.toBe(true);
+      await expect(
+        runtime.eval(`
+          v <- utils::vignette("withr", package = "withr")
+          c(v$Package, v$Topic, v$Title, v$File, v$R, v$PDF)
+        `),
+      ).resolves.toEqual([
+        "withr",
+        "withr",
+        "Changing and restoring state",
+        "withr.Rmd",
+        "withr.R",
+        "withr.html",
+      ]);
       await expect(
         runtime.eval(`
           before <- getOption("digits")

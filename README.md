@@ -84,14 +84,15 @@ console.log(await r.eval('readLines(system.file("DESCRIPTION", package = "demo")
 The loader supports isolated namespaces, dependency/import loading and version checks, package
 metadata/source/resources through virtual `system.file()` paths, bounded `readLines()`, and
 read-only `file()` connections, package `data/*.R`/text/`.rda` loading through `data()`, and
-`R/sysdata.rda` namespace initialization, plus exports, `pkg::name`, `pkg:::name`, S3 registrations,
-`.onLoad()`, `.onAttach()`, `library()`, `require()`, and `requireNamespace()` in inline and Worker
-execution. Arbitrary pure-R source packages can enter this pipeline, but that is not a claim that
-every package already executes: all dependencies, data formats, namespace directives, and R features
-it uses must also be supported. Unchanged, digest-pinned `pkgconfig 2.0.3`, `generics 0.1.4`, and
-`withr 3.0.3` source packages now provide end-to-end external proofs: package resources,
-package-owned S3 dispatch, and generated state-restoring wrappers all execute without patching the
-packages. See the [complete bundle example](examples/pure-r-package.ts) and
+`R/sysdata.rda` namespace initialization, installed vignette discovery through `vignette()`, plus
+exports, `pkg::name`, `pkg:::name`, S3 registrations, `.onLoad()`, `.onAttach()`, `library()`,
+`require()`, and `requireNamespace()` in inline and Worker execution. Arbitrary pure-R source
+packages can enter this pipeline, but that is not a claim that every package already executes: all
+dependencies, data formats, namespace directives, and R features it uses must also be supported.
+Unchanged, digest-pinned `pkgconfig 2.0.3`, `generics 0.1.4`, and `withr 3.0.3` source packages now
+provide end-to-end external proofs: package resources, package-owned S3 dispatch, and generated
+state-restoring wrappers all execute without patching the packages. See the
+[complete bundle example](examples/pure-r-package.ts) and
 [package-loading contract](docs/pure-r-packages.md).
 
 ### One-file browser example
@@ -653,6 +654,12 @@ After installing a package set, applications can call
 `run.dontrun` / `run.donttest` controls are supported. This turns unchanged package examples into a
 repeatable way to expose the next missing shared R feature instead of translating package functions
 to TypeScript.
+
+Installed `inst/doc` vignettes travel with the same package artifact. Applications can list them
+with `utils::vignette(package = "pkg")` or retrieve GNU R-shaped metadata with
+`utils::vignette("topic", package = "pkg")`; R Markdown, Sweave, HTML, PDF, and extracted R files
+remain immutable `nativr://package/<pkg>/doc/...` resources. Rendering new vignettes and automatic
+viewer dispatch remain build/host concerns.
 
 Source releases are managed with Changesets. npm publication uses GitHub Actions trusted publishing
 without a long-lived registry token; see the

@@ -9278,7 +9278,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.224.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.225.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -13885,6 +13885,34 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(runtime.eval("utils::example(package = character())")).rejects.toMatchObject({
       code: "NRE2103",
     });
+    await runtime.dispose();
+  });
+
+  it("matches vignette formals, empty discovery, and the missing-topic boundary", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        f <- formals(utils::vignette)
+        catalog <- utils::vignette(package = character())
+        missing <- suppressWarnings(withVisible(
+          utils::vignette("definitely-missing", package = character())
+        ))
+        c(
+          identical(names(f), c("topic", "package", "lib.loc", "all")),
+          is.null(f$package),
+          is.null(f$lib.loc),
+          identical(f$all, TRUE),
+          identical(class(catalog), "packageIQR"),
+          identical(names(catalog), c("type", "title", "header", "results", "footer")),
+          identical(catalog$type, "vignette"),
+          identical(catalog$title, "Vignettes"),
+          identical(dim(catalog$results), c(0L, 4L)),
+          identical(colnames(catalog$results), c("Package", "LibPath", "Item", "Title")),
+          identical(missing$value, "vignette 'definitely-missing' not found"),
+          missing$visible
+        )
+      `),
+    ).resolves.toEqual([...Array.from({ length: 11 }, () => true), false]);
     await runtime.dispose();
   });
 

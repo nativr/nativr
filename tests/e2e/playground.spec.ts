@@ -33,6 +33,16 @@ test("runs the required Worker examples without evaluation network traffic", asy
 
   await page
     .locator("#source")
+    .fill(
+      "v <- utils::vignette('browser-runtime', package = 'nativrdemo')\nc(v$Topic, v$Title, v$PDF)",
+    );
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText(
+    '["browser-runtime", "Running R in a browser Worker", "browser-runtime.html"]',
+  );
+
+  await page
+    .locator("#source")
     .fill("utils::example(twice_mean, package = 'nativrdemo', echo = FALSE)\nexample_value");
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("6");

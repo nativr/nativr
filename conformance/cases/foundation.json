@@ -8113,5 +8113,12 @@
     "expected": [true, true, true, true, true, true, true, true, true, true],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "vignette-usage-ranked-formals-empty-catalog-and-missing-topic",
+    "code": "f <- formals(utils::vignette)\ncatalog <- utils::vignette(package = character())\nmissing <- suppressWarnings(withVisible(utils::vignette(\"definitely-missing\", package = character())))\nc(identical(names(f), c(\"topic\", \"package\", \"lib.loc\", \"all\")), is.null(f$package), is.null(f$lib.loc), identical(f$all, TRUE), identical(class(catalog), \"packageIQR\"), identical(names(catalog), c(\"type\", \"title\", \"header\", \"results\", \"footer\")), identical(catalog$type, \"vignette\"), identical(catalog$title, \"Vignettes\"), identical(dim(catalog$results), c(0L, 4L)), identical(colnames(catalog$results), c(\"Package\", \"LibPath\", \"Item\", \"Title\")), identical(missing$value, \"vignette 'definitely-missing' not found\"), missing$visible)",
+    "expected": [true, true, true, true, true, true, true, true, true, true, true, false],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

@@ -420,6 +420,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "type.convert.default",
       "type.convert.list",
       "URLdecode",
+      "vignette",
       "View",
       "write.csv",
       "write.csv2",

@@ -1902,6 +1902,16 @@ the Worker Playground executes an extracted package example. Interactive HTML/pr
 Rd conversion/source references/echo formatting, `setRNG` preservation, `catch.aborts`, core-package
 help databases, and execution beyond the supported R surface remain incomplete.
 
+Usage-ranked `utils::vignette()` has GNU R 4.6 differential evidence for its four formal names,
+empty `packageIQR` catalog, result matrix labels, missing-topic warning/value, and specific
+seven-field `vignette` object shape. The build-time package tool independently indexes retained
+`inst/doc` R Markdown, Sweave, `*.pdf.asis`, extracted R, and prebuilt HTML/PDF resources; runtime
+discovery respects installed/attached virtual packages, explicit `package`, `lib.loc`, and `all`. An
+inline package artifact, unchanged `withr 3.0.3`, and the Worker Playground exercise topic discovery
+without GNU R, runtime network access, or document builders. Building a raw development `vignettes/`
+directory, installed lazy help databases, `print.vignette`, automatic viewer dispatch, and
+byte-identical document rendering remain incomplete.
+
 The inference extension retains a weighted upper-triangular QR factor, derives residual variance and
 coefficient covariance without requiring the model frame, and exposes `vcov`, `confint`, and
 `df.residual`. Differential cases cover complete/incomplete covariance matrices, aliased

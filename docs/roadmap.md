@@ -621,6 +621,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      discovery have evidence. Interactive help, exact Rd/source/echo rendering, RNG restoration,
      abort recovery, installed lazy help databases, and unsupported example dependencies remain
      package-system depth.
+142. Usage-ranked installed vignettes: rank-204 `utils::vignette` now maps source-package `inst/doc`
+     source, extracted R, and rendered HTML/PDF entries to a deterministic build-time index. GNU
+     R-shaped formals, package catalogs, specific topic objects, virtual library selection,
+     missing-topic behavior, and default Worker execution have evidence. Rendering raw development
+     vignettes, lazy help databases, print/viewer methods, and document fidelity remain
+     package-system and host-adapter depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

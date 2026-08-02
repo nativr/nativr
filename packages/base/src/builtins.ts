@@ -871,6 +871,24 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
       "exact GNU R source-reference and echo formatting",
     ],
   ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "utils",
+      "vignette",
+      ["topic", "package", "lib.loc", "all"],
+      "behavioral",
+      builtinVignette,
+    ),
+    [
+      { name: "topic" },
+      { name: "package", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      { name: "lib.loc", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      {
+        name: "all",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
   definePackageBuiltin(
     "utils",
     "browseURL",
@@ -19315,6 +19333,7 @@ function warnIgnoredCsvControls(
 }
 
 const PACKAGE_EXAMPLES_RESOURCE_PATH = ".nativr/examples-v1.json";
+const PACKAGE_VIGNETTES_RESOURCE_PATH = ".nativr/vignettes-v1.json";
 
 type PackageExampleBlockKind = "run" | "dontrun" | "donttest";
 
@@ -19328,6 +19347,228 @@ interface PackageExampleTopic {
   readonly title: string;
   readonly aliases: readonly string[];
   readonly blocks: readonly PackageExampleBlock[];
+}
+
+interface PackageVignetteEntry {
+  readonly topic: string;
+  readonly title: string;
+  readonly file: string;
+  readonly r: string;
+  readonly output: string;
+}
+
+async function builtinVignette(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = matchLazyArguments(invocation, ["topic", "package", "lib.loc", "all"]);
+  const libraryArgument = matched.get("lib.loc");
+  const libraryPaths =
+    libraryArgument === undefined
+      ? undefined
+      : libraryLocationArgument(
+          invocation,
+          await invocation.force(libraryArgument.promise),
+          "vignette",
+        );
+  const all = await lazyLogicalFlag(invocation, matched.get("all"), true, "all");
+  const packageNames = await vignettePackageNames(
+    invocation,
+    matched.get("package"),
+    libraryPaths,
+    all,
+  );
+  const topicArgument = matched.get("topic");
+  if (topicArgument === undefined || topicArgument.promise.missing) {
+    return vignetteIndex(invocation, packageNames, libraryPaths);
+  }
+  const topic = await vignetteTopic(invocation, topicArgument);
+  if (topic === undefined) return missingVignetteObject(invocation);
+  for (const packageName of packageNames) {
+    invocation.context.checkpoint();
+    const entry = packageVignetteManifest(invocation, packageName, libraryPaths)?.find(
+      (candidate) => candidate.topic === topic,
+    );
+    if (entry === undefined) continue;
+    return vignetteObject(invocation, packageName, entry, libraryPaths);
+  }
+  const message = `vignette '${topic}' not found`;
+  invocation.context.warn({ code: "NRW1131", message });
+  invocation.setResultVisibility("invisible");
+  return characterVector([message]);
+}
+
+async function vignetteTopic(
+  invocation: BuiltinInvocation,
+  argument: BuiltinCallArgument,
+): Promise<string | undefined> {
+  const expression = argument.promise.expression;
+  if (expression?.kind === "NamespaceExpression" && expression.member.kind === "Identifier") {
+    return expression.member.name;
+  }
+  const value = await invocation.force(argument.promise);
+  if (value.type === "null") return "character(0)";
+  if (!isAtomic(value)) {
+    throw new RTypeMismatchError("NRT3343", "vignette(topic=) must be coercible to character.");
+  }
+  const characters = coerceAtomicToCharacter(value, invocation);
+  if (characters.length === 0 || isMissing(characters, 0)) return undefined;
+  return characters.values[0] ?? "";
+}
+
+async function vignettePackageNames(
+  invocation: BuiltinInvocation,
+  argument: BuiltinCallArgument | undefined,
+  libraryPaths: readonly string[] | undefined,
+  all: boolean,
+): Promise<readonly string[]> {
+  const supplied = await documentationPackageArgument(
+    invocation,
+    argument,
+    libraryPaths,
+    "vignette",
+  );
+  if (supplied !== undefined) return supplied;
+  if (!all) {
+    return uniqueStrings(
+      invocation
+        .searchPath()
+        .filter((entry) => entry.startsWith("package:"))
+        .map((entry) => entry.slice("package:".length)),
+    );
+  }
+  return invocation.installedPackageNames(libraryPaths);
+}
+
+function vignetteIndex(
+  invocation: BuiltinInvocation,
+  packages: readonly string[],
+  libraryPaths: readonly string[] | undefined,
+): RValue {
+  const rows: {
+    readonly package: string;
+    readonly item: string;
+    readonly title: string;
+  }[] = [];
+  for (const packageName of packages) {
+    const entries = packageVignetteManifest(invocation, packageName, libraryPaths) ?? [];
+    for (const entry of entries) {
+      const formats = ["source"];
+      if (entry.output.toLowerCase().endsWith(".html")) formats.push("html");
+      else if (entry.output.toLowerCase().endsWith(".pdf")) formats.push("pdf");
+      rows.push({
+        package: packageName,
+        item: entry.topic,
+        title: `${entry.title} (${formats.join(", ")})`,
+      });
+    }
+  }
+  rows.sort((left, right) => {
+    const packageOrder = left.package.localeCompare(right.package);
+    return packageOrder === 0 ? left.title.localeCompare(right.title) : packageOrder;
+  });
+  invocation.context.allocate(rows.length * 4 + 10);
+  const rowNames = rows.length === 1 ? characterVector(["Topic"]) : R_NULL;
+  const results = withAttribute(
+    withDimensions(
+      characterVector([
+        ...rows.map((row) => row.package),
+        ...rows.map(() => NATIVR_PACKAGE_LIBRARY_PATH),
+        ...rows.map((row) => row.item),
+        ...rows.map((row) => row.title),
+      ]),
+      [rows.length, 4],
+    ),
+    "dimnames",
+    listValue([rowNames, characterVector(["Package", "LibPath", "Item", "Title"])]),
+  );
+  return withClasses(
+    listValue(
+      [characterVector(["vignette"]), characterVector(["Vignettes"]), R_NULL, results, R_NULL],
+      ["type", "title", "header", "results", "footer"],
+    ),
+    ["packageIQR"],
+  );
+}
+
+function vignetteObject(
+  invocation: BuiltinInvocation,
+  packageName: string,
+  entry: PackageVignetteEntry,
+  libraryPaths: readonly string[] | undefined,
+): RValue {
+  const root = invocation.packageResourcePath(packageName, "", libraryPaths);
+  if (root === undefined) {
+    throw new REvaluationError("NRE2254", `Package '${packageName}' is not available.`);
+  }
+  invocation.context.allocate(8);
+  return withClasses(
+    listValue(
+      [
+        characterVector([packageName]),
+        characterVector([root]),
+        characterVector([entry.topic]),
+        characterVector([entry.file]),
+        characterVector([entry.title]),
+        characterVector([entry.r]),
+        characterVector([entry.output]),
+      ],
+      ["Package", "Dir", "Topic", "File", "Title", "R", "PDF"],
+    ),
+    ["vignette"],
+  );
+}
+
+function missingVignetteObject(invocation: BuiltinInvocation): RValue {
+  invocation.context.allocate(8);
+  return withClasses(
+    listValue(
+      [
+        missingValue("character"),
+        missingValue("character"),
+        missingValue("character"),
+        missingValue("character"),
+        missingValue("character"),
+        characterVector([""]),
+        characterVector([""]),
+      ],
+      ["Package", "Dir", "Topic", "File", "Title", "R", "PDF"],
+    ),
+    ["vignette"],
+  );
+}
+
+function packageVignetteManifest(
+  invocation: BuiltinInvocation,
+  packageName: string,
+  libraryPaths: readonly string[] | undefined,
+): readonly PackageVignetteEntry[] | undefined {
+  const parsed = packageDocumentationManifest(
+    invocation,
+    packageName,
+    PACKAGE_VIGNETTES_RESOURCE_PATH,
+    libraryPaths,
+    "vignette",
+    isPackageVignettesManifest,
+  );
+  return parsed?.vignettes;
+}
+
+function isPackageVignettesManifest(
+  value: unknown,
+): value is { readonly vignettes: readonly PackageVignetteEntry[] } {
+  return (
+    isPlainRecord(value) &&
+    value.format === "nativr-package-vignettes" &&
+    value.formatVersion === 1 &&
+    Array.isArray(value.vignettes) &&
+    value.vignettes.every(
+      (entry) =>
+        isPlainRecord(entry) &&
+        typeof entry.topic === "string" &&
+        typeof entry.title === "string" &&
+        typeof entry.file === "string" &&
+        typeof entry.r === "string" &&
+        typeof entry.output === "string",
+    )
+  );
 }
 
 async function builtinExample(invocation: BuiltinInvocation): Promise<RValue> {
@@ -19438,28 +19679,44 @@ async function examplePackageNames(
   argument: BuiltinCallArgument | undefined,
   libraryPaths: readonly string[] | undefined,
 ): Promise<readonly string[]> {
-  if (argument !== undefined) {
-    const value = await invocation.force(argument.promise);
-    if (value.type !== "null") {
-      if (value.type !== "character" || value.missing !== undefined) {
-        throw new RTypeMismatchError(
-          "NRT3343",
-          "example(package=) must be NULL or a non-missing character vector.",
-        );
-      }
-      const names = uniqueStrings([...value.values]);
-      for (const name of names) {
-        if (invocation.installedPackageVersion(name, libraryPaths) === undefined) {
-          await invocation.loadPackage(name, false, libraryPaths);
-        }
-      }
-      if (names.length > 0) return names;
-    }
-  }
+  const supplied = await documentationPackageArgument(
+    invocation,
+    argument,
+    libraryPaths,
+    "example",
+  );
+  if (supplied !== undefined && supplied.length > 0) return supplied;
   return uniqueStrings([
     ...(libraryPaths === undefined ? invocation.loadedNamespaces() : []),
     ...invocation.installedPackageNames(libraryPaths),
   ]);
+}
+
+async function documentationPackageArgument(
+  invocation: BuiltinInvocation,
+  argument: BuiltinCallArgument | undefined,
+  libraryPaths: readonly string[] | undefined,
+  call: string,
+): Promise<readonly string[] | undefined> {
+  if (argument === undefined) return undefined;
+  const supplied = await invocation.force(argument.promise);
+  if (supplied.type === "null") return undefined;
+  if (!isAtomic(supplied)) {
+    throw new RTypeMismatchError(
+      "NRT3343",
+      `${call}(package=) must be NULL or coercible to character.`,
+    );
+  }
+  const value = coerceAtomicToCharacter(supplied, invocation);
+  const names = uniqueStrings(
+    [...value.values].map((name, index) => (isMissing(value, index) ? "NA" : name)),
+  );
+  for (const name of names) {
+    if (invocation.installedPackageVersion(name, libraryPaths) === undefined) {
+      await invocation.loadPackage(name, false, libraryPaths);
+    }
+  }
+  return names;
 }
 
 async function validateExampleControls(
@@ -19489,11 +19746,26 @@ function packageExampleManifest(
   packageName: string,
   libraryPaths: readonly string[] | undefined,
 ): readonly PackageExampleTopic[] | undefined {
-  const path = invocation.packageResourcePath(
+  const parsed = packageDocumentationManifest(
+    invocation,
     packageName,
     PACKAGE_EXAMPLES_RESOURCE_PATH,
     libraryPaths,
+    "example",
+    isPackageExamplesManifest,
   );
+  return parsed?.topics;
+}
+
+function packageDocumentationManifest<T>(
+  invocation: BuiltinInvocation,
+  packageName: string,
+  resourcePath: string,
+  libraryPaths: readonly string[] | undefined,
+  kind: string,
+  validate: (value: unknown) => value is T,
+): T | undefined {
+  const path = invocation.packageResourcePath(packageName, resourcePath, libraryPaths);
   if (path === undefined) return undefined;
   const source = readVirtualTextFile(invocation, path, "utf8");
   let parsed: unknown;
@@ -19502,17 +19774,17 @@ function packageExampleManifest(
   } catch (error) {
     throw new REvaluationError(
       "NRE2254",
-      `Package '${packageName}' has a malformed example manifest.`,
+      `Package '${packageName}' has a malformed ${kind} manifest.`,
       { cause: error },
     );
   }
-  if (!isPackageExamplesManifest(parsed)) {
+  if (!validate(parsed)) {
     throw new REvaluationError(
       "NRE2254",
-      `Package '${packageName}' has an invalid example manifest.`,
+      `Package '${packageName}' has an invalid ${kind} manifest.`,
     );
   }
-  return parsed.topics;
+  return parsed;
 }
 
 function isPackageExamplesManifest(

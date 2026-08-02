@@ -9,6 +9,7 @@ import {
 import { readPackageSource } from "./source.js";
 import type { PackageSourceFile } from "./source.js";
 import { extractPackageExamples, PACKAGE_EXAMPLES_RESOURCE_PATH } from "./rd-examples.js";
+import { extractPackageVignettes, PACKAGE_VIGNETTES_RESOURCE_PATH } from "./vignettes.js";
 import {
   PackageCompatibilityError,
   type NativRPackageArtifact,
@@ -87,6 +88,11 @@ export async function inspectPackage(
       ? []
       : [{ path: installedPath, data: Buffer.from(file.data).toString("base64") }];
   });
+  for (const reservedPath of [PACKAGE_EXAMPLES_RESOURCE_PATH, PACKAGE_VIGNETTES_RESOURCE_PATH]) {
+    if (resources.some((resource) => resource.path === reservedPath)) {
+      throw new Error(`Package resource path '${reservedPath}' is reserved.`);
+    }
+  }
   const examples = extractPackageExamples(
     files
       .filter((file) => /^man\/(?:.*\/)?[^/]+\.Rd$/iu.test(file.path))
@@ -95,14 +101,25 @@ export async function inspectPackage(
         source: decodePackageText(file, "Rd source", decodedDescription.encoding),
       })),
   );
+  let generatedPackageMetadata = false;
   if (examples !== undefined) {
-    if (resources.some((resource) => resource.path === PACKAGE_EXAMPLES_RESOURCE_PATH)) {
-      throw new Error(`Package resource path '${PACKAGE_EXAMPLES_RESOURCE_PATH}' is reserved.`);
-    }
     resources.push({
       path: PACKAGE_EXAMPLES_RESOURCE_PATH,
       data: Buffer.from(JSON.stringify(examples), "utf8").toString("base64"),
     });
+    generatedPackageMetadata = true;
+  }
+  const vignettes = extractPackageVignettes(files, (file) =>
+    decodePackageText(file, "vignette source", decodedDescription.encoding),
+  );
+  if (vignettes !== undefined) {
+    resources.push({
+      path: PACKAGE_VIGNETTES_RESOURCE_PATH,
+      data: Buffer.from(JSON.stringify(vignettes), "utf8").toString("base64"),
+    });
+    generatedPackageMetadata = true;
+  }
+  if (generatedPackageMetadata) {
     resources.sort((left, right) => compareCPath(left.path, right.path));
   }
   const compatibility = {

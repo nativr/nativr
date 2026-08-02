@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.224.0",
+  "languageSubsetVersion": "0.225.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -669,6 +669,7 @@
         { "name": "write.csv2", "compatibility": "behavioral" },
         { "name": "demo", "compatibility": "shape" },
         { "name": "example", "compatibility": "behavioral" },
+        { "name": "vignette", "compatibility": "behavioral" },
         { "name": "browseURL", "compatibility": "behavioral" },
         { "name": "URLdecode", "compatibility": "behavioral" },
         { "name": "glob2rx", "compatibility": "behavioral" },

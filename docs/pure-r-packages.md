@@ -16,7 +16,7 @@ implemented once for every package that needs it.
 CRAN-like source package
   -> bounded archive + license inspection
   -> DESCRIPTION/NAMESPACE/dependency resolution
-  -> ordered R source + immutable resources + extracted Rd examples
+  -> ordered R source + immutable resources + extracted Rd examples/vignette index
   -> namespace + imports + sysdata
   -> ordinary NativR closure evaluation
 ```
@@ -75,6 +75,19 @@ used by application calls. `\\dontrun{}` and `\\donttest{}` remain disabled unle
 `run.dontrun = TRUE` or `run.donttest = TRUE`; `give.lines = TRUE` returns the prepared source
 without executing it.
 
+Installed package vignettes are discoverable through the ordinary utils API as well:
+
+```ts
+const catalog = await r.eval('utils::vignette(package = "mypackage")');
+const guide = await r.eval('utils::vignette("getting-started", package = "mypackage")');
+```
+
+The packager indexes source-package `inst/doc` entries deterministically and preserves their Rmd,
+Rnw/Snw, `*.pdf.asis`, extracted `.R`, and prebuilt `.html`/`.pdf` resources under `doc/`. The
+runtime returns GNU R-shaped `packageIQR` catalogs and `vignette` metadata objects without running
+knitr, Sweave, Pandoc, LaTeX, or host viewers. Building a development package's not-yet-rendered
+`vignettes/` directory and opening the selected output are separate build/host adapter work.
+
 An application can fetch and cache the JSON package set itself before `createR()`. The runtime does
 not fetch repositories or package resources during evaluation.
 
@@ -90,6 +103,8 @@ Each `nativr-pure-r-package` v1 artifact contains:
   license files;
 - an internal deterministic manifest for topics, aliases, titles, and controlled code extracted from
   `man/*.Rd` example sections when present;
+- an internal deterministic vignette index for installed `inst/doc` source, extracted R, and
+  rendered output entries when present;
 - typed dependency kinds and version constraints;
 - install-surface diagnostics;
 - a SHA-256 digest over the deterministic JSON payload.
@@ -137,6 +152,8 @@ normalized AST. The runtime then provides:
     explicit `run.dontrun` / `run.donttest` controls;
 17. `base::gzcon()` wrapping of immutable package resources or session files for bounded gzip text
     and raw reads plus close-time writes through browser-standard streams.
+18. `utils::vignette()` listing across installed or attached virtual packages and GNU R-shaped
+    metadata lookup for retained package documentation;
 
 Package source, metadata, resource counts, and encoded bytes are bounded before parsing. Package
 evaluation then consumes the ordinary step, call-depth, allocation, and output budgets.
@@ -145,6 +162,11 @@ The current `example()` boundary is console-oriented. Interactive HTML help, pro
 source-reference/echo formatting, RNG save-and-restore through `setRNG`, and abort recovery remain
 incomplete. An example can still fail when its package code or the example itself reaches an
 unsupported R feature; that failure is useful executable evidence for the next shared runtime gap.
+
+The current `vignette()` boundary discovers and describes documentation already present in
+`inst/doc`. It does not run vignette builders, regenerate output, implement installed lazy help
+databases, or automatically open HTML/PDF through a viewer. Applications can resolve the returned
+`Dir` plus `doc/<PDF>` through the immutable package resource API when they choose to expose it.
 
 ## Compatibility states
 
@@ -168,9 +190,9 @@ public source packages from the repository resolver and verifies a pinned artifa
   package resources, and an ordinary package-owned call through `get_config()`;
 - [`generics 0.1.4`](https://cran.r-project.org/package=generics) proves package-owned S3 generic
   dispatch to an application-defined method;
-- [`withr 3.0.3`](https://cran.r-project.org/package=withr) proves deeper unchanged-source loading
-  plus generated wrapper execution through `with_options()`, including restoration after the
-  supplied expression finishes.
+- [`withr 3.0.3`](https://cran.r-project.org/package=withr) proves deeper unchanged-source loading,
+  deterministic installed-vignette discovery, and generated wrapper execution through
+  `with_options()`, including restoration after the supplied expression finishes.
 
 No package source is checked into this repository. Together these tests exercise repository
 installation, runtime package files, namespace loading, metaprogramming, dynamic caller frames,
