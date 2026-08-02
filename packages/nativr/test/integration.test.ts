@@ -9182,7 +9182,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.222.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.223.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -13765,6 +13765,29 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(runtime.eval("demo(package = 1)")).rejects.toMatchObject({ code: "NRT3343" });
     await expect(runtime.eval("demo(package = character(), extra = 1)")).rejects.toMatchObject({
       code: "NRE2101",
+    });
+    await runtime.dispose();
+  });
+
+  it("matches example formals and the GNU R missing-topic result boundary", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        f <- formals(utils::example)
+        v <- withVisible(utils::example(no_such_topic, package = character(), echo = FALSE))
+        c(
+          identical(names(f), c(
+            "topic", "package", "lib.loc", "character.only", "give.lines", "local",
+            "type", "echo", "verbose", "setRNG", "ask", "prompt.prefix",
+            "catch.aborts", "run.dontrun", "run.donttest"
+          )),
+          is.null(v$value),
+          v$visible
+        )
+      `),
+    ).resolves.toEqual([true, true, false]);
+    await expect(runtime.eval("utils::example(package = character())")).rejects.toMatchObject({
+      code: "NRE2103",
     });
     await runtime.dispose();
   });

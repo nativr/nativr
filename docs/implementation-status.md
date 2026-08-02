@@ -67,7 +67,9 @@ Date: 2026-08-02
   bounded `readLines()` or read-only file connections. `utils::data()` discovers and executes
   package `data/*.R` scripts, imports `.csv`/`.tab`/`.txt`, or decodes XDR v2/v3 gzip
   `.rda`/`.RData` workspaces into a selected environment. Packaged `R/sysdata.rda` is decoded into
-  the namespace before source evaluation. Native code, installed `.rdx`/`.rdb` lazy-load databases,
+  the namespace before source evaluation. Build-time `man/*.Rd` extraction plus `utils::example()`
+  runs package topics/aliases through the same normalized-AST runtime, with `give.lines` and
+  explicit skipped-section controls. Native code, installed `.rdx`/`.rdb` lazy-load databases,
   unsupported serialized object types/compressors, broader NAMESPACE directives, and universal
   package execution remain explicit boundaries.
 - Usage-ranked `utils::packageVersion()` reads core or validated bundle versions without loading a
@@ -142,6 +144,10 @@ Date: 2026-08-02
 - `utils::demo()` returns GNU R's empty `packageIQR` catalog shape when no package library is
   selected. External package demo discovery and execution remain an explicit package-resource
   boundary.
+- Usage-ranked `utils::example()` discovers deterministic build-time extractions of package
+  `man/*.Rd`, loads the selected source-only bundle, returns prepared lines or evaluates them in a
+  global/fresh environment, and respects `run.dontrun` / `run.donttest`. Interactive HTML/prompting,
+  exact source/echo formatting, `setRNG`, and abort recovery remain depth boundaries.
 - `RNGversion()` selects the Mersenne-Twister/Inversion/Rounding defaults used by zoo's measured
   R-3.5 examples and restores current Rejection defaults for R 3.6 or newer. Historical pre-R-1.7
   uniform and normal generators remain explicit unsupported boundaries.

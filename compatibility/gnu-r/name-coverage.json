@@ -4,11 +4,11 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 595,
-    "overlappingNames": 579,
-    "missingReferenceNames": 1943,
+    "nativrRegisteredNames": 596,
+    "overlappingNames": 580,
+    "missingReferenceNames": 1942,
     "nativrExtensionNames": 16,
-    "nameCoverage": 0.22958
+    "nameCoverage": 0.229976
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 424, "nameCoverage": 0.310168 },
@@ -19,7 +19,7 @@
       "overlappingNames": 10,
       "nameCoverage": 0.047847
     },
-    { "package": "utils", "callableNames": 262, "overlappingNames": 24, "nameCoverage": 0.091603 },
+    { "package": "utils", "callableNames": 262, "overlappingNames": 25, "nameCoverage": 0.09542 },
     {
       "package": "grDevices",
       "callableNames": 135,
@@ -241,6 +241,7 @@
     "environmentName",
     "eval",
     "evalq",
+    "example",
     "exists",
     "exp",
     "expand.grid",
@@ -1417,7 +1418,6 @@
     "evalOnLoad",
     "evalSource",
     "evalqOnLoad",
-    "example",
     "existsFunction",
     "existsMethod",
     "expand.model.frame",

@@ -1400,6 +1400,14 @@ ties:
      GNU R-shaped validation, result/warning behavior, and a typed inline/Worker bridge only when an
      application configures `systemCommand`. Default execution remains unavailable, and native
      compilation is still rejected by the source-only package installer.
+138. Installed package examples: rank-196 `utils::example` represents four calls across rstan,
+     pkgload, and data.table at 2.8% download-weighted reach. Standard source-package `man/*.Rd`
+     sections are extracted deterministically at build time; topic/alias lookup, active virtual
+     libraries, package loading, global/local execution, `give.lines`, and explicit
+     `run.dontrun`/`run.donttest` controls reuse the normalized-AST Worker path. This turns
+     unchanged package examples into executable gap discovery. Interactive HTML/help databases,
+     prompting, exact source/echo formatting, RNG restoration, abort recovery, and examples that
+     need still unsupported runtime features remain compatibility depth.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

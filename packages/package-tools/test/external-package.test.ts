@@ -63,9 +63,18 @@ it.runIf(runExternal)(
         compatibility: { packaging: "ready", execution: "unchecked" },
         integrity: {
           algorithm: "sha256",
-          value: "4c1fa1abb2f72603a542ac23f28da7a958d5deaed9948f82543d73f2d4c38d32",
+          value: "4d4ee79d98a495b7799956b7279d313d43ac9da1165d6872b5aeec3590122b53",
         },
       });
+      const exampleResource = artifact?.bundle.resources.find(
+        (resource) => resource.path === ".nativr/examples-v1.json",
+      );
+      expect(exampleResource).toBeDefined();
+      const exampleManifest = JSON.parse(
+        Buffer.from(exampleResource?.data ?? "", "base64").toString("utf8"),
+      ) as { topics: { aliases: string[] }[] };
+      const exampleTopic = exampleManifest.topics[0]?.aliases[0];
+      expect(exampleTopic).toBeTypeOf("string");
       runtime = await createR({
         execution: "inline",
         assets: {
@@ -87,6 +96,11 @@ it.runIf(runExternal)(
         `),
       ).resolves.toBe("package-method");
       await expect(runtime.eval('"tidy" %in% getNamespaceExports("generics")')).resolves.toBe(true);
+      await expect(
+        runtime.eval(
+          `length(utils::example(${JSON.stringify(exampleTopic)}, package = "generics", give.lines = TRUE, echo = FALSE)) > 6L`,
+        ),
+      ).resolves.toBe(true);
     } finally {
       await runtime?.dispose();
     }
@@ -105,7 +119,7 @@ it.runIf(runExternal)(
         compatibility: { packaging: "ready", execution: "unchecked" },
         integrity: {
           algorithm: "sha256",
-          value: "ef73ac085c7a84f3152770b6180c9a4c29adfdd0d6e505bcb262a39b47c0d759",
+          value: "d22e95403b6ce2c1f5d2ac4333af8383ca69d710277cda1ac90c04af11b354d8",
         },
       });
       runtime = await createR({

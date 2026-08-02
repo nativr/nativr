@@ -31,6 +31,12 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("6");
 
+  await page
+    .locator("#source")
+    .fill("utils::example(twice_mean, package = 'nativrdemo', echo = FALSE)\nexample_value");
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("6");
+
   await page.getByRole("button", { name: "Explicit host command" }).click();
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText('["worker", "bridge"]');

@@ -59,6 +59,12 @@ closed connection handles are destroyed after a table operation, preventing leak
 perform network access. Its current empty catalog does not yet discover or execute the validated
 resources available through the separate browser-safe package layer.
 
+`utils::example()` reads only the generated example manifest already admitted in a validated package
+bundle. Rd parsing happens in the bounded Node build tool; the Worker parses the selected extracted
+R source into the normalized AST and evaluates it under ordinary runtime limits. It cannot scan host
+R libraries, open help databases, fetch documentation, or make skipped `\\dontrun`/`\\donttest` code
+executable unless the caller explicitly opts in.
+
 Graphics use typed, device-independent records rather than exposing a DOM or Canvas object to R
 code. Raster RGBA bytes share the evaluation output budget and are transferred out of the Worker;
 legend labels remain inert strings rather than HTML, segment and legend payloads share the same

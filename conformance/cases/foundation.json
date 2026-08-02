@@ -6619,6 +6619,14 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "example-formals-and-missing-topic-result",
+    "code": "f <- formals(utils::example)\nv <- withVisible(utils::example(no_such_topic, package = character(), echo = FALSE))\nc(identical(names(f), c(\"topic\", \"package\", \"lib.loc\", \"character.only\", \"give.lines\", \"local\", \"type\", \"echo\", \"verbose\", \"setRNG\", \"ask\", \"prompt.prefix\", \"catch.aborts\", \"run.dontrun\", \"run.donttest\")), is.null(v$value), v$visible)",
+    "expected": [true, true, false],
+    "expectedWarning": true,
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "rng-version-zoo-pre-36-defaults",
     "code": "old <- suppressWarnings(RNGversion(\"3.5.0\"))\nc(old, RNGkind())",
     "expected": [

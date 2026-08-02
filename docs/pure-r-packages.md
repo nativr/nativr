@@ -16,7 +16,7 @@ implemented once for every package that needs it.
 CRAN-like source package
   -> bounded archive + license inspection
   -> DESCRIPTION/NAMESPACE/dependency resolution
-  -> ordered R source + immutable resources
+  -> ordered R source + immutable resources + extracted Rd examples
   -> namespace + imports + sysdata
   -> ordinary NativR closure evaluation
 ```
@@ -62,6 +62,19 @@ await r.eval("library(pkgconfig)");
 const value = await r.eval('pkgconfig::get_config("unset-option", 42L)');
 ```
 
+Package documentation examples are available through the ordinary R API after packaging:
+
+```ts
+await r.eval('utils::example("my_topic", package = "mypackage", echo = FALSE)');
+```
+
+The build tool independently extracts `\\examples{}` from `man/*.Rd` into a deterministic manifest.
+The browser runtime therefore does not need GNU R, an installed help database, or an Rd parser. It
+executes the extracted code through Tree-sitter, the normalized AST, and the same package namespace
+used by application calls. `\\dontrun{}` and `\\donttest{}` remain disabled unless the caller sets
+`run.dontrun = TRUE` or `run.donttest = TRUE`; `give.lines = TRUE` returns the prepared source
+without executing it.
+
 An application can fetch and cache the JSON package set itself before `createR()`. The runtime does
 not fetch repositories or package resources during evaluation.
 
@@ -75,6 +88,8 @@ Each `nativr-pure-r-package` v1 artifact contains:
   `Collate.unix`, or `Collate.windows` when declared (otherwise C-locale path order);
 - `inst/` files mapped to installed package-relative resources, plus preserved `data/`, `demo/`, and
   license files;
+- an internal deterministic manifest for topics, aliases, titles, and controlled code extracted from
+  `man/*.Rd` example sections when present;
 - typed dependency kinds and version constraints;
 - install-surface diagnostics;
 - a SHA-256 digest over the deterministic JSON payload.
@@ -117,9 +132,17 @@ normalized AST. The runtime then provides:
     paths over package files, session files, connections, or inline `text=` input.
 15. bounded GNU R XDR version-2/version-3 and gzip decoding for `R/sysdata.rda`, loaded into the
     package namespace before its R source is evaluated.
+16. `utils::example()` lookup by topic or alias across loaded/installed bundles, optional virtual
+    `package` and `lib.loc` selection, package loading, local/global execution, `give.lines`, and
+    explicit `run.dontrun` / `run.donttest` controls.
 
 Package source, metadata, resource counts, and encoded bytes are bounded before parsing. Package
 evaluation then consumes the ordinary step, call-depth, allocation, and output budgets.
+
+The current `example()` boundary is console-oriented. Interactive HTML help, prompting, exact GNU R
+source-reference/echo formatting, RNG save-and-restore through `setRNG`, and abort recovery remain
+incomplete. An example can still fail when its package code or the example itself reaches an
+unsupported R feature; that failure is useful executable evidence for the next shared runtime gap.
 
 ## Compatibility states
 

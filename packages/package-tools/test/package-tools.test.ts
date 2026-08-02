@@ -81,6 +81,113 @@ describe("pure-R package packager", () => {
     }
   });
 
+  it("extracts Rd examples into a deterministic package manifest and executes their controls", async () => {
+    const packageRoot = await fixturePackage();
+    await mkdir(path.join(packageRoot, "man"));
+    await writeFile(
+      path.join(packageRoot, "man", "square.Rd"),
+      [
+        "\\name{square}",
+        "\\alias{square}",
+        "\\alias{square-alias}",
+        "\\title{Square a value}",
+        "\\description{An independently authored example fixture.}",
+        "\\examples{",
+        "ordinary <- square(3)",
+        "\\out{illustrative output, not R code}",
+        "\\dontshow{hidden <- ordinary + 1}",
+        "\\testonly{tested <- hidden + 1}",
+        "\\donttest{slow <- tested + 1}",
+        "\\dontrun{never <- 999}",
+        "final <- tested + 10",
+        "}",
+        "",
+      ].join("\n"),
+    );
+
+    const artifact = await packPackage(packageRoot);
+    const manifestResource = artifact.bundle.resources.find(
+      (resource) => resource.path === ".nativr/examples-v1.json",
+    );
+    expect(manifestResource).toBeDefined();
+    const manifest = JSON.parse(
+      Buffer.from(manifestResource?.data ?? "", "base64").toString("utf8"),
+    ) as { topics: { blocks: unknown[] }[] };
+    expect(manifest).toMatchObject({
+      format: "nativr-package-examples",
+      formatVersion: 1,
+      topics: [
+        {
+          name: "square",
+          title: "Square a value",
+          aliases: ["square", "square-alias"],
+        },
+      ],
+    });
+    expect(manifest.topics[0]?.blocks).toEqual(
+      expect.arrayContaining([
+        { kind: "donttest", source: "slow <- tested + 1" },
+        { kind: "dontrun", source: "never <- 999" },
+      ]),
+    );
+
+    const runtime = await createR({
+      execution: "inline",
+      assets: {
+        treeSitterRuntimeWasm: new URL("../../parser/assets/web-tree-sitter.wasm", import.meta.url),
+        rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+      },
+      packages: [artifact.bundle],
+    });
+    try {
+      await expect(
+        runtime.eval('utils::example("square-alias", package = "demopkg", echo = FALSE)'),
+      ).resolves.toEqual([21, false]);
+      await expect(runtime.eval("c(ordinary, hidden, tested, final)")).resolves.toEqual([
+        9, 10, 11, 21,
+      ]);
+      await expect(runtime.eval("exists('slow') || exists('never')")).resolves.toBe(false);
+      await expect(
+        runtime.eval(
+          "utils::example(square, package = 'demopkg', echo = FALSE, run.dontrun = TRUE, run.donttest = TRUE)",
+        ),
+      ).resolves.toEqual([21, false]);
+      await expect(runtime.eval("c(slow, never)")).resolves.toEqual([12, 999]);
+      const lines = await runtime.eval<string[]>(
+        "utils::example(square, package = 'demopkg', give.lines = TRUE, echo = FALSE)",
+      );
+      expect(lines).toEqual(
+        expect.arrayContaining([
+          "### Name: square",
+          "### Title: Square a value",
+          "### Aliases: square square-alias",
+        ]),
+      );
+      await runtime.eval("rm(ordinary, hidden, tested, slow, never, final)");
+      await expect(
+        runtime.eval("utils::example(square, package = 'demopkg', echo = FALSE, local = TRUE)"),
+      ).resolves.toEqual([21, false]);
+      await expect(
+        runtime.eval(
+          "exists('ordinary') || exists('hidden') || exists('tested') || exists('final')",
+        ),
+      ).resolves.toBe(false);
+
+      await runtime.reset();
+      await runtime.eval(".libPaths(character(), include.site = FALSE)");
+      await expect(
+        runtime.eval("utils::example(square, package = 'demopkg', echo = FALSE)"),
+      ).rejects.toMatchObject({ code: "NRE2221" });
+      await expect(
+        runtime.eval(
+          "utils::example(square, package = 'demopkg', lib.loc = 'nativr://package', echo = FALSE)",
+        ),
+      ).resolves.toEqual([21, false]);
+    } finally {
+      await runtime.dispose();
+    }
+  });
+
   it("retains GNU R sysdata workspaces and loads them into the package namespace", async () => {
     const packageRoot = await fixturePackage();
     await writeFile(

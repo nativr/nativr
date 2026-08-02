@@ -637,6 +637,17 @@ bundle root to lifecycle hooks. Unchanged `withr 3.0.3` executes and restores `w
 Startup `R_LIBS*` expansion, host library discovery, runtime repository installation, duplicate
 versions across roots, installed lazy-load databases, and binary packages remain incomplete.
 
+The package-example increment raises current name overlap to 580 of 2,522. Measured rank 196
+`utils::example` represents four calls across rstan, pkgload, and data.table, or 2.8%
+download-weighted reach. GNU R 4.6 black-box evidence covers the 15 formal names, missing-topic
+warning, invisible `NULL`, default skipped blocks, opt-in `dontrun`/`donttest`, alias lookup,
+`give.lines`, and local/global execution. The Node-only packager independently extracts `man/*.Rd`
+into a deterministic manifest; the Worker parses selected code through Tree-sitter and the
+normalized AST. An unchanged `generics 0.1.4` source artifact supplies discovery evidence, while the
+Playground executes a packaged example. Interactive HTML/help databases, prompting, exact
+Rd/source/echo formatting, RNG restoration, abort recovery, core-package examples, and examples that
+reach unsupported semantics remain incomplete.
+
 ## Completion evidence
 
 The objective is complete only when:

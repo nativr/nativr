@@ -485,6 +485,16 @@ listing shape follow GNU R's visible/invisible contract. Installed-package `.rdx
 databases, aliases/index metadata, unsupported serialized types/compressors, and temporary
 working-directory changes remain explicit boundaries.
 
+The Node-only packager converts package-owned `man/*.Rd` example sections into one versioned JSON
+resource containing canonical topics, aliases, titles, and ordered `run`, `dontrun`, or `donttest`
+blocks. `utils::example()` searches loaded namespaces and the active virtual library paths (or
+explicit `package` / `lib.loc` selections), loads the matching package, and parses the selected
+source through the normal normalized-AST path. Default execution comments skipped blocks; explicit
+flags admit them. `give.lines = TRUE` returns a GNU R-shaped header plus prepared code without
+evaluation, and `local = TRUE` uses a fresh environment parented by the global environment.
+Interactive help rendering/prompting, source references, exact console echo layout, RNG restoration,
+and abort recovery are not yet modeled.
+
 `Sys.sleep(time)` uses short asynchronous timer slices, returns invisible `NULL`, and checks the
 active cancellation token without consuming evaluation steps. Non-negative finite intervals and
 `Inf` are accepted; missing, `NaN`, and negative values fail. Inline interruption is cooperative,

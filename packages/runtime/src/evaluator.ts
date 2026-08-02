@@ -405,6 +405,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "compareVersion",
       "data",
       "demo",
+      "example",
       "glob2rx",
       "packageName",
       "packageVersion",
@@ -1895,6 +1896,7 @@ export class Evaluator {
           this.#loadPackage(name, attach, context, libraryPaths),
         installedPackageVersion: (name, libraryPaths) =>
           this.#installedPackageVersion(name, libraryPaths),
+        installedPackageNames: (libraryPaths) => this.#installedPackageNames(libraryPaths),
         isNamespaceLoaded: (name) =>
           REGISTERED_NAMESPACE_EXPORTS.has(name) ||
           this.#packages.get(name)?.namespace !== undefined,
@@ -2564,6 +2566,16 @@ export class Evaluator {
       return undefined;
     }
     return record.definition.version;
+  }
+
+  #installedPackageNames(libraryPaths?: readonly string[]): readonly string[] {
+    const effectivePaths = libraryPaths ?? this.#libraryPaths;
+    const names: string[] = [];
+    if (effectivePaths.includes(NATIVR_SYSTEM_LIBRARY_PATH)) {
+      names.push(...REGISTERED_NAMESPACE_EXPORTS.keys());
+    }
+    if (effectivePaths.includes(NATIVR_PACKAGE_LIBRARY_PATH)) names.push(...this.#packages.keys());
+    return Object.freeze([...new Set(names)].sort());
   }
 
   #packageResourcePath(

@@ -647,6 +647,13 @@ a package still works only when every dependency and R feature it uses is suppor
 packages need separately audited Wasm or host adapters. See the
 [pure-R package loading contract](docs/pure-r-packages.md).
 
+Source-package `man/*.Rd` examples now travel through the same build-time bundle and Worker runtime.
+After installing a package set, applications can call
+`utils::example("topic", package = "pkg", echo = FALSE)`; topic aliases, `give.lines`, and explicit
+`run.dontrun` / `run.donttest` controls are supported. This turns unchanged package examples into a
+repeatable way to expose the next missing shared R feature instead of translating package functions
+to TypeScript.
+
 Source releases are managed with Changesets. npm publication uses GitHub Actions trusted publishing
 without a long-lived registry token; see the
 [release guide](https://github.com/nativr/nativr/blob/main/docs/releasing.md).

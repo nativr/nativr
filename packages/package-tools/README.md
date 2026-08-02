@@ -20,7 +20,10 @@ The generated package set exposes `bundles`, which can be supplied directly to
 `createR({ packages: packageSet.bundles })`. Packaging is a build-time operation; the browser
 runtime remains network-free and does not execute host installation scripts.
 
-The artifact preserves `inst/`, `data/`, demo, license, and `R/sysdata.rda` resources. At runtime,
+The artifact preserves `inst/`, `data/`, demo, license, and `R/sysdata.rda` resources. It also
+extracts topics, aliases, titles, and controlled code from `man/*.Rd` example sections into a
+deterministic internal manifest. At runtime, `utils::example()` can return or execute that code,
+including opt-in `run.dontrun` and `run.donttest` sections, without bundling an Rd parser or GNU R;
 `utils::data()` can load package `data/*.R`, `.csv`, `.tab`, `.txt`, `.rda`, and `.RData` entries;
 the namespace loader installs XDR/gzip `R/sysdata.rda` before evaluating R source. Unsupported
 serialized graph types/compressors and installed `.rdx`/`.rdb` lazy-load databases remain explicit

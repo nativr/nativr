@@ -125,6 +125,12 @@ still be in the documented NativR subset.
 External package/topic selection is rejected until bundles can provide browser-safe demo resources;
 the public API never searches a system R library.
 
+Source-package bundles built by `@nativr/package-tools` can expose their `man/*.Rd` examples through
+`utils::example(topic, package=)`. Topic aliases, `give.lines`, local/global execution, active or
+explicit virtual libraries, and opt-in `run.dontrun` / `run.donttest` are supported; the selected
+source runs through the same Worker and resource limits as `eval()`. The public API never reads a
+host help database or fetches documentation during evaluation.
+
 `utils::View()` emits character-formatted tables in `evalDetailed().dataViews` and returns invisible
 `NULL`. Each event contains a title, named columns, and optional non-default row names.
 `createR({ onDataView })` receives the same events after inline or Worker evaluation. Event text

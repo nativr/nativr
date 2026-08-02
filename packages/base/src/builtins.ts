@@ -735,6 +735,120 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "shape",
     builtinDemo,
   ),
+  withUnsupportedBehavior(
+    withBuiltinFormals(
+      definePackageBuiltin(
+        "utils",
+        "example",
+        [
+          "topic",
+          "package",
+          "lib.loc",
+          "character.only",
+          "give.lines",
+          "local",
+          "type",
+          "echo",
+          "verbose",
+          "setRNG",
+          "ask",
+          "prompt.prefix",
+          "catch.aborts",
+          "run.dontrun",
+          "run.donttest",
+        ],
+        "behavioral",
+        builtinExample,
+      ),
+      [
+        { name: "topic" },
+        { name: "package", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+        { name: "lib.loc", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+        {
+          name: "character.only",
+          defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+        },
+        {
+          name: "give.lines",
+          defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+        },
+        {
+          name: "local",
+          defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+        },
+        {
+          name: "type",
+          defaultValue: callAst("c", [
+            {
+              value: { kind: "StringLiteral", value: "console", span: SYNTHETIC_SPAN },
+              span: SYNTHETIC_SPAN,
+            },
+            {
+              value: { kind: "StringLiteral", value: "html", span: SYNTHETIC_SPAN },
+              span: SYNTHETIC_SPAN,
+            },
+          ]),
+        },
+        {
+          name: "echo",
+          defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+        },
+        {
+          name: "verbose",
+          defaultValue: callAst("getOption", [
+            {
+              value: { kind: "StringLiteral", value: "verbose", span: SYNTHETIC_SPAN },
+              span: SYNTHETIC_SPAN,
+            },
+          ]),
+        },
+        {
+          name: "setRNG",
+          defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+        },
+        {
+          name: "ask",
+          defaultValue: callAst("getOption", [
+            {
+              value: { kind: "StringLiteral", value: "example.ask", span: SYNTHETIC_SPAN },
+              span: SYNTHETIC_SPAN,
+            },
+          ]),
+        },
+        {
+          name: "prompt.prefix",
+          defaultValue: callAst("abbreviate", [
+            {
+              value: { kind: "Identifier", name: "topic", span: SYNTHETIC_SPAN },
+              span: SYNTHETIC_SPAN,
+            },
+            {
+              value: { kind: "DoubleLiteral", value: 6, span: SYNTHETIC_SPAN },
+              span: SYNTHETIC_SPAN,
+            },
+          ]),
+        },
+        {
+          name: "catch.aborts",
+          defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+        },
+        {
+          name: "run.dontrun",
+          defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+        },
+        {
+          name: "run.donttest",
+          defaultValue: callAst("interactive", []),
+        },
+      ],
+    ),
+    [
+      "interactive HTML rendering and prompting",
+      "setRNG state save/restore",
+      "catch.aborts recovery",
+      "exact GNU R source-reference and echo formatting",
+    ],
+  ),
   definePackageBuiltin(
     "utils",
     "browseURL",
@@ -18943,6 +19057,295 @@ function warnIgnoredCsvControls(
       message: `attempt to set '${name}' ignored by ${variant}()`,
     });
   }
+}
+
+const PACKAGE_EXAMPLES_RESOURCE_PATH = ".nativr/examples-v1.json";
+
+type PackageExampleBlockKind = "run" | "dontrun" | "donttest";
+
+interface PackageExampleBlock {
+  readonly kind: PackageExampleBlockKind;
+  readonly source: string;
+}
+
+interface PackageExampleTopic {
+  readonly name: string;
+  readonly title: string;
+  readonly aliases: readonly string[];
+  readonly blocks: readonly PackageExampleBlock[];
+}
+
+async function builtinExample(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = matchLazyArguments(invocation, [
+    "topic",
+    "package",
+    "lib.loc",
+    "character.only",
+    "give.lines",
+    "local",
+    "type",
+    "echo",
+    "verbose",
+    "setRNG",
+    "ask",
+    "prompt.prefix",
+    "catch.aborts",
+    "run.dontrun",
+    "run.donttest",
+  ]);
+  const topicArgument = matched.get("topic");
+  if (topicArgument === undefined || topicArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'topic' is missing in example().");
+  }
+  const characterOnly = await lazyLogicalFlag(
+    invocation,
+    matched.get("character.only"),
+    false,
+    "character.only",
+  );
+  const topicExpression = topicArgument.promise.expression;
+  const topic =
+    !characterOnly && topicExpression?.kind === "Identifier"
+      ? topicExpression.name
+      : characterScalar(await invocation.force(topicArgument.promise), "topic");
+  const libraryArgument = matched.get("lib.loc");
+  const libraryPaths =
+    libraryArgument === undefined
+      ? undefined
+      : libraryLocationArgument(
+          invocation,
+          await invocation.force(libraryArgument.promise),
+          "example",
+        );
+  const packageNames = await examplePackageNames(invocation, matched.get("package"), libraryPaths);
+  const giveLines = await lazyLogicalFlag(
+    invocation,
+    matched.get("give.lines"),
+    false,
+    "give.lines",
+  );
+  const local = await lazyLogicalFlag(invocation, matched.get("local"), false, "local");
+  const echo = await lazyLogicalFlag(invocation, matched.get("echo"), true, "echo");
+  const runDontrun = await lazyLogicalFlag(
+    invocation,
+    matched.get("run.dontrun"),
+    false,
+    "run.dontrun",
+  );
+  const runDonttest = await lazyLogicalFlag(
+    invocation,
+    matched.get("run.donttest"),
+    false,
+    "run.donttest",
+  );
+  await validateExampleControls(invocation, matched);
+
+  let found: { readonly packageName: string; readonly example: PackageExampleTopic } | undefined;
+  for (const packageName of packageNames) {
+    invocation.context.checkpoint();
+    const manifest = packageExampleManifest(invocation, packageName, libraryPaths);
+    const example = manifest?.find((candidate) => candidate.aliases.includes(topic));
+    if (example === undefined) continue;
+    found = { packageName, example };
+    break;
+  }
+  if (found === undefined) {
+    invocation.context.warn({ code: "NRW1130", message: `no help found for '${topic}'` });
+    invocation.setResultVisibility("invisible");
+    return R_NULL;
+  }
+  await invocation.loadPackage(found.packageName, true, libraryPaths);
+  const source = renderPackageExampleSource(found.example.blocks, runDontrun, runDonttest);
+  if (giveLines) {
+    const lines = packageExampleLines(found.example, source);
+    invocation.context.allocate(lines.length);
+    return characterVector(lines);
+  }
+  if (echo) writeExampleEcho(invocation, source);
+  const program = invocation.parse(source);
+  const environment = local
+    ? createEnvironment(invocation.globalEnvironment())
+    : invocation.globalEnvironment();
+  const evaluated =
+    program.body.length === 0
+      ? { value: R_NULL, visible: false }
+      : await invocation.evaluateDetailed(
+          { type: "expression", values: Object.freeze([...program.body]) },
+          environment,
+        );
+  invocation.context.allocate(3);
+  invocation.setResultVisibility("invisible");
+  return listValue([evaluated.value, logicalVector([evaluated.visible])], ["value", "visible"]);
+}
+
+async function examplePackageNames(
+  invocation: BuiltinInvocation,
+  argument: BuiltinCallArgument | undefined,
+  libraryPaths: readonly string[] | undefined,
+): Promise<readonly string[]> {
+  if (argument !== undefined) {
+    const value = await invocation.force(argument.promise);
+    if (value.type !== "null") {
+      if (value.type !== "character" || value.missing !== undefined) {
+        throw new RTypeMismatchError(
+          "NRT3343",
+          "example(package=) must be NULL or a non-missing character vector.",
+        );
+      }
+      const names = uniqueStrings([...value.values]);
+      for (const name of names) {
+        if (invocation.installedPackageVersion(name, libraryPaths) === undefined) {
+          await invocation.loadPackage(name, false, libraryPaths);
+        }
+      }
+      if (names.length > 0) return names;
+    }
+  }
+  return uniqueStrings([
+    ...(libraryPaths === undefined ? invocation.loadedNamespaces() : []),
+    ...invocation.installedPackageNames(libraryPaths),
+  ]);
+}
+
+async function validateExampleControls(
+  invocation: BuiltinInvocation,
+  matched: ReadonlyMap<string, BuiltinCallArgument>,
+): Promise<void> {
+  const typeArgument = matched.get("type");
+  if (typeArgument !== undefined) {
+    const typeValue = await invocation.force(typeArgument.promise);
+    if (typeValue.type !== "character" || typeValue.length === 0 || isMissing(typeValue, 0)) {
+      throw new RTypeMismatchError("NRT3343", "example(type=) must select 'console' or 'html'.");
+    }
+    const type = typeValue.values[0] ?? "";
+    if (type !== "console" && type !== "html") {
+      throw new REvaluationError("NRE2254", "'arg' should be one of 'console', 'html'");
+    }
+  }
+  for (const name of ["verbose", "setRNG", "ask", "catch.aborts"] as const) {
+    await lazyLogicalFlag(invocation, matched.get(name), false, name);
+  }
+  // prompt.prefix has no effect in the non-interactive browser output channel. Avoid forcing its
+  // GNU R default expression, which is presentation-only and independent of example execution.
+}
+
+function packageExampleManifest(
+  invocation: BuiltinInvocation,
+  packageName: string,
+  libraryPaths: readonly string[] | undefined,
+): readonly PackageExampleTopic[] | undefined {
+  const path = invocation.packageResourcePath(
+    packageName,
+    PACKAGE_EXAMPLES_RESOURCE_PATH,
+    libraryPaths,
+  );
+  if (path === undefined) return undefined;
+  const source = readVirtualTextFile(invocation, path, "utf8");
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(source) as unknown;
+  } catch (error) {
+    throw new REvaluationError(
+      "NRE2254",
+      `Package '${packageName}' has a malformed example manifest.`,
+      { cause: error },
+    );
+  }
+  if (!isPackageExamplesManifest(parsed)) {
+    throw new REvaluationError(
+      "NRE2254",
+      `Package '${packageName}' has an invalid example manifest.`,
+    );
+  }
+  return parsed.topics;
+}
+
+function isPackageExamplesManifest(
+  value: unknown,
+): value is { readonly topics: readonly PackageExampleTopic[] } {
+  if (
+    !isPlainRecord(value) ||
+    value.format !== "nativr-package-examples" ||
+    value.formatVersion !== 1
+  )
+    return false;
+  return (
+    Array.isArray(value.topics) &&
+    value.topics.every(
+      (topic) =>
+        isPlainRecord(topic) &&
+        typeof topic.name === "string" &&
+        typeof topic.title === "string" &&
+        Array.isArray(topic.aliases) &&
+        topic.aliases.every((alias) => typeof alias === "string") &&
+        Array.isArray(topic.blocks) &&
+        topic.blocks.every(
+          (block) =>
+            isPlainRecord(block) &&
+            (block.kind === "run" || block.kind === "dontrun" || block.kind === "donttest") &&
+            typeof block.source === "string",
+        ),
+    )
+  );
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function renderPackageExampleSource(
+  blocks: readonly PackageExampleBlock[],
+  runDontrun: boolean,
+  runDonttest: boolean,
+): string {
+  return blocks
+    .map((block) => {
+      const run =
+        block.kind === "run" ||
+        (block.kind === "dontrun" && runDontrun) ||
+        (block.kind === "donttest" && runDonttest);
+      return run ? block.source : commentExampleSource(block.source, block.kind);
+    })
+    .join("")
+    .replaceAll("\r\n", "\n")
+    .replaceAll("\r", "\n");
+}
+
+function commentExampleSource(
+  source: string,
+  kind: Exclude<PackageExampleBlockKind, "run">,
+): string {
+  const label = kind === "dontrun" ? "Not run" : "No test";
+  const normalized = source.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
+  const lines = normalized.split("\n");
+  if (lines.length <= 2 && (lines[0] ?? "").trim().length > 0) {
+    return `## ${label}: ${lines[0] ?? ""}${normalized.endsWith("\n") ? "\n" : ""}`;
+  }
+  return `## ${label}:\n${lines.map((line) => `##D ${line}`).join("\n")}\n## End(${label})\n`;
+}
+
+function packageExampleLines(example: PackageExampleTopic, source: string): readonly string[] {
+  const lines = source.replace(/^\n/u, "").split("\n");
+  return [
+    `### Name: ${example.name}`,
+    `### Title: ${example.title}`,
+    `### Aliases: ${example.aliases.join(" ")}`,
+    "",
+    "### ** Examples",
+    "",
+    ...lines,
+    "",
+    "",
+  ];
+}
+
+function writeExampleEcho(invocation: BuiltinInvocation, source: string): void {
+  const lines = source.replace(/^\n/u, "").replace(/\n+$/u, "").split("\n");
+  if (lines.length === 1 && lines[0] === "") return;
+  invocation.context.writeOutput({
+    stream: "stdout",
+    text: `${lines.map((line) => `> ${line}`).join("\n")}\n`,
+  });
 }
 
 async function builtinDemo(invocation: BuiltinInvocation): Promise<RValue> {

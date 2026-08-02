@@ -8,6 +8,7 @@ import {
 } from "./dcf.js";
 import { readPackageSource } from "./source.js";
 import type { PackageSourceFile } from "./source.js";
+import { extractPackageExamples, PACKAGE_EXAMPLES_RESOURCE_PATH } from "./rd-examples.js";
 import {
   PackageCompatibilityError,
   type NativRPackageArtifact,
@@ -86,6 +87,24 @@ export async function inspectPackage(
       ? []
       : [{ path: installedPath, data: Buffer.from(file.data).toString("base64") }];
   });
+  const examples = extractPackageExamples(
+    files
+      .filter((file) => /^man\/(?:.*\/)?[^/]+\.Rd$/iu.test(file.path))
+      .map((file) => ({
+        path: file.path,
+        source: decodePackageText(file, "Rd source", decodedDescription.encoding),
+      })),
+  );
+  if (examples !== undefined) {
+    if (resources.some((resource) => resource.path === PACKAGE_EXAMPLES_RESOURCE_PATH)) {
+      throw new Error(`Package resource path '${PACKAGE_EXAMPLES_RESOURCE_PATH}' is reserved.`);
+    }
+    resources.push({
+      path: PACKAGE_EXAMPLES_RESOURCE_PATH,
+      data: Buffer.from(JSON.stringify(examples), "utf8").toString("base64"),
+    });
+    resources.sort((left, right) => compareCPath(left.path, right.path));
+  }
   const compatibility = {
     packaging: issues.some((issue) => issue.severity === "error")
       ? ("blocked" as const)

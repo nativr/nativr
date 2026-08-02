@@ -613,6 +613,14 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      `withr 3.0.3` executes `with_libpaths()` and restores it. Host filesystem libraries, startup
      environment expansion, runtime repository installation, duplicate versions, and binary package
      trees remain package-system compatibility depth.
+141. Usage-ranked package examples: rank-196 `utils::example` now maps standard source-package Rd
+     topics and aliases to deterministic build-time code blocks, discovers them through active or
+     explicit virtual libraries, loads the package, and returns or executes prepared code through
+     the normalized AST. Default and opt-in `dontrun`/`donttest`, local/global environments, GNU
+     R-shaped formals/missing-topic behavior, Worker execution, and unchanged external-package
+     discovery have evidence. Interactive help, exact Rd/source/echo rendering, RNG restoration,
+     abort recovery, installed lazy help databases, and unsupported example dependencies remain
+     package-system depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

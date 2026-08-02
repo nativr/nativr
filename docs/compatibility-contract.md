@@ -1880,6 +1880,17 @@ and column labels. Supplying a topic, external package, or host library location
 unsupported-feature error. External demo discovery and script execution require package-loader and
 virtual-resource support and are not claimed.
 
+Usage-ranked `utils::example()` has GNU R 4.6 differential evidence for its 15 formal names and the
+warning/invisible-`NULL` missing-topic result. Standard source-package `man/*.Rd` files are
+independently extracted at build time into deterministic topic/alias/title and controlled-code
+records. The runtime searches active virtual libraries or explicit `package`/`lib.loc`, loads the
+matching bundle, supports symbol or character topics, returns prepared code with `give.lines`,
+evaluates in the global or a fresh local environment, and skips `dontrun`/`donttest` blocks unless
+explicitly enabled. An unchanged `generics 0.1.4` artifact supplies external discovery evidence, and
+the Worker Playground executes an extracted package example. Interactive HTML/prompting, exact GNU R
+Rd conversion/source references/echo formatting, `setRNG` preservation, `catch.aborts`, core-package
+help databases, and execution beyond the supported R surface remain incomplete.
+
 The inference extension retains a weighted upper-triangular QR factor, derives residual variance and
 coefficient covariance without requiring the model frame, and exposes `vcov`, `confint`, and
 `df.residual`. Differential cases cover complete/incomplete covariance matrices, aliased
