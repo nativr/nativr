@@ -19,6 +19,7 @@ importFrom(utils, packageName)
 export(square, centered, new_score, describe, package_state, package_name)
 S3method(describe, score)
 S3method(plot, score)
+S3method(lines, score)
 `,
   rSources: [
     {
@@ -38,6 +39,7 @@ centered <- function(x) x - median(x)
 new_score <- function(x) structure(x, class = c("score", "numeric"))
 describe.score <- function(x, ...) paste0(.package_state, ":", sum(x))
 plot.score <- function(x, ..., marker = "package-plot") c(marker, sum(x), list(...)$extra)
+lines.score <- function(x, ..., marker = "package-lines") c(marker, sum(x), list(...)$extra)
 package_state <- function() .package_state
 package_name <- function() packageName()
 hidden_helper <- function(x) x + 100
@@ -2179,6 +2181,9 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(
       runtime.eval("x <- withVisible(plot(new_score(1:3), extra = 7)); c(x$value, x$visible)"),
     ).resolves.toEqual(["package-plot", "6", "7", "TRUE"]);
+    await expect(
+      runtime.eval("x <- withVisible(lines(new_score(1:3), extra = 8)); c(x$value, x$visible)"),
+    ).resolves.toEqual(["package-lines", "6", "8", "TRUE"]);
     await expect(runtime.eval('sort(getNamespaceExports("nativrfixture"))')).resolves.toEqual([
       "centered",
       "describe",
@@ -5713,6 +5718,149 @@ describe("complete inline source-to-result vertical slice", () => {
     await limited.dispose();
   });
 
+  it("draws usage-ranked connected lines through the reusable graphics journal", async () => {
+    const observed: unknown[] = [];
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      onGraphics: (event) => observed.push(event),
+    });
+    const drawn = await runtime.evalDetailed(`
+      plot.new()
+      plot.window(c(0, 6), c(0, 7))
+      visible <- withVisible(graphics::lines(
+        c(1, 2, NA, 4, 5),
+        c(1, 3, 2, 4, 1),
+        col = c("red", "blue"),
+        lty = c(2, 3),
+        lwd = c(2, 4)
+      ))
+      c(is.null(visible$value), visible$visible)
+    `);
+    expect(drawn.value).toEqual([true, false]);
+    expect(drawn.graphics).toEqual([
+      { kind: "new-page" },
+      { kind: "window", xlim: [0, 6], ylim: [0, 7] },
+      {
+        kind: "segments",
+        segments: [
+          {
+            x0: 1,
+            y0: 1,
+            x1: 2,
+            y1: 3,
+            color: "#FF0000FF",
+            lineType: "44",
+            lineWidth: 2,
+          },
+          {
+            x0: 4,
+            y0: 4,
+            x1: 5,
+            y1: 1,
+            color: "#FF0000FF",
+            lineType: "44",
+            lineWidth: 2,
+          },
+        ],
+      },
+    ]);
+    expect(observed).toEqual(drawn.graphics);
+
+    const combined = await runtime.evalDetailed(`
+      lines(
+        matrix(c(1, 2, 3, 4, 5, 6), ncol = 2),
+        type = "b",
+        pch = c(16, 21, 1),
+        col = c("blue", "red", "green"),
+        bg = "yellow",
+        lwd = c(3, 1)
+      )
+    `);
+    expect(combined.graphics).toHaveLength(2);
+    expect(combined.graphics[0]).toMatchObject({ kind: "segments" });
+    if (combined.graphics[0]?.kind === "segments") {
+      expect(combined.graphics[0].segments).toHaveLength(2);
+      expect(combined.graphics[0].segments.every((segment) => segment.color === "#0000FFFF")).toBe(
+        true,
+      );
+      expect(combined.graphics[0].segments.every((segment) => segment.lineWidth === 3)).toBe(true);
+    }
+    expect(combined.graphics[1]).toMatchObject({ kind: "points" });
+    if (combined.graphics[1]?.kind === "points") {
+      expect(combined.graphics[1].points.map((point) => point.color)).toEqual([
+        "#0000FFFF",
+        "#FF0000FF",
+        "#00FF00FF",
+      ]);
+      expect(combined.graphics[1].points.map((point) => point.lineWidth)).toEqual([3, 1, 3]);
+    }
+
+    const histogram = await runtime.evalDetailed(
+      'lines(1:3, c(2, 4, 6), type = "h", col = c("red", "blue"), lwd = c(2, 9))',
+    );
+    expect(histogram.graphics).toMatchObject([
+      {
+        kind: "segments",
+        segments: [
+          { x0: 1, y0: 0, x1: 1, y1: 2, color: "#FF0000FF", lineWidth: 2 },
+          { x0: 2, y0: 0, x1: 2, y1: 4, color: "#0000FFFF", lineWidth: 2 },
+          { x0: 3, y0: 0, x1: 3, y1: 6, color: "#FF0000FF", lineWidth: 2 },
+        ],
+      },
+    ]);
+    const stepped = await runtime.evalDetailed('lines(1:3, c(2, 4, 3), type = "s")');
+    expect(stepped.graphics).toMatchObject([{ kind: "segments" }]);
+    if (stepped.graphics[0]?.kind === "segments") {
+      expect(stepped.graphics[0].segments).toHaveLength(4);
+    }
+    await expect(runtime.evalDetailed('lines(1:3, 4:6, type = "n")')).resolves.toMatchObject({
+      value: null,
+      visible: false,
+      graphics: [],
+    });
+    await expect(runtime.eval("lines(numeric(), numeric())")).resolves.toBeNull();
+
+    await expect(
+      runtime.eval(`
+        lines.probe <- function(x, y = NULL, type = "l", ..., marker = "default") {
+          c(class(x), marker, list(...)$extra)
+        }
+        custom <- withVisible(
+          lines(structure(1:3, class = "probe"), marker = "custom", extra = 7)
+        )
+        fmls <- formals(graphics::lines.default)
+        c(
+          custom$value,
+          custom$visible,
+          names(fmls),
+          identical(fmls[["y"]], NULL),
+          identical(fmls[["type"]], "l")
+        )
+      `),
+    ).resolves.toEqual(["probe", "custom", "7", "TRUE", "x", "y", "type", "...", "TRUE", "TRUE"]);
+    await expect(runtime.eval("lines(1:3, 4:5)")).rejects.toMatchObject({ code: "NRT3347" });
+    await expect(runtime.eval("lines(1:3, 4:6, type = 'q')")).rejects.toMatchObject({
+      code: "NRT3353",
+    });
+    await expect(runtime.eval("lines(1:3, 4:6, lend = 'butt')")).rejects.toMatchObject({
+      code: "NRU6171",
+    });
+    await runtime.reset();
+    await expect(runtime.eval("lines(1, 2)")).rejects.toMatchObject({ code: "NRE2190" });
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 10 },
+    });
+    await expect(limited.eval("plot.new()\nlines(1:2, 2:3)")).rejects.toMatchObject({
+      code: "NRL4002",
+    });
+    await limited.dispose();
+  });
+
   it("draws zoo's usage-ranked point generic through the Worker graphics protocol", async () => {
     const observed: unknown[] = [];
     const runtime = await createR({
@@ -8430,7 +8578,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.213.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.214.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -8464,6 +8612,8 @@ describe("complete inline source-to-result vertical slice", () => {
       { name: "image.default", compatibility: "shape" },
       { name: "rasterImage", compatibility: "shape" },
       { name: "segments", compatibility: "shape" },
+      { name: "lines", compatibility: "shape" },
+      { name: "lines.default", compatibility: "shape" },
       { name: "points", compatibility: "shape" },
       { name: "text", compatibility: "shape" },
       { name: "polygon", compatibility: "shape" },

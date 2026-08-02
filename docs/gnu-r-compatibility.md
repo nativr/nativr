@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           570 |
-| Overlapping callable names        |           555 |
-| Missing GNU R callable names      |         1,967 |
-| Name overlap                      |       22.006% |
+| NativR registered names           |           572 |
+| Overlapping callable names        |           557 |
+| Missing GNU R callable names      |         1,965 |
+| Name overlap                      |       22.086% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -551,6 +551,16 @@ for weak-reference examples, benchmark preparation, or cleanup after `rm()`. GNU
 evidence covers formals, matrix type/dimensions/dimnames, reset maxima, controls, previous-flag
 state, and verbose output. NativR measures only its reachable R-value graph, shares that census with
 `system.time(gcFirst = TRUE)`, and does not claim host JavaScript heap counts or forced collection.
+
+The connected-lines increment adds exported `graphics::lines` and `lines.default`, raising current
+name overlap to 557 of 2,522. Rank 174 represents 20 documented calls across `scales`,
+`matrixStats`, `posterior`, and `zoo`, or 3.4% download-weighted reach. GNU R 4.6 black-box evidence
+covers generic/default formals, package-owned S3 forwarding, visibility, accepted coordinate shapes,
+plot types, missing path breaks, styles, device errors, and input boundaries. NativR reuses its
+existing coordinate adapter plus segment/point journal for browser, Worker, PNG, hold/flush, and
+record/replay output; no package-specific translation or polyline protocol was added. Complete
+graphics parameters, clipping/log transforms, specialized coordinate classes, and device-identical
+rendering remain incomplete.
 
 ## Completion evidence
 

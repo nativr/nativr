@@ -1,6 +1,6 @@
 # Implementation status
 
-Date: 2026-07-31
+Date: 2026-08-01
 
 ## Implemented
 
@@ -11,7 +11,7 @@ Date: 2026-07-31
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 570 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 572 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Character vectors own exact per-element bytes and canonical `unknown`/`latin1`/`UTF-8`/`bytes`
@@ -147,6 +147,12 @@ Date: 2026-07-31
   invisible default returns, bounded Worker/Canvas output, and display-list replay. Complete axis
   ticks/labels, logarithmic or fixed-aspect layout, specialized core methods, margins/clipping, and
   device-identical rendering remain explicit boundaries.
+- Usage-ranked `graphics::lines` plus exported `lines.default` with S3-first package-method
+  forwarding, shared vector/matrix/data-frame/list/complex coordinate normalization, all nine plot
+  types, missing-value path breaks, documented line/point style rules, invisible default results,
+  and bounded Worker/Canvas/PNG/record-replay output through the existing segment and point event
+  vocabulary. Complete coordinate classes, clipping/log transforms, line join/cap controls,
+  arbitrary graphical parameters, and device-identical rendering remain explicit boundaries.
 - Usage-ranked `grDevices::as.raster`/`is.raster` with ragg's captured-color-matrix shape, row-first
   raster storage, logical/numeric/raw grayscale, numeric/raw RGB(A), vector reshaping,
   names/dimnames removal, S3 methods, identity, missingness/scaling boundaries, and downstream

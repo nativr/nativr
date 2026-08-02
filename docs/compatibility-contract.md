@@ -238,28 +238,29 @@ budgets. S3 print-method dispatch, global print options, line filling, labels, h
 complete connection stack are not claimed.
 
 `plot`, `plot.default`, `plot.new`, bounded `plot.window`, `axTicks`, `box`, `boxplot`, `image`,
-`image.default`, `persp`, `points`, `polygon`, `rasterImage`, `segments`, and `legend` provide the
-first browser-native graphics slice. Evaluation owns page and linear coordinate-window state,
-converts two-dimensional grayscale or character colors, three-/four-channel numeric/raw arrays, and
-packed `nativeRaster` integers to row-major RGBA, and emits commands for recycled raster placements,
-styled line segments, resolved point symbols and polygons, plot frames and boxplots, and resolved
-legend entries. Commands preserve raster angle/interpolation, finite coordinates, canonical colors,
-normalized line patterns, line widths, polygon fill rules, frame edges, text labels, point symbols,
-placement, and layout controls. They cross the Worker boundary, remain available in
-`evalDetailed.graphics`, and count toward the configured output budget. Inline and Worker callbacks
-receive the same command shapes, and the Playground renders them to Canvas. Evidence covers the
-measured systemfonts glyph-raster, httr PNG-array, posterior interval-segment, zoo filled-area, zoo
-plot-frame, zoo grouped-boxplot, and zoo legend patterns. The owned registry also supports
-`dev.cur`/`dev.list`, GNU R-shaped null device 1, simultaneous browser/PNG device identities,
-selected `dev.off`/`graphics.off` closure, nested `dev.hold`/`dev.flush` levels, per-device `par()`
-isolation and restoration, ordered cross-evaluation command buffering, and bounded same-session
-`recordPlot`/`replayPlot` over its own page/window/raster/segments/points/text/polygon/box/boxplot/
-legend display list. `grDevices::png` uses that list to produce bounded, decompressible RGBA PNG
-bytes in the virtual file store, including transparent backgrounds, exact requested dimensions,
-raw-byte reads, and numbered multi-page targets. Closing flushes held commands and completes the
-current PNG page. Complete plot methods, non-PNG devices, axis tick/label drawing, complete
-clipping/margins, graphical parameters beyond the documented controls, external display-list
-formats, and pixel equivalence across GNU R devices are not claimed.
+`image.default`, `persp`, `lines`, `lines.default`, `points`, `polygon`, `rasterImage`, `segments`,
+and `legend` provide the first browser-native graphics slice. Evaluation owns page and linear
+coordinate-window state, converts two-dimensional grayscale or character colors, three-/four-channel
+numeric/raw arrays, and packed `nativeRaster` integers to row-major RGBA, and emits commands for
+recycled raster placements, styled line segments, resolved point symbols and polygons, plot frames
+and boxplots, and resolved legend entries. Commands preserve raster angle/interpolation, finite
+coordinates, canonical colors, normalized line patterns, line widths, polygon fill rules, frame
+edges, text labels, point symbols, placement, and layout controls. They cross the Worker boundary,
+remain available in `evalDetailed.graphics`, and count toward the configured output budget. Inline
+and Worker callbacks receive the same command shapes, and the Playground renders them to Canvas.
+Evidence covers the measured systemfonts glyph-raster, httr PNG-array, posterior interval-segment,
+zoo filled-area, zoo plot-frame, zoo grouped-boxplot, and zoo legend patterns. The owned registry
+also supports `dev.cur`/`dev.list`, GNU R-shaped null device 1, simultaneous browser/PNG device
+identities, selected `dev.off`/`graphics.off` closure, nested `dev.hold`/`dev.flush` levels,
+per-device `par()` isolation and restoration, ordered cross-evaluation command buffering, and
+bounded same-session `recordPlot`/`replayPlot` over its own
+page/window/raster/segments/points/text/polygon/box/boxplot/ legend display list. `grDevices::png`
+uses that list to produce bounded, decompressible RGBA PNG bytes in the virtual file store,
+including transparent backgrounds, exact requested dimensions, raw-byte reads, and numbered
+multi-page targets. Closing flushes held commands and completes the current PNG page. Complete plot
+methods, non-PNG devices, axis tick/label drawing, complete clipping/margins, graphical parameters
+beyond the documented controls, external display-list formats, and pixel equivalence across GNU R
+devices are not claimed.
 
 `image` has shape-level differential evidence for the rank-163 calls sampled from `scales`,
 `viridisLite`, and `RColorBrewer`. Its S3 generic preserves package-defined methods. The default
@@ -283,6 +284,19 @@ sessions and participates in hold/flush and display-list replay. Automatic expre
 labels, tick marks and tick labels, logarithmic or fixed-aspect axes, complete axis-gap layout,
 formula/function/time-series/raster and other specialized methods, arbitrary graphical parameters,
 margins/clipping, and device-identical pixels remain outside this shape-level claim.
+
+`graphics::lines` and `graphics::lines.default` have differential shape evidence for all 20 measured
+calls across scales, matrixStats, posterior, and zoo. The generic dispatches package-owned S3
+methods before the default and preserves their value and visibility. The default reuses the
+plot/points coordinate adapter for paired vectors, one-vector indices, matrices, data frames, named
+x/y lists, and complex coordinates; unequal paired lengths fail and missing/non-finite pairs split
+paths. Types `l`, `p`, `b`, `c`, `o`, `h`, `s`, `S`, and `n` reuse bounded segment and point
+commands. Ordinary connected paths use the first line colour/type/width, histogram lines recycle
+colour, point-bearing types recycle symbol, colour, fill, size, and width, and the default returns
+invisible `NULL`. Worker/Canvas rendering and same-session device recording therefore require no
+package-specific protocol. Line joins/caps/mitres, clipping and log transforms, broader coordinate
+classes, complete `par()` inheritance, every graphical parameter, and device-identical pixels are
+not claimed.
 
 `graphics::axTicks` has differential evidence for zoo's measured secondary-axis tick lookup and
 ordinary horizontal-axis lookup. On the owned linear device, sides 1/3 derive ticks from the current

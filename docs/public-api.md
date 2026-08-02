@@ -156,7 +156,9 @@ renderer.
 
 High-level `graphics::image()` uses the same public command vocabulary: regular grids emit one
 `raster` event, while irregular grids emit borderless `polygon` cells. Hosts do not need a separate
-image-specific renderer.
+image-specific renderer. `graphics::lines()` likewise maps connected, point-bearing, histogram, and
+step types onto existing `segments` and `points` events, so package-owned line methods require no
+additional host protocol.
 
 ```ts
 const graphics = [];
@@ -169,6 +171,7 @@ await r.eval(`
   plot.window(c(0, 2), c(0, 2))
   image <- as.raster(matrix(c("red", "green", "blue", "white"), 2, 2))
   rasterImage(image, 0, 0, 2, 2)
+  lines(c(.25, 1, 1.75), c(1.5, .5, 1.5), col = "purple", lwd = 2)
   segments(c(.5, 1.5), c(.25, .5), y1 = c(1.5, 1.75), col = c("red", "blue"))
   points(c(.5, 1, 1.5), c(.5, 1.5, 1), pch = c(16, 21, 65), col = c("red", "blue", "green"))
   polygon(c(.25, 1, 1.75), c(.25, 1.75, .25), col = "#FFA50099", border = "blue")

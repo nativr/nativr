@@ -65,82 +65,84 @@ depends on GNU R's private recorded-plot representation. Coordinate and style re
 `graphics::segments` is resolved inside `@nativr/base`; the runtime and protocol see only finite
 endpoints, canonical colors, line-widths, and line-type patterns. `graphics::points` resolves
 coordinate containers, symbol codes, literal characters, colors, fills, sizes, widths, and omission
-before emitting a host-neutral point array. `graphics::text` resolves recycled coordinates, labels,
-canonical colors, size, face, family, adjustment, position, offset, rotation, and omission into a
-host-neutral text array. `graphics::polygon` splits missing-coordinate runs and resolves their
-closed paths, fill rules, canonical fill/border colors, widths, and dash patterns before emitting a
-host-neutral polygon array. `graphics::legend` similarly resolves labels, anchors, colors, line
-types, point symbols, and layout inside `@nativr/base`; `graphics::box` resolves plot-frame edges
-and line style before crossing the host boundary; `graphics::boxplot` computes group statistics and
-resolves its drawing controls before emitting a compact host-neutral command; and
-`graphics::axTicks` reads only the same owned linear window state and returns ordinary runtime
-vectors, so tick calculation adds no host command or device dependency. `graphics::persp`
-independently normalizes and rotates owned matrix/grid coordinates, returns its column-major
-homogeneous view transform, then projects the measured default wireframe and box into the existing
-resolved segment command. The browser host receives no GNU R device object, 3D scene dependency, or
-executable rendering code. Neither R code nor the Worker protocol receives a DOM or Canvas handle.
-The initial linear-model solver lives in `@nativr/base`, consumes only normalized formulas and owned
-runtime values, and has no host or package dependency. Matrix condition diagnostics use owned QR,
-triangular-estimation, eigensolver, norm, and inversion paths in the same layer. Real-matrix
-Cholesky decomposition likewise uses copied column-major values, an owned upper-factor algorithm,
-and bounded diagonal pivoting behind ordinary S3 dispatch; it imports no LAPACK, tensor, or package
-code. Cross-tabulation evaluates normalized formulas into owned column-major table vectors in that
-layer; sparse Matrix classes remain outside the current value architecture. Session RNG state also
-stays in that layer: an independently implemented Mersenne-Twister engine feeds normal/discrete
-adapters, stable log-gamma beta draws, and exact integer-sampling paths without host entropy after
-explicit seeding, native libraries, network requests, or generated code. `RNGversion` changes only
-this session-owned kind metadata and engine state; historical generators are never delegated to a
-host R installation. Normal probabilities likewise remain in the owned base layer: central tails
-reuse the regularized-gamma path and far log tails use a direct Mills-ratio expansion, so
-`stats::pnorm` never delegates to a host statistics library. The public `stats::rgamma` path reuses
-the same rejection sampler that already feeds owned beta, chi-squared, and Student-t draws, without
-introducing a second RNG or host distribution service. `stats::rlnorm` similarly exponentiates the
-same session-owned Inversion normal stream after vectorized log-scale parameter validation,
-preserving fixed-seed ordering without a parallel random engine. The Cauchy family stays on that
-owned path too: `rcauchy` transforms one uniform draw per valid positive-scale result, while
-`dcauchy`, `pcauchy`, and `qcauchy` use direct browser-native numeric formulas and stable tail
-identities. No host statistics service or native distribution library participates.
-Browser-independent text adapters also remain in the base layer: `utils::glob2rx` coerces owned
-values and translates glob metacharacters directly into R regular-expression text, while `sQuote`
-wraps coerced text using deterministic C-locale, explicit Unicode/TeX, or caller-supplied quote
-pairs. Neither asks the host filesystem, shell, locale, URL APIs, or a JavaScript regular-expression
-engine to interpret its input. Simple shape constructors remain in the same owned base layer:
-`mat.or.vec` allocates zero-filled typed arrays and attaches runtime dimensions directly, without
-delegating to a host matrix library. Primitive `seq.int` similarly selects integer or double typed
-storage after bounded, checkpointed sequence generation and routes classed first arguments through
-the evaluator's existing `seq` S3 dispatch seam. Explicit `methods::setAs` declarations live in a
-separate evaluator-session coercion map; `methods::as` resolves owned source classes and their
-declared parents before invoking a registered R closure or a core `as.<Class>` constructor.
-`methods::setOldClass` records S3 class chains in the same session-owned class map, allowing bounded
-S4 generic and coercion lookup to traverse declared old-style inheritance without consulting an R
-installation, host class registry, or package code. `methods::show` consumes that same map for
-single-object display dispatch; package-defined methods write through the bounded output journal,
-while the fallback formats only owned values and never opens a pager or terminal device. The output
-journal also supports nested, stream-selective capture frames for `utils::capture.output`. Captured
-text remains evaluator-owned until it becomes a bounded character result or is explicitly duplicated
-by `split = TRUE`; it never enters a host file or connection. The `stats::family` entry is another
-deliberately thin generic seam: it routes owned class metadata through the same evaluator S3 stack
-but does not embed distributional's package-owned method or objects. Regular time-series values
-follow the same boundary. `stats::ts` creates only owned vectors/matrices and `tsp` metadata;
-`as.ts`, `frequency`, `deltat`, `stats::cycle`, and `stats::window` route external classes through
-the evaluator's S3 stack before using the regular-series fallback. The non-generic `stats::embed`
-consumes only owned vector/matrix storage and builds bounded, column-major lag matrices, so pure-R
-rolling-window helpers can reuse the runtime primitive without a host R process. The
-application-supplied source-bundle loader can now install independently authored `window.*`,
-`cycle.*`, `deltat.*`, or `as.ts.*` methods without replacing the core runtime, while
-package-specific irregular indexes remain package-owned and must fit the supported value model.
-Bundle metadata is normalized in the public facade; only normalized package definitions enter the
-runtime, preserving `parser -> ast` and `runtime -> ast` dependency direction. `utils::demo`
-likewise builds only an owned empty catalog; external demo discovery awaits virtual package
-resources rather than a host R installation. `utils::View` remains host-independent by coercing
-owned values to a bounded data-frame shape and journaling character-formatted columns; only the
-public facade and Playground decide how to display that structured event. Date labeling follows the
-same owned path: `weekdays` dispatches through registered Date/POSIXt methods and an embedded
-C-locale catalog, using UTC arithmetic rather than browser locale or time zone services. Path text
-follows the same host-independent boundary. `file.path` performs only vectorized string construction
-with a caller-selected separator. `path.expand` does not query an operating-system account or
-process environment; because browser sessions expose no home directory, leading tildes remain
-unchanged. Neither operation normalizes paths, checks existence, or performs filesystem I/O.
+before emitting a host-neutral point array. `graphics::lines` keeps its S3/default method seam in R
+and normalizes all supported line/point/step/histogram types into those existing segment and point
+records, including missing-value path breaks and documented style selection; no polyline protocol or
+package adapter is introduced. `graphics::text` resolves recycled coordinates, labels, canonical
+colors, size, face, family, adjustment, position, offset, rotation, and omission into a host-neutral
+text array. `graphics::polygon` splits missing-coordinate runs and resolves their closed paths, fill
+rules, canonical fill/border colors, widths, and dash patterns before emitting a host-neutral
+polygon array. `graphics::legend` similarly resolves labels, anchors, colors, line types, point
+symbols, and layout inside `@nativr/base`; `graphics::box` resolves plot-frame edges and line style
+before crossing the host boundary; `graphics::boxplot` computes group statistics and resolves its
+drawing controls before emitting a compact host-neutral command; and `graphics::axTicks` reads only
+the same owned linear window state and returns ordinary runtime vectors, so tick calculation adds no
+host command or device dependency. `graphics::persp` independently normalizes and rotates owned
+matrix/grid coordinates, returns its column-major homogeneous view transform, then projects the
+measured default wireframe and box into the existing resolved segment command. The browser host
+receives no GNU R device object, 3D scene dependency, or executable rendering code. Neither R code
+nor the Worker protocol receives a DOM or Canvas handle. The initial linear-model solver lives in
+`@nativr/base`, consumes only normalized formulas and owned runtime values, and has no host or
+package dependency. Matrix condition diagnostics use owned QR, triangular-estimation, eigensolver,
+norm, and inversion paths in the same layer. Real-matrix Cholesky decomposition likewise uses copied
+column-major values, an owned upper-factor algorithm, and bounded diagonal pivoting behind ordinary
+S3 dispatch; it imports no LAPACK, tensor, or package code. Cross-tabulation evaluates normalized
+formulas into owned column-major table vectors in that layer; sparse Matrix classes remain outside
+the current value architecture. Session RNG state also stays in that layer: an independently
+implemented Mersenne-Twister engine feeds normal/discrete adapters, stable log-gamma beta draws, and
+exact integer-sampling paths without host entropy after explicit seeding, native libraries, network
+requests, or generated code. `RNGversion` changes only this session-owned kind metadata and engine
+state; historical generators are never delegated to a host R installation. Normal probabilities
+likewise remain in the owned base layer: central tails reuse the regularized-gamma path and far log
+tails use a direct Mills-ratio expansion, so `stats::pnorm` never delegates to a host statistics
+library. The public `stats::rgamma` path reuses the same rejection sampler that already feeds owned
+beta, chi-squared, and Student-t draws, without introducing a second RNG or host distribution
+service. `stats::rlnorm` similarly exponentiates the same session-owned Inversion normal stream
+after vectorized log-scale parameter validation, preserving fixed-seed ordering without a parallel
+random engine. The Cauchy family stays on that owned path too: `rcauchy` transforms one uniform draw
+per valid positive-scale result, while `dcauchy`, `pcauchy`, and `qcauchy` use direct browser-native
+numeric formulas and stable tail identities. No host statistics service or native distribution
+library participates. Browser-independent text adapters also remain in the base layer:
+`utils::glob2rx` coerces owned values and translates glob metacharacters directly into R
+regular-expression text, while `sQuote` wraps coerced text using deterministic C-locale, explicit
+Unicode/TeX, or caller-supplied quote pairs. Neither asks the host filesystem, shell, locale, URL
+APIs, or a JavaScript regular-expression engine to interpret its input. Simple shape constructors
+remain in the same owned base layer: `mat.or.vec` allocates zero-filled typed arrays and attaches
+runtime dimensions directly, without delegating to a host matrix library. Primitive `seq.int`
+similarly selects integer or double typed storage after bounded, checkpointed sequence generation
+and routes classed first arguments through the evaluator's existing `seq` S3 dispatch seam. Explicit
+`methods::setAs` declarations live in a separate evaluator-session coercion map; `methods::as`
+resolves owned source classes and their declared parents before invoking a registered R closure or a
+core `as.<Class>` constructor. `methods::setOldClass` records S3 class chains in the same
+session-owned class map, allowing bounded S4 generic and coercion lookup to traverse declared
+old-style inheritance without consulting an R installation, host class registry, or package code.
+`methods::show` consumes that same map for single-object display dispatch; package-defined methods
+write through the bounded output journal, while the fallback formats only owned values and never
+opens a pager or terminal device. The output journal also supports nested, stream-selective capture
+frames for `utils::capture.output`. Captured text remains evaluator-owned until it becomes a bounded
+character result or is explicitly duplicated by `split = TRUE`; it never enters a host file or
+connection. The `stats::family` entry is another deliberately thin generic seam: it routes owned
+class metadata through the same evaluator S3 stack but does not embed distributional's package-owned
+method or objects. Regular time-series values follow the same boundary. `stats::ts` creates only
+owned vectors/matrices and `tsp` metadata; `as.ts`, `frequency`, `deltat`, `stats::cycle`, and
+`stats::window` route external classes through the evaluator's S3 stack before using the
+regular-series fallback. The non-generic `stats::embed` consumes only owned vector/matrix storage
+and builds bounded, column-major lag matrices, so pure-R rolling-window helpers can reuse the
+runtime primitive without a host R process. The application-supplied source-bundle loader can now
+install independently authored `window.*`, `cycle.*`, `deltat.*`, or `as.ts.*` methods without
+replacing the core runtime, while package-specific irregular indexes remain package-owned and must
+fit the supported value model. Bundle metadata is normalized in the public facade; only normalized
+package definitions enter the runtime, preserving `parser -> ast` and `runtime -> ast` dependency
+direction. `utils::demo` likewise builds only an owned empty catalog; external demo discovery awaits
+virtual package resources rather than a host R installation. `utils::View` remains host-independent
+by coercing owned values to a bounded data-frame shape and journaling character-formatted columns;
+only the public facade and Playground decide how to display that structured event. Date labeling
+follows the same owned path: `weekdays` dispatches through registered Date/POSIXt methods and an
+embedded C-locale catalog, using UTC arithmetic rather than browser locale or time zone services.
+Path text follows the same host-independent boundary. `file.path` performs only vectorized string
+construction with a caller-selected separator. `path.expand` does not query an operating-system
+account or process environment; because browser sessions expose no home directory, leading tildes
+remain unchanged. Neither operation normalizes paths, checks existence, or performs filesystem I/O.
 Duplicate-position lookup is likewise an owned value operation: `anyDuplicated` dispatches package
 methods through S3, while default atomic/list and data-frame row comparisons use runtime value
 equality, missing-value, factor, and directional-scan primitives without serializing or hashing host

@@ -554,6 +554,13 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      backs `system.time(gcFirst = TRUE)`. Exact GNU allocator counts, automatic host-GC messages,
      weak-reference finalization, and forced JavaScript collection remain explicit runtime-depth
      boundaries.
+132. Usage-ranked connected lines: rank-174 `graphics::lines` and exported `lines.default` now run
+     all 20 measured calls across scales, matrixStats, posterior, and zoo through a reusable S3 and
+     coordinate-normalization path. All nine documented plot types, missing-value path breaks,
+     line/point style rules, invisible default results, Worker/Canvas rendering, PNG output,
+     recording/replay, and resource bounds have evidence over the existing segment/point journal.
+     Broader coordinate classes, complete graphical parameters, clipping/log transforms, line
+     cap/join controls, and device-identical rendering remain graphics-depth work.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

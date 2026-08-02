@@ -1629,6 +1629,29 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     builtinSegments,
     "invisible",
   ),
+  withBuiltinFormals(
+    definePackageBuiltin("graphics", "lines", ["x", "..."], "shape", builtinLines),
+    [{ name: "x" }, { name: "..." }],
+  ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "graphics",
+      "lines.default",
+      ["x", "y", "type", "..."],
+      "shape",
+      builtinLinesDefault,
+      "invisible",
+    ),
+    [
+      { name: "x" },
+      { name: "y", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      {
+        name: "type",
+        defaultValue: { kind: "StringLiteral", value: "l", span: SYNTHETIC_SPAN },
+      },
+      { name: "..." },
+    ],
+  ),
   definePackageBuiltin("graphics", "points", ["x", "..."], "shape", builtinPoints),
   definePackageBuiltin("graphics", "text", ["x", "..."], "shape", builtinGraphicsText),
   definePackageBuiltin(
@@ -20213,9 +20236,10 @@ function plotDefaultGeometry(
   const lineWidths = graphicsSegmentLineWidths(controls.get("lwd"));
   const segments: RGraphicsSegment[] = [];
   const addSegment = (x0: number, y0: number, x1: number, y1: number, index: number): void => {
-    const color = colors[index % colors.length];
-    const lineType = lineTypes[index % lineTypes.length];
-    const lineWidth = lineWidths[index % lineWidths.length];
+    const colorIndex = type === "h" ? index : 0;
+    const color = colors[colorIndex % colors.length];
+    const lineType = lineTypes[0];
+    const lineWidth = lineWidths[0];
     if (
       color === undefined ||
       color[3] === 0 ||
@@ -22755,6 +22779,76 @@ async function builtinPoints(invocation: BuiltinInvocation): Promise<RValue> {
   return R_NULL;
 }
 
+async function builtinLines(invocation: BuiltinInvocation): Promise<RValue> {
+  const generic = matchBuiltinArguments(invocation, ["x", "..."]);
+  const genericX = generic.matched.get("x");
+  if (genericX === undefined || genericX.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in lines().");
+  }
+  const input = await invocation.force(genericX.promise);
+  const dispatched = await invocation.dispatchS3IfPresent(
+    "lines",
+    input,
+    invocation.arguments,
+    false,
+  );
+  return dispatched ?? builtinLinesDefault(invocation, input);
+}
+
+async function builtinLinesDefault(
+  invocation: BuiltinInvocation,
+  genericInput?: RValue,
+): Promise<RValue> {
+  const { matched, dots } = matchLazyArgumentsWithDots(invocation, ["x", "y", "type"]);
+  const xArgument = matched.get("x");
+  if (xArgument === undefined || xArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in lines.default().");
+  }
+  const input = genericInput ?? (await invocation.force(xArgument.promise));
+  const forceOptional = async (name: "y" | "type"): Promise<RValue | undefined> => {
+    const argument = matched.get(name);
+    if (argument === undefined || argument.promise.missing) return undefined;
+    return invocation.force(argument.promise);
+  };
+
+  const controls = new Map<string, RValue>();
+  const supportedControls = new Set(["pch", "col", "bg", "cex", "lwd", "lty"]);
+  for (const argument of dots) {
+    if (
+      argument.name === undefined ||
+      !supportedControls.has(argument.name) ||
+      controls.has(argument.name)
+    ) {
+      if (!argument.promise.missing) await invocation.force(argument.promise);
+      if (argument.name !== undefined && controls.has(argument.name)) {
+        throw new REvaluationError(
+          "NRE2102",
+          `Argument '${argument.name}' matched more than once.`,
+        );
+      }
+      throw new RUnsupportedFeatureError(
+        "NRU6171",
+        `lines.default() graphical control '${argument.name ?? "<unnamed>"}' is outside the current browser line subset.`,
+      );
+    }
+    if (argument.promise.missing) {
+      throw new REvaluationError(
+        "NRE2103",
+        `Argument '${argument.name}' is missing in lines.default().`,
+      );
+    }
+    controls.set(argument.name, await invocation.force(argument.promise));
+  }
+
+  const coordinates = graphicsXyCoordinates(input, await forceOptional("y"), invocation, "lines");
+  const typeValue = await forceOptional("type");
+  const type = typeValue === undefined ? "l" : plotType(typeValue);
+  const state = graphicsState(invocation, "lines");
+  invocation.setResultVisibility("invisible");
+  plotDefaultGeometry(invocation, state, coordinates, type, controls);
+  return R_NULL;
+}
+
 async function builtinGraphicsText(invocation: BuiltinInvocation): Promise<RValue> {
   const generic = matchBuiltinArguments(invocation, ["x", "..."]);
   const genericX = generic.matched.get("x");
@@ -23048,12 +23142,12 @@ function graphicsXyCoordinates(
   input: RValue,
   suppliedY: RValue | undefined,
   invocation: BuiltinInvocation,
-  call: "plot" | "points" | "polygon" | "text",
+  call: "plot" | "lines" | "points" | "polygon" | "text",
 ): { readonly x: RDoubleVector; readonly y: RDoubleVector } {
   const errorCode =
     call === "plot"
       ? "NRT3353"
-      : call === "points"
+      : call === "lines" || call === "points"
         ? "NRT3347"
         : call === "polygon"
           ? "NRT3348"
@@ -23140,13 +23234,13 @@ function graphicsXyAtomicCoordinates(
   value: RValue,
   name: "x" | "y",
   invocation: BuiltinInvocation,
-  call: "plot" | "points" | "polygon" | "text",
+  call: "plot" | "lines" | "points" | "polygon" | "text",
 ): RDoubleVector {
   if (!isAtomic(value) || value.type === "character" || value.type === "complex") {
     throw new RTypeMismatchError(
       call === "plot"
         ? "NRT3353"
-        : call === "points"
+        : call === "lines" || call === "points"
           ? "NRT3347"
           : call === "polygon"
             ? "NRT3348"

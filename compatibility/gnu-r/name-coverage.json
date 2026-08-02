@@ -4,11 +4,11 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 570,
-    "overlappingNames": 555,
-    "missingReferenceNames": 1967,
+    "nativrRegisteredNames": 572,
+    "overlappingNames": 557,
+    "missingReferenceNames": 1965,
     "nativrExtensionNames": 15,
-    "nameCoverage": 0.220063
+    "nameCoverage": 0.220856
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 410, "nameCoverage": 0.299927 },
@@ -24,8 +24,8 @@
     {
       "package": "graphics",
       "callableNames": 88,
-      "overlappingNames": 19,
-      "nameCoverage": 0.215909
+      "overlappingNames": 21,
+      "nameCoverage": 0.238636
     },
     { "package": "datasets", "callableNames": 0, "overlappingNames": 0, "nameCoverage": 1 }
   ],
@@ -335,6 +335,8 @@
     "lengths",
     "levels",
     "library",
+    "lines",
+    "lines.default",
     "list",
     "list.dirs",
     "list.files",
@@ -1729,8 +1731,6 @@
     "license",
     "limitedLabels",
     "line",
-    "lines",
-    "lines.default",
     "list2DF",
     "listFromMethods",
     "lm.fit",

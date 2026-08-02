@@ -336,12 +336,20 @@ vectors, defaults an omitted `x1` or `y1` to its corresponding start coordinate,
 coordinates, colors, line types, and line widths without a recycling warning. Missing/non-finite
 coordinates and missing/transparent/invalid-width drawing entries are omitted. Valid colors are
 resolved to `#RRGGBBAA`, and documented line-type names, numeric cycles, and custom hexadecimal
-patterns are normalized before transport. `graphics::points()` dispatches classed first arguments
-before accessing the owned device. Its default accepts paired real vectors, two-column matrices,
-one-/two-column data frames, complex coordinates, and named `list(x, y)` containers, with an
-implicit sequence paired to a single ordinary vector. Separate x/y vectors must have equal lengths.
-It resolves numeric plotting-symbol codes 0:25, printable ASCII and negative-Unicode codes, literal
-one-character symbols, colors, fills, sizes, and widths into a bounded point event;
+patterns are normalized before transport. `graphics::lines()` dispatches classed inputs before its
+owned `lines.default` fallback, preserving package-method values and visibility. The default uses
+the same x/y normalization as `plot.default`, accepts all nine documented plot types, and returns
+invisible `NULL`. Connected and step paths are broken by missing/non-finite pairs; histogram lines
+recycle colour while ordinary line colour/type/width use their first values, and point-bearing types
+reuse the point-style recycling path. All geometry becomes existing bounded segment/point commands,
+so Worker transfer, browser/PNG rendering, hold/flush, and record/replay need no separate polyline
+protocol. Line caps/joins/mitres, full clipping/log transforms, and the remaining graphical
+parameter surface remain explicit boundaries. `graphics::points()` dispatches classed first
+arguments before accessing the owned device. Its default accepts paired real vectors, two-column
+matrices, one-/two-column data frames, complex coordinates, and named `list(x, y)` containers, with
+an implicit sequence paired to a single ordinary vector. Separate x/y vectors must have equal
+lengths. It resolves numeric plotting-symbol codes 0:25, printable ASCII and negative-Unicode codes,
+literal one-character symbols, colors, fills, sizes, and widths into a bounded point event;
 missing/non-finite coordinates and non-drawing style entries are omitted. `type = "p"` draws,
 `type = "n"` validates without emission, and both return invisible `NULL`. Line/path types,
 locale-dependent codes, character coordinate coercion, broader coordinate classes, clipping/log

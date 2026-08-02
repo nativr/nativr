@@ -360,6 +360,8 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "image",
       "image.default",
       "legend",
+      "lines",
+      "lines.default",
       "matplot",
       "pairs",
       "par",

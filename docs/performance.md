@@ -517,3 +517,9 @@ reachable-graph census shared with `system.time(gcFirst = TRUE)`. The traversal 
 runtime objects and payload storage, uses cycle guards, and imports no host heap profiler or GC
 adapter. The measured Worker is 348.3 KiB gzip, so the ceiling rises narrowly to 349 KiB; client and
 parser-Wasm budgets remain unchanged.
+
+Language subset 0.214 adds usage-ranked `graphics::lines`/`lines.default` without a new event type,
+renderer, dependency, or package adapter. Generic/default dispatch and coordinate normalization stay
+inside existing runtime/base layers; all geometry reuses the bounded segment and point journal
+already transported to Worker, Canvas, and PNG consumers. The measured Worker is 348.6 KiB gzip
+within the existing 349 KiB ceiling; client and parser-Wasm budgets remain unchanged.

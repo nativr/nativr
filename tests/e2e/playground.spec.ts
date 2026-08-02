@@ -406,6 +406,25 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.locator("#source").fill(`
     plot.new()
     plot.window(c(0, 4), c(0, 4))
+    lines(c(1, 2, 3), c(1, 3, 1), col = "purple", lwd = 4)
+  `);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("null");
+  await expect(page.locator("#graphics-count")).toHaveText("3");
+  const linePixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
+    const context = canvas.getContext("2d");
+    if (context === null) return [];
+    return [
+      ...context.getImageData(160, 300, 1, 1).data,
+      ...context.getImageData(320, 100, 1, 1).data,
+      ...context.getImageData(480, 300, 1, 1).data,
+    ];
+  });
+  expect(linePixels).toEqual([160, 32, 240, 255, 160, 32, 240, 255, 160, 32, 240, 255]);
+
+  await page.locator("#source").fill(`
+    plot.new()
+    plot.window(c(0, 4), c(0, 4))
     points(
       c(1, 2, 3),
       c(1, 2, 3),

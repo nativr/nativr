@@ -139,10 +139,11 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 570 registered functions, including resettable
+an initial condition/handler slice. It exposes 572 registered functions, including resettable
 session options, isolated session environment variables, deterministic non-interactive host-mode
-detection, browser-owned `gc()` memory censuses, and vectorized decimal rounding plus real/complex
-logarithm and exponential semantics. Browser-memory `read.table`/`read.csv`/ `read.delim` and
+detection, browser-owned `gc()` memory censuses, an S3-first `graphics::lines()` path over the
+existing Worker/Canvas journal, and vectorized decimal rounding plus real/complex logarithm and
+exponential semantics. Browser-memory `read.table`/`read.csv`/ `read.delim` and
 `write.table`/`write.csv` paths provide quoted text-table interchange without host filesystem
 access. Data-mask and local-environment evaluation preserve result visibility, while `all.equal`
 provides bounded tolerant recursive comparison and `ifelse` provides lazy vectorized branch

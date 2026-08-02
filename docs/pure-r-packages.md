@@ -197,6 +197,14 @@ grids reuse one transferable raster command, while irregular grids reuse the pol
 removes a shared pure-R dependency seam without translating any of those packages to TypeScript;
 their remaining dependencies and runtime calls still need executable evidence.
 
+Rank-174 `graphics::lines()` now removes the next shared seam for scales, matrixStats, posterior,
+and zoo. Package-owned `lines.<class>` methods stay ordinary R functions selected by the runtime's
+S3 registry; the exported default maps vectors and common coordinate containers, all documented plot
+types, missing-value breaks, and line/point styles onto the already-owned graphics journal. That
+means installing another pure-R package can reuse this primitive immediately rather than requiring a
+TypeScript rewrite or a new Worker message. Compatibility still depends on every other callable,
+class, dependency, data format, and graphics behavior that the package exercises.
+
 Rank-166 `utils::browseURL()` supplies the same package-independent report/viewer seam for the
 measured xfun, htmltools, knitr, and httpuv calls. Unchanged package code can write HTML, SVG, PNG,
 or another asset to a session-local path and request that the embedding application present it. The

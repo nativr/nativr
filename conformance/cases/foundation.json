@@ -7069,6 +7069,27 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "lines-generic-default-formals-and-method-visibility",
+    "code": "lines.probe <- function(x, y = NULL, type = \"l\", ..., marker = \"default\") c(class(x), marker, list(...)$extra)\ncustom <- withVisible(graphics::lines(structure(1:3, class = \"probe\"), marker = \"custom\", extra = 7))\nfmls <- formals(graphics::lines.default)\nc(custom$value, custom$visible, names(fmls), identical(fmls[[\"y\"]], NULL), identical(fmls[[\"type\"]], \"l\"))",
+    "expected": ["probe", "custom", "7", "TRUE", "x", "y", "type", "...", "TRUE", "TRUE"],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "lines-default-coordinate-types-breaks-and-visibility",
+    "code": "plot.new()\nplot.window(c(0, 6), c(0, 7))\na <- withVisible(lines(c(1, 2, NA, 4), c(1, 3, 2, 4), col = c(\"red\", \"blue\"), lty = c(2, 3), lwd = c(2, 4)))\nb <- withVisible(lines(matrix(1:6, ncol = 2), type = \"b\", pch = 1:3, col = 1:3))\nd <- withVisible(lines(1:3, 4:6, type = \"n\"))\ne <- withVisible(lines(numeric(), numeric()))\nc(is.null(a$value), a$visible, is.null(b$value), b$visible, is.null(d$value), d$visible, is.null(e$value), e$visible)",
+    "expected": [true, false, true, false, true, false, true, false],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "lines-active-window-and-input-boundaries",
+    "code": "before <- inherits(try(lines(1:2, 1:2), silent = TRUE), \"try-error\")\nplot.new()\nplot.window(c(0, 6), c(0, 7))\nc(before, inherits(try(lines(1:3, 4:5), silent = TRUE), \"try-error\"), inherits(try(lines(), silent = TRUE), \"try-error\"), inherits(try(lines(1:3, 4:6, type = \"q\"), silent = TRUE), \"try-error\"), inherits(try(lines(1:3, 4:6, lty = \"wat\"), silent = TRUE), \"try-error\"), is.null(lines(c(1, Inf, NaN), 1:3)))",
+    "expected": [true, true, true, true, true, true],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "points-zoo-documented-method-seam-and-visibility",
     "code": "points.zoo <- function(x, y = NULL, type = \"p\", ..., marker = \"default\") c(class(x), marker, list(...)$extra)\nresult <- withVisible(graphics::points(structure(1:3, class = \"zoo\"), marker = \"custom\", extra = 7))\nc(result$value, result$visible)",
     "expected": ["zoo", "custom", "7", "TRUE"],
