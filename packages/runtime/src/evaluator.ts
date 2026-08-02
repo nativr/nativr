@@ -9,6 +9,7 @@ import type {
 } from "@nativr/ast";
 
 import { EvaluationContext, DEFAULT_RUNTIME_LIMITS } from "./context.js";
+import { deparseAst } from "./language.js";
 import { censusRuntimeMemory } from "./memory.js";
 import {
   createEnvironment,
@@ -32,6 +33,7 @@ import {
   characterVector,
   complexVector,
   doubleVector,
+  functionDebugRegistry,
   integerVector,
   isAtomic,
   isDataFrame,
@@ -1850,6 +1852,10 @@ export class Evaluator {
     call?: CallExpressionNode,
     callerEnvironment?: REnvironment,
   ): Promise<EvaluationResult> {
+    const debugStep =
+      callable.type === "builtin" || callable.type === "closure"
+        ? await this.#enterFunctionDebug(callable, call, context)
+        : false;
     if (callable.type === "builtin") {
       let resultVisibility = callable.definition.resultVisibility ?? "visible";
       const value = await callable.definition.implementation({
@@ -2012,7 +2018,81 @@ export class Evaluator {
         details: { type: callable.type },
       });
     }
-    return this.#invokeClosure(callable, args, context, call, callerEnvironment);
+    return this.#invokeClosure(callable, args, context, call, callerEnvironment, debugStep);
+  }
+
+  async #enterFunctionDebug(
+    callable: RClosure | RBuiltin,
+    call: CallExpressionNode | undefined,
+    context: EvaluationContext,
+  ): Promise<boolean> {
+    const registry = functionDebugRegistry(this.#builtinState);
+    const persistent = registry.persistent.get(callable);
+    const once = registry.once.get(callable);
+    if (persistent === undefined && once === undefined) return false;
+    if (once !== undefined) registry.once.delete(callable);
+
+    const callLabel =
+      call === undefined
+        ? callable.type === "builtin"
+          ? `${callable.definition.name}()`
+          : "function()"
+        : deparseAst(call);
+    context.writeOutput({ stream: "stdout", text: `debugging in: ${callLabel}\n` });
+    if (this.#readline === undefined) return false;
+    if (callable.type === "builtin") {
+      context.writeOutput({
+        stream: "stdout",
+        text: `debug: <${callable.definition.package}::${callable.definition.name}>\n`,
+      });
+      await this.#readDebugCommand(context);
+      return false;
+    }
+    return true;
+  }
+
+  async #readDebugCommand(context: EvaluationContext): Promise<"step" | "continue"> {
+    context.writeOutput({ stream: "stdout", text: "Browse[1]> " });
+    const command = (await this.#readline?.("Browse[1]> "))?.trim() ?? "c";
+    switch (command) {
+      case "":
+      case "n":
+      case "next":
+      case "s":
+      case "step":
+        return "step";
+      case "c":
+      case "cont":
+      case "continue":
+      case "f":
+      case "finish":
+        return "continue";
+      case "Q":
+        throw new REvaluationError("NRE2256", "Evaluation aborted from the debug browser.");
+      default:
+        throw new RUnsupportedFeatureError(
+          "NRU6205",
+          `Debug-browser command '${command}' is outside the current next/continue/finish/Q subset.`,
+        );
+    }
+  }
+
+  async #evaluateDebuggedBody(
+    body: AstNode,
+    environment: REnvironment,
+    context: EvaluationContext,
+  ): Promise<EvaluationResult> {
+    const statements = body.kind === "Block" ? body.body : [body];
+    let result: EvaluationResult = { value: R_NULL, visible: false };
+    let stepping = true;
+    for (const statement of statements) {
+      if (stepping) {
+        context.writeOutput({ stream: "stdout", text: `debug: ${deparseAst(statement)}\n` });
+        stepping = (await this.#readDebugCommand(context)) === "step";
+      }
+      result = await this.#evaluateNode(statement, environment, context);
+    }
+    return result;
   }
 
   async #signalGlobalCondition(
@@ -2055,6 +2135,7 @@ export class Evaluator {
     context: EvaluationContext,
     call?: CallExpressionNode,
     callerEnvironment?: REnvironment,
+    debugStep = false,
   ): Promise<EvaluationResult> {
     context.enterCall();
     const functionTarget = Symbol("function");
@@ -2192,7 +2273,9 @@ export class Evaluator {
         let failed = false;
         let failure: unknown;
         try {
-          result = await this.#evaluateNode(closure.body, frame, context);
+          result = debugStep
+            ? await this.#evaluateDebuggedBody(closure.body, frame, context)
+            : await this.#evaluateNode(closure.body, frame, context);
         } catch (error) {
           if (error instanceof ReturnSignal && error.target === functionTarget) {
             result = error.result;

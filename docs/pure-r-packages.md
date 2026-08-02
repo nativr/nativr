@@ -442,6 +442,10 @@ loader.
   resources, session files, raw vectors, and owned file/URL/gzip connections. UTF-8 character and
   exact-byte widths, cursors, EOF, warnings, invalid input, and resource limits are shared runtime
   behavior rather than package-specific rewrites.
+- `debug()`/`undebug()` cover R6's measured generator and instance-method instrumentation without
+  rewriting those closures. Marks follow the shared function object, and `debugonce()` invocations
+  can cross the default Worker through the explicit readline adapter. The present browser command
+  subset does not yet include arbitrary expressions, nested stepping, `browser()`, or S4 signatures.
 - Package resources and their parent directories can be enumerated with `list.files()`/`list.dirs()`
   or selected with `setwd()`. Relative `readLines()`, table-reader, and connection paths then
   resolve inside that immutable package root. `R.home()` and the runtime/package/session directory

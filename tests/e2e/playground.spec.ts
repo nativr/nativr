@@ -52,6 +52,20 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText('"x"');
 
+  await page
+    .locator("#source")
+    .fill("debugonce(nativrdemo::twice_mean)\nnativrdemo::twice_mean(c(1, 2, 6))");
+  page.once("dialog", async (dialog) => {
+    expect(dialog.type()).toBe("prompt");
+    expect(dialog.message()).toBe("Browse[1]> ");
+    await dialog.accept("c");
+  });
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("6");
+  await expect(page.locator("#console-output")).toContainText(
+    "debugging in: nativrdemo::twice_mean(c(1, 2, 6))",
+  );
+
   await page.locator("#source").fill('nativrdemo::dynamic_summary(structure(1:3, class = "demo"))');
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText('"worker-dynamic:6"');

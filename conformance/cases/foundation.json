@@ -8774,5 +8774,52 @@
     "rOracle": false,
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "debug-function-object-state-visibility-formals-and-debugonce-query",
+    "code": "f <- function(x) x + 1\ng <- f\ndebugged <- withVisible(debug(f))\nmarked <- c(isdebugged(f), isdebugged(g))\ncleared <- withVisible(undebug(g))\nafter <- c(isdebugged(f), isdebugged(g))\nonce <- withVisible(debugonce(f))\nc(is.null(debugged$value), debugged$visible, marked, is.null(cleared$value), cleared$visible, after, is.null(once$value), once$visible, isdebugged(f), names(formals(debug)), names(formals(debugonce)), names(formals(undebug)), names(formals(isdebugged)))",
+    "expected": [
+      "TRUE",
+      "FALSE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "FALSE",
+      "fun",
+      "text",
+      "condition",
+      "signature",
+      "fun",
+      "text",
+      "condition",
+      "signature",
+      "fun",
+      "signature",
+      "fun",
+      "signature"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "undebug-unmarked-function-warning",
+    "code": "is.null(undebug(function() 1))",
+    "expected": true,
+    "expectedWarning": true,
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "debugonce-noninteractive-call-consumption",
+    "code": "f <- function(x) { y <- x + 1; y * 2 }\ndebugonce(f)\nc(f(2), isdebugged(f))",
+    "expected": [6, 0],
+    "rOracle": false,
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

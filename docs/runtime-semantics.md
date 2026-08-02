@@ -462,6 +462,16 @@ connections advance their byte cursor after each field, while closed connections
 operation-scoped and remain closed. Embedded NUL, invalid UTF-8, negative/missing widths, result
 length, and total output bytes fail within the ordinary evaluator limits.
 
+`debug(fun)` and `debugonce(fun)` retain evaluator-local marks in weak object-identity registries;
+aliases of one closure therefore observe the same persistent mark, while replacing or rewriting a
+function produces an unmarked object. `undebug()` removes only the persistent mark and warns when
+none exists; `isdebugged()` intentionally does not report a one-shot mark, matching GNU R 4.6.
+Entering a marked closure consumes any one-shot mark, emits a bounded trace, and, when an explicit
+line-input host exists, prompts before normalized top-level body statements. The current command set
+is empty/`next`, `continue`, `finish`, and `Q`. Non-interactive sessions continue after the entry
+trace; arbitrary debugger expressions, nested stepping, and S4 method-signature tracing are not yet
+implemented.
+
 The same map owns a bounded directory tree and current working directory. `R.home()` identifies a
 static `nativr://runtime` shape; `tempdir()` identifies the mutable session root; and package roots
 come only from supplied bundles. `dir.create()` and recursive `unlink()` mutate session directories,

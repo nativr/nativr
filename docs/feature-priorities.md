@@ -189,10 +189,12 @@ record/replay, pure-R package, Worker, and Canvas paths have executable evidence
 density, clipping/log axes, coordinate-class conversion, and device-exact joins remain explicit
 depth. Rank 256 `base::file.remove` is now complete for xfun and data.table's four measured cleanup
 calls. Rank 259 `base::readChar` now runs digest and Shiny's two measured fixed-width file reads;
-the next measured unresolved callable is rank 277 `base::debug`. Rank 144 `Encoding` is also
-complete for all 12 observed calls across rlang, utf8, and xfun (4.5% weighted reach), together with
-adjacent `Encoding<-`, `enc2utf8`, and `enc2native`. The shared character representation preserves
-exact bytes and canonical R marks through subset/replacement, concatenation, raw conversion, and XDR
+rank 277 `base::debug` and rank 279 `base::undebug` now run R6's measured method-instrumentation
+calls through shared function-object state and the existing Worker readline seam. The next measured
+unresolved callable is rank 281 `grDevices::pdf`. Rank 144 `Encoding` is also complete for all 12
+observed calls across rlang, utf8, and xfun (4.5% weighted reach), together with adjacent
+`Encoding<-`, `enc2utf8`, and `enc2native`. The shared character representation preserves exact
+bytes and canonical R marks through subset/replacement, concatenation, raw conversion, and XDR
 serialization; this is reusable package infrastructure, not an assertion that those packages' native
 components are supported. Rank 149 `rcauchy` is now complete for four calls across ggplot2, pillar,
 and purrr (4.2% weighted reach), together with `dcauchy`, `pcauchy`, and `qcauchy`. The shared
@@ -319,18 +321,20 @@ filtering convolution through `convolve` (rank 225, 2.3%) is now complete, and r
 already supported. Hexadecimal integer modes through `as.hexmode` (rank 280, 1.7%) are now complete
 together with their formatting, printing, selection, and bitwise method chain. Ranks 281 `axis` and
 282 `readChar` now reuse the owned graphics and connection architectures; ranks 283 `debug` and 285
-`undebug` still depend on interactive-debug host architecture. Rank 284 `emptyenv` is already
-supported. Rank 286 `as.list.environment` is the next isolated browser-safe callable and is now
-complete with S3 dispatch, local binding enumeration, hidden-name and sorting controls, hash-aware
-unsorted order, and lazy-promise forcing. Rank 287 `list2env` is already supported. Rank 288
-`capabilities` is now complete: the four sampled calls query `cairo` or `profmem`, and the browser
-runtime truthfully reports both unavailable while preserving GNU R's full named selection shape.
-Ranks 289 `pdf` and 290 `title` require graphics-host architecture, rank 291 `exists` is already
-supported, and rank 292 `kappa` is now complete with QR estimates, exact 2-norm results, direct
-one-/infinity-norm paths, triangular controls, and `qr`/`lm` dispatch. Rank 293 `model.matrix` is
-already supported. Rank 294 `xtabs` is now complete for the sampled RcppEigen factor-table call plus
-weighted/matrix responses, subsets, missing-value controls, unused levels, and table metadata. Rank
-295 `RNGkind` is now complete for the six sampled query calls in the
+`undebug` now reuse the explicit readline host architecture with adjacent `debugonce` and
+`isdebugged`, preserving function-object identity, one-shot consumption, and a bounded command
+subset. Arbitrary debugger expressions, nested stepping, and S4 signatures remain depth. Rank 284
+`emptyenv` is already supported. Rank 286 `as.list.environment` is the next isolated browser-safe
+callable and is now complete with S3 dispatch, local binding enumeration, hidden-name and sorting
+controls, hash-aware unsorted order, and lazy-promise forcing. Rank 287 `list2env` is already
+supported. Rank 288 `capabilities` is now complete: the four sampled calls query `cairo` or
+`profmem`, and the browser runtime truthfully reports both unavailable while preserving GNU R's full
+named selection shape. Ranks 289 `pdf` and 290 `title` require graphics-host architecture, rank 291
+`exists` is already supported, and rank 292 `kappa` is now complete with QR estimates, exact 2-norm
+results, direct one-/infinity-norm paths, triangular controls, and `qr`/`lm` dispatch. Rank 293
+`model.matrix` is already supported. Rank 294 `xtabs` is now complete for the sampled RcppEigen
+factor-table call plus weighted/matrix responses, subsets, missing-value controls, unused levels,
+and table metadata. Rank 295 `RNGkind` is now complete for the six sampled query calls in the
 [`withr` reference manual](https://cran.r-project.org/web/packages/withr/refman/withr.html) plus
 partial/default kind selection, prior-state return and visibility, warnings, the default
 Mersenne-Twister/Inversion pair, and both discrete samplers. Rank 296 `sample.int` is now complete

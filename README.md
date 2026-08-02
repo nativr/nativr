@@ -663,6 +663,12 @@ bytes. It accepts raw vectors, package/session paths, and file, URL, or gzip con
 UTF-8 character counts or exact byte counts; advances open binary cursors; and preserves closed
 connection lifecycle. It does not expose host files or ambient network access.
 
+`debug()`/`undebug()` now run R6's measured method-instrumentation shapes, together with
+`debugonce()` and `isdebugged()`. Marks follow function-object identity, so shared closure aliases
+stay synchronized. Marked calls use the existing explicit readline bridge for bounded
+next/continue/finish/Q prompts in inline or Worker execution; arbitrary debugger expressions, nested
+stepping, `browser()`, and S4 signature tracing remain incomplete.
+
 `stdin()`, `stdout()`, and `stderr()` are stable `c("terminal", "connection")` handles numbered 0,
 1, and 2. Package code can inspect them with `summary()`, `isOpen()`, `isatty()`, `getConnection()`,
 `getAllConnections()`, and `showConnections()`; writes to stdout/stderr become bounded ordered

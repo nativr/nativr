@@ -275,9 +275,9 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 274,rt,true,1,ggplot2,1,1.0,1.7
 275,emptyenv,true,1,R6,2,1.0,1.7
 276,as.list.environment,true,1,R6,1,1.0,1.7
-277,debug,false,1,R6,1,1.0,1.7
+277,debug,true,1,R6,1,1.0,1.7
 278,list2env,true,1,R6,1,1.0,1.7
-279,undebug,false,1,R6,1,1.0,1.7
+279,undebug,true,1,R6,1,1.0,1.7
 280,capabilities,true,2,htmltools|data.table,4,2.1,1.7
 281,pdf,false,2,knitr|data.table,2,2.1,1.7
 282,exists,true,2,knitr|shiny,3,2.1,1.6

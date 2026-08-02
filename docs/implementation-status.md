@@ -433,6 +433,11 @@ Date: 2026-08-02
   raw vectors, package/session paths, file/URL/gzip connections, UTF-8 character and exact-byte
   counts, vector lengths, EOF/zero fields, cursor/lifecycle behavior, text-mode warnings, invalid
   NUL/UTF-8 input, exact formals, pure-R package and Worker execution, and resource bounds.
+- Usage-ranked `base::debug` and `base::undebug` for R6's measured generator/instance-method calls,
+  together with `debugonce` and `isdebugged`: object-identity state shared by closure aliases,
+  persistent and one-shot marks, invisible returns and warnings, string lookup, ordinary and package
+  closures, primitive functions, non-interactive tracing, and Worker-safe
+  `next`/`continue`/`finish`/`Q` commands through the explicit readline host capability.
 - Usage-ranked `grDevices::gray`/`grey` and `gray.colors`/`grey.colors` with zoo's two measured
   calls, byte-exact RGB(A) output, documented gamma correction, alpha recycling, reversal,
   descending endpoints, alias behavior, atomic gray-level coercion, attribute removal, and bounded

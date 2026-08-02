@@ -659,3 +659,9 @@ file/URL/gzip connection registry. One bounded UTF-8 prefix validator provides c
 byte-count modes without a codec dependency, protocol event, filesystem adapter, or package-specific
 translation. The measured Worker is 375.6 KiB gzip, so the ceiling rises narrowly to 376 KiB; client
 and parser-Wasm budgets remain unchanged.
+
+Language subset 0.241 adds usage-ranked `base::debug`/`undebug` plus `debugonce`/`isdebugged`
+through weak function-object registries and the existing evaluator call/readline paths. It adds no
+dependency, protocol event, DOM surface, generated-code path, or package-specific translation. The
+measured Worker is 376.7 KiB gzip, so the ceiling rises narrowly to 377 KiB; client and parser-Wasm
+budgets remain unchanged.

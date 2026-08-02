@@ -83,6 +83,8 @@ export {
   withNames,
   withoutAttribute,
   withoutClasses,
+  functionDebugRegistry,
+  FUNCTION_DEBUG_STATE_KEY,
   GLOBAL_CALLING_HANDLERS_STATE_KEY,
 } from "./values.js";
 export {
@@ -115,10 +117,13 @@ export type {
   RComplexVector,
   RClosure,
   RDoubleVector,
+  RDebuggableFunction,
   RDots,
   REnvironment,
   RExpression,
   RFormula,
+  RFunctionDebugMetadata,
+  RFunctionDebugRegistry,
   RGraphicsEvent,
   RGraphicsBoxplotGroup,
   RGraphicsLegendEntry,

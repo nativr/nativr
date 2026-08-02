@@ -498,6 +498,17 @@ advance one byte cursor; open text mode warns; package/session paths and URL/gzi
 same bounded byte store. Host paths, streaming stdin, native non-UTF-8 locale codecs, `writeChar`,
 and platform-exact connection diagnostics are not claimed.
 
+Usage-ranked `base::debug` and `base::undebug` have GNU R 4.6 behavioral differential evidence for
+R6's measured future-instance and single-instance method patterns, function-object identity,
+invisible `NULL` returns, unmarked warnings, character-name lookup, exact formals, persistent marks,
+and GNU R's separate `debugonce`/`isdebugged` state. NativR-only executable evidence consumes a
+one-shot mark on invocation and routes closure statements through the existing bounded Worker
+`readline` exchange. `next`/empty, `continue`, `finish`, and `Q` are supported; sessions without a
+line-input adapter emit the entry trace and continue. Arbitrary R expressions and inspection
+commands at `Browse[]`, nested step-in/step-out fidelity, `browser()` metadata access, global
+`debuggingState()`, bytecode fallback, and S4 `signature=` tracing remain explicit compatibility
+depth.
+
 `base::R.home`, `dir.create`, `dir.exists`, `list.files`/`dir`, `list.dirs`, `getwd`, `setwd`,
 `normalizePath`, `basename`, and `dirname` have public-shape differential evidence plus NativR-only
 integration coverage for the virtual directory boundary. The runtime owns a static runtime tree,

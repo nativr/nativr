@@ -716,6 +716,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      composition, pure-R namespaces, Worker execution, invalid input, and resource bounds have GNU R
      4.6 evidence. Host files, native locale codecs, streaming stdin, and `writeChar` remain
      compatibility depth.
+153. Usage-ranked function debugging: ranks 277 and 279 `base::debug`/`undebug` run R6's measured
+     future-instance and single-instance method instrumentation, with adjacent `debugonce` and
+     `isdebugged`. GNU R 4.6 evidence covers marks, aliases, visibility, warnings, formals, and name
+     lookup; inline/package/Worker evidence covers one-shot consumption and bounded
+     next/continue/finish/Q prompts. Arbitrary browser expressions, nested stepping, `browser()`,
+     global debugging state, and S4 signature tracing remain compatibility depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

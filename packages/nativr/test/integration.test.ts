@@ -9355,6 +9355,96 @@ describe("complete inline source-to-result vertical slice", () => {
     await limited.dispose();
   });
 
+  it("tracks GNU R-style function debugging state and steps closures through readline", async () => {
+    const nonInteractive = await createR({ execution: "inline", assets, packages: [pureRFixture] });
+    await expect(
+      nonInteractive.eval(`
+        f <- function(x) x + 1
+        g <- f
+        before <- c(isdebugged(f), isdebugged(g))
+        debug(f)
+        marked <- c(isdebugged(f), isdebugged(g))
+        undebug(g)
+        cleared <- c(isdebugged(f), isdebugged(g))
+        c(
+          before, marked, cleared,
+          names(formals(debug)), names(formals(debugonce)),
+          names(formals(undebug)), names(formals(isdebugged))
+        )
+      `),
+    ).resolves.toEqual([
+      "FALSE",
+      "FALSE",
+      "TRUE",
+      "TRUE",
+      "FALSE",
+      "FALSE",
+      "fun",
+      "text",
+      "condition",
+      "signature",
+      "fun",
+      "text",
+      "condition",
+      "signature",
+      "fun",
+      "signature",
+      "fun",
+      "signature",
+    ]);
+
+    const oneShot = await nonInteractive.evalDetailed(`
+      debugonce(nativrfixture::square)
+      first <- nativrfixture::square(3)
+      second <- nativrfixture::square(4)
+      c(first, second, isdebugged(nativrfixture::square))
+    `);
+    expect(oneShot.value).toEqual([9, 16, 0]);
+    expect(oneShot.output).toEqual([
+      { stream: "stdout", text: "debugging in: nativrfixture::square(3)\n" },
+    ]);
+
+    const unmarked = await nonInteractive.evalDetailed("f <- function() 1; undebug(f)");
+    expect(unmarked.warnings).toEqual([
+      { code: "NRW1134", message: "argument is not being debugged" },
+    ]);
+    await expect(nonInteractive.eval("debug(1)")).rejects.toMatchObject({ code: "NRT3368" });
+    await expect(nonInteractive.eval("isdebugged('missing_debug_target')")).rejects.toMatchObject({
+      code: "NRE2001",
+    });
+    await expect(nonInteractive.eval("debug(identity, signature = 'ANY')")).rejects.toMatchObject({
+      code: "NRU6204",
+    });
+    await nonInteractive.dispose();
+
+    const commands = ["n", "c"];
+    const requests: PublicReadlineRequest[] = [];
+    const interactive = await createR({
+      execution: "inline",
+      assets,
+      readline: (request) => {
+        requests.push(request);
+        return commands.shift() ?? "c";
+      },
+    });
+    const stepped = await interactive.evalDetailed(`
+      f <- function(x) { y <- x + 1; y * 2 }
+      debug(f)
+      value <- f(2)
+      c(value, isdebugged(f))
+    `);
+    expect(stepped.value).toEqual([6, 1]);
+    expect(requests).toEqual([{ prompt: "Browse[1]> " }, { prompt: "Browse[1]> " }]);
+    expect(stepped.output).toEqual([
+      { stream: "stdout", text: "debugging in: f(2)\n" },
+      { stream: "stdout", text: "debug: (y <- (x + 1))\n" },
+      { stream: "stdout", text: "Browse[1]> " },
+      { stream: "stdout", text: "debug: (y * 2)\n" },
+      { stream: "stdout", text: "Browse[1]> " },
+    ]);
+    await interactive.dispose();
+  });
+
   it("routes lazy url() connections through an explicit bounded host capability", async () => {
     const offline = await createR({ execution: "inline", assets });
     await expect(
@@ -10434,7 +10524,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.240.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.241.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

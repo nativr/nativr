@@ -29,6 +29,7 @@ import {
   factorLevels,
   factorValue,
   extractVectorElement,
+  functionDebugRegistry,
   integerVector,
   isAtomic,
   isDataFrame,
@@ -68,6 +69,7 @@ import type {
   RCharacterVector,
   RComplexVector,
   RDoubleVector,
+  RDebuggableFunction,
   REnvironment,
   RExpression,
   RFormula,
@@ -1267,6 +1269,43 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("deparse", ["expr"], "shape", builtinDeparse),
   defineBuiltin("deparse1", ["expr"], "shape", builtinDeparse),
   defineBuiltin("body", ["fun"], "behavioral", builtinBody),
+  withBuiltinFormals(
+    defineBuiltin(
+      "debug",
+      ["fun", "text", "condition", "signature"],
+      "behavioral",
+      (invocation) => builtinDebug(invocation, false),
+      "regular",
+      "invisible",
+    ),
+    debugFunctionFormals(),
+  ),
+  withBuiltinFormals(
+    defineBuiltin(
+      "debugonce",
+      ["fun", "text", "condition", "signature"],
+      "behavioral",
+      (invocation) => builtinDebug(invocation, true),
+      "regular",
+      "invisible",
+    ),
+    debugFunctionFormals(),
+  ),
+  withBuiltinFormals(
+    defineBuiltin(
+      "undebug",
+      ["fun", "signature"],
+      "behavioral",
+      builtinUndebug,
+      "regular",
+      "invisible",
+    ),
+    [{ name: "fun" }, { name: "signature", defaultValue: nullAst() }],
+  ),
+  withBuiltinFormals(
+    defineBuiltin("isdebugged", ["fun", "signature"], "behavioral", builtinIsDebugged),
+    [{ name: "fun" }, { name: "signature", defaultValue: nullAst() }],
+  ),
   defineBuiltin("args", ["name"], "behavioral", builtinArgs),
   defineBuiltin("formals", ["fun"], "behavioral", builtinFormals),
   defineBuiltin("formals<-", ["fun", "value"], "behavioral", builtinFormalsReplacement),
@@ -3252,6 +3291,18 @@ function withBuiltinFormals(
       })),
     ),
   };
+}
+
+function debugFunctionFormals(): readonly {
+  readonly name: string;
+  readonly defaultValue?: AstNode;
+}[] {
+  return [
+    { name: "fun" },
+    { name: "text", defaultValue: { kind: "StringLiteral", value: "", span: SYNTHETIC_SPAN } },
+    { name: "condition", defaultValue: nullAst() },
+    { name: "signature", defaultValue: nullAst() },
+  ];
 }
 
 function classicPaletteFormals(): readonly FunctionParameter[] {
@@ -12710,6 +12761,64 @@ async function builtinBody(invocation: BuiltinInvocation): Promise<RValue> {
   if (value.type === "builtin") return R_NULL;
   invocation.context.warn({ code: "NRW1013", message: "argument is not a function" });
   return R_NULL;
+}
+
+async function builtinDebug(invocation: BuiltinInvocation, once: boolean): Promise<RValue> {
+  const call = once ? "debugonce" : "debug";
+  const matched = await matchExact(invocation, ["fun", "text", "condition", "signature"]);
+  rejectDebugSignature(matched.get("signature"), call);
+  const target = await debugFunctionTarget(invocation, required(matched, "fun", call));
+  const metadata = {
+    text: matched.get("text") ?? characterVector([""]),
+    condition: matched.get("condition") ?? R_NULL,
+  };
+  const registry = functionDebugRegistry(invocation.state);
+  (once ? registry.once : registry.persistent).set(target, metadata);
+  return R_NULL;
+}
+
+async function builtinUndebug(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["fun", "signature"]);
+  rejectDebugSignature(matched.get("signature"), "undebug");
+  const target = await debugFunctionTarget(invocation, required(matched, "fun", "undebug"));
+  if (!functionDebugRegistry(invocation.state).persistent.delete(target)) {
+    invocation.context.warn({ code: "NRW1134", message: "argument is not being debugged" });
+  }
+  return R_NULL;
+}
+
+async function builtinIsDebugged(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["fun", "signature"]);
+  rejectDebugSignature(matched.get("signature"), "isdebugged");
+  const target = await debugFunctionTarget(invocation, required(matched, "fun", "isdebugged"));
+  invocation.context.allocate(1);
+  return logicalVector([functionDebugRegistry(invocation.state).persistent.has(target)]);
+}
+
+async function debugFunctionTarget(
+  invocation: BuiltinInvocation,
+  supplied: RValue,
+): Promise<RDebuggableFunction> {
+  let target = supplied;
+  if (target.type === "character") {
+    if (target.length === 0) {
+      throw new REvaluationError("NRE2255", "could not find function ''");
+    }
+    const name = isMissing(target, 0) ? "NA" : (target.values[0] ?? "");
+    target = await lookupCallableByName(invocation, name);
+  }
+  if (target.type !== "closure" && target.type !== "builtin") {
+    throw new RTypeMismatchError("NRT3368", "argument must be a function");
+  }
+  return target;
+}
+
+function rejectDebugSignature(value: RValue | undefined, call: string): void {
+  if (value === undefined || value.type === "null") return;
+  throw new RUnsupportedFeatureError(
+    "NRU6204",
+    `${call}(signature=) requires S4 method tracing, which is outside the current debugger subset.`,
+  );
 }
 
 async function lookupCallableByName(invocation: BuiltinInvocation, name: string): Promise<RValue> {

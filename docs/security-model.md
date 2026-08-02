@@ -13,6 +13,11 @@ fallbacks from the pinned web-tree-sitter browser bundle and the browser audit r
 reappearance. Inline Node tests use the upstream module, but the dormant fallback is not reached by
 the pinned grammar.
 
+Function debugging reuses only the explicit `createR({ readline })` string exchange. Debug marks
+remain evaluator-local weak object-identity state, prompts and traces are charged to the ordinary
+output limit, and the current command parser accepts only a fixed next/continue/finish/Q vocabulary;
+it does not execute host JavaScript or arbitrary generated code.
+
 Internal names live in `Map`; public output uses arrays and typed snapshots. No untrusted name is
 assigned to an ordinary JavaScript prototype-bearing record. Resource limits and Worker termination
 reduce accidental hangs. NativR does not claim a formally verified hostile-code sandbox; host

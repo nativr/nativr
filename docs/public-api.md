@@ -75,6 +75,11 @@ the current Worker evaluation. A configured handler makes `interactive()` return
 handler, `interactive()` is `FALSE`, `readline()` emits its prompt with the non-interactive newline,
 and returns `""` without contacting the host.
 
+The same explicit handler services `debug()`/`debugonce()` prompts, including across the default
+Worker. The current debugger accepts empty/`next`, `continue`, `finish`, and `Q`; it does not yet
+evaluate arbitrary R expressions or inspection commands at `Browse[]`. With no handler, a marked
+call emits its entry trace and continues without granting any new host capability.
+
 `evalDetailed` returns textual `print()`/`cat()` output as ordered
 `{ stream: "stdout" | "stderr" | "message", text }` events. `createR({ onOutput })` receives the
 same events in both inline and Worker execution, while the detailed result retains them for

@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.240.0",
+  "languageSubsetVersion": "0.241.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -215,6 +215,10 @@
         { "name": "deparse", "compatibility": "shape" },
         { "name": "deparse1", "compatibility": "shape" },
         { "name": "body", "compatibility": "behavioral" },
+        { "name": "debug", "compatibility": "behavioral" },
+        { "name": "debugonce", "compatibility": "behavioral" },
+        { "name": "undebug", "compatibility": "behavioral" },
+        { "name": "isdebugged", "compatibility": "behavioral" },
         { "name": "args", "compatibility": "behavioral" },
         { "name": "formals", "compatibility": "behavioral" },
         { "name": "formals<-", "compatibility": "behavioral" },

@@ -796,8 +796,19 @@ removal, open cursor and closed lifecycle behavior, text-mode warnings, and inva
 inputs. NativR-only browser-UTF-8 evidence covers scalar widths, exact arbitrary byte fields, and
 invalid UTF-8; package and Worker evidence crosses immutable resources, session files, file/URL/gzip
 connections, and resource bounds without a package-specific path. Host files, native locale codecs,
-streaming stdin, `writeChar`, and platform-exact diagnostics remain compatibility depth. The next
-measured unresolved callable is rank 277 `base::debug`.
+streaming stdin, `writeChar`, and platform-exact diagnostics remain compatibility depth.
+
+The function-debugging increment raises current name overlap to 615 of 2,522. Ranks 277
+`base::debug` and 279 `base::undebug` cover R6's two measured method-instrumentation calls at 1.7%
+download-weighted reach, while the same state model adds adjacent `debugonce` and `isdebugged`. GNU
+R 4.6 differential evidence covers exact formals, visibility, warnings, string lookup, closure and
+primitive marks, shared aliases, replacement reset, and the fact that a one-shot mark is not
+reported by `isdebugged` or removed by `undebug`. NativR-only inline, source-only package, and
+Worker evidence covers invocation, one-shot consumption, non-interactive tracing, and bounded
+next/continue/finish/Q prompts through the existing readline bridge. Arbitrary Browse expressions,
+nested stepping, `browser()`, global debugging state, and S4 signature tracing remain compatibility
+depth. The next measured unresolved callable is rank 281 `grDevices::pdf`; rank 287
+`base::file.create` is the next unresolved browser-owned filesystem callable.
 
 ## Completion evidence
 

@@ -36,6 +36,13 @@ no adapter, the evaluator remains non-interactive and never contacts the host. T
 can reuse browser UI supplied by the application without importing DOM APIs into `base`, `runtime`,
 or the Worker.
 
+Function-debug state follows the value boundary rather than the base-builtin boundary. Runtime-owned
+weak registries key persistent and one-shot metadata by closure or builtin object identity; base
+`debug`/`undebug` mutate those registries, while the evaluator consumes them at the common callable
+entry point. Debugged closure statements then reuse the same readline exchange for a fixed bounded
+command set. This preserves `base -> runtime`, avoids mutating normalized values, and gives inline,
+package, and Worker calls one implementation.
+
 High-level helpers reuse semantic runtime primitives instead of maintaining parallel behavior.
 `base::replace`, for example, delegates to the same immutable one-dimensional subset-replacement
 engine used by direct `x[index] <- value` evaluation, so coercion, recycling, attributes, extension,

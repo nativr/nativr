@@ -325,6 +325,21 @@ export interface RBuiltin {
   readonly definition: BuiltinDefinition;
 }
 
+/** A function object whose GNU R-style debugging bits belong to the evaluator session. */
+export type RDebuggableFunction = RClosure | RBuiltin;
+
+/** Browser-safe metadata retained when debug() or debugonce() marks a function object. */
+export interface RFunctionDebugMetadata {
+  readonly text: RValue;
+  readonly condition: RValue;
+}
+
+/** Object-identity registries keep shared closure references in sync without mutating values. */
+export interface RFunctionDebugRegistry {
+  readonly persistent: WeakMap<RDebuggableFunction, RFunctionDebugMetadata>;
+  readonly once: WeakMap<RDebuggableFunction, RFunctionDebugMetadata>;
+}
+
 /** A cancellation flag shared by evaluator and reference operators. */
 export interface CancellationToken {
   readonly cancelled: boolean;
@@ -595,6 +610,27 @@ export interface OperatorContext {
 
 /** Session-state slot shared by the evaluator and the base condition builtins. */
 export const GLOBAL_CALLING_HANDLERS_STATE_KEY = "runtime.globalCallingHandlers";
+
+/** Session-state slot shared by the evaluator and the base debugging builtins. */
+export const FUNCTION_DEBUG_STATE_KEY = "runtime.functionDebug";
+
+/** Return the session-owned function-debug registry, creating it on first use. */
+export function functionDebugRegistry(state: Map<string, unknown>): RFunctionDebugRegistry {
+  const existing = state.get(FUNCTION_DEBUG_STATE_KEY);
+  if (isFunctionDebugRegistry(existing)) return existing;
+  const created: RFunctionDebugRegistry = {
+    persistent: new WeakMap(),
+    once: new WeakMap(),
+  };
+  state.set(FUNCTION_DEBUG_STATE_KEY, created);
+  return created;
+}
+
+function isFunctionDebugRegistry(value: unknown): value is RFunctionDebugRegistry {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as Partial<RFunctionDebugRegistry>;
+  return candidate.persistent instanceof WeakMap && candidate.once instanceof WeakMap;
+}
 
 /** Replaceable arithmetic seam implemented by the JavaScript reference backend. */
 export interface RuntimeOperators {
