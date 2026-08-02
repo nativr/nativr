@@ -198,6 +198,12 @@ Date: 2026-08-02
   R formals. A source-only package and default Worker Playground execute the same path. Data-frame
   coercion, complex filtering, irregular-series package methods, and native algorithm identity
   remain explicit boundaries.
+- Usage-ranked `stats::ts.plot()` runs magrittr's exposition-pipe vector example and aligns
+  equal-frequency vector/matrix/data-frame/regular-series columns across their union time range.
+  Missing union cells break paths; common line and point styles recycle by series; bounded linear or
+  log windows, annotations, frame control, dynamic `par("usr")`, pure-R packages, Worker transport,
+  and Canvas rendering share the existing graphics journal. Multi-panel `plot.ts`, irregular
+  indexes, complete axis/margin layout, and device-exact output remain incomplete.
 - Usage-ranked `base::findInterval()` runs zoo's irregular-Date rolling-window width expression
   through checkpointed binary search, including duplicate/infinite breakpoints, missing queries,
   closure and inside controls, flattened numeric coercion, sortedness validation, and unattributed
@@ -722,10 +728,10 @@ Date: 2026-08-02
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 13 files and 432 tests, with three explicitly skipped tests.
+- Vitest currently passes 13 files and 433 tests, with three explicitly skipped tests.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 785/785 cases. The optional black-box R oracle passes all 746
+- Checked-in conformance passes 788/788 cases. The optional black-box R oracle passes all 749
   eligible cases and explicitly skips 39 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,

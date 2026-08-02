@@ -347,6 +347,18 @@ after the window and on either side of data geometry, while annotations remain l
 `ann = FALSE`. The default returns invisible `NULL`; package methods preserve their own visibility.
 Automatic axes, expression-derived labels, logarithmic or fixed-aspect windows, specialized core
 plot methods, margins/clipping, and device-identical layout remain explicit boundaries.
+
+`stats::ts.plot(..., gpars = list())` is a high-level aligned-series plot rather than a
+package-specific translation. Unnamed inputs and explicitly named `ts`/`mts` inputs become one or
+more columns; other named dots and named `gpars` entries become plot controls. Every column must
+have the same positive sampling frequency. The runtime constructs the union start/end grid, inserts
+missing cells outside each source interval, and renders each column through the existing line/point
+geometry so gaps remain disconnected. Default type is line, x coordinates retain `tsp` calendar
+values, common styles recycle by column, and the result is invisible `NULL`. Linear/log windows,
+explicit limits, frame/annotation controls, expression-derived single-series labels, and dynamic
+`par("usr")` use the owned graphics state. Multi-panel `plot.ts`, irregular series, complete
+axes/margins and arbitrary graphical parameters remain outside this behavioral slice.
+
 `graphics::box()` resolves plot-region `bty` edge shapes, `col`/`fg` precedence, line type, and
 positive width into one bounded frame command. It returns invisible `NULL`; figure, inner, and outer
 regions are rejected until the owned device has a margin/layout model. `graphics::boxplot()` is an

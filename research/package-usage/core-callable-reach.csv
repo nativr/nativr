@@ -290,7 +290,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 289,kappa,true,1,RcppEigen,1,1.0,1.6
 290,model.matrix,true,1,RcppEigen,1,1.0,1.6
 291,xtabs,true,1,RcppEigen,1,1.0,1.6
-292,ts.plot,false,1,magrittr,1,1.0,1.6
+292,ts.plot,true,1,magrittr,1,1.0,1.6
 293,Sys.which,false,2,knitr|sys,2,2.1,1.6
 294,tan,true,2,testthat|data.table,2,2.1,1.5
 295,diag,true,1,tibble,3,1.0,1.5

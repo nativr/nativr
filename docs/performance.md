@@ -680,3 +680,10 @@ count preflight allocate only bounded path/result arrays; successful files reuse
 binary writer. It adds no dependency, protocol event, filesystem/network adapter, generated-code
 path, or package-specific translation. The measured Worker is 382.3 KiB gzip, so the ceiling rises
 narrowly from 382 KiB to 383 KiB; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.244 adds usage-ranked `stats::ts.plot` by composing the existing regular-series
+metadata validators, bounded numeric coercion, graphics window, segment/point geometry, annotations,
+and device journal. Equal-frequency union allocates one preflighted rectangular grid and adds no
+dependency, protocol event, DOM/device access, generated-code path, or package-specific translation.
+The measured Worker is 383.8 KiB gzip, so the ceiling rises narrowly from 383 KiB to 384 KiB; client
+and parser-Wasm budgets remain unchanged.

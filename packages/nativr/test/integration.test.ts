@@ -28,9 +28,9 @@ NeedsCompilation: no`,
   namespace: `
 importFrom(graphics, axis, plot.new, plot.window, rect)
 importFrom(methods, setClass, showClass)
-importFrom(stats, median)
+importFrom(stats, median, ts.plot)
 importFrom(utils, packageDescription, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, create_file, remove_files, fixed_text, axis_ticks, sourced_value, ask_value, remote_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output)
+export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, plot_series, create_file, remove_files, fixed_text, axis_ticks, sourced_value, ask_value, remote_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -70,6 +70,10 @@ usage_rectangles <- function() {
   plot.new()
   plot.window(c(0, 1), c(0, 1))
   rect(c(0, 0.5), c(0, 0.5), c(0.5, 1), c(0.5, 1), col = "#00000044", border = NA)
+}
+plot_series <- function(z) {
+  ts.plot(z)
+  invisible(length(z))
 }
 create_file <- function() {
   path <- tempfile()
@@ -3347,6 +3351,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "package_metadata",
       "package_name",
       "package_state",
+      "plot_series",
       "process_id",
       "remote_lines",
       "remove_files",
@@ -7016,6 +7021,122 @@ describe("complete inline source-to-result vertical slice", () => {
     await limited.dispose();
   });
 
+  it("plots magrittr's usage-ranked time series through aligned browser graphics", async () => {
+    const runtime = await session();
+    const measured = await runtime.evalDetailed(`
+      z <- c(1, 4, 2)
+      shown <- withVisible(stats::ts.plot(z))
+      c(
+        shown$visible,
+        is.null(shown$value),
+        names(formals(stats::ts.plot)),
+        identical(formals(stats::ts.plot)$gpars, list())
+      )
+    `);
+    expect(measured.value).toEqual(["FALSE", "TRUE", "...", "gpars", "FALSE"]);
+    expect(measured.warnings).toEqual([]);
+    expect(measured.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "window",
+      "box",
+      "segments",
+      "text",
+    ]);
+    expect(measured.graphics[1]).toEqual({
+      kind: "window",
+      xlim: [0.92, 3.08],
+      ylim: [0.88, 4.12],
+    });
+    expect(measured.graphics[3]).toMatchObject({
+      kind: "segments",
+      segments: [
+        { x0: 1, y0: 1, x1: 2, y1: 4, color: "#000000FF" },
+        { x0: 2, y0: 4, x1: 3, y1: 2, color: "#000000FF" },
+      ],
+    });
+    expect(measured.graphics[4]).toMatchObject({
+      kind: "text",
+      labels: [{ label: "Time" }, { label: "z" }],
+    });
+
+    const aligned = await runtime.evalDetailed(`
+      stats::ts.plot(
+        stats::ts(1:3, start = 2),
+        stats::ts(10:12, start = 3),
+        gpars = list(
+          type = "b", col = c("red", "blue"), lty = 2:3, lwd = c(4, 5),
+          pch = 6:7, xlim = c(1, 6), ylim = c(0, 20), axes = FALSE, ann = FALSE
+        )
+      )
+    `);
+    expect(aligned.value).toBeNull();
+    expect(aligned.visible).toBe(false);
+    expect(aligned.warnings).toEqual([]);
+    expect(aligned.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "window",
+      "segments",
+      "points",
+      "segments",
+      "points",
+    ]);
+    expect(aligned.graphics[1]).toEqual({
+      kind: "window",
+      xlim: [0.8, 6.2],
+      ylim: [-0.8, 20.8],
+    });
+    expect(aligned.graphics[2]).toMatchObject({
+      kind: "segments",
+      segments: [
+        { x0: 2, y0: 1, x1: 3, y1: 2, color: "#FF0000FF", lineWidth: 4 },
+        { x0: 3, y0: 2, x1: 4, y1: 3, color: "#FF0000FF", lineWidth: 4 },
+      ],
+    });
+    expect(aligned.graphics[4]).toMatchObject({
+      kind: "segments",
+      segments: [
+        { x0: 3, y0: 10, x1: 4, y1: 11, color: "#0000FFFF", lineWidth: 5 },
+        { x0: 4, y0: 11, x1: 5, y1: 12, color: "#0000FFFF", lineWidth: 5 },
+      ],
+    });
+
+    await expect(runtime.eval("stats::ts.plot(data.frame(z = c(3, 1, 2))$z)")).resolves.toBeNull();
+    await expect(runtime.eval("stats::ts.plot()")).rejects.toMatchObject({ code: "NRT3413" });
+    await expect(runtime.eval("stats::ts.plot(a = 1:3, b = 4:6)")).rejects.toMatchObject({
+      code: "NRT3413",
+    });
+    await expect(
+      runtime.eval("stats::ts.plot(ts(1:3, frequency = 2), ts(4:6, frequency = 3))"),
+    ).rejects.toMatchObject({ code: "NRT3413" });
+    await expect(runtime.eval("stats::ts.plot(1:3, gpars = 1)")).rejects.toMatchObject({
+      code: "NRT3413",
+    });
+    await runtime.dispose();
+
+    const packaged = await createR({ execution: "inline", assets, packages: [pureRFixture] });
+    const packageResult = await packaged.evalDetailed("nativrfixture::plot_series(c(2, 5, 1, 4))");
+    expect(packageResult.value).toBe(4);
+    expect(packageResult.visible).toBe(false);
+    expect(packageResult.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "window",
+      "box",
+      "segments",
+      "text",
+    ]);
+    await packaged.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 8 },
+    });
+    await expect(
+      limited.eval("stats::ts.plot(ts(1:3, start = 1), ts(1:3, start = 20))"),
+    ).rejects.toMatchObject({ code: "NRL4002" });
+    await limited.dispose();
+  });
+
   it("draws the usage-ranked numeric plot generic and preserves package S3 seams", async () => {
     const observed: unknown[] = [];
     const runtime = await createR({
@@ -10662,7 +10783,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.243.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.244.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

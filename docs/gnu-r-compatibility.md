@@ -828,7 +828,17 @@ warning suppression, and validation before mutation. NativR-only package, immuta
 host-boundary, resource-limit, and default-Worker evidence runs through the ordinary virtual
 filesystem without a withr-specific adapter. Recursive parent creation, host paths, native
 permissions/umasks, links/devices, platform-exact diagnostics, and persistence remain compatibility
-depth. Rank 292 `graphics::ts.plot` is now the next measured unresolved callable.
+depth.
+
+The time-series-plot increment raises current name overlap to 618 of 2,522. Rank 292
+`stats::ts.plot` covers magrittr's measured exposition-pipe call at 1.6% download-weighted reach.
+GNU R 4.6 differential evidence covers exact formals and invisible return, regular-axis `usr`
+ranges, equal-frequency union across different starts, style and limit controls, empty/named-only
+inputs, incompatible frequencies, and invalid `gpars`. NativR-only event assertions prove gap-aware
+segments and points, style recycling, expression labels, resource preflight, pure-R namespace use,
+default Worker transport, and Canvas pixels without a magrittr adapter. Multi-panel `plot.ts`,
+irregular indexes, complete axes/margins, arbitrary graphical parameters, and device-exact rendering
+remain compatibility depth. Rank 293 `base::Sys.which` is now the next measured unresolved callable.
 
 ## Completion evidence
 

@@ -2573,6 +2573,28 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   definePackageBuiltin("stats", "frequency", ["x", "..."], "behavioral", builtinFrequency),
   definePackageBuiltin("stats", "deltat", ["x", "..."], "behavioral", builtinDeltaTime),
   definePackageBuiltin("stats", "cycle", ["x", "..."], "behavioral", builtinCycle),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "stats",
+      "ts.plot",
+      ["...", "gpars"],
+      "behavioral",
+      builtinTimeSeriesPlot,
+      "invisible",
+    ),
+    [
+      { name: "..." },
+      {
+        name: "gpars",
+        defaultValue: {
+          kind: "CallExpression",
+          callee: { kind: "Identifier", name: "list", span: SYNTHETIC_SPAN },
+          arguments: [],
+          span: SYNTHETIC_SPAN,
+        },
+      },
+    ],
+  ),
   definePackageBuiltin("stats", "embed", ["x", "dimension"], "behavioral", builtinEmbed),
   withBuiltinFormals(
     definePackageBuiltin(
@@ -24580,6 +24602,12 @@ async function builtinGraphicsPar(invocation: BuiltinInvocation): Promise<RValue
     });
   };
   const selected = (name: string): RValue => {
+    if (name === "usr") {
+      const active = activeGraphicsState(invocation);
+      if (active !== undefined) {
+        return doubleVector([active.xlim[0], active.xlim[1], active.ylim[0], active.ylim[1]]);
+      }
+    }
     const value = state.get(name);
     if (value !== undefined) return value;
     warnUnknown(name);
@@ -26168,6 +26196,412 @@ function matplotCoordinateAt(
   const x = coordinates.x[index];
   const y = coordinates.y[index];
   return x === undefined || y === undefined ? undefined : { x, y };
+}
+
+interface TimeSeriesPlotSeries {
+  readonly values: readonly (number | undefined)[];
+  readonly start: number;
+  readonly end: number;
+  readonly frequency: number;
+  readonly label: string;
+}
+
+interface TimeSeriesPlotUnion {
+  readonly rows: number;
+  readonly frequency: number;
+  readonly start: number;
+  readonly end: number;
+  readonly x: readonly number[];
+  readonly columns: readonly (readonly (number | undefined)[])[];
+}
+
+async function builtinTimeSeriesPlot(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched, dots } = matchLeadingDotsArguments(invocation, ["gpars"]);
+  const controls = new Map<string, RValue>();
+  const data: Array<readonly [BuiltinCallArgument, RValue]> = [];
+  for (const argument of dots) {
+    if (argument.promise.missing) {
+      throw new REvaluationError("NRE2103", "argument is missing, with no default");
+    }
+    const value = await invocation.force(argument.promise);
+    const namedTimeSeries =
+      argument.name !== undefined &&
+      isVector(value) &&
+      (vectorClasses(value)?.includes("ts") ?? false);
+    if (argument.name === undefined || namedTimeSeries) {
+      data.push([argument, value]);
+      continue;
+    }
+    timeSeriesPlotAddControl(controls, argument.name, value);
+  }
+
+  const gparsArgument = matched.get("gpars");
+  if (gparsArgument !== undefined && !gparsArgument.promise.missing) {
+    const gpars = await invocation.force(gparsArgument.promise);
+    if (gpars.type !== "null") {
+      if (gpars.type !== "list" && gpars.type !== "pairlist") {
+        throw new RTypeMismatchError("NRT3413", "ts.plot() 'gpars' must be a list or NULL.");
+      }
+      const names = vectorNames(gpars);
+      if (gpars.length > 0 && (names === undefined || names.some((name) => name.length === 0))) {
+        throw new RTypeMismatchError(
+          "NRT3413",
+          "ts.plot() 'gpars' entries must have non-empty names.",
+        );
+      }
+      for (let index = 0; index < gpars.length; index += 1) {
+        timeSeriesPlotAddControl(controls, names?.[index] ?? "", gpars.values[index] ?? R_NULL);
+      }
+    }
+  }
+  if (data.length === 0) {
+    throw new RTypeMismatchError("NRT3413", "no time series supplied");
+  }
+  if (controls.has("plot.type")) {
+    throw new REvaluationError(
+      "NRE2102",
+      'Formal argument "plot.type" matched by multiple actual arguments.',
+    );
+  }
+
+  const series = data.flatMap(([argument, value]) =>
+    timeSeriesPlotSeries(value, argument, invocation),
+  );
+  if (series.length === 0) {
+    throw new RTypeMismatchError("NRT3413", "'ts' object must have one or more observations");
+  }
+  const union = timeSeriesPlotUnion(series, invocation);
+  const supportedControls = new Set([
+    "x",
+    "type",
+    "lty",
+    "lwd",
+    "lend",
+    "pch",
+    "col",
+    "cex",
+    "bg",
+    "xlab",
+    "ylab",
+    "xlim",
+    "ylim",
+    "log",
+    "main",
+    "sub",
+    "ann",
+    "axes",
+  ]);
+  for (const name of controls.keys()) {
+    if (!supportedControls.has(name)) {
+      throw new RUnsupportedFeatureError(
+        "NRU6197",
+        `ts.plot() graphical control '${name}' is outside the current browser time-series plot subset.`,
+      );
+    }
+  }
+  matplotLineEnds(controls.get("lend"));
+  const log = matplotLogAxes(controls.get("log"));
+  const suppliedX = controls.get("x");
+  const x =
+    suppliedX === undefined
+      ? union.x
+      : timeSeriesPlotXCoordinates(suppliedX, union.rows, invocation);
+  const transformedX = x.map((value) => matplotTransform(value, log.x));
+  const transformedColumns = union.columns.map((column) =>
+    column.map((value) => matplotTransform(value, log.y)),
+  );
+  const allX = Array.from({ length: transformedColumns.length }, () => transformedX).flat();
+  const allY = transformedColumns.flat();
+  const xlim = matplotWindowLimits(controls.get("xlim"), allX, log.x, "xlim");
+  const ylim = matplotWindowLimits(controls.get("ylim"), allY, log.y, "ylim");
+  const axes = logicalFlag(controls.get("axes"), true, "axes");
+  const ann = logicalFlag(controls.get("ann"), true, "ann");
+  const type = timeSeriesPlotType(controls.get("type"), series.length, invocation);
+
+  const state = await beginGraphicsPage(invocation);
+  state.xlim = xlim;
+  state.ylim = ylim;
+  writeGraphics(invocation, state, { kind: "window", xlim, ylim });
+  if (axes) {
+    writeGraphics(invocation, state, {
+      kind: "box",
+      edges: ["top", "right", "bottom", "left"],
+      color: "#000000FF",
+      lineType: "solid",
+      lineWidth: 1,
+    });
+  }
+
+  for (let column = 0; column < transformedColumns.length; column += 1) {
+    invocation.context.checkpoint();
+    const style = new Map<string, RValue>();
+    for (const name of ["col", "bg", "pch", "cex", "lty", "lwd"]) {
+      const value = controls.get(name);
+      if (value !== undefined) {
+        style.set(name, timeSeriesPlotRecycledControl(value, column, invocation));
+      }
+    }
+    plotDefaultGeometry(
+      invocation,
+      state,
+      {
+        x: timeSeriesPlotCoordinates(transformedX),
+        y: timeSeriesPlotCoordinates(transformedColumns[column] ?? []),
+      },
+      type,
+      style,
+    );
+  }
+  if (ann) {
+    plotDefaultAnnotations(
+      invocation,
+      state,
+      new Map([
+        ["main", controls.get("main") ?? R_NULL],
+        ["sub", controls.get("sub") ?? R_NULL],
+        ["xlab", controls.get("xlab") ?? characterVector(["Time"])],
+        [
+          "ylab",
+          controls.get("ylab") ??
+            characterVector([series.length === 1 ? (series[0]?.label ?? "") : ""]),
+        ],
+      ]),
+    );
+  }
+  invocation.setResultVisibility("invisible");
+  return R_NULL;
+}
+
+function timeSeriesPlotAddControl(
+  controls: Map<string, RValue>,
+  name: string,
+  value: RValue,
+): void {
+  if (controls.has(name)) {
+    throw new REvaluationError("NRE2102", `Argument '${name}' matched more than once.`);
+  }
+  controls.set(name, value);
+}
+
+function timeSeriesPlotSeries(
+  value: RValue,
+  argument: BuiltinCallArgument,
+  invocation: BuiltinInvocation,
+): readonly TimeSeriesPlotSeries[] {
+  const expressionLabel =
+    argument.name ??
+    (argument.promise.expression === null ? "x" : deparseAst(argument.promise.expression));
+  if (value.type === "list") {
+    if (vectorClasses(value)?.includes("data.frame") ?? false) {
+      const rows = dataFrameRowCount(value);
+      if (rows === 0 || value.length === 0) {
+        throw new RTypeMismatchError("NRT3413", "'ts' object must have one or more observations");
+      }
+      const names = vectorNames(value);
+      return value.values.map((column, index) => {
+        const numeric = timeSeriesPlotNumeric(column, invocation);
+        if (numeric.length !== rows) {
+          throw new RTypeMismatchError("NRT3413", "time-series data-frame columns are ragged");
+        }
+        return {
+          values: timeSeriesPlotNumericValues(numeric),
+          start: 1,
+          end: rows,
+          frequency: 1,
+          label: names?.[index] ?? `Series ${index + 1}`,
+        };
+      });
+    }
+    if (value.length === 0) {
+      throw new RTypeMismatchError("NRT3413", "'ts' object must have one or more observations");
+    }
+    const numbers = value.values.map((entry) => timeSeriesPlotListNumber(entry, invocation));
+    return [
+      {
+        values: numbers,
+        start: 1,
+        end: numbers.length,
+        frequency: 1,
+        label: expressionLabel,
+      },
+    ];
+  }
+  if (!isAtomic(value)) {
+    throw new RTypeMismatchError("NRT3413", "invalid time-series value");
+  }
+  const dimensions = vectorDimensions(value);
+  if (dimensions !== undefined && dimensions.length !== 2) {
+    throw new RTypeMismatchError("NRT3413", "time-series arrays must have two dimensions");
+  }
+  const rows = dimensions?.[0] ?? value.length;
+  const columns = dimensions?.[1] ?? 1;
+  if (rows === 0 || columns === 0) {
+    throw new RTypeMismatchError("NRT3413", "'ts' object must have one or more observations");
+  }
+  const metadata = validatedTimeSeries(value, rows, "ts.plot", true);
+  const numeric = timeSeriesPlotNumeric(value, invocation);
+  const dimensionNames = value.attributes.get("dimnames");
+  const columnNames = dimensionNames?.type === "list" ? dimensionNames.values[1] : undefined;
+  return Array.from({ length: columns }, (_, column) => ({
+    values: timeSeriesPlotNumericValues(numeric, column * rows, rows),
+    start: metadata.start,
+    end: metadata.end,
+    frequency: metadata.frequency,
+    label:
+      columnNames?.type === "character" && !isMissing(columnNames, column)
+        ? (columnNames.values[column] ?? `Series ${column + 1}`)
+        : columns === 1
+          ? expressionLabel
+          : `Series ${column + 1}`,
+  }));
+}
+
+function timeSeriesPlotNumeric(value: RValue, invocation: BuiltinInvocation): RDoubleVector {
+  if (!isAtomic(value)) {
+    throw new RTypeMismatchError("NRT3413", "time-series observations must be atomic");
+  }
+  if (value.type === "character") {
+    const levels = [...new Set(value.values.filter((_, index) => !isMissing(value, index)))].sort(
+      (left, right) => left.localeCompare(right),
+    );
+    const codes = new Float64Array(value.length);
+    const missing = new Uint8Array(value.length);
+    for (let index = 0; index < value.length; index += 1) {
+      if (isMissing(value, index)) missing[index] = 1;
+      else codes[index] = levels.indexOf(value.values[index] ?? "") + 1;
+    }
+    invocation.context.allocate(value.length);
+    return doubleVector(codes, compactMask(missing));
+  }
+  return coerceAtomicToDouble(value, invocation);
+}
+
+function timeSeriesPlotListNumber(
+  value: RValue | undefined,
+  invocation: BuiltinInvocation,
+): number | undefined {
+  if (value === undefined || !isAtomic(value) || value.length !== 1 || isMissing(value, 0)) {
+    return undefined;
+  }
+  const numeric = timeSeriesPlotNumeric(value, invocation);
+  if (isMissing(numeric, 0)) return undefined;
+  const number = numeric.values[0] ?? Number.NaN;
+  return Number.isFinite(number) ? number : undefined;
+}
+
+function timeSeriesPlotNumericValues(
+  value: RDoubleVector,
+  offset = 0,
+  length = value.length,
+): readonly (number | undefined)[] {
+  return Array.from({ length }, (_, local) => {
+    const index = offset + local;
+    if (isMissing(value, index)) return undefined;
+    const number = value.values[index] ?? Number.NaN;
+    return Number.isFinite(number) ? number : undefined;
+  });
+}
+
+function timeSeriesPlotUnion(
+  series: readonly TimeSeriesPlotSeries[],
+  invocation: BuiltinInvocation,
+): TimeSeriesPlotUnion {
+  const frequency = series[0]?.frequency ?? 1;
+  const tolerance = Math.sqrt(Number.EPSILON);
+  if (series.some((entry) => Math.abs(entry.frequency - frequency) > tolerance)) {
+    throw new RTypeMismatchError("NRT3413", "not all series have the same frequency");
+  }
+  const start = Math.min(...series.map((entry) => entry.start));
+  const end = Math.max(...series.map((entry) => entry.end));
+  const rows = Math.round((end - start) * frequency) + 1;
+  const outputLength = rows * series.length;
+  if (
+    !Number.isSafeInteger(rows) ||
+    rows < 1 ||
+    !Number.isSafeInteger(outputLength) ||
+    outputLength > invocation.context.limits.maxVectorLength
+  ) {
+    throw new RResourceLimitError("NRL4002", "ts.plot() aligned series exceed the vector limit.");
+  }
+  invocation.context.allocate(outputLength + rows);
+  const columns = series.map((entry) => {
+    const output: (number | undefined)[] = Array.from({ length: rows });
+    const offset = Math.round((entry.start - start) * frequency);
+    for (let index = 0; index < entry.values.length; index += 1) {
+      invocation.context.checkpoint();
+      output[offset + index] = entry.values[index];
+    }
+    return output;
+  });
+  return {
+    rows,
+    frequency,
+    start,
+    end,
+    x: Array.from({ length: rows }, (_, index) => start + index / frequency),
+    columns,
+  };
+}
+
+function timeSeriesPlotXCoordinates(
+  value: RValue,
+  rows: number,
+  invocation: BuiltinInvocation,
+): readonly number[] {
+  const numeric = timeSeriesPlotNumeric(value, invocation);
+  if (numeric.length !== rows || numeric.missing !== undefined) {
+    throw new RTypeMismatchError("NRT3413", "'x' and 'y' lengths differ");
+  }
+  const output = Array.from(numeric.values);
+  if (!output.every(Number.isFinite)) {
+    throw new RTypeMismatchError("NRT3413", "ts.plot() 'x' must contain finite values");
+  }
+  return output;
+}
+
+function timeSeriesPlotType(
+  value: RValue | undefined,
+  series: number,
+  invocation: BuiltinInvocation,
+): PlotType {
+  if (value === undefined || value.type === "null") return "l";
+  if (value.type !== "character" || value.length !== 1 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3413", "invalid plot type");
+  }
+  const source = value.values[0] ?? "";
+  const type = [...source][0];
+  if (type === undefined || !["p", "l", "b", "c", "o", "h", "s", "S", "n"].includes(type)) {
+    throw new RTypeMismatchError("NRT3413", "invalid plot type");
+  }
+  if ([...source].length > 1) {
+    for (let index = 0; index < series; index += 1) {
+      invocation.context.warn({
+        code: "NRW1137",
+        message: `plot type '${source}' will be truncated to first character`,
+      });
+    }
+  }
+  return type as PlotType;
+}
+
+function timeSeriesPlotRecycledControl(
+  value: RValue,
+  index: number,
+  invocation: BuiltinInvocation,
+): RValue {
+  if (!isVector(value) || value.length === 0) return value;
+  return subsetVector(value, integerVector([(index % value.length) + 1]), invocation.context);
+}
+
+function timeSeriesPlotCoordinates(values: readonly (number | undefined)[]): RDoubleVector {
+  const output = new Float64Array(values.length);
+  const missing = new Uint8Array(values.length);
+  for (let index = 0; index < values.length; index += 1) {
+    const value = values[index];
+    if (value === undefined) missing[index] = 1;
+    else output[index] = value;
+  }
+  return doubleVector(output, compactMask(missing));
 }
 
 async function builtinAxisTicks(invocation: BuiltinInvocation): Promise<RValue> {

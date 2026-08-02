@@ -215,6 +215,11 @@ image-specific renderer. `graphics::lines()` likewise maps connected, point-bear
 step types onto existing `segments` and `points` events, so package-owned line methods require no
 additional host protocol.
 
+`stats::ts.plot()` also uses only this vocabulary: equal-frequency regular series align on a bounded
+union time grid and emit ordinary `window`, `box`, `segments`, `points`, and `text` events. Hosts
+need no time-series-specific handler, `par("usr")` reports the active event window, and the default
+Worker plus source-only package example exercise the same route.
+
 ```ts
 const graphics = [];
 const r = await createR({ onGraphics: (event) => graphics.push(event) });

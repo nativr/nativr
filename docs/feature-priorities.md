@@ -192,10 +192,11 @@ calls. Rank 259 `base::readChar` now runs digest and Shiny's two measured fixed-
 rank 277 `base::debug` and rank 279 `base::undebug` now run R6's measured method-instrumentation
 calls through shared function-object state and the existing Worker readline seam. Rank 281
 `grDevices::pdf` now covers knitr's recording device and data.table's file-backed plot. Rank 287
-`base::file.create` now covers withr's deferred-cleanup setup. The next measured unresolved callable
-is rank 292 `graphics::ts.plot`. Rank 144 `Encoding` is also complete for all 12 observed calls
-across rlang, utf8, and xfun (4.5% weighted reach), together with adjacent `Encoding<-`, `enc2utf8`,
-and `enc2native`. The shared character representation preserves exact bytes and canonical R marks
+`base::file.create` now covers withr's deferred-cleanup setup. Rank 292 `stats::ts.plot` now runs
+magrittr's measured exposition-pipe example. The next measured unresolved callable is rank 293
+`base::Sys.which`. Rank 144 `Encoding` is also complete for all 12 observed calls across rlang,
+utf8, and xfun (4.5% weighted reach), together with adjacent `Encoding<-`, `enc2utf8`, and
+`enc2native`. The shared character representation preserves exact bytes and canonical R marks
 through subset/replacement, concatenation, raw conversion, and XDR serialization; this is reusable
 package infrastructure, not an assertion that those packages' native components are supported. Rank
 149 `rcauchy` is now complete for four calls across ggplot2, pillar, and purrr (4.2% weighted
@@ -1611,6 +1612,15 @@ ties:
      and Worker execution, and file/result resource bounds. Recursive parents, host files,
      permissions/umasks, links, devices, platform-exact diagnostics, and persistence remain
      compatibility depth.
+156. Aligned time-series plotting: rank-292 `stats::ts.plot` represents magrittr's exposition-pipe
+     example at 1.6% download-weighted reach. Unnamed vectors, regular `ts`/`mts` values, matrices,
+     and data frames become bounded aligned columns on a shared frequency/time range; absent
+     observations split paths, common line/point styles recycle by series, and `gpars` controls
+     linear/log windows, annotations, and frames through the existing graphics journal. GNU R 4.6
+     formals, visibility, user-window ranges, alignment errors, pure-R package execution, Worker
+     transport, and Canvas rendering have evidence. The broader `plot.ts` multi-panel method,
+     irregular indexes, every graphical parameter, exact axes/margins, and device-identical pixels
+     remain compatibility depth.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

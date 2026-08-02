@@ -289,6 +289,16 @@ labels, automatic axis generation, logarithmic or fixed-aspect axes, complete ax
 formula/function/time-series/raster and other specialized methods, arbitrary graphical parameters,
 margins/clipping, and device-identical pixels remain outside this shape-level claim.
 
+`stats::ts.plot` has behavioral differential evidence for magrittr's measured exposition-pipe
+example and for equal-frequency regular-series union. Unnamed vectors, matrices/data frames, and
+`ts`/`mts` inputs become aligned columns on one shared time grid; cells outside a source interval
+are missing and break the corresponding path. Default line geometry, all nine line/point types,
+recycled colour/fill/symbol/size/line controls, explicit linear/log limits, annotations, frames,
+invisible `NULL`, exact `(..., gpars = list())` formals, and current `par("usr")` values reuse the
+owned graphics device. Source-only package and Worker/Canvas tests traverse the same public
+namespace binding. This does not claim the broader multi-panel `plot.ts` method, irregular index
+classes, every `gpars` value, complete tick/margin/clipping semantics, or device-identical output.
+
 `graphics::lines` and `graphics::lines.default` have differential shape evidence for all 20 measured
 calls across scales, matrixStats, posterior, and zoo. The generic dispatches package-owned S3
 methods before the default and preserves their value and visibility. The default reuses the

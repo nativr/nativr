@@ -325,6 +325,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "filter",
       "frequency",
       "ts",
+      "ts.plot",
       "update",
       "var",
       "weights",

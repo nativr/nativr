@@ -4,15 +4,15 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 633,
-    "overlappingNames": 617,
-    "missingReferenceNames": 1905,
+    "nativrRegisteredNames": 634,
+    "overlappingNames": 618,
+    "missingReferenceNames": 1904,
     "nativrExtensionNames": 16,
-    "nameCoverage": 0.244647
+    "nameCoverage": 0.245044
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 450, "nameCoverage": 0.329188 },
-    { "package": "stats", "callableNames": 464, "overlappingNames": 75, "nameCoverage": 0.161638 },
+    { "package": "stats", "callableNames": 464, "overlappingNames": 76, "nameCoverage": 0.163793 },
     {
       "package": "methods",
       "callableNames": 209,
@@ -614,6 +614,7 @@
     "try",
     "tryCatch",
     "ts",
+    "ts.plot",
     "type.convert",
     "typeof",
     "unclass",
@@ -2442,7 +2443,6 @@
     "tryInvokeRestart",
     "tryNew",
     "ts.intersect",
-    "ts.plot",
     "ts.union",
     "tsSmooth",
     "tsdiag",

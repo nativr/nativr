@@ -35,6 +35,29 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("[1, 1, 0, 0]");
 
+  await page.locator("#source").fill("nativrdemo::plot_series(c(2, 5, 1, 4))");
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("4");
+  await expect(page.locator("#graphics-count")).toHaveText("5");
+  const timeSeriesPixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
+    const context = canvas.getContext("2d");
+    if (context === null) return 0;
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    let dark = 0;
+    for (let index = 0; index < pixels.length; index += 4) {
+      if (
+        (pixels[index] ?? 255) < 80 &&
+        (pixels[index + 1] ?? 255) < 80 &&
+        (pixels[index + 2] ?? 255) < 80 &&
+        (pixels[index + 3] ?? 0) > 0
+      ) {
+        dark += 1;
+      }
+    }
+    return dark;
+  });
+  expect(timeSeriesPixels).toBeGreaterThan(100);
+
   await page.getByRole("button", { name: "Recursive time-series filter" }).click();
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("[1, 2.8, 5.24, 8.192, 11.5536, 15.24288]");

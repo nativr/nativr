@@ -139,5 +139,11 @@ host, runtime, and package paths return bounded failures. Filename vectors are v
 count limits are checked before mutation, preventing invalid later arguments or resource overflow
 from leaving a partially created batch.
 
+`stats::ts.plot()` grants no DOM, Canvas, device, or package-specific callback capability. It aligns
+finite evaluator-owned observations under the normal vector/allocation limits and emits only the
+existing bounded, data-only graphics events. Worker hosts receive the same events as any other plot;
+labels and package-supplied style strings remain untrusted display content, never HTML or executable
+code. Large union ranges fail before a page or partial series is emitted.
+
 Dependencies are locked, build scripts are explicitly approved in `pnpm-workspace.yaml`, browser
 bundles are audited for Node built-ins/dynamic code, and CI includes CodeQL and Dependabot.

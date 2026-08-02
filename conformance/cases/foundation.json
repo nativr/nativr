@@ -8909,5 +8909,26 @@
     ],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "ts-plot-magrittr-measured-window-visibility-and-formals",
+    "code": "grDevices::pdf(NULL)\nz <- c(1, 4, 2)\nshown <- withVisible(stats::ts.plot(z))\nresult <- c(shown$visible, is.null(shown$value), par(\"usr\"), names(formals(stats::ts.plot)), typeof(formals(stats::ts.plot)$gpars), length(formals(stats::ts.plot)$gpars))\ngrDevices::dev.off()\nresult",
+    "expected": ["FALSE", "TRUE", "0.92", "3.08", "0.88", "4.12", "...", "gpars", "language", "1"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "ts-plot-aligned-series-styles-explicit-window-and-controls",
+    "code": "grDevices::pdf(NULL)\nshown <- withVisible(stats::ts.plot(ts(1:3, start = 2), ts(10:12, start = 3), gpars = list(type = \"b\", col = c(\"red\", \"blue\"), lty = 2:3, lwd = c(4, 5), pch = 6:7, xlim = c(1, 6), ylim = c(0, 20), axes = FALSE, ann = FALSE)))\nresult <- c(shown$visible, is.null(shown$value), par(\"usr\"))\ngrDevices::dev.off()\nresult",
+    "expected": [0, 1, 0.8, 6.2, -0.8, 20.8],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 1e-12, "relative": 1e-12 }
+  },
+  {
+    "id": "ts-plot-empty-named-frequency-and-gpars-boundaries",
+    "code": "c(inherits(try(stats::ts.plot(), silent = TRUE), \"try-error\"), inherits(try(stats::ts.plot(a = 1:3, b = 4:6), silent = TRUE), \"try-error\"), inherits(try(stats::ts.plot(ts(1:3, frequency = 2), ts(4:6, frequency = 3)), silent = TRUE), \"try-error\"), inherits(try(stats::ts.plot(1:3, gpars = 1), silent = TRUE), \"try-error\"))",
+    "expected": [true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

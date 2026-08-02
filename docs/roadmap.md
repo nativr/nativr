@@ -735,6 +735,13 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      paths, warning suppression, and preflight errors; package and Worker evidence crosses the same
      path. Recursive parents, host paths, native permissions/umasks, links/devices, platform-exact
      diagnostics, and persistence remain compatibility depth.
+156. Usage-ranked time-series plotting: rank-292 `stats::ts.plot` runs magrittr's measured
+     `data.frame(z = ...) %$% ts.plot(z)` shape over the existing regular-time-series and graphics
+     foundations. A generic bounded union aligns equal-frequency vectors and matrix/data-frame
+     columns, preserves gaps as disconnected paths, recycles common `gpars` styles, reports the
+     current `par("usr")` window, and crosses pure-R package and default Worker paths. Multi-panel
+     `plot.ts`, irregular indexes, arbitrary graphical parameters, complete axis/margin layout, and
+     device-exact output remain compatibility depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

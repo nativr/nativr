@@ -189,6 +189,9 @@ normalized AST. The runtime then provides:
 20. stable `stdin()`/`stdout()`/`stderr()` terminal handles, bounded stdout/stderr Worker routing,
     and package-visible `isatty()`/connection-catalog introspection without granting host file
     descriptors or claiming an interactive TTY.
+21. regular time-series plotting through exported `stats::ts.plot()`, including equal-frequency
+    union, gap-aware line/point geometry, bounded `gpars`, package expression labels, and the same
+    Worker graphics journal used by application R code.
 
 Package source, metadata, resource counts, and encoded bytes are bounded before parsing. Package
 evaluation then consumes the ordinary step, call-depth, allocation, and output budgets.
@@ -466,6 +469,11 @@ loader.
   matching, per-path results/warnings, Worker execution, and resource preflight share the ordinary
   virtual filesystem. Parent directories must exist, and package/runtime resources plus host paths
   remain read-only or unavailable.
+- `stats::ts.plot()` supports magrittr's measured exposition-pipe example without translating
+  magrittr or the calling package. Numeric vectors and regular vector/matrix series align on a
+  shared bounded time grid, missing union cells split paths, and styles/annotations traverse the
+  normal Worker/Canvas graphics path. Irregular index packages and multi-panel `plot.ts` still need
+  their broader shared runtime foundations before they can be claimed.
 - Package `data/*.R` scripts execute through the same parser and normalized AST as package source;
   `.csv`, `.tab`, and `.txt` datasets load into owned data frames. XDR v2/v3 `.rda`/`.RData` and
   gzip wrappers use the independent bounded serialization decoder, and `R/sysdata.rda` enters the
