@@ -7339,7 +7339,7 @@ async function builtinInstalledPackageVersion(invocation: BuiltinInvocation): Pr
   const packageValue = required(matched, "pkg", "packageVersion");
   let packageName: string;
   if (isFactor(packageValue) && packageValue.length === 1 && !isMissing(packageValue, 0)) {
-    packageName = stringAt(packageValue, 0);
+    packageName = factorLevels(packageValue)[(packageValue.values[0] ?? 0) - 1] ?? "";
   } else {
     packageName = characterScalar(packageValue, "pkg");
   }

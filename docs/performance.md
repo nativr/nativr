@@ -558,5 +558,5 @@ Language subset 0.220 adds usage-ranked `utils::packageVersion`, adjacent `getRv
 numeric-version object/parser, and both explicit-call and infix comparison paths. Installed package
 metadata is read through the existing immutable bundle facade without loading a namespace; no
 dependency, protocol event, host library search, or second execution backend is added. The measured
-Worker is 358.6 KiB gzip, so the ceiling rises narrowly to 359 KiB; client and parser-Wasm budgets
+Worker is 358.7 KiB gzip, so the ceiling rises narrowly to 359 KiB; client and parser-Wasm budgets
 remain unchanged.

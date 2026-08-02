@@ -8592,8 +8592,37 @@ describe("complete inline source-to-result vertical slice", () => {
       ),
     ).resolves.toEqual([-1, 0, 1]);
     await expect(
+      runtime.eval(`
+        c(
+          \`<\`(numeric_version("1.2"), "2.0"),
+          \`<=\`(numeric_version("1.2"), "1.2.0"),
+          \`>\`(numeric_version("2.0"), "1.2"),
+          \`>=\`("2.0", numeric_version("2.0")),
+          \`==\`(numeric_version(c(a = "1.0", b = NA)), c("1.0.0", "2.0")),
+          \`!=\`(numeric_version("1.0"), "1.0.1")
+        )
+      `),
+    ).resolves.toEqual([true, true, true, true, true, NA, true]);
+    await expect(
+      runtime.eval(`
+        c(
+          as.character(as.numeric_version(numeric_version("1.2"))),
+          as.character(as.numeric_version("1.3")),
+          as.character(as.package_version(package_version("2.1"))),
+          as.character(as.package_version("2.2")),
+          is.numeric_version("1.2"),
+          is.package_version(numeric_version("1.2")),
+          as.character(R_system_version("4.6.0")),
+          as.character(utils::packageVersion(factor("stats")))
+        )
+      `),
+    ).resolves.toEqual(["1.2", "1.3", "2.1", "2.2", "FALSE", "FALSE", "4.6.0", "4.6.0"]);
+    await expect(
       runtime.eval('capture.output(print(package_version(c("1.2.3", "2.0", NA))))'),
     ).resolves.toBe("[1] '1.2.3' '2.0'   <NA>   ");
+    await expect(runtime.eval("capture.output(print(numeric_version(character())))")).resolves.toBe(
+      "<0 elements>",
+    );
     await expect(runtime.eval("names(formals(utils::packageVersion))")).resolves.toEqual([
       "pkg",
       "lib.loc",
@@ -8603,6 +8632,12 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(runtime.eval("numeric_version(1.2)")).rejects.toMatchObject({ code: "NRT3354" });
     await expect(runtime.eval('packageVersion("does.not.exist")')).rejects.toMatchObject({
       code: "NRE2221",
+    });
+    await expect(
+      runtime.eval('packageVersion("stats", lib.loc = "elsewhere")'),
+    ).rejects.toMatchObject({ code: "NRE2221" });
+    await expect(runtime.eval('compareVersion("not-a-version", "1.0")')).rejects.toMatchObject({
+      code: "NRE2244",
     });
     await runtime.dispose();
   });
