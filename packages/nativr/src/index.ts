@@ -13,10 +13,13 @@ export type {
   PublicReadlineRequest,
   PublicSystemCommandRequest,
   PublicSystemCommandResult,
+  PublicUrlRequest,
+  PublicUrlResult,
   PureRPackageBundle,
   PureRPackageResource,
   ReadlineHandler,
   SystemCommandHandler,
+  UrlHandler,
 } from "./api.js";
 export { isComplex, isExpression, isLanguage, isNA, isRaw, isSymbol, NA } from "./conversion.js";
 export type {

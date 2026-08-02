@@ -109,5 +109,13 @@ untrusted display text, avoid rendering them as HTML, bound or cancel their UI, 
 secrets unless the calling R code is trusted. Newlines, NUL characters, and results beyond the
 session output-byte budget are rejected. The default runtime never opens a dialog or reads stdin.
 
+`url()` is likewise inert unless the application supplies `createR({ url })`. The callback receives
+only copied URL/method/header data and must return a `Uint8Array`; the facade copies and charges the
+bytes to the session output limit before the Worker can expose them to R. NativR does not call
+`fetch`, follow redirects, attach cookies, consult ambient credentials, or choose trusted origins.
+Hosts must allow-list schemes and origins, validate redirect targets, bound response time and size,
+and avoid forwarding secrets to package-selected destinations. The Playground adapter serves one
+embedded allow-listed fixture and performs no network request.
+
 Dependencies are locked, build scripts are explicitly approved in `pnpm-workspace.yaml`, browser
 bundles are audited for Node built-ins/dynamic code, and CI includes CodeQL and Dependabot.

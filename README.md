@@ -156,11 +156,34 @@ Without it, `readline()` follows non-interactive R behavior and returns `""`; pr
 `interactive()` report `TRUE`. Returned leading/trailing spaces and tabs are trimmed as in R, while
 multiline, NUL-containing, or oversized host results are rejected.
 
+Packages that read through `url()` can use a separate byte-only host seam. NativR never performs an
+ambient fetch; the application owns the origin allow-list, credentials, redirects, caching, and
+transport policy:
+
+```js
+const r = await createR({
+  packages: packageSet.bundles,
+  url: async ({ url, headers }) => {
+    if (!url.startsWith("https://data.example/")) throw new Error("URL denied");
+    const response = await fetch(url, {
+      headers: Object.fromEntries(headers.map(({ name, value }) => [name, value])),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return { body: new Uint8Array(await response.arrayBuffer()) };
+  },
+});
+```
+
+The same asynchronous adapter works through the default Worker. Returned bytes enter a bounded,
+read-only R connection and can be consumed by `readLines()`, raw `readBin()`, `source()`, table and
+serialization readers, or `gzcon()`. This removes a common package-I/O rewrite, but it deliberately
+does not grant package code unrestricted browser networking.
+
 The current milestone supports all 25 feature groups measured by the repository's package-usage
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 595 registered functions, including resettable
+an initial condition/handler slice. It exposes 596 registered functions, including resettable
 session options, isolated session environment variables, deterministic non-interactive host-mode
 detection, browser-owned `gc()` memory censuses, an S3-first `graphics::lines()` path over the
 existing Worker/Canvas journal, usage-ranked numeric and character time-interval construction

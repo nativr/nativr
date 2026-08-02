@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.232.0",
+  "languageSubsetVersion": "0.233.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -132,6 +132,7 @@
         { "name": "system.file", "compatibility": "shape" },
         { "name": "tempfile", "compatibility": "shape" },
         { "name": "file", "compatibility": "behavioral" },
+        { "name": "url", "compatibility": "behavioral" },
         { "name": "textConnection", "compatibility": "behavioral" },
         { "name": "gzcon", "compatibility": "behavioral" },
         { "name": "readBin", "compatibility": "shape" },

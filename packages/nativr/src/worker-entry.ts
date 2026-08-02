@@ -6,6 +6,8 @@ import type {
   OutputEvent,
   ReadlineEvent,
   ReadlineResultRequest,
+  UrlEvent,
+  UrlResultRequest,
   SuccessResponse,
   SystemCommandEvent,
   SystemCommandResultRequest,
@@ -14,6 +16,8 @@ import type {
   WorkerSuccessPayload,
   PublicSystemCommandRequest,
   PublicSystemCommandResult,
+  PublicUrlRequest,
+  PublicUrlResult,
 } from "@nativr/protocol";
 import { NativRError } from "@nativr/runtime";
 
@@ -26,6 +30,7 @@ let debug = false;
 let queue: Promise<void> = Promise.resolve();
 let nextSystemCommandId = 1;
 let nextReadlineId = 1;
+let nextUrlId = 1;
 const pendingSystemCommands = new Map<
   string,
   {
@@ -40,6 +45,13 @@ const pendingReadlines = new Map<
     readonly reject: (error: unknown) => void;
   }
 >();
+const pendingUrls = new Map<
+  string,
+  {
+    readonly resolve: (result: PublicUrlResult) => void;
+    readonly reject: (error: unknown) => void;
+  }
+>();
 
 workerScope.addEventListener("message", (event: MessageEvent<unknown>) => {
   const immediate = event.data;
@@ -49,6 +61,10 @@ workerScope.addEventListener("message", (event: MessageEvent<unknown>) => {
   }
   if (isWorkerRequest(immediate) && immediate.kind === "readline-result") {
     resolveReadline(immediate);
+    return;
+  }
+  if (isWorkerRequest(immediate) && immediate.kind === "url-result") {
+    resolveUrl(immediate);
     return;
   }
   queue = queue.then(async () => {
@@ -74,6 +90,7 @@ async function handleRequest(request: WorkerRequest): Promise<void> {
         request.environmentVariables,
         requestSystemCommand,
         request.readline === true ? requestReadline : undefined,
+        request.url === true ? requestUrl : undefined,
       );
       postSuccess(request.id, { kind: "ready" });
       return;
@@ -212,6 +229,31 @@ function resolveReadline(response: ReadlineResultRequest): void {
     pending.reject(new NativRError(response.error.code, response.error.message));
   } else {
     pending.resolve(response.value);
+  }
+}
+
+function requestUrl(request: PublicUrlRequest): Promise<PublicUrlResult> {
+  const id = `url-${nextUrlId++}`;
+  return new Promise((resolve, reject) => {
+    pendingUrls.set(id, { resolve, reject });
+    const event: UrlEvent = {
+      protocolVersion: PROTOCOL_VERSION,
+      id,
+      kind: "url",
+      request,
+    };
+    workerScope.postMessage(event);
+  });
+}
+
+function resolveUrl(response: UrlResultRequest): void {
+  const pending = pendingUrls.get(response.id);
+  if (pending === undefined) return;
+  pendingUrls.delete(response.id);
+  if ("error" in response) {
+    pending.reject(new NativRError(response.error.code, response.error.message));
+  } else {
+    pending.resolve(response.result);
   }
 }
 

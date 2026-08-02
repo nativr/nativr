@@ -134,6 +134,8 @@ export type {
   ROutput,
   RSystemCommandRequest,
   RSystemCommandResult,
+  RUrlRequest,
+  RUrlResult,
   RPairlist,
   RPromise,
   RRawVector,

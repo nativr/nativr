@@ -4,6 +4,7 @@ import { createR, isComplex, isNA, isRaw, NA, RRuntimeDisposedError } from "../s
 import type {
   PublicReadlineRequest,
   PublicSystemCommandRequest,
+  PublicUrlRequest,
   PureRPackageBundle,
 } from "../src/index.js";
 
@@ -22,7 +23,7 @@ importFrom(graphics, axis, plot.new, plot.window)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median)
 importFrom(utils, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, axis_ticks, sourced_value, ask_value, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, installed_version, namespace_names, process_id, library_paths)
+export(square, centered, duration, histogram_counts, hcl_colours, axis_ticks, sourced_value, ask_value, remote_lines, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, installed_version, namespace_names, process_id, library_paths)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -63,6 +64,11 @@ sourced_value <- function() {
   source(con, local = TRUE)$value
 }
 ask_value <- function(prompt = "Package input: ") readline(prompt)
+remote_lines <- function(address, headers = NULL) {
+  con <- url(address, headers = headers)
+  on.exit(close(con))
+  readLines(con)
+}
 class_summary <- function() capture.output(showClass("NativRFixtureClass"))
 signature_names <- function(fun = square) names(formals(args(fun)))
 new_score <- function(x) structure(x, class = c("score", "numeric"))
@@ -2815,6 +2821,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "package_name",
       "package_state",
       "process_id",
+      "remote_lines",
       "signature_names",
       "sourced_value",
       "square",
@@ -8694,6 +8701,123 @@ describe("complete inline source-to-result vertical slice", () => {
     await limited.dispose();
   });
 
+  it("routes lazy url() connections through an explicit bounded host capability", async () => {
+    const offline = await createR({ execution: "inline", assets });
+    await expect(
+      offline.eval(`
+        con <- url("https://data.nativr.invalid/lines")
+        details <- summary(con)
+        result <- c(
+          class(con), names(formals(url)), details$class, details$mode, details$opened,
+          details[["can read"]], details[["can write"]],
+          identical(formals(url)$open, ""), identical(formals(url)$blocking, TRUE),
+          identical(formals(url)$encoding, quote(getOption("encoding"))),
+          identical(formals(url)$method, quote(getOption("url.method", "default"))),
+          is.null(formals(url)$headers)
+        )
+        close(con)
+        result
+      `),
+    ).resolves.toEqual([
+      "url",
+      "connection",
+      "description",
+      "open",
+      "blocking",
+      "encoding",
+      "method",
+      "headers",
+      "url-libcurl",
+      "r",
+      "closed",
+      "yes",
+      "no",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    await expect(
+      offline.eval('readLines(url("https://data.nativr.invalid/lines"))'),
+    ).rejects.toMatchObject({ code: "NRU6196" });
+    await offline.dispose();
+
+    const requests: PublicUrlRequest[] = [];
+    const gzipBody = Uint8Array.from(
+      atob("H4sIAAAAAAAACkvMKchI5EpKLUnkAgBuUDBuCwAAAA=="),
+      (character) => character.charCodeAt(0),
+    );
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [pureRFixture],
+      url: (request) => {
+        requests.push(request);
+        if (request.url.endsWith("/lines.txt.gz")) return { body: gzipBody };
+        return { body: new TextEncoder().encode("alpha\nbeta\n") };
+      },
+    });
+    await expect(
+      runtime.eval(`
+        nativrfixture::remote_lines(
+          "https://data.nativr.invalid/lines",
+          c(Accept = "text/plain", \`X-NativR\` = "fixture")
+        )
+      `),
+    ).resolves.toEqual(["alpha", "beta"]);
+    expect(requests).toEqual([
+      {
+        url: "https://data.nativr.invalid/lines",
+        method: "default",
+        headers: [
+          { name: "Accept", value: "text/plain" },
+          { name: "X-NativR", value: "fixture" },
+        ],
+      },
+    ]);
+    await expect(
+      runtime.eval(`
+        con <- url("https://data.nativr.invalid/cursor", open = "r")
+        first <- readLines(con, n = 1L)
+        second <- readLines(con, n = 1L)
+        close(con)
+        c(first, second)
+      `),
+    ).resolves.toEqual(["alpha", "beta"]);
+    expect(requests.filter((request) => request.url.endsWith("/cursor"))).toHaveLength(1);
+    await expect(
+      runtime.eval(`
+        con <- gzcon(url("https://data.nativr.invalid/lines.txt.gz", open = "rb"), text = TRUE)
+        value <- readLines(con)
+        close(con)
+        value
+      `),
+    ).resolves.toEqual(["alpha", "beta"]);
+    await runtime.dispose();
+
+    const invalid = await createR({
+      execution: "inline",
+      assets,
+      url: () => ({ body: [1, 2, 3] }) as never,
+    });
+    await expect(
+      invalid.eval('readLines(url("https://data.nativr.invalid/invalid"))'),
+    ).rejects.toMatchObject({ code: "NRS5007" });
+    await invalid.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxOutputBytes: 3 },
+      url: () => ({ body: new Uint8Array([1, 2, 3, 4]) }),
+    });
+    await expect(
+      limited.eval('readBin(url("https://data.nativr.invalid/large", open = "rb"), "raw", 4L)'),
+    ).rejects.toMatchObject({ code: "NRL4007" });
+    await limited.dispose();
+  });
+
   it("keeps frequency-prioritized options as resettable session state", async () => {
     const runtime = await session();
     await expect(
@@ -9557,7 +9681,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.232.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.233.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

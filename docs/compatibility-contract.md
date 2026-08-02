@@ -456,7 +456,16 @@ closed `capture.output` targets follow GNU R's destroy-after-use behavior. Handl
 forging, package writes are rejected, and the map is reset with the evaluator. Host paths, URLs,
 sockets, typed binary decoding/writes beyond raw `readBin`, encoding conversion on writes,
 independent read/write positions, positions beyond end of file, and the broader
-connection/filesystem stack are not claimed.
+connection/filesystem stack beyond the explicit URL adapter are not claimed.
+
+Usage-ranked `base::url` has GNU R 4.6 behavioral differential evidence for its six formal names,
+defaults, `c("url", "connection")` handle, and closed `url-libcurl` summary. A construction-time
+`createR({ url })` capability carries validated URL, method, and named-header data across inline or
+Worker execution, copies and bounds one returned `Uint8Array`, and materializes it lazily into the
+owned connection store. Existing line/raw/source/table/serialization readers and `gzcon()` consume
+the same record; repeated reads preserve one cursor without refetching. No adapter means no network
+authority. HTTP status, redirects, authentication, cookies, CORS, caching, cancellation, and origin
+allow-lists remain host policy; native libcurl and writable URL connections are not claimed.
 
 Usage-ranked `base::gzcon` has GNU R 4.6 behavioral differential evidence for its four formal names,
 `c("gzcon", "connection")` handle shape, connection summary, gzip magic, text write/read roundtrips,
@@ -465,9 +474,9 @@ It mutates the evaluator connection record and invalidates the superseded file h
 subsequent I/O traverses one bounded decompressed byte buffer. Immutable package gzip resources and
 same-session files use browser-standard `CompressionStream`/`DecompressionStream` in both inline and
 Worker execution. The `level` range is validated, but the browser API does not expose GNU zlib's
-level control, so compressed-byte or compression-ratio identity is not claimed. URL/curl transports,
-sockets, seek/pushback in compressed streams, concatenated-member fidelity, and typed binary I/O
-remain separate capabilities.
+level control, so compressed-byte or compression-ratio identity is not claimed. Native curl
+transports, sockets, seek/pushback in compressed streams, concatenated-member fidelity, and typed
+binary I/O remain separate capabilities.
 
 `base::R.home`, `dir.create`, `dir.exists`, `list.files`/`dir`, `list.dirs`, `getwd`, `setwd`,
 `normalizePath`, `basename`, and `dirname` have public-shape differential evidence plus NativR-only
@@ -1355,9 +1364,9 @@ any expression runs; evaluation is sequential in the global, caller, or explicit
 the invisible named result retains the last value plus its visibility. Measured echo and visible
 result printing use bounded runtime output and ordinary S3 print dispatch. Exact formal names,
 connection classes, cursor consumption, local/global assignment, parse atomicity, virtual `chdir`,
-package execution, and Worker execution have evidence. Output text connections, URL/host-file input,
+package execution, and Worker execution have evidence. Output text connections, host-file input,
 source-reference retention, abort recovery, exact echo deparsing, and every encoding remain outside
-this increment.
+this increment; URL-connection input is covered by the later explicit host-adapter increment.
 
 `utils::URLdecode` has GNU R differential evidence for backports' measured `URLdecode("ab%20cd")`
 call and NativR executable coverage for vectorized hexadecimal case, reserved characters, literal

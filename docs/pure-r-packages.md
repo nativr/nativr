@@ -91,6 +91,28 @@ knitr, Sweave, Pandoc, LaTeX, or host viewers. Building a development package's 
 An application can fetch and cache the JSON package set itself before `createR()`. The runtime does
 not fetch repositories or package resources during evaluation.
 
+Packages may still perform data I/O at evaluation time through R's ordinary connection API when the
+embedding application explicitly supplies a policy-enforcing transport:
+
+```ts
+const r = await createR({
+  packages: packageSet.bundles,
+  url: async (request) => {
+    if (!request.url.startsWith("https://data.example/")) throw new Error("URL denied");
+    const response = await fetch(request.url);
+    return { body: new Uint8Array(await response.arrayBuffer()) };
+  },
+});
+```
+
+The runtime sends only the URL, selected R method, and validated named headers to this callback. It
+copies and bounds the returned `Uint8Array`, stores it in the session byte store on first read, and
+then uses the same cursor and connection code as package resources. There is no default `fetch`, so
+redirects, authentication, cookies, CORS behavior, caching, and allowed origins remain application
+policy. This is especially useful for unchanged pure-R packages that call `readLines(url(...))` or
+`gzcon(url(...))`; packages using libcurl native APIs or compiled download code remain outside the
+source-only contract.
+
 ## Artifact contract
 
 Each `nativr-pure-r-package` v1 artifact contains:
@@ -155,6 +177,9 @@ normalized AST. The runtime then provides:
     and raw reads plus close-time writes through browser-standard streams.
 18. `utils::vignette()` listing across installed or attached virtual packages and GNU R-shaped
     metadata lookup for retained package documentation;
+19. lazy read-only `base::url()` connections backed by an explicit `createR({ url })` byte adapter,
+    reusable by line, raw, source, table, serialization, and gzip readers without exposing host
+    networking to package code.
 
 Package source, metadata, resource counts, and encoded bytes are bounded before parsing. Package
 evaluation then consumes the ordinary step, call-depth, allocation, and output budgets.

@@ -118,6 +118,7 @@ describe("Worker protocol guards", () => {
       ],
       environmentVariables: { SEEDED: "value", EMPTY: "" },
       readline: true,
+      url: true,
       debug: false,
     },
     {
@@ -169,6 +170,18 @@ describe("Worker protocol guards", () => {
       kind: "readline-result",
       error: { code: "NRE2254", message: "cancelled" },
     },
+    {
+      protocolVersion: 1,
+      id: "url-result",
+      kind: "url-result",
+      result: { body: new Uint8Array([1, 2, 3]) },
+    },
+    {
+      protocolVersion: 1,
+      id: "url-error",
+      kind: "url-result",
+      error: { code: "NRE2255", message: "denied" },
+    },
   ])("accepts request kind $kind", (request) => {
     expect(isWorkerRequest(request)).toBe(true);
   });
@@ -204,8 +217,26 @@ describe("Worker protocol guards", () => {
         id: "x",
         kind: "init",
         assets: { treeSitterRuntimeWasm: "runtime.wasm", rGrammarWasm: "r.wasm" },
+        url: "yes",
+        debug: false,
+      }),
+    ).toBe(false);
+    expect(
+      isWorkerRequest({
+        protocolVersion: 1,
+        id: "x",
+        kind: "init",
+        assets: { treeSitterRuntimeWasm: "runtime.wasm", rGrammarWasm: "r.wasm" },
         packages: [{ description: "bad", namespace: "", rSources: [{ path: 1, source: "" }] }],
         debug: false,
+      }),
+    ).toBe(false);
+    expect(
+      isWorkerRequest({
+        protocolVersion: 1,
+        id: "x",
+        kind: "url-result",
+        result: { body: [1, 2, 3] },
       }),
     ).toBe(false);
     expect(
@@ -335,6 +366,16 @@ describe("Worker protocol guards", () => {
       kind: "readline",
       request: { prompt: "Name: " },
     },
+    {
+      protocolVersion: 1,
+      id: "url",
+      kind: "url",
+      request: {
+        url: "https://example.invalid/data",
+        method: "libcurl",
+        headers: [{ name: "Accept", value: "text/plain" }],
+      },
+    },
   ])("accepts response kind $kind", (response) => {
     expect(isWorkerResponse(response)).toBe(true);
   });
@@ -353,6 +394,22 @@ describe("Worker protocol guards", () => {
         id: "x",
         kind: "system-command",
         request: { command: "probe" },
+      }),
+    ).toBe(false);
+    expect(
+      isWorkerResponse({
+        protocolVersion: 1,
+        id: "x",
+        kind: "url",
+        request: { url: "https://example.invalid", method: "other", headers: [] },
+      }),
+    ).toBe(false);
+    expect(
+      isWorkerResponse({
+        protocolVersion: 1,
+        id: "x",
+        kind: "url",
+        request: { url: "https://example.invalid\nsecond", method: "default", headers: [] },
       }),
     ).toBe(false);
     expect(

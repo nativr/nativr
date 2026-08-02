@@ -9,6 +9,8 @@ import type {
   PublicRWarning,
   PublicSystemCommandRequest,
   PublicSystemCommandResult,
+  PublicUrlRequest,
+  PublicUrlResult,
   PureRPackageBundle,
   RValueSnapshot,
   WireEvaluationResult,
@@ -17,6 +19,7 @@ import type {
   WorkerSuccessPayload,
   SystemCommandResultRequest,
   ReadlineResultRequest,
+  UrlResultRequest,
 } from "@nativr/protocol";
 import {
   DEFAULT_RUNTIME_LIMITS,
@@ -44,6 +47,8 @@ export type {
   PublicReadlineRequest,
   PublicSystemCommandRequest,
   PublicSystemCommandResult,
+  PublicUrlRequest,
+  PublicUrlResult,
 } from "@nativr/protocol";
 export type { PureRPackageBundle, PureRPackageResource } from "@nativr/protocol";
 
@@ -68,6 +73,8 @@ export interface CreateROptions {
   readonly systemCommand?: SystemCommandHandler;
   /** Host-owned line input used by readline(); omitted sessions remain non-interactive. */
   readonly readline?: ReadlineHandler;
+  /** Explicit byte transport for url() connections; omitted sessions have no network capability. */
+  readonly url?: UrlHandler;
   readonly timeoutMs?: number;
   readonly debug?: boolean;
   readonly onWarning?: (warning: PublicRWarning) => void;
@@ -85,6 +92,9 @@ export type SystemCommandHandler = (
 
 /** Host-owned line input used only when R code calls readline(). */
 export type ReadlineHandler = (request: PublicReadlineRequest) => string | Promise<string>;
+
+/** Host-owned, policy-enforcing byte transport used only when R reads a url() connection. */
+export type UrlHandler = (request: PublicUrlRequest) => PublicUrlResult | Promise<PublicUrlResult>;
 
 /** Options for one evaluation. */
 export interface EvalOptions {
@@ -155,6 +165,7 @@ export async function createR(options: CreateROptions = {}): Promise<NativRSessi
     const { RuntimeHost: InlineRuntimeHost } = await import("./runtime-host.js");
     const systemCommand = sessionOptions.systemCommand;
     const readline = sessionOptions.readline;
+    const url = sessionOptions.url;
     const host = await InlineRuntimeHost.create(
       {
         treeSitterRuntimeWasm: assets.treeSitterRuntimeWasm,
@@ -178,6 +189,14 @@ export async function createR(options: CreateROptions = {}): Promise<NativRSessi
             executeReadlineHandler(
               readline,
               { prompt },
+              sessionOptions.limits?.maxOutputBytes ?? DEFAULT_RUNTIME_LIMITS.maxOutputBytes,
+            ),
+      url === undefined
+        ? undefined
+        : async (request) =>
+            executeUrlHandler(
+              url,
+              request,
               sessionOptions.limits?.maxOutputBytes ?? DEFAULT_RUNTIME_LIMITS.maxOutputBytes,
             ),
     );
@@ -397,6 +416,43 @@ async function executeReadlineHandler(
   } catch (error) {
     if (error instanceof NativRError) throw error;
     throw new NativRError("NRE2254", error instanceof Error ? error.message : String(error));
+  }
+}
+
+function validateUrlResult(
+  value: unknown,
+  maxOutputBytes = DEFAULT_RUNTIME_LIMITS.maxOutputBytes,
+): PublicUrlResult {
+  if (!isUnknownRecord(value) || !(value["body"] instanceof Uint8Array)) {
+    throw new NativRError(
+      "NRS5007",
+      "createR({ url }) must return an object containing a Uint8Array body.",
+    );
+  }
+  const body = Uint8Array.from(value["body"]);
+  if (body.byteLength > maxOutputBytes) {
+    throw new RResourceLimitError("NRL4007", "URL response size limit exceeded.", {
+      details: { maxOutputBytes, outputBytes: body.byteLength },
+    });
+  }
+  return { body };
+}
+
+async function executeUrlHandler(
+  handler: UrlHandler,
+  request: PublicUrlRequest,
+  maxOutputBytes: number,
+): Promise<PublicUrlResult> {
+  try {
+    const snapshot: PublicUrlRequest = {
+      url: request.url,
+      method: request.method,
+      headers: request.headers.map(({ name, value }) => ({ name, value })),
+    };
+    return validateUrlResult(await handler(snapshot), maxOutputBytes);
+  } catch (error) {
+    if (error instanceof NativRError) throw error;
+    throw new NativRError("NRE2255", error instanceof Error ? error.message : String(error));
   }
 }
 
@@ -664,6 +720,7 @@ class WorkerSession implements NativRSession {
           ? {}
           : { environmentVariables: this.#options.environmentVariables }),
         ...(this.#options.readline === undefined ? {} : { readline: true }),
+        ...(this.#options.url === undefined ? {} : { url: true }),
         debug: this.#options.debug === true,
       },
       [],
@@ -750,6 +807,10 @@ class WorkerSession implements NativRSession {
       void this.#handleReadline(worker, response.id, response.request);
       return;
     }
+    if (response.kind === "url") {
+      void this.#handleUrl(worker, response.id, response.request);
+      return;
+    }
     const pending = this.#pending.get(response.id);
     if (pending === undefined) return;
     this.#pending.delete(response.id);
@@ -828,6 +889,43 @@ class WorkerSession implements NativRSession {
       };
     }
     worker.postMessage(response);
+  }
+
+  async #handleUrl(worker: Worker, id: string, request: PublicUrlRequest): Promise<void> {
+    let response: UrlResultRequest;
+    try {
+      const handler = this.#options.url;
+      if (handler === undefined) {
+        throw new NativRError(
+          "NRU6196",
+          "url() I/O requires an explicit createR({ url }) host capability.",
+        );
+      }
+      response = {
+        protocolVersion: PROTOCOL_VERSION,
+        id,
+        kind: "url-result",
+        result: await executeUrlHandler(
+          handler,
+          request,
+          this.#options.limits?.maxOutputBytes ?? DEFAULT_RUNTIME_LIMITS.maxOutputBytes,
+        ),
+      };
+    } catch (error) {
+      response = {
+        protocolVersion: PROTOCOL_VERSION,
+        id,
+        kind: "url-result",
+        error: {
+          code: error instanceof NativRError ? error.code : "NRE2255",
+          message: error instanceof Error ? error.message : String(error),
+        },
+      };
+    }
+    worker.postMessage(
+      response,
+      "result" in response ? [response.result.body.buffer as ArrayBuffer] : [],
+    );
   }
 
   async #restart(reason: NativRError): Promise<void> {

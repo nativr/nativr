@@ -9,6 +9,7 @@ import type {
   PublicRWarning,
   PublicSystemCommandRequest,
   PublicSystemCommandResult,
+  PublicUrlRequest,
 } from "@nativr/nativr";
 
 import { playgroundPackage } from "./package-example.js";
@@ -74,6 +75,11 @@ twice_mean(c(1, 2, 6))`,
     id: "readline-host",
     label: "Browser readline input",
     code: 'name <- nativrdemo::ask_user("Your name: ")\npaste0("Hello, ", name)',
+  },
+  {
+    id: "url-host",
+    label: "URL connection",
+    code: 'nativrdemo::remote_lines("https://data.nativr.invalid/lines")',
   },
   {
     id: "plot",
@@ -155,6 +161,7 @@ async function initialize(): Promise<void> {
       environmentVariables: { NATIVR_PLAYGROUND: "worker" },
       systemCommand: playgroundSystemCommand,
       readline: playgroundReadline,
+      url: playgroundUrl,
     });
     enableControls(true);
     setStatus("ready", "Runtime ready");
@@ -166,6 +173,13 @@ async function initialize(): Promise<void> {
 
 function playgroundReadline(request: PublicReadlineRequest): string {
   return window.prompt(request.prompt) ?? "";
+}
+
+function playgroundUrl(request: PublicUrlRequest): { readonly body: Uint8Array } {
+  if (request.url !== "https://data.nativr.invalid/lines") {
+    throw new Error(`Playground URL is not allow-listed: ${request.url}`);
+  }
+  return { body: new TextEncoder().encode("worker-url\npackage-connection\n") };
 }
 
 function playgroundSystemCommand(request: PublicSystemCommandRequest): PublicSystemCommandResult {

@@ -86,6 +86,7 @@ import type {
   RPairlist,
   RRawVector,
   RSymbol,
+  RUrlRequest,
   RValue,
   RVector,
 } from "@nativr/runtime";
@@ -424,6 +425,32 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     ["description", "open", "blocking", "encoding", "raw", "method"],
     "behavioral",
     builtinFile,
+  ),
+  withBuiltinFormals(
+    defineBuiltin(
+      "url",
+      ["description", "open", "blocking", "encoding", "method", "headers"],
+      "behavioral",
+      builtinUrl,
+    ),
+    [
+      { name: "description" },
+      { name: "open", defaultValue: { kind: "StringLiteral", value: "", span: SYNTHETIC_SPAN } },
+      {
+        name: "blocking",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+      { name: "encoding", defaultValue: getOptionDefaultAst("encoding") },
+      {
+        name: "method",
+        defaultValue: getOptionDefaultAst("url.method", {
+          kind: "StringLiteral",
+          value: "default",
+          span: SYNTHETIC_SPAN,
+        }),
+      },
+      { name: "headers", defaultValue: nullAst() },
+    ],
   ),
   withBuiltinFormals(
     defineBuiltin(
@@ -2890,6 +2917,7 @@ interface VirtualTextConnection {
   text: "text" | "binary";
   cursor: number;
   gzip?: VirtualGzipConnection;
+  url?: { readonly request: RUrlRequest; loaded: boolean };
 }
 
 interface VirtualGzipConnection {
@@ -3017,7 +3045,7 @@ function withBuiltinFormals(
   };
 }
 
-function getOptionDefaultAst(name: string): AstNode {
+function getOptionDefaultAst(name: string, fallback?: AstNode): AstNode {
   return {
     kind: "CallExpression",
     callee: { kind: "Identifier", name: "getOption", span: SYNTHETIC_SPAN },
@@ -3026,6 +3054,7 @@ function getOptionDefaultAst(name: string): AstNode {
         value: { kind: "StringLiteral", value: name, span: SYNTHETIC_SPAN },
         span: SYNTHETIC_SPAN,
       },
+      ...(fallback === undefined ? [] : [{ value: fallback, span: SYNTHETIC_SPAN }]),
     ],
     span: SYNTHETIC_SPAN,
   };
@@ -5721,6 +5750,115 @@ async function builtinFile(invocation: BuiltinInvocation): Promise<RIntegerVecto
   return handle;
 }
 
+async function builtinUrl(invocation: BuiltinInvocation): Promise<RIntegerVector> {
+  const matched = await matchExact(invocation, [
+    "description",
+    "open",
+    "blocking",
+    "encoding",
+    "method",
+    "headers",
+  ]);
+  const description = filePathScalar(required(matched, "description", "url"), "url");
+  if (/[\0\r\n]/u.test(description)) {
+    throw new RTypeMismatchError("NRT3411", "url() description must be single-line NUL-free text.");
+  }
+  const blocking = coercibleLogicalFlag(matched.get("blocking"), true, "blocking");
+  const encoding = virtualTextEncoding(matched.get("encoding"), "url");
+  const methodText = characterScalar(
+    matched.get("method") ?? characterVector(["default"]),
+    "method",
+  );
+  if (!["default", "internal", "libcurl", "wininet"].includes(methodText)) {
+    throw new RTypeMismatchError(
+      "NRT3411",
+      `'arg' should be one of "default", "internal", "libcurl", "wininet"`,
+    );
+  }
+  const method = methodText as RUrlRequest["method"];
+  const headers = urlRequestHeaders(matched.get("headers"));
+  const requested = virtualConnectionMode(matched.get("open"), "r", "url");
+  if (requested.mode !== "r") {
+    throw new RUnsupportedFeatureError(
+      "NRU6197",
+      "url() currently supports read-only text or binary connections.",
+    );
+  }
+
+  const state = virtualTextFileState(invocation);
+  if (state.connections.size >= invocation.context.limits.maxVectorLength) {
+    throw new RResourceLimitError("NRL4002", "Virtual connection count limit exceeded.");
+  }
+  if (!Number.isSafeInteger(state.nextConnectionId) || state.nextConnectionId > 2_147_483_647) {
+    throw new RResourceLimitError("NRL4002", "Virtual connection identifier limit exceeded.");
+  }
+  const id = state.nextConnectionId;
+  state.nextConnectionId += 1;
+  const path = nextVirtualTempPath(state, "url-connection-", ".bin");
+  invocation.context.allocate(1);
+  const handle = withClasses(integerVector([id]), ["url", "connection"]);
+  const connection: VirtualTextConnection = {
+    id,
+    handle,
+    description,
+    path,
+    packageFile: false,
+    privateFile: true,
+    blocking,
+    encoding,
+    open: false,
+    mode: "r",
+    displayMode: "r",
+    text: "text",
+    cursor: 0,
+    url: { request: { url: description, method, headers }, loaded: false },
+  };
+  state.connections.set(id, connection);
+  if (requested.specified) {
+    try {
+      await ensureUrlConnection(invocation, connection);
+      openVirtualTextConnection(invocation, connection, requested, false);
+    } catch (error) {
+      destroyVirtualTextConnection(state, connection);
+      throw error;
+    }
+  }
+  return handle;
+}
+
+function urlRequestHeaders(value: RValue | undefined): RUrlRequest["headers"] {
+  if (value === undefined || value.type === "null") return [];
+  if (value.type !== "character" || value.missing !== undefined) {
+    throw new RTypeMismatchError("NRT3411", "'headers' must have names and must not be NA");
+  }
+  const names = vectorNames(value);
+  if (
+    names === undefined ||
+    names.length !== value.length ||
+    names.some((name) => name.length === 0)
+  ) {
+    throw new RTypeMismatchError("NRT3411", "'headers' must have names and must not be NA");
+  }
+  return value.values.map((headerValue, index) => {
+    const name = names[index] ?? "";
+    if (/[\0\r\n]/u.test(name) || /[\0\r\n]/u.test(headerValue)) {
+      throw new RTypeMismatchError("NRT3411", "url() headers must be single-line NUL-free text");
+    }
+    return { name, value: headerValue };
+  });
+}
+
+async function ensureUrlConnection(
+  invocation: BuiltinInvocation,
+  connection: VirtualTextConnection,
+): Promise<void> {
+  const url = connection.url;
+  if (url === undefined || url.loaded) return;
+  const result = await invocation.urlRequest(url.request);
+  writeVirtualBinaryFile(invocation, connection.path, result.body);
+  url.loaded = true;
+}
+
 async function builtinTextConnection(invocation: BuiltinInvocation): Promise<RIntegerVector> {
   const matched = await matchExact(invocation, ["object", "open", "local", "name", "encoding"]);
   const object = required(matched, "object", "textConnection");
@@ -5775,6 +5913,7 @@ async function builtinTextConnection(invocation: BuiltinInvocation): Promise<RIn
 async function builtinGzcon(invocation: BuiltinInvocation): Promise<RIntegerVector> {
   const matched = await matchExact(invocation, ["con", "level", "allowNonCompressed", "text"]);
   const connection = requireVirtualTextConnection(invocation, required(matched, "con", "gzcon"));
+  await ensureUrlConnection(invocation, connection);
   if (connection.gzip !== undefined) {
     invocation.context.warn({ code: "NRW1119", message: "this is already a 'gzcon' connection" });
     return connection.handle;
@@ -6003,6 +6142,7 @@ async function builtinReadBin(invocation: BuiltinInvocation): Promise<RRawVector
     bytes = Uint8Array.from(source.values);
   } else if (isVirtualTextConnectionHandle(source)) {
     connection = requireVirtualTextConnection(invocation, source);
+    await ensureUrlConnection(invocation, connection);
     if (connection.open && !virtualConnectionCanRead(connection.mode)) {
       throw new REvaluationError("NRE2240", "cannot read from this connection");
     }
@@ -6043,6 +6183,7 @@ async function builtinOpen(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["con", "open", "blocking"]);
   const connection = requireVirtualTextConnection(invocation, required(matched, "con", "open"));
   const mode = virtualConnectionMode(matched.get("open"), connection.mode, "open");
+  if (virtualConnectionCanRead(mode.mode)) await ensureUrlConnection(invocation, connection);
   connection.blocking = coercibleLogicalFlag(
     matched.get("blocking"),
     connection.blocking,
@@ -6543,6 +6684,7 @@ async function builtinReadLines(invocation: BuiltinInvocation): Promise<RCharact
   let connection: VirtualTextConnection | undefined;
   if (isVirtualTextConnectionHandle(connectionValue)) {
     connection = requireVirtualTextConnection(invocation, connectionValue);
+    await ensureUrlConnection(invocation, connection);
     if (connection.open && !virtualConnectionCanRead(connection.mode)) {
       throw new REvaluationError("NRE2240", "cannot read from this connection");
     }
@@ -6707,7 +6849,14 @@ function virtualTextEncoding(value: RValue | undefined, call: string): VirtualTe
     throw new RTypeMismatchError("NRT3355", "invalid 'encoding' argument");
   }
   const normalized = (value.values[0] ?? "").toLowerCase().replaceAll("-", "");
-  if (normalized === "" || normalized === "unknown" || normalized === "utf8") return "utf8";
+  if (
+    normalized === "" ||
+    normalized === "unknown" ||
+    normalized === "native.enc" ||
+    normalized === "nativeenc" ||
+    normalized === "utf8"
+  )
+    return "utf8";
   if (normalized === "latin1" || normalized === "bytes") return "latin1";
   throw new RUnsupportedFeatureError(
     "NRU6182",
@@ -6846,6 +6995,9 @@ function openVirtualTextConnection(
   }
   const canRead = virtualConnectionCanRead(requested.mode);
   const canWrite = virtualConnectionCanWrite(requested.mode);
+  if (canWrite && connection.url !== undefined) {
+    throw new RUnsupportedFeatureError("NRU6197", "url() connections are read-only.");
+  }
   if (canWrite && connection.packageFile) {
     throw new RUnsupportedFeatureError(
       "NRU6181",
@@ -6883,6 +7035,9 @@ function writeClosedVirtualTextConnection(
   connection: VirtualTextConnection,
   source: string,
 ): void {
+  if (connection.url !== undefined) {
+    throw new RUnsupportedFeatureError("NRU6197", "url() connections are read-only.");
+  }
   if (connection.packageFile) {
     throw new RUnsupportedFeatureError(
       "NRU6181",
@@ -6897,6 +7052,9 @@ function writeVirtualTextConnection(
   connection: VirtualTextConnection,
   source: string,
 ): void {
+  if (connection.url !== undefined) {
+    throw new RUnsupportedFeatureError("NRU6197", "url() connections are read-only.");
+  }
   if (connection.gzip !== undefined) {
     writeGzipConnectionBytes(
       invocation,
@@ -6933,6 +7091,12 @@ function writeVirtualTextTarget(
 ): VirtualTextConnection | undefined {
   if (isVirtualTextConnectionHandle(target)) {
     const connection = requireVirtualTextConnection(invocation, target);
+    if (connection.url !== undefined) {
+      throw new RUnsupportedFeatureError(
+        "NRU6197",
+        `${call}() cannot write to a url() connection.`,
+      );
+    }
     if (connection.open) {
       if (!virtualConnectionCanWrite(connection.mode)) {
         throw new REvaluationError("NRE2240", "cannot write to this connection");
@@ -6992,11 +7156,16 @@ function readVirtualTextFile(
   if (path.startsWith(`${VIRTUAL_TEMP_ROOT}/`)) {
     const state = virtualTextFileState(invocation);
     const source = state.files.get(path);
-    if (source === undefined) {
+    if (source !== undefined) {
+      touchVirtualFile(state, path, "read");
+      return source;
+    }
+    const bytes = state.binaryFiles.get(path);
+    if (bytes === undefined) {
       throw new REvaluationError("NRE2195", `Cannot open virtual text file '${path}'.`);
     }
     touchVirtualFile(state, path, "read");
-    return source;
+    return decodeVirtualTextBytes(bytes, encoding === "latin1" ? "latin1" : "utf8", path);
   }
   const packageFile = invocation.packageFile(path);
   if (packageFile === undefined) {
@@ -7358,6 +7527,12 @@ function writeSerializationTarget(
 ): void {
   if (isVirtualTextConnectionHandle(target)) {
     const connection = requireVirtualTextConnection(invocation, target);
+    if (connection.url !== undefined) {
+      throw new RUnsupportedFeatureError(
+        "NRU6197",
+        `${call}() cannot write to a url() connection.`,
+      );
+    }
     if (connection.packageFile) {
       throw new RUnsupportedFeatureError(
         "NRU6181",
@@ -7408,6 +7583,7 @@ async function serializationInputBytes(
   if (source.type === "raw") return Uint8Array.from(source.values);
   if (isVirtualTextConnectionHandle(source)) {
     const connection = requireVirtualTextConnection(invocation, source);
+    await ensureUrlConnection(invocation, connection);
     if (connection.open && !virtualConnectionCanRead(connection.mode)) {
       throw new REvaluationError("NRE2240", "cannot read from this connection");
     }
@@ -8747,6 +8923,7 @@ function optionsState(invocation: BuiltinInvocation): Map<string, RValue> {
     ["continue", characterVector(["+ "])],
     ["deparse.cutoff", integerVector([60])],
     ["digits", integerVector([7])],
+    ["encoding", characterVector(["native.enc"])],
     ["expressions", integerVector([5000])],
     ["max.print", integerVector([99_999])],
     ["prompt", characterVector(["> "])],
@@ -10123,6 +10300,7 @@ async function sourceInput(
   const encoding = virtualTextEncoding(encodingValue, "source");
   if (isVirtualTextConnectionHandle(file)) {
     const connection = requireVirtualTextConnection(invocation, file);
+    await ensureUrlConnection(invocation, connection);
     if (connection.open && !virtualConnectionCanRead(connection.mode)) {
       throw new REvaluationError("NRE2240", "cannot read from this connection");
     }
@@ -19563,7 +19741,7 @@ async function builtinReadTable(
     if (file === undefined) {
       throw new REvaluationError("NRE2103", "Argument 'file' is missing in read.table().");
     }
-    const read = readTableInput(invocation, file, controls.get("fileEncoding"));
+    const read = await readTableInput(invocation, file, controls.get("fileEncoding"));
     source = read.source;
     connectionToDestroy = read.connectionToDestroy;
   }
@@ -19640,13 +19818,14 @@ function rejectUnsupportedReadTableControls(controls: ReadonlyMap<string, RValue
   if (encoding !== undefined) tableEncoding(encoding, "encoding");
 }
 
-function readTableInput(
+async function readTableInput(
   invocation: BuiltinInvocation,
   value: RValue,
   encodingValue: RValue | undefined,
-): { readonly source: string; readonly connectionToDestroy?: VirtualTextConnection } {
+): Promise<{ readonly source: string; readonly connectionToDestroy?: VirtualTextConnection }> {
   if (isVirtualTextConnectionHandle(value)) {
     const connection = requireVirtualTextConnection(invocation, value);
+    await ensureUrlConnection(invocation, connection);
     if (connection.open && !virtualConnectionCanRead(connection.mode)) {
       throw new REvaluationError("NRE2240", "cannot read from this connection");
     }
@@ -34568,12 +34747,18 @@ async function builtinSummary(invocation: BuiltinInvocation): Promise<RValue> {
       : virtualTextFileExists(invocation, connection.path) || !connection.packageFile;
     const canWrite = connection.open
       ? virtualConnectionCanWrite(connection.mode)
-      : !connection.packageFile;
+      : !connection.packageFile && connection.url === undefined;
     invocation.context.allocate(7);
     return listValue(
       [
         characterVector([connection.description]),
-        characterVector([connection.gzip === undefined ? "file" : "gzcon"]),
+        characterVector([
+          connection.gzip !== undefined
+            ? "gzcon"
+            : connection.url === undefined
+              ? "file"
+              : `url-${connection.url.request.method === "default" ? "libcurl" : connection.url.request.method}`,
+        ]),
         characterVector([connection.displayMode]),
         characterVector([connection.text]),
         characterVector([connection.open ? "opened" : "closed"]),

@@ -127,6 +127,11 @@ Date: 2026-08-02
   single-line input, R whitespace trimming, a 256-character prompt bound, resource limits, and
   capability-aware `interactive()`; an unchanged pure-R package function and Playground browser
   dialog execute through the same seam.
+- Usage-ranked `url()` with GNU R 4.6 formals, class, and closed-summary evidence plus an explicit
+  asynchronous byte adapter. Inline and Worker sessions share validated URL/method/header requests,
+  copied bounded responses, lazy one-request connection state, and downstream `readLines()`, raw
+  `readBin()`, `source()`, table/serialization, and `gzcon()` reuse. The default runtime remains
+  network-free; origin, redirect, credential, timeout, and cache policy belongs to the host.
 - Usage-ranked `gc()` traverses the reachable NativR value graph into GNU R's named 2-by-6
   `Ncells`/`Vcells` report, maintains resettable session high-water values and full/partial census
   counts, emits bounded verbose messages, and shares its collection seam with

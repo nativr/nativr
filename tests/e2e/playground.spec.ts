@@ -84,6 +84,11 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText('"Hello, browser user"');
 
+  await page.getByRole("button", { name: "URL connection" }).click();
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText('["worker-url", "package-connection"]');
+  expect(evaluationRequests).toEqual([]);
+
   await page.locator("#source").fill("system('blocked', intern = TRUE)");
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("Evaluation failed.");

@@ -8347,6 +8347,32 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "url-connection-usage-ranked-formals-class-and-closed-summary",
+    "code": "con <- url(\"https://data.nativr.invalid/lines\")\ndetails <- summary(con)\nresult <- c(class(con), names(formals(url)), details$class, details$mode, details$opened, details[[\"can read\"]], details[[\"can write\"]], identical(formals(url)$open, \"\"), identical(formals(url)$blocking, TRUE), identical(formals(url)$encoding, quote(getOption(\"encoding\"))), identical(formals(url)$method, quote(getOption(\"url.method\", \"default\"))), is.null(formals(url)$headers))\nclose(con)\nresult",
+    "expected": [
+      "url",
+      "connection",
+      "description",
+      "open",
+      "blocking",
+      "encoding",
+      "method",
+      "headers",
+      "url-libcurl",
+      "r",
+      "closed",
+      "yes",
+      "no",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "source-usage-ranked-text-connection-local-return-visibility-and-formals",
     "code": "load_local <- function() { con <- textConnection(c(\"x <- 1L\", \"x + 2L\")); on.exit(close(con)); sourced <- withVisible(source(con, local = TRUE)); c(sourced$value$value, sourced$value$visible, sourced$visible, x) }\ncon <- textConnection(\"1 + 1\")\nclasses <- class(con)\nclose(con)\nc(load_local(), exists(\"x\", globalenv(), inherits = FALSE), classes, names(formals(textConnection)), names(formals(source)))",
     "expected": [

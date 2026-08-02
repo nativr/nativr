@@ -230,7 +230,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 229,force,true,2,magrittr|promises,4,2.1,2.2
 230,readline,true,2,curl|crayon,2,2.1,2.1
 231,difftime,true,2,fs|promises,2,2.1,2.1
-232,url,false,2,jsonlite|openssl,6,2.1,2.1
+232,url,true,2,jsonlite|openssl,6,2.1,2.1
 233,is.character,true,2,dplyr|data.table,4,2.1,2.1
 234,unserialize,true,2,jsonlite|data.table,2,2.1,2.0
 235,cut,true,2,dplyr|zoo,5,2.1,2.0

@@ -233,6 +233,13 @@ runtime's shared browser-standard stream helpers only when the wrapper closes. T
 normal pure-R connection protocol without adding Node built-ins, DOM objects, filesystem resolution,
 network access, or a second execution backend.
 
+URL input extends that connection map through a narrow two-way capability. `base::url()` creates a
+lazy read-only record containing only validated request data. On first open or read, inline
+composition calls the explicit host adapter, while the Worker emits a correlated `url` event and
+accepts a copied `url-result` byte buffer. The bytes then enter the same bounded session store and
+all subsequent line/raw/source/table/serialization/gzip reads use existing connection paths. The
+runtime never imports `fetch` or embeds a network policy; omitted adapters fail closed.
+
 The PNG device composes existing owned seams instead of introducing a host renderer. A numbered
 device records the same normalized graphics events used by Worker callbacks and replay plots; a
 DOM-free software rasterizer converts those events to RGBA; an independent PNG encoder writes

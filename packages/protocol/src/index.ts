@@ -144,6 +144,18 @@ export interface PublicReadlineRequest {
   readonly prompt: string;
 }
 
+/** One URL connection read delegated to an explicitly configured host transport. */
+export interface PublicUrlRequest {
+  readonly url: string;
+  readonly method: "default" | "internal" | "libcurl" | "wininet";
+  readonly headers: readonly { readonly name: string; readonly value: string }[];
+}
+
+/** Bounded response bytes supplied by the URL connection host. */
+export interface PublicUrlResult {
+  readonly body: Uint8Array;
+}
+
 /** Character-formatted table emitted for a browser or other host data viewer. */
 export interface PublicDataViewEvent {
   readonly title: string;
@@ -376,6 +388,8 @@ export interface InitRequest extends ProtocolEnvelope {
   readonly environmentVariables?: Readonly<Record<string, string>>;
   /** Whether the embedding facade configured an interactive readline handler. */
   readonly readline?: boolean;
+  /** Whether the embedding facade configured an explicit URL transport. */
+  readonly url?: boolean;
   readonly debug: boolean;
 }
 
@@ -440,6 +454,16 @@ export type ReadlineResultRequest = ProtocolEnvelope &
       }
   );
 
+/** Resolve a URL request emitted while Worker evaluation is suspended. */
+export type UrlResultRequest = ProtocolEnvelope &
+  (
+    | { readonly kind: "url-result"; readonly result: PublicUrlResult }
+    | {
+        readonly kind: "url-result";
+        readonly error: { readonly code: string; readonly message: string };
+      }
+  );
+
 /** All valid Worker requests. */
 export type WorkerRequest =
   | InitRequest
@@ -451,7 +475,8 @@ export type WorkerRequest =
   | ResetRequest
   | DisposeRequest
   | SystemCommandResultRequest
-  | ReadlineResultRequest;
+  | ReadlineResultRequest
+  | UrlResultRequest;
 
 /** Evaluation data returned internally to the public facade. */
 export interface WireEvaluationResult {
@@ -509,9 +534,21 @@ export interface ReadlineEvent extends ProtocolEnvelope {
   readonly request: PublicReadlineRequest;
 }
 
+/** A correlated URL read request handled by the embedding facade. */
+export interface UrlEvent extends ProtocolEnvelope {
+  readonly kind: "url";
+  readonly request: PublicUrlRequest;
+}
+
 /** All valid Worker responses and events. */
 export type WorkerResponse =
-  SuccessResponse | ErrorResponse | WarningEvent | OutputEvent | SystemCommandEvent | ReadlineEvent;
+  | SuccessResponse
+  | ErrorResponse
+  | WarningEvent
+  | OutputEvent
+  | SystemCommandEvent
+  | ReadlineEvent
+  | UrlEvent;
 
 /** Guard a finite protocol request before dispatch. */
 export function isWorkerRequest(value: unknown): value is WorkerRequest {
@@ -532,6 +569,7 @@ export function isWorkerRequest(value: unknown): value is WorkerRequest {
         (value.environmentVariables === undefined ||
           isEnvironmentVariableRecord(value.environmentVariables)) &&
         (value.readline === undefined || typeof value.readline === "boolean") &&
+        (value.url === undefined || typeof value.url === "boolean") &&
         typeof value.debug === "boolean"
       );
     case "eval":
@@ -568,6 +606,14 @@ export function isWorkerRequest(value: unknown): value is WorkerRequest {
           typeof value.error.message === "string" &&
           value.value === undefined)
       );
+    case "url-result":
+      return (
+        (isUrlResult(value.result) && value.error === undefined) ||
+        (isRecord(value.error) &&
+          typeof value.error.code === "string" &&
+          typeof value.error.message === "string" &&
+          value.result === undefined)
+      );
     default:
       return false;
   }
@@ -598,6 +644,8 @@ export function isWorkerResponse(value: unknown): value is WorkerResponse {
       return isSystemCommandRequest(value.request);
     case "readline":
       return isReadlineRequest(value.request);
+    case "url":
+      return isUrlRequest(value.request);
     default:
       return false;
   }
@@ -742,6 +790,30 @@ function isSystemCommandRequest(value: unknown): value is PublicSystemCommandReq
 
 function isReadlineRequest(value: unknown): value is PublicReadlineRequest {
   return isRecord(value) && typeof value.prompt === "string" && !value.prompt.includes("\0");
+}
+
+function isUrlRequest(value: unknown): value is PublicUrlRequest {
+  return (
+    isRecord(value) &&
+    typeof value.url === "string" &&
+    !/[\0\r\n]/u.test(value.url) &&
+    typeof value.method === "string" &&
+    ["default", "internal", "libcurl", "wininet"].includes(value.method) &&
+    Array.isArray(value.headers) &&
+    value.headers.every(
+      (header) =>
+        isRecord(header) &&
+        typeof header.name === "string" &&
+        header.name.length > 0 &&
+        !/[\0\r\n]/u.test(header.name) &&
+        typeof header.value === "string" &&
+        !/[\0\r\n]/u.test(header.value),
+    )
+  );
+}
+
+function isUrlResult(value: unknown): value is PublicUrlResult {
+  return isRecord(value) && value.body instanceof Uint8Array;
 }
 
 function isSystemCommandResult(value: unknown): value is PublicSystemCommandResult {

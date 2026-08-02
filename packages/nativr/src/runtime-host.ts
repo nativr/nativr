@@ -6,6 +6,8 @@ import type {
   DetailedEvaluationResult,
   RSystemCommandRequest,
   RSystemCommandResult,
+  RUrlRequest,
+  RUrlResult,
   RuntimeLimits,
   RValue,
 } from "@nativr/runtime";
@@ -37,6 +39,7 @@ export class RuntimeHost {
       request: RSystemCommandRequest,
     ) => Promise<RSystemCommandResult> | RSystemCommandResult,
     readline?: (prompt: string) => Promise<string> | string,
+    urlRequest?: (request: RUrlRequest) => Promise<RUrlResult> | RUrlResult,
   ): Promise<RuntimeHost> {
     const parser = await createParser(assets);
     try {
@@ -53,6 +56,7 @@ export class RuntimeHost {
         packages: packageDefinitions,
         ...(systemCommand === undefined ? {} : { systemCommand }),
         ...(readline === undefined ? {} : { readline }),
+        ...(urlRequest === undefined ? {} : { urlRequest }),
         initializeBuiltinState: (state) => {
           state.set(ENVIRONMENT_VARIABLES_STATE_KEY, new Map(Object.entries(environmentVariables)));
         },

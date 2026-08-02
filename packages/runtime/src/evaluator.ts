@@ -75,6 +75,8 @@ import type {
   RPromise,
   RSystemCommandRequest,
   RSystemCommandResult,
+  RUrlRequest,
+  RUrlResult,
   RuntimeLimits,
   RuntimeMemoryStatistics,
   RuntimeOperators,
@@ -109,6 +111,8 @@ export interface EvaluatorOptions {
   readonly initializeBuiltinState?: (state: Map<string, unknown>) => void;
   /** Explicit terminal-line capability. Undefined preserves non-interactive GNU R behavior. */
   readonly readline?: (prompt: string) => Promise<string> | string;
+  /** Explicit URL-byte transport. Undefined means that URL connections cannot perform I/O. */
+  readonly urlRequest?: (request: RUrlRequest) => Promise<RUrlResult> | RUrlResult;
   /** Explicit host capability. Undefined means that no operating-system command may run. */
   readonly systemCommand?: (
     request: RSystemCommandRequest,
@@ -474,6 +478,7 @@ export class Evaluator {
   readonly #parseSource: EvaluatorOptions["parseSource"];
   readonly #initializeBuiltinState: EvaluatorOptions["initializeBuiltinState"];
   readonly #readline: EvaluatorOptions["readline"];
+  readonly #urlRequest: EvaluatorOptions["urlRequest"];
   readonly #systemCommand: EvaluatorOptions["systemCommand"];
   readonly #sessionProcessId: number;
   #emptyEnvironment: REnvironment;
@@ -510,6 +515,7 @@ export class Evaluator {
     this.#parseSource = options.parseSource;
     this.#initializeBuiltinState = options.initializeBuiltinState;
     this.#readline = options.readline;
+    this.#urlRequest = options.urlRequest;
     this.#systemCommand = options.systemCommand;
     this.#sessionProcessId = options.sessionProcessId ?? allocateRuntimeSessionProcessId();
     if (
@@ -1889,6 +1895,15 @@ export class Evaluator {
         systemCall: (which) => this.#systemCall(which),
         isInteractive: () => this.#readline !== undefined,
         readline: async (prompt) => (this.#readline === undefined ? "" : this.#readline(prompt)),
+        urlRequest: async (request) => {
+          if (this.#urlRequest === undefined) {
+            throw new RUnsupportedFeatureError(
+              "NRU6196",
+              "url() I/O requires an explicit createR({ url }) host capability.",
+            );
+          }
+          return this.#urlRequest(request);
+        },
         systemCommand: async (request) => {
           if (this.#systemCommand === undefined) {
             throw new RUnsupportedFeatureError(

@@ -174,6 +174,18 @@ export interface BuiltinMetadata {
   readonly unsupportedBehavior?: readonly string[];
 }
 
+/** Data-only URL connection request delegated to an explicitly configured host. */
+export interface RUrlRequest {
+  readonly url: string;
+  readonly method: "default" | "internal" | "libcurl" | "wininet";
+  readonly headers: readonly { readonly name: string; readonly value: string }[];
+}
+
+/** Bounded response bytes returned by the URL connection host. */
+export interface RUrlResult {
+  readonly body: Uint8Array;
+}
+
 /** Builtin execution kind. */
 export type BuiltinKind = "regular" | "special" | "primitive";
 
@@ -217,6 +229,7 @@ export interface BuiltinInvocation {
   systemCall(which: number): RLanguage | RNull;
   isInteractive(): boolean;
   readline(prompt: string): Promise<string>;
+  urlRequest(request: RUrlRequest): Promise<RUrlResult>;
   systemCommand(request: RSystemCommandRequest): Promise<RSystemCommandResult>;
   searchPath(): readonly string[];
   libraryPaths(): readonly string[];
