@@ -1531,6 +1531,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     builtinHeatColors,
   ),
   defineBuiltin("plot", ["x", "..."], "shape", builtinPlot),
+  ...defineHistogramBuiltins(),
   withBuiltinFormals(
     definePackageBuiltin(
       "graphics",
@@ -2527,6 +2528,206 @@ function defineListObjectsBuiltin(name: "ls" | "objects"): BuiltinDefinition {
       "regular expressions use the documented browser RegExp subset",
     ],
   );
+}
+
+function defineHistogramBuiltins(): readonly BuiltinDefinition[] {
+  const call = (name: string, arguments_: readonly AstNode[]): AstNode => ({
+    kind: "CallExpression",
+    callee: { kind: "Identifier", name, span: SYNTHETIC_SPAN },
+    arguments: arguments_.map((value) => ({ value, span: SYNTHETIC_SPAN })),
+    span: SYNTHETIC_SPAN,
+  });
+  const identifier = (name: string): AstNode => ({
+    kind: "Identifier",
+    name,
+    span: SYNTHETIC_SPAN,
+  });
+  const string = (value: string): AstNode => ({
+    kind: "StringLiteral",
+    value,
+    span: SYNTHETIC_SPAN,
+  });
+  const number = (value: number): AstNode => ({
+    kind: "DoubleLiteral",
+    value,
+    span: SYNTHETIC_SPAN,
+  });
+  const logical = (value: boolean): AstNode => ({
+    kind: "LogicalLiteral",
+    value,
+    span: SYNTHETIC_SPAN,
+  });
+  const nullValue = (): AstNode => ({ kind: "NullLiteral", span: SYNTHETIC_SPAN });
+  const member = (target: AstNode, name: string): AstNode => ({
+    kind: "SubsetExpression",
+    operator: "$",
+    target,
+    arguments: [
+      {
+        value: { kind: "Identifier", name, span: SYNTHETIC_SPAN },
+        span: SYNTHETIC_SPAN,
+      },
+    ],
+    span: SYNTHETIC_SPAN,
+  });
+  const histogram = withBuiltinFormals(
+    definePackageBuiltin("graphics", "hist", ["x", "..."], "behavioral", builtinHistogram),
+    [{ name: "x" }, { name: "..." }],
+  );
+  const histogramDefault = withUnsupportedBehavior(
+    withBuiltinFormals(
+      definePackageBuiltin(
+        "graphics",
+        "hist.default",
+        [
+          "x",
+          "breaks",
+          "freq",
+          "probability",
+          "include.lowest",
+          "right",
+          "fuzz",
+          "density",
+          "angle",
+          "col",
+          "border",
+          "main",
+          "xlim",
+          "ylim",
+          "xlab",
+          "ylab",
+          "axes",
+          "plot",
+          "labels",
+          "nclass",
+          "warn.unused",
+          "panel.first",
+          "...",
+        ],
+        "behavioral",
+        builtinHistogramDefault,
+      ),
+      [
+        { name: "x" },
+        { name: "breaks", defaultValue: string("Sturges") },
+        { name: "freq", defaultValue: nullValue() },
+        { name: "probability", defaultValue: call("!", [identifier("freq")]) },
+        { name: "include.lowest", defaultValue: logical(true) },
+        { name: "right", defaultValue: logical(true) },
+        { name: "fuzz", defaultValue: number(1e-7) },
+        { name: "density", defaultValue: nullValue() },
+        { name: "angle", defaultValue: number(45) },
+        { name: "col", defaultValue: string("lightgray") },
+        { name: "border", defaultValue: nullValue() },
+        {
+          name: "main",
+          defaultValue: call("paste", [string("Histogram of"), identifier("xname")]),
+        },
+        { name: "xlim", defaultValue: call("range", [identifier("breaks")]) },
+        { name: "ylim", defaultValue: nullValue() },
+        { name: "xlab", defaultValue: identifier("xname") },
+        { name: "ylab" },
+        { name: "axes", defaultValue: logical(true) },
+        { name: "plot", defaultValue: logical(true) },
+        { name: "labels", defaultValue: logical(false) },
+        { name: "nclass", defaultValue: nullValue() },
+        { name: "warn.unused", defaultValue: logical(true) },
+        { name: "panel.first", defaultValue: nullValue() },
+        { name: "..." },
+      ],
+    ),
+    [
+      "browser string collation and rendering differ from device-specific GNU R graphics",
+      "positive line-density shading and the complete graphical-parameter surface",
+    ],
+  );
+  const plotHistogram = withBuiltinFormals(
+    definePackageBuiltin(
+      "graphics",
+      "plot.histogram",
+      [
+        "x",
+        "freq",
+        "density",
+        "angle",
+        "col",
+        "border",
+        "lty",
+        "main",
+        "sub",
+        "xlab",
+        "ylab",
+        "xlim",
+        "ylim",
+        "log",
+        "axes",
+        "labels",
+        "add",
+        "ann",
+        "panel.first",
+        "...",
+      ],
+      "shape",
+      builtinPlotHistogram,
+      "invisible",
+    ),
+    [
+      { name: "x" },
+      { name: "freq", defaultValue: identifier("equidist") },
+      { name: "density", defaultValue: nullValue() },
+      { name: "angle", defaultValue: number(45) },
+      { name: "col", defaultValue: string("lightgray") },
+      { name: "border", defaultValue: nullValue() },
+      { name: "lty", defaultValue: nullValue() },
+      {
+        name: "main",
+        defaultValue: call("paste", [
+          string("Histogram of"),
+          call("paste", [member(identifier("x"), "xname")]),
+        ]),
+      },
+      {
+        name: "sub",
+        defaultValue: nullValue(),
+      },
+      {
+        name: "xlab",
+        defaultValue: member(identifier("x"), "xname"),
+      },
+      { name: "ylab" },
+      {
+        name: "xlim",
+        defaultValue: call("range", [member(identifier("x"), "breaks")]),
+      },
+      { name: "ylim", defaultValue: nullValue() },
+      { name: "log", defaultValue: string("") },
+      { name: "axes", defaultValue: logical(true) },
+      { name: "labels", defaultValue: logical(false) },
+      { name: "add", defaultValue: logical(false) },
+      { name: "ann", defaultValue: logical(true) },
+      { name: "panel.first", defaultValue: nullValue() },
+      { name: "..." },
+    ],
+  );
+  const nclassSturges = withBuiltinFormals(
+    definePackageBuiltin("grDevices", "nclass.Sturges", ["x"], "behavioral", (invocation) =>
+      builtinHistogramClassCount(invocation, "sturges"),
+    ),
+    [{ name: "x" }],
+  );
+  const nclassScott = withBuiltinFormals(
+    definePackageBuiltin("grDevices", "nclass.scott", ["x"], "numeric", (invocation) =>
+      builtinHistogramClassCount(invocation, "scott"),
+    ),
+    [{ name: "x" }],
+  );
+  const nclassFd = withBuiltinFormals(
+    definePackageBuiltin("grDevices", "nclass.FD", ["x", "digits"], "numeric", (invocation) =>
+      builtinHistogramClassCount(invocation, "fd"),
+    ),
+    [{ name: "x" }, { name: "digits", defaultValue: number(5) }],
+  );
+  return [histogram, histogramDefault, plotHistogram, nclassSturges, nclassScott, nclassFd];
 }
 
 async function builtinArithmeticOperator(
@@ -20452,6 +20653,659 @@ function validateGraphicsParameter(name: string, value: RValue, template: RValue
   }
 }
 
+interface HistogramValue {
+  readonly value: RList;
+  readonly breaks: readonly number[];
+  readonly counts: readonly number[];
+  readonly density: readonly number[];
+  readonly mids: readonly number[];
+  readonly xname: string;
+  readonly equidist: boolean;
+}
+
+async function builtinHistogram(invocation: BuiltinInvocation): Promise<RValue> {
+  const generic = matchBuiltinArguments(invocation, ["x", "..."]);
+  const xArgument = generic.matched.get("x");
+  if (xArgument === undefined || xArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in hist().");
+  }
+  const input = await invocation.force(xArgument.promise);
+  const dispatched = await invocation.dispatchS3IfPresent(
+    "hist",
+    input,
+    invocation.arguments,
+    false,
+  );
+  return dispatched ?? builtinHistogramDefault(invocation);
+}
+
+async function builtinHistogramDefault(invocation: BuiltinInvocation): Promise<RValue> {
+  const lazy = matchLazyArgumentsWithDots(invocation, [
+    "x",
+    "breaks",
+    "freq",
+    "probability",
+    "include.lowest",
+    "right",
+    "fuzz",
+    "density",
+    "angle",
+    "col",
+    "border",
+    "main",
+    "xlim",
+    "ylim",
+    "xlab",
+    "ylab",
+    "axes",
+    "plot",
+    "labels",
+    "nclass",
+    "warn.unused",
+    "panel.first",
+  ]);
+  const xArgument = lazy.matched.get("x");
+  if (xArgument === undefined || xArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in hist.default().");
+  }
+  const input = await invocation.force(xArgument.promise);
+  const data = histogramData(input, invocation);
+  const value = async (name: string): Promise<RValue | undefined> => {
+    const argument = lazy.matched.get(name);
+    if (argument === undefined || argument.promise.missing) return undefined;
+    return invocation.force(argument.promise);
+  };
+  const xname =
+    xArgument.promise.expression === null
+      ? "x"
+      : histogramExpressionName(xArgument.promise.expression);
+  const breaksValue = await value("breaks");
+  const nclassValue = await value("nclass");
+  const breaks = await histogramBreaks(data, input, breaksValue, nclassValue, invocation);
+  const includeLowest = logicalFlag(await value("include.lowest"), true, "include.lowest");
+  const right = logicalFlag(await value("right"), true, "right");
+  const fuzzValue = await value("fuzz");
+  const fuzz = fuzzValue === undefined ? 1e-7 : numericScalar(fuzzValue, "fuzz");
+  if (!Number.isFinite(fuzz) || fuzz < 0) {
+    throw new RTypeMismatchError("NRT3395", "'fuzz' must be a finite non-negative number");
+  }
+  const result = histogramResult(data, breaks, xname, right, includeLowest, fuzz, invocation);
+  const plot = logicalFlag(await value("plot"), true, "plot");
+  const warnUnused = logicalFlag(await value("warn.unused"), true, "warn.unused");
+  const frequency = histogramFrequency(
+    await value("freq"),
+    await value("probability"),
+    result.equidist,
+  );
+
+  const plotValues = new Map<string, RValue>();
+  if (plot) {
+    for (const name of [
+      "density",
+      "angle",
+      "col",
+      "border",
+      "main",
+      "xlim",
+      "ylim",
+      "xlab",
+      "ylab",
+      "axes",
+      "labels",
+    ]) {
+      const selected = await value(name);
+      if (selected !== undefined) plotValues.set(name, selected);
+    }
+  }
+  const panelFirst = lazy.matched.get("panel.first");
+  if (plot && panelFirst !== undefined) plotValues.set("panel.first", R_NULL);
+  if (plot)
+    for (const argument of lazy.dots) {
+      if (
+        argument.name === undefined ||
+        !["lty", "lwd", "sub", "add", "ann", "log"].includes(argument.name) ||
+        plotValues.has(argument.name)
+      ) {
+        if (!argument.promise.missing) await invocation.force(argument.promise);
+        throw new RUnsupportedFeatureError(
+          "NRU6195",
+          `hist.default() graphical control '${argument.name ?? "<unnamed>"}' is outside the browser histogram subset.`,
+        );
+      }
+      if (argument.promise.missing) {
+        throw new REvaluationError("NRE2103", `Argument '${argument.name}' is missing.`);
+      }
+      plotValues.set(argument.name, await invocation.force(argument.promise));
+    }
+  if (!plot) {
+    if (warnUnused) {
+      const unused = [
+        "freq",
+        "probability",
+        "density",
+        "angle",
+        "col",
+        "border",
+        "main",
+        "xlim",
+        "ylim",
+        "xlab",
+        "ylab",
+        "axes",
+        "labels",
+        "panel.first",
+      ].filter((name) => lazy.matched.has(name));
+      unused.push(...lazy.dots.map((argument) => argument.name ?? "<unnamed>"));
+      for (const name of unused) {
+        invocation.context.warn({
+          code: "NRW1030",
+          message: `argument '${name}' is not made use of`,
+        });
+      }
+    }
+    return result.value;
+  }
+
+  await drawHistogram(invocation, result, frequency, plotValues, panelFirst);
+  invocation.setResultVisibility("invisible");
+  return result.value;
+}
+
+function histogramExpressionName(expression: AstNode): string {
+  const source = deparseAst(expression);
+  const unwrapped = source.startsWith("(") && source.endsWith(")") ? source.slice(1, -1) : source;
+  return unwrapped
+    .replace(/\(\s*([^()\s]+)\s*:\s*([^()\s]+)\s*\)/g, "$1:$2")
+    .replace(/\s*:\s*/g, ":");
+}
+
+function histogramData(value: RValue, invocation: BuiltinInvocation): readonly number[] {
+  if ((value.type !== "integer" && value.type !== "double") || isFactor(value)) {
+    throw new RTypeMismatchError("NRT3395", "'x' must be numeric");
+  }
+  const output: number[] = [];
+  invocation.context.allocate(value.length);
+  for (let index = 0; index < value.length; index += 1) {
+    invocation.context.checkpoint();
+    if (isMissing(value, index)) continue;
+    const item = value.values[index] ?? Number.NaN;
+    if (Number.isFinite(item)) output.push(item);
+  }
+  if (output.length === 0) {
+    throw new RTypeMismatchError("NRT3395", "invalid number of 'breaks'");
+  }
+  return output;
+}
+
+async function histogramBreaks(
+  data: readonly number[],
+  original: RValue,
+  supplied: RValue | undefined,
+  nclass: RValue | undefined,
+  invocation: BuiltinInvocation,
+): Promise<readonly number[]> {
+  let value = supplied;
+  if (nclass !== undefined && nclass.type !== "null") value = nclass;
+  if (value === undefined || value.type === "null") value = characterVector(["Sturges"]);
+  if (value.type === "closure" || value.type === "builtin") {
+    value = await invocation.invoke(value, [{ value: original }]);
+  }
+
+  let suggested: number | undefined;
+  if (value.type === "character") {
+    if (value.length !== 1 || isMissing(value, 0)) {
+      throw new RTypeMismatchError("NRT3395", "invalid 'breaks' argument");
+    }
+    const requested = (value.values[0] ?? "").toLowerCase();
+    const algorithms = ["sturges", "fd", "freedman-diaconis", "scott"].filter((name) =>
+      name.startsWith(requested),
+    );
+    const normalized = new Set(
+      algorithms.map((name) => (name === "freedman-diaconis" ? "fd" : name)),
+    );
+    if (requested.length === 0 || normalized.size !== 1) {
+      throw new RTypeMismatchError(
+        "NRT3395",
+        `'arg' should be one of "sturges", "fd", "freedman-diaconis", "scott"`,
+      );
+    }
+    suggested = histogramClassCount(data, [...normalized][0] as "sturges" | "scott" | "fd");
+  } else {
+    const numeric = histogramNumericBreaks(value);
+    if (numeric.length === 1) suggested = numeric[0];
+    else return validateHistogramBreaks(numeric);
+  }
+
+  if (suggested === undefined || !Number.isFinite(suggested) || suggested < 1) {
+    throw new RTypeMismatchError("NRT3395", "invalid number of 'breaks'");
+  }
+  let count = Math.ceil(suggested);
+  if (count > 1_000_000) {
+    invocation.context.warn({
+      code: "NRW1031",
+      message: "'breaks = 1000000' is too large and has been limited to 1e+06",
+    });
+    count = 1_000_000;
+  }
+  return prettyHistogramBreaks(Math.min(...data), Math.max(...data), count, invocation);
+}
+
+function histogramNumericBreaks(value: RValue): readonly number[] {
+  if (
+    (value.type !== "logical" &&
+      value.type !== "integer" &&
+      value.type !== "double" &&
+      value.type !== "raw") ||
+    isFactor(value)
+  ) {
+    throw new RTypeMismatchError("NRT3395", "invalid 'breaks' argument");
+  }
+  return Array.from({ length: value.length }, (_, index) =>
+    isMissing(value, index) ? Number.NaN : (value.values[index] ?? Number.NaN),
+  );
+}
+
+function validateHistogramBreaks(source: readonly number[]): readonly number[] {
+  if (source.length < 2 || source.some((value) => !Number.isFinite(value))) {
+    throw new RTypeMismatchError("NRT3395", "invalid 'breaks' argument");
+  }
+  const breaks = [...source].sort((left, right) => left - right);
+  if (breaks.some((value, index) => index > 0 && value <= (breaks[index - 1] ?? value))) {
+    throw new RTypeMismatchError("NRT3395", "'breaks' are not unique");
+  }
+  return breaks;
+}
+
+function prettyHistogramBreaks(
+  minimum: number,
+  maximum: number,
+  count: number,
+  invocation: BuiltinInvocation,
+): readonly number[] {
+  if (minimum === maximum) return minimum > 0 ? [0, minimum] : [minimum || -1, 0];
+  const cell = (maximum - minimum) / Math.max(1, count);
+  const base = 10 ** Math.floor(Math.log10(cell));
+  const ratio = cell / base;
+  const multiplier = ratio <= 1.5 ? 1 : ratio <= 2.75 ? 2 : ratio <= 7.5 ? 5 : 10;
+  const unit = multiplier * base;
+  const lowerIndex = Math.floor(minimum / unit + 1e-12);
+  const upperIndex = Math.ceil(maximum / unit - 1e-12);
+  const length = upperIndex - lowerIndex + 1;
+  invocation.context.allocate(length);
+  return Array.from({ length }, (_, index) => (lowerIndex + index) * unit);
+}
+
+function histogramResult(
+  data: readonly number[],
+  breaks: readonly number[],
+  xname: string,
+  right: boolean,
+  includeLowest: boolean,
+  fuzz: number,
+  invocation: BuiltinInvocation,
+): HistogramValue {
+  const widths = breaks.slice(1).map((value, index) => value - (breaks[index] ?? value));
+  const medianWidth = medianOfSorted(
+    [...widths].sort((left, right) => left - right),
+    false,
+    false,
+  );
+  const tolerance = Math.abs(medianWidth) * fuzz;
+  const counts = new Int32Array(widths.length);
+  let uncounted = 0;
+  for (const item of data) {
+    invocation.context.checkpoint();
+    let selected = -1;
+    if (right) {
+      if (
+        includeLowest &&
+        item >= (breaks[0] ?? 0) - tolerance &&
+        item <= (breaks[0] ?? 0) + tolerance
+      ) {
+        selected = 0;
+      } else {
+        for (let index = 0; index < widths.length; index += 1) {
+          const lower = breaks[index] ?? 0;
+          const upper = breaks[index + 1] ?? 0;
+          if (item > lower + tolerance && item <= upper + tolerance) {
+            selected = index;
+            break;
+          }
+        }
+      }
+    } else {
+      if (
+        includeLowest &&
+        item >= (breaks.at(-1) ?? 0) - tolerance &&
+        item <= (breaks.at(-1) ?? 0) + tolerance
+      ) {
+        selected = widths.length - 1;
+      } else {
+        for (let index = 0; index < widths.length; index += 1) {
+          const lower = breaks[index] ?? 0;
+          const upper = breaks[index + 1] ?? 0;
+          if (item >= lower - tolerance && item < upper - tolerance) {
+            selected = index;
+            break;
+          }
+        }
+      }
+    }
+    if (selected < 0) uncounted += 1;
+    else counts[selected] = (counts[selected] ?? 0) + 1;
+  }
+  if (uncounted > 0) {
+    throw new RTypeMismatchError(
+      "NRT3395",
+      "some 'x' not counted; maybe 'breaks' do not span range of 'x'",
+    );
+  }
+  const equidist = widths.every(
+    (width) => Math.abs(width - (widths[0] ?? width)) <= Math.abs(width) * 1e-7,
+  );
+  const density = widths.map((width, index) => (counts[index] ?? 0) / (data.length * width));
+  const mids = widths.map((_, index) => ((breaks[index] ?? 0) + (breaks[index + 1] ?? 0)) / 2);
+  invocation.context.allocate(breaks.length + counts.length * 3 + 8);
+  const value = withClasses(
+    listValue(
+      [
+        doubleVector(breaks),
+        integerVector(counts),
+        doubleVector(density),
+        doubleVector(mids),
+        characterVector([xname]),
+        logicalVector([equidist ? 1 : 0]),
+      ],
+      ["breaks", "counts", "density", "mids", "xname", "equidist"],
+    ),
+    ["histogram"],
+  );
+  return { value, breaks, counts: [...counts], density, mids, xname, equidist };
+}
+
+function histogramFrequency(
+  freqValue: RValue | undefined,
+  probabilityValue: RValue | undefined,
+  equidist: boolean,
+): boolean {
+  const freq =
+    freqValue === undefined || freqValue.type === "null"
+      ? undefined
+      : logicalFlag(freqValue, equidist, "freq");
+  const probability =
+    probabilityValue === undefined
+      ? undefined
+      : logicalFlag(probabilityValue, !equidist, "probability");
+  if (freq !== undefined && probability !== undefined && freq === probability) {
+    throw new RTypeMismatchError(
+      "NRT3395",
+      "'probability' is an alias for '!freq', however they differ.",
+    );
+  }
+  return freq ?? (probability === undefined ? equidist : !probability);
+}
+
+async function builtinPlotHistogram(invocation: BuiltinInvocation): Promise<RValue> {
+  const lazy = matchLazyArgumentsWithDots(invocation, [
+    "x",
+    "freq",
+    "density",
+    "angle",
+    "col",
+    "border",
+    "lty",
+    "main",
+    "sub",
+    "xlab",
+    "ylab",
+    "xlim",
+    "ylim",
+    "log",
+    "axes",
+    "labels",
+    "add",
+    "ann",
+    "panel.first",
+  ]);
+  const inputArgument = lazy.matched.get("x");
+  if (inputArgument === undefined || inputArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in plot.histogram().");
+  }
+  const histogram = histogramValue(await invocation.force(inputArgument.promise));
+  const values = new Map<string, RValue>();
+  for (const [name, argument] of lazy.matched) {
+    if (name === "x" || name === "panel.first" || argument.promise.missing) continue;
+    values.set(name, await invocation.force(argument.promise));
+  }
+  for (const argument of lazy.dots) {
+    if (argument.name !== "lwd" || values.has("lwd") || argument.promise.missing) {
+      if (!argument.promise.missing) await invocation.force(argument.promise);
+      throw new RUnsupportedFeatureError(
+        "NRU6195",
+        `plot.histogram() graphical control '${argument.name ?? "<unnamed>"}' is outside the browser histogram subset.`,
+      );
+    }
+    values.set("lwd", await invocation.force(argument.promise));
+  }
+  const frequency = histogramFrequency(values.get("freq"), undefined, histogram.equidist);
+  await drawHistogram(invocation, histogram, frequency, values, lazy.matched.get("panel.first"));
+  invocation.setResultVisibility("invisible");
+  return R_NULL;
+}
+
+function histogramValue(value: RValue): HistogramValue {
+  if (value.type !== "list" || !(vectorClasses(value) ?? []).includes("histogram")) {
+    throw new RTypeMismatchError("NRT3395", "'x' must be a histogram object");
+  }
+  const names = vectorNames(value) ?? [];
+  const get = (name: string): RValue => value.values[names.indexOf(name)] ?? R_NULL;
+  const breaks = histogramNumericBreaks(get("breaks"));
+  const counts = histogramNumericBreaks(get("counts"));
+  const density = histogramNumericBreaks(get("density"));
+  const mids = histogramNumericBreaks(get("mids"));
+  const xnameValue = get("xname");
+  const equidistValue = get("equidist");
+  if (
+    breaks.length !== counts.length + 1 ||
+    density.length !== counts.length ||
+    mids.length !== counts.length ||
+    xnameValue.type !== "character" ||
+    xnameValue.length !== 1
+  ) {
+    throw new RTypeMismatchError("NRT3395", "invalid histogram object");
+  }
+  return {
+    value,
+    breaks,
+    counts,
+    density,
+    mids,
+    xname: xnameValue.values[0] ?? "x",
+    equidist: logicalFlag(equidistValue, false, "equidist"),
+  };
+}
+
+async function drawHistogram(
+  invocation: BuiltinInvocation,
+  histogram: HistogramValue,
+  frequency: boolean,
+  values: ReadonlyMap<string, RValue>,
+  panelFirst: BuiltinCallArgument | undefined,
+): Promise<void> {
+  const log = values.get("log");
+  if (log !== undefined && log.type !== "null" && characterScalar(log, "log") !== "") {
+    throw new RUnsupportedFeatureError("NRU6195", "histogram logarithmic axes are unsupported.");
+  }
+  const density = values.get("density");
+  if (density !== undefined && density.type !== "null") {
+    const modes = graphicsPolygonDensity(density);
+    if (modes.some((mode) => mode !== "solid")) {
+      throw new RUnsupportedFeatureError(
+        "NRU6195",
+        "histogram line-density shading is unsupported.",
+      );
+    }
+  }
+  graphicsPolygonAngles(values.get("angle"));
+  const add = logicalFlag(values.get("add"), false, "add");
+  const heights = frequency ? histogram.counts : histogram.density;
+  const xVector = doubleVector(histogram.breaks);
+  const yMaximum = Math.max(0, ...heights);
+  let state: GraphicsState;
+  if (add) {
+    state = graphicsState(invocation, "plot.histogram");
+  } else {
+    state = await beginGraphicsPage(invocation);
+    const xlim = plotWindowLimits(values.get("xlim"), xVector, "xlim");
+    const ylim =
+      values.get("ylim") === undefined || values.get("ylim")?.type === "null"
+        ? ([0, yMaximum === 0 ? 1 : yMaximum * 1.04] as const)
+        : plotWindowLimits(values.get("ylim"), doubleVector([0, yMaximum]), "ylim");
+    state.xlim = xlim;
+    state.ylim = ylim;
+    writeGraphics(invocation, state, { kind: "window", xlim, ylim });
+  }
+  await plotPanel(invocation, panelFirst);
+  const fills = graphicsPolygonColours(
+    values.get("col"),
+    parseRColour("lightgray") ?? [211, 211, 211, 255],
+    invocation,
+    false,
+  );
+  const borders = graphicsPolygonColours(values.get("border"), [0, 0, 0, 255], invocation, true);
+  const lineTypes = graphicsPolygonLineTypes(values.get("lty"));
+  const lineWidths = graphicsPointLineWidths(values.get("lwd"));
+  const polygons: RGraphicsPolygon[] = [];
+  for (let index = 0; index < heights.length; index += 1) {
+    invocation.context.checkpoint();
+    const height = heights[index] ?? 0;
+    const fill = fills[index % fills.length] ?? ([255, 255, 255, 0] as const);
+    const border = borders[index % borders.length] ?? ([0, 0, 0, 255] as const);
+    const lineType = lineTypes[index % lineTypes.length] ?? "solid";
+    const lineWidth = lineWidths[index % lineWidths.length] ?? 1;
+    polygons.push({
+      x: [
+        histogram.breaks[index] ?? 0,
+        histogram.breaks[index + 1] ?? 0,
+        histogram.breaks[index + 1] ?? 0,
+        histogram.breaks[index] ?? 0,
+      ],
+      y: [0, 0, height, height],
+      fill: graphicsCssColour(fill),
+      border: graphicsCssColour(border),
+      lineType,
+      lineWidth,
+      fillRule: "nonzero",
+    });
+  }
+  invocation.context.allocate(polygons.length * 16);
+  if (polygons.length > 0) writeGraphics(invocation, state, { kind: "polygon", polygons });
+  if (logicalFlag(values.get("axes"), true, "axes") && !add) {
+    writeGraphics(invocation, state, {
+      kind: "box",
+      edges: ["top", "right", "bottom", "left"],
+      color: "#000000FF",
+      lineType: "solid",
+      lineWidth: 1,
+    });
+  }
+  histogramLabels(invocation, state, histogram, heights, values.get("labels"));
+  if (logicalFlag(values.get("ann"), true, "ann") && !add) {
+    plotDefaultAnnotations(
+      invocation,
+      state,
+      new Map([
+        ["main", values.get("main") ?? characterVector([`Histogram of ${histogram.xname}`])],
+        ["sub", values.get("sub") ?? R_NULL],
+        ["xlab", values.get("xlab") ?? characterVector([histogram.xname])],
+        ["ylab", values.get("ylab") ?? characterVector([frequency ? "Frequency" : "Density"])],
+      ]),
+    );
+  }
+}
+
+function histogramLabels(
+  invocation: BuiltinInvocation,
+  state: GraphicsState,
+  histogram: HistogramValue,
+  heights: readonly number[],
+  value: RValue | undefined,
+): void {
+  if (value === undefined || value.type === "null") return;
+  let labels: readonly string[];
+  if (value.type === "character") labels = value.values;
+  else if (logicalFlag(value, false, "labels")) labels = histogram.counts.map(String);
+  else return;
+  const resolved: RGraphicsText[] = [];
+  for (let index = 0; index < heights.length; index += 1) {
+    const label = labels[index % labels.length];
+    if (label === undefined) continue;
+    resolved.push({
+      x: histogram.mids[index] ?? 0,
+      y: heights[index] ?? 0,
+      label,
+      color: "#000000FF",
+      size: 1,
+      font: 1,
+      family: "",
+      rotation: 0,
+      horizontalAdjustment: 0.5,
+      verticalAdjustment: -0.2,
+      offset: 0.5,
+    });
+  }
+  if (resolved.length > 0) writeGraphics(invocation, state, { kind: "text", labels: resolved });
+}
+
+async function builtinHistogramClassCount(
+  invocation: BuiltinInvocation,
+  algorithm: "sturges" | "scott" | "fd",
+): Promise<RValue> {
+  const matched = await matchExact(invocation, algorithm === "fd" ? ["x", "digits"] : ["x"]);
+  const input = required(matched, "x", `nclass.${algorithm}`);
+  const data = histogramData(input, invocation);
+  let values = data;
+  if (algorithm === "fd" && matched.get("digits") !== undefined) {
+    const digits = numericScalar(matched.get("digits") as RValue, "digits");
+    if (!Number.isFinite(digits) || digits < 1) {
+      throw new RTypeMismatchError("NRT3395", "invalid number of digits");
+    }
+    values = data.map((value) => histogramSignificant(value, Math.trunc(digits)));
+  }
+  invocation.context.allocate(1);
+  return integerVector([histogramClassCount(values, algorithm)]);
+}
+
+function histogramClassCount(
+  data: readonly number[],
+  algorithm: "sturges" | "scott" | "fd",
+): number {
+  if (algorithm === "sturges") return Math.max(1, Math.ceil(Math.log2(data.length) + 1));
+  if (data.length < 2) return 1;
+  const minimum = Math.min(...data);
+  const maximum = Math.max(...data);
+  if (minimum === maximum) return 1;
+  let width: number;
+  if (algorithm === "scott") {
+    const mean = data.reduce((sum, value) => sum + value, 0) / data.length;
+    const variance = data.reduce((sum, value) => sum + (value - mean) ** 2, 0) / (data.length - 1);
+    width = 3.5 * Math.sqrt(variance) * data.length ** (-1 / 3);
+  } else {
+    const sorted = [...data].sort((left, right) => left - right);
+    const iqr = quantileType7(sorted, 0.75) - quantileType7(sorted, 0.25);
+    width = 2 * iqr * data.length ** (-1 / 3);
+  }
+  return !Number.isFinite(width) || width <= 0
+    ? 1
+    : Math.max(1, Math.ceil((maximum - minimum) / width));
+}
+
+function histogramSignificant(value: number, digits: number): number {
+  if (value === 0) return 0;
+  const scale = 10 ** (digits - 1 - Math.floor(Math.log10(Math.abs(value))));
+  return Math.round(value * scale) / scale;
+}
+
 async function builtinPlot(invocation: BuiltinInvocation): Promise<RValue> {
   const generic = matchBuiltinArguments(invocation, ["x", "..."]);
   const xArgument = generic.matched.get("x");
@@ -31870,6 +32724,7 @@ async function builtinView(invocation: BuiltinInvocation): Promise<RValue> {
     }),
     ...(defaultRowNames ? {} : { rowNames }),
   });
+  invocation.setResultVisibility("invisible");
   return R_NULL;
 }
 

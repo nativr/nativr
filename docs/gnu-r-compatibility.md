@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           576 |
-| Overlapping callable names        |           561 |
-| Missing GNU R callable names      |         1,961 |
-| Name overlap                      |       22.244% |
+| NativR registered names           |           582 |
+| Overlapping callable names        |           566 |
+| Missing GNU R callable names      |         1,956 |
+| Name overlap                      |       22.443% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -589,6 +589,15 @@ search-list selection, hidden bindings, deterministic sorted and unhashed order,
 identity, and non-forcing promise enumeration. Search-list package environments expose only NativR's
 implemented exports; browser RegExp syntax, browser string collation, active bindings, and exact
 hash-bucket enumeration remain incomplete.
+
+The histogram increment adds usage-ranked `graphics::hist`, `hist.default`, internal
+`plot.histogram`, and the three exported `grDevices::nclass.*` helpers, raising current name overlap
+to 566 of 2,522. Rank 186 represents 19 documented calls across testthat, openssl, shiny, and
+posterior, or 3.0% download-weighted reach. GNU R 4.6 black-box evidence covers standard result
+shape, visibility, S3 dispatch, default/numeric/algorithmic breaks, right/left endpoints,
+unequal-bin density, formals, matrices, and class counts. Browser bars reuse the owned polygon
+display list; exhaustive `pretty()` boundaries, log axes, line-density shading, and device-identical
+rendering remain incomplete.
 
 ## Completion evidence
 

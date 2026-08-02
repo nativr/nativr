@@ -335,6 +335,18 @@ held journals, and same-session record/replay. Formula/data-frame methods, logar
 arbitrary `pars`, complete annotation/axes, exact notch-overlap diagnostics, and device-identical
 layout remain unsupported.
 
+`graphics::hist` and `graphics::hist.default` have differential evidence for all 19 measured calls
+across testthat, openssl, shiny, and posterior. The generic dispatches package-owned S3 methods; the
+default removes missing and non-finite numeric values, accepts vectors or matrices, and returns the
+standard `breaks`, `counts`, `density`, `mids`, `xname`, and `equidist` fields with class
+`histogram`. Sturges, Scott, Freedman-Diaconis, scalar-count, explicit-vector, and callable breaks;
+right/left endpoint controls; unequal-bin densities; exact formals; visibility; and the connected
+`grDevices::nclass.*` helpers have GNU R 4.6 evidence. Drawing recycles bar colors and styles,
+supports labels and additive plots, and reuses bounded polygon/text/box events through Worker,
+Canvas, PNG, hold/flush, and record/replay paths. Exhaustive `pretty()` floating-point boundaries,
+logarithmic axes, positive line-density shading, arbitrary graphical parameters, and
+device-identical rendering remain unsupported.
+
 `graphics::persp` has differential evidence for zoo's measured `persp(1:nO, 1:nC, zz)` call where
 `zz` is a classed numeric matrix. S3 dispatch runs before the owned default, which accepts ascending
 real x/y grids and a two-dimensional real z matrix, omits missing grid edges, validates explicit

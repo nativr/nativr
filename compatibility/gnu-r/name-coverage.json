@@ -4,11 +4,11 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 576,
-    "overlappingNames": 561,
-    "missingReferenceNames": 1961,
-    "nativrExtensionNames": 15,
-    "nameCoverage": 0.222443
+    "nativrRegisteredNames": 582,
+    "overlappingNames": 566,
+    "missingReferenceNames": 1956,
+    "nativrExtensionNames": 16,
+    "nameCoverage": 0.224425
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 414, "nameCoverage": 0.302853 },
@@ -18,14 +18,14 @@
     {
       "package": "grDevices",
       "callableNames": 135,
-      "overlappingNames": 22,
-      "nameCoverage": 0.162963
+      "overlappingNames": 25,
+      "nameCoverage": 0.185185
     },
     {
       "package": "graphics",
       "callableNames": 88,
-      "overlappingNames": 21,
-      "nameCoverage": 0.238636
+      "overlappingNames": 23,
+      "nameCoverage": 0.261364
     },
     { "package": "datasets", "callableNames": 0, "overlappingNames": 0, "nameCoverage": 1 }
   ],
@@ -278,6 +278,8 @@
     "gsub",
     "head",
     "heat.colors",
+    "hist",
+    "hist.default",
     "identical",
     "identity",
     "ifelse",
@@ -375,6 +377,9 @@
     "names",
     "names<-",
     "nchar",
+    "nclass.FD",
+    "nclass.Sturges",
+    "nclass.scott",
     "ncol",
     "new",
     "new.env",
@@ -1597,8 +1602,6 @@
     "help.request",
     "help.search",
     "help.start",
-    "hist",
-    "hist.default",
     "history",
     "hsearch_db",
     "hsearch_db_concepts",
@@ -1864,9 +1867,6 @@
     "naprint",
     "naresid",
     "nargs",
-    "nclass.FD",
-    "nclass.Sturges",
-    "nclass.scott",
     "new.packages",
     "newBasic",
     "newClassRepresentation",
@@ -2565,6 +2565,7 @@
     "as.raster.raw",
     "new_class",
     "new_vctr",
+    "plot.histogram",
     "tibble",
     "tribble",
     "type.convert.data.frame",

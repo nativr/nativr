@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 353 KiB gzip;
+- Worker JavaScript: 357 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -540,3 +540,10 @@ views of the search list. Enumeration copies binding references but never forces
 dependency or host capability, and invalidates its small environment cache only when a package is
 attached or the session resets. The measured Worker is 352.7 KiB gzip within the existing 353 KiB
 ceiling; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.218 adds usage-ranked `graphics::hist`/`hist.default`, `plot.histogram`, and the
+three class-count helpers without adding a dependency, renderer, package adapter, or protocol event.
+Break calculation, counting, S3 dispatch, and returned R objects stay in the shared runtime; bars
+reuse the existing bounded polygon journal across Worker, Canvas, recording, and PNG paths. The
+measured Worker is 356.0 KiB gzip, so the ceiling rises narrowly to 357 KiB; client and parser-Wasm
+budgets remain unchanged.

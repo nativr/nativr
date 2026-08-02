@@ -351,6 +351,9 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "graphics.off",
       "heat.colors",
       "is.raster",
+      "nclass.FD",
+      "nclass.Sturges",
+      "nclass.scott",
       "png",
       "recordPlot",
       "replayPlot",
@@ -363,6 +366,8 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "axTicks",
       "box",
       "boxplot",
+      "hist",
+      "hist.default",
       "image",
       "image.default",
       "legend",
@@ -1877,8 +1882,18 @@ export class Evaluator {
           setBinding(this.#globalEnvironment, name, value);
         },
         dispatchS3: async (generic, object) => this.#dispatchS3(generic, object, context),
-        dispatchS3IfPresent: async (generic, object, arguments_, includeDefault) =>
-          this.#dispatchS3IfPresent(generic, object, arguments_, context, includeDefault),
+        dispatchS3IfPresent: async (generic, object, arguments_, includeDefault) => {
+          const result = await this.#dispatchS3IfPresentResult(
+            generic,
+            object,
+            arguments_,
+            context,
+            includeDefault,
+          );
+          if (result === undefined) return undefined;
+          resultVisibility = result.visible ? "visible" : "invisible";
+          return result.value;
+        },
         nextMethod: async (generic) => this.#nextS3Method(generic, context),
       });
       return {
@@ -2665,13 +2680,13 @@ export class Evaluator {
     }
   }
 
-  async #dispatchS3IfPresent(
+  async #dispatchS3IfPresentResult(
     generic: string,
     object: RValue,
     arguments_: readonly BuiltinCallArgument[],
     context: EvaluationContext,
     includeDefault = true,
-  ): Promise<RValue | undefined> {
+  ): Promise<EvaluationResult | undefined> {
     if (generic.length === 0) {
       throw new REvaluationError("NRE2213", "UseMethod() generic name must be non-empty.");
     }
@@ -2689,7 +2704,7 @@ export class Evaluator {
             },
             ...arguments_.slice(1),
           ];
-    return this.#invokeS3MethodIfPresent(
+    return this.#invokeS3MethodIfPresentResult(
       generic,
       runtimeClassNames(object),
       0,
@@ -2742,6 +2757,26 @@ export class Evaluator {
     context: EvaluationContext,
     includeDefault = true,
   ): Promise<RValue | undefined> {
+    return (
+      await this.#invokeS3MethodIfPresentResult(
+        generic,
+        classes,
+        startIndex,
+        arguments_,
+        context,
+        includeDefault,
+      )
+    )?.value;
+  }
+
+  async #invokeS3MethodIfPresentResult(
+    generic: string,
+    classes: readonly string[],
+    startIndex: number,
+    arguments_: ClosureCallFrame["arguments"],
+    context: EvaluationContext,
+    includeDefault = true,
+  ): Promise<EvaluationResult | undefined> {
     const end = includeDefault ? classes.length : classes.length - 1;
     for (let index = startIndex; index <= end; index += 1) {
       const className = classes[index];
@@ -2759,7 +2794,7 @@ export class Evaluator {
       };
       this.#s3DispatchFrames.push(dispatchFrame);
       try {
-        return await this.#invokeCallable(callable, arguments_, context);
+        return await this.#invokeCallableResult(callable, arguments_, context);
       } finally {
         this.#s3DispatchFrames.pop();
       }

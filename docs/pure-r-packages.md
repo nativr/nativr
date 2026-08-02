@@ -232,6 +232,14 @@ rstan's native code or every package metaprogramming pattern is supported; activ
 hash-bucket order, locale collation, and the full package/search-path mutation API remain separate
 gates.
 
+Rank-186 `graphics::hist()` removes the next shared computation-and-rendering seam for testthat,
+openssl, shiny, and posterior. Package R code receives an ordinary six-field `histogram` object and
+can use default, named-algorithm, scalar-count, explicit-vector, or callable breaks; plotted bars
+and labels reuse the same Worker graphics journal as other packages. The checked-in source-only
+fixture exports `histogram_counts()` and loads it through the normal namespace path without a
+TypeScript port. This proves reusable runtime behavior, not compatibility for every dependency or
+every graphics option those packages may exercise.
+
 Rank-166 `utils::browseURL()` supplies the same package-independent report/viewer seam for the
 measured xfun, htmltools, knitr, and httpuv calls. Unchanged package code can write HTML, SVG, PNG,
 or another asset to a session-local path and request that the embedding application present it. The

@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.217.0",
+  "languageSubsetVersion": "0.218.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -577,6 +577,9 @@
       "name": "graphics",
       "referenceVersion": "R 4.6.x documented behavior",
       "functions": [
+        { "name": "hist", "compatibility": "behavioral" },
+        { "name": "hist.default", "compatibility": "behavioral" },
+        { "name": "plot.histogram", "compatibility": "shape" },
         { "name": "par", "compatibility": "behavioral" },
         { "name": "plot.default", "compatibility": "shape" },
         { "name": "plot.new", "compatibility": "behavioral" },
@@ -629,7 +632,10 @@
         { "name": "grey", "compatibility": "behavioral" },
         { "name": "gray.colors", "compatibility": "behavioral" },
         { "name": "grey.colors", "compatibility": "behavioral" },
-        { "name": "heat.colors", "compatibility": "behavioral" }
+        { "name": "heat.colors", "compatibility": "behavioral" },
+        { "name": "nclass.Sturges", "compatibility": "behavioral" },
+        { "name": "nclass.scott", "compatibility": "numeric" },
+        { "name": "nclass.FD", "compatibility": "numeric" }
       ]
     },
     {

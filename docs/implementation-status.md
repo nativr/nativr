@@ -11,7 +11,7 @@ Date: 2026-08-01
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 576 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 582 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Character vectors own exact per-element bytes and canonical `unknown`/`latin1`/`UTF-8`/`bytes`
@@ -201,6 +201,13 @@ Date: 2026-08-01
   standard result shape, S3 forwarding, widths/positions/styles, Worker transport, Canvas pixels,
   output accounting, and same-session display-list replay. Formula/data-frame methods, logarithmic
   axes, arbitrary `pars`, complete annotation/axes, and device-identical layout remain explicit
+  boundaries.
+- Usage-ranked `graphics::hist`/`hist.default` for 19 measured testthat, openssl, shiny, and
+  posterior calls, including S3 forwarding, finite numeric/matrix inputs, Sturges/Scott/FD or
+  numeric/callable breaks, endpoint controls, counts/densities/midpoints, standard histogram
+  objects, labels, additive drawing, and bounded Worker/Canvas/PNG/record-replay output over the
+  existing polygon journal. Exact `pretty()` boundaries for every floating-point range, logarithmic
+  axes, positive line-density shading, and the full graphical-parameter surface remain explicit
   boundaries.
 - Usage-ranked `graphics::persp` for zoo's measured classed `100 × 10` matrix call, including S3
   forwarding, ascending/default grids, missing surface cells, exact scaled/aspect-preserving

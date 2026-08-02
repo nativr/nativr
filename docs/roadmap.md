@@ -581,6 +581,13 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      exercises the same implementation inside its namespace. Active bindings, exact hash-bucket
      order, locale collation, browser/GNU regexp differences, and search-path mutation remain
      environment compatibility depth.
+136. Usage-ranked histogram foundation: rank-186 `graphics::hist` now runs all 19 measured calls
+     across testthat, openssl, shiny, and posterior through one reusable S3/default implementation.
+     Standard result objects, Sturges/Scott/FD and numeric/callable breaks, endpoint controls,
+     densities, labels, additive bars, Worker/Canvas/PNG transport, recording/replay, exact formals,
+     GNU R differential cases, and unchanged source-package reuse have evidence. Exhaustive
+     `pretty()` equivalence, log axes, line-density shading, and device-identical output remain
+     graphics/statistics compatibility depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

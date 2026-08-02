@@ -16,7 +16,7 @@ NeedsCompilation: no`,
   namespace: `
 importFrom(stats, median)
 importFrom(utils, packageName)
-export(square, centered, duration, new_score, describe, package_state, package_name, namespace_names)
+export(square, centered, duration, histogram_counts, new_score, describe, package_state, package_name, namespace_names)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -37,6 +37,7 @@ describe <- function(x, ...) UseMethod("describe")
 square <- function(x) x ^ 2
 centered <- function(x) x - median(x)
 duration <- function(x, units = "secs") as.difftime(x, units = units)
+histogram_counts <- function(x, breaks = "Sturges") hist(x, breaks = breaks, plot = FALSE)$counts
 new_score <- function(x) structure(x, class = c("score", "numeric"))
 describe.score <- function(x, ...) paste0(.package_state, ":", sum(x))
 plot.score <- function(x, ..., marker = "package-plot") c(marker, sum(x), list(...)$extra)
@@ -2306,6 +2307,9 @@ describe("complete inline source-to-result vertical slice", () => {
       ),
     ).resolves.toEqual([true, true, false]);
     await expect(runtime.eval("nativrfixture::centered(c(1, 4, 10))")).resolves.toEqual([-3, 0, 6]);
+    await expect(runtime.eval("nativrfixture::histogram_counts(1:10)")).resolves.toEqual([
+      2, 2, 2, 2, 2,
+    ]);
     await expect(
       runtime.eval(
         "x <- nativrfixture::duration(2, 'hours'); c(unclass(x), attr(x, 'units'), class(x))",
@@ -2355,6 +2359,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "centered",
       "describe",
       "duration",
+      "histogram_counts",
       "namespace_names",
       "new_score",
       "package_name",
@@ -5649,6 +5654,169 @@ describe("complete inline source-to-result vertical slice", () => {
     await limited.dispose();
   });
 
+  it("computes and draws usage-ranked histograms through S3 and browser graphics seams", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+    });
+    await expect(
+      runtime.eval(`
+        fit <- graphics::hist(1:10, plot = FALSE)
+        c(
+          fit$breaks,
+          fit$counts,
+          fit$density,
+          fit$mids,
+          fit$xname,
+          fit$equidist,
+          class(fit),
+          names(formals(hist)),
+          names(formals(hist.default))
+        )
+      `),
+    ).resolves.toEqual([
+      "0",
+      "2",
+      "4",
+      "6",
+      "8",
+      "10",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "0.1",
+      "0.1",
+      "0.1",
+      "0.1",
+      "0.1",
+      "1",
+      "3",
+      "5",
+      "7",
+      "9",
+      "1:10",
+      "TRUE",
+      "histogram",
+      "x",
+      "...",
+      "x",
+      "breaks",
+      "freq",
+      "probability",
+      "include.lowest",
+      "right",
+      "fuzz",
+      "density",
+      "angle",
+      "col",
+      "border",
+      "main",
+      "xlim",
+      "ylim",
+      "xlab",
+      "ylab",
+      "axes",
+      "plot",
+      "labels",
+      "nclass",
+      "warn.unused",
+      "panel.first",
+      "...",
+    ]);
+    await expect(
+      runtime.eval(`
+        right <- hist(c(0, 1, 2, 3), breaks = c(0, 1, 2, 3), plot = FALSE)
+        left <- hist(c(0, 1, 2, 3), breaks = c(0, 1, 2, 3), right = FALSE, plot = FALSE)
+        uneven <- hist(c(0, 1, 2, 3), breaks = c(0, 1, 3), plot = FALSE)
+        c(right$counts, left$counts, uneven$density, uneven$equidist)
+      `),
+    ).resolves.toEqual([2, 1, 1, 1, 1, 2, 0.5, 0.25, 0]);
+    await expect(
+      runtime.eval(`
+        numeric_breaks <- hist(1:3, breaks = 2, plot = FALSE)
+        c(
+          nclass.Sturges(1:10),
+          nclass.scott(1:10),
+          nclass.FD(1:10),
+          numeric_breaks$breaks,
+          hist(matrix(1:4, 2), plot = FALSE)$counts
+        )
+      `),
+    ).resolves.toEqual([5, 2, 3, 1, 2, 3, 2, 1, 1]);
+    await expect(
+      runtime.eval(`
+        hist.probe <- function(x, ..., marker = "ok") c(class(x), marker, list(...)$extra)
+        hist(structure(1:3, class = "probe"), marker = "custom", extra = 7)
+      `),
+    ).resolves.toEqual(["probe", "custom", "7"]);
+
+    const drawn = await runtime.evalDetailed(`
+      hist(
+        1:3,
+        breaks = c(0, 1, 2, 3),
+        col = c("red", "blue"),
+        labels = TRUE
+      )
+    `);
+    expect(drawn.visible).toBe(false);
+    expect(drawn.graphics.slice(0, 2)).toEqual([
+      { kind: "new-page" },
+      { kind: "window", xlim: [-0.12, 3.12], ylim: [0, 1.04] },
+    ]);
+    expect(drawn.graphics[2]).toMatchObject({
+      kind: "polygon",
+      polygons: [
+        { x: [0, 1, 1, 0], y: [0, 0, 1, 1], fill: "#FF0000FF" },
+        { x: [1, 2, 2, 1], y: [0, 0, 1, 1], fill: "#0000FFFF" },
+        { x: [2, 3, 3, 2], y: [0, 0, 1, 1], fill: "#FF0000FF" },
+      ],
+    });
+    expect(drawn.graphics.some((event) => event.kind === "text")).toBe(true);
+
+    await expect(
+      runtime.eval(`
+        wide <- hist(c(0, 255), breaks = -1:255, plot = FALSE)
+        chosen <- hist(1:10, breaks = function(x) nclass.Sturges(x), plot = FALSE)
+        c(length(wide$counts), sum(wide$counts), chosen$breaks)
+      `),
+    ).resolves.toEqual([256, 2, 0, 2, 4, 6, 8, 10]);
+    const replotted = await runtime.evalDetailed(`
+      fit <- hist(c(1, NA, 3), breaks = c(0, 1, 2, 3), plot = FALSE)
+      plot(fit, col = "green", labels = TRUE)
+    `);
+    expect(replotted.visible).toBe(false);
+    expect(replotted.graphics[2]).toMatchObject({ kind: "polygon" });
+    if (replotted.graphics[2]?.kind !== "polygon") throw new Error("expected histogram polygons");
+    expect(replotted.graphics[2].polygons.every((polygon) => polygon.fill === "#00FF00FF")).toBe(
+      true,
+    );
+    const unused = await runtime.evalDetailed(
+      'hist(1:3, freq = TRUE, col = stop("plot control stayed lazy"), plot = FALSE)',
+    );
+    expect(unused.warnings).toEqual([
+      { code: "NRW1030", message: "argument 'freq' is not made use of" },
+      { code: "NRW1030", message: "argument 'col' is not made use of" },
+    ]);
+    await expect(
+      runtime.evalDetailed(
+        'hist(1:3, col = stop("still lazy"), plot = FALSE, warn.unused = FALSE)',
+      ),
+    ).resolves.toMatchObject({ warnings: [] });
+
+    await expect(runtime.eval("hist(TRUE, plot = FALSE)")).rejects.toMatchObject({
+      code: "NRT3395",
+    });
+    await expect(
+      runtime.eval("hist(c(1, 2, 3), breaks = c(0, 1), plot = FALSE)"),
+    ).rejects.toMatchObject({ code: "NRT3395" });
+    await expect(
+      runtime.eval("hist(1:3, freq = TRUE, probability = TRUE, plot = FALSE)"),
+    ).rejects.toMatchObject({ code: "NRT3395" });
+    await runtime.dispose();
+  });
+
   it("projects zoo's usage-ranked perspective surface through the browser graphics journal", async () => {
     const observed: unknown[] = [];
     const runtime = await createR({
@@ -8747,7 +8915,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.217.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.218.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -8769,6 +8937,9 @@ describe("complete inline source-to-result vertical slice", () => {
       s3MethodDispatch: "supported",
     });
     expect(capabilities.packages.find((entry) => entry.name === "graphics")?.functions).toEqual([
+      { name: "hist", compatibility: "behavioral" },
+      { name: "hist.default", compatibility: "behavioral" },
+      { name: "plot.histogram", compatibility: "shape" },
       { name: "par", compatibility: "behavioral" },
       { name: "plot.default", compatibility: "shape" },
       { name: "plot.new", compatibility: "behavioral" },
