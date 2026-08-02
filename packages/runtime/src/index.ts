@@ -128,6 +128,8 @@ export type {
   RLogicalVector,
   RNull,
   ROutput,
+  RSystemCommandRequest,
+  RSystemCommandResult,
   RPairlist,
   RPromise,
   RRawVector,

@@ -71,6 +71,8 @@ import type {
   RGraphicsEvent,
   ROutput,
   RPromise,
+  RSystemCommandRequest,
+  RSystemCommandResult,
   RuntimeLimits,
   RuntimeMemoryStatistics,
   RuntimeOperators,
@@ -101,6 +103,10 @@ export interface EvaluatorOptions {
   readonly packages?: readonly RuntimePackageDefinition[];
   /** Recreate evaluator-owned builtin state at construction and reset. */
   readonly initializeBuiltinState?: (state: Map<string, unknown>) => void;
+  /** Explicit host capability. Undefined means that no operating-system command may run. */
+  readonly systemCommand?: (
+    request: RSystemCommandRequest,
+  ) => Promise<RSystemCommandResult> | RSystemCommandResult;
 }
 
 /** One dependency imported by a normalized source-only package. */
@@ -435,6 +441,7 @@ export class Evaluator {
   readonly #limits: RuntimeLimits;
   readonly #parseSource: EvaluatorOptions["parseSource"];
   readonly #initializeBuiltinState: EvaluatorOptions["initializeBuiltinState"];
+  readonly #systemCommand: EvaluatorOptions["systemCommand"];
   #emptyEnvironment: REnvironment;
   #baseEnvironment: REnvironment;
   #attachedPackagesEnvironment: REnvironment;
@@ -464,6 +471,7 @@ export class Evaluator {
     this.#limits = { ...DEFAULT_RUNTIME_LIMITS, ...options.limits };
     this.#parseSource = options.parseSource;
     this.#initializeBuiltinState = options.initializeBuiltinState;
+    this.#systemCommand = options.systemCommand;
     this.#initializeBuiltinState?.(this.#builtinState);
     this.#emptyEnvironment = createEnvironment(null, true);
     this.#baseEnvironment = createEnvironment(this.#emptyEnvironment, true);
@@ -1823,6 +1831,15 @@ export class Evaluator {
         },
         currentCall: () => (call === undefined ? R_NULL : { type: "language", expression: call }),
         systemCall: (which) => this.#systemCall(which),
+        systemCommand: async (request) => {
+          if (this.#systemCommand === undefined) {
+            throw new RUnsupportedFeatureError(
+              "NRU6194",
+              "system() requires an explicit createR({ systemCommand }) host capability.",
+            );
+          }
+          return this.#systemCommand(request);
+        },
         searchPath: () => Object.freeze([...this.#searchPath]),
         loadPackage: async (name, attach) => this.#loadPackage(name, attach, context),
         isNamespaceLoaded: (name) =>

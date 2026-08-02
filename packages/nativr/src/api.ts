@@ -6,14 +6,22 @@ import type {
   PublicGraphicsEvent,
   PublicOutputEvent,
   PublicRWarning,
+  PublicSystemCommandRequest,
+  PublicSystemCommandResult,
   PureRPackageBundle,
   RValueSnapshot,
   WireEvaluationResult,
   WorkerRequest,
   WorkerResponse,
   WorkerSuccessPayload,
+  SystemCommandResultRequest,
 } from "@nativr/protocol";
-import { NativRError, RRuntimeDisposedError } from "@nativr/runtime";
+import {
+  DEFAULT_RUNTIME_LIMITS,
+  NativRError,
+  RResourceLimitError,
+  RRuntimeDisposedError,
+} from "@nativr/runtime";
 import type { RuntimeLimits } from "@nativr/runtime";
 
 import {
@@ -31,6 +39,8 @@ export type {
   PublicDataViewEvent,
   PublicGraphicsEvent,
   PublicOutputEvent,
+  PublicSystemCommandRequest,
+  PublicSystemCommandResult,
 } from "@nativr/protocol";
 export type { PureRPackageBundle, PureRPackageResource } from "@nativr/protocol";
 
@@ -51,6 +61,8 @@ export interface CreateROptions {
   readonly packages?: readonly PureRPackageBundle[];
   /** Initial session-owned environment variables; host process variables are never read implicitly. */
   readonly environmentVariables?: Readonly<Record<string, string>>;
+  /** Explicit allow-list seam for system(); omitted by default, so R code has no shell capability. */
+  readonly systemCommand?: SystemCommandHandler;
   readonly timeoutMs?: number;
   readonly debug?: boolean;
   readonly onWarning?: (warning: PublicRWarning) => void;
@@ -60,6 +72,11 @@ export interface CreateROptions {
   readonly onBrowse?: (event: PublicBrowseEvent) => void;
   readonly onGraphics?: (event: PublicGraphicsEvent) => void;
 }
+
+/** Host-owned policy and execution function used only when R code calls system(). */
+export type SystemCommandHandler = (
+  request: PublicSystemCommandRequest,
+) => PublicSystemCommandResult | Promise<PublicSystemCommandResult>;
 
 /** Options for one evaluation. */
 export interface EvalOptions {
@@ -119,6 +136,7 @@ export async function createR(options: CreateROptions = {}): Promise<NativRSessi
   };
   if (sessionOptions.execution === "inline") {
     const { RuntimeHost: InlineRuntimeHost } = await import("./runtime-host.js");
+    const systemCommand = sessionOptions.systemCommand;
     const host = await InlineRuntimeHost.create(
       {
         treeSitterRuntimeWasm: assets.treeSitterRuntimeWasm,
@@ -127,6 +145,14 @@ export async function createR(options: CreateROptions = {}): Promise<NativRSessi
       sessionOptions.limits,
       sessionOptions.packages,
       sessionOptions.environmentVariables,
+      systemCommand === undefined
+        ? undefined
+        : async (request) =>
+            executeSystemCommandHandler(
+              systemCommand,
+              request,
+              sessionOptions.limits?.maxOutputBytes ?? DEFAULT_RUNTIME_LIMITS.maxOutputBytes,
+            ),
     );
     return new InlineSession(host, sessionOptions);
   }
@@ -249,6 +275,65 @@ function asUnknownArray(value: unknown): readonly unknown[] | undefined {
 
 function isUnknownRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === "object" && value !== null;
+}
+
+function validateSystemCommandResult(
+  value: unknown,
+  maxOutputBytes = DEFAULT_RUNTIME_LIMITS.maxOutputBytes,
+): PublicSystemCommandResult {
+  if (!isUnknownRecord(value)) throw invalidSystemCommandResult();
+  const { status, stdout, stderr, errorMessage, failedToStart, timedOut } = value;
+  if (
+    typeof status !== "number" ||
+    !Number.isSafeInteger(status) ||
+    status < 0 ||
+    status > 2_147_483_647 ||
+    (stdout !== undefined && typeof stdout !== "string") ||
+    (stderr !== undefined && typeof stderr !== "string") ||
+    (errorMessage !== undefined && typeof errorMessage !== "string") ||
+    (failedToStart !== undefined && typeof failedToStart !== "boolean") ||
+    (timedOut !== undefined && typeof timedOut !== "boolean")
+  ) {
+    throw invalidSystemCommandResult();
+  }
+  const result = {
+    status,
+    ...(stdout === undefined ? {} : { stdout }),
+    ...(stderr === undefined ? {} : { stderr }),
+    ...(errorMessage === undefined ? {} : { errorMessage }),
+    ...(failedToStart === undefined ? {} : { failedToStart }),
+    ...(timedOut === undefined ? {} : { timedOut }),
+  };
+  const outputBytes = [result.stdout, result.stderr, result.errorMessage].reduce(
+    (total, text) => total + (text === undefined ? 0 : new TextEncoder().encode(text).byteLength),
+    0,
+  );
+  if (outputBytes > maxOutputBytes) {
+    throw new RResourceLimitError("NRL4007", "System-command output size limit exceeded.", {
+      details: { maxOutputBytes, outputBytes },
+    });
+  }
+  return result;
+}
+
+function invalidSystemCommandResult(): NativRError {
+  return new NativRError(
+    "NRS5005",
+    "createR({ systemCommand }) must return a non-negative integer status and optional string output fields.",
+  );
+}
+
+async function executeSystemCommandHandler(
+  handler: SystemCommandHandler,
+  request: PublicSystemCommandRequest,
+  maxOutputBytes: number,
+): Promise<PublicSystemCommandResult> {
+  try {
+    return validateSystemCommandResult(await handler(request), maxOutputBytes);
+  } catch (error) {
+    if (error instanceof NativRError) throw error;
+    throw new NativRError("NRE2250", error instanceof Error ? error.message : String(error));
+  }
 }
 
 class InlineSession implements NativRSession {
@@ -564,7 +649,7 @@ class WorkerSession implements NativRSession {
         this.#rejectPending(new NativRError("NRW7001", "Malformed Worker protocol response."));
         return;
       }
-      this.#handleResponse(response);
+      this.#handleResponse(worker, response);
     });
     worker.addEventListener("error", () => {
       this.#rejectPending(new NativRError("NRW7002", "NativR Worker failed."));
@@ -574,7 +659,7 @@ class WorkerSession implements NativRSession {
     });
   }
 
-  #handleResponse(response: WorkerResponse): void {
+  #handleResponse(worker: Worker, response: WorkerResponse): void {
     if (response.kind === "warning") {
       this.#options.onWarning?.(response.warning);
       return;
@@ -583,12 +668,54 @@ class WorkerSession implements NativRSession {
       this.#options.onOutput?.({ stream: response.stream, text: response.text });
       return;
     }
+    if (response.kind === "system-command") {
+      void this.#handleSystemCommand(worker, response.id, response.request);
+      return;
+    }
     const pending = this.#pending.get(response.id);
     if (pending === undefined) return;
     this.#pending.delete(response.id);
     if (pending.timer !== undefined) clearTimeout(pending.timer);
     if (response.kind === "error") pending.reject(deserializeError(response.error));
     else pending.resolve(response.payload);
+  }
+
+  async #handleSystemCommand(
+    worker: Worker,
+    id: string,
+    request: PublicSystemCommandRequest,
+  ): Promise<void> {
+    let response: SystemCommandResultRequest;
+    try {
+      const handler = this.#options.systemCommand;
+      if (handler === undefined) {
+        throw new NativRError(
+          "NRU6194",
+          "system() requires an explicit createR({ systemCommand }) host capability.",
+        );
+      }
+      response = {
+        protocolVersion: PROTOCOL_VERSION,
+        id,
+        kind: "system-command-result",
+        result: await executeSystemCommandHandler(
+          handler,
+          request,
+          this.#options.limits?.maxOutputBytes ?? DEFAULT_RUNTIME_LIMITS.maxOutputBytes,
+        ),
+      };
+    } catch (error) {
+      response = {
+        protocolVersion: PROTOCOL_VERSION,
+        id,
+        kind: "system-command-result",
+        error: {
+          code: error instanceof NativRError ? error.code : "NRE2250",
+          message: error instanceof Error ? error.message : String(error),
+        },
+      };
+    }
+    worker.postMessage(response);
   }
 
   async #restart(reason: NativRError): Promise<void> {

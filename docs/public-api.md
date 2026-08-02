@@ -35,6 +35,30 @@ The options record is snapshotted at construction and sent through the Worker in
 protocol. `Sys.getenv()`, `Sys.setenv()`, and `Sys.unsetenv()` operate only on that isolated map;
 they never read or mutate `process.env`, browser globals, or another NativR session.
 
+`base::system()` is available through an explicit, asynchronous host policy. NativR never chooses a
+shell or process API and the option is absent by default. An embedding application may allow-list
+virtual commands, a sandboxed service, or a platform-specific process runner and return bounded text
+plus an exit status:
+
+```ts
+const r = await createR({
+  systemCommand: async (request) => {
+    if (request.command !== "report-version") {
+      return { status: 127, errorMessage: "command is not allowed", failedToStart: true };
+    }
+    return { status: 0, stdout: "reporter 1.0\n" };
+  },
+});
+await r.eval('system("report-version", intern = TRUE)'); // "reporter 1.0"
+```
+
+The request includes GNU R 4.6's controls, input lines, and timeout value. The result accepts
+`status`, optional `stdout`/`stderr`, `errorMessage`, `failedToStart`, and `timedOut`. Inline
+execution calls the same handler directly; Worker execution uses a correlated request/result
+exchange while the R evaluation is suspended. With no handler, `system()` fails with `NRU6194`. The
+handler, not NativR, owns allow-listing, quoting, environment isolation, cancellation, and actual
+process semantics.
+
 `evalDetailed` returns textual `print()`/`cat()` output as ordered
 `{ stream: "stdout" | "stderr" | "message", text }` events. `createR({ onOutput })` receives the
 same events in both inline and Worker execution, while the detailed result retains them for

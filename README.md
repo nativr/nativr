@@ -135,11 +135,17 @@ External URLs remain strings for an application to approve, while browser-memory
 other files include a bounded byte snapshot. The Playground exposes a user-clicked reference viewer
 and never opens a request automatically.
 
+Package code may also call `base::system()`, but NativR has no default shell. Applications that need
+a specific external feature can pass `createR({ systemCommand })`, inspect and allow-list the typed
+request, then return `{ status, stdout, stderr }`; the same asynchronous policy works through the
+default Worker. Without it, command execution fails closed. Native compilation such as `R CMD SHLIB`
+remains outside the pure-R package contract.
+
 The current milestone supports all 25 feature groups measured by the repository's package-usage
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 572 registered functions, including resettable
+an initial condition/handler slice. It exposes 573 registered functions, including resettable
 session options, isolated session environment variables, deterministic non-interactive host-mode
 detection, browser-owned `gc()` memory censuses, an S3-first `graphics::lines()` path over the
 existing Worker/Canvas journal, and vectorized decimal rounding plus real/complex logarithm and

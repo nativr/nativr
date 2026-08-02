@@ -472,6 +472,15 @@ NativR-owned R graph but cannot request host garbage collection. Exact scheduler
 accounting, child-process accounting, and GNU R's class-specific print/summary formatting are not
 claimed.
 
+`base::system` has GNU R 4.6 differential evidence for its 11 closure-like formals and preflight
+validation. With `createR({ systemCommand })`, behavioral integration evidence covers captured line
+output, stderr events, nonzero status attributes/warnings, ordinary and asynchronous return codes,
+timeout signaling, input/control transport, Worker correlation, and invocation from an unchanged
+pure-R package function. Without that explicit option it fails closed. Command parsing, shell
+selection, executable discovery, quoting, environment inheritance, signals, real timeout
+enforcement, and the presence or behavior of any external program are host-defined and are not
+claimed by the browser runtime.
+
 `base::gc` has behavioral differential evidence for its closure-like defaults, control coercion,
 visible double matrix, dimensions, row/column labels, resettable maxima, and verbose message shape.
 `Ncells` counts reachable NativR runtime objects plus binding/attribute links; `Vcells` counts owned

@@ -10,8 +10,11 @@ export type {
   PublicEvaluationResult,
   PublicGraphicsEvent,
   PublicOutputEvent,
+  PublicSystemCommandRequest,
+  PublicSystemCommandResult,
   PureRPackageBundle,
   PureRPackageResource,
+  SystemCommandHandler,
 } from "./api.js";
 export { isComplex, isExpression, isLanguage, isNA, isRaw, isSymbol, NA } from "./conversion.js";
 export type {

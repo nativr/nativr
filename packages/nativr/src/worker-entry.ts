@@ -5,9 +5,13 @@ import type {
   ErrorResponse,
   OutputEvent,
   SuccessResponse,
+  SystemCommandEvent,
+  SystemCommandResultRequest,
   WarningEvent,
   WorkerRequest,
   WorkerSuccessPayload,
+  PublicSystemCommandRequest,
+  PublicSystemCommandResult,
 } from "@nativr/protocol";
 import { NativRError } from "@nativr/runtime";
 
@@ -18,10 +22,23 @@ const workerScope = globalThis as unknown as DedicatedWorkerGlobalScope;
 let host: RuntimeHost | undefined;
 let debug = false;
 let queue: Promise<void> = Promise.resolve();
+let nextSystemCommandId = 1;
+const pendingSystemCommands = new Map<
+  string,
+  {
+    readonly resolve: (result: PublicSystemCommandResult) => void;
+    readonly reject: (error: unknown) => void;
+  }
+>();
 
 workerScope.addEventListener("message", (event: MessageEvent<unknown>) => {
+  const immediate = event.data;
+  if (isWorkerRequest(immediate) && immediate.kind === "system-command-result") {
+    resolveSystemCommand(immediate);
+    return;
+  }
   queue = queue.then(async () => {
-    const request = event.data;
+    const request = immediate;
     if (!isWorkerRequest(request)) {
       postError("invalid", new NativRError("NRW7005", "Malformed Worker protocol request."));
       return;
@@ -40,6 +57,7 @@ async function handleRequest(request: WorkerRequest): Promise<void> {
         request.limits,
         request.packages,
         request.environmentVariables,
+        requestSystemCommand,
       );
       postSuccess(request.id, { kind: "ready" });
       return;
@@ -126,6 +144,33 @@ async function handleRequest(request: WorkerRequest): Promise<void> {
     }
   } catch (error) {
     postError(request.id, error);
+  }
+}
+
+function requestSystemCommand(
+  request: PublicSystemCommandRequest,
+): Promise<PublicSystemCommandResult> {
+  const id = `system-${nextSystemCommandId++}`;
+  return new Promise((resolve, reject) => {
+    pendingSystemCommands.set(id, { resolve, reject });
+    const event: SystemCommandEvent = {
+      protocolVersion: PROTOCOL_VERSION,
+      id,
+      kind: "system-command",
+      request,
+    };
+    workerScope.postMessage(event);
+  });
+}
+
+function resolveSystemCommand(response: SystemCommandResultRequest): void {
+  const pending = pendingSystemCommands.get(response.id);
+  if (pending === undefined) return;
+  pendingSystemCommands.delete(response.id);
+  if ("error" in response) {
+    pending.reject(new NativRError(response.error.code, response.error.message));
+  } else {
+    pending.resolve(response.result);
   }
 }
 

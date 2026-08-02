@@ -6,6 +6,8 @@ import type {
   PublicGraphicsEvent,
   PublicOutputEvent,
   PublicRWarning,
+  PublicSystemCommandRequest,
+  PublicSystemCommandResult,
 } from "@nativr/nativr";
 
 import { playgroundPackage } from "./package-example.js";
@@ -56,6 +58,11 @@ resource <- system.file("extdata", "demo.json", package = "nativrdemo")
 stopifnot(resource == "nativr://package/nativrdemo/extdata/demo.json")
 stopifnot(readLines(resource) == '{"demo":true}')
 twice_mean(c(1, 2, 6))`,
+  },
+  {
+    id: "system-host",
+    label: "Explicit host command",
+    code: "system('nativr-echo', intern = TRUE, input = c('worker', 'bridge'))",
   },
   {
     id: "plot",
@@ -135,6 +142,7 @@ async function initialize(): Promise<void> {
     runtime = await createR({
       packages: [playgroundPackage],
       environmentVariables: { NATIVR_PLAYGROUND: "worker" },
+      systemCommand: playgroundSystemCommand,
     });
     enableControls(true);
     setStatus("ready", "Runtime ready");
@@ -142,6 +150,17 @@ async function initialize(): Promise<void> {
     setStatus("error", "Initialization failed");
     renderError(error);
   }
+}
+
+function playgroundSystemCommand(request: PublicSystemCommandRequest): PublicSystemCommandResult {
+  if (request.command !== "nativr-echo") {
+    return {
+      status: 127,
+      errorMessage: `Playground command is not allow-listed: ${request.command}`,
+      failedToStart: true,
+    };
+  }
+  return { status: 0, stdout: `${(request.input ?? ["nativr-host"]).join("\n")}\n` };
 }
 
 async function run(): Promise<void> {

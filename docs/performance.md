@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 349 KiB gzip;
+- Worker JavaScript: 351 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -523,3 +523,9 @@ renderer, dependency, or package adapter. Generic/default dispatch and coordinat
 inside existing runtime/base layers; all geometry reuses the bounded segment and point journal
 already transported to Worker, Canvas, and PNG consumers. The measured Worker is 348.6 KiB gzip
 within the existing 349 KiB ceiling; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.215 adds usage-ranked `base::system` as an explicit typed host capability. Inline
+execution invokes only an application-supplied handler; Worker execution adds one correlated
+request/result exchange whose response bypasses the serialized evaluation queue. No process,
+filesystem, network, or shell dependency enters the browser bundle. The measured Worker is 350.1 KiB
+gzip, so the ceiling rises narrowly to 351 KiB; client and parser-Wasm budgets remain unchanged.

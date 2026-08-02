@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           572 |
-| Overlapping callable names        |           557 |
-| Missing GNU R callable names      |         1,965 |
-| Name overlap                      |       22.086% |
+| NativR registered names           |           573 |
+| Overlapping callable names        |           558 |
+| Missing GNU R callable names      |         1,964 |
+| Name overlap                      |       22.125% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -561,6 +561,15 @@ existing coordinate adapter plus segment/point journal for browser, Worker, PNG,
 record/replay output; no package-specific translation or polyline protocol was added. Complete
 graphics parameters, clipping/log transforms, specialized coordinate classes, and device-identical
 rendering remain incomplete.
+
+The explicit-command increment adds `base::system`, raising current name overlap to 558 of 2,522.
+Rank 176 represents five documented calls across withr, knitr, and data.table, or 3.3%
+download-weighted reach. GNU R 4.6 black-box evidence covers all 11 formals and validation that runs
+before any process. Inline, Worker, Playground, and pure-R package integration evidence covers one
+typed opt-in handler, captured lines, stderr, statuses, warnings, timeouts, controls, and failures.
+The measured calls themselves request native compilation, Pandoc, or `diff`; NativR therefore does
+not claim that those tools, a shell, executable discovery, environment inheritance, signals, or
+process cancellation exist. Without a handler, execution fails closed.
 
 ## Completion evidence
 

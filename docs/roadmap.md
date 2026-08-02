@@ -561,6 +561,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      recording/replay, and resource bounds have evidence over the existing segment/point journal.
      Broader coordinate classes, complete graphical parameters, clipping/log transforms, line
      cap/join controls, and device-identical rendering remain graphics-depth work.
+133. Explicit system-command capability: rank-176 `base::system` now preserves GNU R 4.6 formals,
+     validation, captured/output status shapes, and warnings over one opt-in host handler. Inline
+     calls invoke the handler directly; Worker calls suspend over a correlated request/result
+     bridge. The default remains fail-closed, the Playground allows only one virtual echo command,
+     and shell parsing, executable discovery, native compilation, environment inheritance, signals,
+     and real process cancellation remain host/platform work.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

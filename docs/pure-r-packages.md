@@ -205,6 +205,15 @@ means installing another pure-R package can reuse this primitive immediately rat
 TypeScript rewrite or a new Worker message. Compatibility still depends on every other callable,
 class, dependency, data format, and graphics behavior that the package exercises.
 
+Rank-176 `base::system()` is now a reusable opt-in host seam rather than an implicit browser shell.
+The measured five calls are two `R CMD SHLIB` examples in withr, one `pandoc -h` example in knitr,
+and two duplicated `diff` examples in data.table. `R CMD SHLIB` is native compilation and therefore
+outside the source-only package contract; `pandoc` and `diff` are external application features, not
+R-language semantics. Packages may still load when those paths are not executed. If an application
+needs one, `createR({ systemCommand })` can approve that exact command and return its status/output
+across inline or Worker execution. No handler means no process authority, and a successful package
+bundle still cannot claim that arbitrary external programs exist.
+
 Rank-166 `utils::browseURL()` supplies the same package-independent report/viewer seam for the
 measured xfun, htmltools, knitr, and httpuv calls. Unchanged package code can write HTML, SVG, PNG,
 or another asset to a session-local path and request that the embedding application present it. The
@@ -217,6 +226,10 @@ application.
 
 - C, C++, Fortran, Rust, Java, shared libraries, `LinkingTo`, `useDynLib`, subprocesses, system
   libraries, sockets, and native graphics require separate audited Wasm or host adapters.
+- `system()` exposes only an explicit embedding-host request/response contract. The browser runtime
+  has no default shell, command search path, inherited environment, or executable filesystem. A host
+  adapter can support selected package features, but it does not make a package containing native
+  code a pure-R package.
 - `configure`, `configure.win`, `cleanup`, and `cleanup.win` are not executed.
 - The current NAMESPACE parser supports `export`, `import`, `importFrom`, and `S3method`. S4
   registration, `exportPattern`, conditional declarations, and other directives remain blockers.

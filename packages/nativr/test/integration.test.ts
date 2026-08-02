@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { createR, isComplex, isNA, isRaw, NA, RRuntimeDisposedError } from "../src/index.js";
-import type { PureRPackageBundle } from "../src/index.js";
+import type { PublicSystemCommandRequest, PureRPackageBundle } from "../src/index.js";
 
 const assets = {
   treeSitterRuntimeWasm: new URL("../../parser/assets/web-tree-sitter.wasm", import.meta.url),
@@ -72,6 +72,17 @@ Version: 0.2.0
 Imports: nativrfixture (>= 0.1.0)`,
   namespace: `importFrom(nativrfixture, square)\nexport(quad)`,
   rSources: [{ path: "R/quad.R", source: "quad <- function(x) square(square(x))" }],
+};
+
+const pureRSystemFixture: PureRPackageBundle = {
+  description: "Package: nativrsystem\nVersion: 0.1.0\nNeedsCompilation: no",
+  namespace: "export(system_probe)",
+  rSources: [
+    {
+      path: "R/system.R",
+      source: "system_probe <- function() system('package-probe', intern = TRUE)",
+    },
+  ],
 };
 
 const pureRLatinDataFixture: PureRPackageBundle = {
@@ -1806,6 +1817,145 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.interrupt();
     await expect(pending).rejects.toMatchObject({ code: "NRL4005" });
     await runtime.dispose();
+  });
+
+  it("routes usage-ranked system() through an explicit host policy for inline and pure-R package code", async () => {
+    const requests: PublicSystemCommandRequest[] = [];
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [pureRSystemFixture],
+      systemCommand: (request) => {
+        requests.push(request);
+        switch (request.command) {
+          case "capture":
+            return { status: 0, stdout: "alpha\r\nbeta\n", stderr: "note\n" };
+          case "failure":
+            return { status: 7, stdout: "", errorMessage: "process returned 7" };
+          case "display":
+            return { status: 3, stdout: "out\n", stderr: "err\n" };
+          case "async":
+            return { status: 9 };
+          case "timeout":
+            return { status: 124, timedOut: true };
+          case "package-probe":
+            return { status: 0, stdout: "package-ok\n" };
+          case "throws":
+            throw new Error("host exploded");
+          default:
+            return {
+              status: 127,
+              errorMessage: `command not allowed: ${request.command}`,
+              failedToStart: true,
+            };
+        }
+      },
+    });
+
+    const captured = await runtime.evalDetailed(
+      "x <- system('capture', intern = TRUE, input = c('one', 'two'), timeout = 2)\nc(x, typeof(x), is.null(attr(x, 'status')))",
+    );
+    expect(captured.value).toEqual(["alpha", "beta", "character", "TRUE"]);
+    expect(captured.output).toEqual([{ stream: "stderr", text: "note\n" }]);
+    expect(requests[0]).toEqual({
+      command: "capture",
+      intern: true,
+      ignoreStdout: false,
+      ignoreStderr: false,
+      wait: true,
+      input: ["one", "two"],
+      showOutputOnConsole: true,
+      minimized: false,
+      invisible: true,
+      timeoutSeconds: 2,
+      receiveConsoleSignals: true,
+    });
+
+    const failed = await runtime.evalDetailed(
+      "x <- suppressWarnings(system('failure', intern = TRUE)); c(length(x), attr(x, 'status'), attr(x, 'errmsg'))",
+    );
+    expect(failed.value).toEqual(["0", "7", "process returned 7"]);
+    const warned = await runtime.evalDetailed("system('failure', intern = TRUE)");
+    expect(warned.warnings).toEqual([
+      { code: "NRW1129", message: "running command 'failure' had status 7" },
+    ]);
+
+    const displayed = await runtime.evalDetailed("system('display')");
+    expect(displayed).toMatchObject({ value: 3, visible: true });
+    expect(displayed.output).toEqual([
+      { stream: "stderr", text: "err\n" },
+      { stream: "stdout", text: "out\n" },
+    ]);
+    await expect(runtime.eval("system('async', wait = FALSE)")).resolves.toBe(0);
+    expect(requests.at(-1)).toMatchObject({ command: "async", wait: false });
+
+    const timed = await runtime.evalDetailed("system('timeout')");
+    expect(timed.value).toBe(124);
+    expect(timed.warnings).toEqual([{ code: "NRW1129", message: "command 'timeout' timed out" }]);
+    await expect(runtime.eval("system('blocked', intern = TRUE)")).rejects.toMatchObject({
+      code: "NRE2250",
+    });
+    await expect(runtime.eval("system('throws')")).rejects.toMatchObject({
+      code: "NRE2250",
+      message: "host exploded",
+    });
+    await expect(runtime.eval("library(nativrsystem)\nsystem_probe()")).resolves.toBe("package-ok");
+    await expect(runtime.eval("names(formals(system))")).resolves.toEqual([
+      "command",
+      "intern",
+      "ignore.stdout",
+      "ignore.stderr",
+      "wait",
+      "input",
+      "show.output.on.console",
+      "minimized",
+      "invisible",
+      "timeout",
+      "receive.console.signals",
+    ]);
+    await expect(runtime.eval("system(c('a', 'b'))")).rejects.toMatchObject({ code: "NRT3406" });
+    await expect(runtime.eval("system('x', intern = NA)")).rejects.toMatchObject({
+      code: "NRT3406",
+    });
+    await expect(runtime.eval("system('x', timeout = -1)")).rejects.toMatchObject({
+      code: "NRT3406",
+    });
+    await expect(runtime.eval("system('x', wait = FALSE, timeout = 1)")).rejects.toMatchObject({
+      code: "NRE2251",
+    });
+    await runtime.dispose();
+
+    const closed = await session();
+    await expect(closed.eval("system('anything')")).rejects.toMatchObject({ code: "NRU6194" });
+    await closed.dispose();
+
+    const invalid = await createR({
+      execution: "inline",
+      assets,
+      systemCommand: () => ({ status: -1 }),
+    });
+    await expect(invalid.eval("system('x')")).rejects.toMatchObject({ code: "NRS5005" });
+    await invalid.dispose();
+
+    let limitedCalls = 0;
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxOutputBytes: 8 },
+      systemCommand: () => {
+        limitedCalls += 1;
+        return { status: 0, stdout: "too much output" };
+      },
+    });
+    await expect(limited.eval("system('123456789', intern = TRUE)")).rejects.toMatchObject({
+      code: "NRL4007",
+    });
+    expect(limitedCalls).toBe(0);
+    await expect(limited.eval("system('x', intern = TRUE)")).rejects.toMatchObject({
+      code: "NRL4007",
+    });
+    expect(limitedCalls).toBe(1);
+    await limited.dispose();
   });
 
   it("measures lazy expressions with browser-safe system.time and proc.time values", async () => {
@@ -8578,7 +8728,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.214.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.215.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

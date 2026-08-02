@@ -136,6 +136,18 @@ describe("Worker protocol guards", () => {
     { protocolVersion: 1, id: "capabilities", kind: "capabilities" },
     { protocolVersion: 1, id: "reset", kind: "reset" },
     { protocolVersion: 1, id: "dispose", kind: "dispose" },
+    {
+      protocolVersion: 1,
+      id: "system-result",
+      kind: "system-command-result",
+      result: { status: 0, stdout: "ok\n" },
+    },
+    {
+      protocolVersion: 1,
+      id: "system-error",
+      kind: "system-command-result",
+      error: { code: "NRU6194", message: "denied" },
+    },
   ])("accepts request kind $kind", (request) => {
     expect(isWorkerRequest(request)).toBe(true);
   });
@@ -198,6 +210,22 @@ describe("Worker protocol guards", () => {
     expect(isWorkerRequest({ protocolVersion: 1, id: "x", kind: "call", arguments: [] })).toBe(
       false,
     );
+    expect(
+      isWorkerRequest({
+        protocolVersion: 1,
+        id: "x",
+        kind: "system-command-result",
+        result: { status: -1 },
+      }),
+    ).toBe(false);
+    expect(
+      isWorkerRequest({
+        protocolVersion: 1,
+        id: "x",
+        kind: "system-command-result",
+        error: "denied",
+      }),
+    ).toBe(false);
   });
 
   it.each([
@@ -226,6 +254,24 @@ describe("Worker protocol guards", () => {
       stream: "stdout",
       text: "hello",
     },
+    {
+      protocolVersion: 1,
+      id: "system",
+      kind: "system-command",
+      request: {
+        command: "probe",
+        intern: true,
+        ignoreStdout: false,
+        ignoreStderr: false,
+        wait: true,
+        input: ["one"],
+        showOutputOnConsole: true,
+        minimized: false,
+        invisible: true,
+        timeoutSeconds: 0,
+        receiveConsoleSignals: true,
+      },
+    },
   ])("accepts response kind $kind", (response) => {
     expect(isWorkerResponse(response)).toBe(true);
   });
@@ -238,6 +284,14 @@ describe("Worker protocol guards", () => {
       false,
     );
     expect(isWorkerResponse({ protocolVersion: 1, id: "x", kind: "output", text: 1 })).toBe(false);
+    expect(
+      isWorkerResponse({
+        protocolVersion: 1,
+        id: "x",
+        kind: "system-command",
+        request: { command: "probe" },
+      }),
+    ).toBe(false);
   });
 
   it.each([

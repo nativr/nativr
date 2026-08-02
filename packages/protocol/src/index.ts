@@ -113,6 +113,31 @@ export interface PublicOutputEvent {
   readonly text: string;
 }
 
+/** A command that R code asks an embedding host to execute explicitly. */
+export interface PublicSystemCommandRequest {
+  readonly command: string;
+  readonly intern: boolean;
+  readonly ignoreStdout: boolean;
+  readonly ignoreStderr: boolean;
+  readonly wait: boolean;
+  readonly input: readonly string[] | null;
+  readonly showOutputOnConsole: boolean;
+  readonly minimized: boolean;
+  readonly invisible: boolean;
+  readonly timeoutSeconds: number;
+  readonly receiveConsoleSignals: boolean;
+}
+
+/** Text and status returned by an explicitly configured command host. */
+export interface PublicSystemCommandResult {
+  readonly status: number;
+  readonly stdout?: string;
+  readonly stderr?: string;
+  readonly errorMessage?: string;
+  readonly failedToStart?: boolean;
+  readonly timedOut?: boolean;
+}
+
 /** Character-formatted table emitted for a browser or other host data viewer. */
 export interface PublicDataViewEvent {
   readonly title: string;
@@ -385,6 +410,16 @@ export interface DisposeRequest extends ProtocolEnvelope {
   readonly kind: "dispose";
 }
 
+/** Resolve a command request emitted while a Worker evaluation is suspended. */
+export type SystemCommandResultRequest = ProtocolEnvelope &
+  (
+    | { readonly kind: "system-command-result"; readonly result: PublicSystemCommandResult }
+    | {
+        readonly kind: "system-command-result";
+        readonly error: { readonly code: string; readonly message: string };
+      }
+  );
+
 /** All valid Worker requests. */
 export type WorkerRequest =
   | InitRequest
@@ -394,7 +429,8 @@ export type WorkerRequest =
   | CallRequest
   | CapabilitiesRequest
   | ResetRequest
-  | DisposeRequest;
+  | DisposeRequest
+  | SystemCommandResultRequest;
 
 /** Evaluation data returned internally to the public facade. */
 export interface WireEvaluationResult {
@@ -440,8 +476,15 @@ export interface OutputEvent extends ProtocolEnvelope, PublicOutputEvent {
   readonly kind: "output";
 }
 
+/** A correlated command request that must be approved and handled by the embedding host. */
+export interface SystemCommandEvent extends ProtocolEnvelope {
+  readonly kind: "system-command";
+  readonly request: PublicSystemCommandRequest;
+}
+
 /** All valid Worker responses and events. */
-export type WorkerResponse = SuccessResponse | ErrorResponse | WarningEvent | OutputEvent;
+export type WorkerResponse =
+  SuccessResponse | ErrorResponse | WarningEvent | OutputEvent | SystemCommandEvent;
 
 /** Guard a finite protocol request before dispatch. */
 export function isWorkerRequest(value: unknown): value is WorkerRequest {
@@ -474,6 +517,14 @@ export function isWorkerRequest(value: unknown): value is WorkerRequest {
     case "reset":
     case "dispose":
       return true;
+    case "system-command-result":
+      return (
+        (isSystemCommandResult(value.result) && value.error === undefined) ||
+        (isRecord(value.error) &&
+          typeof value.error.code === "string" &&
+          typeof value.error.message === "string" &&
+          value.result === undefined)
+      );
     default:
       return false;
   }
@@ -500,6 +551,8 @@ export function isWorkerResponse(value: unknown): value is WorkerResponse {
       );
     case "output":
       return typeof value.text === "string" && typeof value.stream === "string";
+    case "system-command":
+      return isSystemCommandRequest(value.request);
     default:
       return false;
   }
@@ -617,6 +670,43 @@ function isEnvironmentVariableRecord(value: unknown): value is Readonly<Record<s
         typeof entry === "string" &&
         !entry.includes("\0"),
     )
+  );
+}
+
+function isSystemCommandRequest(value: unknown): value is PublicSystemCommandRequest {
+  return (
+    isRecord(value) &&
+    typeof value.command === "string" &&
+    !value.command.includes("\0") &&
+    typeof value.intern === "boolean" &&
+    typeof value.ignoreStdout === "boolean" &&
+    typeof value.ignoreStderr === "boolean" &&
+    typeof value.wait === "boolean" &&
+    (value.input === null ||
+      (Array.isArray(value.input) &&
+        value.input.every((line) => typeof line === "string" && !line.includes("\0")))) &&
+    typeof value.showOutputOnConsole === "boolean" &&
+    typeof value.minimized === "boolean" &&
+    typeof value.invisible === "boolean" &&
+    typeof value.timeoutSeconds === "number" &&
+    Number.isFinite(value.timeoutSeconds) &&
+    value.timeoutSeconds >= 0 &&
+    typeof value.receiveConsoleSignals === "boolean"
+  );
+}
+
+function isSystemCommandResult(value: unknown): value is PublicSystemCommandResult {
+  return (
+    isRecord(value) &&
+    typeof value.status === "number" &&
+    Number.isSafeInteger(value.status) &&
+    value.status >= 0 &&
+    value.status <= 2_147_483_647 &&
+    (value.stdout === undefined || typeof value.stdout === "string") &&
+    (value.stderr === undefined || typeof value.stderr === "string") &&
+    (value.errorMessage === undefined || typeof value.errorMessage === "string") &&
+    (value.failedToStart === undefined || typeof value.failedToStart === "boolean") &&
+    (value.timedOut === undefined || typeof value.timedOut === "boolean")
   );
 }
 

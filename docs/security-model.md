@@ -86,5 +86,13 @@ Playground permits user-clicked HTTP(S) targets, renders owned files in a script
 iframe, and renders other schemes as review-only; it never evaluates URL text as JavaScript or opens
 a request automatically.
 
+`system()` grants no process capability unless the application supplies `systemCommand`. The runtime
+validates and copies a data-only request; Worker transport correlates one data-only result; and
+returned text is charged to the normal output budget. No command is parsed, searched, or run by
+NativR. Hosts must use an exact allow-list, avoid ambient credentials and inherited environment,
+bound stdout/stderr and execution time, reject shell metacharacter composition unless deliberately
+supported, and treat package-provided command text as untrusted input. The Playground handler is a
+single virtual echo command and never touches an operating-system process.
+
 Dependencies are locked, build scripts are explicitly approved in `pnpm-workspace.yaml`, browser
 bundles are audited for Node built-ins/dynamic code, and CI includes CodeQL and Dependabot.

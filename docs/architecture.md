@@ -227,3 +227,11 @@ URL/file record to the per-evaluation context. The public protocol transports it
 result; virtual-file buffers are transferred, while the host facade invokes `onBrowse`. No DOM,
 Window, network, or process object enters `base`, `runtime`, or the Worker. This keeps viewer
 support reusable for source-only packages without weakening the dependency direction or CSP model.
+
+System commands use a deliberately different, two-way capability because R must receive a status or
+captured output before evaluation can continue. `base` validates GNU R-shaped arguments and asks the
+runtime invocation for a typed command result. Inline composition calls an explicit facade handler;
+the Worker emits a correlated request, suspends only that evaluation, and resolves it from an
+immediate response message that bypasses the ordinary serialized operation queue. Neither runtime
+nor protocol imports Node process APIs or parses a shell command. Missing policy fails closed, and
+the embedding host remains the sole authority for allow-lists, execution, and cancellation.

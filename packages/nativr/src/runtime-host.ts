@@ -2,7 +2,13 @@ import { baseBuiltins, ENVIRONMENT_VARIABLES_STATE_KEY, jsReferenceOperators } f
 import { createParser } from "@nativr/parser";
 import type { NativRParser, ParserAssets } from "@nativr/parser";
 import { DEFAULT_RUNTIME_LIMITS, Evaluator, RParseError } from "@nativr/runtime";
-import type { DetailedEvaluationResult, RuntimeLimits, RValue } from "@nativr/runtime";
+import type {
+  DetailedEvaluationResult,
+  RSystemCommandRequest,
+  RSystemCommandResult,
+  RuntimeLimits,
+  RValue,
+} from "@nativr/runtime";
 import type { ProgramNode } from "@nativr/ast";
 
 import { CAPABILITIES } from "./capabilities.js";
@@ -26,6 +32,9 @@ export class RuntimeHost {
     limits?: Partial<RuntimeLimits>,
     packages: readonly PureRPackageBundle[] = [],
     environmentVariables: Readonly<Record<string, string>> = {},
+    systemCommand?: (
+      request: RSystemCommandRequest,
+    ) => Promise<RSystemCommandResult> | RSystemCommandResult,
   ): Promise<RuntimeHost> {
     const parser = await createParser(assets);
     try {
@@ -39,6 +48,7 @@ export class RuntimeHost {
         limits: effectiveLimits,
         parseSource: (source, maxExpressions) => parseProgram(parser, source, maxExpressions),
         packages: packageDefinitions,
+        ...(systemCommand === undefined ? {} : { systemCommand }),
         initializeBuiltinState: (state) => {
           state.set(ENVIRONMENT_VARIABLES_STATE_KEY, new Map(Object.entries(environmentVariables)));
         },

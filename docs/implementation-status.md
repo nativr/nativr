@@ -11,7 +11,7 @@ Date: 2026-08-01
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 572 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 573 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Character vectors own exact per-element bytes and canonical `unknown`/`latin1`/`UTF-8`/`bytes`
@@ -83,6 +83,11 @@ Date: 2026-08-01
   elapsed seconds, missing unavailable child-process fields, timed-error stderr output, and
   deterministic reset. Browser-unavailable CPU, child-process, and forced-GC metrics are explicit
   platform boundaries rather than invented values.
+- Usage-ranked `system()` with GNU R 4.6 formals/validation and an explicit `systemCommand` host
+  handler. Inline and Worker execution share typed command/input/control requests, captured output,
+  stderr, status/warning, timeout, and failure shapes; a pure-R package function executes through
+  the same seam. The default runtime has no shell or process authority, and all executable lookup,
+  quoting, environment, signal, and cancellation semantics remain host policy.
 - Usage-ranked `gc()` traverses the reachable NativR value graph into GNU R's named 2-by-6
   `Ncells`/`Vcells` report, maintains resettable session high-water values and full/partial census
   counts, emits bounded verbose messages, and shares its collection seam with

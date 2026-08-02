@@ -207,6 +207,7 @@ export interface BuiltinInvocation {
   parentFrame(offset: number): REnvironment;
   currentCall(): RLanguage | RNull;
   systemCall(which: number): RLanguage | RNull;
+  systemCommand(request: RSystemCommandRequest): Promise<RSystemCommandResult>;
   searchPath(): readonly string[];
   loadPackage(
     name: string,
@@ -300,6 +301,31 @@ export interface RWarning {
 export interface ROutput {
   readonly stream: "stdout" | "stderr" | "message";
   readonly text: string;
+}
+
+/** One explicit request to an embedding host for an operating-system command. */
+export interface RSystemCommandRequest {
+  readonly command: string;
+  readonly intern: boolean;
+  readonly ignoreStdout: boolean;
+  readonly ignoreStderr: boolean;
+  readonly wait: boolean;
+  readonly input: readonly string[] | null;
+  readonly showOutputOnConsole: boolean;
+  readonly minimized: boolean;
+  readonly invisible: boolean;
+  readonly timeoutSeconds: number;
+  readonly receiveConsoleSignals: boolean;
+}
+
+/** Sanitized command outcome supplied by an embedding host. */
+export interface RSystemCommandResult {
+  readonly status: number;
+  readonly stdout?: string;
+  readonly stderr?: string;
+  readonly errorMessage?: string;
+  readonly failedToStart?: boolean;
+  readonly timedOut?: boolean;
 }
 
 /** One character-formatted column sent to a host data viewer. */

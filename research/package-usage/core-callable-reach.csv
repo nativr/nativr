@@ -174,7 +174,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 173,raw,true,2,rlang|curl,4,2.1,3.4
 174,lines,true,4,scales|matrixStats|posterior|zoo,20,4.1,3.4
 175,Sys.setenv,true,4,xfun|memoise|openssl|zoo,7,4.1,3.3
-176,system,false,3,withr|knitr|data.table,5,3.1,3.3
+176,system,true,3,withr|knitr|data.table,5,3.1,3.3
 177,as.difftime,false,2,vctrs|scales,2,2.1,3.3
 178,log10,true,2,ggplot2|pillar,6,2.1,3.2
 179,setNames,true,3,ggplot2|loo|data.table,3,3.1,3.1

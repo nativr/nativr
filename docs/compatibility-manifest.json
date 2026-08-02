@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.214.0",
+  "languageSubsetVersion": "0.215.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -114,6 +114,7 @@
         { "name": "Sys.setenv", "compatibility": "behavioral" },
         { "name": "Sys.unsetenv", "compatibility": "behavioral" },
         { "name": "Sys.sleep", "compatibility": "behavioral" },
+        { "name": "system", "compatibility": "behavioral" },
         { "name": "proc.time", "compatibility": "behavioral" },
         { "name": "system.time", "compatibility": "behavioral" },
         { "name": "R.home", "compatibility": "shape" },
