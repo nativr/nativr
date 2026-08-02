@@ -213,7 +213,8 @@ The opt-in test `packages/package-tools/test/external-package.test.ts` downloads
 public source packages from the repository resolver and verifies a pinned artifact digest for each:
 
 - [`pkgconfig 2.0.3`](https://cran.r-project.org/package=pkgconfig) proves namespace exports,
-  package resources, and an ordinary package-owned call through `get_config()`;
+  package resources, classed DESCRIPTION metadata with a virtual installation path, and an ordinary
+  package-owned call through `get_config()`;
 - [`generics 0.1.4`](https://cran.r-project.org/package=generics) proves package-owned S3 generic
   dispatch to an application-defined method;
 - [`withr 3.0.3`](https://cran.r-project.org/package=withr) proves deeper unchanged-source loading,
@@ -230,6 +231,15 @@ registered builtin/operator usage metadata; the inline source-package fixture an
 default Worker both execute this path. It removes one common introspection gap, but package loading
 still stops at the first unsupported R semantic, namespace directive, data representation, or
 native-code dependency.
+
+Package code may inspect its installed metadata through `utils::packageDescription()` without
+loading a second namespace or reading a host file. Full or selected DESCRIPTION fields retain their
+source order and continuation text, and the result exposes GNU R-shaped class, field-selection, and
+virtual installation-file attributes. The source-only fixture mirrors cli's documented
+`unclass(desc)` field access, `pkgconfig 2.0.3` supplies an unchanged public artifact, and the
+Playground runs the same query in its default Worker. This does not provide host-library discovery,
+malformed-tree recovery, mutable metadata, arbitrary encoding conversion, or the complete
+description printing/citation/date method family.
 
 Package `.onLoad()` hooks may dynamically register hidden S3 methods with
 `registerS3method(generic, class, method)`, using either a function or a method name resolved inside

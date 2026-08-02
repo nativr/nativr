@@ -4,11 +4,11 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 611,
-    "overlappingNames": 595,
-    "missingReferenceNames": 1927,
+    "nativrRegisteredNames": 612,
+    "overlappingNames": 596,
+    "missingReferenceNames": 1926,
     "nativrExtensionNames": 16,
-    "nameCoverage": 0.235924
+    "nameCoverage": 0.23632
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 435, "nameCoverage": 0.318215 },
@@ -19,7 +19,7 @@
       "overlappingNames": 10,
       "nameCoverage": 0.047847
     },
-    { "package": "utils", "callableNames": 262, "overlappingNames": 26, "nameCoverage": 0.099237 },
+    { "package": "utils", "callableNames": 262, "overlappingNames": 27, "nameCoverage": 0.103053 },
     {
       "package": "grDevices",
       "callableNames": 135,
@@ -421,6 +421,7 @@
     "order",
     "ordered",
     "outer",
+    "packageDescription",
     "packageEvent",
     "packageName",
     "packageVersion",
@@ -1921,7 +1922,6 @@
     "packBits",
     "package.skeleton",
     "packageDate",
-    "packageDescription",
     "packageHasNamespace",
     "packageNotFoundError",
     "packageSlot",

@@ -44,6 +44,17 @@ it.runIf(runExternal)(
       await expect(
         runtime.eval('readLines(system.file("DESCRIPTION", package = "pkgconfig"), n = 1L)'),
       ).resolves.toBe("Package: pkgconfig");
+      await expect(
+        runtime.eval(`
+          description <- utils::packageDescription("pkgconfig")
+          c(
+            description$Package,
+            description$Version,
+            class(description),
+            basename(dirname(attr(description, "file")))
+          )
+        `),
+      ).resolves.toEqual(["pkgconfig", "2.0.3", "packageDescription", "pkgconfig"]);
     } finally {
       await runtime?.dispose();
     }

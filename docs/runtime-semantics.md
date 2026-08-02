@@ -505,6 +505,15 @@ separate component-count ordering. Arbitrary `lib.loc` discovery, mutable instal
 component extraction/replacement, summary methods, and the complete numeric-version S3 family are
 not yet supported.
 
+`utils::packageDescription()` reads the same immutable catalog without initializing a namespace.
+Validated bundle DESCRIPTION fields retain their source order and folded continuation text; callers
+may request a subset, receive character `NA` for absent fields, drop a one-field result to a scalar,
+or inspect the named `packageDescription` list plus its `fields` and virtual `file` attributes.
+Missing packages and empty field selections warn and return character `NA`. Core compatibility names
+expose bounded `Package`, `Version`, and `Priority` metadata. Arbitrary host libraries, malformed
+installed trees, full GNU core prose, runtime metadata mutation, and codecs beyond the owned
+UTF-8/Latin-1 path remain outside this catalog.
+
 Dynamic `registerS3method()` entries use the same owned S3 registry as declarative NAMESPACE
 methods. The registry key includes the generic's definition environment, so independent namespaces
 may define the same generic/class pair without cross-dispatch. Function values and character method

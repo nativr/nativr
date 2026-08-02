@@ -11,7 +11,7 @@ Date: 2026-08-02
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 611 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 612 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Character vectors own exact per-element bytes and canonical `unknown`/`latin1`/`UTF-8`/`bytes`
@@ -80,8 +80,14 @@ Date: 2026-08-02
   namespace. Shared `numeric_version`, `package_version`, and `R_system_version` values preserve
   integer components, missing entries, printing/formatting, concatenation, and padded vectorized
   comparisons; `getRversion()` and `utils::compareVersion()` use the same parser. Arbitrary library
-  paths, DESCRIPTION objects, version replacement/indexing, the complete numeric-version method
-  family, and execution compatibility for a merely discoverable package remain explicit gaps.
+  paths, version replacement/indexing, the complete numeric-version method family, and execution
+  compatibility for a merely discoverable package remain explicit gaps.
+- Usage-ranked `utils::packageDescription()` retains validated DESCRIPTION fields and returns full
+  or selected classed metadata, missing fields, scalar drops, exact formals, and virtual file
+  locations without loading the namespace. A source-only fixture mirrors cli's measured field
+  access, the default Worker exposes it in the Playground, and unchanged `pkgconfig 2.0.3` proves
+  repository-installed metadata. Host-library scans, malformed package trees, arbitrary codecs, full
+  core-package prose, print/citation/date methods, and metadata mutation remain explicit gaps.
 - Usage-ranked `Sys.getpid()` exposes one positive integer identity per NativR session. It is stable
   across calls, reset, and Worker restart; concurrently created facade sessions are distinct; and an
   unchanged source-only package calls it through the ordinary base namespace. The identifier is not

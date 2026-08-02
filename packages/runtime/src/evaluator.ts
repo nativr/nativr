@@ -158,6 +158,10 @@ export interface RuntimePackageTextResource {
 export interface RuntimePackageDefinition {
   readonly name: string;
   readonly version: string;
+  readonly descriptionFields: readonly {
+    readonly name: string;
+    readonly value: string;
+  }[];
   readonly resourceTextEncoding: "utf8" | "latin1";
   readonly dependencies: readonly RuntimePackageDependency[];
   readonly imports: readonly RuntimePackageImport[];
@@ -418,6 +422,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "example",
       "glob2rx",
       "packageName",
+      "packageDescription",
       "packageVersion",
       "read.csv",
       "read.csv2",
@@ -441,6 +446,24 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
   ["vctrs", new Set(["new_class", "new_vctr"])],
   ["tibble", new Set(["tibble", "tribble"])],
 ]);
+const CORE_R_PACKAGE_NAMES = new Set([
+  "base",
+  "stats",
+  "graphics",
+  "grDevices",
+  "utils",
+  "methods",
+]);
+
+function corePackageDescriptionFields(
+  name: string,
+): readonly { readonly name: string; readonly value: string }[] {
+  return Object.freeze([
+    Object.freeze({ name: "Package", value: name }),
+    Object.freeze({ name: "Version", value: "4.6.0" }),
+    ...(CORE_R_PACKAGE_NAMES.has(name) ? [Object.freeze({ name: "Priority", value: "base" })] : []),
+  ]);
+}
 
 class ReturnSignal extends Error {
   public constructor(
@@ -1925,6 +1948,8 @@ export class Evaluator {
           this.#loadPackage(name, attach, context, libraryPaths),
         installedPackageVersion: (name, libraryPaths) =>
           this.#installedPackageVersion(name, libraryPaths),
+        installedPackageDescription: (name, libraryPaths) =>
+          this.#installedPackageDescription(name, libraryPaths),
         installedPackageNames: (libraryPaths) => this.#installedPackageNames(libraryPaths),
         isNamespaceLoaded: (name) =>
           REGISTERED_NAMESPACE_EXPORTS.has(name) ||
@@ -2414,6 +2439,7 @@ export class Evaluator {
             definition: {
               name,
               version: "4.6.0",
+              descriptionFields: corePackageDescriptionFields(name),
               resourceTextEncoding: "utf8",
               dependencies: [],
               imports: [],
@@ -2647,6 +2673,37 @@ export class Evaluator {
       return undefined;
     }
     return record.definition.version;
+  }
+
+  #installedPackageDescription(
+    name: string,
+    libraryPaths?: readonly string[],
+  ):
+    | {
+        readonly fields: readonly { readonly name: string; readonly value: string }[];
+        readonly file: string;
+      }
+    | undefined {
+    const effectivePaths = libraryPaths ?? this.#libraryPaths;
+    if (REGISTERED_NAMESPACE_EXPORTS.has(name)) {
+      if (!effectivePaths.includes(NATIVR_SYSTEM_LIBRARY_PATH)) return undefined;
+      return {
+        fields: corePackageDescriptionFields(name),
+        file: `${NATIVR_SYSTEM_LIBRARY_PATH}/${encodeURIComponent(name)}/DESCRIPTION`,
+      };
+    }
+    const record = this.#packages.get(name);
+    if (record === undefined) return undefined;
+    if (
+      (libraryPaths !== undefined || record.namespace === undefined) &&
+      !effectivePaths.includes(NATIVR_PACKAGE_LIBRARY_PATH)
+    ) {
+      return undefined;
+    }
+    return {
+      fields: record.definition.descriptionFields,
+      file: `${NATIVR_PACKAGE_LIBRARY_PATH}/${encodeURIComponent(name)}/DESCRIPTION`,
+    };
   }
 
   #installedPackageNames(libraryPaths?: readonly string[]): readonly string[] {

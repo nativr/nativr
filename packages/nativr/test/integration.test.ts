@@ -16,14 +16,21 @@ const assets = {
 const pureRFixture: PureRPackageBundle = {
   description: `Package: nativrfixture
 Version: 0.1.0
+Title: NativR Fixture Package
+Description: Exercises browser-native package metadata
+  without translating its R source.
+Maintainer: NativR Test <test@nativr.dev>
+License: Apache-2.0
+URL: https://nativr.dev/fixture
 Imports: grDevices, graphics, methods, stats, utils
+Encoding: UTF-8
 NeedsCompilation: no`,
   namespace: `
 importFrom(graphics, axis, plot.new, plot.window)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median)
-importFrom(utils, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, axis_ticks, sourced_value, ask_value, remote_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, installed_version, namespace_names, process_id, library_paths)
+importFrom(utils, packageDescription, packageName, packageVersion)
+export(square, centered, duration, histogram_counts, hcl_colours, axis_ticks, sourced_value, ask_value, remote_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -80,6 +87,18 @@ lines.score <- function(x, ..., marker = "package-lines") c(marker, sum(x), list
 package_state <- function() .package_state
 package_name <- function() packageName()
 package_libname <- function() .package_libname
+package_metadata <- function(package = "nativrfixture") {
+  description <- unclass(packageDescription(package))
+  c(
+    description$Package,
+    description$Title,
+    description$Description,
+    description$Version,
+    description$Maintainer,
+    description$License,
+    description$URL
+  )
+}
 installed_version <- function(package = "nativrfixture") as.character(packageVersion(package))
 namespace_names <- function(pattern = "") ls(envir = environment(namespace_names), pattern = pattern, all.names = TRUE)
 process_id <- function() Sys.getpid()
@@ -2760,12 +2779,22 @@ describe("complete inline source-to-result vertical slice", () => {
     ).resolves.toEqual(["2", "hours", "difftime"]);
     await expect(runtime.eval("nativrfixture::package_name()")).resolves.toBe("nativrfixture");
     await expect(runtime.eval("nativrfixture::installed_version()")).resolves.toBe("0.1.0");
+    await expect(runtime.eval("nativrfixture::package_metadata()")).resolves.toEqual([
+      "nativrfixture",
+      "NativR Fixture Package",
+      "Exercises browser-native package metadata\n  without translating its R source.",
+      "0.1.0",
+      "NativR Test <test@nativr.dev>",
+      "Apache-2.0",
+      "https://nativr.dev/fixture",
+    ]);
     await expect(runtime.eval("nativrfixture::process_id() == Sys.getpid()")).resolves.toBe(true);
     await expect(
       runtime.eval("nativrfixture::dynamic_describe(nativrfixture::new_score(1:3))"),
     ).resolves.toBe("dynamic:6");
     await expect(runtime.eval("nativrfixture::namespace_names('^package_')")).resolves.toEqual([
       "package_libname",
+      "package_metadata",
       "package_name",
       "package_state",
     ]);
@@ -2820,6 +2849,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "namespace_names",
       "new_score",
       "package_libname",
+      "package_metadata",
       "package_name",
       "package_state",
       "process_id",
@@ -9272,6 +9302,105 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("returns installed DESCRIPTION metadata for unchanged pure-R package code", async () => {
+    const runtime = await createR({ execution: "inline", assets, packages: [pureRFixture] });
+    await expect(
+      runtime.eval(`
+        description <- utils::packageDescription("nativrfixture")
+        selected <- packageDescription(
+          "nativrfixture",
+          fields = c("Package", "Version", "Missing"),
+          drop = FALSE
+        )
+        listed <- packageDescription("nativrfixture", fields = "Version", drop = FALSE)
+        core <- packageDescription(
+          "stats",
+          fields = c("Package", "Version", "Priority"),
+          drop = FALSE
+        )
+        c(
+          class(description), names(description), attr(description, "file"),
+          selected$Package, selected$Version, is.na(selected$Missing), attr(selected, "fields"),
+          packageDescription("nativrfixture", fields = "Version"),
+          class(listed), listed$Version, attr(listed, "fields"),
+          core$Package, core$Version, core$Priority
+        )
+      `),
+    ).resolves.toEqual([
+      "packageDescription",
+      "Package",
+      "Version",
+      "Title",
+      "Description",
+      "Maintainer",
+      "License",
+      "URL",
+      "Imports",
+      "Encoding",
+      "NeedsCompilation",
+      "nativr://package/nativrfixture/DESCRIPTION",
+      "nativrfixture",
+      "0.1.0",
+      "TRUE",
+      "Package",
+      "Version",
+      "Missing",
+      "0.1.0",
+      "packageDescription",
+      "0.1.0",
+      "Version",
+      "stats",
+      "4.6.0",
+      "base",
+    ]);
+    await expect(runtime.eval('isNamespaceLoaded("nativrfixture")')).resolves.toBe(false);
+    const missing = await runtime.evalDetailed(
+      'utils::packageDescription("does.not.exist", fields = c("Package", "Version"))',
+    );
+    expect(missing.value).toEqual(NA);
+    expect(missing.warnings.map((warning) => warning.message)).toEqual([
+      "no package 'does.not.exist' was found",
+    ]);
+    const emptyFields = await runtime.evalDetailed(
+      'utils::packageDescription("nativrfixture", fields = character())',
+    );
+    expect(emptyFields.value).toEqual(NA);
+    expect(emptyFields.warnings.map((warning) => warning.message)).toEqual([
+      "DESCRIPTION file of package 'nativrfixture' is missing or broken",
+    ]);
+    await expect(
+      runtime.eval(`
+        f <- formals(utils::packageDescription)
+        c(
+          names(f), is.null(f$lib.loc), is.null(f$fields),
+          identical(f$drop, TRUE), identical(f$encoding, "")
+        )
+      `),
+    ).resolves.toEqual([
+      "pkg",
+      "lib.loc",
+      "fields",
+      "drop",
+      "encoding",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    await expect(
+      runtime.eval('packageDescription("nativrfixture", fields = 1)'),
+    ).rejects.toMatchObject({ code: "NRT3413" });
+    await expect(
+      runtime.eval(
+        'packageDescription("nativrfixture", fields = "Version", drop = c(TRUE, FALSE))',
+      ),
+    ).rejects.toMatchObject({ code: "NRT3413" });
+    await expect(
+      runtime.eval('packageDescription("nativrfixture", encoding = "unknown-codec")'),
+    ).rejects.toMatchObject({ code: "NRU6197" });
+    await runtime.dispose();
+  });
+
   it("returns the canonical NA marker and distinguishes NaN", async () => {
     const runtime = await session();
     const missing = await runtime.eval("mean(c(1, NA, 3))");
@@ -9683,7 +9812,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.234.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.235.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

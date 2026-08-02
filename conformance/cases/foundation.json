@@ -8500,5 +8500,40 @@
     ],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "package-description-usage-ranked-fields-class-and-formals",
+    "code": "description <- utils::packageDescription(\"stats\", fields = c(\"Package\", \"Version\", \"Priority\"), drop = FALSE)\nf <- formals(utils::packageDescription)\nc(class(description), names(description), unlist(description), attr(description, \"fields\"), names(f), is.null(f$lib.loc), is.null(f$fields), identical(f$drop, TRUE), identical(f$encoding, \"\"))",
+    "expected": [
+      "packageDescription",
+      "Package",
+      "Version",
+      "Priority",
+      "stats",
+      "4.6.0",
+      "base",
+      "Package",
+      "Version",
+      "Priority",
+      "pkg",
+      "lib.loc",
+      "fields",
+      "drop",
+      "encoding",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "package-description-missing-package-warning-and-value",
+    "code": "is.na(utils::packageDescription(\"nativr.definitely.not.installed\"))",
+    "expected": true,
+    "expectedWarning": true,
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

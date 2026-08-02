@@ -4,14 +4,20 @@ import type { PureRPackageBundle } from "@nativr/nativr";
 export const playgroundPackage: PureRPackageBundle = {
   description: `Package: nativrdemo
 Version: 0.1.0
+Title: Browser-Native R Demo
+Description: Demonstrates unchanged pure R package code in a Web Worker.
+Maintainer: NativR Demo <demo@nativr.dev>
+License: Apache-2.0
+URL: https://github.com/nativr/nativr
+Encoding: UTF-8
 NeedsCompilation: no`,
   namespace:
-    "export(twice_mean, signature_names, dynamic_summary, resource_size, event_colours, custom_axis, sourced_value, ask_user, remote_lines, filtered_flow)",
+    "export(twice_mean, signature_names, dynamic_summary, resource_size, event_colours, custom_axis, sourced_value, ask_user, remote_lines, filtered_flow, package_summary)",
   rSources: [
     {
       path: "R/twice-mean.R",
       source:
-        'twice_mean <- function(x) 2 * mean(x)\nsignature_names <- function(fun = twice_mean) names(formals(args(fun)))\ndynamic_summary <- function(x, ...) UseMethod("dynamic_summary")\ndynamic_summary.demo <- function(x, ...) paste0("worker-dynamic:", sum(x))\nresource_size <- function() file.size(system.file("extdata", "demo.json", package = "nativrdemo"))\nevent_colours <- function() grDevices::hcl(c(0, 0, 260), c = c(100, 0, 100), l = c(50, 90, 50), alpha = .3)\ncustom_axis <- function() { graphics::plot.new(); graphics::plot.window(c(0, 4), c(0, 4)); graphics::axis(1, at = 1:3, labels = c("one", "two", "three")) }\nsourced_value <- function() { con <- textConnection("value <- 40L; value + 2L"); on.exit(close(con)); source(con, local = TRUE)$value }\nask_user <- function(prompt = "Value: ") readline(prompt)\nremote_lines <- function(address) { con <- url(address); on.exit(close(con)); readLines(con) }\nfiltered_flow <- function(x, coefficient = .8) stats::filter(x, coefficient, method = "r")\n.onLoad <- function(...) registerS3method("dynamic_summary", "demo", "dynamic_summary.demo")',
+        'twice_mean <- function(x) 2 * mean(x)\nsignature_names <- function(fun = twice_mean) names(formals(args(fun)))\ndynamic_summary <- function(x, ...) UseMethod("dynamic_summary")\ndynamic_summary.demo <- function(x, ...) paste0("worker-dynamic:", sum(x))\nresource_size <- function() file.size(system.file("extdata", "demo.json", package = "nativrdemo"))\nevent_colours <- function() grDevices::hcl(c(0, 0, 260), c = c(100, 0, 100), l = c(50, 90, 50), alpha = .3)\ncustom_axis <- function() { graphics::plot.new(); graphics::plot.window(c(0, 4), c(0, 4)); graphics::axis(1, at = 1:3, labels = c("one", "two", "three")) }\nsourced_value <- function() { con <- textConnection("value <- 40L; value + 2L"); on.exit(close(con)); source(con, local = TRUE)$value }\nask_user <- function(prompt = "Value: ") readline(prompt)\nremote_lines <- function(address) { con <- url(address); on.exit(close(con)); readLines(con) }\nfiltered_flow <- function(x, coefficient = .8) stats::filter(x, coefficient, method = "r")\npackage_summary <- function() { description <- utils::packageDescription("nativrdemo"); fields <- unclass(description); c(fields$Package, fields$Version, fields$Title, fields$License, basename(dirname(attr(description, "file")))) }\n.onLoad <- function(...) registerS3method("dynamic_summary", "demo", "dynamic_summary.demo")',
     },
   ],
   resources: [

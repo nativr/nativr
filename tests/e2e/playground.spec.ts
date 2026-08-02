@@ -35,6 +35,12 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("[1, 2.8, 5.24, 8.192, 11.5536, 15.24288]");
 
+  await page.getByRole("button", { name: "Package DESCRIPTION" }).click();
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText(
+    '["nativrdemo", "0.1.0", "Browser-Native R Demo", "Apache-2.0", "nativrdemo"]',
+  );
+
   await page.locator("#source").fill("nativrdemo::signature_names()");
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText('"x"');

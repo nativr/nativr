@@ -243,7 +243,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 242,regmatches,true,1,cli,2,1.0,1.9
 243,trimws,true,1,cli,2,1.0,1.9
 244,gregexpr,true,1,cli,1,1.0,1.9
-245,packageDescription,false,1,cli,1,1.0,1.9
+245,packageDescription,true,1,cli,1,1.0,1.9
 246,stdout,false,1,cli,1,1.0,1.9
 247,logical,true,1,vctrs,4,1.0,1.9
 248,rle,true,1,vctrs,1,1.0,1.9

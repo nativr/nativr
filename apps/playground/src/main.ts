@@ -73,6 +73,11 @@ twice_mean(c(1, 2, 6))`,
     code: "nativrdemo::filtered_flow(1:6)",
   },
   {
+    id: "package-description",
+    label: "Package DESCRIPTION",
+    code: "nativrdemo::package_summary()",
+  },
+  {
     id: "system-host",
     label: "Explicit host command",
     code: "system('nativr-echo', intern = TRUE, input = c('worker', 'bridge'))",

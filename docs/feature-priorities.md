@@ -73,18 +73,18 @@ excluded; this prevents package-owned functions from being mislabeled as GNU R c
 The primary ranking remains download-weighted package reach; raw occurrence counts are a secondary
 signal.
 
-| Priority | Measured rank | Callable             | Weighted reach | Packages | Observed calls |
-| -------: | ------------: | -------------------- | -------------: | -------: | -------------: |
-|        1 |           245 | `packageDescription` |           1.9% |        1 |              1 |
-|        2 |           246 | `stdout`             |           1.9% |        1 |              1 |
-|        3 |           252 | `rainbow`            |           1.8% |        2 |              5 |
-|        4 |           253 | `rect`               |           1.8% |        2 |              3 |
-|        5 |           256 | `file.remove`        |           1.8% |        2 |              4 |
-|        6 |           259 | `readChar`           |           1.7% |        2 |              2 |
-|        7 |           262 | `terrain.colors`     |           1.7% |        1 |              3 |
-|        8 |           277 | `debug`              |           1.7% |        1 |              1 |
-|        9 |           279 | `undebug`            |           1.7% |        1 |              1 |
-|       10 |           281 | `pdf`                |           1.7% |        2 |              2 |
+| Priority | Measured rank | Callable         | Weighted reach | Packages | Observed calls |
+| -------: | ------------: | ---------------- | -------------: | -------: | -------------: |
+|        1 |           246 | `stdout`         |           1.9% |        1 |              1 |
+|        2 |           252 | `rainbow`        |           1.8% |        2 |              5 |
+|        3 |           253 | `rect`           |           1.8% |        2 |              3 |
+|        4 |           256 | `file.remove`    |           1.8% |        2 |              4 |
+|        5 |           259 | `readChar`       |           1.7% |        2 |              2 |
+|        6 |           262 | `terrain.colors` |           1.7% |        1 |              3 |
+|        7 |           277 | `debug`          |           1.7% |        1 |              1 |
+|        8 |           279 | `undebug`        |           1.7% |        1 |              1 |
+|        9 |           281 | `pdf`            |           1.7% |        2 |              2 |
+|       10 |           287 | `file.create`    |           1.6% |        1 |              1 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -169,21 +169,25 @@ reuse the result without package-specific rewrites or ambient network access. Ra
 circular boundaries, multivariate series, missing values, recursive initial state, and exact
 formals. The collector's second `filter` hit is a jsonlite example that has attached dplyr, so its
 unqualified call is a documented lexical false positive rather than evidence for `stats::filter`;
-the aggregate row remains unchanged to keep the committed snapshot reproducible. The next measured
-unresolved callable is rank 245 `utils::packageDescription`. Rank 144 `Encoding` is also complete
-for all 12 observed calls across rlang, utf8, and xfun (4.5% weighted reach), together with adjacent
-`Encoding<-`, `enc2utf8`, and `enc2native`. The shared character representation preserves exact
-bytes and canonical R marks through subset/replacement, concatenation, raw conversion, and XDR
-serialization; this is reusable package infrastructure, not an assertion that those packages' native
-components are supported. Rank 149 `rcauchy` is now complete for four calls across ggplot2, pillar,
-and purrr (4.2% weighted reach), together with `dcauchy`, `pcauchy`, and `qcauchy`. The shared
-distribution path covers seeded random-stream consumption, vectorized parameters, stable probability
-tails, formals, and missing/domain behavior without package-specific rewrites. Rank 162 `Sys.getenv`
-is now available for all 16 measured calls across withr, xfun, and pkgbuild (3.7% weighted reach),
-together with rank 175 `Sys.setenv` across xfun, memoise, openssl, and zoo (3.3%) and adjacent
-`Sys.unsetenv`. The shared session-state path is Worker-safe, resettable, and sufficient for
-unchanged `withr::with_envvar()` mutation/restoration; it does not expose the host environment. Rank
-163 `image` is now available for the six measured calls across scales, viridisLite, and RColorBrewer
+the aggregate row remains unchanged to keep the committed snapshot reproducible. Rank 245
+`utils::packageDescription` is now complete for cli's full DESCRIPTION-object call shape, selected
+fields, missing fields/packages, file metadata, and exact formals. Validated bundle metadata is
+retained once at install time and can be inspected without loading the package namespace; unchanged
+`pkgconfig 2.0.3` and the Worker Playground exercise the same path. The next measured unresolved
+callable is rank 246 `base::stdout`. Rank 144 `Encoding` is also complete for all 12 observed calls
+across rlang, utf8, and xfun (4.5% weighted reach), together with adjacent `Encoding<-`, `enc2utf8`,
+and `enc2native`. The shared character representation preserves exact bytes and canonical R marks
+through subset/replacement, concatenation, raw conversion, and XDR serialization; this is reusable
+package infrastructure, not an assertion that those packages' native components are supported. Rank
+149 `rcauchy` is now complete for four calls across ggplot2, pillar, and purrr (4.2% weighted
+reach), together with `dcauchy`, `pcauchy`, and `qcauchy`. The shared distribution path covers
+seeded random-stream consumption, vectorized parameters, stable probability tails, formals, and
+missing/domain behavior without package-specific rewrites. Rank 162 `Sys.getenv` is now available
+for all 16 measured calls across withr, xfun, and pkgbuild (3.7% weighted reach), together with rank
+175 `Sys.setenv` across xfun, memoise, openssl, and zoo (3.3%) and adjacent `Sys.unsetenv`. The
+shared session-state path is Worker-safe, resettable, and sufficient for unchanged
+`withr::with_envvar()` mutation/restoration; it does not expose the host environment. Rank 163
+`image` is now available for the six measured calls across scales, viridisLite, and RColorBrewer
 (3.7% weighted reach). Its reusable S3/default path covers numeric/logical matrices, center or
 boundary coordinates, regular raster and irregular polygon grids, colour intervals, missing
 transparency, and one-row palette strips through the same Worker graphics journal; it is not a claim
@@ -1532,6 +1536,15 @@ ties:
      and exact native implementation details remain compatibility depth. The snapshot's jsonlite
      occurrence resolves to dplyr after attachment and is retained only as an auditable collector
      limitation.
+149. Installed package descriptions: rank-245 `utils::packageDescription` represents cli's one
+     complete installed-package metadata example at 1.9% download-weighted reach. The runtime
+     returns selected or full named DESCRIPTION lists, missing fields, the `packageDescription`
+     class, `fields` and virtual `file` attributes, scalar dropping, warnings, encoding controls,
+     exact formals, and bounded core fields without loading a namespace. An unchanged source-only
+     fixture mirrors cli's `unclass()`/field access, unchanged `pkgconfig 2.0.3` proves public
+     artifact metadata, and the default Worker Playground uses the same path. Host libraries,
+     malformed installed trees, complete core DESCRIPTION prose, arbitrary `iconv` codecs, and
+     package-description print/citation/date methods remain compatibility depth.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

@@ -106,6 +106,9 @@ export function compilePureRPackages(
     return {
       name,
       version,
+      descriptionFields: Object.freeze(
+        [...description].map(([fieldName, value]) => Object.freeze({ name: fieldName, value })),
+      ),
       resourceTextEncoding,
       dependencies,
       imports: namespace.imports,
@@ -194,7 +197,7 @@ function parseDescription(source: string): ReadonlyMap<string, string> {
   for (const rawLine of source.replaceAll("\r\n", "\n").split("\n")) {
     if (/^[ \t]/u.test(rawLine)) {
       if (current !== undefined) {
-        fields.set(current, `${fields.get(current) ?? ""} ${rawLine.trim()}`.trim());
+        fields.set(current, `${fields.get(current) ?? ""}\n${rawLine}`.trim());
       }
       continue;
     }

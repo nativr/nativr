@@ -737,6 +737,28 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   withBuiltinFormals(
     definePackageBuiltin(
       "utils",
+      "packageDescription",
+      ["pkg", "lib.loc", "fields", "drop", "encoding"],
+      "behavioral",
+      builtinPackageDescription,
+    ),
+    [
+      { name: "pkg" },
+      { name: "lib.loc", defaultValue: nullAst() },
+      { name: "fields", defaultValue: nullAst() },
+      {
+        name: "drop",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "encoding",
+        defaultValue: { kind: "StringLiteral", value: "", span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "utils",
       "packageVersion",
       ["pkg", "lib.loc"],
       "behavioral",
@@ -8751,12 +8773,7 @@ async function builtinIsPackageVersion(invocation: BuiltinInvocation): Promise<R
 async function builtinInstalledPackageVersion(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["pkg", "lib.loc"]);
   const packageValue = required(matched, "pkg", "packageVersion");
-  let packageName: string;
-  if (isFactor(packageValue) && packageValue.length === 1 && !isMissing(packageValue, 0)) {
-    packageName = factorLevels(packageValue)[(packageValue.values[0] ?? 0) - 1] ?? "";
-  } else {
-    packageName = characterScalar(packageValue, "pkg");
-  }
+  const packageName = installedPackageName(packageValue);
   const library = matched.get("lib.loc");
   const libraryPaths = libraryLocationArgument(invocation, library, "packageVersion");
   const version = invocation.installedPackageVersion(packageName, libraryPaths);
@@ -8766,6 +8783,93 @@ async function builtinInstalledPackageVersion(invocation: BuiltinInvocation): Pr
     });
   }
   return numericVersionValue(characterVector([version]), "package", true, invocation);
+}
+
+async function builtinPackageDescription(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["pkg", "lib.loc", "fields", "drop", "encoding"]);
+  const packageName = installedPackageName(required(matched, "pkg", "packageDescription"));
+  const libraryPaths = libraryLocationArgument(
+    invocation,
+    matched.get("lib.loc"),
+    "packageDescription",
+  );
+  const fieldsValue = matched.get("fields");
+  let requestedFields: readonly string[] | undefined;
+  if (fieldsValue !== undefined && fieldsValue.type !== "null") {
+    if (fieldsValue.type !== "character") {
+      throw new RTypeMismatchError("NRT3413", "'fields' must be a character vector or NULL");
+    }
+    if (fieldsValue.missing?.some((entry) => entry === 1)) {
+      throw new RTypeMismatchError("NRT3413", "'fields' must not contain missing values");
+    }
+    requestedFields = fieldsValue.values;
+  }
+  const drop = packageDescriptionDrop(matched.get("drop"));
+  packageDescriptionEncoding(matched.get("encoding"));
+  const description = invocation.installedPackageDescription(packageName, libraryPaths);
+  if (description === undefined || requestedFields?.length === 0) {
+    invocation.context.warn({
+      code: "NRW1030",
+      message:
+        description === undefined
+          ? `no package '${packageName}' was found`
+          : `DESCRIPTION file of package '${packageName}' is missing or broken`,
+    });
+    return characterVector([""], [1]);
+  }
+  const available = new Map(description.fields.map((field) => [field.name, field.value]));
+  const names = requestedFields ?? description.fields.map((field) => field.name);
+  const values = names.map((name) => {
+    const value = available.get(name);
+    return value === undefined ? characterVector([""], [1]) : characterVector([value]);
+  });
+  invocation.context.allocate(values.length + 2);
+  if (drop && requestedFields?.length === 1) return values[0] ?? characterVector([""], [1]);
+  let result: RVector = withClasses(listValue(values, names), ["packageDescription"]);
+  if (requestedFields !== undefined) {
+    result = withAttribute(result, "fields", characterVector(requestedFields));
+  }
+  return withAttribute(result, "file", characterVector([description.file]));
+}
+
+function installedPackageName(value: RValue): string {
+  if (isFactor(value) && value.length === 1 && !isMissing(value, 0)) {
+    return factorLevels(value)[(value.values[0] ?? 0) - 1] ?? "";
+  }
+  return characterScalar(value, "pkg");
+}
+
+function packageDescriptionDrop(value: RValue | undefined): boolean {
+  if (value === undefined) return true;
+  if (!isAtomic(value) || value.length !== 1 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3413", "invalid 'drop' argument");
+  }
+  if (value.type === "character") {
+    const parsed = parseRLogical(value.values[0] ?? "");
+    if (parsed === undefined) throw new RTypeMismatchError("NRT3413", "invalid 'drop' argument");
+    return parsed;
+  }
+  return value.type === "complex"
+    ? (value.real[0] ?? 0) !== 0 || (value.imaginary[0] ?? 0) !== 0
+    : (value.values[0] ?? 0) !== 0;
+}
+
+function packageDescriptionEncoding(value: RValue | undefined): void {
+  if (value === undefined) return;
+  if ((value.type !== "character" && value.type !== "logical") || value.length !== 1) {
+    throw new RTypeMismatchError("NRT3413", "invalid 'encoding' argument");
+  }
+  if (isMissing(value, 0)) return;
+  if (value.type !== "character") {
+    throw new RTypeMismatchError("NRT3413", "invalid 'encoding' argument");
+  }
+  const encoding = (value.values[0] ?? "").toLowerCase();
+  if (encoding !== "" && !/^utf-?8$/u.test(encoding) && !/^latin-?1$/u.test(encoding)) {
+    throw new RUnsupportedFeatureError(
+      "NRU6197",
+      `packageDescription() encoding '${value.values[0] ?? ""}' is not supported.`,
+    );
+  }
 }
 
 function compareVersionParts(

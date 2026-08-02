@@ -82,19 +82,21 @@ console.log(await r.eval("round(filtered_flow(1:6), 6)"));
 // [1, 2.8, 5.24, 8.192, 11.5536, 15.24288]
 console.log(await r.eval('readLines(system.file("DESCRIPTION", package = "demo"), n = 1)'));
 // "Package: demo"
+console.log(await r.eval('utils::packageDescription("demo", fields = "Version")'));
+// "0.1.0"
 ```
 
 The loader supports isolated namespaces, dependency/import loading and version checks, package
-metadata/source/resources through virtual `system.file()` paths, bounded `readLines()`, and
-read-only `file()` connections, input `textConnection()` plus `source()` into selected environments,
-package `data/*.R`/text/`.rda` loading through `data()`, and `R/sysdata.rda` namespace
-initialization, installed vignette discovery through `vignette()`, plus exports, `pkg::name`,
-`pkg:::name`, S3 registrations, `.onLoad()`, `.onAttach()`, `library()`, `require()`, and
-`requireNamespace()` in inline and Worker execution. Arbitrary pure-R source packages can enter this
-pipeline, but that is not a claim that every package already executes: all dependencies, data
-formats, namespace directives, and R features it uses must also be supported. Unchanged,
-digest-pinned `pkgconfig 2.0.3`, `generics 0.1.4`, and `withr 3.0.3` source packages now provide
-end-to-end external proofs: package resources, package-owned S3 dispatch, and generated
+metadata/source/resources through virtual `system.file()` paths, classed `packageDescription()`
+queries, bounded `readLines()`, and read-only `file()` connections, input `textConnection()` plus
+`source()` into selected environments, package `data/*.R`/text/`.rda` loading through `data()`, and
+`R/sysdata.rda` namespace initialization, installed vignette discovery through `vignette()`, plus
+exports, `pkg::name`, `pkg:::name`, S3 registrations, `.onLoad()`, `.onAttach()`, `library()`,
+`require()`, and `requireNamespace()` in inline and Worker execution. Arbitrary pure-R source
+packages can enter this pipeline, but that is not a claim that every package already executes: all
+dependencies, data formats, namespace directives, and R features it uses must also be supported.
+Unchanged, digest-pinned `pkgconfig 2.0.3`, `generics 0.1.4`, and `withr 3.0.3` source packages now
+provide end-to-end external proofs: package resources, package-owned S3 dispatch, and generated
 state-restoring wrappers all execute without patching the packages. See the
 [complete bundle example](examples/pure-r-package.ts) and
 [package-loading contract](docs/pure-r-packages.md).
@@ -186,7 +188,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 611 registered functions, including resettable
+an initial condition/handler slice. It exposes 612 registered functions, including resettable
 session options, isolated session environment variables, deterministic non-interactive host-mode
 detection, browser-owned `gc()` memory censuses, an S3-first `graphics::lines()` path over the
 existing Worker/Canvas journal, usage-ranked numeric and character time-interval construction

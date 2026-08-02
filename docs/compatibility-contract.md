@@ -2013,6 +2013,16 @@ parser. Explicit unsupported boundaries include host library discovery, non-`NUL
 locations, the complete numeric-version indexing, replacement, summary, ordering, data-frame, and S3
 method surface, and any inference that version visibility proves package execution compatibility.
 
+Usage-ranked
+`utils::packageDescription(pkg, lib.loc = NULL, fields = NULL, drop = TRUE, encoding = "")` reads
+validated bundle metadata without loading or attaching the package. Differential evidence covers
+bounded core Package/Version/Priority fields, selected/full named lists, missing fields, scalar
+dropping, class and `fields` attributes, exact formals/defaults, and missing-package warnings.
+Source-only fixture and Worker tests reproduce cli's measured `unclass()`/field access and virtual
+`file` lookup; unchanged `pkgconfig 2.0.3` supplies public artifact evidence. Full GNU core
+DESCRIPTION prose, malformed installed directories, host-library search, arbitrary iconv codecs,
+`print.packageDescription`, citation/date utilities, and writable metadata are not claimed.
+
 The Node-only `@nativr/package-tools` build path accepts standard source directories and `.tar.gz`
 archives, or resolves required `Depends`/`Imports` from a CRAN-like `PACKAGES` index. It enforces
 archive/file/byte/package limits, rejects links, native/JVM code, install hooks, `LinkingTo`,

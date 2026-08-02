@@ -242,6 +242,15 @@ export interface BuiltinInvocation {
     libraryPaths?: readonly string[],
   ): Promise<{ readonly name: string; readonly version: string }>;
   installedPackageVersion(name: string, libraryPaths?: readonly string[]): string | undefined;
+  installedPackageDescription(
+    name: string,
+    libraryPaths?: readonly string[],
+  ):
+    | {
+        readonly fields: readonly { readonly name: string; readonly value: string }[];
+        readonly file: string;
+      }
+    | undefined;
   installedPackageNames(libraryPaths?: readonly string[]): readonly string[];
   isNamespaceLoaded(name: string): boolean;
   loadedNamespaces(): readonly string[];

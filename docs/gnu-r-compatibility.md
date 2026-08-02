@@ -740,6 +740,17 @@ Worker Playground tests execute the same owned implementation without package-sp
 Data-frame coercion, complex filters, irregular-series methods, and native algorithm identity remain
 incomplete.
 
+The package-description increment raises current name overlap to 596 of 2,522. Measured rank 245
+`utils::packageDescription` is cli's one full installed-package metadata call at 1.9%
+download-weighted reach. GNU R 4.6 black-box evidence covers selected fields, absent fields,
+one-field dropping, named classed lists, `fields` and file-shape semantics, exact formals/defaults,
+and missing-package warnings. NativR retains validated source-bundle DESCRIPTION metadata in its
+immutable catalog, exposes virtual installation paths, and reads it without namespace loading. A
+source-only fixture mirrors cli's `unclass()` access, unchanged `pkgconfig 2.0.3` proves a public
+artifact, and the default Worker Playground executes the same path. Host libraries, malformed
+installed trees, complete core-package prose, arbitrary codecs, and description print/citation/date
+methods remain incomplete.
+
 ## Completion evidence
 
 The objective is complete only when:

@@ -623,3 +623,9 @@ owned double-vector and regular-time-series representations. Convolution and rec
 the same implementation across direct, pure-R package, and Worker calls without a dependency,
 protocol event, host adapter, or package-specific translation. The measured Worker is 371.1 KiB
 gzip, so the ceiling rises narrowly to 372 KiB; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.235 adds usage-ranked `utils::packageDescription` by retaining the already parsed
+DESCRIPTION field table in each immutable package definition and projecting it into ordinary owned
+lists on demand. It adds no dependency, protocol event, host adapter, filesystem scan, namespace
+load, or package-specific translation. The measured Worker is 371.8 KiB gzip within the existing 372
+KiB ceiling; client and parser-Wasm budgets remain unchanged.
