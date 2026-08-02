@@ -718,7 +718,7 @@ Date: 2026-08-02
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 12 files and 429 tests, with three explicitly skipped tests.
+- Vitest currently passes 13 files and 431 tests, with three explicitly skipped tests.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
 - Checked-in conformance passes 783/783 cases. The optional black-box R oracle passes all 744
