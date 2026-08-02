@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 573,
-    "overlappingNames": 558,
-    "missingReferenceNames": 1964,
+    "nativrRegisteredNames": 574,
+    "overlappingNames": 559,
+    "missingReferenceNames": 1963,
     "nativrExtensionNames": 15,
-    "nameCoverage": 0.221253
+    "nameCoverage": 0.221649
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 411, "nameCoverage": 0.300658 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 412, "nameCoverage": 0.30139 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 74, "nameCoverage": 0.159483 },
     { "package": "methods", "callableNames": 209, "overlappingNames": 9, "nameCoverage": 0.043062 },
     { "package": "utils", "callableNames": 262, "overlappingNames": 22, "nameCoverage": 0.083969 },
@@ -109,6 +109,7 @@
     "as.character.hexmode",
     "as.complex",
     "as.data.frame",
+    "as.difftime",
     "as.double",
     "as.environment",
     "as.expression",
@@ -1018,7 +1019,6 @@
     "as.data.frame.ts",
     "as.data.frame.vector",
     "as.dendrogram",
-    "as.difftime",
     "as.dist",
     "as.double.POSIXlt",
     "as.double.difftime",

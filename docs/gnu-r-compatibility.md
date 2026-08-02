@@ -15,10 +15,10 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           573 |
-| Overlapping callable names        |           558 |
-| Missing GNU R callable names      |         1,964 |
-| Name overlap                      |       22.125% |
+| NativR registered names           |           574 |
+| Overlapping callable names        |           559 |
+| Missing GNU R callable names      |         1,963 |
+| Name overlap                      |       22.165% |
 
 Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
 cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
@@ -570,6 +570,16 @@ typed opt-in handler, captured lines, stderr, statuses, warnings, timeouts, cont
 The measured calls themselves request native compilation, Pandoc, or `diff`; NativR therefore does
 not claim that those tools, a shell, executable discovery, environment inheritance, signals, or
 process cancellation exist. Without a handler, execution fails closed.
+
+The time-interval increment adds usage-ranked `base::as.difftime`, raising current name overlap to
+559 of 2,522. Rank 177 represents two documented calls across vctrs and scales, or 3.3%
+download-weighted reach. GNU R 4.6 black-box evidence covers exact formals, numeric and recycled
+character formats, automatic and explicit seconds/minutes/hours/days/weeks, names, missing values,
+attributes, and input errors. The adjacent `difftime` path now selects automatic units, accepts
+partial unit names, preserves names and attributes, and reports fractional recycling. Deterministic
+24-hour C-locale parsing is browser-owned; arbitrary locale-specific `%X`, named-zone date parsing,
+POSIXlt conversion, leap-second databases, and the complete difftime method/arithmetic family remain
+incomplete.
 
 ## Completion evidence
 

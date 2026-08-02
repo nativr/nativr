@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.215.0",
+  "languageSubsetVersion": "0.216.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -492,6 +492,7 @@
         { "name": "ave", "compatibility": "behavioral" },
         { "name": "aggregate", "compatibility": "behavioral" },
         { "name": "as.Date", "compatibility": "numeric" },
+        { "name": "as.difftime", "compatibility": "numeric" },
         { "name": "as.POSIXct", "compatibility": "numeric" },
         { "name": "as.POSIXlt", "compatibility": "behavioral" },
         { "name": "weekdays", "compatibility": "behavioral" },

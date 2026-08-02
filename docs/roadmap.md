@@ -567,6 +567,13 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      bridge. The default remains fail-closed, the Playground allows only one virtual echo command,
      and shell parsing, executable discovery, native compilation, environment inheritance, signals,
      and real process cancellation remain host/platform work.
+134. Usage-ranked time intervals: rank-177 `base::as.difftime` now runs the two measured vctrs and
+     scales calls through numeric or recycled character interval construction with exact formals,
+     automatic/explicit units, names, missing values, and class/unit attributes. The connected
+     `difftime` constructor now adds automatic seconds/minutes/hours/days, explicit weeks, partial
+     unit names, result names, and fractional-recycling warnings. Locale-specific `%X`, named-zone
+     date parsing, POSIXlt conversion, leap-second databases, and the complete difftime method and
+     arithmetic family remain date-time compatibility depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

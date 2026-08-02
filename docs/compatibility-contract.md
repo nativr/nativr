@@ -1570,9 +1570,15 @@ POSIXlt-specific `length`/`names` behavior and zero-based month/year day fields.
 the documented UTC parsing subset. `strftime` recycles values and formats, preserves input names,
 converts through custom `as.POSIXlt` methods, distinguishes missing from non-finite seconds, and
 formats bounded calendar, clock, week, epoch, timezone, and fractional-second tokens in
-deterministic C/UTC or C/GMT form. Named time zones, daylight-saving databases, leap-second tables,
-locale parsing/formatting, alternate digits/eras, ISO week-year tokens, and unbounded output are
-outside the current subset. `Sys.Date` and `Sys.time` deliberately expose the host clock.
+deterministic C/UTC or C/GMT form. `as.difftime` accepts plain numeric intervals with explicit units
+or character intervals with recycled 24-hour formats, selecting the documented automatic unit or
+converting to explicit seconds, minutes, hours, days, or weeks while retaining names and missing
+values. `difftime` now shares those units, automatic selection, partial unit matching, class/unit
+attributes, names, and vector recycling warnings for Date, POSIXct, and numeric epoch values. Named
+time zones for date-bearing character intervals, POSIXlt conversion, daylight-saving databases,
+leap-second tables, locale-specific `%X` parsing/formatting, alternate digits/eras, ISO week-year
+tokens, the complete difftime arithmetic/method family, and unbounded output are outside the current
+subset. `Sys.Date` and `Sys.time` deliberately expose the host clock.
 
 `weekdays` has differential coverage for the corresponding data.table IDate grouping-label calls,
 explicit Date inheritance, custom S3 forwarding, Date/POSIXct/POSIXlt and direct-method inputs,

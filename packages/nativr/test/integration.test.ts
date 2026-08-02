@@ -16,7 +16,7 @@ NeedsCompilation: no`,
   namespace: `
 importFrom(stats, median)
 importFrom(utils, packageName)
-export(square, centered, new_score, describe, package_state, package_name)
+export(square, centered, duration, new_score, describe, package_state, package_name)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -36,6 +36,7 @@ describe <- function(x, ...) UseMethod("describe")
       source: `
 square <- function(x) x ^ 2
 centered <- function(x) x - median(x)
+duration <- function(x, units = "secs") as.difftime(x, units = units)
 new_score <- function(x) structure(x, class = c("score", "numeric"))
 describe.score <- function(x, ...) paste0(.package_state, ":", sum(x))
 plot.score <- function(x, ..., marker = "package-plot") c(marker, sum(x), list(...)$extra)
@@ -2304,6 +2305,11 @@ describe("complete inline source-to-result vertical slice", () => {
       ),
     ).resolves.toEqual([true, true, false]);
     await expect(runtime.eval("nativrfixture::centered(c(1, 4, 10))")).resolves.toEqual([-3, 0, 6]);
+    await expect(
+      runtime.eval(
+        "x <- nativrfixture::duration(2, 'hours'); c(unclass(x), attr(x, 'units'), class(x))",
+      ),
+    ).resolves.toEqual(["2", "hours", "difftime"]);
     await expect(runtime.eval("nativrfixture::package_name()")).resolves.toBe("nativrfixture");
     await expect(runtime.eval("utils::packageName()")).resolves.toBe(null);
     await expect(runtime.eval("nativrfixture:::hidden_helper(1)")).resolves.toBe(101);
@@ -2337,6 +2343,7 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(runtime.eval('sort(getNamespaceExports("nativrfixture"))')).resolves.toEqual([
       "centered",
       "describe",
+      "duration",
       "new_score",
       "package_name",
       "package_state",
@@ -8728,7 +8735,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.215.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.216.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -12235,6 +12242,74 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(
       runtime.eval('as.POSIXct("2024-01-01", tz = "America/New_York")'),
     ).rejects.toMatchObject({ code: "NRU6113" });
+    await runtime.dispose();
+  });
+
+  it("constructs documented difftime units from numeric and character intervals", async () => {
+    const runtime = await session();
+    await expect(runtime.eval("names(formals(as.difftime))")).resolves.toEqual([
+      "tim",
+      "format",
+      "units",
+      "tz",
+    ]);
+    await expect(runtime.eval("names(formals(difftime))")).resolves.toEqual([
+      "time1",
+      "time2",
+      "tz",
+      "units",
+    ]);
+
+    await runtime.eval("x <- as.difftime(c(a = 0L, b = 30L), units = 'mins')");
+    await expect(runtime.eval("unclass(x)")).resolves.toEqual([0, 30]);
+    await expect(runtime.eval("class(x)")).resolves.toBe("difftime");
+    await expect(runtime.eval("attr(x, 'units')")).resolves.toBe("mins");
+    await expect(runtime.eval("names(x)")).resolves.toEqual(["a", "b"]);
+
+    await runtime.eval("parsed <- as.difftime(c('01:30:00', '00:01:30'), units = 'mins')");
+    await expect(runtime.eval("unclass(parsed)")).resolves.toEqual([90, 1.5]);
+    await expect(runtime.eval("attr(parsed, 'units')")).resolves.toBe("mins");
+    await expect(
+      runtime.eval(
+        "unclass(as.difftime(c('03:20', '04:05:06'), format = c('%H:%M', '%H:%M:%S'), units = 'secs'))",
+      ),
+    ).resolves.toEqual([12_000, 14_706]);
+    await runtime.eval("automatic <- as.difftime(c('00:01:00', '01:00:00'))");
+    await expect(runtime.eval("unclass(automatic)")).resolves.toEqual([1, 60]);
+    await expect(runtime.eval("attr(automatic, 'units')")).resolves.toBe("mins");
+
+    await runtime.eval(
+      "delta <- difftime(as.POSIXct(c('1970-01-01 00:01:00', '1970-01-01 01:00:00'), tz = 'UTC'), as.POSIXct('1970-01-01 00:00:00', tz = 'UTC'))",
+    );
+    await expect(runtime.eval("unclass(delta)")).resolves.toEqual([1, 60]);
+    await expect(runtime.eval("attr(delta, 'units')")).resolves.toBe("mins");
+    await runtime.eval(
+      "weeks <- difftime(as.Date('1970-01-15'), as.Date('1970-01-01'), units = 'week')",
+    );
+    await expect(runtime.eval("unclass(weeks)")).resolves.toBe(2);
+    await expect(runtime.eval("attr(weeks, 'units')")).resolves.toBe("weeks");
+
+    const recycled = await runtime.evalDetailed(
+      "difftime(as.Date(c('1970-01-03', '1970-01-04', '1970-01-05')), as.Date(c('1970-01-01', '1970-01-02')), units = 'days')",
+    );
+    expect(recycled.warnings).toEqual([
+      {
+        code: "NRW1001",
+        message: "Longer object length is not a multiple of shorter object length.",
+      },
+    ]);
+    await expect(runtime.eval("as.difftime(1)")).rejects.toMatchObject({ code: "NRE2252" });
+    await expect(runtime.eval("as.difftime(TRUE, units = 'secs')")).rejects.toMatchObject({
+      code: "NRT3350",
+    });
+    await expect(runtime.eval("as.difftime(1, units = 'sec')")).rejects.toMatchObject({
+      code: "NRE2252",
+    });
+    await expect(
+      runtime.eval(
+        "as.difftime('2020-01-01 01:00:00', format = '%Y-%m-%d %H:%M:%S', tz = 'America/New_York')",
+      ),
+    ).rejects.toMatchObject({ code: "NRU6195" });
     await runtime.dispose();
   });
 

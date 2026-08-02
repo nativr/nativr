@@ -418,6 +418,27 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "as-difftime-numeric-and-character-intervals",
+    "code": "numeric <- as.difftime(c(1, 2), units = \"weeks\")\nclock <- as.difftime(c(\"01:30:00\", \"00:01:30\"), units = \"mins\")\nc(unclass(numeric), unclass(clock))",
+    "expected": [1, 2, 90, 1.5],
+    "expectedCompatibility": "numeric",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "as-difftime-auto-units-and-formals",
+    "code": "x <- as.difftime(c(\"00:01:00\", \"01:00:00\"))\nc(unclass(x), attr(x, \"units\"), names(formals(as.difftime)))",
+    "expected": ["1", "60", "mins", "tim", "format", "units", "tz"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "difftime-auto-weeks-and-formals",
+    "code": "d <- difftime(as.POSIXct(c(\"1970-01-01 00:01:00\", \"1970-01-01 01:00:00\"), tz = \"UTC\"), as.POSIXct(\"1970-01-01 00:00:00\", tz = \"UTC\"))\nw <- difftime(as.Date(\"1970-01-15\"), as.Date(\"1970-01-01\"), units = \"week\")\nc(unclass(d), attr(d, \"units\"), unclass(w), attr(w, \"units\"), names(formals(difftime)))",
+    "expected": ["1", "60", "mins", "2", "weeks", "time1", "time2", "tz", "units"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "stable-sort",
     "code": "sort(c(3, NA, 1, 2))",
     "expected": [1, 2, 3],

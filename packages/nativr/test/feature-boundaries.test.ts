@@ -226,8 +226,8 @@ describe("measured feature boundary coverage", () => {
     });
     await expect(runtime.eval('strptime("1970", "%q")')).rejects.toMatchObject({ code: "NRU6121" });
     await expect(
-      runtime.eval('difftime(Sys.time(), Sys.time(), units = "hours")'),
-    ).rejects.toMatchObject({ code: "NRU6114" });
+      runtime.eval('attr(difftime(Sys.time(), Sys.time(), units = "hours"), "units")'),
+    ).resolves.toBe("hours");
     await expect(runtime.eval("Sys.Date(1)")).rejects.toMatchObject({ code: "NRE2101" });
     await expect(runtime.eval("which(1:3)")).rejects.toMatchObject({ code: "NRT3143" });
     await expect(runtime.eval('rank(1:3, ties.method = "bad")')).rejects.toMatchObject({

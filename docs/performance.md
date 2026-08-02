@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 351 KiB gzip;
+- Worker JavaScript: 353 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -529,3 +529,8 @@ execution invokes only an application-supplied handler; Worker execution adds on
 request/result exchange whose response bypasses the serialized evaluation queue. No process,
 filesystem, network, or shell dependency enters the browser bundle. The measured Worker is 350.1 KiB
 gzip, so the ceiling rises narrowly to 351 KiB; client and parser-Wasm budgets remain unchanged.
+
+The usage-ranked time-interval increment adds one shared constructor, deterministic character-format
+parser, automatic unit selection, and expanded `difftime` recycling/metadata behavior without a
+timezone database or host dependency. The measured Worker is 351.8 KiB gzip, so the ceiling rises
+narrowly to 353 KiB; client and parser-Wasm budgets remain unchanged.

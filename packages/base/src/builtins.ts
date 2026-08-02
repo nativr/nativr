@@ -2108,6 +2108,27 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("ave", ["x", "...", "FUN"], "behavioral", builtinAve),
   defineBuiltin("aggregate", ["x", "by", "FUN", "..."], "behavioral", builtinAggregate),
   defineBuiltin("as.Date", ["x", "origin"], "numeric", builtinAsDate),
+  withBuiltinFormals(
+    withUnsupportedBehavior(
+      defineBuiltin("as.difftime", ["tim", "format", "units", "tz"], "numeric", builtinAsDifftime),
+      [
+        "locale-specific %X variants beyond deterministic 24-hour parsing",
+        "non-UTC date-bearing character formats",
+      ],
+    ),
+    [
+      { name: "tim" },
+      {
+        name: "format",
+        defaultValue: { kind: "StringLiteral", value: "%X", span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "units",
+        defaultValue: { kind: "StringLiteral", value: "auto", span: SYNTHETIC_SPAN },
+      },
+      { name: "tz", defaultValue: { kind: "StringLiteral", value: "UTC", span: SYNTHETIC_SPAN } },
+    ],
+  ),
   defineBuiltin("as.POSIXct", ["x", "tz", "origin"], "numeric", builtinAsPosix),
   defineBuiltin("as.POSIXlt", ["x", "tz", "..."], "behavioral", builtinAsPosixLt),
   defineBuiltin("weekdays", ["x", "abbreviate"], "behavioral", builtinWeekdays),
@@ -2127,7 +2148,29 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   defineBuiltin("strptime", ["x", "format", "tz"], "numeric", builtinStrptime),
   defineBuiltin("strftime", ["x", "format", "tz", "usetz", "..."], "behavioral", builtinStrftime),
-  defineBuiltin("difftime", ["time1", "time2", "units"], "numeric", builtinDifftime),
+  withBuiltinFormals(
+    withUnsupportedBehavior(
+      defineBuiltin("difftime", ["time1", "time2", "tz", "units"], "numeric", builtinDifftime),
+      ["POSIXlt inputs and civil-time-zone conversion beyond epoch-valued inputs"],
+    ),
+    [
+      { name: "time1" },
+      { name: "time2" },
+      { name: "tz" },
+      {
+        name: "units",
+        defaultValue: {
+          kind: "CallExpression",
+          callee: { kind: "Identifier", name: "c", span: SYNTHETIC_SPAN },
+          arguments: ["auto", "secs", "mins", "hours", "days", "weeks"].map((value) => ({
+            value: { kind: "StringLiteral", value, span: SYNTHETIC_SPAN },
+            span: SYNTHETIC_SPAN,
+          })),
+          span: SYNTHETIC_SPAN,
+        },
+      },
+    ],
+  ),
   defineBuiltin("Sys.Date", [], "shape", builtinSystemDate),
   defineBuiltin("Sys.time", [], "shape", builtinSystemTime),
   defineBuiltin("sort", ["x", "decreasing", "na.last"], "behavioral", builtinSort),
@@ -34906,25 +34949,367 @@ function strftimeUtf8Length(value: string): number {
   return length;
 }
 
+const DIFFTIME_UNITS = Object.freeze(["auto", "secs", "mins", "hours", "days", "weeks"] as const);
+
+type DifftimeUnit = (typeof DIFFTIME_UNITS)[number];
+type ConcreteDifftimeUnit = Exclude<DifftimeUnit, "auto">;
+
+async function builtinAsDifftime(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = matchLazyArguments(invocation, ["tim", "format", "units", "tz"]);
+  const inputArgument = matched.get("tim");
+  if (inputArgument === undefined || inputArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'tim' is missing in as.difftime().");
+  }
+  const input = await invocation.force(inputArgument.promise);
+  if (isVector(input) && vectorClasses(input)?.includes("difftime") === true) return input;
+
+  const units = await forceAsDifftimeUnit(matched.get("units"), invocation);
+  if (input.type === "integer" || input.type === "double") {
+    const classes = vectorClasses(input) ?? [];
+    if (
+      classes.some((className) =>
+        ["Date", "POSIXct", "POSIXlt", "POSIXt", "factor", "ordered"].includes(className),
+      )
+    ) {
+      throw new RTypeMismatchError("NRT3350", "'tim' is not character or numeric");
+    }
+    if (units === "auto") {
+      throw new REvaluationError("NRE2252", "need explicit units for numeric conversion");
+    }
+    invocation.context.allocate(input.length);
+    return difftimeValue(Float64Array.from(input.values), input.missing, units, vectorNames(input));
+  }
+  if (input.type !== "character") {
+    throw new RTypeMismatchError("NRT3350", "'tim' is not character or numeric");
+  }
+
+  const formatArgument = matched.get("format");
+  const formats =
+    formatArgument === undefined
+      ? characterVector(["%X"])
+      : await invocation.force(formatArgument.promise);
+  if (formats.type !== "character" || formats.length === 0) {
+    throw new RTypeMismatchError("NRT3350", "invalid 'format' argument");
+  }
+  const timezoneArgument = matched.get("tz");
+  const timezone =
+    timezoneArgument === undefined
+      ? "UTC"
+      : characterScalar(await invocation.force(timezoneArgument.promise), "tz");
+  const seconds = new Float64Array(input.length);
+  const missing = new Uint8Array(input.length);
+  for (let index = 0; index < input.length; index += 1) {
+    invocation.context.checkpoint();
+    const formatIndex = index % formats.length;
+    if (isMissing(input, index) || isMissing(formats, formatIndex)) {
+      missing[index] = 1;
+      continue;
+    }
+    const parsed = parseDifftimeCharacter(
+      input.values[index] ?? "",
+      formats.values[formatIndex] ?? "",
+      timezone,
+    );
+    if (parsed === undefined) missing[index] = 1;
+    else seconds[index] = parsed;
+  }
+  const outputUnits = units === "auto" ? automaticDifftimeUnit(seconds, missing) : units;
+  const scale = difftimeUnitSeconds(outputUnits);
+  const values = Float64Array.from(seconds, (value) => value / scale);
+  invocation.context.allocate(values.length);
+  return difftimeValue(values, compactMask(missing), outputUnits, vectorNames(input));
+}
+
+async function forceAsDifftimeUnit(
+  argument: BuiltinCallArgument | undefined,
+  invocation: BuiltinInvocation,
+): Promise<DifftimeUnit> {
+  const value =
+    argument === undefined ? characterVector(["auto"]) : await invocation.force(argument.promise);
+  if (value.type !== "character" || value.length !== 1 || isMissing(value, 0)) {
+    throw new REvaluationError("NRE2252", "invalid units specified");
+  }
+  const supplied = value.values[0] ?? "";
+  if (DIFFTIME_UNITS.includes(supplied as DifftimeUnit)) return supplied as DifftimeUnit;
+  throw new REvaluationError("NRE2252", "invalid units specified");
+}
+
+interface DifftimeFormatCapture {
+  readonly token: "Y" | "y" | "m" | "b" | "B" | "d" | "e" | "H" | "I" | "M" | "S" | "p";
+}
+
+function parseDifftimeCharacter(
+  value: string,
+  format: string,
+  timezone: string,
+): number | undefined {
+  const captures: DifftimeFormatCapture[] = [];
+  let source = "";
+  let hasDateComponent = false;
+
+  const appendToken = (token: string): void => {
+    switch (token) {
+      case "X":
+      case "T":
+        appendToken("H");
+        source += ":";
+        appendToken("M");
+        source += ":";
+        appendToken("S");
+        return;
+      case "R":
+        appendToken("H");
+        source += ":";
+        appendToken("M");
+        return;
+      case "Y":
+        captures.push({ token: "Y" });
+        source += "(\\d{4})";
+        hasDateComponent = true;
+        return;
+      case "y":
+        captures.push({ token: "y" });
+        source += "(\\d{2})";
+        hasDateComponent = true;
+        return;
+      case "m":
+        captures.push({ token: "m" });
+        source += "(\\d{1,2})";
+        hasDateComponent = true;
+        return;
+      case "b":
+        captures.push({ token: "b" });
+        source += `(${C_MONTH_ABBREVIATIONS.join("|")})`;
+        hasDateComponent = true;
+        return;
+      case "B":
+        captures.push({ token: "B" });
+        source += `(${C_MONTH_NAMES.join("|")})`;
+        hasDateComponent = true;
+        return;
+      case "d":
+        captures.push({ token: "d" });
+        source += "(\\d{1,2})";
+        hasDateComponent = true;
+        return;
+      case "e":
+        captures.push({ token: "e" });
+        source += "(\\s?\\d{1,2})";
+        hasDateComponent = true;
+        return;
+      case "H":
+        captures.push({ token: "H" });
+        source += "(\\d{1,2})";
+        return;
+      case "I":
+        captures.push({ token: "I" });
+        source += "(\\d{1,2})";
+        return;
+      case "M":
+        captures.push({ token: "M" });
+        source += "(\\d{1,2})";
+        return;
+      case "S":
+        captures.push({ token: "S" });
+        source += "(\\d{1,2}(?:\\.\\d+)?)";
+        return;
+      case "p":
+        captures.push({ token: "p" });
+        source += "([AP]M)";
+        return;
+      default:
+        throw new RUnsupportedFeatureError(
+          "NRU6195",
+          `as.difftime() format token '%${token}' is not supported.`,
+        );
+    }
+  };
+
+  for (let index = 0; index < format.length; index += 1) {
+    const character = format[index] ?? "";
+    if (character === "%") {
+      index += 1;
+      let token = format[index] ?? "";
+      if (token === "%") {
+        source += "%";
+        continue;
+      }
+      if (token === "O" && format[index + 1] === "S") {
+        token = "S";
+        index += 1;
+        while (/\d/u.test(format[index + 1] ?? "")) index += 1;
+      }
+      appendToken(token);
+      continue;
+    }
+    if (/\s/u.test(character)) {
+      source += "\\s+";
+      while (/\s/u.test(format[index + 1] ?? "")) index += 1;
+    } else {
+      source += character.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+    }
+  }
+
+  if (hasDateComponent && timezone !== "UTC" && timezone !== "GMT") {
+    throw new RUnsupportedFeatureError(
+      "NRU6195",
+      "as.difftime() date-bearing formats currently support UTC/GMT only.",
+    );
+  }
+  const match = new RegExp(`^\\s*${source}\\s*$`, "iu").exec(value);
+  if (match === null) return undefined;
+
+  const now = new Date();
+  let year = now.getUTCFullYear();
+  let month = now.getUTCMonth() + 1;
+  let day = now.getUTCDate();
+  let hour = 0;
+  let minute = 0;
+  let second = 0;
+  let twelveHour: number | undefined;
+  let meridiem: string | undefined;
+  captures.forEach((capture, index) => {
+    const raw = match[index + 1] ?? "";
+    switch (capture.token) {
+      case "Y":
+        year = Number(raw);
+        break;
+      case "y": {
+        const shortYear = Number(raw);
+        year = shortYear <= 68 ? 2_000 + shortYear : 1_900 + shortYear;
+        break;
+      }
+      case "m":
+        month = Number(raw);
+        break;
+      case "b":
+        month =
+          C_MONTH_ABBREVIATIONS.findIndex(
+            (candidate) => candidate.toLowerCase() === raw.toLowerCase(),
+          ) + 1;
+        break;
+      case "B":
+        month =
+          C_MONTH_NAMES.findIndex((candidate) => candidate.toLowerCase() === raw.toLowerCase()) + 1;
+        break;
+      case "d":
+      case "e":
+        day = Number(raw.trim());
+        break;
+      case "H":
+        hour = Number(raw);
+        break;
+      case "I":
+        twelveHour = Number(raw);
+        break;
+      case "M":
+        minute = Number(raw);
+        break;
+      case "S":
+        second = Number(raw);
+        break;
+      case "p":
+        meridiem = raw.toUpperCase();
+        break;
+    }
+  });
+  if (twelveHour !== undefined) {
+    if (twelveHour < 1 || twelveHour > 12) return undefined;
+    hour = (twelveHour % 12) + (meridiem === "PM" ? 12 : 0);
+  }
+  if (
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > 31 ||
+    hour < 0 ||
+    hour > 24 ||
+    minute < 0 ||
+    minute > 59 ||
+    second < 0 ||
+    second > 60 ||
+    (hour === 24 && (minute !== 0 || second > 0))
+  ) {
+    return undefined;
+  }
+  if (!hasDateComponent) return hour * 3_600 + minute * 60 + second;
+
+  const dayCarry = hour === 24 ? 86_400 : 0;
+  const leapSecond = second === 60 ? 1 : 0;
+  const parsed = utcDateTimeSeconds(
+    year,
+    month,
+    day,
+    hour === 24 ? 0 : hour,
+    minute,
+    second === 60 ? 59 : second,
+  );
+  if (parsed === undefined) return undefined;
+  const today = utcDateTimeSeconds(
+    now.getUTCFullYear(),
+    now.getUTCMonth() + 1,
+    now.getUTCDate(),
+    0,
+    0,
+    0,
+  );
+  return today === undefined ? undefined : parsed + dayCarry + leapSecond - today;
+}
+
+function difftimeUnitSeconds(units: ConcreteDifftimeUnit): number {
+  switch (units) {
+    case "secs":
+      return 1;
+    case "mins":
+      return 60;
+    case "hours":
+      return 3_600;
+    case "days":
+      return 86_400;
+    case "weeks":
+      return 604_800;
+  }
+}
+
+function automaticDifftimeUnit(seconds: Float64Array, missing?: Uint8Array): ConcreteDifftimeUnit {
+  let minimum = Number.POSITIVE_INFINITY;
+  let observed = false;
+  for (let index = 0; index < seconds.length; index += 1) {
+    if (missing?.[index] === 1) continue;
+    const value = Math.abs(seconds[index] ?? 0);
+    if (Number.isNaN(value)) continue;
+    observed = true;
+    minimum = Math.min(minimum, value);
+  }
+  if (!observed || !Number.isFinite(minimum) || minimum < 60) return "secs";
+  if (minimum < 3_600) return "mins";
+  if (minimum < 86_400) return "hours";
+  return "days";
+}
+
+function difftimeValue(
+  values: Float64Array,
+  missing: Uint8Array | undefined,
+  units: ConcreteDifftimeUnit,
+  names?: readonly string[],
+): RDoubleVector {
+  let output = doubleVector(values, missing);
+  if (names !== undefined) output = withNames(output, names);
+  return withAttribute(withClasses(output, ["difftime"]), "units", characterVector([units]));
+}
+
 async function builtinDifftime(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = await matchExact(invocation, ["time1", "time2", "units"]);
+  const matched = await matchExact(invocation, ["time1", "time2", "tz", "units"]);
   const first = requireDateNumeric(required(matched, "time1", "difftime"), "time1");
   const second = requireDateNumeric(required(matched, "time2", "difftime"), "time2");
-  const units =
-    matched.get("units") === undefined
-      ? "secs"
-      : characterScalar(matched.get("units") as RValue, "units");
-  if (units !== "secs" && units !== "days") {
-    throw new RUnsupportedFeatureError("NRU6114", "difftime() supports 'secs' and 'days'.");
-  }
-  const length = Math.max(first.length, second.length);
-  if (first.length === 0 || second.length === 0) return withClasses(doubleVector([]), ["difftime"]);
-  invocation.context.allocate(length);
-  const values = new Float64Array(length);
+  const timezone = matched.get("tz");
+  if (timezone !== undefined) characterScalar(timezone, "tz");
+  const requestedUnits = difftimeUnitChoice(matched.get("units"));
+  const length = recycledLength(invocation.context, first.length, second.length);
+  const seconds = new Float64Array(length);
   const missing = new Uint8Array(length);
   const firstScale = vectorClasses(first)?.includes("Date") ? 86_400 : 1;
   const secondScale = vectorClasses(second)?.includes("Date") ? 86_400 : 1;
-  const outputScale = units === "days" ? 86_400 : 1;
   for (let index = 0; index < length; index += 1) {
     invocation.context.checkpoint();
     const firstIndex = index % first.length;
@@ -34932,13 +35317,65 @@ async function builtinDifftime(invocation: BuiltinInvocation): Promise<RValue> {
     if (isMissing(first, firstIndex) || isMissing(second, secondIndex)) {
       missing[index] = 1;
     } else {
-      values[index] =
-        ((first.values[firstIndex] ?? 0) * firstScale -
-          (second.values[secondIndex] ?? 0) * secondScale) /
-        outputScale;
+      seconds[index] =
+        (first.values[firstIndex] ?? 0) * firstScale -
+        (second.values[secondIndex] ?? 0) * secondScale;
     }
   }
-  return withClasses(doubleVector(values, compactMask(missing)), ["difftime"]);
+  const units =
+    requestedUnits === "auto"
+      ? automaticDifftimeUnit(seconds, compactMask(missing))
+      : requestedUnits;
+  const scale = difftimeUnitSeconds(units);
+  const values = Float64Array.from(seconds, (value) => value / scale);
+  const names = difftimeResultNames(first, second, length);
+  invocation.context.allocate(length);
+  return difftimeValue(values, compactMask(missing), units, names);
+}
+
+function difftimeUnitChoice(value: RValue | undefined): DifftimeUnit {
+  if (value === undefined) return "auto";
+  if (value.type !== "character" || value.length === 0 || isMissing(value, 0)) {
+    throw new REvaluationError(
+      "NRE2252",
+      `'arg' should be one of ${DIFFTIME_UNITS.map((unit) => JSON.stringify(unit)).join(", ")}`,
+    );
+  }
+  if (
+    value.length === DIFFTIME_UNITS.length &&
+    DIFFTIME_UNITS.every((unit, index) => !isMissing(value, index) && value.values[index] === unit)
+  ) {
+    return "auto";
+  }
+  if (value.length !== 1) {
+    throw new REvaluationError("NRE2252", "'arg' must be of length 1");
+  }
+  const supplied = value.values[0] ?? "";
+  const exact = DIFFTIME_UNITS.find((unit) => unit === supplied);
+  if (exact !== undefined) return exact;
+  const partial = DIFFTIME_UNITS.filter((unit) => unit.startsWith(supplied));
+  if (partial.length === 1 && partial[0] !== undefined) return partial[0];
+  throw new REvaluationError(
+    "NRE2252",
+    `'arg' should be one of ${DIFFTIME_UNITS.map((unit) => JSON.stringify(unit)).join(", ")}`,
+  );
+}
+
+function difftimeResultNames(
+  first: RDoubleVector | RIntegerVector,
+  second: RDoubleVector | RIntegerVector,
+  length: number,
+): readonly string[] | undefined {
+  const firstNames = vectorNames(first);
+  const secondNames = vectorNames(second);
+  const source =
+    first.length >= second.length && firstNames !== undefined
+      ? firstNames
+      : secondNames !== undefined
+        ? secondNames
+        : firstNames;
+  if (source === undefined || source.length !== length) return undefined;
+  return source;
 }
 
 function builtinSystemDate(invocation: BuiltinInvocation): RValue {

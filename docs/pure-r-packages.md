@@ -214,6 +214,15 @@ needs one, `createR({ systemCommand })` can approve that exact command and retur
 across inline or Worker execution. No handler means no process authority, and a successful package
 bundle still cannot claim that arbitrary external programs exist.
 
+Rank-177 `base::as.difftime()` removes the next shared seam for the two measured vctrs/scales calls.
+Numeric and character interval construction, automatic and explicit units, names, missing values,
+attributes, and the connected `difftime()` recycling/unit behavior live in `base`, so package source
+uses them without translation. The checked-in source-only fixture now exports an ordinary R
+`duration()` wrapper and executes it through namespace loading. This proves reuse of the runtime
+primitive, not compatibility for all of vctrs or scales; named-zone date parsing, arbitrary locale
+formats, POSIXlt conversion, native dependencies, and every other package call remain independent
+gates.
+
 Rank-166 `utils::browseURL()` supplies the same package-independent report/viewer seam for the
 measured xfun, htmltools, knitr, and httpuv calls. Unchanged package code can write HTML, SVG, PNG,
 or another asset to a session-local path and request that the embedding application present it. The
