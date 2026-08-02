@@ -11,12 +11,13 @@ const assets = {
 const pureRFixture: PureRPackageBundle = {
   description: `Package: nativrfixture
 Version: 0.1.0
-Imports: stats, utils
+Imports: methods, stats, utils
 NeedsCompilation: no`,
   namespace: `
+importFrom(methods, setClass, showClass)
 importFrom(stats, median)
 importFrom(utils, packageName)
-export(square, centered, duration, histogram_counts, new_score, describe, package_state, package_name, namespace_names)
+export(square, centered, duration, histogram_counts, class_summary, new_score, describe, package_state, package_name, namespace_names)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -29,6 +30,7 @@ S3method(lines, score)
 .onLoad <- function(libname, pkgname) .package_state <<- paste0("loaded:", pkgname)
 .onAttach <- function(libname, pkgname) .package_state <<- paste0("attached:", pkgname)
 describe <- function(x, ...) UseMethod("describe")
+setClass("NativRFixtureClass", representation(value = "integer", label = "character"))
 `,
     },
     {
@@ -38,6 +40,7 @@ square <- function(x) x ^ 2
 centered <- function(x) x - median(x)
 duration <- function(x, units = "secs") as.difftime(x, units = units)
 histogram_counts <- function(x, breaks = "Sturges") hist(x, breaks = breaks, plot = FALSE)$counts
+class_summary <- function() capture.output(showClass("NativRFixtureClass"))
 new_score <- function(x) structure(x, class = c("score", "numeric"))
 describe.score <- function(x, ...) paste0(.package_state, ":", sum(x))
 plot.score <- function(x, ..., marker = "package-plot") c(marker, sum(x), list(...)$extra)
@@ -2310,6 +2313,14 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(runtime.eval("nativrfixture::histogram_counts(1:10)")).resolves.toEqual([
       2, 2, 2, 2, 2,
     ]);
+    await expect(runtime.eval("nativrfixture::class_summary()")).resolves.toEqual([
+      'Class "NativRFixtureClass" [package "nativrfixture"]',
+      "",
+      "Slots:",
+      "                          ",
+      "Name:      value     label",
+      "Class:   integer character",
+    ]);
     await expect(
       runtime.eval(
         "x <- nativrfixture::duration(2, 'hours'); c(unclass(x), attr(x, 'units'), class(x))",
@@ -2357,6 +2368,7 @@ describe("complete inline source-to-result vertical slice", () => {
     ).resolves.toEqual(["package-lines", "6", "8", "TRUE"]);
     await expect(runtime.eval('sort(getNamespaceExports("nativrfixture"))')).resolves.toEqual([
       "centered",
+      "class_summary",
       "describe",
       "duration",
       "histogram_counts",
@@ -8915,7 +8927,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.218.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.219.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -10982,6 +10994,80 @@ describe("complete inline source-to-result vertical slice", () => {
     ] as const) {
       await expect(runtime.eval(code)).rejects.toMatchObject({ code: expectedCode });
     }
+    await runtime.dispose();
+  });
+
+  it("shows usage-ranked S4 class metadata with inherited slots and subclasses", async () => {
+    const runtime = await session();
+    const shown = await runtime.evalDetailed(`
+      setClass("ProbeShow", representation(x = "numeric", label = "character"))
+      setClass("ChildShow", contains = "ProbeShow", representation(flag = "logical"))
+      capture.output(methods::showClass("ChildShow"))
+    `);
+    expect(shown.value).toEqual([
+      'Class "ChildShow" [in ".GlobalEnv"]',
+      "",
+      "Slots:",
+      "                                    ",
+      "Name:       flag         x     label",
+      "Class:   logical   numeric character",
+      "",
+      'Extends: "ProbeShow"',
+    ]);
+    await expect(
+      runtime.eval(
+        'capture.output(methods::showClass("ProbeShow", propertiesAreCalled = "Fields"))',
+      ),
+    ).resolves.toEqual([
+      'Class "ProbeShow" [in ".GlobalEnv"]',
+      "",
+      "Fields:",
+      "                          ",
+      "Name:          x     label",
+      "Class:   numeric character",
+      "",
+      'Known Subclasses: "ChildShow"',
+    ]);
+    await expect(
+      runtime.eval(
+        'setClass("VirtualShow", contains = "VIRTUAL", representation(code = "integer")); capture.output(showClass("VirtualShow"))',
+      ),
+    ).resolves.toEqual([
+      'Virtual Class "VirtualShow" [in ".GlobalEnv"]',
+      "",
+      "Slots:",
+      "              ",
+      "Name:     code",
+      "Class: integer",
+    ]);
+    await expect(
+      runtime.eval(
+        'setClass("VirtualEmpty", contains = "VIRTUAL"); capture.output(showClass("VirtualEmpty"))',
+      ),
+    ).resolves.toEqual([
+      'Virtual Class "VirtualEmpty" [in ".GlobalEnv"]',
+      "",
+      'No Slots, prototype of class "S4"',
+    ]);
+    await expect(
+      runtime.eval(
+        'setClass("ParentViaRepresentation", representation(value = "numeric")); setClass("ChildViaRepresentation", representation("ParentViaRepresentation", label = "character")); capture.output(showClass("ChildViaRepresentation"))',
+      ),
+    ).resolves.toContain('Extends: "ParentViaRepresentation"');
+    const visibility = await runtime.evalDetailed('methods::showClass("ProbeShow")');
+    expect(visibility.value).toBeNull();
+    expect(visibility.visible).toBe(false);
+    await expect(runtime.eval('methods::showClass("NoSuchClass")')).rejects.toMatchObject({
+      code: "NRE2162",
+    });
+    await expect(runtime.eval("methods::showClass(1)")).rejects.toMatchObject({
+      code: "NRT3343",
+    });
+    await expect(runtime.eval("names(formals(methods::showClass))")).resolves.toEqual([
+      "Class",
+      "complete",
+      "propertiesAreCalled",
+    ]);
     await runtime.dispose();
   });
 

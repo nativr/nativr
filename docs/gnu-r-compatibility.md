@@ -15,8 +15,8 @@ callable kinds, and formal argument names. It never reads or serializes implemen
 | GNU R core namespaces inventoried |             7 |
 | Exported symbols                  |         2,736 |
 | Unique exported callable names    |         2,522 |
-| NativR registered names           |           582 |
-| Overlapping callable names        |           566 |
+| NativR registered names           |           583 |
+| Overlapping callable names        |           567 |
 | Missing GNU R callable names      |         1,956 |
 | Name overlap                      |       22.443% |
 
@@ -598,6 +598,15 @@ shape, visibility, S3 dispatch, default/numeric/algorithmic breaks, right/left e
 unequal-bin density, formals, matrices, and class counts. Browser bars reuse the owned polygon
 display list; exhaustive `pretty()` boundaries, log axes, line-density shading, and device-identical
 rendering remain incomplete.
+
+The class-introspection increment adds usage-ranked `methods::showClass`, raising current name
+overlap to 567 of 2,522. Rank 188 represents four documented calls across Rcpp and rstan, or 2.9%
+download-weighted reach. GNU R 4.6 black-box evidence covers exact formals, namespace/global
+ownership labels, direct and inherited slots, representation-declared parents, virtual classes,
+known subclasses, custom property labels, errors, output capture, and invisible return behavior. A
+source-only package fixture imports the same methods functions and declares/queries its class during
+normal namespace loading. Native Rcpp/rstan classes and the complete S4 metadata, validity,
+multiple-dispatch, cache, and console-wrapping domains remain incomplete.
 
 ## Completion evidence
 

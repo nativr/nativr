@@ -4930,6 +4930,61 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "show-class-inherited-slots-and-location",
+    "code": "setClass(\"ProbeShow\", representation(x = \"numeric\", label = \"character\"))\nsetClass(\"ChildShow\", contains = \"ProbeShow\", representation(flag = \"logical\"))\ncapture.output(methods::showClass(\"ChildShow\"))",
+    "expected": [
+      "Class \"ChildShow\" [in \".GlobalEnv\"]",
+      "",
+      "Slots:",
+      "                                    ",
+      "Name:       flag         x     label",
+      "Class:   logical   numeric character",
+      "",
+      "Extends: \"ProbeShow\""
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "show-class-known-subclass-custom-label-and-visibility",
+    "code": "setClass(\"ProbeShow\", representation(x = \"numeric\", label = \"character\"))\nsetClass(\"ChildShow\", contains = \"ProbeShow\", representation(flag = \"logical\"))\ntext <- capture.output(methods::showClass(\"ProbeShow\", complete = FALSE, propertiesAreCalled = \"Fields\"))\nshown <- withVisible(methods::showClass(\"ProbeShow\"))\nc(text, is.null(shown$value), shown$visible, names(formals(methods::showClass)))",
+    "expected": [
+      "Class \"ProbeShow\" [in \".GlobalEnv\"]",
+      "",
+      "Fields:",
+      "                          ",
+      "Name:          x     label",
+      "Class:   numeric character",
+      "",
+      "Known Subclasses: \"ChildShow\"",
+      "TRUE",
+      "FALSE",
+      "Class",
+      "complete",
+      "propertiesAreCalled"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "show-class-representation-parent-and-errors",
+    "code": "setClass(\"ParentViaRepresentation\", representation(value = \"numeric\"))\nsetClass(\"ChildViaRepresentation\", representation(\"ParentViaRepresentation\", label = \"character\"))\ntext <- capture.output(showClass(\"ChildViaRepresentation\"))\nc(text, inherits(try(showClass(\"NoSuchClass\"), silent = TRUE), \"try-error\"), inherits(try(showClass(1), silent = TRUE), \"try-error\"))",
+    "expected": [
+      "Class \"ChildViaRepresentation\" [in \".GlobalEnv\"]",
+      "",
+      "Slots:",
+      "                          ",
+      "Name:      label     value",
+      "Class: character   numeric",
+      "",
+      "Extends: \"ParentViaRepresentation\"",
+      "TRUE",
+      "TRUE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "trunc-observed-data-table-itime-method-shape",
     "code": "trunc.ITime <- function(x, units = c(\"hours\", \"minutes\"), ...) {\n  units <- match.arg(units)\n  step <- if (units == \"hours\") 3600L else 60L\n  structure(unclass(x) - unclass(x) %% step, class = class(x))\n}\nseqtimes <- structure(c(25200L, 25220L, 28799L, 28800L), class = \"ITime\")\nx <- trunc(seqtimes, \"hours\")\nc(x, class(x))",
     "expected": ["25200", "25200", "25200", "28800", "ITime"],

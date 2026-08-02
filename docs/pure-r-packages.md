@@ -240,6 +240,14 @@ fixture exports `histogram_counts()` and loads it through the normal namespace p
 TypeScript port. This proves reusable runtime behavior, not compatibility for every dependency or
 every graphics option those packages may exercise.
 
+The object-system foundation follows the same rule. The checked-in source-only fixture imports
+`methods::setClass` and `methods::showClass`, declares `NativRFixtureClass` while its namespace is
+loaded, and exports an unchanged R function that captures the class summary. Class ownership, slots,
+and inherited declarations live in the session registry, so another pure-R package can reuse them
+without a TypeScript rewrite. This does not yet make native Rcpp/rstan binaries loadable or
+implement every S4 NAMESPACE directive, validity hook, union, reference class, or multiple-dispatch
+rule.
+
 Rank-166 `utils::browseURL()` supplies the same package-independent report/viewer seam for the
 measured xfun, htmltools, knitr, and httpuv calls. Unchanged package code can write HTML, SVG, PNG,
 or another asset to a session-local path and request that the embedding application present it. The
@@ -257,8 +265,10 @@ application.
   adapter can support selected package features, but it does not make a package containing native
   code a pure-R package.
 - `configure`, `configure.win`, `cleanup`, and `cleanup.win` are not executed.
-- The current NAMESPACE parser supports `export`, `import`, `importFrom`, and `S3method`. S4
-  registration, `exportPattern`, conditional declarations, and other directives remain blockers.
+- The current NAMESPACE parser supports `export`, `import`, `importFrom`, and `S3method`. Imported
+  S4 construction/introspection functions can run from ordinary package R source, but S4
+  registration directives, `exportPattern`, conditional declarations, and other directives remain
+  blockers.
 - `file()` connections currently cover bounded text/binary-mode handles over immutable package files
   and same-session browser-memory paths, including implicit open/close, explicit `open()`/`close()`,
   `isOpen()`, `flush()`, bounded `seek()`, and `summary()`. Compressed connections, URLs, sockets,

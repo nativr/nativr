@@ -1623,6 +1623,15 @@ backtick slot names, duplicate declarations, scalar-character validation, and mi
 covered. Complete GNU R S4 class-definition semantics and package namespace loading remain outside
 this increment.
 
+`methods::showClass` has differential coverage for the four measured Rcpp/rstan inspection calls at
+the reusable class-registry boundary. GNU R 4.6 evidence covers exact formals, global/package
+location labels, direct and inherited slot tables, representation-declared parents, extends and
+known-subclass lines, virtual classes, custom property labels, error shapes, captured output, and
+invisible `NULL`. A source-only package imports `setClass`/`showClass`, declares its class while its
+namespace loads, and queries the same metadata unchanged. External/native Rcpp and rstan classes,
+complete `classRepresentation` objects, validity, unions, sealed classes, exact wide-console
+wrapping, multiple dispatch, and the full methods cache remain outside this increment.
+
 `trunc` has differential coverage for data.table's measured `trunc(seqtimes, "hours")` extension
 shape using an independently authored `ITime` method, direct and Math-group dispatch, toward-zero
 real values, logical/integer double output, signed zero, missing/non-finite values, empty input,

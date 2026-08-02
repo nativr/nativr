@@ -547,3 +547,9 @@ Break calculation, counting, S3 dispatch, and returned R objects stay in the sha
 reuse the existing bounded polygon journal across Worker, Canvas, recording, and PNG paths. The
 measured Worker is 356.0 KiB gzip, so the ceiling rises narrowly to 357 KiB; client and parser-Wasm
 budgets remain unchanged.
+
+Language subset 0.219 adds usage-ranked `methods::showClass` by extending the existing session-local
+S4 registry with namespace ownership plus recursive parent/slot inspection. Formatting and output
+capture reuse owned strings and the bounded journal; there is no reflection dependency, host
+adapter, protocol event, or package-specific implementation. The measured Worker is 356.9 KiB gzip
+within the existing 357 KiB ceiling; client and parser-Wasm budgets remain unchanged.

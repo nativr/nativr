@@ -2279,6 +2279,27 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "invisible",
   ),
   definePackageBuiltin("methods", "show", ["object"], "shape", builtinShow),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "methods",
+      "showClass",
+      ["Class", "complete", "propertiesAreCalled"],
+      "behavioral",
+      builtinShowClass,
+      "invisible",
+    ),
+    [
+      { name: "Class" },
+      {
+        name: "complete",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "propertiesAreCalled",
+        defaultValue: { kind: "StringLiteral", value: "Slots", span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
   defineBuiltin("setGeneric", ["name", "def"], "shape", builtinSetGeneric),
   defineBuiltin("standardGeneric", ["f", "fdef"], "shape", builtinStandardGeneric, "primitive"),
   defineBuiltin("setMethod", ["f", "signature", "definition"], "shape", builtinSetMethod),
@@ -2391,6 +2412,8 @@ interface S4ClassDefinition {
   readonly representation?: RValue;
   readonly contains: readonly string[];
   readonly prototype?: RValue;
+  readonly packageName?: string;
+  readonly environmentName?: string;
 }
 
 interface S4GenericDefinition {
@@ -37786,17 +37809,24 @@ async function builtinSetClass(invocation: BuiltinInvocation): Promise<RValue> {
   ]);
   const className = characterScalar(required(matched, "Class", "setClass"), "Class");
   const containsValue = matched.get("contains");
-  const contains =
+  const declaredContains =
     containsValue === undefined || containsValue.type === "null"
       ? []
       : nonMissingStrings(containsValue, "contains");
   const definitions = stateMap<string, S4ClassDefinition>(invocation, S4_CLASSES_STATE_KEY);
   const representation = matched.get("representation");
   const prototype = matched.get("prototype");
+  const representationParents = methodsRepresentationEntries(representation).parents;
+  const contains = [...new Set([...declaredContains, ...representationParents])];
+  const environment = invocation.currentEnvironment();
+  const packageName = invocation.packageName(environment);
+  const environmentName = invocation.environmentName(environment);
   const definition: S4ClassDefinition = {
     ...(representation === undefined ? {} : { representation }),
     contains,
     ...(prototype === undefined ? {} : { prototype }),
+    ...(packageName === undefined ? {} : { packageName }),
+    ...(environmentName === undefined ? {} : { environmentName }),
   };
   definitions.set(className, definition);
 
@@ -37881,6 +37911,164 @@ async function builtinShow(invocation: BuiltinInvocation): Promise<RValue> {
     quote: true,
   });
   invocation.context.writeOutput({ stream: "stdout", text: `${text}\n` });
+  invocation.setResultVisibility("invisible");
+  return R_NULL;
+}
+
+interface S4SlotDeclaration {
+  readonly name: string;
+  readonly className: string;
+}
+
+function methodsRepresentationEntries(value: RValue | undefined): {
+  readonly slots: readonly S4SlotDeclaration[];
+  readonly parents: readonly string[];
+} {
+  if (value?.type !== "list") return { slots: [], parents: [] };
+  const names = vectorNames(value) ?? Array.from({ length: value.length }, () => "");
+  const slots: S4SlotDeclaration[] = [];
+  const parents: string[] = [];
+  for (let index = 0; index < value.length; index += 1) {
+    const entry = value.values[index];
+    if (entry?.type !== "character" || entry.length !== 1 || isMissing(entry, 0)) continue;
+    const className = entry.values[0] ?? "";
+    const name = names[index] ?? "";
+    if (name.length === 0) parents.push(className);
+    else slots.push({ name, className });
+  }
+  return { slots, parents };
+}
+
+function methodsClassName(value: RValue): string | undefined {
+  if (value.type === "character" && value.length === 1 && !isMissing(value, 0)) {
+    return value.values[0];
+  }
+  if (value.type !== "list" || !vectorClasses(value)?.includes("classRepresentation")) {
+    return undefined;
+  }
+  const names = vectorNames(value);
+  const index = names?.indexOf("className") ?? -1;
+  const className = index < 0 ? undefined : value.values[index];
+  if (className?.type !== "character" || className.length !== 1 || isMissing(className, 0)) {
+    return undefined;
+  }
+  return className.values[0];
+}
+
+function methodsClassSlots(
+  className: string,
+  definitions: ReadonlyMap<string, S4ClassDefinition>,
+  visited = new Set<string>(),
+): readonly S4SlotDeclaration[] {
+  if (visited.has(className)) return [];
+  visited.add(className);
+  const definition = definitions.get(className);
+  if (definition === undefined) return [];
+  const own = methodsRepresentationEntries(definition.representation).slots;
+  const inherited = definition.contains
+    .filter((parent) => parent !== "VIRTUAL")
+    .flatMap((parent) => methodsClassSlots(parent, definitions, visited));
+  const slots = new Map<string, S4SlotDeclaration>();
+  for (const slot of [...own, ...inherited]) {
+    if (!slots.has(slot.name)) slots.set(slot.name, slot);
+  }
+  return [...slots.values()];
+}
+
+function methodsClassExtends(
+  className: string,
+  definitions: ReadonlyMap<string, S4ClassDefinition>,
+  visited = new Set<string>(),
+): readonly string[] {
+  if (visited.has(className)) return [];
+  visited.add(className);
+  const parents = (definitions.get(className)?.contains ?? []).filter(
+    (parent) => parent !== "VIRTUAL",
+  );
+  const result: string[] = [];
+  for (const parent of parents) {
+    if (!result.includes(parent)) result.push(parent);
+    for (const ancestor of methodsClassExtends(parent, definitions, visited)) {
+      if (!result.includes(ancestor)) result.push(ancestor);
+    }
+  }
+  return result;
+}
+
+function methodsQuotedClasses(classes: readonly string[]): string {
+  return classes.map((className) => `"${className}"`).join(", ");
+}
+
+function formatMethodsSlots(
+  slots: readonly S4SlotDeclaration[],
+  propertiesAreCalled: string,
+): readonly string[] {
+  const width = Math.max(...slots.flatMap((slot) => [slot.name.length, slot.className.length])) + 1;
+  const names = slots.map((slot) => slot.name.padStart(width)).join("");
+  const classes = slots.map((slot) => slot.className.padStart(width)).join("");
+  const nameLine = `Name: ${names}`;
+  const classLine = `Class:${classes}`;
+  return [
+    propertiesAreCalled + ":",
+    " ".repeat(Math.max(nameLine.length, classLine.length)),
+    nameLine,
+    classLine,
+  ];
+}
+
+async function builtinShowClass(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["Class", "complete", "propertiesAreCalled"]);
+  const classValue = required(matched, "Class", "showClass");
+  const className = methodsClassName(classValue);
+  if (className === undefined) {
+    throw new RTypeMismatchError(
+      "NRT3343",
+      "class should be either a character-string name or a class definition",
+    );
+  }
+  logicalFlag(matched.get("complete"), true, "complete");
+  const propertiesAreCalled = characterScalar(
+    matched.get("propertiesAreCalled") ?? characterVector(["Slots"]),
+    "propertiesAreCalled",
+  );
+  const definitions = stateMap<string, S4ClassDefinition>(invocation, S4_CLASSES_STATE_KEY);
+  const definition = definitions.get(className);
+  if (definition === undefined) {
+    throw new REvaluationError("NRE2162", `"${className}" is not a defined class`);
+  }
+
+  const slots = methodsClassSlots(className, definitions);
+  const parents = methodsClassExtends(className, definitions);
+  const isVirtual =
+    definition.contains.includes("VIRTUAL") ||
+    (definition.representation === undefined &&
+      definition.prototype === undefined &&
+      parents.length === 0);
+  const location =
+    definition.packageName === undefined
+      ? `in "${definition.environmentName === "R_GlobalEnv" ? ".GlobalEnv" : (definition.environmentName ?? ".GlobalEnv")}"`
+      : `package "${definition.packageName}"`;
+  const lines = [`${isVirtual ? "Virtual Class" : "Class"} "${className}" [${location}]`, ""];
+  if (slots.length === 0) {
+    const prototypeClass =
+      definition.prototype === undefined &&
+      parents.length === 0 &&
+      !definition.contains.includes("VIRTUAL")
+        ? "NULL"
+        : "S4";
+    lines.push(`No ${propertiesAreCalled}, prototype of class "${prototypeClass}"`);
+  } else {
+    lines.push(...formatMethodsSlots(slots, propertiesAreCalled));
+  }
+  if (parents.length > 0) lines.push("", `Extends: ${methodsQuotedClasses(parents)}`);
+  const subclasses = [...definitions.keys()].filter(
+    (candidate) =>
+      candidate !== className && methodsClassExtends(candidate, definitions).includes(className),
+  );
+  if (subclasses.length > 0) {
+    lines.push("", `Known Subclasses: ${methodsQuotedClasses(subclasses)}`);
+  }
+  invocation.context.writeOutput({ stream: "stdout", text: `${lines.join("\n")}\n` });
   invocation.setResultVisibility("invisible");
   return R_NULL;
 }

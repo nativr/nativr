@@ -1172,6 +1172,16 @@ classes, and duplicate slot names are rejected before class registration. Empty 
 boundary. This is a declaration-list constructor, not a complete S4 representation or validity
 engine.
 
+`methods::showClass()` reads the same session-local class registry populated by `setClass()` and
+prints GNU R-shaped metadata through the bounded output journal. Named entries in a representation
+are slots; unnamed entries now also contribute parent classes to construction and inherited
+dispatch. The display recursively gathers inherited slots, reports direct/transitive parents and
+known subclasses, distinguishes virtual declarations, preserves package namespace ownership, and
+returns invisible `NULL`. The `complete` argument is accepted and validated; NativR's owned class
+registry currently has no sealed/incomplete class-definition variants for it to expand. Class
+validity functions, unions, multiple dispatch, redefinition warnings, exact wide-output wrapping,
+and the full `classRepresentation` object remain outside this slice.
+
 `trunc()` first forwards the original lazy call to a class-specific `trunc.<Class>` method or the
 `Math` group, which supplies the extension seam used by data.table's package-owned `ITime` method.
 The default path forces otherwise unused dots, converts logical/integer input to double, truncates

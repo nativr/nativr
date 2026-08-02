@@ -588,6 +588,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      GNU R differential cases, and unchanged source-package reuse have evidence. Exhaustive
      `pretty()` equivalence, log axes, line-density shading, and device-identical output remain
      graphics/statistics compatibility depth.
+137. Usage-ranked class introspection: rank-188 `methods::showClass` now runs the four measured
+     Rcpp/rstan calls at the reusable class-registry boundary. GNU R-shaped formals, package/global
+     ownership, direct/inherited slots, representation parents, virtual classes, known subclasses,
+     captured output, invisible return behavior, and unchanged source-package reuse have evidence.
+     Native external classes, full class representations, validity, unions, multiple dispatch, cache
+     behavior, and exact wide-console wrapping remain object-system compatibility depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

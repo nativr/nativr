@@ -1,6 +1,6 @@
 # Implementation status
 
-Date: 2026-08-01
+Date: 2026-08-02
 
 ## Implemented
 
@@ -11,7 +11,7 @@ Date: 2026-08-01
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 582 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 583 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Character vectors own exact per-element bytes and canonical `unknown`/`latin1`/`UTF-8`/`bytes`
@@ -451,6 +451,10 @@ Date: 2026-08-01
   ordered unnamed parent and named slot entries, plain-list output, empty/missing class strings,
   backtick slot names, duplicate detection, strict scalar-character validation, and bounded
   `setClass`/`new` integration.
+- Usage-ranked `methods::showClass` with Rcpp/rstan's four measured class-inspection calls, GNU
+  R-shaped class location, direct/inherited slots, parent classes, known subclasses, virtual
+  classes, configurable property label, exact formals, invisible `NULL`, and source-only package
+  namespace reuse. This is registered-class introspection, not complete S4 metadata or validation.
 - Usage-ranked `trunc` with data.table's measured ITime hour-truncation method seam, direct and
   Math-group S3 dispatch, toward-zero real-vector behavior, logical/integer double output, signed
   zero, missing/non-finite values, retained attributes, eager default dots, and bounded invalid

@@ -186,7 +186,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 185,unclass,true,2,cli|xfun,2,2.1,3.0
 186,hist,true,4,testthat|openssl|shiny|posterior,19,4.1,3.0
 187,append,true,3,curl|purrr|data.table,3,3.1,2.9
-188,showClass,false,2,Rcpp|rstan,4,2.1,2.9
+188,showClass,true,2,Rcpp|rstan,4,2.1,2.9
 189,packageVersion,false,2,ggplot2|bslib,3,2.1,2.9
 190,setClass,true,2,rlang|data.table,3,2.1,2.9
 191,diff,true,3,ggplot2|zoo|bit64,13,3.1,2.9

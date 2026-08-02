@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.218.0",
+  "languageSubsetVersion": "0.219.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -673,7 +673,8 @@
         { "name": "setAs", "compatibility": "behavioral" },
         { "name": "representation", "compatibility": "behavioral" },
         { "name": "setOldClass", "compatibility": "shape" },
-        { "name": "show", "compatibility": "shape" }
+        { "name": "show", "compatibility": "shape" },
+        { "name": "showClass", "compatibility": "behavioral" }
       ]
     }
   ],
