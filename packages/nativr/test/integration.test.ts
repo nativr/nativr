@@ -15586,7 +15586,7 @@ NeedsCompilation: no
     const runtime = await session();
     await expect(
       runtime.eval(
-        "setClass('is_parent')\nsetClass('is_child', contains = 'is_parent')\nx <- structure(1, class = 'is_child')\nc(methods::is('x', 'character'), methods::is(1L, 'numeric'), methods::is(1L, 'vector'), methods::is(NULL, 'NULL'), methods::is(environment(), 'environment'), methods::is(x, 'is_parent'), methods::is(x, 'ANY'), !methods::is(1L, 'atomic'))",
+        "setClass('is_parent')\nsetClass('is_child', contains = 'is_parent')\nx <- structure(1, class = 'is_child')\nc(methods::is('x', 'character'), methods::is(1L, 'numeric'), methods::is(1L, 'vector'), methods::is(NULL, 'NULL'), methods::is(environment(), 'environment'), methods::is(x, 'is_parent'), !methods::is(x, 'ANY'), !methods::is(1L, 'atomic'))",
       ),
     ).resolves.toEqual([true, true, true, true, true, true, true, true]);
     await expect(

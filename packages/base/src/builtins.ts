@@ -50607,8 +50607,10 @@ async function builtinMethodsIs(invocation: BuiltinInvocation): Promise<RValue> 
   const object = required(matched, "object", "is");
   const target = characterScalar(required(matched, "class2", "is"), "class2");
   const classes = methodsCoercionSourceClasses(object, invocation);
+  const hasExplicitClass = objectClasses(object) !== undefined;
   const isVector =
     target === "vector" &&
+    !hasExplicitClass &&
     object.type !== "null" &&
     object.type !== "environment" &&
     object.type !== "closure" &&
@@ -50616,7 +50618,8 @@ async function builtinMethodsIs(invocation: BuiltinInvocation): Promise<RValue> 
     object.type !== "language" &&
     object.type !== "symbol" &&
     object.type !== "formula";
-  return logicalVector([target === "ANY" || isVector || classes.includes(target) ? 1 : 0]);
+  const isAny = target === "ANY" && !hasExplicitClass;
+  return logicalVector([isAny || isVector || classes.includes(target) ? 1 : 0]);
 }
 
 function methodsCoercionSourceClasses(

@@ -1392,9 +1392,9 @@ outside this slice.
 
 `methods::is()` queries that same class graph for one requested class. It recognizes explicit and
 implicit classes, declared parents, integer values as `numeric`, ordinary non-callable values as
-`vector`, and the universal `ANY` class. Environment parent links are mutable R references:
-`parent.env<-` validates the replacement, walks the proposed parent chain before mutation, and
-rejects cycles without changing the target.
+`vector` only when no explicit class is present, and `ANY` for unclassed values. Environment parent
+links are mutable R references: `parent.env<-` validates the replacement, walks the proposed parent
+chain before mutation, and rejects cycles without changing the target.
 
 `kappa()` converts supported vectors, matrices, and numeric-coercible data frames to owned
 column-major storage. Its default path computes a Householder QR factor and applies a bounded

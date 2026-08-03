@@ -229,9 +229,9 @@ not claimed.
 
 `methods::is` has differential behavioral evidence for implicit atomic classes, the integer-to-
 `numeric` relationship, ordinary vector membership, explicit classes, parents declared by
-`setClass`, `ANY`, and scalar-`class2` validation. It uses the same session-owned class graph as S4
-dispatch and coercion; virtual classes, class unions, sealed definitions, and the complete methods
-package are not claimed.
+`setClass`, the unclassed-value `ANY` fallback, and scalar-`class2` validation. It uses the same
+session-owned class graph as S4 dispatch and coercion; virtual classes, class unions, sealed
+definitions, and the complete methods package are not claimed.
 
 The string surface includes `paste`, `paste0`, `sprintf`, `format`, `grep`, `grepl`, `gsub`, `sub`,
 `strsplit`, `substring`, `substr`, `nchar`, `nzchar`, `tolower`, `toupper`, `chartr`, `trimws`,
