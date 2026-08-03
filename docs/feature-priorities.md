@@ -1787,6 +1787,14 @@ ties:
      verifies shallow nested-reference sharing plus recursive deep-copy independence. No R6 source,
      adapter, or package-specific branch was added. Finalization, inheritance breadth,
      portable-locking variants, and arbitrary packages remain unclaimed.
+172. Download-ranked R6 inheritance depth: the unchanged package's ordinary multi-level
+     `inherit`/`super` implementation exposed generic GNU R `NULL` extraction and replacement
+     promotion gaps. Differential evidence now covers index forcing, missing `[[` indices,
+     primitive-style positional tags, atomic/list promotion, typed gaps, names, empty selections,
+     and long false logical replacement indices. Digest-pinned R6 2.6.1 then constructs a
+     three-level hierarchy and runs recursive `super$initialize()`/`super$greet()` paths without an
+     adapter or package patch. Finalization, arbitrary/multiple inheritance breadth,
+     portable-locking variants, and arbitrary packages remain unclaimed.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

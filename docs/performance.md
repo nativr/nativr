@@ -898,3 +898,10 @@ environment, promise, active-binding, callable, and extraction mechanisms; there
 adapter, dependency, protocol event, native payload, network access, or generated JavaScript. The
 measured Worker is 416.1 KiB gzip (426,078 bytes), 94 bytes above the previous 416 KiB ceiling, so
 the Worker ceiling rises narrowly to 417 KiB; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.275 adds GNU R-compatible `NULL` extraction, index forcing, and replacement
+promotion across the shared evaluator/subsetting paths. The unchanged R6 inheritance proof composes
+those operations with existing environments, closures, active bindings, and package-owned methods;
+there is no R6 adapter, dependency, protocol event, native payload, evaluation-time network access,
+or generated JavaScript. The measured Worker is 416.3 KiB gzip (426,286 bytes), within the existing
+417 KiB ceiling, so all budgets remain unchanged.

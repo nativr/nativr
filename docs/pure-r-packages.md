@@ -334,7 +334,9 @@ public source packages from the repository resolver and verifies a pinned artifa
   that unchanged package code can construct a generator, instantiate a reference object, invoke
   public/private-state methods, mutate reference state, expose an active read/write field, preserve
   shared nested references through a shallow clone, and recursively copy a nested R6 object through
-  a deep clone.
+  a deep clone. The same unchanged source constructs a three-level `Person`/`Employee`/`Manager`
+  hierarchy, invokes recursive `super$initialize()`/`super$greet()` paths, and observes inherited
+  fields, methods, and class membership.
 
 No package source is checked into this repository. Together these tests exercise repository
 installation, runtime package files, namespace loading, qualified S3 registration, metaprogramming,
@@ -342,7 +344,10 @@ dynamic caller frames, closure-formal replacement, environment/closure attribute
 binding locks, function-backed active bindings, internal subset primitives, and reusable
 state-management behavior. The clone paths additionally exercise generic `mget()`, first-class `[[`,
 `mapply()`/`Map()` naming, environment copying, active bindings, and recursive package-owned method
-invocation; there is no R6 adapter or package-source rewrite.
+invocation. The inheritance path additionally exercises GNU R-compatible `NULL` extraction and
+replacement promotion used by package-owned super environments; there is no R6 adapter or
+package-source rewrite. Finalization, arbitrary/multiple inheritance breadth, portable-locking
+variants, and complete R6 remain outside the evidence.
 
 The checked-in source-only fixture also exports a function that calls `grDevices::rainbow`,
 `terrain.colors`, `topo.colors`, and `cm.colors` through its namespace. This is a small executable

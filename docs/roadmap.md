@@ -884,8 +884,11 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      Generic active-binding read/write/inspection plus unchanged private-state and active-field R6
      paths add the next depth layer. Generic `mget`, first-class `[[`, and exact unsimplified
      `mapply`/`Map` result names now carry the same unchanged package through shallow and recursive
-     deep clone paths. Finalization, broader inheritance, portable-locking variants, broad R6
-     behavior, and arbitrary packages remain explicit future work.
+     deep clone paths. GNU R-compatible `NULL` extraction/replacement promotion now carries a
+     three-level unchanged hierarchy through recursive `super$initialize()`/`super$greet()` calls,
+     inherited fields/methods, and class-chain checks. Finalization, arbitrary/multiple inheritance
+     breadth, portable-locking variants, broad R6 behavior, and arbitrary packages remain explicit
+     future work.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

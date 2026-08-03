@@ -920,7 +920,12 @@ export class Evaluator {
             await this.#assignBinding(target, memberName, replacement, context);
             return { value: replacement, visible: false };
           }
-          updated = replaceListMember(target, memberName, replacement, context);
+          updated =
+            target.type === "null"
+              ? replacement.type === "null"
+                ? R_NULL
+                : replaceListMember(listValue([]), memberName, replacement, context)
+              : replaceListMember(target, memberName, replacement, context);
         } else {
           if (target.type === "environment") {
             if (node.target.operator !== "[[") {
@@ -942,6 +947,43 @@ export class Evaluator {
               replacement,
               context,
             );
+            return { value: replacement, visible: false };
+          }
+          if (target.type === "null") {
+            const arguments_ = node.target.arguments;
+            if (arguments_.length > 1) {
+              throw new REvaluationError(
+                "NRE2204",
+                `${node.target.operator} replacement requires one-dimensional subsetting on NULL.`,
+              );
+            }
+            const argument = arguments_[0]?.value;
+            const missing =
+              argument?.kind === "UnsupportedExpression" && argument.feature === "missing argument";
+            if (node.target.operator === "[[" && (argument === undefined || missing)) {
+              throw new REvaluationError("NRE2204", "[[ requires one non-missing subscript.");
+            }
+            const index =
+              argument === undefined || missing
+                ? undefined
+                : await this.#evaluateValue(argument, environment, context);
+            if (replacement.type === "null") {
+              updated = R_NULL;
+            } else if (node.target.operator === "[") {
+              const emptyTarget =
+                replacement.type === "list" || replacement.type === "pairlist"
+                  ? listValue([])
+                  : isAtomic(replacement)
+                    ? subsetVector(replacement, integerVector([]), context)
+                    : logicalVector([]);
+              updated = replaceVectorSubset(emptyTarget, index, replacement, context);
+            } else {
+              if (index === undefined) {
+                throw new REvaluationError("NRE2204", "[[ requires one non-missing subscript.");
+              }
+              updated = replaceVectorElement(listValue([]), index, replacement, context);
+            }
+            await this.#assignBinding(targetEnvironment, name, updated, context);
             return { value: replacement, visible: false };
           }
           if (!isVector(target) && target.type !== "pairlist") {
@@ -1090,6 +1132,7 @@ export class Evaluator {
               visible: true,
             };
           }
+          if (target.type === "null") return { value: R_NULL, visible: true };
           return {
             value: extractListMember(target, name, context),
             visible: true,
@@ -1112,6 +1155,23 @@ export class Evaluator {
             value: binding === undefined ? R_NULL : await this.#force(binding, context),
             visible: true,
           };
+        }
+        if (target.type === "null") {
+          let supplied = false;
+          for (const argument of node.arguments) {
+            const missing =
+              argument.value?.kind === "UnsupportedExpression" &&
+              argument.value.feature === "missing argument";
+            if (argument.value === undefined || missing) continue;
+            supplied = true;
+            await this.#evaluateValue(argument.value, environment, context);
+          }
+          if (node.operator === "[[" && !supplied) {
+            throw new REvaluationError("NRE2204", "[[ requires one non-missing subscript.", {
+              span: node.span,
+            });
+          }
+          return { value: R_NULL, visible: true };
         }
         if (!isVector(target) && target.type !== "pairlist") {
           throw new RTypeMismatchError(

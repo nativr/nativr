@@ -13291,7 +13291,7 @@ NeedsCompilation: no
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.274.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.275.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -13581,9 +13581,47 @@ NeedsCompilation: no
     await expect(runtime.eval('items[["bet"]]')).resolves.toBeNull();
     await expect(runtime.eval('items[["bet", exact = FALSE]]')).resolves.toBe(3);
     await expect(runtime.eval('items[["al", exact = FALSE]]')).resolves.toBeNull();
+    await expect(
+      runtime.eval(
+        "c(is.null(NULL[]), is.null(NULL[1, 1]), is.null(NULL[[1]]), is.null(NULL[[1, 2]]), is.null(NULL$member), is.null(`[[`(NULL, 1)), is.null(`[[`(foo = NULL, index = 1)), is.null(.subset(NULL, index = 1)), is.null(.subset2(NULL, index = 1)))",
+      ),
+    ).resolves.toEqual([true, true, true, true, true, true, true, true, true]);
+    await expect(
+      runtime.eval(
+        "tracker <- 0L\na <- NULL[{ tracker <- tracker + 1L; 1L }]\nb <- NULL[[{ tracker <- tracker + 1L; 1L }]]\nc(is.null(a), is.null(b), tracker)",
+      ),
+    ).resolves.toEqual([1, 1, 2]);
+    await expect(runtime.eval("NULL[stop('index forced')]")).rejects.toMatchObject({
+      message: "index forced",
+    });
     const warnedPartial = await runtime.evalDetailed('items[["bet", exact = NA]]');
     expect(warnedPartial.value).toBe(3);
     expect(warnedPartial.warnings).toMatchObject([{ code: "NRW1008" }]);
+    await runtime.dispose();
+  });
+
+  it("promotes NULL through GNU R extraction and replacement semantics", async () => {
+    const runtime = await session();
+    await expect(runtime.eval("x <- NULL\nx[2] <- 3\nx")).resolves.toEqual([NA, 3]);
+    await runtime.eval('named <- NULL\nnamed["a"] <- 3\nNULL');
+    await expect(runtime.evalRaw("named")).resolves.toMatchObject({
+      type: "double",
+      values: new Float64Array([3]),
+      names: ["a"],
+    });
+    await expect(runtime.eval("x <- NULL\nx[[2]] <- 4\nx")).resolves.toEqual([null, 4]);
+    await expect(runtime.eval("x <- NULL\nx$field <- 5\nx$field")).resolves.toBe(5);
+    await expect(runtime.eval("x <- NULL\nx[] <- 6\nc(is.double(x), length(x))")).resolves.toEqual([
+      1, 0,
+    ]);
+    await expect(runtime.eval("x <- NULL\nx[1] <- NULL\nis.null(x)")).resolves.toBe(true);
+    await expect(runtime.eval("x <- NULL\nx[[1]] <- NULL\nis.null(x)")).resolves.toBe(true);
+    await expect(runtime.eval("x <- NULL\nx$field <- NULL\nis.null(x)")).resolves.toBe(true);
+    await expect(runtime.eval("x <- NULL\nx[integer()] <- 3\nx")).resolves.toEqual([]);
+    await expect(runtime.eval("x <- NULL\nx[FALSE] <- 3\nx")).resolves.toEqual(NA);
+    await expect(runtime.eval("x <- NULL\nx[1, 1] <- 3")).rejects.toMatchObject({
+      code: "NRE2204",
+    });
     await runtime.dispose();
   });
 

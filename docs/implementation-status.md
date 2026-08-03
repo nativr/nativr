@@ -132,7 +132,9 @@ Date: 2026-08-03
   session-owned environment variables, plus unchanged R6 generator construction, object
   instantiation, public/private method calls, reference field mutation, and an active read/write
   field, plus shallow and recursive deep cloning of nested R6 objects, without translating or
-  patching package code.
+  patching package code. The same unchanged package now constructs a three-level hierarchy and
+  executes recursive `super$initialize()`/`super$greet()` paths with inherited fields, methods, and
+  class membership.
 - Session environment variables are explicit, isolated runtime state. `createR()` snapshots an
   optional string map for inline or Worker execution; GNU R-shaped `Sys.getenv()`, `Sys.setenv()`,
   and `Sys.unsetenv()` query and mutate it, while reset restores the original map and host process
@@ -881,11 +883,11 @@ Date: 2026-08-03
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 14 files and 475 tests; one opt-in file with four external-package tests
+- Vitest currently passes 14 files and 476 tests; one opt-in file with four external-package tests
   is skipped in the default run and passes when enabled.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 847/847 cases. The optional black-box R oracle passes all 806
+- Checked-in conformance passes 848/848 cases. The optional black-box R oracle passes all 807
   eligible cases and explicitly skips 41 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,

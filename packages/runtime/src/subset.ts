@@ -383,7 +383,36 @@ export function replaceVectorSubset(
   const selected = selection.positions.flatMap((position) =>
     position === undefined ? [] : [position],
   );
-  if (selected.length === 0) return target;
+  if (selected.length === 0) {
+    if (selection.resultLength === target.length) return target;
+    if (target.type === "list" || target.type === "pairlist") {
+      const values = Array.from(
+        { length: selection.resultLength },
+        (_, position) => target.values[position] ?? R_NULL,
+      );
+      context.allocate(values.length);
+      return cloneAsList(target, values, selection.names);
+    }
+    const atomicReplacement = isAtomic(replacement) ? replacement : target;
+    if (target.type === "integer" && isFactor(target)) {
+      return replaceFactor(
+        target,
+        [],
+        atomicReplacement,
+        selection.resultLength,
+        selection.names,
+        context,
+      );
+    }
+    return replaceAtomic(
+      target,
+      [],
+      atomicReplacement,
+      selection.resultLength,
+      selection.names,
+      context,
+    );
+  }
   if (target.type === "list" || target.type === "pairlist") {
     if (replacement.type === "null") {
       const removed = new Set(selected);
@@ -622,7 +651,7 @@ function resolveReplacementSelection(
       if (isMissing(index, source)) positions.push(undefined);
       else if (index.values[source] === 1) positions.push(position);
     }
-    const resultLength = replacementResultLength(target.length, positions);
+    const resultLength = inspectedLength;
     return {
       positions,
       resultLength,

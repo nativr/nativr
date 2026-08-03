@@ -123,6 +123,68 @@ it.runIf(runExternal)(
           )
         `),
       ).resolves.toEqual([2, 2, 9, 1, 0]);
+      await expect(
+        runtime.eval(`
+          Person <- R6::R6Class(
+            "Person",
+            public = list(
+              name = NULL,
+              initialize = function(name) self$name <- name,
+              greet = function() paste0("hello ", self$name)
+            )
+          )
+          Employee <- R6::R6Class(
+            "Employee",
+            inherit = Person,
+            public = list(
+              role = NULL,
+              initialize = function(name, role) {
+                super$initialize(name)
+                self$role <- role
+              },
+              greet = function() paste0(super$greet(), " (", self$role, ")")
+            )
+          )
+          Manager <- R6::R6Class(
+            "Manager",
+            inherit = Employee,
+            public = list(
+              team = NULL,
+              initialize = function(name, role, team) {
+                super$initialize(name, role)
+                self$team <- team
+              },
+              greet = function() paste0(super$greet(), " [", self$team, "]")
+            )
+          )
+          NULL
+        `),
+      ).resolves.toBeNull();
+      await expect(
+        runtime.eval(`
+          employee <- Manager$new("Ada", "engineer", "runtime")
+          NULL
+        `),
+      ).resolves.toBeNull();
+      await expect(
+        runtime.eval(`
+          c(
+            employee$greet(), employee$name, employee$role, employee$team,
+            class(employee), inherits(employee, "Person"), inherits(employee, "Employee")
+          )
+        `),
+      ).resolves.toEqual([
+        "hello Ada (engineer) [runtime]",
+        "Ada",
+        "engineer",
+        "runtime",
+        "Manager",
+        "Employee",
+        "Person",
+        "R6",
+        "TRUE",
+        "TRUE",
+      ]);
     } finally {
       await runtime?.dispose();
     }

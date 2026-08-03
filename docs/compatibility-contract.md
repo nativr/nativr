@@ -40,11 +40,14 @@ against the runtime capability source after a build.
 Indexing accepts positive, negative, zero, logical, truncated double, and exact character
 subscripts. `[[` supports a recursive numeric or character path plus unique partial character
 matching through `exact = FALSE` or warning-producing `exact = NA`. `$` uses exact names before GNU
-R's default unique partial match. One-dimensional `[<-` and `[[<-` extend atomic vectors and lists
-for positive, long logical, or new character-name subscripts, filling intervening atomic positions
-with typed missing values and list positions with NULL. Existing names are extended, new character
-names are created, and dimensions are dropped when linear extension invalidates them. Missing
-numeric/logical positions are skipped only for a length-one replacement. Missing character
+R's default unique partial match. Extraction from `NULL` through `[`, `[[`, `$`, `.subset`,
+`.subset2`, or first-class `[[` returns `NULL` while forcing supplied subscript/control expressions;
+an absent `[[` subscript remains an error. Primitive-style named argument tags do not change the
+positional target/index interpretation. One-dimensional `[<-` and `[[<-` extend atomic vectors and
+lists for positive, long logical, or new character-name subscripts, filling intervening atomic
+positions with typed missing values and list positions with NULL. Existing names are extended, new
+character names are created, and dimensions are dropped when linear extension invalidates them.
+Missing numeric/logical positions are skipped only for a length-one replacement. Missing character
 replacement names remain outside the current value-model boundary. Arrays support
 arbitrary-dimensional column-major extraction and replacement, including one-dimensional array
 names, strict per-axis bounds, non-finite numeric coercion warnings, zero-length selections, `drop`,
@@ -67,6 +70,11 @@ every missing row subscript retain GNU R's rejection behavior. As in GNU R, exte
 column through `df$x[i] <- value` remains an incompatible column-length error rather than implicitly
 growing the frame. Factor replacement maps labels back to existing levels, extends with missing
 codes, and warns when an assigned label is not a level.
+
+Replacing through `[<-`, `[[<-`, or `$<-` on `NULL` promotes the target using GNU R's replacement
+type, length, typed-gap, and name rules; replacement by `NULL` leaves it `NULL`. A long logical
+replacement index determines the resulting length even where its positions are false, filling
+unselected new atomic positions with typed missing values or list positions with `NULL`.
 
 `base::replace` has differential evidence for zoo's measured `replace(x, 1:min(length(x)), 3)`
 missing-run helper. It returns a new value and leaves `x` unchanged by delegating to the same owned
@@ -2305,9 +2313,12 @@ public-field defaults. Separately, unchanged R6 2.6.1 now loads and exercises a 
 mutable public `self`, reference field mutation, and public method calls through the generic package
 runtime. The same unchanged package now exercises private state through public methods and a
 read/write active field backed by `makeActiveBinding()`, shallow cloning with shared nested
-references, and deep cloning with an independent nested R6 object. Finalization, broad inheritance,
-portable-locking variants, and complete R6 behavior remain unclaimed. `new_class` and `new_vctr`
-provide vctrs-compatible class construction shapes, not the complete vctrs or S7 packages.
+references, and deep cloning with an independent nested R6 object. A three-level unchanged
+`Person`/`Employee`/`Manager` hierarchy additionally proves inherited fields and methods, recursive
+`super$initialize()`/`super$greet()` calls, and the expected class chain. Finalization, arbitrary
+and multiple inheritance breadth, portable-locking variants, and complete R6 behavior remain
+unclaimed. `new_class` and `new_vctr` provide vctrs-compatible class construction shapes, not the
+complete vctrs or S7 packages.
 
 Applications may provide `PureRPackageBundle` records at `createR()` initialization. DESCRIPTION and
 NAMESPACE metadata, package-relative `R/*.R` source, and optional base64 resources are validated and
@@ -2350,7 +2361,8 @@ runtime remains network-free. Digest-pinned opt-in executable tests cover unchan
 `pkgconfig 2.0.3`, `generics 0.1.4`, `withr 3.0.3`, and `R6 2.6.1` sources. They prove the
 repository-to-namespace path, package-owned S3 dispatch, and generated state-restoring wrappers
 through `with_options()`, plus R6 generator/object construction and public reference mutation,
-private-state method access, and an active read/write field, without package patches.
+private-state method access, an active read/write field, shallow/deep cloning, and three-level
+inheritance with recursive `super` calls, without package patches.
 
 Package admission is not universal execution compatibility. Package `data/*.R`, `.csv`, `.tab`,
 `.txt`, and XDR/gzip `.rda`/`.RData` discovery/loading is supported through `utils::data`, including

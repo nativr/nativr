@@ -1110,6 +1110,16 @@ proof now executes both shallow and recursive deep clone paths for nested R6 obj
 reusable Base R semantic depth, not an R6 adapter; finalizers, broad inheritance, portable-locking
 variants, complete R6, and arbitrary-package compatibility remain unclaimed.
 
+The generic NULL/inheritance-depth increment adds no callable names, so current overlap remains 664
+of 2,522. GNU R 4.6 differential evidence now covers `NULL` extraction through `[`, `[[`, `$`,
+`.subset`, `.subset2`, and first-class `[[`, including forced index/control expressions and missing
+index errors. Replacement evidence covers `[<-`, `[[<-`, and `$<-` promotion with atomic/list
+selection, typed gaps, names, empty selections, and long false logical indices. The unchanged R6
+2.6.1 proof composes those generic semantics into a three-level class hierarchy with inherited
+fields/methods and recursive `super$initialize()`/`super$greet()` calls. No package-specific branch
+or source rewrite was added. Finalization, arbitrary/multiple inheritance breadth, portable-locking
+variants, complete R6, and arbitrary-package compatibility remain unclaimed.
+
 ## Completion evidence
 
 The objective is complete only when:

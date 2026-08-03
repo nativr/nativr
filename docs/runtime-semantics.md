@@ -57,8 +57,12 @@ result of the runtime's immutable one-dimensional subset replacement. Numeric/lo
 subscripts, names and extension, atomic promotion, ordinary recycling warnings, dimensions, factors,
 lists, pairlists, owned data frames, and `NULL` deletion share the direct `[<-` path. Replacing into
 `NULL` first materializes an empty atomic/list target from `values`; a `NULL` subscript preserves
-that empty target. Expression vectors and arbitrary class-specific `[<-` methods remain outside the
-owned path.
+that empty target. Direct `NULL[...]`, `NULL[[...]]`, and `NULL$name` extraction returns `NULL`
+while still forcing every supplied subscript/control expression. `[<-`, `[[<-`, and `$<-` promote a
+`NULL` target with GNU R's atomic/list type, typed-gap, length, and name rules; a logical
+replacement index can therefore extend through false positions and fill them with the target's
+missing representation. Expression vectors and arbitrary class-specific `[<-` methods remain outside
+the owned path.
 
 `typeof`, `mode`, and the core `is.*` predicates inspect NativR storage without exposing parser
 nodes. Registered builtins carrying ordinary R-level `formals` report `typeof = "closure"`; true
@@ -1632,10 +1636,13 @@ terminal, pager, ANSI capability, or package-specific display code is consulted.
 built-in R6 helper constructs classed public-field lists; the unchanged external R6 2.6.1 proof
 exercises its own package generator, environment locks, reference field mutation, public/private
 method state, active-binding invocation, shallow clone aliasing, and recursive deep cloning of a
-nested R6 object. vctrs helpers construct class metadata. R6 finalization, inheritance depth,
-portable-locking variants, and broad R6 behavior remain unclaimed. Ambiguous-method diagnostics,
-union classes, full formal/partial argument matching, automatic namespace/package registration,
-method caches, primitive/group generics, and complete external-package behavior are not claimed.
+nested R6 object. The same unchanged package now constructs a three-level class hierarchy, runs
+recursive `super$initialize()`/`super$greet()` calls, and observes inherited fields, methods, and
+class membership. vctrs helpers construct class metadata. R6 finalization, arbitrary and multiple
+inheritance breadth, portable-locking variants, and broad R6 behavior remain unclaimed.
+Ambiguous-method diagnostics, union classes, full formal/partial argument matching, automatic
+namespace/package registration, method caches, primitive/group generics, and complete
+external-package behavior are not claimed.
 
 Default resource limits are 100,000 steps, 100 calls, 1,000,000 elements per vector, and 1,000,000
 output bytes. Structured resource errors reduce accidental denial of service but are not a formal

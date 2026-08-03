@@ -16224,19 +16224,12 @@ async function builtinInternalSubset(
   let exact = true;
   const indexArguments: BuiltinCallArgument[] = [];
   for (const argument of invocation.arguments) {
-    if (argument.name === "x") {
-      targetArgument = uniqueArgument(targetArgument, argument, "x");
+    if (targetArgument === undefined) {
+      targetArgument = argument;
     } else if (single && argument.name === "exact") {
       exact = logicalFlag(await invocation.force(argument.promise), true, "exact");
-    } else if (argument.name === undefined && targetArgument === undefined) {
-      targetArgument = argument;
-    } else if (argument.name === undefined) {
-      indexArguments.push(argument);
     } else {
-      throw new REvaluationError(
-        "NRE2101",
-        `${call}() does not accept named subscript '${argument.name}'.`,
-      );
+      indexArguments.push(argument);
     }
   }
   if (targetArgument === undefined || targetArgument.promise.missing) {
@@ -16262,6 +16255,12 @@ async function builtinInternalSubset(
       throw new REvaluationError("NRE2204", `${call}() cannot extract the internal dots binding.`);
     }
     return invocation.force(binding);
+  }
+  if (target.type === "null") {
+    if (single && (indices.length === 0 || indices.some((index) => index === undefined))) {
+      throw new REvaluationError("NRE2204", `${call}() requires one non-missing subscript.`);
+    }
+    return R_NULL;
   }
   if (!isVector(target) && target.type !== "pairlist") {
     throw new RTypeMismatchError(

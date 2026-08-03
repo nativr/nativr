@@ -9957,5 +9957,12 @@
     "expected": [2, 3, 5, 4, 6, 1, 1, 1, 1, 1, 1, 1, 1, 7, 8, 4],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "null-extraction-replacement-and-index-forcing-semantics",
+    "code": "tracker <- 0L\na <- NULL[{ tracker <- tracker + 1L; 1L }]\nb <- NULL[[{ tracker <- tracker + 1L; 1L }]]\nc_value <- NULL$missing\nx <- NULL; x[2] <- 3\ny <- NULL; y[[2]] <- 4\nz <- NULL; z$name <- 5\nempty <- NULL; empty[] <- 6\nremoved <- NULL; removed[1] <- NULL\nc(is.null(a), is.null(b), is.null(c_value), tracker, x, length(y), is.null(y[[1]]), y[[2]], z$name, is.double(empty), length(empty), is.null(removed), is.null(`[[`(NULL, 1)), is.null(.subset(NULL, 1)), is.null(.subset2(NULL, 1)))",
+    "expected": [1, 1, 1, 2, "NA", 3, 2, 1, 4, 5, 1, 0, 1, 1, 1, 1],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]
