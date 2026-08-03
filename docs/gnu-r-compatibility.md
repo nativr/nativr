@@ -958,7 +958,17 @@ NativR-only evidence proves exact binary package-resource copies, immutable-sour
 mutable-session transfer, unchanged pure-R package execution, default Worker/Playground use, and
 result/file/storage bounds. Host paths, links, devices, platform permissions/ACLs, and cross-session
 persistence remain outside the browser-owned filesystem contract. Rank 349 `base::find.package` is
-the next measured unresolved callable.
+implemented by the next package-discovery increment.
+
+The package-discovery increment raises current name overlap to 638 of 2,522. Rank 349
+`base::find.package` covers xfun's measured package-root lookup at 1.1% download-weighted reach. GNU
+R 4.6 black-box evidence covers its four formals/defaults, default attached-package order, vector
+order/duplicates, missing warning/error/quiet behavior, empty-input laziness, and explicit library
+selection. NativR-only evidence covers immutable core and pure-R bundle roots, the missing
+`datasets` core registration, directory enumeration from unchanged package R code, and default
+Worker/Playground execution. Returned locations are virtual owned directories; host-library scans,
+package installation, native-code loading, and platform-exact paths remain outside this slice. Rank
+351 `base::l10n_info` is the next measured unresolved callable.
 
 ## Completion evidence
 

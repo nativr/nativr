@@ -548,6 +548,16 @@ modification timestamps. File count, result length, bytes, recursion work, alloc
 bounded, while host paths, links, devices, cross-session persistence, and ambient filesystem access
 remain unavailable.
 
+`find.package(package = NULL, lib.loc = NULL, quiet = FALSE, verbose = getOption("verbose"))`
+queries the same session-owned package registry used by namespace loading. With `package = NULL` it
+returns attached package directories in search-list order; explicit vectors preserve order and
+duplicates. Missing entries warn when some requested packages exist, error when none exist, or are
+filtered when `quiet` is true. Explicit `lib.loc` restricts source-only bundles to admitted library
+roots, while attached Base R packages retain their core runtime locations. Returned directories are
+immutable virtual identifiers: source-only bundles use `nativr://package/<name>` and core packages
+use `nativr://runtime/library/<name>`. `verbose` is retained as an unforced compatibility formal.
+This is package discovery, not host library scanning or package installation.
+
 `utils::read.table` and its CSV/delimited variants consume that same text layer or inline `text=`.
 The owned bounded scanner recognizes LF/CRLF/CR records, explicit or whitespace separators, quoted
 fields, doubled quotes, embedded quoted newlines, comments, skipped/blank lines, filling, headers,

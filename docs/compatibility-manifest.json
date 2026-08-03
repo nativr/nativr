@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.258.0",
+  "languageSubsetVersion": "0.259.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -122,6 +122,7 @@
         { "name": "system.time", "compatibility": "behavioral" },
         { "name": "R.home", "compatibility": "shape" },
         { "name": ".libPaths", "compatibility": "behavioral" },
+        { "name": "find.package", "compatibility": "behavioral" },
         { "name": "path.expand", "compatibility": "shape" },
         { "name": "basename", "compatibility": "behavioral" },
         { "name": "dirname", "compatibility": "behavioral" },
@@ -737,6 +738,7 @@
         { "name": "type.convert.data.frame", "compatibility": "behavioral" }
       ]
     },
+    { "name": "datasets", "referenceVersion": "R 4.6.x documented behavior", "functions": [] },
     {
       "name": "methods",
       "referenceVersion": "R 4.6.x documented behavior",

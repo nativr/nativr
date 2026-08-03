@@ -174,6 +174,10 @@ Date: 2026-08-02
   and validation boundaries. Exact text/binary bytes move from immutable package resources or
   session files only into bounded mutable session paths; unchanged pure-R package and default Worker
   examples execute without host-filesystem authority.
+- Usage-ranked `find.package()` with GNU R 4.6 formals/defaults, attached-package order,
+  vectorization, missing warning/error/quiet behavior, empty-input laziness, and explicit library
+  filtering. Core and source-only packages resolve to immutable virtual roots; unchanged package R
+  code locates and enumerates its own files inline and through the default Worker Playground.
 - Usage-ranked `utils::download.file()` composes that explicit byte adapter with session-owned
   files. GNU R 4.6 formals, preflight validation, invisible statuses, paired-vector `retvals`, exact
   replacement bytes, named headers, pure-R namespace calls, failure atomicity, default-deny inline
@@ -520,6 +524,10 @@ Date: 2026-08-02
   binary bytes, vector targets, existing-directory basename expansion, overwrite, recursive session
   trees including dotfiles, GNU R-shaped lazy/formal/result behavior, unchanged package execution,
   Worker proof, and file-count/storage limits.
+- Usage-ranked `base::find.package` for xfun's measured package-root lookup: GNU R-shaped formals,
+  search order, vector results, missing/quiet behavior, library selection, registered `datasets`,
+  immutable core/bundle directories, unchanged package self-discovery, directory enumeration,
+  conformance, and Worker proof.
 - Usage-ranked `grDevices::gray`/`grey` and `gray.colors`/`grey.colors` with zoo's two measured
   calls, byte-exact RGB(A) output, documented gamma correction, alpha recycling, reversal,
   descending endpoints, alias behavior, atomic gray-level coercion, attribute removal, and bounded

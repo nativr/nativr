@@ -292,6 +292,13 @@ owned directories under evaluator checkpoints. Pure-R package resource staging t
 same normalized-AST evaluator and virtual filesystem as interactive code; no package translation,
 Node filesystem, DOM API, or host path is introduced.
 
+Package-root discovery composes the evaluator's existing library paths, registered core namespaces,
+and admitted pure-R bundle records. `base::find.package()` returns the directory that owns the same
+retained DESCRIPTION/resources already used by `library()`, `requireNamespace()`, `system.file()`,
+and `packageDescription()`. Core package directories are read-only children of the virtual runtime
+library; bundle roots remain `nativr://package` children. No directory crawler, host R installation,
+Node filesystem, Worker protocol event, or package-specific rewrite is introduced.
+
 Command pipes compose the existing command request with that same private connection storage.
 `base::pipe()` creates an inert record; a read asks the explicit host policy once and writes copied
 stdout bytes into the record, while a write buffers bytes and submits exact text on close. Existing

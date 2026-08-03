@@ -464,6 +464,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "write.table",
     ]),
   ],
+  ["datasets", new Set()],
   ["R6", new Set(["R6Class"])],
   ["vctrs", new Set(["new_class", "new_vctr"])],
   ["tibble", new Set(["tibble", "tribble"])],
@@ -474,6 +475,7 @@ const CORE_R_PACKAGE_NAMES = new Set([
   "graphics",
   "grDevices",
   "utils",
+  "datasets",
   "methods",
 ]);
 

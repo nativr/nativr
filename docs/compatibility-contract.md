@@ -491,6 +491,15 @@ are immutable and host paths are unavailable. Virtual modes are fixed rather tha
 links/devices and platform-specific metadata are unsupported, and recursive copies require one
 existing destination directory.
 
+Usage-ranked `base::find.package` has GNU R 4.6 differential evidence for its four formals and
+defaults, default attached-package search order, vector order and duplicates, attribute removal,
+missing-package warnings/errors, quiet filtering, empty-input laziness, and explicit library
+selection. NativR-only evidence proves source-only package roots, directory enumeration from
+unchanged package R code, immutable core-package directories, inline execution, and default Worker
+Playground execution. Returned paths are owned virtual identifiers rather than host installation
+paths. Package installation, arbitrary host library scanning, installed help databases, compiled
+code discovery, and platform-exact diagnostics remain outside this slice.
+
 This is a browser-memory compatibility slice, not host filesystem emulation. Relative paths are
 accepted only when the current directory belongs to a NativR-owned root; absolute host paths and
 unsupported connections are rejected. Only the default `dput(control=)` set is accepted;

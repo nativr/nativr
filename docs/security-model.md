@@ -180,6 +180,12 @@ count, result length, recursive enumeration, allocation, and steps are checked. 
 roots remain immutable, open destinations fail closed, dot segments cannot escape an owned root, and
 links, devices, mounts, ACLs, and ambient host paths do not exist in this model.
 
+`find.package()` exposes only virtual paths for packages already registered in the session. Its
+library filter is matched against the evaluator's admitted library identifiers; it never probes the
+host filesystem, environment, registry, user profile, or an installed GNU R tree. Returned roots
+remain immutable, resource enumeration stays allocation/step bounded, and package-controlled names
+cannot escape their encoded virtual-library child.
+
 `stats::ts.plot()` grants no DOM, Canvas, device, or package-specific callback capability. It aligns
 finite evaluator-owned observations under the normal vector/allocation limits and emits only the
 existing bounded, data-only graphics events. Worker hosts receive the same events as any other plot;

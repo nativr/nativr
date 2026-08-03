@@ -6,7 +6,7 @@ import type { CapabilityManifest } from "@nativr/protocol";
 export const CAPABILITIES = Object.freeze({
   nativrVersion: "0.1.1",
   protocolVersion: PROTOCOL_VERSION,
-  languageSubsetVersion: "0.258.0",
+  languageSubsetVersion: "0.259.0",
   syntax: {
     literals: "supported",
     assignment: "supported",
@@ -62,15 +62,17 @@ export const CAPABILITIES = Object.freeze({
     textParsing: "supported",
     dynamicEvaluation: "supported",
   },
-  packages: ["base", "stats", "graphics", "grDevices", "utils", "methods"].map((packageName) => ({
-    name: packageName,
-    referenceVersion: "R 4.6.x documented behavior",
-    functions: baseBuiltins
-      .filter((definition) => definition.package === packageName)
-      .map((definition) => ({
-        name: definition.name,
-        compatibility: definition.metadata.compatibilityLevel,
-      })),
-  })),
+  packages: ["base", "stats", "graphics", "grDevices", "utils", "datasets", "methods"].map(
+    (packageName) => ({
+      name: packageName,
+      referenceVersion: "R 4.6.x documented behavior",
+      functions: baseBuiltins
+        .filter((definition) => definition.package === packageName)
+        .map((definition) => ({
+          name: definition.name,
+          compatibility: definition.metadata.compatibilityLevel,
+        })),
+    }),
+  ),
   backends: [...new Set(REFERENCE_OPERATOR_MANIFEST.map((operator) => operator.backend))],
 } satisfies CapabilityManifest);

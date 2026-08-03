@@ -229,6 +229,10 @@ normalized AST. The runtime then provides:
     stage immutable text or binary resources into a writable tempfile, copy several files into an
     existing directory, and recursively reproduce session trees without a JavaScript package shim or
     host-filesystem access.
+30. usage-ranked `base::find.package()` over the owned package-library registry. Unchanged package
+    code can resolve its installed root, enumerate bundled `DESCRIPTION`, `NAMESPACE`, R source,
+    data, documentation, and resources, and respect explicit library selection without scanning a
+    host R installation. The same helper executes inline and in the default Worker Playground.
 
 Package source, metadata, resource counts, and encoded bytes are bounded before parsing. Package
 evaluation then consumes the ordinary step, call-depth, allocation, and output budgets.
@@ -570,6 +574,11 @@ loader.
   supports vector targets, overwrite control, recursive session directories and dotfiles, bounded
   Worker execution, and logical per-path results. It cannot write package/runtime roots, discover
   host files, reproduce host permissions, or follow links.
+- `find.package()` supports xfun's measured package-root lookup and the common pure-R package
+  self-discovery pattern. Default attached-package order, vectorization, missing-package
+  warning/error/quiet behavior, explicit library selection, immutable virtual roots, directory
+  enumeration, unchanged fixture code, and Worker execution have evidence. It does not discover host
+  libraries, install packages, or make native-code packages portable.
 - `stats::ts.plot()` supports magrittr's measured exposition-pipe example without translating
   magrittr or the calling package. Numeric vectors and regular vector/matrix series align on a
   shared bounded time grid, missing union cells split paths, and styles/annotations traverse the

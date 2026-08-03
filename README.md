@@ -786,7 +786,13 @@ Rank 348 `base::file.copy()` now covers xfun's measured package-resource staging
 exact text or binary bytes from immutable package bundles into bounded session files, supports
 vector destinations, overwrite behavior, recursive directory trees including dotfiles, GNU R-shaped
 lazy/formal/result semantics, and default Worker execution. It never grants host-filesystem access.
-Rank 349 `base::find.package()` is the next measured unresolved callable.
+
+Rank 349 `base::find.package()` now covers xfun's measured installed-package root lookup. It
+searches the session's owned library registry, preserves GNU R's default attached-package order and
+vector results, filters missing packages under `quiet`, respects explicit `lib.loc`, and returns
+immutable `nativr://package/<name>` or core `nativr://runtime/library/<name>` directories. Unchanged
+pure-R package code can locate and enumerate its own installed files in inline and default Worker
+sessions. Rank 351 `base::l10n_info()` is the next measured unresolved callable.
 
 Rank 121 `grDevices::png()` now covers all seven measured calls across five packages. It opens
 alongside the browser display, records the existing graphics command vocabulary, rasterizes it in

@@ -785,3 +785,9 @@ package-specific translation, or second file backend; immutable package resource
 session paths use the same bounded copy path inline and in the Worker. The measured Worker is 401.6
 KiB gzip (411,265 bytes), so the ceiling rises narrowly from 401 KiB to 402 KiB; client and parser-
 Wasm budgets remain unchanged.
+
+Language subset 0.259 adds usage-ranked `base::find.package` by composing existing library paths,
+registered core namespaces, admitted pure-R package descriptions, and owned directory enumeration.
+It adds no dependency, protocol event, host filesystem scan, GNU R installation path, or package-
+specific translation. The measured Worker is 402.5 KiB gzip (412,110 bytes), so the ceiling rises
+narrowly from 402 KiB to 403 KiB; client and parser-Wasm budgets remain unchanged.

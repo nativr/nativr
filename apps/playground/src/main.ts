@@ -71,6 +71,7 @@ stopifnot(identical(custom_axis(), c(1, 2, 3)))
 stopifnot(sourced_value() == 42L)
 stopifnot(all(round(filtered_flow(1:6), 6) == c(1, 2.8, 5.24, 8.192, 11.5536, 15.24288)))
 stopifnot(dynamic_summary(structure(1:3, class = "demo")) == "worker-dynamic:6")
+stopifnot(identical(package_files(), c("nativrdemo", "DESCRIPTION", "NAMESPACE", "R", "doc", "extdata")))
 twice_mean(c(1, 2, 6))`,
   },
   {
@@ -87,6 +88,11 @@ twice_mean(c(1, 2, 6))`,
     id: "package-description",
     label: "Package DESCRIPTION",
     code: "nativrdemo::package_summary()",
+  },
+  {
+    id: "package-discovery",
+    label: "Pure-R package discovery",
+    code: "nativrdemo::package_files()",
   },
   {
     id: "package-archive",

@@ -817,8 +817,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
 170. Usage-ranked file copying: rank-348 `base::file.copy` covers xfun's measured resource staging,
      GNU R formals/laziness/vectorization/overwrite/recursive behavior, exact package-resource
      bytes, immutable-source to mutable-session transfer, pure-R package calls, default Worker
-     execution, conformance, and evaluator resource limits. Rank-349 `base::find.package` is the
-     next measured unresolved callable.
+     execution, conformance, and evaluator resource limits.
+171. Usage-ranked package-root discovery: rank-349 `base::find.package` queries the same owned
+     library/package registry used by namespace loading, with GNU R formals, default attached order,
+     vector/missing/quiet/library behavior, immutable core and pure-R package roots, unchanged
+     package self-enumeration, inline/Worker execution, and differential conformance. Rank-351
+     `base::l10n_info` is the next measured unresolved callable.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

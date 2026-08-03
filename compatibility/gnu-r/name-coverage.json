@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 655,
-    "overlappingNames": 637,
-    "missingReferenceNames": 1885,
+    "nativrRegisteredNames": 656,
+    "overlappingNames": 638,
+    "missingReferenceNames": 1884,
     "nativrExtensionNames": 18,
-    "nameCoverage": 0.252577
+    "nameCoverage": 0.252974
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 461, "nameCoverage": 0.337235 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 462, "nameCoverage": 0.337966 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 76, "nameCoverage": 0.163793 },
     {
       "package": "methods",
@@ -274,6 +274,7 @@
     "file.remove",
     "file.size",
     "filter",
+    "find.package",
     "findInterval",
     "fitted",
     "fitted.values",
@@ -1487,7 +1488,6 @@
     "filled.contour",
     "finalDefaultMethod",
     "find",
-    "find.package",
     "findCRANmirror",
     "findClass",
     "findFunction",

@@ -8516,6 +8516,43 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "find-package-usage-ranked-default-search-order-vectorization-and-formals",
+    "code": "found <- withVisible(find.package(c(\"base\", \"stats\", \"base\")))\nfmls <- formals(find.package)\nc(basename(found$value), found$visible, is.null(attributes(found$value)), basename(find.package()), basename(dirname(find.package(\"base\"))), names(fmls), is.null(fmls$package), is.null(fmls$lib.loc), identical(fmls$quiet, FALSE), paste(deparse(fmls$verbose), collapse = \"\"))",
+    "expected": [
+      "base",
+      "stats",
+      "base",
+      "TRUE",
+      "TRUE",
+      "stats",
+      "graphics",
+      "grDevices",
+      "utils",
+      "datasets",
+      "methods",
+      "base",
+      "library",
+      "package",
+      "lib.loc",
+      "quiet",
+      "verbose",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "getOption(\"verbose\")"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "find-package-usage-ranked-missing-quiet-library-and-lazy-boundaries",
+    "code": "mixed <- find.package(c(\"base\", \"definitely.missing\", \"stats\"))\nquiet <- find.package(c(\"base\", NA_character_, \"stats\"), quiet = TRUE)\nempty <- find.package(character(), lib.loc = stop(\"must stay lazy\"))\nc(basename(mixed), basename(quiet), length(empty) == 0L, inherits(try(find.package(c(\"missing.one\", \"missing.two\")), silent = TRUE), \"try-error\"), inherits(try(find.package(\"\", quiet = TRUE), silent = TRUE), \"try-error\"), basename(find.package(\"base\", quiet = stop(\"must stay lazy\"), verbose = stop(\"must stay lazy\"))), length(find.package(\"stats\", lib.loc = tempdir(), quiet = TRUE)) == 1L)",
+    "expected": ["base", "stats", "base", "stats", "TRUE", "TRUE", "TRUE", "base", "TRUE"],
+    "expectedWarning": true,
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "vignette-usage-ranked-formals-empty-catalog-and-missing-topic",
     "code": "f <- formals(utils::vignette)\ncatalog <- utils::vignette(package = character())\nmissing <- suppressWarnings(withVisible(utils::vignette(\"definitely-missing\", package = character())))\nc(identical(names(f), c(\"topic\", \"package\", \"lib.loc\", \"all\")), is.null(f$package), is.null(f$lib.loc), identical(f$all, TRUE), identical(class(catalog), \"packageIQR\"), identical(names(catalog), c(\"type\", \"title\", \"header\", \"results\", \"footer\")), identical(catalog$type, \"vignette\"), identical(catalog$title, \"Vignettes\"), identical(dim(catalog$results), c(0L, 4L)), identical(colnames(catalog$results), c(\"Package\", \"LibPath\", \"Item\", \"Title\")), identical(missing$value, \"vignette 'definitely-missing' not found\"), missing$visible)",
     "expected": [true, true, true, true, true, true, true, true, true, true, true, false],

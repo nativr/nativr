@@ -463,6 +463,23 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
       },
     ],
   ),
+  withBuiltinFormals(
+    defineBuiltin(
+      "find.package",
+      ["package", "lib.loc", "quiet", "verbose"],
+      "behavioral",
+      builtinFindPackage,
+    ),
+    [
+      { name: "package", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      { name: "lib.loc", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      {
+        name: "quiet",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      { name: "verbose", defaultValue: getOptionDefaultAst("verbose") },
+    ],
+  ),
   defineBuiltin("path.expand", ["path"], "shape", builtinPathExpand),
   defineBuiltin("basename", ["path"], "behavioral", builtinBaseName),
   defineBuiltin("dirname", ["path"], "behavioral", builtinDirName),
@@ -6492,6 +6509,170 @@ function libraryIncludeSite(value: RValue): boolean {
   return coercibleLogicalFlag(value, true, "include.site");
 }
 
+const ATTACHED_CORE_PACKAGE_NAMES = new Set([
+  "base",
+  "stats",
+  "graphics",
+  "grDevices",
+  "utils",
+  "datasets",
+  "methods",
+]);
+
+interface FindPackageName {
+  readonly name: string;
+  readonly missing: boolean;
+}
+
+async function builtinFindPackage(invocation: BuiltinInvocation): Promise<RCharacterVector> {
+  const matched = matchLazyArguments(invocation, ["package", "lib.loc", "quiet", "verbose"]);
+  const packageArgument = matched.get("package");
+  const packages =
+    packageArgument === undefined
+      ? attachedPackageNames(invocation)
+      : findPackageNames(await invocation.force(packageArgument.promise), invocation);
+  if (packages.length === 0) return characterVector([]);
+  if (packages.some((entry) => !entry.missing && entry.name.length === 0)) {
+    throw new REvaluationError("NRE2259", "attempt to use zero-length package name");
+  }
+
+  const libraryPaths = await findPackageLibraryPaths(invocation, matched.get("lib.loc"));
+  const paths: string[] = [];
+  const missing: string[] = [];
+  for (const entry of packages) {
+    invocation.context.checkpoint();
+    const name = entry.missing ? "NA" : entry.name;
+    const description = invocation.installedPackageDescription(
+      name,
+      ATTACHED_CORE_PACKAGE_NAMES.has(name) ? undefined : libraryPaths,
+    );
+    if (description === undefined) {
+      missing.push(name);
+      continue;
+    }
+    paths.push(packageDescriptionRoot(description.file));
+  }
+
+  if (missing.length > 0 && !(await findPackageQuiet(invocation, matched.get("quiet")))) {
+    const message = missingPackageMessage(missing);
+    if (paths.length === 0) {
+      throw new REvaluationError("NRE2221", message, { details: { packages: missing } });
+    }
+    invocation.context.warn({ code: "NRW1142", message });
+  }
+  // GNU R 4.6 exposes verbose as a compatibility formal but does not force it on this path.
+  invocation.context.allocate(paths.length);
+  return characterVector(paths);
+}
+
+function attachedPackageNames(invocation: BuiltinInvocation): FindPackageName[] {
+  return invocation
+    .searchPath()
+    .filter((entry) => entry.startsWith("package:"))
+    .map((entry) => ({ name: entry.slice("package:".length), missing: false }));
+}
+
+function findPackageNames(value: RValue, invocation: BuiltinInvocation): FindPackageName[] {
+  if (value.type === "null") return attachedPackageNames(invocation);
+  if (isAtomic(value)) {
+    const plain = atomicWithoutAttributes(value);
+    const characters = isFactor(value)
+      ? coerceAtomicToCharacter(value, invocation)
+      : plain.type === "character"
+        ? plain
+        : coerceAtomicToCharacter(plain, invocation);
+    return characters.values.map((name, index) => ({
+      name,
+      missing: isMissing(characters, index),
+    }));
+  }
+  if (value.type === "list") {
+    return value.values.map((entry) => findPackageListName(entry, invocation));
+  }
+  throw new RTypeMismatchError("NRT3360", "invalid 'package' argument");
+}
+
+function findPackageListName(value: RValue, invocation: BuiltinInvocation): FindPackageName {
+  if (value.type === "null") return { name: "NULL", missing: false };
+  if (!isAtomic(value) || value.length !== 1) {
+    throw new RTypeMismatchError("NRT3360", "invalid 'package' argument");
+  }
+  const plain = atomicWithoutAttributes(value);
+  const characters = isFactor(value)
+    ? coerceAtomicToCharacter(value, invocation)
+    : plain.type === "character"
+      ? plain
+      : coerceAtomicToCharacter(plain, invocation);
+  return {
+    name: characters.values[0] ?? "",
+    missing: isMissing(characters, 0),
+  };
+}
+
+async function findPackageLibraryPaths(
+  invocation: BuiltinInvocation,
+  argument: BuiltinCallArgument | undefined,
+): Promise<readonly string[] | undefined> {
+  if (argument === undefined) return undefined;
+  const supplied = await invocation.force(argument.promise);
+  if (supplied.type === "null") return undefined;
+  if (!isAtomic(supplied)) {
+    throw new RTypeMismatchError("NRT3338", "invalid 'lib.loc' argument in find.package()");
+  }
+  const plain = atomicWithoutAttributes(supplied);
+  if (plain.type !== "character" && !isFactor(supplied)) {
+    throw new RTypeMismatchError("NRT3338", "invalid 'lib.loc' argument in find.package()");
+  }
+  const paths = isFactor(supplied)
+    ? coerceAtomicToCharacter(supplied, invocation)
+    : plain.type === "character"
+      ? plain
+      : coerceAtomicToCharacter(plain, invocation);
+  if (paths.length === 0) return undefined;
+  return normalizeVirtualLibraryLocations(invocation, paths, "find.package");
+}
+
+async function findPackageQuiet(
+  invocation: BuiltinInvocation,
+  argument: BuiltinCallArgument | undefined,
+): Promise<boolean> {
+  if (argument === undefined) return false;
+  const value = await invocation.force(argument.promise);
+  if (
+    value.type === "null" ||
+    !isAtomic(value) ||
+    value.type === "character" ||
+    isFactor(value) ||
+    value.length !== 1 ||
+    isMissing(value, 0)
+  ) {
+    throw new RTypeMismatchError("NRT3355", "invalid 'quiet' argument");
+  }
+  if (value.type === "complex") {
+    const real = value.real[0] ?? Number.NaN;
+    const imaginary = value.imaginary[0] ?? Number.NaN;
+    if (Number.isNaN(real) || Number.isNaN(imaginary)) {
+      throw new RTypeMismatchError("NRT3355", "invalid 'quiet' argument");
+    }
+    return real !== 0 || imaginary !== 0;
+  }
+  const scalar = value.values[0];
+  if (typeof scalar === "number" && Number.isNaN(scalar)) {
+    throw new RTypeMismatchError("NRT3355", "invalid 'quiet' argument");
+  }
+  return typeof scalar === "number" && scalar !== 0;
+}
+
+function packageDescriptionRoot(file: string): string {
+  const suffix = "/DESCRIPTION";
+  return file.endsWith(suffix) ? file.slice(0, -suffix.length) : file;
+}
+
+function missingPackageMessage(packages: readonly string[]): string {
+  if (packages.length === 1) return `there is no package called '${packages[0] ?? ""}'`;
+  return `there are no packages called ${packages.map((name) => `'${name}'`).join(", ")}`;
+}
+
 function normalizeVirtualLibraryLocations(
   invocation: BuiltinInvocation,
   value: RCharacterVector,
@@ -9194,7 +9375,7 @@ async function builtinFileExists(invocation: BuiltinInvocation): Promise<RLogica
           state.files.has(path) ||
             state.binaryFiles.has(path) ||
             state.directories.has(path) ||
-            runtimeVirtualDirectoryExists(path) ||
+            runtimeVirtualDirectoryExists(invocation, path) ||
             packageVirtualPathExists(invocation, path),
         );
       } catch {
@@ -9763,7 +9944,7 @@ async function builtinFileRemove(invocation: BuiltinInvocation): Promise<RLogica
       resolved !== undefined &&
       (open ||
         state.directories.has(resolved) ||
-        runtimeVirtualDirectoryExists(resolved) ||
+        runtimeVirtualDirectoryExists(invocation, resolved) ||
         packageVirtualPathExists(invocation, resolved));
     invocation.context.warn({
       code: "NRW1132",
@@ -11773,17 +11954,37 @@ function requireVirtualTextPath(invocation: BuiltinInvocation, path: string, cal
   );
 }
 
-function runtimeVirtualDirectoryExists(path: string): boolean {
-  return (
+function runtimeVirtualDirectoryExists(invocation: BuiltinInvocation, path: string): boolean {
+  if (
     path === NATIVR_PACKAGE_LIBRARY_PATH ||
     path === VIRTUAL_RUNTIME_ROOT ||
     VIRTUAL_RUNTIME_COMPONENTS.some((component) => path === `${VIRTUAL_RUNTIME_ROOT}/${component}`)
+  ) {
+    return true;
+  }
+  const packageName = runtimePackageDirectoryName(path);
+  return (
+    packageName !== undefined &&
+    invocation.installedPackageVersion(packageName, [NATIVR_SYSTEM_LIBRARY_PATH]) !== undefined
   );
+}
+
+function runtimePackageDirectoryName(path: string): string | undefined {
+  const prefix = `${NATIVR_SYSTEM_LIBRARY_PATH}/`;
+  if (!path.startsWith(prefix)) return undefined;
+  const encoded = path.slice(prefix.length);
+  if (encoded.length === 0 || encoded.includes("/")) return undefined;
+  try {
+    const name = decodeURIComponent(encoded);
+    return name.length === 0 || name.includes("/") || name.includes("\\") ? undefined : name;
+  } catch {
+    return undefined;
+  }
 }
 
 function virtualDirectoryExists(invocation: BuiltinInvocation, path: string): boolean {
   if (virtualTextFileState(invocation).directories.has(path)) return true;
-  if (runtimeVirtualDirectoryExists(path)) return true;
+  if (runtimeVirtualDirectoryExists(invocation, path)) return true;
   const parsed = parsePackageVirtualPath(path);
   if (parsed === undefined || invocation.packageFile(path) !== undefined) return false;
   return invocation.packageResourcePath(parsed.name, parsed.resourcePath) === path;
@@ -11878,6 +12079,13 @@ function virtualDirectoryEntries(
     }
   } else if (root === VIRTUAL_RUNTIME_ROOT) {
     for (const component of VIRTUAL_RUNTIME_COMPONENTS) add(component, true);
+    for (const name of invocation.installedPackageNames([NATIVR_SYSTEM_LIBRARY_PATH])) {
+      add(`library/${encodeURIComponent(name)}`, true);
+    }
+  } else if (root === NATIVR_SYSTEM_LIBRARY_PATH) {
+    for (const name of invocation.installedPackageNames([NATIVR_SYSTEM_LIBRARY_PATH])) {
+      add(encodeURIComponent(name), true);
+    }
   } else {
     const parsed = parsePackageVirtualPath(root);
     if (parsed !== undefined) {

@@ -32,7 +32,7 @@ importFrom(graphics, axis, barplot, plot.new, plot.window, rect, title)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median, ts.plot)
 importFrom(utils, download.file, packageDescription, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, annotated_plot, ask_new_pages, find_tools, create_file, copy_resource, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, socket_exchange, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, loaded_module_paths, standard_output, sink_lines, write_sass_variable)
+export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, annotated_plot, ask_new_pages, find_tools, create_file, copy_resource, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, socket_exchange, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, package_files, installed_version, namespace_names, process_id, library_paths, loaded_module_paths, standard_output, sink_lines, write_sass_variable)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -182,6 +182,10 @@ package_metadata <- function(package = "nativrfixture") {
     description$License,
     description$URL
   )
+}
+package_files <- function(package = "nativrfixture") {
+  root <- find.package(package)
+  c(basename(root), basename(list.files(root, full.names = TRUE)))
 }
 installed_version <- function(package = "nativrfixture") as.character(packageVersion(package))
 namespace_names <- function(pattern = "") ls(envir = environment(namespace_names), pattern = pattern, all.names = TRUE)
@@ -3801,6 +3805,97 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("finds installed core and pure-R package directories with GNU-compatible boundaries", async () => {
+    const runtime = await createR({ execution: "inline", assets, packages: [pureRFixture] });
+
+    await expect(
+      runtime.eval(`
+        found <- withVisible(find.package(c("base", "stats", "base")))
+        defaults <- find.package()
+        f <- formals(find.package)
+        c(
+          basename(found$value), found$visible, is.null(attributes(found$value)),
+          basename(defaults), basename(dirname(find.package("base"))),
+          dir.exists(find.package("base")),
+          all(c("base", "stats") %in% basename(list.files(.Library, full.names = TRUE))),
+          names(f), is.null(f$package), is.null(f$lib.loc), identical(f$quiet, FALSE),
+          paste(deparse(f$verbose), collapse = "")
+        )
+      `),
+    ).resolves.toEqual([
+      "base",
+      "stats",
+      "base",
+      "TRUE",
+      "TRUE",
+      "stats",
+      "graphics",
+      "grDevices",
+      "utils",
+      "datasets",
+      "methods",
+      "base",
+      "library",
+      "TRUE",
+      "TRUE",
+      "package",
+      "lib.loc",
+      "quiet",
+      "verbose",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      'getOption("verbose")',
+    ]);
+
+    const mixed = await runtime.evalDetailed(
+      'find.package(c("base", "definitely.missing", "stats"))',
+    );
+    expect(mixed.value).toEqual([
+      "nativr://runtime/library/base",
+      "nativr://runtime/library/stats",
+    ]);
+    expect(mixed.warnings).toEqual([
+      expect.objectContaining({
+        code: "NRW1142",
+        message: "there is no package called 'definitely.missing'",
+      }),
+    ]);
+    await expect(
+      runtime.eval('basename(find.package(c("base", NA_character_, "stats"), quiet = TRUE))'),
+    ).resolves.toEqual(["base", "stats"]);
+    await expect(
+      runtime.eval('find.package(c("missing.one", "missing.two"))'),
+    ).rejects.toMatchObject({ code: "NRE2221" });
+    await expect(runtime.eval('find.package("", quiet = TRUE)')).rejects.toMatchObject({
+      code: "NRE2259",
+    });
+    await expect(
+      runtime.eval('length(find.package(character(), lib.loc = stop("must stay lazy")))'),
+    ).resolves.toBe(0);
+    await expect(
+      runtime.eval(
+        'basename(find.package("base", quiet = stop("must stay lazy"), verbose = stop("must stay lazy")))',
+      ),
+    ).resolves.toBe("base");
+    await expect(runtime.eval('find.package("missing", quiet = logical())')).rejects.toMatchObject({
+      code: "NRT3355",
+    });
+
+    await expect(runtime.eval("nativrfixture::package_files()")).resolves.toEqual([
+      "nativrfixture",
+      "DESCRIPTION",
+      "NAMESPACE",
+      "R",
+      "data",
+      "extdata",
+    ]);
+    await expect(
+      runtime.eval('length(find.package("nativrfixture", lib.loc = tempdir(), quiet = TRUE))'),
+    ).resolves.toBe(0);
+    await runtime.dispose();
+  });
+
   it("reports the browser-native loaded-module registry without synthetic host DLLs", async () => {
     const runtime = await createR({ execution: "inline", assets, packages: [pureRFixture] });
     await expect(
@@ -4192,6 +4287,7 @@ describe("complete inline source-to-result vertical slice", () => {
     ]);
     await expect(runtime.eval("nativrfixture::namespace_names('^package_')")).resolves.toEqual([
       "package_bars",
+      "package_files",
       "package_libname",
       "package_metadata",
       "package_name",
@@ -4258,6 +4354,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "namespace_names",
       "new_score",
       "package_bars",
+      "package_files",
       "package_libname",
       "package_metadata",
       "package_name",
@@ -12391,7 +12488,7 @@ NeedsCompilation: no
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.258.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.259.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
