@@ -199,6 +199,10 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText('["worker", "bridge"]');
 
+  await page.getByRole("button", { name: "Structured system2 command" }).click();
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText('["system2-worker", "structured-command"]');
+
   await page.getByRole("button", { name: "Pure-R package pipe" }).click();
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText('["pipe-worker", "package-pipe"]');

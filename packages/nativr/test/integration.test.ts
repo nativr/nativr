@@ -252,11 +252,12 @@ Imports: nativrfixture (>= 0.1.0)`,
 
 const pureRSystemFixture: PureRPackageBundle = {
   description: "Package: nativrsystem\nVersion: 0.1.0\nNeedsCompilation: no",
-  namespace: "export(system_probe)",
+  namespace: "export(system_probe, system2_probe)",
   rSources: [
     {
       path: "R/system.R",
-      source: "system_probe <- function() system('package-probe', intern = TRUE)",
+      source:
+        "system_probe <- function() system('package-probe', intern = TRUE)\nsystem2_probe <- function() system2('package-runner', '--probe', stdout = TRUE)",
     },
   ],
 };
@@ -3266,6 +3267,165 @@ describe("complete inline source-to-result vertical slice", () => {
     });
     expect(limitedCalls).toBe(1);
     await limited.dispose();
+  });
+
+  it("routes usage-ranked system2() as a structured portable host request", async () => {
+    const requests: PublicSystemCommandRequest[] = [];
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [pureRSystemFixture],
+      systemCommand: (request) => {
+        requests.push(request);
+        if (request.operation !== "system2") {
+          return { status: 127, failedToStart: true, errorMessage: "system2 test only" };
+        }
+        switch (request.command) {
+          case "runner":
+            return { status: 0, stdout: "alpha\r\nbeta\n", stderr: "note\n" };
+          case "console-runner":
+            return { status: 3, stdout: "out\n", stderr: "err\n" };
+          case "failure-runner":
+            return { status: 7, stdout: "", errorMessage: "process returned 7" };
+          case "missing-runner":
+            return { status: 127, failedToStart: true, errorMessage: "not allowed" };
+          case "async-runner":
+            return { status: 9 };
+          case "long-runner":
+            return { status: 0, stdout: `${"x".repeat(8_100)}\n` };
+          case "package-runner":
+            return { status: 0, stdout: "package-ok\n" };
+          default:
+            return { status: 0 };
+        }
+      },
+    });
+
+    const captured = await runtime.evalDetailed(`
+      x <- system2(
+        c("runner", "embedded"),
+        c("--flag", shQuote("a b")),
+        stdout = TRUE,
+        stderr = TRUE,
+        input = c("one", NA_character_),
+        env = c("A=1", "B=two"),
+        wait = FALSE,
+        timeout = 2
+      )
+      c(x, typeof(x), is.null(attr(x, "status")))
+    `);
+    expect(captured.value).toEqual(["alpha", "beta", "note", "character", "TRUE"]);
+    expect(captured.visible).toBe(true);
+    expect(requests[0]).toEqual({
+      operation: "system2",
+      command: "runner",
+      commandElements: ["embedded"],
+      args: ["--flag", "'a b'"],
+      environment: ["A=1", "B=two"],
+      stdinPath: null,
+      stdout: { mode: "capture" },
+      stderr: { mode: "capture" },
+      intern: true,
+      ignoreStdout: false,
+      ignoreStderr: false,
+      wait: true,
+      input: ["one", "NA"],
+      inputText: null,
+      showOutputOnConsole: false,
+      minimized: false,
+      invisible: true,
+      timeoutSeconds: 2,
+      receiveConsoleSignals: true,
+    });
+
+    const stderrCapture = await runtime.evalDetailed(
+      "system2('runner', stderr = TRUE, stdout = NULL, stdin = 'ignored.in', input = 'body', timeout = 0.75)",
+    );
+    expect(stderrCapture.value).toEqual(["alpha", "beta", "note"]);
+    expect(stderrCapture.warnings).toEqual([
+      {
+        code: "NRW1129",
+        message: "setting stdout = TRUE because stderr = TRUE on this platform",
+      },
+    ]);
+    expect(requests.at(-1)).toMatchObject({
+      stdinPath: null,
+      input: ["body"],
+      stdout: { mode: "capture" },
+      stderr: { mode: "capture" },
+      timeoutSeconds: 0,
+    });
+
+    const consoleResult = await runtime.evalDetailed(
+      "system2('console-runner', stdout = '', stderr = '')",
+    );
+    expect(consoleResult).toMatchObject({ value: 3, visible: false });
+    expect(consoleResult.output).toEqual([
+      { stream: "stdout", text: "out\n" },
+      { stream: "stderr", text: "err\n" },
+    ]);
+
+    const failed = await runtime.evalDetailed(
+      "suppressWarnings(system2('failure-runner', stdout = TRUE))",
+    );
+    expect(failed.value).toEqual([]);
+    await expect(
+      runtime.eval("attr(suppressWarnings(system2('failure-runner', stdout = TRUE)), 'status')"),
+    ).resolves.toBe(7);
+    const warned = await runtime.evalDetailed("system2('failure-runner', stdout = TRUE)");
+    expect(warned.warnings).toEqual([
+      { code: "NRW1129", message: "running command 'failure-runner' had status 7" },
+    ]);
+    await expect(runtime.eval("system2('missing-runner', stdout = TRUE)")).rejects.toMatchObject({
+      code: "NRE2250",
+    });
+    const missingStatus = await runtime.evalDetailed("system2('missing-runner')");
+    expect(missingStatus).toMatchObject({ value: 127, visible: false });
+    expect(missingStatus.warnings).toEqual([{ code: "NRW1129", message: "not allowed" }]);
+    await expect(runtime.eval("system2('async-runner', wait = FALSE)")).resolves.toBe(0);
+    await expect(
+      runtime.eval("x <- system2('long-runner', stdout = TRUE); c(length(x), nchar(x))"),
+    ).resolves.toEqual([2, 8_095, 5]);
+
+    await runtime.eval(
+      "system2('redirect-runner', stdout = 'virtual.out', stderr = NULL, stdin = 'virtual.in', env = 1:2)",
+    );
+    expect(requests.at(-1)).toMatchObject({
+      operation: "system2",
+      environment: ["1", "2"],
+      stdinPath: "virtual.in",
+      stdout: { mode: "file", path: "virtual.out" },
+      stderr: { mode: "discard" },
+    });
+    await expect(runtime.eval("library(nativrsystem)\nsystem2_probe()")).resolves.toBe(
+      "package-ok",
+    );
+    await expect(runtime.eval("typeof(system2)")).resolves.toBe("closure");
+    await expect(runtime.eval("names(formals(system2))")).resolves.toEqual([
+      "command",
+      "args",
+      "stdout",
+      "stderr",
+      "stdin",
+      "input",
+      "env",
+      "wait",
+      "minimized",
+      "invisible",
+      "timeout",
+      "receive.console.signals",
+    ]);
+    await expect(runtime.eval("system2('x', stdout = c('', 'x'))")).rejects.toMatchObject({
+      code: "NRT3406",
+    });
+    await expect(runtime.eval("system2('x', wait = FALSE, timeout = 1)")).rejects.toMatchObject({
+      code: "NRE2251",
+    });
+    await runtime.dispose();
+
+    const closed = await session();
+    await expect(closed.eval("system2('anything')")).rejects.toMatchObject({ code: "NRU6194" });
+    await closed.dispose();
   });
 
   it("provides usage-ranked pipe() connections through the bounded host-command capability", async () => {
@@ -12574,7 +12734,7 @@ NeedsCompilation: no
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.261.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.262.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

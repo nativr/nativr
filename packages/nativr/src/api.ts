@@ -51,6 +51,7 @@ export type {
   PublicSocketRequest,
   PublicSocketResult,
   PublicSystemCommandRequest,
+  PublicSystemCommandRedirection,
   PublicSystemCommandResult,
   PublicUrlRequest,
   PublicUrlResult,
@@ -76,7 +77,7 @@ export interface CreateROptions {
   readonly environmentVariables?: Readonly<Record<string, string>>;
   /** Explicit executable-name allow-list used by Sys.which(); no host PATH is read implicitly. */
   readonly executablePaths?: Readonly<Record<string, string>>;
-  /** Explicit allow-list seam for system(); omitted by default, so R code has no shell capability. */
+  /** Explicit allow-list seam for system(), system2(), and pipe(); omitted sessions have no process capability. */
   readonly systemCommand?: SystemCommandHandler;
   /** Host-owned line input for R and graphics prompts; omitted sessions remain non-interactive. */
   readonly readline?: ReadlineHandler;
@@ -94,7 +95,7 @@ export interface CreateROptions {
   readonly onGraphics?: (event: PublicGraphicsEvent) => void;
 }
 
-/** Host-owned policy used only when R code executes system() or a pipe() connection. */
+/** Host-owned policy used only when R code executes system(), system2(), or a pipe() connection. */
 export type SystemCommandHandler = (
   request: PublicSystemCommandRequest,
 ) => PublicSystemCommandResult | Promise<PublicSystemCommandResult>;
@@ -970,7 +971,7 @@ class WorkerSession implements NativRSession {
       if (handler === undefined) {
         throw new NativRError(
           "NRU6194",
-          "system()/pipe() requires an explicit createR({ systemCommand }) host capability.",
+          "system()/system2()/pipe() requires an explicit createR({ systemCommand }) host capability.",
         );
       }
       response = {

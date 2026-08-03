@@ -90,6 +90,7 @@ import type {
   ROutput,
   RPairlist,
   RRawVector,
+  RSystemCommandRedirection,
   RSystemCommandResult,
   RSymbol,
   RUrlRequest,
@@ -433,6 +434,53 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
         name: "show.output.on.console",
         defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
       },
+      {
+        name: "minimized",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "invisible",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+      { name: "timeout", defaultValue: { kind: "DoubleLiteral", value: 0, span: SYNTHETIC_SPAN } },
+      {
+        name: "receive.console.signals",
+        defaultValue: { kind: "Identifier", name: "wait", span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
+  withBuiltinFormals(
+    withUnsupportedBehavior(
+      defineBuiltin(
+        "system2",
+        [
+          "command",
+          "args",
+          "stdout",
+          "stderr",
+          "stdin",
+          "input",
+          "env",
+          "wait",
+          "minimized",
+          "invisible",
+          "timeout",
+          "receive.console.signals",
+        ],
+        "behavioral",
+        builtinSystem2,
+      ),
+      ["operating-system execution is available only through an explicit host handler"],
+    ),
+    [
+      { name: "command" },
+      { name: "args", defaultValue: callAst("character", []) },
+      { name: "stdout", defaultValue: { kind: "StringLiteral", value: "", span: SYNTHETIC_SPAN } },
+      { name: "stderr", defaultValue: { kind: "StringLiteral", value: "", span: SYNTHETIC_SPAN } },
+      { name: "stdin", defaultValue: { kind: "StringLiteral", value: "", span: SYNTHETIC_SPAN } },
+      { name: "input", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      { name: "env", defaultValue: callAst("character", []) },
+      { name: "wait", defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN } },
       {
         name: "minimized",
         defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
@@ -6000,18 +6048,7 @@ async function builtinSystem(invocation: BuiltinInvocation): Promise<RValue> {
     timeoutSeconds,
     receiveConsoleSignals: intern || wait || receiveConsoleSignals,
   });
-  if (
-    !Number.isSafeInteger(result.status) ||
-    result.status < 0 ||
-    result.status > 2_147_483_647 ||
-    (result.stdout !== undefined && typeof result.stdout !== "string") ||
-    (result.stderr !== undefined && typeof result.stderr !== "string") ||
-    (result.errorMessage !== undefined && typeof result.errorMessage !== "string") ||
-    (result.failedToStart !== undefined && typeof result.failedToStart !== "boolean") ||
-    (result.timedOut !== undefined && typeof result.timedOut !== "boolean")
-  ) {
-    throw new REvaluationError("NRE2250", "system() host returned an invalid command result.");
-  }
+  validateSystemCommandResult(result, "system");
 
   if (!ignoreStderr && result.stderr !== undefined && result.stderr.length > 0) {
     invocation.context.writeOutput({ stream: "stderr", text: result.stderr });
@@ -6060,6 +6097,244 @@ async function builtinSystem(invocation: BuiltinInvocation): Promise<RValue> {
   return output;
 }
 
+async function builtinSystem2(invocation: BuiltinInvocation): Promise<RValue> {
+  const names = [
+    "command",
+    "args",
+    "stdout",
+    "stderr",
+    "stdin",
+    "input",
+    "env",
+    "wait",
+    "minimized",
+    "invisible",
+    "timeout",
+    "receive.console.signals",
+  ] as const;
+  const matched = await matchExact(invocation, names);
+  const commandValues = system2Characters(
+    required(matched, "command", "system2"),
+    "command",
+    invocation,
+  );
+  const normalizedCommand = commandValues.length === 0 ? [""] : commandValues;
+  const command = normalizedCommand[0] ?? "";
+  const commandElements = Object.freeze(normalizedCommand.slice(1));
+  const args = Object.freeze(system2Characters(matched.get("args") ?? R_NULL, "args", invocation));
+  const environment = Object.freeze(
+    system2Characters(matched.get("env") ?? R_NULL, "env", invocation),
+  );
+  const requestedStdout = system2Redirection(matched.get("stdout"), "stdout");
+  const stderr = system2Redirection(matched.get("stderr"), "stderr");
+  const suppliedStdinPath = system2StdinPath(matched.get("stdin"));
+  const input = systemInput(matched.get("input"));
+  const stdinPath = input === null ? suppliedStdinPath : null;
+  const requestedWait = systemLogicalFlag(matched.get("wait"), true, "wait");
+  const minimized = systemLogicalFlag(matched.get("minimized"), false, "minimized");
+  const invisible = systemLogicalFlag(matched.get("invisible"), true, "invisible");
+  const timeoutSeconds = Math.trunc(systemTimeout(matched.get("timeout")));
+  const receiveConsoleSignals = systemLogicalFlag(
+    matched.get("receive.console.signals"),
+    requestedWait,
+    "receive.console.signals",
+  );
+  const stdout =
+    stderr.mode === "capture" && requestedStdout.mode !== "capture"
+      ? ({ mode: "capture" } as const)
+      : requestedStdout;
+  if (stderr.mode === "capture" && requestedStdout.mode !== "capture") {
+    invocation.context.warn({
+      code: "NRW1129",
+      message: "setting stdout = TRUE because stderr = TRUE on this platform",
+    });
+  }
+  if (minimized) {
+    invocation.context.warn({
+      code: "NRW1129",
+      message: "argument 'minimized' is ignored on this platform",
+    });
+  }
+  if (!invisible) {
+    invocation.context.warn({
+      code: "NRW1129",
+      message: "argument 'invisible' is ignored on this platform",
+    });
+  }
+  const capture = stdout.mode === "capture" || stderr.mode === "capture";
+  const wait = requestedWait || capture;
+  if (timeoutSeconds > 0 && !wait) {
+    throw new REvaluationError(
+      "NRE2251",
+      "Timeout with background running processes is not supported.",
+    );
+  }
+
+  const requestStrings = [
+    command,
+    ...commandElements,
+    ...args,
+    ...environment,
+    ...(stdinPath === null ? [] : [stdinPath]),
+    ...(stdout.mode === "file" ? [stdout.path] : []),
+    ...(stderr.mode === "file" ? [stderr.path] : []),
+    ...(input ?? []),
+  ];
+  for (const value of requestStrings) {
+    if (value.includes("\0")) {
+      throw new RTypeMismatchError("NRT3406", "embedded nul in string");
+    }
+  }
+  const requestBytes = requestStrings.reduce(
+    (total, value) => total + encodeUtf8Bytes(value).byteLength + 1,
+    0,
+  );
+  if (requestBytes > invocation.context.limits.maxOutputBytes) {
+    throw new RResourceLimitError("NRL4007", "System-command request size limit exceeded.", {
+      details: { maxOutputBytes: invocation.context.limits.maxOutputBytes, requestBytes },
+    });
+  }
+
+  const result = await invocation.systemCommand({
+    operation: "system2",
+    command,
+    commandElements,
+    args,
+    environment,
+    stdinPath,
+    stdout,
+    stderr,
+    intern: capture,
+    ignoreStdout: stdout.mode === "discard" || stdout.mode === "file",
+    ignoreStderr: stderr.mode === "discard" || stderr.mode === "file",
+    wait,
+    input,
+    inputText: null,
+    showOutputOnConsole: stdout.mode === "console" || stderr.mode === "console",
+    minimized,
+    invisible,
+    timeoutSeconds,
+    receiveConsoleSignals: capture || wait || receiveConsoleSignals,
+  });
+  validateSystemCommandResult(result, "system2");
+
+  const commandLabel = [command, ...commandElements, ...args].join(" ");
+  if (result.failedToStart === true && capture) {
+    throw new REvaluationError(
+      "NRE2250",
+      result.errorMessage ?? `error in running command '${commandLabel}'`,
+    );
+  }
+  const completedStatus =
+    result.failedToStart === true ? 127 : result.timedOut === true ? 124 : result.status;
+  const status = result.failedToStart === true ? 127 : wait ? completedStatus : 0;
+  if (result.timedOut === true) {
+    invocation.context.warn({ code: "NRW1129", message: `command '${commandLabel}' timed out` });
+  } else if (result.failedToStart === true) {
+    invocation.context.warn({
+      code: "NRW1129",
+      message: result.errorMessage ?? `error in running command '${commandLabel}'`,
+    });
+  } else if (capture && status !== 0) {
+    invocation.context.warn({
+      code: "NRW1129",
+      message: `running command '${commandLabel}' had status ${status}`,
+    });
+  }
+
+  if (stdout.mode === "console" && result.stdout !== undefined && result.stdout.length > 0) {
+    invocation.context.writeOutput({ stream: "stdout", text: result.stdout });
+  }
+  if (stderr.mode === "console" && result.stderr !== undefined && result.stderr.length > 0) {
+    invocation.context.writeOutput({ stream: "stderr", text: result.stderr });
+  }
+  if (!capture) {
+    invocation.setResultVisibility("invisible");
+    return integerVector([status]);
+  }
+
+  invocation.setResultVisibility("visible");
+  const capturedText = [
+    ...(stdout.mode === "capture" ? [result.stdout ?? ""] : []),
+    ...(stderr.mode === "capture" ? [result.stderr ?? ""] : []),
+  ].join("");
+  const lines = system2OutputLines(capturedText);
+  invocation.context.allocate(lines.length);
+  let output: RValue = characterVector(lines);
+  if (status !== 0) output = withAttribute(output, "status", integerVector([status]));
+  if (result.errorMessage !== undefined) {
+    output = withAttribute(output, "errmsg", characterVector([result.errorMessage]));
+  }
+  return output;
+}
+
+function system2Characters(
+  value: RValue,
+  name: "command" | "args" | "env",
+  invocation: BuiltinInvocation,
+): string[] {
+  if (value.type === "null") return [];
+  if (value.type === "list" || value.type === "pairlist") {
+    return [...globPatternCharacters(value, invocation)];
+  }
+  if (!isAtomic(value)) throw new RTypeMismatchError("NRT3406", `invalid '${name}' argument`);
+  const characters = coerceAtomicToCharacter(value, invocation);
+  return Array.from({ length: characters.length }, (_, index) =>
+    isMissing(characters, index) ? "NA" : (characters.values[index] ?? ""),
+  );
+}
+
+function system2Redirection(
+  value: RValue | undefined,
+  name: "stdout" | "stderr",
+): RSystemCommandRedirection {
+  if (value === undefined) return { mode: "console" };
+  if (value.type === "null") return { mode: "discard" };
+  if (!isAtomic(value)) {
+    throw new RTypeMismatchError("NRT3406", `'${name}' must be of length 1`);
+  }
+  if (value.length !== 1) {
+    throw new RTypeMismatchError("NRT3406", `'${name}' must be of length 1`);
+  }
+  if (value.type === "logical") {
+    if (isMissing(value, 0)) return { mode: "console" };
+    return value.values[0] === 1 ? { mode: "capture" } : { mode: "discard" };
+  }
+  if (value.type === "character") {
+    const path = isMissing(value, 0) ? "NA" : (value.values[0] ?? "");
+    return path.length === 0 ? { mode: "console" } : { mode: "file", path };
+  }
+  return { mode: "console" };
+}
+
+function system2StdinPath(value: RValue | undefined): string | null {
+  if (value === undefined) return null;
+  if (value.type !== "character") {
+    throw new RTypeMismatchError("NRT3406", "character string expected as third argument");
+  }
+  if (value.length === 0) return null;
+  const path = isMissing(value, 0) ? "NA" : (value.values[0] ?? "");
+  return path.length === 0 ? null : path;
+}
+
+function validateSystemCommandResult(
+  result: RSystemCommandResult,
+  call: "system" | "system2",
+): void {
+  if (
+    !Number.isSafeInteger(result.status) ||
+    result.status < 0 ||
+    result.status > 2_147_483_647 ||
+    (result.stdout !== undefined && typeof result.stdout !== "string") ||
+    (result.stderr !== undefined && typeof result.stderr !== "string") ||
+    (result.errorMessage !== undefined && typeof result.errorMessage !== "string") ||
+    (result.failedToStart !== undefined && typeof result.failedToStart !== "boolean") ||
+    (result.timedOut !== undefined && typeof result.timedOut !== "boolean")
+  ) {
+    throw new REvaluationError("NRE2250", `${call}() host returned an invalid command result.`);
+  }
+}
+
 function systemLogicalFlag(value: RValue | undefined, fallback: boolean, name: string): boolean {
   if (value === undefined) return fallback;
   if (value.type !== "logical" || value.length !== 1 || isMissing(value, 0)) {
@@ -6102,6 +6377,28 @@ function systemOutputLines(output: string): readonly string[] {
   const lines = normalized.split("\n");
   if (normalized.endsWith("\n")) lines.pop();
   return lines;
+}
+
+function system2OutputLines(output: string): readonly string[] {
+  const lines = systemOutputLines(output);
+  const split: string[] = [];
+  for (const line of lines) {
+    let segment = "";
+    let bytes = 0;
+    for (const character of line) {
+      const characterBytes = encodeUtf8Bytes(character).byteLength;
+      if (bytes + characterBytes > 8_095 && segment.length > 0) {
+        split.push(segment);
+        segment = character;
+        bytes = characterBytes;
+      } else {
+        segment += character;
+        bytes += characterBytes;
+      }
+    }
+    split.push(segment);
+  }
+  return split;
 }
 
 async function builtinProcessTime(invocation: BuiltinInvocation): Promise<RValue> {

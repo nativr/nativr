@@ -53,10 +53,10 @@ The map is snapshotted and works identically through inline and default Worker e
 derived from `systemCommand`; applications that both advertise and execute a tool should enforce the
 same allow-list in both options.
 
-`base::system()` is available through an explicit, asynchronous host policy. NativR never chooses a
-shell or process API and the option is absent by default. An embedding application may allow-list
-virtual commands, a sandboxed service, or a platform-specific process runner and return bounded text
-plus an exit status:
+`base::system()` and `base::system2()` are available through an explicit, asynchronous host policy.
+NativR never chooses a shell or process API and the option is absent by default. An embedding
+application may allow-list virtual commands, a sandboxed service, or a platform-specific process
+runner and return bounded text plus an exit status:
 
 ```ts
 const r = await createR({
@@ -70,16 +70,22 @@ const r = await createR({
 });
 await r.eval('Sys.which("report-version")'); // "nativr://host/bin/report-version"
 await r.eval('system("report-version", intern = TRUE)'); // "reporter 1.0"
+await r.eval('system2("report-version", "--json", stdout = TRUE)');
 ```
 
 The request has an `operation` discriminator. A `system` request includes GNU R 4.6's controls,
 line-oriented `input`, and timeout value. A `pipe` read sends `inputText: null`; a pipe write sends
-the exact buffered stdin text in `inputText`. The result accepts `status`, optional
+the exact buffered stdin text in `inputText`. A `system2` request additionally preserves
+`commandElements`, `args`, portable `environment` entries, `stdinPath`, and separate `stdout` /
+`stderr` descriptors whose modes are `console`, `capture`, `discard`, or `file`. This is structured
+policy input, not a safe-to-run shell string: the host must still validate executable identity,
+arguments, environment names, and every file path. The result accepts `status`, optional
 `stdout`/`stderr`, `errorMessage`, `failedToStart`, and `timedOut`. Inline execution calls the same
 handler directly; Worker execution uses a correlated request/result exchange while the R evaluation
-is suspended. With no handler, `system()` and an executing `pipe()` fail with `NRU6194`. A
-constructed but unused pipe remains inert and can be closed normally. The handler, not NativR, owns
-allow-listing, quoting, environment isolation, cancellation, and actual process semantics.
+is suspended. With no handler, `system()`, `system2()`, and an executing `pipe()` fail with
+`NRU6194`. A constructed but unused pipe remains inert and can be closed normally. The handler, not
+NativR, owns allow-listing, argument interpretation, quoting, environment isolation, redirection,
+cancellation, and actual process semantics.
 
 The same policy can expose a selected command as a normal R connection, including from unchanged
 pure-R package code: `readLines(pipe("approved-report"))`. Open write pipes buffer R output and pass

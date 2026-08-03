@@ -988,6 +988,15 @@ and escaping also has exact browser conformance. Atomic, factor, list/pairlist, 
 expression, and formula coercion use the owned value model. Byte-invalid native strings, exhaustive
 host-shell round trips, and command execution are outside this function's contract.
 
+`system2()` has GNU R 4.6 differential evidence for closure type, all twelve formals and defaults,
+atomic/list argument and environment coercion, preflight errors, capture/status/warning/visibility,
+and documented timeout/failed-start status conventions. NativR's platform-independent host contract
+keeps executable, command elements, arguments, environment entries, stdin path, input lines and
+stdout/stderr redirection descriptors separate across inline and Worker execution. Capturing either
+stream forces waiting; absent `systemCommand` authority fails closed. Exact OS shell parsing,
+executable discovery, inherited environment, host paths, terminal interaction, stream interleaving,
+and arbitrary process support remain host-adapter responsibilities and are not claimed.
+
 `utils::sessionInfo` has shape evidence for the measured otel `utils::sessionInfo()$platform` lookup
 and differential evidence for its class, R major/minor target, RNG-kind length, attached
 base-package length, and named-list access. Browser-specific values are deliberately NativR

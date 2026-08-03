@@ -986,8 +986,17 @@ removal, explicit `cmd`/`cmd2` output, missing values, and registered `as.charac
 The public GNU R documentation supplies the non-Windows `sh` and `csh` contract, which has exact
 NativR browser cases together with unchanged pure-R package and default Worker execution. Quoting is
 an owned string transform and grants no process authority; actual command execution remains behind
-the separate default-deny host seam. Rank 357 `base::system2` is the next measured unresolved
-callable.
+the separate default-deny host seam.
+
+The structured-command increment raises current name overlap to 641 of 2,522. Rank 357
+`base::system2` covers xfun's measured portable process call at 1.1% download-weighted reach. GNU R
+4.6 black-box evidence covers closure formals/defaults, argument/environment coercion, output
+capture, status/warning/visibility behavior and preflight errors. NativR-only evidence covers the
+explicit data-only host request, console/capture/discard/file redirection intent, resource limits,
+failed-start and timeout outcomes, unchanged source-only package execution, and inline/default-
+Worker transport. No handler means no process authority, and NativR does not claim host shell,
+filesystem, environment, or executable discovery. Rank 358 `.Call` is now the next measured missing
+callable and requires a future typed native/Wasm ABI rather than JavaScript or host pointers.
 
 ## Completion evidence
 

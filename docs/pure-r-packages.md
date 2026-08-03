@@ -409,6 +409,14 @@ needs one, `createR({ systemCommand })` can approve that exact command and retur
 across inline or Worker execution. No handler means no process authority, and a successful package
 bundle still cannot claim that arbitrary external programs exist.
 
+Rank-357 `base::system2()` makes the portable variant reusable by unchanged source-only package
+code. Instead of translating a package helper, NativR sends the approved host policy separate
+executable, command-element, argument, environment, stdin/stdout/stderr, input, wait/signal, and
+timeout fields through the same inline/Worker bridge. Captured output, exit status, warnings,
+visibility, missing values, redirection intent, and GNU R-shaped formals are handled in the shared R
+runtime. The embedding application still decides whether any executable, environment entry, or path
+is allowed; the browser runtime neither owns a shell nor inherits a host process environment.
+
 Rank-313 `base::pipe()` exposes the same opt-in command policy through R's ordinary connection
 protocol. A source-only package can keep `readLines(pipe(command))`, `source(pipe(command))`, or a
 text write pipe in its R code; NativR routes only an allow-listed, copied request through inline or
@@ -530,11 +538,11 @@ loader.
 
 - C, C++, Fortran, Rust, Java, shared libraries, `LinkingTo`, `useDynLib`, subprocesses, system
   libraries, sockets, and native graphics require separate audited Wasm or host adapters.
-- `system()` and `pipe()` expose only an explicit embedding-host request/response contract. The
-  browser runtime has no default shell, command search path, inherited environment, or executable
-  filesystem. A host adapter can support selected package features, but it does not make a package
-  containing native code a pure-R package. Pipe execution is currently one-shot and one-way rather
-  than interactive or duplex.
+- `system()`, `system2()`, and `pipe()` expose only an explicit embedding-host request/response
+  contract. The browser runtime has no default shell, command search path, inherited environment, or
+  executable filesystem. A host adapter can support selected package features, but it does not make
+  a package containing native code a pure-R package. Pipe execution is currently one-shot and
+  one-way rather than interactive or duplex.
 - `configure`, `configure.win`, `cleanup`, and `cleanup.win` are not executed.
 - The current NAMESPACE parser supports `export`, `import`, `importFrom`, and `S3method`, while
   package code can call `registerS3method()` once its generic is available. Delayed registration
@@ -595,6 +603,11 @@ loader.
   behavior, attributes, missing values, unchanged fixture function, and Worker Playground path have
   executable evidence. It only returns text; package process execution still requires the explicit
   default-deny host command adapter.
+- `system2()` supports xfun's measured portable command path through that adapter. It preserves
+  argument and environment vectors plus stream redirection intent as structured data, forces waiting
+  when output is captured, returns GNU R-shaped output/status/visibility, and runs from an unchanged
+  source-only package namespace in both runtime modes. It does not discover executables, grant
+  ambient process authority, implement host file paths, or make native-code packages pure R.
 - `stats::ts.plot()` supports magrittr's measured exposition-pipe example without translating
   magrittr or the calling package. Numeric vectors and regular vector/matrix series align on a
   shared bounded time grid, missing union cells split paths, and styles/annotations traverse the

@@ -829,8 +829,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
 173. Usage-ranked shell-string quoting: rank-353 `base::shQuote` covers xfun's measured call with
      ordinary closure formals, browser-default Unix `sh`, explicit `csh`/`cmd`/`cmd2`, partial mode
      matching, coercion and S3 dispatch, missing values, unchanged pure-R package use, inline/Worker
-     execution, and differential conformance without granting process authority. Rank-357
-     `base::system2` is the next measured unresolved callable.
+     execution, and differential conformance without granting process authority.
+174. Usage-ranked structured command execution: rank-357 `base::system2` carries xfun's measured
+     call through the explicit default-deny host policy, preserving executable/argument/environment
+     and stream-redirection structure, GNU R formals/coercion/capture/status/visibility, resource
+     limits, unchanged pure-R package execution, and inline/Worker transport. Rank-358 `.Call` is
+     the next measured unresolved callable and requires a typed Wasm/native ABI.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

@@ -803,3 +803,10 @@ for documented Unix `sh`/`csh` and Windows `cmd`/`cmd2` modes. It adds no depend
 event, process launch, host-shell probe, or package-specific translation; coercion and registered S3
 methods remain inside the evaluator. The measured Worker is 403.1 KiB gzip (412,820 bytes), so the
 ceiling rises narrowly from 403 KiB to 404 KiB; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.262 adds usage-ranked `base::system2` by reusing the existing explicit
+host-command request/result suspension path. The added fields preserve executable, arguments,
+environment, stdin and stdout/stderr redirection intent across inline and Worker execution; NativR
+still contains no process launcher or shell. The measured Worker is 404.2 KiB gzip (413,860 bytes),
+164 bytes above the previous 404 KiB ceiling, so the ceiling rises narrowly to 405 KiB; client and
+parser-Wasm budgets remain unchanged.

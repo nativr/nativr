@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.261.0",
+  "languageSubsetVersion": "0.262.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -120,6 +120,7 @@
         { "name": "Sys.which", "compatibility": "behavioral" },
         { "name": "Sys.sleep", "compatibility": "behavioral" },
         { "name": "system", "compatibility": "behavioral" },
+        { "name": "system2", "compatibility": "behavioral" },
         { "name": "proc.time", "compatibility": "behavioral" },
         { "name": "system.time", "compatibility": "behavioral" },
         { "name": "R.home", "compatibility": "shape" },

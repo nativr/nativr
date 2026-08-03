@@ -75,16 +75,16 @@ signal.
 
 | Priority | Measured rank | Callable           | Weighted reach | Packages | Observed calls |
 | -------: | ------------: | ------------------ | -------------: | -------: | -------------: |
-|        1 |           357 | `system2`          |           1.1% |        1 |              1 |
-|        2 |           358 | `.Call`            |           1.0% |        1 |              1 |
-|        3 |           363 | `aspell`           |           1.0% |        1 |              2 |
-|        4 |           364 | `abline`           |           1.0% |        1 |              1 |
-|        5 |           365 | `browseVignettes`  |           1.0% |        1 |              1 |
-|        6 |           366 | `dev.control`      |           1.0% |        1 |              1 |
-|        7 |           368 | `getFromNamespace` |           0.9% |        1 |             37 |
-|        8 |           370 | `help`             |           0.9% |        1 |             15 |
-|        9 |           380 | `curve`            |           0.7% |        1 |              1 |
-|       10 |           392 | `tracemem`         |           0.7% |        1 |              2 |
+|        1 |           358 | `.Call`            |           1.0% |        1 |              1 |
+|        2 |           363 | `aspell`           |           1.0% |        1 |              2 |
+|        3 |           364 | `abline`           |           1.0% |        1 |              1 |
+|        4 |           365 | `browseVignettes`  |           1.0% |        1 |              1 |
+|        5 |           366 | `dev.control`      |           1.0% |        1 |              1 |
+|        6 |           368 | `getFromNamespace` |           0.9% |        1 |             37 |
+|        7 |           370 | `help`             |           0.9% |        1 |             15 |
+|        8 |           380 | `curve`            |           0.7% |        1 |              1 |
+|        9 |           392 | `tracemem`         |           0.7% |        1 |              2 |
+|       10 |           403 | `update.packages`  |           0.7% |        1 |              1 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -209,9 +209,10 @@ rank 346 `socketConnection` now runs through a typed, default-deny duplex host a
 `file.copy` now stages exact package resources into session paths; rank 349 `find.package` now
 resolves core and pure-R package roots; rank 351 `l10n_info` now reports browser UTF-8 capability;
 rank 353 `shQuote` now quotes Unix and explicit Windows shell arguments without executing a host
-shell; rank 357 `system2` is next. Rank 144 `Encoding` is also complete for all 12 observed calls
-across rlang, utf8, and xfun (4.5% weighted reach), together with adjacent `Encoding<-`, `enc2utf8`,
-and `enc2native`. The shared character representation preserves exact bytes and canonical R marks
+shell; rank 357 `system2` now sends structured process intent only through an explicit host policy;
+rank 358 `.Call` is next. Rank 144 `Encoding` is also complete for all 12 observed calls across
+rlang, utf8, and xfun (4.5% weighted reach), together with adjacent `Encoding<-`, `enc2utf8`, and
+`enc2native`. The shared character representation preserves exact bytes and canonical R marks
 through subset/replacement, concatenation, raw conversion, and XDR serialization; this is reusable
 package infrastructure, not an assertion that those packages' native components are supported. Rank
 149 `rcauchy` is now complete for four calls across ggplot2, pillar, and purrr (4.2% weighted
@@ -501,9 +502,10 @@ measured `vapply(..., "path")` probe over NativR's currently empty native-module
 `socketConnection` is complete for ps's measured call and the reusable connection lifecycle; rank
 348 `file.copy` is complete for xfun's package-resource staging path; rank 349 `find.package` is
 complete for its installed-root lookup; rank 351 `l10n_info` is complete for xfun's UTF-8 branch;
-rank 353 `shQuote` is complete for its deterministic string-quoting path; rank 357 `system2` is the
-next usage-ranked unresolved callable. Rank 316 `colSums` is now complete for three observed calls
-across [`loo`](https://cran.r-project.org/web/packages/loo/refman/loo.html) and
+rank 353 `shQuote` is complete for its deterministic string-quoting path; rank 357 `system2` is
+complete for its explicit structured host-policy path; rank 358 `.Call` is the next usage-ranked
+unresolved callable. Rank 316 `colSums` is now complete for three observed calls across
+[`loo`](https://cran.r-project.org/web/packages/loo/refman/loo.html) and
 [`zoo`](https://cran.r-project.org/web/packages/zoo/refman/zoo.html), representing 1,601,512
 snapshot downloads and 1.3% download reach. Loo calls `colSums(tab_10)` and `colSums(tab_9)` on
 integer fold tables; zoo selects usable columns with `colSums(!is.na(za)) > 0`. NativR covers
@@ -688,34 +690,34 @@ browser-native implementation accepts atomic paragraph vectors, preserves paragr
 spacing rules, supports `width`, `indent`, `exdent`, `prefix`, `initial`, and simplified/list-shaped
 results, and has black-box evidence for missing values, coercion, empty paragraphs, and input
 errors. Rank 362 `suppressMessages` was already supported; `Sys.unsetenv` is now supported, while
-current rank 357 `system2` and rank 358 `.Call` remain process and native-interface work. Rank 366
-`col2rgb` is now complete for stringr's measured named-color replacement helper, representing
-1,237,835 downloads and 1.0% reach. Reviewing that end-to-end example also exposed an earlier missed
-browser-safe dependency: rank 207 `rgb`, with 3.1% package reach and 2.6% download-weighted reach,
-is now complete too. Together they run the measured `col2rgb` matrix lookup followed by
-`rgb(..., maxColorValue = 255)`, cover the complete 657-name catalog, short/long hexadecimal alpha,
-transparent and missing colors, the default numeric palette, intensity recycling, names, and
-matrix/data-frame channel inputs. Rank 367 `colors` was already supported. The detector now excludes
-package-owned `$method()`/`@method()` calls, so htmltools' `tagQ$find()` is no longer misranked as
-`base::find`; rank 368 `simplify2array` is the next measured callable and is now complete for
-stringi's two examples, representing 1,237,835 downloads and 1.0% reach. Equal-length vectors
-simplify to a common-type matrix, unequal lengths remain a list, scalar inputs simplify with outer
-names, and equal-dimensional inputs can retain a higher array shape and dimension names. List-valued
-cells, zero-length exception controls, promotion, names, non-list identity, and invalid `higher`
-boundaries have GNU R black-box evidence. Ranks 369 `setwd`, 370 `aspell`, 371 `abline`, 372
-`browseVignettes`, and 373 `dev.control` remain host-filesystem, package-tooling, or graphics-device
-work; rank 374 `lengths` was already supported. Rank 375 `getFromNamespace` has 37 apparent calls,
-but all are backports examples that fetch that package's private implementations before invoking
-them. It therefore remains tied to the general package namespace loader; implementing only a
-core-namespace facade would not run the measured examples. Ranks 376 `str2expression` and 377
-`str2lang` are now complete for the measured source strings and represent the same 1,112,829
-downloads and 0.9% reach. They reuse the browser-native Tree-sitter parser and return only owned
-expression/language/symbol/atomic values, with differential evidence for vectors, comments, blank
-text, missing strings, single-result checks, and parse/type errors. The backports examples'
-preceding private-namespace retrieval remains outside this claim. Rank 378 `URLdecode` is now
-complete for backports' direct `URLdecode("ab%20cd")` example, again representing 1,112,829
-downloads and 0.9% reach. Registered `utils::` lookup, vectorized ASCII and UTF-8 percent bytes,
-literal plus signs, missing/empty/NULL values, attribute removal, and NUL termination have
+rank 357 `system2` now covers the explicit structured process boundary; rank 358 `.Call` remains
+native-interface work. Rank 366 `col2rgb` is now complete for stringr's measured named-color
+replacement helper, representing 1,237,835 downloads and 1.0% reach. Reviewing that end-to-end
+example also exposed an earlier missed browser-safe dependency: rank 207 `rgb`, with 3.1% package
+reach and 2.6% download-weighted reach, is now complete too. Together they run the measured
+`col2rgb` matrix lookup followed by `rgb(..., maxColorValue = 255)`, cover the complete 657-name
+catalog, short/long hexadecimal alpha, transparent and missing colors, the default numeric palette,
+intensity recycling, names, and matrix/data-frame channel inputs. Rank 367 `colors` was already
+supported. The detector now excludes package-owned `$method()`/`@method()` calls, so htmltools'
+`tagQ$find()` is no longer misranked as `base::find`; rank 368 `simplify2array` is the next measured
+callable and is now complete for stringi's two examples, representing 1,237,835 downloads and 1.0%
+reach. Equal-length vectors simplify to a common-type matrix, unequal lengths remain a list, scalar
+inputs simplify with outer names, and equal-dimensional inputs can retain a higher array shape and
+dimension names. List-valued cells, zero-length exception controls, promotion, names, non-list
+identity, and invalid `higher` boundaries have GNU R black-box evidence. Ranks 369 `setwd`, 370
+`aspell`, 371 `abline`, 372 `browseVignettes`, and 373 `dev.control` remain host-filesystem,
+package-tooling, or graphics-device work; rank 374 `lengths` was already supported. Rank 375
+`getFromNamespace` has 37 apparent calls, but all are backports examples that fetch that package's
+private implementations before invoking them. It therefore remains tied to the general package
+namespace loader; implementing only a core-namespace facade would not run the measured examples.
+Ranks 376 `str2expression` and 377 `str2lang` are now complete for the measured source strings and
+represent the same 1,112,829 downloads and 0.9% reach. They reuse the browser-native Tree-sitter
+parser and return only owned expression/language/symbol/atomic values, with differential evidence
+for vectors, comments, blank text, missing strings, single-result checks, and parse/type errors. The
+backports examples' preceding private-namespace retrieval remains outside this claim. Rank 378
+`URLdecode` is now complete for backports' direct `URLdecode("ab%20cd")` example, again representing
+1,112,829 downloads and 0.9% reach. Registered `utils::` lookup, vectorized ASCII and UTF-8 percent
+bytes, literal plus signs, missing/empty/NULL values, attribute removal, and NUL termination have
 executable evidence. Malformed percent escapes and invalid UTF-8 bytes are explicitly rejected
 because browser strings cannot represent GNU R's platform-dependent raw-byte results losslessly.
 Rank 379 `warningCondition` is now complete for backports' direct

@@ -14,6 +14,7 @@ export type {
   PublicSocketRequest,
   PublicSocketResult,
   PublicSystemCommandRequest,
+  PublicSystemCommandRedirection,
   PublicSystemCommandResult,
   PublicUrlRequest,
   PublicUrlResult,

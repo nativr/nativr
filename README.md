@@ -219,7 +219,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 624 registered functions, including resettable
+an initial condition/handler slice. It exposes 659 registered functions, including resettable
 session options, isolated session environment variables, deterministic non-interactive host-mode
 detection, browser-owned `gc()` memory censuses, an S3-first `graphics::lines()` path over the
 existing Worker/Canvas journal, usage-ranked numeric and character time-interval construction
@@ -807,7 +807,17 @@ and `cmd.exe` `cmd2` modes are also implemented as deterministic string transfor
 R-shaped formals, partial type matching, atomic/list/language coercion, S3 `as.character` dispatch,
 missing values, visibility, and attribute dropping have executable evidence. Unchanged pure-R
 package code runs the same helper inline and in the default Worker without granting process or shell
-authority. Rank 357 `base::system2()` is the next usage-ranked unresolved callable.
+authority.
+
+Rank 357 `base::system2()` now carries xfun's measured portable command invocation through the same
+explicit, default-deny host boundary as `system()` and `pipe()`. The Worker sends structured
+executable, command-element, argument, environment, stdin, stdout, stderr, input, wait, signal, and
+timeout data; it never concatenates those fields into generated JavaScript or launches a process by
+itself. GNU R-shaped formals, atomic/list coercion, capture, console/discard/file redirection
+intent, exit status, warnings, visibility, unchanged pure-R package execution, and
+inline/default-Worker transport have executable evidence. Rank 358 `.Call()` is now the next
+measured missing core callable; supporting it requires a separately designed typed Wasm/native ABI,
+not ambient host pointers.
 
 Rank 121 `grDevices::png()` now covers all seven measured calls across five packages. It opens
 alongside the browser display, records the existing graphics command vocabulary, rasterizes it in

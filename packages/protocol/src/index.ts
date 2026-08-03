@@ -113,9 +113,12 @@ export interface PublicOutputEvent {
   readonly text: string;
 }
 
-/** A system() or pipe() command that R code asks an embedding host to execute explicitly. */
-export interface PublicSystemCommandRequest {
-  readonly operation: "system" | "pipe";
+/** One explicit stream redirection requested by system2(). */
+export type PublicSystemCommandRedirection =
+  | { readonly mode: "console" | "capture" | "discard" }
+  | { readonly mode: "file"; readonly path: string };
+
+interface PublicSystemCommandRequestBase {
   readonly command: string;
   readonly intern: boolean;
   readonly ignoreStdout: boolean;
@@ -130,6 +133,19 @@ export interface PublicSystemCommandRequest {
   readonly timeoutSeconds: number;
   readonly receiveConsoleSignals: boolean;
 }
+
+/** A system(), system2(), or pipe() command that R code asks an embedding host to execute explicitly. */
+export type PublicSystemCommandRequest =
+  | (PublicSystemCommandRequestBase & { readonly operation: "system" | "pipe" })
+  | (PublicSystemCommandRequestBase & {
+      readonly operation: "system2";
+      readonly commandElements: readonly string[];
+      readonly args: readonly string[];
+      readonly environment: readonly string[];
+      readonly stdinPath: string | null;
+      readonly stdout: PublicSystemCommandRedirection;
+      readonly stderr: PublicSystemCommandRedirection;
+    });
 
 /** Text and status returned by an explicitly configured command host. */
 export interface PublicSystemCommandResult {
@@ -865,9 +881,9 @@ function isExecutablePathRecord(value: unknown): value is Readonly<Record<string
 }
 
 function isSystemCommandRequest(value: unknown): value is PublicSystemCommandRequest {
-  return (
+  if (!(
     isRecord(value) &&
-    (value.operation === "system" || value.operation === "pipe") &&
+    (value.operation === "system" || value.operation === "system2" || value.operation === "pipe") &&
     typeof value.command === "string" &&
     !value.command.includes("\0") &&
     typeof value.intern === "boolean" &&
@@ -886,7 +902,34 @@ function isSystemCommandRequest(value: unknown): value is PublicSystemCommandReq
     Number.isFinite(value.timeoutSeconds) &&
     value.timeoutSeconds >= 0 &&
     typeof value.receiveConsoleSignals === "boolean"
+  )) {
+    return false;
+  }
+  if (value.operation !== "system2") return true;
+  return (
+    isNulFreeStringArray(value.commandElements) &&
+    isNulFreeStringArray(value.args) &&
+    isNulFreeStringArray(value.environment) &&
+    (value.stdinPath === null ||
+      (typeof value.stdinPath === "string" && !value.stdinPath.includes("\0"))) &&
+    isSystemCommandRedirection(value.stdout) &&
+    isSystemCommandRedirection(value.stderr)
   );
+}
+
+function isNulFreeStringArray(value: unknown): value is readonly string[] {
+  return (
+    Array.isArray(value) &&
+    value.every((entry) => typeof entry === "string" && !entry.includes("\0"))
+  );
+}
+
+function isSystemCommandRedirection(value: unknown): value is PublicSystemCommandRedirection {
+  if (!isRecord(value)) return false;
+  if (value.mode === "console" || value.mode === "capture" || value.mode === "discard") {
+    return true;
+  }
+  return value.mode === "file" && typeof value.path === "string" && !value.path.includes("\0");
 }
 
 function isReadlineRequest(value: unknown): value is PublicReadlineRequest {

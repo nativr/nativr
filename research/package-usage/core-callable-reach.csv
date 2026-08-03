@@ -355,7 +355,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 354,strwrap,true,1,xfun,1,1.0,1.1
 355,suppressMessages,true,1,xfun,1,1.0,1.1
 356,Sys.unsetenv,true,1,xfun,1,1.0,1.1
-357,system2,false,1,xfun,1,1.0,1.1
+357,system2,true,1,xfun,1,1.0,1.1
 358,.Call,false,1,digest,1,1.0,1.0
 359,col2rgb,true,1,stringr,1,1.0,1.0
 360,colors,true,1,stringr,1,1.0,1.0

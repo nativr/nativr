@@ -137,6 +137,11 @@ twice_mean(c(1, 2, 6))`,
     code: "system('nativr-echo', intern = TRUE, input = c('worker', 'bridge'))",
   },
   {
+    id: "system2-host",
+    label: "Structured system2 command",
+    code: "system2('nativr-tool', c('--path', shQuote('worker path')), stdout = TRUE, env = 'MODE=demo')",
+  },
+  {
     id: "pipe-package",
     label: "Pure-R package pipe",
     code: "nativrdemo::pipe_lines('nativr-lines')",
@@ -293,6 +298,15 @@ function playgroundSocket(request: PublicSocketRequest): {
 function playgroundSystemCommand(request: PublicSystemCommandRequest): PublicSystemCommandResult {
   if (request.operation === "pipe" && request.command === "nativr-lines") {
     return { status: 0, stdout: "pipe-worker\npackage-pipe\n" };
+  }
+  if (request.operation === "system2" && request.command === "nativr-tool") {
+    if (
+      request.args.join(" ") !== "--path 'worker path'" ||
+      request.environment[0] !== "MODE=demo"
+    ) {
+      return { status: 2, errorMessage: "unexpected structured arguments" };
+    }
+    return { status: 0, stdout: "system2-worker\nstructured-command\n" };
   }
   if (request.operation !== "system" || request.command !== "nativr-echo") {
     return {

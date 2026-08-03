@@ -1,6 +1,6 @@
 # Implementation status
 
-Date: 2026-08-02
+Date: 2026-08-03
 
 ## Implemented
 
@@ -11,7 +11,7 @@ Date: 2026-08-02
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 627 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 659 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Character vectors own exact per-element bytes and canonical `unknown`/`latin1`/`UTF-8`/`bytes`
@@ -185,6 +185,10 @@ Date: 2026-08-02
 - Usage-ranked `shQuote()` with GNU R 4.6 closure/formal shape, partial mode matching, explicit
   `sh`/`csh`/`cmd`/`cmd2` rules, coercion and registered `as.character` S3 dispatch, missing values,
   visibility, and attribute removal. Pure-R and Worker paths execute without host process authority.
+- Usage-ranked `system2()` with GNU R 4.6 closure/formal shape, structured executable/argument/
+  environment and stream-redirection data, capture/status/timeout/warning/visibility semantics,
+  explicit resource bounds, unchanged pure-R package execution, and inline/default-Worker host
+  transport. Without a `systemCommand` policy it fails closed and launches no process.
 - Usage-ranked `utils::download.file()` composes that explicit byte adapter with session-owned
   files. GNU R 4.6 formals, preflight validation, invisible statuses, paired-vector `retvals`, exact
   replacement bytes, named headers, pure-R namespace calls, failure atomicity, default-deny inline
@@ -541,6 +545,10 @@ Date: 2026-08-02
 - Usage-ranked `base::shQuote` for xfun's measured shell-argument preparation: ordinary closure
   metadata, documented non-Windows default, all four explicit quote modes, partial selection,
   coercion/S3 behavior, missingness, unchanged package helper, conformance, and Worker proof.
+- Usage-ranked `base::system2` for xfun's measured portable command path: exact closure formals,
+  argument/environment coercion, separate stream redirection intent, capture/status/visibility,
+  request/result resource bounds, unchanged package namespace execution, protocol validation, and
+  default-Worker Playground proof through an explicit allow-list handler.
 - Usage-ranked `grDevices::gray`/`grey` and `gray.colors`/`grey.colors` with zoo's two measured
   calls, byte-exact RGB(A) output, documented gamma correction, alpha recycling, reversal,
   descending endpoints, alias behavior, atomic gray-level coercion, attribute removal, and bounded
@@ -820,11 +828,11 @@ Date: 2026-08-02
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 14 files and 443 tests, with three explicitly skipped tests.
+- Vitest currently passes 14 files and 459 tests, with three explicitly skipped tests.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 802/802 cases. The optional black-box R oracle passes all 763
-  eligible cases and explicitly skips 39 NativR-owned
+- Checked-in conformance passes 825/825 cases. The optional black-box R oracle passes all 784
+  eligible cases and explicitly skips 41 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,
   expanded matrix, weighted sampling, S3, and R6 paths with no evaluation-time network requests.

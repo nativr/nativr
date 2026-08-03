@@ -220,8 +220,12 @@ the same UTF-8 result inline and across the Worker because no protocol extension
 Shell quoting is intentionally below the host-command boundary. `shQuote()` converts owned R
 character values with deterministic Unix or Windows quoting rules and returns another owned vector;
 it neither probes the page's operating system nor invokes the `systemCommand` adapter. This lets
-pure-R packages prepare command text without receiving process authority, while `system` and future
-`system2` calls remain separately policy-gated.
+pure-R packages prepare command text without receiving process authority, while `system()` and
+`system2()` calls remain separately policy-gated. `system2()` crosses that gate as a structured
+record: the executable and command elements, argument fragments, portable environment entries,
+standard- stream redirection intent, input lines, wait/signal controls, and timeout remain distinct
+fields. Inline and Worker modes use the same record, and neither mode has an implicit process
+launcher.
 
 Session process identity follows the same rule. The facade allocates one positive integer before
 choosing inline or Worker execution, sends it as an optional protocol-v1 initialization field, and

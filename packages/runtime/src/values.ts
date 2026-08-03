@@ -414,9 +414,12 @@ export interface ROutput {
   readonly text: string;
 }
 
-/** One explicit system() or pipe() request to an embedding host command policy. */
-export interface RSystemCommandRequest {
-  readonly operation: "system" | "pipe";
+/** One explicit stream redirection requested by system2(). */
+export type RSystemCommandRedirection =
+  | { readonly mode: "console" | "capture" | "discard" }
+  | { readonly mode: "file"; readonly path: string };
+
+interface RSystemCommandRequestBase {
   readonly command: string;
   readonly intern: boolean;
   readonly ignoreStdout: boolean;
@@ -430,6 +433,22 @@ export interface RSystemCommandRequest {
   readonly timeoutSeconds: number;
   readonly receiveConsoleSignals: boolean;
 }
+
+/** One explicit system(), system2(), or pipe() request to an embedding host command policy. */
+export type RSystemCommandRequest =
+  | (RSystemCommandRequestBase & { readonly operation: "system" | "pipe" })
+  | (RSystemCommandRequestBase & {
+      readonly operation: "system2";
+      /** Additional command elements accepted by GNU R, followed by args in their original order. */
+      readonly commandElements: readonly string[];
+      /** Argument fragments as supplied to system2(); callers quote shell-sensitive values with shQuote(). */
+      readonly args: readonly string[];
+      /** Portable NAME=value entries supplied through system2(env=). */
+      readonly environment: readonly string[];
+      readonly stdinPath: string | null;
+      readonly stdout: RSystemCommandRedirection;
+      readonly stderr: RSystemCommandRedirection;
+    });
 
 /** Sanitized command outcome supplied by an embedding host. */
 export interface RSystemCommandResult {

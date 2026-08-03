@@ -693,6 +693,18 @@ session identity only, never a browser, Node, Worker, or operating-system proces
 Independent page realms cannot coordinate the counter, and the runtime exposes no parent process,
 process enumeration, signaling, native handle, or CPU-accounting authority.
 
+`system()` and `system2()` are ordinary R closures over one explicit construction-time
+`systemCommand` capability. With no capability they fail before any host action. `system()` sends
+its single command line and GNU R control flags; `system2()` keeps the first executable, additional
+command elements, argument fragments, `NAME=value` environment entries, stdin path, input lines, and
+stdout/stderr redirection descriptors separate. Capturing either stream forces waiting and returns
+visible lines; otherwise the integer status is invisible, asynchronous success is zero, failed
+starts use 127, and timeouts use 124. Nonzero captured status and host failures preserve the
+documented warning/status/errmsg contract. Request and result text share `maxOutputBytes`, NUL is
+rejected, and inline/Worker execution use the same copied record. The evaluator never resolves an
+executable, interprets a shell, opens a host path, inherits host environment state, or starts a
+process; those actions remain wholly inside an application allow-list policy.
+
 `.libPaths()` returns the evaluator session's ordered package-library roots. The default is
 `c("nativr://package", "nativr://runtime/library")`; the first root contains immutable supplied
 source bundles and the second is `.Library` for registered runtime namespaces. A setter expands

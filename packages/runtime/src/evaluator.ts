@@ -1978,7 +1978,7 @@ export class Evaluator {
           if (this.#systemCommand === undefined) {
             throw new RUnsupportedFeatureError(
               "NRU6194",
-              "system()/pipe() requires an explicit createR({ systemCommand }) host capability.",
+              "system()/system2()/pipe() requires an explicit createR({ systemCommand }) host capability.",
             );
           }
           return this.#systemCommand(request);

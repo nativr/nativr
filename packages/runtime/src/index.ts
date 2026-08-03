@@ -142,6 +142,7 @@ export type {
   RNull,
   ROutput,
   RSystemCommandRequest,
+  RSystemCommandRedirection,
   RSystemCommandResult,
   RSocketRequest,
   RSocketResult,
