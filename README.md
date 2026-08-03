@@ -739,6 +739,13 @@ deterministically; message sinks use one replaceable open-connection slot. The s
 fixture and default Worker Playground execute the same API unchanged. Host filesystem targets remain
 unavailable.
 
+Rank 338 `base::write()` now covers sass's measured `write('$color: "red";', path)` call unchanged.
+Character values default to one item per line, other atomic storage defaults to five, explicit
+separator vectors reproduce GNU R's column layout, and file/connection targets stay inside the
+bounded browser-memory store. The source-only package fixture and Worker Playground execute the same
+helper without a JavaScript rewrite. Rank 340 `utils::available.packages()` is the next usage-ranked
+unresolved callable.
+
 Rank 121 `grDevices::png()` now covers all seven measured calls across five packages. It opens
 alongside the browser display, records the existing graphics command vocabulary, rasterizes it in
 the Worker without DOM or native dependencies, and writes a standards-compliant compressed RGBA PNG

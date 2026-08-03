@@ -9166,5 +9166,54 @@
     "rOracleWithoutSinks": true,
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "write-usage-ranked-formals-sass-file-and-visibility",
+    "code": "f <- formals(write)\npath <- tempfile()\nvisible <- withVisible(write('$color: \"red\";', path))\nc(names(f), identical(f$file, \"data\"), identical(f$ncolumns, quote(if (is.character(x)) 1 else 5)), identical(f$append, FALSE), identical(f$sep, \" \"), is.null(visible$value), visible$visible, readLines(path))",
+    "expected": [
+      "x",
+      "file",
+      "ncolumns",
+      "append",
+      "sep",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "FALSE",
+      "$color: \"red\";"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "write-usage-ranked-column-layout-object-storage-connections-and-boundaries",
+    "code": "numeric <- capture.output(write(1:7, \"\"))\ncharacter <- capture.output(write(c(\"x\", NA_character_), \"\"))\nexplicit <- capture.output(write(1:6, \"\", ncolumns = 3, sep = c(\",\", \";\")))\nmatrix_path <- tempfile(); write(matrix(1:6, nrow = 2), matrix_path, ncolumns = 3)\nfactor_path <- tempfile(); write(factor(c(\"b\", \"a\", NA)), factor_path)\nconnection_path <- tempfile(); con <- file(connection_path); before <- isOpen(con); write(c(\"a\", \"b\"), con); after <- isOpen(con)\nc(numeric, \"<character>\", character, \"<explicit>\", explicit, \"<matrix>\", readLines(matrix_path), \"<factor>\", readLines(factor_path), \"<connection>\", before, after, readLines(connection_path), inherits(try(write(list(1), \"\"), silent = TRUE), \"try-error\"), inherits(try(write(1, \"\", ncolumns = 0), silent = TRUE), \"try-error\"), inherits(try(write(1, \"\", sep = NULL), silent = TRUE), \"try-error\"))",
+    "expected": [
+      "1 2 3 4 5",
+      "6 7",
+      "<character>",
+      "x",
+      "NA",
+      "<explicit>",
+      "1,2;3,4;5",
+      "6",
+      "<matrix>",
+      "1 2 3",
+      "4 5 6",
+      "<factor>",
+      "2 1 NA",
+      "<connection>",
+      "FALSE",
+      "FALSE",
+      "a",
+      "b",
+      "TRUE",
+      "TRUE",
+      "TRUE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

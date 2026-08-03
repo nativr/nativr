@@ -782,8 +782,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
 163. Usage-ranked persistent output diversion: rank-330 `base::sink` and `sink.number` share one
      ordered session router with `capture.output`, preserving nested output frames, split tees,
      message routing, connection lifecycle, and restoration across evaluations/errors. The two
-     measured utf8 calls plus source-package and Worker paths have executable evidence; rank-338
-     `base::write` is the next measured unresolved callable.
+     measured utf8 calls plus source-package and Worker paths have executable evidence.
+164. Usage-ranked atomic writer: rank-338 `base::write` reproduces GNU R's character/numeric column
+     defaults, repeated separator vectors, final newline, underlying atomic storage, append mode,
+     and owned file/connection lifecycle. Sass's measured call runs unchanged from a source-only
+     package in the default Worker; rank-340 `utils::available.packages` is the next measured
+     unresolved callable.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

@@ -756,6 +756,11 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await expect(page.locator("#result")).toHaveText('"package-worker-sink"');
   await expect(page.locator("#console-output")).toHaveText("No textual output.");
 
+  await page.locator("#source").fill("nativrdemo::write_sass_variable()");
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText('"$color: \\"red\\";"');
+  await expect(page.locator("#console-output")).toHaveText("No textual output.");
+
   await page.locator("#source").fill(`
     plot.new()
     plot.window(c(0, 4), c(0, 4))

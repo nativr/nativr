@@ -2083,6 +2083,14 @@ buffered within `maxOutputBytes` and committed on restoration. Reading, closing,
 mutating an active sink target, host filesystem paths, native file descriptors, and platform-exact
 console diagnostics remain outside the browser contract.
 
+Usage-ranked `base::write()` has GNU R 4.6 black-box evidence for exact formals/defaults, invisible
+`NULL`, character and numeric column defaults, repeated separator vectors, final newlines,
+underlying named/matrix/factor storage, missing values, append mode, and closed/already-open
+connection lifecycle. Sass's measured source-line write runs unchanged in the source-only package
+fixture and Worker Playground. The writer is bounded by output/vector/session-file limits and does
+not grant host filesystem access, native encodings, platform-specific line endings, or support for
+non-atomic objects.
+
 `utils::demo` has GNU R differential evidence for the empty package catalog returned by
 `demo(package = character())`, including its `packageIQR` class, fields, zero-row results matrix,
 and column labels. Supplying a topic, external package, or host library location raises an explicit

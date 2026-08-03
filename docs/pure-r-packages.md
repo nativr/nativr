@@ -214,6 +214,9 @@ normalized AST. The runtime then provides:
 25. persistent `base::sink()` output diversions, split tees, message routing, and `sink.number()`
     inspection over the same bounded session files/connections. The unchanged package fixture and
     default Worker package both write and read a sink target without JavaScript shims.
+26. usage-ranked `base::write()` over those same bounded files/connections. The unchanged fixture
+    writes sass's measured `$color: "red";` source line, reads it back, exports the helper, and runs
+    through the default Worker without a package-specific JavaScript implementation.
 
 Package source, metadata, resource counts, and encoded bytes are bounded before parsing. Package
 evaluation then consumes the ordinary step, call-depth, allocation, and output budgets.

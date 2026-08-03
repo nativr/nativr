@@ -231,6 +231,13 @@ supported; arbitrary print methods and host filesystem targets remain incomplete
 increment adds persistent output/message diversion through `base::sink` and `sink.number`, including
 nested restoration, split tees, connection lifecycle, and cross-evaluation state.
 
+The rank-338 increment adds GNU R 4.6 differential evidence for sass's measured `base::write`
+source-line call and the reusable atomic writer beneath it. Exact formals/defaults, character and
+numeric column layout, separator-vector repetition, final newlines, underlying matrix/factor
+storage, append, closed/open connections, visibility, errors, and bounds are covered. The same
+unchanged helper executes from a source-only package in the default Worker; host files and native
+encoding/newline identity remain explicit boundaries.
+
 The rank-437 increment adds GNU R differential evidence for the empty `utils::demo()` package
 catalog's `packageIQR` structure and an explicit browser boundary for external package demo scripts.
 NativR does not inspect an installed R library or claim execution of httpuv's `echo` demo. That path

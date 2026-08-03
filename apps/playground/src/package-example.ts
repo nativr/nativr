@@ -12,7 +12,7 @@ URL: https://github.com/nativr/nativr
 Encoding: UTF-8
 NeedsCompilation: no`,
   namespace:
-    "export(twice_mean, signature_names, dynamic_summary, resource_size, archive_lines, event_colours, classic_palettes, usage_rectangles, plot_series, annotated_plot, find_tools, create_file, remove_files, fixed_text, custom_axis, sourced_value, ask_user, remote_lines, download_resource, pipe_lines, filtered_flow, package_summary, standard_output, sink_lines)",
+    "export(twice_mean, signature_names, dynamic_summary, resource_size, archive_lines, event_colours, classic_palettes, usage_rectangles, plot_series, annotated_plot, find_tools, create_file, remove_files, fixed_text, custom_axis, sourced_value, ask_user, remote_lines, download_resource, pipe_lines, filtered_flow, package_summary, standard_output, sink_lines, write_sass_variable)",
   rSources: [
     {
       path: "R/twice-mean.R",
@@ -22,7 +22,7 @@ NeedsCompilation: no`,
     {
       path: "R/sink-lines.R",
       source:
-        'sink_lines <- function() { path <- tempfile(); sink(path); cat("package-worker-sink\\n"); sink(); readLines(path) }',
+        'sink_lines <- function() { path <- tempfile(); sink(path); cat("package-worker-sink\\n"); sink(); readLines(path) }\nwrite_sass_variable <- function() { path <- tempfile(); write(\'$color: "red";\', path); readLines(path) }',
     },
   ],
   resources: [

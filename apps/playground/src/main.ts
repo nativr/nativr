@@ -97,6 +97,11 @@ twice_mean(c(1, 2, 6))`,
     code: "nativrdemo::sink_lines()",
   },
   {
+    id: "package-write",
+    label: "Pure-R package write()",
+    code: "nativrdemo::write_sass_variable()",
+  },
+  {
     id: "system-host",
     label: "Explicit host command",
     code: "system('nativr-echo', intern = TRUE, input = c('worker', 'bridge'))",

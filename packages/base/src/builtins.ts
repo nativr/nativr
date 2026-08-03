@@ -791,6 +791,32 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "regular",
     "invisible",
   ),
+  withBuiltinFormals(
+    defineBuiltin(
+      "write",
+      ["x", "file", "ncolumns", "append", "sep"],
+      "behavioral",
+      builtinWrite,
+      "regular",
+      "invisible",
+    ),
+    [
+      { name: "x" },
+      {
+        name: "file",
+        defaultValue: { kind: "StringLiteral", value: "data", span: SYNTHETIC_SPAN },
+      },
+      { name: "ncolumns", defaultValue: writeColumnDefaultAst() },
+      {
+        name: "append",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "sep",
+        defaultValue: { kind: "StringLiteral", value: " ", span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
   defineBuiltin(
     "unlink",
     ["x", "recursive", "force", "expand"],
@@ -8609,6 +8635,87 @@ async function builtinWriteLines(invocation: BuiltinInvocation): Promise<RValue>
   return R_NULL;
 }
 
+async function builtinWrite(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["x", "file", "ncolumns", "append", "sep"]);
+  const input = required(matched, "x", "write");
+  const file = matched.get("file") ?? characterVector(["data"]);
+  const append = coercibleLogicalFlag(matched.get("append"), false, "append");
+  const separatorValues = writeSeparatorValues(matched.get("sep"), invocation);
+  const repetitions = writeSeparatorRepetitions(
+    matched.get("ncolumns"),
+    input.type === "character" ? 1 : 5,
+  );
+  const separatorCount = separatorValues.length * repetitions + 1;
+  if (separatorCount > invocation.context.limits.maxVectorLength) {
+    throw new RResourceLimitError("NRL4002", "write() separator vector exceeds runtime limits.", {
+      details: { separatorCount, maxVectorLength: invocation.context.limits.maxVectorLength },
+    });
+  }
+  const separators: string[] = [];
+  for (let repetition = 0; repetition < repetitions; repetition += 1) {
+    invocation.context.checkpoint();
+    separators.push(...separatorValues);
+  }
+  separators.push("\n");
+
+  let pieces: string[];
+  if (input.type === "null" || input.type === "environment") {
+    pieces = [""];
+  } else if (isAtomic(input)) {
+    pieces = Array.from({ length: input.length }, (_, index) => {
+      invocation.context.checkpoint();
+      return isMissing(input, index) ? "NA" : stringAt(input, index);
+    });
+    if (pieces.length === 0) pieces.push("");
+  } else {
+    throw new RTypeMismatchError(
+      "NRT3371",
+      `Argument 1 (type '${input.type}') cannot be handled by write().`,
+    );
+  }
+  const source = catSeparatedText(pieces, separators);
+  if (file.type === "character" && characterScalar(file, "file") === "") {
+    invocation.context.writeOutput({ stream: "stdout", text: source });
+  } else {
+    await writeVirtualTextTarget(invocation, file, source, append, "write");
+  }
+  return R_NULL;
+}
+
+function writeSeparatorValues(
+  value: RValue | undefined,
+  invocation: BuiltinInvocation,
+): readonly string[] {
+  if (value === undefined) return [" "];
+  if (!isAtomic(value)) {
+    throw new RTypeMismatchError("NRT3372", "write(sep=) requires an atomic vector.");
+  }
+  return Array.from({ length: value.length }, (_, index) => {
+    invocation.context.checkpoint();
+    return isMissing(value, index) ? "NA" : stringAt(value, index);
+  });
+}
+
+function writeSeparatorRepetitions(value: RValue | undefined, fallback: number): number {
+  if (
+    value === undefined
+      ? false
+      : value.type !== "logical" && value.type !== "integer" && value.type !== "double"
+  ) {
+    throw new RTypeMismatchError("NRT3373", "invalid 'times' value");
+  }
+  const supplied = value as RLogicalVector | RIntegerVector | RDoubleVector | undefined;
+  if (
+    supplied !== undefined &&
+    (supplied.length !== 1 || isMissing(supplied, 0) || !Number.isFinite(supplied.values[0]))
+  ) {
+    throw new RTypeMismatchError("NRT3373", "invalid 'times' value");
+  }
+  const repetitions = Math.trunc((supplied?.values[0] ?? fallback) - 1);
+  if (repetitions < 0) throw new RTypeMismatchError("NRT3373", "invalid 'times' value");
+  return repetitions;
+}
+
 function filePathScalar(value: RValue, call: string): string {
   if (value.type !== "character" || value.length !== 1 || isMissing(value, 0)) {
     throw new RTypeMismatchError("NRT3355", `${call}() requires a non-missing character path.`);
@@ -13807,6 +13914,26 @@ function outputMessageChoiceAst(): AstNode {
       value: { kind: "StringLiteral" as const, value, span: SYNTHETIC_SPAN },
       span: SYNTHETIC_SPAN,
     })),
+    span: SYNTHETIC_SPAN,
+  };
+}
+
+function writeColumnDefaultAst(): AstNode {
+  return {
+    kind: "IfExpression",
+    condition: {
+      kind: "CallExpression",
+      callee: { kind: "Identifier", name: "is.character", span: SYNTHETIC_SPAN },
+      arguments: [
+        {
+          value: { kind: "Identifier", name: "x", span: SYNTHETIC_SPAN },
+          span: SYNTHETIC_SPAN,
+        },
+      ],
+      span: SYNTHETIC_SPAN,
+    },
+    consequence: { kind: "DoubleLiteral", value: 1, span: SYNTHETIC_SPAN },
+    alternative: { kind: "DoubleLiteral", value: 5, span: SYNTHETIC_SPAN },
     span: SYNTHETIC_SPAN,
   };
 }
@@ -23356,22 +23483,31 @@ async function builtinCat(invocation: BuiltinInvocation): Promise<RValue> {
       pieces.push(isMissing(input, index) ? "NA" : stringAt(input, index));
     }
   }
-  const terminatesElements = separators.some((separator) => separator.includes("\n"));
-  const text = terminatesElements
-    ? pieces
-        .map((piece, index) => `${piece}${separators[index % separators.length] ?? ""}`)
-        .join("")
-    : pieces
-        .map((piece, index) =>
-          index === 0 ? piece : `${separators[(index - 1) % separators.length] ?? ""}${piece}`,
-        )
-        .join("");
+  const text = catSeparatedText(pieces, separators);
   if (file === undefined || (file.type === "character" && characterScalar(file, "file") === "")) {
     if (text.length > 0) invocation.context.writeOutput({ stream: "stdout", text });
   } else {
     await writeVirtualTextTarget(invocation, file, text, append, "cat");
   }
   return R_NULL;
+}
+
+function catSeparatedText(pieces: readonly string[], separators: readonly string[]): string {
+  const terminatesElements = separators.some((separator) => separator.includes("\n"));
+  if (terminatesElements) {
+    return pieces
+      .map((piece, index) =>
+        index === pieces.length - 1
+          ? `${piece}\n`
+          : `${piece}${separators[index % separators.length] ?? ""}`,
+      )
+      .join("");
+  }
+  return pieces
+    .map((piece, index) =>
+      index === 0 ? piece : `${separators[(index - 1) % separators.length] ?? ""}${piece}`,
+    )
+    .join("");
 }
 
 async function builtinHead(invocation: BuiltinInvocation): Promise<RValue> {

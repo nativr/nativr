@@ -140,62 +140,65 @@ evaluation's public result. `utils::capture.output()` and `base::sink()` share i
 so the most recently created capture or diversion wins even when package code nests the two.
 Persistent output frames survive separate `r.eval()` calls, while file and connection writes remain
 in the base layer over the bounded virtual store; runtime knows only the dependency-neutral router
-interface. The `stats::family` entry is another deliberately thin generic seam: it routes owned
-class metadata through the same evaluator S3 stack but does not embed distributional's package-owned
-method or objects. Regular time-series values follow the same boundary. `stats::ts` creates only
-owned vectors/matrices and `tsp` metadata; `as.ts`, `frequency`, `deltat`, `stats::cycle`, and
-`stats::window` route external classes through the evaluator's S3 stack before using the
-regular-series fallback. The non-generic `stats::embed` consumes only owned vector/matrix storage
-and builds bounded, column-major lag matrices, so pure-R rolling-window helpers can reuse the
-runtime primitive without a host R process. The application-supplied source-bundle loader can now
-install independently authored `window.*`, `cycle.*`, `deltat.*`, or `as.ts.*` methods without
-replacing the core runtime, while package-specific irregular indexes remain package-owned and must
-fit the supported value model. Bundle metadata is normalized in the public facade; only normalized
-package definitions enter the runtime, preserving `parser -> ast` and `runtime -> ast` dependency
-direction. `utils::demo` likewise builds only an owned empty catalog; external demo discovery awaits
-virtual package resources rather than a host R installation. `utils::View` remains host-independent
-by coercing owned values to a bounded data-frame shape and journaling character-formatted columns;
-only the public facade and Playground decide how to display that structured event. Date labeling
-follows the same owned path: `weekdays` dispatches through registered Date/POSIXt methods and an
-embedded C-locale catalog, using UTC arithmetic rather than browser locale or time zone services.
-Path text follows the same host-independent boundary. `file.path` performs only vectorized string
-construction with a caller-selected separator. `path.expand` does not query an operating-system
-account or process environment; because browser sessions expose no home directory, leading tildes
-remain unchanged. Neither operation normalizes paths, checks existence, or performs filesystem I/O.
-Duplicate-position lookup is likewise an owned value operation: `anyDuplicated` dispatches package
-methods through S3, while default atomic/list and data-frame row comparisons use runtime value
-equality, missing-value, factor, and directional-scan primitives without serializing or hashing host
-objects. Fixed repetition follows a direct typed-output path: `rep.int` validates and bounds its
-repeat plan before allocating atomic/list/expression storage, removes ordinary attributes, and
-restores only factor class/levels. Legacy S4 declaration follows an equally bounded owned path:
-`methods::representation` forces and validates only its declaration arguments, rejects duplicate
-parent/slot names, and returns the plain list consumed by the evaluator's session-local `setClass`
-registry. `methods::showClass` reads that registry without host reflection, recursively combines
-owned parent/slot declarations, and writes namespace-aware class metadata to the bounded output
-journal used by `capture.output`. Toward-zero rounding shares the same owned typed-vector path as
-floor and ceiling; `trunc` performs direct and Math-group S3 dispatch before transforming real
-storage and never consults host date, locale, or numeric libraries. `utils::type.convert` similarly
-scans owned character storage through deterministic logical/integer/double/complex recognizers,
-recursively rebuilding lists and data frames without a host parser or locale-sensitive conversion
-service. Visibility capture remains evaluator-owned: `withVisible` asks the promise engine for the
-value and visibility produced by first forcing an expression, while a previously forced promise is
-an ordinary visible lookup. Interval lookup follows the same rule: `base::findInterval` converts
-owned numeric-like vectors, validates ordinary breakpoint ordering, and performs a checkpointed
-binary search. This lets pure-R rolling-window code compute irregular Date widths without
-package-specific host code or an R process. Gray colors follow the same ownership boundary:
-`grDevices::gray` and `gray.colors` perform numeric validation, gamma interpolation, byte rounding,
-alpha composition, and reversal without CSS, Canvas, a device profile, or a host color service.
-Date-time construction and formatting are also owned: `ISOdate`/`ISOdatetime` validate and recycle
-numeric calendar components, while `strftime` converts through the runtime's POSIXlt representation
-and expands bounded UTC/GMT, C-locale tokens without calling host locale or time-zone databases. The
-empty `ISOdatetime` timezone is resolved to deterministic UTC instead of probing the browser host.
-No parser node or generated JavaScript crosses this boundary. Platform-shaped numeric constants such
-as `.Machine` are installed as owned runtime values rather than read from a host R process. Locale
-categories and monetary conventions follow the same rule: resettable evaluator state owns the
-supported profiles, so Worker results do not vary with the browser or operating-system locale.
-`utils::sessionInfo()` projects that state into a deterministic NativR/browser identity rather than
-probing or claiming the user's native operating system or a GNU R installation. Future backends
-attach behind stable operator IDs rather than duplicating package-specific algorithms.
+interface. `base::write()` composes that same base-owned target writer with an independently
+implemented atomic formatter and GNU R-shaped column separators; neither package code nor the
+runtime facade receives a host file handle. The `stats::family` entry is another deliberately thin
+generic seam: it routes owned class metadata through the same evaluator S3 stack but does not embed
+distributional's package-owned method or objects. Regular time-series values follow the same
+boundary. `stats::ts` creates only owned vectors/matrices and `tsp` metadata; `as.ts`, `frequency`,
+`deltat`, `stats::cycle`, and `stats::window` route external classes through the evaluator's S3
+stack before using the regular-series fallback. The non-generic `stats::embed` consumes only owned
+vector/matrix storage and builds bounded, column-major lag matrices, so pure-R rolling-window
+helpers can reuse the runtime primitive without a host R process. The application-supplied
+source-bundle loader can now install independently authored `window.*`, `cycle.*`, `deltat.*`, or
+`as.ts.*` methods without replacing the core runtime, while package-specific irregular indexes
+remain package-owned and must fit the supported value model. Bundle metadata is normalized in the
+public facade; only normalized package definitions enter the runtime, preserving `parser -> ast` and
+`runtime -> ast` dependency direction. `utils::demo` likewise builds only an owned empty catalog;
+external demo discovery awaits virtual package resources rather than a host R installation.
+`utils::View` remains host-independent by coercing owned values to a bounded data-frame shape and
+journaling character-formatted columns; only the public facade and Playground decide how to display
+that structured event. Date labeling follows the same owned path: `weekdays` dispatches through
+registered Date/POSIXt methods and an embedded C-locale catalog, using UTC arithmetic rather than
+browser locale or time zone services. Path text follows the same host-independent boundary.
+`file.path` performs only vectorized string construction with a caller-selected separator.
+`path.expand` does not query an operating-system account or process environment; because browser
+sessions expose no home directory, leading tildes remain unchanged. Neither operation normalizes
+paths, checks existence, or performs filesystem I/O. Duplicate-position lookup is likewise an owned
+value operation: `anyDuplicated` dispatches package methods through S3, while default atomic/list
+and data-frame row comparisons use runtime value equality, missing-value, factor, and
+directional-scan primitives without serializing or hashing host objects. Fixed repetition follows a
+direct typed-output path: `rep.int` validates and bounds its repeat plan before allocating
+atomic/list/expression storage, removes ordinary attributes, and restores only factor class/levels.
+Legacy S4 declaration follows an equally bounded owned path: `methods::representation` forces and
+validates only its declaration arguments, rejects duplicate parent/slot names, and returns the plain
+list consumed by the evaluator's session-local `setClass` registry. `methods::showClass` reads that
+registry without host reflection, recursively combines owned parent/slot declarations, and writes
+namespace-aware class metadata to the bounded output journal used by `capture.output`. Toward-zero
+rounding shares the same owned typed-vector path as floor and ceiling; `trunc` performs direct and
+Math-group S3 dispatch before transforming real storage and never consults host date, locale, or
+numeric libraries. `utils::type.convert` similarly scans owned character storage through
+deterministic logical/integer/double/complex recognizers, recursively rebuilding lists and data
+frames without a host parser or locale-sensitive conversion service. Visibility capture remains
+evaluator-owned: `withVisible` asks the promise engine for the value and visibility produced by
+first forcing an expression, while a previously forced promise is an ordinary visible lookup.
+Interval lookup follows the same rule: `base::findInterval` converts owned numeric-like vectors,
+validates ordinary breakpoint ordering, and performs a checkpointed binary search. This lets pure-R
+rolling-window code compute irregular Date widths without package-specific host code or an R
+process. Gray colors follow the same ownership boundary: `grDevices::gray` and `gray.colors` perform
+numeric validation, gamma interpolation, byte rounding, alpha composition, and reversal without CSS,
+Canvas, a device profile, or a host color service. Date-time construction and formatting are also
+owned: `ISOdate`/`ISOdatetime` validate and recycle numeric calendar components, while `strftime`
+converts through the runtime's POSIXlt representation and expands bounded UTC/GMT, C-locale tokens
+without calling host locale or time-zone databases. The empty `ISOdatetime` timezone is resolved to
+deterministic UTC instead of probing the browser host. No parser node or generated JavaScript
+crosses this boundary. Platform-shaped numeric constants such as `.Machine` are installed as owned
+runtime values rather than read from a host R process. Locale categories and monetary conventions
+follow the same rule: resettable evaluator state owns the supported profiles, so Worker results do
+not vary with the browser or operating-system locale. `utils::sessionInfo()` projects that state
+into a deterministic NativR/browser identity rather than probing or claiming the user's native
+operating system or a GNU R installation. Future backends attach behind stable operator IDs rather
+than duplicating package-specific algorithms.
 
 Session process identity follows the same rule. The facade allocates one positive integer before
 choosing inline or Worker execution, sends it as an optional protocol-v1 initialization field, and

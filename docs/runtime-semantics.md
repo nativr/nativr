@@ -1464,6 +1464,15 @@ remain open. Buffered text is committed when a frame is removed, so reading or c
 while active is deliberately outside the supported interaction boundary. Host paths, ambient file
 descriptors, and byte-for-byte native console buffering are not exposed.
 
+`base::write(x, file = "data", ncolumns = if (is.character(x)) 1 else 5, append = FALSE, sep = " ")`
+writes the underlying atomic storage in column-major vector order. Its separator vector is repeated
+`ncolumns - 1` times and followed by a newline, reproducing character one-per-line, numeric
+five-per-line, multi-separator, zero-length, matrix, factor-code, missing, file, and connection
+behavior from GNU R 4.6. A newline anywhere in a `cat()` separator vector likewise terminates its
+final item, fixing the shared formatting primitive used by `write()`. Output and session-file limits
+apply before publication; non-atomic values, host paths, native encodings, and platform newline
+bytes remain outside this browser contract.
+
 `utils::demo()` constructs the empty `packageIQR` catalog entirely from owned values when
 `package = character()` and no library location is supplied. It does not scan an operating-system R
 library or fetch package resources. Topics, nonempty package selections, and host library locations

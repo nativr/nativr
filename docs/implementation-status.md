@@ -196,6 +196,11 @@ Date: 2026-08-02
   19-level output diversion stack, split tees, one message-connection slot, connection lifecycle,
   and shared ordering with `capture.output()` across separate evaluations and errors. Host
   filesystem output remains an explicit boundary.
+- Usage-ranked `base::write()` composes the same browser-memory writer with GNU R-shaped one/five
+  column defaults, vector separators, atomic-storage formatting, append behavior, closed/open
+  connection lifecycle, invisible results, and output/resource bounds. The measured sass call runs
+  unchanged in a source-only package and the default Worker. Native encodings, host files, and
+  non-atomic deparse behavior remain explicit boundaries.
 - `utils::demo()` returns GNU R's empty `packageIQR` catalog shape when no package library is
   selected. External package demo discovery and execution remain an explicit package-resource
   boundary.

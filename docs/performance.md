@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 391 KiB gzip;
+- Worker JavaScript: 393 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -730,3 +730,15 @@ record/replay, inline callbacks, Worker transport, and source-only package calls
 paths; no dependency, protocol event, DOM/runtime network access, generated code, or package-source
 translation is added. The measured Worker is 390.4 KiB gzip, so the ceiling rises narrowly from 390
 KiB to 391 KiB; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.251 adds usage-ranked `base::sink` and `sink.number` by composing the existing
+output router, bounded virtual targets, and private connection state. It adds no dependency,
+protocol event, host descriptor, generated-code path, or package-specific translation. The measured
+Worker is 391.5 KiB gzip, so the ceiling rises narrowly from 391 KiB to 392 KiB; client and
+parser-Wasm budgets remain unchanged.
+
+Language subset 0.252 adds usage-ranked `base::write` by composing the existing atomic formatter,
+`cat` separator layout, bounded session-file writer, and private connection state. It adds no
+dependency, protocol event, host filesystem access, generated-code path, or package-specific
+translation. The measured Worker is 392.0 KiB gzip, so the ceiling rises narrowly from 392 KiB to
+393 KiB; client and parser-Wasm budgets remain unchanged.

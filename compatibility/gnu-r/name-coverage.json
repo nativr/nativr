@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 644,
-    "overlappingNames": 626,
-    "missingReferenceNames": 1896,
+    "nativrRegisteredNames": 645,
+    "overlappingNames": 627,
+    "missingReferenceNames": 1895,
     "nativrExtensionNames": 18,
-    "nameCoverage": 0.248216
+    "nameCoverage": 0.248612
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 455, "nameCoverage": 0.332846 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 456, "nameCoverage": 0.333577 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 76, "nameCoverage": 0.163793 },
     {
       "package": "methods",
@@ -654,6 +654,7 @@
     "with",
     "withVisible",
     "within",
+    "write",
     "write.csv",
     "write.csv2",
     "write.table",
@@ -2520,7 +2521,6 @@
     "withRestarts",
     "within.data.frame",
     "within.list",
-    "write",
     "write.dcf",
     "write.ftable",
     "write.socket",

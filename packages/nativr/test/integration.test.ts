@@ -30,7 +30,7 @@ importFrom(graphics, axis, plot.new, plot.window, rect, title)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median, ts.plot)
 importFrom(utils, download.file, packageDescription, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, plot_series, annotated_plot, find_tools, create_file, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, pipe_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output, sink_lines)
+export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, plot_series, annotated_plot, find_tools, create_file, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, pipe_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output, sink_lines, write_sass_variable)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -173,6 +173,11 @@ sink_lines <- function() {
   sink(path)
   cat("pure-R package sink\\n")
   sink()
+  readLines(path)
+}
+write_sass_variable <- function() {
+  path <- tempfile()
+  write('$color: "red";', path)
   readLines(path)
 }
 hidden_helper <- function(x) x + 100
@@ -328,6 +333,8 @@ describe("complete inline source-to-result vertical slice", () => {
       { stream: "stdout", text: "a-1|2" },
       { stream: "stdout", text: " 1" },
     ]);
+    const terminated = await runtime.evalDetailed('cat(1:7, sep = c(" ", " ", " ", " ", "\\n"))');
+    expect(terminated.output).toEqual([{ stream: "stdout", text: "1 2 3 4 5\n6 7\n" }]);
 
     const matrix = await runtime.evalDetailed("print(matrix(1:6, nrow = 2))");
     expect(matrix.output[0]?.text).toBe(
@@ -1689,6 +1696,80 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("writes atomic data with GNU R column layout through owned files and connections", async () => {
+    const runtime = await session();
+    const characterOutput = await runtime.evalDetailed('write(c("a", "b", NA_character_), "")');
+    expect(characterOutput).toMatchObject({ value: null, visible: false });
+    expect(characterOutput.output).toEqual([{ stream: "stdout", text: "a\nb\nNA\n" }]);
+    const numericOutput = await runtime.evalDetailed('write(1:7, "")');
+    expect(numericOutput.output).toEqual([{ stream: "stdout", text: "1 2 3 4 5\n6 7\n" }]);
+    const explicit = await runtime.evalDetailed('write(1:6, "", ncolumns = 3, sep = c(",", ";"))');
+    expect(explicit.output).toEqual([{ stream: "stdout", text: "1,2;3,4;5\n6\n" }]);
+
+    await expect(
+      runtime.eval(`
+        f <- formals(write)
+        c(
+          names(f), identical(f$file, "data"),
+          identical(f$ncolumns, quote(if (is.character(x)) 1 else 5)),
+          identical(f$append, FALSE), identical(f$sep, " ")
+        )
+      `),
+    ).resolves.toEqual(["x", "file", "ncolumns", "append", "sep", "TRUE", "TRUE", "TRUE", "TRUE"]);
+
+    await expect(
+      runtime.eval(`
+        path <- tempfile(); visible <- withVisible(write('$color: "red";', path))
+        first <- readLines(path)
+        write(c("x", "y"), path, append = TRUE)
+        c(first, readLines(path), is.null(visible$value), visible$visible)
+      `),
+    ).resolves.toEqual(['$color: "red";', '$color: "red";', "x", "y", "TRUE", "FALSE"]);
+    await expect(
+      runtime.eval(`
+        named <- structure(1:3, names = c("a", "b", "c"))
+        matrix.path <- tempfile(); write(matrix(1:6, nrow = 2), matrix.path, ncolumns = 3)
+        factor.path <- tempfile(); write(factor(c("b", "a", NA)), factor.path)
+        list(capture.output(write(named, "")), readLines(matrix.path), readLines(factor.path))
+      `),
+    ).resolves.toEqual(["1 2 3", ["1 2 3", "4 5 6"], "2 1 NA"]);
+
+    await expect(
+      runtime.eval(`
+        closed.path <- tempfile(); closed <- file(closed.path)
+        before <- isOpen(closed); write(c("a", "b"), closed); after <- isOpen(closed)
+        open.path <- tempfile(); opened <- file(open.path, open = "wt")
+        write(1:3, opened, ncolumns = 2); still <- isOpen(opened); close(opened)
+        c(before, after, readLines(closed.path), still, readLines(open.path))
+      `),
+    ).resolves.toEqual(["FALSE", "FALSE", "a", "b", "TRUE", "1 2", "3"]);
+
+    await expect(runtime.eval('write(list(1, 2), "")')).rejects.toMatchObject({
+      code: "NRT3371",
+    });
+    await expect(runtime.eval('write(1:2, "", ncolumns = 0)')).rejects.toMatchObject({
+      code: "NRT3373",
+    });
+    await expect(runtime.eval('write(1:2, "", ncolumns = c(1, 2))')).rejects.toMatchObject({
+      code: "NRT3373",
+    });
+    await expect(runtime.eval('write(1:2, "", sep = NULL)')).rejects.toMatchObject({
+      code: "NRT3372",
+    });
+    await expect(runtime.eval('write(1:2, "", append = NA)')).rejects.toMatchObject({
+      code: "NRT3355",
+    });
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxOutputBytes: 5 },
+    });
+    await expect(limited.eval('write("too long", "")')).rejects.toMatchObject({ code: "NRL4007" });
+    await limited.dispose();
+  });
+
   it("sources complete R programs from text connections into the selected environment", async () => {
     const runtime = await session();
     await expect(
@@ -2440,6 +2521,9 @@ describe("complete inline source-to-result vertical slice", () => {
     ]);
     expect(packageCall.output).toEqual([{ stream: "stdout", text: "package-output\n" }]);
     await expect(runtime.eval("nativrfixture::sink_lines()")).resolves.toBe("pure-R package sink");
+    await expect(runtime.eval("nativrfixture::write_sass_variable()")).resolves.toBe(
+      '$color: "red";',
+    );
     await runtime.dispose();
   });
 
@@ -3782,6 +3866,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "square",
       "standard_output",
       "usage_rectangles",
+      "write_sass_variable",
     ]);
     await expect(runtime.eval('requireNamespace("does.not.exist", quietly = TRUE)')).resolves.toBe(
       false,
@@ -11384,7 +11469,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.251.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.252.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
