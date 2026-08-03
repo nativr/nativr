@@ -6534,9 +6534,6 @@ function systemWhichCharacters(value: RValue, invocation: BuiltinInvocation): RC
     invocation.context.allocate(output.length);
     return characterVector(output);
   }
-  if (value.type === "symbol" || value.type === "language") {
-    return asVectorLanguageCharacter(value, invocation);
-  }
   if (value.type === "expression") {
     const output = value.values.map((node) => {
       const text = asVectorLanguageCharacterNode(node);

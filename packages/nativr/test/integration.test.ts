@@ -12347,10 +12347,12 @@ NeedsCompilation: no
       "/approved/bin/bash",
       "",
     ]);
-    await expect(runtime.eval("unname(Sys.which(quote(bash)))")).resolves.toBe(
-      "/approved/bin/bash",
-    );
-    await expect(runtime.eval("unname(Sys.which(quote(f(1, 2))))")).resolves.toEqual(["", "", ""]);
+    await expect(runtime.eval("unname(Sys.which(quote(bash)))")).rejects.toMatchObject({
+      code: "NRT3405",
+    });
+    await expect(runtime.eval("unname(Sys.which(quote(f(1, 2))))")).rejects.toMatchObject({
+      code: "NRT3405",
+    });
     await expect(runtime.eval("Sys.which(na = 'bash')")).resolves.toBe("/approved/bin/bash");
     await expect(runtime.eval("Sys.which(x = 'bash')")).rejects.toMatchObject({ code: "NRE2101" });
     await expect(runtime.eval("Sys.which()")).rejects.toMatchObject({ code: "NRE2103" });
