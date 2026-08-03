@@ -12692,7 +12692,7 @@ NeedsCompilation: no
     ).resolves.toEqual([
       "wasm32-unknown-browser/nativr",
       "4",
-      "6.0",
+      "6.1",
       "C",
       "UTC",
       "internal",

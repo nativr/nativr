@@ -13795,7 +13795,7 @@ async function builtinSessionInfo(invocation: BuiltinInvocation): Promise<RValue
       characterVector(["wasm32, browser"]),
       characterVector([""]),
       characterVector(["4"]),
-      characterVector(["6.0"]),
+      characterVector(["6.1"]),
       characterVector(["2026"]),
       characterVector(["07"]),
       characterVector(["30"]),
@@ -26346,7 +26346,6 @@ async function builtinHelp(invocation: BuiltinInvocation): Promise<RValue> {
           await invocation.force(libraryArgument.promise),
           "help",
         );
-  await helpLogicalControl(invocation, matched.get("verbose"), "verbose", false);
   const helpType = await helpTypeArgument(invocation, matched.get("help_type"));
   const explicitPackages = await helpPackageArgument(
     invocation,

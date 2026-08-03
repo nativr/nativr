@@ -9,7 +9,7 @@
   "capabilityManifestHash": "3c9f13c99e9a162f8f79b853d349ca77dcc83f2db7ec02a11a2762955b80b5f3",
   "evidence": {
     "checkedInConformanceCases": 854,
-    "liveREligibleCases": 811,
+    "liveREligibleCases": 806,
     "recursiveOracleV2Cases": 2,
     "recursiveBehaviorallyProvenBindings": null,
     "note": "Recursive behavioral binding counts remain null until oracle-v2 cases are associated with registry bindings; name overlap is inventory only."
