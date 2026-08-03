@@ -791,7 +791,13 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      `contrib.url` turn application-approved CRAN-like `PACKAGES` bytes into GNU R's package matrix,
      with extra fields, built-in/custom filters, duplicate selection, session caching, request
      controls, package execution, and Worker evidence. Runtime code retains no ambient network or
-     host cache authority; rank-343 `graphics::barplot` is the next measured unresolved callable.
+     host cache authority.
+166. Usage-ranked bar plots: rank-343 `graphics::barplot` and `barplot.default` reproduce the three
+     measured zoo/bit64 vector-and-matrix calls through S3 dispatch, stacked/beside midpoint
+     geometry, widths/spaces/offsets, names, axes, annotations, legends, and the existing bounded
+     Worker polygon journal. Source-only packages can import or extend the generic without
+     TypeScript rewrites; unsupported log axes, positive hatch density, and device-exact layout
+     remain explicit. Rank-344 `grDevices::devAskNewPage` is the next measured unresolved callable.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

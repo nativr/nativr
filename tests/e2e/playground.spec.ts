@@ -851,6 +851,36 @@ test("runs the required Worker examples without evaluation network traffic", asy
   expect(boxplotPixels.lightblue).toBeGreaterThan(0);
 
   await page.locator("#source").fill(`
+    barplot(
+      matrix(1:4, 2, dimnames = list(c("low", "high"), c("A", "B"))),
+      beside = TRUE,
+      col = c("red", "blue"),
+      border = "black"
+    )
+  `);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("[1.5, 2.5, 4.5, 5.5]");
+  const barplotCommandCount = Number(await page.locator("#graphics-count").textContent());
+  expect(barplotCommandCount).toBeGreaterThan(2);
+  const barplotPixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
+    const context = canvas.getContext("2d");
+    if (context === null) return { red: 0, blue: 0 };
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    const counts = { red: 0, blue: 0 };
+    for (let index = 0; index < pixels.length; index += 4) {
+      const red = pixels[index] ?? 0;
+      const green = pixels[index + 1] ?? 0;
+      const blue = pixels[index + 2] ?? 0;
+      const alpha = pixels[index + 3] ?? 0;
+      if (red > 220 && green < 40 && blue < 40 && alpha > 0) counts.red += 1;
+      if (blue > 220 && red < 40 && green < 40 && alpha > 0) counts.blue += 1;
+    }
+    return counts;
+  });
+  expect(barplotPixels.red).toBeGreaterThan(100);
+  expect(barplotPixels.blue).toBeGreaterThan(100);
+
+  await page.locator("#source").fill(`
     plot.new()
     plot.window(c(0, 10), c(0, 10))
     visible <- withVisible(legend(

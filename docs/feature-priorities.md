@@ -75,16 +75,16 @@ signal.
 
 | Priority | Measured rank | Callable           | Weighted reach | Packages | Observed calls |
 | -------: | ------------: | ------------------ | -------------: | -------: | -------------: |
-|        1 |           343 | `barplot`          |           1.2% |        2 |              3 |
-|        2 |           344 | `devAskNewPage`    |           1.1% |        1 |             10 |
-|        3 |           345 | `getLoadedDLLs`    |           1.1% |        1 |              1 |
-|        4 |           346 | `socketConnection` |           1.1% |        1 |              1 |
-|        5 |           348 | `file.copy`        |           1.1% |        1 |              1 |
-|        6 |           349 | `find.package`     |           1.1% |        1 |              1 |
-|        7 |           351 | `l10n_info`        |           1.1% |        1 |              1 |
-|        8 |           353 | `shQuote`          |           1.1% |        1 |              1 |
-|        9 |           357 | `system2`          |           1.1% |        1 |              1 |
-|       10 |           358 | `.Call`            |           1.0% |        1 |              1 |
+|        1 |           344 | `devAskNewPage`    |           1.1% |        1 |             10 |
+|        2 |           345 | `getLoadedDLLs`    |           1.1% |        1 |              1 |
+|        3 |           346 | `socketConnection` |           1.1% |        1 |              1 |
+|        4 |           348 | `file.copy`        |           1.1% |        1 |              1 |
+|        5 |           349 | `find.package`     |           1.1% |        1 |              1 |
+|        6 |           351 | `l10n_info`        |           1.1% |        1 |              1 |
+|        7 |           353 | `shQuote`          |           1.1% |        1 |              1 |
+|        8 |           357 | `system2`          |           1.1% |        1 |              1 |
+|        9 |           358 | `.Call`            |           1.0% |        1 |              1 |
+|       10 |           363 | `aspell`           |           1.0% |        1 |              2 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -202,20 +202,21 @@ for data.table and bit64. Rank 328 `title` now supplies shared plot annotations 
 measured Shiny/bit64 calls, including unchanged pure-R package and Worker rendering paths; rank 330
 `sink` now supplies persistent output/message diversions for utf8's two measured calls; rank 338
 `write` now runs sass's measured source-file write; rank 340 `available.packages` now runs curl's
-measured repository query; rank 343 `barplot` is next. Rank 144 `Encoding` is also complete for all
-12 observed calls across rlang, utf8, and xfun (4.5% weighted reach), together with adjacent
-`Encoding<-`, `enc2utf8`, and `enc2native`. The shared character representation preserves exact
-bytes and canonical R marks through subset/replacement, concatenation, raw conversion, and XDR
-serialization; this is reusable package infrastructure, not an assertion that those packages' native
-components are supported. Rank 149 `rcauchy` is now complete for four calls across ggplot2, pillar,
-and purrr (4.2% weighted reach), together with `dcauchy`, `pcauchy`, and `qcauchy`. The shared
-distribution path covers seeded random-stream consumption, vectorized parameters, stable probability
-tails, formals, and missing/domain behavior without package-specific rewrites. Rank 162 `Sys.getenv`
-is now available for all 16 measured calls across withr, xfun, and pkgbuild (3.7% weighted reach),
-together with rank 175 `Sys.setenv` across xfun, memoise, openssl, and zoo (3.3%) and adjacent
-`Sys.unsetenv`. The shared session-state path is Worker-safe, resettable, and sufficient for
-unchanged `withr::with_envvar()` mutation/restoration; it does not expose the host environment. Rank
-163 `image` is now available for the six measured calls across scales, viridisLite, and RColorBrewer
+measured repository query; rank 343 `barplot` now runs zoo and bit64's measured vector/matrix calls;
+rank 344 `devAskNewPage` is next. Rank 144 `Encoding` is also complete for all 12 observed calls
+across rlang, utf8, and xfun (4.5% weighted reach), together with adjacent `Encoding<-`, `enc2utf8`,
+and `enc2native`. The shared character representation preserves exact bytes and canonical R marks
+through subset/replacement, concatenation, raw conversion, and XDR serialization; this is reusable
+package infrastructure, not an assertion that those packages' native components are supported. Rank
+149 `rcauchy` is now complete for four calls across ggplot2, pillar, and purrr (4.2% weighted
+reach), together with `dcauchy`, `pcauchy`, and `qcauchy`. The shared distribution path covers
+seeded random-stream consumption, vectorized parameters, stable probability tails, formals, and
+missing/domain behavior without package-specific rewrites. Rank 162 `Sys.getenv` is now available
+for all 16 measured calls across withr, xfun, and pkgbuild (3.7% weighted reach), together with rank
+175 `Sys.setenv` across xfun, memoise, openssl, and zoo (3.3%) and adjacent `Sys.unsetenv`. The
+shared session-state path is Worker-safe, resettable, and sufficient for unchanged
+`withr::with_envvar()` mutation/restoration; it does not expose the host environment. Rank 163
+`image` is now available for the six measured calls across scales, viridisLite, and RColorBrewer
 (3.7% weighted reach). Its reusable S3/default path covers numeric/logical matrices, center or
 boundary coordinates, regular raster and irregular polygon grids, colour intervals, missing
 transparency, and one-row palette strips through the same Worker graphics journal; it is not a claim
@@ -487,9 +488,10 @@ Worker text events, browser/file devices, and unchanged source-only package code
 complete for utf8's two measured redirection calls, with reusable session stack, split, message,
 connection, pure-R package, and Worker evidence. Rank 338 `write` is complete for sass's measured
 source-line call with GNU R column layout and owned file/connection targets. Rank 340
-`available.packages` is complete for curl's measured repository database; rank 343 `barplot` is the
-next usage-ranked unresolved callable. Rank 316 `colSums` is now complete for three observed calls
-across [`loo`](https://cran.r-project.org/web/packages/loo/refman/loo.html) and
+`available.packages` is complete for curl's measured repository database; rank 343 `barplot` is
+complete for zoo and bit64's measured vector/matrix calls; rank 344 `devAskNewPage` is the next
+usage-ranked unresolved callable. Rank 316 `colSums` is now complete for three observed calls across
+[`loo`](https://cran.r-project.org/web/packages/loo/refman/loo.html) and
 [`zoo`](https://cran.r-project.org/web/packages/zoo/refman/zoo.html), representing 1,601,512
 snapshot downloads and 1.3% download reach. Loo calls `colSums(tab_10)` and `colSums(tab_9)` on
 integer fold tables; zoo selects usable columns with `colSums(!is.na(za)) > 0`. NativR covers
@@ -641,10 +643,11 @@ The related `hcl.colors`, `palette`, and device color-management surfaces are se
 work; `rainbow`, `terrain.colors`, `topo.colors`, and `cm.colors` are covered by the later shared
 HSV increment. In ranks 345 through 353, `open` now uses the virtual connection layer and `readBin`
 can retrieve raw bytes from owned binary files; typed binary decoding remains incomplete. The
-remaining `stderr`, `barplot`, `devAskNewPage`, `getLoadedDLLs`, and `socketConnection` surfaces
-require broader browser adapters, repositories, graphics, connections, or native-library state.
-Usage-ranked `write` now uses the owned file/connection writer. Rank 354 `factorial` is now complete
-for xfun's [`factorial(10)` example](https://cran.r-project.org/web/packages/xfun/refman/xfun.html),
+remaining `devAskNewPage`, `getLoadedDLLs`, and `socketConnection` surfaces require broader browser
+adapters, graphics, connections, or native-library state; `stderr` and `barplot` now use the owned
+connection and graphics foundations. Usage-ranked `write` now uses the owned file/connection writer.
+Rank 354 `factorial` is now complete for xfun's
+[`factorial(10)` example](https://cran.r-project.org/web/packages/xfun/refman/xfun.html),
 representing 1,305,720 downloads and 1.1% reach. The independent implementation uses direct products
 for finite non-negative integers and a bounded Lanczos gamma approximation elsewhere, while
 retaining vector attributes, `NA`/`NaN` distinctions, non-finite behavior, and one domain-warning
@@ -1671,6 +1674,12 @@ ties:
      execution, Worker execution, conformance, and resource limits have evidence. Ambient network,
      persistent host caches, archive installation, binary execution, and dependency-recursive
      license proof remain compatibility depth.
+161. Browser bar plots: rank-343 `graphics::barplot` represents three measured calls across zoo and
+     bit64 at 1.2% download-weighted reach. GNU R 4.6 midpoint shapes, vector/matrix inputs,
+     stacked/beside widths and spacing, offsets, names, axes, annotations, legends, S3 package
+     methods, unchanged source-package execution, Worker/Canvas rendering, conformance, and resource
+     accounting have evidence. Log axes, positive hatch density, complete graphical parameters, and
+     device-exact layout remain compatibility depth.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

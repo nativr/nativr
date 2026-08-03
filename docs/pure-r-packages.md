@@ -455,6 +455,15 @@ fixture exports `histogram_counts()` and loads it through the normal namespace p
 TypeScript port. This proves reusable runtime behavior, not compatibility for every dependency or
 every graphics option those packages may exercise.
 
+Rank-343 `graphics::barplot()` demonstrates the intended package-amplification path directly. A
+source-only package can import the S3 generic, define its own `barplot.<class>` method when needed,
+or pass an ordinary numeric vector/matrix into the shared default without translating that package's
+R source to TypeScript. The checked-in fixture exports `package_bars()` unchanged, while zoo-style
+class methods can prepare a matrix and delegate to `barplot.default`. This avoids rewriting each
+pure-R package, but it does not bypass dependencies: the package still loads only when all language,
+namespace, data, and runtime calls it actually executes are supported and its dependency closure is
+license-admissible and free of native-code requirements.
+
 The object-system foundation follows the same rule. The checked-in source-only fixture imports
 `methods::setClass` and `methods::showClass`, declares `NativRFixtureClass` while its namespace is
 loaded, and exports an unchanged R function that captures the class summary. Class ownership, slots,

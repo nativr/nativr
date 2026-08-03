@@ -750,8 +750,15 @@ query. It derives source `contrib` URLs, parses bounded CRAN-like `PACKAGES` DCF
 R-shaped character matrices, applies version/OS/subarchitecture/duplicate or user-defined filters,
 and reuses an age-bounded session cache. Repository bytes enter only through the explicit
 `createR({ url })` callback; package code receives no ambient browser network access. An unchanged
-pure-R helper runs through the inline API and Worker Playground. Rank 343 `graphics::barplot()` is
-the next usage-ranked unresolved callable.
+pure-R helper runs through the inline API and Worker Playground.
+
+Rank 343 `graphics::barplot()` now covers zoo and bit64's three measured vector/matrix calls. Its S3
+generic lets source-only packages provide class methods, while the shared default computes GNU
+R-shaped stacked or beside midpoints and sends rectangles, names, axes, annotations, and legends
+through the existing bounded Worker graphics journal. The fixture imports and calls it without a
+TypeScript rewrite. Log axes, positive hatch density, every graphical parameter, and device-exact
+layout remain explicit depth; rank 344 `grDevices::devAskNewPage()` is the next measured unresolved
+callable.
 
 Rank 121 `grDevices::png()` now covers all seven measured calls across five packages. It opens
 alongside the browser display, records the existing graphics command vocabulary, rasterizes it in

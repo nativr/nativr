@@ -237,23 +237,23 @@ inline and Worker APIs retain stdout in `evalDetailed`; output and stored text s
 budgets. S3 print-method dispatch, global print options, line filling, labels, host files, and the
 complete connection stack are not claimed.
 
-`plot`, `plot.default`, `plot.new`, bounded `plot.window`, `axTicks`, `box`, `boxplot`, `image`,
-`image.default`, `persp`, `lines`, `lines.default`, `points`, `polygon`, `rasterImage`, `segments`,
-and `legend` provide the first browser-native graphics slice. Evaluation owns page and linear
-coordinate-window state, converts two-dimensional grayscale or character colors, three-/four-channel
-numeric/raw arrays, and packed `nativeRaster` integers to row-major RGBA, and emits commands for
-recycled raster placements, styled line segments, resolved point symbols and polygons, plot frames
-and boxplots, and resolved legend entries. Commands preserve raster angle/interpolation, finite
-coordinates, canonical colors, normalized line patterns, line widths, polygon fill rules, frame
-edges, text labels, point symbols, placement, and layout controls. They cross the Worker boundary,
-remain available in `evalDetailed.graphics`, and count toward the configured output budget. Inline
-and Worker callbacks receive the same command shapes, and the Playground renders them to Canvas.
-Evidence covers the measured systemfonts glyph-raster, httr PNG-array, posterior interval-segment,
-zoo filled-area, zoo plot-frame, zoo grouped-boxplot, and zoo legend patterns. The owned registry
-also supports `dev.cur`/`dev.list`, GNU R-shaped null device 1, simultaneous browser/PNG/PDF device
-identities, selected `dev.off`/`graphics.off` closure, nested `dev.hold`/`dev.flush` levels,
-per-device `par()` isolation and restoration, ordered cross-evaluation command buffering, and
-bounded same-session `recordPlot`/`replayPlot` over its own
+`plot`, `plot.default`, `plot.new`, bounded `plot.window`, `axTicks`, `barplot`, `box`, `boxplot`,
+`image`, `image.default`, `persp`, `lines`, `lines.default`, `points`, `polygon`, `rasterImage`,
+`segments`, and `legend` provide the first browser-native graphics slice. Evaluation owns page and
+linear coordinate-window state, converts two-dimensional grayscale or character colors,
+three-/four-channel numeric/raw arrays, and packed `nativeRaster` integers to row-major RGBA, and
+emits commands for recycled raster placements, styled line segments, resolved point symbols and
+polygons, plot frames and boxplots, and resolved legend entries. Commands preserve raster
+angle/interpolation, finite coordinates, canonical colors, normalized line patterns, line widths,
+polygon fill rules, frame edges, text labels, point symbols, placement, and layout controls. They
+cross the Worker boundary, remain available in `evalDetailed.graphics`, and count toward the
+configured output budget. Inline and Worker callbacks receive the same command shapes, and the
+Playground renders them to Canvas. Evidence covers the measured systemfonts glyph-raster, httr
+PNG-array, posterior interval-segment, zoo filled-area, zoo plot-frame, zoo grouped-boxplot, and zoo
+legend patterns. The owned registry also supports `dev.cur`/`dev.list`, GNU R-shaped null device 1,
+simultaneous browser/PNG/PDF device identities, selected `dev.off`/`graphics.off` closure, nested
+`dev.hold`/`dev.flush` levels, per-device `par()` isolation and restoration, ordered
+cross-evaluation command buffering, and bounded same-session `recordPlot`/`replayPlot` over its own
 page/window/raster/segments/points/text/polygon/box/boxplot/legend display list. `grDevices::png`
 uses that list to produce bounded, decompressible RGBA PNG bytes in the virtual file store,
 including transparent backgrounds, exact requested dimensions, raw-byte reads, and numbered
@@ -358,6 +358,18 @@ resolved line types/widths. Commands cross inline/Worker APIs, Canvas pixels, ou
 held journals, and same-session record/replay. Formula/data-frame methods, logarithmic axes,
 arbitrary `pars`, complete annotation/axes, exact notch-overlap diagnostics, and device-identical
 layout remain unsupported.
+
+`graphics::barplot` and `graphics::barplot.default` have differential evidence for the three
+rank-343 calls measured in zoo and bit64. The S3 generic forwards classed inputs to package-owned
+methods; the default accepts real vectors and two-dimensional matrices, reproduces visible
+`plot = FALSE` midpoint vectors/matrices, and computes stacked or beside rectangles with recycled
+width, spacing, offset, orientation, and stack ordering controls. Plotting reuses bounded
+page/window, polygon, axis, box, text, and legend commands across inline, Worker, Canvas,
+file-device, hold/flush, and record/replay paths. Names, annotations, panel hooks, additive drawing,
+colors, borders, and common line/axis controls share the existing graphics state. Logarithmic axes,
+positive line-density hatching, device-exact typography/margins, every graphical parameter, and
+arbitrary specialized methods remain explicit compatibility depth rather than silently approximated
+support.
 
 `graphics::hist` and `graphics::hist.default` have differential evidence for all 19 measured calls
 across testthat, openssl, shiny, and posterior. The generic dispatches package-owned S3 methods; the

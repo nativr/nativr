@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 396 KiB gzip;
+- Worker JavaScript: 399 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -748,3 +748,10 @@ bounded DCF index parser, character-matrix builder, reusable filtering pipeline,
 the existing explicit URL callback. It performs no ambient fetch, filesystem scan, archive install,
 generated-code execution, or package-specific translation. The measured Worker is 395.1 KiB gzip, so
 the ceiling rises narrowly from 393 KiB to 396 KiB; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.254 adds usage-ranked `graphics::barplot` and `barplot.default` by composing the
+existing S3 dispatcher, matrix/value model, graphics state, polygon/axis/text/legend journal, Worker
+protocol, and browser/file renderers. It adds no dependency, ambient network or filesystem access,
+generated-code path, package-specific translation, or new graphics command kind. The measured Worker
+is 398.5 KiB gzip, so the ceiling rises narrowly from 396 KiB to 399 KiB; client and parser-Wasm
+budgets remain unchanged.

@@ -26,11 +26,11 @@ Imports: grDevices, graphics, methods, stats, utils
 Encoding: UTF-8
 NeedsCompilation: no`,
   namespace: `
-importFrom(graphics, axis, plot.new, plot.window, rect, title)
+importFrom(graphics, axis, barplot, plot.new, plot.window, rect, title)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median, ts.plot)
 importFrom(utils, download.file, packageDescription, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, plot_series, annotated_plot, find_tools, create_file, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output, sink_lines, write_sass_variable)
+export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, annotated_plot, find_tools, create_file, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output, sink_lines, write_sass_variable)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -71,6 +71,7 @@ usage_rectangles <- function() {
   plot.window(c(0, 1), c(0, 1))
   rect(c(0, 0.5), c(0, 0.5), c(0.5, 1), c(0.5, 1), col = "#00000044", border = NA)
 }
+package_bars <- function(x = matrix(1:4, 2)) barplot(x, beside = TRUE, plot = FALSE)
 plot_series <- function(z) {
   ts.plot(z)
   invisible(length(z))
@@ -888,6 +889,19 @@ describe("complete inline source-to-result vertical slice", () => {
       "x",
       "...",
     ]);
+    await expect(
+      runtime.eval(`
+        f <- formals(graphics::barplot.default)
+        c(
+          identical(f$width, 1),
+          is.null(f$space),
+          identical(f$border, quote(par("fg"))),
+          identical(f$cex.axis, quote(par("cex.axis"))),
+          identical(f$ann, quote(!add && par("ann"))),
+          identical(f$orderH, quote(c("none", "incr", "decr")))
+        )
+      `),
+    ).resolves.toEqual([true, true, true, true, true, true]);
     await expect(runtime.eval("c(is.null(args(1)), is.null(args(character())))")).resolves.toEqual([
       true,
       true,
@@ -3792,7 +3806,11 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(
       runtime.eval("nativrfixture::dynamic_describe(nativrfixture::new_score(1:3))"),
     ).resolves.toBe("dynamic:6");
+    await expect(runtime.eval("nativrfixture::package_bars()")).resolves.toEqual([
+      1.5, 2.5, 4.5, 5.5,
+    ]);
     await expect(runtime.eval("nativrfixture::namespace_names('^package_')")).resolves.toEqual([
+      "package_bars",
       "package_libname",
       "package_metadata",
       "package_name",
@@ -3855,6 +3873,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "library_paths",
       "namespace_names",
       "new_score",
+      "package_bars",
       "package_libname",
       "package_metadata",
       "package_name",
@@ -7266,6 +7285,212 @@ describe("complete inline source-to-result vertical slice", () => {
       code: "NRL4007",
     });
     await limited.dispose();
+  });
+
+  it("computes and draws usage-ranked barplots through S3 and browser graphics seams", async () => {
+    const runtime = await createR({ execution: "inline", assets });
+    await expect(
+      runtime.eval(`
+        vector <- barplot(c(a = 1, b = 2, c = 3), plot = FALSE)
+        stacked <- graphics::barplot(matrix(1:6, nrow = 2), plot = FALSE)
+        beside <- barplot(matrix(1:6, nrow = 2), beside = TRUE, plot = FALSE)
+        custom <- barplot(
+          matrix(1:6, nrow = 2),
+          beside = TRUE,
+          width = c(1, 2),
+          space = c(.25, 1.5),
+          plot = FALSE
+        )
+        c(
+          dim(vector), vector,
+          length(dim(stacked)), stacked,
+          dim(beside), beside,
+          custom,
+          names(formals(barplot)),
+          names(formals(graphics::barplot.default))
+        )
+      `),
+    ).resolves.toEqual([
+      "3",
+      "1",
+      "0.7",
+      "1.9",
+      "3.1",
+      "0",
+      "0.7",
+      "1.9",
+      "3.1",
+      "2",
+      "3",
+      "1.5",
+      "2.5",
+      "4.5",
+      "5.5",
+      "7.5",
+      "8.5",
+      "2.75",
+      "4.625",
+      "8.375",
+      "10.25",
+      "14",
+      "15.875",
+      "height",
+      "...",
+      "height",
+      "width",
+      "space",
+      "names.arg",
+      "legend.text",
+      "beside",
+      "horiz",
+      "density",
+      "angle",
+      "col",
+      "border",
+      "main",
+      "sub",
+      "xlab",
+      "ylab",
+      "xlim",
+      "ylim",
+      "xpd",
+      "log",
+      "axes",
+      "axisnames",
+      "cex.axis",
+      "cex.names",
+      "inside",
+      "plot",
+      "axis.lty",
+      "offset",
+      "add",
+      "ann",
+      "args.legend",
+      "orderH",
+      "panel.first",
+      "panel.last",
+      "...",
+    ]);
+    await expect(
+      runtime.eval(`
+        barplot.probe <- function(height, ..., marker = "ok") {
+          c(class(height), marker, list(...)$extra)
+        }
+        barplot(structure(1:3, class = "probe"), marker = "custom", extra = 7)
+      `),
+    ).resolves.toEqual(["probe", "custom", "7"]);
+
+    const warning = await runtime.evalDetailed("barplot(1:3, space = c(1, 2), plot = FALSE)");
+    expect(warning.value).toEqual([1.5, 4.5, 6.5]);
+    expect(warning.warnings).toEqual([
+      {
+        code: "NRW1001",
+        message: "longer object length is not a multiple of shorter object length",
+      },
+      {
+        code: "NRW1001",
+        message: "longer object length is not a multiple of shorter object length",
+      },
+    ]);
+
+    const namedVector = await runtime.evalDetailed(
+      "barplot(c(alpha = 1, beta = 2), axes = FALSE, axisnames = TRUE)",
+    );
+    expect(
+      namedVector.graphics
+        .filter((event) => event.kind === "text")
+        .flatMap((event) =>
+          event.kind === "text" ? event.labels.map((label) => label.label) : [],
+        ),
+    ).toEqual(["alpha", "beta"]);
+
+    const drawn = await runtime.evalDetailed(`
+      visible <- withVisible(barplot(
+        matrix(1:4, 2, dimnames = list(c("low", "high"), c("A", "B"))),
+        beside = TRUE,
+        col = c("red", "blue"),
+        border = "black",
+        legend.text = TRUE,
+        args.legend = list(x = "topleft", bty = "n")
+      ))
+      c(dim(visible$value), visible$value, visible$visible)
+    `);
+    expect(drawn.value).toEqual([2, 2, 1.5, 2.5, 4.5, 5.5, 0]);
+    expect(drawn.visible).toBe(true);
+    expect(drawn.graphics.slice(0, 2)).toEqual([
+      { kind: "new-page" },
+      { kind: "window", xlim: [0.8, 6.2], ylim: [-0.04, 4] },
+    ]);
+    expect(drawn.graphics.find((event) => event.kind === "polygon")).toMatchObject({
+      kind: "polygon",
+      polygons: [
+        { fill: "#FF0000FF", border: "#000000FF" },
+        { fill: "#0000FFFF", border: "#000000FF" },
+        { fill: "#FF0000FF", border: "#000000FF" },
+        { fill: "#0000FFFF", border: "#000000FF" },
+      ],
+    });
+    expect(drawn.graphics.find((event) => event.kind === "legend")).toMatchObject({
+      kind: "legend",
+      position: { kind: "keyword", value: "topleft" },
+      entries: [{ label: "low" }, { label: "high" }],
+      box: false,
+    });
+
+    const stacked = await runtime.evalDetailed(`
+      hooks <- character()
+      visible <- withVisible(barplot(
+        matrix(c(3, -1, 2, -4), nrow = 2),
+        axes = FALSE,
+        axisnames = FALSE,
+        panel.first = hooks <- c(hooks, "first"),
+        panel.last = hooks <- c(hooks, "last")
+      ))
+      c(visible$visible, hooks)
+    `);
+    expect(stacked.value).toEqual(["FALSE", "first", "last"]);
+    expect(stacked.graphics.slice(0, 2)).toEqual([
+      { kind: "new-page" },
+      { kind: "window", xlim: [0.11200000000000002, 2.488], ylim: [-2, 3] },
+    ]);
+    expect(stacked.graphics.find((event) => event.kind === "polygon")).toMatchObject({
+      polygons: [
+        { x: [0.2, 1.2, 1.2, 0.2], y: [0, 0, 3, 3] },
+        { x: [0.2, 1.2, 1.2, 0.2], y: [3, 3, 2, 2] },
+        { x: [1.4, 2.4, 2.4, 1.4], y: [0, 0, 2, 2] },
+        { x: [1.4, 2.4, 2.4, 1.4], y: [2, 2, -2, -2] },
+      ],
+    });
+
+    const horizontal = await runtime.evalDetailed(
+      "barplot(c(-1, 2), horiz = TRUE, axes = FALSE, axisnames = FALSE)",
+    );
+    expect(horizontal.graphics[1]).toEqual({
+      kind: "window",
+      xlim: [-1, 2],
+      ylim: [0.11200000000000002, 2.488],
+    });
+    expect(horizontal.graphics.find((event) => event.kind === "polygon")).toMatchObject({
+      polygons: [
+        { x: [0, 0, -1, -1], y: [0.2, 1.2, 1.2, 0.2] },
+        { x: [0, 0, 2, 2], y: [1.4, 2.4, 2.4, 1.4] },
+      ],
+    });
+
+    await expect(
+      runtime.eval("barplot(array(1:8, c(2, 2, 2)), plot = FALSE)"),
+    ).rejects.toMatchObject({
+      code: "NRT3420",
+    });
+    await expect(
+      runtime.eval("barplot(matrix(1:4, 2), orderH = 'wat', plot = FALSE)"),
+    ).rejects.toMatchObject({
+      code: "NRT3420",
+    });
+    await expect(runtime.eval("barplot(1:2, log = 'y')")).rejects.toMatchObject({
+      code: "NRU6201",
+    });
+    await runtime.dispose();
   });
 
   it("computes and draws usage-ranked histograms through S3 and browser graphics seams", async () => {
@@ -11781,7 +12006,7 @@ NeedsCompilation: no
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.253.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.254.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -11806,6 +12031,8 @@ NeedsCompilation: no
       { name: "hist", compatibility: "behavioral" },
       { name: "hist.default", compatibility: "behavioral" },
       { name: "plot.histogram", compatibility: "shape" },
+      { name: "barplot", compatibility: "behavioral" },
+      { name: "barplot.default", compatibility: "behavioral" },
       { name: "par", compatibility: "behavioral" },
       { name: "plot.default", compatibility: "shape" },
       { name: "plot.new", compatibility: "behavioral" },

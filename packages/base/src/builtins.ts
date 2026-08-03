@@ -2345,6 +2345,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   defineBuiltin("plot", ["x", "..."], "shape", builtinPlot),
   ...defineHistogramBuiltins(),
+  ...defineBarplotBuiltins(),
   withBuiltinFormals(
     definePackageBuiltin(
       "graphics",
@@ -4109,6 +4110,145 @@ function defineHistogramBuiltins(): readonly BuiltinDefinition[] {
     [{ name: "x" }, { name: "digits", defaultValue: number(5) }],
   );
   return [histogram, histogramDefault, plotHistogram, nclassSturges, nclassScott, nclassFd];
+}
+
+function defineBarplotBuiltins(): readonly BuiltinDefinition[] {
+  const identifier = (name: string): AstNode => ({
+    kind: "Identifier",
+    name,
+    span: SYNTHETIC_SPAN,
+  });
+  const string = (value: string): AstNode => ({
+    kind: "StringLiteral",
+    value,
+    span: SYNTHETIC_SPAN,
+  });
+  const number = (value: number): AstNode => ({
+    kind: "DoubleLiteral",
+    value,
+    span: SYNTHETIC_SPAN,
+  });
+  const logical = (value: boolean): AstNode => ({
+    kind: "LogicalLiteral",
+    value,
+    span: SYNTHETIC_SPAN,
+  });
+  const nullValue = (): AstNode => ({ kind: "NullLiteral", span: SYNTHETIC_SPAN });
+  const call = (name: string, arguments_: readonly AstNode[]): AstNode => ({
+    kind: "CallExpression",
+    callee: identifier(name),
+    arguments: arguments_.map((value) => ({ value, span: SYNTHETIC_SPAN })),
+    span: SYNTHETIC_SPAN,
+  });
+  const generic = withBuiltinFormals(
+    definePackageBuiltin("graphics", "barplot", ["height", "..."], "behavioral", builtinBarplot),
+    [{ name: "height" }, { name: "..." }],
+  );
+  const defaultMethod = withUnsupportedBehavior(
+    withBuiltinFormals(
+      definePackageBuiltin(
+        "graphics",
+        "barplot.default",
+        [
+          "height",
+          "width",
+          "space",
+          "names.arg",
+          "legend.text",
+          "beside",
+          "horiz",
+          "density",
+          "angle",
+          "col",
+          "border",
+          "main",
+          "sub",
+          "xlab",
+          "ylab",
+          "xlim",
+          "ylim",
+          "xpd",
+          "log",
+          "axes",
+          "axisnames",
+          "cex.axis",
+          "cex.names",
+          "inside",
+          "plot",
+          "axis.lty",
+          "offset",
+          "add",
+          "ann",
+          "args.legend",
+          "orderH",
+          "panel.first",
+          "panel.last",
+          "...",
+        ],
+        "behavioral",
+        builtinBarplotDefault,
+      ),
+      [
+        { name: "height" },
+        { name: "width", defaultValue: number(1) },
+        { name: "space", defaultValue: nullValue() },
+        { name: "names.arg", defaultValue: nullValue() },
+        { name: "legend.text", defaultValue: nullValue() },
+        { name: "beside", defaultValue: logical(false) },
+        { name: "horiz", defaultValue: logical(false) },
+        { name: "density", defaultValue: nullValue() },
+        { name: "angle", defaultValue: number(45) },
+        { name: "col", defaultValue: nullValue() },
+        { name: "border", defaultValue: call("par", [string("fg")]) },
+        { name: "main", defaultValue: nullValue() },
+        { name: "sub", defaultValue: nullValue() },
+        { name: "xlab", defaultValue: nullValue() },
+        { name: "ylab", defaultValue: nullValue() },
+        { name: "xlim", defaultValue: nullValue() },
+        { name: "ylim", defaultValue: nullValue() },
+        { name: "xpd", defaultValue: logical(true) },
+        { name: "log", defaultValue: string("") },
+        { name: "axes", defaultValue: logical(true) },
+        { name: "axisnames", defaultValue: logical(true) },
+        { name: "cex.axis", defaultValue: call("par", [string("cex.axis")]) },
+        { name: "cex.names", defaultValue: call("par", [string("cex.axis")]) },
+        { name: "inside", defaultValue: logical(true) },
+        { name: "plot", defaultValue: logical(true) },
+        { name: "axis.lty", defaultValue: number(0) },
+        { name: "offset", defaultValue: number(0) },
+        { name: "add", defaultValue: logical(false) },
+        {
+          name: "ann",
+          defaultValue: {
+            kind: "BinaryExpression",
+            operator: "&&",
+            left: {
+              kind: "UnaryExpression",
+              operator: "!",
+              operand: identifier("add"),
+              span: SYNTHETIC_SPAN,
+            },
+            right: call("par", [string("ann")]),
+            span: SYNTHETIC_SPAN,
+          },
+        },
+        { name: "args.legend", defaultValue: nullValue() },
+        {
+          name: "orderH",
+          defaultValue: call("c", [string("none"), string("incr"), string("decr")]),
+        },
+        { name: "panel.first", defaultValue: nullValue() },
+        { name: "panel.last", defaultValue: nullValue() },
+        { name: "..." },
+      ],
+    ),
+    [
+      "logarithmic axes await browser log-coordinate transforms",
+      "positive density values await browser hatch-pattern rendering",
+      "device-specific typography and the complete graphical-parameter surface",
+    ],
+  );
+  return [generic, defaultMethod];
 }
 
 async function builtinArithmeticOperator(
@@ -27337,6 +27477,683 @@ function histogramSignificant(value: number, digits: number): number {
   if (value === 0) return 0;
   const scale = 10 ** (digits - 1 - Math.floor(Math.log10(Math.abs(value))));
   return Math.round(value * scale) / scale;
+}
+
+interface BarplotData {
+  readonly rows: number;
+  readonly columns: number;
+  readonly values: readonly (number | undefined)[];
+  readonly vector: boolean;
+  readonly rowNames?: readonly string[];
+  readonly columnNames?: readonly string[];
+}
+
+interface BarplotRectangle {
+  readonly left: number;
+  readonly right: number;
+  readonly bottom: number;
+  readonly top: number;
+  readonly styleIndex: number;
+}
+
+interface BarplotGeometry {
+  readonly midpoints: readonly number[];
+  readonly resultRows?: number;
+  readonly resultColumns?: number;
+  readonly rectangles: readonly BarplotRectangle[];
+  readonly categoryCenters: readonly number[];
+  readonly categoryLeft: number;
+  readonly categoryRight: number;
+  readonly valueMinimum: number;
+  readonly valueMaximum: number;
+}
+
+async function builtinBarplot(invocation: BuiltinInvocation): Promise<RValue> {
+  const generic = matchBuiltinArguments(invocation, ["height", "..."]);
+  const heightArgument = generic.matched.get("height");
+  if (heightArgument === undefined || heightArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'height' is missing in barplot().");
+  }
+  const height = await invocation.force(heightArgument.promise);
+  const dispatched = await invocation.dispatchS3IfPresent(
+    "barplot",
+    height,
+    invocation.arguments,
+    false,
+  );
+  return dispatched ?? builtinBarplotDefault(invocation);
+}
+
+async function builtinBarplotDefault(invocation: BuiltinInvocation): Promise<RValue> {
+  const lazy = matchLazyArgumentsWithDots(invocation, [
+    "height",
+    "width",
+    "space",
+    "names.arg",
+    "legend.text",
+    "beside",
+    "horiz",
+    "density",
+    "angle",
+    "col",
+    "border",
+    "main",
+    "sub",
+    "xlab",
+    "ylab",
+    "xlim",
+    "ylim",
+    "xpd",
+    "log",
+    "axes",
+    "axisnames",
+    "cex.axis",
+    "cex.names",
+    "inside",
+    "plot",
+    "axis.lty",
+    "offset",
+    "add",
+    "ann",
+    "args.legend",
+    "orderH",
+    "panel.first",
+    "panel.last",
+  ]);
+  const heightArgument = lazy.matched.get("height");
+  if (heightArgument === undefined || heightArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'height' is missing in barplot.default().");
+  }
+  const data = barplotData(await invocation.force(heightArgument.promise));
+  const values = new Map<string, RValue>();
+  for (const [name, argument] of lazy.matched) {
+    if (
+      name === "height" ||
+      name === "panel.first" ||
+      name === "panel.last" ||
+      argument.promise.missing
+    ) {
+      continue;
+    }
+    values.set(name, await invocation.force(argument.promise));
+  }
+
+  const controls = new Map<string, RValue>();
+  const supportedControls = new Set([
+    "lty",
+    "lwd",
+    "las",
+    "col.axis",
+    "font.axis",
+    "family",
+    "cex",
+  ]);
+  for (const argument of lazy.dots) {
+    if (argument.promise.missing) continue;
+    const value = await invocation.force(argument.promise);
+    if (argument.name === undefined || !supportedControls.has(argument.name)) {
+      throw new RUnsupportedFeatureError(
+        "NRU6201",
+        `barplot() graphical control '${argument.name ?? "<unnamed>"}' is outside the measured browser subset.`,
+      );
+    }
+    controls.set(argument.name, value);
+  }
+
+  const beside = logicalFlag(values.get("beside"), false, "beside");
+  const horizontal = logicalFlag(values.get("horiz"), false, "horiz");
+  const widths = barplotNumbers(values.get("width"), [1], "width");
+  const spaces = barplotSpaces(values.get("space"), data, beside);
+  const offsets = barplotNumbers(values.get("offset"), [0], "offset");
+  const order = barplotOrder(values.get("orderH"));
+  const geometry = barplotGeometry(data, beside, widths, spaces, offsets, order, invocation);
+  const result = barplotMidpointResult(geometry);
+  const plot = logicalFlag(values.get("plot"), true, "plot");
+  if (!plot) return result;
+
+  const log = values.get("log");
+  if (log !== undefined && log.type !== "null" && characterScalar(log, "log") !== "") {
+    throw new RUnsupportedFeatureError(
+      "NRU6201",
+      "barplot(log=) awaits logarithmic browser axes and coordinate transforms.",
+    );
+  }
+  const density = graphicsPolygonDensity(values.get("density"), "barplot");
+  graphicsPolygonAngles(values.get("angle"), "barplot");
+  const add = logicalFlag(values.get("add"), false, "add");
+  logicalFlag(values.get("xpd"), true, "xpd");
+  logicalFlag(values.get("inside"), true, "inside");
+
+  let state: GraphicsState;
+  if (add) {
+    state = graphicsState(invocation, "barplot");
+  } else {
+    state = await beginGraphicsPage(invocation);
+    const categoryLimit = barplotCategoryLimits(
+      horizontal ? values.get("ylim") : values.get("xlim"),
+      geometry,
+      horizontal ? "ylim" : "xlim",
+    );
+    const valueLimit = barplotValueLimits(
+      horizontal ? values.get("xlim") : values.get("ylim"),
+      geometry,
+      horizontal ? "xlim" : "ylim",
+    );
+    state.xlim = horizontal ? valueLimit : categoryLimit;
+    state.ylim = horizontal ? categoryLimit : valueLimit;
+    writeGraphics(invocation, state, { kind: "window", xlim: state.xlim, ylim: state.ylim });
+  }
+
+  await plotPanel(invocation, lazy.matched.get("panel.first"));
+  const fills = graphicsPolygonColours(
+    values.get("col")?.type === "null"
+      ? barplotDefaultColours(data.vector ? 1 : data.rows)
+      : values.get("col"),
+    parseRColour("gray70") ?? [179, 179, 179, 255],
+    invocation,
+    false,
+  );
+  const foreground =
+    graphicsBoxColour(state.parameters.get("fg"), invocation) ?? ([0, 0, 0, 255] as const);
+  const borders = graphicsPolygonColours(values.get("border"), foreground, invocation, true);
+  const lineTypes = graphicsPolygonLineTypes(controls.get("lty") ?? state.parameters.get("lty"));
+  const lineWidths = graphicsPointLineWidths(controls.get("lwd") ?? state.parameters.get("lwd"));
+  const polygons: RGraphicsPolygon[] = [];
+  for (let index = 0; index < geometry.rectangles.length; index += 1) {
+    invocation.context.checkpoint();
+    const rectangle = geometry.rectangles[index]!;
+    if (
+      !Number.isFinite(rectangle.left) ||
+      !Number.isFinite(rectangle.right) ||
+      !Number.isFinite(rectangle.bottom) ||
+      !Number.isFinite(rectangle.top)
+    ) {
+      continue;
+    }
+    const style = rectangle.styleIndex;
+    const densityMode = density[style % density.length] ?? "solid";
+    const fill =
+      densityMode === "none"
+        ? ([255, 255, 255, 0] as const)
+        : (fills[style % fills.length] ?? ([255, 255, 255, 0] as const));
+    let border = borders[style % borders.length] ?? foreground;
+    let lineType = lineTypes[style % lineTypes.length] ?? "solid";
+    let lineWidth = lineWidths[style % lineWidths.length];
+    if (lineType === "blank" || lineWidth === undefined) {
+      border = [255, 255, 255, 0];
+      lineType = "solid";
+      lineWidth = 1;
+    }
+    const x = horizontal
+      ? [rectangle.bottom, rectangle.bottom, rectangle.top, rectangle.top]
+      : [rectangle.left, rectangle.right, rectangle.right, rectangle.left];
+    const y = horizontal
+      ? [rectangle.left, rectangle.right, rectangle.right, rectangle.left]
+      : [rectangle.bottom, rectangle.bottom, rectangle.top, rectangle.top];
+    polygons.push({
+      x,
+      y,
+      fill: graphicsCssColour(fill),
+      border: graphicsCssColour(border),
+      lineType,
+      lineWidth,
+      fillRule: "nonzero",
+    });
+  }
+  invocation.context.allocate(polygons.length * 16);
+  if (polygons.length > 0) writeGraphics(invocation, state, { kind: "polygon", polygons });
+
+  if (!add) {
+    const axes = logicalFlag(values.get("axes"), true, "axes");
+    const axisNames = logicalFlag(values.get("axisnames"), true, "axisnames");
+    if (axes) {
+      const side = horizontal ? 1 : 2;
+      drawGraphicsAxis(
+        invocation,
+        state,
+        side,
+        barplotLinearAxisEntries(horizontal ? state.xlim : state.ylim),
+        [],
+        true,
+        new Map([
+          ["cex.axis", values.get("cex.axis") ?? doubleVector([1])],
+          ...[...controls].filter(([name]) =>
+            ["las", "col.axis", "font.axis", "family"].includes(name),
+          ),
+        ]),
+      );
+      writeGraphics(invocation, state, {
+        kind: "box",
+        edges: ["top", "right", "bottom", "left"],
+        color: graphicsCssColour(foreground),
+        lineType: "solid",
+        lineWidth: 1,
+      });
+    }
+    if (axisNames) {
+      const labels = barplotCategoryLabels(values.get("names.arg"), data, invocation);
+      if (labels.length > 0 && geometry.categoryCenters.length > 0) {
+        const entries = geometry.categoryCenters.map((value, index) => ({
+          value,
+          missing: !Number.isFinite(value),
+          labelIndex: index,
+        }));
+        drawGraphicsAxis(
+          invocation,
+          state,
+          horizontal ? 2 : 1,
+          entries,
+          barplotRecycleLabels(labels, entries.length),
+          true,
+          new Map([
+            ["lty", values.get("axis.lty") ?? doubleVector([0])],
+            ["cex.axis", values.get("cex.names") ?? doubleVector([1])],
+            ...[...controls].filter(([name]) =>
+              ["las", "col.axis", "font.axis", "family"].includes(name),
+            ),
+          ]),
+        );
+      }
+    }
+    if (logicalFlag(values.get("ann"), true, "ann")) {
+      plotDefaultAnnotations(
+        invocation,
+        state,
+        new Map(["main", "sub", "xlab", "ylab"].map((name) => [name, values.get(name) ?? R_NULL])),
+      );
+    }
+  }
+
+  barplotLegend(invocation, state, values, data, fills);
+  await plotPanel(invocation, lazy.matched.get("panel.last"));
+  invocation.setResultVisibility("invisible");
+  return result;
+}
+
+function barplotData(value: RValue): BarplotData {
+  if (
+    !isAtomic(value) ||
+    (value.type !== "logical" &&
+      value.type !== "integer" &&
+      value.type !== "double" &&
+      value.type !== "raw") ||
+    (value.type === "integer" && (vectorClasses(value)?.includes("factor") ?? false))
+  ) {
+    throw new RTypeMismatchError("NRT3420", "'height' must be a vector or a matrix");
+  }
+  const dimensions = vectorDimensions(value);
+  if (dimensions !== undefined && dimensions.length !== 2) {
+    throw new RTypeMismatchError("NRT3420", "'height' must be a vector or a matrix");
+  }
+  const vector = dimensions === undefined;
+  const rows = vector ? value.length : (dimensions[0] ?? 0);
+  const columns = vector ? 1 : (dimensions[1] ?? 0);
+  const values = Array.from({ length: value.length }, (_, index) =>
+    isMissing(value, index) ? undefined : (value.values[index] ?? Number.NaN),
+  );
+  const dimNames = value.attributes.get("dimnames");
+  const dimensionNames = dimNames?.type === "list" ? dimNames.values : [];
+  const characterNames = (candidate: RValue | undefined): readonly string[] | undefined =>
+    candidate?.type === "character" ? candidate.values : undefined;
+  const rowNames = vector ? undefined : characterNames(dimensionNames[0]);
+  const columnNames = vector ? vectorNames(value) : characterNames(dimensionNames[1]);
+  return {
+    rows,
+    columns,
+    values,
+    vector,
+    ...(rowNames === undefined ? {} : { rowNames }),
+    ...(columnNames === undefined ? {} : { columnNames }),
+  };
+}
+
+function barplotNumbers(
+  value: RValue | undefined,
+  fallback: readonly number[],
+  name: string,
+): readonly number[] {
+  if (value === undefined || value.type === "null") return fallback;
+  if (
+    !isAtomic(value) ||
+    (value.type !== "logical" &&
+      value.type !== "integer" &&
+      value.type !== "double" &&
+      value.type !== "raw") ||
+    (value.type === "integer" && (vectorClasses(value)?.includes("factor") ?? false))
+  ) {
+    throw new RTypeMismatchError("NRT3420", `barplot(${name}=) requires a numeric vector.`);
+  }
+  return Array.from({ length: value.length }, (_, index) =>
+    isMissing(value, index) ? Number.NaN : (value.values[index] ?? Number.NaN),
+  );
+}
+
+function barplotSpaces(
+  value: RValue | undefined,
+  data: BarplotData,
+  beside: boolean,
+): readonly number[] {
+  if (value === undefined || value.type === "null") {
+    return !data.vector && beside ? [0, 1] : [0.2];
+  }
+  return barplotNumbers(value, [], "space");
+}
+
+function barplotOrder(value: RValue | undefined): "none" | "incr" | "decr" {
+  if (value === undefined || value.type === "null") return "none";
+  if (value.type !== "character" || value.length === 0 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3420", `'arg' should be one of "none", "incr", "decr"`);
+  }
+  const source = value.values[0] ?? "";
+  const candidates = (["none", "incr", "decr"] as const).filter((candidate) =>
+    candidate.startsWith(source),
+  );
+  if (candidates.length !== 1) {
+    throw new RTypeMismatchError("NRT3420", `'arg' should be one of "none", "incr", "decr"`);
+  }
+  return candidates[0]!;
+}
+
+function barplotGeometry(
+  data: BarplotData,
+  beside: boolean,
+  widthSource: readonly number[],
+  spaces: readonly number[],
+  offsets: readonly number[],
+  order: "none" | "incr" | "decr",
+  invocation: BuiltinInvocation,
+): BarplotGeometry {
+  const grouped = data.vector || beside;
+  const count = grouped ? data.rows * data.columns : data.columns;
+  if (spaces.length === 0) {
+    return {
+      midpoints: [],
+      ...(grouped ? { resultRows: 0, resultColumns: data.columns } : {}),
+      rectangles: [],
+      categoryCenters: [],
+      categoryLeft: 0,
+      categoryRight: 1,
+      valueMinimum: 0,
+      valueMaximum: 1,
+    };
+  }
+  const widthFallback = widthSource.length === 0 ? [Number.NaN] : widthSource;
+  const widths = Array.from(
+    { length: count },
+    (_, index) => widthFallback[index % widthFallback.length] ?? Number.NaN,
+  );
+  const averageWidth =
+    widths.reduce((total, value) => total + value, 0) / Math.max(1, widths.length);
+  if (
+    count > 0 &&
+    count % spaces.length !== 0 &&
+    !(grouped && !data.vector && spaces.length === 2)
+  ) {
+    for (let warning = 0; warning < 2; warning += 1) {
+      invocation.context.warn({
+        code: "NRW1001",
+        message: "longer object length is not a multiple of shorter object length",
+      });
+    }
+  }
+  const lefts = new Array<number>(count);
+  const midpoints = new Array<number>(count);
+  let cursor = 0;
+  for (let index = 0; index < count; index += 1) {
+    const row = grouped ? index % Math.max(data.rows, 1) : 0;
+    let gap: number;
+    if (grouped && !data.vector && spaces.length >= 2) {
+      gap = (spaces[row === 0 ? 1 : 0] ?? 0) * averageWidth;
+    } else {
+      gap = (spaces[index % spaces.length] ?? 0) * averageWidth;
+    }
+    cursor += gap;
+    lefts[index] = cursor;
+    midpoints[index] = cursor + (widths[index] ?? Number.NaN) / 2;
+    cursor += widths[index] ?? Number.NaN;
+  }
+
+  const rectangles: BarplotRectangle[] = [];
+  const offsetSource = offsets.length === 0 ? [0] : offsets;
+  if (grouped) {
+    for (let column = 0; column < data.columns; column += 1) {
+      for (let row = 0; row < data.rows; row += 1) {
+        const index = row + column * data.rows;
+        const value = data.values[index];
+        const base = offsetSource[index % offsetSource.length] ?? 0;
+        rectangles.push({
+          left: lefts[index] ?? Number.NaN,
+          right: (lefts[index] ?? Number.NaN) + (widths[index] ?? Number.NaN),
+          bottom: base,
+          top: value === undefined ? Number.NaN : base + value,
+          styleIndex: row,
+        });
+      }
+    }
+  } else {
+    for (let column = 0; column < data.columns; column += 1) {
+      const rows = Array.from({ length: data.rows }, (_, row) => row);
+      if (order !== "none") {
+        rows.sort((left, right) => {
+          const leftValue = data.values[left + column * data.rows] ?? Number.NaN;
+          const rightValue = data.values[right + column * data.rows] ?? Number.NaN;
+          const difference = leftValue - rightValue;
+          return order === "incr" ? difference : -difference;
+        });
+      }
+      let base = offsetSource[column % offsetSource.length] ?? 0;
+      for (const row of rows) {
+        const value = data.values[row + column * data.rows];
+        const top = value === undefined ? Number.NaN : base + value;
+        rectangles.push({
+          left: lefts[column] ?? Number.NaN,
+          right: (lefts[column] ?? Number.NaN) + (widths[column] ?? Number.NaN),
+          bottom: base,
+          top,
+          styleIndex: row,
+        });
+        base = top;
+      }
+    }
+  }
+  const finiteCategory = rectangles
+    .flatMap((rectangle) => [rectangle.left, rectangle.right])
+    .filter(Number.isFinite);
+  const finiteValues = rectangles
+    .flatMap((rectangle) => [rectangle.bottom, rectangle.top])
+    .filter(Number.isFinite);
+  const categoryCenters = data.vector
+    ? [...midpoints]
+    : Array.from({ length: data.columns }, (_, column) => {
+        if (!grouped) return midpoints[column] ?? Number.NaN;
+        const group = midpoints
+          .slice(column * data.rows, (column + 1) * data.rows)
+          .filter(Number.isFinite);
+        return group.length === 0 ? Number.NaN : (group[0]! + group[group.length - 1]!) / 2;
+      });
+  return {
+    midpoints,
+    ...(grouped ? { resultRows: data.rows, resultColumns: data.columns } : {}),
+    rectangles,
+    categoryCenters,
+    categoryLeft: finiteCategory.length === 0 ? 0 : Math.min(...finiteCategory),
+    categoryRight: finiteCategory.length === 0 ? 1 : Math.max(...finiteCategory),
+    valueMinimum: finiteValues.length === 0 ? 0 : Math.min(...finiteValues),
+    valueMaximum: finiteValues.length === 0 ? 1 : Math.max(...finiteValues),
+  };
+}
+
+function barplotMidpointResult(geometry: BarplotGeometry): RDoubleVector {
+  const missing = Uint8Array.from(geometry.midpoints, (value) => (Number.isFinite(value) ? 0 : 1));
+  let result = doubleVector(
+    geometry.midpoints.map((value) => (Number.isFinite(value) ? value : 0)),
+    compactMask(missing),
+  );
+  if (geometry.resultRows !== undefined && geometry.resultColumns !== undefined) {
+    result = withDimensions(result, [geometry.resultRows, geometry.resultColumns]);
+  }
+  return result;
+}
+
+function barplotCategoryLimits(
+  supplied: RValue | undefined,
+  geometry: BarplotGeometry,
+  name: "xlim" | "ylim",
+): readonly [number, number] {
+  if (supplied !== undefined && supplied.type !== "null") {
+    return plotWindowLimits(supplied, doubleVector([0, 1]), name);
+  }
+  return plotWindowLimits(
+    undefined,
+    doubleVector([geometry.categoryLeft, geometry.categoryRight]),
+    name,
+  );
+}
+
+function barplotValueLimits(
+  supplied: RValue | undefined,
+  geometry: BarplotGeometry,
+  name: "xlim" | "ylim",
+): readonly [number, number] {
+  if (supplied !== undefined && supplied.type !== "null") {
+    const limits = graphicsNumbers(supplied, name);
+    if (limits.length !== 2 || limits[0] === limits[1]) {
+      throw new RTypeMismatchError("NRT3420", `need finite '${name}' values`);
+    }
+    return [limits[0]!, limits[1]!];
+  }
+  let lower = geometry.valueMinimum;
+  let upper = geometry.valueMaximum;
+  if (lower === upper) {
+    const expansion = lower === 0 ? 1 : Math.abs(lower) * 0.4;
+    lower -= expansion;
+    upper += expansion;
+  } else if (lower >= 0) {
+    lower -= (upper - lower) * 0.01;
+  } else if (upper <= 0) {
+    upper += (upper - lower) * 0.01;
+  }
+  return [lower, upper];
+}
+
+function barplotLinearAxisEntries(limits: readonly [number, number]): readonly GraphicsAxisEntry[] {
+  const parameters = linearAxisParameters(limits);
+  const intervals = Math.floor(Math.abs(parameters[2]) + 0.25);
+  const step = intervals === 0 ? 0 : (parameters[1] - parameters[0]) / intervals;
+  return Array.from({ length: intervals + 1 }, (_, index) => ({
+    value:
+      index === intervals ? parameters[1] : Number((parameters[0] + step * index).toPrecision(15)),
+    missing: false,
+    labelIndex: index,
+  }));
+}
+
+function barplotCategoryLabels(
+  supplied: RValue | undefined,
+  data: BarplotData,
+  invocation: BuiltinInvocation,
+): readonly string[] {
+  if (supplied === undefined || supplied.type === "null") return data.columnNames ?? [];
+  if (!isAtomic(supplied) || supplied.type === "complex" || supplied.type === "raw") {
+    throw new RTypeMismatchError("NRT3420", "invalid names.arg");
+  }
+  const labels =
+    supplied.type === "character" ? supplied : coerceAtomicToCharacter(supplied, invocation);
+  return Array.from({ length: labels.length }, (_, index) =>
+    isMissing(labels, index) ? "NA" : (labels.values[index] ?? ""),
+  );
+}
+
+function barplotRecycleLabels(labels: readonly string[], length: number): readonly string[] {
+  if (labels.length === 0) return [];
+  return Array.from({ length }, (_, index) => labels[index % labels.length] ?? "");
+}
+
+function barplotDefaultColours(rows: number): RCharacterVector {
+  const count = Math.max(1, rows);
+  return characterVector(
+    Array.from({ length: count }, (_, index) => {
+      const gray = count === 1 ? 70 : Math.round(70 - (50 * index) / (count - 1));
+      return `gray${gray}`;
+    }),
+  );
+}
+
+function barplotLegend(
+  invocation: BuiltinInvocation,
+  state: GraphicsState,
+  values: ReadonlyMap<string, RValue>,
+  data: BarplotData,
+  fills: readonly RColour[],
+): void {
+  const supplied = values.get("legend.text");
+  let labels: readonly string[] = [];
+  if (supplied?.type === "logical") {
+    if (logicalFlag(supplied, false, "legend.text")) labels = data.rowNames ?? [];
+  } else if (supplied !== undefined && supplied.type !== "null") {
+    labels = legendLabels(supplied, invocation);
+  }
+  if (labels.length === 0) return;
+  const argumentsValue = values.get("args.legend");
+  const arguments_ = new Map<string, RValue>();
+  if (argumentsValue !== undefined && argumentsValue.type !== "null") {
+    if (argumentsValue.type !== "list") {
+      throw new RTypeMismatchError("NRT3420", "'args.legend' must be a list");
+    }
+    const names = vectorNames(argumentsValue);
+    if (names === undefined) {
+      throw new RTypeMismatchError("NRT3420", "'args.legend' must be a named list");
+    }
+    for (let index = 0; index < argumentsValue.length; index += 1) {
+      arguments_.set(names[index] ?? "", argumentsValue.values[index] ?? R_NULL);
+    }
+  }
+  const supported = new Set([
+    "x",
+    "y",
+    "inset",
+    "bty",
+    "bg",
+    "cex",
+    "ncol",
+    "horiz",
+    "title",
+    "text.col",
+  ]);
+  for (const name of arguments_.keys()) {
+    if (!supported.has(name)) {
+      throw new RUnsupportedFeatureError(
+        "NRU6201",
+        `barplot(args.legend=) control '${name}' is outside the browser legend subset.`,
+      );
+    }
+  }
+  const x = arguments_.get("x") ?? characterVector(["topright"]);
+  const position = legendPosition(x, arguments_.get("y"), arguments_.get("inset"));
+  const cex = legendPositiveScalar(arguments_.get("cex"), 1, "cex");
+  const horizontal = logicalFlag(arguments_.get("horiz"), false, "horiz");
+  const columns = horizontal
+    ? labels.length
+    : legendPositiveInteger(arguments_.get("ncol"), 1, "ncol");
+  const textColors = legendColours(arguments_.get("text.col"), invocation);
+  const entries: RGraphicsLegendEntry[] = labels.map((label, index) => ({
+    label,
+    textColor: textColors[index % textColors.length] ?? "#000000FF",
+    color: graphicsCssColour(fills[index % fills.length] ?? ([179, 179, 179, 255] as const)),
+    lineType: "solid",
+    lineWidth: 8,
+  }));
+  const title = legendTitle(arguments_.get("title"), invocation);
+  writeGraphics(invocation, state, {
+    kind: "legend",
+    position,
+    entries,
+    box: legendBox(arguments_.get("bty")),
+    background: legendColour(arguments_.get("bg"), "#FFFFFFFF", invocation),
+    columns,
+    cex,
+    ...(title === undefined ? {} : { title }),
+  });
 }
 
 async function builtinPlot(invocation: BuiltinInvocation): Promise<RValue> {

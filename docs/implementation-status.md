@@ -308,6 +308,12 @@ Date: 2026-08-02
   output accounting, and same-session display-list replay. Formula/data-frame methods, logarithmic
   axes, arbitrary `pars`, complete annotation/axes, and device-identical layout remain explicit
   boundaries.
+- Usage-ranked `graphics::barplot`/`barplot.default` for zoo and bit64's three measured calls,
+  including S3 forwarding, vector and matrix inputs, stacked/beside geometry, GNU R-shaped midpoint
+  return matrices, widths/spaces/offsets, horizontal layout, names, annotations, legends, additive
+  drawing, source-only package reuse, and bounded Worker/Canvas/display-list output over existing
+  polygon/axis/text events. Log axes, positive density hatching, device-exact layout, and the full
+  graphical-parameter surface remain explicit boundaries.
 - Usage-ranked `graphics::hist`/`hist.default` for 19 measured testthat, openssl, shiny, and
   posterior calls, including S3 forwarding, finite numeric/matrix inputs, Sturges/Scott/FD or
   numeric/callable breaks, endpoint controls, counts/densities/midpoints, standard histogram

@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.253.0",
+  "languageSubsetVersion": "0.254.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -624,6 +624,8 @@
         { "name": "hist", "compatibility": "behavioral" },
         { "name": "hist.default", "compatibility": "behavioral" },
         { "name": "plot.histogram", "compatibility": "shape" },
+        { "name": "barplot", "compatibility": "behavioral" },
+        { "name": "barplot.default", "compatibility": "behavioral" },
         { "name": "par", "compatibility": "behavioral" },
         { "name": "plot.default", "compatibility": "shape" },
         { "name": "plot.new", "compatibility": "behavioral" },

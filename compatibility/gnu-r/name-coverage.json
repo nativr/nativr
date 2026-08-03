@@ -4,11 +4,11 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 647,
-    "overlappingNames": 629,
-    "missingReferenceNames": 1893,
+    "nativrRegisteredNames": 649,
+    "overlappingNames": 631,
+    "missingReferenceNames": 1891,
     "nativrExtensionNames": 18,
-    "nameCoverage": 0.249405
+    "nameCoverage": 0.250198
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 456, "nameCoverage": 0.333577 },
@@ -29,8 +29,8 @@
     {
       "package": "graphics",
       "callableNames": 88,
-      "overlappingNames": 26,
-      "nameCoverage": 0.295455
+      "overlappingNames": 28,
+      "nameCoverage": 0.318182
     },
     { "package": "datasets", "callableNames": 0, "overlappingNames": 0, "nameCoverage": 1 }
   ],
@@ -151,6 +151,8 @@
     "ave",
     "axTicks",
     "axis",
+    "barplot",
+    "barplot.default",
     "baseenv",
     "basename",
     "body",
@@ -1164,8 +1166,6 @@
     "balanceMethodsList",
     "balancePOSIXlt",
     "bandwidth.kernel",
-    "barplot",
-    "barplot.default",
     "bartlett.test",
     "besselI",
     "besselJ",

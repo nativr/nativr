@@ -318,6 +318,15 @@ record/replay have executable coverage. Formula/data-frame methods, logarithmic 
 `pars`, complete annotation/axes, every legacy diagnostic, and device-identical layout remain
 incomplete.
 
+The rank-343 increment adds GNU R 4.6 black-box evidence for zoo and bit64's three measured
+`barplot()` calls. Vector and matrix heights reproduce GNU R midpoint return shapes for default,
+stacked, beside, custom-width, and custom-spacing layouts; `plot = FALSE` remains visible while
+drawing returns the same value invisibly. The generic preserves package-owned S3 methods, including
+source-only package namespaces, and the default routes resolved rectangles, linear axes, names,
+annotations, and legends through the existing bounded Worker graphics journal. Log coordinates,
+positive density hatching, exact device typography/margins, and the full graphical-parameter surface
+remain declared gaps.
+
 The rank-451 increment adds GNU R differential evidence for zoo's measured `deltat(z)` regular
 sampling-interval call. The generic dispatches to independently declared package methods with lazy
 dots; its default returns an unnamed visible double equal to one for ordinary inputs or the
