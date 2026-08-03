@@ -10536,6 +10536,46 @@ NeedsCompilation: no
       "https://one.invalid/bin/windows/contrib/4.6",
       "https://one.invalid/src/contrib",
     ]);
+    await expect(
+      runtime.eval(`
+        c(
+          utils::contrib.url("https://one.invalid"),
+          utils::contrib.url("https://one.invalid", "binary"),
+          utils::contrib.url("https://one.invalid", "mac.binary"),
+          utils::contrib.url("https://one.invalid", "mac.binary.big-sur-x86_64"),
+          utils::contrib.url("https://one.invalid", "mac.binary.big-sur-arm64")
+        )
+      `),
+    ).resolves.toEqual([
+      "https://one.invalid/src/contrib",
+      "https://one.invalid/src/contrib",
+      "https://one.invalid/bin/macosx/contrib/4.6",
+      "https://one.invalid/bin/macosx/big-sur-x86_64/contrib/4.6",
+      "https://one.invalid/bin/macosx/big-sur-arm64/contrib/4.6",
+    ]);
+    await expect(runtime.eval('utils::contrib.url(NA_character_, "source")')).resolves.toBe(
+      "NA/src/contrib",
+    );
+    await expect(
+      runtime.eval(`
+        c(
+          inherits(try(utils::contrib.url(), silent = TRUE), "try-error"),
+          inherits(try(utils::contrib.url(1, "source"), silent = TRUE), "try-error"),
+          inherits(try(utils::contrib.url("https://one.invalid", "invalid"), silent = TRUE), "try-error")
+        )
+      `),
+    ).resolves.toEqual([true, true, true]);
+    await expect(
+      runtime.eval(`
+        empty <- utils::available.packages(
+          contriburl = character(), fields = c(NA_character_, ""), filters = "unknown"
+        )
+        ignored <- utils::available.packages(
+          contriburl = character(), filters = list(1)
+        )
+        c(dim(empty), is.na(colnames(empty)[18]), identical(colnames(empty)[19], ""), ncol(ignored))
+      `),
+    ).resolves.toEqual([0, 20, 1, 1, 18]);
 
     const defaultColumns = [
       "Package",
@@ -10611,6 +10651,34 @@ NeedsCompilation: no
       `),
     ).resolves.toEqual(["1", "19", "beta", "2.0.0"]);
     await expect(
+      runtime.eval(`
+        foss <- utils::available.packages(
+          repos = "https://packages.nativr.invalid", filters = "license/FOSS"
+        )
+        unrestricted <- utils::available.packages(
+          repos = "https://packages.nativr.invalid", filters = list("license/restricts_use")
+        )
+        cran <- utils::available.packages(
+          repos = c(CRAN = "https://packages.nativr.invalid"), filters = list("CRAN")
+        )
+        defaults <- utils::available.packages(
+          repos = "https://packages.nativr.invalid", filters = list(add = TRUE)
+        )
+        binary <- utils::available.packages(
+          contriburl = "https://packages.nativr.invalid/src/contrib",
+          type = "win.binary", filters = list("subarch")
+        )
+        c(nrow(foss), nrow(unrestricted), nrow(cran), nrow(defaults), nrow(binary))
+      `),
+    ).resolves.toEqual([0, 3, 3, 1, 2]);
+    await expect(
+      runtime.eval(`
+        capture.output(utils::available.packages(
+          repos = "https://packages.nativr.invalid", verbose = TRUE
+        ))[1]
+      `),
+    ).resolves.toBe("https://packages.nativr.invalid/src/contrib: 3 packages");
+    await expect(
       runtime.eval('nativrfixture::repository_versions("https://packages.nativr.invalid")'),
     ).resolves.toEqual(["alpha", "1.2.3"]);
     expect(requests).toHaveLength(1);
@@ -10618,13 +10686,13 @@ NeedsCompilation: no
     await runtime.eval(`
       utils::available.packages(
         repos = "https://packages.nativr.invalid", ignore_repo_cache = TRUE,
-        headers = c(Accept = "text/plain")
+        method = "libcurl", headers = c(Accept = "text/plain")
       )
     `);
     expect(requests).toHaveLength(2);
     expect(requests.at(-1)).toEqual({
       url: "https://packages.nativr.invalid/src/contrib/PACKAGES",
-      method: "default",
+      method: "libcurl",
       headers: [{ name: "Accept", value: "text/plain" }],
     });
     await expect(
@@ -10640,6 +10708,27 @@ NeedsCompilation: no
         'utils::available.packages(repos = "https://packages.nativr.invalid", filters = 1)',
       ),
     ).rejects.toMatchObject({ code: "NRT3415" });
+    await expect(
+      runtime.eval(`
+        c(
+          inherits(try(utils::available.packages(contriburl = 1), silent = TRUE), "try-error"),
+          inherits(try(utils::available.packages(contriburl = NA_character_), silent = TRUE), "try-error"),
+          inherits(try(utils::available.packages(repos = "https://packages.nativr.invalid", type = "invalid"), silent = TRUE), "try-error"),
+          inherits(try(utils::available.packages(repos = "https://packages.nativr.invalid", method = "invalid"), silent = TRUE), "try-error"),
+          inherits(try(utils::available.packages(repos = "https://packages.nativr.invalid", max_repo_cache_age = -1), silent = TRUE), "try-error"),
+          inherits(try(utils::available.packages(repos = "https://packages.nativr.invalid", max_repo_cache_age = "old"), silent = TRUE), "try-error"),
+          inherits(try(utils::available.packages(repos = "https://packages.nativr.invalid", fields = 1), silent = TRUE), "try-error"),
+          inherits(try(utils::available.packages(repos = "https://packages.nativr.invalid", fields = ""), silent = TRUE), "try-error"),
+          inherits(try(utils::available.packages(repos = "https://packages.nativr.invalid", fields = NA_character_), silent = TRUE), "try-error"),
+          inherits(try(utils::available.packages(repos = "https://packages.nativr.invalid", fields = "Bad:Field"), silent = TRUE), "try-error"),
+          inherits(try(utils::available.packages(repos = "https://packages.nativr.invalid", filters = list(1)), silent = TRUE), "try-error"),
+          inherits(try(utils::available.packages(repos = "https://packages.nativr.invalid", filters = NA_character_), silent = TRUE), "try-error"),
+          inherits(try(utils::available.packages(repos = "https://packages.nativr.invalid", filters = "unknown"), silent = TRUE), "try-error"),
+          inherits(try(utils::available.packages(repos = "https://packages.nativr.invalid", headers = "plain"), silent = TRUE), "try-error"),
+          inherits(try(utils::available.packages(repos = "https://packages.nativr.invalid", headers = c(A = "one"), headers = c(B = "two")), silent = TRUE), "try-error")
+        )
+      `),
+    ).resolves.toEqual(Array.from({ length: 15 }, () => true));
     await runtime.dispose();
 
     const offline = await createR({ execution: "inline", assets });
