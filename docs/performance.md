@@ -816,3 +816,9 @@ one typed request/result suspension path shared by inline and Worker sessions. I
 existing public R snapshot representation and adds no dynamic loader, JavaScript code generation,
 host pointer, or native dependency. The measured Worker is 405.0 KiB gzip (414,709 bytes), 11 bytes
 below the existing 405 KiB ceiling, so all budgets remain unchanged.
+
+Language subset 0.264 adds usage-ranked `utils::aspell` by composing existing virtual text reads,
+R-callable invocation, structured `systemCommand` transport, and ordinary data-frame values. It adds
+no dependency, protocol event, dictionary, process launcher, host PATH scan, or package-specific
+translation. The measured Worker is 406.4 KiB gzip (416,123 bytes), so the ceiling rises narrowly
+from 405 KiB to 407 KiB; client and parser-Wasm budgets remain unchanged.

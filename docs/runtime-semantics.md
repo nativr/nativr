@@ -705,6 +705,14 @@ rejected, and inline/Worker execution use the same copied record. The evaluator 
 executable, interprets a shell, opens a host path, inherits host environment state, or starts a
 process; those actions remain wholly inside an application allow-list policy.
 
+`utils::aspell(files, filter, control, encoding, program, dictionaries)` selects an explicitly
+advertised `aspell`, `hunspell`, or `ispell` path (or validates an explicit program), reads each
+owned virtual file, and optionally invokes a supplied R filter with `ifile` and recycled `encoding`.
+Caret-prefixed lines cross the existing structured command seam with `-a`; bounded Ispell response
+groups become `Original`, `File`, `Line`, `Column`, and list-column `Suggestions` inside a
+`c("aspell", "data.frame")` value. Missing process authority fails before execution. Built-in
+filters and nonempty `dictionaries` currently fail explicitly rather than approximating.
+
 `.libPaths()` returns the evaluator session's ordered package-library roots. The default is
 `c("nativr://package", "nativr://runtime/library")`; the first root contains immutable supplied
 source bundles and the second is `.Library` for registered runtime namespaces. A setter expands

@@ -303,6 +303,32 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     [{ name: "x" }],
   ),
   withBuiltinFormals(
+    withUnsupportedBehavior(
+      definePackageBuiltin(
+        "utils",
+        "aspell",
+        ["files", "filter", "control", "encoding", "program", "dictionaries"],
+        "behavioral",
+        builtinAspell,
+      ),
+      [
+        "spell-check execution requires an explicitly admitted Ispell-compatible host program",
+        "built-in filters and R-level serialized dictionaries are not yet available",
+      ],
+    ),
+    [
+      { name: "files" },
+      { name: "filter" },
+      { name: "control", defaultValue: callAst("list", []) },
+      {
+        name: "encoding",
+        defaultValue: { kind: "StringLiteral", value: "unknown", span: SYNTHETIC_SPAN },
+      },
+      { name: "program", defaultValue: nullAst() },
+      { name: "dictionaries", defaultValue: callAst("character", []) },
+    ],
+  ),
+  withBuiltinFormals(
     definePackageBuiltin(
       "utils",
       "format.object_size",
@@ -5836,6 +5862,271 @@ async function builtinSystemWhich(invocation: BuiltinInvocation): Promise<RChara
       requested.values.map((name, index) => (isMissing(requested, index) ? "NA" : name)),
     ),
   );
+}
+
+interface AspellFinding {
+  readonly original: string;
+  readonly file: string;
+  readonly line: number;
+  readonly column: number;
+  readonly suggestions: readonly string[];
+}
+
+async function builtinAspell(invocation: BuiltinInvocation): Promise<RList> {
+  const matched = await matchExact(invocation, [
+    "files",
+    "filter",
+    "control",
+    "encoding",
+    "program",
+    "dictionaries",
+  ]);
+  const files = required(matched, "files", "aspell");
+  if (files.type !== "character") {
+    throw new RTypeMismatchError("NRT3406", "invalid 'files' argument");
+  }
+  const control = aspellCharacterOptions(matched.get("control"), "control", invocation);
+  const encodings = aspellEncodings(matched.get("encoding"), invocation);
+  const dictionaries = aspellCharacterOptions(
+    matched.get("dictionaries"),
+    "dictionaries",
+    invocation,
+  );
+  if (dictionaries.length > 0) {
+    throw new RUnsupportedFeatureError(
+      "NRU6218",
+      "aspell(dictionaries=) awaits browser-safe R serialization dictionary loading.",
+    );
+  }
+  const filter = matched.get("filter");
+  if (
+    filter !== undefined &&
+    filter.type !== "null" &&
+    filter.type !== "closure" &&
+    filter.type !== "builtin"
+  ) {
+    if (filter.type === "character" || filter.type === "list") {
+      throw new RUnsupportedFeatureError(
+        "NRU6218",
+        "aspell() built-in filters are not yet available in the browser runtime; supply an R filter function.",
+      );
+    }
+    throw new RTypeMismatchError("NRT3406", "Invalid 'filter' argument.");
+  }
+  const program = aspellProgram(matched.get("program"), invocation);
+  const findings: AspellFinding[] = [];
+  for (let index = 0; index < files.length; index += 1) {
+    invocation.context.checkpoint();
+    if (isMissing(files, index)) {
+      throw new RTypeMismatchError("NRT3355", "invalid 'description' argument");
+    }
+    const file = files.values[index] ?? "";
+    const encoding = encodings[index % encodings.length] ?? "unknown";
+    const lines = await aspellInputLines(invocation, file, encoding, filter);
+    if (lines.length > invocation.context.limits.maxVectorLength) {
+      throw new RResourceLimitError("NRL4002", "aspell input line limit exceeded.", {
+        details: {
+          maxVectorLength: invocation.context.limits.maxVectorLength,
+          requestedLength: lines.length,
+        },
+      });
+    }
+    const input = Object.freeze(lines.map((line) => `^${line}`));
+    const requestStrings = [program, "-a", ...control, ...input];
+    for (const value of requestStrings) {
+      if (value.includes("\0")) throw new RTypeMismatchError("NRT3406", "embedded nul in string");
+    }
+    const requestBytes = requestStrings.reduce(
+      (total, value) => total + encodeUtf8Bytes(value).byteLength + 1,
+      0,
+    );
+    if (requestBytes > invocation.context.limits.maxOutputBytes) {
+      throw new RResourceLimitError("NRL4007", "aspell request size limit exceeded.", {
+        details: { maxOutputBytes: invocation.context.limits.maxOutputBytes, requestBytes },
+      });
+    }
+    const result = await invocation.systemCommand({
+      operation: "system2",
+      command: program,
+      commandElements: Object.freeze([]),
+      args: Object.freeze(["-a", ...control]),
+      environment: Object.freeze([]),
+      stdinPath: null,
+      stdout: { mode: "capture" },
+      stderr: { mode: "capture" },
+      intern: true,
+      ignoreStdout: false,
+      ignoreStderr: false,
+      wait: true,
+      input,
+      inputText: null,
+      showOutputOnConsole: false,
+      minimized: false,
+      invisible: true,
+      timeoutSeconds: 0,
+      receiveConsoleSignals: true,
+    });
+    validateSystemCommandResult(result, "system2");
+    if (result.failedToStart === true || result.status !== 0 || result.timedOut === true) {
+      const diagnostic =
+        result.errorMessage !== undefined && result.errorMessage.length > 0
+          ? result.errorMessage
+          : result.stderr !== undefined && result.stderr.length > 0
+            ? result.stderr
+            : `error in running spell checker '${program}'`;
+      throw new REvaluationError("NRE2250", diagnostic);
+    }
+    const parsed = parseAspellOutput(result.stdout ?? "", file, invocation);
+    if (findings.length + parsed.length > invocation.context.limits.maxVectorLength) {
+      throw new RResourceLimitError("NRL4002", "aspell result row limit exceeded.", {
+        details: {
+          maxVectorLength: invocation.context.limits.maxVectorLength,
+          requestedLength: findings.length + parsed.length,
+        },
+      });
+    }
+    findings.push(...parsed);
+  }
+  invocation.context.allocate(findings.length * 5);
+  const frame = dataFrameValue(
+    [
+      characterVector(findings.map((finding) => finding.original)),
+      characterVector(findings.map((finding) => finding.file)),
+      integerVector(findings.map((finding) => finding.line)),
+      integerVector(findings.map((finding) => finding.column)),
+      listValue(findings.map((finding) => characterVector(finding.suggestions))),
+    ],
+    ["Original", "File", "Line", "Column", "Suggestions"],
+    findings.map((_, index) => String(index + 1)),
+    true,
+  );
+  return withClasses(frame, ["aspell", "data.frame"]);
+}
+
+function aspellCharacterOptions(
+  value: RValue | undefined,
+  name: "control" | "dictionaries",
+  invocation: BuiltinInvocation,
+): string[] {
+  if (value === undefined || value.type === "null") return [];
+  if (value.type !== "character" && value.type !== "list" && value.type !== "pairlist") {
+    if (!isAtomic(value)) throw new RTypeMismatchError("NRT3406", `invalid '${name}' argument`);
+  }
+  return system2Characters(value, name === "control" ? "args" : "env", invocation);
+}
+
+function aspellEncodings(value: RValue | undefined, invocation: BuiltinInvocation): string[] {
+  const encodings = aspellCharacterOptions(value, "control", invocation);
+  if (encodings.length === 0) return ["unknown"];
+  for (const encoding of encodings) virtualTextEncoding(characterVector([encoding]), "aspell");
+  return encodings;
+}
+
+function aspellProgram(value: RValue | undefined, invocation: BuiltinInvocation): string {
+  if (value === undefined || value.type === "null") {
+    const paths = systemWhichState(invocation);
+    for (const candidate of ["aspell", "hunspell", "ispell"]) {
+      const path = paths.get(candidate);
+      if (path !== undefined && path.length > 0) return path;
+    }
+    throw new REvaluationError("NRE2250", "No suitable spell-checker program found");
+  }
+  if (value.type !== "character" || value.length !== 1 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3406", "invalid 'program' argument");
+  }
+  const program = value.values[0] ?? "";
+  if (program.length === 0 || program.includes("\0")) {
+    throw new RTypeMismatchError("NRT3406", "invalid 'program' argument");
+  }
+  return program;
+}
+
+async function aspellInputLines(
+  invocation: BuiltinInvocation,
+  file: string,
+  encoding: string,
+  filter: RValue | undefined,
+): Promise<readonly string[]> {
+  if (filter !== undefined && filter.type !== "null") {
+    const filtered = await invocation.invoke(filter, [
+      { name: "ifile", value: characterVector([file]) },
+      { name: "encoding", value: characterVector([encoding]) },
+    ]);
+    if (filtered.type !== "character") {
+      throw new RTypeMismatchError("NRT3406", "aspell filter must return a character vector");
+    }
+    return Array.from({ length: filtered.length }, (_, index) =>
+      isMissing(filtered, index) ? "NA" : (filtered.values[index] ?? ""),
+    );
+  }
+  const decodedEncoding = virtualTextEncoding(characterVector([encoding]), "aspell");
+  const source = readVirtualTextFile(invocation, file, decodedEncoding);
+  return splitVirtualTextLines(invocation, source, 0, -1, false, false, file).lines;
+}
+
+function parseAspellOutput(
+  source: string,
+  file: string,
+  invocation: BuiltinInvocation,
+): AspellFinding[] {
+  const lines = source.replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n");
+  if (lines[0]?.startsWith("@(#)")) lines.shift();
+  const findings: AspellFinding[] = [];
+  let inputLine = 1;
+  let groupHadContent = false;
+  for (const line of lines) {
+    invocation.context.checkpoint();
+    if (line.length === 0) {
+      if (groupHadContent) inputLine += 1;
+      groupHadContent = false;
+      continue;
+    }
+    groupHadContent = true;
+    const finding = parseAspellFinding(line, file, inputLine);
+    if (finding !== undefined) findings.push(finding);
+  }
+  return findings;
+}
+
+function parseAspellFinding(
+  line: string,
+  file: string,
+  inputLine: number,
+): AspellFinding | undefined {
+  const suggested = /^[&?] (\S+) \d+ (\d+): ?(.*)$/u.exec(line);
+  if (suggested !== null) {
+    const suggestions = (suggested[3] ?? "")
+      .split(",")
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0);
+    const column = Number(suggested[2] ?? 0);
+    if (!Number.isSafeInteger(column)) {
+      throw new REvaluationError("NRE2250", `invalid Ispell pipe response: '${line}'`);
+    }
+    return {
+      original: suggested[1] ?? "",
+      file,
+      line: inputLine,
+      column,
+      suggestions,
+    };
+  }
+  const absent = /^# (\S+) (\d+)$/u.exec(line);
+  if (absent !== null) {
+    const column = Number(absent[2] ?? 0);
+    if (!Number.isSafeInteger(column)) {
+      throw new REvaluationError("NRE2250", `invalid Ispell pipe response: '${line}'`);
+    }
+    return {
+      original: absent[1] ?? "",
+      file,
+      line: inputLine,
+      column,
+      suggestions: [],
+    };
+  }
+  if (line === "*" || line.startsWith("+") || line.startsWith("-")) return undefined;
+  throw new REvaluationError("NRE2250", `invalid Ispell pipe response: '${line}'`);
 }
 
 function systemWhichCharacters(value: RValue, invocation: BuiltinInvocation): RCharacterVector {

@@ -228,6 +228,11 @@ standard- stream redirection intent, input lines, wait/signal controls, and time
 fields. Inline and Worker modes use the same record, and neither mode has an implicit process
 launcher.
 
+`utils::aspell()` is a base-layer composition over that record, not a new host protocol. It reads
+owned virtual text, optionally invokes an ordinary R filter closure, sends caret-prefixed lines to
+an admitted Ispell-compatible program, and reconstructs an owned data frame. The Worker therefore
+uses the existing command event while package code remains independent of host process APIs.
+
 Session process identity follows the same rule. The facade allocates one positive integer before
 choosing inline or Worker execution, sends it as an optional protocol-v1 initialization field, and
 the evaluator retains it outside resettable builtin state. `Sys.getpid()` therefore remains stable

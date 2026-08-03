@@ -999,9 +999,18 @@ Worker transport. No handler means no process authority, and NativR does not cla
 filesystem, environment, or executable discovery.
 
 The typed-native-call increment raises current name overlap to 642 of 2,522. Rank 358 `.Call` now
-has a typed native/Wasm ABI foundation rather than JavaScript or host pointers. The new name overlap
-is 642 of 2,522; complete compiled-package compatibility still requires the portable R C-API/value
-subset and an automatic Wasm build/registration pipeline.
+has a typed native/Wasm ABI foundation rather than JavaScript or host pointers. Complete
+compiled-package compatibility still requires the portable R C-API/value subset and an automatic
+Wasm build/registration pipeline.
+
+The spell-check increment raises current name overlap to 643 of 2,522. Rank 363 `utils::aspell`
+covers knitr's two measured custom-filter calls through a generic Ispell `-a` adapter. GNU R 4.6
+black-box evidence fixes the closure formals/defaults, program failure, five-column classed frame,
+line/column mapping, suggestions, and empty-result shape. NativR evidence covers session-owned and
+package files, arbitrary R filter closures, bounded request/result parsing, pure-R package calls,
+and inline/default-Worker execution. Spell checking requires matching `executablePaths` and
+`systemCommand` policies; built-in filters, serialized dictionaries, and ambient PATH discovery
+remain incomplete.
 
 ## Completion evidence
 

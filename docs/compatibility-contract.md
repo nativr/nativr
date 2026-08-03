@@ -1005,6 +1005,14 @@ stream forces waiting; absent `systemCommand` authority fails closed. Exact OS s
 executable discovery, inherited environment, host paths, terminal interaction, stream interleaving,
 and arbitrary process support remain host-adapter responsibilities and are not claimed.
 
+`utils::aspell()` has GNU R 4.6 differential and black-box fixture evidence for its six formals and
+defaults, classed five-column result, line/column association, suggestion list column, correct-word
+omission, and empty-result shape. Behavioral integration evidence covers automatic admitted-program
+selection, multiple virtual files, encoding recycling, arbitrary R filter closures, unchanged
+source-only package calls, and the same inline/Worker command transport used by `system2`. The
+contract excludes built-in Rd/Sweave/R/pot/dcf/md filters, serialized R dictionaries, ambient PATH,
+host files, and checker-identical diagnostics until executable cases cover them.
+
 `utils::sessionInfo` has shape evidence for the measured otel `utils::sessionInfo()$platform` lookup
 and differential evidence for its class, R major/minor target, RNG-kind length, attached
 base-package length, and named-list access. Browser-specific values are deliberately NativR

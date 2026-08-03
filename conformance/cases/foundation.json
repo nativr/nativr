@@ -9367,6 +9367,25 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "aspell-usage-ranked-formals-defaults-and-namespace-export",
+    "code": "f <- formals(utils::aspell)\nc(typeof(utils::aspell), names(f), identical(f$control, quote(list())), identical(f$encoding, \"unknown\"), is.null(f$program), identical(f$dictionaries, quote(character())))",
+    "expected": [
+      "closure",
+      "files",
+      "filter",
+      "control",
+      "encoding",
+      "program",
+      "dictionaries",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "download-file-formals-and-defaults",
     "code": "f <- formals(utils::download.file)\nc(names(f), identical(f$quiet, FALSE), identical(f$mode, \"w\"), identical(f$cacheOK, TRUE), identical(f$extra, quote(getOption(\"download.file.extra\"))), is.null(f$headers))",
     "expected": [

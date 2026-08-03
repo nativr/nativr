@@ -11997,6 +11997,141 @@ NeedsCompilation: no
     ).rejects.toMatchObject({ code: "NRS5008" });
   });
 
+  it("runs utils::aspell through an admitted Ispell pipe host with arbitrary R filters", async () => {
+    const requests: PublicSystemCommandRequest[] = [];
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      executablePaths: { aspell: "/approved/bin/aspell" },
+      systemCommand: (request) => {
+        requests.push(request);
+        if (request.input?.[0] === "^correct") {
+          return { status: 0, stdout: "@(#) International Ispell Version 3.1.20\n*\n\n" };
+        }
+        return {
+          status: 0,
+          stdout:
+            "@(#) International Ispell Version 3.1.20\n*\n\n& wrng 2 4: wrong, wring\n\n# zzzz 6\n\n",
+        };
+      },
+    });
+    await runtime.eval(`
+      path <- tempfile(fileext = ".txt")
+      writeLines("source text is replaced by the filter", path)
+      package_filter <- function(ifile, encoding) {
+        stopifnot(ifile == path, encoding == "UTF-8")
+        c("hello", "xx wrng", "more zzzz")
+      }
+      checked <- utils::aspell(path, package_filter, control = "-H -t", encoding = "UTF-8")
+    `);
+    await expect(runtime.eval("class(checked)")).resolves.toEqual(["aspell", "data.frame"]);
+    await expect(runtime.eval("names(checked)")).resolves.toEqual([
+      "Original",
+      "File",
+      "Line",
+      "Column",
+      "Suggestions",
+    ]);
+    await expect(runtime.eval("checked$Original")).resolves.toEqual(["wrng", "zzzz"]);
+    await expect(runtime.eval("checked$File == path")).resolves.toEqual([true, true]);
+    await expect(runtime.eval("checked$Line")).resolves.toEqual([2, 3]);
+    await expect(runtime.eval("checked$Column")).resolves.toEqual([4, 6]);
+    await expect(runtime.eval("checked$Suggestions[[1]]")).resolves.toEqual(["wrong", "wring"]);
+    await expect(runtime.eval("checked$Suggestions[[2]]")).resolves.toEqual([]);
+    await expect(runtime.eval("nrow(checked)")).resolves.toBe(2);
+    await expect(runtime.eval("names(formals(utils::aspell))")).resolves.toEqual([
+      "files",
+      "filter",
+      "control",
+      "encoding",
+      "program",
+      "dictionaries",
+    ]);
+    expect(requests).toHaveLength(1);
+    expect(requests[0]).toEqual({
+      operation: "system2",
+      command: "/approved/bin/aspell",
+      commandElements: [],
+      args: ["-a", "-H -t"],
+      environment: [],
+      stdinPath: null,
+      stdout: { mode: "capture" },
+      stderr: { mode: "capture" },
+      intern: true,
+      ignoreStdout: false,
+      ignoreStderr: false,
+      wait: true,
+      input: ["^hello", "^xx wrng", "^more zzzz"],
+      inputText: null,
+      showOutputOnConsole: false,
+      minimized: false,
+      invisible: true,
+      timeoutSeconds: 0,
+      receiveConsoleSignals: true,
+    });
+
+    await runtime.reset();
+    await runtime.eval('empty_path <- tempfile(); writeLines("correct", empty_path)');
+    await runtime.eval("empty_checked <- utils::aspell(empty_path)");
+    await expect(
+      runtime.eval(
+        "c(nrow(empty_checked), ncol(empty_checked), vapply(empty_checked, length, integer(1)))",
+      ),
+    ).resolves.toEqual([0, 5, 0, 0, 0, 0, 0]);
+    await runtime.dispose();
+
+    const unavailable = await session();
+    await expect(unavailable.eval("utils::aspell(character())")).rejects.toMatchObject({
+      code: "NRE2250",
+      message: "No suitable spell-checker program found",
+    });
+    await unavailable.dispose();
+
+    const unsupported = await createR({
+      execution: "inline",
+      assets,
+      executablePaths: { aspell: "/approved/bin/aspell" },
+      systemCommand: () => ({ status: 0, stdout: "@(#) fake\n" }),
+    });
+    await unsupported.eval('path <- tempfile(); writeLines("text", path)');
+    await expect(unsupported.eval('utils::aspell(path, filter = "R")')).rejects.toMatchObject({
+      code: "NRU6218",
+    });
+    await expect(
+      unsupported.eval('utils::aspell(path, dictionaries = "en_stats")'),
+    ).rejects.toMatchObject({ code: "NRU6218" });
+    await unsupported.dispose();
+
+    let limitedCalls = 0;
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 2 },
+      executablePaths: { aspell: "/approved/bin/aspell" },
+      systemCommand: () => {
+        limitedCalls += 1;
+        return { status: 0, stdout: "@(#) fake\n" };
+      },
+    });
+    await limited.eval('path <- tempfile(); cat("one\\ntwo\\nthree\\n", file = path)');
+    await expect(limited.eval("utils::aspell(path)")).rejects.toMatchObject({ code: "NRL4002" });
+    expect(limitedCalls).toBe(0);
+    await limited.dispose();
+
+    const malformed = await createR({
+      execution: "inline",
+      assets,
+      executablePaths: { aspell: "/approved/bin/aspell" },
+      systemCommand: () => ({
+        status: 0,
+        stdout: "@(#) fake\n& word 1 99999999999999999999: suggestion\n\n",
+      }),
+    });
+    await malformed.eval('path <- tempfile(); writeLines("word", path)');
+    await expect(malformed.eval("utils::aspell(path)")).rejects.toMatchObject({ code: "NRE2250" });
+    await malformed.dispose();
+  });
+
   it("reports deterministic browser locale categories and monetary conventions", async () => {
     const runtime = await session();
     const names = [
@@ -12861,7 +12996,7 @@ NeedsCompilation: no
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.263.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.264.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

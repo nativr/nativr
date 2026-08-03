@@ -4,11 +4,11 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 660,
-    "overlappingNames": 642,
-    "missingReferenceNames": 1880,
+    "nativrRegisteredNames": 661,
+    "overlappingNames": 643,
+    "missingReferenceNames": 1879,
     "nativrExtensionNames": 18,
-    "nameCoverage": 0.25456
+    "nameCoverage": 0.254956
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 466, "nameCoverage": 0.340892 },
@@ -19,7 +19,7 @@
       "overlappingNames": 10,
       "nameCoverage": 0.047847
     },
-    { "package": "utils", "callableNames": 262, "overlappingNames": 31, "nameCoverage": 0.118321 },
+    { "package": "utils", "callableNames": 262, "overlappingNames": 32, "nameCoverage": 0.122137 },
     {
       "package": "grDevices",
       "callableNames": 135,
@@ -144,6 +144,7 @@
     "as.symbol",
     "as.ts",
     "as.vector",
+    "aspell",
     "assign",
     "attr",
     "attr<-",
@@ -1148,7 +1149,6 @@
     "asin",
     "asinh",
     "askYesNo",
-    "aspell",
     "aspell_package_C_files",
     "aspell_package_R_files",
     "aspell_package_Rd_files",

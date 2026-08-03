@@ -623,6 +623,11 @@ loader.
   when output is captured, returns GNU R-shaped output/status/visibility, and runs from an unchanged
   source-only package namespace in both runtime modes. It does not discover executables, grant
   ambient process authority, implement host file paths, or make native-code packages pure R.
+- `utils::aspell()` supports knitr's measured custom-filter shape without translating package
+  source. Package filter closures receive their virtual file name and encoding normally; filtered
+  lines cross an explicitly admitted Ispell-compatible `systemCommand` policy and return a standard
+  classed result. Applications must provide the checker/dictionary implementation. Built-in document
+  filters and R-level serialized dictionaries are not yet admitted.
 - `stats::ts.plot()` supports magrittr's measured exposition-pipe example without translating
   magrittr or the calling package. Numeric vectors and regular vector/matrix series align on a
   shared bounded time grid, missing union cells split paths, and styles/annotations traverse the

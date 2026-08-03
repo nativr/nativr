@@ -92,6 +92,13 @@ pure-R package code: `readLines(pipe("approved-report"))`. Open write pipes buff
 it as exact text when closed. The current adapter is one-shot and one-way; duplex `r+`, interactive
 streaming, shell discovery, and NUL-containing binary stdin are not claimed.
 
+`utils::aspell()` reuses the same policy for an Ispell-compatible `-a` program. Advertise only an
+allow-listed checker in `executablePaths`, then accept the structured `system2` request in
+`systemCommand`; its `input` contains caret-prefixed filtered lines and its `args` begin with `-a`.
+The runtime reads only session/package virtual files, can invoke an arbitrary R `filter` function,
+and converts the returned pipe text to GNU R's five-column `aspell` data frame. It never discovers
+or launches a checker itself. Built-in document filters and `dictionaries=` are not yet supported.
+
 ## Typed native/Wasm calls
 
 `.Call()` is available only through an explicit module registry and data-only host adapter:

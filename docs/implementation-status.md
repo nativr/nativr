@@ -193,6 +193,10 @@ Date: 2026-08-03
   registered arity checks, bounded `RValueSnapshot` arguments/results, inline/default-Worker
   transport, and a default-deny typed native/Wasm callback. Automatic compiled-package builds and
   GNU R C-API/SEXP compatibility are not yet implemented.
+- Usage-ranked `utils::aspell()` with GNU R 4.6 formals and classed five-column results, virtual
+  text inputs, arbitrary R filter functions, Ispell pipe parsing, explicit admitted-program
+  selection, unchanged pure-R package execution, and inline/default-Worker transport. Built-in
+  filters and serialized dictionaries remain explicit unsupported depth.
 - Usage-ranked `utils::download.file()` composes that explicit byte adapter with session-owned
   files. GNU R 4.6 formals, preflight validation, invisible statuses, paired-vector `retvals`, exact
   replacement bytes, named headers, pure-R namespace calls, failure atomicity, default-deny inline
@@ -833,10 +837,10 @@ Date: 2026-08-03
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 14 files and 459 tests, with three explicitly skipped tests.
+- Vitest currently passes 14 files and 464 tests, with three explicitly skipped tests.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 825/825 cases. The optional black-box R oracle passes all 784
+- Checked-in conformance passes 827/827 cases. The optional black-box R oracle passes all 786
   eligible cases and explicitly skips 41 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,

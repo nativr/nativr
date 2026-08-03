@@ -838,6 +838,11 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      `RValueSnapshot` request/result seam inline or through the default Worker. The default remains
      native-capability-free. Automatic native-package builds, SEXP/external-pointer fidelity,
      `.External`, and arbitrary compiled-package loading remain future depth.
+176. Usage-ranked spell checking: rank-363 `utils::aspell` composes virtual package/session text,
+     ordinary R filter closures, and the existing default-deny structured-command bridge into a
+     bounded Ispell `-a` request. It returns GNU R-shaped `aspell` data frames inline and through
+     the Worker without a bundled checker, dictionary, host PATH scan, or package-specific rewrite.
+     Built-in document filters and R-level serialized dictionaries remain future depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

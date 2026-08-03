@@ -149,6 +149,11 @@ twice_mean(c(1, 2, 6))`,
     code: "system2('nativr-tool', c('--path', shQuote('worker path')), stdout = TRUE, env = 'MODE=demo')",
   },
   {
+    id: "aspell-package",
+    label: "Pure-R package spell check",
+    code: "checked <- nativrdemo::spell_lines()\nc(checked$Original, checked$Line, checked$Column, checked$Suggestions[[1]])",
+  },
+  {
     id: "pipe-package",
     label: "Pure-R package pipe",
     code: "nativrdemo::pipe_lines('nativr-lines')",
@@ -251,7 +256,10 @@ async function initialize(): Promise<void> {
     runtime = await createR({
       packages: [playgroundPackage],
       environmentVariables: { NATIVR_PLAYGROUND: "worker" },
-      executablePaths: { "nativr-echo": "nativr://host/bin/nativr-echo" },
+      executablePaths: {
+        "nativr-echo": "nativr://host/bin/nativr-echo",
+        aspell: "nativr://host/bin/aspell",
+      },
       nativeModules: [
         {
           name: "nativr.demo",
@@ -324,6 +332,18 @@ function playgroundSystemCommand(request: PublicSystemCommandRequest): PublicSys
       return { status: 2, errorMessage: "unexpected structured arguments" };
     }
     return { status: 0, stdout: "system2-worker\nstructured-command\n" };
+  }
+  if (request.operation === "system2" && request.command === "nativr://host/bin/aspell") {
+    if (
+      request.args.join(" ") !== "-a -H" ||
+      request.input?.join("\n") !== "^browser compatiblity\n^native runtime"
+    ) {
+      return { status: 2, errorMessage: "unexpected Ispell pipe request" };
+    }
+    return {
+      status: 0,
+      stdout: "@(#) NativR playground Ispell adapter\n& compatiblity 1 9: compatibility\n\n*\n\n",
+    };
   }
   if (request.operation !== "system" || request.command !== "nativr-echo") {
     return {

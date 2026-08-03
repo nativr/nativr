@@ -707,20 +707,20 @@ stringi's two examples, representing 1,237,835 downloads and 1.0% reach. Equal-l
 simplify to a common-type matrix, unequal lengths remain a list, scalar inputs simplify with outer
 names, and equal-dimensional inputs can retain a higher array shape and dimension names. List-valued
 cells, zero-length exception controls, promotion, names, non-list identity, and invalid `higher`
-boundaries have GNU R black-box evidence. Ranks 369 `setwd`, 370 `aspell`, 371 `abline`, 372
-`browseVignettes`, and 373 `dev.control` remain host-filesystem, package-tooling, or graphics-device
-work; rank 374 `lengths` was already supported. Rank 375 `getFromNamespace` has 37 apparent calls,
-but all are backports examples that fetch that package's private implementations before invoking
-them. It therefore remains tied to the general package namespace loader; implementing only a
-core-namespace facade would not run the measured examples. Ranks 376 `str2expression` and 377
-`str2lang` are now complete for the measured source strings and represent the same 1,112,829
-downloads and 0.9% reach. They reuse the browser-native Tree-sitter parser and return only owned
-expression/language/symbol/atomic values, with differential evidence for vectors, comments, blank
-text, missing strings, single-result checks, and parse/type errors. The backports examples'
-preceding private-namespace retrieval remains outside this claim. Rank 378 `URLdecode` is now
-complete for backports' direct `URLdecode("ab%20cd")` example, again representing 1,112,829
-downloads and 0.9% reach. Registered `utils::` lookup, vectorized ASCII and UTF-8 percent bytes,
-literal plus signs, missing/empty/NULL values, attribute removal, and NUL termination have
+boundaries have GNU R black-box evidence. Rank 363 `aspell` is now implemented through the explicit
+Ispell-compatible host boundary. Ranks 364 `abline`, 365 `browseVignettes`, and 366 `dev.control`
+remain package-tooling or graphics-device work; `lengths` was already supported. Rank 368
+`getFromNamespace` has 37 apparent calls, but all are backports examples that fetch that package's
+private implementations before invoking them. It therefore remains tied to the general package
+namespace loader; implementing only a core-namespace facade would not run the measured examples.
+Ranks 376 `str2expression` and 377 `str2lang` are now complete for the measured source strings and
+represent the same 1,112,829 downloads and 0.9% reach. They reuse the browser-native Tree-sitter
+parser and return only owned expression/language/symbol/atomic values, with differential evidence
+for vectors, comments, blank text, missing strings, single-result checks, and parse/type errors. The
+backports examples' preceding private-namespace retrieval remains outside this claim. Rank 378
+`URLdecode` is now complete for backports' direct `URLdecode("ab%20cd")` example, again representing
+1,112,829 downloads and 0.9% reach. Registered `utils::` lookup, vectorized ASCII and UTF-8 percent
+bytes, literal plus signs, missing/empty/NULL values, attribute removal, and NUL termination have
 executable evidence. Malformed percent escapes and invalid UTF-8 bytes are explicitly rejected
 because browser strings cannot represent GNU R's platform-dependent raw-byte results losslessly.
 Rank 379 `warningCondition` is now complete for backports' direct
@@ -1726,6 +1726,14 @@ ties:
      immutable-package-to-session binary copies, unchanged package code, default Worker execution,
      conformance, and storage/file/result limits. Host paths, links/devices, native permissions and
      cross-session persistence remain compatibility depth.
+166. Host-backed spell checking: rank-363 `utils::aspell` represents knitr's two measured calls at
+     1.0% download-weighted reach. Exact GNU R 4.6 formals, program selection, virtual file reads,
+     encoding recycling, arbitrary R filter functions, Ispell `-a` requests, five-column `aspell`
+     data frames, suggestions, empty results, pure-R package execution, and default Worker transport
+     have evidence. The runtime reuses the explicit `executablePaths`/`systemCommand` policy and
+     never bundles a dictionary or process runner. Built-in Rd/Sweave/R/pot/dcf/md filters,
+     serialized R dictionaries, exact checker diagnostics, and ambient program discovery remain
+     compatibility depth.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

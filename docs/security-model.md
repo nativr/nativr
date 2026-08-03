@@ -130,6 +130,13 @@ them trusted. A host must reject unknown executables, unsafe argument forms, env
 paths before choosing any OS-specific process API. The Playground handler is a fixed virtual fixture
 policy and never touches an operating-system process.
 
+`utils::aspell()` grants no additional authority: automatic selection uses only names admitted
+through `executablePaths`, while an explicit `program=` identifier still must pass the same exact
+host allow-list. One structured `system2`-shaped Ispell `-a` request crosses the existing callback.
+File contents and custom-filter output are untrusted package-selected input. Hosts must bind an
+approved identifier to an isolated checker, constrain options, and avoid passing control fragments
+through a shell. Default sessions cannot discover or run a checker.
+
 `readline()` and interactive `devAskNewPage(TRUE)` grant only a construction-time, line-oriented
 callback when the application supplies `readline`. The Worker sends inert prompt text and accepts
 one validated string result; R code never receives a DOM handle or arbitrary JavaScript function.
