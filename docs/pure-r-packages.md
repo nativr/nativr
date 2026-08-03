@@ -318,8 +318,9 @@ prevents a safe archive scan from being mislabeled as full package compatibility
 
 ## External proof
 
-The opt-in test `packages/package-tools/test/external-package.test.ts` downloads seven unchanged
-public source packages from the repository resolver and verifies a pinned artifact digest for each:
+The opt-in test `packages/package-tools/test/external-package.test.ts` evaluates nine unchanged
+public source packages from the repository resolver. It verifies the pinned source-archive digest
+separately from each normalized NativR artifact digest. Seven reach the evidence described below:
 
 - [`pkgconfig 2.0.3`](https://cran.r-project.org/package=pkgconfig) proves namespace exports,
   package resources, classed DESCRIPTION metadata with a virtual installation path, and an ordinary
@@ -350,6 +351,12 @@ public source packages from the repository resolver and verifies a pinned artifa
   downloads in the committed snapshot, reaches P4 with all nine exported labeling algorithms
   executing unchanged. Its deeper `extended.figures()` path exercises shared `pmax`, histogram, and
   graphics behavior before stopping explicitly at the recorded `axis(xlab=)` P5 blocker.
+- [`assertthat 0.2.1`](https://cran.r-project.org/package=assertthat) completes P1 and records the
+  absent standard `tools` namespace dependency as its first P2 blocker;
+- [`crayon 1.5.3`](https://cran.r-project.org/package=crayon) completes P1 and records its relative
+  `tools/ansi-palettes.txt` namespace resource read as its first P2 blocker. The evaluation also
+  exposed reusable `methods::is`, `parent.env<-`, and inert host-install utility bindings, but the
+  package remains explicitly blocked rather than being counted as compatible.
 
 No package source is checked into this repository. Together these tests exercise repository
 installation, runtime package files, namespace loading, qualified S3 registration, metaprogramming,
@@ -368,8 +375,9 @@ the public package pipeline, and discarded with the test process. The browser bu
 reusable color interpolation, frame, warning, and arithmetic semantics.
 
 The machine-readable [package corpus](../compatibility/package-corpus.json) is authoritative for
-development/regression/holdout membership, completed tier, and first blocker. These proofs must not
-be summarized as a single unqualified “supported packages” count.
+development/regression/holdout membership, source and artifact digests, completed tier, and first
+blocker. The current uninspected P0 holdouts are `praise 1.0.0` and `prettyunits 1.2.0`. These
+proofs must not be summarized as a single unqualified “supported packages” count.
 
 The checked-in source-only fixture also exports a function that calls `grDevices::rainbow`,
 `terrain.colors`, `topo.colors`, and `cm.colors` through its namespace. This is a small executable

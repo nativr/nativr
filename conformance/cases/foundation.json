@@ -910,6 +910,13 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "environment-binding-count-and-symbol-character-coercion",
+    "code": "e <- new.env(parent = emptyenv())\nbefore <- length(e)\ne$x <- 1\ne$.hidden <- 2\nc(before, length(e), as.character(quote(alpha)), as.character(quote(`+`)))",
+    "expected": ["0", "2", "alpha", "+"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "shape-type-predicates",
     "code": "c(is.matrix(matrix(1:4, 2)), is.array(array(1:4, c(2, 2, 1))), is.data.frame(data.frame(x = 1)), is.factor(factor(\"a\")), is.recursive(list(1)), is.recursive(1:2))",
     "expected": [true, true, true, true, true, false],
@@ -963,6 +970,13 @@
     "id": "quoted-language-types",
     "code": "c(typeof(quote(alpha)), mode(quote(alpha)), typeof(quote(alpha + 1)), mode(quote(alpha + 1)), typeof(quote))",
     "expected": ["symbol", "name", "language", "call", "special"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "language-list-decomposition-across-call-shapes",
+    "code": "binary <- as.list(quote(x + 2))\nnested_call <- quote(alpha(beta = 1L, gamma = x + 2))\nnested <- as.list(nested_call)\nc(length(binary), as.character(binary[[1]]), deparse(binary[[2]]), binary[[3]], length(nested), names(nested), as.character(nested[[1]]), identical(names(nested_call), c('', 'beta', 'gamma')), is.null(names(quote(x + 2))))",
+    "expected": ["3", "+", "x", "2", "3", "", "beta", "gamma", "alpha", "TRUE", "TRUE"],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
   },
@@ -1099,6 +1113,13 @@
     "id": "isolated-empty-parent-environment",
     "code": "isolated <- new.env(parent = emptyenv())\ne <- new.env(hash = FALSE, parent = baseenv(), size = 7)\neval(quote(x <- 8), e)\nc(is.environment(parent.env(isolated)), eval(quote(x), e))",
     "expected": [1, 8],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "parent-environment-replacement-and-cycle-boundaries",
+    "code": "e <- new.env(parent = globalenv())\np <- new.env(parent = emptyenv())\nassigned <- (parent.env(e) <- p)\na <- new.env()\nb <- new.env(parent = a)\nc(identical(parent.env(e), p), identical(assigned, p), inherits(try(parent.env(a) <- b, silent = TRUE), \"try-error\"), inherits(try(parent.env(emptyenv()) <- globalenv(), silent = TRUE), \"try-error\"), inherits(try(parent.env(e) <- 1, silent = TRUE), \"try-error\"))",
+    "expected": [true, true, true, true, true],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
   },
@@ -4796,6 +4817,13 @@
     "id": "seq-int-internal-s3-method-dispatch",
     "code": "seq.foo <- function(from, ..., marker = \"default\") c(\"method\", unclass(from), marker, list(...)[[\"extra\"]])\nseq.int(structure(3, class = \"foo\"), marker = \"ok\", extra = 7)",
     "expected": ["method", "3", "ok", "7"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "methods-is-implicit-explicit-inherited-and-boundary-classes",
+    "code": "setClass(\"is_parent\")\nsetClass(\"is_child\", contains = \"is_parent\")\nx <- structure(1, class = \"is_child\")\nc(methods::is(\"x\", \"character\"), methods::is(1L, \"integer\"), methods::is(1L, \"numeric\"), methods::is(1L, \"vector\"), methods::is(NULL, \"NULL\"), methods::is(environment(), \"environment\"), methods::is(x, \"is_child\"), methods::is(x, \"is_parent\"), methods::is(x, \"ANY\"), !methods::is(1L, \"atomic\"), inherits(try(methods::is(1L, c(\"integer\", \"numeric\")), silent = TRUE), \"try-error\"))",
+    "expected": [true, true, true, true, true, true, true, true, true, true, true],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
   },

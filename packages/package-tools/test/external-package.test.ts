@@ -590,3 +590,53 @@ it.runIf(runExternal)(
   },
   30_000,
 );
+
+it.runIf(runExternal)(
+  "records the first unchanged public assertthat 0.2.1 pure-R package blocker",
+  async () => {
+    await expect(installPackagesFromRepository(["assertthat"])).rejects.toThrow(
+      "Package 'assertthat' requires 'tools', which is absent from https://cran.r-project.org/.",
+    );
+  },
+  30_000,
+);
+
+it.runIf(runExternal)(
+  "records the first unchanged public crayon 1.5.3 pure-R package blocker",
+  async () => {
+    let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    try {
+      const installed = await installPackagesFromRepository(["crayon"]);
+      expect(
+        installed.artifacts.find((artifact) => artifact.package.name === "crayon"),
+      ).toMatchObject({
+        package: { name: "crayon", version: "1.5.3" },
+        compatibility: { packaging: "ready", execution: "unchecked" },
+        integrity: {
+          algorithm: "sha256",
+          value: "8e1e46992f4e3348cb03ab87850c5efd4305f6a2f4cda5fc201bcdf438cc0bdf",
+        },
+      });
+      runtime = await createR({
+        execution: "inline",
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+        packages: installed.bundles,
+      });
+      await expect(
+        runtime.eval('requireNamespace("crayon", quietly = TRUE)'),
+      ).rejects.toMatchObject({
+        code: "NRE2195",
+        message: "Cannot open virtual text file 'nativr://session-temp/tools/ansi-palettes.txt'.",
+      });
+    } finally {
+      await runtime?.dispose();
+    }
+  },
+  30_000,
+);

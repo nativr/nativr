@@ -26,6 +26,16 @@ export function createEnvironment(parent: REnvironment | null, hashed = false): 
   };
 }
 
+/** Replace an environment parent while preserving R's acyclic lexical-chain invariant. */
+export function setParentEnvironment(environment: REnvironment, parent: REnvironment): void {
+  for (let current: REnvironment | null = parent; current !== null; current = current.parent) {
+    if (current === environment) {
+      throw new REvaluationError("NRE2141", "cycles in parent chains are not allowed");
+    }
+  }
+  environment.parent = parent;
+}
+
 /** Install or replace a binding in one environment. */
 export function setBinding(environment: REnvironment, name: string, value: RBinding): void {
   if (environment.lockedBindings.has(name)) {

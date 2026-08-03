@@ -13,7 +13,7 @@ const statuses = new Set(["passing", "blocked", "unevaluated"]);
 const tiers = Object.keys(corpus.tiers);
 const names = new Set();
 
-assert(corpus.schemaVersion === 1, "Unsupported package-corpus schemaVersion.");
+assert(corpus.schemaVersion === 2, "Unsupported package-corpus schemaVersion.");
 assert(
   corpus.targetR === profiles.normative.version,
   "Package corpus targetR must match the normative profile.",
@@ -35,7 +35,18 @@ for (const entry of corpus.packages) {
       `${corpus.snapshot.repository}/src/contrib/${entry.package}_${entry.version}.tar.gz`,
     `${key} sourceUrl is not the pinned canonical source URL.`,
   );
-  assert(/^[0-9a-f]{64}$/.test(entry.sourceSha256), `${key} has an invalid SHA-256 digest.`);
+  assert(
+    /^[0-9a-f]{64}$/.test(entry.sourceSha256),
+    `${key} has an invalid source-archive SHA-256 digest.`,
+  );
+  if (entry.partition === "holdout") {
+    assert(entry.artifactSha256 === null, `${key} holdout must not expose an evaluated artifact.`);
+  } else {
+    assert(
+      /^[0-9a-f]{64}$/.test(entry.artifactSha256),
+      `${key} has an invalid evaluated-artifact SHA-256 digest.`,
+    );
+  }
   assert(typeof entry.evidence === "string" && entry.evidence.length > 0, `${key} lacks evidence.`);
   if (entry.status === "blocked") {
     assert(entry.firstBlocker !== null, `${key} is blocked but has no firstBlocker.`);

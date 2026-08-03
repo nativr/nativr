@@ -12127,6 +12127,27 @@ NeedsCompilation: no
     await limited.dispose();
   });
 
+  it("exports inert host-install utility bindings for package namespace compatibility", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        c(
+          is.function(utils::install.packages),
+          is.function(utils::package.skeleton),
+          is.function(utils::tar)
+        )
+      `),
+    ).resolves.toEqual([true, true, true]);
+    for (const code of [
+      "utils::install.packages(character())",
+      "utils::package.skeleton('probe')",
+      "utils::tar('probe.tar', character())",
+    ]) {
+      await expect(runtime.eval(code)).rejects.toMatchObject({ code: "NRU6178" });
+    }
+    await runtime.dispose();
+  });
+
   it("keeps frequency-prioritized options as resettable session state", async () => {
     const runtime = await session();
     await expect(
@@ -13135,6 +13156,11 @@ NeedsCompilation: no
       runtime.eval("c(as.character(TRUE), as.character(1 + 2i), as.character(NA_complex_))"),
     ).resolves.toEqual(["TRUE", "1+2i", NA]);
     await expect(
+      runtime.eval(
+        "e <- new.env(parent = emptyenv()); before <- length(e); e$x <- 1; e$.hidden <- 2; c(before, length(e), as.character(quote(alpha)), as.character(quote(`+`)))",
+      ),
+    ).resolves.toEqual(["0", "2", "alpha", "+"]);
+    await expect(
       runtime.eval('c(as.character(factor(c("a", "b"))), as.logical(factor(c("TRUE", "FALSE"))))'),
     ).resolves.toEqual(["a", "b", "TRUE", "FALSE"]);
     await runtime.dispose();
@@ -13380,8 +13406,8 @@ NeedsCompilation: no
     const capabilities = await runtime.capabilities();
     expect(capabilities).toMatchObject({
       targetRVersion: "4.6.1",
-      semanticProfileVersion: "0.278.0",
-      languageSubsetVersion: "0.278.0",
+      semanticProfileVersion: "0.279.0",
+      languageSubsetVersion: "0.279.0",
     });
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
@@ -15558,6 +15584,11 @@ NeedsCompilation: no
 
   it("dispatches usage-ranked methods coercions through a session registry", async () => {
     const runtime = await session();
+    await expect(
+      runtime.eval(
+        "setClass('is_parent')\nsetClass('is_child', contains = 'is_parent')\nx <- structure(1, class = 'is_child')\nc(methods::is('x', 'character'), methods::is(1L, 'numeric'), methods::is(1L, 'vector'), methods::is(NULL, 'NULL'), methods::is(environment(), 'environment'), methods::is(x, 'is_parent'), methods::is(x, 'ANY'), !methods::is(1L, 'atomic'))",
+      ),
+    ).resolves.toEqual([true, true, true, true, true, true, true, true]);
     await expect(
       runtime.eval(
         "as.IDate <- function(x) structure(as.integer(as.Date(x)), class = c('IDate', 'Date'))\nas.ITime <- function(x) structure(ifelse(x == '10:45', 38700L, NA_integer_), class = 'ITime')\nmethods::setAs('character', 'IDate', as.IDate)\nsetAs('character', 'ITime', as.ITime)\nc(identical(as.IDate('2001-01-01'), methods::as('2001-01-01', 'IDate')), identical(as.ITime('10:45'), methods::as('10:45', 'ITime')))",
@@ -20503,6 +20534,11 @@ NeedsCompilation: no
       "",
       "x",
     ]);
+    await expect(
+      runtime.eval(
+        "binary <- as.list(quote(x + 2)); nested_call <- quote(alpha(beta = 1L, gamma = x + 2)); nested <- as.list(nested_call); c(length(binary), as.character(binary[[1]]), deparse(binary[[2]]), binary[[3]], length(nested), names(nested), as.character(nested[[1]]), identical(names(nested_call), c('', 'beta', 'gamma')), is.null(names(quote(x + 2))))",
+      ),
+    ).resolves.toEqual(["3", "+", "x", "2", "3", "", "beta", "gamma", "alpha", "TRUE", "TRUE"]);
     await expect(runtime.eval("match.call()")).rejects.toMatchObject({ code: "NRE2217" });
     await expect(
       runtime.eval("f <- function(x) match.call(definition = x)\nf(1)"),
@@ -20627,6 +20663,11 @@ NeedsCompilation: no
         'e <- list2env(list(a = 3, b = 4), parent = baseenv())\nc(e$a, e[["b"]], environmentName(parent.env(e)), environmentName(as.environment(1)))',
       ),
     ).resolves.toEqual(["3", "4", "base", "R_GlobalEnv"]);
+    await expect(
+      runtime.eval(
+        "e <- new.env(parent = globalenv())\np <- new.env(parent = emptyenv())\nassigned <- (parent.env(e) <- p)\na <- new.env()\nb <- new.env(parent = a)\nc(identical(parent.env(e), p), identical(assigned, p), inherits(try(parent.env(a) <- b, silent = TRUE), 'try-error'))",
+      ),
+    ).resolves.toEqual([true, true, true]);
     await expect(
       runtime.eval(
         'e <- new.env()\ne$x <- 1\ndelayedAssign("z", not.bound, assign.env = e)\ntracker <- new.env()\ntracker$n <- 0\nc(get0("x", envir = e, ifnotfound = { tracker$n <- tracker$n + 1; 99 }), exists("z", envir = e), tracker$n)',

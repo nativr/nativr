@@ -424,7 +424,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 423,capture.output,true,1,httpuv,1,1.0,0.6
 424,demo,true,1,httpuv,1,1.0,0.6
 425,signature,true,1,inline,18,1.0,0.6
-426,package.skeleton,false,1,inline,2,1.0,0.6
+426,package.skeleton,true,1,inline,2,1.0,0.6
 427,x11,false,1,inline,1,1.0,0.6
 428,RNGversion,true,1,zoo,17,1.0,0.6
 429,window,true,1,zoo,14,1.0,0.6

@@ -10,6 +10,7 @@ export {
   removeBinding,
   setActiveBinding,
   setBinding,
+  setParentEnvironment,
 } from "./environment.js";
 export {
   NativRError,

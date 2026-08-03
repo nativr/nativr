@@ -697,6 +697,10 @@ Date: 2026-08-03
   and ITime coercion shapes, session-local source/target registration, inherited source classes,
   core constructor fallback, identity conversions, namespace lookup, invisible registration, and
   bounded error behavior.
+- `methods::is` class-graph queries and reference-semantic `parent.env<-` replacement with exact
+  implicit/explicit/inherited-class and cycle-boundary evidence. Host-oriented `install.packages`,
+  `package.skeleton`, and `tar` bindings are present for namespace import compatibility but remain
+  inert and fail explicitly when invoked in the browser runtime.
 - Usage-ranked `weekdays`, `weekdays.Date`, and `weekdays.POSIXt` with data.table's two measured
   IDate grouping-label calls, inherited Date dispatch, deterministic C-locale full/abbreviated
   names, recycled abbreviation flags, UTC/GMT date-time handling, names, missing/non-finite values,

@@ -227,6 +227,12 @@ data.table's classes or methods. Replacement coercions, automatic namespace regi
 multiple-signature selection, package loading, caches, slots, and exhaustive methods diagnostics are
 not claimed.
 
+`methods::is` has differential behavioral evidence for implicit atomic classes, the integer-to-
+`numeric` relationship, ordinary vector membership, explicit classes, parents declared by
+`setClass`, `ANY`, and scalar-`class2` validation. It uses the same session-owned class graph as S4
+dispatch and coercion; virtual classes, class unions, sealed definitions, and the complete methods
+package are not claimed.
+
 The string surface includes `paste`, `paste0`, `sprintf`, `format`, `grep`, `grepl`, `gsub`, `sub`,
 `strsplit`, `substring`, `substr`, `nchar`, `nzchar`, `tolower`, `toupper`, `chartr`, `trimws`,
 `regexpr`, `gregexpr`, and `regmatches`. `trimws` covers both/left/right selection, configurable
@@ -1602,9 +1608,11 @@ dots remain outside this increment.
 
 `parent.frame` traverses the dynamic closure-call stack, supports positive multi-level offsets, and
 falls back to the global environment beyond the recorded stack. Its distinction from lexical
-`parent.env` has differential coverage. `sys.call` returns owned R-language calls for the current
-closure frame, positive absolute frame positions, and negative relative positions, with NULL for
-position zero and GNU R-compatible out-of-range errors. Promise-evaluation and method-dispatch
+`parent.env` has differential coverage. `parent.env<-` replaces a non-empty environment's parent by
+reference, returns through ordinary replacement-assignment semantics, rejects non-environment
+parents, and prevents self or indirect cycles. `sys.call` returns owned R-language calls for the
+current closure frame, positive absolute frame positions, and negative relative positions, with NULL
+for position zero and GNU R-compatible out-of-range errors. Promise-evaluation and method-dispatch
 frames, internal/native API frames, `sys.calls`, `sys.frames`, `sys.function`, and the remaining
 `sys.*` call-stack API are not yet claimed. `t` transposes named vectors, factors, and
 two-dimensional matrices in column-major order, swaps matrix dimension-name axes, and converts

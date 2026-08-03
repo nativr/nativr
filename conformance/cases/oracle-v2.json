@@ -8,5 +8,20 @@
     "id": "recursive-data-frame-object",
     "policy": "exact",
     "code": "data.frame(group = factor(c(\"b\", \"a\"), levels = c(\"a\", \"b\", \"unused\")), score = c(one = 1.5, two = NA_real_), row.names = c(\"r1\", \"r2\"), check.names = FALSE)"
+  },
+  {
+    "id": "shared-environment-identity",
+    "policy": "exact",
+    "code": "local({ shared <- new.env(parent = emptyenv()); list(first = shared, second = shared) })"
+  },
+  {
+    "id": "nested-language-call-structure",
+    "policy": "exact",
+    "code": "quote(alpha(beta = 1L, gamma = x + 2))"
+  },
+  {
+    "id": "closure-formals-body-and-environment",
+    "policy": "exact",
+    "code": "local({ captured <- 7L; function(x = captured) x + 1L })"
   }
 ]

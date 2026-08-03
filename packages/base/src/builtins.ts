@@ -51,6 +51,7 @@ import {
   replaceVectorSubset,
   setActiveBinding,
   setBinding,
+  setParentEnvironment,
   subsetDimensions,
   subsetVector,
   vectorDimensions,
@@ -1565,6 +1566,50 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     ),
     availablePackagesFormals(),
   ),
+  definePackageBuiltin(
+    "utils",
+    "install.packages",
+    [
+      "pkgs",
+      "lib",
+      "repos",
+      "contriburl",
+      "method",
+      "available",
+      "destdir",
+      "dependencies",
+      "type",
+      "configure.args",
+      "configure.vars",
+      "clean",
+      "Ncpus",
+      "verbose",
+      "libs_only",
+      "INSTALL_opts",
+      "quiet",
+      "keep_outputs",
+      "...",
+    ],
+    "shape",
+    builtinInstallPackages,
+    "invisible",
+  ),
+  definePackageBuiltin(
+    "utils",
+    "package.skeleton",
+    ["name", "list", "environment", "path", "force", "code_files", "encoding"],
+    "shape",
+    builtinPackageSkeleton,
+    "invisible",
+  ),
+  definePackageBuiltin(
+    "utils",
+    "tar",
+    ["tarfile", "files", "compression", "compression_level", "tar", "extra_flags"],
+    "shape",
+    builtinTar,
+    "invisible",
+  ),
   definePackageBuiltin("utils", "URLdecode", ["URL"], "behavioral", builtinUrlDecode),
   definePackageBuiltin(
     "utils",
@@ -1921,6 +1966,12 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     builtinActiveBindingFunction,
   ),
   defineBuiltin("parent.env", ["env"], "behavioral", builtinParentEnvironment),
+  defineBuiltin(
+    "parent.env<-",
+    ["env", "value"],
+    "behavioral",
+    builtinParentEnvironmentReplacement,
+  ),
   defineBuiltin("parent.frame", ["n"], "behavioral", builtinParentFrame),
   defineBuiltin("search", [], "behavioral", builtinSearch),
   defineBuiltin(
@@ -3841,6 +3892,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "behavioral",
     builtinMethodsAs,
   ),
+  definePackageBuiltin("methods", "is", ["object", "class2"], "behavioral", builtinMethodsIs),
   definePackageBuiltin(
     "methods",
     "setAs",
@@ -17398,8 +17450,9 @@ function valueLength(value: RValue): number {
       return value.arguments.length;
     case "closure":
     case "builtin":
-    case "environment":
       return 1;
+    case "environment":
+      return value.bindings.size;
   }
 }
 
@@ -17785,6 +17838,22 @@ async function builtinParentEnvironment(invocation: BuiltinInvocation): Promise<
   return environment.parent;
 }
 
+async function builtinParentEnvironmentReplacement(
+  invocation: BuiltinInvocation,
+): Promise<REnvironment> {
+  const matched = await matchExact(invocation, ["env", "value"]);
+  const environment = required(matched, "env", "parent.env<-");
+  const parent = required(matched, "value", "parent.env<-");
+  if (environment.type !== "environment" || environment.parent === null) {
+    throw new RTypeMismatchError("NRT3211", "invalid (NULL) left side of assignment");
+  }
+  if (parent.type !== "environment") {
+    throw new RTypeMismatchError("NRT3211", "'parent' is not an environment");
+  }
+  setParentEnvironment(environment, parent);
+  return environment;
+}
+
 async function builtinParentFrame(invocation: BuiltinInvocation): Promise<REnvironment> {
   const matched = await matchExact(invocation, ["n"]);
   const offset = matched.has("n") ? nonNegativeInteger(matched.get("n"), "n") : 1;
@@ -17855,6 +17924,27 @@ async function builtinRequire(invocation: BuiltinInvocation): Promise<RLogicalVe
     invocation.context.allocate(1);
     return logicalVector([false]);
   }
+}
+
+function builtinInstallPackages(): never {
+  throw new RUnsupportedFeatureError(
+    "NRU6178",
+    "install.packages() is unavailable at runtime; resolve and pack source packages at build time with @nativr/package-tools.",
+  );
+}
+
+function builtinPackageSkeleton(): never {
+  throw new RUnsupportedFeatureError(
+    "NRU6178",
+    "package.skeleton() cannot write a host source tree from the browser runtime.",
+  );
+}
+
+function builtinTar(): never {
+  throw new RUnsupportedFeatureError(
+    "NRU6178",
+    "tar() cannot create or invoke host archives from the browser runtime.",
+  );
 }
 
 async function builtinRequireNamespace(invocation: BuiltinInvocation): Promise<RLogicalVector> {
@@ -19820,6 +19910,10 @@ async function builtinAsCharacter(invocation: BuiltinInvocation): Promise<RValue
   if (isRomanValue(input)) return asCharacterRoman(invocation);
   if (isNumericVersionValue(input)) return numericVersionStrings(input, invocation);
   if (input.type === "null") return characterVector([]);
+  if (input.type === "symbol") {
+    invocation.context.allocate(1);
+    return characterVector([input.name]);
+  }
   if (!isAtomic(input)) {
     throw new RTypeMismatchError("NRT3197", "as.character() requires NULL or an atomic vector.");
   }
@@ -21557,14 +21651,10 @@ async function builtinAsList(invocation: BuiltinInvocation): Promise<RValue> {
     invocation.context.allocate(value.length);
     return listValue(value.values, vectorNames(value));
   }
-  if (value.type === "language" && value.expression.kind === "CallExpression") {
-    const entries = [
-      quoteAst(value.expression.callee),
-      ...value.expression.arguments.map((argument) => quoteAst(argument.value)),
-    ];
-    const names = ["", ...value.expression.arguments.map((argument) => argument.name ?? "")];
-    invocation.context.allocate(entries.length);
-    return listValue(entries, names);
+  if (value.type === "language") {
+    const entries = asVectorLanguageEntries(value);
+    invocation.context.allocate(entries.values.length);
+    return listValue(entries.values, entries.names);
   }
   if (!isAtomic(value)) {
     throw new RTypeMismatchError(
@@ -21835,6 +21925,12 @@ async function builtinNames(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["x"]);
   const value = required(matched, "x", "names");
   if (value.type === "null") return R_NULL;
+  if (value.type === "language") {
+    const names = asVectorLanguageEntries(value).names;
+    if (names === undefined) return R_NULL;
+    invocation.context.allocate(names.length);
+    return characterVector(names);
+  }
   if (!isVector(value) && value.type !== "pairlist") {
     throw new RTypeMismatchError(
       "NRT3106",
@@ -50504,6 +50600,23 @@ async function builtinMethodsAs(invocation: BuiltinInvocation): Promise<RValue> 
     "NRE2161",
     `No method or default can coerce '${sourceClasses[0] ?? object.type}' to '${target}'.`,
   );
+}
+
+async function builtinMethodsIs(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["object", "class2"]);
+  const object = required(matched, "object", "is");
+  const target = characterScalar(required(matched, "class2", "is"), "class2");
+  const classes = methodsCoercionSourceClasses(object, invocation);
+  const isVector =
+    target === "vector" &&
+    object.type !== "null" &&
+    object.type !== "environment" &&
+    object.type !== "closure" &&
+    object.type !== "builtin" &&
+    object.type !== "language" &&
+    object.type !== "symbol" &&
+    object.type !== "formula";
+  return logicalVector([target === "ANY" || isVector || classes.includes(target) ? 1 : 0]);
 }
 
 function methodsCoercionSourceClasses(

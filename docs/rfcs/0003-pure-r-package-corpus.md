@@ -9,7 +9,13 @@ Status: **accepted; implementation in progress**
 - **holdout** packages are not used to guide implementation before their scheduled evaluation.
 
 Moving a package out of holdout is a recorded corpus revision. All source URLs, versions, dependency
-closures, and SHA-256 digests are pinned. Live repository state cannot redefine the corpus.
+closures, source-archive SHA-256 digests, and evaluated NativR artifact SHA-256 digests are pinned.
+The two digest domains are recorded separately; live repository state cannot redefine the corpus.
+
+The first holdout rotation evaluated `assertthat 0.2.1` and `crayon 1.5.3`. Both complete P1 and
+record an exact P2 blocker: the missing standard `tools` namespace dependency for `assertthat`, and
+the relative `tools/ansi-palettes.txt` namespace resource read for `crayon`. Neither is described as
+compatible. `praise 1.0.0` and `prettyunits 1.2.0` replace them as uninspected P0 holdouts.
 
 ## Validation tiers
 

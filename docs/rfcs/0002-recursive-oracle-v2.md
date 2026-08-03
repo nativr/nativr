@@ -36,3 +36,8 @@ selected policy accepts them. Platform adaptations must identify the matching en
 3. Add conditions, language values, closures, environments, shared references, cycles, and RNG.
 4. Migrate every behavioral claim; retire scalar-extraction workarounds only after equivalent v2
    evidence exists.
+
+The current gate completes the first rollout slice with five exact cases: nested arbitrary
+attributes, data frames, shared environment identity, nested language-call structure, and closure
+formals/body/environment capture. Conditions, cycles, RNG, and migration of the remaining behavioral
+surface are still pending; v1 remains the broad regression gate.

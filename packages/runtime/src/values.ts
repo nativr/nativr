@@ -95,11 +95,11 @@ export type RVector =
   | RCharacterVector
   | RList;
 
-/** A lexical environment with mutable bindings and an immutable parent link. */
+/** A lexical environment with mutable bindings and an R-compatible replaceable parent link. */
 export interface REnvironment {
   readonly type: "environment";
   readonly id: number;
-  readonly parent: REnvironment | null;
+  parent: REnvironment | null;
   /** Reference-semantics attributes; mutation is visible through every environment alias. */
   readonly attributes: Map<string, RValue>;
   /** Whether unordered binding enumeration follows hashed-environment insertion order. */
