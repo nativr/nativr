@@ -29,11 +29,11 @@ Encoding: UTF-8
 NeedsCompilation: no`,
   namespace: `
 importFrom(grDevices, devAskNewPage)
-importFrom(graphics, axis, barplot, plot.new, plot.window, rect, title)
+importFrom(graphics, abline, axis, barplot, plot.new, plot.window, rect, title)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median, ts.plot)
 importFrom(utils, download.file, packageDescription, packageName, packageVersion)
-  export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, annotated_plot, ask_new_pages, find_tools, create_file, copy_resource, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, socket_exchange, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, package_files, installed_version, namespace_names, process_id, library_paths, loaded_module_paths, native_encoding, shell_quote, standard_output, sink_lines, write_sass_variable)
+  export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, annotated_plot, reference_lines, ask_new_pages, find_tools, create_file, copy_resource, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, socket_exchange, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, package_files, installed_version, namespace_names, process_id, library_paths, loaded_module_paths, native_encoding, shell_quote, standard_output, sink_lines, write_sass_variable)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -84,6 +84,11 @@ annotated_plot <- function(label = "package title") {
   plot.window(c(0, 1), c(0, 1))
   title(label)
   invisible(label)
+}
+reference_lines <- function(intercept = 1, slope = 2) {
+  plot.new()
+  plot.window(c(0, 4), c(0, 9))
+  abline(intercept, slope, h = 4, v = 2, col = c("red", "blue", "green"), lwd = 3)
 }
 ask_new_pages <- function(ask = TRUE) devAskNewPage(ask)
 find_tools <- function(names) Sys.which(names)
@@ -4652,6 +4657,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "pipe_lines",
       "plot_series",
       "process_id",
+      "reference_lines",
       "remote_lines",
       "remove_files",
       "repository_versions",
@@ -9730,6 +9736,178 @@ describe("complete inline source-to-result vertical slice", () => {
     await commandLimited.dispose();
   });
 
+  it("draws knitr's usage-ranked reference lines through the graphics journal", async () => {
+    const observed: unknown[] = [];
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      onGraphics: (event) => observed.push(event),
+    });
+    const result = await runtime.evalDetailed(`
+      plot.new()
+      plot.window(c(0, 10), c(0, 10))
+      graphics::abline(
+        a = 1,
+        b = 0.5,
+        h = c(2, 3),
+        v = c(4, 5),
+        col = c("red", "blue", "green"),
+        lty = c(1, 2),
+        lwd = c(1, 2, 3)
+      )
+    `);
+    expect(result.value).toBeNull();
+    expect(result.visible).toBe(false);
+    expect(result.graphics.slice(0, 2)).toEqual([
+      { kind: "new-page" },
+      { kind: "window", xlim: [0, 10], ylim: [0, 10] },
+    ]);
+    expect(result.graphics[2]).toEqual({
+      kind: "segments",
+      segments: [
+        {
+          x0: 0,
+          y0: 1,
+          x1: 10,
+          y1: 6,
+          color: "#FF0000FF",
+          lineType: "solid",
+          lineWidth: 1,
+        },
+        {
+          x0: 0,
+          y0: 2,
+          x1: 10,
+          y1: 2,
+          color: "#0000FFFF",
+          lineType: "44",
+          lineWidth: 2,
+        },
+        {
+          x0: 0,
+          y0: 3,
+          x1: 10,
+          y1: 3,
+          color: "#00FF00FF",
+          lineType: "solid",
+          lineWidth: 3,
+        },
+        {
+          x0: 4,
+          y0: 0,
+          x1: 4,
+          y1: 10,
+          color: "#FF0000FF",
+          lineType: "44",
+          lineWidth: 1,
+        },
+        {
+          x0: 5,
+          y0: 0,
+          x1: 5,
+          y1: 10,
+          color: "#0000FFFF",
+          lineType: "solid",
+          lineWidth: 2,
+        },
+      ],
+    });
+    expect(observed).toEqual(result.graphics);
+    expect(await runtime.eval("names(formals(graphics::abline))")).toEqual([
+      "a",
+      "b",
+      "h",
+      "v",
+      "reg",
+      "coef",
+      "untf",
+      "...",
+    ]);
+
+    const model = await runtime.evalDetailed(`
+      x <- 0:4
+      y <- 2 + 3 * x
+      abline(reg = lm(y ~ x))
+    `);
+    expect(model.graphics).toEqual([
+      {
+        kind: "segments",
+        segments: [
+          {
+            x0: 0,
+            y0: 2,
+            x1: 8 / 3,
+            y1: 10,
+            color: "#000000FF",
+            lineType: "solid",
+            lineWidth: 1,
+          },
+        ],
+      },
+    ]);
+    const custom = await runtime.evalDetailed(`
+      coef.origin_fit <- function(object, ...) object$slope
+      fit <- structure(list(slope = 2), class = "origin_fit")
+      abline(reg = fit)
+    `);
+    expect(custom.graphics).toMatchObject([
+      {
+        kind: "segments",
+        segments: [{ x0: 0, y0: 0, x1: 5, y1: 10 }],
+      },
+    ]);
+
+    const overridden = await runtime.evalDetailed(`
+      abline(a = 9, b = 8, reg = list(coefficients = c(7, 6)), coef = c(1, 2, 3))
+    `);
+    expect(overridden.warnings.map((warning) => warning.message)).toEqual([
+      "'a' is overridden by 'reg'",
+      "'a' and 'b' are overridden by 'coef'",
+    ]);
+    expect(overridden.graphics).toMatchObject([
+      { kind: "segments", segments: [{ x0: 0, y0: 1, x1: 4.5, y1: 10 }] },
+    ]);
+    await expect(runtime.eval("abline(a = c('1', '2'))")).resolves.toBeNull();
+    await expect(runtime.eval("abline(a = 1)")).rejects.toMatchObject({ code: "NRT3335" });
+    await expect(runtime.eval("abline(coef = 1)")).rejects.toMatchObject({ code: "NRT3335" });
+    await expect(runtime.eval("abline(reg = 1)")).rejects.toMatchObject({ code: "NRT3335" });
+    await expect(runtime.eval("abline(h = 1, col = 'not-a-colour')")).rejects.toMatchObject({
+      code: "NRT3297",
+    });
+    await expect(runtime.eval("abline(h = 1, lwd = numeric())")).resolves.toBeNull();
+
+    await runtime.eval("recorded_abline <- recordPlot()\ndev.hold()");
+    const replayed = await runtime.evalDetailed("replayPlot(recorded_abline)\ndev.flush()");
+    expect(replayed.graphics.at(-1)).toEqual(overridden.graphics[0]);
+    await runtime.reset();
+    await expect(runtime.eval("abline(h = 1)")).rejects.toMatchObject({ code: "NRE2190" });
+    await runtime.dispose();
+
+    const packaged = await createR({ execution: "inline", assets, packages: [pureRFixture] });
+    const packageResult = await packaged.evalDetailed("nativrfixture::reference_lines()");
+    expect(packageResult.value).toBeNull();
+    expect(packageResult.visible).toBe(false);
+    expect(packageResult.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "window",
+      "segments",
+    ]);
+    if (packageResult.graphics[2]?.kind === "segments") {
+      expect(packageResult.graphics[2].segments).toHaveLength(3);
+    }
+    await packaged.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxOutputBytes: 100 },
+    });
+    await expect(limited.eval("plot.new()\nabline(h = 1:2)")).rejects.toMatchObject({
+      code: "NRL4007",
+    });
+    await limited.dispose();
+  });
+
   it("draws posterior's usage-ranked interval segments through the graphics journal", async () => {
     const observed: unknown[] = [];
     const runtime = await createR({
@@ -12996,7 +13174,7 @@ NeedsCompilation: no
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.264.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.265.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -13036,6 +13214,7 @@ NeedsCompilation: no
       { name: "image", compatibility: "shape" },
       { name: "image.default", compatibility: "shape" },
       { name: "rasterImage", compatibility: "shape" },
+      { name: "abline", compatibility: "shape" },
       { name: "segments", compatibility: "shape" },
       { name: "lines", compatibility: "shape" },
       { name: "lines.default", compatibility: "shape" },

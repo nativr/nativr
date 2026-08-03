@@ -9386,6 +9386,39 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "abline-usage-ranked-formals-defaults-and-visibility",
+    "code": "f <- formals(graphics::abline)\nplot.new()\nplot.window(c(0, 10), c(0, 10))\nshown <- withVisible(graphics::abline(a = 1, b = 2, h = c(3, 4), v = 5))\nc(typeof(graphics::abline), names(f), identical(f$a, NULL), identical(f$b, NULL), identical(f$h, NULL), identical(f$v, NULL), identical(f$reg, NULL), identical(f$coef, NULL), identical(f$untf, FALSE), is.null(shown$value), shown$visible)",
+    "expected": [
+      "closure",
+      "a",
+      "b",
+      "h",
+      "v",
+      "reg",
+      "coef",
+      "untf",
+      "...",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "FALSE"
+    ],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "abline-usage-ranked-coefficients-models-and-boundaries",
+    "code": "plot.new()\nplot.window(c(0, 10), c(0, 10))\ncoef.origin_fit <- function(object, ...) object$slope\nfit <- structure(list(slope = 2), class = \"origin_fit\")\na <- withVisible(abline(a = c(1, 2)))\nb <- withVisible(abline(b = 3))\nd <- withVisible(abline(reg = fit))\ne <- withVisible(abline(reg = list(coefficients = c(4, 5))))\nf <- withVisible(abline(coef = c(6, 7, 8), h = c(NA, NaN, Inf, 1), v = numeric()))\nc(a$visible, b$visible, d$visible, e$visible, f$visible, inherits(try(abline(a = 1), silent = TRUE), \"try-error\"), inherits(try(abline(coef = 1), silent = TRUE), \"try-error\"), inherits(try(abline(a = NA, b = 1), silent = TRUE), \"try-error\"), inherits(try(abline(reg = 1), silent = TRUE), \"try-error\"), inherits(try(abline(h = 1, col = \"not-a-colour\"), silent = TRUE), \"try-error\"), is.null(abline(h = 1, lwd = numeric())))",
+    "expected": [false, false, false, false, false, true, true, true, true, true, true],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "download-file-formals-and-defaults",
     "code": "f <- formals(utils::download.file)\nc(names(f), identical(f$quiet, FALSE), identical(f$mode, \"w\"), identical(f$cacheOK, TRUE), identical(f$extra, quote(getOption(\"download.file.extra\"))), is.null(f$headers))",
     "expected": [

@@ -628,6 +628,11 @@ loader.
   lines cross an explicitly admitted Ispell-compatible `systemCommand` policy and return a standard
   classed result. Applications must provide the checker/dictionary implementation. Built-in document
   filters and R-level serialized dictionaries are not yet admitted.
+- `graphics::abline()` supports knitr's measured reference-line call without translating package
+  source. Source-only packages can import it normally, pass fitted model objects through their own
+  `coef.*` methods, and draw coefficient, horizontal, and vertical lines through the same default
+  Worker/Canvas journal. The current claim is limited to linear plot windows; logarithmic transforms
+  and expanded clipping remain explicit capability boundaries.
 - `stats::ts.plot()` supports magrittr's measured exposition-pipe example without translating
   magrittr or the calling package. Numeric vectors and regular vector/matrix series align on a
   shared bounded time grid, missing union cells split paths, and styles/annotations traverse the

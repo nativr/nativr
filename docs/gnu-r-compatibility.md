@@ -1012,6 +1012,16 @@ and inline/default-Worker execution. Spell checking requires matching `executabl
 `systemCommand` policies; built-in filters, serialized dictionaries, and ambient PATH discovery
 remain incomplete.
 
+The reference-line increment raises current name overlap to 644 of 2,522. Rank 364
+`graphics::abline` covers knitr's measured plot annotation call through the existing owned
+`segments` journal. GNU R 4.6 black-box evidence fixes its eight formals/defaults, invisible result,
+coefficient/model precedence, warnings, two-element `a` shorthand, one-coefficient through-origin
+models, arbitrary S3 `coef.*`, vectorized horizontal/vertical inputs, omissions, and input errors.
+NativR evidence adds exact linear-window geometry and style ordering, resource limits,
+record/replay, unchanged source-only package imports, and default Worker/Canvas rendering. This is a
+shape-level linear-device claim: logarithmic `untf` transformation, extended `xpd` clipping, and
+device-exact cap/join metrics remain incomplete.
+
 ## Completion evidence
 
 The objective is complete only when:

@@ -4,11 +4,11 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 661,
-    "overlappingNames": 643,
-    "missingReferenceNames": 1879,
+    "nativrRegisteredNames": 662,
+    "overlappingNames": 644,
+    "missingReferenceNames": 1878,
     "nativrExtensionNames": 18,
-    "nameCoverage": 0.254956
+    "nameCoverage": 0.255353
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 466, "nameCoverage": 0.340892 },
@@ -29,8 +29,8 @@
     {
       "package": "graphics",
       "callableNames": 88,
-      "overlappingNames": 28,
-      "nameCoverage": 0.318182
+      "overlappingNames": 29,
+      "nameCoverage": 0.329545
     },
     { "package": "datasets", "callableNames": 0, "overlappingNames": 0, "nameCoverage": 1 }
   ],
@@ -91,6 +91,7 @@
     "View",
     "[.hexmode",
     "^",
+    "abline",
     "abs",
     "aggregate",
     "alist",
@@ -991,7 +992,6 @@
     "[[<-.factor",
     "[[<-.numeric_version",
     "abbreviate",
-    "abline",
     "acf",
     "acf2AR",
     "acos",

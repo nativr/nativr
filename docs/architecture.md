@@ -385,3 +385,9 @@ annotation values and session `par()` state into the existing owned `text` displ
 Browser Canvas, PNG, PDF, record/replay, inline callbacks, and the Worker protocol therefore consume
 one event shape. Source-only packages resolve the callable through ordinary NAMESPACE imports; no
 package name or translated JavaScript enters the graphics layer.
+
+Reference lines follow the same rule. `graphics::abline()` resolves direct coefficients or generic
+model `coef.*` results, clips finite lines to the owned linear window, and emits the existing
+`segments` event alongside vectorized horizontal and vertical lines. Record/replay, Canvas, PNG,
+PDF, inline callbacks, and Worker transport therefore need no new protocol or renderer branch, and
+source-only packages import the ordinary graphics callable without a package adapter.

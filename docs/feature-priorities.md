@@ -75,16 +75,16 @@ signal.
 
 | Priority | Measured rank | Callable           | Weighted reach | Packages | Observed calls |
 | -------: | ------------: | ------------------ | -------------: | -------: | -------------: |
-|        1 |           363 | `aspell`           |           1.0% |        1 |              2 |
-|        2 |           364 | `abline`           |           1.0% |        1 |              1 |
-|        3 |           365 | `browseVignettes`  |           1.0% |        1 |              1 |
-|        4 |           366 | `dev.control`      |           1.0% |        1 |              1 |
-|        5 |           368 | `getFromNamespace` |           0.9% |        1 |             37 |
-|        6 |           370 | `help`             |           0.9% |        1 |             15 |
-|        7 |           380 | `curve`            |           0.7% |        1 |              1 |
-|        8 |           392 | `tracemem`         |           0.7% |        1 |              2 |
-|        9 |           403 | `update.packages`  |           0.7% |        1 |              1 |
-|       10 |           406 | `df`               |           0.7% |        1 |              1 |
+|        1 |           365 | `browseVignettes`  |           1.0% |        1 |              1 |
+|        2 |           366 | `dev.control`      |           1.0% |        1 |              1 |
+|        3 |           368 | `getFromNamespace` |           0.9% |        1 |             37 |
+|        4 |           370 | `help`             |           0.9% |        1 |             15 |
+|        5 |           380 | `curve`            |           0.7% |        1 |              1 |
+|        6 |           392 | `tracemem`         |           0.7% |        1 |              2 |
+|        7 |           403 | `update.packages`  |           0.7% |        1 |              1 |
+|        8 |           406 | `df`               |           0.7% |        1 |              1 |
+|        9 |           407 | `dist`             |           0.7% |        1 |              1 |
+|       10 |           409 | `simulate`         |           0.7% |        1 |              1 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -708,8 +708,10 @@ simplify to a common-type matrix, unequal lengths remain a list, scalar inputs s
 names, and equal-dimensional inputs can retain a higher array shape and dimension names. List-valued
 cells, zero-length exception controls, promotion, names, non-list identity, and invalid `higher`
 boundaries have GNU R black-box evidence. Rank 363 `aspell` is now implemented through the explicit
-Ispell-compatible host boundary. Ranks 364 `abline`, 365 `browseVignettes`, and 366 `dev.control`
-remain package-tooling or graphics-device work; `lengths` was already supported. Rank 368
+Ispell-compatible host boundary. Rank 364 `abline` is now implemented over the existing browser
+graphics journal with coefficient/model, horizontal/vertical vector, style-recycling, record/replay,
+pure-R package, and Worker evidence. Ranks 365 `browseVignettes` and 366 `dev.control` remain
+package-tooling or graphics-device work; `lengths` was already supported. Rank 368
 `getFromNamespace` has 37 apparent calls, but all are backports examples that fetch that package's
 private implementations before invoking them. It therefore remains tied to the general package
 namespace loader; implementing only a core-namespace facade would not run the measured examples.
@@ -1733,6 +1735,13 @@ ties:
      have evidence. The runtime reuses the explicit `executablePaths`/`systemCommand` policy and
      never bundles a dictionary or process runner. Built-in Rd/Sweave/R/pot/dcf/md filters,
      serialized R dictionaries, exact checker diagnostics, and ambient program discovery remain
+     compatibility depth.
+167. Browser reference lines: rank-364 `graphics::abline` represents knitr's measured plot-change
+     call at 1.0% download-weighted reach. Exact formals/defaults, coefficient precedence and
+     warnings, `a`/`b`, `coef`, one- and two-coefficient model objects through arbitrary S3
+     `coef.*`, vectorized `h`/`v`, continuous style recycling, clipping, display-list replay,
+     unchanged pure-R package code, and default Worker/Canvas rendering have evidence. Logarithmic
+     transforms, non-plot-region `xpd` extension, and exact device line-cap/join metrics remain
      compatibility depth.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new

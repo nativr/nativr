@@ -742,6 +742,12 @@ browser graphics journal. Main, subtitle, and axis labels use active `par()` sty
 record/replay, PNG, and PDF. The source-only package fixture imports and calls `title` unchanged,
 demonstrating the intended Base-R-foundation-to-package extension model.
 
+Rank 364 `graphics::abline()` now covers knitr's measured reference-line call through that same
+browser graphics journal. Intercept/slope, coefficient vectors, fitted models through generic
+`coef.*`, horizontal/vertical vectors, styles, record/replay, and unchanged source-only package code
+run inline and in the default Worker/Canvas path. The current evidence is for linear plot windows;
+logarithmic transformation and expanded clipping remain explicit compatibility depth.
+
 Rank 330 `base::sink()` now covers utf8's two measured output-redirection calls and the broader GNU
 R stack semantics they rely on. Output diversions persist across `r.eval()` calls and errors, nest
 up to 19 levels, tee with `split = TRUE`, and restore owned file/connection targets

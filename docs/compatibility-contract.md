@@ -2325,3 +2325,13 @@ main/subtitle/axis-label style families. Its normalized text events execute thro
 record/replay, Canvas, PNG, and PDF paths, including unchanged source-only package code. Browser
 plotmath glyph layout, exact device-specific margin metrics, Hershey fonts, and the rest of the
 base-graphics layout engine remain compatibility depth.
+
+Usage-ranked `graphics::abline()` has GNU R 4.6 differential evidence for its exact
+`a, b, h, v, reg, coef, untf, ...` signature, invisible `NULL`, two-element `a` shorthand, `b`
+through-origin behavior, coefficient and model precedence/warnings, one-coefficient model slope,
+arbitrary registered S3 `coef.*`, nonfinite horizontal/vertical omission, empty styles, and invalid
+inputs. NativR clips finite intercept/slope lines to the active linear plot window and emits
+horizontal/vertical segments in GNU R's style-recycling order. The same bounded events pass through
+inline callbacks, the Worker protocol, Canvas, PNG, PDF, and record/replay, including unchanged
+source-only package code. Log-axis `untf`, clipping outside the plot region when `xpd` expands it,
+and exact device line-cap/join behavior are not part of this shape-level claim.

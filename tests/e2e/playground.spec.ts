@@ -813,6 +813,33 @@ test("runs the required Worker examples without evaluation network traffic", asy
   });
   expect(titlePixels).toBeGreaterThan(0);
 
+  await page.locator("#source").fill("nativrdemo::reference_lines()");
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("null");
+  await expect(page.locator("#graphics-count")).toHaveText("3");
+  const referenceLinePixels = await page
+    .locator("#graphics")
+    .evaluate((canvas: HTMLCanvasElement) => {
+      const context = canvas.getContext("2d");
+      if (context === null) return { red: 0, blue: 0, green: 0 };
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      let red = 0;
+      let blue = 0;
+      let green = 0;
+      for (let index = 0; index < pixels.length; index += 4) {
+        const r = pixels[index] ?? 0;
+        const g = pixels[index + 1] ?? 0;
+        const b = pixels[index + 2] ?? 0;
+        if (r > 160 && g < 80 && b < 80) red += 1;
+        if (r < 80 && g < 80 && b > 160) blue += 1;
+        if (r < 80 && g > 80 && b < 80) green += 1;
+      }
+      return { red, blue, green };
+    });
+  expect(referenceLinePixels.red).toBeGreaterThan(0);
+  expect(referenceLinePixels.blue).toBeGreaterThan(0);
+  expect(referenceLinePixels.green).toBeGreaterThan(0);
+
   await page.locator("#source").fill("nativrdemo::sink_lines()");
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText('"package-worker-sink"');

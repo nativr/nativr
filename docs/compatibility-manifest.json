@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.264.0",
+  "languageSubsetVersion": "0.265.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -649,6 +649,7 @@
         { "name": "image", "compatibility": "shape" },
         { "name": "image.default", "compatibility": "shape" },
         { "name": "rasterImage", "compatibility": "shape" },
+        { "name": "abline", "compatibility": "shape" },
         { "name": "segments", "compatibility": "shape" },
         { "name": "lines", "compatibility": "shape" },
         { "name": "lines.default", "compatibility": "shape" },

@@ -822,3 +822,10 @@ R-callable invocation, structured `systemCommand` transport, and ordinary data-f
 no dependency, protocol event, dictionary, process launcher, host PATH scan, or package-specific
 translation. The measured Worker is 406.4 KiB gzip (416,123 bytes), so the ceiling rises narrowly
 from 405 KiB to 407 KiB; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.265 adds usage-ranked `graphics::abline` by projecting coefficient/model and
+horizontal/vertical line forms into the existing `segments` display-list event. It adds no
+dependency, protocol event, renderer, package-specific translation, or host capability; inline,
+Worker, Canvas, PNG, PDF, and record/replay paths reuse the same journal. The measured Worker is
+407.4 KiB gzip (417,200 bytes), so the ceiling rises narrowly from 407 KiB to 408 KiB; client and
+parser-Wasm budgets remain unchanged.

@@ -2779,6 +2779,29 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     builtinRasterImage,
     "invisible",
   ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "graphics",
+      "abline",
+      ["a", "b", "h", "v", "reg", "coef", "untf", "..."],
+      "shape",
+      builtinAbline,
+      "invisible",
+    ),
+    [
+      { name: "a", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      { name: "b", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      { name: "h", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      { name: "v", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      { name: "reg", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      { name: "coef", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      {
+        name: "untf",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      { name: "..." },
+    ],
+  ),
   definePackageBuiltin(
     "graphics",
     "segments",
@@ -34569,6 +34592,269 @@ function graphicsPolygonLineTypes(value: RValue | undefined): readonly string[] 
   if (value === undefined || value.type === "null") return ["solid"];
   if (isVector(value) && value.length === 0) return ["solid"];
   return graphicsSegmentLineTypes(value);
+}
+
+async function builtinAbline(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched, dots } = matchLazyArgumentsWithDots(invocation, [
+    "a",
+    "b",
+    "h",
+    "v",
+    "reg",
+    "coef",
+    "untf",
+  ]);
+  const values = new Map<string, RValue>();
+  for (const [name, argument] of matched) {
+    if (!argument.promise.missing) values.set(name, await invocation.force(argument.promise));
+  }
+
+  const state = graphicsState(invocation, "abline");
+  const controls = new Map<string, RValue>();
+  const graphicalParameters = new Set(["col", "lty", "lwd", "xpd", "lend", "ljoin", "lmitre"]);
+  for (const argument of dots) {
+    if (argument.promise.missing) {
+      throw new REvaluationError(
+        "NRE2103",
+        `Argument '${argument.name ?? ""}' is missing in abline().`,
+      );
+    }
+    const value = await invocation.force(argument.promise);
+    if (argument.name === undefined || !graphicalParameters.has(argument.name)) {
+      invocation.context.warn({
+        code: "NRW1128",
+        message: `"${argument.name ?? ""}" is not a graphical parameter`,
+      });
+      continue;
+    }
+    if (controls.has(argument.name)) {
+      throw new REvaluationError("NRE2102", `Argument '${argument.name}' matched more than once.`);
+    }
+    controls.set(argument.name, value);
+  }
+  for (const name of ["xpd", "lend", "ljoin", "lmitre"] as const) {
+    const value = controls.get(name);
+    const template = state.parameters.get(name);
+    if (value !== undefined && template !== undefined)
+      validateGraphicsParameter(name, value, template);
+  }
+
+  // GNU R consults untf only on logarithmic axes. NativR's current plot window is linear, but the
+  // promise is deliberately forced so side effects and argument matching remain observable.
+  void values.get("untf");
+
+  let a = values.get("a");
+  let b = values.get("b");
+  const reg = values.get("reg");
+  const suppliedCoef = values.get("coef");
+  if (reg !== undefined && reg.type !== "null") {
+    if (a !== undefined && a.type !== "null") {
+      invocation.context.warn({ code: "NRW1130", message: "'a' is overridden by 'reg'" });
+    }
+    const coefficients = await ablineModelCoefficients(invocation, reg);
+    if (coefficients.length === 1) {
+      a = doubleVector([0]);
+      b = doubleVector([coefficients[0] ?? Number.NaN]);
+    } else {
+      a = doubleVector([coefficients[0] ?? Number.NaN]);
+      b = doubleVector([coefficients[1] ?? Number.NaN]);
+    }
+  }
+  if (suppliedCoef !== undefined && suppliedCoef.type !== "null") {
+    if ((a !== undefined && a.type !== "null") || (b !== undefined && b.type !== "null")) {
+      invocation.context.warn({
+        code: "NRW1131",
+        message: "'a' and 'b' are overridden by 'coef'",
+      });
+    }
+    const coefficients = ablineNumericValues(suppliedCoef, "coef", invocation);
+    a = doubleVector([coefficients[0] ?? Number.NaN]);
+    b = doubleVector([coefficients[1] ?? Number.NaN]);
+  }
+
+  const segments: Array<{ readonly coordinates: readonly [number, number, number, number] }> = [];
+  const aValues =
+    a === undefined || a.type === "null" ? [] : ablineNumericValues(a, "a", invocation);
+  const bValues =
+    b === undefined || b.type === "null" ? [] : ablineNumericValues(b, "b", invocation);
+  if (aValues.length > 0 || bValues.length > 0) {
+    let intercept: number;
+    let slope: number;
+    if (bValues.length === 0) {
+      if (aValues.length !== 2) {
+        throw new RTypeMismatchError("NRT3335", "invalid a=, b= specification");
+      }
+      intercept = aValues[0] ?? Number.NaN;
+      slope = aValues[1] ?? Number.NaN;
+    } else {
+      intercept = aValues.length === 0 ? 0 : (aValues[0] ?? Number.NaN);
+      slope = bValues[0] ?? Number.NaN;
+    }
+    if (!Number.isFinite(intercept) || !Number.isFinite(slope)) {
+      throw new RTypeMismatchError("NRT3335", "'a' and 'b' must be finite");
+    }
+    const clipped = clipAbline(intercept, slope, state.xlim, state.ylim);
+    if (clipped !== undefined) segments.push({ coordinates: clipped });
+  }
+
+  for (const y of ablineOptionalCoordinates(values.get("h"), "h", invocation)) {
+    if (y !== undefined) {
+      segments.push({ coordinates: [state.xlim[0], y, state.xlim[1], y] });
+    }
+  }
+  for (const x of ablineOptionalCoordinates(values.get("v"), "v", invocation)) {
+    if (x !== undefined) {
+      segments.push({ coordinates: [x, state.ylim[0], x, state.ylim[1]] });
+    }
+  }
+
+  invocation.setResultVisibility("invisible");
+  if (segments.length === 0) return R_NULL;
+  const colors = graphicsSegmentColours(
+    controls.get("col") ?? state.parameters.get("col"),
+    invocation,
+  );
+  const lineTypes = graphicsSegmentLineTypes(controls.get("lty") ?? state.parameters.get("lty"));
+  const lineWidthSource = controls.get("lwd") ?? state.parameters.get("lwd");
+  if (lineWidthSource !== undefined && isVector(lineWidthSource) && lineWidthSource.length === 0) {
+    return R_NULL;
+  }
+  const lineWidths = graphicsSegmentLineWidths(lineWidthSource);
+  if (colors.length === 0 || lineTypes.length === 0 || lineWidths.length === 0) return R_NULL;
+
+  invocation.context.allocate(segments.length * 8);
+  const rendered: RGraphicsSegment[] = [];
+  for (let index = 0; index < segments.length; index += 1) {
+    invocation.context.checkpoint();
+    const color = colors[index % colors.length];
+    const lineType = lineTypes[index % lineTypes.length];
+    const lineWidth = lineWidths[index % lineWidths.length];
+    if (
+      color === undefined ||
+      color[3] === 0 ||
+      lineType === undefined ||
+      lineType === "blank" ||
+      lineWidth === undefined
+    ) {
+      continue;
+    }
+    const [x0, y0, x1, y1] = segments[index]!.coordinates;
+    rendered.push({
+      x0,
+      y0,
+      x1,
+      y1,
+      color: graphicsCssColour(color),
+      lineType,
+      lineWidth,
+    });
+  }
+  if (rendered.length > 0)
+    writeGraphics(invocation, state, { kind: "segments", segments: rendered });
+  return R_NULL;
+}
+
+async function ablineModelCoefficients(
+  invocation: BuiltinInvocation,
+  model: RValue,
+): Promise<readonly number[]> {
+  const argument: BuiltinCallArgument = {
+    promise: createForcedPromise(model, invocation.currentEnvironment()),
+  };
+  const dispatched = await invocation.dispatchS3IfPresent("coef", model, [argument]);
+  let coefficients = dispatched;
+  if (coefficients === undefined && model.type === "list") {
+    const names = vectorNames(model);
+    const index = names?.indexOf("coefficients") ?? -1;
+    if (index >= 0) coefficients = model.values[index] ?? R_NULL;
+  }
+  if (coefficients === undefined) {
+    throw new RTypeMismatchError("NRT3335", "invalid 'reg' argument");
+  }
+  return ablineNumericValues(coefficients, "reg", invocation);
+}
+
+function ablineNumericValues(
+  value: RValue,
+  name: "a" | "b" | "coef" | "reg",
+  invocation: BuiltinInvocation,
+): readonly number[] {
+  if (!isAtomic(value) || value.type === "complex" || value.type === "raw" || isFactor(value)) {
+    throw new RTypeMismatchError("NRT3335", `invalid '${name}' argument`);
+  }
+  const numeric = coerceAtomicToDouble(value, invocation);
+  return Array.from({ length: numeric.length }, (_, index) =>
+    isMissing(numeric, index) ? Number.NaN : (numeric.values[index] ?? Number.NaN),
+  );
+}
+
+function ablineOptionalCoordinates(
+  value: RValue | undefined,
+  name: "h" | "v",
+  invocation: BuiltinInvocation,
+): readonly (number | undefined)[] {
+  if (value === undefined || value.type === "null") return [];
+  if (!isAtomic(value) || value.type === "complex" || value.type === "raw" || isFactor(value)) {
+    throw new RTypeMismatchError("NRT3335", `invalid '${name}' argument`);
+  }
+  const numeric = coerceAtomicToDouble(value, invocation);
+  return Array.from({ length: numeric.length }, (_, index) => {
+    if (isMissing(numeric, index)) return undefined;
+    const coordinate = numeric.values[index] ?? Number.NaN;
+    return Number.isFinite(coordinate) ? coordinate : undefined;
+  });
+}
+
+function clipAbline(
+  intercept: number,
+  slope: number,
+  xlim: readonly [number, number],
+  ylim: readonly [number, number],
+): readonly [number, number, number, number] | undefined {
+  const xmin = Math.min(...xlim);
+  const xmax = Math.max(...xlim);
+  const ymin = Math.min(...ylim);
+  const ymax = Math.max(...ylim);
+  const points: Array<readonly [number, number]> = [];
+  const add = (x: number, y: number): void => {
+    const epsilon =
+      Number.EPSILON * Math.max(1, Math.abs(x), Math.abs(y), xmax - xmin, ymax - ymin) * 16;
+    if (x < xmin - epsilon || x > xmax + epsilon || y < ymin - epsilon || y > ymax + epsilon)
+      return;
+    if (
+      points.some(
+        ([existingX, existingY]) =>
+          Math.abs(existingX - x) <= epsilon && Math.abs(existingY - y) <= epsilon,
+      )
+    )
+      return;
+    points.push([Math.max(xmin, Math.min(xmax, x)), Math.max(ymin, Math.min(ymax, y))]);
+  };
+  add(xmin, intercept + slope * xmin);
+  add(xmax, intercept + slope * xmax);
+  if (slope !== 0) {
+    add((ymin - intercept) / slope, ymin);
+    add((ymax - intercept) / slope, ymax);
+  }
+  if (points.length < 2) return undefined;
+  let selected: readonly [readonly [number, number], readonly [number, number]] = [
+    points[0]!,
+    points[1]!,
+  ];
+  let largestDistance = -1;
+  for (let left = 0; left < points.length; left += 1) {
+    for (let right = left + 1; right < points.length; right += 1) {
+      const xDistance = (points[right]?.[0] ?? 0) - (points[left]?.[0] ?? 0);
+      const yDistance = (points[right]?.[1] ?? 0) - (points[left]?.[1] ?? 0);
+      const distance = xDistance * xDistance + yDistance * yDistance;
+      if (distance > largestDistance) {
+        largestDistance = distance;
+        selected = [points[left]!, points[right]!];
+      }
+    }
+  }
+  const [start, end] = selected;
+  return [start[0], start[1], end[0], end[1]];
 }
 
 async function builtinSegments(invocation: BuiltinInvocation): Promise<RValue> {

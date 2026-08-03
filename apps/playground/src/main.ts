@@ -154,6 +154,11 @@ twice_mean(c(1, 2, 6))`,
     code: "checked <- nativrdemo::spell_lines()\nc(checked$Original, checked$Line, checked$Column, checked$Suggestions[[1]])",
   },
   {
+    id: "abline-package",
+    label: "Pure-R package reference lines",
+    code: "nativrdemo::reference_lines()",
+  },
+  {
     id: "pipe-package",
     label: "Pure-R package pipe",
     code: "nativrdemo::pipe_lines('nativr-lines')",

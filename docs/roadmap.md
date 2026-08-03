@@ -843,6 +843,11 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      bounded Ispell `-a` request. It returns GNU R-shaped `aspell` data frames inline and through
      the Worker without a bundled checker, dictionary, host PATH scan, or package-specific rewrite.
      Built-in document filters and R-level serialized dictionaries remain future depth.
+177. Usage-ranked browser reference lines: rank-364 `graphics::abline` composes active linear plot
+     limits, generic model coefficients, and the existing segment display list. Unchanged pure-R
+     package code runs inline and in the default Worker/Canvas path without a new renderer or
+     protocol event. Log-axis transformation, extended `xpd` clipping, and exact device stroke
+     metrics remain future depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

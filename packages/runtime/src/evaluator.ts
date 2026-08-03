@@ -406,6 +406,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
   [
     "graphics",
     new Set([
+      "abline",
       "axTicks",
       "axis",
       "barplot",
