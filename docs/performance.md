@@ -864,3 +864,13 @@ same journal, Worker protocol, Canvas/PNG/PDF consumers, and package loader. It 
 protocol event, renderer, host capability, generated JavaScript, or package-specific adapter. The
 measured Worker is 413.1 KiB gzip (423,045 bytes), 1,157 bytes above the previous 412 KiB ceiling,
 so the ceiling rises narrowly to 414 KiB; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.271 adds usage-ranked `methods::signature` and reusable multi-argument S4 method
+selection. Registration and dispatch remain evaluator-session maps over owned character signatures;
+they add no dependency, protocol event, package-specific rewrite, native payload, network access, or
+generated JavaScript. The measured Worker is 413.7 KiB gzip (423,613 bytes), within the existing 414
+KiB ceiling, so all budgets remain unchanged. The Node benchmark now embeds the built Wasm assets as
+data URLs and raises only its local step allowance, making the same benchmark portable on Windows
+without changing runtime defaults. This run measured 0.06 ms/op scalar parse/evaluation, 1.74 ms/op
+for a 100,000-element mean, 0.46 ms/op typed-array assignment, and 1.12 ms/op raw snapshotting on
+the current development machine.

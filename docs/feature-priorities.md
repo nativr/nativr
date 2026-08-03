@@ -1758,6 +1758,13 @@ ties:
      unchanged pure-R package code, and default Worker/Canvas rendering have evidence. Logarithmic
      transforms, non-plot-region `xpd` extension, and exact device line-cap/join metrics remain
      compatibility depth.
+168. S4 method signatures: rank-425 `methods::signature` represents inline's 18 measured calls at
+     0.6% download-weighted reach. GNU R-compatible empty/named/mixed/missing shapes and invalid
+     element boundaries combine with real named and positional multi-argument `setMethod` dispatch,
+     inherited classes, `ANY` fallback, and differential conformance. This advances inline's pure-R
+     registration layer without claiming execution of its compiled native payloads; ambiguous
+     methods, union classes, primitive/group generics, and the complete methods package remain
+     depth.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.
@@ -1770,8 +1777,9 @@ longitudinal snapshots. High namespace reach is not an instruction to add a gene
    30 available days and identifies the RStudio CRAN mirror as its source.
 2. Fetch the CRAN-generated HTML reference manual for every sampled package.
 3. Extract only `Examples` code blocks, remove comments and string contents, and apply the
-   independently written feature and named-call detectors in `scripts/package-usage.mjs`. Named
-   calls to functions assigned earlier in the same example block are excluded as local helpers.
+   independently written feature and named-call detectors in `scripts/package-usage.mjs`. Calls
+   resolved to ordinary local assignments, right assignments, loop variables, or function formals
+   are excluded; explicit core namespace calls remain attributable.
 4. Filter named calls through the checked-in GNU R black-box callable inventory.
 5. Discard the example text. Commit only package-level flags, aggregate counts, CSV tables, and
    generated SVG figures.
@@ -1790,8 +1798,8 @@ manuals come from the [CRAN package repository](https://cran.r-project.org/web/p
 - Download popularity includes dependency and automation effects and does not measure active users.
 - Documentation examples are a public-API usage proxy, not production-code telemetry.
 - Lexical feature groups can produce false positives or miss indirect use.
-- Named-call counts exclude direct local function assignments within each example block, but cannot
-  fully resolve lexical shadowing, indirect calls, dynamically generated names, or operator syntax.
+- Named-call counts exclude lexically local bindings within each example block, but cannot fully
+  resolve runtime reassignment, indirect calls, dynamically generated names, or operator syntax.
 - A supported detector surface can still have explicitly documented semantic limits.
 
 Refresh before a major roadmap revision and compare multiple snapshots before treating small rank

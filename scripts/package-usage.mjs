@@ -28,8 +28,12 @@ const NAMESPACE_URL = (packageName) =>
 const USER_AGENT = "NativR package-usage research (https://github.com/nativr/nativr)";
 const CALL_PATTERN =
   /(?<![A-Za-z0-9._$@])(?:(?<namespace>[A-Za-z.][A-Za-z0-9._]*)\s*:::{0,1}\s*)?(?<name>[A-Za-z.][A-Za-z0-9._]*)(?=\s*\()/gu;
-const LOCAL_FUNCTION_PATTERN =
-  /(?<![A-Za-z0-9._])([A-Za-z.][A-Za-z0-9._]*)\s*(?:<-|=)\s*function\s*\(/gu;
+const FUNCTION_PATTERN = /(?<![A-Za-z0-9._])function\s*\(/gu;
+const LEFT_ASSIGNMENT_PATTERN = /(?<![A-Za-z0-9._<])([A-Za-z.][A-Za-z0-9._]*)\s*<-(?!-)/gu;
+const STATEMENT_EQUAL_ASSIGNMENT_PATTERN = /(?:^|[;\n{}])\s*([A-Za-z.][A-Za-z0-9._]*)\s*=(?!=)/gmu;
+const RIGHT_ASSIGNMENT_PATTERN = /(?<!-)->(?!>)\s*([A-Za-z.][A-Za-z0-9._]*)/gu;
+const FOR_BINDING_PATTERN = /(?<![A-Za-z0-9._])for\s*\(\s*([A-Za-z.][A-Za-z0-9._]*)\s+in\b/gu;
+const LEXICAL_BINDING_DETECTOR_VERSION = 2;
 const NAMESPACE_EXPORT_PATTERN = /(?<![A-Za-z0-9.])export\s*\(([^)]*)\)/gu;
 const NON_CALL_KEYWORDS = new Set(["for", "function", "if", "while"]);
 const LANGUAGE_CALLABLE_NAMES = new Set(["return"]);
@@ -419,7 +423,7 @@ async function collectSnapshot() {
       totalDownloads,
       analyzedDownloads,
       method:
-        "Download-weighted package reach across language features and GNU R core callable names detected in CRAN-generated reference-manual example blocks, excluding exact package exports declared by CRAN NAMESPACE files and non-core namespace-qualified calls.",
+        "Download-weighted package reach across language features and GNU R core callable names detected in CRAN-generated reference-manual example blocks, excluding lexically local bindings, exact package exports declared by CRAN NAMESPACE files, and non-core namespace-qualified calls.",
     },
     packages: snapshotPackages,
     features,
@@ -464,10 +468,7 @@ function detectFeatures(source) {
 
 function detectCallCounts(source, packageCallables = new Set(), corePackageNames = new Set()) {
   const code = stripCommentsAndStrings(source);
-  const localDefinitions = [...code.matchAll(LOCAL_FUNCTION_PATTERN)].map((match) => ({
-    name: match[1],
-    index: match.index,
-  }));
+  const lexicalBindings = detectLexicalBindings(code);
   const core = new Map();
   const packageOwned = new Map();
   for (const match of code.matchAll(CALL_PATTERN)) {
@@ -475,8 +476,10 @@ function detectCallCounts(source, packageCallables = new Set(), corePackageNames
     const namespace = match.groups?.namespace;
     if (name === undefined || NON_CALL_KEYWORDS.has(name)) continue;
     if (
-      localDefinitions.some(
-        (definition) => definition.name === name && definition.index < match.index,
+      namespace === undefined &&
+      lexicalBindings.some(
+        (binding) =>
+          binding.name === name && binding.start <= match.index && match.index < binding.end,
       )
     ) {
       continue;
@@ -491,6 +494,155 @@ function detectCallCounts(source, packageCallables = new Set(), corePackageNames
       [...packageOwned].sort(([left], [right]) => left.localeCompare(right)),
     ),
   };
+}
+
+function detectLexicalBindings(code) {
+  const scopes = [{ start: 0, end: code.length, formalNames: [] }];
+  for (const match of code.matchAll(FUNCTION_PATTERN)) {
+    const openParenthesis = code.indexOf("(", match.index);
+    const closeParenthesis = findMatchingDelimiter(code, openParenthesis, "(", ")");
+    if (closeParenthesis === -1) continue;
+    const bodyStart = findNextNonWhitespace(code, closeParenthesis + 1);
+    if (bodyStart === -1) continue;
+    const bodyEnd =
+      code[bodyStart] === "{"
+        ? findMatchingDelimiter(code, bodyStart, "{", "}")
+        : findExpressionEnd(code, bodyStart);
+    if (bodyEnd === -1 || bodyEnd <= bodyStart) continue;
+    scopes.push({
+      start: code[bodyStart] === "{" ? bodyStart + 1 : bodyStart,
+      end: bodyEnd,
+      formalNames: extractFormalNames(code.slice(openParenthesis + 1, closeParenthesis)),
+    });
+  }
+
+  const bindings = scopes.flatMap((scope) =>
+    scope.formalNames.map((name) => ({ name, start: scope.start, end: scope.end })),
+  );
+  const assignments = [
+    ...[...code.matchAll(LEFT_ASSIGNMENT_PATTERN)].map((match) => ({
+      name: match[1],
+      index: match.index,
+      kind: "assignment",
+    })),
+    ...[...code.matchAll(STATEMENT_EQUAL_ASSIGNMENT_PATTERN)].map((match) => ({
+      name: match[1],
+      index: match.index + match[0].indexOf(match[1]),
+      kind: "statement-equal",
+    })),
+    ...[...code.matchAll(RIGHT_ASSIGNMENT_PATTERN)].map((match) => ({
+      name: match[1],
+      index: match.index,
+      kind: "assignment",
+    })),
+    ...[...code.matchAll(FOR_BINDING_PATTERN)].map((match) => ({
+      name: match[1],
+      index: match.index,
+      kind: "assignment",
+    })),
+  ];
+  for (const assignment of assignments) {
+    if (assignment.name === undefined) continue;
+    const scope = findInnermostScope(scopes, assignment.index);
+    if (
+      assignment.kind === "statement-equal" &&
+      !isStatementAssignmentContext(code, scope.start, assignment.index)
+    ) {
+      continue;
+    }
+    bindings.push({ name: assignment.name, start: assignment.index, end: scope.end });
+  }
+  return bindings;
+}
+
+function findInnermostScope(scopes, index) {
+  return scopes
+    .filter((scope) => scope.start <= index && index < scope.end)
+    .sort((left, right) => right.start - left.start || left.end - right.end)[0];
+}
+
+function isStatementAssignmentContext(code, start, end) {
+  const closingFor = new Map([
+    ["(", ")"],
+    ["[", "]"],
+    ["{", "}"],
+  ]);
+  const stack = [];
+  for (let index = start; index < end; index += 1) {
+    const character = code[index];
+    const closing = closingFor.get(character);
+    if (closing !== undefined) stack.push({ opening: character, closing });
+    else if (stack.at(-1)?.closing === character) stack.pop();
+  }
+  const opening = stack.at(-1)?.opening;
+  return opening === undefined || opening === "{";
+}
+
+function findMatchingDelimiter(code, start, opening, closing) {
+  if (code[start] !== opening) return -1;
+  let depth = 0;
+  for (let index = start; index < code.length; index += 1) {
+    if (code[index] === opening) depth += 1;
+    if (code[index] === closing) depth -= 1;
+    if (depth === 0) return index;
+  }
+  return -1;
+}
+
+function findNextNonWhitespace(code, start) {
+  for (let index = start; index < code.length; index += 1) {
+    if (!/\s/u.test(code[index])) return index;
+  }
+  return -1;
+}
+
+function findExpressionEnd(code, start) {
+  const closingFor = new Map([
+    ["(", ")"],
+    ["[", "]"],
+    ["{", "}"],
+  ]);
+  const stack = [];
+  for (let index = start; index < code.length; index += 1) {
+    const character = code[index];
+    const closing = closingFor.get(character);
+    if (closing !== undefined) stack.push(closing);
+    else if (stack.at(-1) === character) stack.pop();
+    else if (stack.length === 0 && (character === "\n" || character === ";")) return index;
+  }
+  return code.length;
+}
+
+function extractFormalNames(source) {
+  const names = [];
+  for (const argument of splitTopLevel(source, ",")) {
+    const match = /^\s*([A-Za-z.][A-Za-z0-9._]*)\s*(?:=|$)/u.exec(argument);
+    if (match?.[1] !== undefined && match[1] !== "...") names.push(match[1]);
+  }
+  return names;
+}
+
+function splitTopLevel(source, separator) {
+  const parts = [];
+  const closingFor = new Map([
+    ["(", ")"],
+    ["[", "]"],
+    ["{", "}"],
+  ]);
+  const stack = [];
+  let start = 0;
+  for (let index = 0; index < source.length; index += 1) {
+    const character = source[index];
+    const closing = closingFor.get(character);
+    if (closing !== undefined) stack.push(closing);
+    else if (stack.at(-1) === character) stack.pop();
+    else if (stack.length === 0 && character === separator) {
+      parts.push(source.slice(start, index));
+      start = index + 1;
+    }
+  }
+  parts.push(source.slice(start));
+  return parts;
 }
 
 function mergeCallCounts(exampleBlocks, packageCallables, corePackageNames) {
@@ -636,16 +788,47 @@ function verifyFeatureDetector() {
   }
 
   const attributedCalls = detectCallCounts(
-    "hashtab(cache)\nmean(x)\nbase::mean(x)\nexternal::mean(x)",
+    "hashtab(cache)\nmean(x)\nbase::mean(x)\nexternal::mean(x)\nmean <- identity\nmean(x)\nbase::mean(x)",
     packageExports,
     new Set(["base"]),
   );
   if (
     attributedCalls.packageOwned.hashtab !== 1 ||
-    attributedCalls.core.mean !== 2 ||
+    attributedCalls.core.mean !== 3 ||
     Object.keys(attributedCalls.core).length !== 1
   ) {
     throw new Error("Callable ownership detector invariant failed.");
+  }
+
+  const lexicalCalls = detectCallCounts(
+    `df <- eventReactive(input$button, { head(cars, input$x) })
+df()
+dist = switch(input$dist, norm = rnorm)
+hist(dist(500))
+identity -> local_identity
+local_identity(value)
+for (callback in callbacks) callback(value)
+card_server <- function(id, simulate = reactive()) {
+  simulate()
+  stats::simulate(model)
+}
+configure(
+  mean = identity
+)
+mean(value)`,
+    new Set(),
+    new Set(["stats"]),
+  );
+  for (const localName of ["callback", "df", "dist", "local_identity"]) {
+    if (lexicalCalls.core[localName] !== undefined) {
+      throw new Error(`Lexical callable detector failed to exclude ${localName}.`);
+    }
+  }
+  if (lexicalCalls.core.simulate !== 1) {
+    throw new Error("Lexical callable detector failed for formals or namespaced calls.");
+  }
+  if (lexicalCalls.core.mean !== 1) {
+    throw new Error("Lexical callable detector mistook a named argument for an assignment.");
   }
 }
 
@@ -994,7 +1177,12 @@ function featureDetectorFingerprint() {
       patterns: patterns.map((pattern) => pattern.toString()),
     })),
     callPattern: CALL_PATTERN.toString(),
-    localFunctionPattern: LOCAL_FUNCTION_PATTERN.toString(),
+    lexicalBindingDetectorVersion: LEXICAL_BINDING_DETECTOR_VERSION,
+    functionPattern: FUNCTION_PATTERN.toString(),
+    leftAssignmentPattern: LEFT_ASSIGNMENT_PATTERN.toString(),
+    statementEqualAssignmentPattern: STATEMENT_EQUAL_ASSIGNMENT_PATTERN.toString(),
+    rightAssignmentPattern: RIGHT_ASSIGNMENT_PATTERN.toString(),
+    forBindingPattern: FOR_BINDING_PATTERN.toString(),
     namespaceExportPattern: NAMESPACE_EXPORT_PATTERN.toString(),
     nonCallKeywords: [...NON_CALL_KEYWORDS].sort(),
   };

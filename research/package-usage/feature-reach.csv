@@ -1,26 +1,26 @@
 rank,priority,feature_id,feature,nativr_status,packages,package_reach_percent,download_weighted_reach_percent
-1,P0,sequences-repetition,Sequences and repetition,supported,63,64.9,69.1
-2,P0,extraction,Element/member extraction [[ and $,supported,66,68.0,69.1
-3,P1,subsetting,Vector/list subsetting [,supported,56,57.7,62.3
-4,P1,namespaces,Namespace access,supported,56,57.7,61.6
-5,P1,lists,Lists,supported,57,58.8,61.4
+1,P0,sequences-repetition,Sequences and repetition,supported,63,64.9,69.3
+2,P0,extraction,Element/member extraction [[ and $,supported,66,68.0,69.0
+3,P1,subsetting,Vector/list subsetting [,supported,56,57.7,62.4
+4,P1,lists,Lists,supported,57,58.8,61.4
+5,P1,namespaces,Namespace access,supported,55,56.7,61.1
 6,P1,conditionals,if / else,supported,46,47.4,50.6
-7,P1,string-helpers,String helpers,supported,40,41.2,44.6
-8,P1,random-numbers,Random numbers and sampling,supported,40,41.2,44.4
-9,P1,comparisons,Comparison operators,supported,40,41.2,43.8
-10,P1,matrices-arrays,"Matrices, arrays, and dimensions",supported,40,41.2,42.7
-11,P1,names-attributes,Names and attributes,supported,38,39.2,40.3
-12,P2,statistics,Descriptive statistics,supported,31,32.0,34.1
-13,P2,logical-operators,Logical operators,supported,29,29.9,32.8
-14,P2,data-frames,Data frames,supported,28,28.9,31.4
-15,P2,replacement,Replacement assignment,supported,25,25.8,29.8
+7,P1,random-numbers,Random numbers and sampling,supported,40,41.2,44.5
+8,P1,string-helpers,String helpers,supported,39,40.2,44.0
+9,P1,comparisons,Comparison operators,supported,39,40.2,43.2
+10,P1,matrices-arrays,"Matrices, arrays, and dimensions",supported,40,41.2,42.8
+11,P2,names-attributes,Names and attributes,supported,37,38.1,39.7
+12,P2,statistics,Descriptive statistics,supported,30,30.9,33.6
+13,P2,logical-operators,Logical operators,supported,28,28.9,32.2
+14,P2,data-frames,Data frames,supported,27,27.8,30.8
+15,P2,replacement,Replacement assignment,supported,24,24.7,29.2
 16,P2,dates-times,Dates and times,supported,23,23.7,26.8
-17,P2,apply-family,Apply/map family,supported,25,25.8,26.7
+17,P2,apply-family,Apply/map family,supported,24,24.7,26.1
 18,P2,ellipsis,Ellipsis arguments,supported,21,21.6,24.8
-19,P2,factors,Factors,supported,21,21.6,24.1
-20,P2,loops,for / while / repeat,supported,20,20.6,22.5
-21,P2,formulas,Formulas,supported,19,19.6,20.6
-22,P3,sorting-matching,Sorting and matching,supported,13,13.4,14.0
-23,P3,pipes,Native and magrittr pipes,supported,11,11.3,13.5
+19,P2,factors,Factors,supported,20,20.6,23.5
+20,P2,loops,for / while / repeat,supported,19,19.6,21.9
+21,P2,formulas,Formulas,supported,19,19.6,20.5
+22,P3,pipes,Native and magrittr pipes,supported,11,11.3,13.5
+23,P3,sorting-matching,Sorting and matching,supported,12,12.4,13.4
 24,P3,return,return,supported,10,10.3,12.8
-25,P3,object-systems,S3/S4/R6/S7 object systems,supported,8,8.2,10.6
+25,P3,object-systems,S3/S4/R6/S7 object systems,supported,8,8.2,10.7

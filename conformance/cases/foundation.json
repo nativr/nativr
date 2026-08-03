@@ -4992,6 +4992,43 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "signature-empty-named-missing-and-formals-shapes",
+    "code": "a <- methods::signature()\nb <- signature(\"numeric\", y = \"character\", z = NA_character_)\nd <- signature(\"\", x = \"A\", x = \"B\")\nc(length(a), is.null(names(a)), b[1:2], is.na(b[3]), names(b), names(formals(methods::signature)), d, names(d))",
+    "expected": [
+      "0",
+      "TRUE",
+      "numeric",
+      "character",
+      "TRUE",
+      "",
+      "y",
+      "z",
+      "...",
+      "",
+      "A",
+      "B",
+      "",
+      "x",
+      "x"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "signature-multi-argument-s4-dispatch",
+    "code": "setClass(\"SignatureA\", representation(value = \"numeric\"))\nsetClass(\"SignatureB\", representation(value = \"numeric\"))\nsetClass(\"SignatureBChild\", contains = \"SignatureB\")\nsetGeneric(\"signaturePair\", function(x, y) standardGeneric(\"signaturePair\"))\nsetMethod(\"signaturePair\", signature(x = \"SignatureA\", y = \"SignatureB\"), function(x, y) \"AB\")\nsetMethod(\"signaturePair\", signature(x = \"SignatureA\", y = \"ANY\"), function(x, y) \"A-any\")\nsetMethod(\"signaturePair\", c(\"SignatureA\", \"SignatureB\"), function(x, y) \"AB-replaced\")\na <- new(\"SignatureA\", value = 1)\nb <- new(\"SignatureB\", value = 2)\nchild <- new(\"SignatureBChild\", value = 3)\nc(signaturePair(a, b), signaturePair(a, 1), signaturePair(y = b, x = a), signaturePair(a, child))",
+    "expected": ["AB-replaced", "A-any", "AB-replaced", "AB-replaced"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "signature-invalid-element-and-missing-argument-boundaries",
+    "code": "c(inherits(try(signature(c(\"A\", \"B\")), silent = TRUE), \"try-error\"), inherits(try(signature(factor(\"A\")), silent = TRUE), \"try-error\"), inherits(try(signature(1), silent = TRUE), \"try-error\"), inherits(try(signature(NULL), silent = TRUE), \"try-error\"), inherits(try(signature(x = ), silent = TRUE), \"try-error\"))",
+    "expected": [true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "representation-observed-data-table-legacy-slot-definition",
     "code": "r <- methods::representation(x = \"character\", dt = \"data.table\")\nc(names(r), unlist(r), length(r))",
     "expected": ["x", "dt", "character", "data.table", "2"],

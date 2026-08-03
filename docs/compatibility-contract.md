@@ -2284,10 +2284,12 @@ additionally supports a bare callable and one dot insertion; it does not reprodu
 rewriting rule.
 
 S3 dispatch supports `UseMethod`, ordered class lookup, `.default`, and `NextMethod`. The bounded S4
-surface supports `setClass`, single-object `setGeneric`/`setMethod`, `standardGeneric`, `new`, and
+surface supports `setClass`, multi-argument `setGeneric`/`setMethod`, `standardGeneric`, `new`, and
 explicit single-source `setAs`/`as` coercions. The measured S7 generic-definition body has
 differential evidence for explicit/`ANY` method selection, formals, defaults, dots, missing methods,
-and calls outside a generic body. Multiple dispatch, full signature/class inheritance, automatic
+and calls outside a generic body. `methods::signature()` and named/positional multi-argument method
+registration have differential evidence, including reordered named calls, inherited classes, and
+`ANY` fallback selection. Ambiguity reporting, union classes, complete argument matching, automatic
 package registration, method caching, primitive/group generics, and the full methods/S7 protocols
 are not claimed. `R6Class` supplies a generator with `$new` and public-field defaults, but not
 mutable `self`, private/active bindings, or reference semantics. `new_class` and `new_vctr` provide
@@ -2380,3 +2382,13 @@ horizontal/vertical segments in GNU R's style-recycling order. The same bounded 
 inline callbacks, the Worker protocol, Canvas, PNG, PDF, and record/replay, including unchanged
 source-only package code. Log-axis `untf`, clipping outside the plot region when `xpd` expands it,
 and exact device line-cap/join behavior are not part of this shape-level claim.
+
+Usage-ranked `methods::signature()` represents 18 measured calls in inline's CRAN reference-manual
+examples. Empty, positional, named, mixed, duplicate-name, empty-string, and missing class values
+produce GNU R-compatible character-vector shapes; nonscalar, noncharacter, factor, `NULL`, and
+missing arguments fail explicitly. The full signature is retained by `setMethod()` and participates
+in exact, inherited, named, positional, and `ANY` multi-argument dispatch through both generated
+generic wrappers and `standardGeneric()`. This directly covers inline's pure-R S4 registration layer
+without claiming that its compiled C/C++/Fortran payloads can execute. Ambiguous-method diagnostics,
+union classes, `callNextMethod`, primitive/group generics, and the complete methods package remain
+compatibility depth.

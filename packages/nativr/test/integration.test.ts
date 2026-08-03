@@ -13230,7 +13230,7 @@ NeedsCompilation: no
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.270.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.271.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -15377,6 +15377,69 @@ NeedsCompilation: no
     ] as const) {
       await expect(runtime.eval(code)).rejects.toMatchObject({ code: expectedCode });
     }
+    await runtime.dispose();
+  });
+
+  it("constructs method signatures and dispatches across multiple arguments", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(
+        "a <- methods::signature()\nb <- signature('numeric', y = 'character', z = NA_character_)\nd <- signature('', x = 'A', x = 'B')\nc(length(a), is.null(names(a)), b[1:2], is.na(b[3]), names(b), names(formals(methods::signature)), d, names(d))",
+      ),
+    ).resolves.toEqual([
+      "0",
+      "TRUE",
+      "numeric",
+      "character",
+      "TRUE",
+      "",
+      "y",
+      "z",
+      "...",
+      "",
+      "A",
+      "B",
+      "",
+      "x",
+      "x",
+    ]);
+    await expect(
+      runtime.eval(`
+        setClass("SignatureA", representation(value = "numeric"))
+        setClass("SignatureB", representation(value = "numeric"))
+        setClass("SignatureBChild", contains = "SignatureB")
+        setGeneric("signaturePair", function(x, y) standardGeneric("signaturePair"))
+        setMethod(
+          "signaturePair",
+          signature(x = "SignatureA", y = "SignatureB"),
+          function(x, y) "AB"
+        )
+        setMethod(
+          "signaturePair",
+          signature(x = "SignatureA", y = "ANY"),
+          function(x, y) "A-any"
+        )
+        setMethod(
+          "signaturePair",
+          c("SignatureA", "SignatureB"),
+          function(x, y) "AB-replaced"
+        )
+        a <- new("SignatureA", value = 1)
+        b <- new("SignatureB", value = 2)
+        child <- new("SignatureBChild", value = 3)
+        c(
+          signaturePair(a, b),
+          signaturePair(a, 1),
+          signaturePair(y = b, x = a),
+          signaturePair(a, child)
+        )
+      `),
+    ).resolves.toEqual(["AB-replaced", "A-any", "AB-replaced", "AB-replaced"]);
+    await expect(
+      runtime.eval(
+        "c(inherits(try(signature(c('A', 'B')), silent = TRUE), 'try-error'), inherits(try(signature(factor('A')), silent = TRUE), 'try-error'), inherits(try(signature(1), silent = TRUE), 'try-error'), inherits(try(signature(NULL), silent = TRUE), 'try-error'), inherits(try(signature(x = ), silent = TRUE), 'try-error'))",
+      ),
+    ).resolves.toEqual([true, true, true, true, true]);
     await runtime.dispose();
   });
 

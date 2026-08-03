@@ -3668,6 +3668,10 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "invisible",
   ),
   definePackageBuiltin("methods", "representation", ["..."], "behavioral", builtinRepresentation),
+  withBuiltinFormals(
+    definePackageBuiltin("methods", "signature", ["..."], "behavioral", builtinSignature),
+    [{ name: "..." }],
+  ),
   defineBuiltin(
     "setClass",
     ["Class", "representation", "contains", "prototype"],
@@ -3731,6 +3735,7 @@ export const EXECUTABLE_PATHS_STATE_KEY = "base.executablePaths";
 const S4_CLASSES_STATE_KEY = "base.s4.classes";
 const S4_GENERICS_STATE_KEY = "base.s4.generics";
 const S4_METHODS_STATE_KEY = "base.s4.methods";
+const S4_SIGNATURE_METHODS_STATE_KEY = "base.s4.signatureMethods";
 const S4_COERCIONS_STATE_KEY = "base.s4.coercions";
 const GRAPHICS_STATE_KEY = "graphics.device";
 const GRAPHICS_PARAMETERS_STATE_KEY = "graphics.parameters";
@@ -3950,6 +3955,16 @@ interface S4ClassDefinition {
 
 interface S4GenericDefinition {
   readonly fallback?: RValue;
+}
+
+interface S4MethodSignatureEntry {
+  readonly argumentName?: string;
+  readonly className: string;
+}
+
+interface S4RegisteredMethod {
+  readonly signature: readonly S4MethodSignatureEntry[];
+  readonly definition: RValue;
 }
 
 function defineBuiltin(
@@ -49874,6 +49889,32 @@ function methodsDispatchClasses(value: RValue, invocation: BuiltinInvocation): r
   return classes;
 }
 
+async function builtinSignature(invocation: BuiltinInvocation): Promise<RValue> {
+  const values: string[] = [];
+  const missing = new Uint8Array(invocation.arguments.length);
+  const names: string[] = [];
+  let hasNames = false;
+  for (const [index, argument] of invocation.arguments.entries()) {
+    if (argument.promise.missing) {
+      throw new REvaluationError("NRE2163", "signature() argument is missing.");
+    }
+    const value = await invocation.force(argument.promise);
+    if (value.type !== "character" || value.length !== 1) {
+      throw new RTypeMismatchError(
+        "NRT3345",
+        `bad class specified for element ${index + 1} (should be a single character string)`,
+      );
+    }
+    values.push(value.values[0] ?? "");
+    if (isMissing(value, 0)) missing[index] = 1;
+    names.push(argument.name ?? "");
+    if (argument.name !== undefined) hasNames = true;
+  }
+  invocation.context.allocate(values.length);
+  const result = characterVector(values, compactMask(missing));
+  return hasNames ? withNames(result, names) : result;
+}
+
 async function builtinRepresentation(invocation: BuiltinInvocation): Promise<RValue> {
   const values: RValue[] = [];
   const names: string[] = [];
@@ -50213,14 +50254,7 @@ async function builtinSetGeneric(invocation: BuiltinInvocation): Promise<RValue>
       },
       implementation: async (call) => {
         const arguments_ = await forceInvocationArguments(call);
-        const object = arguments_[0]?.value;
-        if (object === undefined) {
-          throw new REvaluationError("NRE2124", `Generic '${name}' requires an object.`);
-        }
-        const methods = stateMap<string, RValue>(call, S4_METHODS_STATE_KEY);
-        const method = [...methodsDispatchClasses(object, call), "ANY"]
-          .map((className) => methods.get(`${name}:${className}`))
-          .find((candidate) => candidate !== undefined);
+        const method = selectS4Method(name, arguments_, call);
         if (method !== undefined) return call.invoke(method, arguments_);
         const registered = stateMap<string, S4GenericDefinition>(call, S4_GENERICS_STATE_KEY).get(
           name,
@@ -50228,9 +50262,10 @@ async function builtinSetGeneric(invocation: BuiltinInvocation): Promise<RValue>
         if (registered?.fallback !== undefined) {
           return call.invoke(registered.fallback, arguments_);
         }
+        const object = arguments_[0]?.value;
         throw new REvaluationError(
           "NRE2125",
-          `No method is registered for generic '${name}' and class '${implicitClasses(object)[0]}'.`,
+          `No method is registered for generic '${name}' and class '${object === undefined ? "missing" : implicitClasses(object)[0]}'.`,
         );
       },
     },
@@ -50248,9 +50283,19 @@ async function builtinSetMethod(invocation: BuiltinInvocation): Promise<RValue> 
     throw new RTypeMismatchError("NRT3161", "setMethod(definition=) requires a function.");
   }
   stateMap<string, RValue>(invocation, S4_METHODS_STATE_KEY).set(
-    `${generic}:${signature}`,
+    `${generic}:${signature[0]?.className ?? "ANY"}`,
     definition,
   );
+  const methods = stateMap<string, S4RegisteredMethod[]>(
+    invocation,
+    S4_SIGNATURE_METHODS_STATE_KEY,
+  );
+  const registered = methods.get(generic) ?? [];
+  const signatureKey = s4SignatureKey(signature);
+  methods.set(generic, [
+    ...registered.filter((entry) => s4SignatureKey(entry.signature) !== signatureKey),
+    { signature, definition },
+  ]);
   return definition;
 }
 
@@ -50289,18 +50334,12 @@ async function builtinStandardGeneric(invocation: BuiltinInvocation): Promise<RV
     const value = binding.type === "promise" ? await invocation.force(binding) : binding;
     arguments_.push({ name: parameter.name, value });
   }
-  const object = arguments_[0]?.value;
-  if (object === undefined) {
-    throw new REvaluationError("NRE2124", `Generic '${name}' requires an object.`);
-  }
-  const methods = stateMap<string, RValue>(invocation, S4_METHODS_STATE_KEY);
-  const method = [...methodsDispatchClasses(object, invocation), "ANY"]
-    .map((className) => methods.get(`${name}:${className}`))
-    .find((candidate) => candidate !== undefined);
+  const method = selectS4Method(name, arguments_, invocation);
   if (method !== undefined) return invocation.invoke(method, arguments_);
+  const object = arguments_[0]?.value;
   throw new REvaluationError(
     "NRE2125",
-    `Unable to find an inherited method for generic '${name}' and class '${implicitClasses(object)[0]}'.`,
+    `Unable to find an inherited method for generic '${name}' and class '${object === undefined ? "missing" : implicitClasses(object)[0]}'.`,
   );
 }
 
@@ -50550,18 +50589,131 @@ function nonMissingStrings(value: RValue, name: string): readonly string[] {
   return value.values;
 }
 
-function methodSignature(value: RValue): string {
+function methodSignature(value: RValue): readonly S4MethodSignatureEntry[] {
   if (value.type === "character" && value.missing === undefined && value.length > 0) {
-    return value.values[0] ?? "ANY";
+    const names = vectorNames(value);
+    return value.values.map((className, index) => {
+      const argumentName = names?.[index];
+      return argumentName === undefined || argumentName.length === 0
+        ? { className }
+        : { argumentName, className };
+    });
   }
   if (value.type === "list" && value.length > 0) {
-    const first = value.values[0];
-    if (first !== undefined) return characterScalar(first, "signature");
+    const names = vectorNames(value);
+    return value.values.map((entry, index) => {
+      const className = characterScalar(entry, "signature");
+      const argumentName = names?.[index];
+      return argumentName === undefined || argumentName.length === 0
+        ? { className }
+        : { argumentName, className };
+    });
   }
   throw new RTypeMismatchError(
     "NRT3164",
     "setMethod(signature=) requires a class name or a non-empty signature list.",
   );
+}
+
+function s4SignatureKey(signature: readonly S4MethodSignatureEntry[]): string {
+  return JSON.stringify(signature.map((entry) => [entry.argumentName ?? "", entry.className]));
+}
+
+function selectS4Method(
+  generic: string,
+  arguments_: readonly { readonly name?: string; readonly value: RValue }[],
+  invocation: BuiltinInvocation,
+): RValue | undefined {
+  const registered =
+    stateMap<string, S4RegisteredMethod[]>(invocation, S4_SIGNATURE_METHODS_STATE_KEY).get(
+      generic,
+    ) ?? [];
+  const values = s4DispatchValues(generic, arguments_, invocation);
+  let selected: { readonly definition: RValue; readonly score: number } | undefined;
+  for (const method of registered) {
+    let score = 0;
+    let matched = true;
+    for (const [index, signature] of method.signature.entries()) {
+      const value =
+        signature.argumentName === undefined
+          ? values.byPosition[index]
+          : values.byName.get(signature.argumentName);
+      if (value === undefined) {
+        if (signature.className === "missing") continue;
+        if (signature.className === "ANY") {
+          score += 10_000;
+          continue;
+        }
+        matched = false;
+        break;
+      }
+      const classes = methodsDispatchClasses(value, invocation);
+      if (signature.className === "ANY") {
+        score += 10_000;
+        continue;
+      }
+      const distance = classes.indexOf(signature.className);
+      if (distance === -1) {
+        matched = false;
+        break;
+      }
+      score += distance;
+    }
+    if (matched && (selected === undefined || score <= selected.score)) {
+      selected = { definition: method.definition, score };
+    }
+  }
+  if (selected !== undefined) return selected.definition;
+
+  const object = values.byPosition[0];
+  if (object === undefined) {
+    throw new REvaluationError("NRE2124", `Generic '${generic}' requires an object.`);
+  }
+  const legacy = stateMap<string, RValue>(invocation, S4_METHODS_STATE_KEY);
+  return [...methodsDispatchClasses(object, invocation), "ANY"]
+    .map((className) => legacy.get(`${generic}:${className}`))
+    .find((candidate) => candidate !== undefined);
+}
+
+function s4DispatchValues(
+  generic: string,
+  arguments_: readonly { readonly name?: string; readonly value: RValue }[],
+  invocation: BuiltinInvocation,
+): {
+  readonly byPosition: readonly (RValue | undefined)[];
+  readonly byName: ReadonlyMap<string, RValue>;
+} {
+  const fallback = stateMap<string, S4GenericDefinition>(invocation, S4_GENERICS_STATE_KEY).get(
+    generic,
+  )?.fallback;
+  const formalNames =
+    fallback?.type === "closure"
+      ? fallback.parameters.map((parameter) => parameter.name).filter((name) => name !== "...")
+      : [];
+  const byPosition: (RValue | undefined)[] = [];
+  const byName = new Map<string, RValue>();
+  const deferredUnnamed: RValue[] = [];
+  for (const argument of arguments_) {
+    if (argument.name === undefined) deferredUnnamed.push(argument.value);
+    else {
+      byName.set(argument.name, argument.value);
+      const formalIndex = formalNames.indexOf(argument.name);
+      if (formalIndex !== -1) byPosition[formalIndex] = argument.value;
+    }
+  }
+  let nextFormal = 0;
+  for (const value of deferredUnnamed) {
+    while (byPosition[nextFormal] !== undefined) nextFormal += 1;
+    byPosition[nextFormal] = value;
+    const formalName = formalNames[nextFormal];
+    if (formalName !== undefined) byName.set(formalName, value);
+    nextFormal += 1;
+  }
+  for (const [index, formalName] of formalNames.entries()) {
+    const value = byPosition[index];
+    if (value !== undefined && !byName.has(formalName)) byName.set(formalName, value);
+  }
+  return { byPosition, byName };
 }
 
 async function classAndFields(

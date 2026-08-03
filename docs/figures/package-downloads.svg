@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1010" viewBox="0 0 1200 1010" role="img" aria-labelledby="title description">
 <title id="title">Top CRAN package downloads in the sampled 30-day window</title>
-<desc id="description">The twenty most downloaded packages from 2026-06-30 through 2026-07-29, using cranlogs data from the RStudio CRAN mirror.</desc>
+<desc id="description">The twenty most downloaded packages from 2026-07-04 through 2026-08-02, using cranlogs data from the RStudio CRAN mirror.</desc>
 <rect width="1200" height="1010" fill="#ffffff"/>
 <style>
   text { font-family: Inter, "Segoe UI", Arial, sans-serif; fill: #0f172a; }
@@ -14,67 +14,67 @@
 </style>
 
 <text x="60" y="60" class="title">Top CRAN package downloads</text>
-<text x="60" y="94" class="subtitle">2026-06-30 through 2026-07-29; RStudio CRAN mirror via cranlogs</text>
+<text x="60" y="94" class="subtitle">2026-07-04 through 2026-08-02; RStudio CRAN mirror via cranlogs</text>
 <line x1="225" y1="130" x2="225" y2="918" stroke="#94a3b8"/>
 <text x="209" y="169" text-anchor="end" class="label">rlang</text>
 <rect x="225" y="150" width="825.0" height="24" rx="3" fill="#2563eb"/>
-<text x="1054.0" y="168" class="value">2.76M</text>
+<text x="1054.0" y="168" class="value">2.77M</text>
 <text x="209" y="208" text-anchor="end" class="label">cli</text>
-<rect x="225" y="189" width="701.5" height="24" rx="3" fill="#2563eb"/>
-<text x="936.5" y="207" class="value">2.34M</text>
+<rect x="225" y="189" width="700.7" height="24" rx="3" fill="#2563eb"/>
+<text x="935.7" y="207" class="value">2.35M</text>
 <text x="209" y="247" text-anchor="end" class="label">vctrs</text>
-<rect x="225" y="228" width="699.7" height="24" rx="3" fill="#2563eb"/>
-<text x="934.7" y="246" class="value">2.34M</text>
+<rect x="225" y="228" width="695.0" height="24" rx="3" fill="#2563eb"/>
+<text x="930.0" y="246" class="value">2.33M</text>
 <text x="209" y="286" text-anchor="end" class="label">lifecycle</text>
-<rect x="225" y="267" width="678.1" height="24" rx="3" fill="#2563eb"/>
-<text x="913.1" y="285" class="value">2.27M</text>
+<rect x="225" y="267" width="678.2" height="24" rx="3" fill="#2563eb"/>
+<text x="913.2" y="285" class="value">2.28M</text>
 <text x="209" y="325" text-anchor="end" class="label">Rcpp</text>
-<rect x="225" y="306" width="646.7" height="24" rx="3" fill="#2563eb"/>
-<text x="881.7" y="324" class="value">2.16M</text>
-<text x="209" y="364" text-anchor="end" class="label">ggplot2</text>
-<rect x="225" y="345" width="630.2" height="24" rx="3" fill="#2563eb"/>
-<text x="865.2" y="363" class="value">2.11M</text>
-<text x="209" y="403" text-anchor="end" class="label">R6</text>
-<rect x="225" y="384" width="626.0" height="24" rx="3" fill="#2563eb"/>
-<text x="861.0" y="402" class="value">2.09M</text>
+<rect x="225" y="306" width="644.0" height="24" rx="3" fill="#2563eb"/>
+<text x="879.0" y="324" class="value">2.16M</text>
+<text x="209" y="364" text-anchor="end" class="label">R6</text>
+<rect x="225" y="345" width="628.3" height="24" rx="3" fill="#2563eb"/>
+<text x="863.3" y="363" class="value">2.11M</text>
+<text x="209" y="403" text-anchor="end" class="label">ggplot2</text>
+<rect x="225" y="384" width="618.4" height="24" rx="3" fill="#2563eb"/>
+<text x="853.4" y="402" class="value">2.08M</text>
 <text x="209" y="442" text-anchor="end" class="label">glue</text>
-<rect x="225" y="423" width="608.2" height="24" rx="3" fill="#2563eb"/>
-<text x="843.2" y="441" class="value">2.03M</text>
-<text x="209" y="481" text-anchor="end" class="label">withr</text>
-<rect x="225" y="462" width="595.6" height="24" rx="3" fill="#2563eb"/>
-<text x="830.6" y="480" class="value">1.99M</text>
-<text x="209" y="520" text-anchor="end" class="label">RcppEigen</text>
-<rect x="225" y="501" width="591.8" height="24" rx="3" fill="#2563eb"/>
-<text x="826.8" y="519" class="value">1.98M</text>
+<rect x="225" y="423" width="608.3" height="24" rx="3" fill="#2563eb"/>
+<text x="843.3" y="441" class="value">2.04M</text>
+<text x="209" y="481" text-anchor="end" class="label">RcppEigen</text>
+<rect x="225" y="462" width="594.8" height="24" rx="3" fill="#2563eb"/>
+<text x="829.8" y="480" class="value">2.00M</text>
+<text x="209" y="520" text-anchor="end" class="label">withr</text>
+<rect x="225" y="501" width="591.6" height="24" rx="3" fill="#2563eb"/>
+<text x="826.6" y="519" class="value">1.99M</text>
 <text x="209" y="559" text-anchor="end" class="label">magrittr</text>
-<rect x="225" y="540" width="589.0" height="24" rx="3" fill="#2563eb"/>
-<text x="824.0" y="558" class="value">1.97M</text>
+<rect x="225" y="540" width="587.7" height="24" rx="3" fill="#2563eb"/>
+<text x="822.7" y="558" class="value">1.97M</text>
 <text x="209" y="598" text-anchor="end" class="label">tibble</text>
-<rect x="225" y="579" width="568.1" height="24" rx="3" fill="#2563eb"/>
-<text x="803.1" y="597" class="value">1.90M</text>
+<rect x="225" y="579" width="560.9" height="24" rx="3" fill="#2563eb"/>
+<text x="795.9" y="597" class="value">1.88M</text>
 <text x="209" y="637" text-anchor="end" class="label">cpp11</text>
-<rect x="225" y="618" width="546.9" height="24" rx="3" fill="#2563eb"/>
-<text x="781.9" y="636" class="value">1.83M</text>
+<rect x="225" y="618" width="542.9" height="24" rx="3" fill="#2563eb"/>
+<text x="777.9" y="636" class="value">1.82M</text>
 <text x="209" y="676" text-anchor="end" class="label">fs</text>
-<rect x="225" y="657" width="543.6" height="24" rx="3" fill="#2563eb"/>
-<text x="778.6" y="675" class="value">1.82M</text>
+<rect x="225" y="657" width="536.8" height="24" rx="3" fill="#2563eb"/>
+<text x="771.8" y="675" class="value">1.80M</text>
 <text x="209" y="715" text-anchor="end" class="label">pillar</text>
-<rect x="225" y="696" width="537.7" height="24" rx="3" fill="#2563eb"/>
-<text x="772.7" y="714" class="value">1.80M</text>
-<text x="209" y="754" text-anchor="end" class="label">dplyr</text>
-<rect x="225" y="735" width="506.4" height="24" rx="3" fill="#2563eb"/>
-<text x="741.4" y="753" class="value">1.69M</text>
-<text x="209" y="793" text-anchor="end" class="label">scales</text>
-<rect x="225" y="774" width="503.9" height="24" rx="3" fill="#2563eb"/>
-<text x="738.9" y="792" class="value">1.68M</text>
+<rect x="225" y="696" width="532.0" height="24" rx="3" fill="#2563eb"/>
+<text x="767.0" y="714" class="value">1.79M</text>
+<text x="209" y="754" text-anchor="end" class="label">scales</text>
+<rect x="225" y="735" width="498.8" height="24" rx="3" fill="#2563eb"/>
+<text x="733.8" y="753" class="value">1.68M</text>
+<text x="209" y="793" text-anchor="end" class="label">dplyr</text>
+<rect x="225" y="774" width="493.5" height="24" rx="3" fill="#2563eb"/>
+<text x="728.5" y="792" class="value">1.66M</text>
 <text x="209" y="832" text-anchor="end" class="label">jsonlite</text>
-<rect x="225" y="813" width="488.2" height="24" rx="3" fill="#2563eb"/>
-<text x="723.2" y="831" class="value">1.63M</text>
-<text x="209" y="871" text-anchor="end" class="label">S7</text>
-<rect x="225" y="852" width="472.1" height="24" rx="3" fill="#2563eb"/>
-<text x="707.1" y="870" class="value">1.58M</text>
-<text x="209" y="910" text-anchor="end" class="label">gtable</text>
-<rect x="225" y="891" width="471.3" height="24" rx="3" fill="#2563eb"/>
-<text x="706.3" y="909" class="value">1.58M</text>
+<rect x="225" y="813" width="482.2" height="24" rx="3" fill="#2563eb"/>
+<text x="717.2" y="831" class="value">1.62M</text>
+<text x="209" y="871" text-anchor="end" class="label">gtable</text>
+<rect x="225" y="852" width="467.0" height="24" rx="3" fill="#2563eb"/>
+<text x="702.0" y="870" class="value">1.57M</text>
+<text x="209" y="910" text-anchor="end" class="label">S7</text>
+<rect x="225" y="891" width="465.9" height="24" rx="3" fill="#2563eb"/>
+<text x="700.9" y="909" class="value">1.56M</text>
 <text x="60" y="965" class="note">Counts include direct installs and dependency installs; they measure mirror downloads, not unique users.</text>
 </svg>

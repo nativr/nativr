@@ -1598,17 +1598,21 @@ an explicit unsupported-feature condition rather than silently discarding metada
 
 Explicit classes use the ordinary attribute map. S3 `UseMethod` dispatches through ordered classes
 and `.default`; `NextMethod` continues the current chain. The bounded S4 layer stores class,
-old-style class, single-object generic, method, and explicit coercion declarations in session state.
+old-style class, generic, method-signature, and explicit coercion declarations in session state.
 `standardGeneric()` recognizes a registered generic definition's active closure frame, forwards its
-declared values, evaluated defaults, and dots, and selects the first explicit class method or `ANY`;
-declared S4 and old-style parent classes participate in that lookup. Calls outside that body and
-missing methods are bounded errors. The generic wrapper performs the same lookup before evaluating
-an ordinary fallback definition. `methods::show()` performs the same inherited single-object lookup
-for registered `show` methods and preserves each method's returned value and visibility. Without a
-registered method it writes the deterministic owned-value representation to the output journal and
-returns invisible `NULL`; no terminal, pager, ANSI capability, or package-specific display code is
-consulted. R6 generators construct classed public-field lists, and vctrs helpers construct class
-metadata. Multiple S4 dispatch, full signature inheritance, automatic namespace/package
+declared values, evaluated defaults, and dots. `methods::signature()` returns the GNU R-shaped,
+possibly named character signature, preserving empty names and missing class strings while rejecting
+non-scalar class specifications. `setMethod()` retains every positional or named signature element;
+generic dispatch maps supplied arguments to the generic's formal order, selects exact or inherited
+classes across all declared dispatch arguments, and uses `ANY` only when a more specific registered
+method does not match. Calls outside a generic body and missing methods are bounded errors. The
+generic wrapper performs the same lookup before evaluating an ordinary fallback definition.
+`methods::show()` performs the same inherited single-object lookup for registered `show` methods and
+preserves each method's returned value and visibility. Without a registered method it writes the
+deterministic owned-value representation to the output journal and returns invisible `NULL`; no
+terminal, pager, ANSI capability, or package-specific display code is consulted. R6 generators
+construct classed public-field lists, and vctrs helpers construct class metadata. Ambiguous-method
+diagnostics, union classes, full formal/partial argument matching, automatic namespace/package
 registration, method caches, primitive/group generics, and complete external-package behavior are
 not claimed.
 

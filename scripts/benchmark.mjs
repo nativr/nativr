@@ -1,4 +1,5 @@
 import path from "node:path";
+import { readFile } from "node:fs/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
@@ -6,11 +7,16 @@ const { createR } = await import(
   pathToFileURL(path.join(root, "packages", "nativr", "dist", "index.js")).href
 );
 const assets = path.join(root, "packages", "nativr", "dist", "assets");
+const [treeSitterRuntimeWasm, rGrammarWasm] = await Promise.all([
+  wasmDataUrl(path.join(assets, "web-tree-sitter.wasm")),
+  wasmDataUrl(path.join(assets, "tree-sitter-r.wasm")),
+]);
 const runtime = await createR({
   execution: "inline",
+  limits: { maxSteps: 1_000_000 },
   assets: {
-    treeSitterRuntimeWasm: path.join(assets, "web-tree-sitter.wasm"),
-    rGrammarWasm: path.join(assets, "tree-sitter-r.wasm"),
+    treeSitterRuntimeWasm,
+    rGrammarWasm,
   },
 });
 
@@ -32,4 +38,9 @@ async function measure(label, iterations, operation) {
   for (let index = 0; index < iterations; index += 1) await operation();
   const elapsed = performance.now() - start;
   console.log(`${label}: ${(elapsed / iterations).toFixed(2)} ms/op (${iterations} iterations)`);
+}
+
+async function wasmDataUrl(file) {
+  const bytes = await readFile(file);
+  return `data:application/wasm;base64,${bytes.toString("base64")}`;
 }

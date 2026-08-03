@@ -352,6 +352,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "as",
       "new",
       "representation",
+      "signature",
       "setAs",
       "setClass",
       "setGeneric",
