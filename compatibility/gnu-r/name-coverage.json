@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 685,
-    "overlappingNames": 665,
-    "missingReferenceNames": 1857,
+    "nativrRegisteredNames": 686,
+    "overlappingNames": 666,
+    "missingReferenceNames": 1856,
     "nativrExtensionNames": 20,
-    "nameCoverage": 0.26368
+    "nameCoverage": 0.264076
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 479, "nameCoverage": 0.350402 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 480, "nameCoverage": 0.351134 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 76, "nameCoverage": 0.163793 },
     {
       "package": "methods",
@@ -487,6 +487,7 @@
     "plot.default",
     "plot.new",
     "plot.window",
+    "pmax",
     "pmin",
     "png",
     "pnorm",
@@ -1995,7 +1996,6 @@
     "plot.ts",
     "plot.xy",
     "pmatch",
-    "pmax",
     "pmax.int",
     "pmin.int",
     "pnbinom",

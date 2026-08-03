@@ -321,6 +321,68 @@ it.runIf(runExternal)(
 );
 
 it.runIf(runExternal)(
+  "packs, loads, and exercises the unchanged public labeling 0.4.3 pure-R source package",
+  async () => {
+    let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    try {
+      const installed = await installPackagesFromRepository(["labeling"]);
+      expect(installed.artifacts[0]).toMatchObject({
+        package: { name: "labeling", version: "0.4.3" },
+        compatibility: { packaging: "ready", execution: "unchecked" },
+        integrity: {
+          algorithm: "sha256",
+          value: "2d4f9e5a9b1b0e109821a3cd705ca81dbbc46c6ee53acc0d216db907e857a89f",
+        },
+      });
+      runtime = await createR({
+        execution: "inline",
+        runtimeProfile: "package-test",
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+        packages: installed.bundles,
+      });
+      await expect(runtime.eval('requireNamespace("labeling", quietly = TRUE)')).resolves.toBe(
+        true,
+      );
+      await expect(runtime.eval('as.character(packageVersion("labeling"))')).resolves.toBe("0.4.3");
+      await expect(runtime.eval("labeling::heckbert(8.1, 14.1, 4)")).resolves.toEqual([5, 10, 15]);
+      await expect(runtime.eval("labeling::wilkinson(8.1, 14.1, 4)")).resolves.toEqual([
+        8, 9, 10, 11, 12, 13, 14, 15,
+      ]);
+      await expect(runtime.eval("labeling::extended(8.1, 14.1, 4)")).resolves.toEqual([
+        8, 10, 12, 14,
+      ]);
+      await expect(runtime.eval("labeling::rpretty(8.1, 14.1, 4)")).resolves.toEqual([
+        8, 10, 12, 14, 16,
+      ]);
+      await expect(runtime.eval("labeling::matplotlib(8.1, 14.1, 4)")).resolves.toEqual([
+        8, 10, 12, 14, 16,
+      ]);
+      await expect(runtime.eval("labeling::gnuplot(8.1, 14.1, 4)")).resolves.toEqual([6, 12, 18]);
+      await expect(runtime.eval("labeling::nelder(8.1, 14.1, 4)")).resolves.toEqual([
+        8, 10, 12, 14,
+      ]);
+      await expect(runtime.eval("labeling::sparks(8.1, 14.1, 4)")).resolves.toEqual([6, 9]);
+      await expect(runtime.eval("labeling::thayer(8.1, 14.1, 4)")).resolves.toEqual([6, 9, 12, 15]);
+      await expect(
+        runtime.evalDetailed("set.seed(1); labeling::extended.figures(2)"),
+      ).rejects.toMatchObject({
+        code: "NRU6197",
+        message: "axis() graphical control 'xlab' is outside the measured browser subset.",
+      });
+    } finally {
+      await runtime?.dispose();
+    }
+  },
+  120_000,
+);
+
+it.runIf(runExternal)(
   "packs and loads the unchanged public pkgconfig 2.0.3 pure-R source package",
   async () => {
     let runtime: Awaited<ReturnType<typeof createR>> | undefined;

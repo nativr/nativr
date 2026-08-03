@@ -448,6 +448,9 @@ export type SyntaxCapability = "supported" | "parsed" | "unsupported";
 export interface CapabilityManifest {
   readonly nativrVersion: string;
   readonly protocolVersion: 1;
+  readonly targetRVersion: string;
+  readonly semanticProfileVersion: string;
+  /** @deprecated Use semanticProfileVersion. Retained for protocol-v1 consumers. */
   readonly languageSubsetVersion: string;
   readonly syntax: Readonly<Record<string, SyntaxCapability>>;
   readonly packages: readonly {

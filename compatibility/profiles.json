@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "normative": {
+    "id": "r-4.6.1",
+    "implementation": "GNU R",
+    "version": "4.6.1",
+    "releaseDate": "2026-06-24",
+    "releaseGating": true
+  },
+  "advisory": [
+    {
+      "id": "r-4.6.1-patched",
+      "purpose": "Warn about regressions fixed on the release branch without redefining the normative target.",
+      "releaseGating": false
+    },
+    {
+      "id": "r-devel",
+      "purpose": "Canary for future language and API changes.",
+      "releaseGating": false
+    }
+  ],
+  "platformProfile": {
+    "id": "browser-admissible",
+    "definition": "Behavioral compatibility is required wherever GNU R behavior is meaningful inside a capability-safe browser runtime. Browser-inapplicable behavior must use an explicit adaptation or fail closed.",
+    "adaptations": [
+      {
+        "surface": "system, system2, pipe",
+        "behavior": "Require an explicit host command adapter; otherwise fail closed."
+      },
+      {
+        "surface": "file and connections",
+        "behavior": "Operate on evaluator-owned virtual storage unless an explicit byte transport is supplied."
+      },
+      {
+        "surface": "Sys.getpid",
+        "behavior": "Return a stable NativR session identifier, never a host operating-system process identifier."
+      },
+      {
+        "surface": "capabilities",
+        "behavior": "Report the facilities actually available to the NativR session."
+      },
+      {
+        "surface": "native routines and external pointers",
+        "behavior": "Use registered capability-safe handles and audited Wasm adapters; never expose host pointers or ambient dynamic loading."
+      },
+      {
+        "surface": "graphics devices",
+        "behavior": "Compare semantic graphics operations and documented output profiles without claiming platform-device pixel identity."
+      }
+    ]
+  },
+  "upgradePolicy": "Changing the normative GNU R version requires an explicit compatibility-profile change, regenerated evidence, and release-gating review. A moving release alias must not redefine behavior."
+}

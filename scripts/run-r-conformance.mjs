@@ -9,6 +9,7 @@ if (rscript === undefined) {
   console.log("SKIP optional R oracle: Rscript is not installed or not on PATH.");
   process.exit(0);
 }
+assertNormativeR(rscript);
 
 const root = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const cases = JSON.parse(
@@ -219,6 +220,18 @@ function parseCanonicalNumber(value) {
   if (value === "Inf") return Number.POSITIVE_INFINITY;
   if (value === "-Inf") return Number.NEGATIVE_INFINITY;
   return Number(value);
+}
+
+function assertNormativeR(rscript) {
+  const result = spawnSync(rscript, ["--vanilla", "-e", "cat(as.character(getRversion()))"], {
+    encoding: "utf8",
+    windowsHide: true,
+  });
+  const detected = result.status === 0 ? result.stdout.trim() : "unknown";
+  if (detected === "4.6.1" || process.env.NATIVR_ALLOW_NON_NORMATIVE_R === "1") return;
+  throw new Error(
+    `The release-gating oracle requires GNU R 4.6.1; found ${detected}. Set NATIVR_ALLOW_NON_NORMATIVE_R=1 only for advisory local investigation.`,
+  );
 }
 
 async function findRscript() {

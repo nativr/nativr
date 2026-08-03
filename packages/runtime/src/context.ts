@@ -19,6 +19,26 @@ export const DEFAULT_RUNTIME_LIMITS: RuntimeLimits = Object.freeze({
   maxOutputBytes: 1_000_000,
 });
 
+/** Named, reviewable resource budgets for common browser-runtime workloads. */
+export type RuntimeProfile = "interactive-safe" | "package-test" | "large-browser";
+
+export const RUNTIME_LIMIT_PROFILES: Readonly<Record<RuntimeProfile, RuntimeLimits>> =
+  Object.freeze({
+    "interactive-safe": DEFAULT_RUNTIME_LIMITS,
+    "package-test": Object.freeze({
+      maxSteps: 5_000_000,
+      maxCallDepth: 200,
+      maxVectorLength: 2_000_000,
+      maxOutputBytes: 32_000_000,
+    }),
+    "large-browser": Object.freeze({
+      maxSteps: 10_000_000,
+      maxCallDepth: 250,
+      maxVectorLength: 10_000_000,
+      maxOutputBytes: 64_000_000,
+    }),
+  });
+
 /** Mutable accounting state for exactly one evaluation. */
 export class EvaluationContext implements OperatorContext {
   public readonly limits: RuntimeLimits;

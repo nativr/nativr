@@ -508,7 +508,7 @@ function corePackageDescriptionFields(
 ): readonly { readonly name: string; readonly value: string }[] {
   return Object.freeze([
     Object.freeze({ name: "Package", value: name }),
-    Object.freeze({ name: "Version", value: "4.6.0" }),
+    Object.freeze({ name: "Version", value: "4.6.1" }),
     ...(CORE_R_PACKAGE_NAMES.has(name) ? [Object.freeze({ name: "Priority", value: "base" })] : []),
   ]);
 }
@@ -2685,12 +2685,12 @@ export class Evaluator {
       if (REGISTERED_NAMESPACE_EXPORTS.has(name)) {
         return {
           name,
-          version: "4.6.0",
+          version: "4.6.1",
           namespace: this.#baseEnvironment,
           record: {
             definition: {
               name,
-              version: "4.6.0",
+              version: "4.6.1",
               descriptionFields: corePackageDescriptionFields(name),
               resourceTextEncoding: "utf8",
               dependencies: [],
@@ -2954,7 +2954,7 @@ export class Evaluator {
   #installedPackageVersion(name: string, libraryPaths?: readonly string[]): string | undefined {
     const effectivePaths = libraryPaths ?? this.#libraryPaths;
     if (this.#staticNamespaceExports(name) !== undefined) {
-      return effectivePaths.includes(NATIVR_SYSTEM_LIBRARY_PATH) ? "4.6.0" : undefined;
+      return effectivePaths.includes(NATIVR_SYSTEM_LIBRARY_PATH) ? "4.6.1" : undefined;
     }
     const record = this.#packages.get(name);
     if (record === undefined) return undefined;

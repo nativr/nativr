@@ -43,6 +43,8 @@ export type {
   NativRSymbolValue,
 } from "./conversion.js";
 export type { CapabilityManifest, PublicRWarning, RValueSnapshot } from "@nativr/protocol";
+export { RUNTIME_LIMIT_PROFILES } from "@nativr/runtime";
+export type { RuntimeProfile } from "@nativr/runtime";
 export {
   NativRError,
   REvaluationError,

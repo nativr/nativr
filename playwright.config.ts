@@ -9,7 +9,7 @@ export default defineConfig({
   testDir: "./tests/e2e",
   outputDir: artifactRoot === undefined ? "test-results" : path.join(artifactRoot, "test-results"),
   fullyParallel: false,
-  timeout: 30_000,
+  timeout: 60_000,
   expect: { timeout: 10_000 },
   reporter: [
     ["list"],
@@ -31,6 +31,14 @@ export default defineConfig({
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "firefox",
+      use: { ...devices["Desktop Firefox"] },
+    },
+    {
+      name: "webkit",
+      use: { ...devices["Desktop Safari"] },
     },
   ],
   webServer: {

@@ -1,4 +1,5 @@
-export { EvaluationContext, DEFAULT_RUNTIME_LIMITS } from "./context.js";
+export { EvaluationContext, DEFAULT_RUNTIME_LIMITS, RUNTIME_LIMIT_PROFILES } from "./context.js";
+export type { RuntimeProfile } from "./context.js";
 export {
   createEnvironment,
   createForcedPromise,

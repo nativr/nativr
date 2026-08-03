@@ -8,6 +8,7 @@ for (const command of [
   ["format:check"],
   ["research:usage:check"],
   ["features:check"],
+  ["corpus:check"],
   ["compatibility:check"],
   ["lint"],
   ["boundaries"],
@@ -16,6 +17,7 @@ for (const command of [
   ["test"],
   ["build"],
   ["capabilities:check"],
+  ["status:check"],
   ["audit:browser"],
   ["size"],
 ]) {

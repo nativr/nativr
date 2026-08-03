@@ -31,10 +31,11 @@ import type {
 import {
   DEFAULT_RUNTIME_LIMITS,
   NativRError,
+  RUNTIME_LIMIT_PROFILES,
   RResourceLimitError,
   RRuntimeDisposedError,
 } from "@nativr/runtime";
-import type { RuntimeLimits } from "@nativr/runtime";
+import type { RuntimeLimits, RuntimeProfile } from "@nativr/runtime";
 
 import {
   deserializeError,
@@ -78,6 +79,8 @@ export interface CreateROptions {
   /** Default: Worker. Inline mode may block the calling thread. */
   readonly execution?: "worker" | "inline";
   readonly assets?: CreateRAssets;
+  /** Named resource budget; defaults to interactive-safe. Explicit limits override its fields. */
+  readonly runtimeProfile?: RuntimeProfile;
   readonly limits?: Partial<RuntimeLimits>;
   /** Audited source-only package bundles available to this isolated session. */
   readonly packages?: readonly PureRPackageBundle[];
@@ -184,8 +187,10 @@ function allocateSessionProcessId(): number {
 export async function createR(options: CreateROptions = {}): Promise<NativRSession> {
   const assets = resolveAssets(options.assets);
   const sessionProcessId = allocateSessionProcessId();
+  const effectiveLimits = resolveRuntimeLimits(options.runtimeProfile, options.limits);
   const sessionOptions: CreateROptions = {
     ...options,
+    limits: effectiveLimits,
     ...(options.packages === undefined
       ? {}
       : { packages: snapshotPackageBundles(options.packages) }),
@@ -200,8 +205,8 @@ export async function createR(options: CreateROptions = {}): Promise<NativRSessi
       : {
           nativeModules: snapshotNativeModules(
             options.nativeModules,
-            options.limits?.maxVectorLength ?? DEFAULT_RUNTIME_LIMITS.maxVectorLength,
-            options.limits?.maxOutputBytes ?? DEFAULT_RUNTIME_LIMITS.maxOutputBytes,
+            effectiveLimits.maxVectorLength,
+            effectiveLimits.maxOutputBytes,
           ),
         }),
   };
@@ -274,6 +279,17 @@ export async function createR(options: CreateROptions = {}): Promise<NativRSessi
     );
   }
   return WorkerSession.create(assets, sessionOptions, sessionProcessId);
+}
+
+function resolveRuntimeLimits(
+  profile: RuntimeProfile | undefined,
+  overrides: Partial<RuntimeLimits> | undefined,
+): RuntimeLimits {
+  const selected = RUNTIME_LIMIT_PROFILES[profile ?? "interactive-safe"];
+  if (selected === undefined) {
+    throw new NativRError("NRS5009", `Unknown runtime profile '${String(profile)}'.`);
+  }
+  return Object.freeze({ ...selected, ...overrides });
 }
 
 function snapshotEnvironmentVariables(

@@ -6,13 +6,13 @@ import type {
 } from "./types.js";
 
 const DEFAULT_PROVIDED_PACKAGES: Readonly<Record<string, string>> = Object.freeze({
-  R: "4.6.0",
-  base: "4.6.0",
-  stats: "4.6.0",
-  graphics: "4.6.0",
-  grDevices: "4.6.0",
-  methods: "4.6.0",
-  utils: "4.6.0",
+  R: "4.6.1",
+  base: "4.6.1",
+  stats: "4.6.1",
+  graphics: "4.6.1",
+  grDevices: "4.6.1",
+  methods: "4.6.1",
+  utils: "4.6.1",
 });
 
 export function resolvePackageArtifacts(

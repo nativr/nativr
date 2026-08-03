@@ -2,8 +2,9 @@
 
 NativR reports five evidence levels: parse, API, result shape, numeric, and behavioral. A function
 is never described beyond the highest level covered by automated tests or conformance cases.
-Capabilities are versioned by NativR semver and `languageSubsetVersion`; protocol changes have their
-own version.
+Capabilities are versioned by NativR semver, `semanticProfileVersion`, `targetRVersion`, and the
+generated capability-manifest hash; protocol changes have their own version. `languageSubsetVersion`
+is a deprecated protocol-v1 alias of `semanticProfileVersion`.
 
 The current bounded contract is not complete GNU R compatibility. The broader completion boundary
 and black-box inventory are tracked in the [GNU R compatibility ledger](gnu-r-compatibility.md).
@@ -1058,7 +1059,7 @@ and differential evidence for its class, R major/minor target, RNG-kind length, 
 base-package length, and named-list access. Browser-specific values are deliberately NativR
 identities: platform is `wasm32-unknown-browser/nativr`, running host is
 `Browser JavaScript (NativR)`, time zone is UTC, native BLAS/LAPACK fields are empty, and the
-version list describes R 4.6.0 as the compatibility target rather than claiming that GNU R is
+version list describes R 4.6.1 as the compatibility target rather than claiming that GNU R is
 embedded. Current evaluator locale and RNG-kind mutations are reflected. `sessionInfo(package=)`,
 package descriptions, platform-native code-page fields, `print.sessionInfo`, `toLatex.sessionInfo`,
 and arbitrary host probing are not claimed.
@@ -1399,16 +1400,18 @@ behavior is an explicit package-usage extension; the source-bundle namespace loa
 general dplyr compatibility; arbitrary dplyr methods, grouped/remote tables, dots, pairlists,
 locale-specific encodings, and exhaustive recursive identity corners are not claimed.
 
-`pmin` computes recycled elementwise minima across logical, integer, double, character, factor, and
-NULL inputs. Nonempty logical results use integer storage, mixed inputs follow the ordinary
-character/double/integer promotion order, fractional recycling emits one warning, and any
+`pmin` and `pmax` compute recycled elementwise extrema across logical, integer, double, character,
+factor, and NULL inputs. Nonempty logical results use integer storage, mixed inputs follow the
+ordinary character/double/integer promotion order, fractional recycling emits one warning, and any
 zero-length input produces a typed zero-length result. The result copies the first input's owned
 attributes, including names, dimensions, custom metadata, and compatible classes. NA and NaN remain
 distinct, exact `na.rm` control ignores missing candidates unless every candidate is missing, and
 all-missing positions retain GNU R's rightmost NA/NaN identity. Equal-level ordered factors compare
-by level order; ordinary factors retain GNU R's warning-producing first-input behavior in the
-covered shapes. Complex/raw/list inputs, unequal ordered-factor levels, S3/S4 method dispatch,
-locale-specific character collation, and exhaustive class/recycling corner cases are not claimed.
+by level order; ordinary factors retain GNU R's operation-specific warning-producing first-input
+behavior in the covered shapes. The unchanged `labeling 0.4.3` figures path exercises `pmax` before
+reaching its separately recorded graphics blocker. Complex/raw/list inputs, unequal ordered-factor
+levels, S3/S4 method dispatch, locale-specific character collation, and exhaustive class/recycling
+corner cases are not claimed.
 
 `outer(X, Y, FUN, ...)` forms column-major Cartesian inputs, invokes the resolved callable once, and
 requires a vector result whose length matches the product of the input lengths. Vector inputs

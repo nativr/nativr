@@ -3249,7 +3249,20 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("max", ["...", "na.rm"], "numeric", (invocation) =>
     builtinExtremum(invocation, "max"),
   ),
-  defineBuiltin("pmin", ["...", "na.rm"], "behavioral", builtinParallelMinimum),
+  ...(["min", "max"] as const).map((operation) =>
+    withBuiltinFormals(
+      defineBuiltin(`p${operation}`, ["...", "na.rm"], "behavioral", (invocation) =>
+        builtinParallelExtremum(invocation, operation),
+      ),
+      [
+        { name: "..." },
+        {
+          name: "na.rm",
+          defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+        },
+      ],
+    ),
+  ),
   defineBuiltin("lag", ["x", "..."], "behavioral", builtinLag),
   defineBuiltin("start", ["x", "..."], "behavioral", (invocation) =>
     builtinTimeSeriesEndpoint(invocation, "start"),
@@ -13582,7 +13595,7 @@ function formatPrintedNumericVersion(value: RList, invocation: BuiltinInvocation
 
 function builtinGetRVersion(invocation: BuiltinInvocation): RValue {
   invocation.context.allocate(3);
-  return withClasses(listValue([integerVector([4, 6, 0])]), numericVersionClasses("system"));
+  return withClasses(listValue([integerVector([4, 6, 1])]), numericVersionClasses("system"));
 }
 
 async function builtinAsNumericVersion(invocation: BuiltinInvocation): Promise<RValue> {
@@ -13788,7 +13801,7 @@ async function builtinSessionInfo(invocation: BuiltinInvocation): Promise<RValue
       characterVector(["30"]),
       characterVector([""]),
       characterVector(["R"]),
-      characterVector(["R version 4.6.0 (NativR browser runtime)"]),
+      characterVector(["R version 4.6.1 (NativR browser runtime)"]),
       characterVector(["NativR"]),
     ],
     [
@@ -30634,10 +30647,18 @@ function histogramLabels(
   value: RValue | undefined,
 ): void {
   if (value === undefined || value.type === "null") return;
-  let labels: readonly string[];
-  if (value.type === "character") labels = value.values;
-  else if (logicalFlag(value, false, "labels")) labels = histogram.counts.map(String);
-  else return;
+  let labels: readonly (string | undefined)[];
+  if (value.type === "logical") {
+    if (!logicalFlag(value, false, "labels")) return;
+    labels = histogram.counts.map(String);
+  } else if (isAtomic(value)) {
+    labels = Array.from({ length: value.length }, (_, index) =>
+      isMissing(value, index) ? undefined : stringAt(value, index),
+    );
+  } else {
+    throw new RTypeMismatchError("NRT3395", "invalid 'labels' argument");
+  }
+  if (labels.length === 0) return;
   const resolved: RGraphicsText[] = [];
   for (let index = 0; index < heights.length; index += 1) {
     const label = labels[index % labels.length];
@@ -40579,25 +40600,31 @@ async function builtinExtremum(
   return doubleVector([result]);
 }
 
-type ParallelMinimumState =
+type ParallelExtremumOperation = "min" | "max";
+
+type ParallelExtremumState =
   | { readonly type: "value"; readonly value: number | string }
   | { readonly type: "missing" }
   | { readonly type: "nan" };
 
-async function builtinParallelMinimum(invocation: BuiltinInvocation): Promise<RValue> {
+async function builtinParallelExtremum(
+  invocation: BuiltinInvocation,
+  operation: ParallelExtremumOperation,
+): Promise<RValue> {
+  const call = `p${operation}`;
   const controls = invocation.arguments.filter((argument) => argument.name === "na.rm");
   if (controls.length > 1) {
-    throw new REvaluationError("NRE2102", "Argument 'na.rm' matched more than once in pmin().");
+    throw new REvaluationError("NRE2102", `Argument 'na.rm' matched more than once in ${call}().`);
   }
   const inputs: RValue[] = [];
   let removeMissing = false;
   for (const argument of invocation.arguments) {
     const value = await invocation.force(argument.promise);
-    if (argument.name === "na.rm") removeMissing = parallelMinimumRemoveMissing(value);
+    if (argument.name === "na.rm") removeMissing = parallelExtremumRemoveMissing(value, call);
     else inputs.push(value);
   }
   if (inputs.length === 0) {
-    throw new REvaluationError("NRE2103", "pmin() requires at least one parallel input.");
+    throw new REvaluationError("NRE2103", `${call}() requires at least one parallel input.`);
   }
 
   const vectors: AtomicVector[] = [];
@@ -40606,7 +40633,7 @@ async function builtinParallelMinimum(invocation: BuiltinInvocation): Promise<RV
     if (!isAtomic(input) || input.type === "complex" || input.type === "raw") {
       throw new RTypeMismatchError(
         "NRT3244",
-        "pmin() requires logical, integer, double, character, factor, or NULL inputs.",
+        `${call}() requires logical, integer, double, character, factor, or NULL inputs.`,
       );
     }
     vectors.push(input);
@@ -40616,7 +40643,7 @@ async function builtinParallelMinimum(invocation: BuiltinInvocation): Promise<RV
   const outputType = commonType(vectors);
   const first = inputs[0] ?? R_NULL;
   if (inputs.some((input) => input.type === "null" || (isAtomic(input) && input.length === 0))) {
-    return parallelMinimumAttributes(parallelMinimumEmpty(outputType), first);
+    return parallelExtremumAttributes(parallelExtremumEmpty(outputType, call), first);
   }
   const length = Math.max(...vectors.map((vector) => vector.length));
   if (vectors.some((vector) => length % vector.length !== 0)) {
@@ -40634,9 +40661,10 @@ async function builtinParallelMinimum(invocation: BuiltinInvocation): Promise<RV
     if (!allOrdered) {
       invocation.context.warn({
         code: "NRW1011",
-        message: "'>' not meaningful for factors",
+        message:
+          operation === "min" ? "'>' not meaningful for factors" : "'<' not meaningful for factors",
       });
-      return parallelMinimumRecycleFirst(first, length, invocation);
+      return parallelExtremumRecycleFirst(first, length, invocation, call);
     }
     const expectedLevels = factorLevels(factors[0] as RIntegerVector);
     if (
@@ -40650,7 +40678,7 @@ async function builtinParallelMinimum(invocation: BuiltinInvocation): Promise<RV
     ) {
       throw new RTypeMismatchError(
         "NRT3244",
-        "pmin() ordered factors require identical level sets.",
+        `${call}() ordered factors require identical level sets.`,
       );
     }
   }
@@ -40660,7 +40688,7 @@ async function builtinParallelMinimum(invocation: BuiltinInvocation): Promise<RV
   if (outputType === "character") {
     const output: string[] = [];
     for (let index = 0; index < length; index += 1) {
-      const state = parallelMinimumAt(vectors, index, true, removeMissing, invocation);
+      const state = parallelExtremumAt(vectors, index, true, removeMissing, operation, invocation);
       if (state.type === "missing") {
         missing[index] = 1;
         output.push("");
@@ -40668,50 +40696,51 @@ async function builtinParallelMinimum(invocation: BuiltinInvocation): Promise<RV
         output.push(String(state.type === "nan" ? "NaN" : state.value));
       }
     }
-    return parallelMinimumAttributes(characterVector(output, compactMask(missing)), first);
+    return parallelExtremumAttributes(characterVector(output, compactMask(missing)), first);
   }
 
   if (outputType === "double") {
     const output = new Float64Array(length);
     for (let index = 0; index < length; index += 1) {
-      const state = parallelMinimumAt(vectors, index, false, removeMissing, invocation);
+      const state = parallelExtremumAt(vectors, index, false, removeMissing, operation, invocation);
       if (state.type === "missing") missing[index] = 1;
       else output[index] = state.type === "nan" ? Number.NaN : Number(state.value);
     }
-    return parallelMinimumAttributes(doubleVector(output, compactMask(missing)), first);
+    return parallelExtremumAttributes(doubleVector(output, compactMask(missing)), first);
   }
 
   if (outputType === "integer") {
     const output = new Int32Array(length);
     for (let index = 0; index < length; index += 1) {
-      const state = parallelMinimumAt(vectors, index, false, removeMissing, invocation);
+      const state = parallelExtremumAt(vectors, index, false, removeMissing, operation, invocation);
       if (state.type !== "value") missing[index] = 1;
       else output[index] = Number(state.value);
     }
-    return parallelMinimumAttributes(integerVector(output, compactMask(missing)), first);
+    return parallelExtremumAttributes(integerVector(output, compactMask(missing)), first);
   }
 
   const output = new Int32Array(length);
   for (let index = 0; index < length; index += 1) {
-    const state = parallelMinimumAt(vectors, index, false, removeMissing, invocation);
+    const state = parallelExtremumAt(vectors, index, false, removeMissing, operation, invocation);
     if (state.type !== "value") missing[index] = 1;
     else output[index] = Number(state.value) === 0 ? 0 : 1;
   }
-  return parallelMinimumAttributes(integerVector(output, compactMask(missing)), first);
+  return parallelExtremumAttributes(integerVector(output, compactMask(missing)), first);
 }
 
-function parallelMinimumAt(
+function parallelExtremumAt(
   vectors: readonly AtomicVector[],
   index: number,
   characterMode: boolean,
   removeMissing: boolean,
+  operation: ParallelExtremumOperation,
   invocation: BuiltinInvocation,
-): ParallelMinimumState {
-  let selected: ParallelMinimumState | undefined;
+): ParallelExtremumState {
+  let selected: ParallelExtremumState | undefined;
   for (const vector of vectors) {
     invocation.context.checkpoint();
     const position = index % vector.length;
-    const candidate: ParallelMinimumState = isMissing(vector, position)
+    const candidate: ParallelExtremumState = isMissing(vector, position)
       ? { type: "missing" }
       : !characterMode && vector.type === "double" && Number.isNaN(vector.values[position])
         ? { type: "nan" }
@@ -40731,12 +40760,17 @@ function parallelMinimumAt(
       if (removeMissing) selected = candidate;
       continue;
     }
-    if (candidate.value < selected.value) selected = candidate;
+    if (
+      (operation === "min" && candidate.value < selected.value) ||
+      (operation === "max" && candidate.value > selected.value)
+    ) {
+      selected = candidate;
+    }
   }
   return selected ?? { type: "missing" };
 }
 
-function parallelMinimumRemoveMissing(value: RValue): boolean {
+function parallelExtremumRemoveMissing(value: RValue, call: string): boolean {
   if (
     (value.type !== "logical" && value.type !== "integer" && value.type !== "double") ||
     isFactor(value) ||
@@ -40744,12 +40778,15 @@ function parallelMinimumRemoveMissing(value: RValue): boolean {
     isMissing(value, 0) ||
     Number.isNaN(value.values[0])
   ) {
-    throw new RTypeMismatchError("NRT3244", "pmin(na.rm=) requires one non-missing logical value.");
+    throw new RTypeMismatchError(
+      "NRT3244",
+      `${call}(na.rm=) requires one non-missing logical value.`,
+    );
   }
   return (value.values[0] ?? 0) !== 0;
 }
 
-function parallelMinimumEmpty(type: AtomicVector["type"]): AtomicVector {
+function parallelExtremumEmpty(type: AtomicVector["type"], call: string): AtomicVector {
   switch (type) {
     case "logical":
       return logicalVector([]);
@@ -40761,25 +40798,26 @@ function parallelMinimumEmpty(type: AtomicVector["type"]): AtomicVector {
       return characterVector([]);
     case "complex":
     case "raw":
-      throw new Error("Internal pmin type invariant failed.");
+      throw new Error(`Internal ${call} type invariant failed.`);
     default:
       return assertNever(type);
   }
 }
 
-function parallelMinimumAttributes(output: AtomicVector, first: RValue): AtomicVector {
+function parallelExtremumAttributes(output: AtomicVector, first: RValue): AtomicVector {
   return isAtomic(first) ? { ...output, attributes: new Map(first.attributes) } : output;
 }
 
-function parallelMinimumRecycleFirst(
+function parallelExtremumRecycleFirst(
   first: RValue,
   length: number,
   invocation: BuiltinInvocation,
+  call: string,
 ): RValue {
   if (!isAtomic(first) || first.length === 0) {
     throw new RTypeMismatchError(
       "NRT3244",
-      "pmin() factor comparison requires an atomic first input.",
+      `${call}() factor comparison requires an atomic first input.`,
     );
   }
   return subsetVector(
@@ -44523,14 +44561,17 @@ async function collectDataFrameArguments(
     throw new REvaluationError("NRE2116", "Data-frame columns have incompatible row counts.");
   }
   const columns = supplied.map((column) => {
-    if (column.length === rowCount) return column;
-    if (rowCount % column.length !== 0) {
-      throw new REvaluationError("NRE2116", "Data-frame columns have incompatible row counts.");
+    let normalized = column;
+    if (column.length !== rowCount) {
+      if (rowCount % column.length !== 0) {
+        throw new REvaluationError("NRE2116", "Data-frame columns have incompatible row counts.");
+      }
+      const indices = Array.from({ length: rowCount }, (_, index) => (index % column.length) + 1);
+      const recycled = subsetVector(column, integerVector(indices), invocation.context);
+      if (!isAtomic(recycled)) throw new Error("Internal data-frame column invariant failed.");
+      normalized = recycled;
     }
-    const indices = Array.from({ length: rowCount }, (_, index) => (index % column.length) + 1);
-    const recycled = subsetVector(column, integerVector(indices), invocation.context);
-    if (!isAtomic(recycled)) throw new Error("Internal data-frame column invariant failed.");
-    return recycled;
+    return withoutAttribute(normalized, "names");
   });
   invocation.context.allocate(columns.length + rowCount);
   return { columns, names, rowCount };
@@ -51074,74 +51115,64 @@ async function builtinStructure(invocation: BuiltinInvocation): Promise<RValue> 
   }
 
   let output: AttributedSequence = data;
-  const names = matched.get("names");
-  if (names !== undefined) {
-    if (names.type !== "character" || names.missing !== undefined) {
-      throw new RTypeMismatchError("NRT3138", "structure(names=) requires character names.");
-    }
-    output = withNames(output, names.values);
-  }
-  const dimensions = matched.get("dim");
-  if (dimensions !== undefined) {
-    const numeric = requireNumeric(dimensions, "structure");
-    const values = Array.from({ length: numeric.length }, (_, index) => numberAt(numeric, index));
-    output = withDimensions(output, values);
-  }
-  const levels = matched.get("levels");
-  if (levels !== undefined) {
-    if (
-      levels.type !== "character" ||
-      levels.missing !== undefined ||
-      new Set(levels.values).size !== levels.length
-    ) {
-      throw new RTypeMismatchError(
-        "NRT3139",
-        "structure(levels=) requires unique non-missing character levels.",
-      );
-    }
-    output = withAttribute(output, "levels", characterVector(levels.values));
-  }
-  const rowNames = matched.get("row.names");
-  if (rowNames !== undefined) {
-    if (rowNames.type !== "character" || rowNames.missing !== undefined) {
-      throw new RTypeMismatchError(
-        "NRT3156",
-        "structure(row.names=) requires non-missing character row names.",
-      );
-    }
-    output = withAttribute(output, "row.names", rowNames);
-  }
-  const dimNames = matched.get("dimnames");
-  if (dimNames !== undefined) {
-    if (dimNames.type !== "list") {
-      throw new RTypeMismatchError("NRT3157", "structure(dimnames=) requires a list.");
-    }
-    output = withAttribute(output, "dimnames", dimNames);
-    validatedDimensionNames(output);
-  }
-  const classes = matched.get("class");
-  if (classes !== undefined) {
-    if (classes.type !== "character" || classes.missing !== undefined) {
-      throw new RTypeMismatchError("NRT3140", "structure(class=) requires character classes.");
-    }
-    output = withClasses(output, classes.values);
-  }
   for (const [name, attribute] of matched) {
-    if (
-      name === "class" ||
-      name === "names" ||
-      name === "dim" ||
-      name === "levels" ||
-      name === "row.names" ||
-      name === "dimnames"
-    ) {
-      continue;
+    switch (name) {
+      case "names":
+        if (attribute.type !== "character" || attribute.missing !== undefined) {
+          throw new RTypeMismatchError("NRT3138", "structure(names=) requires character names.");
+        }
+        output = withNames(output, attribute.values);
+        break;
+      case "dim": {
+        const numeric = requireNumeric(attribute, "structure");
+        const values = Array.from({ length: numeric.length }, (_, index) =>
+          numberAt(numeric, index),
+        );
+        output = withDimensions(output, values);
+        break;
+      }
+      case "levels":
+        if (
+          attribute.type !== "character" ||
+          attribute.missing !== undefined ||
+          new Set(attribute.values).size !== attribute.length
+        ) {
+          throw new RTypeMismatchError(
+            "NRT3139",
+            "structure(levels=) requires unique non-missing character levels.",
+          );
+        }
+        output = withAttribute(output, "levels", characterVector(attribute.values));
+        break;
+      case "row.names":
+        if (attribute.type !== "character" || attribute.missing !== undefined) {
+          throw new RTypeMismatchError(
+            "NRT3156",
+            "structure(row.names=) requires non-missing character row names.",
+          );
+        }
+        output = withAttribute(output, "row.names", attribute);
+        break;
+      case "dimnames":
+        if (attribute.type !== "list") {
+          throw new RTypeMismatchError("NRT3157", "structure(dimnames=) requires a list.");
+        }
+        output = withAttribute(output, "dimnames", attribute);
+        break;
+      case "class":
+        if (attribute.type !== "character" || attribute.missing !== undefined) {
+          throw new RTypeMismatchError("NRT3140", "structure(class=) requires character classes.");
+        }
+        output = withClasses(output, attribute.values);
+        break;
+      default:
+        output =
+          attribute.type === "null"
+            ? withoutAttribute(output, name)
+            : withAttribute(output, name, attribute);
     }
-    output =
-      attribute.type === "null"
-        ? withoutAttribute(output, name)
-        : withAttribute(output, name, attribute);
   }
+  if (matched.has("dimnames")) validatedDimensionNames(output);
   return output;
 }
 

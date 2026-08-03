@@ -6,7 +6,9 @@ import type { CapabilityManifest } from "@nativr/protocol";
 export const CAPABILITIES = Object.freeze({
   nativrVersion: "0.1.1",
   protocolVersion: PROTOCOL_VERSION,
-  languageSubsetVersion: "0.277.0",
+  targetRVersion: "4.6.1",
+  semanticProfileVersion: "0.278.0",
+  languageSubsetVersion: "0.278.0",
   syntax: {
     literals: "supported",
     assignment: "supported",
@@ -65,7 +67,7 @@ export const CAPABILITIES = Object.freeze({
   packages: ["base", "stats", "graphics", "grDevices", "utils", "datasets", "methods"].map(
     (packageName) => ({
       name: packageName,
-      referenceVersion: "R 4.6.x documented behavior",
+      referenceVersion: "GNU R 4.6.1 documented behavior",
       functions: baseBuiltins
         .filter((definition) => definition.package === packageName)
         .map((definition) => ({

@@ -1,33 +1,30 @@
 # GNU R compatibility ledger
 
-The long-term objective is complete behavioral compatibility with GNU R 4.6.0 while preserving
-NativR's independent browser-native implementation and clean-room constraints. This ledger defines
-the real completion boundary. The 25 package-usage groups remain useful for prioritization, but they
-are not a substitute for full compatibility.
+NativR targets versioned, browser-admissible behavioral compatibility with GNU R 4.6.1 while
+preserving an independent browser-native implementation and clean-room constraints. The normative
+and advisory profiles are defined in [`compatibility/profiles.json`](../compatibility/profiles.json)
+and [RFC-0001](rfcs/0001-normative-compatibility-profiles.md). The 25 package-usage groups remain
+useful for prioritization, but they are not a substitute for semantic or package-corpus evidence.
 
 ## Current black-box baseline
 
 `pnpm compatibility:collect` queries a separately installed GNU R only for public namespace names,
 callable kinds, and formal argument names. It never reads or serializes implementation bodies.
 
-| Inventory metric                  | Current value |
-| --------------------------------- | ------------: |
-| GNU R core namespaces inventoried |             7 |
-| Exported symbols                  |         2,736 |
-| Unique exported callable names    |         2,522 |
-| NativR registered names           |           594 |
-| Overlapping callable names        |           578 |
-| Missing GNU R callable names      |         1,944 |
-| Name overlap                      |       22.918% |
+The generated [`compatibility/status.json`](../compatibility/status.json) is the only canonical
+public status summary. It records the exact target, semantic profile, capability-manifest hash,
+conformance counts, name inventory, and package-corpus tiers. Historical callable totals elsewhere
+in this ledger are release notes, not current metrics.
 
-Name overlap is not behavioral evidence. A matching name remains incomplete until differential tests
-cover its argument matching, types, values, attributes, warnings, errors, visibility, side effects,
-and relevant platform behavior.
+Name overlap is not behavioral evidence. A matching name remains incomplete until recursive
+differential tests cover its argument matching, types, values, attributes, warnings, errors,
+visibility, side effects, reference identity, and relevant platform behavior.
 
 The committed black-box snapshot is
 [`compatibility/gnu-r/surface.json`](../compatibility/gnu-r/surface.json), and the derived report is
 [`name-coverage.json`](../compatibility/gnu-r/name-coverage.json). `pnpm compatibility:check`
-prevents the report from drifting from NativR's capability manifest.
+prevents the report from drifting from NativR's capability manifest. The name inventory records the
+exact GNU R version under which it was collected; it does not redefine the normative 4.6.1 target.
 
 ## Required compatibility domains
 
@@ -44,7 +41,7 @@ prevents the report from drifting from NativR's capability manifest.
 | Numeric runtime    | Complex arithmetic, special functions, linear algebra, FFT, distributions, optimizers, integration, and deterministic tolerances                                                                       | Decimal and upward-integer rounding, numeric interpolation, bounded `nlm` and general-purpose `optim` BFGS minimization with analytic/numerical derivatives and scaling, real/complex trigonometry through `sin`/`cos`/`tan`, real factorials through direct products and Lanczos gamma approximation, logarithms/exponentials, Cartesian outer products, logistic, normal, and central Student-t probabilities/quantiles, gamma and central/bounded non-central beta generation, vectorized binomial densities, all nine sample-quantile algorithms, posterior-grid probability points, direct-grid Gaussian density estimation, pivoted/unpivoted real Cholesky factors, real symmetric and bounded small asymmetric eigendecomposition, matrix standardization, formula-driven and direct `lsfit` least-squares fitting plus covariance, finite-data clustering, direct/radix-2/Bluestein convolution, planar convex hulls, session RNG-kind selection, and fixed-seed `sample.int` replacement/no-replacement, hash, weighted, and large-population paths have missingness, non-finite, warning, distribution, optimization, geometry, signal, clustering, rank-deficiency, inference, tail, and metadata evidence; the broader numeric domain remains incomplete |
 | Data and time      | Factors, frames, arrays, time zones, locales, encodings, connections, serialization, and native data formats                                                                                           | Column-major arrays, coordinate-matrix frames, frame extension, model-frame construction with treatment-coded factors, numeric data-frame/matrix standardization, grouped factor scoring/reordering, bounded delimited-table parsing/writing with type conversion, `lag`, `start`, `end`, and `time` regular-series coordinates, atomic/matrix/frame/regular-series `na.omit`, UTC/GMT POSIXlt calendar decomposition, inherited Date/POSIXt `weekdays` extraction with deterministic C-locale names, numeric `cut` factor construction, and deterministic C/Italian/US monetary locale-convention profiles have differential evidence; domain incomplete                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | I/O and platform   | Files, URLs, compression, processes, environment variables, capabilities, and browser-safe host adapters                                                                                               | Deterministic non-interactive browser/Worker mode, GNU R-shaped host-capability selection, evaluator-owned locale query/mutation, truthful classed session information, transferable graphics commands, bounded session-local text/raw-binary reads, lazy explicit-host URL input, a PNG file device, and GNU R XDR v2/v3 serialization have evidence through `serialize`/`unserialize`, `saveRDS`/`readRDS`/`infoRDS`, `save`/`load`, gzip, virtual files/connections, raw `readBin`, and Worker rendering; native host devices, profiling, ambient/native networking, arbitrary host locales, host files, other compression/connection classes, typed binary I/O, processes, environment access, broader serialized graphs, persistence, and broader host-adapter behavior remain incomplete                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| Package execution  | Namespace loading, lazy data, S3/S4 registration, bytecode-equivalent semantics, package resources, and R CMD check behavior                                                                           | Standard pure-R source directories and tarballs have build-time repository resolution, bounded archive inspection, deterministic artifacts, dependency/version checks, Collate and portable encoding handling, immutable resources, installed example/vignette indexes, isolated namespaces, imports/exports, `::`/`:::`, qualified S3 registration, lifecycle hooks, attachment, package source/text data plus XDR/gzip `.rda` and `R/sysdata.rda`, Worker transport, and reset/reload. Unchanged, digest-pinned `pkgconfig 2.0.3`, `generics 0.1.4`, `withr 3.0.3`, `R6 2.6.1`, `viridisLite 0.4.3`, and `RColorBrewer 1.1-3` sources provide executable evidence for resources, package-owned S3 dispatch, metaprogramming, state-restoring wrappers, reference objects, package-owned Lab spline palettes, and explicit-row-name data-frame metadata. Installed `.rdx`/`.rdb` lazy databases, raw development-vignette building, broader namespace directives, native code, S4 namespace registration, bytecode-equivalent behavior, R CMD check, universal package execution, and the broader domain remain incomplete                                                                                                                                           |
+| Package execution  | Namespace loading, lazy data, S3/S4 registration, bytecode-equivalent semantics, package resources, and R CMD check behavior                                                                           | Standard pure-R source directories and tarballs have build-time repository resolution, bounded archive inspection, deterministic artifacts, dependency/version checks, Collate and portable encoding handling, immutable resources, installed example/vignette indexes, isolated namespaces, imports/exports, `::`/`:::`, qualified S3 registration, lifecycle hooks, attachment, package source/text data plus XDR/gzip `.rda` and `R/sysdata.rda`, Worker transport, and reset/reload. The pinned package corpus records seven unchanged execution proofs by completed tier and includes separate unevaluated holdouts; `labeling 0.4.3` reaches P4 and records `axis(xlab=)` as its first P5 blocker. Installed `.rdx`/`.rdb` lazy databases, raw development-vignette building, broader namespace directives, native code, S4 namespace registration, bytecode-equivalent behavior, R CMD check, universal package execution, and the broader domain remain incomplete                                                                                                                                                                                                                                                                                            |
 | Graphics           | Devices, graphics state, base graphics, colors, fonts, and browser rendering equivalence                                                                                                               | Evidence covers common session-local `graphics::par` query/update/restore semantics, a numbered browser/PNG `dev.cur`/`dev.list`/`dev.off`/`graphics.off` lifecycle, standards-compliant RGBA PNG output, the `graphics::pairs` package-method extension point, complete ordered GNU R 4.6.0 named-color catalog and distinct subset, bounded linear RGB/Lab `colorRampPalette`, polar CIE-LUV `hcl`, deterministic palettes, owned page/window state, bounded linear `axis` ticks/labels, raster/segment/plot primitives, command buffering, display-list replay, Worker transfer, and Canvas rendering; remaining parameters, non-PNG devices, complete device switching, logarithmic/date axes, font metrics, external/cross-device formats, layout identity, and rendering equivalence remain incomplete                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 
 The package-I/O increment adds `readLines`, `writeLines`, and `Sys.sleep`, raising name overlap to
@@ -500,10 +497,10 @@ directories and tarballs plus CRAN-like repository dependency closure resolution
 metadata and resources, selects and records platform-specific R sources, applies Collate order and
 portable encodings, rejects native/install-hook surfaces, emits SHA-256 artifacts and locks, and
 passes them to the existing Worker loader. The opt-in external test downloads unchanged
-`pkgconfig 2.0.3`, `generics 0.1.4`, `withr 3.0.3`, `R6 2.6.1`, `viridisLite 0.4.3`, and
-`RColorBrewer 1.1-3`, pins each resulting artifact digest, and executes package-resource,
-S3-dispatch, state-restoring wrapper, reference-object, and package-owned palette paths without
-source rewrites. The `withr` proof drove general call-rooted replacement, `formals<-`,
+`pkgconfig 2.0.3`, `generics 0.1.4`, `withr 3.0.3`, `R6 2.6.1`, `viridisLite 0.4.3`,
+`RColorBrewer 1.1-3`, and `labeling 0.4.3`, pins each resulting artifact digest, and executes
+package-resource, S3-dispatch, state-restoring wrapper, reference-object, and package-owned palette
+paths without source rewrites. The `withr` proof drove general call-rooted replacement, `formals<-`,
 `environment<-`, `bquote`, list-backed environments, dynamic caller-frame, hook-registry,
 closure-like builtin-formal, and `graphics::par` work. The R6 proof additionally drove shim
 precedence, qualified S3 registration, environment/closure attributes, NULL-as-empty
@@ -512,7 +509,9 @@ non-dispatching subset primitives. The unchanged R6 proof now also exercises pri
 active read/write field; viridisLite exercises generic arithmetic attribute propagation and a
 256-anchor Lab spline through `grDevices::colorRamp`; RColorBrewer exercises exact trailing
 `data.frame()` controls, explicit row names, metadata subsetting, palette recursion, and warnings.
-These six package/version proofs are not universal package compatibility.
+Labeling reaches P4 through nine unchanged algorithms and records `axis(xlab=)` as the first blocker
+on its deeper figures path. These tiered package/version proofs are not universal package
+compatibility.
 
 This metaprogramming/package increment adds eight overlapping GNU R names and raises current name
 overlap to 531 of 2,522. Each added behavior has checked-in differential evidence; the unchanged

@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { createR, isComplex, isNA, isRaw, NA, RRuntimeDisposedError } from "../src/index.js";
+import {
+  createR,
+  isComplex,
+  isNA,
+  isRaw,
+  NA,
+  RUNTIME_LIMIT_PROFILES,
+  RRuntimeDisposedError,
+} from "../src/index.js";
 import type {
   PublicReadlineRequest,
   PublicNativeCallRequest,
@@ -6660,7 +6668,7 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     await runtime.dispose();
   });
 
-  it("computes parallel minima with recycling, missingness, and first-input metadata", async () => {
+  it("computes parallel extrema with recycling, missingness, and first-input metadata", async () => {
     const runtime = await session();
     await expect(runtime.eval("pmin(c(3L, 1L, 4L), c(2L, 5L, 0L))")).resolves.toEqual([2, 1, 0]);
     await expect(
@@ -6707,6 +6715,46 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       code: "NRT3244",
     });
     await expect(runtime.eval("pmin(list(1), list(2))")).rejects.toMatchObject({
+      code: "NRT3244",
+    });
+    await expect(runtime.eval("pmax(c(3L, 1L, 4L), c(2L, 5L, 0L))")).resolves.toEqual([3, 5, 4]);
+    await expect(
+      runtime.eval(
+        'c(pmax(c(TRUE, FALSE), c(TRUE, TRUE)), typeof(pmax(c(TRUE, FALSE), c(TRUE, TRUE))), pmax(1:3, c(2, 1.5, 4)), pmax(c("b", "a"), c("a", "c")), pmax(1:2, c("0", "3")))',
+      ),
+    ).resolves.toEqual(["1", "1", "integer", "2", "2", "4", "b", "c", "1", "3"]);
+    await expect(
+      runtime.eval("pmax(c(1, NA, NaN, -Inf), c(2, 3, 4, Inf), na.rm = TRUE)"),
+    ).resolves.toEqual([2, 3, 4, Number.POSITIVE_INFINITY]);
+    await expect(
+      runtime.eval(
+        "x <- structure(matrix(c(3, 1, 4, 2), 2), dimnames = list(c('r1', 'r2'), c('a', 'b')), label = 'x')\ny <- pmax(x, c(2, 5, 0, 9))\nc(y, dim(y), rownames(y), colnames(y), attr(y, 'label'))",
+      ),
+    ).resolves.toEqual(["3", "5", "4", "9", "2", "2", "r1", "r2", "a", "b", "x"]);
+    await expect(
+      runtime.eval(
+        "x <- pmax(ordered(c('b', 'a')), ordered(c('a', 'b')))\nc(as.integer(x), class(x), levels(x))",
+      ),
+    ).resolves.toEqual(["2", "2", "ordered", "factor", "a", "b"]);
+    const maximumFactor = await runtime.evalDetailed(
+      "as.character(pmax(factor(c('b', 'a')), factor(c('a', 'b'))))",
+    );
+    expect(maximumFactor.value).toEqual(["b", "a"]);
+    expect(maximumFactor.warnings).toEqual([
+      { code: "NRW1011", message: "'<' not meaningful for factors" },
+    ]);
+    const maximumRecycled = await runtime.evalDetailed("pmax(1:3, c(10L, 2L))");
+    expect(maximumRecycled.value).toEqual([10, 2, 10]);
+    expect(maximumRecycled.warnings).toEqual([
+      { code: "NRW1001", message: "an argument will be fractionally recycled" },
+    ]);
+    await expect(
+      runtime.eval(
+        "c(names(formals(pmin)), names(formals(pmax)), formals(pmin)$na.rm, formals(pmax)$na.rm, typeof(pmax(integer(), 1:3)), length(pmax(NULL, 1:3)), is.null(pmax(NULL)))",
+      ),
+    ).resolves.toEqual(["...", "na.rm", "...", "na.rm", "FALSE", "FALSE", "integer", "0", "TRUE"]);
+    await expect(runtime.eval("pmax()")).rejects.toMatchObject({ code: "NRE2103" });
+    await expect(runtime.eval("pmax(as.raw(1), as.raw(2))")).rejects.toMatchObject({
       code: "NRT3244",
     });
     await runtime.dispose();
@@ -8495,6 +8543,15 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       ],
     });
     expect(drawn.graphics.some((event) => event.kind === "text")).toBe(true);
+
+    const numericLabels = await runtime.evalDetailed(`
+      hist(1:3, breaks = c(0, 1, 2, 3), labels = c(3, NA, 4))
+    `);
+    const numericText = numericLabels.graphics.find((event) => event.kind === "text");
+    expect(numericText).toMatchObject({
+      kind: "text",
+      labels: [{ label: "3" }, { label: "4" }],
+    });
 
     await expect(
       runtime.eval(`
@@ -11369,6 +11426,34 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     await limited.dispose();
   });
 
+  it("exposes named runtime resource profiles with explicit per-session overrides", async () => {
+    expect(RUNTIME_LIMIT_PROFILES["interactive-safe"]).toEqual({
+      maxSteps: 100_000,
+      maxCallDepth: 100,
+      maxVectorLength: 1_000_000,
+      maxOutputBytes: 1_000_000,
+    });
+    expect(RUNTIME_LIMIT_PROFILES["package-test"]).toEqual({
+      maxSteps: 5_000_000,
+      maxCallDepth: 200,
+      maxVectorLength: 2_000_000,
+      maxOutputBytes: 32_000_000,
+    });
+
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      runtimeProfile: "package-test",
+      limits: { maxSteps: 50 },
+    });
+    await expect(runtime.eval("while (TRUE) 1")).rejects.toMatchObject({ code: "NRL4001" });
+    await runtime.dispose();
+
+    await expect(
+      createR({ execution: "inline", assets, runtimeProfile: "unknown" as "package-test" }),
+    ).rejects.toMatchObject({ code: "NRS5009" });
+  });
+
   it("routes readline through an explicit host capability while preserving non-interactive defaults", async () => {
     const nonInteractive = await createR({ execution: "inline", assets });
     const defaultResult = await nonInteractive.evalDetailed(
@@ -12671,7 +12756,7 @@ NeedsCompilation: no
         r <- getRversion()
         c(
           typeof(v), length(v), class(v), as.character(v), format(v),
-          v >= "3.6", v == "4.6.0.0", "5.0" > v,
+          v >= "3.6", v == "4.6.1.0", "5.0" > v,
           class(r), as.character(r), r >= "4.6",
           is.package_version(v), is.numeric_version(v)
         )
@@ -12681,15 +12766,15 @@ NeedsCompilation: no
       "1",
       "package_version",
       "numeric_version",
-      "4.6.0",
-      "4.6.0",
+      "4.6.1",
+      "4.6.1",
       "TRUE",
       "TRUE",
       "TRUE",
       "R_system_version",
       "package_version",
       "numeric_version",
-      "4.6.0",
+      "4.6.1",
       "TRUE",
       "TRUE",
       "TRUE",
@@ -12755,7 +12840,7 @@ NeedsCompilation: no
           as.character(utils::packageVersion(factor("stats")))
         )
       `),
-    ).resolves.toEqual(["1.2", "1.3", "2.1", "2.2", "FALSE", "FALSE", "4.6.0", "4.6.0"]);
+    ).resolves.toEqual(["1.2", "1.3", "2.1", "2.2", "FALSE", "FALSE", "4.6.0", "4.6.1"]);
     await expect(
       runtime.eval('capture.output(print(package_version(c("1.2.3", "2.0", NA))))'),
     ).resolves.toBe("[1] '1.2.3' '2.0'   <NA>   ");
@@ -12829,7 +12914,7 @@ NeedsCompilation: no
       "0.1.0",
       "Version",
       "stats",
-      "4.6.0",
+      "4.6.1",
       "base",
     ]);
     await expect(runtime.eval('isNamespaceLoaded("nativrfixture")')).resolves.toBe(false);
@@ -13291,7 +13376,11 @@ NeedsCompilation: no
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.277.0");
+    expect(capabilities).toMatchObject({
+      targetRVersion: "4.6.1",
+      semanticProfileVersion: "0.278.0",
+      languageSubsetVersion: "0.278.0",
+    });
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

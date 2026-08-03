@@ -1,7 +1,9 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.277.0",
+  "targetRVersion": "4.6.1",
+  "semanticProfileVersion": "0.278.0",
+  "languageSubsetVersion": "0.278.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -60,7 +62,7 @@
   "packages": [
     {
       "name": "base",
-      "referenceVersion": "R 4.6.x documented behavior",
+      "referenceVersion": "GNU R 4.6.1 documented behavior",
       "functions": [
         { "name": "+", "compatibility": "behavioral" },
         { "name": "-", "compatibility": "behavioral" },
@@ -464,6 +466,7 @@
         { "name": "min", "compatibility": "numeric" },
         { "name": "max", "compatibility": "numeric" },
         { "name": "pmin", "compatibility": "behavioral" },
+        { "name": "pmax", "compatibility": "behavioral" },
         { "name": "lag", "compatibility": "behavioral" },
         { "name": "start", "compatibility": "behavioral" },
         { "name": "end", "compatibility": "behavioral" },
@@ -611,7 +614,7 @@
     },
     {
       "name": "stats",
-      "referenceVersion": "R 4.6.x documented behavior",
+      "referenceVersion": "GNU R 4.6.1 documented behavior",
       "functions": [
         { "name": "rlnorm", "compatibility": "behavioral" },
         { "name": "rcauchy", "compatibility": "behavioral" },
@@ -641,7 +644,7 @@
     },
     {
       "name": "graphics",
-      "referenceVersion": "R 4.6.x documented behavior",
+      "referenceVersion": "GNU R 4.6.1 documented behavior",
       "functions": [
         { "name": "curve", "compatibility": "behavioral" },
         { "name": "hist", "compatibility": "behavioral" },
@@ -677,7 +680,7 @@
     },
     {
       "name": "grDevices",
-      "referenceVersion": "R 4.6.x documented behavior",
+      "referenceVersion": "GNU R 4.6.1 documented behavior",
       "functions": [
         { "name": "colorRamp", "compatibility": "numeric" },
         { "name": "colorRampPalette", "compatibility": "numeric" },
@@ -722,7 +725,7 @@
     },
     {
       "name": "utils",
-      "referenceVersion": "R 4.6.x documented behavior",
+      "referenceVersion": "GNU R 4.6.1 documented behavior",
       "functions": [
         { "name": "object.size", "compatibility": "behavioral" },
         { "name": ".DollarNames", "compatibility": "behavioral" },
@@ -766,10 +769,10 @@
         { "name": "getFromNamespace", "compatibility": "behavioral" }
       ]
     },
-    { "name": "datasets", "referenceVersion": "R 4.6.x documented behavior", "functions": [] },
+    { "name": "datasets", "referenceVersion": "GNU R 4.6.1 documented behavior", "functions": [] },
     {
       "name": "methods",
-      "referenceVersion": "R 4.6.x documented behavior",
+      "referenceVersion": "GNU R 4.6.1 documented behavior",
       "functions": [
         { "name": "as", "compatibility": "behavioral" },
         { "name": "setAs", "compatibility": "behavioral" },

@@ -1,0 +1,12 @@
+[
+  {
+    "id": "recursive-nested-attributes",
+    "policy": "exact",
+    "code": "structure(list(alpha = 1:2, beta = structure(c(\"x\", NA_character_), class = c(\"probe\", \"character\"), levels = c(\"x\", \"y\"))), class = \"outer\", marker = matrix(1:4, 2, dimnames = list(c(\"r1\", \"r2\"), c(\"a\", \"b\"))))"
+  },
+  {
+    "id": "recursive-data-frame-object",
+    "policy": "exact",
+    "code": "data.frame(group = factor(c(\"b\", \"a\"), levels = c(\"a\", \"b\", \"unused\")), score = c(one = 1.5, two = NA_real_), row.names = c(\"r1\", \"r2\"), check.names = FALSE)"
+  }
+]

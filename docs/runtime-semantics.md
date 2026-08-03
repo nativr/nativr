@@ -628,7 +628,7 @@ reference object, call public methods, mutate public and private state, and expo
 active field without source changes. Core package names remain reserved. This is an executable
 package/version proof, not universal R6 or pure-R package compatibility. Unchanged
 `utils::packageVersion(pkg)` consults that immutable catalog and therefore does not load or attach
-the requested namespace. Core namespaces expose the runtime's documented `4.6.0` compatibility
+the requested namespace. Core namespaces expose the runtime's documented `4.6.1` compatibility
 identity; installed bundles expose their validated DESCRIPTION version. `getRversion()` uses the
 same component representation with class chain `R_system_version`, `package_version`, and
 `numeric_version`. Version constructors normalize dots and hyphens into integer components,
@@ -1012,7 +1012,7 @@ a Worker host handler, or any native shell.
 
 `utils::sessionInfo()` assembles a classed named list from the same evaluator-owned state. It
 reports `wasm32-unknown-browser/nativr` and `Browser JavaScript (NativR)` instead of leaking or
-misrepresenting the host operating system, identifies R 4.6.0 as the compatibility target, exposes
+misrepresenting the host operating system, identifies R 4.6.1 as the compatibility target, exposes
 the active locale and three RNG kind names, lists the seven attached core packages, and reports the
 runtime's UTC/internal time-zone contract. Native BLAS/LAPACK strings and loaded-only packages are
 empty because the interpreter does not load those host facilities. Explicit `package=` description
@@ -1654,9 +1654,19 @@ Ambiguous-method diagnostics, union classes, full formal/partial argument matchi
 namespace/package registration, method caches, primitive/group generics, and complete
 external-package behavior are not claimed.
 
-Default resource limits are 100,000 steps, 100 calls, 1,000,000 elements per vector, and 1,000,000
-output bytes. Structured resource errors reduce accidental denial of service but are not a formal
-security sandbox.
+Named resource profiles make workload intent explicit:
+
+| Profile                      |      Steps | Calls | Vector elements | Output / graphics bytes |
+| ---------------------------- | ---------: | ----: | --------------: | ----------------------: |
+| `interactive-safe` (default) |    100,000 |   100 |       1,000,000 |               1,000,000 |
+| `package-test`               |  5,000,000 |   200 |       2,000,000 |              32,000,000 |
+| `large-browser`              | 10,000,000 |   250 |      10,000,000 |              64,000,000 |
+
+`createR({ runtimeProfile, limits })` selects a profile and then applies explicit per-field
+overrides. The larger profiles are opt-in and remain finite; they do not weaken the default browser
+session. Structured resource errors reduce accidental denial of service but are not a formal
+security sandbox. Byte-oriented graph accounting beyond output, resources, and graphics remains an
+open object-memory-model requirement.
 
 `utils::browseURL()` validates one non-empty character URL and preserves GNU R's invisible return. A
 callable `browser` option/function receives a lazy original or `encodeIfNeeded`-encoded URL and its

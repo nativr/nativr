@@ -2,17 +2,15 @@
 
 **Write R. Run JavaScript.**
 
-> Experimental: NativR implements a small, explicitly documented R-compatible subset. It is not GNU
-> R and does not run arbitrary R packages.
+> Experimental: NativR is an independent browser-native implementation targeting versioned,
+> browser-admissible behavioral compatibility with GNU R 4.6.1. It is not GNU R and does not yet run
+> arbitrary R packages.
 
-NativR is an independent, browser-native analytics runtime written in TypeScript. It parses
-supported R source with Tree-sitter, normalizes that syntax into a NativR-owned AST, and interprets
-it locally with explicit vector semantics. The default public API runs in a Web Worker and performs
-no network access during evaluation.
+NativR parses R source with Tree-sitter, converts it to a NativR-owned normalized AST, and
+interprets it in TypeScript. The default API runs in a Web Worker. Evaluation has no ambient
+network, filesystem, DOM, process, native-pointer, or dynamic-code capability.
 
 ## Quick start
-
-Install from npm:
 
 ```sh
 pnpm add @nativr/nativr
@@ -26,14 +24,26 @@ const result = await r.eval(`
   x <- c(1, 2, 3, 4, 5)
   mean(x)
 `);
+
 console.log(result); // 3
 await r.dispose();
 ```
 
-### Load a source-only R package
+The default `interactive-safe` resource profile is deliberately bounded. Package validation can opt
+into a larger, still finite budget without weakening normal browser sessions:
 
-Pure-R functions do not need TypeScript rewrites. Install the build-time package tool, then turn a
-standard source directory or CRAN-like source package into a deterministic browser artifact:
+```ts
+const r = await createR({ runtimeProfile: "package-test" });
+```
+
+Explicit `limits` override individual fields of the selected profile.
+
+## Load an unchanged pure-R package
+
+NativR follows **Base R once, package source many times**. Pure-R package functions should remain R
+code rather than being rewritten package-by-package in TypeScript.
+
+Create an integrity-locked browser artifact at build time:
 
 ```sh
 pnpm add -D @nativr/package-tools
@@ -47,87 +57,29 @@ import packageSet from "./packages.json" with { type: "json" };
 const r = await createR({ packages: packageSet.bundles });
 await r.eval("library(pkgconfig)");
 console.log(await r.eval('pkgconfig::get_config("unset", 42L)')); // 42
+await r.dispose();
 ```
 
-`install` reads the repository's source `PACKAGES` index, downloads the required `Depends`/`Imports`
-closure, rejects unsafe or non-pure install surfaces, checks version constraints, and writes an
-integrity-locked package set. To package a local source directory or `.tar.gz`:
+The installer resolves and pins the source dependency closure, rejects native or unsafe install
+surfaces, verifies integrity, and emits data-only bundles for the Worker. A package is not called
+compatible merely because the installer accepts it: NativR reports progression from archive
+admission (P0) through namespace loading, attachment, representative execution, examples, tests, and
+applicable package-check behavior (P7).
 
-```sh
-pnpm exec nativr-package pack ./demo --output demo.nativr.json
-```
+See the [package-loading contract](docs/pure-r-packages.md),
+[pinned package corpus](compatibility/package-corpus.json), and
+[complete bundle example](examples/pure-r-package.ts).
 
-Applications can also supply an audited bundle directly when the session is created:
+## One-file browser example
 
-```ts
-const r = await createR({
-  packages: [
-    {
-      description: "Package: demo\nVersion: 0.1.0\nNeedsCompilation: no",
-      namespace: "export(twice_mean, filtered_flow)",
-      rSources: [
-        {
-          path: "R/twice-mean.R",
-          source:
-            'twice_mean <- function(x) 2 * mean(x)\nfiltered_flow <- function(x) stats::filter(x, .8, method = "r")',
-        },
-      ],
-    },
-  ],
-});
-
-await r.eval("library(demo)");
-console.log(await r.eval("twice_mean(c(1, 2, 6))")); // 6
-console.log(await r.eval("round(filtered_flow(1:6), 6)"));
-// [1, 2.8, 5.24, 8.192, 11.5536, 15.24288]
-console.log(await r.eval('readLines(system.file("DESCRIPTION", package = "demo"), n = 1)'));
-// "Package: demo"
-console.log(await r.eval('utils::packageDescription("demo", fields = "Version")'));
-// "0.1.0"
-console.log(await r.eval('c(class(stdout()), isOpen(stdout(), "write"), isatty(stdout()))'));
-// ["terminal", "connection", "TRUE", "FALSE"]
-```
-
-The loader supports isolated namespaces, dependency/import loading and version checks, package
-metadata/source/resources through virtual `system.file()` paths, classed `packageDescription()`
-queries, bounded `readLines()`, standard stdout/stderr connections, read-only `file()` connections,
-stored/DEFLATE ZIP-member resources through read-only `unz()` connections, input `textConnection()`
-plus `source()` into selected environments, package `data/*.R`/text/`.rda` loading through `data()`,
-and `R/sysdata.rda` namespace initialization, installed vignette discovery through `vignette()`,
-build-time `man/*.Rd` help indexing through `help()`, CSP-safe text/HTML help presentation, plus
-exports, `pkg::name`, `pkg:::name`, S3 registrations, `.onLoad()`, `.onAttach()`, `library()`,
-`require()`, `requireNamespace()`, and exact private-binding retrieval through
-`utils::getFromNamespace()` in inline and Worker execution. Private lookup uses the package's real
-isolated namespace and never falls through to imports or Base R. Arbitrary pure-R source packages
-can enter this pipeline, but that is not a claim that every package already executes: all
-dependencies, data formats, namespace directives, and R features it uses must also be supported.
-Unchanged, digest-pinned `pkgconfig 2.0.3`, `generics 0.1.4`, and `withr 3.0.3` source packages now
-provide end-to-end external proofs: package resources, package-owned S3 dispatch, and generated
-state-restoring wrappers all execute without patching the packages. See the
-[complete bundle example](examples/pure-r-package.ts) and
-[package-loading contract](docs/pure-r-packages.md).
-
-The compatibility strategy is therefore **Base R once, package source many times**. NativR does not
-plan to port each package function to TypeScript. It measures common package usage, implements the
-shared R/core contract once, and reruns unchanged packages to reveal the next blocker. "Any pure-R
-package can be submitted to the installer" is already the input contract; "every pure-R package
-runs" remains the evidence-driven compatibility goal rather than a present claim.
-
-The long-term layering is intentional: first make the Base R and recommended-package substrate as
-complete as executable evidence permits, then let ordinary package-owned R closures provide the
-larger ecosystem. A source-only package should need no NativR-specific rewrite. Packages containing
-C, C++, Fortran, JVM code, system libraries, or external processes need a separate reviewed Wasm or
-host-capability layer; Base R compatibility alone cannot make those binaries browser-native.
-
-### One-file browser example
-
-Save this as `index.html` and serve it from any static web server. This CDN example uses inline
-execution to avoid a build step; npm/bundler applications use the Worker-first default shown above.
+Save this as `index.html` and serve it from a static web server. Inline mode avoids a bundler for
+this small demo; production applications normally use the Worker-first default.
 
 ```html
 <!doctype html>
 <button id="run">Run R</button>
 <pre id="output">Loading NativR...</pre>
+
 <script type="module">
   import { createR } from "https://cdn.jsdelivr.net/npm/@nativr/nativr@0.1.1/dist/index.js";
 
@@ -140,805 +92,38 @@ execution to avoid a build step; npm/bundler applications use the Worker-first d
     },
   });
 
-  const run = document.querySelector("#run");
   const output = document.querySelector("#output");
   output.textContent = "Ready";
-  run.onclick = async () => {
+  document.querySelector("#run").onclick = async () => {
     output.textContent = JSON.stringify(await r.eval("mean(c(1, 2, 3, 4, 5))"));
   };
 </script>
 ```
 
-For an editable, persistent browser R console, open or copy the
-[single-file HTML + JavaScript REPL](examples/browser-repl.html). It needs no framework or bundler.
-The CDN is used only to load the package and Wasm assets; R evaluation itself remains local and
-network-free.
+For an editable R console, use the [single-file HTML + JavaScript REPL](examples/browser-repl.html).
+R evaluation remains local and network-free after the package and Wasm assets load.
 
-Package code may call `utils::browseURL()` without gaining network or DOM access. NativR returns an
-inert entry in `evalDetailed().browseRequests`; `createR({ onBrowse })` receives the same event.
-External URLs remain strings for an application to approve, while browser-memory HTML, images, and
-other files include a bounded byte snapshot. The Playground exposes a user-clicked reference viewer
-and never opens a request automatically.
+## Compatibility is evidence, not a name count
 
-Pure-R package feature checks can use `Sys.which()` without exposing the machine's PATH. Admit only
-the virtual or host tools the application intends to advertise:
+The normative release-gating target is GNU R 4.6.1. Patched R and R-devel are advisory profiles and
+cannot silently redefine behavior. Browser-inapplicable operating-system surfaces use documented
+adaptations or fail closed.
 
-```js
-const r = await createR({
-  executablePaths: { pandoc: "nativr://host/bin/pandoc" },
-});
-console.log(await r.eval('Sys.which(c("pandoc", "git"))'));
-// ["nativr://host/bin/pandoc", ""]
-```
+Compatibility claims require executable evidence:
 
-The map is copied into the Worker and is empty by default. Advertising a tool does not authorize
-execution; `systemCommand` remains a separate explicit policy.
+- checked-in regression cases;
+- a live, exact-version GNU R oracle;
+- recursive Oracle v2 object graphs for nested values and attributes;
+- pinned unchanged-package development, regression, and holdout corpora;
+- explicit first-blocker and platform-deviation records.
 
-Package code may also call `base::system()`, but NativR has no default shell. Applications that need
-a specific external feature can pass `createR({ systemCommand })`, inspect and allow-list the typed
-request, then return `{ status, stdout, stderr }`; the same asynchronous policy works through the
-default Worker. Without it, command execution fails closed. Native compilation such as `R CMD SHLIB`
-remains outside the pure-R package contract.
+API-name overlap is inventory only. The generated
+[canonical compatibility status](compatibility/status.json) is the source for public metrics; the
+[GNU R compatibility ledger](docs/gnu-r-compatibility.md),
+[compatibility contract](docs/compatibility-contract.md), and
+[normative profile](compatibility/profiles.json) define the details.
 
-Packages with compiled code use a separate, explicit `.Call` boundary. An application registers
-module and routine metadata in `nativeModules` and supplies `nativeCall`, normally backed by an
-audited Wasm module. Arguments and results are versioned, structured-cloneable R snapshots; NativR
-does not load host DLLs, expose pointers, or execute JavaScript generated by R code. Pure-R packages
-need neither option and continue to load from source bundles unchanged.
-
-Pure-R packages that prompt through `readline()` can use an equally explicit browser input seam:
-
-```js
-const r = await createR({
-  readline: ({ prompt }) => window.prompt(prompt) ?? "",
-});
-```
-
-The same callback works through the default Worker and may return a promise for a custom dialog.
-Without it, `readline()` follows non-interactive R behavior and returns `""`; providing it makes
-`interactive()` report `TRUE`. Returned leading/trailing spaces and tabs are trimmed as in R, while
-multiline, NUL-containing, or oversized host results are rejected.
-
-Packages that read through `url()` can use a separate byte-only host seam. NativR never performs an
-ambient fetch; the application owns the origin allow-list, credentials, redirects, caching, and
-transport policy:
-
-```js
-const r = await createR({
-  packages: packageSet.bundles,
-  url: async ({ url, headers }) => {
-    if (!url.startsWith("https://data.example/")) throw new Error("URL denied");
-    const response = await fetch(url, {
-      headers: Object.fromEntries(headers.map(({ name, value }) => [name, value])),
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return { body: new Uint8Array(await response.arrayBuffer()) };
-  },
-});
-```
-
-The same asynchronous adapter works through the default Worker. Returned bytes enter the bounded
-session store and can be consumed by `url()` connections or written to a browser-memory file with
-`utils::download.file()`, then read by `readLines()`, raw `readBin()`, `source()`, table and
-serialization readers, or `gzcon()`. This removes a common package-I/O rewrite, but it deliberately
-does not grant package code unrestricted browser networking. `download.file()` is package runtime
-I/O; it does not yet make `install.packages()` available inside the browser.
-
-The current milestone supports all 25 feature groups measured by the repository's package-usage
-study, including structured data, the measured vector-helper surface, native and magrittr-style
-pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
-`print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 670 registered functions, including resettable
-session options, isolated session environment variables, deterministic non-interactive host-mode
-detection, browser-owned `gc()` memory censuses, an S3-first `graphics::lines()` path over the
-existing Worker/Canvas journal, usage-ranked numeric and character time-interval construction
-through `as.difftime()`/`difftime()`, non-forcing environment/package namespace introspection
-through `ls()`/`objects()`, and vectorized decimal rounding plus real/complex logarithm and
-exponential semantics. Browser-memory `read.table`/`read.csv`/ `read.delim` and
-`write.table`/`write.csv` paths provide quoted text-table interchange without host filesystem
-access. Data-mask and local-environment evaluation preserve result visibility, while `all.equal`
-provides bounded tolerant recursive comparison and `ifelse` provides lazy vectorized branch
-selection. Missing-aware `any`/`all` logical summaries cover atomic and list inputs, while `subset`
-provides lazy vector/list/matrix/data-frame selection expressions. Environment removal, core value
-reversal, cumulative numeric summaries, function-exit cleanup, `AsIs` class marking, closure-body
-inspection, and recursive list flattening extend the frequency-ranked surface. Closure `formals`
-inspection and lazy repeated evaluation through `replicate`, real-vector `floor`, grouped `split`,
-factor-pattern generation through `gl`, and bounded data-frame joins through `merge` follow the same
-measured priority data. List/data-frame mutation through `within` and vectorized real/complex `sin`
-continue that frequency-ranked sequence. Numeric-order factor coercion through `as.factor` and
-grouped transformation through `ave` are the next completed entries from the same ranking.
-Vectorized UTC/GMT construction through `ISOdate` and Cartesian data-frame generation through
-`expand.grid` are the next completed pair. Type-promoting insertion through `append` and vectorized
-real/complex `cos` follow, with stable `intersect`, `setdiff`, and `union` completing the next
-measured family and parallel minimum selection through `pmin` following it. The frequency-ranked
-model path now includes `lm`, `aov`, treatment-coded model matrices, prediction and accessors, while
-`IQR` and all nine `quantile` algorithms cover the next isolated descriptive-statistics entry.
-Central Student-t probabilities and quantiles now support weighted QR covariance, `vcov`, `confint`,
-and residual degrees of freedom for that model path. Usage-ranked `kmeans` adds an independently
-implemented browser-native clustering path with explicit or session-random initial centers and the
-documented Hartigan-Wong, Lloyd/Forgy, and MacQueen algorithm choices. Circular, open, and filtering
-convolution now follows the same ranking through an owned complex radix-2/Bluestein Fourier backend.
-Usage-ranked hexadecimal integer modes add validated numeric/character construction, signed 32-bit
-formatting, class-preserving subsetting, printing, and bitwise operations. Environment-to-list
-conversion now follows the same usage ranking with local binding enumeration, hidden-name and
-ordering controls, lazy-promise forcing, and S3 dispatch. Browser host-capability reporting follows
-with GNU R's named selection shape and deterministic `FALSE` values for unavailable graphics,
-profiling, network, and native facilities. Usage-ranked `kappa` adds owned QR-based estimates, exact
-2-norm condition numbers, direct one-/infinity-norm paths, triangular controls, and `qr`/`lm` S3
-methods without a host linear-algebra dependency. The next measured callable, `xtabs`, now
-cross-tabulates formula-selected factor, character, and numeric axes with weighted or matrix
-responses, subsets, missing-value controls, and GNU R-shaped table metadata. Usage-ranked `RNGkind`
-now covers the sampled kind-query surface, default Mersenne-Twister/Inversion selection, and both
-discrete samplers; the fixed-seed uniform sequence has black-box GNU R evidence. Rank-296
-`sample.int` then adds the exact fixed-seed integer-sampling path used by `withr`, including
-`.Machine$integer.max`, replacement, no-replacement, hash, weighted, and large-population modes. The
-next usage-ranked locale slice adds session-local `Sys.getlocale`, `Sys.setlocale`, and
-`Sys.localeconv` behavior for the deterministic C profile and the `it_IT`/`en_US` monetary profiles
-observed in `withr`, without reading host locale state. Rank-303 `tan` then runs the expressions
-observed in `testthat` and `data.table`, backed by the base `pi` constant and vectorized
-real/complex, missing-value, metadata, and non-finite warning semantics. Rank-304 `make.names` now
-runs tibble's measured formula-based custom name repair with GNU R-compatible C-locale syntax,
-reserved-word, underscore, missing-name, and uniqueness rules. Rank-305 `start` adds row-based and
-regular-time-series origin coordinates, `ts.eps` grid recognition, negative periods, decimal
-fallbacks, and package-defined S3 method dispatch. Rank-307 `as.roman` runs pillar's measured
-`utils::as.roman(seq_len(nrow(x)))` row-identifier path with integer-backed Roman values and
-canonical character formatting. Rank-308 `as.POSIXlt` now runs testthat's measured
-`as.POSIXlt(Sys.time())`/`length()` path and zoo's month-day extraction with an owned 11-component
-POSIXlt representation, UTC/GMT calendar decomposition, fractional seconds, missing values, and S3
-dispatch. Rank-309 `drop` now runs matrixStats' singleton-set validations and posterior's explicit
-rvar array reduction while preserving surviving dimension names, custom classes, and non-shape
-attributes. Rank-310 `rasterImage` now runs the measured systemfonts `nativeRaster` and httr
-RGB(A)-array shapes through device-independent Worker graphics events, with `plot.new`/`plot.window`
-state and a real Playground canvas renderer. Every claim has an explicit boundary. Rank-311
-`weights` now supplies the GNU R `stats` generic, list/pairlist default component lookup,
-`na.exclude` restoration, weighted/unweighted `lm` access, and package-owned S3 method dispatch for
-the measured `loo` and `posterior` call shapes. NativR does not reproduce those packages' methods;
-it provides the generic protocol they extend. Rank-313 `colours` now runs scales' measured catalog
-call through the complete ordered 657-name GNU R 4.6.0 catalog, including the 502-name
-`distinct = TRUE` result, the `colors` alias, and registered `grDevices::` lookup. Rank-314 `outer`
-now runs scales' measured radial-matrix expression and covers vector/array Cartesian products,
-concatenated dimensions and dimension names, character or callable `FUN`, lazy forwarded dots, and
-the `%o%` operator. Rank-316 `nzchar` now runs data.table's captured-group converter and Shiny's
-nonempty-input guard, with atomic/list coercion, `keepNA`, primitive argument boundaries, and
-attribute-free logical results. Rank-317 `density` now supplies the S3 generic boundary needed by
-posterior and distributional plus a bounded, independently implemented Gaussian numeric default with
-grids, weights, missing-value removal, and the `nrd0` bandwidth selector. Rank-319 `setequal` now
-covers base vector/factor/list set equality and dplyr's two measured data-frame row-set examples;
-tibble row selection retains its non-dropping class behavior. Rank-322 `eigen` now runs jsonlite's
-measured 3-by-3 decomposition through independent symmetric Jacobi and bounded asymmetric
-real/complex eigenpair paths. Rank-325 `colSums` now runs loo's two fold-table totals and zoo's
-non-missing-column mask, with logical/integer/double/complex arrays, numeric data frames, `na.rm`,
-generalized `dims`, and retained output names. Rank-326 `time` now runs data.table's decade-spaced
-`uspop` coordinates and supplies the S3 boundary for zoo's 24 package-owned index calls, with
-regular-series offsets, integer snapping, and `tsp`/`ts` result shape. Rank-327 `na.omit` now runs
-the eight measured data.table and zoo calls through package-owned S3 methods while supplying an
-independent default for atomic vectors, factors, matrices, data frames, and regular time series. It
-removes both `NA` and `NaN`, preserves row-oriented shape metadata, and records GNU R-shaped
-`na.action` positions and labels. Rank-328 `ceiling` now runs the measured data.table exponential
-sample conversion and zoo tick-alignment helper with real-vector/array rounding, missing/non-finite
-values, attribute retention, and direct or Math-group S3 method boundaries. Rank-331 `approx` now
-runs data.table's date-sequence interpolation and zoo's Date-coordinate helper through registered
-`stats::` access, with linear/constant methods, endpoint rules, generated grids, missing-value
-handling, duplicate-coordinate reducers, and preservation of an explicitly supplied `xout`
-coordinate shape. Rank-334 `standardGeneric` now runs S7's measured standard S4 generic definition
-shape through the bounded session-local class/generic/method registry, including defaults, dots,
-`ANY`, and call-context errors. Rank-335 `colorRampPalette` now runs isoband's two measured 21-color
-Viridis palette calls through registered `grDevices::` access. The returned first-class palette
-function uses independent linear RGB or CIE Lab interpolation with bias and alpha controls; the
-measured Lab output matches GNU R byte-for-byte. Usage-ranked `sink()` now adds persistent output
-diversion stacks, split tees, message routing, and nested restoration over the standard connection
-registry. Rank-337 `sessionInfo` now runs otel's measured `utils::sessionInfo()$platform` path with
-an owned, deterministic browser-platform descriptor, target R version, locale, RNG kinds, attached
-core packages, and a classed GNU R-shaped result. Rank-338 `as.ordered` now runs generics' measured
-`as.ordered(letters[1:5])` example through the existing owned factor representation, with
-ordered-factor identity, unused-level removal, names, and package-defined S3 forwarding. Rank-339
-`as.array` now supplies rstan's measured package-method extension point: class-specific methods
-receive the original object and lazy dots, while `as.array.default` adds a one-dimensional extent to
-atomic vectors, lists, factors, and pairlists, promotes vector names to dimension names, preserves
-unrelated attributes, and returns existing arrays unchanged. Rank-341 `nlm` now runs rstan's
-measured analytic-gradient objective shape through registered `stats::` access, lazy forwarded
-objective arguments, finite-difference or supplied derivatives, bounded BFGS minimization, optional
-Hessians, and GNU R-shaped convergence results. Rank-342 `optim` now runs rstan's separate
-objective/gradient BFGS example with named and scaled parameters, lazy forwarded arguments,
-numerical-gradient fallback, optional Hessians, call counts, and GNU R-shaped convergence results.
-Rank-343 `pairs` now supplies rstan's measured `pairs.stanfit` S3 extension point with lazy plotting
-arguments, while the broader default scatterplot-matrix device remains explicit future graphics
-work. Rank-344 `heat.colors` and the higher-priority rank-252 `rainbow` now share a browser-native
-classic HSV palette path with `terrain.colors`, `topo.colors`, and `cm.colors`, including
-deterministic RGB(A), hue wrapping, vector recycling, reversal, numeric count coercion, and
-empty-result boundaries. Rank-354 `factorial` now runs xfun's measured `factorial(10)` example and
-extends it with vectorized integer and non-integer gamma values, missingness, non-finite boundaries,
-warnings, and attribute retention. Rank-359 `lsfit` now runs xfun's measured least-squares example
-through the owned QR solver, with matrix predictors, weights, intercept control, complete-case
-handling, rank metadata, and explicit multi-response boundaries. Rank-361 `strwrap` now runs xfun's
-measured paragraph-wrapping example with vectorized text, paragraph boundaries, prefixes,
-indentation, sentence spacing, and simplified or list-shaped results. The refreshed rank-353
-`shQuote` now performs documented shell-string quoting entirely in owned memory; it does not execute
-a shell or require a host adapter. A ranking audit also closed the earlier rank-207 `rgb` gap, and
-rank-366 `col2rgb` now runs stringr's measured named-color-to-hex helper across the complete owned
-color catalog, numeric palette indices, hexadecimal alpha forms, transparent values, matrix
-metadata, and reverse RGB formatting. Rank-368 `simplify2array` now runs stringi's two measured
-list-shape examples, with scalar/vector simplification, common-type promotion, list matrices,
-retained names and higher-dimensional array metadata, and explicit exception controls. Ranks 376/377
-`str2expression` and `str2lang` now parse backports' measured source strings through the owned
-Tree-sitter/normalized-AST path into NativR expression, language, symbol, and atomic values. The
-source-bundle loader now supplies private-namespace lookup, although backports itself is not yet a
-verified compatible package. Rank-378 `utils::URLdecode` now runs backports' direct percent-decoding
-example with vectorized ASCII and UTF-8 byte decoding, deterministic missing/empty handling, and
-explicit browser-string boundaries for malformed byte input. Rank-379 `warningCondition` now runs
-backports' measured custom-condition construction and covers owned message/call/additional-field
-lists, custom class prefixes, condition-message extraction, and the class-selective suppression call
-shape. Ranks 382/383 `stats::qbinom` and `stats::qnorm` now run openssl's measured
-uniform-to-binomial and uniform-to-normal transforms through owned, browser-native quantile
-algorithms, including vectorized distribution parameters, tail/log probabilities, recycling,
-metadata, and explicit numeric bounds. Rank-384 `rawToBits` now runs openssl's measured random-byte
-bit expansion with GNU R's least-significant-bit-first order over the owned raw vector model. Ranks
-385/386 `rowMeans` and `colMeans` now run matrixStats' measured matrix-subset validation paths and
-cover generalized array dimensions, numeric data frames, complex values, missing-value removal,
-retained axis names, and empty reductions. Rank-387 `stats::weighted.mean` now runs matrixStats' six
-reference comparisons with numeric/complex weights, zero-weight omission, missing-value rules,
-non-finite results, and S3 dispatch. Rank-388 `stats::mad` now supplies matrixStats' two reference
-values plus center/constant controls, ordinary, low, and high medians, missing-value removal, and
-strict real-numeric boundaries. Rank-391 `stats::rbeta` now runs loo's two measured beta-posterior
-calls with recycled central/non-central parameters, deterministic session RNG state, stable
-log-gamma ratios, limit distributions, and missing/invalid argument handling. Rank-392
-`stats::dbinom` now completes the same loo example's vectorized log-likelihood call with recycled
-parameters, stable log probabilities, metadata, missing values, and GNU R-shaped domain warnings.
-Rank-393 `base::mat.or.vec` now runs loo's measured `mat.or.vec(10, 3)` scratch-matrix allocation
-with double zero storage, vector-versus-matrix branch behavior, truncated nonnegative extents,
-zero-sized dimensions, and explicit invalid-input boundaries. Rank-395 primitive `base::seq.int` now
-runs data.table's three rolling-window index calls, with one-argument length semantics,
-ascending/descending steps, `length.out`/`along.with`, integer/double result selection, S3 `seq`
-dispatch, and finite allocation guards. Rank-396 `methods::as` now runs data.table's measured IDate
-and ITime conversion checks through a session-local `setAs` registry. Explicit source-class
-inheritance, identity coercions, core `as.<Class>` constructor fallback, namespace access, invisible
-registration, and bounded errors are covered. NativR supplies the package-extension mechanism; it
-does not claim to bundle or support data.table's classes and methods. Rank-402 `weekdays` then runs
-data.table's two measured IDate labeling calls through the inherited `Date` method, with
-deterministic C-locale names, recycled abbreviation controls, UTC/GMT POSIXt support, custom S3
-dispatch, names, missing/non-finite values, and explicit invalid-input boundaries. Rank-403
-`write.table` now writes bounded browser-owned files and connections with GNU R-shaped delimited
-formatting. Rank-404 `anyDuplicated` supplies the S3 generic and default/data-frame methods used by
-data.table's measured `by = c("A", "B")` duplicate-row check, with first-position results, reverse
-scans, missing-value distinctions, incomparables, factors, lists, frames, names, and package-defined
-methods. Rank-408 `rep.int` now runs data.table's measured adaptive-window tail construction with
-scalar or element-wise counts, numeric coercion, attribute removal, factor metadata,
-atomic/list/expression results, S3 methods, and allocation guards. Rank-409
-`methods::representation` now runs data.table's measured legacy S4 slot declaration, returning the
-validated parent/slot list consumed by `setClass`; duplicate declarations, missing arguments,
-backtick slot names, and class-string boundaries have differential evidence. Rank-410 `trunc` now
-supplies the direct and Math-group S3 extension seam used by data.table's measured
-`trunc(seqtimes, "hours")` call, plus owned toward-zero real-vector behavior, retained attributes,
-eager default dots, and bounded type/missingness errors. Rank-411 `utils::type.convert` now runs
-data.table's measured split-column conversion with recursive list/data-frame methods and an owned
-logical, integer, double, complex, character, and factor inference ladder. Rank-414 `withVisible`
-now captures Shiny's measured visibility-control call shape, including lazy forwarded and
-already-forced promise distinctions. Rank-419 `strftime` now formats Shiny's measured log timestamp
-through deterministic UTC/GMT and C-locale semantics, including recycled formats, fractional
-seconds, names, non-finite values, timezone labels, and custom `as.POSIXlt` dispatch. Rank-420
-`as.raster` now converts ragg's measured capture matrix plus grayscale and RGB(A) inputs into owned,
-row-first raster values that feed the existing browser RGBA command path. Rank-421 `dev.flush` and
-its paired `dev.hold` now implement nested browser-device hold levels: graphics commands remain
-bounded and private across evaluations until the level returns to zero, then reach the host in their
-original order. This covers the measured ragg animation call shape without claiming ragg's file
-device, WebP encoding, or complete high-level plot methods. Rank-422 `recordPlot`/`replayPlot` now
-captures and replays that owned page/window/raster display list for ragg's measured same-session
-call shape, including hold/flush integration and bounded command/raster storage. External GNU R
-recorded-plot formats, package reloading, `print.recordedplot`, and general graphics devices remain
-outside this increment. Rank-366 `grDevices::dev.control` now gives every owned device a separate
-recorded display list: `inhibit` clears replay capture without suppressing Canvas, PNG, or PDF
-output, while `enable` starts a fresh bounded recording. Exact GNU R 4.6 formals, reset-on-toggle
-behavior, file-device defaults, unchanged pure-R package imports, and differential tests have
-evidence without a package-specific adapter. The higher-reach rank-80 `dev.off` gap is now closed
-together with `dev.cur`, `dev.list`, and `graphics.off`: the session exposes a numbered device
-registry, flushes held commands when a device closes, selects a remaining device, then opens a fresh
-browser device on the next plot when needed. PNG file devices now share that registry; other device
-formats remain explicit boundaries. `devAskNewPage(ask = NULL)` keeps GNU R-shaped ask state per
-device, seeds it from `options("device.ask.default")`, and uses the existing explicit
-`createR({ readline })` bridge only between pages on an interactive browser device; file devices and
-non-interactive sessions never block. Rank-423 `stats::ppoints` now runs posterior's two measured
-`quantile(x, ppoints(10))` examples with documented default offsets, observation-vector lengths,
-numeric/complex offsets, recycling and attributes, lazy nonpositive results, and bounded allocation.
-Rank-424 `chol` now supplies posterior's measured `rvar` S3 method seam plus an independently
-implemented upper-triangular real-matrix default with optional positive-semidefinite pivot/rank
-metadata, data-frame coercion, dimnames, lazy dots, and explicit non-finite/shape/defunct-control
-boundaries. Rank-425 `stats::pnorm` now runs posterior's measured vectorized-mean probability
-example with recycled `q`/`mean`/`sd`, lower and upper tails, attributes, point-mass and
-missing/domain boundaries, and stable far-tail log probabilities computed without host statistics
-libraries. Rank-426 `stats::rgamma` now runs posterior's measured scalar rate/shape examples through
-the session-owned gamma sampler, with vectorized parameters, rate/scale equivalence, moments,
-degenerate limits, warnings, and deterministic reseeding. Rank-427 `graphics::segments` now runs
-posterior's measured vertical credible-interval call through a Worker-safe vector graphics event,
-including endpoint defaults, recycled coordinates/styles, missing-value omission, Canvas rendering,
-and same-session record/replay. Rank-428 `utils::glob2rx` now runs rprojroot's measured
-`glob2rx("DESCRIPTION")` file-pattern call, with vectorized wildcard translation, documented
-head/tail trimming, ordinary R coercion, dropped attributes, namespace access, and bounded output.
-Rank-429 `sQuote` now runs httr's two measured request-URL logging calls with deterministic ASCII
-defaults, explicit UTF-8/TeX/custom styles, owned-value coercion, and session-option integration.
-Rank-430 `stats::family` now provides distributional's measured `family(dist)` S3 extension seam,
-including lazy dots, class-order/`NextMethod`/default dispatch, and explicit package-method
-boundaries. Rank-431 `utils::View` now maps rstudioapi's measured terminal-context call shape to a
-bounded, character-formatted data-view event available identically in inline and Worker execution;
-the Playground renders those events as read-only tables without importing a DOM into the runtime.
-Rank-433 `path.expand` now runs diffobj's measured home-path expression under an explicit
-browser-without-a-home-directory contract, while the higher-reach `file.path` dependency provides
-vectorized, deterministic path-string construction without consulting a host filesystem. Rank-434
-`methods::setOldClass` now runs diffobj's measured `zulu` S3/S4 guides-method registration and links
-declared old-class inheritance into the bounded single-object S4 dispatch and coercion paths.
-Rank-435 `methods::show` now provides diffobj's measured style-display extension seam with inherited
-method lookup, method-result visibility, and bounded default text output. Rank-436
-`utils::capture.output` now runs httpuv's measured request-inspection expression through a nested,
-resource-bounded in-memory output capture, with visible-result printing, partial-line handling,
-message selection, split output, and bounded browser-memory file/connection targets. Host filesystem
-targets remain an explicit boundary. It shares an ordered session router with `base::sink()`, so
-package-created diversions persist across evaluations and errors. Rank-437 `utils::demo` reproduces
-the empty package-demo catalog shape while making external package demo discovery and execution an
-explicit package-resource boundary. Rank-438 `RNGversion` runs zoo's measured R-3.5 reproducibility
-setup by selecting the historical Rounding sampler before `set.seed`; pre-R-1.7 generator families
-remain explicit boundaries. Ranks 439-443 add the regular time-series foundation: `ts()` constructs
-vector or matrix series, `as.ts()` and `frequency()` expose their sampling metadata, and `window()`
-slices, downsamples, or explicitly extends them. These generics also forward to independently
-supplied methods such as `window.zoo`; NativR does not claim that zoo itself is bundled or
-compatible yet. Rank 444 `graphics::legend` now runs zoo's three measured line/point legend shapes
-through a bounded Worker graphics event and the Playground Canvas renderer, including
-keyword/coordinate placement, colors, columns, titles, invisible geometry results, and same-session
-record/replay. General base graphics, arbitrary graphical parameters, and device-identical layout
-remain explicit boundaries. See the
-[compatibility contract](https://github.com/nativr/nativr/blob/main/docs/compatibility-contract.md)
-for exact boundaries.
-
-Rank 445 `comment` and its replacement form now run zoo's measured metadata example. Owned vectors,
-arrays, lists, pairlists, and data frames can query, set, replace, or remove character comments
-while preserving their other attributes; the future general attribute model is still required before
-closures, environments, and language objects can receive comments.
-
-Rank 446 `stats::cycle` now runs zoo's two measured regular-series call shapes through a GNU
-R-compatible default and an S3 extension seam. It derives observation cycles from validated `tsp`
-metadata for vectors and matrix rows, including fractional frequencies, while leaving zoo's
-irregular-series method and index model package-owned.
-
-Rank 447 `signif` now runs zoo's two measured plot-limit calculations. Real and complex vectors use
-1–22 rounded significant digits with decimal ties-to-even behavior, recycled controls, retained
-metadata, and direct or Math-group S3 extension seams.
-
-Rank 448 `graphics::axTicks` now runs zoo's measured linear secondary-axis tick lookup. It derives
-horizontal or vertical tick locations from the owned `plot.window` state, also supports explicit
-`axp` parameters and reversed axes, and keeps logarithmic axes as an explicit compatibility
-boundary.
-
-Rank 449 `graphics::box` now runs zoo's measured plot-frame redraw. Plot-region frames support all
-documented `bty` edge shapes, resolved `col`/`fg`, line types and positive widths, invisible return
-semantics, Worker transport, Canvas rendering, bounded display-list record/replay, and explicit
-boundaries for figure and margin regions that need a future layout model.
-
-Rank 450 `graphics::boxplot` now runs zoo's measured grouped-series example. The owned default
-computes Tukey hinges, whiskers, notches, and outliers for numeric vectors, lists, and matrix
-columns; returns GNU R-shaped statistics invisibly; forwards classed inputs through S3; and carries
-resolved boxplot commands through the Worker, Canvas renderer, output budget, and display-list
-record/replay path. Formula/data-frame methods, logarithmic axes, arbitrary `pars`, axis annotation,
-and device-identical layout remain explicit boundaries.
-
-Measured rank 186 `graphics::hist` now runs all 19 sampled calls across testthat, openssl, shiny,
-and posterior. One reusable S3/default path returns standard histogram objects, supports
-Sturges/Scott/FD, scalar, explicit, and callable breaks, and draws bars/labels through the existing
-Worker polygon journal. The source-only package fixture calls it unchanged; exhaustive `pretty()`
-boundaries, log axes, line-density shading, and device-identical output remain compatibility work.
-
-Measured rank 188 `methods::showClass` now runs Rcpp/rstan's four sampled class-inspection calls at
-the reusable class-registry boundary. It reports global or package ownership, direct/inherited slots
-and parents, known subclasses, virtual classes, GNU R-shaped formals, captured output, and invisible
-`NULL`. The source-only package fixture imports `setClass`/`showClass`, declares its class while
-loading, and queries it unchanged. Native Rcpp/rstan components and complete S4 metadata, validity,
-multiple dispatch, and cache behavior remain compatibility work.
-
-Measured rank 189 `utils::packageVersion` now reads the immutable installed-bundle catalog without
-loading the requested namespace. Core packages report the runtime's documented compatibility
-version, source-only bundles report their validated DESCRIPTION version, and the same shared
-`package_version`/`numeric_version` representation supports formatting, concatenation, missing
-values, vectorized comparisons, `getRversion()`, and `utils::compareVersion()`. This is package
-dependency infrastructure, not a claim that duplicate package versions, every numeric-version S3
-method, or every package whose version can be queried is already executable.
-
-Measured rank 194 `Sys.getpid()` now returns a stable positive integer owned by the NativR session.
-Concurrent sessions created through one facade realm receive distinct identities, inline and Worker
-execution use the same path, reset and Worker restart preserve the identity, and unchanged pure-R
-package code can consume it. This is deliberately not a host operating-system PID: browser tabs,
-native process enumeration, parent/child processes, signals, and ps-compatible process handles
-remain outside the runtime's authority.
-
-Measured rank 195 `.libPaths()` now owns the browser session's package-library search order.
-Supplied source bundles live under `nativr://package`, registered core namespaces live under
-`nativr://runtime/library`, setters retain existing normalized virtual directories, and reset
-restores the default order. `library()`, `require()`, `requireNamespace()`, `pkg::`,
-`utils::packageVersion()`, and `system.file()` consume the active path or an explicit virtual
-`lib.loc`; `.onLoad()`/`.onAttach()` receive the bundle library root. Unchanged `withr 3.0.3`
-executes `with_libpaths()` and restores the previous state. Host filesystem libraries, runtime
-network installation, duplicate versions across roots, and binary packages remain separate work.
-
-Rank 451 `stats::deltat` now runs zoo's measured regular-series sampling-interval call. The generic
-forwards classed values and lazy dots to package methods, while its owned default returns the
-reciprocal of validated `tsp` frequency or one for ordinary inputs. Zoo's irregular index, `zooreg`
-construction, and package-owned methods require an audited bundle plus additional runtime support.
-
-Rank 452 `stats::embed` now runs zoo's documented lagged-window building block `embed(1:5, 3)`. It
-returns column-major current-to-past windows for supported vectors and multivariate matrices,
-preserves vector storage, applies GNU R's matrix coercions, removes source attributes, and accounts
-for the complete result before allocation. This is directly reusable by pure-R rolling-window code;
-factor/data-frame inputs, expression vectors, list matrices, and fractional dimensions on nonempty
-matrices remain explicit GNU R-aligned boundaries.
-
-Rank 453 `base::findInterval` now runs zoo's irregular-date rolling-window width expression
-`seq_along(tt) - findInterval(tt - 3, tt)`. A bounded binary search supports duplicate and infinite
-breakpoints, missing queries, the documented closure/inside controls, flattened numeric coercion,
-and attribute-free integer output. Unchecked unsorted/missing break vectors and recursive-list
-coercion remain explicit unsafe or unsupported boundaries.
-
-Ranks 454-455 add the shared `grDevices` gray-color surface used by zoo:
-`gray.colors(2, start = 0.7)` and `grey(7:1/8)`. The `gray`/`grey` and `gray.colors`/`grey.colors`
-aliases now produce deterministic uppercase RGB(A) bytes, including gamma-corrected palettes, alpha
-recycling, reversal, descending endpoints, and bounded output. General color spaces, device
-profiles, and the remaining palette families stay separate.
-
-Rank 456 `base::ISOdatetime` now runs zoo's five-value POSIXct index constructor with ordinary
-component recycling, fractional seconds, explicit UTC/GMT labels, class metadata, invalid-calendar
-missingness, and pre-allocation limits. Its documented default `tz = ""` is computed as
-deterministic UTC in the browser while retaining the empty `tzone` label; regional time zones and
-daylight-saving databases remain explicit future work.
-
-Rank 457 `graphics::persp` now runs zoo's documented classed `100 × 10` numeric-matrix surface. The
-owned generic preserves package-defined S3 methods; its default validates ascending grids, computes
-the documented invisible `4 × 4` view transform for scaled or aspect-preserving views, and projects
-the default white/black wireframe plus bounding box into bounded Worker-safe line events rendered by
-the Playground. Filled facets, lighting, detailed ticks/text, hidden-line equivalence, and arbitrary
-graphical parameters remain explicit graphics-depth work.
-
-Rank 458 `graphics::points` now supplies zoo's documented S3 plotting extension point and an owned
-default for real coordinate vectors, two-column matrices, data frames, complex coordinates, and
-`list(x, y)` inputs. Numeric plotting symbols 0:25, ASCII/Unicode characters, recycled
-`pch`/`col`/`bg`/`cex`/`lwd`, missing-point omission, invisible results, bounded display-list
-replay, Worker transfer, and Canvas rendering share one host-neutral point command. Line/path
-`type`s, coordinate classes beyond owned numeric storage, clipping/log axes, font identity, and
-arbitrary graphical parameters remain explicit boundaries.
-
-Rank 459 `graphics::polygon` now runs zoo's measured filled-area panel helper. The owned default
-accepts paired vectors, two-column matrices/data frames, complex coordinates, and `list(x, y)`;
-missing coordinates split independent closed polygons, while recycled fill/border colors, line
-types/widths, `fillOddEven`, solid fills, and `density = 0` resolve into a bounded Worker command.
-The same command supports held graphics, display-list replay, and Canvas rendering. Hatch-pattern
-density, coordinate classes beyond owned numeric storage, clipping/log axes, exact device dash
-metrics, and arbitrary graphical parameters remain explicit boundaries.
-
-Rank 253 `graphics::rect` now runs sass and zoo's measured interval/background rectangles. Four
-coordinate vectors recycle to their common longest length, missing/non-finite rectangles are
-omitted, and fill/border colors plus line styles recycle independently. Transparent fills,
-`border = NA`, current `par()` defaults, zero/negative density, invisible results, pure-R package
-calls, Worker transfer, Canvas/PNG rendering, and display-list replay all reuse the existing bounded
-polygon command. Positive hatch density, general coordinate classes, clipping/log axes, and
-device-identical joins remain explicit boundaries.
-
-Rank 460 `base::replace` now runs zoo's measured missing-run fill helper through NativR's existing
-immutable `[` replacement engine. It covers numeric/logical/character subscripts, ordinary
-recycling, names and extension, atomic type promotion, matrices, factors, lists, pairlists, owned
-data frames, `NULL` materialization/deletion, partial argument matching, input immutability, and
-resource limits. Expression vectors, arbitrary class-specific `[<-` methods, and exact legacy
-diagnostic wording remain explicit boundaries.
-
-Rank 461 `stats::rlnorm` now runs zoo's measured 200-value log-normal flow generator. It uses the
-session-owned Mersenne-Twister/Inversion stream, matches the pinned historical fixed-seed sequence,
-follows scalar-or-vector `n` sizing, recycles vectorized `meanlog`/`sdlog`, preserves zero-deviation
-point masses without advancing the RNG, drops input metadata, and emits one bounded missing/domain
-warning. Alternative normal generators, bit identity beyond the documented Inversion path, and the
-rest of the log-normal density/CDF/quantile family remain explicit boundaries.
-
-Rank 462 `base::tapply` now runs zoo's measured screen-range grouping path. It accepts one or more
-same-length atomic grouping vectors, preserves factor levels as array dimensions and dimnames, omits
-missing groups, forwards `...`, resolves functions or function names, returns group codes for
-`FUN = NULL`, simplifies scalar atomic results with a typed `default`, and otherwise returns
-indexable list arrays. Formula indexes, custom split methods, and broader class-specific
-simplification remain explicit boundaries.
-
-Rank 463 `graphics::text` now runs zoo's measured rotated outside-label call through the Worker
-graphics protocol and Playground Canvas renderer. It supports S3 dispatch, R coordinate containers
-with x/y recycling, character-label coercion and truncation warnings, missing omission, recycled
-colors/sizes/font faces/positions, adjustment, offset, rotation, browser font families, namespace
-access, bounded graphics accounting, and same-session recording/replay. Plotmath expressions,
-Hershey fonts, class-specific label coercion, clipping/log axes, and device-identical text metrics
-remain explicit boundaries.
-
-Rank 464 `stats::update` now exposes the S3 extension seam used by zoo's documented
-`update(trellis.last.object(), type = c("l", "g"))` call. It preserves lazy `...`, dispatches across
-inherited classes and `NextMethod`, permits independently authored `update.default` methods, and
-works through direct and namespace-qualified calls. NativR does not include lattice's package-owned
-`update.trellis` method; the built-in `update.default` stored-call rewriting and re-evaluation path
-remains an explicit boundary.
-
-Rank 465 `graphics::matplot` now runs bit64's measured matrix-performance plots through the Worker
-graphics path. It accepts one- or two-argument numeric vectors, matrices, and data frames; cycles
-matrix columns and point/line styles; omits incomplete pairs; supports point, line, both,
-overplotted, and no-draw series; resolves x/y logarithmic coordinates; opens bounded pages and
-windows; and records/replays the resulting box, segment, and point commands. Full axes and
-annotations, class-specific `lines` methods, `add = TRUE`, step/histogram series, and
-device-identical layout remain explicit boundaries.
-
-Rank 470 `base::aperm` now runs bit64's measured matrix-axis swap and supplies the S3 extension seam
-needed by pure-R array classes. The independently authored `aperm.default` handles numeric and named
-axis permutations, reverse-axis defaults, dimension/dimname resizing, `resize = FALSE`, atomic and
-list arrays, lazy dots, inherited dispatch, and `NextMethod`. Table-specific methods, invalid
-low-level attribute shapes, exact diagnostics, and long-vector storage remain explicit boundaries.
-
-Rank 471 `base::dget` now runs bit64's measured `dput`/`dget` serialization roundtrip together with
-the higher-reach `tempfile` and `unlink` prerequisites. Temporary paths use a bounded, session-local
-`nativr://session-temp/...` text store: no host files are read or written. The independent
-serializer round-trips owned atomic vectors, lists, pairlists, names and ordinary attributes,
-including bit64's classed double column; `NA`, `NaN`, infinities, complex, raw, and Unicode values
-have differential coverage. Host paths and connections, arbitrary `dput` controls,
-closures/environments, cyclic values, binary serialization, and cross-session persistence remain
-explicit boundaries.
-
-The browser-memory resource seam now supports portable GNU R XDR v2/v3 serialization and gzip for
-owned atomic vectors, lists, pairlists, names, and ordinary attributes.
-`serialize()`/`unserialize()`, `saveRDS()`/`readRDS()`/`infoRDS()`, and `save()`/`load()` share the
-bounded codec. Real package `data/*.rda` and `R/sysdata.rda` resources can therefore load without
-translating the package's R code. Ordinary environments, closures, language objects, more ALTREP
-classes, bzip2/xz/zstd, and installed-package `.rdx`/`.rdb` lazy-load databases remain explicit
-boundaries.
-
-The usage-ranked `file`, `close`, `tempdir`, and `file.exists` foundation now exposes bounded,
-session-owned connection handles over that same browser-memory store and immutable package files.
-`R.home`, `dir.create`, `dir.exists`, `list.files`/`dir`, `list.dirs`, `getwd`, `setwd`,
-`normalizePath`, `basename`, and `dirname` add an owned directory tree and relative-path layer for
-unchanged package code. Package resources can be enumerated or selected as a read-only working
-directory, while session directories can be created and removed recursively. Implicit and explicit
-connection opening, read/write/append modes, persistent cursors, `seek`, `flush`, `isOpen`,
-`summary`, destruction, and connection-aware `readLines`, `writeLines`, `cat`, and `capture.output`
-have executable coverage. URL, socket, absolute host-file, symlink, and general typed raw/binary
-connection operations remain explicit boundaries; raw `readBin()` can retrieve owned bytes, while
-serialization builtins use bounded binary-mode handles directly.
-
-`file.remove()` supplies the per-path logical result and warning shape used by xfun and data.table.
-It removes only closed, mutable session files; open connections, directories, immutable package
-resources, wildcard strings, and host paths fail without granting filesystem authority.
-
-`readChar()` now runs digest's full-file and Shiny's bookmark-file call shapes over the same owned
-bytes. It accepts raw vectors, package/session paths, and file, URL, or gzip connections; supports
-UTF-8 character counts or exact byte counts; advances open binary cursors; and preserves closed
-connection lifecycle. It does not expose host files or ambient network access.
-
-`debug()`/`undebug()` now run R6's measured method-instrumentation shapes, together with
-`debugonce()` and `isdebugged()`. Marks follow function-object identity, so shared closure aliases
-stay synchronized. Marked calls use the existing explicit readline bridge for bounded
-next/continue/finish/Q prompts in inline or Worker execution; arbitrary debugger expressions, nested
-stepping, `browser()`, and S4 signature tracing remain incomplete.
-
-`stdin()`, `stdout()`, and `stderr()` are stable `c("terminal", "connection")` handles numbered 0,
-1, and 2. Package code can inspect them with `summary()`, `isOpen()`, `isatty()`, `getConnection()`,
-`getAllConnections()`, and `showConnections()`; writes to stdout/stderr become bounded ordered
-Worker output events. The embedded browser is deliberately not reported as a TTY, and streaming
-reads from `stdin()` still require a future explicit host adapter.
-
-Measured rank 22 `plot()` now supplies the high-reach S3 extension point used by package-defined
-`plot.<class>` methods and a bounded browser-native numeric default. One-argument vectors and paired
-x/y data support point, line, both, overplotted, histogram, step, and no-draw types; finite ranges,
-common point/line styles, panel hooks, scalar character labels, Worker transport, Canvas rendering,
-and display-list replay reuse the existing graphics path. Complete axes/tick labels, logarithmic and
-fixed-aspect layouts, formula/function/time-series/raster methods, clipping/margins, and
-device-identical output remain explicit boundaries.
-
-Rank 127 `system.time()` now covers 95 measured calls across six packages through one lazy
-single-evaluation path. It returns GNU R-shaped `proc_time` values, uses a monotonic browser elapsed
-clock, preserves side effects, validates `gcFirst`, and emits timed-error output before propagating
-the original condition. The adjacent `proc.time()` exposes the same named/classed shape. Browser-
-unavailable CPU and child-process counters remain explicit platform boundaries.
-
-Rank 168 `gc()` now covers 17 measured calls across `rlang`, `matrixStats`, and `bit64`. It returns
-GNU R's named 2×6 `Ncells`/`Vcells` report from a deterministic traversal of the reachable NativR
-R-value graph, with `verbose`, high-water `reset`, full/partial census accounting, and adjacent
-`gcinfo()` state. These are NativR-owned payload cells; the browser's JavaScript heap collector is
-neither measured nor controlled.
-
-Rank 324 `utils::object.size()` now covers the three measured calls in `data.table` and `bit64`
-without package-specific rewrites. It returns a length-one double of class `object_size`, applies a
-deterministic GNU R 4.6-shaped 64-bit layout to atomic vectors, character sharing, lists, pairlists,
-attributes, language objects, and closures, and excludes environment bindings while retaining the
-environment object's own footprint. `format()` and `print()` support legacy, IEC, and SI units. This
-estimates owned R objects; it does not claim to measure the JavaScript heap.
-
-Rank 328 `graphics::title()` now covers all seven measured Shiny/bit64 calls through the shared
-browser graphics journal. Main, subtitle, and axis labels use active `par()` styles or list-local
-`col`/`cex`/`font` overrides, and the same text events drive Worker callbacks, browser Canvas,
-record/replay, PNG, and PDF. The source-only package fixture imports and calls `title` unchanged,
-demonstrating the intended Base-R-foundation-to-package extension model.
-
-Rank 364 `graphics::abline()` now covers knitr's measured reference-line call through that same
-browser graphics journal. Intercept/slope, coefficient vectors, fitted models through generic
-`coef.*`, horizontal/vertical vectors, styles, record/replay, and unchanged source-only package code
-run inline and in the default Worker/Canvas path. The current evidence is for linear plot windows;
-logarithmic transformation and expanded clipping remain explicit compatibility depth.
-
-Rank 365 `utils::browseVignettes()` now covers knitr's measured installed-guide catalog call. It
-returns GNU R-shaped package matrices and its S3 print method builds a bounded self-contained HTML
-catalog from the same generic manifest emitted for every admitted pure-R package. Unchanged package
-code runs inline or in the default Worker, while the Playground previews the resulting inert file
-event in a no-permissions sandbox; no help server, runtime fetch, host path, or package-specific
-rewrite is involved.
-
-Rank 368 `utils::getFromNamespace()` now covers all 37 measured backports calls through the generic
-package loader. Character namespace names, loaded namespace environments, attached-package
-`pos`/`envir` lookup, exact non-inheriting private binding resolution, lazy unused controls, GNU R
-formals, and bounded errors share one runtime path. The source-only fixture imports the callable and
-invokes an unexported package function unchanged, so this closes the measured private-implementation
-seam without a backports adapter or a core-only facade. It does not claim that all other backports
-dependencies or every pure-R package are already compatible.
-
-Rank 370 `utils::help()` now covers pkgload's 15 measured calls through one package-independent
-documentation path. The packager indexes every `man/*.Rd` topic, including pages without examples;
-the runtime returns GNU R-shaped topic and package-index objects, prints portable text by default,
-and can emit bounded, script-free HTML through the existing Worker browse journal. Core callable
-discovery and unchanged source-package topics use the same API. Exact GNU Rd conversion, `??`
-search, installed lazy help databases, and byte-identical GNU help pages remain compatibility work.
-
-Rank 380 `graphics::curve()` now runs numDeriv's unchanged `curve(func1, from=0, to=5)` example
-through one general expression/function-to-graphics path. Exact formals, lazy caller/package
-environments, configurable variable names, linear and logarithmic sampling, invisible `x`/`y`
-results, `add=TRUE`, style forwarding, errors, pure-R package calls, and Worker/Canvas rendering
-have GNU R 4.6 and browser evidence. It composes the existing `plot`/`lines` journal and also adds
-positive-coordinate logarithmic transforms to `plot.default`; `lines` and additive curves inherit
-the active log axes. Complete ticks/labels, other additive primitives, clipping, replayed log-axis
-metadata, and device-identical pixels remain graphics depth.
-
-Rank 330 `base::sink()` now covers utf8's two measured output-redirection calls and the broader GNU
-R stack semantics they rely on. Output diversions persist across `r.eval()` calls and errors, nest
-up to 19 levels, tee with `split = TRUE`, and restore owned file/connection targets
-deterministically; message sinks use one replaceable open-connection slot. The source-only package
-fixture and default Worker Playground execute the same API unchanged. Host filesystem targets remain
-unavailable.
-
-Rank 338 `base::write()` now covers sass's measured `write('$color: "red";', path)` call unchanged.
-Character values default to one item per line, other atomic storage defaults to five, explicit
-separator vectors reproduce GNU R's column layout, and file/connection targets stay inside the
-bounded browser-memory store. The source-only package fixture and Worker Playground execute the same
-helper without a JavaScript rewrite.
-
-Rank 340 `utils::available.packages()` now covers curl's measured reverse-dependency repository
-query. It derives source `contrib` URLs, parses bounded CRAN-like `PACKAGES` DCF indexes into GNU
-R-shaped character matrices, applies version/OS/subarchitecture/duplicate or user-defined filters,
-and reuses an age-bounded session cache. Repository bytes enter only through the explicit
-`createR({ url })` callback; package code receives no ambient browser network access. An unchanged
-pure-R helper runs through the inline API and Worker Playground.
-
-Rank 343 `graphics::barplot()` now covers zoo and bit64's three measured vector/matrix calls. Its S3
-generic lets source-only packages provide class methods, while the shared default computes GNU
-R-shaped stacked or beside midpoints and sends rectangles, names, axes, annotations, and legends
-through the existing bounded Worker graphics journal. The fixture imports and calls it without a
-TypeScript rewrite. Log axes, positive hatch density, every graphical parameter, and device-exact
-layout remain explicit depth.
-
-Rank 344 `grDevices::devAskNewPage()` now covers RColorBrewer's ten measured page-prompt calls.
-Query and update visibility, GNU R coercion, `device.ask.default`, and independent browser/PDF/PNG
-device state have differential evidence. On the default Worker, the second browser page crosses the
-same explicit `readline` request used by package code; the first page, non-interactive sessions, and
-file devices do not prompt. An unchanged source-only fixture imports the function directly.
-
-Rank 345 `base::getLoadedDLLs()` now covers ps's measured loaded-module path probe. It returns a
-visible, no-argument `DLLInfoList`; `vapply(getLoadedDLLs(), "[[", character(1), "path")` therefore
-runs unchanged in source-only package code. The default browser-native list is truthfully empty;
-when `createR({ nativeModules })` is used, it contains only those explicitly registered modules and
-never invents GNU R DLLs, host paths, or pointer handles. Pure-R packages can use the empty shape to
-select an R fallback, while adapter-backed packages can inspect their owned virtual Wasm paths.
-
-Rank 346 `base::socketConnection()` now supplies GNU R-shaped socket handles, formals, summaries,
-timeouts, completeness queries, text writes, and line/raw reads through an explicit
-`createR({ socket })` adapter. The default runtime has no socket authority; the embedding
-application owns endpoint allow-listing and transport policy, and reset/disposal closes the session.
-An unchanged source-only package helper runs through both inline and default Worker execution.
-
-Rank 348 `base::file.copy()` now covers xfun's measured package-resource staging pattern. It copies
-exact text or binary bytes from immutable package bundles into bounded session files, supports
-vector destinations, overwrite behavior, recursive directory trees including dotfiles, GNU R-shaped
-lazy/formal/result semantics, and default Worker execution. It never grants host-filesystem access.
-
-Rank 349 `base::find.package()` now covers xfun's measured installed-package root lookup. It
-searches the session's owned library registry, preserves GNU R's default attached-package order and
-vector results, filters missing packages under `quiet`, respects explicit `lib.loc`, and returns
-immutable `nativr://package/<name>` or core `nativr://runtime/library/<name>` directories. Unchanged
-pure-R package code can locate and enumerate its own installed files in inline and default Worker
-sessions.
-
-Rank 351 `base::l10n_info()` now covers xfun's measured UTF-8 capability branch. It returns GNU R's
-visible named-list contract with logical `MBCS`, `UTF-8`, and `Latin-1` fields plus the non-Windows
-`codeset` field. The browser profile truthfully reports multi-byte UTF-8 text and no Latin-1 native
-locale without querying the host OS. Unchanged pure-R package code executes `l10n_info()[["UTF-8"]]`
-inline and in the default Worker.
-
-Rank 353 `base::shQuote()` now covers xfun's measured shell-argument preparation path. The
-non-Windows browser default is documented Unix `sh`; explicit `csh`, Microsoft command-line `cmd`,
-and `cmd.exe` `cmd2` modes are also implemented as deterministic string transformations. GNU
-R-shaped formals, partial type matching, atomic/list/language coercion, S3 `as.character` dispatch,
-missing values, visibility, and attribute dropping have executable evidence. Unchanged pure-R
-package code runs the same helper inline and in the default Worker without granting process or shell
-authority.
-
-Rank 357 `base::system2()` now carries xfun's measured portable command invocation through the same
-explicit, default-deny host boundary as `system()` and `pipe()`. The Worker sends structured
-executable, command-element, argument, environment, stdin, stdout, stderr, input, wait, signal, and
-timeout data; it never concatenates those fields into generated JavaScript or launches a process by
-itself. GNU R-shaped formals, atomic/list coercion, capture, console/discard/file redirection
-intent, exit status, warnings, visibility, unchanged pure-R package execution, and
-inline/default-Worker transport have executable evidence. Rank 358 `.Call()` is the next measured
-callable and is implemented through a separately registered typed Wasm/native ABI rather than
-ambient host pointers.
-
-Rank 358 `base::.Call()` now resolves registered routine names, exact `PACKAGE` confinement,
-dynamic-lookup and force-symbol policy, and declared argument counts before invoking an explicit
-`createR({ nativeCall })` adapter. The same correlated data-only request works inline and through
-the default Worker; handler results are validated as bounded `RValueSnapshot` values. With no
-registered module the symbol is absent, and with no handler execution fails closed. This is the
-foundation for Wasm-backed compiled packages, not a claim that arbitrary CRAN shared libraries or
-the full R C API already run unchanged.
-
-Rank 121 `grDevices::png()` now covers all seven measured calls across five packages. It opens
-alongside the browser display, records the existing graphics command vocabulary, rasterizes it in
-the Worker without DOM or native dependencies, and writes a standards-compliant compressed RGBA PNG
-into the bounded session file store on page transition or `dev.off()`. Requested dimensions,
-transparent backgrounds, point size, numbered multi-page filenames, device return values, PNG
-signature/dimensions, decompression, and nontransparent plot pixels have executable evidence. Raw
-`readBin()` retrieves the file bytes; typed binary decoding, exact GNU R fonts/anti-aliasing/color
-management, other file devices, and pixel identity remain incomplete.
-
-Rank 144 `Encoding()` now covers the highest-reach missing callable: 12 measured calls across three
-package manuals (4.5% download-weighted reach). Character vectors retain exact per-element bytes and
-`unknown`/`latin1`/`UTF-8`/`bytes` marks through subsetting, replacement, concatenation, and XDR
-serialization. `Encoding<-`, `enc2utf8()`, and deterministic browser-UTF-8 `enc2native()` reuse the
-same owned representation. General `iconv`, host locale encodings, and arbitrary malformed-byte
-behavior remain explicit boundaries.
-
-Rank 149 `stats::rcauchy()` now covers four measured calls across ggplot2, pillar, and purrr (4.2%
-download-weighted reach). It shares the evaluator-owned seeded uniform stream with the complete
-`dcauchy()`/`pcauchy()`/`qcauchy()` family, including vector recycling, stable ordinary/log tails,
-degenerate scales, missing/domain warnings, and GNU R-shaped formals. This is reusable distribution
-infrastructure for package R code; it does not imply that those packages or their dependency graphs
-are fully compatible.
-
-Development priority is based on a reproducible analysis of documented usage in popular CRAN
-packages. The committed
-[priority report and figures](https://github.com/nativr/nativr/blob/main/docs/feature-priorities.md)
-show the data, method, limitations, and current status of all 25 measured feature groups.
-
-Pure-R package loading now has an initial executable vertical slice; it is not a blanket CRAN
-compatibility claim. Source-only bundles can reuse supported R code without TypeScript rewrites, but
-a package still works only when every dependency and R feature it uses is supported. Compiled/native
-packages need separately audited Wasm or host adapters. See the
-[pure-R package loading contract](docs/pure-r-packages.md).
-
-Source-package `man/*.Rd` examples now travel through the same build-time bundle and Worker runtime.
-After installing a package set, applications can call
-`utils::example("topic", package = "pkg", echo = FALSE)`; topic aliases, `give.lines`, and explicit
-`run.dontrun` / `run.donttest` controls are supported. This turns unchanged package examples into a
-repeatable way to expose the next missing shared R feature instead of translating package functions
-to TypeScript.
-
-Installed `inst/doc` vignettes travel with the same package artifact. Applications can list them
-with `utils::vignette(package = "pkg")` or retrieve GNU R-shaped metadata with
-`utils::vignette("topic", package = "pkg")`; R Markdown, Sweave, HTML, PDF, and extracted R files
-remain immutable `nativr://package/<pkg>/doc/...` resources. Rendering new vignettes and automatic
-viewer dispatch remain build/host concerns.
-
-Source releases are managed with Changesets. npm publication uses GitHub Actions trusted publishing
-without a long-lived registry token; see the
-[release guide](https://github.com/nativr/nativr/blob/main/docs/releasing.md).
-
-## Development
-
-Use Node 24 and pnpm 11.
-
-```text
-pnpm install
-pnpm grammar:build
-pnpm check
-pnpm dev
-```
-
-The repository is a pnpm workspace:
+## Architecture
 
 ```text
 R source -> @nativr/parser -> normalized @nativr/ast
@@ -948,17 +133,46 @@ R source -> @nativr/parser -> normalized @nativr/ast
                                   |
                                   v
                   @nativr/nativr Worker API -> playground
+
+source package -> @nativr/package-tools -> pinned data bundle -> isolated namespace
 ```
 
-NativR intentionally does not perform package installation inside the browser and does not yet
-implement complete GNU R/package semantics, the complete graphics-device/base-graphics stack,
-host-filesystem access, or runtime network access. Semantic limits and planned directions are
-documented in the [roadmap](https://github.com/nativr/nativr/blob/main/docs/roadmap.md).
+Production packages are browser-first, ESM-only, CSP-safe, and free of Node built-ins, `eval`,
+`new Function`, or generated JavaScript execution. Native packages are a later phase requiring a
+versioned, capability-safe Wasm ABI; NativR will not expose unrestricted host pointers, dynamic
+loading, ambient filesystem access, or a shell to package code.
 
-This Apache-2.0 project follows an independent clean-room policy. It is not affiliated with or
-endorsed by the R Foundation, Posit, OpenAI, or R package authors. No official R branding is used.
+## Security and clean-room independence
+
+Host interactions are explicit construction-time adapters. URLs, sockets, commands, line input,
+navigation, and native calls are unavailable unless the embedding application supplies and
+authorizes the corresponding capability. Virtual storage and graphics journals remain bounded and
+session-owned.
+
+NativR is developed under an independent [clean-room policy](docs/clean-room.md). GNU R may be used
+only as a black-box behavioral oracle. GNU R, webR, and incompatible package implementation source
+must never be copied, translated, linked, or embedded in this Apache-2.0 implementation.
+
+## Development
+
+Use Node 24 and pnpm 11:
+
+```text
+pnpm install
+pnpm grammar:build
+pnpm check
+pnpm test:e2e
+pnpm conformance:r
+pnpm conformance:r:v2
+pnpm dev
+```
+
+The differential commands require exact GNU R 4.6.1 by default. The [agent guide](AGENTS.md),
+[development guide](docs/development.md), [RFC index](docs/rfcs/README.md),
+[roadmap](docs/roadmap.md), and [release guide](docs/releasing.md) contain the full project rules.
+
+NativR is not affiliated with or endorsed by the R Foundation, Posit, OpenAI, or R package authors.
 
 ## License
 
-Apache License 2.0. Third-party notices are in
-[`NOTICE`](https://github.com/nativr/nativr/blob/main/NOTICE).
+Apache License 2.0. Third-party notices are in [NOTICE](NOTICE).
