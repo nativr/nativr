@@ -825,8 +825,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
 172. Usage-ranked localization capability reporting: rank-351 `base::l10n_info` exposes GNU R's
      portable logical list fields and a non-Windows `codeset = "UTF-8"` browser profile, with null
      formals, visibility/attribute invariants, unchanged xfun-shaped package use, inline/Worker
-     execution, and differential conformance. Rank-353 `base::shQuote` is the next measured
-     unresolved callable.
+     execution, and differential conformance.
+173. Usage-ranked shell-string quoting: rank-353 `base::shQuote` covers xfun's measured call with
+     ordinary closure formals, browser-default Unix `sh`, explicit `csh`/`cmd`/`cmd2`, partial mode
+     matching, coercion and S3 dispatch, missing values, unchanged pure-R package use, inline/Worker
+     execution, and differential conformance without granting process authority. Rank-357
+     `base::system2` is the next measured unresolved callable.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

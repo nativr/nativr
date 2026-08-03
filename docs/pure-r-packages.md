@@ -236,6 +236,10 @@ normalized AST. The runtime then provides:
 31. usage-ranked `base::l10n_info()` as a GNU R-shaped browser encoding-capability report. Unchanged
     package code can select its UTF-8 path with `l10n_info()[["UTF-8"]]` inline or in the default
     Worker without inspecting browser preferences, host locales, or Windows codepages.
+32. usage-ranked `base::shQuote()` as a process-free string transformation. Unchanged package code
+    can prepare Unix `sh`/`csh` or explicit Windows `cmd`/`cmd2` arguments, including custom
+    `as.character` methods and missing values, inline or in the default Worker. This does not grant
+    permission to execute the result.
 
 Package source, metadata, resource counts, and encoded bytes are bounded before parsing. Package
 evaluation then consumes the ordinary step, call-depth, allocation, and output budgets.
@@ -586,6 +590,11 @@ loader.
   non-Windows `codeset` suffix. Direct, namespace, unchanged fixture, Worker, formals, visibility,
   attribute, and platform-invariant evidence is executable. It does not provide arbitrary locale
   installation, LC_CTYPE mutation, native codecs, or compiled package portability.
+- `shQuote()` supports xfun's measured shell-argument preparation without translating xfun. Its
+  ordinary closure formals, partial mode selection, four documented quoting modes, coercion/S3
+  behavior, attributes, missing values, unchanged fixture function, and Worker Playground path have
+  executable evidence. It only returns text; package process execution still requires the explicit
+  default-deny host command adapter.
 - `stats::ts.plot()` supports magrittr's measured exposition-pipe example without translating
   magrittr or the calling package. Numeric vectors and regular vector/matrix series align on a
   shared bounded time grid, missing union cells split paths, and styles/annotations traverse the

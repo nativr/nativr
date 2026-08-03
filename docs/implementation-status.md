@@ -182,6 +182,9 @@ Date: 2026-08-02
   logical fields and OS-specific suffix contract. The browser platform reports MBCS UTF-8,
   non-Latin-1 text with `codeset = "UTF-8"`; unchanged package and Worker paths exercise xfun's
   measured UTF-8 branch without host-locale probing.
+- Usage-ranked `shQuote()` with GNU R 4.6 closure/formal shape, partial mode matching, explicit
+  `sh`/`csh`/`cmd`/`cmd2` rules, coercion and registered `as.character` S3 dispatch, missing values,
+  visibility, and attribute removal. Pure-R and Worker paths execute without host process authority.
 - Usage-ranked `utils::download.file()` composes that explicit byte adapter with session-owned
   files. GNU R 4.6 formals, preflight validation, invisible statuses, paired-vector `retvals`, exact
   replacement bytes, named headers, pure-R namespace calls, failure atomicity, default-deny inline
@@ -535,6 +538,9 @@ Date: 2026-08-02
 - Usage-ranked `base::l10n_info` for xfun's measured native-encoding check: GNU R-shaped names,
   list/scalar types, visibility, null formals, platform suffix validation, browser-owned UTF-8
   `codeset`, unchanged package helper, conformance, and Worker proof.
+- Usage-ranked `base::shQuote` for xfun's measured shell-argument preparation: ordinary closure
+  metadata, documented non-Windows default, all four explicit quote modes, partial selection,
+  coercion/S3 behavior, missingness, unchanged package helper, conformance, and Worker proof.
 - Usage-ranked `grDevices::gray`/`grey` and `gray.colors`/`grey.colors` with zoo's two measured
   calls, byte-exact RGB(A) output, documented gamma correction, alpha recycling, reversal,
   descending endpoints, alias behavior, atomic gray-level coercion, attribute removal, and bounded

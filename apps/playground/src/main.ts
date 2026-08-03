@@ -73,6 +73,7 @@ stopifnot(all(round(filtered_flow(1:6), 6) == c(1, 2.8, 5.24, 8.192, 11.5536, 15
 stopifnot(dynamic_summary(structure(1:3, class = "demo")) == "worker-dynamic:6")
 stopifnot(identical(package_files(), c("nativrdemo", "DESCRIPTION", "NAMESPACE", "R", "doc", "extdata")))
 stopifnot(native_encoding())
+stopifnot(shell_quote("package path") == "'package path'")
 twice_mean(c(1, 2, 6))`,
   },
   {
@@ -99,6 +100,11 @@ twice_mean(c(1, 2, 6))`,
     id: "package-encoding",
     label: "Pure-R UTF-8 detection",
     code: "nativrdemo::native_encoding()",
+  },
+  {
+    id: "package-shell-quote",
+    label: "Pure-R shell quoting",
+    code: 'nativrdemo::shell_quote(c("package path", "plain"))',
   },
   {
     id: "package-archive",

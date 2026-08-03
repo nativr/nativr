@@ -976,8 +976,18 @@ black-box evidence covers null formals, visible named-list shape, the three port
 fields, names-only attributes, OS-specific suffix validity, and encoding invariants. NativR-only
 evidence covers its non-Windows `codeset = "UTF-8"` browser identity, unchanged pure-R package use,
 and default Worker/Playground execution. It does not claim Windows codepages, host locale discovery,
-arbitrary native encodings, ICU/iconv, or LC_CTYPE mutation. Rank 353 `base::shQuote` is the next
-measured unresolved callable.
+arbitrary native encodings, ICU/iconv, or LC_CTYPE mutation. Rank 353 `base::shQuote` is implemented
+by the next shell-string increment.
+
+The shell-string increment raises current name overlap to 640 of 2,522. Rank 353 `base::shQuote`
+covers xfun's measured argument-quoting call at 1.1% download-weighted reach. GNU R 4.6 differential
+evidence covers its closure/formals/default vector, partial type matching, visibility, attribute
+removal, explicit `cmd`/`cmd2` output, missing values, and registered `as.character` S3 dispatch.
+The public GNU R documentation supplies the non-Windows `sh` and `csh` contract, which has exact
+NativR browser cases together with unchanged pure-R package and default Worker execution. Quoting is
+an owned string transform and grants no process authority; actual command execution remains behind
+the separate default-deny host seam. Rank 357 `base::system2` is the next measured unresolved
+callable.
 
 ## Completion evidence
 

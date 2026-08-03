@@ -90,6 +90,10 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("true");
 
+  await page.getByRole("button", { name: "Pure-R shell quoting" }).click();
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText(`["'package path'", "'plain'"]`);
+
   await page.getByRole("button", { name: "Pure-R package ZIP member" }).click();
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText('["alpha", "beta"]');

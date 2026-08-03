@@ -797,3 +797,9 @@ no dependency, protocol event, host locale/codepage probe, `Intl` call, codec, o
 translation; inline and Worker sessions share the same non-Windows UTF-8 browser profile. The
 measured Worker is 402.6 KiB gzip (412,213 bytes), within the existing 403 KiB ceiling, so all
 budgets remain unchanged.
+
+Language subset 0.261 adds usage-ranked `base::shQuote` as bounded in-memory character transforms
+for documented Unix `sh`/`csh` and Windows `cmd`/`cmd2` modes. It adds no dependency, protocol
+event, process launch, host-shell probe, or package-specific translation; coercion and registered S3
+methods remain inside the evaluator. The measured Worker is 403.1 KiB gzip (412,820 bytes), so the
+ceiling rises narrowly from 403 KiB to 404 KiB; client and parser-Wasm budgets remain unchanged.

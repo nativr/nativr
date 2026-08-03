@@ -62,6 +62,11 @@ It reveals no language preference, regional setting, system codepage, installed 
 or operating-system identity. Its `codeset = "UTF-8"` field describes only NativR's admitted text
 representation and grants no encoding-conversion capability.
 
+`shQuote()` does not cross a capability boundary. It transforms strings in evaluator memory and
+never invokes `systemCommand`, reads a host shell setting, or assumes that a quoted string is safe
+for a different parser than the selected documented mode. Executing that string remains subject to
+the separate explicit, allow-listed command adapter.
+
 Directory operations use the same closed capability set. Session, package, and runtime roots are
 recognized structurally; `.` and `..` are normalized with an explicit no-root-escape check; and the
 working directory is always one of those owned directories. Listing cannot discover host names,

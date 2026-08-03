@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 657,
-    "overlappingNames": 639,
-    "missingReferenceNames": 1883,
+    "nativrRegisteredNames": 658,
+    "overlappingNames": 640,
+    "missingReferenceNames": 1882,
     "nativrExtensionNames": 18,
-    "nameCoverage": 0.25337
+    "nameCoverage": 0.253767
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 463, "nameCoverage": 0.338698 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 464, "nameCoverage": 0.339429 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 76, "nameCoverage": 0.163793 },
     {
       "package": "methods",
@@ -568,6 +568,7 @@
     "setdiff",
     "setequal",
     "setwd",
+    "shQuote",
     "show",
     "showClass",
     "showConnections",
@@ -2272,7 +2273,6 @@
     "setWinProgressBar",
     "setWindowTitle",
     "sethash",
-    "shQuote",
     "shapiro.test",
     "shell",
     "shell.exec",

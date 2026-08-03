@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.260.0",
+  "languageSubsetVersion": "0.261.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -99,6 +99,7 @@
         { "name": "options", "compatibility": "behavioral" },
         { "name": "getOption", "compatibility": "behavioral" },
         { "name": "sQuote", "compatibility": "behavioral" },
+        { "name": "shQuote", "compatibility": "behavioral" },
         { "name": "interactive", "compatibility": "behavioral" },
         { "name": "readline", "compatibility": "behavioral" },
         { "name": "capabilities", "compatibility": "behavioral" },

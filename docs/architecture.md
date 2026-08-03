@@ -217,6 +217,12 @@ and a non-Windows `codeset` string. It does not call `Intl`, inspect browser lan
 read Windows codepages, or share mutable state with the host. Pure-R package feature branches see
 the same UTF-8 result inline and across the Worker because no protocol extension is required.
 
+Shell quoting is intentionally below the host-command boundary. `shQuote()` converts owned R
+character values with deterministic Unix or Windows quoting rules and returns another owned vector;
+it neither probes the page's operating system nor invokes the `systemCommand` adapter. This lets
+pure-R packages prepare command text without receiving process authority, while `system` and future
+`system2` calls remain separately policy-gated.
+
 Session process identity follows the same rule. The facade allocates one positive integer before
 choosing inline or Worker execution, sends it as an optional protocol-v1 initialization field, and
 the evaluator retains it outside resettable builtin state. `Sys.getpid()` therefore remains stable

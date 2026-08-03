@@ -169,6 +169,8 @@ type AtomicVector =
   RLogicalVector | RIntegerVector | RDoubleVector | RComplexVector | RRawVector | RCharacterVector;
 type NumericVector = RLogicalVector | RIntegerVector | RDoubleVector | RComplexVector;
 type AttributedSequence = RVector | RPairlist;
+const SHELL_QUOTE_TYPES = ["sh", "csh", "cmd", "cmd2"] as const;
+type ShellQuoteType = (typeof SHELL_QUOTE_TYPES)[number];
 
 function isAttributedSequence(value: RValue): value is AttributedSequence {
   return isVector(value) || value.type === "pairlist";
@@ -248,6 +250,10 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("options", ["..."], "behavioral", builtinOptions),
   defineBuiltin("getOption", ["x", "default"], "behavioral", builtinGetOption),
   defineBuiltin("sQuote", ["x", "q"], "behavioral", builtinSingleQuote),
+  withBuiltinFormals(
+    defineBuiltin("shQuote", ["string", "type"], "behavioral", builtinShellQuote),
+    [{ name: "string" }, { name: "type", defaultValue: shellQuoteTypeChoiceAst() }],
+  ),
   defineBuiltin("interactive", [], "behavioral", builtinInteractive),
   withBuiltinFormals(defineBuiltin("readline", ["prompt"], "behavioral", builtinReadline), [
     {
@@ -14573,6 +14579,131 @@ async function builtinSingleQuote(invocation: BuiltinInvocation): Promise<RChara
   return characterVector(output);
 }
 
+async function builtinShellQuote(invocation: BuiltinInvocation): Promise<RCharacterVector> {
+  const matched = matchLazyArguments(invocation, ["string", "type"]);
+  const stringArgument = matched.get("string");
+  if (stringArgument === undefined || stringArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'string' is missing in shQuote().");
+  }
+  const input = await invocation.force(stringArgument.promise);
+  const typeArgument = matched.get("type");
+  const type =
+    typeArgument === undefined
+      ? "sh"
+      : shellQuoteType(await invocation.force(typeArgument.promise));
+  const characters = await shellQuoteCharacters(invocation, stringArgument, input);
+  const output = new Array<string>(characters.length);
+  const missing = new Uint8Array(characters.length);
+  for (let index = 0; index < characters.length; index += 1) {
+    invocation.context.checkpoint();
+    if (type === "cmd2" && isMissing(characters, index)) {
+      missing[index] = 1;
+      output[index] = "";
+      continue;
+    }
+    const value = isMissing(characters, index) ? "NA" : (characters.values[index] ?? "");
+    output[index] = quoteForShell(value, type);
+  }
+  invocation.context.allocate(output.length);
+  return characterVector(
+    output,
+    compactMask(missing),
+    type === "cmd2" ? output.map((_, index) => characterEncodingAt(characters, index)) : undefined,
+  );
+}
+
+function shellQuoteType(value: RValue): ShellQuoteType {
+  if (value.type === "null") return "sh";
+  if (value.type !== "character") {
+    throw new RTypeMismatchError("NRT3416", "invalid 'type' argument");
+  }
+  if (
+    value.length === SHELL_QUOTE_TYPES.length &&
+    SHELL_QUOTE_TYPES.every(
+      (choice, index) => !isMissing(value, index) && value.values[index] === choice,
+    )
+  ) {
+    return "sh";
+  }
+  if (value.length !== 1) {
+    throw new RTypeMismatchError("NRT3416", "invalid 'type' argument");
+  }
+  if (isMissing(value, 0)) throw matchArgumentChoiceError(SHELL_QUOTE_TYPES);
+  const requested = value.values[0] ?? "";
+  const exact = SHELL_QUOTE_TYPES.find((choice) => choice === requested);
+  if (exact !== undefined) return exact;
+  const partial = SHELL_QUOTE_TYPES.filter(
+    (choice) => requested.length > 0 && choice.startsWith(requested),
+  );
+  if (partial.length === 1) return partial[0]!;
+  throw matchArgumentChoiceError(SHELL_QUOTE_TYPES);
+}
+
+async function shellQuoteCharacters(
+  invocation: BuiltinInvocation,
+  stringArgument: BuiltinCallArgument,
+  input: RValue,
+): Promise<RCharacterVector> {
+  const dispatched = await invocation.dispatchS3IfPresent("as.character", input, [stringArgument]);
+  if (dispatched !== undefined) {
+    if (dispatched.type !== "character") {
+      throw new RTypeMismatchError("NRT3416", "invalid 'text' argument");
+    }
+    return dispatched;
+  }
+  if (input.type === "null") return characterVector([]);
+  if (isAtomic(input)) return coerceAtomicToCharacter(input, invocation);
+  if (
+    input.type === "symbol" ||
+    input.type === "language" ||
+    input.type === "expression" ||
+    input.type === "formula" ||
+    input.type === "list" ||
+    input.type === "pairlist"
+  ) {
+    return characterVector(globPatternCharacters(input, invocation));
+  }
+  throw new RTypeMismatchError("NRT3416", "invalid 'text' argument");
+}
+
+function quoteForShell(value: string, type: ShellQuoteType): string {
+  switch (type) {
+    case "sh":
+      return value.includes("'") ? `"${value.replace(/[$\x60\\"]/gu, "\\$&")}"` : `'${value}'`;
+    case "csh":
+      if (!value.includes("'")) return `'${value}'`;
+      if (!/[$\x60]/u.test(value)) return `"${value.replace(/[\\!"]/gu, "\\$&")}"`;
+      return value
+        .split("'")
+        .map((part) => `'${part}'`)
+        .join('"\'"');
+    case "cmd":
+      return quoteForMicrosoftCommandLine(value);
+    case "cmd2":
+      return value.replace(/[()%!^"<>&|]/gu, "^$&");
+    default:
+      return assertNever(type);
+  }
+}
+
+function quoteForMicrosoftCommandLine(value: string): string {
+  let output = '"';
+  let backslashes = 0;
+  for (const character of value) {
+    if (character === "\\") {
+      backslashes += 1;
+      continue;
+    }
+    if (character === '"') {
+      output += `${"\\".repeat(backslashes * 2 + 1)}"`;
+    } else {
+      output += `${"\\".repeat(backslashes)}${character}`;
+    }
+    backslashes = 0;
+  }
+  return `${output}${"\\".repeat(backslashes * 2)}"`;
+}
+
 function singleQuoteMarks(setting: RValue): readonly [string, string] {
   if (setting.type === "character" && setting.length >= 4) {
     return [quoteSettingText(setting, 0), quoteSettingText(setting, 1)];
@@ -15793,6 +15924,16 @@ function outputMessageChoiceAst(): AstNode {
   };
 }
 
+function shellQuoteTypeChoiceAst(): AstNode {
+  return callAst(
+    "c",
+    SHELL_QUOTE_TYPES.map((value) => ({
+      value: { kind: "StringLiteral" as const, value, span: SYNTHETIC_SPAN },
+      span: SYNTHETIC_SPAN,
+    })),
+  );
+}
+
 function writeColumnDefaultAst(): AstNode {
   return {
     kind: "IfExpression",
@@ -16269,7 +16410,12 @@ async function builtinTypeof(invocation: BuiltinInvocation): Promise<RValue> {
       type = "language";
       break;
     case "builtin":
-      type = value.definition.kind === "special" ? "special" : "builtin";
+      type =
+        value.definition.formals !== undefined
+          ? "closure"
+          : value.definition.kind === "special"
+            ? "special"
+            : "builtin";
       break;
     case "dots":
       type = "...";

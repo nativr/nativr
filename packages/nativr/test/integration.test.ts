@@ -32,7 +32,7 @@ importFrom(graphics, axis, barplot, plot.new, plot.window, rect, title)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median, ts.plot)
 importFrom(utils, download.file, packageDescription, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, annotated_plot, ask_new_pages, find_tools, create_file, copy_resource, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, socket_exchange, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, package_files, installed_version, namespace_names, process_id, library_paths, loaded_module_paths, native_encoding, standard_output, sink_lines, write_sass_variable)
+  export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, annotated_plot, ask_new_pages, find_tools, create_file, copy_resource, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, socket_exchange, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, package_files, installed_version, namespace_names, process_id, library_paths, loaded_module_paths, native_encoding, shell_quote, standard_output, sink_lines, write_sass_variable)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -193,6 +193,7 @@ process_id <- function() Sys.getpid()
 library_paths <- function() .libPaths()
 loaded_module_paths <- function() vapply(getLoadedDLLs(), "[[", character(1), "path")
 native_encoding <- function() l10n_info()[["UTF-8"]]
+shell_quote <- function(x, type = "sh") shQuote(x, type)
 standard_output <- function() {
   out <- stdout()
   writeLines("package-output", out)
@@ -4367,6 +4368,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "remote_lines",
       "remove_files",
       "repository_versions",
+      "shell_quote",
       "signature_names",
       "sink_lines",
       "socket_exchange",
@@ -11841,6 +11843,44 @@ NeedsCompilation: no
     await runtime.dispose();
   });
 
+  it("quotes shell arguments with the documented Unix and explicit Windows modes", async () => {
+    const runtime = await createR({ execution: "inline", assets, packages: [pureRFixture] });
+    await expect(
+      runtime.eval(
+        'x <- withVisible(shQuote("plain"))\nc(typeof(shQuote), names(formals(shQuote)), identical(eval(formals(shQuote)$type), c("sh", "csh", "cmd", "cmd2")), x$value, x$visible, is.null(attributes(x$value)))',
+      ),
+    ).resolves.toEqual(["closure", "string", "type", "TRUE", "'plain'", "TRUE", "TRUE"]);
+    await expect(
+      runtime.eval(`shQuote(c("plain", "a b", "a'b", 'a"b', NA), "sh")`),
+    ).resolves.toEqual(["'plain'", "'a b'", `"a'b"`, `'a"b'`, "'NA'"]);
+    await expect(
+      runtime.eval(`shQuote(c("plain", "a'b", "a'b!", "a'\u0024b"), "csh")`),
+    ).resolves.toEqual(["'plain'", `"a'b"`, `"a'b\\!"`, `'a'"'"'$b'`]);
+    await expect(
+      runtime.eval(`shQuote(c("", 'a"b', "a\\\\", "a\\\\\\\\", NA), "cmd")`),
+    ).resolves.toEqual(['""', '"a\\"b"', '"a\\\\"', '"a\\\\\\\\"', '"NA"']);
+    await expect(
+      runtime.eval(`shQuote(c('a"b', "a%PATH%!", "^&|<>", "(x)", NA), "cmd2")`),
+    ).resolves.toEqual(['a^"b', "a^%PATH^%^!", "^^^&^|^<^>", "^(x^)", NA]);
+    await expect(runtime.eval(`shQuote("a b", "s")`)).resolves.toBe("'a b'");
+    await expect(runtime.eval(`shQuote("a b", NULL)`)).resolves.toBe("'a b'");
+    await expect(runtime.eval(`shQuote("a b", c("sh", "csh", "cmd", "cmd2"))`)).resolves.toBe(
+      "'a b'",
+    );
+    await expect(
+      runtime.eval(`
+        as.character.shell_demo <- function(x, ...) c("custom value", NA_character_)
+        x <- structure(1L, class = "shell_demo")
+        c(shQuote(x, "sh"), shQuote(x, "cmd2"), nativrfixture::shell_quote("package path"))
+      `),
+    ).resolves.toEqual(["'custom value'", "'NA'", "custom value", NA, "'package path'"]);
+    await expect(runtime.eval(`shQuote("x", "c")`)).rejects.toMatchObject({ code: "NRE2130" });
+    await expect(runtime.eval(`shQuote("x", character())`)).rejects.toMatchObject({
+      code: "NRT3416",
+    });
+    await runtime.dispose();
+  });
+
   it("reports deterministic browser-native session information through utils", async () => {
     const runtime = await session();
     await expect(
@@ -12300,7 +12340,7 @@ NeedsCompilation: no
     const runtime = await session();
     await expect(
       runtime.eval("c(typeof(mean), mode(mean), mode(TRUE), mode(list()))"),
-    ).resolves.toEqual(["builtin", "function", "logical", "list"]);
+    ).resolves.toEqual(["closure", "function", "logical", "list"]);
     await expect(
       runtime.eval(
         'c(is.vector(as.raw(1), "raw"), is.vector(list(1), "list"), is.vector("x", "numeric"), is.vector(factor("x")))',
@@ -12534,7 +12574,7 @@ NeedsCompilation: no
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.260.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.261.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

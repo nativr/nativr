@@ -980,6 +980,14 @@ calls exercise xfun's measured `l10n_info()[["UTF-8"]]` branch. Host locale/code
 Windows codepage fields, arbitrary native encodings, ICU/iconv, and mutation through LC_CTYPE remain
 outside this browser profile.
 
+`shQuote()` has GNU R 4.6 differential evidence for its closure type, `string`/`type` formals and
+four-choice default, visible character result, partial type matching, attribute removal, explicit
+Microsoft `cmd` and `cmd2` transformations, missing-value rules, and registered `as.character` S3
+dispatch. The browser default follows the documented Unix `sh` contract; documented `csh` splitting
+and escaping also has exact browser conformance. Atomic, factor, list/pairlist, symbol, call,
+expression, and formula coercion use the owned value model. Byte-invalid native strings, exhaustive
+host-shell round trips, and command execution are outside this function's contract.
+
 `utils::sessionInfo` has shape evidence for the measured otel `utils::sessionInfo()$platform` lookup
 and differential evidence for its class, R major/minor target, RNG-kind length, attached
 base-package length, and named-list access. Browser-specific values are deliberately NativR
@@ -1784,10 +1792,13 @@ malformed-sequence display, and complete encoding-aware string semantics are not
 
 Core storage inspection covers `typeof`, `mode`, `is.null`, atomic storage predicates, `is.numeric`,
 `is.atomic`, `is.list`, `is.function`, `is.environment`, and bounded `is.vector` mode/attribute
-checks. Atomic coercion covers `as.logical`, `as.integer`, `as.double`/`as.numeric`, and
-`as.character`, with executable NA/NaN, complex, factor, raw, warning, and integer-range cases.
-General S3/S4 coercion dispatch beyond the bounded `hexmode` chain, list coercion, option-dependent
-numeric formatting, and all locale-specific parsing remain outside this increment.
+checks. Builtin definitions with explicit ordinary R-level formals report `typeof = "closure"`; the
+black-box surface inventory confirms that classification for all 92 registered names also found in
+GNU R, while true primitives/specials remain unchanged. Atomic coercion covers `as.logical`,
+`as.integer`, `as.double`/`as.numeric`, and `as.character`, with executable NA/NaN, complex, factor,
+raw, warning, and integer-range cases. General S3/S4 coercion dispatch beyond the bounded `hexmode`
+chain, list coercion, option-dependent numeric formatting, and all locale-specific parsing remain
+outside this increment.
 
 Zero-filled logical/integer/double/character constructors, the corresponding common `vector()`
 modes, `lengths()`, and matrix/array/data-frame/factor/recursive predicates have executable

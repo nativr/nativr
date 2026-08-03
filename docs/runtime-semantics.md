@@ -61,10 +61,12 @@ that empty target. Expression vectors and arbitrary class-specific `[<-` methods
 owned path.
 
 `typeof`, `mode`, and the core `is.*` predicates inspect NativR storage without exposing parser
-nodes. `as.logical`, `as.integer`, `as.double`/`as.numeric`, and `as.character` cover NULL and
-atomic vectors, including factors, complex imaginary-discard warnings, integer-range warnings, and
-NA-versus-NaN handling. Coercions drop attributes as GNU R does. Locale- and option-dependent
-number-to-character formatting and general list/method coercion remain incomplete.
+nodes. Registered builtins carrying ordinary R-level `formals` report `typeof = "closure"`; true
+primitive and special builtins retain their GNU R storage labels. `as.logical`, `as.integer`,
+`as.double`/`as.numeric`, and `as.character` cover NULL and atomic vectors, including factors,
+complex imaginary-discard warnings, integer-range warnings, and NA-versus-NaN handling. Coercions
+drop attributes as GNU R does. Locale- and option-dependent number-to-character formatting and
+general list/method coercion remain incomplete.
 
 `logical`, `integer`, `double`/`numeric`, `character`, and `vector` allocate zero-filled vectors
 through the same resource-accounted storage model. `vector("expression", n)` allocates NULL-filled
@@ -949,6 +951,13 @@ GNU R fields are `MBCS = TRUE`, `UTF-8 = TRUE`, and `Latin-1 = FALSE`; because N
 invented Windows codepages. These values describe the owned browser text representation. C-locale
 collation, names, dates, and numeric formatting remain separate deterministic policy, and monetary
 profile changes do not alter the native UTF-8 encoding report.
+
+`shQuote()` is a deterministic character transformation. Omitted `type` selects `sh` for NativR's
+non-Windows browser platform; explicit `sh`, `csh`, `cmd`, and `cmd2` reproduce the documented
+quote, escape, backslash-doubling, and caret-prefix rules. Type names partially match as in
+`match.arg`, the four-choice formal default is visible through `formals`, ordinary `as.character` S3
+methods can participate, and the output drops source attributes. This function never calls `system`,
+a Worker host handler, or any native shell.
 
 `utils::sessionInfo()` assembles a classed named list from the same evaluator-owned state. It
 reports `wasm32-unknown-browser/nativr` and `Browser JavaScript (NativR)` instead of leaking or

@@ -343,8 +343,9 @@ warnings, and attribute retention. Rank-359 `lsfit` now runs xfun's measured lea
 through the owned QR solver, with matrix predictors, weights, intercept control, complete-case
 handling, rank metadata, and explicit multi-response boundaries. Rank-361 `strwrap` now runs xfun's
 measured paragraph-wrapping example with vectorized text, paragraph boundaries, prefixes,
-indentation, sentence spacing, and simplified or list-shaped results. Rank-360 `shQuote` remains
-browser host-shell adapter work. A ranking audit also closed the earlier rank-207 `rgb` gap, and
+indentation, sentence spacing, and simplified or list-shaped results. The refreshed rank-353
+`shQuote` now performs documented shell-string quoting entirely in owned memory; it does not execute
+a shell or require a host adapter. A ranking audit also closed the earlier rank-207 `rgb` gap, and
 rank-366 `col2rgb` now runs stringr's measured named-color-to-hex helper across the complete owned
 color catalog, numeric palette indices, hexadecimal alpha forms, transparent values, matrix
 metadata, and reverse RGB formatting. Rank-368 `simplify2array` now runs stringi's two measured
@@ -798,8 +799,15 @@ Rank 351 `base::l10n_info()` now covers xfun's measured UTF-8 capability branch.
 visible named-list contract with logical `MBCS`, `UTF-8`, and `Latin-1` fields plus the non-Windows
 `codeset` field. The browser profile truthfully reports multi-byte UTF-8 text and no Latin-1 native
 locale without querying the host OS. Unchanged pure-R package code executes `l10n_info()[["UTF-8"]]`
-inline and in the default Worker. Rank 353 `base::shQuote()` is the next measured unresolved
-callable.
+inline and in the default Worker.
+
+Rank 353 `base::shQuote()` now covers xfun's measured shell-argument preparation path. The
+non-Windows browser default is documented Unix `sh`; explicit `csh`, Microsoft command-line `cmd`,
+and `cmd.exe` `cmd2` modes are also implemented as deterministic string transformations. GNU
+R-shaped formals, partial type matching, atomic/list/language coercion, S3 `as.character` dispatch,
+missing values, visibility, and attribute dropping have executable evidence. Unchanged pure-R
+package code runs the same helper inline and in the default Worker without granting process or shell
+authority. Rank 357 `base::system2()` is the next usage-ranked unresolved callable.
 
 Rank 121 `grDevices::png()` now covers all seven measured calls across five packages. It opens
 alongside the browser display, records the existing graphics command vocabulary, rasterizes it in

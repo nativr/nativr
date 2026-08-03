@@ -309,6 +309,65 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "shell-quote-usage-ranked-formals-windows-modes-and-visibility",
+    "code": "x <- withVisible(shQuote(c(\"a b\", 'a\\\"b', NA), \"cmd\"))\ny <- shQuote(c('a\\\"b', \"a%PATH%!\", \"^&|<>\", \"(x)\", NA), \"cmd2\")\nc(typeof(shQuote), names(formals(shQuote)), identical(eval(formals(shQuote)$type), c(\"sh\", \"csh\", \"cmd\", \"cmd2\")), x$value, x$visible, is.null(attributes(x$value)), y, is.na(y))",
+    "expected": [
+      "closure",
+      "string",
+      "type",
+      "TRUE",
+      "\"a b\"",
+      "\"a\\\"b\"",
+      "\"NA\"",
+      "TRUE",
+      "TRUE",
+      "a^\"b",
+      "a^%PATH^%^!",
+      "^^^&^|^<^>",
+      "^(x^)",
+      { "__nativr__": "NA" },
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "TRUE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "shell-quote-browser-unix-default-csh-and-coercion",
+    "code": "a <- shQuote(c(\"plain\", \"a b\", \"a'b\", 'a\\\"b', NA))\nb <- shQuote(c(\"plain\", \"a'b\", \"a'b!\", \"a'$b\"), \"csh\")\nc(a, b, shQuote(list(\"a b\", NA, NULL, 1:3), \"sh\"), shQuote(\"a b\", \"s\"), shQuote(\"a b\", NULL), shQuote(\"a b\", c(\"sh\", \"csh\", \"cmd\", \"cmd2\")))",
+    "expected": [
+      "'plain'",
+      "'a b'",
+      "\"a'b\"",
+      "'a\"b'",
+      "'NA'",
+      "'plain'",
+      "\"a'b\"",
+      "\"a'b\\!\"",
+      "'a'\"'\"'$b'",
+      "'a b'",
+      "'NA'",
+      "'NULL'",
+      "'1:3'",
+      "'a b'",
+      "'a b'",
+      "'a b'"
+    ],
+    "rOracle": false,
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "shell-quote-as-character-s3-dispatch",
+    "code": "as.character.shell_demo <- function(x, ...) c(\"custom value\", NA_character_)\nregisterS3method(\"as.character\", \"shell_demo\", as.character.shell_demo)\nx <- structure(1L, class = \"shell_demo\")\nc(shQuote(x, \"cmd\"), shQuote(x, \"cmd2\"))",
+    "expected": ["\"custom value\"", "\"NA\"", "custom value", { "__nativr__": "NA" }],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "paste-recycling",
     "code": "paste(c(\"a\", \"b\"), 1:2, sep = \"-\")",
     "expected": ["a-1", "b-2"],
