@@ -271,6 +271,7 @@
     "id": "browser-monetary-locale-profiles",
     "code": "old <- Sys.getlocale('LC_MONETARY')\nSys.setlocale('LC_MONETARY', 'it_IT')\nit <- Sys.localeconv()\nSys.setlocale('LC_MONETARY', 'en_US')\nus <- Sys.localeconv()\nSys.setlocale('LC_MONETARY', old)\nc(it[['int_curr_symbol']] == 'EUR', it[['mon_decimal_point']] == ',', it[['mon_thousands_sep']] == '.', it[['p_cs_precedes']] == '0', it[['p_sep_by_space']] == '1', us[['int_curr_symbol']] == 'USD', us[['currency_symbol']] == '$', us[['mon_decimal_point']] == '.', us[['mon_thousands_sep']] == ',', us[['n_sign_posn']] == '0')",
     "expected": [true, true, true, true, true, true, true, true, true, true],
+    "rOracle": false,
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
   },
@@ -1938,6 +1939,7 @@
     "id": "browser-capabilities-xchk-laziness-and-extra-argument-error",
     "code": "tracker <- new.env()\ntracker$forced <- FALSE\ncapabilities(\"cairo\", Xchk = { tracker$forced <- TRUE; stop(\"forced\") })\nc(!tracker$forced, inherits(try(capabilities(\"cairo\", unused = TRUE), silent = TRUE), \"try-error\"))",
     "expected": [true, true],
+    "rOracle": false,
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
   },

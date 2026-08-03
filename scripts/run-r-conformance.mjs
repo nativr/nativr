@@ -47,12 +47,19 @@ for (const testCase of oracleCases) {
     nativr.warnings.length > 0,
     nativr.output.map((event) => event.text).join(""),
   );
-  const oracle = await runOracle(
-    testCase.code,
-    testCase.rOracleWithoutCallingHandlers === true,
-    testCase.rOracleIgnoreOutput === true,
-    testCase.rOracleWithoutSinks === true,
-  );
+  let oracle;
+  try {
+    oracle = await runOracle(
+      testCase.code,
+      testCase.rOracleWithoutCallingHandlers === true,
+      testCase.rOracleIgnoreOutput === true,
+      testCase.rOracleWithoutSinks === true,
+    );
+  } catch (error) {
+    failures += 1;
+    console.error(`FAIL ${testCase.id}\n  R oracle error: ${String(error)}`);
+    continue;
+  }
   if (!canonicalEqual(actual, oracle, testCase.tolerance)) {
     failures += 1;
     console.error(
