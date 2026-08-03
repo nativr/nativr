@@ -145,6 +145,15 @@ parsing and an evaluator-session-only cache; they are never treated as executabl
 installed by the runtime. The Playground adapter serves embedded allow-listed fixtures and performs
 no network request.
 
+`socketConnection()` is inert unless the application supplies `createR({ socket })`. The callback
+receives copied, data-only open/read/write/timeout/close requests keyed by opaque session and
+connection IDs; read results and writes are bounded by `maxOutputBytes`, and lifecycle results must
+be empty. NativR never opens a browser or operating-system socket, resolves DNS, selects TLS,
+forwards cookies/credentials, or authorizes an endpoint. Hosts must exact-allow-list endpoint and
+mode combinations, isolate sessions, bound time and buffered data, treat package bytes as untrusted,
+and release all resources on `close-all`. Reset, Worker restart, and disposal request that cleanup;
+the Playground adapter is an in-memory fixed fixture and performs no network request.
+
 `unz()` grants neither network nor filesystem authority. It reads only bytes already admitted as an
 immutable package resource or session-owned file, locates one exact member without path extraction,
 and rejects encrypted, multi-disk, ZIP64, malformed, unsupported, over-count, over-size, or

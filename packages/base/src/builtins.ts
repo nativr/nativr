@@ -531,6 +531,33 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   withBuiltinFormals(
     defineBuiltin(
+      "socketConnection",
+      ["host", "port", "server", "blocking", "open", "encoding", "timeout", "options"],
+      "behavioral",
+      builtinSocketConnection,
+    ),
+    [
+      {
+        name: "host",
+        defaultValue: { kind: "StringLiteral", value: "localhost", span: SYNTHETIC_SPAN },
+      },
+      { name: "port" },
+      {
+        name: "server",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "blocking",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      { name: "open", defaultValue: { kind: "StringLiteral", value: "a+", span: SYNTHETIC_SPAN } },
+      { name: "encoding", defaultValue: getOptionDefaultAst("encoding") },
+      { name: "timeout", defaultValue: getOptionDefaultAst("timeout") },
+      { name: "options", defaultValue: getOptionDefaultAst("socketOptions") },
+    ],
+  ),
+  withBuiltinFormals(
+    defineBuiltin(
       "textConnection",
       ["object", "open", "local", "name", "encoding"],
       "behavioral",
@@ -687,6 +714,17 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("close", ["con", "type"], "behavioral", builtinClose, "regular", "invisible"),
   defineBuiltin("flush", ["con"], "behavioral", builtinFlush, "regular", "invisible"),
   defineBuiltin("isOpen", ["con", "rw"], "behavioral", builtinIsOpen),
+  defineBuiltin("isIncomplete", ["con"], "shape", builtinIsIncomplete),
+  withBuiltinFormals(
+    defineBuiltin("socketTimeout", ["socket", "timeout"], "behavioral", builtinSocketTimeout),
+    [
+      { name: "socket" },
+      {
+        name: "timeout",
+        defaultValue: { kind: "IntegerLiteral", value: -1, span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
   defineBuiltin("seek", ["con", "where", "origin", "rw"], "behavioral", builtinSeek),
   defineBuiltin("file.exists", ["..."], "shape", builtinFileExists),
   withBuiltinFormals(
@@ -3511,8 +3549,19 @@ interface VirtualTextConnection {
   cursor: number;
   gzip?: VirtualGzipConnection;
   url?: { readonly request: RUrlRequest; loaded: boolean };
+  socket?: VirtualSocketConnection;
   pipe?: VirtualPipeConnection;
   zip?: VirtualZipMemberConnection;
+}
+
+interface VirtualSocketConnection {
+  readonly host: string;
+  readonly port: number;
+  readonly server: boolean;
+  readonly options: readonly string[];
+  timeoutSeconds: number;
+  incomplete: boolean;
+  connected: boolean;
 }
 
 interface VirtualPipeConnection {
@@ -5278,7 +5327,10 @@ async function builtinCapabilities(invocation: BuiltinInvocation): Promise<RLogi
       ? [...BROWSER_CAPABILITY_NAMES]
       : capabilitySelection(requested);
   invocation.context.allocate(names.length);
-  return withNames(logicalVector(new Uint8Array(names.length)), names);
+  return withNames(
+    logicalVector(names.map((name) => name === "sockets" && invocation.hasSocketCapability())),
+    names,
+  );
 }
 
 async function builtinGcTorture2(invocation: BuiltinInvocation): Promise<RValue> {
@@ -7125,6 +7177,175 @@ async function builtinUrl(invocation: BuiltinInvocation): Promise<RIntegerVector
   return handle;
 }
 
+async function builtinSocketConnection(invocation: BuiltinInvocation): Promise<RIntegerVector> {
+  const matched = await matchExact(invocation, [
+    "host",
+    "port",
+    "server",
+    "blocking",
+    "open",
+    "encoding",
+    "timeout",
+    "options",
+  ]);
+  const host = virtualConnectionCharacter(
+    matched.get("host") ?? characterVector(["localhost"]),
+    "host",
+    "socketConnection",
+  );
+  if (host.length === 0 || /[\0\r\n]/u.test(host)) {
+    throw new RTypeMismatchError("NRT3415", "invalid 'host' argument");
+  }
+  const port = socketPort(required(matched, "port", "socketConnection"));
+  const server = coercibleLogicalFlag(matched.get("server"), false, "server");
+  const blocking = coercibleLogicalFlag(matched.get("blocking"), false, "blocking");
+  const encoding = virtualTextEncoding(matched.get("encoding"), "socketConnection");
+  const timeoutSeconds = socketTimeoutSeconds(matched.get("timeout"), "socketConnection");
+  const options = socketOptions(matched.get("options"));
+  const requested =
+    matched.get("open") === undefined
+      ? { mode: "a+" as const, displayMode: "a+", text: "text" as const, specified: true }
+      : virtualConnectionMode(matched.get("open"), "a+", "socketConnection");
+
+  const state = virtualTextFileState(invocation);
+  if (virtualUserConnectionCount(state) >= invocation.context.limits.maxVectorLength) {
+    throw new RResourceLimitError("NRL4002", "Virtual connection count limit exceeded.");
+  }
+  if (!Number.isSafeInteger(state.nextConnectionId) || state.nextConnectionId > 2_147_483_647) {
+    throw new RResourceLimitError("NRL4002", "Virtual connection identifier limit exceeded.");
+  }
+  const id = state.nextConnectionId;
+  state.nextConnectionId += 1;
+  const path = nextVirtualTempPath(state, "socket-connection-", ".bin");
+  invocation.context.allocate(1);
+  const handle = withClasses(integerVector([id]), ["sockconn", "connection"]);
+  const connection: VirtualTextConnection = {
+    id,
+    handle,
+    description: host,
+    path,
+    packageFile: false,
+    privateFile: true,
+    blocking,
+    encoding,
+    open: false,
+    mode: "a+",
+    displayMode: requested.specified ? requested.displayMode : "",
+    text: requested.specified ? requested.text : "text",
+    cursor: 0,
+    socket: {
+      host,
+      port,
+      server,
+      options,
+      timeoutSeconds,
+      incomplete: false,
+      connected: false,
+    },
+  };
+  state.connections.set(id, connection);
+  if (requested.specified) {
+    try {
+      await openSocketConnection(invocation, connection, requested);
+    } catch (error) {
+      await closeSocketConnection(invocation, connection).catch(() => undefined);
+      destroyVirtualTextConnection(state, connection);
+      throw error;
+    }
+  }
+  return handle;
+}
+
+function socketPort(value: RValue): number {
+  if (
+    (value.type !== "logical" && value.type !== "integer" && value.type !== "double") ||
+    value.length !== 1 ||
+    isMissing(value, 0)
+  ) {
+    throw new RTypeMismatchError("NRT3415", "invalid 'port' argument");
+  }
+  const port = Math.trunc(value.values[0] ?? Number.NaN);
+  if (!Number.isSafeInteger(port) || port < 1 || port > 65_535) {
+    throw new RTypeMismatchError("NRT3415", "invalid 'port' argument");
+  }
+  return port;
+}
+
+function socketTimeoutSeconds(value: RValue | undefined, call: string): number {
+  if (value === undefined || value.type === "null") return 60;
+  if (
+    (value.type !== "logical" && value.type !== "integer" && value.type !== "double") ||
+    value.length !== 1 ||
+    isMissing(value, 0)
+  ) {
+    throw new RTypeMismatchError("NRT3415", `${call}() requires a finite non-negative timeout.`);
+  }
+  const timeout = value.values[0] ?? Number.NaN;
+  if (!Number.isFinite(timeout) || timeout < 0) {
+    throw new RTypeMismatchError("NRT3415", `${call}() requires a finite non-negative timeout.`);
+  }
+  return timeout;
+}
+
+function socketOptions(value: RValue | undefined): readonly string[] {
+  if (value === undefined || value.type === "null") return [];
+  if (value.type !== "character" || value.missing !== undefined) {
+    throw new RTypeMismatchError("NRT3415", "invalid 'options' argument");
+  }
+  if (value.values.some((option) => option !== "no-delay")) {
+    throw new RTypeMismatchError("NRT3415", "unsupported socket option");
+  }
+  return [...value.values];
+}
+
+async function openSocketConnection(
+  invocation: BuiltinInvocation,
+  connection: VirtualTextConnection,
+  requested: {
+    readonly mode: VirtualTextConnectionMode;
+    readonly displayMode: string;
+    readonly text: "text" | "binary";
+  },
+): Promise<void> {
+  const socket = connection.socket;
+  if (socket === undefined) return;
+  await invocation.socketRequest({
+    operation: "open",
+    sessionId: invocation.sessionProcessId,
+    connectionId: connection.id,
+    host: socket.host,
+    port: socket.port,
+    server: socket.server,
+    blocking: connection.blocking,
+    open: requested.displayMode,
+    encoding: connection.encoding,
+    timeoutSeconds: socket.timeoutSeconds,
+    options: socket.options,
+  });
+  socket.connected = true;
+  connection.description = `${socket.server ? "<-" : "->"}${socket.host}:${socket.port}`;
+  writeVirtualBinaryFile(invocation, connection.path, new Uint8Array());
+  openVirtualTextConnection(invocation, connection, requested, false);
+}
+
+async function closeSocketConnection(
+  invocation: BuiltinInvocation,
+  connection: VirtualTextConnection,
+): Promise<void> {
+  const socket = connection.socket;
+  if (socket === undefined || !socket.connected) return;
+  try {
+    await invocation.socketRequest({
+      operation: "close",
+      sessionId: invocation.sessionProcessId,
+      connectionId: connection.id,
+    });
+  } finally {
+    socket.connected = false;
+    connection.open = false;
+  }
+}
+
 async function builtinDownloadFile(invocation: BuiltinInvocation): Promise<RIntegerVector> {
   const matched = await matchExact(invocation, [
     "url",
@@ -8036,6 +8257,34 @@ async function ensureInputConnection(
   await ensureUrlConnection(invocation, connection);
   await ensureZipConnection(invocation, connection);
   if (virtualConnectionCanRead(connection.mode)) await ensurePipeConnection(invocation, connection);
+  await ensureSocketInput(invocation, connection);
+}
+
+async function ensureSocketInput(
+  invocation: BuiltinInvocation,
+  connection: VirtualTextConnection,
+): Promise<void> {
+  const socket = connection.socket;
+  if (socket === undefined) return;
+  if (!connection.open || !socket.connected) {
+    throw new REvaluationError("NRE2239", "connection is not open");
+  }
+  const result = await invocation.socketRequest({
+    operation: "read",
+    sessionId: invocation.sessionProcessId,
+    connectionId: connection.id,
+    maxBytes: invocation.context.limits.maxOutputBytes,
+  });
+  if (!(result.body instanceof Uint8Array) || typeof result.incomplete !== "boolean") {
+    throw new REvaluationError("NRE2256", "Socket host returned an invalid read result.");
+  }
+  const state = virtualTextFileState(invocation);
+  const existing = state.binaryFiles.get(connection.path) ?? new Uint8Array();
+  const combined = new Uint8Array(existing.byteLength + result.body.byteLength);
+  combined.set(existing);
+  combined.set(result.body, existing.byteLength);
+  writeVirtualBinaryFile(invocation, connection.path, combined);
+  socket.incomplete = result.incomplete;
 }
 
 async function ensureZipConnection(
@@ -8692,7 +8941,11 @@ async function builtinCloseAllConnections(invocation: BuiltinInvocation): Promis
     ) {
       await executePipeWriteConnection(invocation, connection);
     }
-    destroyVirtualTextConnection(state, connection);
+    try {
+      await closeSocketConnection(invocation, connection);
+    } finally {
+      destroyVirtualTextConnection(state, connection);
+    }
   }
   return R_NULL;
 }
@@ -8704,6 +8957,16 @@ async function builtinOpen(invocation: BuiltinInvocation): Promise<RValue> {
     throw new REvaluationError("NRE2250", "cannot open standard connections");
   }
   const mode = virtualConnectionMode(matched.get("open"), connection.mode, "open");
+  if (connection.socket !== undefined) {
+    connection.blocking = coercibleLogicalFlag(
+      matched.get("blocking"),
+      connection.blocking,
+      "blocking",
+    );
+    if (connection.open) openVirtualTextConnection(invocation, connection, mode, true);
+    else await openSocketConnection(invocation, connection, mode);
+    return R_NULL;
+  }
   if (connection.pipe !== undefined && mode.mode.endsWith("+")) {
     throw new RUnsupportedFeatureError(
       "NRU6206",
@@ -8740,6 +9003,7 @@ async function builtinClose(invocation: BuiltinInvocation): Promise<RValue> {
   const state = virtualTextFileState(invocation);
   const wasOpen = connection.open;
   const wasZip = connection.zip !== undefined;
+  const wasSocket = connection.socket !== undefined;
   await finalizeGzipConnection(invocation, connection);
   if (
     connection.pipe !== undefined &&
@@ -8750,9 +9014,13 @@ async function builtinClose(invocation: BuiltinInvocation): Promise<RValue> {
   }
   const pipeExecuted = connection.pipe?.executed;
   const pipeStatus = connection.pipe?.status;
-  destroyVirtualTextConnection(state, connection);
+  try {
+    await closeSocketConnection(invocation, connection);
+  } finally {
+    destroyVirtualTextConnection(state, connection);
+  }
   if (pipeStatus !== undefined) return pipeExecuted === true ? integerVector([pipeStatus]) : R_NULL;
-  if (wasZip) return R_NULL;
+  if (wasZip || wasSocket) return R_NULL;
   return wasOpen ? integerVector([0]) : R_NULL;
 }
 
@@ -8775,13 +9043,71 @@ async function builtinIsOpen(invocation: BuiltinInvocation): Promise<RLogicalVec
   return logicalVector([result]);
 }
 
+async function builtinIsIncomplete(invocation: BuiltinInvocation): Promise<RLogicalVector> {
+  const matched = await matchExact(invocation, ["con"]);
+  const connection = requireVirtualTextConnection(
+    invocation,
+    required(matched, "con", "isIncomplete"),
+  );
+  invocation.context.allocate(1);
+  return logicalVector([connection.socket?.incomplete === true]);
+}
+
+async function builtinSocketTimeout(invocation: BuiltinInvocation): Promise<RIntegerVector> {
+  const matched = await matchExact(invocation, ["socket", "timeout"]);
+  const connection = requireVirtualTextConnection(
+    invocation,
+    required(matched, "socket", "socketTimeout"),
+  );
+  const socket = connection.socket;
+  if (socket === undefined) {
+    throw new RTypeMismatchError("NRT3415", "invalid socket connection");
+  }
+  const timeoutValue = matched.get("timeout");
+  let requested = -1;
+  if (timeoutValue !== undefined) {
+    if (
+      (timeoutValue.type !== "logical" &&
+        timeoutValue.type !== "integer" &&
+        timeoutValue.type !== "double") ||
+      timeoutValue.length !== 1 ||
+      isMissing(timeoutValue, 0)
+    ) {
+      throw new RTypeMismatchError("NRT3415", "invalid 'timeout' argument");
+    }
+    requested = timeoutValue.values[0] ?? Number.NaN;
+    if (!Number.isFinite(requested) || requested < -1) {
+      throw new RTypeMismatchError("NRT3415", "invalid 'timeout' argument");
+    }
+  }
+  const previous = Math.trunc(socket.timeoutSeconds);
+  if (requested >= 0) {
+    const timeoutSeconds = Math.trunc(requested);
+    if (socket.connected) {
+      await invocation.socketRequest({
+        operation: "timeout",
+        sessionId: invocation.sessionProcessId,
+        connectionId: connection.id,
+        timeoutSeconds,
+      });
+    }
+    socket.timeoutSeconds = timeoutSeconds;
+  }
+  invocation.context.allocate(1);
+  return integerVector([previous]);
+}
+
 async function builtinSeek(invocation: BuiltinInvocation): Promise<RDoubleVector> {
   const matched = await matchExact(invocation, ["con", "where", "origin", "rw"]);
   const connection = requireVirtualTextConnection(invocation, required(matched, "con", "seek"));
   if (connection.standard !== undefined) {
     throw new REvaluationError("NRE2252", "'seek' not enabled for this connection");
   }
-  if (connection.pipe !== undefined || connection.zip !== undefined) {
+  if (
+    connection.pipe !== undefined ||
+    connection.zip !== undefined ||
+    connection.socket !== undefined
+  ) {
     throw new REvaluationError("NRE2252", "'seek' not enabled for this connection");
   }
   if (!connection.open) throw new REvaluationError("NRE2239", "connection is not open");
@@ -9559,7 +9885,7 @@ async function builtinWriteLines(invocation: BuiltinInvocation): Promise<RValue>
       if (!virtualConnectionCanWriteRecord(connection)) {
         throw new REvaluationError("NRE2240", "cannot write to this connection");
       }
-      writeVirtualTextConnection(invocation, connection, source);
+      await writeVirtualTextConnection(invocation, connection, source);
     } else {
       await writeClosedVirtualTextConnection(invocation, connection, source);
     }
@@ -9938,6 +10264,9 @@ async function writeClosedVirtualTextConnection(
   if (connection.zip !== undefined) {
     throw new REvaluationError("NRE2240", "cannot write to this connection");
   }
+  if (connection.socket !== undefined) {
+    throw new REvaluationError("NRE2239", "connection is not open");
+  }
   if (connection.pipe !== undefined) {
     connection.pipe.executed = false;
     connection.pipe.status = 0;
@@ -9954,11 +10283,11 @@ async function writeClosedVirtualTextConnection(
   writeVirtualTextFile(invocation, connection.path, source);
 }
 
-function writeVirtualTextConnection(
+async function writeVirtualTextConnection(
   invocation: BuiltinInvocation,
   connection: VirtualTextConnection,
   source: string,
-): void {
+): Promise<void> {
   if (connection.standard !== undefined) {
     if (connection.standard === "stdin") {
       throw new REvaluationError("NRE2240", "cannot write to this connection");
@@ -9966,6 +10295,18 @@ function writeVirtualTextConnection(
     if (source.length > 0) {
       invocation.context.writeOutput({ stream: connection.standard, text: source });
     }
+    return;
+  }
+  if (connection.socket !== undefined) {
+    if (!connection.socket.connected) {
+      throw new REvaluationError("NRE2239", "connection is not open");
+    }
+    await invocation.socketRequest({
+      operation: "write",
+      sessionId: invocation.sessionProcessId,
+      connectionId: connection.id,
+      bytes: encodeVirtualTextBytes(source, connection.encoding),
+    });
     return;
   }
   if (connection.url !== undefined) {
@@ -10023,7 +10364,7 @@ async function writeVirtualTextTarget(
       if (!virtualConnectionCanWriteRecord(connection)) {
         throw new REvaluationError("NRE2240", "cannot write to this connection");
       }
-      writeVirtualTextConnection(invocation, connection, source);
+      await writeVirtualTextConnection(invocation, connection, source);
     } else {
       await writeClosedVirtualTextConnection(invocation, connection, source);
     }
@@ -40363,9 +40704,11 @@ function virtualConnectionSummaryFields(
             ? "gzcon"
             : connection.zip !== undefined
               ? "unz"
-              : connection.url === undefined
-                ? "file"
-                : `url-${connection.url.request.method === "default" ? "libcurl" : connection.url.request.method}`,
+              : connection.socket !== undefined
+                ? "sockconn"
+                : connection.url === undefined
+                  ? "file"
+                  : `url-${connection.url.request.method === "default" ? "libcurl" : connection.url.request.method}`,
     mode: connection.displayMode,
     text: connection.text,
     isopen: connection.open ? "opened" : "closed",

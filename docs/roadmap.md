@@ -808,7 +808,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      subsetting, source-package execution, and Worker evidence. The result is truthfully empty while
      NativR has no R-callable native ABI; it exposes no synthetic DLL, host path, or handle. A
      future typed Wasm/native registration and foreign-call layer remains required for compiled
-     packages. Rank-346 `base::socketConnection` is the next measured unresolved callable.
+     packages.
+169. Usage-ranked socket connections: rank-346 `base::socketConnection` plus adjacent `isIncomplete`
+     and `socketTimeout` provide GNU R-shaped connection metadata, text writes, and line/raw reads
+     through an explicit `createR({ socket })` lifecycle adapter. Default sessions have no network
+     authority; inline, Worker, reset/dispose, conformance, and unchanged source-package paths have
+     evidence. Rank-348 `base::file.copy` is the next measured unresolved callable.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

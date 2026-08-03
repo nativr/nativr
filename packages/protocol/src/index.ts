@@ -159,6 +159,52 @@ export interface PublicUrlResult {
   readonly body: Uint8Array;
 }
 
+/** One socket operation delegated to an explicit host transport. */
+export type PublicSocketRequest =
+  | {
+      readonly operation: "open";
+      readonly sessionId: number;
+      readonly connectionId: number;
+      readonly host: string;
+      readonly port: number;
+      readonly server: boolean;
+      readonly blocking: boolean;
+      readonly open: string;
+      readonly encoding: string;
+      readonly timeoutSeconds: number;
+      readonly options: readonly string[];
+    }
+  | {
+      readonly operation: "read";
+      readonly sessionId: number;
+      readonly connectionId: number;
+      readonly maxBytes: number;
+    }
+  | {
+      readonly operation: "write";
+      readonly sessionId: number;
+      readonly connectionId: number;
+      readonly bytes: Uint8Array;
+    }
+  | {
+      readonly operation: "timeout";
+      readonly sessionId: number;
+      readonly connectionId: number;
+      readonly timeoutSeconds: number;
+    }
+  | {
+      readonly operation: "close";
+      readonly sessionId: number;
+      readonly connectionId: number;
+    }
+  | { readonly operation: "close-all"; readonly sessionId: number };
+
+/** Bounded result returned by the socket host. Read operations require both fields. */
+export interface PublicSocketResult {
+  readonly body?: Uint8Array;
+  readonly incomplete?: boolean;
+}
+
 /** Character-formatted table emitted for a browser or other host data viewer. */
 export interface PublicDataViewEvent {
   readonly title: string;
@@ -395,6 +441,8 @@ export interface InitRequest extends ProtocolEnvelope {
   readonly readline?: boolean;
   /** Whether the embedding facade configured an explicit URL transport. */
   readonly url?: boolean;
+  /** Whether the embedding facade configured an explicit socket transport. */
+  readonly socket?: boolean;
   readonly debug: boolean;
 }
 
@@ -469,6 +517,16 @@ export type UrlResultRequest = ProtocolEnvelope &
       }
   );
 
+/** Resolve a socket request emitted while Worker evaluation is suspended. */
+export type SocketResultRequest = ProtocolEnvelope &
+  (
+    | { readonly kind: "socket-result"; readonly result: PublicSocketResult }
+    | {
+        readonly kind: "socket-result";
+        readonly error: { readonly code: string; readonly message: string };
+      }
+  );
+
 /** All valid Worker requests. */
 export type WorkerRequest =
   | InitRequest
@@ -481,7 +539,8 @@ export type WorkerRequest =
   | DisposeRequest
   | SystemCommandResultRequest
   | ReadlineResultRequest
-  | UrlResultRequest;
+  | UrlResultRequest
+  | SocketResultRequest;
 
 /** Evaluation data returned internally to the public facade. */
 export interface WireEvaluationResult {
@@ -545,6 +604,12 @@ export interface UrlEvent extends ProtocolEnvelope {
   readonly request: PublicUrlRequest;
 }
 
+/** A correlated socket operation handled by the embedding facade. */
+export interface SocketEvent extends ProtocolEnvelope {
+  readonly kind: "socket";
+  readonly request: PublicSocketRequest;
+}
+
 /** All valid Worker responses and events. */
 export type WorkerResponse =
   | SuccessResponse
@@ -553,7 +618,8 @@ export type WorkerResponse =
   | OutputEvent
   | SystemCommandEvent
   | ReadlineEvent
-  | UrlEvent;
+  | UrlEvent
+  | SocketEvent;
 
 /** Guard a finite protocol request before dispatch. */
 export function isWorkerRequest(value: unknown): value is WorkerRequest {
@@ -576,6 +642,7 @@ export function isWorkerRequest(value: unknown): value is WorkerRequest {
         (value.executablePaths === undefined || isExecutablePathRecord(value.executablePaths)) &&
         (value.readline === undefined || typeof value.readline === "boolean") &&
         (value.url === undefined || typeof value.url === "boolean") &&
+        (value.socket === undefined || typeof value.socket === "boolean") &&
         typeof value.debug === "boolean"
       );
     case "eval":
@@ -620,6 +687,14 @@ export function isWorkerRequest(value: unknown): value is WorkerRequest {
           typeof value.error.message === "string" &&
           value.result === undefined)
       );
+    case "socket-result":
+      return (
+        (isSocketResult(value.result) && value.error === undefined) ||
+        (isRecord(value.error) &&
+          typeof value.error.code === "string" &&
+          typeof value.error.message === "string" &&
+          value.result === undefined)
+      );
     default:
       return false;
   }
@@ -652,6 +727,8 @@ export function isWorkerResponse(value: unknown): value is WorkerResponse {
       return isReadlineRequest(value.request);
     case "url":
       return isUrlRequest(value.request);
+    case "socket":
+      return isSocketRequest(value.request);
     default:
       return false;
   }
@@ -838,6 +915,59 @@ function isUrlRequest(value: unknown): value is PublicUrlRequest {
 
 function isUrlResult(value: unknown): value is PublicUrlResult {
   return isRecord(value) && value.body instanceof Uint8Array;
+}
+
+function isSocketRequest(value: unknown): value is PublicSocketRequest {
+  if (
+    !isRecord(value) ||
+    !Number.isSafeInteger(value.sessionId) ||
+    (value.sessionId as number) <= 0
+  ) {
+    return false;
+  }
+  if (value.operation === "close-all") return true;
+  if (!Number.isSafeInteger(value.connectionId) || (value.connectionId as number) < 3) return false;
+  switch (value.operation) {
+    case "open":
+      return (
+        typeof value.host === "string" &&
+        !/[\0\r\n]/u.test(value.host) &&
+        Number.isSafeInteger(value.port) &&
+        (value.port as number) >= 1 &&
+        (value.port as number) <= 65_535 &&
+        typeof value.server === "boolean" &&
+        typeof value.blocking === "boolean" &&
+        typeof value.open === "string" &&
+        typeof value.encoding === "string" &&
+        typeof value.timeoutSeconds === "number" &&
+        Number.isFinite(value.timeoutSeconds) &&
+        value.timeoutSeconds >= 0 &&
+        Array.isArray(value.options) &&
+        value.options.every((option) => typeof option === "string" && !option.includes("\0"))
+      );
+    case "read":
+      return Number.isSafeInteger(value.maxBytes) && (value.maxBytes as number) >= 0;
+    case "write":
+      return value.bytes instanceof Uint8Array;
+    case "timeout":
+      return (
+        typeof value.timeoutSeconds === "number" &&
+        Number.isFinite(value.timeoutSeconds) &&
+        value.timeoutSeconds >= 0
+      );
+    case "close":
+      return true;
+    default:
+      return false;
+  }
+}
+
+function isSocketResult(value: unknown): value is PublicSocketResult {
+  return (
+    isRecord(value) &&
+    (value.body === undefined || value.body instanceof Uint8Array) &&
+    (value.incomplete === undefined || typeof value.incomplete === "boolean")
+  );
 }
 
 function isSystemCommandResult(value: unknown): value is PublicSystemCommandResult {

@@ -78,6 +78,8 @@ import type {
   RPromise,
   RSystemCommandRequest,
   RSystemCommandResult,
+  RSocketRequest,
+  RSocketResult,
   RUrlRequest,
   RUrlResult,
   RuntimeLimits,
@@ -116,6 +118,8 @@ export interface EvaluatorOptions {
   readonly readline?: (prompt: string) => Promise<string> | string;
   /** Explicit URL-byte transport. Undefined means that URL connections cannot perform I/O. */
   readonly urlRequest?: (request: RUrlRequest) => Promise<RUrlResult> | RUrlResult;
+  /** Explicit socket transport. Undefined means that socket connections cannot perform I/O. */
+  readonly socketRequest?: (request: RSocketRequest) => Promise<RSocketResult> | RSocketResult;
   /** Explicit host capability. Undefined means that no operating-system command may run. */
   readonly systemCommand?: (
     request: RSystemCommandRequest,
@@ -521,6 +525,7 @@ export class Evaluator {
   readonly #initializeBuiltinState: EvaluatorOptions["initializeBuiltinState"];
   readonly #readline: EvaluatorOptions["readline"];
   readonly #urlRequest: EvaluatorOptions["urlRequest"];
+  readonly #socketRequest: EvaluatorOptions["socketRequest"];
   readonly #systemCommand: EvaluatorOptions["systemCommand"];
   readonly #sessionProcessId: number;
   #emptyEnvironment: REnvironment;
@@ -558,6 +563,7 @@ export class Evaluator {
     this.#initializeBuiltinState = options.initializeBuiltinState;
     this.#readline = options.readline;
     this.#urlRequest = options.urlRequest;
+    this.#socketRequest = options.socketRequest;
     this.#systemCommand = options.systemCommand;
     this.#sessionProcessId = options.sessionProcessId ?? allocateRuntimeSessionProcessId();
     if (
@@ -1946,6 +1952,7 @@ export class Evaluator {
         currentCall: () => (call === undefined ? R_NULL : { type: "language", expression: call }),
         systemCall: (which) => this.#systemCall(which),
         isInteractive: () => this.#readline !== undefined,
+        hasSocketCapability: () => this.#socketRequest !== undefined,
         readline: async (prompt) => (this.#readline === undefined ? "" : this.#readline(prompt)),
         urlRequest: async (request) => {
           if (this.#urlRequest === undefined) {
@@ -1955,6 +1962,15 @@ export class Evaluator {
             );
           }
           return this.#urlRequest(request);
+        },
+        socketRequest: async (request) => {
+          if (this.#socketRequest === undefined) {
+            throw new RUnsupportedFeatureError(
+              "NRU6207",
+              "socketConnection() I/O requires an explicit createR({ socket }) host capability.",
+            );
+          }
+          return this.#socketRequest(request);
         },
         systemCommand: async (request) => {
           if (this.#systemCommand === undefined) {

@@ -6,6 +6,8 @@ import type {
   OutputEvent,
   ReadlineEvent,
   ReadlineResultRequest,
+  SocketEvent,
+  SocketResultRequest,
   UrlEvent,
   UrlResultRequest,
   SuccessResponse,
@@ -16,6 +18,8 @@ import type {
   WorkerSuccessPayload,
   PublicSystemCommandRequest,
   PublicSystemCommandResult,
+  PublicSocketRequest,
+  PublicSocketResult,
   PublicUrlRequest,
   PublicUrlResult,
 } from "@nativr/protocol";
@@ -31,6 +35,7 @@ let queue: Promise<void> = Promise.resolve();
 let nextSystemCommandId = 1;
 let nextReadlineId = 1;
 let nextUrlId = 1;
+let nextSocketId = 1;
 const pendingSystemCommands = new Map<
   string,
   {
@@ -52,6 +57,13 @@ const pendingUrls = new Map<
     readonly reject: (error: unknown) => void;
   }
 >();
+const pendingSockets = new Map<
+  string,
+  {
+    readonly resolve: (result: PublicSocketResult) => void;
+    readonly reject: (error: unknown) => void;
+  }
+>();
 
 workerScope.addEventListener("message", (event: MessageEvent<unknown>) => {
   const immediate = event.data;
@@ -65,6 +77,10 @@ workerScope.addEventListener("message", (event: MessageEvent<unknown>) => {
   }
   if (isWorkerRequest(immediate) && immediate.kind === "url-result") {
     resolveUrl(immediate);
+    return;
+  }
+  if (isWorkerRequest(immediate) && immediate.kind === "socket-result") {
+    resolveSocket(immediate);
     return;
   }
   queue = queue.then(async () => {
@@ -92,6 +108,7 @@ async function handleRequest(request: WorkerRequest): Promise<void> {
         requestSystemCommand,
         request.readline === true ? requestReadline : undefined,
         request.url === true ? requestUrl : undefined,
+        request.socket === true ? requestSocket : undefined,
       );
       postSuccess(request.id, { kind: "ready" });
       return;
@@ -251,6 +268,31 @@ function resolveUrl(response: UrlResultRequest): void {
   const pending = pendingUrls.get(response.id);
   if (pending === undefined) return;
   pendingUrls.delete(response.id);
+  if ("error" in response) {
+    pending.reject(new NativRError(response.error.code, response.error.message));
+  } else {
+    pending.resolve(response.result);
+  }
+}
+
+function requestSocket(request: PublicSocketRequest): Promise<PublicSocketResult> {
+  const id = `socket-${nextSocketId++}`;
+  return new Promise((resolve, reject) => {
+    pendingSockets.set(id, { resolve, reject });
+    const event: SocketEvent = {
+      protocolVersion: PROTOCOL_VERSION,
+      id,
+      kind: "socket",
+      request,
+    };
+    workerScope.postMessage(event, request.operation === "write" ? [request.bytes.buffer] : []);
+  });
+}
+
+function resolveSocket(response: SocketResultRequest): void {
+  const pending = pendingSockets.get(response.id);
+  if (pending === undefined) return;
+  pendingSockets.delete(response.id);
   if ("error" in response) {
     pending.reject(new NativRError(response.error.code, response.error.message));
   } else {

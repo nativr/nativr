@@ -186,6 +186,51 @@ export interface RUrlResult {
   readonly body: Uint8Array;
 }
 
+/** One explicit socket lifecycle operation delegated to an embedding host. */
+export type RSocketRequest =
+  | {
+      readonly operation: "open";
+      readonly sessionId: number;
+      readonly connectionId: number;
+      readonly host: string;
+      readonly port: number;
+      readonly server: boolean;
+      readonly blocking: boolean;
+      readonly open: string;
+      readonly encoding: string;
+      readonly timeoutSeconds: number;
+      readonly options: readonly string[];
+    }
+  | {
+      readonly operation: "read";
+      readonly sessionId: number;
+      readonly connectionId: number;
+      readonly maxBytes: number;
+    }
+  | {
+      readonly operation: "write";
+      readonly sessionId: number;
+      readonly connectionId: number;
+      readonly bytes: Uint8Array;
+    }
+  | {
+      readonly operation: "timeout";
+      readonly sessionId: number;
+      readonly connectionId: number;
+      readonly timeoutSeconds: number;
+    }
+  | {
+      readonly operation: "close";
+      readonly sessionId: number;
+      readonly connectionId: number;
+    };
+
+/** Bounded result of one host-owned socket operation. */
+export interface RSocketResult {
+  readonly body?: Uint8Array;
+  readonly incomplete?: boolean;
+}
+
 /** Builtin execution kind. */
 export type BuiltinKind = "regular" | "special" | "primitive";
 
@@ -228,8 +273,10 @@ export interface BuiltinInvocation {
   currentCall(): RLanguage | RNull;
   systemCall(which: number): RLanguage | RNull;
   isInteractive(): boolean;
+  hasSocketCapability(): boolean;
   readline(prompt: string): Promise<string>;
   urlRequest(request: RUrlRequest): Promise<RUrlResult>;
+  socketRequest(request: RSocketRequest): Promise<RSocketResult>;
   systemCommand(request: RSystemCommandRequest): Promise<RSystemCommandResult>;
   searchPath(): readonly string[];
   libraryPaths(): readonly string[];

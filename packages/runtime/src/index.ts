@@ -143,6 +143,8 @@ export type {
   ROutput,
   RSystemCommandRequest,
   RSystemCommandResult,
+  RSocketRequest,
+  RSocketResult,
   RUrlRequest,
   RUrlResult,
   RPairlist,

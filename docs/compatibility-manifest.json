@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.256.0",
+  "languageSubsetVersion": "0.257.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -136,6 +136,7 @@
         { "name": "pipe", "compatibility": "behavioral" },
         { "name": "unz", "compatibility": "behavioral" },
         { "name": "url", "compatibility": "behavioral" },
+        { "name": "socketConnection", "compatibility": "behavioral" },
         { "name": "textConnection", "compatibility": "behavioral" },
         { "name": "stdin", "compatibility": "behavioral" },
         { "name": "stdout", "compatibility": "behavioral" },
@@ -154,6 +155,8 @@
         { "name": "close", "compatibility": "behavioral" },
         { "name": "flush", "compatibility": "behavioral" },
         { "name": "isOpen", "compatibility": "behavioral" },
+        { "name": "isIncomplete", "compatibility": "shape" },
+        { "name": "socketTimeout", "compatibility": "behavioral" },
         { "name": "seek", "compatibility": "behavioral" },
         { "name": "file.exists", "compatibility": "shape" },
         { "name": "file.create", "compatibility": "behavioral" },

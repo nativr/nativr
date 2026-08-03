@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 400 KiB gzip;
+- Worker JavaScript: 401 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -771,3 +771,10 @@ browser-native result is constant-size; populated native-module records remain o
 increment. The measured Worker is 399.0 KiB gzip (408,591 bytes), 15 bytes above the previous 399
 KiB byte ceiling, so the ceiling rises narrowly to 400 KiB; client and parser-Wasm budgets remain
 unchanged.
+
+Language subset 0.257 adds usage-ranked `base::socketConnection`, `isIncomplete`, and
+`socketTimeout` by composing the existing connection registry with one typed, construction-time
+duplex host capability. Open/read/write/timeout/close operations cross inline or Worker execution as
+bounded data-only records; the default remains network-free and fails closed. The measured Worker is
+400.4 KiB gzip (410,003 bytes), so the ceiling rises narrowly from 400 KiB to 401 KiB; client and
+parser-Wasm budgets remain unchanged.

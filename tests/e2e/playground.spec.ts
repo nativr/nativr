@@ -186,6 +186,13 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await expect(page.locator("#result")).toHaveText('["pipe-worker", "package-pipe"]');
   expect(evaluationRequests).toEqual([]);
 
+  await page.getByRole("button", { name: "Pure-R package socket" }).click();
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText(
+    '["socket-worker", "package-socket", "FALSE", "5"]',
+  );
+  expect(evaluationRequests).toEqual([]);
+
   await page.getByRole("button", { name: "Browser readline input" }).click();
   page.once("dialog", async (dialog) => {
     expect(dialog.type()).toBe("prompt");

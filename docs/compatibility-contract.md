@@ -528,6 +528,15 @@ the same record; repeated reads preserve one cursor without refetching. No adapt
 authority. HTTP status, redirects, authentication, cookies, CORS, caching, cancellation, and origin
 allow-lists remain host policy; native libcurl and writable URL connections are not claimed.
 
+Usage-ranked `base::socketConnection` has GNU R 4.6 differential evidence for its eight formal
+names/defaults, `c("sockconn", "connection")` integer handle, closed/open summaries, modes,
+visibility, access queries, and timeout state. NativR-only integration evidence covers typed
+open/read/write/timeout/close and close-all requests, bounded copied byte results, line and raw
+connection consumers, `isIncomplete`, reset/disposal, default denial, unchanged source-only package
+code, Worker transport, and Playground use. This is an explicit transport boundary, not a claim for
+browser raw TCP: DNS, TLS, server sockets, nonblocking scheduling, backpressure, half-close,
+cancellation, and platform-exact diagnostics remain host or future compatibility work.
+
 Usage-ranked `base::gzcon` has GNU R 4.6 behavioral differential evidence for its four formal names,
 `c("gzcon", "connection")` handle shape, connection summary, gzip magic, text write/read roundtrips,
 close-time emission, raw decompression, and `allowNonCompressed = FALSE` warning plus pass-through.

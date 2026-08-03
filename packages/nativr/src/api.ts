@@ -7,6 +7,8 @@ import type {
   PublicOutputEvent,
   PublicReadlineRequest,
   PublicRWarning,
+  PublicSocketRequest,
+  PublicSocketResult,
   PublicSystemCommandRequest,
   PublicSystemCommandResult,
   PublicUrlRequest,
@@ -19,6 +21,7 @@ import type {
   WorkerSuccessPayload,
   SystemCommandResultRequest,
   ReadlineResultRequest,
+  SocketResultRequest,
   UrlResultRequest,
 } from "@nativr/protocol";
 import {
@@ -45,6 +48,8 @@ export type {
   PublicGraphicsEvent,
   PublicOutputEvent,
   PublicReadlineRequest,
+  PublicSocketRequest,
+  PublicSocketResult,
   PublicSystemCommandRequest,
   PublicSystemCommandResult,
   PublicUrlRequest,
@@ -77,6 +82,8 @@ export interface CreateROptions {
   readonly readline?: ReadlineHandler;
   /** Explicit byte transport for url() connections; omitted sessions have no network capability. */
   readonly url?: UrlHandler;
+  /** Explicit duplex socket transport; omitted sessions cannot open network sockets. */
+  readonly socket?: SocketHandler;
   readonly timeoutMs?: number;
   readonly debug?: boolean;
   readonly onWarning?: (warning: PublicRWarning) => void;
@@ -97,6 +104,11 @@ export type ReadlineHandler = (request: PublicReadlineRequest) => string | Promi
 
 /** Host-owned, policy-enforcing byte transport used only when R reads a url() connection. */
 export type UrlHandler = (request: PublicUrlRequest) => PublicUrlResult | Promise<PublicUrlResult>;
+
+/** Host-owned, policy-enforcing transport for one socket lifecycle operation. */
+export type SocketHandler = (
+  request: PublicSocketRequest,
+) => PublicSocketResult | Promise<PublicSocketResult>;
 
 /** Options for one evaluation. */
 export interface EvalOptions {
@@ -171,6 +183,7 @@ export async function createR(options: CreateROptions = {}): Promise<NativRSessi
     const systemCommand = sessionOptions.systemCommand;
     const readline = sessionOptions.readline;
     const url = sessionOptions.url;
+    const socket = sessionOptions.socket;
     const host = await InlineRuntimeHost.create(
       {
         treeSitterRuntimeWasm: assets.treeSitterRuntimeWasm,
@@ -205,8 +218,16 @@ export async function createR(options: CreateROptions = {}): Promise<NativRSessi
               request,
               sessionOptions.limits?.maxOutputBytes ?? DEFAULT_RUNTIME_LIMITS.maxOutputBytes,
             ),
+      socket === undefined
+        ? undefined
+        : async (request) =>
+            executeSocketHandler(
+              socket,
+              request,
+              sessionOptions.limits?.maxOutputBytes ?? DEFAULT_RUNTIME_LIMITS.maxOutputBytes,
+            ),
     );
-    return new InlineSession(host, sessionOptions);
+    return new InlineSession(host, sessionOptions, sessionProcessId);
   }
   if (typeof Worker === "undefined") {
     throw new NativRError(
@@ -487,15 +508,77 @@ async function executeUrlHandler(
   }
 }
 
+function validateSocketResult(
+  value: unknown,
+  request: PublicSocketRequest,
+  maxOutputBytes = DEFAULT_RUNTIME_LIMITS.maxOutputBytes,
+): PublicSocketResult {
+  if (!isUnknownRecord(value)) throw invalidSocketResult();
+  if (Object.keys(value).some((key) => key !== "body" && key !== "incomplete")) {
+    throw invalidSocketResult();
+  }
+  const body = value["body"];
+  const incomplete = value["incomplete"];
+  if (request.operation === "read") {
+    if (!(body instanceof Uint8Array) || typeof incomplete !== "boolean") {
+      throw invalidSocketResult();
+    }
+    if (body.byteLength > request.maxBytes || body.byteLength > maxOutputBytes) {
+      throw new RResourceLimitError("NRL4007", "Socket response size limit exceeded.", {
+        details: {
+          maxOutputBytes: Math.min(request.maxBytes, maxOutputBytes),
+          outputBytes: body.byteLength,
+        },
+      });
+    }
+    return { body: Uint8Array.from(body), incomplete };
+  }
+  if (body !== undefined || incomplete !== undefined) throw invalidSocketResult();
+  return {};
+}
+
+function invalidSocketResult(): NativRError {
+  return new NativRError(
+    "NRS5009",
+    "createR({ socket }) must return { body: Uint8Array, incomplete: boolean } for reads and {} for lifecycle operations.",
+  );
+}
+
+async function executeSocketHandler(
+  handler: SocketHandler,
+  request: PublicSocketRequest,
+  maxOutputBytes: number,
+): Promise<PublicSocketResult> {
+  try {
+    if (request.operation === "write" && request.bytes.byteLength > maxOutputBytes) {
+      throw new RResourceLimitError("NRL4007", "Socket write size limit exceeded.", {
+        details: { maxOutputBytes, outputBytes: request.bytes.byteLength },
+      });
+    }
+    const snapshot: PublicSocketRequest =
+      request.operation === "open"
+        ? { ...request, options: [...request.options] }
+        : request.operation === "write"
+          ? { ...request, bytes: Uint8Array.from(request.bytes) }
+          : { ...request };
+    return validateSocketResult(await handler(snapshot), request, maxOutputBytes);
+  } catch (error) {
+    if (error instanceof NativRError) throw error;
+    throw new NativRError("NRE2256", error instanceof Error ? error.message : String(error));
+  }
+}
+
 class InlineSession implements NativRSession {
   readonly #host: RuntimeHost;
   readonly #options: CreateROptions;
+  readonly #sessionProcessId: number;
   #disposed = false;
   #queue: Promise<void> = Promise.resolve();
 
-  public constructor(host: RuntimeHost, options: CreateROptions) {
+  public constructor(host: RuntimeHost, options: CreateROptions, sessionProcessId: number) {
     this.#host = host;
     this.#options = options;
+    this.#sessionProcessId = sessionProcessId;
   }
 
   public async eval(code: string, options?: EvalOptions): Promise<JsValue> {
@@ -559,9 +642,15 @@ class InlineSession implements NativRSession {
   }
 
   public reset(): Promise<void> {
-    return this.#enqueue(() => {
+    return this.#enqueue(async () => {
+      let cleanupError: Error | undefined;
+      try {
+        await closeSocketSession(this.#options, this.#sessionProcessId);
+      } catch (error) {
+        cleanupError = error instanceof Error ? error : new NativRError("NRE2256", String(error));
+      }
       this.#host.reset();
-      return Promise.resolve();
+      if (cleanupError !== undefined) throw cleanupError;
     });
   }
 
@@ -575,7 +664,11 @@ class InlineSession implements NativRSession {
     if (!this.#disposed) {
       this.#disposed = true;
       await this.#queue.catch(() => undefined);
-      this.#host.dispose();
+      try {
+        await closeSocketSession(this.#options, this.#sessionProcessId);
+      } finally {
+        this.#host.dispose();
+      }
     }
   }
 
@@ -710,8 +803,15 @@ class WorkerSession implements NativRSession {
 
   public reset(): Promise<void> {
     return this.#enqueue(async () => {
+      let cleanupError: Error | undefined;
+      try {
+        await closeSocketSession(this.#options, this.#sessionProcessId);
+      } catch (error) {
+        cleanupError = error instanceof Error ? error : new NativRError("NRE2256", String(error));
+      }
       const payload = await this.#request({ kind: "reset" });
       if (payload.kind !== "void") throw protocolPayloadError("void", payload.kind);
+      if (cleanupError !== undefined) throw cleanupError;
     });
   }
 
@@ -728,6 +828,7 @@ class WorkerSession implements NativRSession {
     if (this.#disposed) return;
     this.#disposed = true;
     try {
+      await closeSocketSession(this.#options, this.#sessionProcessId);
       await this.#request({ kind: "dispose" });
     } catch {
       // Termination below remains authoritative when the Worker is already unhealthy.
@@ -755,6 +856,7 @@ class WorkerSession implements NativRSession {
           : { executablePaths: this.#options.executablePaths }),
         ...(this.#options.readline === undefined ? {} : { readline: true }),
         ...(this.#options.url === undefined ? {} : { url: true }),
+        ...(this.#options.socket === undefined ? {} : { socket: true }),
         debug: this.#options.debug === true,
       },
       [],
@@ -843,6 +945,10 @@ class WorkerSession implements NativRSession {
     }
     if (response.kind === "url") {
       void this.#handleUrl(worker, response.id, response.request);
+      return;
+    }
+    if (response.kind === "socket") {
+      void this.#handleSocket(worker, response.id, response.request);
       return;
     }
     const pending = this.#pending.get(response.id);
@@ -962,9 +1068,48 @@ class WorkerSession implements NativRSession {
     );
   }
 
+  async #handleSocket(worker: Worker, id: string, request: PublicSocketRequest): Promise<void> {
+    let response: SocketResultRequest;
+    try {
+      const handler = this.#options.socket;
+      if (handler === undefined) {
+        throw new NativRError(
+          "NRU6207",
+          "socketConnection() I/O requires an explicit createR({ socket }) host capability.",
+        );
+      }
+      response = {
+        protocolVersion: PROTOCOL_VERSION,
+        id,
+        kind: "socket-result",
+        result: await executeSocketHandler(
+          handler,
+          request,
+          this.#options.limits?.maxOutputBytes ?? DEFAULT_RUNTIME_LIMITS.maxOutputBytes,
+        ),
+      };
+    } catch (error) {
+      response = {
+        protocolVersion: PROTOCOL_VERSION,
+        id,
+        kind: "socket-result",
+        error: {
+          code: error instanceof NativRError ? error.code : "NRE2256",
+          message: error instanceof Error ? error.message : String(error),
+        },
+      };
+    }
+    const transferables =
+      "result" in response && response.result.body !== undefined
+        ? [response.result.body.buffer as ArrayBuffer]
+        : [];
+    worker.postMessage(response, transferables);
+  }
+
   async #restart(reason: NativRError): Promise<void> {
     if (this.#disposed) return;
     const previous = this.#worker;
+    await closeSocketSession(this.#options, this.#sessionProcessId).catch(() => undefined);
     this.#rejectPending(reason);
     previous.terminate();
     const worker = createRuntimeWorker(this.#assets.worker);
@@ -986,6 +1131,15 @@ class WorkerSession implements NativRSession {
       throw new RRuntimeDisposedError("NRS5001", "The NativR session has been disposed.");
     }
   }
+}
+
+async function closeSocketSession(options: CreateROptions, sessionId: number): Promise<void> {
+  if (options.socket === undefined) return;
+  await executeSocketHandler(
+    options.socket,
+    { operation: "close-all", sessionId },
+    options.limits?.maxOutputBytes ?? DEFAULT_RUNTIME_LIMITS.maxOutputBytes,
+  );
 }
 
 function resolveAssets(overrides: CreateRAssets | undefined): ResolvedAssets {

@@ -270,6 +270,14 @@ accepts a copied `url-result` byte buffer. The bytes then enter the same bounded
 all subsequent line/raw/source/table/serialization/gzip reads use existing connection paths. The
 runtime never imports `fetch` or embeds a network policy; omitted adapters fail closed.
 
+Socket input/output uses a separate typed lifecycle capability over the same connection map.
+`socketConnection()` stores validated endpoint/mode/timeout metadata; the facade invokes the
+construction-time adapter directly inline or relays correlated `socket`/`socket-result` records
+through the Worker. Reads return bounded copied bytes plus an incomplete flag, writes carry copied
+bytes, and timeout/close operations carry no executable object. Reset, Worker restart, and disposal
+send session-scoped close-all. No raw socket API, `fetch`, DOM object, Node builtin, or transport
+policy enters `base`, `runtime`, or evaluated package code.
+
 `utils::download.file()` composes that same request capability with the mutable session file tree.
 It validates every URL, header, mode, and destination before making the first request, delegates
 only typed request data, and atomically replaces each destination after a complete bounded response

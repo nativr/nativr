@@ -254,6 +254,46 @@ the derived `src/contrib/PACKAGES` URL and maintains only an age-bounded evaluat
 The default session has no URL adapter and fails closed. Redirects, credentials, persistent caching,
 and origin policy remain entirely with the application.
 
+Duplex socket connections use a separate explicit lifecycle adapter. The package receives ordinary R
+connection semantics; the host decides which endpoints and transport implementation are allowed:
+
+```ts
+const r = await createR({
+  socket: async (request) => {
+    if (request.operation === "open") {
+      if (request.host !== "service.example" || request.port !== 443) throw new Error("denied");
+      await transport.open(request.sessionId, request.connectionId);
+      return {};
+    }
+    if (request.operation === "write") {
+      await transport.write(request.sessionId, request.connectionId, request.bytes);
+      return {};
+    }
+    if (request.operation === "read") {
+      return { body: await transport.read(request.maxBytes), incomplete: false };
+    }
+    await transport.lifecycle(request);
+    return {};
+  },
+});
+
+await r.eval(`
+  con <- socketConnection("service.example", 443, open = "a+b")
+  writeLines("ping", con)
+  reply <- readLines(con, n = 1)
+  close(con)
+  reply
+`);
+```
+
+Requests are typed as `open`, `read`, `write`, `timeout`, `close`, or session-scoped `close-all`.
+Read results require a bounded `Uint8Array` and `incomplete` flag; lifecycle operations return `{}`.
+Inline and Worker sessions use the same validation. With no adapter, `capabilities("sockets")` is
+false and opening a socket fails with `NRU6207`; NativR never chooses raw TCP, WebSocket, TLS,
+proxy, credentials, or endpoint policy on the application's behalf. Socket text writes and line/raw
+reads are covered; general `writeBin()`, typed binary decoding, half-close, and transport-specific
+buffering remain outside this increment.
+
 `evalDetailed` also retains device-independent graphics commands in `graphics`.
 `createR({ onGraphics })` receives the same commands after each inline or Worker evaluation.
 `new-page` clears a host device, `window` declares its user-coordinate limits, `raster` carries an

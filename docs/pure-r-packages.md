@@ -221,6 +221,10 @@ normalized AST. The runtime then provides:
     unchanged fixture derives a source `contrib` URL, reads package names and versions from the GNU
     R-shaped matrix, and runs through inline and Worker APIs without a JavaScript package shim or
     ambient network authority.
+28. usage-ranked `base::socketConnection()` over an explicit `createR({ socket })` duplex lifecycle
+    adapter. Unchanged package code can open, write, read, query completeness, change timeouts, and
+    close ordinary socket connections in inline or Worker sessions; endpoint policy and the actual
+    transport stay outside the package, and omission of the adapter fails closed.
 
 Package source, metadata, resource counts, and encoded bytes are bounded before parsing. Package
 evaluation then consumes the ordinary step, call-depth, allocation, and output budgets.

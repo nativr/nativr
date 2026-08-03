@@ -73,18 +73,18 @@ excluded; this prevents package-owned functions from being mislabeled as GNU R c
 The primary ranking remains download-weighted package reach; raw occurrence counts are a secondary
 signal.
 
-| Priority | Measured rank | Callable           | Weighted reach | Packages | Observed calls |
-| -------: | ------------: | ------------------ | -------------: | -------: | -------------: |
-|        1 |           346 | `socketConnection` |           1.1% |        1 |              1 |
-|        2 |           348 | `file.copy`        |           1.1% |        1 |              1 |
-|        3 |           349 | `find.package`     |           1.1% |        1 |              1 |
-|        4 |           351 | `l10n_info`        |           1.1% |        1 |              1 |
-|        5 |           353 | `shQuote`          |           1.1% |        1 |              1 |
-|        6 |           357 | `system2`          |           1.1% |        1 |              1 |
-|        7 |           358 | `.Call`            |           1.0% |        1 |              1 |
-|        8 |           363 | `aspell`           |           1.0% |        1 |              2 |
-|        9 |           364 | `abline`           |           1.0% |        1 |              1 |
-|       10 |           365 | `browseVignettes`  |           1.0% |        1 |              1 |
+| Priority | Measured rank | Callable          | Weighted reach | Packages | Observed calls |
+| -------: | ------------: | ----------------- | -------------: | -------: | -------------: |
+|        1 |           348 | `file.copy`       |           1.1% |        1 |              1 |
+|        2 |           349 | `find.package`    |           1.1% |        1 |              1 |
+|        3 |           351 | `l10n_info`       |           1.1% |        1 |              1 |
+|        4 |           353 | `shQuote`         |           1.1% |        1 |              1 |
+|        5 |           357 | `system2`         |           1.1% |        1 |              1 |
+|        6 |           358 | `.Call`           |           1.0% |        1 |              1 |
+|        7 |           363 | `aspell`          |           1.0% |        1 |              2 |
+|        8 |           364 | `abline`          |           1.0% |        1 |              1 |
+|        9 |           365 | `browseVignettes` |           1.0% |        1 |              1 |
+|       10 |           366 | `dev.control`     |           1.0% |        1 |              1 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -205,9 +205,10 @@ measured Shiny/bit64 calls, including unchanged pure-R package and Worker render
 measured repository query; rank 343 `barplot` now runs zoo and bit64's measured vector/matrix calls;
 rank 344 `devAskNewPage` now runs RColorBrewer's ten measured page controls; rank 345
 `getLoadedDLLs` now runs ps's measured module-path probe over a truthful empty browser registry;
-rank 346 `socketConnection` is next. Rank 144 `Encoding` is also complete for all 12 observed calls
-across rlang, utf8, and xfun (4.5% weighted reach), together with adjacent `Encoding<-`, `enc2utf8`,
-and `enc2native`. The shared character representation preserves exact bytes and canonical R marks
+rank 346 `socketConnection` now runs through a typed, default-deny duplex host adapter; rank 348
+`file.copy` is next. Rank 144 `Encoding` is also complete for all 12 observed calls across rlang,
+utf8, and xfun (4.5% weighted reach), together with adjacent `Encoding<-`, `enc2utf8`, and
+`enc2native`. The shared character representation preserves exact bytes and canonical R marks
 through subset/replacement, concatenation, raw conversion, and XDR serialization; this is reusable
 package infrastructure, not an assertion that those packages' native components are supported. Rank
 149 `rcauchy` is now complete for four calls across ggplot2, pillar, and purrr (4.2% weighted
@@ -494,9 +495,10 @@ source-line call with GNU R column layout and owned file/connection targets. Ran
 complete for zoo and bit64's measured vector/matrix calls; and rank 344 `devAskNewPage` is complete
 for RColorBrewer's ten measured prompts. Rank 345 `getLoadedDLLs` is shape-complete for ps's
 measured `vapply(..., "path")` probe over NativR's currently empty native-module set. Rank 346
-`socketConnection` is the next usage-ranked unresolved callable. Rank 316 `colSums` is now complete
-for three observed calls across [`loo`](https://cran.r-project.org/web/packages/loo/refman/loo.html)
-and [`zoo`](https://cran.r-project.org/web/packages/zoo/refman/zoo.html), representing 1,601,512
+`socketConnection` is complete for ps's measured call and the reusable connection lifecycle; rank
+348 `file.copy` is the next usage-ranked unresolved callable. Rank 316 `colSums` is now complete for
+three observed calls across [`loo`](https://cran.r-project.org/web/packages/loo/refman/loo.html) and
+[`zoo`](https://cran.r-project.org/web/packages/zoo/refman/zoo.html), representing 1,601,512
 snapshot downloads and 1.3% download reach. Loo calls `colSums(tab_10)` and `colSums(tab_9)` on
 integer fold tables; zoo selects usable columns with `colSums(!is.na(za)) > 0`. NativR covers
 logical, integer, double, and complex arrays of rank two or greater, numeric data frames,
@@ -647,11 +649,11 @@ The related `hcl.colors`, `palette`, and device color-management surfaces are se
 work; `rainbow`, `terrain.colors`, `topo.colors`, and `cm.colors` are covered by the later shared
 HSV increment. In ranks 345 through 353, `open` now uses the virtual connection layer and `readBin`
 can retrieve raw bytes from owned binary files; typed binary decoding remains incomplete. The
-`getLoadedDLLs` now exposes the owned empty-module truth without host inspection; the remaining
-`socketConnection` surface requires a broader browser adapter. `devAskNewPage`, `stderr`, and
-`barplot` now use the owned connection and graphics foundations. Usage-ranked `write` now uses the
-owned file/connection writer. Rank 354 `factorial` is now complete for xfun's
-[`factorial(10)` example](https://cran.r-project.org/web/packages/xfun/refman/xfun.html),
+`getLoadedDLLs` now exposes the owned empty-module truth without host inspection; `socketConnection`
+uses an explicit bounded duplex browser adapter rather than ambient network authority.
+`devAskNewPage`, `stderr`, and `barplot` now use the owned connection and graphics foundations.
+Usage-ranked `write` now uses the owned file/connection writer. Rank 354 `factorial` is now complete
+for xfun's [`factorial(10)` example](https://cran.r-project.org/web/packages/xfun/refman/xfun.html),
 representing 1,305,720 downloads and 1.1% reach. The independent implementation uses direct products
 for finite non-negative integers and a bounded Lanczos gamma approximation elsewhere, while
 retaining vector attributes, `NA`/`NaN` distinctions, non-finite behavior, and one domain-warning

@@ -163,6 +163,12 @@ Date: 2026-08-02
   copied bounded responses, lazy one-request connection state, and downstream `readLines()`, raw
   `readBin()`, `source()`, table/serialization, and `gzcon()` reuse. The default runtime remains
   network-free; origin, redirect, credential, timeout, and cache policy belongs to the host.
+- Usage-ranked `socketConnection()` plus `isIncomplete()` and `socketTimeout()` with GNU R 4.6
+  formals, classed integer handles, closed/open summaries, modes, visibility, timeout mutation, and
+  text-write plus line/raw-read behavior. A typed `createR({ socket })` adapter owns endpoint and
+  transport policy; requests and byte responses are copied, bounded, correlated through the Worker,
+  and closed on R close, reset, restart, or disposal. Without the adapter, construction with
+  `open = ""` remains an inert shape probe and network I/O fails closed.
 - Usage-ranked `utils::download.file()` composes that explicit byte adapter with session-owned
   files. GNU R 4.6 formals, preflight validation, invisible statuses, paired-vector `retvals`, exact
   replacement bytes, named headers, pure-R namespace calls, failure atomicity, default-deny inline

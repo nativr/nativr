@@ -11,6 +11,8 @@ import type {
   DetailedEvaluationResult,
   RSystemCommandRequest,
   RSystemCommandResult,
+  RSocketRequest,
+  RSocketResult,
   RUrlRequest,
   RUrlResult,
   RuntimeLimits,
@@ -46,6 +48,7 @@ export class RuntimeHost {
     ) => Promise<RSystemCommandResult> | RSystemCommandResult,
     readline?: (prompt: string) => Promise<string> | string,
     urlRequest?: (request: RUrlRequest) => Promise<RUrlResult> | RUrlResult,
+    socketRequest?: (request: RSocketRequest) => Promise<RSocketResult> | RSocketResult,
   ): Promise<RuntimeHost> {
     const parser = await createParser(assets);
     try {
@@ -63,6 +66,7 @@ export class RuntimeHost {
         ...(systemCommand === undefined ? {} : { systemCommand }),
         ...(readline === undefined ? {} : { readline }),
         ...(urlRequest === undefined ? {} : { urlRequest }),
+        ...(socketRequest === undefined ? {} : { socketRequest }),
         initializeBuiltinState: (state) => {
           state.set(ENVIRONMENT_VARIABLES_STATE_KEY, new Map(Object.entries(environmentVariables)));
           state.set(EXECUTABLE_PATHS_STATE_KEY, new Map(Object.entries(executablePaths)));

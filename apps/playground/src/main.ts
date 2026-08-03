@@ -7,6 +7,7 @@ import type {
   PublicOutputEvent,
   PublicReadlineRequest,
   PublicRWarning,
+  PublicSocketRequest,
   PublicSystemCommandRequest,
   PublicSystemCommandResult,
   PublicUrlRequest,
@@ -117,6 +118,11 @@ twice_mean(c(1, 2, 6))`,
     code: "nativrdemo::pipe_lines('nativr-lines')",
   },
   {
+    id: "socket-package",
+    label: "Pure-R package socket",
+    code: 'nativrdemo::socket_exchange("echo.nativr.invalid", 8080L)',
+  },
+  {
     id: "readline-host",
     label: "Browser readline input",
     code: 'name <- nativrdemo::ask_user("Your name: ")\npaste0("Hello, ", name)',
@@ -213,6 +219,7 @@ async function initialize(): Promise<void> {
       systemCommand: playgroundSystemCommand,
       readline: playgroundReadline,
       url: playgroundUrl,
+      socket: playgroundSocket,
     });
     enableControls(true);
     setStatus("ready", "Runtime ready");
@@ -238,6 +245,25 @@ function playgroundUrl(request: PublicUrlRequest): { readonly body: Uint8Array }
     throw new Error(`Playground URL is not allow-listed: ${request.url}`);
   }
   return { body: new TextEncoder().encode("worker-url\npackage-connection\n") };
+}
+
+function playgroundSocket(request: PublicSocketRequest): {
+  readonly body?: Uint8Array;
+  readonly incomplete?: boolean;
+} {
+  if (request.operation === "open") {
+    if (request.host !== "echo.nativr.invalid" || request.port !== 8080) {
+      throw new Error(`Playground socket is not allow-listed: ${request.host}:${request.port}`);
+    }
+    return {};
+  }
+  if (request.operation === "read") {
+    return {
+      body: new TextEncoder().encode("socket-worker\npackage-socket\n"),
+      incomplete: false,
+    };
+  }
+  return {};
 }
 
 function playgroundSystemCommand(request: PublicSystemCommandRequest): PublicSystemCommandResult {

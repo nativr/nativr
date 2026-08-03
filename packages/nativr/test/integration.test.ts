@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createR, isComplex, isNA, isRaw, NA, RRuntimeDisposedError } from "../src/index.js";
 import type {
   PublicReadlineRequest,
+  PublicSocketRequest,
   PublicSystemCommandRequest,
   PublicUrlRequest,
   PureRPackageBundle,
@@ -31,7 +32,7 @@ importFrom(graphics, axis, barplot, plot.new, plot.window, rect, title)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median, ts.plot)
 importFrom(utils, download.file, packageDescription, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, annotated_plot, ask_new_pages, find_tools, create_file, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, loaded_module_paths, standard_output, sink_lines, write_sass_variable)
+export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, annotated_plot, ask_new_pages, find_tools, create_file, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, socket_exchange, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, loaded_module_paths, standard_output, sink_lines, write_sass_variable)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -141,6 +142,16 @@ pipe_lines <- function(command) {
   con <- pipe(command)
   on.exit(close(con))
   readLines(con)
+}
+socket_exchange <- function(host, port) {
+  con <- socketConnection(
+    host, port, blocking = TRUE, open = "a+b", encoding = "UTF-8",
+    timeout = 5, options = "no-delay"
+  )
+  on.exit(close(con))
+  writeLines(c("ping", "package"), con)
+  c(readLines(con, n = 2L), isIncomplete(con), socketTimeout(con),
+    socketTimeout(con, 7), socketTimeout(con))
 }
 filtered_flow <- function(x, coefficient = 0.8) stats::filter(x, coefficient, method = "r")
 class_summary <- function() capture.output(showClass("NativRFixtureClass"))
@@ -3686,6 +3697,151 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("routes usage-ranked socket connections through a bounded duplex host capability", async () => {
+    const requests: PublicSocketRequest[] = [];
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [pureRFixture],
+      socket: (request) => {
+        requests.push(request);
+        if (request.operation === "read") {
+          return {
+            body: new TextEncoder().encode("pong\nworker\n"),
+            incomplete: false,
+          };
+        }
+        return {};
+      },
+    });
+    await expect(runtime.eval('capabilities("sockets")')).resolves.toBe(true);
+    await expect(
+      runtime.eval('nativrfixture::socket_exchange("echo.invalid", 8080L)'),
+    ).resolves.toEqual(["pong", "worker", "FALSE", "5", "5", "7"]);
+    expect(requests[0]).toMatchObject({
+      operation: "open",
+      connectionId: 3,
+      host: "echo.invalid",
+      port: 8080,
+      server: false,
+      blocking: true,
+      open: "a+b",
+      encoding: "utf8",
+      timeoutSeconds: 5,
+      options: ["no-delay"],
+    });
+    expect(requests[0]?.sessionId).toBeGreaterThan(0);
+    expect(requests[1]).toMatchObject({ operation: "write", connectionId: 3 });
+    expect(
+      requests[1]?.operation === "write" ? new TextDecoder().decode(requests[1].bytes) : undefined,
+    ).toBe("ping\npackage\n");
+    expect(requests.slice(2, 5).map((request) => request.operation)).toEqual([
+      "read",
+      "timeout",
+      "close",
+    ]);
+
+    await expect(
+      runtime.eval(`
+        con <- socketConnection("shape.invalid", 9000L, blocking = FALSE, open = "a+")
+        info <- summary(con)
+        closed <- withVisible(close(con))
+        c(
+          typeof(con), mode(con), class(con), length(con),
+          info$class, info$mode, info$text, info$opened,
+          info[["can read"]], info[["can write"]],
+          closed$visible, is.null(closed$value),
+          names(formals(socketConnection)), names(formals(socketTimeout))
+        )
+      `),
+    ).resolves.toEqual([
+      "integer",
+      "numeric",
+      "sockconn",
+      "connection",
+      "1",
+      "sockconn",
+      "a+",
+      "text",
+      "opened",
+      "yes",
+      "yes",
+      "FALSE",
+      "TRUE",
+      "host",
+      "port",
+      "server",
+      "blocking",
+      "open",
+      "encoding",
+      "timeout",
+      "options",
+      "socket",
+      "timeout",
+    ]);
+    await runtime.reset();
+    expect(requests.at(-1)).toMatchObject({ operation: "close-all" });
+    await runtime.dispose();
+
+    const unavailable = await createR({ execution: "inline", assets });
+    await expect(unavailable.eval('capabilities("sockets")')).resolves.toBe(false);
+    await expect(
+      unavailable.eval(`
+        con <- socketConnection("closed.invalid", 80L, open = "")
+        info <- summary(con)
+        result <- c(class(con), info$mode, info$text, info$opened, isOpen(con))
+        close(con)
+        result
+      `),
+    ).resolves.toEqual(["sockconn", "connection", "", "text", "closed", "FALSE"]);
+    await expect(unavailable.eval('socketConnection("denied.invalid", 80L)')).rejects.toMatchObject(
+      { code: "NRU6207" },
+    );
+    await unavailable.dispose();
+
+    const invalidLifecycle = await createR({
+      execution: "inline",
+      assets,
+      socket: (request) =>
+        request.operation === "open" ? { body: new Uint8Array(), incomplete: false } : {},
+    });
+    await expect(
+      invalidLifecycle.eval('socketConnection("invalid.invalid", 80L)'),
+    ).rejects.toMatchObject({ code: "NRS5009" });
+    await invalidLifecycle.dispose();
+
+    const oversizedRead = await createR({
+      execution: "inline",
+      assets,
+      packages: [pureRFixture],
+      limits: { maxOutputBytes: 4 },
+      socket: (request) =>
+        request.operation === "read" ? { body: new Uint8Array(5), incomplete: false } : {},
+    });
+    await expect(
+      oversizedRead.eval('con <- socketConnection("bounded.invalid", 80L); readLines(con, n = 1L)'),
+    ).rejects.toMatchObject({ code: "NRL4007" });
+    await oversizedRead.dispose();
+
+    let cleanupAttempts = 0;
+    const cleanupFailure = await createR({
+      execution: "inline",
+      assets,
+      socket: (request) => {
+        if (request.operation === "close-all") {
+          cleanupAttempts += 1;
+          throw new Error("cleanup failed");
+        }
+        return request.operation === "read" ? { body: new Uint8Array(), incomplete: false } : {};
+      },
+    });
+    await cleanupFailure.eval("retained <- 1L");
+    await expect(cleanupFailure.reset()).rejects.toMatchObject({ code: "NRE2256" });
+    await expect(cleanupFailure.eval('exists("retained")')).resolves.toBe(false);
+    await expect(cleanupFailure.dispose()).rejects.toMatchObject({ code: "NRE2256" });
+    expect(cleanupAttempts).toBe(2);
+  });
+
   it("loads source-only R package bundles with namespaces, imports, hooks, and S3 methods", async () => {
     const runtime = await createR({
       execution: "inline",
@@ -3950,6 +4106,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "repository_versions",
       "signature_names",
       "sink_lines",
+      "socket_exchange",
       "sourced_value",
       "square",
       "standard_output",
@@ -12070,7 +12227,7 @@ NeedsCompilation: no
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.256.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.257.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

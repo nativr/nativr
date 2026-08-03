@@ -466,6 +466,16 @@ when `close()` destroys the wrapper, matching GNU R's zero-byte-before-close beh
 stream API does not expose compression-level selection, so `level` is range-checked but byte
 identity is not promised. No URL, socket, host file, or ambient network capability is introduced.
 
+`socketConnection(host, port, ...)` creates a `c("sockconn", "connection")` integer handle in the
+same unforgeable registry. `open = ""` creates an inert closed record; opening requires the explicit
+host socket capability. Open/read/write/timeout/close carry only session and connection IDs plus
+validated scalar metadata or bounded copied bytes. Returned read bytes enter the private connection
+buffer, so `readLines()`, raw `readBin()`, `writeLines()`, `cat()`, `isOpen()`, `isIncomplete()`,
+`summary()`, and `socketTimeout()` reuse ordinary connection semantics. Reset and disposal issue a
+session-scoped close-all request before clearing evaluator state. Raw TCP, TLS, DNS, CORS,
+backpressure, cancellation, and endpoint selection are host policy rather than implicit runtime
+authority.
+
 `unz(description, filename, open = "", encoding = getOption("encoding"))` creates a lazy, read-only
 `c("unz", "connection")` record over one exact member of an immutable package resource or
 session-owned ZIP file. Stored and raw-DEFLATE members share the normal closed-operation or open

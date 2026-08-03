@@ -119,6 +119,7 @@ describe("Worker protocol guards", () => {
       environmentVariables: { SEEDED: "value", EMPTY: "" },
       readline: true,
       url: true,
+      socket: true,
       debug: false,
     },
     {
@@ -182,6 +183,18 @@ describe("Worker protocol guards", () => {
       kind: "url-result",
       error: { code: "NRE2255", message: "denied" },
     },
+    {
+      protocolVersion: 1,
+      id: "socket-read-result",
+      kind: "socket-result",
+      result: { body: new Uint8Array([1, 2, 3]), incomplete: false },
+    },
+    {
+      protocolVersion: 1,
+      id: "socket-error",
+      kind: "socket-result",
+      error: { code: "NRE2256", message: "denied" },
+    },
   ])("accepts request kind $kind", (request) => {
     expect(isWorkerRequest(request)).toBe(true);
   });
@@ -207,8 +220,26 @@ describe("Worker protocol guards", () => {
         id: "x",
         kind: "init",
         assets: { treeSitterRuntimeWasm: "runtime.wasm", rGrammarWasm: "r.wasm" },
+        socket: "yes",
+        debug: false,
+      }),
+    ).toBe(false);
+    expect(
+      isWorkerRequest({
+        protocolVersion: 1,
+        id: "x",
+        kind: "init",
+        assets: { treeSitterRuntimeWasm: "runtime.wasm", rGrammarWasm: "r.wasm" },
         readline: "yes",
         debug: false,
+      }),
+    ).toBe(false);
+    expect(
+      isWorkerRequest({
+        protocolVersion: 1,
+        id: "x",
+        kind: "socket-result",
+        result: { body: [1, 2, 3], incomplete: false },
       }),
     ).toBe(false);
     expect(
@@ -378,6 +409,24 @@ describe("Worker protocol guards", () => {
         headers: [{ name: "Accept", value: "text/plain" }],
       },
     },
+    {
+      protocolVersion: 1,
+      id: "socket",
+      kind: "socket",
+      request: {
+        operation: "open",
+        sessionId: 7,
+        connectionId: 3,
+        host: "echo.invalid",
+        port: 8080,
+        server: false,
+        blocking: true,
+        open: "a+b",
+        encoding: "UTF-8",
+        timeoutSeconds: 60,
+        options: ["no-delay"],
+      },
+    },
   ])("accepts response kind $kind", (response) => {
     expect(isWorkerResponse(response)).toBe(true);
   });
@@ -396,6 +445,14 @@ describe("Worker protocol guards", () => {
         id: "x",
         kind: "system-command",
         request: { command: "probe" },
+      }),
+    ).toBe(false);
+    expect(
+      isWorkerResponse({
+        protocolVersion: 1,
+        id: "x",
+        kind: "socket",
+        request: { operation: "open", sessionId: 1, connectionId: 3, port: 70_000 },
       }),
     ).toBe(false);
     expect(

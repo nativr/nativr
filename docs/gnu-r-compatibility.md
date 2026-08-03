@@ -939,6 +939,16 @@ event for Worker/Canvas, record/replay, PNG, PDF, and unchanged pure-R package c
 layout and platform-exact margin/font metrics remain compatibility depth. Rank 330 `base::sink` is
 the next measured unresolved callable.
 
+The socket-connection increment raises current name overlap to 636 of 2,522. Rank 346
+`base::socketConnection` covers ps's measured connection-list call shape while adding reusable
+`isIncomplete` and `socketTimeout` support. GNU R 4.6 black-box evidence covers exact formals and
+defaults, classed integer handles, closed/open summaries, access queries, modes, timeout values, and
+close visibility. NativR-owned evidence covers bounded typed open/read/write/timeout/close events,
+line/raw connection consumers, unchanged source-only package code, default Worker execution,
+reset/disposal cleanup, invalid handler results, output limits, and default denial. Because browsers
+do not expose raw TCP to ordinary JavaScript, DNS, TLS, server sockets, backpressure, cancellation,
+and endpoint policy belong to the explicit host adapter and remain compatibility depth.
+
 ## Completion evidence
 
 The objective is complete only when:

@@ -11,6 +11,8 @@ export type {
   PublicGraphicsEvent,
   PublicOutputEvent,
   PublicReadlineRequest,
+  PublicSocketRequest,
+  PublicSocketResult,
   PublicSystemCommandRequest,
   PublicSystemCommandResult,
   PublicUrlRequest,
@@ -18,6 +20,7 @@ export type {
   PureRPackageBundle,
   PureRPackageResource,
   ReadlineHandler,
+  SocketHandler,
   SystemCommandHandler,
   UrlHandler,
 } from "./api.js";

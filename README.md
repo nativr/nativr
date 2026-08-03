@@ -774,7 +774,14 @@ runs unchanged in source-only package code. NativR currently exposes no R-callab
 so the browser-native list is truthfully empty: it never invents GNU R DLLs, host paths, or pointer
 handles. Pure-R packages can use this shape to detect an absent optional native backend and take
 their R fallback. Packages such as ps that declare `NeedsCompilation: yes` still require a future
-typed Wasm/native ABI. Rank 346 `base::socketConnection()` is the next measured unresolved callable.
+typed Wasm/native ABI.
+
+Rank 346 `base::socketConnection()` now supplies GNU R-shaped socket handles, formals, summaries,
+timeouts, completeness queries, text writes, and line/raw reads through an explicit
+`createR({ socket })` adapter. The default runtime has no socket authority; the embedding
+application owns endpoint allow-listing and transport policy, and reset/disposal closes the session.
+An unchanged source-only package helper runs through both inline and default Worker execution. Rank
+348 `base::file.copy()` is the next measured unresolved callable.
 
 Rank 121 `grDevices::png()` now covers all seven measured calls across five packages. It opens
 alongside the browser display, records the existing graphics command vocabulary, rasterizes it in
