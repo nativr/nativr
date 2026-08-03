@@ -8,7 +8,12 @@ import {
 } from "./dcf.js";
 import { readPackageSource } from "./source.js";
 import type { PackageSourceFile } from "./source.js";
-import { extractPackageExamples, PACKAGE_EXAMPLES_RESOURCE_PATH } from "./rd-examples.js";
+import {
+  extractPackageExamples,
+  extractPackageHelp,
+  PACKAGE_EXAMPLES_RESOURCE_PATH,
+  PACKAGE_HELP_RESOURCE_PATH,
+} from "./rd-examples.js";
 import { extractPackageVignettes, PACKAGE_VIGNETTES_RESOURCE_PATH } from "./vignettes.js";
 import {
   PackageCompatibilityError,
@@ -88,7 +93,11 @@ export async function inspectPackage(
       ? []
       : [{ path: installedPath, data: Buffer.from(file.data).toString("base64") }];
   });
-  for (const reservedPath of [PACKAGE_EXAMPLES_RESOURCE_PATH, PACKAGE_VIGNETTES_RESOURCE_PATH]) {
+  for (const reservedPath of [
+    PACKAGE_EXAMPLES_RESOURCE_PATH,
+    PACKAGE_HELP_RESOURCE_PATH,
+    PACKAGE_VIGNETTES_RESOURCE_PATH,
+  ]) {
     if (resources.some((resource) => resource.path === reservedPath)) {
       throw new Error(`Package resource path '${reservedPath}' is reserved.`);
     }
@@ -106,6 +115,21 @@ export async function inspectPackage(
     resources.push({
       path: PACKAGE_EXAMPLES_RESOURCE_PATH,
       data: Buffer.from(JSON.stringify(examples), "utf8").toString("base64"),
+    });
+    generatedPackageMetadata = true;
+  }
+  const help = extractPackageHelp(
+    files
+      .filter((file) => /^man\/(?:.*\/)?[^/]+\.Rd$/iu.test(file.path))
+      .map((file) => ({
+        path: file.path,
+        source: decodePackageText(file, "Rd source", decodedDescription.encoding),
+      })),
+  );
+  if (help !== undefined) {
+    resources.push({
+      path: PACKAGE_HELP_RESOURCE_PATH,
+      data: Buffer.from(JSON.stringify(help), "utf8").toString("base64"),
     });
     generatedPackageMetadata = true;
   }

@@ -13,7 +13,7 @@ Encoding: UTF-8
 Imports: utils
 NeedsCompilation: no`,
   namespace:
-    "importFrom(utils, getFromNamespace)\nexport(twice_mean, signature_names, dynamic_summary, resource_size, archive_lines, event_colours, classic_palettes, usage_rectangles, plot_series, annotated_plot, reference_lines, find_tools, create_file, copy_resource, remove_files, fixed_text, custom_axis, sourced_value, ask_user, remote_lines, download_resource, repository_versions, pipe_lines, socket_exchange, filtered_flow, package_summary, package_files, native_encoding, shell_quote, standard_output, sink_lines, write_sass_variable, spell_lines, browse_guides, private_call)",
+    "importFrom(utils, getFromNamespace)\nexport(twice_mean, signature_names, dynamic_summary, resource_size, archive_lines, event_colours, classic_palettes, usage_rectangles, plot_series, annotated_plot, reference_lines, find_tools, create_file, copy_resource, remove_files, fixed_text, custom_axis, sourced_value, ask_user, remote_lines, download_resource, repository_versions, pipe_lines, socket_exchange, filtered_flow, package_summary, package_files, native_encoding, shell_quote, standard_output, sink_lines, write_sass_variable, spell_lines, browse_guides, browse_help, private_call)",
   rSources: [
     {
       path: "R/twice-mean.R",
@@ -23,10 +23,14 @@ NeedsCompilation: no`,
     {
       path: "R/sink-lines.R",
       source:
-        'sink_lines <- function() { path <- tempfile(); sink(path); cat("package-worker-sink\\n"); sink(); readLines(path) }\nwrite_sass_variable <- function() { path <- tempfile(); write(\'$color: "red";\', path); readLines(path) }\nspell_lines <- function() { path <- tempfile(); writeLines("ignored", path); on.exit(unlink(path)); utils::aspell(path, function(ifile, encoding) c("browser compatiblity", "native runtime"), control = "-H") }\nbrowse_guides <- function() print(utils::browseVignettes(package = "nativrdemo"))',
+        'sink_lines <- function() { path <- tempfile(); sink(path); cat("package-worker-sink\\n"); sink(); readLines(path) }\nwrite_sass_variable <- function() { path <- tempfile(); write(\'$color: "red";\', path); readLines(path) }\nspell_lines <- function() { path <- tempfile(); writeLines("ignored", path); on.exit(unlink(path)); utils::aspell(path, function(ifile, encoding) c("browser compatiblity", "native runtime"), control = "-H") }\nbrowse_guides <- function() print(utils::browseVignettes(package = "nativrdemo"))\nbrowse_help <- function(topic = "twice-mean") print(utils::help(topic, package = "nativrdemo", help_type = "html"))',
     },
   ],
   resources: [
+    {
+      path: ".nativr/help-v1.json",
+      data: "eyJmb3JtYXQiOiJuYXRpdnItcGFja2FnZS1oZWxwIiwiZm9ybWF0VmVyc2lvbiI6MSwidG9waWNzIjpbeyJuYW1lIjoidHdpY2VfbWVhbiIsInRpdGxlIjoiRG91YmxlIGFuIGFyaXRobWV0aWMgbWVhbiIsImFsaWFzZXMiOlsidHdpY2VfbWVhbiIsInR3aWNlLW1lYW4iXSwic2VjdGlvbnMiOlt7Im5hbWUiOiJkZXNjcmlwdGlvbiIsInRpdGxlIjoiRGVzY3JpcHRpb24iLCJ0ZXh0IjoiRXZhbHVhdGVzIHVuY2hhbmdlZCBwdXJlIFIgcGFja2FnZSBjb2RlIGluc2lkZSB0aGUgZGVmYXVsdCBXZWIgV29ya2VyLiIsImNvZGUiOmZhbHNlfSx7Im5hbWUiOiJ1c2FnZSIsInRpdGxlIjoiVXNhZ2UiLCJ0ZXh0IjoidHdpY2VfbWVhbih4KSIsImNvZGUiOnRydWV9LHsibmFtZSI6ImV4YW1wbGVzIiwidGl0bGUiOiJFeGFtcGxlcyIsInRleHQiOiJ0d2ljZV9tZWFuKGMoMSwgMiwgNikpIiwiY29kZSI6dHJ1ZX1dfV19",
+    },
     { path: "extdata/demo.json", data: "eyJkZW1vIjp0cnVlfQo=" },
     {
       path: "extdata/archive.zip",

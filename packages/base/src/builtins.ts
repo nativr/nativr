@@ -1241,6 +1241,48 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "shape",
     builtinDemo,
   ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "utils",
+      "help",
+      ["topic", "package", "lib.loc", "verbose", "try.all.packages", "help_type"],
+      "behavioral",
+      builtinHelp,
+    ),
+    [
+      { name: "topic" },
+      { name: "package", defaultValue: nullAst() },
+      { name: "lib.loc", defaultValue: nullAst() },
+      { name: "verbose", defaultValue: getOptionDefaultAst("verbose") },
+      {
+        name: "try.all.packages",
+        defaultValue: getOptionDefaultAst("help.try.all.packages"),
+      },
+      { name: "help_type", defaultValue: getOptionDefaultAst("help_type") },
+    ],
+  ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "utils",
+      "print.help_files_with_topic",
+      ["x", "..."],
+      "behavioral",
+      builtinPrintHelpFilesWithTopic,
+      "invisible",
+    ),
+    [{ name: "x" }, { name: "..." }],
+  ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "utils",
+      "print.packageInfo",
+      ["x", "..."],
+      "shape",
+      builtinPrintPackageInfo,
+      "invisible",
+    ),
+    [{ name: "x" }, { name: "..." }],
+  ),
   withUnsupportedBehavior(
     withBuiltinFormals(
       definePackageBuiltin(
@@ -13595,6 +13637,8 @@ function optionsState(invocation: BuiltinInvocation): Map<string, RValue> {
     ["device.ask.default", logicalVector([false])],
     ["encoding", characterVector(["native.enc"])],
     ["expressions", integerVector([5000])],
+    ["help.try.all.packages", logicalVector([false])],
+    ["help_type", characterVector(["text"])],
     ["max.print", integerVector([99_999])],
     ["prompt", characterVector(["> "])],
     ["pkgType", characterVector(["source"])],
@@ -25681,6 +25725,7 @@ function warnIgnoredCsvControls(
 }
 
 const PACKAGE_EXAMPLES_RESOURCE_PATH = ".nativr/examples-v1.json";
+const PACKAGE_HELP_RESOURCE_PATH = ".nativr/help-v1.json";
 const PACKAGE_VIGNETTES_RESOURCE_PATH = ".nativr/vignettes-v1.json";
 
 type PackageExampleBlockKind = "run" | "dontrun" | "donttest";
@@ -25695,6 +25740,20 @@ interface PackageExampleTopic {
   readonly title: string;
   readonly aliases: readonly string[];
   readonly blocks: readonly PackageExampleBlock[];
+}
+
+interface PackageHelpSection {
+  readonly name: string;
+  readonly title: string;
+  readonly text: string;
+  readonly code: boolean;
+}
+
+interface PackageHelpTopic {
+  readonly name: string;
+  readonly title: string;
+  readonly aliases: readonly string[];
+  readonly sections: readonly PackageHelpSection[];
 }
 
 interface PackageVignetteEntry {
@@ -25723,6 +25782,389 @@ interface BrowseVignetteRow {
   readonly title: string;
   readonly r: string;
   readonly output: string;
+}
+
+const HELP_CORE_ALIASES = new Map<string, ReadonlyMap<string, string>>([
+  ["utils", new Map([["?", "Question"]])],
+  [
+    "base",
+    new Map([
+      ["NULL", "NULL"],
+      ["NA", "NA"],
+      ["TRUE", "TRUE"],
+      ["FALSE", "FALSE"],
+      ["Inf", "Inf"],
+      ["NaN", "NaN"],
+    ]),
+  ],
+]);
+
+async function builtinHelp(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = matchLazyArguments(invocation, [
+    "topic",
+    "package",
+    "lib.loc",
+    "verbose",
+    "try.all.packages",
+    "help_type",
+  ]);
+  const libraryArgument = matched.get("lib.loc");
+  const libraryPaths =
+    libraryArgument === undefined || libraryArgument.promise.missing
+      ? undefined
+      : libraryLocationArgument(
+          invocation,
+          await invocation.force(libraryArgument.promise),
+          "help",
+        );
+  await helpLogicalControl(invocation, matched.get("verbose"), "verbose", false);
+  const helpType = await helpTypeArgument(invocation, matched.get("help_type"));
+  const explicitPackages = await helpPackageArgument(
+    invocation,
+    matched.get("package"),
+    libraryPaths,
+  );
+  const topicArgument = matched.get("topic");
+  if (topicArgument === undefined || topicArgument.promise.missing) {
+    if (explicitPackages === undefined || explicitPackages.length === 0) {
+      throw new REvaluationError("NRE2103", "Argument 'topic' is missing in help().");
+    }
+    return helpPackageInfo(invocation, explicitPackages[0] ?? "", libraryPaths);
+  }
+  const topic = await helpTopic(invocation, topicArgument);
+  const primaryPackages =
+    explicitPackages ??
+    uniqueStrings([
+      ...invocation
+        .searchPath()
+        .filter((entry) => entry.startsWith("package:"))
+        .map((entry) => entry.slice("package:".length)),
+      ...invocation.installedPackageNames(libraryPaths),
+    ]);
+  let matches = await helpTopicMatches(invocation, topic, primaryPackages, libraryPaths);
+  let triedAllPackages = false;
+  if (matches.length === 0 && explicitPackages === undefined) {
+    const tryAll = await helpLogicalControl(
+      invocation,
+      matched.get("try.all.packages"),
+      "try.all.packages",
+      false,
+    );
+    if (tryAll) {
+      triedAllPackages = true;
+      matches = await helpTopicMatches(
+        invocation,
+        topic,
+        invocation.installedPackageNames(libraryPaths),
+        libraryPaths,
+      );
+    }
+  }
+  invocation.context.allocate(matches.length + 6);
+  return withClasses(
+    withAttribute(
+      withAttribute(
+        withAttribute(
+          withAttribute(characterVector(matches), "call", invocation.currentCall()),
+          "topic",
+          characterVector([topic]),
+        ),
+        "tried_all_packages",
+        logicalVector([triedAllPackages]),
+      ),
+      "type",
+      characterVector([helpType]),
+    ),
+    ["help_files_with_topic"],
+  );
+}
+
+async function helpTopic(
+  invocation: BuiltinInvocation,
+  argument: BuiltinCallArgument,
+): Promise<string> {
+  const expression = argument.promise.expression;
+  if (expression?.kind === "Identifier") {
+    try {
+      const value = await invocation.force(argument.promise);
+      if (value.type === "character" && value.length === 1) {
+        return isMissing(value, 0) ? "NA" : (value.values[0] ?? "");
+      }
+    } catch (error) {
+      if (error instanceof RResourceLimitError) throw error;
+    }
+    return expression.name;
+  }
+  if (expression?.kind === "NullLiteral") return "NULL";
+  if (expression?.kind === "LogicalLiteral") {
+    return expression.value === null ? "NA" : expression.value ? "TRUE" : "FALSE";
+  }
+  const value = await invocation.force(argument.promise);
+  if (value.type !== "character" || value.length !== 1) {
+    throw new RTypeMismatchError(
+      "NRT3343",
+      "'topic' should be a name, length-one character vector or reserved word",
+    );
+  }
+  return isMissing(value, 0) ? "NA" : (value.values[0] ?? "");
+}
+
+async function helpPackageArgument(
+  invocation: BuiltinInvocation,
+  argument: BuiltinCallArgument | undefined,
+  libraryPaths: readonly string[] | undefined,
+): Promise<readonly string[] | undefined> {
+  if (argument === undefined) return undefined;
+  const expression = argument.promise.expression;
+  const supplied =
+    expression?.kind === "Identifier"
+      ? characterVector([expression.name])
+      : await invocation.force(argument.promise);
+  if (supplied.type === "null") return undefined;
+  if (!isAtomic(supplied)) {
+    throw new RTypeMismatchError(
+      "NRT3343",
+      "help(package=) must be NULL or coercible to character.",
+    );
+  }
+  const value = coerceAtomicToCharacter(supplied, invocation);
+  const names = [...value.values].map((name, index) => (isMissing(value, index) ? "NA" : name));
+  for (const name of uniqueStrings(names)) {
+    if (invocation.installedPackageVersion(name, libraryPaths) === undefined) {
+      throw new REvaluationError("NRE2254", `there is no package called '${name}'`);
+    }
+  }
+  return names;
+}
+
+async function helpLogicalControl(
+  invocation: BuiltinInvocation,
+  argument: BuiltinCallArgument | undefined,
+  name: string,
+  fallback: boolean,
+): Promise<boolean> {
+  const value =
+    argument === undefined || argument.promise.missing
+      ? optionsState(invocation).get(name)
+      : await invocation.force(argument.promise);
+  return logicalFlag(value, fallback, name);
+}
+
+async function helpTypeArgument(
+  invocation: BuiltinInvocation,
+  argument: BuiltinCallArgument | undefined,
+): Promise<"text" | "html" | "pdf"> {
+  const value =
+    argument === undefined || argument.promise.missing
+      ? (optionsState(invocation).get("help_type") ?? characterVector(["text"]))
+      : await invocation.force(argument.promise);
+  const type = characterScalar(value, "help_type");
+  if (type !== "text" && type !== "html" && type !== "pdf") {
+    throw new REvaluationError("NRE2254", `'arg' should be one of "text", "html", "pdf"`);
+  }
+  return type;
+}
+
+async function helpTopicMatches(
+  invocation: BuiltinInvocation,
+  topic: string,
+  packageNames: readonly string[],
+  libraryPaths: readonly string[] | undefined,
+): Promise<string[]> {
+  const matches: string[] = [];
+  for (const packageName of packageNames) {
+    invocation.context.checkpoint();
+    const manifest = packageHelpManifest(invocation, packageName, libraryPaths);
+    const manifestTopic = manifest?.find((candidate) => candidate.aliases.includes(topic));
+    let canonical = manifestTopic?.name;
+    if (canonical === undefined && HELP_CORE_ALIASES.get(packageName)?.has(topic)) {
+      canonical = HELP_CORE_ALIASES.get(packageName)?.get(topic);
+    }
+    const description = invocation.installedPackageDescription(packageName, libraryPaths);
+    const isSystemPackage = description?.file.startsWith(`${NATIVR_SYSTEM_LIBRARY_PATH}/`) ?? false;
+    if (canonical === undefined && isSystemPackage) {
+      const binding = await invocation.namespaceBinding(packageName, topic);
+      if (binding !== undefined) canonical = topic;
+    }
+    if (canonical === undefined) continue;
+    const root = invocation.packageResourcePath(packageName, "", libraryPaths);
+    if (root !== undefined) matches.push(`${root}/help/${encodeURIComponent(canonical)}`);
+  }
+  return uniqueStrings(matches);
+}
+
+async function helpPackageInfo(
+  invocation: BuiltinInvocation,
+  packageName: string,
+  libraryPaths: readonly string[] | undefined,
+): Promise<RValue> {
+  const description = invocation.installedPackageDescription(packageName, libraryPaths);
+  const root = invocation.packageResourcePath(packageName, "", libraryPaths);
+  if (description === undefined || root === undefined) {
+    throw new REvaluationError("NRE2254", `there is no package called '${packageName}'`);
+  }
+  const manifest = packageHelpManifest(invocation, packageName, libraryPaths);
+  const entries =
+    manifest?.map((topic) => `${topic.name.padEnd(24, " ")} ${topic.title}`) ??
+    (await invocation.namespaceExports(packageName)).map((name) => name);
+  const descriptionLines = description.fields.map(
+    (field) => `${`${field.name}:`.padEnd(15, " ")} ${field.value}`,
+  );
+  invocation.context.allocate(descriptionLines.length + entries.length + 8);
+  return withClasses(
+    listValue(
+      [
+        characterVector([packageName]),
+        characterVector([root]),
+        listValue([characterVector(descriptionLines), characterVector(entries), R_NULL]),
+      ],
+      ["name", "path", "info"],
+    ),
+    ["packageInfo"],
+  );
+}
+
+async function builtinPrintHelpFilesWithTopic(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched } = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const argument = matched.get("x");
+  if (argument === undefined || argument.promise.missing) {
+    throw new REvaluationError(
+      "NRE2103",
+      "Argument 'x' is missing in print.help_files_with_topic().",
+    );
+  }
+  const input = await invocation.force(argument.promise);
+  if (input.type !== "character") {
+    throw new RTypeMismatchError(
+      "NRT3343",
+      "print.help_files_with_topic(x=) requires a character help result.",
+    );
+  }
+  const topicAttribute = input.attributes.get("topic");
+  const topic =
+    topicAttribute?.type === "character" && topicAttribute.length > 0
+      ? (topicAttribute.values[0] ?? "")
+      : "";
+  if (input.length === 0) {
+    invocation.context.writeOutput({
+      stream: "stdout",
+      text: `No documentation for '${topic}' in specified packages and libraries:\nyou could try '??${topic}'\n`,
+    });
+    return input;
+  }
+  const pages = await Promise.all(
+    input.values.map((path) => helpPageForPath(invocation, path, topic)),
+  );
+  const type = input.attributes.get("type");
+  const helpType =
+    type?.type === "character" && type.length > 0 ? (type.values[0] ?? "html") : "html";
+  if (helpType === "text") {
+    invocation.context.writeOutput({
+      stream: "stdout",
+      text: `${pages.map((page) => renderHelpPageText(page)).join("\n\n")}\n`,
+    });
+    return input;
+  }
+  await browseGeneratedHtml(invocation, renderHelpPagesHtml(topic, pages), "Rhelp.");
+  return input;
+}
+
+interface RenderedHelpPage {
+  readonly packageName: string;
+  readonly topic: string;
+  readonly title: string;
+  readonly sections: readonly PackageHelpSection[];
+}
+
+async function helpPageForPath(
+  invocation: BuiltinInvocation,
+  path: string,
+  fallbackTopic: string,
+): Promise<RenderedHelpPage> {
+  const match = /^nativr:\/\/package\/([^/]+)\/help\/([^/]+)$/u.exec(path);
+  if (match === null) {
+    throw new RTypeMismatchError("NRT3343", "invalid browser help path");
+  }
+  const packageName = decodeURIComponent(match[1] ?? "");
+  const canonical = decodeURIComponent(match[2] ?? fallbackTopic);
+  const topic = packageHelpManifest(invocation, packageName)?.find(
+    (candidate) => candidate.name === canonical,
+  );
+  if (topic !== undefined) return { packageName, topic: canonical, ...topic };
+  const binding = await invocation.namespaceBinding(packageName, canonical);
+  const arguments_ =
+    binding?.type === "builtin"
+      ? binding.definition.metadata.supportedArguments.join(", ")
+      : binding?.type === "closure"
+        ? binding.parameters.map((parameter) => parameter.name).join(", ")
+        : "";
+  return {
+    packageName,
+    topic: canonical,
+    title: `${canonical} — ${packageName}`,
+    sections: Object.freeze([
+      {
+        name: "usage",
+        title: "Usage",
+        text: arguments_.length === 0 ? canonical : `${canonical}(${arguments_})`,
+        code: true,
+      },
+      {
+        name: "description",
+        title: "Description",
+        text: "Browser-native callable registered by the NativR compatibility runtime.",
+        code: false,
+      },
+    ]),
+  };
+}
+
+function renderHelpPageText(page: RenderedHelpPage): string {
+  return [
+    `${page.title} [package ${page.packageName}]`,
+    ...page.sections.flatMap((section) => [section.title, section.text]),
+  ].join("\n\n");
+}
+
+function renderHelpPagesHtml(topic: string, pages: readonly RenderedHelpPage[]): string {
+  const content = pages
+    .map(
+      (page) =>
+        `<article><header><h1>${escapeBrowseVignettesHtml(page.title || page.topic)}</h1><p>Package <code>${escapeBrowseVignettesHtml(page.packageName)}</code></p></header>${page.sections
+          .map(
+            (section) =>
+              `<section><h2>${escapeBrowseVignettesHtml(section.title)}</h2><pre${section.code ? ' class="code"' : ""}>${escapeBrowseVignettesHtml(section.text)}</pre></section>`,
+          )
+          .join("")}</article>`,
+    )
+    .join("");
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>R Help: ${escapeBrowseVignettesHtml(topic)}</title><style>body{font-family:system-ui,sans-serif;line-height:1.5;max-width:70rem;margin:2rem auto;padding:0 1rem;color:#172033}article+article{border-top:2px solid #98a2b3;margin-top:3rem}code,pre{background:#f4f6f8;border-radius:.25rem}code{padding:.1rem .3rem}pre{padding:1rem;white-space:pre-wrap;overflow-wrap:anywhere}.code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}</style></head><body><main>${content}</main></body></html>`;
+}
+
+async function builtinPrintPackageInfo(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched } = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const argument = matched.get("x");
+  if (argument === undefined || argument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in print.packageInfo().");
+  }
+  const input = await invocation.force(argument.promise);
+  if (input.type !== "list" || input.values.length < 3) {
+    throw new RTypeMismatchError("NRT3343", "print.packageInfo(x=) requires a packageInfo list.");
+  }
+  const name = input.values[0];
+  const info = input.values[2];
+  const packageName = name?.type === "character" && name.length > 0 ? (name.values[0] ?? "") : "";
+  const lines =
+    info?.type === "list"
+      ? info.values.flatMap((value) =>
+          value.type === "character"
+            ? value.values.map((line, index) => (isMissing(value, index) ? "NA" : line))
+            : [],
+        )
+      : [];
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Package ${escapeBrowseVignettesHtml(packageName)}</title><style>body{font-family:system-ui,sans-serif;line-height:1.5;max-width:70rem;margin:2rem auto;padding:0 1rem;color:#172033}pre{background:#f4f6f8;padding:1rem;white-space:pre-wrap}</style></head><body><main><h1>Package <code>${escapeBrowseVignettesHtml(packageName)}</code></h1><pre>${escapeBrowseVignettesHtml(lines.join("\n"))}</pre></main></body></html>`;
+  await browseGeneratedHtml(invocation, html, "Rpkg.");
+  return input;
 }
 
 async function builtinBrowseVignettes(invocation: BuiltinInvocation): Promise<RValue> {
@@ -25879,8 +26321,17 @@ async function builtinPrintBrowseVignettes(invocation: BuiltinInvocation): Promi
   }
 
   const html = renderBrowseVignettesHtml(input, rows, callText, invocation);
+  await browseGeneratedHtml(invocation, html, "Rvig.");
+  return input;
+}
+
+async function browseGeneratedHtml(
+  invocation: BuiltinInvocation,
+  html: string,
+  prefix: string,
+): Promise<void> {
   const state = virtualTextFileState(invocation);
-  const path = nextVirtualTempPath(state, "Rvig.", ".html");
+  const path = nextVirtualTempPath(state, prefix, ".html");
   writeVirtualTextFile(invocation, path, html);
   const utils = invocation.searchEnvironment("package:utils");
   const binding = utils?.bindings.get("browseURL");
@@ -25894,7 +26345,6 @@ async function builtinPrintBrowseVignettes(invocation: BuiltinInvocation): Promi
     throw new REvaluationError("NRE2001", "Could not find function 'browseURL'.");
   }
   await invocation.invoke(browser, [{ value: characterVector([path]) }]);
-  return input;
 }
 
 function printBrowseVignetteRows(input: RList): readonly BrowseVignetteRow[] {
@@ -26400,6 +26850,22 @@ function packageExampleManifest(
   return parsed?.topics;
 }
 
+function packageHelpManifest(
+  invocation: BuiltinInvocation,
+  packageName: string,
+  libraryPaths?: readonly string[],
+): readonly PackageHelpTopic[] | undefined {
+  const parsed = packageDocumentationManifest(
+    invocation,
+    packageName,
+    PACKAGE_HELP_RESOURCE_PATH,
+    libraryPaths,
+    "help",
+    isPackageHelpManifest,
+  );
+  return parsed?.topics;
+}
+
 function packageDocumentationManifest<T>(
   invocation: BuiltinInvocation,
   packageName: string,
@@ -26454,6 +26920,33 @@ function isPackageExamplesManifest(
             isPlainRecord(block) &&
             (block.kind === "run" || block.kind === "dontrun" || block.kind === "donttest") &&
             typeof block.source === "string",
+        ),
+    )
+  );
+}
+
+function isPackageHelpManifest(
+  value: unknown,
+): value is { readonly topics: readonly PackageHelpTopic[] } {
+  if (!isPlainRecord(value) || value.format !== "nativr-package-help" || value.formatVersion !== 1)
+    return false;
+  return (
+    Array.isArray(value.topics) &&
+    value.topics.every(
+      (topic) =>
+        isPlainRecord(topic) &&
+        typeof topic.name === "string" &&
+        typeof topic.title === "string" &&
+        Array.isArray(topic.aliases) &&
+        topic.aliases.every((alias) => typeof alias === "string") &&
+        Array.isArray(topic.sections) &&
+        topic.sections.every(
+          (section) =>
+            isPlainRecord(section) &&
+            typeof section.name === "string" &&
+            typeof section.title === "string" &&
+            typeof section.text === "string" &&
+            typeof section.code === "boolean",
         ),
     )
   );

@@ -209,6 +209,15 @@ test("runs the required Worker examples without evaluation network traffic", asy
     /^data:text\/html;base64,/u,
   );
 
+  await page.getByRole("button", { name: "Pure-R package help page" }).click();
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#browse-count")).toHaveText("1");
+  await page.locator("#browse-requests").getByRole("button", { name: "Preview" }).click();
+  const helpPage = page.frameLocator("#browse-requests iframe");
+  await expect(helpPage.getByRole("heading", { name: "Double an arithmetic mean" })).toBeVisible();
+  await expect(helpPage.getByText("unchanged pure R package code")).toBeVisible();
+  await expect(helpPage.getByText("twice_mean(x)")).toBeVisible();
+
   await page
     .locator("#source")
     .fill("utils::example(twice_mean, package = 'nativrdemo', echo = FALSE)\nexample_value");

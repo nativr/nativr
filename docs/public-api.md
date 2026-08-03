@@ -248,6 +248,12 @@ explicit virtual libraries, and opt-in `run.dontrun` / `run.donttest` are suppor
 source runs through the same Worker and resource limits as `eval()`. The public API never reads a
 host help database or fetches documentation during evaluation.
 
+The same bundles expose every indexed `man/*.Rd` topic through `utils::help()`. Default text output
+uses the evaluation output journal; an explicit `help_type = "html"` followed by `print()` produces
+a bounded, script-free session-file browse request available in `evalDetailed().browseRequests` or
+`createR({ onBrowse })`. The host remains responsible for presenting that inert snapshot. This is a
+portable common-section renderer, not byte-identical GNU Rd conversion or `?`/`??` search.
+
 `utils::View()` emits character-formatted tables in `evalDetailed().dataViews` and returns invisible
 `NULL`. Each event contains a title, named columns, and optional non-default row names.
 `createR({ onDataView })` receives the same events after inline or Worker evaluation. Event text

@@ -453,6 +453,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "example",
       "glob2rx",
       "getFromNamespace",
+      "help",
       "object.size",
       "packageName",
       "packageDescription",

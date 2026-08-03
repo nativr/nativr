@@ -409,3 +409,10 @@ while `print.browseVignettes()` writes a self-contained catalog to the existing 
 and calls `browseURL()`. Package resources remain immutable, the Worker carries the existing typed
 file snapshot, and the host keeps navigation and sandbox policy; no package name, DOM object,
 network client, or host path enters the runtime implementation.
+
+Package help follows the same build-time/runtime split. `@nativr/package-tools` converts every
+admitted `man/*.Rd` page into a deterministic topic/alias/title/common-section manifest, including
+pages with no examples. `utils::help()` resolves that immutable index or a registered core binding,
+then `print.help_files_with_topic()` writes text to the bounded output journal or creates escaped,
+script-free HTML through the existing session-file and `browseURL()` path. No Rd parser, GNU help
+database, package-specific adapter, network client, or DOM object enters the Worker runtime.

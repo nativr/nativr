@@ -106,6 +106,25 @@ used by application calls. `\\dontrun{}` and `\\donttest{}` remain disabled unle
 `run.dontrun = TRUE` or `run.donttest = TRUE`; `give.lines = TRUE` returns the prepared source
 without executing it.
 
+Every packaged `man/*.Rd` page is also discoverable through the ordinary help API, whether or not
+the page contains an examples section:
+
+```ts
+const topic = await r.eval('utils::help("my_topic", package = "mypackage")');
+const page = await r.evalDetailed(
+  'print(utils::help("my_topic", package = "mypackage", help_type = "html"))',
+);
+console.log(topic.attributes.class); // ["help_files_with_topic"]
+console.log(page.browseRequests[0]?.url); // bounded session-file snapshot
+```
+
+The build tool converts common Rd sections into a deterministic, package-independent text manifest;
+the Worker never embeds an Rd parser or opens a GNU R help database. Text is the non-interactive
+default. Requested HTML is generated as escaped, script-free content and crosses the existing
+`browseURL` journal, so the application still decides whether to display it. This portable renderer
+does not yet promise exact GNU Rd macro expansion, `?`/`??` search, installed lazy help databases,
+PDF fidelity, or byte-identical GNU text/HTML.
+
 Installed package vignettes are discoverable through the ordinary utils API as well:
 
 ```ts
@@ -158,6 +177,8 @@ Each `nativr-pure-r-package` v1 artifact contains:
   license files;
 - an internal deterministic manifest for topics, aliases, titles, and controlled code extracted from
   `man/*.Rd` example sections when present;
+- a separate deterministic help manifest for every `man/*.Rd` page, including topics without
+  examples, with portable common-section text;
 - an internal deterministic vignette index for installed `inst/doc` source, extracted R, and
   rendered output entries when present;
 - typed dependency kinds and version constraints;
@@ -207,54 +228,56 @@ normalized AST. The runtime then provides:
 16. `utils::example()` lookup by topic or alias across loaded/installed bundles, optional virtual
     `package` and `lib.loc` selection, package loading, local/global execution, `give.lines`, and
     explicit `run.dontrun` / `run.donttest` controls;
-17. `base::gzcon()` wrapping of immutable package resources or session files for bounded gzip text
+17. `utils::help()` lookup for registered core bindings or indexed package topics/aliases, plus GNU
+    R-shaped topic/package-index values and bounded text or script-free HTML presentation;
+18. `base::gzcon()` wrapping of immutable package resources or session files for bounded gzip text
     and raw reads plus close-time writes through browser-standard streams.
-18. `utils::vignette()` listing across installed or attached virtual packages and GNU R-shaped
+19. `utils::vignette()` listing across installed or attached virtual packages and GNU R-shaped
     metadata lookup for retained package documentation;
-19. lazy read-only `base::url()` connections backed by an explicit `createR({ url })` byte adapter,
+20. lazy read-only `base::url()` connections backed by an explicit `createR({ url })` byte adapter,
     reusable by line, raw, source, table, serialization, and gzip readers without exposing host
     networking to package code.
-20. `utils::download.file()` over the same explicit byte adapter, with vectorized preflight,
+21. `utils::download.file()` over the same explicit byte adapter, with vectorized preflight,
     browser-memory destinations, replacement modes, GNU R-shaped status values, and no ambient
     network or host filesystem.
-21. stable `stdin()`/`stdout()`/`stderr()` terminal handles, bounded stdout/stderr Worker routing,
+22. stable `stdin()`/`stdout()`/`stderr()` terminal handles, bounded stdout/stderr Worker routing,
     and package-visible `isatty()`/connection-catalog introspection without granting host file
     descriptors or claiming an interactive TTY.
-22. regular time-series plotting through exported `stats::ts.plot()`, including equal-frequency
+23. regular time-series plotting through exported `stats::ts.plot()`, including equal-frequency
     union, gap-aware line/point geometry, bounded `gpars`, package expression labels, and the same
     Worker graphics journal used by application R code.
-23. lazy one-way `base::pipe()` connections over an explicit `createR({ systemCommand })` policy,
+24. lazy one-way `base::pipe()` connections over an explicit `createR({ systemCommand })` policy,
     reusable by unchanged package line/raw/source/table/serialization reads and exact buffered text
     writes without granting an ambient browser shell.
-24. read-only `base::unz()` connections for exact stored or DEFLATE members in immutable package
+25. read-only `base::unz()` connections for exact stored or DEFLATE members in immutable package
     resources or session-owned ZIP files, reusable by the existing line/raw/source/table/
     serialization stack without extracting paths or granting host-filesystem access.
-25. persistent `base::sink()` output diversions, split tees, message routing, and `sink.number()`
+26. persistent `base::sink()` output diversions, split tees, message routing, and `sink.number()`
     inspection over the same bounded session files/connections. The unchanged package fixture and
     default Worker package both write and read a sink target without JavaScript shims.
-26. usage-ranked `base::write()` over those same bounded files/connections. The unchanged fixture
+27. usage-ranked `base::write()` over those same bounded files/connections. The unchanged fixture
     writes sass's measured `$color: "red";` source line, reads it back, exports the helper, and runs
     through the default Worker without a package-specific JavaScript implementation.
-27. usage-ranked `utils::available.packages()` over an application-approved repository index. The
+28. usage-ranked `utils::available.packages()` over an application-approved repository index. The
     unchanged fixture derives a source `contrib` URL, reads package names and versions from the GNU
     R-shaped matrix, and runs through inline and Worker APIs without a JavaScript package shim or
     ambient network authority.
-28. usage-ranked `base::socketConnection()` over an explicit `createR({ socket })` duplex lifecycle
+29. usage-ranked `base::socketConnection()` over an explicit `createR({ socket })` duplex lifecycle
     adapter. Unchanged package code can open, write, read, query completeness, change timeouts, and
     close ordinary socket connections in inline or Worker sessions; endpoint policy and the actual
     transport stay outside the package, and omission of the adapter fails closed.
-29. usage-ranked `base::file.copy()` over the owned virtual filesystem. Unchanged package code can
+30. usage-ranked `base::file.copy()` over the owned virtual filesystem. Unchanged package code can
     stage immutable text or binary resources into a writable tempfile, copy several files into an
     existing directory, and recursively reproduce session trees without a JavaScript package shim or
     host-filesystem access.
-30. usage-ranked `base::find.package()` over the owned package-library registry. Unchanged package
+31. usage-ranked `base::find.package()` over the owned package-library registry. Unchanged package
     code can resolve its installed root, enumerate bundled `DESCRIPTION`, `NAMESPACE`, R source,
     data, documentation, and resources, and respect explicit library selection without scanning a
     host R installation. The same helper executes inline and in the default Worker Playground.
-31. usage-ranked `base::l10n_info()` as a GNU R-shaped browser encoding-capability report. Unchanged
+32. usage-ranked `base::l10n_info()` as a GNU R-shaped browser encoding-capability report. Unchanged
     package code can select its UTF-8 path with `l10n_info()[["UTF-8"]]` inline or in the default
     Worker without inspecting browser preferences, host locales, or Windows codepages.
-32. usage-ranked `base::shQuote()` as a process-free string transformation. Unchanged package code
+33. usage-ranked `base::shQuote()` as a process-free string transformation. Unchanged package code
     can prepare Unix `sh`/`csh` or explicit Windows `cmd`/`cmd2` arguments, including custom
     `as.character` methods and missing values, inline or in the default Worker. This does not grant
     permission to execute the result.
@@ -262,10 +285,10 @@ normalized AST. The runtime then provides:
 Package source, metadata, resource counts, and encoded bytes are bounded before parsing. Package
 evaluation then consumes the ordinary step, call-depth, allocation, and output budgets.
 
-The current `example()` boundary is console-oriented. Interactive HTML help, prompting, exact GNU R
-source-reference/echo formatting, RNG save-and-restore through `setRNG`, and abort recovery remain
-incomplete. An example can still fail when its package code or the example itself reaches an
-unsupported R feature; that failure is useful executable evidence for the next shared runtime gap.
+The current `example()` boundary is console-oriented. Prompting, exact GNU R source-reference/echo
+formatting, RNG save-and-restore through `setRNG`, and abort recovery remain incomplete. An example
+can still fail when its package code or the example itself reaches an unsupported R feature; that
+failure is useful executable evidence for the next shared runtime gap.
 
 The current vignette boundary discovers and describes documentation already present in `inst/doc`.
 It does not run vignette builders, regenerate output, or implement installed lazy help databases.

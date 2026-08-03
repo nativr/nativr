@@ -863,6 +863,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      loading, actual namespace environments, attached-package `pos`/`envir`, lazy unused controls,
      strict non-inheritance, GNU R formals/errors, unchanged source-only private-function execution,
      inline/Worker compatibility, and differential evidence without a backports-specific adapter.
+181. Usage-ranked package documentation: rank-370 `utils::help` consumes the generic build-time help
+     manifest emitted for every source-package `man/*.Rd` page, discovers core callables and
+     source-package aliases, returns GNU R-shaped topic/package-index values, and presents text or
+     bounded script-free HTML through the existing Worker browse journal. Exact GNU Rd conversion,
+     `?`/`??` syntax/search, lazy installed help databases, and byte-identical output remain future
+     compatibility depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

@@ -9766,5 +9766,49 @@
     "expected": [true, true, true, true, true, true, true, true, true, true, true],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "help-usage-ranked-formals-core-topics-and-package-index",
+    "code": "f <- formals(utils::help)\nh <- help(mean)\nq <- help(\"?\", \"utils\")\nn <- help(NULL)\nm <- help(\"nativr_definitely_missing_topic\")\np <- help(package = base)\nc(typeof(utils::help), names(f), is.null(f$package), is.null(f$lib.loc), identical(f$verbose, quote(getOption(\"verbose\"))), identical(f$try.all.packages, quote(getOption(\"help.try.all.packages\"))), identical(f$help_type, quote(getOption(\"help_type\"))), inherits(h, \"help_files_with_topic\"), length(h), attr(h, \"topic\"), attr(h, \"tried_all_packages\"), attr(h, \"type\"), grepl(\"/base/help/mean\", h, fixed = TRUE), length(q), attr(q, \"topic\"), grepl(\"/utils/help/Question\", q, fixed = TRUE), length(n), attr(n, \"topic\"), length(m), attr(m, \"topic\"), inherits(p, \"packageInfo\"), identical(names(p), c(\"name\", \"path\", \"info\")), p$name, length(p$info))",
+    "expected": [
+      "closure",
+      "topic",
+      "package",
+      "lib.loc",
+      "verbose",
+      "try.all.packages",
+      "help_type",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "1",
+      "mean",
+      "FALSE",
+      "text",
+      "TRUE",
+      "1",
+      "?",
+      "TRUE",
+      "1",
+      "NULL",
+      "0",
+      "nativr_definitely_missing_topic",
+      "TRUE",
+      "TRUE",
+      "base",
+      "3"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "help-usage-ranked-laziness-types-and-argument-boundaries",
+    "code": "found <- help(mean, package = c(\"base\", \"stats\"), try.all.packages = stop(\"unused\"))\ntext <- help(mean, help_type = \"text\")\npkg <- \"base\"\nc(length(found), identical(attr(text, \"type\"), \"text\"), length(help(mean, package = character())), inherits(try(help(character()), silent = TRUE), \"try-error\"), inherits(try(help(c(\"mean\", \"sum\")), silent = TRUE), \"try-error\"), inherits(try(help(list()), silent = TRUE), \"try-error\"), inherits(try(help(mean, package = pkg), silent = TRUE), \"try-error\"), inherits(try(help(mean, package = NA_character_), silent = TRUE), \"try-error\"), inherits(try(help(mean, lib.loc = stop(\"forced lib\")), silent = TRUE), \"try-error\"), inherits(try(help(mean, verbose = stop(\"forced verbose\")), silent = TRUE), \"try-error\"), inherits(try(help(mean, help_type = \"invalid\"), silent = TRUE), \"try-error\"), inherits(try(help(mean, extra = 1), silent = TRUE), \"try-error\"))",
+    "expected": [1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

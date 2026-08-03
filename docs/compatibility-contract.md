@@ -2225,6 +2225,17 @@ the Worker Playground executes an extracted package example. Interactive HTML/pr
 Rd conversion/source references/echo formatting, `setRNG` preservation, `catch.aborts`, core-package
 help databases, and execution beyond the supported R surface remain incomplete.
 
+Usage-ranked `utils::help()` has GNU R 4.6 differential evidence for its seven exact formals and
+defaults, symbol/character/reserved-word topics, literal unquoted `package=` names, option-driven
+controls, argument laziness, package and library selection, missing-topic results, canonical topic
+paths, help types, `help_files_with_topic` attributes, and `packageInfo` shape. The build-time tool
+indexes every source-package `man/*.Rd` page, including pages with no examples, into deterministic
+topic/alias/title/common-section records. Runtime lookup covers registered core bindings and
+unchanged source-package aliases; text output uses the bounded console journal and requested HTML
+uses escaped script-free session content through the existing Worker browse journal. The portable
+renderer does not claim complete Rd macro expansion, `?`/`??` syntax/search, installed `.rdb`/`.rdx`
+help databases, exact GNU pagination, PDF output fidelity, or byte-identical text/HTML.
+
 Usage-ranked `utils::vignette()` has GNU R 4.6 differential evidence for its four formal names,
 empty `packageIQR` catalog, result matrix labels, missing-topic warning/value, and specific
 seven-field `vignette` object shape. The build-time package tool independently indexes retained

@@ -11,7 +11,7 @@ Date: 2026-08-03
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 666 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 669 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Character vectors own exact per-element bytes and canonical `unknown`/`latin1`/`UTF-8`/`bytes`
@@ -82,6 +82,12 @@ Date: 2026-08-03
   stay lazy, and lookup never inherits from imports or Base. GNU R differential cases plus an
   unchanged source-only package private-function call cover the general seam; namespace mutation,
   lazy-load databases, and the complete namespace-management API remain incomplete.
+- Usage-ranked `utils::help()` discovers core bindings and every indexed source-package `man/*.Rd`
+  topic or alias without loading a host help database. It preserves GNU R's measured symbol,
+  character, literal `package=`, laziness, result-class, and package-index shapes; text is the
+  non-interactive default and requested HTML crosses the existing bounded Worker browse journal as
+  script-free generated content. Exact GNU Rd conversion, `?`/`??` syntax/search, installed lazy
+  help databases, and byte-identical text/HTML/PDF output remain incomplete.
 - Usage-ranked `utils::packageVersion()` reads core or validated bundle versions without loading a
   namespace. Shared `numeric_version`, `package_version`, and `R_system_version` values preserve
   integer components, missing entries, printing/formatting, concatenation, and padded vectorized
@@ -857,10 +863,10 @@ Date: 2026-08-03
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 14 files and 467 tests, with three explicitly skipped tests.
+- Vitest currently passes 14 files and 468 tests, with three explicitly skipped tests.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 835/835 cases. The optional black-box R oracle passes all 794
+- Checked-in conformance passes 837/837 cases. The optional black-box R oracle passes all 796
   eligible cases and explicitly skips 41 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,

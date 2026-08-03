@@ -1052,6 +1052,17 @@ implementation resolves the generic isolated namespace map rather than a core-on
 backports adapter. This does not claim namespace mutation/locking, installed lazy-load databases,
 every namespace-management helper, or complete backports/package compatibility.
 
+The package-help increment raises current name overlap to 649 of 2,522. Rank 370 `utils::help`
+covers pkgload's 15 measured calls with GNU R 4.6 differential evidence for exact formals/defaults,
+symbol and character topics, reserved words, literal unquoted package names, control laziness,
+package/library selection, missing results, canonical paths, result attributes/classes, help types,
+and package-index shape. The package tool emits one generic manifest for every source-package
+`man/*.Rd` page, including pages with no examples; unchanged package aliases and registered core
+bindings use the same lookup. Default text writes through the bounded output journal, while explicit
+HTML uses escaped script-free content and the existing Worker browse event. This is portable
+documentation discovery and presentation, not complete Rd conversion, `?`/`??` search, installed
+lazy help databases, exact pagination/PDF, or byte-identical GNU pages.
+
 ## Completion evidence
 
 The objective is complete only when:

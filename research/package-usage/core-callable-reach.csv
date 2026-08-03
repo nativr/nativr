@@ -368,7 +368,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 367,lengths,true,1,evaluate,2,1.0,0.9
 368,getFromNamespace,true,1,backports,37,1.0,0.9
 369,URLdecode,true,1,backports,1,1.0,0.9
-370,help,false,1,pkgload,15,1.0,0.9
+370,help,true,1,pkgload,15,1.0,0.9
 371,as.environment,true,1,checkmate,1,1.0,0.8
 372,qbinom,true,1,openssl,1,1.0,0.7
 373,qnorm,true,1,openssl,1,1.0,0.7

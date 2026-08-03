@@ -33,7 +33,7 @@ importFrom(graphics, abline, axis, barplot, plot.new, plot.window, rect, title)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median, ts.plot)
 importFrom(utils, download.file, getFromNamespace, packageDescription, packageName, packageVersion)
-  export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, annotated_plot, reference_lines, control_display_list, ask_new_pages, find_tools, create_file, copy_resource, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, socket_exchange, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, package_files, installed_version, namespace_names, private_call, process_id, library_paths, loaded_module_paths, native_encoding, shell_quote, standard_output, sink_lines, write_sass_variable, browse_guides)
+  export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, annotated_plot, reference_lines, control_display_list, ask_new_pages, find_tools, create_file, copy_resource, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, socket_exchange, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, package_files, installed_version, namespace_names, private_call, process_id, library_paths, loaded_module_paths, native_encoding, shell_quote, standard_output, sink_lines, write_sass_variable, browse_guides, browse_help)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -225,11 +225,16 @@ write_sass_variable <- function() {
   readLines(path)
 }
 browse_guides <- function() print(utils::browseVignettes(package = "nativrfixture"))
+browse_help <- function(topic = "square") print(utils::help(topic, package = "nativrfixture", help_type = "html"))
 hidden_helper <- function(x) x + 100
 `,
     },
   ],
   resources: [
+    {
+      path: ".nativr/help-v1.json",
+      data: "eyJmb3JtYXQiOiJuYXRpdnItcGFja2FnZS1oZWxwIiwiZm9ybWF0VmVyc2lvbiI6MSwidG9waWNzIjpbeyJuYW1lIjoic3F1YXJlIiwidGl0bGUiOiJTcXVhcmUgYSB2YWx1ZSIsImFsaWFzZXMiOlsic3F1YXJlIiwic3F1YXJlLWFsaWFzIl0sInNlY3Rpb25zIjpbeyJuYW1lIjoiZGVzY3JpcHRpb24iLCJ0aXRsZSI6IkRlc2NyaXB0aW9uIiwidGV4dCI6IlNxdWFyZXMgYSBudW1lcmljIHZhbHVlIGluIHRoZSB1bmNoYW5nZWQgc291cmNlLW9ubHkgZml4dHVyZSBwYWNrYWdlLiIsImNvZGUiOmZhbHNlfSx7Im5hbWUiOiJ1c2FnZSIsInRpdGxlIjoiVXNhZ2UiLCJ0ZXh0Ijoic3F1YXJlKHgpIiwiY29kZSI6dHJ1ZX1dfV19",
+    },
     { path: "extdata/config.json", data: "eyJzY2FsZSI6Mn0K" },
     { path: "extdata/line-endings.txt", data: "YQ0KYg1jCg==" },
     { path: "extdata/nul.txt", data: "YQBiCg==" },
@@ -4656,6 +4661,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "ask_value",
       "axis_ticks",
       "browse_guides",
+      "browse_help",
       "centered",
       "class_summary",
       "classic_palettes",
@@ -13205,7 +13211,7 @@ NeedsCompilation: no
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.268.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.269.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -18778,6 +18784,45 @@ NeedsCompilation: no
       limited.eval('print(utils::browseVignettes(package = "nativrfixture"))'),
     ).rejects.toMatchObject({ code: "NRL4007" });
     await limited.dispose();
+  });
+
+  it("discovers and renders source-package Rd help through the Worker-safe host journal", async () => {
+    const runtime = await createR({ execution: "inline", assets, packages: [pureRFixture] });
+    await expect(
+      runtime.eval(`
+        topic <- "square-alias"
+        h <- utils::help(topic, package = nativrfixture)
+        c(
+          inherits(h, "help_files_with_topic"), length(h), attr(h, "topic"),
+          attr(h, "tried_all_packages"), attr(h, "type"),
+          grepl("/nativrfixture/help/square", h, fixed = TRUE)
+        )
+      `),
+    ).resolves.toEqual(["TRUE", "1", "square-alias", "FALSE", "text", "TRUE"]);
+    const browsed = await runtime.evalDetailed("nativrfixture::browse_help('square-alias')");
+    expect(browsed.visible).toBe(false);
+    expect(browsed.browseRequests).toHaveLength(1);
+    const request = browsed.browseRequests[0];
+    expect(request).toMatchObject({ kind: "file", mimeType: "text/html;charset=utf-8" });
+    if (request?.kind === "file") {
+      const html = new TextDecoder().decode(request.bytes);
+      expect(html).toContain("Square a value");
+      expect(html).toContain("unchanged source-only fixture package");
+      expect(html).toContain("square(x)");
+      expect(html).not.toContain("<script");
+    }
+    const missing = await runtime.evalDetailed(
+      'print(utils::help("nativr-missing-topic", package = "nativrfixture"))',
+    );
+    expect(missing.visible).toBe(false);
+    expect(missing.browseRequests).toEqual([]);
+    expect(missing.output).toEqual([
+      {
+        stream: "stdout",
+        text: "No documentation for 'nativr-missing-topic' in specified packages and libraries:\nyou could try '??nativr-missing-topic'\n",
+      },
+    ]);
+    await runtime.dispose();
   });
 
   it("extracts usage-ranked browser regex match objects and inverse gaps", async () => {

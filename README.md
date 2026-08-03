@@ -94,7 +94,8 @@ queries, bounded `readLines()`, standard stdout/stderr connections, read-only `f
 stored/DEFLATE ZIP-member resources through read-only `unz()` connections, input `textConnection()`
 plus `source()` into selected environments, package `data/*.R`/text/`.rda` loading through `data()`,
 and `R/sysdata.rda` namespace initialization, installed vignette discovery through `vignette()`,
-plus exports, `pkg::name`, `pkg:::name`, S3 registrations, `.onLoad()`, `.onAttach()`, `library()`,
+build-time `man/*.Rd` help indexing through `help()`, CSP-safe text/HTML help presentation, plus
+exports, `pkg::name`, `pkg:::name`, S3 registrations, `.onLoad()`, `.onAttach()`, `library()`,
 `require()`, `requireNamespace()`, and exact private-binding retrieval through
 `utils::getFromNamespace()` in inline and Worker execution. Private lookup uses the package's real
 isolated namespace and never falls through to imports or Base R. Arbitrary pure-R source packages
@@ -227,7 +228,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 666 registered functions, including resettable
+an initial condition/handler slice. It exposes 669 registered functions, including resettable
 session options, isolated session environment variables, deterministic non-interactive host-mode
 detection, browser-owned `gc()` memory censuses, an S3-first `graphics::lines()` path over the
 existing Worker/Canvas journal, usage-ranked numeric and character time-interval construction
@@ -768,6 +769,13 @@ formals, and bounded errors share one runtime path. The source-only fixture impo
 invokes an unexported package function unchanged, so this closes the measured private-implementation
 seam without a backports adapter or a core-only facade. It does not claim that all other backports
 dependencies or every pure-R package are already compatible.
+
+Rank 370 `utils::help()` now covers pkgload's 15 measured calls through one package-independent
+documentation path. The packager indexes every `man/*.Rd` topic, including pages without examples;
+the runtime returns GNU R-shaped topic and package-index objects, prints portable text by default,
+and can emit bounded, script-free HTML through the existing Worker browse journal. Core callable
+discovery and unchanged source-package topics use the same API. Exact GNU Rd conversion, `??`
+search, installed lazy help databases, and byte-identical GNU help pages remain compatibility work.
 
 Rank 330 `base::sink()` now covers utf8's two measured output-redirection calls and the broader GNU
 R stack semantics they rely on. Output diversions persist across `r.eval()` calls and errors, nest

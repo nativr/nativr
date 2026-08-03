@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 666,
-    "overlappingNames": 647,
-    "missingReferenceNames": 1875,
-    "nativrExtensionNames": 19,
-    "nameCoverage": 0.256542
+    "nativrRegisteredNames": 669,
+    "overlappingNames": 649,
+    "missingReferenceNames": 1873,
+    "nativrExtensionNames": 20,
+    "nameCoverage": 0.257335
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 466, "nameCoverage": 0.340892 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 467, "nameCoverage": 0.341624 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 76, "nameCoverage": 0.163793 },
     {
       "package": "methods",
@@ -19,7 +19,7 @@
       "overlappingNames": 10,
       "nameCoverage": 0.047847
     },
-    { "package": "utils", "callableNames": 262, "overlappingNames": 34, "nameCoverage": 0.129771 },
+    { "package": "utils", "callableNames": 262, "overlappingNames": 35, "nameCoverage": 0.133588 },
     {
       "package": "grDevices",
       "callableNames": 135,
@@ -324,6 +324,7 @@
     "hcl",
     "head",
     "heat.colors",
+    "help",
     "hist",
     "hist.default",
     "identical",
@@ -481,6 +482,7 @@
     "predict",
     "print",
     "print.hexmode",
+    "print.packageInfo",
     "proc.time",
     "prop.table",
     "pt",
@@ -1643,7 +1645,6 @@
     "hclust",
     "head.matrix",
     "heatmap",
-    "help",
     "help.request",
     "help.search",
     "help.start",
@@ -2046,7 +2047,6 @@
     "print.noquote",
     "print.numeric_version",
     "print.octmode",
-    "print.packageInfo",
     "print.proc_time",
     "print.restart",
     "print.rle",
@@ -2573,6 +2573,7 @@
     "new_vctr",
     "plot.histogram",
     "print.browseVignettes",
+    "print.help_files_with_topic",
     "print.object_size",
     "tibble",
     "tribble",

@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.268.0",
+  "languageSubsetVersion": "0.269.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -730,6 +730,9 @@
         { "name": "write.csv", "compatibility": "behavioral" },
         { "name": "write.csv2", "compatibility": "behavioral" },
         { "name": "demo", "compatibility": "shape" },
+        { "name": "help", "compatibility": "behavioral" },
+        { "name": "print.help_files_with_topic", "compatibility": "behavioral" },
+        { "name": "print.packageInfo", "compatibility": "shape" },
         { "name": "example", "compatibility": "behavioral" },
         { "name": "vignette", "compatibility": "behavioral" },
         { "name": "browseVignettes", "compatibility": "shape" },

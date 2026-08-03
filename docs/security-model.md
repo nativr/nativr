@@ -89,6 +89,11 @@ R source into the normalized AST and evaluates it under ordinary runtime limits.
 R libraries, open help databases, fetch documentation, or make skipped `\\dontrun`/`\\donttest` code
 executable unless the caller explicitly opts in.
 
+`utils::help()` reads only the separate deterministic help manifest generated from admitted
+`man/*.Rd` files. Runtime rendering escapes package text, emits no script, and can request display
+only through the existing bounded session-file browse journal. It cannot parse new Rd input, scan
+host libraries, open GNU help databases, fetch documentation, or navigate a browser by itself.
+
 Graphics use typed, device-independent records rather than exposing a DOM or Canvas object to R
 code. Raster RGBA bytes share the evaluation output budget and are transferred out of the Worker;
 legend labels remain inert strings rather than HTML, segment and legend payloads share the same

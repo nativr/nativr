@@ -104,6 +104,16 @@ describe("pure-R package packager", () => {
         "",
       ].join("\n"),
     );
+    await writeFile(
+      path.join(packageRoot, "man", "demopkg-package.Rd"),
+      [
+        "\\name{demopkg-package}",
+        "\\alias{demopkg}",
+        "\\title{Demo package overview}",
+        "\\description{Documentation without an examples section must still be searchable.}",
+        "",
+      ].join("\n"),
+    );
 
     const artifact = await packPackage(packageRoot);
     const manifestResource = artifact.bundle.resources.find(
@@ -116,18 +126,53 @@ describe("pure-R package packager", () => {
     expect(manifest).toMatchObject({
       format: "nativr-package-examples",
       formatVersion: 1,
-      topics: [
-        {
+    });
+    expect(manifest.topics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
           name: "square",
           title: "Square a value",
           aliases: ["square", "square-alias"],
-        },
-      ],
-    });
+        }),
+      ]),
+    );
     expect(manifest.topics[0]?.blocks).toEqual(
       expect.arrayContaining([
         { kind: "donttest", source: "slow <- tested + 1" },
         { kind: "dontrun", source: "never <- 999" },
+      ]),
+    );
+    const helpResource = artifact.bundle.resources.find(
+      (resource) => resource.path === ".nativr/help-v1.json",
+    );
+    expect(helpResource).toBeDefined();
+    const helpManifest = JSON.parse(
+      Buffer.from(helpResource?.data ?? "", "base64").toString("utf8"),
+    ) as { topics: { aliases: string[]; sections: { name: string; text: string }[] }[] };
+    expect(helpManifest).toMatchObject({
+      format: "nativr-package-help",
+      formatVersion: 1,
+    });
+    const squareHelp = helpManifest.topics.find((topic) => topic.aliases.includes("square"));
+    expect(squareHelp).toMatchObject({
+      title: "Square a value",
+      aliases: ["square", "square-alias"],
+    });
+    expect(squareHelp?.sections).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: "description",
+          text: "An independently authored example fixture.",
+        }),
+        expect.objectContaining({ name: "examples" }),
+      ]),
+    );
+    expect(helpManifest.topics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: "demopkg-package",
+          aliases: ["demopkg-package", "demopkg"],
+        }),
       ]),
     );
 
@@ -147,6 +192,34 @@ describe("pure-R package packager", () => {
         9, 10, 11, 21,
       ]);
       await expect(runtime.eval("exists('slow') || exists('never')")).resolves.toBe(false);
+      await expect(
+        runtime.eval(`
+          h <- utils::help("square-alias", package = "demopkg")
+          c(
+            class(h), length(h), attr(h, "topic"), attr(h, "type"),
+            grepl("nativr://package/demopkg/help/square", h, fixed = TRUE)
+          )
+        `),
+      ).resolves.toEqual(["help_files_with_topic", "1", "square-alias", "text", "TRUE"]);
+      await expect(
+        runtime.eval(`
+          info <- utils::help(package = demopkg)
+          c(class(info), info$name, info$path, length(info$info[[2]]))
+        `),
+      ).resolves.toEqual(["packageInfo", "demopkg", "nativr://package/demopkg", "2"]);
+      const browsed = await runtime.evalDetailed(
+        'print(utils::help("demopkg", package = "demopkg", help_type = "html"))',
+      );
+      expect(browsed.visible).toBe(false);
+      expect(browsed.browseRequests).toHaveLength(1);
+      const request = browsed.browseRequests[0];
+      expect(request).toMatchObject({ kind: "file", mimeType: "text/html;charset=utf-8" });
+      if (request?.kind === "file") {
+        const html = new TextDecoder().decode(request.bytes);
+        expect(html).toContain("Demo package overview");
+        expect(html).toContain("Documentation without an examples section");
+        expect(html).not.toContain("<script");
+      }
       await expect(
         runtime.eval(
           "utils::example(square, package = 'demopkg', echo = FALSE, run.dontrun = TRUE, run.donttest = TRUE)",
@@ -297,7 +370,7 @@ describe("pure-R package packager", () => {
   });
 
   it("reserves generated package documentation manifest paths", async () => {
-    for (const name of ["examples-v1.json", "vignettes-v1.json"]) {
+    for (const name of ["examples-v1.json", "help-v1.json", "vignettes-v1.json"]) {
       const packageRoot = await fixturePackage();
       const metadataRoot = path.join(packageRoot, "inst", ".nativr");
       await mkdir(metadataRoot, { recursive: true });
