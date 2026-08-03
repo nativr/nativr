@@ -238,6 +238,13 @@ storage, append, closed/open connections, visibility, errors, and bounds are cov
 unchanged helper executes from a source-only package in the default Worker; host files and native
 encoding/newline identity remain explicit boundaries.
 
+The rank-340 increment adds GNU R 4.6 differential evidence for curl's measured
+`utils::available.packages(repos = mirror)` database path and adjacent `contrib.url`. Exact formals,
+source/binary contribution paths, standard matrix fields, extra/missing fields, DCF continuation,
+R-version/OS/subarchitecture/duplicate and custom filters, session caching, headers, empty results,
+errors, and bounds are covered. Repository bytes cross only the explicit URL seam; the unchanged
+source-package helper executes in the Worker without granting ambient network or filesystem access.
+
 The rank-437 increment adds GNU R differential evidence for the empty `utils::demo()` package
 catalog's `packageIQR` structure and an explicit browser boundary for external package demo scripts.
 NativR does not inspect an installed R library or claim execution of httpuv's `echo` demo. That path

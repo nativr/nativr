@@ -217,6 +217,10 @@ normalized AST. The runtime then provides:
 26. usage-ranked `base::write()` over those same bounded files/connections. The unchanged fixture
     writes sass's measured `$color: "red";` source line, reads it back, exports the helper, and runs
     through the default Worker without a package-specific JavaScript implementation.
+27. usage-ranked `utils::available.packages()` over an application-approved repository index. The
+    unchanged fixture derives a source `contrib` URL, reads package names and versions from the GNU
+    R-shaped matrix, and runs through inline and Worker APIs without a JavaScript package shim or
+    ambient network authority.
 
 Package source, metadata, resource counts, and encoded bytes are bounded before parsing. Package
 evaluation then consumes the ordinary step, call-depth, allocation, and output budgets.

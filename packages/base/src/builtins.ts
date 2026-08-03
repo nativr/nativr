@@ -1244,6 +1244,39 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
       { name: "..." },
     ],
   ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "utils",
+      "contrib.url",
+      ["repos", "type"],
+      "behavioral",
+      builtinContribUrl,
+    ),
+    [{ name: "repos" }, { name: "type", defaultValue: getOptionDefaultAst("pkgType") }],
+  ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "utils",
+      "available.packages",
+      [
+        "contriburl",
+        "method",
+        "fields",
+        "type",
+        "filters",
+        "repos",
+        "ignore_repo_cache",
+        "max_repo_cache_age",
+        "cache_user_dir",
+        "quiet",
+        "verbose",
+        "...",
+      ],
+      "behavioral",
+      builtinAvailablePackages,
+    ),
+    availablePackagesFormals(),
+  ),
   definePackageBuiltin("utils", "URLdecode", ["URL"], "behavioral", builtinUrlDecode),
   definePackageBuiltin(
     "utils",
@@ -3363,6 +3396,44 @@ const PROCESS_TIME_STATE_KEY = "base.processTime";
 const HOOKS_STATE_KEY = "base.hooks";
 const VIRTUAL_TEXT_FILES_STATE_KEY = "base.virtualTextFiles";
 const PACKAGE_DATA_DIRECTORY_STATE_KEY = "utils.packageDataDirectory";
+const AVAILABLE_PACKAGES_CACHE_STATE_KEY = "utils.availablePackages.cache";
+
+const AVAILABLE_PACKAGE_FIELDS = Object.freeze([
+  "Package",
+  "Version",
+  "Priority",
+  "Depends",
+  "Imports",
+  "LinkingTo",
+  "Suggests",
+  "Enhances",
+  "License",
+  "License_is_FOSS",
+  "License_restricts_use",
+  "OS_type",
+  "Archs",
+  "MD5sum",
+  "NeedsCompilation",
+  "File",
+  "Published",
+]);
+
+const DEFAULT_AVAILABLE_PACKAGE_FILTERS = Object.freeze([
+  "R_version",
+  "OS_type",
+  "subarch",
+  "duplicates",
+]);
+
+interface AvailablePackageRecord {
+  readonly fields: ReadonlyMap<string, string>;
+  readonly repository: string;
+}
+
+interface AvailablePackagesCacheEntry {
+  readonly storedAtMilliseconds: number;
+  readonly records: readonly AvailablePackageRecord[];
+}
 const VIRTUAL_TEMP_ROOT = "nativr://session-temp";
 const VIRTUAL_RUNTIME_ROOT = "nativr://runtime";
 const VIRTUAL_RUNTIME_COMPONENTS = Object.freeze([
@@ -3716,6 +3787,68 @@ function getOptionDefaultAst(name: string, fallback?: AstNode): AstNode {
     ],
     span: SYNTHETIC_SPAN,
   };
+}
+
+function availablePackagesFormals(): readonly {
+  readonly name: string;
+  readonly defaultValue?: AstNode;
+}[] {
+  return [
+    {
+      name: "contriburl",
+      defaultValue: callAst("contrib.url", [
+        {
+          value: { kind: "Identifier", name: "repos", span: SYNTHETIC_SPAN },
+          span: SYNTHETIC_SPAN,
+        },
+        {
+          value: { kind: "Identifier", name: "type", span: SYNTHETIC_SPAN },
+          span: SYNTHETIC_SPAN,
+        },
+      ]),
+    },
+    { name: "method" },
+    { name: "fields", defaultValue: getOptionDefaultAst("available_packages_fields") },
+    { name: "type", defaultValue: getOptionDefaultAst("pkgType") },
+    { name: "filters", defaultValue: nullAst() },
+    { name: "repos", defaultValue: getOptionDefaultAst("repos") },
+    {
+      name: "ignore_repo_cache",
+      defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+    },
+    { name: "max_repo_cache_age" },
+    {
+      name: "cache_user_dir",
+      defaultValue: callAst("str2logical", [
+        {
+          value: callAst("Sys.getenv", [
+            {
+              value: {
+                kind: "StringLiteral",
+                value: "R_PACKAGES_CACHE_USER_DIR",
+                span: SYNTHETIC_SPAN,
+              },
+              span: SYNTHETIC_SPAN,
+            },
+            {
+              value: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+              span: SYNTHETIC_SPAN,
+            },
+          ]),
+          span: SYNTHETIC_SPAN,
+        },
+      ]),
+    },
+    {
+      name: "quiet",
+      defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+    },
+    {
+      name: "verbose",
+      defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+    },
+    { name: "..." },
+  ];
 }
 
 function withUnsupportedBehavior(
@@ -6921,6 +7054,667 @@ async function builtinDownloadFile(invocation: BuiltinInvocation): Promise<RInte
   return requestUrls.length === 1
     ? status
     : withAttribute(status, "retvals", integerVector(requestUrls.map(() => 0)));
+}
+
+async function builtinContribUrl(invocation: BuiltinInvocation): Promise<RCharacterVector> {
+  const matched = matchLazyArguments(invocation, ["repos", "type"]);
+  const repositoryArgument = matched.get("repos");
+  if (repositoryArgument === undefined || repositoryArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'repos' is missing in contrib.url().");
+  }
+  const repositories = await invocation.force(repositoryArgument.promise);
+  if (repositories.type !== "character") {
+    throw new RTypeMismatchError("NRT3414", "invalid 'repos' argument");
+  }
+  const typeArgument = matched.get("type");
+  const type = characterScalar(
+    typeArgument === undefined || typeArgument.promise.missing
+      ? (optionsState(invocation).get("pkgType") ?? characterVector(["source"]))
+      : await invocation.force(typeArgument.promise),
+    "type",
+  );
+  const normalizedType = type === "both" ? "source" : type === "binary" ? "source" : type;
+  const suffix =
+    normalizedType === "source"
+      ? "src/contrib"
+      : normalizedType === "win.binary"
+        ? "bin/windows/contrib/4.6"
+        : normalizedType === "mac.binary"
+          ? "bin/macosx/contrib/4.6"
+          : normalizedType === "mac.binary.big-sur-x86_64"
+            ? "bin/macosx/big-sur-x86_64/contrib/4.6"
+            : normalizedType === "mac.binary.big-sur-arm64"
+              ? "bin/macosx/big-sur-arm64/contrib/4.6"
+              : undefined;
+  if (suffix === undefined) {
+    throw new RTypeMismatchError("NRT3414", `invalid package type '${type}'`);
+  }
+  invocation.context.allocate(repositories.length);
+  return characterVector(
+    Array.from({ length: repositories.length }, (_, index) => {
+      invocation.context.checkpoint();
+      const repository = isMissing(repositories, index) ? "NA" : (repositories.values[index] ?? "");
+      return `${repository.replace(/\/+$/u, "")}/${suffix}`;
+    }),
+  );
+}
+
+type AvailablePackageFilter = string | RValue;
+
+async function builtinAvailablePackages(invocation: BuiltinInvocation): Promise<RCharacterVector> {
+  const parameterNames = [
+    "contriburl",
+    "method",
+    "fields",
+    "type",
+    "filters",
+    "repos",
+    "ignore_repo_cache",
+    "max_repo_cache_age",
+    "cache_user_dir",
+    "quiet",
+    "verbose",
+  ] as const;
+  const lazy = matchLazyArgumentsWithDots(invocation, parameterNames);
+  const force = async (name: (typeof parameterNames)[number]): Promise<RValue | undefined> => {
+    const argument = lazy.matched.get(name);
+    return argument === undefined || argument.promise.missing
+      ? undefined
+      : invocation.force(argument.promise);
+  };
+
+  const type = characterScalar(
+    (await force("type")) ?? optionsState(invocation).get("pkgType") ?? characterVector(["source"]),
+    "type",
+  );
+  const normalizedType = type === "both" ? "source" : type === "binary" ? "source" : type;
+  if (
+    ![
+      "source",
+      "win.binary",
+      "mac.binary",
+      "mac.binary.big-sur-x86_64",
+      "mac.binary.big-sur-arm64",
+    ].includes(normalizedType)
+  ) {
+    throw new RTypeMismatchError("NRT3415", `invalid package type '${type}'`);
+  }
+  const repositories =
+    (await force("repos")) ?? optionsState(invocation).get("repos") ?? characterVector(["@CRAN@"]);
+  const contributed = await force("contriburl");
+  const contribUrls =
+    contributed ?? availablePackageContribUrls(repositories, normalizedType, invocation);
+  if (contribUrls.type !== "character") {
+    throw new RTypeMismatchError("NRT3415", "invalid 'contriburl' argument");
+  }
+  if (contribUrls.missing !== undefined) {
+    throw new RTypeMismatchError("NRT3415", "'contriburl' must not contain NA");
+  }
+  const method = availablePackagesMethod(await force("method"));
+  coercibleLogicalFlag(await force("quiet"), true, "quiet");
+  const verbose = coercibleLogicalFlag(await force("verbose"), false, "verbose");
+  const ignoreCache = coercibleLogicalFlag(
+    await force("ignore_repo_cache"),
+    false,
+    "ignore_repo_cache",
+  );
+  const maxCacheAgeSeconds = availablePackagesCacheAge(await force("max_repo_cache_age"));
+  const fieldValue =
+    (await force("fields")) ?? optionsState(invocation).get("available_packages_fields");
+  const filterValue = await force("filters");
+  const configuredFilters =
+    filterValue?.type === "null"
+      ? (optionsState(invocation).get("available_packages_filters") ?? R_NULL)
+      : (filterValue ?? R_NULL);
+  const cranRepositories = availablePackagesCranRepositories(repositories, normalizedType);
+  const headers = await availablePackagesHeaders(invocation, lazy.dots);
+  const records: AvailablePackageRecord[] = [];
+  for (let index = 0; index < contribUrls.length; index += 1) {
+    invocation.context.checkpoint();
+    const repository = contribUrls.values[index] ?? "";
+    const repositoryRecords = await availablePackagesRepositoryRecords(
+      invocation,
+      repository,
+      method,
+      headers,
+      ignoreCache,
+      maxCacheAgeSeconds,
+    );
+    records.push(...repositoryRecords);
+    if (verbose) {
+      invocation.context.writeOutput({
+        stream: "stdout",
+        text: `${repository}: ${repositoryRecords.length} package${repositoryRecords.length === 1 ? "" : "s"}\n`,
+      });
+    }
+  }
+
+  const extraFields = availablePackagesFields(fieldValue, records.length === 0);
+  let matrix = availablePackagesMatrix(invocation, records, extraFields, records.length > 0);
+  if (records.length === 0) return matrix;
+  const filters = availablePackagesFilters(configuredFilters);
+  for (const filter of filters) {
+    matrix = await applyAvailablePackageFilter(
+      invocation,
+      matrix,
+      filter,
+      normalizedType,
+      cranRepositories,
+    );
+  }
+  return matrix;
+}
+
+function availablePackagesMethod(value: RValue | undefined): RUrlRequest["method"] {
+  if (value === undefined) return "default";
+  const method = characterScalar(value, "method");
+  const normalized = method === "auto" ? "default" : method;
+  if (
+    !(["default", "internal", "libcurl", "wininet"] as const).includes(
+      normalized as RUrlRequest["method"],
+    )
+  ) {
+    throw new RUnsupportedFeatureError(
+      "NRU6197",
+      `available.packages() method '${method}' is unavailable in the browser runtime.`,
+    );
+  }
+  return normalized as RUrlRequest["method"];
+}
+
+function availablePackagesCacheAge(value: RValue | undefined): number {
+  if (value === undefined) return 3600;
+  if (
+    !isAtomic(value) ||
+    value.type === "character" ||
+    value.type === "complex" ||
+    value.length === 0
+  ) {
+    throw new RTypeMismatchError("NRT3415", "invalid 'max_repo_cache_age' argument");
+  }
+  const age = value.values[0] ?? Number.NaN;
+  if (isMissing(value, 0) || Number.isNaN(age) || age < 0) {
+    throw new RTypeMismatchError("NRT3415", "invalid 'max_repo_cache_age' argument");
+  }
+  return age;
+}
+
+function availablePackagesFields(
+  value: RValue | undefined,
+  allowMissingOrEmpty: boolean,
+): readonly (string | undefined)[] {
+  if (value === undefined || value.type === "null") return [];
+  if (value.type !== "character") {
+    throw new RTypeMismatchError("NRT3415", "invalid 'fields' argument");
+  }
+  const output: (string | undefined)[] = [];
+  for (let index = 0; index < value.length; index += 1) {
+    if (isMissing(value, index)) {
+      if (!allowMissingOrEmpty) {
+        throw new RTypeMismatchError("NRT3415", "invalid 'fields' argument");
+      }
+      if (output.includes(undefined)) continue;
+      output.push(undefined);
+      continue;
+    }
+    const field = value.values[index] ?? "";
+    if (field.length === 0 || /[\0\r\n:]/u.test(field)) {
+      if (!allowMissingOrEmpty || /[\0\r\n:]/u.test(field)) {
+        throw new RTypeMismatchError("NRT3415", "invalid 'fields' argument");
+      }
+    }
+    if (
+      !AVAILABLE_PACKAGE_FIELDS.includes(field) &&
+      field !== "Built" &&
+      field !== "Repository" &&
+      !output.includes(field)
+    ) {
+      output.push(field);
+    }
+  }
+  return output;
+}
+
+function availablePackagesFilters(value: RValue): readonly AvailablePackageFilter[] {
+  if (value.type === "null") return DEFAULT_AVAILABLE_PACKAGE_FILTERS;
+  if (value.type === "character") {
+    if (value.missing !== undefined)
+      throw new RTypeMismatchError("NRT3415", "invalid 'filters' argument");
+    return Object.freeze([...value.values]);
+  }
+  if (value.type !== "list") {
+    throw new RTypeMismatchError("NRT3415", "invalid 'filters' argument");
+  }
+  const names = vectorNames(value);
+  let addDefaults = false;
+  const filters: AvailablePackageFilter[] = [];
+  for (let index = 0; index < value.length; index += 1) {
+    const entry = value.values[index] ?? R_NULL;
+    if ((names?.[index] ?? "") === "add") {
+      addDefaults = coercibleLogicalFlag(entry, false, "add");
+      continue;
+    }
+    if (entry.type === "character") {
+      if (entry.missing !== undefined) {
+        throw new RTypeMismatchError("NRT3415", "invalid 'filters' argument");
+      }
+      filters.push(...entry.values);
+      continue;
+    }
+    if (entry.type === "closure" || entry.type === "builtin") {
+      filters.push(entry);
+      continue;
+    }
+    throw new RTypeMismatchError("NRT3415", "invalid 'filters' argument");
+  }
+  return Object.freeze(addDefaults ? [...DEFAULT_AVAILABLE_PACKAGE_FILTERS, ...filters] : filters);
+}
+
+function availablePackagesCranRepositories(
+  value: RValue | undefined,
+  type: string,
+): ReadonlySet<string> {
+  if (value?.type !== "character") return new Set();
+  const names = vectorNames(value);
+  if (names === undefined) return new Set();
+  const suffix = type === "source" ? "src/contrib" : availablePackageBinarySuffix(type);
+  return new Set(
+    value.values.flatMap((repository, index) =>
+      (names[index] ?? "") === "CRAN" ? [`${repository.replace(/\/+$/u, "")}/${suffix}`] : [],
+    ),
+  );
+}
+
+function availablePackageContribUrls(
+  repositories: RValue,
+  type: string,
+  invocation: BuiltinInvocation,
+): RCharacterVector {
+  if (repositories.type !== "character" || repositories.missing !== undefined) {
+    throw new RTypeMismatchError("NRT3415", "invalid 'repos' argument");
+  }
+  const suffix = type === "source" ? "src/contrib" : availablePackageBinarySuffix(type);
+  invocation.context.allocate(repositories.length);
+  return characterVector(
+    repositories.values.map((repository) => `${repository.replace(/\/+$/u, "")}/${suffix}`),
+  );
+}
+
+function availablePackageBinarySuffix(type: string): string {
+  switch (type) {
+    case "win.binary":
+      return "bin/windows/contrib/4.6";
+    case "mac.binary":
+      return "bin/macosx/contrib/4.6";
+    case "mac.binary.big-sur-x86_64":
+      return "bin/macosx/big-sur-x86_64/contrib/4.6";
+    case "mac.binary.big-sur-arm64":
+      return "bin/macosx/big-sur-arm64/contrib/4.6";
+    default:
+      return "src/contrib";
+  }
+}
+
+async function availablePackagesHeaders(
+  invocation: BuiltinInvocation,
+  dots: readonly BuiltinCallArgument[],
+): Promise<RUrlRequest["headers"]> {
+  const headers = dots.filter((argument) => argument.name === "headers");
+  if (headers.length > 1) throw new RTypeMismatchError("NRT3415", "duplicate 'headers' argument");
+  return headers[0] === undefined
+    ? []
+    : urlRequestHeaders(await invocation.force(headers[0].promise));
+}
+
+async function availablePackagesRepositoryRecords(
+  invocation: BuiltinInvocation,
+  repository: string,
+  method: RUrlRequest["method"],
+  headers: RUrlRequest["headers"],
+  ignoreCache: boolean,
+  maxCacheAgeSeconds: number,
+): Promise<readonly AvailablePackageRecord[]> {
+  const cache = stateMap<string, AvailablePackagesCacheEntry>(
+    invocation,
+    AVAILABLE_PACKAGES_CACHE_STATE_KEY,
+  );
+  const cacheKey = `${method}\0${repository}\0${headers.map(({ name, value }) => `${name}:${value}`).join("\0")}`;
+  const now = Date.now();
+  const cached = cache.get(cacheKey);
+  if (
+    !ignoreCache &&
+    cached !== undefined &&
+    now - cached.storedAtMilliseconds <= maxCacheAgeSeconds * 1000
+  ) {
+    return cached.records;
+  }
+  const indexUrl = `${repository.replace(/\/+$/u, "")}/PACKAGES`;
+  let body: Uint8Array;
+  try {
+    body = (await invocation.urlRequest({ url: indexUrl, method, headers })).body;
+  } catch (error) {
+    if (error instanceof RUnsupportedFeatureError || error instanceof RResourceLimitError)
+      throw error;
+    invocation.context.warn({
+      code: "NRW1122",
+      message: `unable to access index for repository ${repository}`,
+    });
+    return [];
+  }
+  if (body.byteLength > invocation.context.limits.maxOutputBytes) {
+    throw new RResourceLimitError("NRL4007", "Repository index exceeds runtime limits.", {
+      details: {
+        outputBytes: body.byteLength,
+        maxOutputBytes: invocation.context.limits.maxOutputBytes,
+      },
+    });
+  }
+  const decoded =
+    body[0] === 0x1f && body[1] === 0x8b
+      ? await decompressGzipBytes(body, invocation.context)
+      : body;
+  let text: string;
+  try {
+    const Decoder = (
+      globalThis as unknown as {
+        readonly TextDecoder: new (
+          label: string,
+          options: { readonly fatal: boolean },
+        ) => { readonly decode: (input: Uint8Array) => string };
+      }
+    ).TextDecoder;
+    text = new Decoder("utf-8", { fatal: true }).decode(decoded);
+  } catch {
+    throw new REvaluationError("NRE2245", `repository index '${indexUrl}' is not valid UTF-8`);
+  }
+  if (text.includes("\0")) {
+    throw new REvaluationError("NRE2245", `repository index '${indexUrl}' contains NUL bytes`);
+  }
+  const records = parseAvailablePackageRecords(invocation, text, repository);
+  cache.set(cacheKey, Object.freeze({ storedAtMilliseconds: now, records }));
+  return records;
+}
+
+function parseAvailablePackageRecords(
+  invocation: BuiltinInvocation,
+  source: string,
+  repository: string,
+): readonly AvailablePackageRecord[] {
+  const output: AvailablePackageRecord[] = [];
+  let fields = new Map<string, string>();
+  let previousField: string | undefined;
+  const finish = (): void => {
+    if (fields.size === 0) return;
+    const packageName = fields.get("Package");
+    const version = fields.get("Version");
+    if (
+      packageName !== undefined &&
+      packageName.length > 0 &&
+      version !== undefined &&
+      version.length > 0
+    ) {
+      if (output.length >= invocation.context.limits.maxVectorLength) {
+        throw new RResourceLimitError(
+          "NRL4002",
+          "Repository package count exceeds runtime limits.",
+        );
+      }
+      output.push(Object.freeze({ fields: new Map(fields), repository }));
+    }
+    fields = new Map();
+    previousField = undefined;
+  };
+  for (const rawLine of source.replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
+    invocation.context.checkpoint();
+    if (rawLine.length === 0) {
+      finish();
+      continue;
+    }
+    if (/^[ \t]/u.test(rawLine)) {
+      if (previousField === undefined) continue;
+      fields.set(previousField, `${fields.get(previousField) ?? ""}\n${rawLine.trimStart()}`);
+      continue;
+    }
+    const separator = rawLine.indexOf(":");
+    if (separator <= 0) {
+      previousField = undefined;
+      continue;
+    }
+    previousField = rawLine.slice(0, separator).trim();
+    fields.set(previousField, rawLine.slice(separator + 1).trimStart());
+  }
+  finish();
+  return Object.freeze(output);
+}
+
+function availablePackagesMatrix(
+  invocation: BuiltinInvocation,
+  records: readonly AvailablePackageRecord[],
+  extraFields: readonly (string | undefined)[],
+  includeBuilt: boolean,
+): RCharacterVector {
+  const columns = [
+    ...AVAILABLE_PACKAGE_FIELDS,
+    ...(includeBuilt ? ["Built"] : []),
+    ...extraFields,
+    "Repository",
+  ];
+  const cells = records.length * columns.length;
+  if (cells > invocation.context.limits.maxVectorLength) {
+    throw new RResourceLimitError(
+      "NRL4002",
+      "available.packages() result exceeds runtime limits.",
+      {
+        details: { cells, maxVectorLength: invocation.context.limits.maxVectorLength },
+      },
+    );
+  }
+  invocation.context.allocate(cells);
+  const values: string[] = [];
+  const missing = new Uint8Array(cells);
+  for (const [columnIndex, column] of columns.entries()) {
+    for (const [rowIndex, record] of records.entries()) {
+      invocation.context.checkpoint();
+      const value =
+        column === undefined
+          ? undefined
+          : column === "Repository"
+            ? record.repository
+            : record.fields.get(column);
+      const cell = columnIndex * records.length + rowIndex;
+      values.push(value ?? "");
+      if (value === undefined) missing[cell] = 1;
+    }
+  }
+  let matrix = withDimensions(characterVector(values, compactMask(missing)), [
+    records.length,
+    columns.length,
+  ]);
+  matrix = withAttribute(
+    matrix,
+    "dimnames",
+    listValue([
+      records.length === 0
+        ? R_NULL
+        : characterVector(records.map((record) => record.fields.get("Package") ?? "")),
+      characterVector(
+        columns.map((column) => column ?? ""),
+        compactMask(Uint8Array.from(columns, (column) => (column === undefined ? 1 : 0))),
+      ),
+    ]),
+  );
+  return matrix;
+}
+
+async function applyAvailablePackageFilter(
+  invocation: BuiltinInvocation,
+  matrix: RCharacterVector,
+  filter: AvailablePackageFilter,
+  type: string,
+  cranRepositories: ReadonlySet<string>,
+): Promise<RCharacterVector> {
+  if (typeof filter !== "string") {
+    const result = await invocation.invoke(filter, [{ value: matrix }]);
+    return requireAvailablePackagesMatrix(result);
+  }
+  const rows = vectorDimensions(matrix)?.[0] ?? 0;
+  let selected: readonly number[];
+  switch (filter) {
+    case "R_version":
+      selected = Array.from({ length: rows }, (_, row) => row).filter((row) =>
+        availablePackageRVersionMatches(availablePackageCell(matrix, row, "Depends")),
+      );
+      break;
+    case "OS_type":
+      selected = Array.from({ length: rows }, (_, row) => row).filter((row) => {
+        const os = availablePackageCell(matrix, row, "OS_type");
+        return os === undefined || os === "" || os.toLowerCase() === "unix";
+      });
+      break;
+    case "subarch":
+      selected = Array.from({ length: rows }, (_, row) => row).filter((row) => {
+        if (type === "source") return true;
+        const archs = availablePackageCell(matrix, row, "Archs");
+        return archs === undefined || archs === "" || /(?:^|[, ]+)wasm32(?:$|[, ]+)/u.test(archs);
+      });
+      break;
+    case "duplicates":
+      selected = availablePackageDuplicateRows(matrix);
+      break;
+    case "license/FOSS":
+      selected = Array.from({ length: rows }, (_, row) => row).filter(
+        (row) => availablePackageCell(matrix, row, "License_is_FOSS")?.toLowerCase() === "yes",
+      );
+      break;
+    case "license/restricts_use":
+      selected = Array.from({ length: rows }, (_, row) => row).filter(
+        (row) =>
+          availablePackageCell(matrix, row, "License_restricts_use")?.toLowerCase() !== "yes",
+      );
+      break;
+    case "CRAN":
+      selected = availablePackageCranRows(matrix, cranRepositories);
+      break;
+    default:
+      throw new RTypeMismatchError("NRT3415", `unknown available.packages() filter '${filter}'`);
+  }
+  return requireAvailablePackagesMatrix(
+    subsetDimensions(
+      matrix,
+      [integerVector(selected.map((row) => row + 1)), undefined],
+      false,
+      invocation.context,
+    ),
+  );
+}
+
+function requireAvailablePackagesMatrix(value: RValue): RCharacterVector {
+  if (value.type !== "character") {
+    throw new RTypeMismatchError(
+      "NRT3415",
+      "available.packages() filters must return a character matrix",
+    );
+  }
+  const dimensions = vectorDimensions(value);
+  if (dimensions?.length !== 2) {
+    throw new RTypeMismatchError(
+      "NRT3415",
+      "available.packages() filters must return a character matrix",
+    );
+  }
+  return value;
+}
+
+function availablePackageCell(
+  matrix: RCharacterVector,
+  row: number,
+  column: string,
+): string | undefined {
+  const dimensions = vectorDimensions(matrix);
+  const rows = dimensions?.[0] ?? 0;
+  const dimNames = matrix.attributes.get("dimnames");
+  const columnNames = dimNames?.type === "list" ? dimNames.values[1] : undefined;
+  if (columnNames?.type !== "character") return undefined;
+  const columnIndex = columnNames.values.indexOf(column);
+  if (columnIndex < 0) return undefined;
+  const index = columnIndex * rows + row;
+  return isMissing(matrix, index) ? undefined : (matrix.values[index] ?? "");
+}
+
+function availablePackageRVersionMatches(depends: string | undefined): boolean {
+  if (depends === undefined) return true;
+  const match = /(?:^|,)\s*R\s*(?:\((>=|<=|==|>|<)\s*([0-9]+(?:[.-][0-9]+)*)\))?/u.exec(depends);
+  if (match === null || match[1] === undefined || match[2] === undefined) return true;
+  const required = parseNumericVersionText(match[2], "package");
+  if (required === undefined) return false;
+  const comparison = compareVersionParts([4, 6, 0], required, true);
+  switch (match[1]) {
+    case ">=":
+      return comparison >= 0;
+    case "<=":
+      return comparison <= 0;
+    case "==":
+      return comparison === 0;
+    case ">":
+      return comparison > 0;
+    case "<":
+      return comparison < 0;
+    default:
+      return true;
+  }
+}
+
+function availablePackageDuplicateRows(matrix: RCharacterVector): readonly number[] {
+  const rows = vectorDimensions(matrix)?.[0] ?? 0;
+  const order: string[] = [];
+  const best = new Map<string, number>();
+  for (let row = 0; row < rows; row += 1) {
+    const packageName = availablePackageCell(matrix, row, "Package") ?? "";
+    const previous = best.get(packageName);
+    if (previous === undefined) {
+      order.push(packageName);
+      best.set(packageName, row);
+      continue;
+    }
+    const previousVersion = parseNumericVersionText(
+      availablePackageCell(matrix, previous, "Version") ?? "",
+      "package",
+    );
+    const currentVersion = parseNumericVersionText(
+      availablePackageCell(matrix, row, "Version") ?? "",
+      "package",
+    );
+    if (
+      currentVersion !== undefined &&
+      (previousVersion === undefined ||
+        compareVersionParts(currentVersion, previousVersion, true) > 0)
+    ) {
+      best.set(packageName, row);
+    }
+  }
+  return order.map((name) => best.get(name) ?? 0);
+}
+
+function availablePackageCranRows(
+  matrix: RCharacterVector,
+  cranRepositories: ReadonlySet<string>,
+): readonly number[] {
+  if (cranRepositories.size === 0) {
+    throw new RTypeMismatchError("NRT3415", "CRAN filter requires a named CRAN repository");
+  }
+  const rows = vectorDimensions(matrix)?.[0] ?? 0;
+  const hasCran = new Set<string>();
+  for (let row = 0; row < rows; row += 1) {
+    const repository = availablePackageCell(matrix, row, "Repository") ?? "";
+    if (cranRepositories.has(repository)) {
+      hasCran.add(availablePackageCell(matrix, row, "Package") ?? "");
+    }
+  }
+  return Array.from({ length: rows }, (_, row) => row).filter((row) => {
+    const packageName = availablePackageCell(matrix, row, "Package") ?? "";
+    const repository = availablePackageCell(matrix, row, "Repository") ?? "";
+    return !hasCran.has(packageName) || cranRepositories.has(repository);
+  });
 }
 
 function urlRequestHeaders(value: RValue | undefined): RUrlRequest["headers"] {
@@ -11028,6 +11822,8 @@ function optionsState(invocation: BuiltinInvocation): Map<string, RValue> {
     ["expressions", integerVector([5000])],
     ["max.print", integerVector([99_999])],
     ["prompt", characterVector(["> "])],
+    ["pkgType", characterVector(["source"])],
+    ["repos", withNames(characterVector(["@CRAN@"]), ["CRAN"])],
     ["scipen", integerVector([0])],
     ["stringsAsFactors", logicalVector([false])],
     ["timeout", integerVector([60])],

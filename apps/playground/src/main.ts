@@ -102,6 +102,11 @@ twice_mean(c(1, 2, 6))`,
     code: "nativrdemo::write_sass_variable()",
   },
   {
+    id: "package-repository",
+    label: "Pure-R package repository index",
+    code: 'nativrdemo::repository_versions("https://packages.nativr.invalid")',
+  },
+  {
     id: "system-host",
     label: "Explicit host command",
     code: "system('nativr-echo', intern = TRUE, input = c('worker', 'bridge'))",
@@ -222,6 +227,13 @@ function playgroundReadline(request: PublicReadlineRequest): string {
 }
 
 function playgroundUrl(request: PublicUrlRequest): { readonly body: Uint8Array } {
+  if (request.url === "https://packages.nativr.invalid/src/contrib/PACKAGES") {
+    return {
+      body: new TextEncoder().encode(
+        "Package: alpha\nVersion: 1.2.3\nDepends: R (>= 4.0)\nLicense: MIT\nNeedsCompilation: no\n",
+      ),
+    };
+  }
   if (request.url !== "https://data.nativr.invalid/lines") {
     throw new Error(`Playground URL is not allow-listed: ${request.url}`);
   }

@@ -222,8 +222,8 @@ GNU R's `browser = function(url) ...` extension remains inside R and receives a 
 `encodeIfNeeded`-encoded URL; `browser = "false"` suppresses the request. A character
 browser-program name is treated only as host intent because browser packages cannot spawn processes.
 
-The independent `createR({ url })` byte adapter also backs both read-only `url()` connections and
-session-file downloads:
+The independent `createR({ url })` byte adapter also backs read-only `url()` connections,
+session-file downloads, and `utils::available.packages()` repository indexes:
 
 ```ts
 const r = await createR({
@@ -240,11 +240,17 @@ await r.eval(`
   utils::download.file("https://data.example/input.csv", path, quiet = TRUE, mode = "wb")
   read.csv(path)
 `);
+
+const packages = await r.eval(`
+  db <- utils::available.packages(repos = "https://data.example/cran", type = "source")
+  c(rownames(db), db[, "Version"])
+`);
 ```
 
-The destination is a browser-memory session path, not a host path. The default session has no URL
-adapter and fails closed. Redirects, credentials, caching, and origin policy remain entirely with
-the application.
+The destination is a browser-memory session path, not a host path. `available.packages()` requests
+the derived `src/contrib/PACKAGES` URL and maintains only an age-bounded evaluator-session cache.
+The default session has no URL adapter and fails closed. Redirects, credentials, persistent caching,
+and origin policy remain entirely with the application.
 
 `evalDetailed` also retains device-independent graphics commands in `graphics`.
 `createR({ onGraphics })` receives the same commands after each inline or Worker evaluation.

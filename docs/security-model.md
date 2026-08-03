@@ -124,16 +124,18 @@ untrusted display text, avoid rendering them as HTML, bound or cancel their UI, 
 secrets unless the calling R code is trusted. Newlines, NUL characters, and results beyond the
 session output-byte budget are rejected. The default runtime never opens a dialog or reads stdin.
 
-`url()` and `utils::download.file()` are likewise inert unless the application supplies
-`createR({ url })`. The callback receives only copied URL/method/header data and must return a
-`Uint8Array`; the facade copies and charges the bytes to the session output limit before the Worker
-can expose them to R. `download.file()` additionally preflights all destinations, writes only under
-the session-owned temp tree, and replaces a file only after the complete response has passed host
-and virtual-store limits. NativR does not call `fetch`, follow redirects, attach cookies, consult
-ambient credentials, or choose trusted origins. Hosts must allow-list schemes and origins, validate
-redirect targets, bound response time and size, and avoid forwarding secrets to package-selected
-destinations. The Playground adapter serves one embedded allow-listed fixture and performs no
-network request.
+`url()`, `utils::download.file()`, and `utils::available.packages()` are likewise inert unless the
+application supplies `createR({ url })`. The callback receives only copied URL/method/header data
+and must return a `Uint8Array`; the facade copies and charges the bytes to the session output limit
+before the Worker can expose them to R. `download.file()` additionally preflights all destinations,
+writes only under the session-owned temp tree, and replaces a file only after the complete response
+has passed host and virtual-store limits. NativR does not call `fetch`, follow redirects, attach
+cookies, consult ambient credentials, or choose trusted origins. Hosts must allow-list schemes and
+origins, validate redirect targets, bound response time and size, and avoid forwarding secrets to
+package-selected destinations. Repository indexes additionally pass through bounded UTF-8/gzip DCF
+parsing and an evaluator-session-only cache; they are never treated as executable package code or
+installed by the runtime. The Playground adapter serves embedded allow-listed fixtures and performs
+no network request.
 
 `unz()` grants neither network nor filesystem authority. It reads only bytes already admitted as an
 immutable package resource or session-owned file, locates one exact member without path extraction,

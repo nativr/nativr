@@ -743,8 +743,15 @@ Rank 338 `base::write()` now covers sass's measured `write('$color: "red";', pat
 Character values default to one item per line, other atomic storage defaults to five, explicit
 separator vectors reproduce GNU R's column layout, and file/connection targets stay inside the
 bounded browser-memory store. The source-only package fixture and Worker Playground execute the same
-helper without a JavaScript rewrite. Rank 340 `utils::available.packages()` is the next usage-ranked
-unresolved callable.
+helper without a JavaScript rewrite.
+
+Rank 340 `utils::available.packages()` now covers curl's measured reverse-dependency repository
+query. It derives source `contrib` URLs, parses bounded CRAN-like `PACKAGES` DCF indexes into GNU
+R-shaped character matrices, applies version/OS/subarchitecture/duplicate or user-defined filters,
+and reuses an age-bounded session cache. Repository bytes enter only through the explicit
+`createR({ url })` callback; package code receives no ambient browser network access. An unchanged
+pure-R helper runs through the inline API and Worker Playground. Rank 343 `graphics::barplot()` is
+the next usage-ranked unresolved callable.
 
 Rank 121 `grDevices::png()` now covers all seven measured calls across five packages. It opens
 alongside the browser display, records the existing graphics command vocabulary, rasterizes it in

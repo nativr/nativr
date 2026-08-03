@@ -425,9 +425,11 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
     "utils",
     new Set([
       "as.roman",
+      "available.packages",
       "browseURL",
       "capture.output",
       "compareVersion",
+      "contrib.url",
       "data",
       "demo",
       "download.file",

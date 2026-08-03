@@ -30,7 +30,7 @@ importFrom(graphics, axis, plot.new, plot.window, rect, title)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median, ts.plot)
 importFrom(utils, download.file, packageDescription, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, plot_series, annotated_plot, find_tools, create_file, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, pipe_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output, sink_lines, write_sass_variable)
+export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, plot_series, annotated_plot, find_tools, create_file, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output, sink_lines, write_sass_variable)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -129,6 +129,10 @@ download_resource <- function(address) {
   on.exit(unlink(path))
   status <- download.file(address, path, quiet = TRUE, mode = "wb")
   c(status, readLines(path))
+}
+repository_versions <- function(mirror) {
+  db <- utils::available.packages(repos = mirror, type = "source")
+  c(rownames(db), db[, "Version"])
 }
 pipe_lines <- function(command) {
   con <- pipe(command)
@@ -3860,6 +3864,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "process_id",
       "remote_lines",
       "remove_files",
+      "repository_versions",
       "signature_names",
       "sink_lines",
       "sourced_value",
@@ -10437,6 +10442,224 @@ describe("complete inline source-to-result vertical slice", () => {
     await limited.dispose();
   });
 
+  it("lists usage-ranked CRAN-like package metadata through the explicit URL capability", async () => {
+    const index = `Package: alpha
+Version: 1.2.3
+Depends: R (>= 4.0), beta
+Imports: stats
+Suggests: gamma
+License: MIT + file LICENSE
+MD5sum: 0123456789abcdef0123456789abcdef
+NeedsCompilation: no
+X-Extra: first
+
+Package: beta
+Version: 2.0.0
+Priority: recommended
+OS_type: windows
+Archs: x86_64
+NeedsCompilation: yes
+X-Extra: second
+
+Package: alpha
+Version: 1.1.0
+License: GPL-2
+NeedsCompilation: no
+`;
+    const requests: PublicUrlRequest[] = [];
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [pureRFixture],
+      url: (request) => {
+        requests.push(request);
+        if (request.url !== "https://packages.nativr.invalid/src/contrib/PACKAGES") {
+          throw new Error(`Unexpected repository URL: ${request.url}`);
+        }
+        return { body: new TextEncoder().encode(index) };
+      },
+    });
+
+    await expect(
+      runtime.eval(`
+        f <- formals(utils::available.packages)
+        cf <- formals(utils::contrib.url)
+        c(
+          names(f), names(cf),
+          identical(f$contriburl, quote(contrib.url(repos, type))),
+          identical(f$fields, quote(getOption("available_packages_fields"))),
+          identical(f$type, quote(getOption("pkgType"))), is.null(f$filters),
+          identical(f$repos, quote(getOption("repos"))),
+          identical(f$ignore_repo_cache, FALSE),
+          identical(f$cache_user_dir, quote(str2logical(Sys.getenv("R_PACKAGES_CACHE_USER_DIR", FALSE)))),
+          identical(f$quiet, TRUE), identical(f$verbose, FALSE),
+          identical(cf$type, quote(getOption("pkgType")))
+        )
+      `),
+    ).resolves.toEqual([
+      "contriburl",
+      "method",
+      "fields",
+      "type",
+      "filters",
+      "repos",
+      "ignore_repo_cache",
+      "max_repo_cache_age",
+      "cache_user_dir",
+      "quiet",
+      "verbose",
+      "...",
+      "repos",
+      "type",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          utils::contrib.url(c("https://one.invalid/", "https://two.invalid/root"), "source"),
+          utils::contrib.url("https://one.invalid", "win.binary"),
+          utils::contrib.url("https://one.invalid", "both")
+        )
+      `),
+    ).resolves.toEqual([
+      "https://one.invalid/src/contrib",
+      "https://two.invalid/root/src/contrib",
+      "https://one.invalid/bin/windows/contrib/4.6",
+      "https://one.invalid/src/contrib",
+    ]);
+
+    const defaultColumns = [
+      "Package",
+      "Version",
+      "Priority",
+      "Depends",
+      "Imports",
+      "LinkingTo",
+      "Suggests",
+      "Enhances",
+      "License",
+      "License_is_FOSS",
+      "License_restricts_use",
+      "OS_type",
+      "Archs",
+      "MD5sum",
+      "NeedsCompilation",
+      "File",
+      "Published",
+      "Built",
+      "Repository",
+    ];
+    await expect(
+      runtime.eval(`
+        mirror <- "https://packages.nativr.invalid"
+        db <- utils::available.packages(repos = mirror, type = "source")
+        c(dim(db), rownames(db), colnames(db), db["alpha", c("Version", "MD5sum", "Repository")])
+      `),
+    ).resolves.toEqual([
+      "1",
+      "19",
+      "alpha",
+      ...defaultColumns,
+      "1.2.3",
+      "0123456789abcdef0123456789abcdef",
+      "https://packages.nativr.invalid/src/contrib",
+    ]);
+    expect(requests).toHaveLength(1);
+
+    await expect(
+      runtime.eval(`
+        db <- utils::available.packages(
+          repos = "https://packages.nativr.invalid", type = "source",
+          fields = c("X-Extra", "Missing"), filters = list()
+        )
+        c(dim(db), rownames(db), colnames(db)[19:21], db[, "X-Extra"], is.na(db[, "Missing"]))
+      `),
+    ).resolves.toEqual([
+      "3",
+      "21",
+      "alpha",
+      "beta",
+      "alpha",
+      "X-Extra",
+      "Missing",
+      "Repository",
+      "first",
+      "second",
+      NA,
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    expect(requests).toHaveLength(1);
+
+    await expect(
+      runtime.eval(`
+        only_beta <- function(db) db[db[, "Package"] == "beta", , drop = FALSE]
+        custom <- utils::available.packages(
+          repos = "https://packages.nativr.invalid", filters = list(only_beta)
+        )
+        c(dim(custom), rownames(custom), custom[, "Version"])
+      `),
+    ).resolves.toEqual(["1", "19", "beta", "2.0.0"]);
+    await expect(
+      runtime.eval('nativrfixture::repository_versions("https://packages.nativr.invalid")'),
+    ).resolves.toEqual(["alpha", "1.2.3"]);
+    expect(requests).toHaveLength(1);
+
+    await runtime.eval(`
+      utils::available.packages(
+        repos = "https://packages.nativr.invalid", ignore_repo_cache = TRUE,
+        headers = c(Accept = "text/plain")
+      )
+    `);
+    expect(requests).toHaveLength(2);
+    expect(requests.at(-1)).toEqual({
+      url: "https://packages.nativr.invalid/src/contrib/PACKAGES",
+      method: "default",
+      headers: [{ name: "Accept", value: "text/plain" }],
+    });
+    await expect(
+      runtime.eval(`
+        missing_field <- utils::available.packages(
+          repos = "https://packages.nativr.invalid", fields = NA_character_, filters = list()
+        )
+        c(ncol(missing_field), is.na(colnames(missing_field)[19]))
+      `),
+    ).rejects.toMatchObject({ code: "NRT3415" });
+    await expect(
+      runtime.eval(
+        'utils::available.packages(repos = "https://packages.nativr.invalid", filters = 1)',
+      ),
+    ).rejects.toMatchObject({ code: "NRT3415" });
+    await runtime.dispose();
+
+    const offline = await createR({ execution: "inline", assets });
+    await expect(
+      offline.eval('utils::available.packages(repos = "https://packages.nativr.invalid")'),
+    ).rejects.toMatchObject({ code: "NRU6196" });
+    await offline.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxOutputBytes: 16 },
+      url: () => ({ body: new TextEncoder().encode(index) }),
+    });
+    await expect(
+      limited.eval('utils::available.packages(repos = "https://packages.nativr.invalid")'),
+    ).rejects.toMatchObject({ code: "NRL4007" });
+    await limited.dispose();
+  });
+
   it("keeps frequency-prioritized options as resettable session state", async () => {
     const runtime = await session();
     await expect(
@@ -11469,7 +11692,7 @@ describe("complete inline source-to-result vertical slice", () => {
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.252.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.253.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

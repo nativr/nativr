@@ -2091,6 +2091,15 @@ fixture and Worker Playground. The writer is bounded by output/vector/session-fi
 not grant host filesystem access, native encodings, platform-specific line endings, or support for
 non-atomic objects.
 
+Usage-ranked `utils::available.packages()` and `contrib.url()` have GNU R 4.6 black-box evidence for
+exact formals/default expressions, contribution path rules, GNU R's distinct early-empty and
+populated character-matrix shapes, row/column names, the conditional `Built` column,
+standard/extra/missing fields, R-version/OS/duplicate filters, ordered custom filter functions,
+cache bypass, request headers, and invalid inputs. Curl's measured reverse-dependency database shape
+runs unchanged inside a source-only package and Worker. All repository bytes require the explicit
+bounded URL callback; persistent host caches, ambient networking, repository archive installation,
+binary packages, and full dependency-recursive license filters remain outside this increment.
+
 `utils::demo` has GNU R differential evidence for the empty package catalog returned by
 `demo(package = character())`, including its `packageIQR` class, fields, zero-row results matrix,
 and column labels. Supplying a topic, external package, or host library location raises an explicit

@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 393 KiB gzip;
+- Worker JavaScript: 396 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -742,3 +742,9 @@ Language subset 0.252 adds usage-ranked `base::write` by composing the existing 
 dependency, protocol event, host filesystem access, generated-code path, or package-specific
 translation. The measured Worker is 392.0 KiB gzip, so the ceiling rises narrowly from 392 KiB to
 393 KiB; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.253 adds usage-ranked `utils::available.packages` and `contrib.url` through a
+bounded DCF index parser, character-matrix builder, reusable filtering pipeline, session cache, and
+the existing explicit URL callback. It performs no ambient fetch, filesystem scan, archive install,
+generated-code execution, or package-specific translation. The measured Worker is 395.1 KiB gzip, so
+the ceiling rises narrowly from 393 KiB to 396 KiB; client and parser-Wasm budgets remain unchanged.

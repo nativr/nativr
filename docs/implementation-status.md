@@ -201,6 +201,12 @@ Date: 2026-08-02
   connection lifecycle, invisible results, and output/resource bounds. The measured sass call runs
   unchanged in a source-only package and the default Worker. Native encodings, host files, and
   non-atomic deparse behavior remain explicit boundaries.
+- Usage-ranked `utils::available.packages()` and `contrib.url()` compose the explicit URL callback
+  with a bounded UTF-8/gzip DCF parser, GNU R 4.6-shaped package matrices, extra fields, standard
+  and package-defined filters, duplicate selection, and an age-bounded session cache. The measured
+  curl repository query runs unchanged in a source-only package and Worker. Ambient networking,
+  persistent disk caches, binary installation, and complete recursive license analysis remain
+  explicit boundaries.
 - `utils::demo()` returns GNU R's empty `packageIQR` catalog shape when no package library is
   selected. External package demo discovery and execution remain an explicit package-resource
   boundary.

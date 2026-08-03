@@ -761,6 +761,13 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await expect(page.locator("#result")).toHaveText('"$color: \\"red\\";"');
   await expect(page.locator("#console-output")).toHaveText("No textual output.");
 
+  await page
+    .locator("#source")
+    .fill('nativrdemo::repository_versions("https://packages.nativr.invalid")');
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText('["alpha", "1.2.3"]');
+  await expect(page.locator("#console-output")).toHaveText("No textual output.");
+
   await page.locator("#source").fill(`
     plot.new()
     plot.window(c(0, 4), c(0, 4))

@@ -142,7 +142,11 @@ Persistent output frames survive separate `r.eval()` calls, while file and conne
 in the base layer over the bounded virtual store; runtime knows only the dependency-neutral router
 interface. `base::write()` composes that same base-owned target writer with an independently
 implemented atomic formatter and GNU R-shaped column separators; neither package code nor the
-runtime facade receives a host file handle. The `stats::family` entry is another deliberately thin
+runtime facade receives a host file handle. Repository discovery follows the same split:
+`utils::available.packages()` owns DCF parsing, matrices, filters, and session-cache state in the
+base layer, while bytes arrive through the runtime's dependency-neutral URL request interface and
+the public facade transports only the application-approved response. Package code never receives
+`fetch`, a socket, or a host cache path. The `stats::family` entry is another deliberately thin
 generic seam: it routes owned class metadata through the same evaluator S3 stack but does not embed
 distributional's package-owned method or objects. Regular time-series values follow the same
 boundary. `stats::ts` creates only owned vectors/matrices and `tsp` metadata; `as.ts`, `frequency`,

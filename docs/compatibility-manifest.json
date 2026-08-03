@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.252.0",
+  "languageSubsetVersion": "0.253.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -718,6 +718,8 @@
         { "name": "vignette", "compatibility": "behavioral" },
         { "name": "browseURL", "compatibility": "behavioral" },
         { "name": "download.file", "compatibility": "behavioral" },
+        { "name": "contrib.url", "compatibility": "behavioral" },
+        { "name": "available.packages", "compatibility": "behavioral" },
         { "name": "URLdecode", "compatibility": "behavioral" },
         { "name": "glob2rx", "compatibility": "behavioral" },
         { "name": "View", "compatibility": "behavioral" },

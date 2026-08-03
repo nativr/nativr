@@ -338,7 +338,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 337,heat.colors,true,1,farver,1,1.0,1.2
 338,write,true,1,sass,1,1.0,1.2
 339,readBin,true,1,curl,2,1.0,1.2
-340,available.packages,false,1,curl,1,1.0,1.2
+340,available.packages,true,1,curl,1,1.0,1.2
 341,open,true,1,curl,1,1.0,1.2
 342,stderr,true,1,curl,1,1.0,1.2
 343,barplot,false,2,zoo|bit64,3,2.1,1.2

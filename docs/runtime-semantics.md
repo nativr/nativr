@@ -1473,6 +1473,17 @@ final item, fixing the shared formatting primitive used by `write()`. Output and
 apply before publication; non-atomic values, host paths, native encodings, and platform newline
 bytes remain outside this browser contract.
 
+`utils::contrib.url()` derives GNU R 4.6 source, Windows, and macOS contribution paths without
+opening them. `utils::available.packages()` then requests `<contrib>/PACKAGES` only through the
+application's explicit `createR({ url })` callback, accepts plain UTF-8 or gzip bytes, and parses
+bounded DCF records into GNU R-shaped character matrices with package row names and a `Repository`
+column. Populated reads include the standard `Built` column; GNU R's early empty path omits it.
+Extra fields, missing cells, default R-version/Unix-OS/subarchitecture/latest-duplicate filters,
+named built-in filters, ordered package-defined filter closures, request headers, and age-bounded
+session caching share the ordinary value/call model. Cache state is reset with the session. No
+ambient fetch, host cache directory, repository archive installation, binary execution, or OS
+credential/certificate store is exposed.
+
 `utils::demo()` constructs the empty `packageIQR` catalog entirely from owned values when
 `package = character()` and no library location is supplied. It does not scan an operating-system R
 library or fetch package resources. Topics, nonempty package selections, and host library locations

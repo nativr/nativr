@@ -786,8 +786,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
 164. Usage-ranked atomic writer: rank-338 `base::write` reproduces GNU R's character/numeric column
      defaults, repeated separator vectors, final newline, underlying atomic storage, append mode,
      and owned file/connection lifecycle. Sass's measured call runs unchanged from a source-only
-     package in the default Worker; rank-340 `utils::available.packages` is the next measured
-     unresolved callable.
+     package in the default Worker.
+165. Usage-ranked repository catalog: rank-340 `utils::available.packages` and adjacent
+     `contrib.url` turn application-approved CRAN-like `PACKAGES` bytes into GNU R's package matrix,
+     with extra fields, built-in/custom filters, duplicate selection, session caching, request
+     controls, package execution, and Worker evidence. Runtime code retains no ambient network or
+     host cache authority; rank-343 `graphics::barplot` is the next measured unresolved callable.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

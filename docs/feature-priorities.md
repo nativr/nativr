@@ -73,18 +73,18 @@ excluded; this prevents package-owned functions from being mislabeled as GNU R c
 The primary ranking remains download-weighted package reach; raw occurrence counts are a secondary
 signal.
 
-| Priority | Measured rank | Callable             | Weighted reach | Packages | Observed calls |
-| -------: | ------------: | -------------------- | -------------: | -------: | -------------: |
-|        1 |           340 | `available.packages` |           1.2% |        1 |              1 |
-|        2 |           343 | `barplot`            |           1.2% |        2 |              3 |
-|        3 |           344 | `devAskNewPage`      |           1.1% |        1 |             10 |
-|        4 |           345 | `getLoadedDLLs`      |           1.1% |        1 |              1 |
-|        5 |           346 | `socketConnection`   |           1.1% |        1 |              1 |
-|        6 |           348 | `file.copy`          |           1.1% |        1 |              1 |
-|        7 |           349 | `find.package`       |           1.1% |        1 |              1 |
-|        8 |           351 | `l10n_info`          |           1.1% |        1 |              1 |
-|        9 |           353 | `shQuote`            |           1.1% |        1 |              1 |
-|       10 |           357 | `system2`            |           1.1% |        1 |              1 |
+| Priority | Measured rank | Callable           | Weighted reach | Packages | Observed calls |
+| -------: | ------------: | ------------------ | -------------: | -------: | -------------: |
+|        1 |           343 | `barplot`          |           1.2% |        2 |              3 |
+|        2 |           344 | `devAskNewPage`    |           1.1% |        1 |             10 |
+|        3 |           345 | `getLoadedDLLs`    |           1.1% |        1 |              1 |
+|        4 |           346 | `socketConnection` |           1.1% |        1 |              1 |
+|        5 |           348 | `file.copy`        |           1.1% |        1 |              1 |
+|        6 |           349 | `find.package`     |           1.1% |        1 |              1 |
+|        7 |           351 | `l10n_info`        |           1.1% |        1 |              1 |
+|        8 |           353 | `shQuote`          |           1.1% |        1 |              1 |
+|        9 |           357 | `system2`          |           1.1% |        1 |              1 |
+|       10 |           358 | `.Call`            |           1.0% |        1 |              1 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -201,151 +201,151 @@ ZIP-member connections. Rank 324 `object.size` now supplies deterministic owned-
 for data.table and bit64. Rank 328 `title` now supplies shared plot annotations for all seven
 measured Shiny/bit64 calls, including unchanged pure-R package and Worker rendering paths; rank 330
 `sink` now supplies persistent output/message diversions for utf8's two measured calls; rank 338
-`write` now runs sass's measured source-file write; rank 340 `available.packages` is next. Rank 144
-`Encoding` is also complete for all 12 observed calls across rlang, utf8, and xfun (4.5% weighted
-reach), together with adjacent `Encoding<-`, `enc2utf8`, and `enc2native`. The shared character
-representation preserves exact bytes and canonical R marks through subset/replacement,
-concatenation, raw conversion, and XDR serialization; this is reusable package infrastructure, not
-an assertion that those packages' native components are supported. Rank 149 `rcauchy` is now
-complete for four calls across ggplot2, pillar, and purrr (4.2% weighted reach), together with
-`dcauchy`, `pcauchy`, and `qcauchy`. The shared distribution path covers seeded random-stream
-consumption, vectorized parameters, stable probability tails, formals, and missing/domain behavior
-without package-specific rewrites. Rank 162 `Sys.getenv` is now available for all 16 measured calls
-across withr, xfun, and pkgbuild (3.7% weighted reach), together with rank 175 `Sys.setenv` across
-xfun, memoise, openssl, and zoo (3.3%) and adjacent `Sys.unsetenv`. The shared session-state path is
-Worker-safe, resettable, and sufficient for unchanged `withr::with_envvar()` mutation/restoration;
-it does not expose the host environment. Rank 163 `image` is now available for the six measured
-calls across scales, viridisLite, and RColorBrewer (3.7% weighted reach). Its reusable S3/default
-path covers numeric/logical matrices, center or boundary coordinates, regular raster and irregular
-polygon grids, colour intervals, missing transparency, and one-row palette strips through the same
-Worker graphics journal; it is not a claim of complete base-graphics rendering. Rank 166 `browseURL`
-is now available for eight calls across xfun, htmltools, knitr, and httpuv (3.6% weighted reach). R
-callbacks and suppression remain evaluator-local; external locations become inert host requests and
-existing browser-memory report/image files cross the Worker as bounded byte snapshots. This supplies
-a reusable package viewer seam without granting network, DOM, process, or host-file access. Rank 168
-`gc` is now available for 17 calls across rlang, matrixStats, and bit64 (3.5% weighted reach). The
-no-argument cleanup/benchmark path, GNU R-shaped report matrix, resettable high-water values,
-verbose output, adjacent `gcinfo`, and `system.time(gcFirst)` share a deterministic traversal of the
-reachable NativR graph; this is not a claim to inspect or force the browser JavaScript heap. Rank
-174 `lines` is now available for all 20 measured calls across scales, matrixStats, posterior, and
-zoo (3.4% weighted reach). The exported S3 generic and `lines.default` preserve package-method
-values and visibility, while ordinary coordinate vectors, matrices, lists, data frames, and complex
-values share the existing plot-coordinate adapter. Connected, point, combined, overplotted,
-histogram, step, and no-draw types emit existing bounded segment/point commands; incomplete
-coordinates split paths and line-versus-point style rules follow the documented first-value and
-recycling contract. This is reusable browser graphics infrastructure, not a claim of complete
-devices, axes, clipping, or every graphical parameter. Rank 176 `system` is now available through an
-explicit host policy for five measured withr/knitr/data.table calls (3.3% weighted reach). Its GNU
-R-shaped formals, validation, status/output behavior, and inline/Worker bridge are reusable, but the
-measured `R CMD SHLIB`, `pandoc`, and `diff` programs exist only when the embedding application
-allows and implements them. The default browser runtime still has no process capability.
-`as.difftime` is now available for both measured vctrs/scales calls at rank 177 (3.3% weighted
-reach). Plain numeric intervals retain their explicit units, while recycled character formats feed
-the shared seconds/minutes/hours/days/weeks constructor with automatic-unit selection, names,
-missing values, exact formals, and GNU R-shaped interval attributes. The adjacent `difftime` path
-now adds partial unit names, automatic units, and recycling warnings. Locale-specific `%X`,
-date-bearing named-zone parsing, POSIXlt conversion, and the full difftime S3 arithmetic/method
-family remain explicit compatibility depth. Rank 184 `ls` is now available for all five measured
-calls across callr, rstan, and bit64 (3.0% weighted reach), together with its identical `objects`
-alias. Caller, explicit, numeric-position, and exact named search-list environments share
-non-forcing binding enumeration, hidden-name and pattern filtering, deterministic ordering, and GNU
-R-shaped formals. A checked-in source-only package uses the same implementation inside its
-namespace. Active bindings, locale collation, exact hash-bucket order, and browser/GNU regexp
-differences remain explicit compatibility depth. Rank 186 `hist` is now available for all 19
-measured calls across testthat, openssl, shiny, and posterior (3.0% weighted reach). The shared
-S3/default path returns standard histogram fields, supports numeric or algorithmic breaks,
-right/left endpoint rules, densities, class-count helpers, and browser bar/label drawing over the
-existing polygon journal. A checked-in pure-R package calls the same implementation unchanged;
-complete pretty-boundary identity, logarithmic axes, line-density shading, and every graphics
-parameter remain compatibility depth. Rank 22 `plot` is now available for all 179 measured
-occurrences across 20 sampled package manuals, representing 19.1% download-weighted reach. The
-implementation prioritizes the common numeric vector/x-y calls and the S3 seam required by
-package-owned plot methods: point, line, both, overplotted, histogram, step, and no-draw geometry
-reuse the owned Worker/Canvas graphics journal. This is shape-level availability, not complete
-base-graphics compatibility; specialized methods, full axes/tick labels, log/aspect layout, margins,
-clipping, and arbitrary graphical controls remain declared boundaries. Rank 27 `system.file` is now
-available at 17.1% weighted reach through bounded, immutable package-resource paths. Rank 34
-`Sys.sleep` adds cooperative Worker-safe waits, while rank 52 `writeLines` and rank 61 `readLines`
-add session-memory roundtrips and immutable package-text reads. Ranks 65 `file`, 69 `close`, 71
-`tempdir`, and 125 `file.exists` now share a bounded session-owned connection and path layer; rank
-341 `open` and its adjacent `flush`, `isOpen`, and `seek` operations use the same handles. Ranks 48
-`R.home`, 129 `dir.create`, and 135 `list.files` now share a bounded virtual-directory layer with
-`dir.exists`, `list.dirs`, `getwd`/`setwd`, `normalizePath`, `basename`, and `dirname`. Usage-ranked
-`data`, `write.csv`, and `read.csv` now use that layer for package data scripts, text datasets,
-quoted tabular input/output, and deterministic type conversion. Rank 80 `dev.off` now participates
-in a multi-device lifecycle. Rank 121 `png` covers all seven measured calls across five packages
-through a browser-owned file device, deterministic command rasterizer, and real PNG encoding. Rank
-127 `system.time` now covers all 95 measured calls across six packages through lazy single
-evaluation, GNU R-shaped `proc_time` results, and the adjacent `proc.time` session clock. Grouped
-`split` (rank 155) and real-vector `floor` (rank 156) are now complete at 4.1% weighted reach each.
-Factor generator `gl` (rank 158, 4.1%) and a bounded data-frame `merge` subset (rank 161, 4.0%) are
-now complete. Data-mask mutation through `within` (rank 167, 3.8%) and vectorized real/complex
-trigonometry led by `sin` (rank 177, 3.6%) are now complete as well. After filtering out
-already-supported names and architecture-dependent host, graphics, serialization, and source-loading
-entries, numeric-order factor coercion through `as.factor` (rank 187, 3.1%) and grouped
-transformation through `ave` (rank 188, 3.0%) are now complete. UTC date construction through
-`ISOdate` (rank 189, 3.0%) and Cartesian data-frame construction through `expand.grid` (rank 190,
-3.0%) are now complete too. After filtering out package metadata, graphics, host-memory, process,
-and object-introspection work, vector insertion through `append` (rank 195, 2.9%) and vectorized
-real/complex cosine through `cos` (rank 199, 2.9%) are now complete. The set-operation family is now
-complete through `intersect` (rank 186), `setdiff` (rank 208), and `union` (rank 209), followed by
-parallel minimum selection through `pmin` (rank 215, 2.4%), lagged vector differencing through
-`diff` (rank 222, 2.3%), and explicit vector-mode coercion through `as.vector` (rank 224, 2.3%).
-Integer-code-point decoding through `intToUtf8` (rank 226, 2.3%) is now complete as well. The
-bounded `show` generic is now complete for registered single-object display methods and
-deterministic fallback output, while rank 227 `rep_len` is already supported. Matrix-diagonal
-construction and extraction through `diag` (rank 228, 2.2%) is now complete too. Rank 229 `identity`
-is already supported, while rank 230 `textConnection` belongs to the connection/host-adapter
-surface. Formula coercion through `as.formula` (rank 231, 2.2%) is now complete. Quoted evaluation
-through `evalq` (rank 232, 2.2%) is now complete too. The global calling-handler surface through
-`globalCallingHandlers` (rank 233, 2.2%) is now complete as well. Session search-path inspection
-through `search` and dynamic R-syntax call inspection through `sys.call` (ranks 234–235, 2.2% each)
-are now complete. Rank 236 `force` is already supported, rank 237 `readline` now uses an explicit
-line-input host adapter, ranks 238–239 `difftime` and `is.character` are already supported, and rank
-241 `unserialize` now shares the bounded GNU R XDR codec with rank 142 `serialize`. Time-series
-coordinate shifting through `lag` (rank 242, 2.0%) is now complete. Numeric interval factorization
-through `cut` (rank 243, 2.0%) is now complete too. Ranks 244–245 `Sys.setlocale` and
-`Sys.getlocale` are now complete for evaluator-owned C locale state and the two monetary profiles
-required by the later measured `withr` examples; arbitrary host locales, collation, and
-time-language mutation remain explicit boundaries. Rank 246 `plot.new` is now the page-state
-dependency for the measured raster slice, and rank 247 `logical` is already supported. Atomic
-run-length encoding through `rle` (rank 248, 1.9%) is now complete. Rank 249 `deparse` is already
-supported. Regex match extraction through `regmatches` (rank 250, 1.9%) is now complete together
-with its `gregexpr` match-object producer (rank 252, 1.9%) and the supporting first-match `regexpr`
-surface. Independent whitespace trimming through `trimws` (rank 251, 1.9%) is now complete too.
-Ranks 253–255 require package-metadata, connection, or process-timing host contracts, while rank 256
-`vapply` is already supported. Time-series endpoint inspection through `end` (rank 257, 1.8%) is now
-complete. Ranks 258–259 belong to graphics/color architecture; ranks 260 `complex` and 261 `vector`
-are already supported, while the current rank-256 `file.remove` now uses the owned session-file
-contract without exposing a host filesystem. Grouped factor reordering through `reorder` (rank 263,
-1.7%) and planar convex-hull selection through `chull` (rank 264, 1.7%) are now complete. Rank 265
-`terrain.colors` belongs to color-generation architecture. Model covariance plus central Student-t
-probabilities now complete `confint` (rank 266, 1.7%). Session-local numeric perturbation through
-`jitter` (rank 267, 1.7%) and argument-choice normalization through `match.arg` (rank 268, 1.7%) are
-complete. Stable logistic quantiles through `qlogis` (rank 269, 1.7%) and matrix centering/scaling
-through `scale` (rank 270, 1.7%) are complete too. The model architecture completes `aov` and
-`fitted` (ranks 271–272), and `IQR` (rank 273) covers interquartile ranges through all nine GNU R
-quantile algorithms. Numeric clustering through `kmeans` (rank 274, 1.7%) is now complete for the
-documented bounded algorithms and data shapes. Ranks 275–278 (`log2`, `predict`, `resid`, and `rt`)
-are already supported. Circular, open, and filtering convolution through `convolve` (rank 225, 2.3%)
-is now complete, and rank 279 `Filter` is already supported. Hexadecimal integer modes through
-`as.hexmode` (rank 280, 1.7%) are now complete together with their formatting, printing, selection,
-and bitwise method chain. Ranks 281 `axis` and 282 `readChar` now reuse the owned graphics and
-connection architectures; ranks 283 `debug` and 285 `undebug` now reuse the explicit readline host
-architecture with adjacent `debugonce` and `isdebugged`, preserving function-object identity,
-one-shot consumption, and a bounded command subset. Arbitrary debugger expressions, nested stepping,
-and S4 signatures remain depth. Rank 284 `emptyenv` is already supported. Rank 286
-`as.list.environment` is the next isolated browser-safe callable and is now complete with S3
-dispatch, local binding enumeration, hidden-name and sorting controls, hash-aware unsorted order,
-and lazy-promise forcing. Rank 287 `list2env` is already supported. Rank 288 `capabilities` is now
-complete: the four sampled calls query `cairo` or `profmem`, and the browser runtime truthfully
-reports both unavailable while preserving GNU R's full named selection shape. Ranks 289 `pdf` and
-290 `title` require graphics-host architecture, rank 291 `exists` is already supported, and rank 292
-`kappa` is now complete with QR estimates, exact 2-norm results, direct one-/infinity-norm paths,
-triangular controls, and `qr`/`lm` dispatch. Rank 293 `model.matrix` is already supported. Rank 294
-`xtabs` is now complete for the sampled RcppEigen factor-table call plus weighted/matrix responses,
-subsets, missing-value controls, unused levels, and table metadata. Rank 295 `RNGkind` is now
-complete for the six sampled query calls in the
+`write` now runs sass's measured source-file write; rank 340 `available.packages` now runs curl's
+measured repository query; rank 343 `barplot` is next. Rank 144 `Encoding` is also complete for all
+12 observed calls across rlang, utf8, and xfun (4.5% weighted reach), together with adjacent
+`Encoding<-`, `enc2utf8`, and `enc2native`. The shared character representation preserves exact
+bytes and canonical R marks through subset/replacement, concatenation, raw conversion, and XDR
+serialization; this is reusable package infrastructure, not an assertion that those packages' native
+components are supported. Rank 149 `rcauchy` is now complete for four calls across ggplot2, pillar,
+and purrr (4.2% weighted reach), together with `dcauchy`, `pcauchy`, and `qcauchy`. The shared
+distribution path covers seeded random-stream consumption, vectorized parameters, stable probability
+tails, formals, and missing/domain behavior without package-specific rewrites. Rank 162 `Sys.getenv`
+is now available for all 16 measured calls across withr, xfun, and pkgbuild (3.7% weighted reach),
+together with rank 175 `Sys.setenv` across xfun, memoise, openssl, and zoo (3.3%) and adjacent
+`Sys.unsetenv`. The shared session-state path is Worker-safe, resettable, and sufficient for
+unchanged `withr::with_envvar()` mutation/restoration; it does not expose the host environment. Rank
+163 `image` is now available for the six measured calls across scales, viridisLite, and RColorBrewer
+(3.7% weighted reach). Its reusable S3/default path covers numeric/logical matrices, center or
+boundary coordinates, regular raster and irregular polygon grids, colour intervals, missing
+transparency, and one-row palette strips through the same Worker graphics journal; it is not a claim
+of complete base-graphics rendering. Rank 166 `browseURL` is now available for eight calls across
+xfun, htmltools, knitr, and httpuv (3.6% weighted reach). R callbacks and suppression remain
+evaluator-local; external locations become inert host requests and existing browser-memory
+report/image files cross the Worker as bounded byte snapshots. This supplies a reusable package
+viewer seam without granting network, DOM, process, or host-file access. Rank 168 `gc` is now
+available for 17 calls across rlang, matrixStats, and bit64 (3.5% weighted reach). The no-argument
+cleanup/benchmark path, GNU R-shaped report matrix, resettable high-water values, verbose output,
+adjacent `gcinfo`, and `system.time(gcFirst)` share a deterministic traversal of the reachable
+NativR graph; this is not a claim to inspect or force the browser JavaScript heap. Rank 174 `lines`
+is now available for all 20 measured calls across scales, matrixStats, posterior, and zoo (3.4%
+weighted reach). The exported S3 generic and `lines.default` preserve package-method values and
+visibility, while ordinary coordinate vectors, matrices, lists, data frames, and complex values
+share the existing plot-coordinate adapter. Connected, point, combined, overplotted, histogram,
+step, and no-draw types emit existing bounded segment/point commands; incomplete coordinates split
+paths and line-versus-point style rules follow the documented first-value and recycling contract.
+This is reusable browser graphics infrastructure, not a claim of complete devices, axes, clipping,
+or every graphical parameter. Rank 176 `system` is now available through an explicit host policy for
+five measured withr/knitr/data.table calls (3.3% weighted reach). Its GNU R-shaped formals,
+validation, status/output behavior, and inline/Worker bridge are reusable, but the measured
+`R CMD SHLIB`, `pandoc`, and `diff` programs exist only when the embedding application allows and
+implements them. The default browser runtime still has no process capability. `as.difftime` is now
+available for both measured vctrs/scales calls at rank 177 (3.3% weighted reach). Plain numeric
+intervals retain their explicit units, while recycled character formats feed the shared
+seconds/minutes/hours/days/weeks constructor with automatic-unit selection, names, missing values,
+exact formals, and GNU R-shaped interval attributes. The adjacent `difftime` path now adds partial
+unit names, automatic units, and recycling warnings. Locale-specific `%X`, date-bearing named-zone
+parsing, POSIXlt conversion, and the full difftime S3 arithmetic/method family remain explicit
+compatibility depth. Rank 184 `ls` is now available for all five measured calls across callr, rstan,
+and bit64 (3.0% weighted reach), together with its identical `objects` alias. Caller, explicit,
+numeric-position, and exact named search-list environments share non-forcing binding enumeration,
+hidden-name and pattern filtering, deterministic ordering, and GNU R-shaped formals. A checked-in
+source-only package uses the same implementation inside its namespace. Active bindings, locale
+collation, exact hash-bucket order, and browser/GNU regexp differences remain explicit compatibility
+depth. Rank 186 `hist` is now available for all 19 measured calls across testthat, openssl, shiny,
+and posterior (3.0% weighted reach). The shared S3/default path returns standard histogram fields,
+supports numeric or algorithmic breaks, right/left endpoint rules, densities, class-count helpers,
+and browser bar/label drawing over the existing polygon journal. A checked-in pure-R package calls
+the same implementation unchanged; complete pretty-boundary identity, logarithmic axes, line-density
+shading, and every graphics parameter remain compatibility depth. Rank 22 `plot` is now available
+for all 179 measured occurrences across 20 sampled package manuals, representing 19.1%
+download-weighted reach. The implementation prioritizes the common numeric vector/x-y calls and the
+S3 seam required by package-owned plot methods: point, line, both, overplotted, histogram, step, and
+no-draw geometry reuse the owned Worker/Canvas graphics journal. This is shape-level availability,
+not complete base-graphics compatibility; specialized methods, full axes/tick labels, log/aspect
+layout, margins, clipping, and arbitrary graphical controls remain declared boundaries. Rank 27
+`system.file` is now available at 17.1% weighted reach through bounded, immutable package-resource
+paths. Rank 34 `Sys.sleep` adds cooperative Worker-safe waits, while rank 52 `writeLines` and rank
+61 `readLines` add session-memory roundtrips and immutable package-text reads. Ranks 65 `file`, 69
+`close`, 71 `tempdir`, and 125 `file.exists` now share a bounded session-owned connection and path
+layer; rank 341 `open` and its adjacent `flush`, `isOpen`, and `seek` operations use the same
+handles. Ranks 48 `R.home`, 129 `dir.create`, and 135 `list.files` now share a bounded
+virtual-directory layer with `dir.exists`, `list.dirs`, `getwd`/`setwd`, `normalizePath`,
+`basename`, and `dirname`. Usage-ranked `data`, `write.csv`, and `read.csv` now use that layer for
+package data scripts, text datasets, quoted tabular input/output, and deterministic type conversion.
+Rank 80 `dev.off` now participates in a multi-device lifecycle. Rank 121 `png` covers all seven
+measured calls across five packages through a browser-owned file device, deterministic command
+rasterizer, and real PNG encoding. Rank 127 `system.time` now covers all 95 measured calls across
+six packages through lazy single evaluation, GNU R-shaped `proc_time` results, and the adjacent
+`proc.time` session clock. Grouped `split` (rank 155) and real-vector `floor` (rank 156) are now
+complete at 4.1% weighted reach each. Factor generator `gl` (rank 158, 4.1%) and a bounded
+data-frame `merge` subset (rank 161, 4.0%) are now complete. Data-mask mutation through `within`
+(rank 167, 3.8%) and vectorized real/complex trigonometry led by `sin` (rank 177, 3.6%) are now
+complete as well. After filtering out already-supported names and architecture-dependent host,
+graphics, serialization, and source-loading entries, numeric-order factor coercion through
+`as.factor` (rank 187, 3.1%) and grouped transformation through `ave` (rank 188, 3.0%) are now
+complete. UTC date construction through `ISOdate` (rank 189, 3.0%) and Cartesian data-frame
+construction through `expand.grid` (rank 190, 3.0%) are now complete too. After filtering out
+package metadata, graphics, host-memory, process, and object-introspection work, vector insertion
+through `append` (rank 195, 2.9%) and vectorized real/complex cosine through `cos` (rank 199, 2.9%)
+are now complete. The set-operation family is now complete through `intersect` (rank 186), `setdiff`
+(rank 208), and `union` (rank 209), followed by parallel minimum selection through `pmin` (rank 215,
+2.4%), lagged vector differencing through `diff` (rank 222, 2.3%), and explicit vector-mode coercion
+through `as.vector` (rank 224, 2.3%). Integer-code-point decoding through `intToUtf8` (rank 226,
+2.3%) is now complete as well. The bounded `show` generic is now complete for registered
+single-object display methods and deterministic fallback output, while rank 227 `rep_len` is already
+supported. Matrix-diagonal construction and extraction through `diag` (rank 228, 2.2%) is now
+complete too. Rank 229 `identity` is already supported, while rank 230 `textConnection` belongs to
+the connection/host-adapter surface. Formula coercion through `as.formula` (rank 231, 2.2%) is now
+complete. Quoted evaluation through `evalq` (rank 232, 2.2%) is now complete too. The global
+calling-handler surface through `globalCallingHandlers` (rank 233, 2.2%) is now complete as well.
+Session search-path inspection through `search` and dynamic R-syntax call inspection through
+`sys.call` (ranks 234–235, 2.2% each) are now complete. Rank 236 `force` is already supported, rank
+237 `readline` now uses an explicit line-input host adapter, ranks 238–239 `difftime` and
+`is.character` are already supported, and rank 241 `unserialize` now shares the bounded GNU R XDR
+codec with rank 142 `serialize`. Time-series coordinate shifting through `lag` (rank 242, 2.0%) is
+now complete. Numeric interval factorization through `cut` (rank 243, 2.0%) is now complete too.
+Ranks 244–245 `Sys.setlocale` and `Sys.getlocale` are now complete for evaluator-owned C locale
+state and the two monetary profiles required by the later measured `withr` examples; arbitrary host
+locales, collation, and time-language mutation remain explicit boundaries. Rank 246 `plot.new` is
+now the page-state dependency for the measured raster slice, and rank 247 `logical` is already
+supported. Atomic run-length encoding through `rle` (rank 248, 1.9%) is now complete. Rank 249
+`deparse` is already supported. Regex match extraction through `regmatches` (rank 250, 1.9%) is now
+complete together with its `gregexpr` match-object producer (rank 252, 1.9%) and the supporting
+first-match `regexpr` surface. Independent whitespace trimming through `trimws` (rank 251, 1.9%) is
+now complete too. Ranks 253–255 require package-metadata, connection, or process-timing host
+contracts, while rank 256 `vapply` is already supported. Time-series endpoint inspection through
+`end` (rank 257, 1.8%) is now complete. Ranks 258–259 belong to graphics/color architecture; ranks
+260 `complex` and 261 `vector` are already supported, while the current rank-256 `file.remove` now
+uses the owned session-file contract without exposing a host filesystem. Grouped factor reordering
+through `reorder` (rank 263, 1.7%) and planar convex-hull selection through `chull` (rank 264, 1.7%)
+are now complete. Rank 265 `terrain.colors` belongs to color-generation architecture. Model
+covariance plus central Student-t probabilities now complete `confint` (rank 266, 1.7%).
+Session-local numeric perturbation through `jitter` (rank 267, 1.7%) and argument-choice
+normalization through `match.arg` (rank 268, 1.7%) are complete. Stable logistic quantiles through
+`qlogis` (rank 269, 1.7%) and matrix centering/scaling through `scale` (rank 270, 1.7%) are complete
+too. The model architecture completes `aov` and `fitted` (ranks 271–272), and `IQR` (rank 273)
+covers interquartile ranges through all nine GNU R quantile algorithms. Numeric clustering through
+`kmeans` (rank 274, 1.7%) is now complete for the documented bounded algorithms and data shapes.
+Ranks 275–278 (`log2`, `predict`, `resid`, and `rt`) are already supported. Circular, open, and
+filtering convolution through `convolve` (rank 225, 2.3%) is now complete, and rank 279 `Filter` is
+already supported. Hexadecimal integer modes through `as.hexmode` (rank 280, 1.7%) are now complete
+together with their formatting, printing, selection, and bitwise method chain. Ranks 281 `axis` and
+282 `readChar` now reuse the owned graphics and connection architectures; ranks 283 `debug` and 285
+`undebug` now reuse the explicit readline host architecture with adjacent `debugonce` and
+`isdebugged`, preserving function-object identity, one-shot consumption, and a bounded command
+subset. Arbitrary debugger expressions, nested stepping, and S4 signatures remain depth. Rank 284
+`emptyenv` is already supported. Rank 286 `as.list.environment` is the next isolated browser-safe
+callable and is now complete with S3 dispatch, local binding enumeration, hidden-name and sorting
+controls, hash-aware unsorted order, and lazy-promise forcing. Rank 287 `list2env` is already
+supported. Rank 288 `capabilities` is now complete: the four sampled calls query `cairo` or
+`profmem`, and the browser runtime truthfully reports both unavailable while preserving GNU R's full
+named selection shape. Ranks 289 `pdf` and 290 `title` require graphics-host architecture, rank 291
+`exists` is already supported, and rank 292 `kappa` is now complete with QR estimates, exact 2-norm
+results, direct one-/infinity-norm paths, triangular controls, and `qr`/`lm` dispatch. Rank 293
+`model.matrix` is already supported. Rank 294 `xtabs` is now complete for the sampled RcppEigen
+factor-table call plus weighted/matrix responses, subsets, missing-value controls, unused levels,
+and table metadata. Rank 295 `RNGkind` is now complete for the six sampled query calls in the
 [`withr` reference manual](https://cran.r-project.org/web/packages/withr/refman/withr.html) plus
 partial/default kind selection, prior-state return and visibility, warnings, the default
 Mersenne-Twister/Inversion pair, and both discrete samplers. Rank 296 `sample.int` is now complete
@@ -486,10 +486,10 @@ including GNU R 4.6-shaped vector/list/attribute sizes and object-size unit form
 Worker text events, browser/file devices, and unchanged source-only package code. Rank 330 `sink` is
 complete for utf8's two measured redirection calls, with reusable session stack, split, message,
 connection, pure-R package, and Worker evidence. Rank 338 `write` is complete for sass's measured
-source-line call with GNU R column layout and owned file/connection targets; rank 340
-`available.packages` is the next usage-ranked unresolved callable. Rank 316 `colSums` is now
-complete for three observed calls across
-[`loo`](https://cran.r-project.org/web/packages/loo/refman/loo.html) and
+source-line call with GNU R column layout and owned file/connection targets. Rank 340
+`available.packages` is complete for curl's measured repository database; rank 343 `barplot` is the
+next usage-ranked unresolved callable. Rank 316 `colSums` is now complete for three observed calls
+across [`loo`](https://cran.r-project.org/web/packages/loo/refman/loo.html) and
 [`zoo`](https://cran.r-project.org/web/packages/zoo/refman/zoo.html), representing 1,601,512
 snapshot downloads and 1.3% download reach. Loo calls `colSums(tab_10)` and `colSums(tab_9)` on
 integer fold tables; zoo selects usable columns with `colSums(!is.na(za)) > 0`. NativR covers
@@ -641,11 +641,10 @@ The related `hcl.colors`, `palette`, and device color-management surfaces are se
 work; `rainbow`, `terrain.colors`, `topo.colors`, and `cm.colors` are covered by the later shared
 HSV increment. In ranks 345 through 353, `open` now uses the virtual connection layer and `readBin`
 can retrieve raw bytes from owned binary files; typed binary decoding remains incomplete. The
-remaining `available.packages`, `stderr`, `barplot`, `devAskNewPage`, `getLoadedDLLs`, and
-`socketConnection` surfaces require broader browser adapters, repositories, graphics, connections,
-or native-library state. Usage-ranked `write` now uses the owned file/connection writer. Rank 354
-`factorial` is now complete for xfun's
-[`factorial(10)` example](https://cran.r-project.org/web/packages/xfun/refman/xfun.html),
+remaining `stderr`, `barplot`, `devAskNewPage`, `getLoadedDLLs`, and `socketConnection` surfaces
+require broader browser adapters, repositories, graphics, connections, or native-library state.
+Usage-ranked `write` now uses the owned file/connection writer. Rank 354 `factorial` is now complete
+for xfun's [`factorial(10)` example](https://cran.r-project.org/web/packages/xfun/refman/xfun.html),
 representing 1,305,720 downloads and 1.1% reach. The independent implementation uses direct products
 for finite non-negative integers and a bounded Lanczos gamma approximation elsewhere, while
 retaining vector attributes, `NA`/`NaN` distinctions, non-finite behavior, and one domain-warning
@@ -1665,6 +1664,13 @@ ties:
      closed/open connection lifecycle, exact formals, source-package execution, Worker execution,
      conformance, and resource limits have evidence. Host files, native encodings, platform line
      endings, and non-atomic values remain compatibility depth.
+160. Repository package catalog: rank-340 `utils::available.packages` represents curl's measured
+     reverse-dependency database call at 1.2% download-weighted reach. `contrib.url`, bounded
+     UTF-8/gzip DCF parsing, GNU R 4.6-shaped package matrices, extra/missing fields, standard and
+     package-defined filters, duplicate selection, cache controls, headers, source-package
+     execution, Worker execution, conformance, and resource limits have evidence. Ambient network,
+     persistent host caches, archive installation, binary execution, and dependency-recursive
+     license proof remain compatibility depth.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.
