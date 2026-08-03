@@ -536,6 +536,18 @@ emit one warning per path only when the first coercible `showWarnings` element i
 Parents must already be session directories. Immutable package/runtime resources and host paths
 remain unwritable, and evaluator limits bound path count, files, bytes, allocation, and steps.
 
+`file.copy(from, to, overwrite = recursive, recursive = FALSE, copy.mode = TRUE, copy.date = FALSE)`
+copies only from owned session, runtime, or immutable package paths into the mutable session tree.
+It preserves exact binary bytes, recycles one source across multiple targets, expands multiple
+sources into one existing destination directory, returns an unclassed visible logical per attempted
+copy, and leaves existing targets unchanged unless overwrite is true. Recursive copies reproduce the
+source basename, subdirectories, and dotfiles only beneath one existing destination directory. An
+empty source returns before forcing later arguments. The browser store has deterministic virtual
+modes, so `copy.mode` is accepted but cannot reproduce host ACLs; `copy.date` preserves owned
+modification timestamps. File count, result length, bytes, recursion work, allocation, and steps are
+bounded, while host paths, links, devices, cross-session persistence, and ambient filesystem access
+remain unavailable.
+
 `utils::read.table` and its CSV/delimited variants consume that same text layer or inline `text=`.
 The owned bounded scanner recognizes LF/CRLF/CR records, explicit or whitespace separators, quoted
 fields, doubled quotes, embedded quoted newlines, comments, skipped/blank lines, filling, headers,

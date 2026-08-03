@@ -780,8 +780,13 @@ Rank 346 `base::socketConnection()` now supplies GNU R-shaped socket handles, fo
 timeouts, completeness queries, text writes, and line/raw reads through an explicit
 `createR({ socket })` adapter. The default runtime has no socket authority; the embedding
 application owns endpoint allow-listing and transport policy, and reset/disposal closes the session.
-An unchanged source-only package helper runs through both inline and default Worker execution. Rank
-348 `base::file.copy()` is the next measured unresolved callable.
+An unchanged source-only package helper runs through both inline and default Worker execution.
+
+Rank 348 `base::file.copy()` now covers xfun's measured package-resource staging pattern. It copies
+exact text or binary bytes from immutable package bundles into bounded session files, supports
+vector destinations, overwrite behavior, recursive directory trees including dotfiles, GNU R-shaped
+lazy/formal/result semantics, and default Worker execution. It never grants host-filesystem access.
+Rank 349 `base::find.package()` is the next measured unresolved callable.
 
 Rank 121 `grDevices::png()` now covers all seven measured calls across five packages. It opens
 alongside the browser display, records the existing graphics command vocabulary, rasterizes it in

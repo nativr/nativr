@@ -65,6 +65,7 @@ stopifnot(identical(event_colours(), c("#D33F6A4D", "#E2E2E24D", "#4A6FE34D")))
 stopifnot(identical(classic_palettes(1), c("#FF0000", "#F2F2F2", "#4C00FF", "#80FFFF")))
 stopifnot(is.null(usage_rectangles()))
 stopifnot(identical(remove_files(), c(TRUE, TRUE, TRUE, TRUE, FALSE, FALSE)))
+stopifnot(identical(copy_resource(), c("TRUE", '{"demo":true}', "TRUE")))
 stopifnot(identical(fixed_text(), c('{"demo":true}\n', "bookmarked")))
 stopifnot(identical(custom_axis(), c(1, 2, 3)))
 stopifnot(sourced_value() == 42L)
@@ -76,6 +77,11 @@ twice_mean(c(1, 2, 6))`,
     id: "filter",
     label: "Recursive time-series filter",
     code: "nativrdemo::filtered_flow(1:6)",
+  },
+  {
+    id: "package-copy",
+    label: "Pure-R package file copy",
+    code: "nativrdemo::copy_resource()",
   },
   {
     id: "package-description",

@@ -813,7 +813,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      and `socketTimeout` provide GNU R-shaped connection metadata, text writes, and line/raw reads
      through an explicit `createR({ socket })` lifecycle adapter. Default sessions have no network
      authority; inline, Worker, reset/dispose, conformance, and unchanged source-package paths have
-     evidence. Rank-348 `base::file.copy` is the next measured unresolved callable.
+     evidence.
+170. Usage-ranked file copying: rank-348 `base::file.copy` covers xfun's measured resource staging,
+     GNU R formals/laziness/vectorization/overwrite/recursive behavior, exact package-resource
+     bytes, immutable-source to mutable-session transfer, pure-R package calls, default Worker
+     execution, conformance, and evaluator resource limits. Rank-349 `base::find.package` is the
+     next measured unresolved callable.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

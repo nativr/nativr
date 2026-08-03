@@ -481,6 +481,16 @@ truncated owned file as GNU R does. File count, result length, storage, and step
 Parent creation is deliberately not recursive, and host permissions, umasks, ACLs, links, devices,
 platform-exact diagnostics, and host persistence are outside this browser-memory contract.
 
+Usage-ranked `base::file.copy` has GNU R 4.6 differential evidence for all six formals and defaults,
+visible attribute-free logical results, source recycling, existing-directory expansion, overwrite,
+self-copy failure, empty-source laziness, recursive directories, dotfiles, and invalid arguments.
+NativR-only integration evidence additionally proves exact binary copying from immutable pure-R
+package resources into mutable session paths, unchanged package helper execution, default Worker
+transport, and file-count/storage limits. Destinations remain session-owned; package/runtime roots
+are immutable and host paths are unavailable. Virtual modes are fixed rather than host-derived,
+links/devices and platform-specific metadata are unsupported, and recursive copies require one
+existing destination directory.
+
 This is a browser-memory compatibility slice, not host filesystem emulation. Relative paths are
 accepted only when the current directory belongs to a NativR-owned root; absolute host paths and
 unsupported connections are rejected. Only the default `dput(control=)` set is accepted;

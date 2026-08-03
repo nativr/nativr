@@ -225,6 +225,10 @@ normalized AST. The runtime then provides:
     adapter. Unchanged package code can open, write, read, query completeness, change timeouts, and
     close ordinary socket connections in inline or Worker sessions; endpoint policy and the actual
     transport stay outside the package, and omission of the adapter fails closed.
+29. usage-ranked `base::file.copy()` over the owned virtual filesystem. Unchanged package code can
+    stage immutable text or binary resources into a writable tempfile, copy several files into an
+    existing directory, and recursively reproduce session trees without a JavaScript package shim or
+    host-filesystem access.
 
 Package source, metadata, resource counts, and encoded bytes are bounded before parsing. Package
 evaluation then consumes the ordinary step, call-depth, allocation, and output budgets.
@@ -561,6 +565,11 @@ loader.
   matching, per-path results/warnings, Worker execution, and resource preflight share the ordinary
   virtual filesystem. Parent directories must exist, and package/runtime resources plus host paths
   remain read-only or unavailable.
+- `file.copy()` supports xfun's measured resource-staging pattern: package R code can copy exact
+  immutable bundle bytes to a tempfile and then use ordinary readers or cleanup functions. It also
+  supports vector targets, overwrite control, recursive session directories and dotfiles, bounded
+  Worker execution, and logical per-path results. It cannot write package/runtime roots, discover
+  host files, reproduce host permissions, or follow links.
 - `stats::ts.plot()` supports magrittr's measured exposition-pipe example without translating
   magrittr or the calling package. Numeric vectors and regular vector/matrix series align on a
   shared bounded time grid, missing union cells split paths, and styles/annotations traverse the

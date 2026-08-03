@@ -169,6 +169,11 @@ Date: 2026-08-02
   transport policy; requests and byte responses are copied, bounded, correlated through the Worker,
   and closed on R close, reset, restart, or disposal. Without the adapter, construction with
   `open = ""` remains an inert shape probe and network I/O fails closed.
+- Usage-ranked `file.copy()` with GNU R 4.6 formals, defaults, lazy empty-source behavior,
+  vectorization, directory expansion, overwrite, recursive trees, dotfiles, visible logical results,
+  and validation boundaries. Exact text/binary bytes move from immutable package resources or
+  session files only into bounded mutable session paths; unchanged pure-R package and default Worker
+  examples execute without host-filesystem authority.
 - Usage-ranked `utils::download.file()` composes that explicit byte adapter with session-owned
   files. GNU R 4.6 formals, preflight validation, invisible statuses, paired-vector `retvals`, exact
   replacement bytes, named headers, pure-R namespace calls, failure atomicity, default-deny inline
@@ -511,6 +516,10 @@ Date: 2026-08-02
   and truncation, exact dots/`showWarnings` matching, first-character and later-atomic coercion,
   vectorized visible results, silent missing values, bounded per-path warnings, preflight before
   mutation, pure-R package execution, Worker transport, and resource limits.
+- Usage-ranked `base::file.copy` for xfun's measured immutable-resource staging path: exact text and
+  binary bytes, vector targets, existing-directory basename expansion, overwrite, recursive session
+  trees including dotfiles, GNU R-shaped lazy/formal/result behavior, unchanged package execution,
+  Worker proof, and file-count/storage limits.
 - Usage-ranked `grDevices::gray`/`grey` and `gray.colors`/`grey.colors` with zoo's two measured
   calls, byte-exact RGB(A) output, documented gamma correction, alpha recycling, reversal,
   descending endpoints, alias behavior, atomic gray-level coercion, attribute removal, and bounded

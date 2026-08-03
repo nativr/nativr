@@ -32,7 +32,7 @@ importFrom(graphics, axis, barplot, plot.new, plot.window, rect, title)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median, ts.plot)
 importFrom(utils, download.file, packageDescription, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, annotated_plot, ask_new_pages, find_tools, create_file, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, socket_exchange, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, loaded_module_paths, standard_output, sink_lines, write_sass_variable)
+export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, annotated_plot, ask_new_pages, find_tools, create_file, copy_resource, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, socket_exchange, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, loaded_module_paths, standard_output, sink_lines, write_sass_variable)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -90,6 +90,13 @@ create_file <- function() {
   path <- tempfile()
   created <- file.create(path)
   result <- c(created, file.exists(path), file.size(path), unlink(path))
+  result
+}
+copy_resource <- function() {
+  source <- system.file("extdata", "config.json", package = "nativrfixture")
+  target <- tempfile(fileext = ".json")
+  copied <- file.copy(source, target)
+  result <- c(copied, readLines(target), file.remove(target))
   result
 }
 remove_files <- function() {
@@ -2067,6 +2074,162 @@ describe("complete inline source-to-result vertical slice", () => {
       code: "NRL4002",
     });
     await limited.dispose();
+  });
+
+  it("copies xfun's usage-ranked files and pure-R package resources without host filesystem access", async () => {
+    const runtime = await session();
+    const measured = await runtime.evalDetailed(`
+      root <- tempfile("file-copy-")
+      dir.create(root)
+      sources <- file.path(root, c("a.txt", "b.txt"))
+      writeLines("alpha", sources[1])
+      writeLines("beta", sources[2])
+      destination <- file.path(root, "destination")
+      dir.create(destination)
+      copied <- withVisible(file.copy(sources, destination))
+
+      writeLines("changed", file.path(destination, "a.txt"))
+      kept <- file.copy(sources[1], file.path(destination, "a.txt"), overwrite = FALSE)
+      replaced <- file.copy(sources[1], file.path(destination, "a.txt"), overwrite = TRUE)
+
+      tree <- file.path(root, "tree")
+      dir.create(file.path(tree, "sub"), recursive = TRUE)
+      writeLines("hidden", file.path(tree, ".hidden"))
+      writeLines("nested", file.path(tree, "sub", "nested.txt"))
+      recursive <- file.copy(tree, destination, recursive = TRUE)
+      source_time <- file.mtime(sources[1])
+      Sys.sleep(0.01)
+      dated_path <- file.path(root, "dated.txt")
+      dated <- file.copy(sources[1], dated_path, copy.date = TRUE)
+      f <- formals(file.copy)
+      result <- c(
+        copied$value, copied$visible, is.null(attributes(copied$value)),
+        readLines(file.path(destination, "a.txt")),
+        readLines(file.path(destination, "b.txt")),
+        kept, replaced, readLines(file.path(destination, "a.txt")),
+        recursive,
+        dir.exists(file.path(destination, "tree", "sub")),
+        readLines(file.path(destination, "tree", ".hidden")),
+        readLines(file.path(destination, "tree", "sub", "nested.txt")),
+        dated, identical(file.mtime(dated_path), source_time),
+        names(f), identical(f$overwrite, quote(recursive)),
+        identical(f$recursive, FALSE), identical(f$copy.mode, TRUE),
+        identical(f$copy.date, FALSE)
+      )
+      unlink(root, recursive = TRUE)
+      result
+    `);
+    expect(measured.value).toEqual([
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "alpha",
+      "beta",
+      "FALSE",
+      "TRUE",
+      "alpha",
+      "TRUE",
+      "TRUE",
+      "hidden",
+      "nested",
+      "TRUE",
+      "TRUE",
+      "from",
+      "to",
+      "overwrite",
+      "recursive",
+      "copy.mode",
+      "copy.date",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    expect(measured.warnings).toEqual([]);
+
+    await expect(runtime.eval("file.copy(character(), stop('not forced'))")).resolves.toEqual([]);
+    await expect(runtime.eval("file.copy('missing', character())")).rejects.toMatchObject({
+      code: "NRE2258",
+    });
+    await expect(runtime.eval("file.copy('missing')")).rejects.toMatchObject({ code: "NRE2103" });
+    await expect(
+      runtime.eval("file.copy('missing', tempfile(), recursive = NA)"),
+    ).rejects.toMatchObject({ code: "NRT3355" });
+
+    const vectorized = await runtime.evalDetailed(`
+      root <- tempfile("file-copy-vector-")
+      dir.create(root)
+      source <- file.path(root, "source")
+      writeLines("value", source)
+      targets <- file.path(root, c("one", "two"))
+      value <- file.copy(source, targets)
+      same_error <- inherits(try(file.copy(source, source), silent = TRUE), "try-error")
+      result <- c(
+        value, is.null(attributes(value)),
+        readLines(targets[1]), readLines(targets[2]), same_error
+      )
+      unlink(root, recursive = TRUE)
+      result
+    `);
+    expect(vectorized.value).toEqual(["TRUE", "TRUE", "TRUE", "value", "value", "FALSE"]);
+    expect(vectorized.warnings).toEqual([]);
+    await runtime.dispose();
+
+    const packaged = await createR({ execution: "inline", assets, packages: [pureRFixture] });
+    await expect(packaged.eval("nativrfixture::copy_resource()")).resolves.toEqual([
+      "TRUE",
+      '{"scale":2}',
+      "TRUE",
+    ]);
+    await expect(
+      packaged.eval(`
+        source <- system.file("extdata", "archive.zip", package = "nativrfixture")
+        target <- tempfile(fileext = ".zip")
+        copied <- file.copy(source, target)
+        same <- identical(
+          readBin(source, "raw", n = file.size(source)),
+          readBin(target, "raw", n = file.size(target))
+        )
+        c(copied, same, file.size(source) == file.size(target), file.remove(target))
+      `),
+    ).resolves.toEqual([true, true, true, true]);
+    await expect(
+      packaged.eval(`
+        source <- system.file("extdata", "config.json", package = "nativrfixture")
+        file.copy(source, source, overwrite = TRUE)
+      `),
+    ).resolves.toBe(false);
+    await packaged.dispose();
+
+    const vectorLimited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 3 },
+    });
+    await expect(
+      vectorLimited.eval("file.copy(rep('missing', 4L), tempfile())"),
+    ).rejects.toMatchObject({ code: "NRL4002" });
+    await expect(
+      vectorLimited.eval("file.copy('missing', rep(tempfile(), 4L))"),
+    ).rejects.toMatchObject({ code: "NRL4002" });
+    await vectorLimited.dispose();
+
+    const storageLimited = await createR({
+      execution: "inline",
+      assets,
+      packages: [pureRFixture],
+      limits: { maxOutputBytes: 20 },
+    });
+    await expect(
+      storageLimited.eval(`
+        source <- system.file("extdata", "config.json", package = "nativrfixture")
+        targets <- c(tempfile(), tempfile())
+        file.copy(source, targets)
+      `),
+    ).rejects.toMatchObject({ code: "NRL4007" });
+    await expect(storageLimited.eval("file.exists(targets)")).resolves.toEqual([false, false]);
+    await storageLimited.dispose();
   });
 
   it("removes xfun and data.table's usage-ranked temporary files with per-path results", async () => {
@@ -4078,6 +4241,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "centered",
       "class_summary",
       "classic_palettes",
+      "copy_resource",
       "create_file",
       "describe",
       "download_resource",
@@ -12227,7 +12391,7 @@ NeedsCompilation: no
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.257.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.258.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

@@ -737,6 +737,34 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
       },
     ],
   ),
+  withBuiltinFormals(
+    defineBuiltin(
+      "file.copy",
+      ["from", "to", "overwrite", "recursive", "copy.mode", "copy.date"],
+      "behavioral",
+      builtinFileCopy,
+    ),
+    [
+      { name: "from" },
+      { name: "to" },
+      {
+        name: "overwrite",
+        defaultValue: { kind: "Identifier", name: "recursive", span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "recursive",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "copy.mode",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "copy.date",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
   withBuiltinFormals(defineBuiltin("file.remove", ["..."], "behavioral", builtinFileRemove), [
     { name: "..." },
   ]),
@@ -9334,6 +9362,340 @@ function fileCreateWarningsFlag(value: RValue | undefined): boolean {
   }
   const scalar = value.values[0];
   return typeof scalar === "number" ? !Number.isNaN(scalar) && scalar !== 0 : scalar === true;
+}
+
+interface FileCopyPath {
+  readonly supplied: string;
+  readonly missing: boolean;
+}
+
+interface ResolvedFileCopyOperation {
+  readonly from: FileCopyPath;
+  readonly to: FileCopyPath;
+  readonly source: string | undefined;
+  readonly target: string | undefined;
+}
+
+async function builtinFileCopy(invocation: BuiltinInvocation): Promise<RLogicalVector> {
+  const matched = matchLazyArguments(invocation, [
+    "from",
+    "to",
+    "overwrite",
+    "recursive",
+    "copy.mode",
+    "copy.date",
+  ]);
+  const fromArgument = matched.get("from");
+  if (fromArgument === undefined || fromArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'from' is missing in file.copy().");
+  }
+  const from = fileCopyPaths(await invocation.force(fromArgument.promise), "from", invocation);
+  if (from.length === 0) return logicalVector([]);
+
+  const toArgument = matched.get("to");
+  if (toArgument === undefined || toArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'to' is missing in file.copy().");
+  }
+  const to = fileCopyPaths(await invocation.force(toArgument.promise), "to", invocation);
+  if (to.length === 0) throw new REvaluationError("NRE2258", "no files to copy to");
+
+  const recursive = await fileCopyFlag(invocation, matched.get("recursive"), false, "recursive");
+  const overwrite = await fileCopyFlag(
+    invocation,
+    matched.get("overwrite"),
+    recursive,
+    "overwrite",
+  );
+  await fileCopyFlag(invocation, matched.get("copy.mode"), true, "copy.mode");
+  const copyDate = await fileCopyFlag(invocation, matched.get("copy.date"), false, "copy.date");
+
+  const resolvedToDirectory =
+    to.length === 1 ? resolveFileCopyPath(invocation, to[0]!, "file.copy") : undefined;
+  const toDirectory =
+    resolvedToDirectory !== undefined && virtualDirectoryExists(invocation, resolvedToDirectory);
+  const copyRecursively = recursive && toDirectory;
+  if (recursive && !toDirectory) {
+    invocation.context.warn({
+      code: "NRW1141",
+      message: "'recursive' will be ignored as 'to' is not a single existing directory",
+    });
+  }
+  if (!toDirectory && from.length > to.length) {
+    throw new REvaluationError("NRE2258", "more 'from' files than 'to' files");
+  }
+
+  const length = toDirectory ? from.length : to.length;
+  if (length > invocation.context.limits.maxVectorLength) {
+    throw new RResourceLimitError("NRL4002", "file.copy() result length limit exceeded.", {
+      details: { maxVectorLength: invocation.context.limits.maxVectorLength, requested: length },
+    });
+  }
+  const operations: ResolvedFileCopyOperation[] = [];
+  for (let index = 0; index < length; index += 1) {
+    invocation.context.checkpoint();
+    const sourceInput = from[index % from.length]!;
+    const targetInput = toDirectory ? to[0]! : to[index % to.length]!;
+    const source = resolveFileCopyPath(invocation, sourceInput, "file.copy");
+    const targetRoot = resolveFileCopyPath(invocation, targetInput, "file.copy");
+    const target =
+      toDirectory && source !== undefined && targetRoot !== undefined
+        ? joinOwnedVirtualPath(targetRoot, fileCopyBasename(source))
+        : targetRoot;
+    operations.push({ from: sourceInput, to: targetInput, source, target });
+  }
+  invocation.context.allocate(length);
+  const fileState = virtualTextFileState(invocation);
+  const snapshot = snapshotFileCopyState(fileState);
+  const copied: boolean[] = [];
+  try {
+    for (const operation of operations) {
+      invocation.context.checkpoint();
+      copied.push(
+        copyOwnedVirtualPath(invocation, operation, overwrite, copyRecursively, copyDate),
+      );
+    }
+  } catch (error) {
+    if (error instanceof RResourceLimitError) restoreFileCopyState(fileState, snapshot);
+    throw error;
+  }
+  return logicalVector(copied);
+}
+
+interface FileCopyStateSnapshot {
+  readonly files: Map<string, string>;
+  readonly binaryFiles: Map<string, Uint8Array>;
+  readonly directories: Set<string>;
+  readonly metadata: Map<string, VirtualFileMetadata>;
+  readonly bytes: number;
+}
+
+function snapshotFileCopyState(state: VirtualTextFileState): FileCopyStateSnapshot {
+  return {
+    files: new Map(state.files),
+    binaryFiles: new Map(state.binaryFiles),
+    directories: new Set(state.directories),
+    metadata: new Map(state.metadata),
+    bytes: state.bytes,
+  };
+}
+
+function restoreFileCopyState(state: VirtualTextFileState, snapshot: FileCopyStateSnapshot): void {
+  state.files.clear();
+  for (const [path, source] of snapshot.files) state.files.set(path, source);
+  state.binaryFiles.clear();
+  for (const [path, bytes] of snapshot.binaryFiles) state.binaryFiles.set(path, bytes);
+  state.directories.clear();
+  for (const path of snapshot.directories) state.directories.add(path);
+  state.metadata.clear();
+  for (const [path, metadata] of snapshot.metadata) state.metadata.set(path, metadata);
+  state.bytes = snapshot.bytes;
+}
+
+async function fileCopyFlag(
+  invocation: BuiltinInvocation,
+  argument: BuiltinCallArgument | undefined,
+  fallback: boolean,
+  name: string,
+): Promise<boolean> {
+  if (argument === undefined) return fallback;
+  const value = await invocation.force(argument.promise);
+  if (value.type === "null" || !isAtomic(value) || value.length !== 1 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3355", `invalid '${name}' argument`);
+  }
+  return coercibleLogicalFlag(value, fallback, name);
+}
+
+function fileCopyPaths(
+  value: RValue,
+  name: "from" | "to",
+  invocation: BuiltinInvocation,
+): FileCopyPath[] {
+  if (value.type === "null") return [];
+  if (!isAtomic(value)) {
+    throw new RTypeMismatchError("NRT3361", `invalid '${name}' argument`);
+  }
+  const plain = atomicWithoutAttributes(value);
+  const paths = plain.type === "character" ? plain : coerceAtomicToCharacter(plain, invocation);
+  return paths.values.map((supplied, index) => ({
+    supplied,
+    missing: isMissing(paths, index),
+  }));
+}
+
+function resolveFileCopyPath(
+  invocation: BuiltinInvocation,
+  input: FileCopyPath,
+  call: string,
+): string | undefined {
+  if (input.missing || input.supplied.length === 0) return undefined;
+  try {
+    return resolveOwnedVirtualPath(invocation, input.supplied, call);
+  } catch {
+    return undefined;
+  }
+}
+
+function fileCopyBasename(path: string): string {
+  const normalized = path.replace(/\/+$/u, "");
+  const encoded = normalized.slice(normalized.lastIndexOf("/") + 1);
+  try {
+    return decodeURIComponent(encoded);
+  } catch {
+    return encoded;
+  }
+}
+
+function copyOwnedVirtualPath(
+  invocation: BuiltinInvocation,
+  operation: ResolvedFileCopyOperation,
+  overwrite: boolean,
+  recursive: boolean,
+  copyDate: boolean,
+): boolean {
+  const { source, target } = operation;
+  if (source !== undefined && source === target) return false;
+  if (source === undefined || target === undefined || !virtualPathExists(invocation, source)) {
+    warnFileCopy(invocation, operation, "No such file or directory");
+    return false;
+  }
+  if (virtualDirectoryExists(invocation, source)) {
+    if (!recursive) {
+      invocation.context.warn({
+        code: "NRW1141",
+        message: "directories are omitted unless 'recursive = TRUE'",
+      });
+      return false;
+    }
+    return copyOwnedVirtualDirectory(invocation, operation, overwrite, copyDate);
+  }
+  return copyOwnedVirtualFile(invocation, operation, overwrite, copyDate);
+}
+
+function copyOwnedVirtualFile(
+  invocation: BuiltinInvocation,
+  operation: ResolvedFileCopyOperation,
+  overwrite: boolean,
+  copyDate: boolean,
+): boolean {
+  const { source, target } = operation;
+  if (source === undefined || target === undefined) return false;
+  const state = virtualTextFileState(invocation);
+  const parent = sessionVirtualParent(target);
+  const writable = target.startsWith(`${VIRTUAL_TEMP_ROOT}/`);
+  const targetIsDirectory = virtualDirectoryExists(invocation, target);
+  const targetExists = state.files.has(target) || state.binaryFiles.has(target);
+  const targetOpen = [...state.connections.values()].some(
+    (connection) => connection.open && connection.path === target,
+  );
+  if (!writable || parent === undefined || !state.directories.has(parent) || targetIsDirectory) {
+    warnFileCopy(invocation, operation, "Permission denied");
+    return false;
+  }
+  if (targetExists && !overwrite) return false;
+  if (targetOpen) {
+    warnFileCopy(invocation, operation, "Permission denied");
+    return false;
+  }
+  try {
+    const sourceInfo = copyDate ? ownedVirtualFileInfo(invocation, source) : undefined;
+    writeVirtualBinaryFile(
+      invocation,
+      target,
+      readVirtualBinaryFile(invocation, source, "file.copy"),
+    );
+    if (copyDate && sourceInfo !== undefined) setCopiedVirtualFileDate(state, target, sourceInfo);
+    return true;
+  } catch (error) {
+    if (error instanceof RResourceLimitError) throw error;
+    warnFileCopy(invocation, operation, "Permission denied");
+    return false;
+  }
+}
+
+function copyOwnedVirtualDirectory(
+  invocation: BuiltinInvocation,
+  operation: ResolvedFileCopyOperation,
+  overwrite: boolean,
+  copyDate: boolean,
+): boolean {
+  const { source, target } = operation;
+  if (source === undefined || target === undefined) return false;
+  const state = virtualTextFileState(invocation);
+  const parent = sessionVirtualParent(target);
+  if (
+    !target.startsWith(`${VIRTUAL_TEMP_ROOT}/`) ||
+    parent === undefined ||
+    !state.directories.has(parent) ||
+    state.files.has(target) ||
+    state.binaryFiles.has(target) ||
+    target.startsWith(`${source}/`)
+  ) {
+    warnFileCopy(invocation, operation, "Permission denied");
+    return false;
+  }
+  if (!state.directories.has(target) && !createVirtualDirectory(invocation, state, target, false)) {
+    warnFileCopy(invocation, operation, "Permission denied");
+    return false;
+  }
+
+  const entries = virtualDirectoryEntries(invocation, source, true, true).sort((left, right) => {
+    const depth = left.relative.split("/").length - right.relative.split("/").length;
+    if (depth !== 0) return depth;
+    if (left.directory !== right.directory) return left.directory ? -1 : 1;
+    return left.relative.localeCompare(right.relative);
+  });
+  let complete = true;
+  for (const entry of entries) {
+    invocation.context.checkpoint();
+    const sourceEntry = joinOwnedVirtualPath(source, entry.relative);
+    const targetEntry = joinOwnedVirtualPath(target, entry.relative);
+    if (entry.directory) {
+      if (
+        !state.directories.has(targetEntry) &&
+        !createVirtualDirectory(invocation, state, targetEntry, true)
+      ) {
+        complete = false;
+      }
+      continue;
+    }
+    const copied = copyOwnedVirtualFile(
+      invocation,
+      {
+        from: { supplied: sourceEntry, missing: false },
+        to: { supplied: targetEntry, missing: false },
+        source: sourceEntry,
+        target: targetEntry,
+      },
+      overwrite,
+      copyDate,
+    );
+    if (!copied) complete = false;
+  }
+  if (copyDate) {
+    const sourceInfo = ownedVirtualFileInfo(invocation, source);
+    if (sourceInfo !== undefined) setCopiedVirtualFileDate(state, target, sourceInfo);
+  }
+  return complete;
+}
+
+function setCopiedVirtualFileDate(
+  state: VirtualTextFileState,
+  path: string,
+  source: OwnedVirtualFileInfo,
+): void {
+  const current = state.metadata.get(path) ?? virtualFileMetadata(virtualFileTimestamp());
+  state.metadata.set(path, { ...current, modified: source.modified });
+}
+
+function warnFileCopy(
+  invocation: BuiltinInvocation,
+  operation: ResolvedFileCopyOperation,
+  reason: string,
+): void {
+  invocation.context.warn({
+    code: "NRW1141",
+    message: `problem copying '${operation.from.supplied}' to '${operation.to.supplied}': ${reason}`,
+  });
 }
 
 async function builtinFileRemove(invocation: BuiltinInvocation): Promise<RLogicalVector> {

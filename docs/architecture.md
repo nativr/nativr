@@ -285,6 +285,13 @@ arrives. The operation adds neither a second transport nor host-path access. It 
 runtime primitive for package resource downloads, while repository resolution, archive admission,
 dependency locking, and package activation remain separate package-manager responsibilities.
 
+File copying composes existing owned-path and byte-store primitives without a new backend or Worker
+message. `base::file.copy()` resolves sources across immutable package/runtime resources and mutable
+session paths, copies exact admitted bytes only into the session tree, and recursively enumerates
+owned directories under evaluator checkpoints. Pure-R package resource staging therefore uses the
+same normalized-AST evaluator and virtual filesystem as interactive code; no package translation,
+Node filesystem, DOM API, or host path is introduced.
+
 Command pipes compose the existing command request with that same private connection storage.
 `base::pipe()` creates an inert record; a read asks the explicit host policy once and writes copied
 stdout bytes into the record, while a write buffers bytes and submits exact text on close. Existing

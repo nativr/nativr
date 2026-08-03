@@ -173,6 +173,13 @@ host, runtime, and package paths return bounded failures. Filename vectors are v
 count limits are checked before mutation, preventing invalid later arguments or resource overflow
 from leaving a partially created batch.
 
+`file.copy()` likewise grants no host-filesystem capability. Sources must already belong to an
+admitted runtime/package bundle or the current session, and destinations must be descendants of the
+session-temp root with existing parents. Exact bytes are copied into bounded owned storage; file
+count, result length, recursive enumeration, allocation, and steps are checked. Package/runtime
+roots remain immutable, open destinations fail closed, dot segments cannot escape an owned root, and
+links, devices, mounts, ACLs, and ambient host paths do not exist in this model.
+
 `stats::ts.plot()` grants no DOM, Canvas, device, or package-specific callback capability. It aligns
 finite evaluator-owned observations under the normal vector/allocation limits and emits only the
 existing bounded, data-only graphics events. Worker hosts receive the same events as any other plot;

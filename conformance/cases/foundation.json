@@ -9122,6 +9122,46 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "file-copy-xfun-measured-files-recursion-overwrite-visibility-and-formals",
+    "code": "root <- tempfile(\"file-copy-\")\ndir.create(root)\nsources <- file.path(root, c(\"a.txt\", \"b.txt\"))\nwriteLines(\"alpha\", sources[1])\nwriteLines(\"beta\", sources[2])\ndestination <- file.path(root, \"destination\")\ndir.create(destination)\ncopied <- withVisible(file.copy(sources, destination))\nwriteLines(\"changed\", file.path(destination, \"a.txt\"))\nkept <- file.copy(sources[1], file.path(destination, \"a.txt\"), overwrite = FALSE)\nreplaced <- file.copy(sources[1], file.path(destination, \"a.txt\"), overwrite = TRUE)\ntree <- file.path(root, \"tree\")\ndir.create(file.path(tree, \"sub\"), recursive = TRUE)\nwriteLines(\"hidden\", file.path(tree, \".hidden\"))\nwriteLines(\"nested\", file.path(tree, \"sub\", \"nested.txt\"))\nrecursive_result <- file.copy(tree, destination, recursive = TRUE)\nsource_time <- file.mtime(sources[1])\nSys.sleep(0.01)\ndated_path <- file.path(root, \"dated.txt\")\ndated <- file.copy(sources[1], dated_path, copy.date = TRUE)\nf <- formals(file.copy)\nresult <- c(copied$value, copied$visible, is.null(attributes(copied$value)), readLines(file.path(destination, \"a.txt\")), readLines(file.path(destination, \"b.txt\")), kept, replaced, readLines(file.path(destination, \"a.txt\")), recursive_result, dir.exists(file.path(destination, \"tree\", \"sub\")), readLines(file.path(destination, \"tree\", \".hidden\")), readLines(file.path(destination, \"tree\", \"sub\", \"nested.txt\")), dated, abs(as.numeric(file.mtime(dated_path)) - as.numeric(source_time)) < 2, names(f), identical(f$overwrite, quote(recursive)), identical(f$recursive, FALSE), identical(f$copy.mode, TRUE), identical(f$copy.date, FALSE))\nunlink(root, recursive = TRUE)\nunname(result)",
+    "expected": [
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "alpha",
+      "beta",
+      "FALSE",
+      "TRUE",
+      "alpha",
+      "TRUE",
+      "TRUE",
+      "hidden",
+      "nested",
+      "TRUE",
+      "TRUE",
+      "from",
+      "to",
+      "overwrite",
+      "recursive",
+      "copy.mode",
+      "copy.date",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "file-copy-vector-recycling-empty-laziness-self-copy-and-errors",
+    "code": "root <- tempfile(\"file-copy-boundary-\")\ndir.create(root)\nsource <- file.path(root, \"source\")\nwriteLines(\"value\", source)\ntargets <- file.path(root, c(\"one\", \"two\"))\nvalue <- file.copy(source, targets)\nresult <- c(value, is.null(attributes(value)), readLines(targets[1]), readLines(targets[2]), length(file.copy(character(), stop(\"not forced\"))) == 0L, inherits(try(file.copy(\"missing\", character()), silent = TRUE), \"try-error\"), inherits(try(file.copy(source, source), silent = TRUE), \"try-error\"), inherits(try(file.copy(source, targets, recursive = NA), silent = TRUE), \"try-error\"))\nunlink(root, recursive = TRUE)\nunname(result)",
+    "expected": ["TRUE", "TRUE", "TRUE", "value", "value", "TRUE", "TRUE", "FALSE", "TRUE"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "ts-plot-magrittr-measured-window-visibility-and-formals",
     "code": "grDevices::pdf(NULL)\nz <- c(1, 4, 2)\nshown <- withVisible(stats::ts.plot(z))\nresult <- c(shown$visible, is.null(shown$value), par(\"usr\"), names(formals(stats::ts.plot)), typeof(formals(stats::ts.plot)$gpars), length(formals(stats::ts.plot)$gpars))\ngrDevices::dev.off()\nresult",
     "expected": ["FALSE", "TRUE", "0.92", "3.08", "0.88", "4.12", "...", "gpars", "language", "1"],

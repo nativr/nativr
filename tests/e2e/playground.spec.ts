@@ -149,6 +149,10 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("[true, true, true, true, false, false]");
 
+  await page.getByRole("button", { name: "Pure-R package file copy" }).click();
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText('["TRUE", "{\\"demo\\":true}", "TRUE"]');
+
   await page.locator("#source").fill("nativrdemo::fixed_text()");
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText('["{\\"demo\\":true}\\n", "bookmarked"]');

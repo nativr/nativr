@@ -778,3 +778,10 @@ duplex host capability. Open/read/write/timeout/close operations cross inline or
 bounded data-only records; the default remains network-free and fails closed. The measured Worker is
 400.4 KiB gzip (410,003 bytes), so the ceiling rises narrowly from 400 KiB to 401 KiB; client and
 parser-Wasm budgets remain unchanged.
+
+Language subset 0.258 adds usage-ranked `base::file.copy` by composing the existing owned path,
+directory, metadata, and exact-byte stores. It adds no dependency, protocol event, host filesystem,
+package-specific translation, or second file backend; immutable package resources and mutable
+session paths use the same bounded copy path inline and in the Worker. The measured Worker is 401.6
+KiB gzip (411,265 bytes), so the ceiling rises narrowly from 401 KiB to 402 KiB; client and parser-
+Wasm budgets remain unchanged.

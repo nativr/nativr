@@ -949,6 +949,17 @@ reset/disposal cleanup, invalid handler results, output limits, and default deni
 do not expose raw TCP to ordinary JavaScript, DNS, TLS, server sockets, backpressure, cancellation,
 and endpoint policy belong to the explicit host adapter and remain compatibility depth.
 
+The file-copy increment raises current name overlap to 637 of 2,522. Rank 348 `base::file.copy`
+covers xfun's measured package-resource staging call at 1.1% download-weighted reach. GNU R 4.6
+black-box evidence covers all six formals/defaults, empty-source laziness, visible attribute-free
+logical results, vector source recycling, existing-directory basename expansion, overwrite,
+self-copy failure, recursive subdirectories and dotfiles, and invalid flags/destinations.
+NativR-only evidence proves exact binary package-resource copies, immutable-source to
+mutable-session transfer, unchanged pure-R package execution, default Worker/Playground use, and
+result/file/storage bounds. Host paths, links, devices, platform permissions/ACLs, and cross-session
+persistence remain outside the browser-owned filesystem contract. Rank 349 `base::find.package` is
+the next measured unresolved callable.
+
 ## Completion evidence
 
 The objective is complete only when:
