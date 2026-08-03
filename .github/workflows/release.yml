@@ -27,9 +27,14 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
+      - name: Configure release commit identity
+        run: |
+          git config user.name "Yaoxiang Li"
+          git config user.email "18198096+YaoxiangLi@users.noreply.github.com"
       - name: Create release pull request or publish
         uses: changesets/action@v1
         with:
           publish: pnpm release
+          setupGitUser: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
