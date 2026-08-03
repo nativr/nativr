@@ -272,6 +272,14 @@ device are not claimed. Complete plot methods, embedded/custom fonts, arbitrary 
 device-exact text metrics, complete clipping/margins and graphical parameters, external display-list
 formats, and pixel or byte equivalence with GNU R devices are not claimed.
 
+Usage-ranked `base::getLoadedDLLs` has shape-level GNU R 4.6 evidence for its no-argument formals,
+visible `DLLInfoList` result, class-preserving empty subset, and the measured ps
+`vapply(..., "path")` call. The current browser runtime has no R-callable native modules, so its
+result is intentionally empty. NativR does not synthesize GNU R's base DLL entries, expose parser
+Wasm or JavaScript modules, enumerate a host process, or fabricate external pointers. Populated
+`DLLInfo` records, dynamic symbol lookup, `.Call`/`.External` linkage, and compiled-package loading
+are not claimed.
+
 `image` has shape-level differential evidence for the rank-163 calls sampled from `scales`,
 `viridisLite`, and `RColorBrewer`. Its S3 generic preserves package-defined methods. The default
 method covers matrix orientation, center/boundary expansion, regular raster and irregular polygon

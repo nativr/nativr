@@ -472,6 +472,14 @@ PNG/PDF file devices, plotting continues without a prompt, matching the relevant
 reuses package code but does not make interactive menus, native window devices, or arbitrary UI
 toolkits available.
 
+Rank-345 `base::getLoadedDLLs()` supports a common optional-native-backend probe without pretending
+that compiled code is present. A source-only package can run
+`vapply(getLoadedDLLs(), "[[", character(1), "path")` unchanged; today it receives `character(0)`
+and can choose its ordinary R fallback. This reduces package-specific ports where a fallback already
+exists. It does not make a package with `NeedsCompilation: yes` installable, nor does it turn parser
+Wasm or JavaScript bundles into R DLLs. Those packages need a future explicit, typed, browser-safe
+Wasm/native registration and foreign-call ABI.
+
 The object-system foundation follows the same rule. The checked-in source-only fixture imports
 `methods::setClass` and `methods::showClass`, declares `NativRFixtureClass` while its namespace is
 loaded, and exports an unchanged R function that captures the class summary. Class ownership, slots,

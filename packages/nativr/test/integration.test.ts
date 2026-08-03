@@ -31,7 +31,7 @@ importFrom(graphics, axis, barplot, plot.new, plot.window, rect, title)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median, ts.plot)
 importFrom(utils, download.file, packageDescription, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, annotated_plot, ask_new_pages, find_tools, create_file, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output, sink_lines, write_sass_variable)
+export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, annotated_plot, ask_new_pages, find_tools, create_file, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, loaded_module_paths, standard_output, sink_lines, write_sass_variable)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -169,6 +169,7 @@ installed_version <- function(package = "nativrfixture") as.character(packageVer
 namespace_names <- function(pattern = "") ls(envir = environment(namespace_names), pattern = pattern, all.names = TRUE)
 process_id <- function() Sys.getpid()
 library_paths <- function() .libPaths()
+loaded_module_paths <- function() vapply(getLoadedDLLs(), "[[", character(1), "path")
 standard_output <- function() {
   out <- stdout()
   writeLines("package-output", out)
@@ -3626,6 +3627,65 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("reports the browser-native loaded-module registry without synthetic host DLLs", async () => {
+    const runtime = await createR({ execution: "inline", assets, packages: [pureRFixture] });
+    await expect(
+      runtime.eval(`
+        result <- withVisible(getLoadedDLLs())
+        modules <- result$value
+        paths <- vapply(modules, "[[", character(1), "path")
+        empty <- modules[integer()]
+        c(
+          typeof(modules), mode(modules), class(modules), result$visible,
+          is.null(formals(getLoadedDLLs)), typeof(paths),
+          length(paths) == length(modules), identical(names(paths), names(modules)),
+          class(empty), length(empty)
+        )
+      `),
+    ).resolves.toEqual([
+      "list",
+      "list",
+      "DLLInfoList",
+      "TRUE",
+      "TRUE",
+      "character",
+      "TRUE",
+      "TRUE",
+      "DLLInfoList",
+      "0",
+    ]);
+    await expect(runtime.eval("length(getLoadedDLLs())")).resolves.toBe(0);
+    await expect(runtime.eval("nativrfixture::loaded_module_paths()")).resolves.toEqual([]);
+    await expect(
+      runtime.eval(`
+        c(
+          typeof(vapply(list(), identity, logical(1))),
+          typeof(vapply(list(), identity, integer(1))),
+          typeof(vapply(list(), identity, numeric(1))),
+          typeof(vapply(list(), identity, complex(1))),
+          typeof(vapply(list(), identity, character(1))),
+          typeof(vapply(list(), identity, raw(1))),
+          paste(dim(vapply(list(), identity, numeric(2))), collapse = "x"),
+          paste(
+            dim(vapply(list(), identity, structure(numeric(6), dim = c(2, 3)))),
+            collapse = "x"
+          )
+        )
+      `),
+    ).resolves.toEqual([
+      "logical",
+      "integer",
+      "double",
+      "complex",
+      "character",
+      "raw",
+      "2x0",
+      "2x3x0",
+    ]);
+    await expect(runtime.eval("getLoadedDLLs(1L)")).rejects.toMatchObject({ code: "NRE2101" });
+    await runtime.dispose();
+  });
+
   it("loads source-only R package bundles with namespaces, imports, hooks, and S3 methods", async () => {
     const runtime = await createR({
       execution: "inline",
@@ -3874,6 +3934,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "histogram_counts",
       "installed_version",
       "library_paths",
+      "loaded_module_paths",
       "namespace_names",
       "new_score",
       "package_bars",
@@ -12009,7 +12070,7 @@ NeedsCompilation: no
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.255.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.256.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

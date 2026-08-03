@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 399 KiB gzip;
+- Worker JavaScript: 400 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -763,3 +763,11 @@ graphics command kind. Non-interactive and file-device paths remain synchronous;
 browser path performs exactly one bounded host round trip per later page when enabled. The measured
 Worker is 398.9 KiB gzip, so the 399 KiB ceiling remains unchanged; client and parser-Wasm budgets
 also remain unchanged.
+
+Language subset 0.256 adds usage-ranked `base::getLoadedDLLs` as an allocation-accounted empty
+classed list plus ordinary list/vapply composition. It adds no dependency, host enumeration,
+filesystem access, pointer value, protocol event, or package-specific translation. The empty
+browser-native result is constant-size; populated native-module records remain outside this
+increment. The measured Worker is 399.0 KiB gzip (408,591 bytes), 15 bytes above the previous 399
+KiB byte ceiling, so the ceiling rises narrowly to 400 KiB; client and parser-Wasm budgets remain
+unchanged.

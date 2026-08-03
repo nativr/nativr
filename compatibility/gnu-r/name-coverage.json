@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 650,
-    "overlappingNames": 632,
-    "missingReferenceNames": 1890,
+    "nativrRegisteredNames": 651,
+    "overlappingNames": 633,
+    "missingReferenceNames": 1889,
     "nativrExtensionNames": 18,
-    "nameCoverage": 0.250595
+    "nameCoverage": 0.250991
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 456, "nameCoverage": 0.333577 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 457, "nameCoverage": 0.334309 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 76, "nameCoverage": 0.163793 },
     {
       "package": "methods",
@@ -294,6 +294,7 @@
     "getAllConnections",
     "getConnection",
     "getHook",
+    "getLoadedDLLs",
     "getNamespaceExports",
     "getOption",
     "getRversion",
@@ -1565,7 +1566,6 @@
     "getIdentification",
     "getInitial",
     "getLoadActions",
-    "getLoadedDLLs",
     "getMethod",
     "getMethods",
     "getMethodsForDispatch",

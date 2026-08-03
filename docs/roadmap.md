@@ -802,8 +802,13 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      measured calls with GNU R query/update visibility, logical coercion, per-device state,
      `device.ask.default`, unchanged source-package imports, and default Worker prompting through
      the existing explicit `readline` bridge. First pages, non-interactive sessions, and PNG/PDF
-     devices remain nonblocking. Rank-345 `base::getLoadedDLLs` is the next measured unresolved
-     callable.
+     devices remain nonblocking.
+168. Usage-ranked loaded-module introspection: rank-345 `base::getLoadedDLLs` covers ps's measured
+     `vapply(..., "path")` probe with GNU R-shaped formals, visibility, `DLLInfoList` class, empty
+     subsetting, source-package execution, and Worker evidence. The result is truthfully empty while
+     NativR has no R-callable native ABI; it exposes no synthetic DLL, host path, or handle. A
+     future typed Wasm/native registration and foreign-call layer remains required for compiled
+     packages. Rank-346 `base::socketConnection` is the next measured unresolved callable.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

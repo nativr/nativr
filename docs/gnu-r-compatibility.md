@@ -336,6 +336,14 @@ adapter is present; the request crosses the default Worker protocol. First pages
 sessions, and PNG/PDF devices remain nonblocking. Native screen devices and their platform event
 loops are not claimed.
 
+The rank-345 increment adds shape-level GNU R 4.6 black-box evidence for ps's measured
+`vapply(getLoadedDLLs(), "[[", character(1), "path")` probe. NativR matches the no-argument formals,
+visible list/mode/class contract, named character path projection, and class-preserving empty
+subset. The runtime truthfully reports zero entries because it has no R-callable native modules; GNU
+R's process-loaded DLL contents are platform state, not values NativR imitates. DLLInfo handle
+classes, symbol lookup, compiled-package registration, and ps's native library inspection remain
+explicit gaps.
+
 The rank-451 increment adds GNU R differential evidence for zoo's measured `deltat(z)` regular
 sampling-interval call. The generic dispatches to independently declared package methods with lazy
 dots; its default returns an unnamed visible double equal to one for ordinary inputs or the

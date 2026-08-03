@@ -283,6 +283,10 @@ Date: 2026-08-02
   visible queries, invisible previous-value updates, GNU R coercion, per-device state,
   `device.ask.default`, non-interactive/file-device bypass, unchanged source-package imports, and
   default Worker prompting through the existing explicit bounded `readline` exchange.
+- Usage-ranked `base::getLoadedDLLs` for ps's measured module-path probe, with no-argument formals,
+  visible `DLLInfoList` shape, `vapply(..., "path")`, empty subsetting, source-package and Worker
+  evidence, and a truthful empty result while no R-callable native-module ABI exists. Synthetic GNU
+  R DLLs, host paths, handles, and compiled-package compatibility are explicitly excluded.
 - Usage-ranked `grDevices::recordPlot`/`replayPlot` with a bounded independently owned display list,
   ragg's same-session record/replay shape, package-metadata retention, held replay, invisible replay
   return, namespace access, malformed-input guards, and explicit external-format/reload boundaries.

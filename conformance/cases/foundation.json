@@ -8239,6 +8239,24 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "loaded-dll-list-formals-visibility-vapply-and-empty-subset-shape",
+    "code": "result <- withVisible(getLoadedDLLs())\nmodules <- result$value\npaths <- vapply(modules, \"[[\", character(1), \"path\")\nempty <- modules[integer()]\nc(typeof(modules), mode(modules), class(modules), result$visible, is.null(formals(getLoadedDLLs)), typeof(paths), length(paths) == length(modules), identical(names(paths), names(modules)), class(empty), length(empty))",
+    "expected": [
+      "list",
+      "list",
+      "DLLInfoList",
+      "TRUE",
+      "TRUE",
+      "character",
+      "TRUE",
+      "TRUE",
+      "DLLInfoList",
+      "0"
+    ],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "system-time-lazy-proc-time-shape-and-monotonic-clock",
     "code": "tracker <- 0L\ntimed <- withVisible(system.time({ Sys.sleep(0.01); tracker <- tracker + 1L; invisible(42L) }, gcFirst = FALSE))\nbefore <- proc.time()\nSys.sleep(0.005)\nafter <- proc.time()\nc(tracker, timed$visible, inherits(timed$value, \"proc_time\"), names(timed$value), typeof(timed$value), length(timed$value), all(timed$value[1:3] >= 0), timed$value[[\"elapsed\"]] >= 0.005, all(is.na(timed$value[4:5])), inherits(before, \"proc_time\"), after[[\"elapsed\"]] >= before[[\"elapsed\"]])",
     "expected": [

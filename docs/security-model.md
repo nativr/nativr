@@ -125,6 +125,13 @@ cancel their UI, and return no secrets unless the calling R code is trusted. New
 characters, and results beyond the session output-byte budget are rejected. The default runtime
 never opens a dialog or reads stdin.
 
+`getLoadedDLLs()` does not enumerate the browser, Worker implementation, JavaScript module graph,
+parser Wasm, or host process. Its `DLLInfoList` is sourced only from NativR's R-callable module
+boundary, which is currently empty. Consequently pure-R feature probes reveal neither local paths
+nor pointer-like handles, and no synthetic module can trick package code into attempting an
+unsupported native call. Any future Wasm/native package ABI must register bounded typed records
+explicitly; ambient dynamic-library discovery remains prohibited.
+
 `url()`, `utils::download.file()`, and `utils::available.packages()` are likewise inert unless the
 application supplies `createR({ url })`. The callback receives only copied URL/method/header data
 and must return a `Uint8Array`; the facade copies and charges the bytes to the session output limit

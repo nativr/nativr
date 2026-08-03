@@ -75,16 +75,16 @@ signal.
 
 | Priority | Measured rank | Callable           | Weighted reach | Packages | Observed calls |
 | -------: | ------------: | ------------------ | -------------: | -------: | -------------: |
-|        1 |           344 | `devAskNewPage`    |           1.1% |        1 |             10 |
-|        2 |           345 | `getLoadedDLLs`    |           1.1% |        1 |              1 |
-|        3 |           346 | `socketConnection` |           1.1% |        1 |              1 |
-|        4 |           348 | `file.copy`        |           1.1% |        1 |              1 |
-|        5 |           349 | `find.package`     |           1.1% |        1 |              1 |
-|        6 |           351 | `l10n_info`        |           1.1% |        1 |              1 |
-|        7 |           353 | `shQuote`          |           1.1% |        1 |              1 |
-|        8 |           357 | `system2`          |           1.1% |        1 |              1 |
-|        9 |           358 | `.Call`            |           1.0% |        1 |              1 |
-|       10 |           363 | `aspell`           |           1.0% |        1 |              2 |
+|        1 |           346 | `socketConnection` |           1.1% |        1 |              1 |
+|        2 |           348 | `file.copy`        |           1.1% |        1 |              1 |
+|        3 |           349 | `find.package`     |           1.1% |        1 |              1 |
+|        4 |           351 | `l10n_info`        |           1.1% |        1 |              1 |
+|        5 |           353 | `shQuote`          |           1.1% |        1 |              1 |
+|        6 |           357 | `system2`          |           1.1% |        1 |              1 |
+|        7 |           358 | `.Call`            |           1.0% |        1 |              1 |
+|        8 |           363 | `aspell`           |           1.0% |        1 |              2 |
+|        9 |           364 | `abline`           |           1.0% |        1 |              1 |
+|       10 |           365 | `browseVignettes`  |           1.0% |        1 |              1 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -204,9 +204,10 @@ measured Shiny/bit64 calls, including unchanged pure-R package and Worker render
 `write` now runs sass's measured source-file write; rank 340 `available.packages` now runs curl's
 measured repository query; rank 343 `barplot` now runs zoo and bit64's measured vector/matrix calls;
 rank 344 `devAskNewPage` now runs RColorBrewer's ten measured page controls; rank 345
-`getLoadedDLLs` is next. Rank 144 `Encoding` is also complete for all 12 observed calls across
-rlang, utf8, and xfun (4.5% weighted reach), together with adjacent `Encoding<-`, `enc2utf8`, and
-`enc2native`. The shared character representation preserves exact bytes and canonical R marks
+`getLoadedDLLs` now runs ps's measured module-path probe over a truthful empty browser registry;
+rank 346 `socketConnection` is next. Rank 144 `Encoding` is also complete for all 12 observed calls
+across rlang, utf8, and xfun (4.5% weighted reach), together with adjacent `Encoding<-`, `enc2utf8`,
+and `enc2native`. The shared character representation preserves exact bytes and canonical R marks
 through subset/replacement, concatenation, raw conversion, and XDR serialization; this is reusable
 package infrastructure, not an assertion that those packages' native components are supported. Rank
 149 `rcauchy` is now complete for four calls across ggplot2, pillar, and purrr (4.2% weighted
@@ -491,10 +492,11 @@ connection, pure-R package, and Worker evidence. Rank 338 `write` is complete fo
 source-line call with GNU R column layout and owned file/connection targets. Rank 340
 `available.packages` is complete for curl's measured repository database; rank 343 `barplot` is
 complete for zoo and bit64's measured vector/matrix calls; and rank 344 `devAskNewPage` is complete
-for RColorBrewer's ten measured prompts. Rank 345 `getLoadedDLLs` is the next usage-ranked
-unresolved callable. Rank 316 `colSums` is now complete for three observed calls across
-[`loo`](https://cran.r-project.org/web/packages/loo/refman/loo.html) and
-[`zoo`](https://cran.r-project.org/web/packages/zoo/refman/zoo.html), representing 1,601,512
+for RColorBrewer's ten measured prompts. Rank 345 `getLoadedDLLs` is shape-complete for ps's
+measured `vapply(..., "path")` probe over NativR's currently empty native-module set. Rank 346
+`socketConnection` is the next usage-ranked unresolved callable. Rank 316 `colSums` is now complete
+for three observed calls across [`loo`](https://cran.r-project.org/web/packages/loo/refman/loo.html)
+and [`zoo`](https://cran.r-project.org/web/packages/zoo/refman/zoo.html), representing 1,601,512
 snapshot downloads and 1.3% download reach. Loo calls `colSums(tab_10)` and `colSums(tab_9)` on
 integer fold tables; zoo selects usable columns with `colSums(!is.na(za)) > 0`. NativR covers
 logical, integer, double, and complex arrays of rank two or greater, numeric data frames,
@@ -645,10 +647,10 @@ The related `hcl.colors`, `palette`, and device color-management surfaces are se
 work; `rainbow`, `terrain.colors`, `topo.colors`, and `cm.colors` are covered by the later shared
 HSV increment. In ranks 345 through 353, `open` now uses the virtual connection layer and `readBin`
 can retrieve raw bytes from owned binary files; typed binary decoding remains incomplete. The
-remaining `getLoadedDLLs` and `socketConnection` surfaces require broader browser adapters,
-connections, or native-library state; `devAskNewPage`, `stderr`, and `barplot` now use the owned
-connection and graphics foundations. Usage-ranked `write` now uses the owned file/connection writer.
-Rank 354 `factorial` is now complete for xfun's
+`getLoadedDLLs` now exposes the owned empty-module truth without host inspection; the remaining
+`socketConnection` surface requires a broader browser adapter. `devAskNewPage`, `stderr`, and
+`barplot` now use the owned connection and graphics foundations. Usage-ranked `write` now uses the
+owned file/connection writer. Rank 354 `factorial` is now complete for xfun's
 [`factorial(10)` example](https://cran.r-project.org/web/packages/xfun/refman/xfun.html),
 representing 1,305,720 downloads and 1.1% reach. The independent implementation uses direct products
 for finite non-negative integers and a bounded Lanczos gamma approximation elsewhere, while
@@ -1688,6 +1690,12 @@ ties:
      unchanged source-package execution, non-interactive/file-device bypass, and the default Worker
      `readline` round trip have evidence. Native graphics event loops and platform screen devices
      remain compatibility depth.
+163. Loaded-module introspection: rank-345 `base::getLoadedDLLs` represents ps's measured path probe
+     at 1.1% download-weighted reach. Exact no-argument formals, visible `DLLInfoList` shape,
+     `vapply(..., "path")`, empty subsetting, unchanged source-package execution, Worker execution,
+     and rejection of extra arguments have evidence. Because NativR currently has no R-callable
+     native module ABI, the list is empty and exposes no synthetic DLLs, host paths, or pointer
+     handles. Populated `DLLInfo` entries and compiled-package loading remain compatibility depth.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

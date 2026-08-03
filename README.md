@@ -766,8 +766,15 @@ Rank 344 `grDevices::devAskNewPage()` now covers RColorBrewer's ten measured pag
 Query and update visibility, GNU R coercion, `device.ask.default`, and independent browser/PDF/PNG
 device state have differential evidence. On the default Worker, the second browser page crosses the
 same explicit `readline` request used by package code; the first page, non-interactive sessions, and
-file devices do not prompt. An unchanged source-only fixture imports the function directly. Rank 345
-`base::getLoadedDLLs()` is the next measured unresolved callable.
+file devices do not prompt. An unchanged source-only fixture imports the function directly.
+
+Rank 345 `base::getLoadedDLLs()` now covers ps's measured loaded-module path probe. It returns a
+visible, no-argument `DLLInfoList`; `vapply(getLoadedDLLs(), "[[", character(1), "path")` therefore
+runs unchanged in source-only package code. NativR currently exposes no R-callable native modules,
+so the browser-native list is truthfully empty: it never invents GNU R DLLs, host paths, or pointer
+handles. Pure-R packages can use this shape to detect an absent optional native backend and take
+their R fallback. Packages such as ps that declare `NeedsCompilation: yes` still require a future
+typed Wasm/native ABI. Rank 346 `base::socketConnection()` is the next measured unresolved callable.
 
 Rank 121 `grDevices::png()` now covers all seven measured calls across five packages. It opens
 alongside the browser display, records the existing graphics command vocabulary, rasterizes it in

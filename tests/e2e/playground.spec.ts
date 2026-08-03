@@ -210,6 +210,10 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("true");
 
+  await page.locator("#source").fill("c(class(getLoadedDLLs()), length(getLoadedDLLs()))");
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText('["DLLInfoList", "0"]');
+
   await page.getByRole("button", { name: "URL connection" }).click();
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText('["worker-url", "package-connection"]');

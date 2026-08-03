@@ -343,7 +343,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 342,stderr,true,1,curl,1,1.0,1.2
 343,barplot,true,2,zoo|bit64,3,2.1,1.2
 344,devAskNewPage,true,1,RColorBrewer,10,1.0,1.1
-345,getLoadedDLLs,false,1,ps,1,1.0,1.1
+345,getLoadedDLLs,true,1,ps,1,1.0,1.1
 346,socketConnection,false,1,ps,1,1.0,1.1
 347,factorial,true,1,xfun,1,1.0,1.1
 348,file.copy,false,1,xfun,1,1.0,1.1

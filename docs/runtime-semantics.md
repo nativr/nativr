@@ -733,6 +733,15 @@ fallback otherwise. Page and output bytes remain under normal evaluator limits. 
 non-single-byte encodings, font embedding, exact kerning/glyph metrics, dingbat substitution,
 color-profile management, and GNU R byte-identical output remain explicit boundaries.
 
+`base::getLoadedDLLs()` is a separate R-native-module introspection surface, not a view of the
+parser Wasm, Worker bundle, JavaScript modules, graphics devices, or host process. It accepts no
+arguments and returns a visible list with class `DLLInfoList`. NativR currently has no R-callable
+native modules, so that list has length zero; ordinary list subsetting preserves the class and
+`vapply(getLoadedDLLs(), "[[", character(1), "path")` yields `character(0)`. This lets unchanged
+pure-R code probe for an optional compiled backend and select its fallback without revealing or
+inventing host state. A future compiled-package ABI must add validated `DLLInfo` records at its
+owned registration boundary; JavaScript object references and raw host pointers are never entries.
+
 `graphics::persp()` dispatches classed first arguments before its owned matrix default. The default
 requires increasing finite x/y coordinates and a two-dimensional real z grid, derives missing grids
 over `[0, 1]`, validates finite limits, and leaves edges touching missing z values absent. It

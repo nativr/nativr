@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.255.0",
+  "languageSubsetVersion": "0.256.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -265,6 +265,7 @@
         { "name": "requireNamespace", "compatibility": "behavioral" },
         { "name": "isNamespaceLoaded", "compatibility": "behavioral" },
         { "name": "loadedNamespaces", "compatibility": "behavioral" },
+        { "name": "getLoadedDLLs", "compatibility": "shape" },
         { "name": "getNamespaceExports", "compatibility": "behavioral" },
         { "name": "sys.call", "compatibility": "behavioral" },
         { "name": "get", "compatibility": "behavioral" },

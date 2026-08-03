@@ -1628,6 +1628,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   defineBuiltin("isNamespaceLoaded", ["name"], "behavioral", builtinIsNamespaceLoaded),
   defineBuiltin("loadedNamespaces", [], "behavioral", builtinLoadedNamespaces),
+  defineBuiltin("getLoadedDLLs", [], "shape", builtinGetLoadedDLLs),
   defineBuiltin("getNamespaceExports", ["ns"], "behavioral", builtinGetNamespaceExports),
   defineBuiltin("sys.call", ["which"], "behavioral", builtinSystemCall),
   defineBuiltin("get", ["x", "pos", "envir", "mode", "inherits"], "behavioral", builtinGet),
@@ -15622,6 +15623,13 @@ function builtinLoadedNamespaces(invocation: BuiltinInvocation): RCharacterVecto
   const names = invocation.loadedNamespaces();
   invocation.context.allocate(names.length);
   return characterVector(names);
+}
+
+function builtinGetLoadedDLLs(invocation: BuiltinInvocation): RList {
+  if (invocation.arguments.length !== 0) {
+    throw new REvaluationError("NRE2101", "getLoadedDLLs() does not accept arguments.");
+  }
+  return withClasses(listValue([]), ["DLLInfoList"]);
 }
 
 async function builtinGetNamespaceExports(
@@ -42781,6 +42789,14 @@ async function builtinVapply(invocation: BuiltinInvocation): Promise<RValue> {
   }
   const forwarded = await forceForwarded(invocation, extras);
   const results = await mapVector(invocation, input, callable, forwarded);
+  if (results.length === 0) {
+    let empty = emptyAtomicForVectorMode(template.type);
+    const names = useNames ? vectorNames(input) : undefined;
+    if (template.length === 1) return names === undefined ? empty : withNames(empty, names);
+    const dimensions = vectorDimensions(template);
+    empty = withDimensions(empty, [...(dimensions ?? [template.length]), 0]);
+    return empty;
+  }
   const coerced: AtomicVector[] = [];
   for (const result of results) {
     if (

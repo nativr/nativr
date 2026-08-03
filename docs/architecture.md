@@ -44,6 +44,12 @@ entry point. Debugged closure statements then reuse the same readline exchange f
 command set. This preserves `base -> runtime`, avoids mutating normalized values, and gives inline,
 package, and Worker calls one implementation.
 
+R-callable loaded-module identity is also an owned boundary. `getLoadedDLLs()` does not inspect the
+Worker implementation graph or treat parser Wasm/JavaScript bundles as R DLLs; today it returns an
+empty `DLLInfoList`. That stable query surface lets source-only packages detect an absent optional
+native backend. A future compiled-package subsystem can populate validated module records behind the
+same boundary without leaking raw host pointers or reversing package dependency direction.
+
 High-level helpers reuse semantic runtime primitives instead of maintaining parallel behavior.
 `base::replace`, for example, delegates to the same immutable one-dimensional subset-replacement
 engine used by direct `x[index] <- value` evaluation, so coercion, recycling, attributes, extension,
