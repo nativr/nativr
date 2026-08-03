@@ -912,3 +912,9 @@ anchor lookup. Unchanged viridisLite 0.4.3 remains opt-in and contributes no pac
 data to the browser bundle. The measured Worker is 417.7 KiB gzip (427,754 bytes), 746 bytes above
 the previous 417 KiB ceiling, so the Worker ceiling rises narrowly to 418 KiB; client and
 parser-Wasm budgets remain unchanged.
+
+Language subset 0.277 adds reusable `data.frame()` trailing-control matching, explicit row-name
+validation/coercion, and default syntactic/unique column-name repair. Unchanged RColorBrewer 1.1-3
+remains opt-in and contributes no package source or palette tables to the browser bundle. The
+measured Worker is 418.1 KiB gzip (428,126 bytes), 94 bytes above the previous 418 KiB ceiling, so
+the Worker ceiling rises narrowly to 419 KiB; client and parser-Wasm budgets remain unchanged.

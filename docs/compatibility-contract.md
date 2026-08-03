@@ -56,20 +56,27 @@ replace one array element per matrix row, including zero-row omission and missin
 behavior. Data-frame selection and replacement support missing row/column positions, `drop`,
 common-type coordinate-matrix extraction, and numeric coordinate-matrix replacement. Character,
 missing, and zero-coordinate data-frame replacement matrices retain GNU R's rejection behavior.
-Simple one-dimensional `$`, `[`, and `[[` replacement chains rebuild their containing lists or
-data-frame columns, support non-local rebinding and missing `$` intermediates, and preserve GNU R's
-repeated evaluation of intermediate subscripts. Global partial-match warning options,
-multidimensional intermediate replacement targets, nested replacement-function calls, and
-rectangular pairlist replacement remain outside the current contract. Direct or nested list and
-data-frame-column replacement with NULL deletes the selected component. One-dimensional data-frame
-replacement appends consecutively positioned or named columns, recycles scalar columns, distributes
-atomic replacements column-major, and rejects numeric gaps. Rectangular data-frame replacement
-extends numeric or character-named rows, fills intervening cells with each column's missing
-representation, updates row names, and can create a row and column together. Logical row overrun and
-every missing row subscript retain GNU R's rejection behavior. As in GNU R, extending an extracted
-column through `df$x[i] <- value` remains an incompatible column-length error rather than implicitly
-growing the frame. Factor replacement maps labels back to existing levels, extends with missing
-codes, and warns when an assigned label is not a level.
+`data.frame(..., row.names = NULL, check.rows = FALSE, check.names = TRUE, fix.empty.names = TRUE, stringsAsFactors = FALSE)`
+exposes the GNU R trailing-formal order. Explicit atomic row names become frame metadata rather than
+a column; factor labels and other atomic types coerce to text, zero-column frames derive their
+extent from explicit row names, and missing, duplicate, or incompatible-length values fail
+deterministically. Default name checking uses the owned syntactic/unique repair and
+`check.names = FALSE` preserves supplied tags. Full `check.rows`/`fix.empty.names` behavior,
+column-derived scalar row-name selection, recursive columns, and legacy `stringsAsFactors = TRUE`
+conversion remain outside this increment. Simple one-dimensional `$`, `[`, and `[[` replacement
+chains rebuild their containing lists or data-frame columns, support non-local rebinding and missing
+`$` intermediates, and preserve GNU R's repeated evaluation of intermediate subscripts. Global
+partial-match warning options, multidimensional intermediate replacement targets, nested
+replacement-function calls, and rectangular pairlist replacement remain outside the current
+contract. Direct or nested list and data-frame-column replacement with NULL deletes the selected
+component. One-dimensional data-frame replacement appends consecutively positioned or named columns,
+recycles scalar columns, distributes atomic replacements column-major, and rejects numeric gaps.
+Rectangular data-frame replacement extends numeric or character-named rows, fills intervening cells
+with each column's missing representation, updates row names, and can create a row and column
+together. Logical row overrun and every missing row subscript retain GNU R's rejection behavior. As
+in GNU R, extending an extracted column through `df$x[i] <- value` remains an incompatible
+column-length error rather than implicitly growing the frame. Factor replacement maps labels back to
+existing levels, extends with missing codes, and warns when an assigned label is not a level.
 
 Replacing through `[<-`, `[[<-`, or `$<-` on `NULL` promotes the target using GNU R's replacement
 type, length, typed-gap, and name rules; replacement by `NULL` leaves it `NULL`. A long logical
@@ -2359,13 +2366,14 @@ archive/file/byte/package limits, rejects links, native/JVM code, install hooks,
 `useDynLib`, invalid paths, and unsupported NAMESPACE directives, preserves package resources and
 license metadata, and emits deterministic SHA-256 artifacts plus a dependency lock. The browser
 runtime remains network-free. Digest-pinned opt-in executable tests cover unchanged
-`pkgconfig 2.0.3`, `generics 0.1.4`, `withr 3.0.3`, `R6 2.6.1`, and `viridisLite 0.4.3` sources.
-They prove the repository-to-namespace path, package-owned S3 dispatch, and generated
-state-restoring wrappers through `with_options()`, plus R6 generator/object construction and public
-reference mutation, private-state method access, an active read/write field, shallow/deep cloning,
-and three-level inheritance with recursive `super` calls, plus package-owned 256-anchor Lab spline
-palettes through generic arithmetic/array and `grDevices::colorRamp` semantics, without package
-patches.
+`pkgconfig 2.0.3`, `generics 0.1.4`, `withr 3.0.3`, `R6 2.6.1`, `viridisLite 0.4.3`, and
+`RColorBrewer 1.1-3` sources. They prove the repository-to-namespace path, package-owned S3
+dispatch, and generated state-restoring wrappers through `with_options()`, plus R6 generator/object
+construction and public reference mutation, private-state method access, an active read/write field,
+shallow/deep cloning, and three-level inheritance with recursive `super` calls, plus package-owned
+256-anchor Lab spline palettes through generic arithmetic/array and `grDevices::colorRamp`
+semantics, plus exported RColorBrewer palette metadata through explicit-row-name `data.frame()`
+construction and exact palette/warning execution, without package patches.
 
 Package admission is not universal execution compatibility. Package `data/*.R`, `.csv`, `.tab`,
 `.txt`, and XDR/gzip `.rda`/`.RData` discovery/loading is supported through `utils::data`, including

@@ -13291,7 +13291,7 @@ NeedsCompilation: no
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.276.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.277.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -16355,6 +16355,45 @@ NeedsCompilation: no
       code: "NRE2116",
     });
     await expect(runtime.eval("names(data.frame(1:3))")).resolves.toBe("X1");
+    await expect(
+      runtime.eval(`
+        explicit <- data.frame(\`value label\` = 1:2, row.names = c("left", "right"))
+        unchecked <- data.frame(\`value label\` = 1:2, check.names = FALSE)
+        duplicated <- data.frame(a = 1, a = 2)
+        empty <- data.frame(row.names = c("first", "second"))
+        c(
+          names(formals(data.frame)), names(explicit), rownames(explicit),
+          names(unchecked), names(duplicated), dim(empty), rownames(empty)
+        )
+      `),
+    ).resolves.toEqual([
+      "...",
+      "row.names",
+      "check.rows",
+      "check.names",
+      "fix.empty.names",
+      "stringsAsFactors",
+      "value.label",
+      "left",
+      "right",
+      "value label",
+      "a",
+      "a.1",
+      "2",
+      "0",
+      "first",
+      "second",
+    ]);
+    await expect(
+      runtime.eval('data.frame(x = 1:2, row.names = c("same", "same"))'),
+    ).rejects.toMatchObject({ code: "NRE2244", message: "duplicate row.names: same" });
+    await expect(
+      runtime.eval('data.frame(x = 1:2, row.names = c(NA, "right"))'),
+    ).rejects.toMatchObject({ code: "NRE2244", message: "row names contain missing values" });
+    await expect(runtime.eval('data.frame(x = 1:2, row.names = "one")')).rejects.toMatchObject({
+      code: "NRE2244",
+      message: "'row.names' should specify one of the variables",
+    });
     await runtime.dispose();
   });
 

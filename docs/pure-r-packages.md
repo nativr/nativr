@@ -318,7 +318,7 @@ prevents a safe archive scan from being mislabeled as full package compatibility
 
 ## External proof
 
-The opt-in test `packages/package-tools/test/external-package.test.ts` downloads five unchanged
+The opt-in test `packages/package-tools/test/external-package.test.ts` downloads six unchanged
 public source packages from the repository resolver and verifies a pinned artifact digest for each:
 
 - [`pkgconfig 2.0.3`](https://cran.r-project.org/package=pkgconfig) proves namespace exports,
@@ -340,7 +340,12 @@ public source packages from the repository resolver and verifies a pinned artifa
 - [`viridisLite 0.4.3`](https://cran.r-project.org/package=viridisLite), package rank 30 in the
   committed usage snapshot, proves dependency-free unchanged source loading plus package-owned
   256-anchor CIE Lab spline interpolation. `viridis()`, `magma()`, and an alpha/range/reverse call
-  return the GNU R-observed colors through generic `colorRamp`, matrix arithmetic, and `rgb`.
+  return the GNU R-observed colors through generic `colorRamp`, matrix arithmetic, and `rgb`;
+- [`RColorBrewer 1.1-3`](https://cran.r-project.org/package=RColorBrewer), package rank 35 with
+  1,410,661 downloads in the committed snapshot, proves unchanged package-top-level data-frame
+  construction with explicit row names. Its exported 35-row palette metadata, Set1 and Blues
+  palettes, and minimum-size warning match GNU R through generic `data.frame`, subsetting, `switch`,
+  recursion, warning, and `rgb` semantics.
 
 No package source is checked into this repository. Together these tests exercise repository
 installation, runtime package files, namespace loading, qualified S3 registration, metaprogramming,
@@ -353,10 +358,10 @@ replacement promotion used by package-owned super environments; there is no R6 a
 package-source rewrite. Finalization, arbitrary/multiple inheritance breadth, portable-locking
 variants, and complete R6 remain outside the evidence.
 
-The viridisLite path contains no palette table or package source copied into NativR. Its source is
-downloaded only by the opt-in test, digest-pinned, installed through the public package pipeline,
-and discarded with the test process. The browser bundle contains only reusable color interpolation
-and arithmetic semantics.
+The viridisLite and RColorBrewer paths contain no palette table or package source copied into
+NativR. Their sources are downloaded only by the opt-in test, digest-pinned, installed through the
+public package pipeline, and discarded with the test process. The browser bundle contains only
+reusable color interpolation, frame, warning, and arithmetic semantics.
 
 The checked-in source-only fixture also exports a function that calls `grDevices::rainbow`,
 `terrain.colors`, `topo.colors`, and `cm.colors` through its namespace. This is a small executable

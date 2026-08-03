@@ -292,10 +292,16 @@ returns existing arrays unchanged; otherwise it adds a one-dimensional extent to
 lists, factors, or pairlists, promotes vector names to a one-axis `dimnames` component, and retains
 other attributes. Expression-vector coercion remains outside this bounded increment.
 
-Data frames are classed named lists with automatic row names and equal-length atomic columns after
-documented recycling. They support rectangular and coordinate-matrix selection/replacement plus
-column extraction. `tibble` and formula-header `tribble` construct stricter frame shapes without
-importing external packages.
+Data frames are classed named lists with automatic or validated explicit row names and equal-length
+atomic columns after documented recycling. `data.frame()` exposes GNU R's exact trailing control
+formals after `...`; `row.names` is never mistaken for a data column, explicit atomic row names are
+coerced to text, and missing, duplicate, or incompatible-length row names fail before construction.
+Default `check.names = TRUE` applies the owned syntactic/unique name repair, while
+`check.names = FALSE` preserves supplied column tags. They support rectangular and coordinate-matrix
+selection/replacement plus column extraction. `tibble` and formula-header `tribble` construct
+stricter frame shapes without importing external packages. `check.rows`, `fix.empty.names`, and
+legacy `stringsAsFactors = TRUE` breadth beyond current atomic-column construction remain
+incomplete.
 
 Factors are integer codes plus levels and class metadata. Construction supports explicit levels,
 labels, exclusions, ordering, and level dropping. Factor selection retains class and levels.

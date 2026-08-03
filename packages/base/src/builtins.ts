@@ -3547,7 +3547,34 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   defineBuiltin("table", ["...", "useNA"], "behavioral", builtinTable),
   defineBuiltin("prop.table", ["x", "margin"], "numeric", builtinPropTable),
-  defineBuiltin("data.frame", ["..."], "behavioral", builtinDataFrame),
+  withBuiltinFormals(
+    defineBuiltin(
+      "data.frame",
+      ["...", "row.names", "check.rows", "check.names", "fix.empty.names", "stringsAsFactors"],
+      "behavioral",
+      builtinDataFrame,
+    ),
+    [
+      { name: "..." },
+      { name: "row.names", defaultValue: nullAst() },
+      {
+        name: "check.rows",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "check.names",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "fix.empty.names",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "stringsAsFactors",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
   defineBuiltin(
     "expand.grid",
     ["...", "KEEP.OUT.ATTRS", "stringsAsFactors"],
@@ -44388,13 +44415,78 @@ function collectNumeric(
 }
 
 async function builtinDataFrame(invocation: BuiltinInvocation): Promise<RValue> {
-  const frame = await collectDataFrameArguments(invocation, invocation.arguments, true);
+  const { matched, dots } = matchLeadingDotsArguments(invocation, [
+    "row.names",
+    "check.rows",
+    "check.names",
+    "fix.empty.names",
+    "stringsAsFactors",
+  ]);
+  await lazyLogicalFlag(invocation, matched.get("check.rows"), false, "check.rows");
+  const checkNames = await lazyLogicalFlag(
+    invocation,
+    matched.get("check.names"),
+    true,
+    "check.names",
+  );
+  await lazyLogicalFlag(invocation, matched.get("fix.empty.names"), true, "fix.empty.names");
+  await lazyLogicalFlag(invocation, matched.get("stringsAsFactors"), false, "stringsAsFactors");
+
+  const frame = await collectDataFrameArguments(invocation, dots, false);
+  const names = checkNames
+    ? makeSyntacticNamesUnique(
+        frame.names,
+        frame.names.map((name) => syntacticName(name, true)),
+      )
+    : frame.names;
+  const explicitRowNames = matched.get("row.names");
+  let rowCount = frame.rowCount;
+  let automaticRowNames = true;
+  let rowNames: readonly string[];
+  if (explicitRowNames === undefined) {
+    rowNames = automaticDataFrameRowNames(rowCount);
+  } else {
+    const value = await invocation.force(explicitRowNames.promise);
+    if (value.type === "null") {
+      rowNames = automaticDataFrameRowNames(rowCount);
+    } else {
+      rowNames = explicitDataFrameRowNames(value, rowCount);
+      if (frame.columns.length === 0) rowCount = rowNames.length;
+      automaticRowNames = false;
+    }
+  }
   return dataFrameValue(
     frame.columns,
-    frame.names,
-    Array.from({ length: frame.rowCount }, (_, index) => String(index + 1)),
-    true,
+    names,
+    rowCount === rowNames.length ? rowNames : automaticDataFrameRowNames(rowCount),
+    automaticRowNames,
   );
+}
+
+function automaticDataFrameRowNames(rowCount: number): readonly string[] {
+  return Array.from({ length: rowCount }, (_, index) => String(index + 1));
+}
+
+function explicitDataFrameRowNames(value: RValue, rowCount: number): readonly string[] {
+  if (!isAtomic(value)) {
+    throw new RTypeMismatchError("NRT3358", "invalid 'row.names' specification");
+  }
+  if (rowCount > 0 && value.length !== rowCount) {
+    throw new REvaluationError("NRE2244", "'row.names' should specify one of the variables");
+  }
+  const rowNames = Array.from({ length: value.length }, (_, index) => {
+    if (isMissing(value, index)) {
+      throw new REvaluationError("NRE2244", "row names contain missing values");
+    }
+    return isFactor(value)
+      ? (factorLevels(value)[(value.values[index] ?? 0) - 1] ?? "")
+      : stringAt(value, index);
+  });
+  const duplicate = rowNames.find((name, index) => rowNames.indexOf(name) !== index);
+  if (duplicate !== undefined) {
+    throw new REvaluationError("NRE2244", `duplicate row.names: ${duplicate}`);
+  }
+  return rowNames;
 }
 
 async function collectDataFrameArguments(

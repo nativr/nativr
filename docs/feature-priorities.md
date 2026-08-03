@@ -1803,6 +1803,14 @@ ties:
      executes `viridis()`, `magma()`, and a reversed translucent range without copied package
      source, an adapter, or evaluation-time network access. It does not claim every viridisLite
      function, every palette boundary, or arbitrary packages.
+174. Download-ranked package depth: RColorBrewer is package rank 35 in the committed snapshot with
+     1,410,661 downloads, no runtime package dependencies, and Apache-2.0 metadata. Its unchanged
+     1.1-3 source exposed `data.frame(..., row.names=)` being misclassified as a data column.
+     Generic differential evidence now covers exact trailing formals, explicit/automatic/zero-column
+     row names, atomic coercion, missing/duplicate/length errors, and `check.names`. The
+     digest-pinned sixth external proof executes exported 35-row metadata, Set1 and Blues palettes,
+     and the recursive minimum-size warning without copied package source, an adapter, or
+     evaluation-time network access. Display helpers and arbitrary packages remain unclaimed.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

@@ -250,6 +250,77 @@ it.runIf(runExternal)(
 );
 
 it.runIf(runExternal)(
+  "packs, loads, and exercises the unchanged public RColorBrewer 1.1-3 pure-R source package",
+  async () => {
+    let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    try {
+      const installed = await installPackagesFromRepository(["RColorBrewer"]);
+      expect(installed.artifacts[0]).toMatchObject({
+        package: { name: "RColorBrewer", version: "1.1-3" },
+        compatibility: { packaging: "ready", execution: "unchecked" },
+        integrity: {
+          algorithm: "sha256",
+          value: "4a5438a27a6ddfe2ead9563c736b34498081c811a4185d84bb18ecbde12f6ba8",
+        },
+      });
+      runtime = await createR({
+        execution: "inline",
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+        packages: installed.bundles,
+      });
+      await expect(runtime.eval('requireNamespace("RColorBrewer", quietly = TRUE)')).resolves.toBe(
+        true,
+      );
+      await expect(runtime.eval('as.character(packageVersion("RColorBrewer"))')).resolves.toBe(
+        "1.1.3",
+      );
+      await expect(runtime.eval('RColorBrewer::brewer.pal(5, "Set1")')).resolves.toEqual([
+        "#E41A1C",
+        "#377EB8",
+        "#4DAF4A",
+        "#984EA3",
+        "#FF7F00",
+      ]);
+      await expect(runtime.eval('RColorBrewer::brewer.pal(9, "Blues")')).resolves.toEqual([
+        "#F7FBFF",
+        "#DEEBF7",
+        "#C6DBEF",
+        "#9ECAE1",
+        "#6BAED6",
+        "#4292C6",
+        "#2171B5",
+        "#08519C",
+        "#08306B",
+      ]);
+      await expect(
+        runtime.eval(`
+          info <- RColorBrewer::brewer.pal.info
+          c(dim(info), names(info), unlist(info["Set1", ]))
+        `),
+      ).resolves.toEqual(["35", "3", "maxcolors", "category", "colorblind", "9", "qual", "FALSE"]);
+      const minimum = await runtime.evalDetailed('RColorBrewer::brewer.pal(2, "Set1")');
+      expect(minimum.value).toEqual(["#E41A1C", "#377EB8", "#4DAF4A"]);
+      expect(minimum.warnings).toEqual([
+        {
+          code: "NRW1100",
+          message:
+            "minimal value for n is 3, returning requested palette with 3 different levels\n",
+        },
+      ]);
+    } finally {
+      await runtime?.dispose();
+    }
+  },
+  120_000,
+);
+
+it.runIf(runExternal)(
   "packs and loads the unchanged public pkgconfig 2.0.3 pure-R source package",
   async () => {
     let runtime: Awaited<ReturnType<typeof createR>> | undefined;
