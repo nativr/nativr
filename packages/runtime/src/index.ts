@@ -6,6 +6,7 @@ export {
   createPromise,
   forcePromise,
   lookupBinding,
+  removeBinding,
   setBinding,
 } from "./environment.js";
 export {
@@ -73,6 +74,8 @@ export {
   missingValue,
   NATIVR_PACKAGE_LIBRARY_PATH,
   NATIVR_SYSTEM_LIBRARY_PATH,
+  objectAttributes,
+  objectClasses,
   pairlistValue,
   rawVector,
   R_NULL,

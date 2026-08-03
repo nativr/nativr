@@ -9905,5 +9905,43 @@
     ],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 1e-12, "relative": 1e-12 }
+  },
+  {
+    "id": "environment-and-closure-reference-attribute-semantics",
+    "code": "e <- new.env(); alias <- e\nattr(e, \"name\") <- \"capsule\"\ncomment(e) <- \"shared\"\nclass(e) <- c(\"special\", \"environment\")\nf <- function(x) x; g <- f\nattr(f, \"label\") <- \"owned\"\nclass(f) <- \"tagged_function\"\nc(attr(alias, \"name\"), comment(alias), identical(alias, e), is.object(e), inherits(e, \"special\"), names(attributes(e)), attr(f, \"label\"), class(f), is.object(f), inherits(f, \"tagged_function\"), is.null(attr(g, \"label\")), class(g), names(attributes(f)))",
+    "expected": [
+      "capsule",
+      "shared",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "name",
+      "comment",
+      "class",
+      "owned",
+      "tagged_function",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "function",
+      "label",
+      "class"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "environment-locks-and-internal-subset-primitives",
+    "code": "e <- new.env(); e$x <- 1L\nlockEnvironment(e); e$x <- 2L; lockBinding(\"x\", e)\nlocked <- c(environmentIsLocked(e), bindingIsLocked(\"x\", e), e$x, inherits(try(e$y <- 1L, silent = TRUE), \"try-error\"), inherits(try(e$x <- 3L, silent = TRUE), \"try-error\"), inherits(try(rm(\"x\", envir = e), silent = TRUE), \"try-error\"), { unlockBinding(\"x\", e); e$x <- 3L; e$x })\nsource <- new.env(); source$item <- 7L\nvalues <- list(alpha = 10L, beta = 20L); matrix_value <- matrix(1:4, 2)\nc(locked, .subset2(source, \"item\"), .subset2(values, \"beta\"), .subset(values, 1:2)[[1]], .subset2(matrix_value, 2L, 2L))",
+    "expected": [1, 1, 2, 1, 1, 1, 3, 7, 20, 10, 4],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "null-empty-vector-operators-deduplication-and-vapply",
+    "code": "c(length(NULL == \"\"), length(NULL < 1), length(NULL != NULL), length(NULL %in% 1:3), 1:3 %in% NULL, is.null(unique(NULL)), length(duplicated(NULL)), anyDuplicated(NULL), typeof(vapply(NULL, stop, character(1))), length(vapply(NULL, stop, character(1))))",
+    "expected": ["0", "0", "0", "0", "FALSE", "FALSE", "FALSE", "TRUE", "0", "0", "character", "0"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

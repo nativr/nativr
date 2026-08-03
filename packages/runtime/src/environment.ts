@@ -10,14 +10,37 @@ export function createEnvironment(parent: REnvironment | null, hashed = false): 
     type: "environment",
     id: nextEnvironmentId++,
     parent,
+    attributes: new Map(),
     hashed,
+    locked: false,
+    lockedBindings: new Set(),
     bindings: new Map(),
   };
 }
 
 /** Install or replace a binding in one environment. */
 export function setBinding(environment: REnvironment, name: string, value: RBinding): void {
+  if (environment.lockedBindings.has(name)) {
+    throw new REvaluationError("NRE2012", `Cannot change locked binding '${name}'.`);
+  }
+  if (environment.locked && !environment.bindings.has(name)) {
+    throw new REvaluationError("NRE2012", `Cannot add binding '${name}' to a locked environment.`);
+  }
   environment.bindings.set(name, value);
+}
+
+/** Remove an unlocked binding while respecting environment and per-binding locks. */
+export function removeBinding(environment: REnvironment, name: string): boolean {
+  if (environment.lockedBindings.has(name)) {
+    throw new REvaluationError("NRE2012", `Cannot remove locked binding '${name}'.`);
+  }
+  if (environment.locked) {
+    throw new REvaluationError(
+      "NRE2012",
+      `Cannot remove binding '${name}' from a locked environment.`,
+    );
+  }
+  return environment.bindings.delete(name);
 }
 
 /** Resolve a binding through the lexical parent chain. */

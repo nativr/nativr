@@ -1765,6 +1765,15 @@ ties:
      registration layer without claiming execution of its compiled native payloads; ambiguous
      methods, union classes, primitive/group generics, and the complete methods package remain
      depth.
+169. Download-ranked package depth: R6 is package rank 6 in the committed snapshot with 2,110,617
+     downloads, so unchanged R6 2.6.1 is now the fourth digest-pinned external execution proof. Its
+     first real load exposed reusable gaps rather than package-specific work: non-core shim
+     precedence, qualified S3 registration, environment/closure attributes, NULL empty-vector
+     behavior, environment/binding locks, and `.subset`/`.subset2`. The resulting test installs and
+     loads unchanged source, creates a generator and reference object, calls a public method, and
+     mutates a field. This is package/version evidence selected by measured reach; it does not turn
+     R6 examples, active/private bindings, cloning/finalization, or arbitrary packages into claimed
+     compatibility.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

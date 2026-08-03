@@ -325,6 +325,11 @@ function compareVectors(
   left: RValue,
   right: RValue,
 ): RLogicalVector {
+  if (left.type === "null" || right.type === "null") {
+    if (left.type !== "null") requireComparable(left, operator);
+    if (right.type !== "null") requireComparable(right, operator);
+    return logicalVector([]);
+  }
   const lhs = requireComparable(left, operator);
   const rhs = requireComparable(right, operator);
   const length = recycledLength(context, lhs.length, rhs.length);
@@ -400,6 +405,15 @@ function logicalVectors(
 }
 
 function membershipVector(context: OperatorContext, left: RValue, right: RValue): RLogicalVector {
+  if (left.type === "null") {
+    if (right.type !== "null") requireComparable(right, "%in%");
+    return logicalVector([]);
+  }
+  if (right.type === "null") {
+    const lhs = requireComparable(left, "%in%");
+    context.allocate(lhs.length);
+    return logicalVector(new Uint8Array(lhs.length));
+  }
   const lhs = requireComparable(left, "%in%");
   const rhs = requireComparable(right, "%in%");
   const characterMode = lhs.type === "character" || rhs.type === "character";

@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 414 KiB gzip;
+- Worker JavaScript: 416 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -874,3 +874,13 @@ data URLs and raises only its local step allowance, making the same benchmark po
 without changing runtime defaults. This run measured 0.06 ms/op scalar parse/evaluation, 1.74 ms/op
 for a 100,000-element mean, 0.46 ms/op typed-array assignment, and 1.12 ms/op raw snapshotting on
 the current development machine.
+
+Language subset 0.272 adds reusable pure-R package foundations: installed-package precedence over
+non-core shims, namespace-qualified S3 registration, environment/closure attributes, environment and
+binding locks, GNU R empty-`NULL` operator/application behavior, and `.subset`/`.subset2`. These
+remain owned evaluator/value operations with no dependency, protocol event, native payload, network
+access, generated JavaScript, or package-specific source rewrite. After consolidating static
+namespace ownership checks, the measured Worker is 415.1 KiB gzip (425,096 bytes), 1,160 bytes above
+the previous 414 KiB ceiling, so the ceiling rises narrowly to 416 KiB; client and parser-Wasm
+budgets remain unchanged. The unchanged R6 2.6.1 external proof is opt-in and contributes no package
+source or evaluation-time network payload to the bundle.

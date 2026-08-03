@@ -76,6 +76,11 @@ Date: 2026-08-03
   explicit skipped-section controls. Native code, installed `.rdx`/`.rdb` lazy-load databases,
   unsupported serialized object types/compressors, broader NAMESPACE directives, and universal
   package execution remain explicit boundaries.
+- Installed non-core packages take precedence over same-name compatibility shims; core namespaces
+  remain reserved. Qualified `S3method(package::generic, class)` declarations resolve the generic's
+  namespace independently from the package-local method binding. General attributes now cover
+  environments by reference and closures by copy-on-modify. Environment/binding locks and
+  non-dispatching `.subset`/`.subset2` extraction provide reusable package foundations.
 - Usage-ranked `utils::getFromNamespace()` resolves exact public or private bindings from registered
   core and admitted pure-R package namespaces. Character namespaces load on demand, actual loaded
   namespace environments and attached-package `pos`/`envir` lookup are supported, unused controls
@@ -118,11 +123,13 @@ Date: 2026-08-03
   controls package loading, namespace operators, version/resource discovery, and lifecycle hook
   locations; unchanged `withr 3.0.3` runs `with_libpaths()` and restores state. Host library scans,
   startup `R_LIBS*`, runtime downloads, multiple installed versions, and binary trees remain gaps.
-- Unchanged external-package execution is pinned for `pkgconfig 2.0.3`, `generics 0.1.4`, and
-  `withr 3.0.3`. The latest proof covers package-owned S3 dispatch and a generated `with_options()`
-  wrapper using call/formal/environment replacement, `bquote`, dynamic caller frames, hooks, and
-  state restoration, plus `with_envvar()` mutation and cleanup through session-owned environment
-  variables, without translating or patching package code.
+- Unchanged external-package execution is pinned for `pkgconfig 2.0.3`, `generics 0.1.4`,
+  `withr 3.0.3`, and `R6 2.6.1`. The latest proofs cover package-owned S3 dispatch, a generated
+  `with_options()` wrapper using call/formal/environment replacement, `bquote`, dynamic caller
+  frames, hooks, and state restoration, plus `with_envvar()` mutation and cleanup through
+  session-owned environment variables, plus unchanged R6 generator construction, object
+  instantiation, public method calls, and reference field mutation, without translating or patching
+  package code.
 - Session environment variables are explicit, isolated runtime state. `createR()` snapshots an
   optional string map for inline or Worker execution; GNU R-shaped `Sys.getenv()`, `Sys.setenv()`,
   and `Sys.unsetenv()` query and mutate it, while reset restores the original map and host process

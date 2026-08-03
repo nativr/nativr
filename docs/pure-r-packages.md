@@ -318,7 +318,7 @@ prevents a safe archive scan from being mislabeled as full package compatibility
 
 ## External proof
 
-The opt-in test `packages/package-tools/test/external-package.test.ts` downloads three unchanged
+The opt-in test `packages/package-tools/test/external-package.test.ts` downloads four unchanged
 public source packages from the repository resolver and verifies a pinned artifact digest for each:
 
 - [`pkgconfig 2.0.3`](https://cran.r-project.org/package=pkgconfig) proves namespace exports,
@@ -328,11 +328,16 @@ public source packages from the repository resolver and verifies a pinned artifa
   dispatch to an application-defined method;
 - [`withr 3.0.3`](https://cran.r-project.org/package=withr) proves deeper unchanged-source loading,
   deterministic installed-vignette discovery, and generated wrapper execution through
-  `with_options()`, including restoration after the supplied expression finishes.
+  `with_options()`, including restoration after the supplied expression finishes;
+- [`R6 2.6.1`](https://cran.r-project.org/package=R6) proves that a real installed package takes
+  precedence over a non-core compatibility shim, that namespace-qualified S3 registration loads, and
+  that unchanged package code can construct a generator, instantiate a reference object, invoke a
+  public method, and mutate an existing field.
 
 No package source is checked into this repository. Together these tests exercise repository
-installation, runtime package files, namespace loading, metaprogramming, dynamic caller frames,
-closure-formal replacement, and reusable state-management behavior.
+installation, runtime package files, namespace loading, qualified S3 registration, metaprogramming,
+dynamic caller frames, closure-formal replacement, environment/closure attributes, environment and
+binding locks, internal subset primitives, and reusable state-management behavior.
 
 The checked-in source-only fixture also exports a function that calls `grDevices::rainbow`,
 `terrain.colors`, `topo.colors`, and `cm.colors` through its namespace. This is a small executable

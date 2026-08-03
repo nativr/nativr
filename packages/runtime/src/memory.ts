@@ -416,6 +416,7 @@ export function censusRuntimeMemory(
         visitAttributes(value.attributes);
         return;
       case "environment":
+        visitAttributes(value.attributes);
         if (value.parent !== null) visitValue(value.parent);
         for (const [name, binding] of value.bindings) {
           nodeCells += 1;
@@ -424,6 +425,7 @@ export function censusRuntimeMemory(
         }
         return;
       case "closure":
+        visitAttributes(value.attributes);
         visitValue(value.environment);
         return;
       case "formula":

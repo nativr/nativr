@@ -282,13 +282,25 @@ function parseNamespace(
         break;
       }
       case "S3method": {
-        const generic = arguments_[0];
+        const qualifiedGeneric = arguments_[0];
         const className = arguments_[1];
-        if (generic === undefined || className === undefined || arguments_.length > 3) {
+        if (qualifiedGeneric === undefined || className === undefined || arguments_.length > 3) {
           throw namespaceError(packageName, "S3method requires a generic and class");
+        }
+        const separator = qualifiedGeneric.indexOf("::");
+        const genericPackage = separator < 0 ? undefined : qualifiedGeneric.slice(0, separator);
+        const separatorLength = qualifiedGeneric.startsWith(":::", separator) ? 3 : 2;
+        const generic =
+          separator < 0 ? qualifiedGeneric : qualifiedGeneric.slice(separator + separatorLength);
+        if (
+          generic.length === 0 ||
+          (genericPackage !== undefined && !PACKAGE_NAME.test(genericPackage))
+        ) {
+          throw namespaceError(packageName, "S3method contains an invalid qualified generic");
         }
         s3Methods.push({
           generic,
+          ...(genericPackage === undefined ? {} : { genericPackage }),
           class: className,
           method: arguments_[2] ?? `${generic}.${className}`,
         });

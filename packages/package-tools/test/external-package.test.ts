@@ -6,6 +6,59 @@ import { installPackagesFromRepository } from "../src/index.js";
 const runExternal = process.env.NATIVR_EXTERNAL_PACKAGE_SMOKE === "1";
 
 it.runIf(runExternal)(
+  "packs, loads, and exercises the unchanged public R6 2.6.1 pure-R source package",
+  async () => {
+    let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    try {
+      const installed = await installPackagesFromRepository(["R6"]);
+      expect(installed.artifacts[0]).toMatchObject({
+        package: { name: "R6", version: "2.6.1" },
+        compatibility: { packaging: "ready", execution: "unchecked" },
+        integrity: {
+          algorithm: "sha256",
+          value: "71ec633b25beaabf1b6114e3a1cf488666e273a4b93729a837db87505ea0201f",
+        },
+      });
+      runtime = await createR({
+        execution: "inline",
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+        packages: installed.bundles,
+      });
+      await expect(runtime.eval('requireNamespace("R6", quietly = TRUE)')).resolves.toBe(true);
+      await expect(runtime.eval('as.character(packageVersion("R6"))')).resolves.toBe("2.6.1");
+      await expect(runtime.eval('"R6Class" %in% getNamespaceExports("R6")')).resolves.toBe(true);
+      await expect(runtime.eval('Minimal <- R6::R6Class("Minimal"); class(Minimal)')).resolves.toBe(
+        "R6ClassGenerator",
+      );
+      await expect(
+        runtime.eval(`
+          Counter <- R6::R6Class(
+            "Counter",
+            public = list(
+              value = NULL,
+              initialize = function(value = 0) self$value <- value,
+              increment = function() self$value <- self$value + 1
+            )
+          )
+          counter <- Counter$new(4)
+          counter$increment()
+          c(counter$value, class(counter))
+        `),
+      ).resolves.toEqual(["5", "Counter", "R6"]);
+    } finally {
+      await runtime?.dispose();
+    }
+  },
+  30_000,
+);
+
+it.runIf(runExternal)(
   "packs and loads the unchanged public pkgconfig 2.0.3 pure-R source package",
   async () => {
     let runtime: Awaited<ReturnType<typeof createR>> | undefined;
@@ -18,7 +71,7 @@ it.runIf(runExternal)(
         compatibility: { packaging: "ready", execution: "unchecked" },
         integrity: {
           algorithm: "sha256",
-          value: "c574661146fe159eea8a31458549af021516c92c974e8956b5d5b51c45c2b2f8",
+          value: "4622ae429bf36b71ec392ac3deb337db86e04e77b5e6ee91fc6ceef0de97835e",
         },
       });
       runtime = await createR({
@@ -74,7 +127,7 @@ it.runIf(runExternal)(
         compatibility: { packaging: "ready", execution: "unchecked" },
         integrity: {
           algorithm: "sha256",
-          value: "4d4ee79d98a495b7799956b7279d313d43ac9da1165d6872b5aeec3590122b53",
+          value: "7720925af995c4519af8a5259dbb1529a0d45212aaa376b2fe24985c794efbaf",
         },
       });
       const exampleResource = artifact?.bundle.resources.find(
@@ -130,7 +183,7 @@ it.runIf(runExternal)(
         compatibility: { packaging: "ready", execution: "unchecked" },
         integrity: {
           algorithm: "sha256",
-          value: "f6c848a7a1a4a60a3ae1237316c308ef50016c843e9548c3a36ce2caae7d3605",
+          value: "a51a19247a01ad7d3f712b2029914f2c52f6c713846d0a63ada5a989ab4187f9",
         },
       });
       const vignetteResource = installed.artifacts[0]?.bundle.resources.find(

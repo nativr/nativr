@@ -37,6 +37,7 @@ importFrom(utils, download.file, getFromNamespace, packageDescription, packageNa
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
+S3method(utils::.DollarNames, score)
 `,
   rSources: [
     {
@@ -179,6 +180,7 @@ describe.score <- function(x, ...) paste0(.package_state, ":", sum(x))
 dynamic_describe.score <- function(x, ...) paste0("dynamic:", sum(x))
 plot.score <- function(x, ..., marker = "package-plot") c(marker, sum(x), list(...)$extra)
 lines.score <- function(x, ..., marker = "package-lines") c(marker, sum(x), list(...)$extra)
+.DollarNames.score <- function(x, pattern = "") grep(pattern, c("alpha", "beta"), value = TRUE)
 package_state <- function() .package_state
 package_name <- function() packageName()
 package_libname <- function() .package_libname
@@ -4258,6 +4260,8 @@ describe("complete inline source-to-result vertical slice", () => {
           typeof(vapply(list(), identity, complex(1))),
           typeof(vapply(list(), identity, character(1))),
           typeof(vapply(list(), identity, raw(1))),
+          typeof(vapply(NULL, identity, character(1))),
+          length(vapply(NULL, stop, character(1))),
           paste(dim(vapply(list(), identity, numeric(2))), collapse = "x"),
           paste(
             dim(vapply(list(), identity, structure(numeric(6), dim = c(2, 3)))),
@@ -4272,6 +4276,8 @@ describe("complete inline source-to-result vertical slice", () => {
       "complex",
       "character",
       "raw",
+      "character",
+      "0",
       "2x0",
       "2x3x0",
     ]);
@@ -4652,6 +4658,9 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(runtime.eval("describe(new_score(1:3))")).resolves.toBe(
       "attached:nativrfixture:6",
     );
+    await expect(
+      runtime.eval('utils:::.DollarNames(new_score(1:3), pattern = "^a")'),
+    ).resolves.toBe("alpha");
     await expect(
       runtime.eval("x <- withVisible(plot(new_score(1:3), extra = 7)); c(x$value, x$visible)"),
     ).resolves.toEqual(["package-plot", "6", "7", "TRUE"]);
@@ -5241,6 +5250,58 @@ describe("complete inline source-to-result vertical slice", () => {
     });
     await expect(runtime.eval("collatefixture::answer")).resolves.toBe(42);
     await runtime.dispose();
+  });
+
+  it("lets installed packages replace non-core compatibility shim namespaces", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [
+        {
+          description:
+            "Package: R6\nVersion: 9.9.9\nTitle: Installed R6 precedence fixture\nNeedsCompilation: no",
+          namespace: "export(R6Class, package_probe)",
+          rSources: [
+            {
+              path: "R/R6.R",
+              source: `
+R6Class <- function(classname, ...) paste0("installed:", classname)
+package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
+`,
+            },
+          ],
+        },
+      ],
+    });
+    await expect(
+      runtime.eval(
+        'c(isNamespaceLoaded("R6"), as.character(packageVersion("R6")), R6::R6Class("Box"), isNamespaceLoaded("R6"), R6::package_probe())',
+      ),
+    ).resolves.toEqual(["FALSE", "9.9.9", "installed:Box", "TRUE", "R6", "9.9.9"]);
+    await expect(
+      runtime.eval(
+        'library("R6"); c(R6Class("Attached"), "R6" %in% loadedNamespaces(), basename(find.package("R6")), readLines(system.file("DESCRIPTION", package = "R6"), n = 1L))',
+      ),
+    ).resolves.toEqual(["installed:Attached", "TRUE", "R6", "Package: R6"]);
+    await runtime.reset();
+    await expect(runtime.eval('c(isNamespaceLoaded("R6"), R6::R6Class("Reset"))')).resolves.toEqual(
+      ["FALSE", "installed:Reset"],
+    );
+    await runtime.dispose();
+
+    await expect(
+      createR({
+        execution: "inline",
+        assets,
+        packages: [
+          {
+            description: "Package: base\nVersion: 9.9.9\nNeedsCompilation: no",
+            namespace: "",
+            rSources: [],
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({ code: "NRE2220" });
   });
 
   it("rejects native and malformed package bundles before evaluation", async () => {
@@ -13230,7 +13291,7 @@ NeedsCompilation: no
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.271.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.272.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -13613,6 +13674,10 @@ NeedsCompilation: no
     await expect(runtime.eval("c(1, 2, NA) <= 2")).resolves.toEqual([true, true, NA]);
     await expect(runtime.eval('c("beta", "alpha") > "alpha"')).resolves.toEqual([true, false]);
     await expect(runtime.eval('c(1, 2) == c("1", "3")')).resolves.toEqual([true, false]);
+    await expect(
+      runtime.eval('c(length(NULL == ""), length(NULL < 1), length(NULL != NULL))'),
+    ).resolves.toEqual([0, 0, 0]);
+    await expect(runtime.eval("new.env() == NULL")).rejects.toMatchObject({ code: "NRT3114" });
     await expect(runtime.eval("c(TRUE, NA) & c(NA, FALSE)")).resolves.toEqual([NA, false]);
     await expect(runtime.eval("c(FALSE, NA) | c(NA, TRUE)")).resolves.toEqual([NA, true]);
     await expect(runtime.eval("FALSE && not.bound")).resolves.toBe(false);
@@ -17648,9 +17713,9 @@ NeedsCompilation: no
     await expect(runtime.eval("x <- NULL\ncomment(x) <- 'bad'")).rejects.toMatchObject({
       code: "NRT3335",
     });
-    await expect(runtime.eval("x <- function() 1\ncomment(x) <- 'future'")).rejects.toMatchObject({
-      code: "NRU6160",
-    });
+    await expect(
+      runtime.eval("x <- function() 1\ncomment(x) <- 'future'\ncomment(x)"),
+    ).resolves.toBe("future");
     await runtime.dispose();
   });
 
@@ -17826,8 +17891,13 @@ NeedsCompilation: no
       false,
       true,
     ]);
+    await expect(runtime.eval("is.null(unique(NULL))")).resolves.toBe(true);
+    await expect(runtime.eval("duplicated(NULL)")).resolves.toEqual([]);
+    await expect(runtime.eval("anyDuplicated(NULL)")).resolves.toBe(0);
     await expect(runtime.eval('match(c("b", "x", "a"), c("a", "b"))')).resolves.toEqual([2, NA, 1]);
     await expect(runtime.eval("c(1, NA, 3) %in% c(3, NA)")).resolves.toEqual([false, true, true]);
+    await expect(runtime.eval("NULL %in% 1:3")).resolves.toEqual([]);
+    await expect(runtime.eval("1:3 %in% NULL")).resolves.toEqual([false, false, false]);
     await expect(runtime.eval("which(c(FALSE, TRUE, NA, TRUE))")).resolves.toEqual([2, 4]);
     await expect(runtime.eval("which.max(c(1, 5, 5, NA))")).resolves.toBe(2);
     await expect(runtime.eval("which.min(c(1, -2, -2, NA))")).resolves.toBe(2);
@@ -17983,6 +18053,132 @@ NeedsCompilation: no
     await expect(
       runtime.eval('f <- structure(1:2, levels = c("low", "high"), class = "factor")\nlevels(f)'),
     ).resolves.toEqual(["low", "high"]);
+    await runtime.dispose();
+  });
+
+  it("stores environment attributes by reference and closure attributes by copy-on-modify", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        environment_value <- new.env()
+        environment_alias <- environment_value
+        attr(environment_value, "name") <- "capsule"
+        comment(environment_value) <- "shared"
+        class(environment_value) <- c("special", "environment")
+
+        closure_value <- function(x) x
+        closure_alias <- closure_value
+        attr(closure_value, "label") <- "owned"
+        class(closure_value) <- "tagged_function"
+
+        c(
+          attr(environment_alias, "name"),
+          comment(environment_alias),
+          identical(environment_alias, environment_value),
+          is.object(environment_value),
+          inherits(environment_value, "special"),
+          names(attributes(environment_value)),
+          attr(closure_value, "label"),
+          class(closure_value),
+          is.object(closure_value),
+          inherits(closure_value, "tagged_function"),
+          is.null(attr(closure_alias, "label")),
+          class(closure_alias),
+          names(attributes(closure_value))
+        )
+      `),
+    ).resolves.toEqual([
+      "capsule",
+      "shared",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "name",
+      "comment",
+      "class",
+      "owned",
+      "tagged_function",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "function",
+      "label",
+      "class",
+    ]);
+
+    await expect(
+      runtime.eval(`
+        class(environment_value) <- NULL
+        attr(environment_value, "name") <- NULL
+        comment(environment_value) <- NULL
+        class(closure_value) <- NULL
+        attr(closure_value, "label") <- NULL
+        c(
+          class(environment_value),
+          is.null(attributes(environment_alias)),
+          class(closure_value),
+          is.null(attributes(closure_value))
+        )
+      `),
+    ).resolves.toEqual(["environment", "TRUE", "function", "TRUE"]);
+
+    await expect(runtime.eval('attr(environment_value, "names") <- "bad"')).rejects.toMatchObject({
+      code: "NRT3198",
+    });
+    await expect(runtime.eval('attr(environment_value, "dim") <- 1L')).rejects.toMatchObject({
+      code: "NRT3201",
+    });
+    await expect(runtime.eval('attr(environment_value, "") <- 1L')).rejects.toMatchObject({
+      code: "NRT3011",
+    });
+    await runtime.dispose();
+  });
+
+  it("locks environment structure and individual bindings with Base R semantics", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        locked <- new.env()
+        locked$value <- 1L
+        first <- withVisible(lockEnvironment(locked))
+        locked$value <- 2L
+        second <- withVisible(lockBinding("value", locked))
+        c(
+          environmentIsLocked(locked),
+          bindingIsLocked("value", locked),
+          locked$value,
+          is.null(first$value), !first$visible,
+          is.null(second$value), !second$visible
+        )
+      `),
+    ).resolves.toEqual([1, 1, 2, 1, 1, 1, 1]);
+    await expect(runtime.eval("locked$added <- 1L")).rejects.toMatchObject({ code: "NRE2012" });
+    await expect(runtime.eval("locked$value <- 3L")).rejects.toMatchObject({ code: "NRE2012" });
+    await expect(runtime.eval('rm("value", envir = locked)')).rejects.toMatchObject({
+      code: "NRE2012",
+    });
+    await expect(
+      runtime.eval('unlockBinding("value", locked); locked$value <- 3L; locked$value'),
+    ).resolves.toBe(3);
+    await runtime.dispose();
+  });
+
+  it("extracts without method dispatch through internal subset primitives", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        environment_value <- new.env()
+        environment_value$item <- 7L
+        values <- list(alpha = 10L, beta = 20L)
+        matrix_value <- matrix(1:4, 2)
+        c(
+          .subset2(environment_value, "item"),
+          .subset2(values, "beta"),
+          .subset(values, 1:2)[[1]],
+          .subset2(matrix_value, 2L, 2L)
+        )
+      `),
+    ).resolves.toEqual([7, 20, 10, 4]);
     await runtime.dispose();
   });
 

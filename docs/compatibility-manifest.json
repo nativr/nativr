@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.271.0",
+  "languageSubsetVersion": "0.272.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -220,6 +220,8 @@
         { "name": "within", "compatibility": "behavioral" },
         { "name": "local", "compatibility": "behavioral" },
         { "name": "subset", "compatibility": "behavioral" },
+        { "name": ".subset", "compatibility": "behavioral" },
+        { "name": ".subset2", "compatibility": "behavioral" },
         { "name": "split", "compatibility": "behavioral" },
         { "name": "expression", "compatibility": "behavioral" },
         { "name": "as.expression", "compatibility": "behavioral" },
@@ -265,6 +267,11 @@
         { "name": "baseenv", "compatibility": "behavioral" },
         { "name": "emptyenv", "compatibility": "behavioral" },
         { "name": "new.env", "compatibility": "behavioral" },
+        { "name": "lockEnvironment", "compatibility": "behavioral" },
+        { "name": "environmentIsLocked", "compatibility": "behavioral" },
+        { "name": "lockBinding", "compatibility": "behavioral" },
+        { "name": "unlockBinding", "compatibility": "behavioral" },
+        { "name": "bindingIsLocked", "compatibility": "behavioral" },
         { "name": "parent.env", "compatibility": "behavioral" },
         { "name": "parent.frame", "compatibility": "behavioral" },
         { "name": "search", "compatibility": "behavioral" },
@@ -712,6 +719,7 @@
       "referenceVersion": "R 4.6.x documented behavior",
       "functions": [
         { "name": "object.size", "compatibility": "behavioral" },
+        { "name": ".DollarNames", "compatibility": "behavioral" },
         { "name": "aspell", "compatibility": "behavioral" },
         { "name": "format.object_size", "compatibility": "behavioral" },
         { "name": "print.object_size", "compatibility": "behavioral" },

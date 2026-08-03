@@ -99,22 +99,24 @@ Environment-to-list conversion enumerates only local bindings, optionally includ
 names, sorts before forcing when requested, and preserves the runtime's hash-aware unsorted order.
 The `as.list` entry point performs S3 dispatch. As in GNU R, `exists(mode = "any")` detects an
 unforced delayed binding without forcing it and an explicitly supplied `get0(ifnotfound=)` value is
-evaluated even when the requested object exists. Locked and active bindings, the attached search
-path, namespace mutation, arbitrary numeric search positions, and exact GNU R hash-bucket
-enumeration order are not implemented. Evaluator-native syntax does not yet reproduce GNU R's
-primitive-binding lookup failures when an evaluated expression's environment chain ends directly at
-`emptyenv()`. Pairlists are distinct runtime values with exact tags; `pairlist`, `as.pairlist`,
-`is.pairlist`, `as.list`, `vector("pairlist", n)`, `length`, type/mode inspection, `alist`, and
-Worker transport use that value model. Pairlist `[`, `[[`, and `$` extraction follows the measured
-GNU R list-return and unique-partial-name behavior. `[[<-` and `$<-` preserve pairlist type, `[<-`
-converts to an ordinary list, and names, arbitrary runtime attributes, classes, dimensions,
-dimension names, and implicit matrix/array classes are retained or dropped along the measured GNU R
-paths. GNU R's `lengths()`, `is.matrix()`, and `is.array()` rejection/false results for pairlists
-are preserved. This increment does not yet provide `bquote`, pairlist rectangular replacement or
-every extension edge case, generic pairlist attributes across the public snapshot, inherited
-substitution lookup, alternate `match.call` definitions/calls/environments, full language
-indexing/attributes, list/data-frame evaluation environments, source-reference preservation, or
-file/connection-driven parsing.
+evaluated even when the requested object exists. `lockEnvironment()` prevents adding or removing
+bindings while permitting replacement of existing unlocked bindings; `lockBinding()`,
+`unlockBinding()`, `bindingIsLocked()`, and `environmentIsLocked()` expose the corresponding
+reference-semantics state. Active bindings, namespace mutation, arbitrary numeric search positions,
+and exact GNU R hash-bucket enumeration order are not implemented. Evaluator-native syntax does not
+yet reproduce GNU R's primitive-binding lookup failures when an evaluated expression's environment
+chain ends directly at `emptyenv()`. Pairlists are distinct runtime values with exact tags;
+`pairlist`, `as.pairlist`, `is.pairlist`, `as.list`, `vector("pairlist", n)`, `length`, type/mode
+inspection, `alist`, and Worker transport use that value model. Pairlist `[`, `[[`, and `$`
+extraction follows the measured GNU R list-return and unique-partial-name behavior. `[[<-` and `$<-`
+preserve pairlist type, `[<-` converts to an ordinary list, and names, arbitrary runtime attributes,
+classes, dimensions, dimension names, and implicit matrix/array classes are retained or dropped
+along the measured GNU R paths. GNU R's `lengths()`, `is.matrix()`, and `is.array()` rejection/false
+results for pairlists are preserved. This increment does not yet provide `bquote`, pairlist
+rectangular replacement or every extension edge case, generic pairlist attributes across the public
+snapshot, inherited substitution lookup, alternate `match.call` definitions/calls/environments, full
+language indexing/attributes, list/data-frame evaluation environments, source-reference
+preservation, or file/connection-driven parsing.
 
 `textConnection()` supplies an always-open, session-owned input connection backed by a copied
 character vector. `source()` reads such connections or browser-owned virtual/package paths, parses
@@ -601,16 +603,20 @@ attachment, and exported bindings enter the attached-package search environment 
 `library()`. Reset clears namespaces, hooks, attachment state, S3 registrations, and search entries
 but retains the immutable bundle catalog for deterministic reload. Source size, source count,
 dependency cycles, imports, exports, and lifecycle evaluation all remain resource-checked. Unchanged
-`utils::packageVersion(pkg)` consults that immutable catalog and therefore does not load or attach
-the requested namespace. Core namespaces expose the runtime's documented `4.6.0` compatibility
-identity; installed bundles expose their validated DESCRIPTION version. `getRversion()` uses the
-same component representation with class chain `R_system_version`, `package_version`, and
-`numeric_version`. Version constructors normalize dots and hyphens into integer components,
-represent missing entries explicitly, and support character formatting, printing, concatenation, and
-vectorized relational operators with trailing-zero padding. `utils::compareVersion()` preserves its
-separate component-count ordering. Arbitrary `lib.loc` discovery, mutable installed metadata,
-component extraction/replacement, summary methods, and the complete numeric-version S3 family are
-not yet supported.
+R6 2.6.1 additionally proves that an installed package can replace the built-in compatibility shim
+of the same non-core name, register a namespace-qualified S3 method, construct a generator, create a
+reference object, call a public method, and mutate an existing field without source changes. Core
+package names remain reserved. This is an executable package/version proof, not universal R6 or
+pure-R package compatibility. Unchanged `utils::packageVersion(pkg)` consults that immutable catalog
+and therefore does not load or attach the requested namespace. Core namespaces expose the runtime's
+documented `4.6.0` compatibility identity; installed bundles expose their validated DESCRIPTION
+version. `getRversion()` uses the same component representation with class chain `R_system_version`,
+`package_version`, and `numeric_version`. Version constructors normalize dots and hyphens into
+integer components, represent missing entries explicitly, and support character formatting,
+printing, concatenation, and vectorized relational operators with trailing-zero padding.
+`utils::compareVersion()` preserves its separate component-count ordering. Arbitrary `lib.loc`
+discovery, mutable installed metadata, component extraction/replacement, summary methods, and the
+complete numeric-version S3 family are not yet supported.
 
 `utils::packageDescription()` reads the same immutable catalog without initializing a namespace.
 Validated bundle DESCRIPTION fields retain their source order and folded continuation text; callers
@@ -626,9 +632,11 @@ methods. The registry key includes the generic's definition environment, so inde
 may define the same generic/class pair without cross-dispatch. Function values and character method
 names are retained without creating visible `generic.class` bindings; later registration replaces
 the same key, while a visible call-site method still wins. Namespace-load transactions restore all
-changed entries when `.onLoad()` fails, and reset clears the registry. Delayed registration against
-an unloaded suggested-package namespace and complete method-table introspection are not yet
-supported.
+changed entries when `.onLoad()` fails, and reset clears the registry. Declarative
+`S3method(package::generic, class)` entries resolve the generic in its named namespace while looking
+up the unqualified `generic.class` method in the installing package, matching the form used by R6
+for `utils::.DollarNames`. Delayed registration against an unloaded suggested-package namespace and
+complete method-table introspection are not yet supported.
 
 Unchanged external packages can construct wrapper closures from package-owned source: nested
 replacement rebuilds call roots through `formals<-`, closure enclosures can be replaced through
@@ -1585,16 +1593,18 @@ Native `|>` evaluates its left expression once and inserts it as a forced first 
 right call. `%>%` additionally supports bare callables and dot insertion. Neither form rewrites
 source into JavaScript.
 
-Registered `base`, `stats`, `graphics`, `methods`, `utils`, `R6`, `vctrs`, and `tibble` namespace
-access bypasses global shadowing for exact members. `::` and registered `:::` lookup do no I/O and
-never load packages.
+Registered `base`, `stats`, `graphics`, `methods`, `utils`, `R6`, `vctrs`, and `tibble`
+compatibility namespaces bypass global shadowing for exact members when no installed bundle has the
+same non-core name. An admitted package bundle takes precedence over its shim and then follows
+ordinary lazy namespace loading; core package names cannot be replaced. Static lookup does no I/O.
 
-`comment()` reads the `"comment"` character attribute from the currently attributed sequence model.
-`comment<-` and `attr(x, "comment") <- value` share validation: character values attach metadata,
-`NULL` or `character()` removes it, missing character elements remain distinct, and every unrelated
-attribute is preserved. Replacement uses the ordinary copy-and-rebind path. Closures, environments,
-and owned language values do not yet carry general attribute maps, so setting their comments raises
-an explicit unsupported-feature condition rather than silently discarding metadata.
+`comment()` reads the `"comment"` character attribute from vectors, pairlists, environments, and
+closures. `comment<-` and `attr(x, "comment") <- value` share validation: character values attach
+metadata, `NULL` or `character()` removes it, missing character elements remain distinct, and every
+unrelated attribute is preserved. Vector, pairlist, and closure replacement uses the ordinary
+copy-and-rebind path; environment attributes mutate by reference and are visible through every
+alias. General `attr`, `attributes`, `class`, `inherits`, and `is.object` use the same maps. Owned
+language values do not yet carry general attribute maps.
 
 Explicit classes use the ordinary attribute map. S3 `UseMethod` dispatches through ordered classes
 and `.default`; `NextMethod` continues the current chain. The bounded S4 layer stores class,
@@ -1610,11 +1620,13 @@ generic wrapper performs the same lookup before evaluating an ordinary fallback 
 `methods::show()` performs the same inherited single-object lookup for registered `show` methods and
 preserves each method's returned value and visibility. Without a registered method it writes the
 deterministic owned-value representation to the output journal and returns invisible `NULL`; no
-terminal, pager, ANSI capability, or package-specific display code is consulted. R6 generators
-construct classed public-field lists, and vctrs helpers construct class metadata. Ambiguous-method
-diagnostics, union classes, full formal/partial argument matching, automatic namespace/package
-registration, method caches, primitive/group generics, and complete external-package behavior are
-not claimed.
+terminal, pager, ANSI capability, or package-specific display code is consulted. The bounded
+built-in R6 helper constructs classed public-field lists; the unchanged external R6 2.6.1 proof
+exercises its own package generator, environment locks, reference field mutation, and public method
+invocation. vctrs helpers construct class metadata. Active/private R6 bindings,
+cloning/finalization, and broad R6 behavior remain unclaimed. Ambiguous-method diagnostics, union
+classes, full formal/partial argument matching, automatic namespace/package registration, method
+caches, primitive/group generics, and complete external-package behavior are not claimed.
 
 Default resource limits are 100,000 steps, 100 calls, 1,000,000 elements per vector, and 1,000,000
 output bytes. Structured resource errors reduce accidental denial of service but are not a formal

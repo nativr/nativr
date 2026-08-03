@@ -42,10 +42,10 @@ import {
   listValue,
   logicalVector,
   missingValue,
+  objectClasses,
   NATIVR_PACKAGE_LIBRARY_PATH,
   NATIVR_SYSTEM_LIBRARY_PATH,
   R_NULL,
-  vectorClasses,
   vectorDimensions,
   withClasses,
   GLOBAL_CALLING_HANDLERS_STATE_KEY,
@@ -151,6 +151,7 @@ export interface RuntimePackageDependency {
 /** One S3 registration parsed independently from NAMESPACE. */
 export interface RuntimeS3Method {
   readonly generic: string;
+  readonly genericPackage?: string;
   readonly class: string;
   readonly method: string;
 }
@@ -483,6 +484,14 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
   ["vctrs", new Set(["new_class", "new_vctr"])],
   ["tibble", new Set(["tibble", "tribble"])],
 ]);
+const BASE_NAMESPACE_CONSTANTS = new Set([
+  "pi",
+  "letters",
+  ".Machine",
+  ".LC.categories",
+  ".Library",
+  ".Library.site",
+]);
 const CORE_R_PACKAGE_NAMES = new Set([
   "base",
   "stats",
@@ -603,10 +612,7 @@ export class Evaluator {
     this.#globalEnvironment = createEnvironment(this.#attachedPackagesEnvironment, true);
     this.#installBuiltins();
     for (const definition of options.packages ?? []) {
-      if (
-        this.#packages.has(definition.name) ||
-        REGISTERED_NAMESPACE_EXPORTS.has(definition.name)
-      ) {
+      if (this.#packages.has(definition.name) || CORE_R_PACKAGE_NAMES.has(definition.name)) {
         throw new REvaluationError(
           "NRE2220",
           `Package namespace '${definition.name}' is already registered.`,
@@ -1020,6 +1026,7 @@ export class Evaluator {
             parameters: node.parameters,
             body: node.body,
             environment,
+            attributes: new Map(),
           },
           visible: true,
         };
@@ -1188,10 +1195,13 @@ export class Evaluator {
       case "NamespaceExpression": {
         const namespace = staticName(node.namespace, "namespace");
         const member = staticName(node.member, "namespace member");
-        const exports = REGISTERED_NAMESPACE_EXPORTS.get(namespace);
+        const exports = this.#staticNamespaceExports(namespace);
         if (exports !== undefined) {
           const binding = lookupBinding(this.#baseEnvironment, member);
-          if (binding === undefined || (exports !== "all" && !exports.has(member))) {
+          const internal = this.#staticNamespaceOwnsBinding(namespace, member);
+          const exported = exports === "all" ? internal : exports.has(member);
+          const accessible = node.operator === ":::" ? internal || exported : exported;
+          if (binding === undefined || !accessible) {
             throw new REvaluationError(
               "NRE2211",
               `'${member}' is not a registered ${node.operator === ":::" ? "internal" : "exported"} binding in namespace '${namespace}'.`,
@@ -2026,11 +2036,12 @@ export class Evaluator {
           this.#installedPackageDescription(name, libraryPaths),
         installedPackageNames: (libraryPaths) => this.#installedPackageNames(libraryPaths),
         isNamespaceLoaded: (name) =>
-          REGISTERED_NAMESPACE_EXPORTS.has(name) ||
-          this.#packages.get(name)?.namespace !== undefined,
+          this.#packages.has(name)
+            ? this.#packages.get(name)?.namespace !== undefined
+            : REGISTERED_NAMESPACE_EXPORTS.has(name),
         loadedNamespaces: () =>
           Object.freeze([
-            ...REGISTERED_NAMESPACE_EXPORTS.keys(),
+            ...this.#staticNamespaceNames(),
             ...[...this.#packages]
               .filter(([, record]) => record.namespace !== undefined)
               .map(([name]) => name),
@@ -2507,12 +2518,24 @@ export class Evaluator {
     method: RBinding,
     environment: REnvironment,
     context: EvaluationContext,
+    genericPackage?: string,
   ): Promise<void> {
-    const genericBinding = lookupBinding(environment, generic);
-    if (genericBinding === undefined) {
-      throw new REvaluationError("NRE2001", `object '${generic}' not found`);
+    const genericValue =
+      genericPackage === undefined
+        ? await (async () => {
+            const genericBinding = lookupBinding(environment, generic);
+            if (genericBinding === undefined) {
+              throw new REvaluationError("NRE2001", `object '${generic}' not found`);
+            }
+            return this.#force(genericBinding, context);
+          })()
+        : await this.#namespaceBinding(genericPackage, generic, context);
+    if (genericValue === undefined) {
+      throw new REvaluationError(
+        "NRE2001",
+        `object '${genericPackage === undefined ? generic : `${genericPackage}::${generic}`}' not found`,
+      );
     }
-    const genericValue = await this.#force(genericBinding, context);
     const genericEnvironment =
       genericValue.type === "closure"
         ? genericValue.environment
@@ -2691,7 +2714,14 @@ export class Evaluator {
               `Package '${name}' registers missing S3 method '${method.method}'.`,
             );
           }
-          await this.#registerS3Method(method.generic, method.class, binding, namespace, context);
+          await this.#registerS3Method(
+            method.generic,
+            method.class,
+            binding,
+            namespace,
+            context,
+            method.genericPackage,
+          );
         }
         await this.#invokePackageHook(record, ".onLoad", context);
       } catch (error) {
@@ -2795,7 +2825,7 @@ export class Evaluator {
   }
 
   async #namespaceExports(name: string, context: EvaluationContext): Promise<readonly string[]> {
-    const staticExports = REGISTERED_NAMESPACE_EXPORTS.get(name);
+    const staticExports = this.#staticNamespaceExports(name);
     if (staticExports !== undefined) {
       const names = this.#registeredNamespaceExportNames(name, staticExports);
       context.allocate(names.length);
@@ -2825,17 +2855,9 @@ export class Evaluator {
     bindingName: string,
     context: EvaluationContext,
   ): Promise<RValue | undefined> {
-    const staticExports = REGISTERED_NAMESPACE_EXPORTS.get(name);
+    const staticExports = this.#staticNamespaceExports(name);
     if (staticExports !== undefined) {
-      const packageOwned = this.#builtins.some(
-        (definition) => definition.package === name && definition.name === bindingName,
-      );
-      const baseConstant =
-        name === "base" &&
-        ["pi", "letters", ".Machine", ".LC.categories", ".Library", ".Library.site"].includes(
-          bindingName,
-        );
-      if (!packageOwned && !baseConstant) return undefined;
+      if (!this.#staticNamespaceOwnsBinding(name, bindingName)) return undefined;
       const binding = this.#baseEnvironment.bindings.get(bindingName);
       if (binding === undefined) return undefined;
       return binding.type === "promise" ? this.#force(binding, context) : binding;
@@ -2855,7 +2877,7 @@ export class Evaluator {
 
   #installedPackageVersion(name: string, libraryPaths?: readonly string[]): string | undefined {
     const effectivePaths = libraryPaths ?? this.#libraryPaths;
-    if (REGISTERED_NAMESPACE_EXPORTS.has(name)) {
+    if (this.#staticNamespaceExports(name) !== undefined) {
       return effectivePaths.includes(NATIVR_SYSTEM_LIBRARY_PATH) ? "4.6.0" : undefined;
     }
     const record = this.#packages.get(name);
@@ -2879,7 +2901,7 @@ export class Evaluator {
       }
     | undefined {
     const effectivePaths = libraryPaths ?? this.#libraryPaths;
-    if (REGISTERED_NAMESPACE_EXPORTS.has(name)) {
+    if (this.#staticNamespaceExports(name) !== undefined) {
       if (!effectivePaths.includes(NATIVR_SYSTEM_LIBRARY_PATH)) return undefined;
       return {
         fields: corePackageDescriptionFields(name),
@@ -2904,7 +2926,7 @@ export class Evaluator {
     const effectivePaths = libraryPaths ?? this.#libraryPaths;
     const names: string[] = [];
     if (effectivePaths.includes(NATIVR_SYSTEM_LIBRARY_PATH)) {
-      names.push(...REGISTERED_NAMESPACE_EXPORTS.keys());
+      names.push(...this.#staticNamespaceNames());
     }
     if (effectivePaths.includes(NATIVR_PACKAGE_LIBRARY_PATH)) names.push(...this.#packages.keys());
     return Object.freeze([...new Set(names)].sort());
@@ -2916,7 +2938,7 @@ export class Evaluator {
     libraryPaths?: readonly string[],
   ): string | undefined {
     const normalizedPath = resourcePath.replace(/^\/+|\/+$/gu, "");
-    if (REGISTERED_NAMESPACE_EXPORTS.has(name)) {
+    if (this.#staticNamespaceExports(name) !== undefined) {
       if (!(libraryPaths ?? this.#libraryPaths).includes(NATIVR_SYSTEM_LIBRARY_PATH))
         return undefined;
       return normalizedPath.length === 0
@@ -2955,7 +2977,7 @@ export class Evaluator {
 
   #packageResourcePaths(name: string, prefix: string): readonly string[] | undefined {
     const normalizedPrefix = prefix.replace(/^\/+|\/+$/gu, "");
-    if (REGISTERED_NAMESPACE_EXPORTS.has(name)) return Object.freeze([]);
+    if (this.#staticNamespaceExports(name) !== undefined) return Object.freeze([]);
     const record = this.#packages.get(name);
     if (record === undefined) return undefined;
     const paths = [
@@ -3029,6 +3051,23 @@ export class Evaluator {
     return [...new Set(names)];
   }
 
+  #staticNamespaceExports(name: string): ReadonlySet<string> | "all" | undefined {
+    return this.#packages.has(name) ? undefined : REGISTERED_NAMESPACE_EXPORTS.get(name);
+  }
+
+  #staticNamespaceOwnsBinding(name: string, bindingName: string): boolean {
+    return (
+      this.#builtins.some(
+        (definition) => definition.package === name && definition.name === bindingName,
+      ) ||
+      (name === "base" && BASE_NAMESPACE_CONSTANTS.has(bindingName))
+    );
+  }
+
+  #staticNamespaceNames(): readonly string[] {
+    return [...REGISTERED_NAMESPACE_EXPORTS.keys()].filter((name) => !this.#packages.has(name));
+  }
+
   #invalidateSearchEnvironments(clearNames = false): void {
     this.#searchEnvironments.clear();
     if (clearNames) this.#searchEnvironmentNames.clear();
@@ -3094,7 +3133,7 @@ export class Evaluator {
       const environment = createEnvironment(parent, true);
       if (entry.startsWith("package:")) {
         const name = entry.slice("package:".length);
-        const staticExports = REGISTERED_NAMESPACE_EXPORTS.get(name);
+        const staticExports = this.#staticNamespaceExports(name);
         const record = this.#packages.get(name);
         const source = staticExports === undefined ? record?.namespace : this.#baseEnvironment;
         const exports =
@@ -3556,11 +3595,11 @@ function runtimeClassNames(value: RValue): readonly string[] {
   if (value.type === "language") return ["call"];
   if (value.type === "expression") return ["expression"];
   if (value.type === "null") return ["NULL"];
+  const explicit = objectClasses(value);
+  if (explicit !== undefined) return explicit;
   if (!isVector(value) && value.type !== "pairlist") {
     return [value.type === "closure" || value.type === "builtin" ? "function" : value.type];
   }
-  const explicit = vectorClasses(value);
-  if (explicit !== undefined) return explicit;
   const dimensions = vectorDimensions(value);
   if (dimensions !== undefined) return dimensions.length === 2 ? ["matrix", "array"] : ["array"];
   if (value.type === "pairlist") return ["pairlist"];

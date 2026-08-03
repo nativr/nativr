@@ -41,10 +41,13 @@ import {
   lookupBinding,
   logicalVector,
   missingValue,
+  objectAttributes,
+  objectClasses,
   NATIVR_PACKAGE_LIBRARY_PATH,
   NATIVR_SYSTEM_LIBRARY_PATH,
   pairlistValue,
   rawVector,
+  removeBinding,
   replaceVectorSubset,
   setBinding,
   subsetDimensions,
@@ -67,6 +70,7 @@ import type {
   BuiltinInvocation,
   RBuiltin,
   RBinding,
+  RClosure,
   RCharacterEncoding,
   RCharacterVector,
   RComplexVector,
@@ -170,11 +174,40 @@ type AtomicVector =
   RLogicalVector | RIntegerVector | RDoubleVector | RComplexVector | RRawVector | RCharacterVector;
 type NumericVector = RLogicalVector | RIntegerVector | RDoubleVector | RComplexVector;
 type AttributedSequence = RVector | RPairlist;
+type AttributedRuntimeObject = AttributedSequence | REnvironment | RClosure;
 const SHELL_QUOTE_TYPES = ["sh", "csh", "cmd", "cmd2"] as const;
 type ShellQuoteType = (typeof SHELL_QUOTE_TYPES)[number];
 
 function isAttributedSequence(value: RValue): value is AttributedSequence {
   return isVector(value) || value.type === "pairlist";
+}
+
+function isAttributedRuntimeObject(value: RValue): value is AttributedRuntimeObject {
+  return isAttributedSequence(value) || value.type === "environment" || value.type === "closure";
+}
+
+function replaceRuntimeAttribute(
+  value: AttributedRuntimeObject,
+  name: string,
+  replacement: RValue,
+): AttributedRuntimeObject {
+  if (name.length === 0) {
+    throw new RTypeMismatchError("NRT3011", "Attribute names must be non-empty.");
+  }
+  if (isAttributedSequence(value)) {
+    return replacement.type === "null"
+      ? withoutAttribute(value, name)
+      : withAttribute(value, name, replacement);
+  }
+  if (value.type === "environment") {
+    if (replacement.type === "null") value.attributes.delete(name);
+    else value.attributes.set(name, replacement);
+    return value;
+  }
+  const attributes = new Map(value.attributes);
+  if (replacement.type === "null") attributes.delete(name);
+  else attributes.set(name, replacement);
+  return { ...value, attributes };
 }
 
 const FIRST_CLASS_OPERATOR_BUILTINS: readonly BuiltinDefinition[] = [
@@ -301,6 +334,19 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   withBuiltinFormals(
     definePackageBuiltin("utils", "object.size", ["x"], "behavioral", builtinObjectSize),
     [{ name: "x" }],
+  ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "utils",
+      ".DollarNames",
+      ["x", "pattern"],
+      "behavioral",
+      builtinDollarNames,
+    ),
+    [
+      { name: "x" },
+      { name: "pattern", defaultValue: { kind: "StringLiteral", value: "", span: SYNTHETIC_SPAN } },
+    ],
   ),
   withBuiltinFormals(
     withUnsupportedBehavior(
@@ -1689,6 +1735,12 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("within", ["data", "expr", "..."], "behavioral", builtinWithin),
   defineBuiltin("local", ["expr", "envir"], "behavioral", builtinLocal),
   defineBuiltin("subset", ["x", "subset", "select", "drop", "..."], "behavioral", builtinSubset),
+  defineBuiltin(".subset", ["x", "..."], "behavioral", (invocation) =>
+    builtinInternalSubset(invocation, false),
+  ),
+  defineBuiltin(".subset2", ["x", "...", "exact"], "behavioral", (invocation) =>
+    builtinInternalSubset(invocation, true),
+  ),
   defineBuiltin("split", ["x", "f", "drop", "..."], "behavioral", builtinSplit),
   defineBuiltin("expression", ["..."], "behavioral", builtinExpression, "special"),
   defineBuiltin("as.expression", ["x"], "behavioral", builtinAsExpression),
@@ -1819,6 +1871,32 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     builtinRootEnvironment(invocation, "empty"),
   ),
   defineBuiltin("new.env", ["hash", "parent", "size"], "behavioral", builtinNewEnvironment),
+  defineBuiltin(
+    "lockEnvironment",
+    ["env", "bindings"],
+    "behavioral",
+    builtinLockEnvironment,
+    "regular",
+    "invisible",
+  ),
+  defineBuiltin("environmentIsLocked", ["env"], "behavioral", builtinEnvironmentIsLocked),
+  defineBuiltin(
+    "lockBinding",
+    ["sym", "env"],
+    "behavioral",
+    (invocation) => builtinBindingLock(invocation, true),
+    "regular",
+    "invisible",
+  ),
+  defineBuiltin(
+    "unlockBinding",
+    ["sym", "env"],
+    "behavioral",
+    (invocation) => builtinBindingLock(invocation, false),
+    "regular",
+    "invisible",
+  ),
+  defineBuiltin("bindingIsLocked", ["sym", "env"], "behavioral", builtinBindingIsLocked),
   defineBuiltin("parent.env", ["env"], "behavioral", builtinParentEnvironment),
   defineBuiltin("parent.frame", ["n"], "behavioral", builtinParentFrame),
   defineBuiltin("search", [], "behavioral", builtinSearch),
@@ -6971,6 +7049,34 @@ async function builtinObjectSize(invocation: BuiltinInvocation): Promise<RValue>
     doubleVector([estimateRObjectSize(value, () => invocation.context.checkpoint())]),
     ["object_size"],
   );
+}
+
+async function builtinDollarNames(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["x", "pattern"]);
+  const value = required(matched, "x", ".DollarNames");
+  const pattern = characterScalar(matched.get("pattern") ?? characterVector([""]), "pattern");
+  const dispatched = await invocation.dispatchS3IfPresent(
+    ".DollarNames",
+    value,
+    invocation.arguments,
+  );
+  if (dispatched !== undefined) return dispatched;
+
+  const candidates =
+    value.type === "environment"
+      ? [...value.bindings.keys()]
+      : isAttributedSequence(value)
+        ? [...(vectorNames(value) ?? [])]
+        : [];
+  let matcher: RegExp;
+  try {
+    matcher = new RegExp(pattern, "u");
+  } catch {
+    throw new REvaluationError("NRE2130", `Invalid .DollarNames() pattern '${pattern}'.`);
+  }
+  const selected = [...new Set(candidates.filter((candidate) => matcher.test(candidate)))].sort();
+  invocation.context.allocate(selected.length);
+  return characterVector(selected);
 }
 
 type ObjectSizeStandard = "legacy" | "IEC" | "SI";
@@ -16041,6 +16147,79 @@ async function builtinLocal(invocation: BuiltinInvocation): Promise<RValue> {
   return evaluateArgument(invocation, expressionArgument, environment);
 }
 
+async function builtinInternalSubset(
+  invocation: BuiltinInvocation,
+  single: boolean,
+): Promise<RValue> {
+  const call = single ? ".subset2" : ".subset";
+  let targetArgument: BuiltinCallArgument | undefined;
+  let exact = true;
+  const indexArguments: BuiltinCallArgument[] = [];
+  for (const argument of invocation.arguments) {
+    if (argument.name === "x") {
+      targetArgument = uniqueArgument(targetArgument, argument, "x");
+    } else if (single && argument.name === "exact") {
+      exact = logicalFlag(await invocation.force(argument.promise), true, "exact");
+    } else if (argument.name === undefined && targetArgument === undefined) {
+      targetArgument = argument;
+    } else if (argument.name === undefined) {
+      indexArguments.push(argument);
+    } else {
+      throw new REvaluationError(
+        "NRE2101",
+        `${call}() does not accept named subscript '${argument.name}'.`,
+      );
+    }
+  }
+  if (targetArgument === undefined || targetArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", `${call}() requires x.`);
+  }
+  const target = await invocation.force(targetArgument.promise);
+  const indices: (RValue | undefined)[] = [];
+  for (const argument of indexArguments) {
+    indices.push(argument.promise.missing ? undefined : await invocation.force(argument.promise));
+  }
+
+  if (target.type === "environment") {
+    if (!single || indices.length !== 1 || indices[0] === undefined) {
+      throw new RTypeMismatchError("NRT3306", ".subset2() environment extraction needs one name.");
+    }
+    const index = indices[0];
+    if (index.type !== "character" || index.length !== 1 || index.missing !== undefined) {
+      throw new RTypeMismatchError("NRT3306", ".subset2() environment subscript must be a name.");
+    }
+    const binding = target.bindings.get(index.values[0] ?? "");
+    if (binding === undefined) return R_NULL;
+    if (binding.type === "promise") return invocation.force(binding);
+    if (binding.type === "dots") {
+      throw new REvaluationError("NRE2204", ".subset2() cannot extract the internal dots binding.");
+    }
+    return binding;
+  }
+  if (!isVector(target) && target.type !== "pairlist") {
+    throw new RTypeMismatchError(
+      "NRT3306",
+      `${call}() requires a vector, list, pairlist, or environment.`,
+    );
+  }
+
+  const dimensions = vectorDimensions(target);
+  const dimensional = indices.length >= 2 || (dimensions?.length === 1 && indices.length === 1);
+  if (dimensional) {
+    const selected = subsetDimensions(target, indices, true, invocation.context);
+    if (!single) return selected;
+    if (selected.length !== 1) {
+      throw new REvaluationError("NRE2204", ".subset2() must select exactly one element.");
+    }
+    return extractVectorElement(selected, integerVector([1]), invocation.context);
+  }
+  if (!single) return subsetVector(target, indices[0], invocation.context);
+  if (indices.length !== 1 || indices[0] === undefined) {
+    throw new REvaluationError("NRE2204", ".subset2() requires one non-missing subscript.");
+  }
+  return extractVectorElement(target, indices[0], invocation.context, exact);
+}
+
 async function builtinSubset(invocation: BuiltinInvocation): Promise<RValue> {
   const { matched } = matchLazyArgumentsWithDots(invocation, ["x", "subset", "select", "drop"]);
   const inputArgument = matched.get("x");
@@ -16964,6 +17143,7 @@ async function builtinArgs(invocation: BuiltinInvocation): Promise<RValue> {
     parameters: Object.freeze([...parameters]),
     body: { kind: "NullLiteral", span: SYNTHETIC_SPAN },
     environment: invocation.globalEnvironment(),
+    attributes: new Map(),
   };
 }
 
@@ -17333,6 +17513,71 @@ async function builtinNewEnvironment(invocation: BuiltinInvocation): Promise<REn
     });
   }
   return createEnvironment(parent, hashed);
+}
+
+async function bindingOperationArguments(
+  invocation: BuiltinInvocation,
+  call: string,
+): Promise<{ readonly name: string; readonly environment: REnvironment }> {
+  const matched = await matchExact(invocation, ["sym", "env"]);
+  const symbol = required(matched, "sym", call);
+  const environment = required(matched, "env", call);
+  const name =
+    symbol.type === "symbol"
+      ? symbol.name
+      : symbol.type === "character" && symbol.length === 1 && symbol.missing === undefined
+        ? (symbol.values[0] ?? "")
+        : undefined;
+  if (name === undefined || name.length === 0 || environment.type !== "environment") {
+    throw new RTypeMismatchError(
+      "NRT3211",
+      `${call}() requires one binding name and an environment.`,
+    );
+  }
+  if (!environment.bindings.has(name)) {
+    throw new REvaluationError("NRE2141", `No binding for '${name}'.`);
+  }
+  return { name, environment };
+}
+
+async function builtinLockEnvironment(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["env", "bindings"]);
+  const environment = required(matched, "env", "lockEnvironment");
+  if (environment.type !== "environment") {
+    throw new RTypeMismatchError("NRT3211", "lockEnvironment() requires an environment.");
+  }
+  const bindings = logicalFlag(matched.get("bindings"), false, "bindings");
+  environment.locked = true;
+  if (bindings) {
+    for (const name of environment.bindings.keys()) environment.lockedBindings.add(name);
+  }
+  return R_NULL;
+}
+
+async function builtinEnvironmentIsLocked(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["env"]);
+  const environment = required(matched, "env", "environmentIsLocked");
+  if (environment.type !== "environment") {
+    throw new RTypeMismatchError("NRT3211", "environmentIsLocked() requires an environment.");
+  }
+  invocation.context.allocate(1);
+  return logicalVector([environment.locked]);
+}
+
+async function builtinBindingLock(invocation: BuiltinInvocation, locked: boolean): Promise<RValue> {
+  const { name, environment } = await bindingOperationArguments(
+    invocation,
+    locked ? "lockBinding" : "unlockBinding",
+  );
+  if (locked) environment.lockedBindings.add(name);
+  else environment.lockedBindings.delete(name);
+  return R_NULL;
+}
+
+async function builtinBindingIsLocked(invocation: BuiltinInvocation): Promise<RValue> {
+  const { name, environment } = await bindingOperationArguments(invocation, "bindingIsLocked");
+  invocation.context.allocate(1);
+  return logicalVector([environment.lockedBindings.has(name)]);
 }
 
 async function builtinParentEnvironment(invocation: BuiltinInvocation): Promise<REnvironment> {
@@ -17908,7 +18153,7 @@ async function builtinRemove(invocation: BuiltinInvocation): Promise<RValue> {
         message: `object '${name}' not found`,
       });
     } else {
-      target.bindings.delete(name);
+      removeBinding(target, name);
     }
   }
   return R_NULL;
@@ -21610,12 +21855,13 @@ async function builtinAttr(invocation: BuiltinInvocation): Promise<RValue> {
   const name = characterScalar(required(matched, "which", "attr"), "which");
   logicalFlag(matched.get("exact"), false, "exact");
   if (value.type === "formula" && name === "class") return characterVector(["formula"]);
-  if (!isAttributedSequence(value)) return R_NULL;
-  if (name === "names") {
+  const attributes = objectAttributes(value);
+  if (attributes === undefined) return R_NULL;
+  if (isAttributedSequence(value) && name === "names") {
     const names = effectiveSequenceNames(value);
     return names === undefined ? R_NULL : characterVector(names);
   }
-  return value.attributes.get(name) ?? R_NULL;
+  return attributes.get(name) ?? R_NULL;
 }
 
 async function builtinAttrReplacement(invocation: BuiltinInvocation): Promise<RValue> {
@@ -21627,23 +21873,20 @@ async function builtinAttrReplacement(invocation: BuiltinInvocation): Promise<RV
   if (name === "class") return replaceClassAttribute(value, replacement, invocation);
   if (name === "dim") return replaceDimensionAttribute(value, replacement, invocation);
   if (name === "comment") return replaceCommentAttribute(value, replacement, invocation);
-  if (!isAttributedSequence(value)) {
+  if (!isAttributedRuntimeObject(value)) {
     throw new RTypeMismatchError(
       "NRT3200",
-      "attr<- currently requires a vector, list, or pairlist value.",
+      "attr<- currently requires a vector, list, pairlist, environment, or closure value.",
     );
   }
   invocation.context.allocate(1);
-  return replacement.type === "null"
-    ? withoutAttribute(value, name)
-    : withAttribute(value, name, replacement);
+  return replaceRuntimeAttribute(value, name, replacement);
 }
 
 async function builtinComment(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["x"]);
   const value = required(matched, "x", "comment");
-  if (!isAttributedSequence(value)) return R_NULL;
-  const comment = value.attributes.get("comment");
+  const comment = objectAttributes(value)?.get("comment");
   return comment?.type === "character" ? comment : R_NULL;
 }
 
@@ -21667,7 +21910,7 @@ function replaceCommentAttribute(
       "comment replacement requires a character vector or NULL.",
     );
   }
-  if (!isAttributedSequence(value)) {
+  if (!isAttributedRuntimeObject(value)) {
     if (value.type === "null") {
       throw new RTypeMismatchError("NRT3335", "Cannot set a comment attribute on NULL.");
     }
@@ -21677,10 +21920,10 @@ function replaceCommentAttribute(
     );
   }
   if (replacement.type === "null" || replacement.length === 0) {
-    return withoutAttribute(value, "comment");
+    return replaceRuntimeAttribute(value, "comment", R_NULL);
   }
   invocation.context.allocate(replacement.length);
-  return withAttribute(value, "comment", replacement);
+  return replaceRuntimeAttribute(value, "comment", replacement);
 }
 
 async function builtinAttributes(invocation: BuiltinInvocation): Promise<RValue> {
@@ -21689,8 +21932,9 @@ async function builtinAttributes(invocation: BuiltinInvocation): Promise<RValue>
   if (value.type === "formula") {
     return listValue([characterVector(["formula"])], ["class"]);
   }
-  if (!isAttributedSequence(value) || value.attributes.size === 0) return R_NULL;
-  const entries = [...value.attributes.entries()];
+  const attributes = objectAttributes(value);
+  if (attributes === undefined || attributes.size === 0) return R_NULL;
+  const entries = [...attributes.entries()];
   invocation.context.allocate(entries.length);
   return listValue(
     entries.map(([, attribute]) => attribute),
@@ -46129,14 +46373,16 @@ async function builtinVapply(invocation: BuiltinInvocation): Promise<RValue> {
   const input = await invocation.force(inputArgument.promise);
   const callable = await invocation.force(functionArgument.promise);
   const template = await invocation.force(templateArgument.promise);
-  if (!isVector(input) || !isAtomic(template)) {
+  if ((input.type !== "null" && !isVector(input)) || !isAtomic(template)) {
     throw new RTypeMismatchError("NRT3176", "vapply() requires a vector X and atomic FUN.VALUE.");
   }
   const forwarded = await forceForwarded(invocation, extras);
-  const results = await mapVector(invocation, input, callable, forwarded);
+  const results =
+    input.type === "null" ? [] : await mapVector(invocation, input, callable, forwarded);
+  const inputNames = input.type === "null" ? undefined : vectorNames(input);
   if (results.length === 0) {
     let empty = emptyAtomicForVectorMode(template.type);
-    const names = useNames ? vectorNames(input) : undefined;
+    const names = useNames ? inputNames : undefined;
     if (template.length === 1) return names === undefined ? empty : withNames(empty, names);
     const dimensions = vectorDimensions(template);
     empty = withDimensions(empty, [...(dimensions ?? [template.length]), 0]);
@@ -46156,7 +46402,7 @@ async function builtinVapply(invocation: BuiltinInvocation): Promise<RValue> {
     }
     coerced.push(coerceVapplyResult(result, template.type));
   }
-  return simplifyResults(coerced, useNames ? vectorNames(input) : undefined, invocation);
+  return simplifyResults(coerced, useNames ? inputNames : undefined, invocation);
 }
 
 function vapplyTypeCompatible(
@@ -48623,7 +48869,7 @@ async function builtinDistinct(
     );
   }
   const input = await invocation.force(inputArgument.promise);
-  if (!isAtomic(input)) {
+  if (input.type !== "null" && !isAtomic(input)) {
     throw new RTypeMismatchError("NRT3141", "unique()/duplicated() require an atomic vector.");
   }
   const fromLastArguments = dots.filter((argument) => argument.name === "fromLast");
@@ -48635,6 +48881,7 @@ async function builtinDistinct(
     fromLastArgument === undefined
       ? false
       : anyDuplicatedFlag(await invocation.force(fromLastArgument.promise), invocation);
+  if (input.type === "null") return duplicated ? logicalVector([]) : R_NULL;
   const seen = new Set<string>();
   const selected: number[] = [];
   const flags = new Uint8Array(input.length);
@@ -49693,13 +49940,13 @@ function replaceClassAttribute(
   replacement: RValue,
   invocation: BuiltinInvocation,
 ): RValue {
-  if (!isAttributedSequence(value)) {
+  if (!isAttributedRuntimeObject(value)) {
     throw new RTypeMismatchError(
       "NRT3202",
-      "class<- currently requires a vector, list, or pairlist value.",
+      "class<- currently requires a vector, list, pairlist, environment, or closure value.",
     );
   }
-  if (replacement.type === "null") return withoutClasses(value);
+  if (replacement.type === "null") return replaceRuntimeAttribute(value, "class", replacement);
   if (
     replacement.type !== "character" ||
     replacement.missing !== undefined ||
@@ -49711,7 +49958,7 @@ function replaceClassAttribute(
     );
   }
   invocation.context.allocate(replacement.length);
-  return withClasses(value, replacement.values);
+  return replaceRuntimeAttribute(value, "class", replacement);
 }
 
 async function builtinInherits(invocation: BuiltinInvocation): Promise<RValue> {
@@ -49737,8 +49984,7 @@ async function builtinInherits(invocation: BuiltinInvocation): Promise<RValue> {
 async function builtinIsObject(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["x"]);
   const value = required(matched, "x", "is.object");
-  const object =
-    value.type === "formula" || (isVector(value) && vectorClasses(value) !== undefined);
+  const object = value.type === "formula" || objectClasses(value) !== undefined;
   invocation.context.allocate(1);
   return logicalVector([object]);
 }
@@ -50771,11 +51017,11 @@ function implicitClasses(value: RValue): readonly string[] {
   if (value.type === "language") return ["call"];
   if (value.type === "expression") return ["expression"];
   if (value.type === "null") return ["NULL"];
+  const explicit = objectClasses(value);
+  if (explicit !== undefined) return explicit;
   if (!isAttributedSequence(value)) {
     return [value.type === "closure" || value.type === "builtin" ? "function" : value.type];
   }
-  const explicit = vectorClasses(value);
-  if (explicit !== undefined) return explicit;
   const dimensions = vectorDimensions(value);
   if (dimensions !== undefined) return dimensions.length === 2 ? ["matrix", "array"] : ["array"];
   switch (value.type) {

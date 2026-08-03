@@ -100,8 +100,13 @@ export interface REnvironment {
   readonly type: "environment";
   readonly id: number;
   readonly parent: REnvironment | null;
+  /** Reference-semantics attributes; mutation is visible through every environment alias. */
+  readonly attributes: Map<string, RValue>;
   /** Whether unordered binding enumeration follows hashed-environment insertion order. */
   readonly hashed: boolean;
+  /** Environment locks prevent new bindings; binding locks prevent replacement or removal. */
+  locked: boolean;
+  readonly lockedBindings: Set<string>;
   readonly bindings: Map<string, RBinding>;
 }
 
@@ -111,6 +116,7 @@ export interface RClosure {
   readonly parameters: readonly FunctionParameter[];
   readonly body: AstNode;
   readonly environment: REnvironment;
+  readonly attributes: RAttributes;
 }
 
 /** A normalized, intentionally small formula value independent of parser internals. */
@@ -777,6 +783,29 @@ export const R_NULL: RNull = Object.freeze({ type: "null" });
 
 const EMPTY_ATTRIBUTES: RAttributes = new Map();
 
+/** Read the general attribute map carried by supported attributed runtime objects. */
+export function objectAttributes(value: RValue): RAttributes | undefined {
+  if (
+    isVector(value) ||
+    value.type === "pairlist" ||
+    value.type === "environment" ||
+    value.type === "closure"
+  ) {
+    return value.attributes;
+  }
+  return undefined;
+}
+
+/** Read validated explicit class names from any supported attributed runtime object. */
+export function objectClasses(value: RValue): readonly string[] | undefined {
+  const classes = objectAttributes(value)?.get("class");
+  if (classes === undefined) return undefined;
+  if (classes.type !== "character" || classes.missing !== undefined) {
+    throw new RTypeMismatchError("NRT3009", "The class attribute is malformed.");
+  }
+  return classes.values;
+}
+
 /** Construct and validate an immutable logical vector. */
 export function logicalVector(
   values: ArrayLike<number | boolean>,
@@ -1088,12 +1117,7 @@ export function vectorDimensions(value: RVector | RPairlist): readonly number[] 
 
 /** Read exact class names from a vector when present. */
 export function vectorClasses(value: RVector | RPairlist): readonly string[] | undefined {
-  const classes = value.attributes.get("class");
-  if (classes === undefined) return undefined;
-  if (classes.type !== "character" || classes.missing !== undefined) {
-    throw new RTypeMismatchError("NRT3009", "The class attribute is malformed.");
-  }
-  return classes.values;
+  return objectClasses(value);
 }
 
 /** Return an immutable vector clone with an exact names attribute. */

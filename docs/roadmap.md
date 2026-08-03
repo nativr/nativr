@@ -486,10 +486,10 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      constraints; applies Collate/platform source selection and portable encodings; verifies
      repository digests; writes deterministic SHA-256 artifacts and locks; and feeds dependency-
      first bundles directly to `createR`. Runtime `system.file` exposes immutable package resources.
-     Unchanged `pkgconfig 2.0.3`, `generics 0.1.4`, and `withr 3.0.3` source packages pass opt-in
-     digest-pinned repository/install/load/execution tests, including S3 dispatch and state
-     restoration. Binary/lazy data, broader NAMESPACE/S4 forms, package test orchestration, and
-     audited native Wasm adapters remain later layers.
+     Unchanged `pkgconfig 2.0.3`, `generics 0.1.4`, `withr 3.0.3`, and `R6 2.6.1` source packages
+     pass opt-in digest-pinned repository/install/load/execution tests, including S3 dispatch and
+     state restoration. Binary/lazy data, broader NAMESPACE/S4 forms, package test orchestration,
+     and audited native Wasm adapters remain later layers.
 117. Package text and cooperative waits: `base::readLines` reads same-session temporary text plus
      immutable DESCRIPTION, NAMESPACE, retained R source, and UTF-8/Latin-1 package resources;
      `writeLines` supplies bounded temporary-file and stdout writes; and `Sys.sleep` yields in short
@@ -876,6 +876,13 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      unchanged pure-R package plus Worker/Canvas evidence. `lines` and additive curves inherit
      active log axes; complete log ticks/labels, other additive primitives, clipping, replayed
      log-axis metadata, and pixel identity remain future graphics depth.
+183. Pure-R package compatibility depth: non-core installed bundles now replace same-name static
+     shims, namespace-qualified S3 declarations resolve correctly, environment and closure
+     attributes follow reference/copy-on-modify behavior, environment and binding locks constrain
+     mutation, and `.subset`/`.subset2` expose non-dispatching extraction. Unchanged R6 2.6.1 now
+     installs, loads, constructs a generator and object, calls a public method, and mutates a field.
+     Active/private bindings, cloning/finalization, broader R6 behavior, and arbitrary packages
+     remain explicit future work.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means
@@ -890,12 +897,12 @@ the measured surface is runnable, not that NativR implements all R semantics or 
 2. Complete indexing, arrays, frames, conditions, dates/times, object systems, I/O, serialization,
    numeric algorithms, statistics, and graphics behind browser-safe host interfaces.
 3. Implement the full inventoried core namespace surface with per-callable differential evidence.
-4. Expand the executable package installer from the pinned `pkgconfig`/`generics`/`withr` proofs to
-   the measured pure-R package corpus, binary/text data adapters, broader namespace/object-system
-   declarations, package test orchestration, and R CMD check scenarios without embedding GNU R or
-   webR. In parallel, turn the typed `.Call` seam into a reusable audited Wasm package toolchain,
-   including routine-registration extraction and the portable value/API subset needed by measured
-   compiled packages.
+4. Expand the executable package installer from the pinned `pkgconfig`/`generics`/`withr`/`R6`
+   proofs to the measured pure-R package corpus, binary/text data adapters, broader
+   namespace/object-system declarations, package test orchestration, and R CMD check scenarios
+   without embedding GNU R or webR. In parallel, turn the typed `.Call` seam into a reusable audited
+   Wasm package toolchain, including routine-registration extraction and the portable value/API
+   subset needed by measured compiled packages.
 5. Verify platform, browser, locale, time-zone, graphics, numeric, and performance behavior against
    the completion criteria in the GNU R compatibility ledger.
 6. Continue refreshing package-usage snapshots so high-reach gaps determine implementation order

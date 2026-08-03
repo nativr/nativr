@@ -97,15 +97,17 @@ boundaries. All loops consume the evaluator step budget.
 
 Namespace access resolves exact builtins from the registered `base`, `stats`, `methods`, `R6`,
 `vctrs`, and `tibble` namespaces, and exact owned base bindings such as `base::.Machine`. Public
-`::` and registered internal `:::` lookup never load code, consult the network, or imply general
-package compatibility. `utils::getFromNamespace(x, ns, pos, envir)` additionally resolves one exact
-public or private binding from a core or admitted pure-R package namespace. Character namespaces
-load on demand; actual loaded namespace environments and attached-package `pos`/`envir` selection
-are accepted; unused location controls remain lazy when `ns` is supplied. Lookup never inherits
-through the namespace's imports/Base parent, and missing packages, bindings, invalid names, and
-non-namespace environments fail before returning a value. Mutation helpers such as
-`assignInNamespace`, namespace locking/registration internals, complete `getNamespace*` inspection,
-and lazy-load database bindings remain separate surfaces.
+`::` and registered internal `:::` lookup never consult the network. An admitted non-core package
+bundle replaces a same-name compatibility shim and then loads normally; core namespaces remain
+reserved. Neither path implies general package compatibility.
+`utils::getFromNamespace(x, ns, pos, envir)` additionally resolves one exact public or private
+binding from a core or admitted pure-R package namespace. Character namespaces load on demand;
+actual loaded namespace environments and attached-package `pos`/`envir` selection are accepted;
+unused location controls remain lazy when `ns` is supplied. Lookup never inherits through the
+namespace's imports/Base parent, and missing packages, bindings, invalid names, and non-namespace
+environments fail before returning a value. Mutation helpers such as `assignInNamespace`, namespace
+locking/registration internals, complete `getNamespace*` inspection, and lazy-load database bindings
+remain separate surfaces.
 
 Random state is isolated per session and restored by reset. `RNGkind` queries and selects
 session-local uniform, normal, and discrete-sampling kinds with prior-state return, mutation
@@ -2291,9 +2293,12 @@ and calls outside a generic body. `methods::signature()` and named/positional mu
 registration have differential evidence, including reordered named calls, inherited classes, and
 `ANY` fallback selection. Ambiguity reporting, union classes, complete argument matching, automatic
 package registration, method caching, primitive/group generics, and the full methods/S7 protocols
-are not claimed. `R6Class` supplies a generator with `$new` and public-field defaults, but not
-mutable `self`, private/active bindings, or reference semantics. `new_class` and `new_vctr` provide
-vctrs-compatible class construction shapes, not the complete vctrs or S7 packages.
+are not claimed. The built-in `R6Class` compatibility helper supplies a generator with `$new` and
+public-field defaults. Separately, unchanged R6 2.6.1 now loads and exercises a real generator,
+mutable public `self`, reference field mutation, and public method calls through the generic package
+runtime. Private/active bindings, cloning/finalization, and complete R6 behavior remain unclaimed.
+`new_class` and `new_vctr` provide vctrs-compatible class construction shapes, not the complete
+vctrs or S7 packages.
 
 Applications may provide `PureRPackageBundle` records at `createR()` initialization. DESCRIPTION and
 NAMESPACE metadata, package-relative `R/*.R` source, and optional base64 resources are validated and
@@ -2302,6 +2307,10 @@ isolated namespaces, DESCRIPTION version checks, `import`/`importFrom`, explicit
 internals, `S3method`, `.onLoad`, `.onAttach`, `library`, `require`, `requireNamespace`, namespace
 queries, `utils::packageName`, immutable `system.file` virtual paths, attachment search-path
 entries, bounded text reads for DESCRIPTION/NAMESPACE/R source/resources, and reset/reload behavior.
+Qualified `S3method(package::generic, class)` declarations resolve the generic in the named
+namespace and the default unqualified `generic.class` method in the package namespace. General
+attributes cover environments by reference and closures by copy-on-modify; environment/binding locks
+and non-dispatching `.subset`/`.subset2` extraction follow the measured GNU R boundaries.
 
 Installed-version lookup has GNU R 4.6 black-box evidence.
 `utils::packageVersion(pkg, lib.loc = NULL)` returns a length-one classed package version for core
@@ -2329,9 +2338,10 @@ archive/file/byte/package limits, rejects links, native/JVM code, install hooks,
 `useDynLib`, invalid paths, and unsupported NAMESPACE directives, preserves package resources and
 license metadata, and emits deterministic SHA-256 artifacts plus a dependency lock. The browser
 runtime remains network-free. Digest-pinned opt-in executable tests cover unchanged
-`pkgconfig 2.0.3`, `generics 0.1.4`, and `withr 3.0.3` sources. They prove the
+`pkgconfig 2.0.3`, `generics 0.1.4`, `withr 3.0.3`, and `R6 2.6.1` sources. They prove the
 repository-to-namespace path, package-owned S3 dispatch, and generated state-restoring wrappers
-through `with_options()` without package patches.
+through `with_options()`, plus R6 generator/object construction and public reference mutation,
+without package patches.
 
 Package admission is not universal execution compatibility. Package `data/*.R`, `.csv`, `.tab`,
 `.txt`, and XDR/gzip `.rda`/`.RData` discovery/loading is supported through `utils::data`, including
