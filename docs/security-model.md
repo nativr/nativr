@@ -57,6 +57,11 @@ locale state. Exact stored bytes and four canonical marks are length-bounded wit
 conversion uses deterministic in-process UTF-8/Latin-1 rules and never falls through to `iconv`, an
 operating-system API, or a network service.
 
+`l10n_info()` is likewise a constant projection of the browser runtime contract, not a host probe.
+It reveals no language preference, regional setting, system codepage, installed locale, user name,
+or operating-system identity. Its `codeset = "UTF-8"` field describes only NativR's admitted text
+representation and grants no encoding-conversion capability.
+
 Directory operations use the same closed capability set. Session, package, and runtime roots are
 recognized structurally; `.` and `..` are normalized with an explicit no-root-escape check; and the
 working directory is always one of those owned directories. Listing cannot discover host names,

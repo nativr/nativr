@@ -72,6 +72,7 @@ stopifnot(sourced_value() == 42L)
 stopifnot(all(round(filtered_flow(1:6), 6) == c(1, 2.8, 5.24, 8.192, 11.5536, 15.24288)))
 stopifnot(dynamic_summary(structure(1:3, class = "demo")) == "worker-dynamic:6")
 stopifnot(identical(package_files(), c("nativrdemo", "DESCRIPTION", "NAMESPACE", "R", "doc", "extdata")))
+stopifnot(native_encoding())
 twice_mean(c(1, 2, 6))`,
   },
   {
@@ -93,6 +94,11 @@ twice_mean(c(1, 2, 6))`,
     id: "package-discovery",
     label: "Pure-R package discovery",
     code: "nativrdemo::package_files()",
+  },
+  {
+    id: "package-encoding",
+    label: "Pure-R UTF-8 detection",
+    code: "nativrdemo::native_encoding()",
   },
   {
     id: "package-archive",

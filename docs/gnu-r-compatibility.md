@@ -968,7 +968,16 @@ selection. NativR-only evidence covers immutable core and pure-R bundle roots, t
 `datasets` core registration, directory enumeration from unchanged package R code, and default
 Worker/Playground execution. Returned locations are virtual owned directories; host-library scans,
 package installation, native-code loading, and platform-exact paths remain outside this slice. Rank
-351 `base::l10n_info` is the next measured unresolved callable.
+351 `base::l10n_info` is implemented by the next localization-capability increment.
+
+The localization-capability increment raises current name overlap to 639 of 2,522. Rank 351
+`base::l10n_info` covers xfun's measured UTF-8 branch at 1.1% download-weighted reach. GNU R 4.6
+black-box evidence covers null formals, visible named-list shape, the three portable scalar logical
+fields, names-only attributes, OS-specific suffix validity, and encoding invariants. NativR-only
+evidence covers its non-Windows `codeset = "UTF-8"` browser identity, unchanged pure-R package use,
+and default Worker/Playground execution. It does not claim Windows codepages, host locale discovery,
+arbitrary native encodings, ICU/iconv, or LC_CTYPE mutation. Rank 353 `base::shQuote` is the next
+measured unresolved callable.
 
 ## Completion evidence
 

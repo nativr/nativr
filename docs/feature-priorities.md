@@ -75,16 +75,16 @@ signal.
 
 | Priority | Measured rank | Callable           | Weighted reach | Packages | Observed calls |
 | -------: | ------------: | ------------------ | -------------: | -------: | -------------: |
-|        1 |           351 | `l10n_info`        |           1.1% |        1 |              1 |
-|        2 |           353 | `shQuote`          |           1.1% |        1 |              1 |
-|        3 |           357 | `system2`          |           1.1% |        1 |              1 |
-|        4 |           358 | `.Call`            |           1.0% |        1 |              1 |
-|        5 |           363 | `aspell`           |           1.0% |        1 |              2 |
-|        6 |           364 | `abline`           |           1.0% |        1 |              1 |
-|        7 |           365 | `browseVignettes`  |           1.0% |        1 |              1 |
-|        8 |           366 | `dev.control`      |           1.0% |        1 |              1 |
-|        9 |           368 | `getFromNamespace` |           0.9% |        1 |             37 |
-|       10 |           370 | `help`             |           0.9% |        1 |             15 |
+|        1 |           353 | `shQuote`          |           1.1% |        1 |              1 |
+|        2 |           357 | `system2`          |           1.1% |        1 |              1 |
+|        3 |           358 | `.Call`            |           1.0% |        1 |              1 |
+|        4 |           363 | `aspell`           |           1.0% |        1 |              2 |
+|        5 |           364 | `abline`           |           1.0% |        1 |              1 |
+|        6 |           365 | `browseVignettes`  |           1.0% |        1 |              1 |
+|        7 |           366 | `dev.control`      |           1.0% |        1 |              1 |
+|        8 |           368 | `getFromNamespace` |           0.9% |        1 |             37 |
+|        9 |           370 | `help`             |           0.9% |        1 |             15 |
+|       10 |           380 | `curve`            |           0.7% |        1 |              1 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -207,20 +207,21 @@ rank 344 `devAskNewPage` now runs RColorBrewer's ten measured page controls; ran
 `getLoadedDLLs` now runs ps's measured module-path probe over a truthful empty browser registry;
 rank 346 `socketConnection` now runs through a typed, default-deny duplex host adapter; rank 348
 `file.copy` now stages exact package resources into session paths; rank 349 `find.package` now
-resolves core and pure-R package roots; rank 351 `l10n_info` is next. Rank 144 `Encoding` is also
-complete for all 12 observed calls across rlang, utf8, and xfun (4.5% weighted reach), together with
-adjacent `Encoding<-`, `enc2utf8`, and `enc2native`. The shared character representation preserves
-exact bytes and canonical R marks through subset/replacement, concatenation, raw conversion, and XDR
-serialization; this is reusable package infrastructure, not an assertion that those packages' native
-components are supported. Rank 149 `rcauchy` is now complete for four calls across ggplot2, pillar,
-and purrr (4.2% weighted reach), together with `dcauchy`, `pcauchy`, and `qcauchy`. The shared
-distribution path covers seeded random-stream consumption, vectorized parameters, stable probability
-tails, formals, and missing/domain behavior without package-specific rewrites. Rank 162 `Sys.getenv`
-is now available for all 16 measured calls across withr, xfun, and pkgbuild (3.7% weighted reach),
-together with rank 175 `Sys.setenv` across xfun, memoise, openssl, and zoo (3.3%) and adjacent
-`Sys.unsetenv`. The shared session-state path is Worker-safe, resettable, and sufficient for
-unchanged `withr::with_envvar()` mutation/restoration; it does not expose the host environment. Rank
-163 `image` is now available for the six measured calls across scales, viridisLite, and RColorBrewer
+resolves core and pure-R package roots; rank 351 `l10n_info` now reports browser UTF-8 capability;
+rank 353 `shQuote` is next. Rank 144 `Encoding` is also complete for all 12 observed calls across
+rlang, utf8, and xfun (4.5% weighted reach), together with adjacent `Encoding<-`, `enc2utf8`, and
+`enc2native`. The shared character representation preserves exact bytes and canonical R marks
+through subset/replacement, concatenation, raw conversion, and XDR serialization; this is reusable
+package infrastructure, not an assertion that those packages' native components are supported. Rank
+149 `rcauchy` is now complete for four calls across ggplot2, pillar, and purrr (4.2% weighted
+reach), together with `dcauchy`, `pcauchy`, and `qcauchy`. The shared distribution path covers
+seeded random-stream consumption, vectorized parameters, stable probability tails, formals, and
+missing/domain behavior without package-specific rewrites. Rank 162 `Sys.getenv` is now available
+for all 16 measured calls across withr, xfun, and pkgbuild (3.7% weighted reach), together with rank
+175 `Sys.setenv` across xfun, memoise, openssl, and zoo (3.3%) and adjacent `Sys.unsetenv`. The
+shared session-state path is Worker-safe, resettable, and sufficient for unchanged
+`withr::with_envvar()` mutation/restoration; it does not expose the host environment. Rank 163
+`image` is now available for the six measured calls across scales, viridisLite, and RColorBrewer
 (3.7% weighted reach). Its reusable S3/default path covers numeric/logical matrices, center or
 boundary coordinates, regular raster and irregular polygon grids, colour intervals, missing
 transparency, and one-row palette strips through the same Worker graphics journal; it is not a claim
@@ -498,10 +499,10 @@ for RColorBrewer's ten measured prompts. Rank 345 `getLoadedDLLs` is shape-compl
 measured `vapply(..., "path")` probe over NativR's currently empty native-module set. Rank 346
 `socketConnection` is complete for ps's measured call and the reusable connection lifecycle; rank
 348 `file.copy` is complete for xfun's package-resource staging path; rank 349 `find.package` is
-complete for its installed-root lookup; rank 351 `l10n_info` is the next usage-ranked unresolved
-callable. Rank 316 `colSums` is now complete for three observed calls across
-[`loo`](https://cran.r-project.org/web/packages/loo/refman/loo.html) and
-[`zoo`](https://cran.r-project.org/web/packages/zoo/refman/zoo.html), representing 1,601,512
+complete for its installed-root lookup; rank 351 `l10n_info` is complete for xfun's UTF-8 branch;
+rank 353 `shQuote` is the next usage-ranked unresolved callable. Rank 316 `colSums` is now complete
+for three observed calls across [`loo`](https://cran.r-project.org/web/packages/loo/refman/loo.html)
+and [`zoo`](https://cran.r-project.org/web/packages/zoo/refman/zoo.html), representing 1,601,512
 snapshot downloads and 1.3% download reach. Loo calls `colSums(tab_10)` and `colSums(tab_9)` on
 integer fold tables; zoo selects usable columns with `colSums(!is.na(za)) > 0`. NativR covers
 logical, integer, double, and complex arrays of rank two or greater, numeric data frames,
@@ -665,8 +666,8 @@ event. This follows the
 Exact platform-libm trajectories near gamma poles, complex gamma values, and the wider beta, gamma,
 polygamma, choose, and log-factorial family remain separate work. `file.copy` now uses the owned
 virtual filesystem, and `find.package` uses the package-loader registry. Rank 357 `is.factor` was
-already supported; rank 351 `l10n_info` remains host-locale adapter work. Rank 359 `lsfit` is now
-complete for xfun's measured
+already supported; rank 351 `l10n_info` now reports the fixed browser UTF-8 profile without a host
+locale adapter. Rank 359 `lsfit` is now complete for xfun's measured
 [`lsfit(1:9, 1:9)` tree example](https://cran.r-project.org/web/packages/xfun/refman/xfun.html),
 again representing 1,305,720 downloads and 1.1% reach. NativR reuses its independent, browser-native
 pivoted QR path for vector or matrix predictors, optional non-negative weights, intercept and

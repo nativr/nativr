@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.259.0",
+  "languageSubsetVersion": "0.260.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -112,6 +112,7 @@
         { "name": "Sys.getlocale", "compatibility": "behavioral" },
         { "name": "Sys.setlocale", "compatibility": "behavioral" },
         { "name": "Sys.localeconv", "compatibility": "behavioral" },
+        { "name": "l10n_info", "compatibility": "behavioral" },
         { "name": "Sys.getenv", "compatibility": "behavioral" },
         { "name": "Sys.setenv", "compatibility": "behavioral" },
         { "name": "Sys.unsetenv", "compatibility": "behavioral" },

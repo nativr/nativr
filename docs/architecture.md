@@ -211,6 +211,12 @@ into a deterministic NativR/browser identity rather than probing or claiming the
 operating system or a GNU R installation. Future backends attach behind stable operator IDs rather
 than duplicating package-specific algorithms.
 
+Localization capability reporting is a projection of that same owned platform contract.
+`l10n_info()` constructs four ordinary R values directly: the three portable GNU R logical fields
+and a non-Windows `codeset` string. It does not call `Intl`, inspect browser language preferences,
+read Windows codepages, or share mutable state with the host. Pure-R package feature branches see
+the same UTF-8 result inline and across the Worker because no protocol extension is required.
+
 Session process identity follows the same rule. The facade allocates one positive integer before
 choosing inline or Worker execution, sends it as an optional protocol-v1 initialization field, and
 the evaluator retains it outside resettable builtin state. `Sys.getpid()` therefore remains stable

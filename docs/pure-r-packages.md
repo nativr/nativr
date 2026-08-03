@@ -233,6 +233,9 @@ normalized AST. The runtime then provides:
     code can resolve its installed root, enumerate bundled `DESCRIPTION`, `NAMESPACE`, R source,
     data, documentation, and resources, and respect explicit library selection without scanning a
     host R installation. The same helper executes inline and in the default Worker Playground.
+31. usage-ranked `base::l10n_info()` as a GNU R-shaped browser encoding-capability report. Unchanged
+    package code can select its UTF-8 path with `l10n_info()[["UTF-8"]]` inline or in the default
+    Worker without inspecting browser preferences, host locales, or Windows codepages.
 
 Package source, metadata, resource counts, and encoded bytes are bounded before parsing. Package
 evaluation then consumes the ordinary step, call-depth, allocation, and output budgets.
@@ -579,6 +582,10 @@ loader.
   warning/error/quiet behavior, explicit library selection, immutable virtual roots, directory
   enumeration, unchanged fixture code, and Worker execution have evidence. It does not discover host
   libraries, install packages, or make native-code packages portable.
+- `l10n_info()` supports xfun's measured UTF-8 branch with the portable GNU R list fields and the
+  non-Windows `codeset` suffix. Direct, namespace, unchanged fixture, Worker, formals, visibility,
+  attribute, and platform-invariant evidence is executable. It does not provide arbitrary locale
+  installation, LC_CTYPE mutation, native codecs, or compiled package portability.
 - `stats::ts.plot()` supports magrittr's measured exposition-pipe example without translating
   magrittr or the calling package. Numeric vectors and regular vector/matrix series align on a
   shared bounded time grid, missing union cells split paths, and styles/annotations traverse the

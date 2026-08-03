@@ -943,6 +943,13 @@ addition to C, the owned `LC_MONETARY` table covers Italian and US UTF-8 aliases
 measured package examples. It never reads or mutates browser/OS locale globals, and unsupported
 profiles warn instead of silently substituting the user's host locale.
 
+`l10n_info()` exposes the adjacent encoding-capability shape as a visible named list. The portable
+GNU R fields are `MBCS = TRUE`, `UTF-8 = TRUE`, and `Latin-1 = FALSE`; because NativR targets
+`wasm32-unknown-browser` rather than Windows, the platform field is `codeset = "UTF-8"` instead of
+invented Windows codepages. These values describe the owned browser text representation. C-locale
+collation, names, dates, and numeric formatting remain separate deterministic policy, and monetary
+profile changes do not alter the native UTF-8 encoding report.
+
 `utils::sessionInfo()` assembles a classed named list from the same evaluator-owned state. It
 reports `wasm32-unknown-browser/nativr` and `Browser JavaScript (NativR)` instead of leaking or
 misrepresenting the host operating system, identifies R 4.6.0 as the compatibility target, exposes

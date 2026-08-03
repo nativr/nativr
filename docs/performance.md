@@ -791,3 +791,9 @@ registered core namespaces, admitted pure-R package descriptions, and owned dire
 It adds no dependency, protocol event, host filesystem scan, GNU R installation path, or package-
 specific translation. The measured Worker is 402.5 KiB gzip (412,110 bytes), so the ceiling rises
 narrowly from 402 KiB to 403 KiB; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.260 adds usage-ranked `base::l10n_info` as four ordinary owned R values. It adds
+no dependency, protocol event, host locale/codepage probe, `Intl` call, codec, or package-specific
+translation; inline and Worker sessions share the same non-Windows UTF-8 browser profile. The
+measured Worker is 402.6 KiB gzip (412,213 bytes), within the existing 403 KiB ceiling, so all
+budgets remain unchanged.

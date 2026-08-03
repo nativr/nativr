@@ -821,8 +821,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
 171. Usage-ranked package-root discovery: rank-349 `base::find.package` queries the same owned
      library/package registry used by namespace loading, with GNU R formals, default attached order,
      vector/missing/quiet/library behavior, immutable core and pure-R package roots, unchanged
-     package self-enumeration, inline/Worker execution, and differential conformance. Rank-351
-     `base::l10n_info` is the next measured unresolved callable.
+     package self-enumeration, inline/Worker execution, and differential conformance.
+172. Usage-ranked localization capability reporting: rank-351 `base::l10n_info` exposes GNU R's
+     portable logical list fields and a non-Windows `codeset = "UTF-8"` browser profile, with null
+     formals, visibility/attribute invariants, unchanged xfun-shaped package use, inline/Worker
+     execution, and differential conformance. Rank-353 `base::shQuote` is the next measured
+     unresolved callable.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

@@ -972,6 +972,14 @@ with a stable warning; unsupported categories report an error. Collation, locali
 message translation, paper/measurement categories, arbitrary system locale databases, encoding
 mutation, and package-level `with_locale` execution are not claimed.
 
+`l10n_info()` has GNU R 4.6 differential evidence for its null formals, visible list result, first
+three scalar logical fields and names, names-only attributes, OS-specific suffix contract, and the
+invariants that UTF-8 implies MBCS and excludes Latin-1. NativR's platform-specific evidence fixes
+the non-Windows browser suffix to `codeset = "UTF-8"`; unchanged source-only package and Worker
+calls exercise xfun's measured `l10n_info()[["UTF-8"]]` branch. Host locale/codepage discovery,
+Windows codepage fields, arbitrary native encodings, ICU/iconv, and mutation through LC_CTYPE remain
+outside this browser profile.
+
 `utils::sessionInfo` has shape evidence for the measured otel `utils::sessionInfo()$platform` lookup
 and differential evidence for its class, R major/minor target, RNG-kind length, attached
 base-package length, and named-list access. Browser-specific values are deliberately NativR

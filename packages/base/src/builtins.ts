@@ -358,6 +358,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("Sys.getlocale", ["category"], "behavioral", builtinSystemGetLocale),
   defineBuiltin("Sys.setlocale", ["category", "locale"], "behavioral", builtinSystemSetLocale),
   defineBuiltin("Sys.localeconv", [], "behavioral", builtinSystemLocaleConv),
+  defineBuiltin("l10n_info", [], "behavioral", builtinLocalizationInfo),
   withBuiltinFormals(
     defineBuiltin("Sys.getenv", ["x", "unset", "names"], "behavioral", builtinSystemGetEnvironment),
     [
@@ -5633,6 +5634,20 @@ async function builtinSystemLocaleConv(invocation: BuiltinInvocation): Promise<R
         : C_LOCALE_CONVENTION_VALUES;
   invocation.context.allocate(values.length);
   return withNames(characterVector(values), C_LOCALE_CONVENTION_NAMES);
+}
+
+async function builtinLocalizationInfo(invocation: BuiltinInvocation): Promise<RList> {
+  await matchExact(invocation, []);
+  invocation.context.allocate(4);
+  return listValue(
+    [
+      logicalVector([true]),
+      logicalVector([true]),
+      logicalVector([false]),
+      characterVector(["UTF-8"]),
+    ],
+    ["MBCS", "UTF-8", "Latin-1", "codeset"],
+  );
 }
 
 async function builtinSystemGetEnvironment(

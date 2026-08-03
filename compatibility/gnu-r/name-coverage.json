@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 656,
-    "overlappingNames": 638,
-    "missingReferenceNames": 1884,
+    "nativrRegisteredNames": 657,
+    "overlappingNames": 639,
+    "missingReferenceNames": 1883,
     "nativrExtensionNames": 18,
-    "nameCoverage": 0.252974
+    "nameCoverage": 0.25337
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 462, "nameCoverage": 0.337966 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 463, "nameCoverage": 0.338698 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 76, "nameCoverage": 0.163793 },
     {
       "package": "methods",
@@ -376,6 +376,7 @@
     "kappa.lm",
     "kappa.qr",
     "kmeans",
+    "l10n_info",
     "lag",
     "lapply",
     "legend",
@@ -1741,7 +1742,6 @@
     "kruskal.test",
     "ks.test",
     "ksmooth",
-    "l10n_info",
     "labels",
     "labels.default",
     "lag.plot",

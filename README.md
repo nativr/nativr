@@ -792,7 +792,14 @@ searches the session's owned library registry, preserves GNU R's default attache
 vector results, filters missing packages under `quiet`, respects explicit `lib.loc`, and returns
 immutable `nativr://package/<name>` or core `nativr://runtime/library/<name>` directories. Unchanged
 pure-R package code can locate and enumerate its own installed files in inline and default Worker
-sessions. Rank 351 `base::l10n_info()` is the next measured unresolved callable.
+sessions.
+
+Rank 351 `base::l10n_info()` now covers xfun's measured UTF-8 capability branch. It returns GNU R's
+visible named-list contract with logical `MBCS`, `UTF-8`, and `Latin-1` fields plus the non-Windows
+`codeset` field. The browser profile truthfully reports multi-byte UTF-8 text and no Latin-1 native
+locale without querying the host OS. Unchanged pure-R package code executes `l10n_info()[["UTF-8"]]`
+inline and in the default Worker. Rank 353 `base::shQuote()` is the next measured unresolved
+callable.
 
 Rank 121 `grDevices::png()` now covers all seven measured calls across five packages. It opens
 alongside the browser display, records the existing graphics command vocabulary, rasterizes it in

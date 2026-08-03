@@ -349,7 +349,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 348,file.copy,true,1,xfun,1,1.0,1.1
 349,find.package,true,1,xfun,1,1.0,1.1
 350,is.factor,true,1,xfun,1,1.0,1.1
-351,l10n_info,false,1,xfun,1,1.0,1.1
+351,l10n_info,true,1,xfun,1,1.0,1.1
 352,lsfit,true,1,xfun,1,1.0,1.1
 353,shQuote,false,1,xfun,1,1.0,1.1
 354,strwrap,true,1,xfun,1,1.0,1.1

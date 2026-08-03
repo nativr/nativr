@@ -86,6 +86,10 @@ test("runs the required Worker examples without evaluation network traffic", asy
     '["nativrdemo", "DESCRIPTION", "NAMESPACE", "R", "doc", "extdata"]',
   );
 
+  await page.getByRole("button", { name: "Pure-R UTF-8 detection" }).click();
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("true");
+
   await page.getByRole("button", { name: "Pure-R package ZIP member" }).click();
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText('["alpha", "beta"]');
