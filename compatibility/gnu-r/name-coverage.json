@@ -4,11 +4,11 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 662,
-    "overlappingNames": 644,
-    "missingReferenceNames": 1878,
-    "nativrExtensionNames": 18,
-    "nameCoverage": 0.255353
+    "nativrRegisteredNames": 664,
+    "overlappingNames": 645,
+    "missingReferenceNames": 1877,
+    "nativrExtensionNames": 19,
+    "nameCoverage": 0.255749
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 466, "nameCoverage": 0.340892 },
@@ -19,7 +19,7 @@
       "overlappingNames": 10,
       "nameCoverage": 0.047847
     },
-    { "package": "utils", "callableNames": 262, "overlappingNames": 32, "nameCoverage": 0.122137 },
+    { "package": "utils", "callableNames": 262, "overlappingNames": 33, "nameCoverage": 0.125954 },
     {
       "package": "grDevices",
       "callableNames": 135,
@@ -163,6 +163,7 @@
     "boxplot",
     "bquote",
     "browseURL",
+    "browseVignettes",
     "by",
     "c",
     "call",
@@ -1205,7 +1206,6 @@
     "break",
     "bringToTop",
     "browseEnv",
-    "browseVignettes",
     "browser",
     "browserCondition",
     "browserSetDebug",
@@ -2572,6 +2572,7 @@
     "new_class",
     "new_vctr",
     "plot.histogram",
+    "print.browseVignettes",
     "print.object_size",
     "tibble",
     "tribble",

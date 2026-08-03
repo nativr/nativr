@@ -1022,6 +1022,15 @@ record/replay, unchanged source-only package imports, and default Worker/Canvas 
 shape-level linear-device claim: logarithmic `untf` transformation, extended `xpd` clipping, and
 device-exact cap/join metrics remain incomplete.
 
+The vignette-browser increment raises current name overlap to 645 of 2,522. Rank 365
+`utils::browseVignettes` covers knitr's measured interactive catalog call through the generic
+installed-package documentation index. GNU R 4.6 black-box evidence fixes formals, class and
+attributes, per-package matrix columns, package selection, duplicate rows, errors, empty printing,
+and S3 visibility. NativR evidence adds deterministic self-contained HTML, immutable document links,
+resource limits, unchanged pure-R package execution, Worker transport, and sandboxed Playground
+rendering. It is a browser-native presentation seam, not a claim for GNU's help server, desktop
+viewer, lazy help databases, or runtime vignette builders.
+
 ## Completion evidence
 
 The objective is complete only when:

@@ -748,6 +748,13 @@ browser graphics journal. Intercept/slope, coefficient vectors, fitted models th
 run inline and in the default Worker/Canvas path. The current evidence is for linear plot windows;
 logarithmic transformation and expanded clipping remain explicit compatibility depth.
 
+Rank 365 `utils::browseVignettes()` now covers knitr's measured installed-guide catalog call. It
+returns GNU R-shaped package matrices and its S3 print method builds a bounded self-contained HTML
+catalog from the same generic manifest emitted for every admitted pure-R package. Unchanged package
+code runs inline or in the default Worker, while the Playground previews the resulting inert file
+event in a no-permissions sandbox; no help server, runtime fetch, host path, or package-specific
+rewrite is involved.
+
 Rank 330 `base::sink()` now covers utf8's two measured output-redirection calls and the broader GNU
 R stack semantics they rely on. Output diversions persist across `r.eval()` calls and errors, nest
 up to 19 levels, tee with `split = TRUE`, and restore owned file/connection targets

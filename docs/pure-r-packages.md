@@ -111,13 +111,15 @@ Installed package vignettes are discoverable through the ordinary utils API as w
 ```ts
 const catalog = await r.eval('utils::vignette(package = "mypackage")');
 const guide = await r.eval('utils::vignette("getting-started", package = "mypackage")');
+const browsed = await r.evalDetailed('print(utils::browseVignettes(package = "mypackage"))');
 ```
 
 The packager indexes source-package `inst/doc` entries deterministically and preserves their Rmd,
 Rnw/Snw, `*.pdf.asis`, extracted `.R`, and prebuilt `.html`/`.pdf` resources under `doc/`. The
-runtime returns GNU R-shaped `packageIQR` catalogs and `vignette` metadata objects without running
-knitr, Sweave, Pandoc, LaTeX, or host viewers. Building a development package's not-yet-rendered
-`vignettes/` directory and opening the selected output are separate build/host adapter work.
+runtime returns GNU R-shaped `packageIQR`, `vignette`, and `browseVignettes` objects without running
+knitr, Sweave, Pandoc, or LaTeX. Printing a browse catalog creates a bounded self-contained HTML
+snapshot for the existing inert host viewer seam. Building a development package's not-yet- rendered
+`vignettes/` directory remains separate build work.
 
 An application can fetch and cache the JSON package set itself before `createR()`. The runtime does
 not fetch repositories or package resources during evaluation.
@@ -264,10 +266,11 @@ source-reference/echo formatting, RNG save-and-restore through `setRNG`, and abo
 incomplete. An example can still fail when its package code or the example itself reaches an
 unsupported R feature; that failure is useful executable evidence for the next shared runtime gap.
 
-The current `vignette()` boundary discovers and describes documentation already present in
-`inst/doc`. It does not run vignette builders, regenerate output, implement installed lazy help
-databases, or automatically open HTML/PDF through a viewer. Applications can resolve the returned
-`Dir` plus `doc/<PDF>` through the immutable package resource API when they choose to expose it.
+The current vignette boundary discovers and describes documentation already present in `inst/doc`.
+It does not run vignette builders, regenerate output, or implement installed lazy help databases.
+`browseVignettes()` and its print method aggregate that same index into a self-contained HTML
+catalog and request presentation through the existing inert browse event; the application still
+decides whether and how to expose the snapshot and its embedded immutable resources.
 
 ## Compatibility states
 
@@ -537,6 +540,11 @@ Worker returns a bounded immutable byte snapshot; it never invokes a desktop bro
 file, or fetches an external URL. R-function browser callbacks and `browser = "false"` continue to
 work without a host event. This removes a common rewrite while leaving navigation policy in the
 application.
+
+Rank-365 `utils::browseVignettes()` composes that viewer seam with the package-independent vignette
+index. An unchanged package can request its installed guide catalog, and the default Worker returns
+one bounded HTML snapshot with rendered-output, source, and R-code links. No package adapter,
+runtime fetch, host library scan, or desktop process is introduced.
 
 Rank-195 `.libPaths()` makes package discovery state reusable by ordinary package code. The default
 order is the immutable supplied-bundle library `nativr://package` followed by the registered runtime

@@ -201,6 +201,11 @@ Date: 2026-08-03
   precedence, generic S3 model coefficients, horizontal/vertical vectors, style recycling, linear
   plot-window clipping, display-list replay, unchanged pure-R package execution, and default
   Worker/Canvas rendering. Log-axis `untf` transforms and expanded `xpd` clipping remain depth.
+- Usage-ranked `utils::browseVignettes()` with GNU R 4.6 formals, classed return object, package-
+  grouped seven-column matrices, duplicate-package rows, attached/all-package selection, empty
+  printing, and the `print.browseVignettes()` S3 method. Generic package manifests feed a bounded
+  self-contained HTML catalog through the existing default-deny browse journal; unchanged pure-R
+  package code and the Worker/Playground sandbox exercise it without runtime network or host files.
 - Usage-ranked `utils::download.file()` composes that explicit byte adapter with session-owned
   files. GNU R 4.6 formals, preflight validation, invisible statuses, paired-vector `retvals`, exact
   replacement bytes, named headers, pure-R namespace calls, failure atomicity, default-deny inline

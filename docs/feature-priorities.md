@@ -710,22 +710,24 @@ cells, zero-length exception controls, promotion, names, non-list identity, and 
 boundaries have GNU R black-box evidence. Rank 363 `aspell` is now implemented through the explicit
 Ispell-compatible host boundary. Rank 364 `abline` is now implemented over the existing browser
 graphics journal with coefficient/model, horizontal/vertical vector, style-recycling, record/replay,
-pure-R package, and Worker evidence. Ranks 365 `browseVignettes` and 366 `dev.control` remain
-package-tooling or graphics-device work; `lengths` was already supported. Rank 368
-`getFromNamespace` has 37 apparent calls, but all are backports examples that fetch that package's
-private implementations before invoking them. It therefore remains tied to the general package
-namespace loader; implementing only a core-namespace facade would not run the measured examples.
-Ranks 376 `str2expression` and 377 `str2lang` are now complete for the measured source strings and
-represent the same 1,112,829 downloads and 0.9% reach. They reuse the browser-native Tree-sitter
-parser and return only owned expression/language/symbol/atomic values, with differential evidence
-for vectors, comments, blank text, missing strings, single-result checks, and parse/type errors. The
-backports examples' preceding private-namespace retrieval remains outside this claim. Rank 378
-`URLdecode` is now complete for backports' direct `URLdecode("ab%20cd")` example, again representing
-1,112,829 downloads and 0.9% reach. Registered `utils::` lookup, vectorized ASCII and UTF-8 percent
-bytes, literal plus signs, missing/empty/NULL values, attribute removal, and NUL termination have
-executable evidence. Malformed percent escapes and invalid UTF-8 bytes are explicitly rejected
-because browser strings cannot represent GNU R's platform-dependent raw-byte results losslessly.
-Rank 379 `warningCondition` is now complete for backports' direct
+pure-R package, and Worker evidence. Rank 365 `browseVignettes` now aggregates the generic installed
+package vignette manifest into GNU R-shaped package matrices and renders a bounded self-contained
+catalog through the existing inert browser-file journal, including unchanged pure-R package and
+Worker/Playground evidence. Rank 366 `dev.control` remains graphics-device work; `lengths` was
+already supported. Rank 368 `getFromNamespace` has 37 apparent calls, but all are backports examples
+that fetch that package's private implementations before invoking them. It therefore remains tied to
+the general package namespace loader; implementing only a core-namespace facade would not run the
+measured examples. Ranks 376 `str2expression` and 377 `str2lang` are now complete for the measured
+source strings and represent the same 1,112,829 downloads and 0.9% reach. They reuse the
+browser-native Tree-sitter parser and return only owned expression/language/symbol/atomic values,
+with differential evidence for vectors, comments, blank text, missing strings, single-result checks,
+and parse/type errors. The backports examples' preceding private-namespace retrieval remains outside
+this claim. Rank 378 `URLdecode` is now complete for backports' direct `URLdecode("ab%20cd")`
+example, again representing 1,112,829 downloads and 0.9% reach. Registered `utils::` lookup,
+vectorized ASCII and UTF-8 percent bytes, literal plus signs, missing/empty/NULL values, attribute
+removal, and NUL termination have executable evidence. Malformed percent escapes and invalid UTF-8
+bytes are explicitly rejected because browser strings cannot represent GNU R's platform-dependent
+raw-byte results losslessly. Rank 379 `warningCondition` is now complete for backports' direct
 `warningCondition("warning", class = "testWarning")` call, representing the same 1,112,829 downloads
 and 0.9% reach. The owned constructor preserves the GNU R message/call/additional-field order,
 prepends custom classes to `warning`/`condition`, supports vector messages, and runs the measured

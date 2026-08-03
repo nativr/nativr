@@ -391,3 +391,10 @@ model `coef.*` results, clips finite lines to the owned linear window, and emits
 `segments` event alongside vectorized horizontal and vertical lines. Record/replay, Canvas, PNG,
 PDF, inline callbacks, and Worker transport therefore need no new protocol or renderer branch, and
 source-only packages import the ordinary graphics callable without a package adapter.
+
+Installed vignette browsing is also composition rather than a second documentation subsystem.
+`utils::browseVignettes()` groups the versioned package-tool index already consumed by `vignette()`,
+while `print.browseVignettes()` writes a self-contained catalog to the existing session file store
+and calls `browseURL()`. Package resources remain immutable, the Worker carries the existing typed
+file snapshot, and the host keeps navigation and sandbox policy; no package name, DOM object,
+network client, or host path enters the runtime implementation.

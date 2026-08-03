@@ -277,6 +277,18 @@ await r.eval(`
 // requests[0].kind === "file"; the host may preview it in a sandboxed iframe.
 ```
 
+The same seam backs installed documentation catalogs. `utils::browseVignettes()` returns its GNU
+R-shaped index without host activity; printing that object generates one self-contained virtual HTML
+file whose links embed the package's immutable rendered output, source, and extracted R code:
+
+```ts
+const evaluation = await r.evalDetailed('print(utils::browseVignettes(package = "mypackage"))');
+// evaluation.browseRequests[0].kind === "file"
+```
+
+The reference Playground previews that file in an iframe with no sandbox permissions. Embedders must
+retain an equivalent content and navigation policy.
+
 GNU R's `browser = function(url) ...` extension remains inside R and receives a lazy original or
 `encodeIfNeeded`-encoded URL; `browser = "false"` suppresses the request. A character
 browser-program name is treated only as host intent because browser packages cannot spawn processes.

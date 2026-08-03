@@ -1373,6 +1373,34 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
       },
     ],
   ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "utils",
+      "browseVignettes",
+      ["package", "lib.loc", "all"],
+      "shape",
+      builtinBrowseVignettes,
+    ),
+    [
+      { name: "package", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      { name: "lib.loc", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      {
+        name: "all",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "utils",
+      "print.browseVignettes",
+      ["x", "..."],
+      "shape",
+      builtinPrintBrowseVignettes,
+      "invisible",
+    ),
+    [{ name: "x" }, { name: "..." }],
+  ),
   definePackageBuiltin(
     "utils",
     "browseURL",
@@ -25575,6 +25603,301 @@ interface PackageVignetteEntry {
   readonly file: string;
   readonly r: string;
   readonly output: string;
+}
+
+const BROWSE_VIGNETTE_COLUMNS = Object.freeze([
+  "Package",
+  "Dir",
+  "Topic",
+  "File",
+  "Title",
+  "R",
+  "PDF",
+]);
+
+interface BrowseVignetteRow {
+  readonly packageName: string;
+  readonly directory: string;
+  readonly topic: string;
+  readonly file: string;
+  readonly title: string;
+  readonly r: string;
+  readonly output: string;
+}
+
+async function builtinBrowseVignettes(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = matchLazyArguments(invocation, ["package", "lib.loc", "all"]);
+  const all = await lazyLogicalFlag(invocation, matched.get("all"), true, "all");
+  const packageArgument = matched.get("package");
+  const suppliedPackage =
+    packageArgument === undefined || packageArgument.promise.missing
+      ? R_NULL
+      : await invocation.force(packageArgument.promise);
+  let explicitPackageNames: readonly string[] | undefined;
+  if (suppliedPackage.type !== "null") {
+    if (!isAtomic(suppliedPackage)) {
+      throw new RTypeMismatchError(
+        "NRT3343",
+        "browseVignettes(package=) must be NULL or coercible to character.",
+      );
+    }
+    const characters = coerceAtomicToCharacter(suppliedPackage, invocation);
+    explicitPackageNames = characters.values.map((name, index) =>
+      isMissing(characters, index) ? "NA" : name,
+    );
+    // GNU R does not force lib.loc when an explicitly empty package vector makes discovery moot.
+    if (explicitPackageNames.length === 0) {
+      return browseVignettesObject(invocation, [], "");
+    }
+  }
+
+  const libraryArgument = matched.get("lib.loc");
+  const parsedLibraryPaths =
+    libraryArgument === undefined || libraryArgument.promise.missing
+      ? undefined
+      : libraryLocationArgument(
+          invocation,
+          await invocation.force(libraryArgument.promise),
+          "browseVignettes",
+        );
+  // GNU R treats character() as no library restriction for this catalog helper.
+  const libraryPaths =
+    parsedLibraryPaths !== undefined && parsedLibraryPaths.length === 0
+      ? undefined
+      : parsedLibraryPaths;
+  const packageNames =
+    explicitPackageNames ??
+    (all
+      ? invocation.installedPackageNames(libraryPaths)
+      : uniqueStrings(
+          invocation
+            .searchPath()
+            .filter((entry) => entry.startsWith("package:"))
+            .map((entry) => entry.slice("package:".length)),
+        ));
+
+  if (explicitPackageNames !== undefined) {
+    for (const packageName of uniqueStrings(explicitPackageNames)) {
+      if (invocation.installedPackageVersion(packageName, libraryPaths) === undefined) {
+        await invocation.loadPackage(packageName, false, libraryPaths);
+      }
+    }
+  }
+
+  const grouped = new Map<string, BrowseVignetteRow[]>();
+  for (const packageName of packageNames) {
+    invocation.context.checkpoint();
+    const entries = packageVignetteManifest(invocation, packageName, libraryPaths) ?? [];
+    if (entries.length === 0) continue;
+    const directory = invocation.packageResourcePath(packageName, "", libraryPaths);
+    if (directory === undefined) continue;
+    let rows = grouped.get(packageName);
+    if (rows === undefined) {
+      rows = [];
+      grouped.set(packageName, rows);
+    }
+    for (const entry of entries) {
+      rows.push({
+        packageName,
+        directory,
+        topic: entry.topic,
+        file: entry.file,
+        title: entry.title,
+        r: entry.r,
+        output: entry.output,
+      });
+    }
+  }
+  const footer =
+    explicitPackageNames === undefined && !all
+      ? "Use <code> browseVignettes(all = TRUE) </code> \n to list the vignettes in all <strong>available</strong> packages."
+      : "";
+  return browseVignettesObject(invocation, [...grouped], footer);
+}
+
+function browseVignettesObject(
+  invocation: BuiltinInvocation,
+  packages: readonly (readonly [string, readonly BrowseVignetteRow[]])[],
+  footer: string,
+): RValue {
+  invocation.context.allocate(
+    4 + packages.reduce((total, packageEntry) => total + packageEntry[1].length * 7, 0),
+  );
+  const result = listValue(
+    packages.map((packageEntry) => browseVignettesMatrix(packageEntry[1])),
+    packages.map((packageEntry) => packageEntry[0]),
+  );
+  return withClasses(
+    withAttribute(
+      withAttribute(result, "call", invocation.currentCall()),
+      "footer",
+      characterVector([footer]),
+    ),
+    ["browseVignettes"],
+  );
+}
+
+function browseVignettesMatrix(rows: readonly BrowseVignetteRow[]): RCharacterVector {
+  const columns = [
+    rows.map((row) => row.packageName),
+    rows.map((row) => row.directory),
+    rows.map((row) => row.topic),
+    rows.map((row) => row.file),
+    rows.map((row) => row.title),
+    rows.map((row) => row.r),
+    rows.map((row) => row.output),
+  ];
+  return withAttribute(
+    withDimensions(characterVector(columns.flat()), [rows.length, BROWSE_VIGNETTE_COLUMNS.length]),
+    "dimnames",
+    listValue([R_NULL, characterVector(BROWSE_VIGNETTE_COLUMNS)]),
+  );
+}
+
+async function builtinPrintBrowseVignettes(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched } = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const inputArgument = matched.get("x");
+  if (inputArgument === undefined || inputArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in print.browseVignettes().");
+  }
+  const input = await invocation.force(inputArgument.promise);
+  if (input.type !== "list") {
+    throw new RTypeMismatchError(
+      "NRT3343",
+      "print.browseVignettes(x=) requires a browseVignettes list.",
+    );
+  }
+  const rows = printBrowseVignetteRows(input);
+  const call = input.attributes.get("call");
+  const callText = call?.type === "language" ? deparseAst(call.expression) : "browseVignettes()";
+  if (rows.length === 0) {
+    invocation.context.writeOutput({
+      stream: "stdout",
+      text: `No vignettes found by ${callText}\n`,
+    });
+    return input;
+  }
+
+  const html = renderBrowseVignettesHtml(input, rows, callText, invocation);
+  const state = virtualTextFileState(invocation);
+  const path = nextVirtualTempPath(state, "Rvig.", ".html");
+  writeVirtualTextFile(invocation, path, html);
+  const utils = invocation.searchEnvironment("package:utils");
+  const binding = utils?.bindings.get("browseURL");
+  const browser =
+    binding === undefined
+      ? await lookupCallableByName(invocation, "browseURL")
+      : binding.type === "promise"
+        ? await invocation.force(binding)
+        : binding;
+  if (!isCallable(browser)) {
+    throw new REvaluationError("NRE2001", "Could not find function 'browseURL'.");
+  }
+  await invocation.invoke(browser, [{ value: characterVector([path]) }]);
+  return input;
+}
+
+function printBrowseVignetteRows(input: RList): readonly BrowseVignetteRow[] {
+  const rows: BrowseVignetteRow[] = [];
+  for (const component of input.values) {
+    if (component.type !== "character") {
+      throw new RTypeMismatchError("NRT3343", "invalid browseVignettes package entry");
+    }
+    const dimensions = vectorDimensions(component);
+    if (
+      dimensions?.length !== 2 ||
+      dimensions[1] !== BROWSE_VIGNETTE_COLUMNS.length ||
+      component.missing !== undefined
+    ) {
+      throw new RTypeMismatchError("NRT3343", "invalid browseVignettes package matrix");
+    }
+    const rowCount = dimensions[0] ?? 0;
+    const cell = (row: number, column: number): string =>
+      component.values[row + column * rowCount] ?? "";
+    for (let row = 0; row < rowCount; row += 1) {
+      rows.push({
+        packageName: cell(row, 0),
+        directory: cell(row, 1),
+        topic: cell(row, 2),
+        file: cell(row, 3),
+        title: cell(row, 4),
+        r: cell(row, 5),
+        output: cell(row, 6),
+      });
+    }
+  }
+  return rows;
+}
+
+function renderBrowseVignettesHtml(
+  input: RList,
+  rows: readonly BrowseVignetteRow[],
+  callText: string,
+  invocation: BuiltinInvocation,
+): string {
+  const byPackage = new Map<string, BrowseVignetteRow[]>();
+  for (const row of rows) {
+    const packageRows = byPackage.get(row.packageName) ?? [];
+    packageRows.push(row);
+    byPackage.set(row.packageName, packageRows);
+  }
+  const sections = [...byPackage].map(([packageName, packageRows]) => {
+    const items = packageRows.map((row) => {
+      const links = [
+        browseVignetteLink(invocation, row, row.output, browseVignetteOutputLabel(row.output)),
+        browseVignetteLink(invocation, row, row.file, "source"),
+        browseVignetteLink(invocation, row, row.r, "R code"),
+      ].filter((link): link is string => link !== undefined);
+      return `<li><strong>${escapeBrowseVignettesHtml(row.title)}</strong>${
+        links.length === 0 ? "" : ` — ${links.join(" ")}`
+      }</li>`;
+    });
+    return `<section><h2>Vignettes in package <code>${escapeBrowseVignettesHtml(
+      packageName,
+    )}</code></h2><ul>${items.join("")}</ul></section>`;
+  });
+  const footer = input.attributes.get("footer");
+  const footerText =
+    footer?.type === "character" && footer.length > 0 && !isMissing(footer, 0)
+      ? (footer.values[0] ?? "")
+      : "";
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>R Vignettes</title><style>body{font-family:system-ui,sans-serif;line-height:1.5;max-width:70rem;margin:2rem auto;padding:0 1rem;color:#172033}code{background:#eef2f7;padding:.1rem .3rem;border-radius:.2rem}section{border-top:1px solid #d8dee9;margin-top:1.5rem}li{margin:.65rem 0}a{color:#155eef}footer{margin-top:2rem;color:#52606d;white-space:pre-line}</style></head><body><main><h1>R Vignettes</h1><p>Vignettes found by <code>${escapeBrowseVignettesHtml(
+    callText,
+  )}</code></p>${sections.join("")}${
+    footerText.length === 0 ? "" : `<footer>${escapeBrowseVignettesHtml(footerText)}</footer>`
+  }</main></body></html>`;
+}
+
+function browseVignetteLink(
+  invocation: BuiltinInvocation,
+  row: BrowseVignetteRow,
+  file: string,
+  label: string,
+): string | undefined {
+  if (file.length === 0) return undefined;
+  const path = `${row.directory}/doc/${file}`;
+  const resource = invocation.packageFile(path);
+  if (resource === undefined) return undefined;
+  const mimeType = browseMimeType(file).split(";")[0] ?? "application/octet-stream";
+  const url =
+    resource.encoding === "base64"
+      ? `data:${mimeType};base64,${resource.data}`
+      : `data:${mimeType};charset=utf-8,${encodeURIComponent(resource.data)}`;
+  return `<a href="${url}">${escapeBrowseVignettesHtml(label)}</a>`;
+}
+
+function browseVignetteOutputLabel(path: string): string {
+  const extension = /\.([A-Za-z0-9]+)$/u.exec(path)?.[1];
+  return extension === undefined ? "output" : extension.toUpperCase();
+}
+
+function escapeBrowseVignettesHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
 async function builtinVignette(invocation: BuiltinInvocation): Promise<RValue> {

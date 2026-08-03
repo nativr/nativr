@@ -848,6 +848,11 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      package code runs inline and in the default Worker/Canvas path without a new renderer or
      protocol event. Log-axis transformation, extended `xpd` clipping, and exact device stroke
      metrics remain future depth.
+178. Usage-ranked installed vignette browsing: rank-365 `utils::browseVignettes` aggregates the
+     generic package-tool manifest into GNU R-shaped package matrices and uses
+     `print.browseVignettes` to emit one bounded self-contained catalog through the existing inert
+     browse journal. Unchanged pure-R package code runs inline and in the Worker/Playground sandbox
+     without a help server, runtime network, desktop viewer, or package-specific rewrite.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

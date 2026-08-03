@@ -9708,5 +9708,19 @@
     "expected": ["builtin", "TRUE", "TRUE", "TRUE", "TRUE", "TRUE", "TRUE"],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "browse-vignettes-usage-ranked-formals-empty-object-and-print-visibility",
+    "code": "f <- formals(utils::browseVignettes)\nx <- utils::browseVignettes(package = character())\np <- withVisible(print(x))\nc(identical(names(f), c(\"package\", \"lib.loc\", \"all\")), is.null(f$package), is.null(f$lib.loc), identical(f$all, TRUE), is.list(x), identical(class(x), \"browseVignettes\"), length(x) == 0L, length(names(x)) == 0L, typeof(attr(x, \"call\")) == \"language\", identical(attr(x, \"footer\"), \"\"), identical(p$value, x), !p$visible)",
+    "expected": [true, true, true, true, true, true, true, true, true, true, true, true],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "browse-vignettes-usage-ranked-package-and-control-boundaries",
+    "code": "empty <- utils::browseVignettes(package = character(), lib.loc = 1)\nbase <- utils::browseVignettes(package = \"base\")\nbase_empty_lib <- utils::browseVignettes(package = \"base\", lib.loc = character())\nc(inherits(empty, \"browseVignettes\"), length(empty) == 0L, inherits(base, \"browseVignettes\"), length(base) == 0L, inherits(base_empty_lib, \"browseVignettes\"), length(base_empty_lib) == 0L, inherits(try(utils::browseVignettes(package = \"nativr-definitely-missing\"), silent = TRUE), \"try-error\"), inherits(try(utils::browseVignettes(all = NA), silent = TRUE), \"try-error\"), inherits(try(utils::browseVignettes(extra = 1), silent = TRUE), \"try-error\"))",
+    "expected": [true, true, true, true, true, true, true, true, true],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.265.0",
+  "languageSubsetVersion": "0.266.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -731,6 +731,8 @@
         { "name": "demo", "compatibility": "shape" },
         { "name": "example", "compatibility": "behavioral" },
         { "name": "vignette", "compatibility": "behavioral" },
+        { "name": "browseVignettes", "compatibility": "shape" },
+        { "name": "print.browseVignettes", "compatibility": "shape" },
         { "name": "browseURL", "compatibility": "behavioral" },
         { "name": "download.file", "compatibility": "behavioral" },
         { "name": "contrib.url", "compatibility": "behavioral" },

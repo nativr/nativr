@@ -193,6 +193,18 @@ test("runs the required Worker examples without evaluation network traffic", asy
     '["browser-runtime", "Running R in a browser Worker", "browser-runtime.html"]',
   );
 
+  await page.getByRole("button", { name: "Pure-R package vignette catalog" }).click();
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#browse-count")).toHaveText("1");
+  await page.locator("#browse-requests").getByRole("button", { name: "Preview" }).click();
+  const vignetteCatalog = page.frameLocator("#browse-requests iframe");
+  await expect(vignetteCatalog.getByRole("heading", { name: "R Vignettes" })).toBeVisible();
+  await expect(vignetteCatalog.getByText("Running R in a browser Worker")).toBeVisible();
+  await expect(vignetteCatalog.getByRole("link", { name: "HTML" })).toHaveAttribute(
+    "href",
+    /^data:text\/html;base64,/u,
+  );
+
   await page
     .locator("#source")
     .fill("utils::example(twice_mean, package = 'nativrdemo', echo = FALSE)\nexample_value");

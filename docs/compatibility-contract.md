@@ -2225,6 +2225,17 @@ without GNU R, runtime network access, or document builders. Building a raw deve
 directory, installed lazy help databases, `print.vignette`, automatic viewer dispatch, and
 byte-identical document rendering remain incomplete.
 
+Usage-ranked `utils::browseVignettes()` has GNU R 4.6 differential evidence for its three formal
+names/defaults, classed named-list result, `call`/`footer` attributes, seven-column per-package
+matrices, explicit duplicate-package rows, attached-versus-all discovery, missing packages, lazy
+empty-package `lib.loc`, and `print.browseVignettes()` visibility/empty output. At runtime it
+aggregates the same versioned manifest generated for every admitted source package and creates a
+bounded self-contained HTML catalog whose output/source/R-code links contain immutable package
+resources. The catalog enters the existing `browseURL()` file journal and Playground sandbox; it
+does not receive network, DOM, desktop viewer, or host-filesystem authority. GNU help-server URL
+layout, installed lazy help databases, development-time vignette building, and byte-identical HTML
+remain outside this shape-level claim.
+
 The inference extension retains a weighted upper-triangular QR factor, derives residual variance and
 coefficient covariance without requiring the model frame, and exposes `vcov`, `confint`, and
 `df.residual`. Differential cases cover complete/incomplete covariance matrices, aliased

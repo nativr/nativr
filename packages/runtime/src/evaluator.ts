@@ -441,6 +441,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "aspell",
       "as.roman",
       "available.packages",
+      "browseVignettes",
       "browseURL",
       "capture.output",
       "compareVersion",

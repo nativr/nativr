@@ -33,7 +33,7 @@ importFrom(graphics, abline, axis, barplot, plot.new, plot.window, rect, title)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median, ts.plot)
 importFrom(utils, download.file, packageDescription, packageName, packageVersion)
-  export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, annotated_plot, reference_lines, ask_new_pages, find_tools, create_file, copy_resource, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, socket_exchange, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, package_files, installed_version, namespace_names, process_id, library_paths, loaded_module_paths, native_encoding, shell_quote, standard_output, sink_lines, write_sass_variable)
+  export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, annotated_plot, reference_lines, ask_new_pages, find_tools, create_file, copy_resource, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, socket_exchange, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, package_files, installed_version, namespace_names, process_id, library_paths, loaded_module_paths, native_encoding, shell_quote, standard_output, sink_lines, write_sass_variable, browse_guides)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -218,6 +218,7 @@ write_sass_variable <- function() {
   write('$color: "red";', path)
   readLines(path)
 }
+browse_guides <- function() print(utils::browseVignettes(package = "nativrfixture"))
 hidden_helper <- function(x) x + 100
 `,
     },
@@ -233,6 +234,19 @@ hidden_helper <- function(x) x + 100
     {
       path: "extdata/archive.zip",
       data: "UEsDBAoAAAAAAOuOAl1uUDBuCwAAAAsAAAAJAAAAbm90ZXMudHh0YWxwaGEKYmV0YQpQSwMEFAAAAAgA644CXYPf7MgpAAAAHAIAAAwAAAByZXBlYXRlZC50eHRLLErOyCxLVUjOzy1ILMlMyszJLKlUSEksSVRIpLIUF7UNHLWLtnYBAFBLAQIeAwoAAAAAAOuOAl1uUDBuCwAAAAsAAAAJAAAAAAAAAAEAAACkgQAAAABub3Rlcy50eHRQSwECHgMUAAAACADrjgJdg9/syCkAAAAcAgAADAAAAAAAAAABAAAApIEyAAAAcmVwZWF0ZWQudHh0UEsFBgAAAAACAAIAcQAAAIUAAAAAAA==",
+    },
+    {
+      path: ".nativr/vignettes-v1.json",
+      data: "eyJmb3JtYXQiOiJuYXRpdnItcGFja2FnZS12aWduZXR0ZXMiLCJmb3JtYXRWZXJzaW9uIjoxLCJ2aWduZXR0ZXMiOlt7InRvcGljIjoiYnJvd3Nlci1ydW50aW1lIiwidGl0bGUiOiJSdW5uaW5nIFIgaW4gYSBicm93c2VyIFdvcmtlciIsImZpbGUiOiJicm93c2VyLXJ1bnRpbWUuUm1kIiwiciI6ImJyb3dzZXItcnVudGltZS5SIiwib3V0cHV0IjoiYnJvd3Nlci1ydW50aW1lLmh0bWwifV19",
+    },
+    {
+      path: "doc/browser-runtime.Rmd",
+      data: "LS0tCnRpdGxlOiBSdW5uaW5nIFIgaW4gYSBicm93c2VyIFdvcmtlcgotLS0KClRoaXMgdmlnbmV0dGUgaXMgYnVuZGxlZCB3aXRoIHRoZSBmaXh0dXJlIHBhY2thZ2UuCg==",
+    },
+    { path: "doc/browser-runtime.R", data: "c3F1YXJlKDQpCg==" },
+    {
+      path: "doc/browser-runtime.html",
+      data: "PCFkb2N0eXBlIGh0bWw+PHRpdGxlPlJ1bm5pbmcgUiBpbiBhIGJyb3dzZXIgV29ya2VyPC90aXRsZT48cD5OYXRpdlIgZml4dHVyZSB2aWduZXR0ZS48L3A+",
     },
     {
       path: "extdata/value.rds",
@@ -4182,6 +4196,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "NAMESPACE",
       "R",
       "data",
+      "doc",
       "extdata",
     ]);
     await expect(
@@ -4628,6 +4643,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "ask_new_pages",
       "ask_value",
       "axis_ticks",
+      "browse_guides",
       "centered",
       "class_summary",
       "classic_palettes",
@@ -4808,6 +4824,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "NAMESPACE",
       "R",
       "data",
+      "doc",
       "extdata",
       "csvset.csv",
       "raw/raw.csv",
@@ -13174,7 +13191,7 @@ NeedsCompilation: no
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.265.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.266.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -18561,6 +18578,100 @@ NeedsCompilation: no
       `),
     ).resolves.toEqual([...Array.from({ length: 11 }, () => true), false]);
     await runtime.dispose();
+  });
+
+  it("aggregates and browses installed pure-R package vignettes through the inert host journal", async () => {
+    const observed: unknown[] = [];
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [pureRFixture],
+      onBrowse: (event) => observed.push(event),
+    });
+    await expect(
+      runtime.eval(`
+        f <- formals(utils::browseVignettes)
+        catalog <- utils::browseVignettes(package = c("nativrfixture", "nativrfixture"))
+        entries <- catalog[[1]]
+        c(
+          identical(names(f), c("package", "lib.loc", "all")),
+          is.null(f$package),
+          is.null(f$lib.loc),
+          identical(f$all, TRUE),
+          identical(class(catalog), "browseVignettes"),
+          identical(names(catalog), "nativrfixture"),
+          identical(dim(entries), c(2L, 7L)),
+          identical(colnames(entries), c("Package", "Dir", "Topic", "File", "Title", "R", "PDF")),
+          identical(entries[, "Topic"], rep("browser-runtime", 2)),
+          identical(entries[, "Title"], rep("Running R in a browser Worker", 2)),
+          identical(attr(catalog, "footer"), ""),
+          length(utils::browseVignettes(package = "nativrfixture", lib.loc = character())) == 1L
+        )
+      `),
+    ).resolves.toEqual(Array.from({ length: 12 }, () => true));
+
+    const browsed = await runtime.evalDetailed("nativrfixture::browse_guides()");
+    expect(browsed.visible).toBe(false);
+    expect(browsed.browseRequests).toHaveLength(1);
+    const request = browsed.browseRequests[0];
+    expect(request).toMatchObject({ kind: "file", mimeType: "text/html;charset=utf-8" });
+    if (request?.kind === "file") {
+      const html = new TextDecoder().decode(request.bytes);
+      expect(html).toContain("R Vignettes");
+      expect(html).toContain("Running R in a browser Worker");
+      expect(html).toContain("data:text/html;base64,");
+      expect(html).toContain("data:text/plain;base64,");
+      expect(html).not.toContain("<script");
+    }
+    expect(observed).toEqual(browsed.browseRequests);
+
+    await expect(
+      runtime.eval(`
+        captured <- ""
+        old <- options(browser = function(url) {
+          captured <<- paste(readLines(url), collapse = "\n")
+          invisible(NULL)
+        })
+        value <- withVisible(nativrfixture::browse_guides())
+        options(old)
+        c(
+          inherits(value$value, "browseVignettes"),
+          value$visible,
+          grepl("Running R in a browser Worker", captured, fixed = TRUE)
+        )
+      `),
+    ).resolves.toEqual([true, false, true]);
+
+    const empty = await runtime.evalDetailed(
+      "print(utils::browseVignettes(package = character()), ignored = TRUE)",
+    );
+    expect(empty.visible).toBe(false);
+    expect(empty.output).toEqual([
+      {
+        stream: "stdout",
+        text: "No vignettes found by utils::browseVignettes(package = character())\n",
+      },
+    ]);
+    expect(empty.browseRequests).toEqual([]);
+    await expect(
+      runtime.eval("utils::browseVignettes(package = character(), lib.loc = 1)"),
+    ).resolves.toEqual([]);
+    await expect(
+      runtime.eval("utils::browseVignettes(package = 'definitely-missing')"),
+    ).rejects.toBeDefined();
+    await expect(runtime.eval("utils::browseVignettes(all = NA)")).rejects.toBeDefined();
+    await runtime.dispose();
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      packages: [pureRFixture],
+      limits: { maxOutputBytes: 100 },
+    });
+    await expect(
+      limited.eval('print(utils::browseVignettes(package = "nativrfixture"))'),
+    ).rejects.toMatchObject({ code: "NRL4007" });
+    await limited.dispose();
   });
 
   it("extracts usage-ranked browser regex match objects and inverse gaps", async () => {

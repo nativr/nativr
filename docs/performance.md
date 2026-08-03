@@ -829,3 +829,10 @@ dependency, protocol event, renderer, package-specific translation, or host capa
 Worker, Canvas, PNG, PDF, and record/replay paths reuse the same journal. The measured Worker is
 407.4 KiB gzip (417,200 bytes), so the ceiling rises narrowly from 407 KiB to 408 KiB; client and
 parser-Wasm budgets remain unchanged.
+
+Language subset 0.266 adds usage-ranked `utils::browseVignettes` and its S3 print method by
+composing the existing package vignette manifest, immutable package resources, session text-file
+store, and `browseURL` event. It adds no dependency, protocol type, network client, document
+builder, host path, DOM access, or package-specific adapter. The measured Worker is 408.9 KiB gzip
+(418,665 bytes), so the ceiling rises narrowly from 408 KiB to 409 KiB; client and parser-Wasm
+budgets remain unchanged.

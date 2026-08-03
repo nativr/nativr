@@ -159,6 +159,11 @@ twice_mean(c(1, 2, 6))`,
     code: "nativrdemo::reference_lines()",
   },
   {
+    id: "package-vignettes",
+    label: "Pure-R package vignette catalog",
+    code: "nativrdemo::browse_guides()",
+  },
+  {
     id: "pipe-package",
     label: "Pure-R package pipe",
     code: "nativrdemo::pipe_lines('nativr-lines')",

@@ -16,50 +16,46 @@
 <text x="60" y="60" class="title">Highest-reach missing GNU R callables</text>
 <text x="60" y="94" class="subtitle">97 analyzable manuals; ranked by download-weighted package reach</text>
 <text x="60" y="122" class="legend">Red means the callable is absent from NativR builtins and evaluator-native callable language forms; behavioral completeness is stricter than availability.</text>
-<line x1="250" y1="152" x2="250" y2="588" stroke="#e2e8f0"/><text x="250" y="142" text-anchor="middle" class="tick">0.0%</text>
-<line x1="448.75" y1="152" x2="448.75" y2="588" stroke="#e2e8f0"/><text x="448.75" y="142" text-anchor="middle" class="tick">0.3%</text>
-<line x1="647.5" y1="152" x2="647.5" y2="588" stroke="#e2e8f0"/><text x="647.5" y="142" text-anchor="middle" class="tick">0.5%</text>
-<line x1="846.25" y1="152" x2="846.25" y2="588" stroke="#e2e8f0"/><text x="846.25" y="142" text-anchor="middle" class="tick">0.8%</text>
-<line x1="1045" y1="152" x2="1045" y2="588" stroke="#e2e8f0"/><text x="1045" y="142" text-anchor="middle" class="tick">1.0%</text>
-<text x="234" y="186" text-anchor="end" class="label">browseVignettes</text>
+<line x1="250" y1="152" x2="250" y2="545" stroke="#e2e8f0"/><text x="250" y="142" text-anchor="middle" class="tick">0.0%</text>
+<line x1="448.75" y1="152" x2="448.75" y2="545" stroke="#e2e8f0"/><text x="448.75" y="142" text-anchor="middle" class="tick">0.3%</text>
+<line x1="647.5" y1="152" x2="647.5" y2="545" stroke="#e2e8f0"/><text x="647.5" y="142" text-anchor="middle" class="tick">0.5%</text>
+<line x1="846.25" y1="152" x2="846.25" y2="545" stroke="#e2e8f0"/><text x="846.25" y="142" text-anchor="middle" class="tick">0.8%</text>
+<line x1="1045" y1="152" x2="1045" y2="545" stroke="#e2e8f0"/><text x="1045" y="142" text-anchor="middle" class="tick">1.0%</text>
+<text x="234" y="186" text-anchor="end" class="label">dev.control</text>
 <rect x="250" y="170" width="759.6" height="20" rx="3" fill="#dc2626"/>
 <text x="1017.6" y="185" class="value">1.0%</text>
 <text x="250" y="206" class="meta">1 packages; 1 observed calls</text>
-<text x="234" y="229" text-anchor="end" class="label">dev.control</text>
-<rect x="250" y="213" width="759.6" height="20" rx="3" fill="#dc2626"/>
-<text x="1017.6" y="228" class="value">1.0%</text>
-<text x="250" y="249" class="meta">1 packages; 1 observed calls</text>
-<text x="234" y="272" text-anchor="end" class="label">getFromNamespace</text>
-<rect x="250" y="256" width="715.3" height="20" rx="3" fill="#dc2626"/>
-<text x="973.3" y="271" class="value">0.9%</text>
-<text x="250" y="292" class="meta">1 packages; 37 observed calls</text>
-<text x="234" y="315" text-anchor="end" class="label">help</text>
-<rect x="250" y="299" width="704.9" height="20" rx="3" fill="#dc2626"/>
-<text x="962.9" y="314" class="value">0.9%</text>
-<text x="250" y="335" class="meta">1 packages; 15 observed calls</text>
-<text x="234" y="358" text-anchor="end" class="label">curve</text>
-<rect x="250" y="342" width="577.7" height="20" rx="3" fill="#dc2626"/>
-<text x="835.7" y="357" class="value">0.7%</text>
-<text x="250" y="378" class="meta">1 packages; 1 observed calls</text>
-<text x="234" y="401" text-anchor="end" class="label">tracemem</text>
+<text x="234" y="229" text-anchor="end" class="label">getFromNamespace</text>
+<rect x="250" y="213" width="715.3" height="20" rx="3" fill="#dc2626"/>
+<text x="973.3" y="228" class="value">0.9%</text>
+<text x="250" y="249" class="meta">1 packages; 37 observed calls</text>
+<text x="234" y="272" text-anchor="end" class="label">help</text>
+<rect x="250" y="256" width="704.9" height="20" rx="3" fill="#dc2626"/>
+<text x="962.9" y="271" class="value">0.9%</text>
+<text x="250" y="292" class="meta">1 packages; 15 observed calls</text>
+<text x="234" y="315" text-anchor="end" class="label">curve</text>
+<rect x="250" y="299" width="577.7" height="20" rx="3" fill="#dc2626"/>
+<text x="835.7" y="314" class="value">0.7%</text>
+<text x="250" y="335" class="meta">1 packages; 1 observed calls</text>
+<text x="234" y="358" text-anchor="end" class="label">tracemem</text>
+<rect x="250" y="342" width="555.5" height="20" rx="3" fill="#dc2626"/>
+<text x="813.5" y="357" class="value">0.7%</text>
+<text x="250" y="378" class="meta">1 packages; 2 observed calls</text>
+<text x="234" y="401" text-anchor="end" class="label">update.packages</text>
 <rect x="250" y="385" width="555.5" height="20" rx="3" fill="#dc2626"/>
 <text x="813.5" y="400" class="value">0.7%</text>
-<text x="250" y="421" class="meta">1 packages; 2 observed calls</text>
-<text x="234" y="444" text-anchor="end" class="label">update.packages</text>
-<rect x="250" y="428" width="555.5" height="20" rx="3" fill="#dc2626"/>
-<text x="813.5" y="443" class="value">0.7%</text>
+<text x="250" y="421" class="meta">1 packages; 1 observed calls</text>
+<text x="234" y="444" text-anchor="end" class="label">df</text>
+<rect x="250" y="428" width="542.3" height="20" rx="3" fill="#dc2626"/>
+<text x="800.3" y="443" class="value">0.7%</text>
 <text x="250" y="464" class="meta">1 packages; 1 observed calls</text>
-<text x="234" y="487" text-anchor="end" class="label">df</text>
+<text x="234" y="487" text-anchor="end" class="label">dist</text>
 <rect x="250" y="471" width="542.3" height="20" rx="3" fill="#dc2626"/>
 <text x="800.3" y="486" class="value">0.7%</text>
 <text x="250" y="507" class="meta">1 packages; 1 observed calls</text>
-<text x="234" y="530" text-anchor="end" class="label">dist</text>
+<text x="234" y="530" text-anchor="end" class="label">simulate</text>
 <rect x="250" y="514" width="542.3" height="20" rx="3" fill="#dc2626"/>
 <text x="800.3" y="529" class="value">0.7%</text>
 <text x="250" y="550" class="meta">1 packages; 1 observed calls</text>
-<text x="234" y="573" text-anchor="end" class="label">simulate</text>
-<rect x="250" y="557" width="542.3" height="20" rx="3" fill="#dc2626"/>
-<text x="800.3" y="572" class="value">0.7%</text>
-<text x="250" y="593" class="meta">1 packages; 1 observed calls</text>
 <text x="60" y="1072" class="note">Named-call syntax only; operators and indirect calls are measured elsewhere. Counts are aggregate observations, and no example source is retained.</text>
 </svg>
