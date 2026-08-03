@@ -49,6 +49,7 @@ import {
   rawVector,
   removeBinding,
   replaceVectorSubset,
+  setActiveBinding,
   setBinding,
   subsetDimensions,
   subsetVector,
@@ -1897,6 +1898,21 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "invisible",
   ),
   defineBuiltin("bindingIsLocked", ["sym", "env"], "behavioral", builtinBindingIsLocked),
+  defineBuiltin(
+    "makeActiveBinding",
+    ["sym", "fun", "env"],
+    "behavioral",
+    builtinMakeActiveBinding,
+    "regular",
+    "invisible",
+  ),
+  defineBuiltin("bindingIsActive", ["sym", "env"], "behavioral", builtinBindingIsActive),
+  defineBuiltin(
+    "activeBindingFunction",
+    ["sym", "env"],
+    "behavioral",
+    builtinActiveBindingFunction,
+  ),
   defineBuiltin("parent.env", ["env"], "behavioral", builtinParentEnvironment),
   defineBuiltin("parent.frame", ["n"], "behavioral", builtinParentFrame),
   defineBuiltin("search", [], "behavioral", builtinSearch),
@@ -5423,6 +5439,12 @@ function substituteIdentifier(
     const first = binding.arguments[0];
     return first === undefined ? nullAst() : promiseAst(first.promise);
   }
+  if (binding.type === "active-binding") {
+    throw new RUnsupportedFeatureError(
+      "NRU6222",
+      "substitute() over an active binding is not implemented yet.",
+    );
+  }
   if (binding.type === "promise") return promiseAst(binding);
   return valueToAst(binding);
 }
@@ -5487,7 +5509,7 @@ async function builtinDoCall(invocation: BuiltinInvocation): Promise<RValue> {
     if (binding === undefined) {
       throw new REvaluationError("NRE2001", `Could not find function '${name}'.`);
     }
-    callable = binding.type === "promise" ? await invocation.force(binding) : binding;
+    callable = await invocation.force(binding);
   }
   if (callable.type !== "closure" && callable.type !== "builtin") {
     throw new RTypeMismatchError(
@@ -12437,7 +12459,7 @@ async function builtinSave(invocation: BuiltinInvocation): Promise<RValue> {
         "save() cannot persist an active ellipsis binding.",
       );
     }
-    values.push(binding.type === "promise" ? await invocation.force(binding) : binding);
+    values.push(await invocation.force(binding));
   }
 
   const archive = pairlistValue(values, names);
@@ -16034,7 +16056,7 @@ async function withinBindingValue(
   invocation: BuiltinInvocation,
   binding: RBinding,
 ): Promise<RValue> {
-  return binding.type === "promise" ? invocation.force(binding) : binding;
+  return invocation.force(binding);
 }
 
 function transformSource(
@@ -16190,11 +16212,10 @@ async function builtinInternalSubset(
     }
     const binding = target.bindings.get(index.values[0] ?? "");
     if (binding === undefined) return R_NULL;
-    if (binding.type === "promise") return invocation.force(binding);
     if (binding.type === "dots") {
       throw new REvaluationError("NRE2204", ".subset2() cannot extract the internal dots binding.");
     }
-    return binding;
+    return invocation.force(binding);
   }
   if (!isVector(target) && target.type !== "pairlist") {
     throw new RTypeMismatchError(
@@ -17035,7 +17056,7 @@ async function builtinBody(invocation: BuiltinInvocation): Promise<RValue> {
     if (binding === undefined) {
       throw new REvaluationError("NRE2001", `Could not find function '${name}'.`);
     }
-    value = binding.type === "promise" ? await invocation.force(binding) : binding;
+    value = await invocation.force(binding);
   }
   if (value.type === "closure") {
     if (value.body.kind === "NullLiteral") return R_NULL;
@@ -17109,7 +17130,7 @@ async function lookupCallableByName(invocation: BuiltinInvocation, name: string)
   while (environment !== null) {
     const binding = environment.bindings.get(name);
     if (binding !== undefined) {
-      const value = binding.type === "promise" ? await invocation.force(binding) : binding;
+      const value = await invocation.force(binding);
       if (value.type === "closure" || value.type === "builtin") return value;
     }
     environment = environment.parent;
@@ -17580,6 +17601,69 @@ async function builtinBindingIsLocked(invocation: BuiltinInvocation): Promise<RV
   return logicalVector([environment.lockedBindings.has(name)]);
 }
 
+async function builtinMakeActiveBinding(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["sym", "fun", "env"]);
+  const symbol = required(matched, "sym", "makeActiveBinding");
+  const callable = required(matched, "fun", "makeActiveBinding");
+  const environment = required(matched, "env", "makeActiveBinding");
+  const name = bindingName(symbol, "makeActiveBinding");
+  if (callable.type !== "closure" && callable.type !== "builtin") {
+    throw new RTypeMismatchError("NRT3211", "makeActiveBinding(fun=) requires a function.");
+  }
+  if (environment.type !== "environment") {
+    throw new RTypeMismatchError("NRT3211", "makeActiveBinding(env=) requires an environment.");
+  }
+  setActiveBinding(environment, name, callable);
+  return R_NULL;
+}
+
+async function builtinBindingIsActive(invocation: BuiltinInvocation): Promise<RValue> {
+  const { binding } = await activeBindingArguments(invocation, "bindingIsActive");
+  invocation.context.allocate(1);
+  return logicalVector([binding.type === "active-binding"]);
+}
+
+async function builtinActiveBindingFunction(invocation: BuiltinInvocation): Promise<RValue> {
+  const { binding } = await activeBindingArguments(invocation, "activeBindingFunction");
+  if (binding.type !== "active-binding") {
+    throw new REvaluationError("NRE2141", "Binding is not active.");
+  }
+  return binding.callable;
+}
+
+async function activeBindingArguments(
+  invocation: BuiltinInvocation,
+  call: string,
+): Promise<{
+  readonly binding: RBinding;
+  readonly environment: REnvironment;
+  readonly name: string;
+}> {
+  const matched = await matchExact(invocation, ["sym", "env"]);
+  const symbol = required(matched, "sym", call);
+  const environment = required(matched, "env", call);
+  const name = bindingName(symbol, call);
+  if (environment.type !== "environment") {
+    throw new RTypeMismatchError("NRT3211", `${call}(env=) requires an environment.`);
+  }
+  const binding = environment.bindings.get(name);
+  if (binding === undefined) throw new REvaluationError("NRE2141", `No binding for '${name}'.`);
+  return { binding, environment, name };
+}
+
+function bindingName(value: RValue, call: string): string {
+  const name =
+    value.type === "symbol"
+      ? value.name
+      : value.type === "character" && value.length === 1 && value.missing === undefined
+        ? (value.values[0] ?? "")
+        : undefined;
+  if (name === undefined || name.length === 0) {
+    throw new RTypeMismatchError("NRT3211", `${call}(sym=) requires one binding name.`);
+  }
+  return name;
+}
+
 async function builtinParentEnvironment(invocation: BuiltinInvocation): Promise<REnvironment> {
   const matched = await matchExact(invocation, ["env"]);
   const environment = required(matched, "env", "parent.env");
@@ -17999,12 +18083,7 @@ async function builtinGet(invocation: BuiltinInvocation): Promise<RValue> {
   const mode = await lookupMode(invocation, matched.get("mode"));
   const found = findEnvironmentBinding(environment, name, inherits);
   if (found === undefined) throw objectLookupError(name, mode);
-  const value =
-    found.binding.type === "promise"
-      ? await invocation.force(found.binding)
-      : found.binding.type === "dots"
-        ? R_NULL
-        : found.binding;
+  const value = found.binding.type === "dots" ? R_NULL : await invocation.force(found.binding);
   if (!matchesLookupMode(value, mode)) throw objectLookupError(name, mode);
   return value;
 }
@@ -18020,12 +18099,7 @@ async function builtinGet0(invocation: BuiltinInvocation): Promise<RValue> {
     fallbackArgument === undefined ? R_NULL : await invocation.force(fallbackArgument.promise);
   const found = findEnvironmentBinding(environment, name, inherits);
   if (found !== undefined) {
-    const value =
-      found.binding.type === "promise"
-        ? await invocation.force(found.binding)
-        : found.binding.type === "dots"
-          ? R_NULL
-          : found.binding;
+    const value = found.binding.type === "dots" ? R_NULL : await invocation.force(found.binding);
     if (matchesLookupMode(value, mode)) return value;
   }
   return fallback;
@@ -18047,12 +18121,7 @@ async function builtinExists(invocation: BuiltinInvocation): Promise<RValue> {
   const found = findEnvironmentBinding(environment, name, inherits);
   if (found === undefined) return logicalVector([false]);
   if (mode === "any") return logicalVector([true]);
-  const value =
-    found.binding.type === "promise"
-      ? await invocation.force(found.binding)
-      : found.binding.type === "dots"
-        ? R_NULL
-        : found.binding;
+  const value = found.binding.type === "dots" ? R_NULL : await invocation.force(found.binding);
   return logicalVector([matchesLookupMode(value, mode)]);
 }
 
@@ -18077,7 +18146,7 @@ async function builtinAssign(invocation: BuiltinInvocation): Promise<RValue> {
   const target = inherits
     ? (findEnvironmentBinding(environment, name, true)?.environment ?? environment)
     : environment;
-  setBinding(target, name, value);
+  await invocation.assignBinding(target, name, value);
   return value;
 }
 
@@ -21365,7 +21434,7 @@ async function builtinAsListEnvironment(invocation: BuiltinInvocation): Promise<
   const values: RValue[] = [];
   for (const [, binding] of entries) {
     invocation.context.checkpoint();
-    values.push(binding.type === "promise" ? await invocation.force(binding) : binding);
+    values.push(await invocation.force(binding));
   }
   invocation.context.allocate(values.length);
   return values.length === 0
@@ -26626,9 +26695,7 @@ async function browseGeneratedHtml(
   const browser =
     binding === undefined
       ? await lookupCallableByName(invocation, "browseURL")
-      : binding.type === "promise"
-        ? await invocation.force(binding)
-        : binding;
+      : await invocation.force(binding);
   if (!isCallable(browser)) {
     throw new REvaluationError("NRE2001", "Could not find function 'browseURL'.");
   }
@@ -31259,7 +31326,7 @@ async function builtinCurve(invocation: BuiltinInvocation): Promise<RValue> {
   const binding = add
     ? graphics?.bindings.get("lines")
     : lookupBinding(invocation.baseEnvironment(), "plot");
-  const callable = binding?.type === "promise" ? await invocation.force(binding) : binding;
+  const callable = binding === undefined ? undefined : await invocation.force(binding);
   if (callable === undefined || !isCallable(callable)) {
     throw new REvaluationError("NRE2001", `Could not find function '${add ? "lines" : "plot"}'.`);
   }
@@ -46892,7 +46959,7 @@ async function aveCallable(
   while (current !== null) {
     const binding = current.bindings.get(name);
     if (binding !== undefined) {
-      const resolved = binding.type === "promise" ? await invocation.force(binding) : binding;
+      const resolved = await invocation.force(binding);
       if (resolved.type === "closure" || resolved.type === "builtin") return resolved;
     }
     current = current.parent;
@@ -50050,7 +50117,7 @@ async function builtinRegisterS3Method(invocation: BuiltinInvocation): Promise<R
     if (binding === undefined) {
       throw new REvaluationError("NRE2001", `object '${methodName}' not found`);
     }
-    method = binding.type === "promise" ? await invocation.force(binding) : binding;
+    method = await invocation.force(binding);
   }
   if (!isCallable(method)) {
     throw new RTypeMismatchError("NRT3367", "bad method");
@@ -50101,7 +50168,7 @@ async function builtinMethodsAs(invocation: BuiltinInvocation): Promise<RValue> 
   const constructorName = target === "numeric" ? "as.double" : `as.${target}`;
   const binding = lookupBinding(invocation.currentEnvironment(), constructorName);
   if (binding !== undefined) {
-    const constructor = binding.type === "promise" ? await invocation.force(binding) : binding;
+    const constructor = await invocation.force(binding);
     if (isCallable(constructor)) {
       return invocation.invoke(constructor, [{ value: object }]);
     }
@@ -50577,7 +50644,7 @@ async function builtinStandardGeneric(invocation: BuiltinInvocation): Promise<RV
       continue;
     }
     if (binding === undefined || (binding.type === "promise" && binding.missing)) continue;
-    const value = binding.type === "promise" ? await invocation.force(binding) : binding;
+    const value = await invocation.force(binding);
     arguments_.push({ name: parameter.name, value });
   }
   const method = selectS4Method(name, arguments_, invocation);

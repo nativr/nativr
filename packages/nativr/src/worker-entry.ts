@@ -184,7 +184,7 @@ async function handleRequest(request: WorkerRequest): Promise<void> {
         return;
       }
       case "assign":
-        runtime.assign(request.name, request.value);
+        await runtime.assign(request.name, request.value);
         postSuccess(request.id, { kind: "void" });
         return;
       case "get": {

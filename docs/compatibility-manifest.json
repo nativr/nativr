@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.272.0",
+  "languageSubsetVersion": "0.273.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -272,6 +272,9 @@
         { "name": "lockBinding", "compatibility": "behavioral" },
         { "name": "unlockBinding", "compatibility": "behavioral" },
         { "name": "bindingIsLocked", "compatibility": "behavioral" },
+        { "name": "makeActiveBinding", "compatibility": "behavioral" },
+        { "name": "bindingIsActive", "compatibility": "behavioral" },
+        { "name": "activeBindingFunction", "compatibility": "behavioral" },
         { "name": "parent.env", "compatibility": "behavioral" },
         { "name": "parent.frame", "compatibility": "behavioral" },
         { "name": "search", "compatibility": "behavioral" },

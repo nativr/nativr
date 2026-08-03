@@ -874,9 +874,8 @@ class InlineSession implements NativRSession {
   }
 
   public assign(name: string, value: JsInputValue, _options?: AssignOptions): Promise<void> {
-    return this.#enqueue(() => {
-      this.#host.assign(name, inputToSnapshot(value));
-      return Promise.resolve();
+    return this.#enqueue(async () => {
+      await this.#host.assign(name, inputToSnapshot(value));
     });
   }
 

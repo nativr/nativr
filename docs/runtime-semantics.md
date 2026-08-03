@@ -102,21 +102,26 @@ unforced delayed binding without forcing it and an explicitly supplied `get0(ifn
 evaluated even when the requested object exists. `lockEnvironment()` prevents adding or removing
 bindings while permitting replacement of existing unlocked bindings; `lockBinding()`,
 `unlockBinding()`, `bindingIsLocked()`, and `environmentIsLocked()` expose the corresponding
-reference-semantics state. Active bindings, namespace mutation, arbitrary numeric search positions,
-and exact GNU R hash-bucket enumeration order are not implemented. Evaluator-native syntax does not
-yet reproduce GNU R's primitive-binding lookup failures when an evaluated expression's environment
-chain ends directly at `emptyenv()`. Pairlists are distinct runtime values with exact tags;
-`pairlist`, `as.pairlist`, `is.pairlist`, `as.list`, `vector("pairlist", n)`, `length`, type/mode
-inspection, `alist`, and Worker transport use that value model. Pairlist `[`, `[[`, and `$`
-extraction follows the measured GNU R list-return and unique-partial-name behavior. `[[<-` and `$<-`
-preserve pairlist type, `[<-` converts to an ordinary list, and names, arbitrary runtime attributes,
-classes, dimensions, dimension names, and implicit matrix/array classes are retained or dropped
-along the measured GNU R paths. GNU R's `lengths()`, `is.matrix()`, and `is.array()` rejection/false
-results for pairlists are preserved. This increment does not yet provide `bquote`, pairlist
-rectangular replacement or every extension edge case, generic pairlist attributes across the public
-snapshot, inherited substitution lookup, alternate `match.call` definitions/calls/environments, full
-language indexing/attributes, list/data-frame evaluation environments, source-reference
-preservation, or file/connection-driven parsing.
+reference-semantics state. `makeActiveBinding()` stores a callable rather than a value; identifier,
+`$`, `[[`, `get`, `get0`, `.subset2`, and environment-to-list reads invoke it with no arguments,
+while evaluator assignment, `assign()`, and the async JavaScript `r.assign()` API invoke it with the
+replacement value and discard the callback result. `bindingIsActive()` and `activeBindingFunction()`
+inspect the binding without forcing it, and ordinary binding locks also protect active writes.
+Active-binding substitution, namespace mutation, arbitrary numeric search positions, and exact GNU R
+hash-bucket enumeration order are not implemented. Evaluator-native syntax does not yet reproduce
+GNU R's primitive-binding lookup failures when an evaluated expression's environment chain ends
+directly at `emptyenv()`. Pairlists are distinct runtime values with exact tags; `pairlist`,
+`as.pairlist`, `is.pairlist`, `as.list`, `vector("pairlist", n)`, `length`, type/mode inspection,
+`alist`, and Worker transport use that value model. Pairlist `[`, `[[`, and `$` extraction follows
+the measured GNU R list-return and unique-partial-name behavior. `[[<-` and `$<-` preserve pairlist
+type, `[<-` converts to an ordinary list, and names, arbitrary runtime attributes, classes,
+dimensions, dimension names, and implicit matrix/array classes are retained or dropped along the
+measured GNU R paths. GNU R's `lengths()`, `is.matrix()`, and `is.array()` rejection/false results
+for pairlists are preserved. This increment does not yet provide `bquote`, pairlist rectangular
+replacement or every extension edge case, generic pairlist attributes across the public snapshot,
+inherited substitution lookup, alternate `match.call` definitions/calls/environments, full language
+indexing/attributes, list/data-frame evaluation environments, source-reference preservation, or
+file/connection-driven parsing.
 
 `textConnection()` supplies an always-open, session-owned input connection backed by a copied
 character vector. `source()` reads such connections or browser-owned virtual/package paths, parses
@@ -605,18 +610,19 @@ but retains the immutable bundle catalog for deterministic reload. Source size, 
 dependency cycles, imports, exports, and lifecycle evaluation all remain resource-checked. Unchanged
 R6 2.6.1 additionally proves that an installed package can replace the built-in compatibility shim
 of the same non-core name, register a namespace-qualified S3 method, construct a generator, create a
-reference object, call a public method, and mutate an existing field without source changes. Core
-package names remain reserved. This is an executable package/version proof, not universal R6 or
-pure-R package compatibility. Unchanged `utils::packageVersion(pkg)` consults that immutable catalog
-and therefore does not load or attach the requested namespace. Core namespaces expose the runtime's
-documented `4.6.0` compatibility identity; installed bundles expose their validated DESCRIPTION
-version. `getRversion()` uses the same component representation with class chain `R_system_version`,
-`package_version`, and `numeric_version`. Version constructors normalize dots and hyphens into
-integer components, represent missing entries explicitly, and support character formatting,
-printing, concatenation, and vectorized relational operators with trailing-zero padding.
-`utils::compareVersion()` preserves its separate component-count ordering. Arbitrary `lib.loc`
-discovery, mutable installed metadata, component extraction/replacement, summary methods, and the
-complete numeric-version S3 family are not yet supported.
+reference object, call public methods, mutate public and private state, and expose a read/write
+active field without source changes. Core package names remain reserved. This is an executable
+package/version proof, not universal R6 or pure-R package compatibility. Unchanged
+`utils::packageVersion(pkg)` consults that immutable catalog and therefore does not load or attach
+the requested namespace. Core namespaces expose the runtime's documented `4.6.0` compatibility
+identity; installed bundles expose their validated DESCRIPTION version. `getRversion()` uses the
+same component representation with class chain `R_system_version`, `package_version`, and
+`numeric_version`. Version constructors normalize dots and hyphens into integer components,
+represent missing entries explicitly, and support character formatting, printing, concatenation, and
+vectorized relational operators with trailing-zero padding. `utils::compareVersion()` preserves its
+separate component-count ordering. Arbitrary `lib.loc` discovery, mutable installed metadata,
+component extraction/replacement, summary methods, and the complete numeric-version S3 family are
+not yet supported.
 
 `utils::packageDescription()` reads the same immutable catalog without initializing a namespace.
 Validated bundle DESCRIPTION fields retain their source order and folded continuation text; callers
@@ -1622,11 +1628,12 @@ preserves each method's returned value and visibility. Without a registered meth
 deterministic owned-value representation to the output journal and returns invisible `NULL`; no
 terminal, pager, ANSI capability, or package-specific display code is consulted. The bounded
 built-in R6 helper constructs classed public-field lists; the unchanged external R6 2.6.1 proof
-exercises its own package generator, environment locks, reference field mutation, and public method
-invocation. vctrs helpers construct class metadata. Active/private R6 bindings,
-cloning/finalization, and broad R6 behavior remain unclaimed. Ambiguous-method diagnostics, union
-classes, full formal/partial argument matching, automatic namespace/package registration, method
-caches, primitive/group generics, and complete external-package behavior are not claimed.
+exercises its own package generator, environment locks, reference field mutation, public/private
+method state, and active-binding invocation. vctrs helpers construct class metadata. R6
+cloning/finalization, inheritance depth, and broad R6 behavior remain unclaimed. Ambiguous-method
+diagnostics, union classes, full formal/partial argument matching, automatic namespace/package
+registration, method caches, primitive/group generics, and complete external-package behavior are
+not claimed.
 
 Default resource limits are 100,000 steps, 100 calls, 1,000,000 elements per vector, and 1,000,000
 output bytes. Structured resource errors reduce accidental denial of service but are not a formal

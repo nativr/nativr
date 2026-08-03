@@ -188,7 +188,7 @@ async function outerCallable(
   if (binding === undefined) {
     throw new REvaluationError("NRE2001", `Could not find function '${name}'.`);
   }
-  const callable = binding.type === "promise" ? await invocation.force(binding) : binding;
+  const callable = await invocation.force(binding);
   if (callable.type !== "closure" && callable.type !== "builtin") {
     throw new RTypeMismatchError("NRT3270", `outer(FUN='${name}') is not a function.`);
   }

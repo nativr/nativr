@@ -605,9 +605,9 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      across callr, rstan, and bit64, with an identical `objects` alias, exact GNU R 4.6 formals,
      caller/explicit/search-list environment selection, hidden-name and pattern filtering,
      deterministic ordering, and non-forcing binding enumeration. A source-only package fixture
-     exercises the same implementation inside its namespace. Active bindings, exact hash-bucket
-     order, locale collation, browser/GNU regexp differences, and search-path mutation remain
-     environment compatibility depth.
+     exercises the same implementation inside its namespace. Active-binding substitution, exact
+     hash-bucket order, locale collation, browser/GNU regexp differences, and search-path mutation
+     remain environment compatibility depth.
 136. Usage-ranked histogram foundation: rank-186 `graphics::hist` now runs all 19 measured calls
      across testthat, openssl, shiny, and posterior through one reusable S3/default implementation.
      Standard result objects, Sturges/Scott/FD and numeric/callable breaks, endpoint controls,
@@ -881,8 +881,9 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      attributes follow reference/copy-on-modify behavior, environment and binding locks constrain
      mutation, and `.subset`/`.subset2` expose non-dispatching extraction. Unchanged R6 2.6.1 now
      installs, loads, constructs a generator and object, calls a public method, and mutates a field.
-     Active/private bindings, cloning/finalization, broader R6 behavior, and arbitrary packages
-     remain explicit future work.
+     Generic active-binding read/write/inspection plus unchanged private-state and active-field R6
+     paths now add the next depth layer. Cloning/finalization, broader inheritance and R6 behavior,
+     and arbitrary packages remain explicit future work.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

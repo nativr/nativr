@@ -40,7 +40,9 @@ Date: 2026-08-03
   promises, including hidden-name filtering, patterns, sorted/unhashed ordering, exact GNU R 4.6
   formals, caller frames, and numeric or named search-list environments. This lets unchanged pure-R
   package code inspect its namespace and local call frames. Browser regular expressions, locale
-  collation, active bindings, and exact hash-bucket order remain bounded compatibility surfaces.
+  collation and exact hash-bucket order remain bounded compatibility surfaces. Active bindings now
+  have read/write, inspection, locking, and unchanged-R6 evidence; substitution and exhaustive
+  primitive edges remain bounded.
 - Native and magrittr-style pipes, richer normalized formulas, registered namespaces, S3 dispatch,
   bounded S4 registration, R6 construction, and vctrs class construction.
 - Owned symbol/language/expression values, non-forcing `quote()`/`expression()`, bounded
@@ -128,8 +130,8 @@ Date: 2026-08-03
   `with_options()` wrapper using call/formal/environment replacement, `bquote`, dynamic caller
   frames, hooks, and state restoration, plus `with_envvar()` mutation and cleanup through
   session-owned environment variables, plus unchanged R6 generator construction, object
-  instantiation, public method calls, and reference field mutation, without translating or patching
-  package code.
+  instantiation, public/private method calls, reference field mutation, and an active read/write
+  field, without translating or patching package code.
 - Session environment variables are explicit, isolated runtime state. `createR()` snapshots an
   optional string map for inline or Worker execution; GNU R-shaped `Sys.getenv()`, `Sys.setenv()`,
   and `Sys.unsetenv()` query and mutate it, while reset restores the original map and host process

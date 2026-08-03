@@ -373,6 +373,7 @@ export function censusRuntimeMemory(
 
   const visitBinding = (binding: RBinding): void => {
     if (binding.type === "promise") visitPromise(binding);
+    else if (binding.type === "active-binding") visitValue(binding.callable);
     else visitValue(binding);
   };
 

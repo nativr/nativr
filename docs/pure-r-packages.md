@@ -331,13 +331,14 @@ public source packages from the repository resolver and verifies a pinned artifa
   `with_options()`, including restoration after the supplied expression finishes;
 - [`R6 2.6.1`](https://cran.r-project.org/package=R6) proves that a real installed package takes
   precedence over a non-core compatibility shim, that namespace-qualified S3 registration loads, and
-  that unchanged package code can construct a generator, instantiate a reference object, invoke a
-  public method, and mutate an existing field.
+  that unchanged package code can construct a generator, instantiate a reference object, invoke
+  public/private-state methods, mutate reference state, and expose an active read/write field.
 
 No package source is checked into this repository. Together these tests exercise repository
 installation, runtime package files, namespace loading, qualified S3 registration, metaprogramming,
 dynamic caller frames, closure-formal replacement, environment/closure attributes, environment and
-binding locks, internal subset primitives, and reusable state-management behavior.
+binding locks, function-backed active bindings, internal subset primitives, and reusable
+state-management behavior.
 
 The checked-in source-only fixture also exports a function that calls `grDevices::rainbow`,
 `terrain.colors`, `topo.colors`, and `cm.colors` through its namespace. This is a small executable

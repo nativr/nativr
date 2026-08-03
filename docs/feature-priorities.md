@@ -254,8 +254,8 @@ calls across callr, rstan, and bit64 (3.0% weighted reach), together with its id
 alias. Caller, explicit, numeric-position, and exact named search-list environments share
 non-forcing binding enumeration, hidden-name and pattern filtering, deterministic ordering, and GNU
 R-shaped formals. A checked-in source-only package uses the same implementation inside its
-namespace. Active bindings, locale collation, exact hash-bucket order, and browser/GNU regexp
-differences remain explicit compatibility depth. Rank 186 `hist` is now available for all 19
+namespace. Active-binding substitution, locale collation, exact hash-bucket order, and browser/GNU
+regexp differences remain explicit compatibility depth. Rank 186 `hist` is now available for all 19
 measured calls across testthat, openssl, shiny, and posterior (3.0% weighted reach). The shared
 S3/default path returns standard histogram fields, supports numeric or algorithmic breaks,
 right/left endpoint rules, densities, class-count helpers, and browser bar/label drawing over the
@@ -1772,8 +1772,15 @@ ties:
      behavior, environment/binding locks, and `.subset`/`.subset2`. The resulting test installs and
      loads unchanged source, creates a generator and reference object, calls a public method, and
      mutates a field. This is package/version evidence selected by measured reach; it does not turn
-     R6 examples, active/private bindings, cloning/finalization, or arbitrary packages into claimed
+     R6 examples, cloning/finalization, inheritance breadth, or arbitrary packages into claimed
      compatibility.
+170. Download-ranked R6 depth: package-rank-6 R6 uses Base R active bindings to implement computed
+     reference fields, so the next increment adds generic `makeActiveBinding`, `bindingIsActive`,
+     and `activeBindingFunction` semantics rather than an R6 adapter. GNU R differential evidence
+     covers repeated getter invocation, replacement callbacks, nested replacement, inspection,
+     environment-to-list forcing, visibility, and binding locks. The unchanged R6 2.6.1 proof now
+     runs public methods over private state and a read/write active field. Cloning, finalization,
+     inheritance breadth, active-binding substitution, and arbitrary packages remain unclaimed.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

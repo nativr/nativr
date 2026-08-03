@@ -7,6 +7,7 @@ export {
   forcePromise,
   lookupBinding,
   removeBinding,
+  setActiveBinding,
   setBinding,
 } from "./environment.js";
 export {
@@ -117,6 +118,7 @@ export type {
   CancellationToken,
   OperatorContext,
   RAttributes,
+  RActiveBinding,
   RBuiltin,
   RBinding,
   RCharacterEncoding,

@@ -27,6 +27,20 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("3");
 
+  await page.locator("#source").fill(`
+    stored <- 2L
+    active_environment <- new.env()
+    makeActiveBinding(
+      "doubled",
+      function(value) if (missing(value)) stored * 2L else stored <<- value / 2L,
+      active_environment
+    )
+    active_environment$doubled <- 10L
+    c(active_environment$doubled, stored, bindingIsActive("doubled", active_environment))
+  `);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("[10, 5, 1]");
+
   await page
     .locator("#source")
     .fill(

@@ -672,7 +672,7 @@ export class Evaluator {
   }
 
   /** Assign an already-converted runtime value in the global environment. */
-  public assign(name: string, value: RValue): void {
+  public async assign(name: string, value: RValue): Promise<void> {
     this.#ensureActive();
     validateBindingName(name);
     if (
@@ -684,7 +684,10 @@ export class Evaluator {
         details: { maxVectorLength: this.#limits.maxVectorLength, requested: value.length },
       });
     }
-    setBinding(this.#globalEnvironment, name, value);
+    const context = new EvaluationContext(this.#limits, { cancelled: false }, () =>
+      runtimeOutputRouter(this.#builtinState),
+    );
+    await this.#assignBinding(this.#globalEnvironment, name, value, context);
   }
 
   /** Resolve and force a global binding. */
@@ -863,7 +866,7 @@ export class Evaluator {
           node.operator === "<<-" || node.operator === "->>",
           node.span,
         );
-        setBinding(targetEnvironment, node.target.name, value);
+        await this.#assignBinding(targetEnvironment, node.target.name, value, context);
         return { value, visible: false };
       }
       case "ReplacementExpression": {
@@ -914,7 +917,7 @@ export class Evaluator {
           }
           const memberName = staticName(member, "member");
           if (target.type === "environment") {
-            setBinding(target, memberName, replacement);
+            await this.#assignBinding(target, memberName, replacement, context);
             return { value: replacement, visible: false };
           }
           updated = replaceListMember(target, memberName, replacement, context);
@@ -933,7 +936,12 @@ export class Evaluator {
               );
             }
             const index = await this.#evaluateValue(positional[0].value, environment, context);
-            setBinding(target, environmentSubscriptName(index), replacement);
+            await this.#assignBinding(
+              target,
+              environmentSubscriptName(index),
+              replacement,
+              context,
+            );
             return { value: replacement, visible: false };
           }
           if (!isVector(target) && target.type !== "pairlist") {
@@ -987,7 +995,7 @@ export class Evaluator {
             updated = coordinateIndex
               ? replaceCoordinateMatrix(target, indices[0] as RValue, replacement, context)
               : replaceDimensions(target, indices, replacement, context);
-            setBinding(targetEnvironment, name, updated);
+            await this.#assignBinding(targetEnvironment, name, updated, context);
             return { value: replacement, visible: false };
           }
           const argument = positional[0]?.value;
@@ -1014,7 +1022,7 @@ export class Evaluator {
             updated = replaceVectorElement(target, index, replacement, context);
           }
         }
-        setBinding(targetEnvironment, name, updated);
+        await this.#assignBinding(targetEnvironment, name, updated, context);
         return { value: replacement, visible: false };
       }
       case "CallExpression":
@@ -1279,7 +1287,7 @@ export class Evaluator {
           sequence.type === "list"
             ? (sequence.values[index] ?? R_NULL)
             : extractVectorElement(sequence, integerVector([index + 1]), context);
-        setBinding(environment, node.variable.name, value);
+        await this.#assignBinding(environment, node.variable.name, value, context);
         try {
           await this.#evaluateNode(node.body, environment, context);
         } catch (error) {
@@ -1422,10 +1430,10 @@ export class Evaluator {
               context,
             )
           : (operations[offset] as PreparedSubsetOperation);
-      updated = this.#applyPreparedSubsetReplacement(operation, updated, context);
+      updated = await this.#applyPreparedSubsetReplacement(operation, updated, context);
     }
     if (root.kind === "Identifier") {
-      setBinding(targetEnvironment as REnvironment, root.name, updated);
+      await this.#assignBinding(targetEnvironment as REnvironment, root.name, updated, context);
     } else {
       await this.#applyCallReplacement(root, updated, environment, context, nonLocal, span);
     }
@@ -1521,14 +1529,14 @@ export class Evaluator {
       : extractVectorElement(operation.target, operation.index, context, operation.exact);
   }
 
-  #applyPreparedSubsetReplacement(
+  async #applyPreparedSubsetReplacement(
     operation: PreparedSubsetOperation,
     replacement: RValue,
     context: EvaluationContext,
-  ): RValue {
+  ): Promise<RValue> {
     if (operation.operator === "$") {
       if (operation.target.type === "environment") {
-        setBinding(operation.target, operation.member, replacement);
+        await this.#assignBinding(operation.target, operation.member, replacement, context);
         return operation.target;
       }
       if (operation.target.type === "null") {
@@ -1540,7 +1548,12 @@ export class Evaluator {
       if (operation.operator !== "[[") {
         throw new RTypeMismatchError("NRT3306", "Environment replacement requires [[ or $.");
       }
-      setBinding(operation.target, environmentSubscriptName(operation.index), replacement);
+      await this.#assignBinding(
+        operation.target,
+        environmentSubscriptName(operation.index),
+        replacement,
+        context,
+      );
       return operation.target;
     }
     if (!isVector(operation.target) && operation.target.type !== "pairlist") {
@@ -1614,7 +1627,7 @@ export class Evaluator {
       context,
       span,
     );
-    setBinding(targetEnvironment, objectName, updated);
+    await this.#assignBinding(targetEnvironment, objectName, updated, context);
   }
 
   async #applyCallReplacementToSubset(
@@ -1678,10 +1691,10 @@ export class Evaluator {
         environment,
         context,
       );
-      updated = this.#applyPreparedSubsetReplacement(operation, updated, context);
+      updated = await this.#applyPreparedSubsetReplacement(operation, updated, context);
     }
     if (root.kind === "Identifier") {
-      setBinding(targetEnvironment as REnvironment, root.name, updated);
+      await this.#assignBinding(targetEnvironment as REnvironment, root.name, updated, context);
     } else {
       await this.#applyCallReplacement(root, updated, environment, context, nonLocal, span);
     }
@@ -1965,6 +1978,8 @@ export class Evaluator {
           this.#evaluateLanguageValue(value, environment, context),
         evaluateDetailed: async (value, environment) =>
           this.#evaluateLanguageValueResult(value, environment, context),
+        assignBinding: async (target, name, value) =>
+          this.#assignBinding(target, name, value, context),
         signalCondition: async (classes, condition) =>
           this.#signalGlobalCondition(classes, condition, context),
         configureOnExit: (expression, environment, add, after) => {
@@ -2860,7 +2875,7 @@ export class Evaluator {
       if (!this.#staticNamespaceOwnsBinding(name, bindingName)) return undefined;
       const binding = this.#baseEnvironment.bindings.get(bindingName);
       if (binding === undefined) return undefined;
-      return binding.type === "promise" ? this.#force(binding, context) : binding;
+      return this.#force(binding, context);
     }
 
     const record = this.#packages.get(name);
@@ -2872,7 +2887,7 @@ export class Evaluator {
     if (record.namespace === undefined) await this.#loadPackage(name, false, context);
     const binding = record.namespace?.bindings.get(bindingName);
     if (binding === undefined) return undefined;
-    return binding.type === "promise" ? this.#force(binding, context) : binding;
+    return this.#force(binding, context);
   }
 
   #installedPackageVersion(name: string, libraryPaths?: readonly string[]): string | undefined {
@@ -3286,9 +3301,35 @@ export class Evaluator {
   }
 
   async #force(binding: RBinding, context: EvaluationContext): Promise<RValue> {
+    if (binding.type === "active-binding") {
+      return this.#invokeCallable(binding.callable, [], context);
+    }
     if (binding.type !== "promise") return binding;
     return forcePromise(binding, async (expression, environment) =>
       this.#evaluateValue(expression, environment, context),
+    );
+  }
+
+  async #assignBinding(
+    environment: REnvironment,
+    name: string,
+    value: RValue,
+    context: EvaluationContext,
+  ): Promise<void> {
+    const existing = environment.bindings.get(name);
+    if (existing?.type !== "active-binding") {
+      setBinding(environment, name, value);
+      return;
+    }
+    if (environment.lockedBindings.has(name)) {
+      throw new REvaluationError("NRE2012", `Cannot change locked binding '${name}'.`);
+    }
+    await this.#invokeCallable(
+      existing.callable,
+      [{ promise: createForcedPromise(value, environment) }],
+      context,
+      undefined,
+      environment,
     );
   }
 

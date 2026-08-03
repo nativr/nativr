@@ -884,3 +884,10 @@ namespace ownership checks, the measured Worker is 415.1 KiB gzip (425,096 bytes
 the previous 414 KiB ceiling, so the ceiling rises narrowly to 416 KiB; client and parser-Wasm
 budgets remain unchanged. The unchanged R6 2.6.1 external proof is opt-in and contributes no package
 source or evaluation-time network payload to the bundle.
+
+Language subset 0.273 adds function-backed active bindings to the shared environment model. Reads
+and writes reuse the evaluator's ordinary callable path, including nested replacement, locks, and
+the async JavaScript assignment API; there is no R6 adapter, dependency, protocol event, native
+payload, network access, or generated JavaScript. The unchanged R6 2.6.1 proof remains opt-in and
+ships no package source. The measured Worker is 415.4 KiB gzip (425,381 bytes), within the existing
+416 KiB ceiling, so all budgets remain unchanged.

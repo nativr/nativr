@@ -1,6 +1,14 @@
 import { REvaluationError } from "./errors.js";
 import type { AstNode } from "@nativr/ast";
-import type { RBinding, REnvironment, RPromise, RValue } from "./values.js";
+import type {
+  RActiveBinding,
+  RBinding,
+  RBuiltin,
+  RClosure,
+  REnvironment,
+  RPromise,
+  RValue,
+} from "./values.js";
 
 let nextEnvironmentId = 1;
 
@@ -27,6 +35,21 @@ export function setBinding(environment: REnvironment, name: string, value: RBind
     throw new REvaluationError("NRE2012", `Cannot add binding '${name}' to a locked environment.`);
   }
   environment.bindings.set(name, value);
+}
+
+/** Install or replace a function-backed active binding without invoking it. */
+export function setActiveBinding(
+  environment: REnvironment,
+  name: string,
+  callable: RClosure | RBuiltin,
+): RActiveBinding {
+  const existing = environment.bindings.get(name);
+  if (existing !== undefined && existing.type !== "active-binding") {
+    throw new REvaluationError("NRE2141", `Symbol '${name}' already has a regular binding.`);
+  }
+  const binding = { type: "active-binding", callable } satisfies RActiveBinding;
+  setBinding(environment, name, binding);
+  return binding;
 }
 
 /** Remove an unlocked binding while respecting environment and per-binding locks. */

@@ -1876,9 +1876,7 @@ async function evaluateModelLabel(
   const value =
     binding === undefined
       ? await evaluateModelExpression(label, environment, invocation)
-      : binding.type === "promise"
-        ? await invocation.force(binding)
-        : binding;
+      : await invocation.force(binding);
   if (
     value.type !== "logical" &&
     value.type !== "integer" &&

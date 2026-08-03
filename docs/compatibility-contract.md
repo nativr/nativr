@@ -1351,7 +1351,8 @@ skips non-callable bindings, which allows a data column to share a name with a c
 
 `rm`/`remove` cover captured identifier and string names, `list=`, explicit environments,
 inheritance, missing-object warnings, and invisible NULL. Search-path numeric/character `pos`
-variants beyond `-1`, locked bindings, and active bindings are not claimed.
+variants beyond `-1` are not claimed. Locked bindings protect removal, and removing an unlocked
+active binding removes its callable without invoking it.
 
 `rev` covers the owned vector/list/pairlist shapes, reverses names, preserves class/levels/row
 names, and drops matrix dimensions. `append` inserts at bounded whole-number positions across atomic
@@ -2296,9 +2297,10 @@ package registration, method caching, primitive/group generics, and the full met
 are not claimed. The built-in `R6Class` compatibility helper supplies a generator with `$new` and
 public-field defaults. Separately, unchanged R6 2.6.1 now loads and exercises a real generator,
 mutable public `self`, reference field mutation, and public method calls through the generic package
-runtime. Private/active bindings, cloning/finalization, and complete R6 behavior remain unclaimed.
-`new_class` and `new_vctr` provide vctrs-compatible class construction shapes, not the complete
-vctrs or S7 packages.
+runtime. The same unchanged package now exercises private state through public methods and a
+read/write active field backed by `makeActiveBinding()`. Cloning/finalization, broad inheritance,
+and complete R6 behavior remain unclaimed. `new_class` and `new_vctr` provide vctrs-compatible class
+construction shapes, not the complete vctrs or S7 packages.
 
 Applications may provide `PureRPackageBundle` records at `createR()` initialization. DESCRIPTION and
 NAMESPACE metadata, package-relative `R/*.R` source, and optional base64 resources are validated and
@@ -2341,7 +2343,7 @@ runtime remains network-free. Digest-pinned opt-in executable tests cover unchan
 `pkgconfig 2.0.3`, `generics 0.1.4`, `withr 3.0.3`, and `R6 2.6.1` sources. They prove the
 repository-to-namespace path, package-owned S3 dispatch, and generated state-restoring wrappers
 through `with_options()`, plus R6 generator/object construction and public reference mutation,
-without package patches.
+private-state method access, and an active read/write field, without package patches.
 
 Package admission is not universal execution compatibility. Package `data/*.R`, `.csv`, `.tab`,
 `.txt`, and XDR/gzip `.rda`/`.RData` discovery/loading is supported through `utils::data`, including

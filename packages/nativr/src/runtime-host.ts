@@ -107,8 +107,8 @@ export class RuntimeHost {
     return this.#evaluator.evaluate(parseProgram(this.#parser, code));
   }
 
-  public assign(name: string, snapshot: RValueSnapshot): void {
-    this.#evaluator.assign(
+  public assign(name: string, snapshot: RValueSnapshot): Promise<void> {
+    return this.#evaluator.assign(
       name,
       snapshotToValue(snapshot, (source) => parseProgram(this.#parser, source)),
     );

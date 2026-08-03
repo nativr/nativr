@@ -51,6 +51,32 @@ it.runIf(runExternal)(
           c(counter$value, class(counter))
         `),
       ).resolves.toEqual(["5", "Counter", "R6"]);
+      await expect(
+        runtime.eval(`
+          Meter <- R6::R6Class(
+            "Meter",
+            private = list(value = 1L),
+            public = list(
+              reveal = function() private$value,
+              increment = function() private$value <- private$value + 1L
+            ),
+            active = list(
+              doubled = function(value) {
+                if (missing(value)) private$value * 2L
+                else private$value <- value / 2L
+              }
+            )
+          )
+          meter <- Meter$new()
+          before <- meter$doubled
+          meter$doubled <- 10L
+          meter$increment()
+          c(
+            before, meter$reveal(), meter$doubled,
+            bindingIsActive("doubled", meter), is.null(meter$private)
+          )
+        `),
+      ).resolves.toEqual([2, 6, 12, 1, 1]);
     } finally {
       await runtime?.dispose();
     }

@@ -13291,7 +13291,7 @@ NeedsCompilation: no
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.272.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.273.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -18160,6 +18160,73 @@ NeedsCompilation: no
     await expect(
       runtime.eval('unlockBinding("value", locked); locked$value <- 3L; locked$value'),
     ).resolves.toBe(3);
+    await runtime.dispose();
+  });
+
+  it("invokes active environment bindings on every read and write", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        storage <- list(value = 1L)
+        reads <- 0L
+        active <- function(value) {
+          if (missing(value)) {
+            reads <<- reads + 1L
+            storage
+          } else {
+            storage <<- value
+            invisible(NULL)
+          }
+        }
+        environment_value <- new.env()
+        makeActiveBinding("item", active, environment_value)
+        first <- environment_value$item$value
+        assigned <- withVisible(environment_value$item$value <- 4L)
+        second <- environment_value[["item"]]$value
+        c(
+          bindingIsActive("item", environment_value),
+          bindingIsLocked("item", environment_value),
+          identical(activeBindingFunction("item", environment_value), active),
+          first, storage$value, second, reads,
+          assigned$value, assigned$visible
+        )
+      `),
+    ).resolves.toEqual([1, 0, 1, 1, 4, 4, 3, 4, 0]);
+
+    await runtime.eval(`
+      javascript_storage <- 0
+      makeActiveBinding(
+        "javascript_active",
+        function(value) if (missing(value)) javascript_storage else javascript_storage <<- value,
+        globalenv()
+      )
+    `);
+    await runtime.assign("javascript_active", 12);
+    await expect(runtime.eval("c(javascript_storage, javascript_active)")).resolves.toEqual([
+      12, 12,
+    ]);
+
+    await expect(
+      runtime.eval(`
+        lockBinding("item", environment_value)
+        c(
+          bindingIsActive("item", environment_value),
+          bindingIsLocked("item", environment_value),
+          environment_value$item$value
+        )
+      `),
+    ).resolves.toEqual([1, 1, 4]);
+    await expect(runtime.eval("environment_value$item <- list(value = 9L)")).rejects.toMatchObject({
+      code: "NRE2012",
+    });
+    await expect(
+      runtime.eval(
+        'ordinary <- new.env(); ordinary$x <- 1L; makeActiveBinding("x", active, ordinary)',
+      ),
+    ).rejects.toMatchObject({ code: "NRE2141" });
+    await expect(runtime.eval('makeActiveBinding("bad", 1L, ordinary)')).rejects.toMatchObject({
+      code: "NRT3211",
+    });
     await runtime.dispose();
   });
 

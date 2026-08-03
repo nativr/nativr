@@ -158,6 +158,12 @@ export interface RPromise {
   value: RValue | undefined;
 }
 
+/** A function-backed environment binding evaluated on every read and invoked on every write. */
+export interface RActiveBinding {
+  readonly type: "active-binding";
+  readonly callable: RClosure | RBuiltin;
+}
+
 /** Lazily forwarded ellipsis arguments inside one closure frame. */
 export interface RDots {
   readonly type: "dots";
@@ -249,7 +255,7 @@ export interface BuiltinInvocation {
   readonly sessionProcessId: number;
   memoryStatistics(reset: boolean, full: boolean): RuntimeMemoryStatistics;
   setResultVisibility(visibility: "visible" | "invisible"): void;
-  force(promise: RPromise): Promise<RValue>;
+  force(binding: RBinding): Promise<RValue>;
   forceDetailed(promise: RPromise): Promise<{ readonly value: RValue; readonly visible: boolean }>;
   invoke(
     callable: RValue,
@@ -266,6 +272,7 @@ export interface BuiltinInvocation {
     value: RValue,
     environment: REnvironment,
   ): Promise<{ readonly value: RValue; readonly visible: boolean }>;
+  assignBinding(environment: REnvironment, name: string, value: RValue): Promise<void>;
   signalCondition(classes: readonly string[], condition: RValue): Promise<void>;
   configureOnExit(
     expression: AstNode | null,
@@ -775,8 +782,8 @@ export type RValue =
   | RDots
   | RBuiltin;
 
-/** An environment binding is either an ordinary value or a lazy promise. */
-export type RBinding = RValue | RPromise;
+/** An environment binding is an ordinary value, lazy promise, or function-backed active binding. */
+export type RBinding = RValue | RPromise | RActiveBinding;
 
 /** The R NULL singleton. */
 export const R_NULL: RNull = Object.freeze({ type: "null" });
