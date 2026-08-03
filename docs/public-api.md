@@ -190,6 +190,11 @@ result, the normal public raw-value conversion exposes its copied `Uint8Array`. 
 or `dispose()`. The workspace archive is NativR canonical source rather than a GNU R `.RData`
 binary.
 
+Graphics recording is independently controllable from R. `grDevices::dev.control("inhibit")` clears
+and disables the current device's `recordPlot()` display list without stopping structured browser
+events or PNG/PDF generation; `dev.control("enable")` clears and starts a new recording. This is
+per-device session state and introduces no host callback or additional public protocol.
+
 Within R, `dir.create()` can create nested session directories and `getwd()`/`setwd()` plus relative
 paths work across session files and immutable package resources. `list.files()`/`dir()` and
 `list.dirs()` enumerate only those owned roots; `normalizePath()`, `basename()`, and `dirname()` are

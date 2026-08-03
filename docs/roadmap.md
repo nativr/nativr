@@ -853,6 +853,11 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      `print.browseVignettes` to emit one bounded self-contained catalog through the existing inert
      browse journal. Unchanged pure-R package code runs inline and in the Worker/Playground sandbox
      without a help server, runtime network, desktop viewer, or package-specific rewrite.
+179. Usage-ranked display-list control: rank-366 `grDevices::dev.control` gives every owned graphics
+     device separate output and replay-recording journals. Exact GNU R 4.6 formals, partial
+     `enable`/`inhibit`, reset-on-toggle behavior, screen/file defaults, invisible returns, argument
+     boundaries, unchanged pure-R imports, record/replay, PDF bytes, and browser events have
+     executable evidence without adding a device adapter or protocol message.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

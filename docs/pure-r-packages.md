@@ -546,6 +546,12 @@ index. An unchanged package can request its installed guide catalog, and the def
 one bounded HTML snapshot with rendered-output, source, and R-code links. No package adapter,
 runtime fetch, host library scan, or desktop process is introduced.
 
+Rank-366 `grDevices::dev.control()` removes knitr's measured display-list switch through the same
+generic namespace path. The checked-in source-only fixture imports and calls it unchanged. Inhibit
+mode clears only replay recording while Canvas/PDF/PNG output continues; enable mode starts a fresh
+bounded recording that ordinary `recordPlot()` and `replayPlot()` consume. No knitr-specific code,
+device adapter, or Worker protocol message is involved.
+
 Rank-195 `.libPaths()` makes package discovery state reusable by ordinary package code. The default
 order is the immutable supplied-bundle library `nativr://package` followed by the registered runtime
 library `nativr://runtime/library`; setters retain existing normalized virtual directories, remove

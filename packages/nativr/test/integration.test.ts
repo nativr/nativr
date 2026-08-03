@@ -28,12 +28,12 @@ Imports: grDevices, graphics, methods, stats, utils
 Encoding: UTF-8
 NeedsCompilation: no`,
   namespace: `
-importFrom(grDevices, devAskNewPage)
+importFrom(grDevices, dev.control, devAskNewPage)
 importFrom(graphics, abline, axis, barplot, plot.new, plot.window, rect, title)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median, ts.plot)
 importFrom(utils, download.file, packageDescription, packageName, packageVersion)
-  export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, annotated_plot, reference_lines, ask_new_pages, find_tools, create_file, copy_resource, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, socket_exchange, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, package_files, installed_version, namespace_names, process_id, library_paths, loaded_module_paths, native_encoding, shell_quote, standard_output, sink_lines, write_sass_variable, browse_guides)
+  export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, annotated_plot, reference_lines, control_display_list, ask_new_pages, find_tools, create_file, copy_resource, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, socket_exchange, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, package_files, installed_version, namespace_names, process_id, library_paths, loaded_module_paths, native_encoding, shell_quote, standard_output, sink_lines, write_sass_variable, browse_guides)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -90,6 +90,7 @@ reference_lines <- function(intercept = 1, slope = 2) {
   plot.window(c(0, 4), c(0, 9))
   abline(intercept, slope, h = 4, v = 2, col = c("red", "blue", "green"), lwd = 3)
 }
+control_display_list <- function(mode = "inhibit") dev.control(mode)
 ask_new_pages <- function(ask = TRUE) devAskNewPage(ask)
 find_tools <- function(names) Sys.which(names)
 create_file <- function() {
@@ -4647,6 +4648,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "centered",
       "class_summary",
       "classic_palettes",
+      "control_display_list",
       "copy_resource",
       "create_file",
       "describe",
@@ -13191,7 +13193,7 @@ NeedsCompilation: no
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.266.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.267.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -16773,6 +16775,98 @@ NeedsCompilation: no
       code: "NRT3398",
     });
     await runtime.dispose();
+  });
+
+  it("controls per-device display-list recording without suppressing device output", async () => {
+    const runtime = await session();
+    await expect(runtime.eval("grDevices::dev.control('enable')")).rejects.toMatchObject({
+      code: "NRE2198",
+    });
+
+    await runtime.eval("grDevices::pdf(NULL)");
+    await expect(
+      runtime.eval(`
+        initial <- grDevices::recordPlot()
+        empty_replay <- withVisible(grDevices::replayPlot(initial))
+        enabled_call <- withVisible(grDevices::dev.control("en"))
+        graphics::plot.new()
+        graphics::plot.window(c(0, 1), c(0, 1))
+        graphics::segments(0, 0, 1, 1)
+        enabled <- grDevices::recordPlot()
+        reset_call <- withVisible(grDevices::dev.control("enable"))
+        reset <- grDevices::recordPlot()
+        graphics::points(0.5, 0.5)
+        restarted <- grDevices::recordPlot()
+        inhibited_call <- withVisible(grDevices::dev.control(NULL))
+        inhibited <- grDevices::recordPlot()
+        graphics::points(0.25, 0.75)
+        still_inhibited <- grDevices::recordPlot()
+        c(
+          identical(formals(grDevices::dev.control)$displaylist,
+                    quote(c("inhibit", "enable"))),
+          is.null(initial[[1]]),
+          is.null(empty_replay$value), !empty_replay$visible,
+          is.null(enabled_call$value), !enabled_call$visible,
+          !is.null(enabled[[1]]),
+          is.null(reset_call$value), !reset_call$visible, is.null(reset[[1]]),
+          !is.null(restarted[[1]]),
+          is.null(inhibited_call$value), !inhibited_call$visible,
+          is.null(inhibited[[1]]), is.null(still_inhibited[[1]])
+        )
+      `),
+    ).resolves.toEqual(Array.from({ length: 15 }, () => true));
+    await expect(runtime.eval("grDevices::dev.control() ")).rejects.toMatchObject({
+      code: "NRE2103",
+    });
+    await expect(runtime.eval("grDevices::dev.control(character())")).rejects.toMatchObject({
+      code: "NRT3417",
+    });
+    await expect(runtime.eval("grDevices::dev.control(TRUE)")).rejects.toMatchObject({
+      code: "NRT3417",
+    });
+    await expect(runtime.eval("grDevices::dev.control('unknown')")).rejects.toMatchObject({
+      code: "NRT3417",
+    });
+    await runtime.eval("grDevices::dev.off()");
+
+    const fileResult = await runtime.eval(`
+      path <- tempfile(fileext = ".pdf")
+      grDevices::pdf(path, compress = FALSE, timestamp = FALSE, producer = FALSE)
+      graphics::plot.new()
+      graphics::segments(0, 0, 1, 1)
+      empty_recording <- is.null(grDevices::recordPlot()[[1]])
+      grDevices::dev.off()
+      bytes <- readBin(path, "raw", n = 1000000L)
+      unlink(path)
+      c(empty_recording, length(bytes) > 400L)
+    `);
+    expect(fileResult).toEqual([true, true]);
+    await runtime.dispose();
+
+    const packaged = await createR({ execution: "inline", assets, packages: [pureRFixture] });
+    await packaged.eval("graphics::plot.new()");
+    const inhibited = await packaged.evalDetailed(`
+      nativrfixture::control_display_list("inhibit")
+      graphics::segments(0, 0, 1, 1)
+      saved <- grDevices::recordPlot()
+      is.null(saved[[1]])
+    `);
+    expect(inhibited.value).toBe(true);
+    expect(inhibited.graphics.map((event) => event.kind)).toEqual(["segments"]);
+
+    const enabled = await packaged.evalDetailed(`
+      nativrfixture::control_display_list("enable")
+      graphics::segments(0, 1, 1, 0)
+      saved <- grDevices::recordPlot()
+      c(!is.null(saved[[1]]), length(saved[[1]]))
+    `);
+    expect(enabled.value).toEqual([1, 1]);
+    await packaged.eval("grDevices::dev.hold()");
+    const replayed = await packaged.evalDetailed(
+      "grDevices::replayPlot(saved); grDevices::dev.flush()",
+    );
+    expect(replayed.graphics).toEqual(enabled.graphics);
+    await packaged.dispose();
   });
 
   it("tracks usage-ranked devAskNewPage state and prompts only between interactive browser pages", async () => {

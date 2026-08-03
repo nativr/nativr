@@ -364,7 +364,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 363,aspell,true,1,knitr,2,1.0,1.0
 364,abline,true,1,knitr,1,1.0,1.0
 365,browseVignettes,true,1,knitr,1,1.0,1.0
-366,dev.control,false,1,knitr,1,1.0,1.0
+366,dev.control,true,1,knitr,1,1.0,1.0
 367,lengths,true,1,evaluate,2,1.0,0.9
 368,getFromNamespace,false,1,backports,37,1.0,0.9
 369,URLdecode,true,1,backports,1,1.0,0.9

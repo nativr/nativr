@@ -422,28 +422,32 @@ device, WebP encoding, or complete high-level plot methods. Rank-422 `recordPlot
 captures and replays that owned page/window/raster display list for ragg's measured same-session
 call shape, including hold/flush integration and bounded command/raster storage. External GNU R
 recorded-plot formats, package reloading, `print.recordedplot`, and general graphics devices remain
-outside this increment. The higher-reach rank-80 `dev.off` gap is now closed together with
-`dev.cur`, `dev.list`, and `graphics.off`: the session exposes a numbered device registry, flushes
-held commands when a device closes, selects a remaining device, then opens a fresh browser device on
-the next plot when needed. PNG file devices now share that registry; other device formats remain
-explicit boundaries. `devAskNewPage(ask = NULL)` keeps GNU R-shaped ask state per device, seeds it
-from `options("device.ask.default")`, and uses the existing explicit `createR({ readline })` bridge
-only between pages on an interactive browser device; file devices and non-interactive sessions never
-block. Rank-423 `stats::ppoints` now runs posterior's two measured `quantile(x, ppoints(10))`
-examples with documented default offsets, observation-vector lengths, numeric/complex offsets,
-recycling and attributes, lazy nonpositive results, and bounded allocation. Rank-424 `chol` now
-supplies posterior's measured `rvar` S3 method seam plus an independently implemented
-upper-triangular real-matrix default with optional positive-semidefinite pivot/rank metadata,
-data-frame coercion, dimnames, lazy dots, and explicit non-finite/shape/defunct-control boundaries.
-Rank-425 `stats::pnorm` now runs posterior's measured vectorized-mean probability example with
-recycled `q`/`mean`/`sd`, lower and upper tails, attributes, point-mass and missing/domain
-boundaries, and stable far-tail log probabilities computed without host statistics libraries.
-Rank-426 `stats::rgamma` now runs posterior's measured scalar rate/shape examples through the
-session-owned gamma sampler, with vectorized parameters, rate/scale equivalence, moments, degenerate
-limits, warnings, and deterministic reseeding. Rank-427 `graphics::segments` now runs posterior's
-measured vertical credible-interval call through a Worker-safe vector graphics event, including
-endpoint defaults, recycled coordinates/styles, missing-value omission, Canvas rendering, and
-same-session record/replay. Rank-428 `utils::glob2rx` now runs rprojroot's measured
+outside this increment. Rank-366 `grDevices::dev.control` now gives every owned device a separate
+recorded display list: `inhibit` clears replay capture without suppressing Canvas, PNG, or PDF
+output, while `enable` starts a fresh bounded recording. Exact GNU R 4.6 formals, reset-on-toggle
+behavior, file-device defaults, unchanged pure-R package imports, and differential tests have
+evidence without a package-specific adapter. The higher-reach rank-80 `dev.off` gap is now closed
+together with `dev.cur`, `dev.list`, and `graphics.off`: the session exposes a numbered device
+registry, flushes held commands when a device closes, selects a remaining device, then opens a fresh
+browser device on the next plot when needed. PNG file devices now share that registry; other device
+formats remain explicit boundaries. `devAskNewPage(ask = NULL)` keeps GNU R-shaped ask state per
+device, seeds it from `options("device.ask.default")`, and uses the existing explicit
+`createR({ readline })` bridge only between pages on an interactive browser device; file devices and
+non-interactive sessions never block. Rank-423 `stats::ppoints` now runs posterior's two measured
+`quantile(x, ppoints(10))` examples with documented default offsets, observation-vector lengths,
+numeric/complex offsets, recycling and attributes, lazy nonpositive results, and bounded allocation.
+Rank-424 `chol` now supplies posterior's measured `rvar` S3 method seam plus an independently
+implemented upper-triangular real-matrix default with optional positive-semidefinite pivot/rank
+metadata, data-frame coercion, dimnames, lazy dots, and explicit non-finite/shape/defunct-control
+boundaries. Rank-425 `stats::pnorm` now runs posterior's measured vectorized-mean probability
+example with recycled `q`/`mean`/`sd`, lower and upper tails, attributes, point-mass and
+missing/domain boundaries, and stable far-tail log probabilities computed without host statistics
+libraries. Rank-426 `stats::rgamma` now runs posterior's measured scalar rate/shape examples through
+the session-owned gamma sampler, with vectorized parameters, rate/scale equivalence, moments,
+degenerate limits, warnings, and deterministic reseeding. Rank-427 `graphics::segments` now runs
+posterior's measured vertical credible-interval call through a Worker-safe vector graphics event,
+including endpoint defaults, recycled coordinates/styles, missing-value omission, Canvas rendering,
+and same-session record/replay. Rank-428 `utils::glob2rx` now runs rprojroot's measured
 `glob2rx("DESCRIPTION")` file-pattern call, with vectorized wildcard translation, documented
 head/tail trimming, ordinary R coercion, dropped attributes, namespace access, and bounded output.
 Rank-429 `sQuote` now runs httr's two measured request-URL logging calls with deterministic ASCII

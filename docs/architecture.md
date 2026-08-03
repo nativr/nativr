@@ -80,29 +80,31 @@ keeps package-defined methods in R. No image implementation, Canvas object, or p
 adapter crosses into the runtime core. The session-owned device state also implements
 `dev.hold`/`dev.flush`: held commands remain in a bounded journal across evaluations and are copied
 to the current evaluation context only when the nested hold level reaches zero. Resetting or
-disposing the evaluator drops that private journal. A second bounded, session-owned display list
-records emitted page/window/raster/segments/points/text/polygon/box/boxplot/legend commands.
-`recordPlot` snapshots that list into NativR-owned runtime values, and `replayPlot` decodes only
-that format back through the same graphics journal; neither operation serializes a host device nor
-depends on GNU R's private recorded-plot representation. The PNG rasterizer and PDF serializer are
-independent consumers of that same journal: they write only bounded session-owned bytes and add no
-DOM, host-filesystem, network, GNU R, or webR dependency. Coordinate and style recycling for
-`graphics::segments` is resolved inside `@nativr/base`; the runtime and protocol see only finite
-endpoints, canonical colors, line-widths, and line-type patterns. `graphics::points` resolves
-coordinate containers, symbol codes, literal characters, colors, fills, sizes, widths, and omission
-before emitting a host-neutral point array. `graphics::lines` keeps its S3/default method seam in R
-and normalizes all supported line/point/step/histogram types into those existing segment and point
-records, including missing-value path breaks and documented style selection; no polyline protocol or
-package adapter is introduced. `graphics::text` resolves recycled coordinates, labels, canonical
-colors, size, face, family, adjustment, position, offset, rotation, and omission into a host-neutral
-text array. `graphics::polygon` splits missing-coordinate runs and resolves their closed paths, fill
-rules, canonical fill/border colors, widths, and dash patterns before emitting a host-neutral
-polygon array. `graphics::legend` similarly resolves labels, anchors, colors, line types, point
-symbols, and layout inside `@nativr/base`; `graphics::box` resolves plot-frame edges and line style
-before crossing the host boundary; `graphics::boxplot` computes group statistics and resolves its
-drawing controls before emitting a compact host-neutral command; and `graphics::axTicks` reads only
-the same owned linear window state and returns ordinary runtime vectors, so tick calculation adds no
-host command or device dependency. `graphics::persp` independently normalizes and rotates owned
+disposing the evaluator drops that private journal. Each device keeps a bounded page journal for
+live/file output and a separate bounded recorded display list. `dev.control` clears and toggles only
+the latter, so inhibiting `recordPlot` capture never suppresses Canvas, PNG, or PDF output. Screen
+devices begin with recording enabled; file devices begin with it inhibited. `recordPlot` snapshots
+the recorded list into NativR-owned runtime values, and `replayPlot` decodes only that format back
+through the same graphics journal; neither operation serializes a host device nor depends on GNU R's
+private recorded-plot representation. The PNG rasterizer and PDF serializer consume the page journal
+independently: they write only bounded session-owned bytes and add no DOM, host-filesystem, network,
+GNU R, or webR dependency. Coordinate and style recycling for `graphics::segments` is resolved
+inside `@nativr/base`; the runtime and protocol see only finite endpoints, canonical colors,
+line-widths, and line-type patterns. `graphics::points` resolves coordinate containers, symbol
+codes, literal characters, colors, fills, sizes, widths, and omission before emitting a host-neutral
+point array. `graphics::lines` keeps its S3/default method seam in R and normalizes all supported
+line/point/step/histogram types into those existing segment and point records, including
+missing-value path breaks and documented style selection; no polyline protocol or package adapter is
+introduced. `graphics::text` resolves recycled coordinates, labels, canonical colors, size, face,
+family, adjustment, position, offset, rotation, and omission into a host-neutral text array.
+`graphics::polygon` splits missing-coordinate runs and resolves their closed paths, fill rules,
+canonical fill/border colors, widths, and dash patterns before emitting a host-neutral polygon
+array. `graphics::legend` similarly resolves labels, anchors, colors, line types, point symbols, and
+layout inside `@nativr/base`; `graphics::box` resolves plot-frame edges and line style before
+crossing the host boundary; `graphics::boxplot` computes group statistics and resolves its drawing
+controls before emitting a compact host-neutral command; and `graphics::axTicks` reads only the same
+owned linear window state and returns ordinary runtime vectors, so tick calculation adds no host
+command or device dependency. `graphics::persp` independently normalizes and rotates owned
 matrix/grid coordinates, returns its column-major homogeneous view transform, then projects the
 measured default wireframe and box into the existing resolved segment command. The browser host
 receives no GNU R device object, 3D scene dependency, or executable rendering code. Neither R code

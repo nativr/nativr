@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.266.0",
+  "languageSubsetVersion": "0.267.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -678,6 +678,7 @@
         { "name": "dev.flush", "compatibility": "behavioral" },
         { "name": "dev.cur", "compatibility": "behavioral" },
         { "name": "dev.list", "compatibility": "behavioral" },
+        { "name": "dev.control", "compatibility": "behavioral" },
         { "name": "devAskNewPage", "compatibility": "behavioral" },
         { "name": "dev.off", "compatibility": "behavioral" },
         { "name": "graphics.off", "compatibility": "behavioral" },

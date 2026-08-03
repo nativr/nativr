@@ -9722,5 +9722,35 @@
     "expected": [true, true, true, true, true, true, true, true, true],
     "expectedCompatibility": "shape",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "device-control-usage-ranked-recording-lifecycle-and-formals",
+    "code": "graphics.off()\nclosed <- inherits(try(grDevices::dev.control(\"enable\"), silent = TRUE), \"try-error\")\ngrDevices::pdf(NULL)\ninitial <- grDevices::recordPlot()\nempty_replay <- withVisible(grDevices::replayPlot(initial))\nenabled_call <- withVisible(grDevices::dev.control(\"en\"))\ngraphics::plot.new()\ngraphics::plot.window(c(0, 1), c(0, 1))\ngraphics::segments(0, 0, 1, 1)\nenabled <- grDevices::recordPlot()\nreset_call <- withVisible(grDevices::dev.control(\"enable\"))\nreset <- grDevices::recordPlot()\ngraphics::points(0.5, 0.5)\nrestarted <- grDevices::recordPlot()\ninhibited_call <- withVisible(grDevices::dev.control(NULL))\ngraphics::points(0.25, 0.75)\ninhibited <- grDevices::recordPlot()\ngrDevices::dev.off()\nc(closed, identical(formals(grDevices::dev.control)$displaylist, quote(c(\"inhibit\", \"enable\"))), is.null(initial[[1]]), is.null(empty_replay$value), !empty_replay$visible, is.null(enabled_call$value), !enabled_call$visible, !is.null(enabled[[1]]), is.null(reset_call$value), !reset_call$visible, is.null(reset[[1]]), !is.null(restarted[[1]]), is.null(inhibited_call$value), !inhibited_call$visible, is.null(inhibited[[1]]))",
+    "expected": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "device-control-usage-ranked-argument-and-file-device-boundaries",
+    "code": "path <- tempfile(fileext = \".pdf\")\ngrDevices::pdf(path, compress = FALSE, timestamp = FALSE, producer = FALSE)\ndefault_empty <- is.null(grDevices::recordPlot()[[1]])\nerrors <- c(inherits(try(grDevices::dev.control(), silent = TRUE), \"try-error\"), inherits(try(grDevices::dev.control(character()), silent = TRUE), \"try-error\"), inherits(try(grDevices::dev.control(c(\"enable\", \"inhibit\")), silent = TRUE), \"try-error\"), inherits(try(grDevices::dev.control(NA_character_), silent = TRUE), \"try-error\"), inherits(try(grDevices::dev.control(TRUE), silent = TRUE), \"try-error\"), inherits(try(grDevices::dev.control(\"unknown\"), silent = TRUE), \"try-error\"))\ngrDevices::dev.control(\"in\")\ngraphics::plot.new()\ngraphics::segments(0, 0, 1, 1)\nstill_empty <- is.null(grDevices::recordPlot()[[1]])\ngrDevices::dev.off()\nbytes <- readBin(path, \"raw\", n = 1000000L)\nunlink(path)\nc(default_empty, errors, still_empty, length(bytes) > 400L)",
+    "expected": [true, true, true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

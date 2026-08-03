@@ -4,11 +4,11 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 664,
-    "overlappingNames": 645,
-    "missingReferenceNames": 1877,
+    "nativrRegisteredNames": 665,
+    "overlappingNames": 646,
+    "missingReferenceNames": 1876,
     "nativrExtensionNames": 19,
-    "nameCoverage": 0.255749
+    "nameCoverage": 0.256146
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 466, "nameCoverage": 0.340892 },
@@ -23,8 +23,8 @@
     {
       "package": "grDevices",
       "callableNames": 135,
-      "overlappingNames": 32,
-      "nameCoverage": 0.237037
+      "overlappingNames": 33,
+      "nameCoverage": 0.244444
     },
     {
       "package": "graphics",
@@ -222,6 +222,7 @@
     "density.default",
     "deparse",
     "deparse1",
+    "dev.control",
     "dev.cur",
     "dev.flush",
     "dev.hold",
@@ -1369,7 +1370,6 @@
     "determinant.matrix",
     "dev.capabilities",
     "dev.capture",
-    "dev.control",
     "dev.copy",
     "dev.copy2eps",
     "dev.copy2pdf",

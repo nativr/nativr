@@ -75,16 +75,14 @@ signal.
 
 | Priority | Measured rank | Callable           | Weighted reach | Packages | Observed calls |
 | -------: | ------------: | ------------------ | -------------: | -------: | -------------: |
-|        1 |           365 | `browseVignettes`  |           1.0% |        1 |              1 |
-|        2 |           366 | `dev.control`      |           1.0% |        1 |              1 |
-|        3 |           368 | `getFromNamespace` |           0.9% |        1 |             37 |
-|        4 |           370 | `help`             |           0.9% |        1 |             15 |
-|        5 |           380 | `curve`            |           0.7% |        1 |              1 |
-|        6 |           392 | `tracemem`         |           0.7% |        1 |              2 |
-|        7 |           403 | `update.packages`  |           0.7% |        1 |              1 |
-|        8 |           406 | `df`               |           0.7% |        1 |              1 |
-|        9 |           407 | `dist`             |           0.7% |        1 |              1 |
-|       10 |           409 | `simulate`         |           0.7% |        1 |              1 |
+|        1 |           368 | `getFromNamespace` |           0.9% |        1 |             37 |
+|        2 |           370 | `help`             |           0.9% |        1 |             15 |
+|        3 |           380 | `curve`            |           0.7% |        1 |              1 |
+|        4 |           392 | `tracemem`         |           0.7% |        1 |              2 |
+|        5 |           403 | `update.packages`  |           0.7% |        1 |              1 |
+|        6 |           406 | `df`               |           0.7% |        1 |              1 |
+|        7 |           407 | `dist`             |           0.7% |        1 |              1 |
+|        8 |           409 | `simulate`         |           0.7% |        1 |              1 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -713,21 +711,23 @@ graphics journal with coefficient/model, horizontal/vertical vector, style-recyc
 pure-R package, and Worker evidence. Rank 365 `browseVignettes` now aggregates the generic installed
 package vignette manifest into GNU R-shaped package matrices and renders a bounded self-contained
 catalog through the existing inert browser-file journal, including unchanged pure-R package and
-Worker/Playground evidence. Rank 366 `dev.control` remains graphics-device work; `lengths` was
-already supported. Rank 368 `getFromNamespace` has 37 apparent calls, but all are backports examples
-that fetch that package's private implementations before invoking them. It therefore remains tied to
-the general package namespace loader; implementing only a core-namespace facade would not run the
-measured examples. Ranks 376 `str2expression` and 377 `str2lang` are now complete for the measured
-source strings and represent the same 1,112,829 downloads and 0.9% reach. They reuse the
-browser-native Tree-sitter parser and return only owned expression/language/symbol/atomic values,
-with differential evidence for vectors, comments, blank text, missing strings, single-result checks,
-and parse/type errors. The backports examples' preceding private-namespace retrieval remains outside
-this claim. Rank 378 `URLdecode` is now complete for backports' direct `URLdecode("ab%20cd")`
-example, again representing 1,112,829 downloads and 0.9% reach. Registered `utils::` lookup,
-vectorized ASCII and UTF-8 percent bytes, literal plus signs, missing/empty/NULL values, attribute
-removal, and NUL termination have executable evidence. Malformed percent escapes and invalid UTF-8
-bytes are explicitly rejected because browser strings cannot represent GNU R's platform-dependent
-raw-byte results losslessly. Rank 379 `warningCondition` is now complete for backports' direct
+Worker/Playground evidence. Rank 366 `dev.control` now separates the per-device replay recording
+from live/PNG/PDF output, with exact formals, reset-on-toggle behavior, pure-R package imports, and
+GNU R differential evidence; `lengths` was already supported. Rank 368 `getFromNamespace` has 37
+apparent calls, but all are backports examples that fetch that package's private implementations
+before invoking them. It therefore remains tied to the general package namespace loader;
+implementing only a core-namespace facade would not run the measured examples. Ranks 376
+`str2expression` and 377 `str2lang` are now complete for the measured source strings and represent
+the same 1,112,829 downloads and 0.9% reach. They reuse the browser-native Tree-sitter parser and
+return only owned expression/language/symbol/atomic values, with differential evidence for vectors,
+comments, blank text, missing strings, single-result checks, and parse/type errors. The backports
+examples' preceding private-namespace retrieval remains outside this claim. Rank 378 `URLdecode` is
+now complete for backports' direct `URLdecode("ab%20cd")` example, again representing 1,112,829
+downloads and 0.9% reach. Registered `utils::` lookup, vectorized ASCII and UTF-8 percent bytes,
+literal plus signs, missing/empty/NULL values, attribute removal, and NUL termination have
+executable evidence. Malformed percent escapes and invalid UTF-8 bytes are explicitly rejected
+because browser strings cannot represent GNU R's platform-dependent raw-byte results losslessly.
+Rank 379 `warningCondition` is now complete for backports' direct
 `warningCondition("warning", class = "testWarning")` call, representing the same 1,112,829 downloads
 and 0.9% reach. The owned constructor preserves the GNU R message/call/additional-field order,
 prepends custom classes to `warning`/`condition`, supports vector messages, and runs the measured

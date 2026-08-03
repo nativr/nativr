@@ -1031,6 +1031,17 @@ resource limits, unchanged pure-R package execution, Worker transport, and sandb
 rendering. It is a browser-native presentation seam, not a claim for GNU's help server, desktop
 viewer, lazy help databases, or runtime vignette builders.
 
+The display-list-control increment raises current name overlap to 646 of 2,522. Rank 366
+`grDevices::dev.control` covers knitr's measured device-recording switch with GNU R 4.6 formals,
+partial `enable`/`inhibit` matching, explicit-`NULL` inhibition, invisible `NULL`, no-device and
+argument errors, per-device state, file-device recording defaults, and the observed rule that every
+toggle clears earlier replay capture. NativR keeps the output page journal separate, so Canvas, PNG,
+and PDF generation continue while `recordPlot()` returns an empty snapshot; enabling starts a fresh
+bounded capture of only subsequent commands. Differential, pure-R package, same-session replay,
+PDF-byte, and Worker-compatible integration evidence cover this owned representation. GNU R's
+private recorded-plot binary layout, external devices, and cross-runtime replay remain outside the
+claim.
+
 ## Completion evidence
 
 The objective is complete only when:

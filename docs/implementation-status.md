@@ -319,6 +319,11 @@ Date: 2026-08-03
 - Usage-ranked `grDevices::dev.hold`/`dev.flush` with nested owned-device levels, bounded ordered
   graphics buffering across evaluations, zero-level release, namespace access, visible integer
   returns, and reset/dispose cleanup.
+- Usage-ranked `grDevices::dev.control` with exact GNU R 4.6 formals, partial `enable`/`inhibit`
+  selection, invisible `NULL`, per-device state, and immediate recorded-display-list reset. Browser
+  rendering and PNG/PDF output remain active while recording is inhibited; screen devices default to
+  recording and file devices default to no recording. An unchanged pure-R package import and
+  same-session `recordPlot`/`replayPlot` provide executable evidence.
 - Usage-ranked `grDevices::dev.cur`/`dev.list`/`dev.off` plus `graphics.off` with one browser-owned
   device, GNU R-shaped null/current values and visibility, held-command flush on close, graphical-
   parameter reset, reopen behavior, namespace access, and explicit multiple/file-device boundaries.

@@ -253,22 +253,24 @@ PNG-array, posterior interval-segment, zoo filled-area, zoo plot-frame, zoo grou
 legend patterns. The owned registry also supports `dev.cur`/`dev.list`, GNU R-shaped null device 1,
 simultaneous browser/PNG/PDF device identities, selected `dev.off`/`graphics.off` closure, nested
 `dev.hold`/`dev.flush` levels, per-device `par()` isolation and restoration, ordered
-cross-evaluation command buffering, and bounded same-session `recordPlot`/`replayPlot` over its own
-page/window/raster/segments/points/text/polygon/box/boxplot/legend display list. `grDevices::png`
-uses that list to produce bounded, decompressible RGBA PNG bytes in the virtual file store,
-including transparent backgrounds, exact requested dimensions, raw-byte reads, and numbered
-multi-page targets. Usage-ranked `grDevices::pdf` uses the same device journal to produce a bounded,
-self-contained PDF with a valid object graph, cross-reference table, metadata, standard base-14 font
-families, alpha graphics states, optional Flate compression, multi-page `onefile` output, and
-numbered single-page targets. `pdf(NULL)` retains the display list for knitr-style `recordPlot()`
-without creating a file. Closing flushes held commands and completes the active file device.
-Usage-ranked `grDevices::devAskNewPage` adds GNU R 4.6-shaped query/update visibility and coercion,
-per-device flags, `device.ask.default` initialization, and a single prompt before a later browser
-page when the session has an explicit `readline` host capability. It never prompts for the first
-page, a non-interactive session, or an owned PNG/PDF file device. RColorBrewer's ten measured calls,
-an unchanged source-only package import, and the default Worker request path have executable
-evidence. Native device event loops and device-specific prompt wording beyond the owned browser
-device are not claimed. Complete plot methods, embedded/custom fonts, arbitrary encodings,
+cross-evaluation command buffering, and `dev.control` separation of device output from the
+per-device recorded display list. Bounded same-session `recordPlot`/`replayPlot` covers the owned
+page/window/raster/segments/points/text/polygon/box/boxplot/legend command vocabulary.
+`grDevices::png` uses that list to produce bounded, decompressible RGBA PNG bytes in the virtual
+file store, including transparent backgrounds, exact requested dimensions, raw-byte reads, and
+numbered multi-page targets. Usage-ranked `grDevices::pdf` uses the same device journal to produce a
+bounded, self-contained PDF with a valid object graph, cross-reference table, metadata, standard
+base-14 font families, alpha graphics states, optional Flate compression, multi-page `onefile`
+output, and numbered single-page targets. PDF/PNG devices keep producing output while display-list
+recording is inhibited by default; `dev.control("enable")` starts a fresh recording without
+retroactively capturing earlier commands. Closing flushes held commands and completes the active
+file device. Usage-ranked `grDevices::devAskNewPage` adds GNU R 4.6-shaped query/update visibility
+and coercion, per-device flags, `device.ask.default` initialization, and a single prompt before a
+later browser page when the session has an explicit `readline` host capability. It never prompts for
+the first page, a non-interactive session, or an owned PNG/PDF file device. RColorBrewer's ten
+measured calls, an unchanged source-only package import, and the default Worker request path have
+executable evidence. Native device event loops and device-specific prompt wording beyond the owned
+browser device are not claimed. Complete plot methods, embedded/custom fonts, arbitrary encodings,
 device-exact text metrics, complete clipping/margins and graphical parameters, external display-list
 formats, and pixel or byte equivalence with GNU R devices are not claimed.
 

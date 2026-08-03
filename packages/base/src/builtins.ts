@@ -2403,6 +2403,17 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   withBuiltinFormals(
     definePackageBuiltin(
       "grDevices",
+      "dev.control",
+      ["displaylist"],
+      "behavioral",
+      builtinDeviceControl,
+      "invisible",
+    ),
+    [{ name: "displaylist", defaultValue: graphicsDisplayListChoiceAst() }],
+  ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "grDevices",
       "devAskNewPage",
       ["ask"],
       "behavioral",
@@ -3805,6 +3816,9 @@ interface GraphicsState {
   holdLevel: number;
   pending: RGraphicsEvent[];
   pendingBytes: number;
+  recordingEnabled: boolean;
+  recordedDisplayList: RGraphicsEvent[];
+  recordedDisplayListBytes: number;
   displayList: RGraphicsEvent[];
   displayListBytes: number;
 }
@@ -16568,6 +16582,16 @@ function shellQuoteTypeChoiceAst(): AstNode {
   return callAst(
     "c",
     SHELL_QUOTE_TYPES.map((value) => ({
+      value: { kind: "StringLiteral" as const, value, span: SYNTHETIC_SPAN },
+      span: SYNTHETIC_SPAN,
+    })),
+  );
+}
+
+function graphicsDisplayListChoiceAst(): AstNode {
+  return callAst(
+    "c",
+    ["inhibit", "enable"].map((value) => ({
       value: { kind: "StringLiteral" as const, value, span: SYNTHETIC_SPAN },
       span: SYNTHETIC_SPAN,
     })),
@@ -35740,6 +35764,9 @@ async function builtinPdf(invocation: BuiltinInvocation): Promise<RValue> {
     holdLevel: 0,
     pending: [],
     pendingBytes: 0,
+    recordingEnabled: false,
+    recordedDisplayList: [],
+    recordedDisplayListBytes: 0,
     displayList: [],
     displayListBytes: 0,
   };
@@ -35950,6 +35977,9 @@ async function builtinPng(invocation: BuiltinInvocation): Promise<RValue> {
     holdLevel: 0,
     pending: [],
     pendingBytes: 0,
+    recordingEnabled: false,
+    recordedDisplayList: [],
+    recordedDisplayListBytes: 0,
     displayList: [],
     displayListBytes: 0,
   };
@@ -36102,6 +36132,45 @@ async function builtinDeviceList(invocation: BuiltinInvocation): Promise<RValue>
     integerVector(devices.map((device) => device.number)),
     devices.map((device) => device.name),
   );
+}
+
+async function builtinDeviceControl(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["displaylist"]);
+  const state = activeGraphicsState(invocation);
+  if (state === undefined) {
+    throw new REvaluationError("NRE2198", "dev.control() called without an open graphics device");
+  }
+  const supplied = matched.get("displaylist");
+  if (supplied === undefined) {
+    throw new REvaluationError("NRE2103", "argument is missing with no default");
+  }
+
+  state.recordingEnabled = deviceControlRecordingEnabled(supplied);
+  state.recordedDisplayList = [];
+  state.recordedDisplayListBytes = 0;
+  return R_NULL;
+}
+
+function deviceControlRecordingEnabled(value: RValue): boolean {
+  if (value.type === "null") return false;
+  if (value.type !== "character") {
+    throw new RTypeMismatchError("NRT3417", "'arg' must be NULL or a character vector");
+  }
+  if (value.length !== 1) {
+    throw new RTypeMismatchError("NRT3417", "'arg' must be of length 1");
+  }
+  if (isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3417", `'arg' should be one of "inhibit", "enable"`);
+  }
+  const requested = value.values[0] ?? "";
+  const choices = ["inhibit", "enable"] as const;
+  const exact = choices.find((choice) => choice === requested);
+  const partial = choices.filter((choice) => requested.length > 0 && choice.startsWith(requested));
+  const selected = exact ?? (partial.length === 1 ? partial[0] : undefined);
+  if (selected === undefined) {
+    throw new RTypeMismatchError("NRT3417", `'arg' should be one of "inhibit", "enable"`);
+  }
+  return selected === "enable";
 }
 
 async function builtinDeviceOff(invocation: BuiltinInvocation): Promise<RValue> {
@@ -36348,13 +36417,16 @@ async function builtinRecordPlot(invocation: BuiltinInvocation): Promise<RValue>
   const state = graphicsState(invocation, "recordPlot");
   const load = recordedPlotPackages(matched.get("load"), "load");
   const attach = recordedPlotPackages(matched.get("attach"), "attach");
-  invocation.context.allocate(state.displayList.length + state.displayListBytes);
-  const commands = state.displayList.map(graphicsEventValue);
+  invocation.context.allocate(state.recordedDisplayList.length + state.recordedDisplayListBytes);
+  const commands =
+    state.recordedDisplayList.length === 0
+      ? R_NULL
+      : listValue(state.recordedDisplayList.map(graphicsEventValue));
   const deviceState = listValue(
     [doubleVector(state.xlim), doubleVector(state.ylim)],
     ["xlim", "ylim"],
   );
-  let recorded = withClasses(listValue([listValue(commands), deviceState]), ["recordedplot"]);
+  let recorded = withClasses(listValue([commands, deviceState]), ["recordedplot"]);
   recorded = withAttribute(recorded, "engineVersion", integerVector([1]));
   recorded = withAttribute(recorded, "load", load);
   recorded = withAttribute(recorded, "attach", attach);
@@ -36378,16 +36450,24 @@ async function builtinReplayPlot(invocation: BuiltinInvocation): Promise<RValue>
   }
 
   const commandValues = input.values[0];
-  if (commandValues?.type !== "list") {
+  if (
+    commandValues === undefined ||
+    (commandValues.type !== "list" && commandValues.type !== "null")
+  ) {
     throw new RTypeMismatchError("NRT3333", "The recorded plot command list is malformed.");
   }
-  const commands = commandValues.values.map((value) => graphicsEventFromValue(value, invocation));
+  const commands =
+    commandValues.type === "null"
+      ? []
+      : commandValues.values.map((value) => graphicsEventFromValue(value, invocation));
   let state = activeGraphicsState(invocation);
   if (state === undefined) {
     state = createBrowserGraphicsState(invocation);
   } else {
     state.displayList = [];
     state.displayListBytes = 0;
+    state.recordedDisplayList = [];
+    state.recordedDisplayListBytes = 0;
   }
 
   for (const event of commands) {
@@ -37449,6 +37529,9 @@ function createBrowserGraphicsState(invocation: BuiltinInvocation): GraphicsStat
     holdLevel: 0,
     pending: [],
     pendingBytes: 0,
+    recordingEnabled: true,
+    recordedDisplayList: [],
+    recordedDisplayListBytes: 0,
     displayList: [],
     displayListBytes: 0,
   };
@@ -37513,6 +37596,16 @@ function writeGraphics(
   } else {
     state.displayList.push(event);
     state.displayListBytes = nextDisplayBytes;
+  }
+
+  if (state.recordingEnabled) {
+    if (event.kind === "new-page") {
+      state.recordedDisplayList = [event];
+      state.recordedDisplayListBytes = 0;
+    } else {
+      state.recordedDisplayList.push(event);
+      state.recordedDisplayListBytes += bytes;
+    }
   }
 }
 

@@ -836,3 +836,9 @@ store, and `browseURL` event. It adds no dependency, protocol type, network clie
 builder, host path, DOM access, or package-specific adapter. The measured Worker is 408.9 KiB gzip
 (418,665 bytes), so the ceiling rises narrowly from 408 KiB to 409 KiB; client and parser-Wasm
 budgets remain unchanged.
+
+Language subset 0.267 adds usage-ranked `grDevices::dev.control` by splitting per-device replay
+recording state from the existing output page journal. It adds no dependency, protocol event,
+renderer, host capability, or package-specific adapter; browser, PNG, PDF, and same-session replay
+reuse the existing command values. The measured Worker is 409.2 KiB gzip (419,046 bytes), so the
+ceiling rises narrowly from 409 KiB to 410 KiB; client and parser-Wasm budgets remain unchanged.
