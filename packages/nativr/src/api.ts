@@ -73,7 +73,7 @@ export interface CreateROptions {
   readonly executablePaths?: Readonly<Record<string, string>>;
   /** Explicit allow-list seam for system(); omitted by default, so R code has no shell capability. */
   readonly systemCommand?: SystemCommandHandler;
-  /** Host-owned line input used by readline(); omitted sessions remain non-interactive. */
+  /** Host-owned line input for R and graphics prompts; omitted sessions remain non-interactive. */
   readonly readline?: ReadlineHandler;
   /** Explicit byte transport for url() connections; omitted sessions have no network capability. */
   readonly url?: UrlHandler;
@@ -92,7 +92,7 @@ export type SystemCommandHandler = (
   request: PublicSystemCommandRequest,
 ) => PublicSystemCommandResult | Promise<PublicSystemCommandResult>;
 
-/** Host-owned line input used only when R code calls readline(). */
+/** Host-owned line input used only for explicit R/debug/browser-graphics prompts. */
 export type ReadlineHandler = (request: PublicReadlineRequest) => string | Promise<string>;
 
 /** Host-owned, policy-enforcing byte transport used only when R reads a url() connection. */

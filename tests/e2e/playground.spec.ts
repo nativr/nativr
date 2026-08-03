@@ -195,6 +195,21 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText('"Hello, browser user"');
 
+  await page.locator("#source").fill(`
+      grDevices::graphics.off()
+      grDevices::devAskNewPage(TRUE)
+      graphics::plot.new()
+      graphics::plot.new()
+      grDevices::devAskNewPage()
+    `);
+  page.once("dialog", async (dialog) => {
+    expect(dialog.type()).toBe("prompt");
+    expect(dialog.message()).toBe("Hit <Return> to see next plot: ");
+    await dialog.accept("");
+  });
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("true");
+
   await page.getByRole("button", { name: "URL connection" }).click();
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText('["worker-url", "package-connection"]');

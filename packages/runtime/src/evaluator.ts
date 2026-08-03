@@ -112,7 +112,7 @@ export interface EvaluatorOptions {
   readonly sessionProcessId?: number;
   /** Recreate evaluator-owned builtin state at construction and reset. */
   readonly initializeBuiltinState?: (state: Map<string, unknown>) => void;
-  /** Explicit terminal-line capability. Undefined preserves non-interactive GNU R behavior. */
+  /** Explicit line-prompt capability. Undefined preserves non-interactive GNU R behavior. */
   readonly readline?: (prompt: string) => Promise<string> | string;
   /** Explicit URL-byte transport. Undefined means that URL connections cannot perform I/O. */
   readonly urlRequest?: (request: RUrlRequest) => Promise<RUrlResult> | RUrlResult;
@@ -371,6 +371,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "dev.cur",
       "dev.list",
       "dev.off",
+      "devAskNewPage",
       "gray",
       "gray.colors",
       "grey",

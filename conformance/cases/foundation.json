@@ -8211,6 +8211,34 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "graphics-device-ask-new-page-formals-state-coercion-and-visibility",
+    "code": "graphics.off()\nold <- options(device.ask.default = FALSE)\ninitial <- withVisible(grDevices::devAskNewPage())\nenabled <- withVisible(grDevices::devAskNewPage(TRUE))\nvector <- withVisible(grDevices::devAskNewPage(c(FALSE, TRUE)))\ncurrent <- withVisible(grDevices::devAskNewPage())\nfactor_update <- withVisible(grDevices::devAskNewPage(factor(\"FALSE\")))\nfactor_current <- grDevices::devAskNewPage()\nf <- formals(grDevices::devAskNewPage)\ngraphics.off()\nunlink(\"Rplots.pdf\")\noptions(old)\nc(initial$value, initial$visible, enabled$value, enabled$visible, vector$value, vector$visible, current$value, current$visible, factor_update$value, factor_update$visible, factor_current, names(f), is.null(f$ask))",
+    "expected": [
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "FALSE",
+      "TRUE",
+      "ask",
+      "TRUE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "graphics-device-ask-new-page-per-device-default-and-file-device-pages",
+    "code": "graphics.off()\nold <- options(device.ask.default = FALSE)\ngrDevices::devAskNewPage()\ngrDevices::devAskNewPage(TRUE)\npath <- tempfile(fileext = \".pdf\")\ngrDevices::pdf(path)\npdf_initial <- grDevices::devAskNewPage()\ngrDevices::devAskNewPage(TRUE)\ngraphics::plot.new()\ngraphics::plot.new()\ngrDevices::dev.off()\nbrowser_restored <- grDevices::devAskNewPage()\ngraphics.off()\nunlink(c(path, \"Rplots.pdf\"))\noptions(device.ask.default = TRUE)\ndefault_enabled <- grDevices::devAskNewPage()\ngraphics.off()\nunlink(\"Rplots.pdf\")\noptions(old)\nc(pdf_initial, browser_restored, default_enabled)",
+    "expected": [false, true, true],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "system-time-lazy-proc-time-shape-and-monotonic-clock",
     "code": "tracker <- 0L\ntimed <- withVisible(system.time({ Sys.sleep(0.01); tracker <- tracker + 1L; invisible(42L) }, gcFirst = FALSE))\nbefore <- proc.time()\nSys.sleep(0.005)\nafter <- proc.time()\nc(tracker, timed$visible, inherits(timed$value, \"proc_time\"), names(timed$value), typeof(timed$value), length(timed$value), all(timed$value[1:3] >= 0), timed$value[[\"elapsed\"]] >= 0.005, all(is.na(timed$value[4:5])), inherits(before, \"proc_time\"), after[[\"elapsed\"]] >= before[[\"elapsed\"]])",
     "expected": [

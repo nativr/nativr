@@ -797,7 +797,13 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      geometry, widths/spaces/offsets, names, axes, annotations, legends, and the existing bounded
      Worker polygon journal. Source-only packages can import or extend the generic without
      TypeScript rewrites; unsupported log axes, positive hatch density, and device-exact layout
-     remain explicit. Rank-344 `grDevices::devAskNewPage` is the next measured unresolved callable.
+     remain explicit.
+167. Usage-ranked page prompting: rank-344 `grDevices::devAskNewPage` covers RColorBrewer's ten
+     measured calls with GNU R query/update visibility, logical coercion, per-device state,
+     `device.ask.default`, unchanged source-package imports, and default Worker prompting through
+     the existing explicit `readline` bridge. First pages, non-interactive sessions, and PNG/PDF
+     devices remain nonblocking. Rank-345 `base::getLoadedDLLs` is the next measured unresolved
+     callable.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

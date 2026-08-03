@@ -464,6 +464,14 @@ pure-R package, but it does not bypass dependencies: the package still loads onl
 namespace, data, and runtime calls it actually executes are supported and its dependency closure is
 license-admissible and free of native-code requirements.
 
+Rank-344 `grDevices::devAskNewPage()` removes RColorBrewer's repeated pagination shim without a
+package rewrite. A source-only namespace can import the function and execute its ordinary
+`devAskNewPage(ask = TRUE)` calls; state belongs to the current graphics device and the next browser
+page uses the already explicit `createR({ readline })` bridge. In a non-interactive embedding or on
+PNG/PDF file devices, plotting continues without a prompt, matching the relevant GNU R branch. This
+reuses package code but does not make interactive menus, native window devices, or arbitrary UI
+toolkits available.
+
 The object-system foundation follows the same rule. The checked-in source-only fixture imports
 `methods::setClass` and `methods::showClass`, declares `NativRFixtureClass` while its namespace is
 loaded, and exports an unchanged R function that captures the class summary. Class ownership, slots,

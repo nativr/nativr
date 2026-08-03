@@ -755,3 +755,11 @@ protocol, and browser/file renderers. It adds no dependency, ambient network or 
 generated-code path, package-specific translation, or new graphics command kind. The measured Worker
 is 398.5 KiB gzip, so the ceiling rises narrowly from 396 KiB to 399 KiB; client and parser-Wasm
 budgets remain unchanged.
+
+Language subset 0.255 adds usage-ranked `grDevices::devAskNewPage` as one boolean on each existing
+graphics-device record plus a conditional call through the existing explicit `readline` bridge. It
+adds no dependency, protocol event, ambient terminal/UI authority, package-specific translation, or
+graphics command kind. Non-interactive and file-device paths remain synchronous; the interactive
+browser path performs exactly one bounded host round trip per later page when enabled. The measured
+Worker is 398.9 KiB gzip, so the 399 KiB ceiling remains unchanged; client and parser-Wasm budgets
+also remain unchanged.

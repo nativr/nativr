@@ -702,6 +702,15 @@ later drawing reopens the browser device at the lowest free number. Each device 
 `graphics::par()` map; opening a PNG device applies its point size without mutating the browser
 device, and closing it restores the newly selected device's parameters.
 
+`grDevices::devAskNewPage(ask = NULL)` opens a browser device when the null device is current and
+returns that device's ask flag visibly without changing it. A coercible non-missing `ask` updates
+only the current device and returns the previous flag invisibly; new devices copy
+`options("device.ask.default")`, using `FALSE` with a warning when that option cannot supply a first
+logical value. Before replacing an existing browser page, an enabled interactive session emits
+`"Hit <Return> to see next plot: "` through the explicit bounded `readline` exchange and waits for
+one host-approved line. The first page, non-interactive sessions, and PNG/PDF devices do not prompt.
+Reset/dispose and device closure remove the associated ask state with the rest of the device.
+
 `grDevices::png()` opens an invisible-returning browser-memory file device with GNU R-shaped
 formals. It resolves `px` dimensions directly or converts `in`/`cm`/`mm` dimensions using required
 resolution, validates colors and device controls, creates the page target immediately, and records

@@ -86,8 +86,9 @@ pure-R package code: `readLines(pipe("approved-report"))`. Open write pipes buff
 it as exact text when closed. The current adapter is one-shot and one-way; duplex `r+`, interactive
 streaming, shell discovery, and NUL-containing binary stdin are not claimed.
 
-`base::readline()` uses a separate line-oriented host adapter. This enables unchanged pure-R package
-prompts without exposing DOM objects to R or the Worker:
+`base::readline()` and interactive browser-page pauses requested by `grDevices::devAskNewPage(TRUE)`
+use a separate line-oriented host adapter. This enables unchanged pure-R package prompts without
+exposing DOM objects to R or the Worker:
 
 ```ts
 const r = await createR({
@@ -100,7 +101,8 @@ characters. NativR applies R's leading/trailing space-and-tab trimming and charg
 to `maxOutputBytes`. The callback may be asynchronous; a correlated protocol exchange suspends only
 the current Worker evaluation. A configured handler makes `interactive()` return `TRUE`. With no
 handler, `interactive()` is `FALSE`, `readline()` emits its prompt with the non-interactive newline,
-and returns `""` without contacting the host.
+and returns `""` without contacting the host; `devAskNewPage(TRUE)` records device state but never
+blocks. File graphics devices never invoke this handler.
 
 The same explicit handler services `debug()`/`debugonce()` prompts, including across the default
 Worker. The current debugger accepts empty/`next`, `continue`, `finish`, and `Q`; it does not yet

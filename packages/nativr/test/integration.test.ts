@@ -26,11 +26,12 @@ Imports: grDevices, graphics, methods, stats, utils
 Encoding: UTF-8
 NeedsCompilation: no`,
   namespace: `
+importFrom(grDevices, devAskNewPage)
 importFrom(graphics, axis, barplot, plot.new, plot.window, rect, title)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median, ts.plot)
 importFrom(utils, download.file, packageDescription, packageName, packageVersion)
-export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, annotated_plot, find_tools, create_file, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output, sink_lines, write_sass_variable)
+export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, annotated_plot, ask_new_pages, find_tools, create_file, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, installed_version, namespace_names, process_id, library_paths, standard_output, sink_lines, write_sass_variable)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -82,6 +83,7 @@ annotated_plot <- function(label = "package title") {
   title(label)
   invisible(label)
 }
+ask_new_pages <- function(ask = TRUE) devAskNewPage(ask)
 find_tools <- function(names) Sys.which(names)
 create_file <- function() {
   path <- tempfile()
@@ -3854,6 +3856,7 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(runtime.eval('sort(getNamespaceExports("nativrfixture"))')).resolves.toEqual([
       "annotated_plot",
       "archive_lines",
+      "ask_new_pages",
       "ask_value",
       "axis_ticks",
       "centered",
@@ -12006,7 +12009,7 @@ NeedsCompilation: no
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.254.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.255.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -15587,6 +15590,101 @@ NeedsCompilation: no
       code: "NRT3398",
     });
     await runtime.dispose();
+  });
+
+  it("tracks usage-ranked devAskNewPage state and prompts only between interactive browser pages", async () => {
+    const requests: PublicReadlineRequest[] = [];
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [pureRFixture],
+      readline: (request) => {
+        requests.push(request);
+        return "";
+      },
+    });
+    const result = await runtime.evalDetailed(`
+      initial <- withVisible(grDevices::devAskNewPage())
+      enabled <- withVisible(grDevices::devAskNewPage(TRUE))
+      graphics::plot.new()
+      graphics::plot.new()
+      current <- withVisible(grDevices::devAskNewPage())
+      package_previous <- withVisible(nativrfixture::ask_new_pages(FALSE))
+      c(
+        initial$value, initial$visible,
+        enabled$value, enabled$visible,
+        current$value, current$visible,
+        package_previous$value, package_previous$visible,
+        names(formals(grDevices::devAskNewPage)),
+        is.null(formals(grDevices::devAskNewPage)$ask)
+      )
+    `);
+    expect(result.value).toEqual([
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "FALSE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "FALSE",
+      "ask",
+      "TRUE",
+    ]);
+    expect(result.graphics.map((event) => event.kind)).toEqual(["new-page", "new-page"]);
+    expect(result.output).toEqual([{ stream: "stdout", text: "Hit <Return> to see next plot: " }]);
+    expect(requests).toEqual([{ prompt: "Hit <Return> to see next plot: " }]);
+
+    await expect(
+      runtime.eval(`
+        grDevices::devAskNewPage(TRUE)
+        path <- tempfile(fileext = ".pdf")
+        grDevices::pdf(path)
+        pdf_initial <- grDevices::devAskNewPage()
+        grDevices::devAskNewPage(TRUE)
+        graphics::plot.new()
+        graphics::plot.new()
+        grDevices::dev.off()
+        browser_restored <- grDevices::devAskNewPage()
+        unlink(path)
+        c(pdf_initial, browser_restored)
+      `),
+    ).resolves.toEqual([false, true]);
+    expect(requests).toHaveLength(1);
+
+    await runtime.eval("grDevices::graphics.off(); options(device.ask.default = TRUE)");
+    await expect(runtime.eval("grDevices::devAskNewPage()")).resolves.toBe(true);
+    await expect(runtime.eval("grDevices::devAskNewPage(c(FALSE, TRUE))")).resolves.toBe(true);
+    await expect(runtime.eval("grDevices::devAskNewPage()")).resolves.toBe(false);
+    await expect(runtime.eval("grDevices::devAskNewPage(factor('FALSE'))")).resolves.toBe(false);
+    await expect(runtime.eval("grDevices::devAskNewPage()")).resolves.toBe(true);
+    await expect(runtime.eval("grDevices::devAskNewPage(NA)")).rejects.toMatchObject({
+      code: "NRT3355",
+    });
+    await expect(runtime.eval("grDevices::devAskNewPage(logical())")).rejects.toMatchObject({
+      code: "NRT3355",
+    });
+    const invalidDefault = await runtime.evalDetailed(`
+      grDevices::graphics.off()
+      options(device.ask.default = NA)
+      grDevices::devAskNewPage()
+    `);
+    expect(invalidDefault.value).toBe(false);
+    expect(invalidDefault.warnings).toEqual([
+      { code: "NRW1140", message: 'invalid value for "device.ask.default", using FALSE' },
+    ]);
+    await runtime.dispose();
+
+    const nonInteractive = await createR({ execution: "inline", assets });
+    const noPrompt = await nonInteractive.evalDetailed(`
+      grDevices::devAskNewPage(TRUE)
+      graphics::plot.new()
+      graphics::plot.new()
+      grDevices::devAskNewPage()
+    `);
+    expect(noPrompt.value).toBe(true);
+    expect(noPrompt.output).toEqual([]);
+    await nonInteractive.dispose();
   });
 
   it("renders bounded PNG files through the shared graphics device lifecycle", async () => {

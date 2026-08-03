@@ -117,12 +117,13 @@ text to that callback, so hosts must bound it and must never concatenate it into
 The Playground handler is a fixed virtual fixture policy and never touches an operating-system
 process.
 
-`readline()` grants only a construction-time, line-oriented callback when the application supplies
-`readline`. The Worker sends inert prompt text and accepts one validated string result; R code never
-receives a DOM handle or arbitrary JavaScript function. Hosts must treat package prompts as
-untrusted display text, avoid rendering them as HTML, bound or cancel their UI, and return no
-secrets unless the calling R code is trusted. Newlines, NUL characters, and results beyond the
-session output-byte budget are rejected. The default runtime never opens a dialog or reads stdin.
+`readline()` and interactive `devAskNewPage(TRUE)` grant only a construction-time, line-oriented
+callback when the application supplies `readline`. The Worker sends inert prompt text and accepts
+one validated string result; R code never receives a DOM handle or arbitrary JavaScript function.
+Hosts must treat package prompts as untrusted display text, avoid rendering them as HTML, bound or
+cancel their UI, and return no secrets unless the calling R code is trusted. Newlines, NUL
+characters, and results beyond the session output-byte budget are rejected. The default runtime
+never opens a dialog or reads stdin.
 
 `url()`, `utils::download.file()`, and `utils::available.packages()` are likewise inert unless the
 application supplies `createR({ url })`. The callback receives only copied URL/method/header data

@@ -2207,6 +2207,16 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   definePackageBuiltin("grDevices", "dev.cur", [], "behavioral", builtinDeviceCurrent),
   definePackageBuiltin("grDevices", "dev.list", [], "behavioral", builtinDeviceList),
   withBuiltinFormals(
+    definePackageBuiltin(
+      "grDevices",
+      "devAskNewPage",
+      ["ask"],
+      "behavioral",
+      builtinDeviceAskNewPage,
+    ),
+    [{ name: "ask", defaultValue: nullAst() }],
+  ),
+  withBuiltinFormals(
     definePackageBuiltin("grDevices", "dev.off", ["which"], "behavioral", builtinDeviceOff),
     [{ name: "which", defaultValue: callAst("dev.cur", []) }],
   ),
@@ -3561,6 +3571,7 @@ interface GraphicsState {
     page: number;
   };
   active: boolean;
+  askNewPage: boolean;
   xlim: readonly [number, number];
   ylim: readonly [number, number];
   holdLevel: number;
@@ -11958,6 +11969,7 @@ function optionsState(invocation: BuiltinInvocation): Map<string, RValue> {
     ["continue", characterVector(["+ "])],
     ["deparse.cutoff", integerVector([60])],
     ["digits", integerVector([7])],
+    ["device.ask.default", logicalVector([false])],
     ["encoding", characterVector(["native.enc"])],
     ["expressions", integerVector([5000])],
     ["max.print", integerVector([99_999])],
@@ -28718,7 +28730,13 @@ function plotDefaultAnnotations(
 async function beginGraphicsPage(invocation: BuiltinInvocation): Promise<GraphicsState> {
   const existing = activeGraphicsState(invocation);
   const state = existing ?? createBrowserGraphicsState(invocation);
-  if (state.kind === "png" && state.displayList.some((event) => event.kind === "new-page")) {
+  const replacingPage = state.displayList.some((event) => event.kind === "new-page");
+  if (replacingPage && state.kind === "browser" && state.askNewPage && invocation.isInteractive()) {
+    const prompt = "Hit <Return> to see next plot: ";
+    invocation.context.writeOutput({ stream: "stdout", text: prompt });
+    await invocation.readline(prompt);
+  }
+  if (state.kind === "png" && replacingPage) {
     await renderPngPage(invocation, state);
     const png = state.png;
     if (png === undefined) throw new Error("Internal PNG device invariant failed.");
@@ -28728,7 +28746,7 @@ async function beginGraphicsPage(invocation: BuiltinInvocation): Promise<Graphic
       pngPageFilename(png.filenamePattern, png.page),
       new Uint8Array(),
     );
-  } else if (state.kind === "pdf" && state.displayList.some((event) => event.kind === "new-page")) {
+  } else if (state.kind === "pdf" && replacingPage) {
     await finalizePdfPage(invocation, state, false);
   }
   state.xlim = [0, 1];
@@ -33343,6 +33361,7 @@ async function builtinPdf(invocation: BuiltinInvocation): Promise<RValue> {
       page: 1,
     },
     active: true,
+    askNewPage: deviceAskDefault(invocation),
     xlim: [0, 1],
     ylim: [0, 1],
     holdLevel: 0,
@@ -33552,6 +33571,7 @@ async function builtinPng(invocation: BuiltinInvocation): Promise<RValue> {
       page: 1,
     },
     active: true,
+    askNewPage: deviceAskDefault(invocation),
     xlim: [0, 1],
     ylim: [0, 1],
     holdLevel: 0,
@@ -33922,6 +33942,32 @@ function deviceHoldLevel(
   let level = 0;
   for (const candidate of coerced.values) level = Math.max(level, candidate);
   return level;
+}
+
+async function builtinDeviceAskNewPage(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["ask"]);
+  const state = activeGraphicsState(invocation) ?? createBrowserGraphicsState(invocation);
+  const previous = state.askNewPage;
+  const ask = matched.get("ask");
+  if (ask === undefined || ask.type === "null") return logicalVector([previous]);
+
+  state.askNewPage = coercibleLogicalFlag(ask, false, "ask");
+  invocation.setResultVisibility("invisible");
+  return logicalVector([previous]);
+}
+
+function deviceAskDefault(invocation: BuiltinInvocation): boolean {
+  const value = optionsState(invocation).get("device.ask.default") ?? logicalVector([false]);
+  try {
+    return coercibleLogicalFlag(value, false, "device.ask.default");
+  } catch (error) {
+    if (!(error instanceof RTypeMismatchError) || error.code !== "NRT3355") throw error;
+    invocation.context.warn({
+      code: "NRW1140",
+      message: 'invalid value for "device.ask.default", using FALSE',
+    });
+    return false;
+  }
 }
 
 async function builtinRecordPlot(invocation: BuiltinInvocation): Promise<RValue> {
@@ -35024,6 +35070,7 @@ function createBrowserGraphicsState(invocation: BuiltinInvocation): GraphicsStat
     kind: "browser",
     parameters,
     active: true,
+    askNewPage: deviceAskDefault(invocation),
     xlim: [0, 1],
     ylim: [0, 1],
     holdLevel: 0,

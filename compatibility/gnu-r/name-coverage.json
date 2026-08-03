@@ -4,11 +4,11 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 649,
-    "overlappingNames": 631,
-    "missingReferenceNames": 1891,
+    "nativrRegisteredNames": 650,
+    "overlappingNames": 632,
+    "missingReferenceNames": 1890,
     "nativrExtensionNames": 18,
-    "nameCoverage": 0.250198
+    "nameCoverage": 0.250595
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 456, "nameCoverage": 0.333577 },
@@ -23,8 +23,8 @@
     {
       "package": "grDevices",
       "callableNames": 135,
-      "overlappingNames": 31,
-      "nameCoverage": 0.22963
+      "overlappingNames": 32,
+      "nameCoverage": 0.237037
     },
     {
       "package": "graphics",
@@ -223,6 +223,7 @@
     "dev.hold",
     "dev.list",
     "dev.off",
+    "devAskNewPage",
     "df.residual",
     "dget",
     "diag",
@@ -1371,7 +1372,6 @@
     "dev.set",
     "dev.size",
     "dev2bitmap",
-    "devAskNewPage",
     "deviance",
     "deviceIsInteractive",
     "dexp",

@@ -262,9 +262,15 @@ self-contained PDF with a valid object graph, cross-reference table, metadata, s
 families, alpha graphics states, optional Flate compression, multi-page `onefile` output, and
 numbered single-page targets. `pdf(NULL)` retains the display list for knitr-style `recordPlot()`
 without creating a file. Closing flushes held commands and completes the active file device.
-Complete plot methods, embedded/custom fonts, arbitrary encodings, device-exact text metrics,
-complete clipping/margins and graphical parameters, external display-list formats, and pixel or byte
-equivalence with GNU R devices are not claimed.
+Usage-ranked `grDevices::devAskNewPage` adds GNU R 4.6-shaped query/update visibility and coercion,
+per-device flags, `device.ask.default` initialization, and a single prompt before a later browser
+page when the session has an explicit `readline` host capability. It never prompts for the first
+page, a non-interactive session, or an owned PNG/PDF file device. RColorBrewer's ten measured calls,
+an unchanged source-only package import, and the default Worker request path have executable
+evidence. Native device event loops and device-specific prompt wording beyond the owned browser
+device are not claimed. Complete plot methods, embedded/custom fonts, arbitrary encodings,
+device-exact text metrics, complete clipping/margins and graphical parameters, external display-list
+formats, and pixel or byte equivalence with GNU R devices are not claimed.
 
 `image` has shape-level differential evidence for the rank-163 calls sampled from `scales`,
 `viridisLite`, and `RColorBrewer`. Its S3 generic preserves package-defined methods. The default

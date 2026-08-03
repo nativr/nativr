@@ -279,6 +279,10 @@ Date: 2026-08-02
 - Usage-ranked `grDevices::dev.cur`/`dev.list`/`dev.off` plus `graphics.off` with one browser-owned
   device, GNU R-shaped null/current values and visibility, held-command flush on close, graphical-
   parameter reset, reopen behavior, namespace access, and explicit multiple/file-device boundaries.
+- Usage-ranked `grDevices::devAskNewPage` for RColorBrewer's ten measured calls, with exact formals,
+  visible queries, invisible previous-value updates, GNU R coercion, per-device state,
+  `device.ask.default`, non-interactive/file-device bypass, unchanged source-package imports, and
+  default Worker prompting through the existing explicit bounded `readline` exchange.
 - Usage-ranked `grDevices::recordPlot`/`replayPlot` with a bounded independently owned display list,
   ragg's same-session record/replay shape, package-metadata retention, held replay, invisible replay
   return, namespace access, malformed-input guards, and explicit external-format/reload boundaries.

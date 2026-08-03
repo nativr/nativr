@@ -327,6 +327,15 @@ annotations, and legends through the existing bounded Worker graphics journal. L
 positive density hatching, exact device typography/margins, and the full graphical-parameter surface
 remain declared gaps.
 
+The rank-344 increment adds GNU R 4.6 black-box and browser-host evidence for RColorBrewer's ten
+measured `devAskNewPage(ask = TRUE)` calls. Exact formals, visible queries, invisible updates that
+return the previous flag, first-element logical coercion, invalid-value errors, per-device state,
+and `options("device.ask.default")` initialization match the audited paths. The browser device
+pauses only before replacing an existing page and only when an explicit interactive `readline`
+adapter is present; the request crosses the default Worker protocol. First pages, non-interactive
+sessions, and PNG/PDF devices remain nonblocking. Native screen devices and their platform event
+loops are not claimed.
+
 The rank-451 increment adds GNU R differential evidence for zoo's measured `deltat(z)` regular
 sampling-interval call. The generic dispatches to independently declared package methods with lazy
 dots; its default returns an unnamed visible double equal to one for ordinary inputs or the

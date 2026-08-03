@@ -391,7 +391,7 @@ export interface InitRequest extends ProtocolEnvelope {
   readonly environmentVariables?: Readonly<Record<string, string>>;
   /** Explicit executable names and resolved paths available to base::Sys.which(). */
   readonly executablePaths?: Readonly<Record<string, string>>;
-  /** Whether the embedding facade configured an interactive readline handler. */
+  /** Whether the embedding facade configured an interactive line-prompt handler. */
   readonly readline?: boolean;
   /** Whether the embedding facade configured an explicit URL transport. */
   readonly url?: boolean;

@@ -29,12 +29,13 @@ environment builtins read only that state. Reset re-runs the state initializer, 
 sessions have identical restoration and isolation without granting access to a process environment.
 
 Line input follows the same explicit boundary. A configured `readline` callback is represented in
-the initialization message by a capability boolean, not a function. When R calls `readline()`, the
-Worker emits a correlated inert `{ prompt }` event and suspends that evaluation until the facade
-returns one validated string or error. Inline mode calls the same validated adapter directly. With
-no adapter, the evaluator remains non-interactive and never contacts the host. Thus package R code
-can reuse browser UI supplied by the application without importing DOM APIs into `base`, `runtime`,
-or the Worker.
+the initialization message by a capability boolean, not a function. When R calls `readline()` or an
+enabled browser graphics device reaches a later page through `devAskNewPage(TRUE)`, the Worker emits
+a correlated inert `{ prompt }` event and suspends that evaluation until the facade returns one
+validated string or error. Inline mode calls the same validated adapter directly. With no adapter,
+the evaluator remains non-interactive and never contacts the host. Thus package R code can reuse
+browser UI supplied by the application without importing DOM APIs into `base`, `runtime`, or the
+Worker.
 
 Function-debug state follows the value boundary rather than the base-builtin boundary. Runtime-owned
 weak registries key persistent and one-shot metadata by closure or builtin object identity; base
