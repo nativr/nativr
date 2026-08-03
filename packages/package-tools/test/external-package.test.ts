@@ -193,6 +193,63 @@ it.runIf(runExternal)(
 );
 
 it.runIf(runExternal)(
+  "packs, loads, and exercises the unchanged public viridisLite 0.4.3 pure-R source package",
+  async () => {
+    let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    try {
+      const installed = await installPackagesFromRepository(["viridisLite"]);
+      expect(installed.artifacts[0]).toMatchObject({
+        package: { name: "viridisLite", version: "0.4.3" },
+        compatibility: { packaging: "ready", execution: "unchecked" },
+        integrity: {
+          algorithm: "sha256",
+          value: "aba19bcae8a19d1bfaa4806275b6caf4c6d0d4ea7acd58cbb8df7474aa39bb09",
+        },
+      });
+      runtime = await createR({
+        execution: "inline",
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+        packages: installed.bundles,
+      });
+      await expect(runtime.eval('requireNamespace("viridisLite", quietly = TRUE)')).resolves.toBe(
+        true,
+      );
+      await expect(runtime.eval('as.character(packageVersion("viridisLite"))')).resolves.toBe(
+        "0.4.3",
+      );
+      await expect(runtime.eval("viridisLite::viridis(5)")).resolves.toEqual([
+        "#440154FF",
+        "#3B528BFF",
+        "#21908CFF",
+        "#5DC863FF",
+        "#FDE725FF",
+      ]);
+      await expect(runtime.eval("viridisLite::magma(5)")).resolves.toEqual([
+        "#000004FF",
+        "#51127CFF",
+        "#B63679FF",
+        "#FB8861FF",
+        "#FCFDBFFF",
+      ]);
+      await expect(
+        runtime.eval(
+          "viridisLite::viridis(3, alpha = 0.5, begin = 0.2, end = 0.8, direction = -1)",
+        ),
+      ).resolves.toEqual(["#7AD15180", "#21908C80", "#41448780"]);
+    } finally {
+      await runtime?.dispose();
+    }
+  },
+  120_000,
+);
+
+it.runIf(runExternal)(
   "packs and loads the unchanged public pkgconfig 2.0.3 pure-R source package",
   async () => {
     let runtime: Awaited<ReturnType<typeof createR>> | undefined;

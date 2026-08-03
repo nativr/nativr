@@ -13291,7 +13291,7 @@ NeedsCompilation: no
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.275.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.276.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -14819,8 +14819,56 @@ NeedsCompilation: no
     ]);
     await expect(runtime.eval("length(colorRampPalette(c('red', 'blue'))(0))")).resolves.toBe(0);
     await expect(
-      runtime.eval("colorRampPalette(c('red', 'blue'), interpolate = 'spline')"),
-    ).rejects.toMatchObject({ code: "NRU6147" });
+      runtime.eval(
+        "colorRampPalette(c('black', '#555555', 'white', '#AAAAAA'), interpolate = 'spline')(9)",
+      ),
+    ).resolves.toEqual([
+      "#000000",
+      "#000000",
+      "#2A2A2A",
+      "#6C6C6C",
+      "#B4B4B4",
+      "#F0F0F0",
+      "#FFFFFF",
+      "#FDFDFD",
+      "#AAAAAA",
+    ]);
+    const splineRamp = await runtime.eval(
+      "c(colorRamp(c('black', '#555555', 'white', '#AAAAAA'), interpolate = 'spline')(seq(0, 1, by = .125)))",
+    );
+    const expectedSplineRamp = [
+      0, 0.332031250000002, 42.5, 108.57421875, 180.625, 240.72265625, 255, 253.33984375, 170, 0,
+      0.332031250000002, 42.5, 108.57421875, 180.625, 240.72265625, 255, 253.33984375, 170, 0,
+      0.332031250000002, 42.5, 108.57421875, 180.625, 240.72265625, 255, 253.33984375, 170,
+    ];
+    expect(splineRamp).toHaveLength(expectedSplineRamp.length);
+    for (const [index, expected] of expectedSplineRamp.entries()) {
+      expect((splineRamp as number[])[index]).toBeCloseTo(expected, 10);
+    }
+    await expect(
+      runtime.eval(
+        "empty <- colorRamp(c('black', 'white'))(numeric())\nc(dim(empty), is.null(dimnames(empty)[[1]]), is.null(dimnames(empty)[[2]]))",
+      ),
+    ).resolves.toEqual([0, 4, 1, 1]);
+    await expect(runtime.eval("names(formals(grDevices::colorRamp))")).resolves.toEqual([
+      "colors",
+      "bias",
+      "space",
+      "interpolate",
+      "alpha",
+    ]);
+    await expect(runtime.eval("names(formals(grDevices::colorRampPalette))")).resolves.toEqual([
+      "colors",
+      "...",
+    ]);
+    await expect(
+      runtime.eval(
+        "x <- structure(matrix(1:4, 2, 2), marker = 'kept') / 2\nc(dim(x), attr(x, 'marker'))",
+      ),
+    ).resolves.toEqual(["2", "2", "kept"]);
+    await expect(runtime.eval("matrix(1:4, 2, 2) + array(1:4, c(4, 1))")).rejects.toMatchObject({
+      code: "NRT3108",
+    });
     await runtime.dispose();
   });
 

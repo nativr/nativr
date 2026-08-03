@@ -40,7 +40,9 @@ Arithmetic, comparison, and logical operations are vectorized. Shorter operands 
 stays NaN. Comparisons produce unknown for NA/NaN. `!`, `&`, and `|` use three-valued logic; `&&`
 and `||` are scalar and short-circuit. Complex values support arithmetic, equality, logical
 coercion, core component helpers, indexing/replacement, and Worker transport; the full GNU R complex
-mathematics surface is not yet implemented.
+mathematics surface is not yet implemented. Binary arithmetic preserves and combines attributes from
+conforming arrays and the longer/equal-length operand using GNU R's precedence rules; arrays retain
+dimensions, reject non-conformable shapes, and suppress ordinary vector names.
 
 Raw values support construction/coercion, concatenation, comparison, bytewise `!`/`&`/`|`,
 selection/replacement, shifts, integer-bit expansion, exact character-byte conversion, and Worker
@@ -866,13 +868,15 @@ unnamed character vector and does not read DOM, CSS, host locale, network, or GN
 catalog's compact aligned RGB table backs `col2rgb` and palette interpolation without consulting
 host color APIs.
 
-`colorRampPalette()` is a separate registered `grDevices` builtin. It validates hexadecimal and
-catalog named colors, then returns a first-class palette function accepting the requested output
-length. The observed isoband path linearly interpolates six anchors in CIE Lab space and reproduces
-GNU R's 21 returned hexadecimal colors exactly; ordinary RGB, positive bias, optional alpha, partial
-choice matching, and empty or singleton outputs have differential evidence. Conversion uses owned
-sRGB/D65 transforms and never consults CSS, Canvas, or a host color service. Spline interpolation,
-standalone `colorRamp`, and device color profiles remain outside this slice.
+`colorRamp()` and `colorRampPalette()` are registered `grDevices` builtins. They validate
+hexadecimal and catalog named colors, then return first-class numeric-matrix or hexadecimal palette
+functions. Linear and not-a-knot/FMM spline interpolation, ordinary RGB, CIE Lab, positive bias,
+optional alpha, partial choice matching, non-finite/out-of-range points, and empty or singleton
+outputs have differential evidence. The observed isoband path reproduces GNU R's 21-color result,
+and unchanged viridisLite 0.4.3 composes a 256-anchor Lab spline through `colorRamp()` into exact
+Viridis, Magma, alpha, range, and direction outputs. Conversion uses owned sRGB/D65 transforms and
+never consults CSS, Canvas, or a host color service. Other color spaces, device profiles, and
+exhaustive coercion/rounding boundaries remain outside this slice.
 
 `hcl()` is a registered `grDevices` builtin with GNU R-shaped defaults and formals. It recycles hue,
 chroma, luminance, and optional alpha vectors, converts polar CIE-LUV coordinates through a fixed

@@ -9,6 +9,7 @@ import {
   logicalVector,
   rawVector,
   vectorClasses,
+  vectorDimensions,
   vectorNames,
   withNames,
 } from "@nativr/runtime";
@@ -185,7 +186,10 @@ export const jsReferenceOperators: RuntimeOperators = {
         real[index] = result.real;
         imaginary[index] = result.imaginary;
       }
-      return complexVector(real, imaginary, compactMask(missing));
+      return {
+        ...complexVector(real, imaginary, compactMask(missing)),
+        attributes: arithmeticAttributes(lhs, rhs, length),
+      };
     }
     const returnsDouble = lhs.type === "double" || rhs.type === "double" || "/^".includes(operator);
 
@@ -205,7 +209,10 @@ export const jsReferenceOperators: RuntimeOperators = {
           numericAt(rhs, rightIndex),
         );
       }
-      return doubleVector(values, compactMask(missing));
+      return {
+        ...doubleVector(values, compactMask(missing)),
+        attributes: arithmeticAttributes(lhs, rhs, length),
+      };
     }
 
     const values = new Int32Array(length);
@@ -229,9 +236,59 @@ export const jsReferenceOperators: RuntimeOperators = {
         values[index] = result;
       }
     }
-    return integerVector(values, compactMask(missing));
+    return {
+      ...integerVector(values, compactMask(missing)),
+      attributes: arithmeticAttributes(lhs, rhs, length),
+    };
   },
 };
+
+function arithmeticAttributes(
+  left: NumericVector,
+  right: NumericVector,
+  resultLength: number,
+): ReadonlyMap<string, RValue> {
+  if (resultLength === 0) return new Map();
+  const leftDimensions = vectorDimensions(left);
+  const rightDimensions = vectorDimensions(right);
+  if (
+    leftDimensions !== undefined &&
+    rightDimensions !== undefined &&
+    (leftDimensions.length !== rightDimensions.length ||
+      leftDimensions.some((dimension, index) => dimension !== rightDimensions[index]))
+  ) {
+    throw new RTypeMismatchError("NRT3108", "non-conformable arrays");
+  }
+  const dimensions = leftDimensions ?? rightDimensions;
+  if (
+    dimensions !== undefined &&
+    dimensions.reduce((product, dimension) => product * dimension, 1) !== resultLength
+  ) {
+    throw new RTypeMismatchError(
+      "NRT3109",
+      `dims [product ${dimensions.reduce((product, dimension) => product * dimension, 1)}] do not match the length of object [${resultLength}]`,
+    );
+  }
+
+  let attributes: Map<string, RValue>;
+  if (left.length > right.length) attributes = new Map(left.attributes);
+  else if (right.length > left.length) attributes = new Map(right.attributes);
+  else attributes = new Map([...right.attributes, ...left.attributes]);
+
+  if (leftDimensions !== undefined && rightDimensions === undefined) {
+    attributes =
+      left.length === right.length
+        ? new Map([...right.attributes, ...left.attributes])
+        : new Map(left.attributes);
+  } else if (rightDimensions !== undefined && leftDimensions === undefined) {
+    attributes =
+      left.length === right.length
+        ? new Map([...left.attributes, ...right.attributes])
+        : new Map(right.attributes);
+  }
+  if (dimensions !== undefined) attributes.delete("names");
+  return attributes;
+}
 
 function isNumericVersionValue(value: RValue): value is RList {
   return value.type === "list" && (vectorClasses(value) ?? []).includes("numeric_version");

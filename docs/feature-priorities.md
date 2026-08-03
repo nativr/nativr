@@ -578,14 +578,14 @@ alpha interpolation, partial argument choices, zero/one-length output, and regis
 lookup. The exact 21-color observed output has byte-for-byte GNU R black-box evidence. This follows
 the
 [GNU R color-interpolation contract](https://stat.ethz.ch/R-manual/R-devel/library/grDevices/html/colorRamp.html).
-Spline interpolation, standalone `colorRamp`, palette mutation, and general device color management
-remain outside this increment; the later rank-366 work reuses the complete catalog for `col2rgb`.
-The refreshed detector excludes bslib's two locally defined `person()` HTML-helper calls rather than
-misclassifying them as `utils::person()`. Rank 336 `sink` remains deferred because utf8's measured
-output-redirection example still requires stateful `file()`/`close()` connection objects. The
-session `tempfile()` and `readLines()` pieces are now available, but implementing only the sink
-switch without that remaining connection vertical path would not run the example. Rank 337
-`sessionInfo` is now complete for the one call in
+A later package-depth increment adds standalone linear/spline `colorRamp` for unchanged viridisLite;
+palette mutation and general device color management remain outside this measured surface. The later
+rank-366 work reuses the complete catalog for `col2rgb`. The refreshed detector excludes bslib's two
+locally defined `person()` HTML-helper calls rather than misclassifying them as `utils::person()`.
+Rank 336 `sink` remains deferred because utf8's measured output-redirection example still requires
+stateful `file()`/`close()` connection objects. The session `tempfile()` and `readLines()` pieces
+are now available, but implementing only the sink switch without that remaining connection vertical
+path would not run the example. Rank 337 `sessionInfo` is now complete for the one call in
 [`otel`](https://cran.r-project.org/web/packages/otel/refman/otel.html), representing 1,478,538
 snapshot downloads and 1.2% download reach. The measured expression reads
 `utils::sessionInfo()$platform` for a log field. NativR returns a classed, named list containing its
@@ -1795,6 +1795,14 @@ ties:
      three-level hierarchy and runs recursive `super$initialize()`/`super$greet()` paths without an
      adapter or package patch. Finalization, arbitrary/multiple inheritance breadth,
      portable-locking variants, and arbitrary packages remain unclaimed.
+173. Download-ranked package depth: viridisLite is package rank 30 in the committed snapshot with
+     1,465,142 downloads and no runtime package dependencies. Its unchanged 0.4.3 source first
+     exposed missing `grDevices::colorRamp`, then the more general loss of matrix attributes through
+     arithmetic. GNU R differential evidence now covers array/long-operand attribute propagation and
+     linear/not-a-knot spline numeric ramps in RGB/Lab space. The digest-pinned fifth external proof
+     executes `viridis()`, `magma()`, and a reversed translucent range without copied package
+     source, an adapter, or evaluation-time network access. It does not claim every viridisLite
+     function, every palette boundary, or arbitrary packages.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

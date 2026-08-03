@@ -5577,6 +5577,35 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "color-ramp-standalone-rgb-lab-spline-and-empty-shape",
+    "code": "spline <- c(colorRamp(c(\"black\", \"#555555\", \"white\", \"#AAAAAA\"), interpolate = \"spline\")(seq(0, 1, by = .125)))\nlab <- c(colorRamp(c(\"#440154\", \"#FDE725\"), space = \"Lab\", interpolate = \"spline\")(c(0, .25, .5, .75, 1)))\nempty <- colorRamp(c(\"black\", \"white\"))(numeric())\nc(spline, lab, dim(empty), is.null(dimnames(empty)[[1]]), is.null(dimnames(empty)[[2]]))",
+    "expected": [
+      0, 0.33203125000000355, 42.500000000000014, 108.57421875, 180.62500000000003,
+      240.72265625000003, 255, 253.33984375, 170, 0, 0.33203125000000355, 42.500000000000014,
+      108.57421875, 180.62500000000003, 240.72265625000003, 255, 253.33984375, 170, 0,
+      0.33203125000000355, 42.500000000000014, 108.57421875, 180.62500000000003, 240.72265625000003,
+      255, 253.33984375, 170, 68.00085, 118.51635, 164.33984999999998, 208.84755, 253.0008,
+      0.9995999999999999, 61.63095, 115.59915000000001, 171.94905, 230.9994, 83.99955, 85.12155,
+      81.45975, 69.5946, 37.0005, 0, 4, 1, 1
+    ],
+    "expectedCompatibility": "numeric",
+    "tolerance": { "absolute": 0.0001, "relative": 0.000001 }
+  },
+  {
+    "id": "color-ramp-and-palette-exact-formals",
+    "code": "c(names(formals(grDevices::colorRamp)), names(formals(grDevices::colorRampPalette)), identical(formals(grDevices::colorRamp), formals(grDevices::colorRampPalette)))",
+    "expected": ["colors", "bias", "space", "interpolate", "alpha", "colors", "...", "FALSE"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "arithmetic-array-and-long-operand-attribute-propagation",
+    "code": "x <- structure(matrix(1:4, 2, 2), marker = \"kept\") / 2\nright <- 1 + structure(1:3, foo = \"right\")\nsame <- structure(1:2, foo = \"left\") + structure(3:4, bar = \"right\")\nc(c(x), dim(x), attr(x, \"marker\"), attr(right, \"foo\"), attr(same, \"foo\"), attr(same, \"bar\"), inherits(try(matrix(1:4, 2, 2) + array(1:4, c(4, 1)), silent = TRUE), \"try-error\"))",
+    "expected": ["0.5", "1", "1.5", "2", "2", "2", "kept", "right", "left", "right", "TRUE"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "hcl-observed-ggplot2-raster-colors",
     "code": "hcl_rainbow <- matrix(hcl(seq(0, 360, length.out = 50 * 50), 80, 70), nrow = 50)\nc(dim(hcl_rainbow), hcl_rainbow[c(1, 625, 1250, 1875, 2500)], hcl(seq(0, 360, length.out = 10), 80, 70))",
     "expected": [

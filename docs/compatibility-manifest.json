@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.275.0",
+  "languageSubsetVersion": "0.276.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -679,6 +679,7 @@
       "name": "grDevices",
       "referenceVersion": "R 4.6.x documented behavior",
       "functions": [
+        { "name": "colorRamp", "compatibility": "numeric" },
         { "name": "colorRampPalette", "compatibility": "numeric" },
         { "name": "hcl", "compatibility": "behavioral" },
         { "name": "col2rgb", "compatibility": "behavioral" },

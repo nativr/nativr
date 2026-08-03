@@ -318,7 +318,7 @@ prevents a safe archive scan from being mislabeled as full package compatibility
 
 ## External proof
 
-The opt-in test `packages/package-tools/test/external-package.test.ts` downloads four unchanged
+The opt-in test `packages/package-tools/test/external-package.test.ts` downloads five unchanged
 public source packages from the repository resolver and verifies a pinned artifact digest for each:
 
 - [`pkgconfig 2.0.3`](https://cran.r-project.org/package=pkgconfig) proves namespace exports,
@@ -336,7 +336,11 @@ public source packages from the repository resolver and verifies a pinned artifa
   shared nested references through a shallow clone, and recursively copy a nested R6 object through
   a deep clone. The same unchanged source constructs a three-level `Person`/`Employee`/`Manager`
   hierarchy, invokes recursive `super$initialize()`/`super$greet()` paths, and observes inherited
-  fields, methods, and class membership.
+  fields, methods, and class membership;
+- [`viridisLite 0.4.3`](https://cran.r-project.org/package=viridisLite), package rank 30 in the
+  committed usage snapshot, proves dependency-free unchanged source loading plus package-owned
+  256-anchor CIE Lab spline interpolation. `viridis()`, `magma()`, and an alpha/range/reverse call
+  return the GNU R-observed colors through generic `colorRamp`, matrix arithmetic, and `rgb`.
 
 No package source is checked into this repository. Together these tests exercise repository
 installation, runtime package files, namespace loading, qualified S3 registration, metaprogramming,
@@ -348,6 +352,11 @@ invocation. The inheritance path additionally exercises GNU R-compatible `NULL` 
 replacement promotion used by package-owned super environments; there is no R6 adapter or
 package-source rewrite. Finalization, arbitrary/multiple inheritance breadth, portable-locking
 variants, and complete R6 remain outside the evidence.
+
+The viridisLite path contains no palette table or package source copied into NativR. Its source is
+downloaded only by the opt-in test, digest-pinned, installed through the public package pipeline,
+and discarded with the test process. The browser bundle contains only reusable color interpolation
+and arithmetic semantics.
 
 The checked-in source-only fixture also exports a function that calls `grDevices::rainbow`,
 `terrain.colors`, `topo.colors`, and `cm.colors` through its namespace. This is a small executable

@@ -905,3 +905,10 @@ those operations with existing environments, closures, active bindings, and pack
 there is no R6 adapter, dependency, protocol event, native payload, evaluation-time network access,
 or generated JavaScript. The measured Worker is 416.3 KiB gzip (426,286 bytes), within the existing
 417 KiB ceiling, so all budgets remain unchanged.
+
+Language subset 0.276 adds reusable binary-arithmetic attribute propagation and standalone
+`grDevices::colorRamp` with precomputed, banded not-a-knot/FMM spline coefficients and logarithmic
+anchor lookup. Unchanged viridisLite 0.4.3 remains opt-in and contributes no package source or map
+data to the browser bundle. The measured Worker is 417.7 KiB gzip (427,754 bytes), 746 bytes above
+the previous 417 KiB ceiling, so the Worker ceiling rises narrowly to 418 KiB; client and
+parser-Wasm budgets remain unchanged.

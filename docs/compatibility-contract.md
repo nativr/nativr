@@ -899,12 +899,13 @@ conditions, and unclassed unnamed character output have differential evidence. T
 independently recorded public black-box result. It does not imply arbitrary color spaces, palette
 mutation, raster conversion, or devices.
 
-`grDevices::colorRampPalette` has differential evidence for isoband's two identical six-anchor,
-21-color CIE Lab Viridis calls and for linear RGB, positive bias, alpha, partial choice matching,
-and zero/singleton output lengths. It returns an owned first-class builtin function and performs all
-interpolation with browser-native arithmetic; the observed palette is byte-identical to GNU R. All
-657 catalog names are now accepted as color inputs. Spline interpolation, standalone `colorRamp`,
-wide-gamut/device profiles, and exhaustive out-of-gamut rounding remain outside this bounded slice.
+`grDevices::colorRamp` and `colorRampPalette` have differential evidence for first-class numeric
+matrix and hexadecimal palette closures, linear and not-a-knot/FMM spline interpolation, RGB/CIE Lab
+space, positive bias, alpha, partial choice matching, non-finite/out-of-range points, and
+zero/singleton output lengths. Isoband's six-anchor 21-color palette and unchanged viridisLite
+0.4.3's 256-anchor Lab spline produce GNU R-compatible colors with browser-native arithmetic. All
+657 catalog names are accepted as color inputs. Wide-gamut/device profiles, other color spaces, and
+exhaustive coercion/out-of-gamut rounding remain outside this bounded slice.
 
 `grDevices::hcl` has differential evidence for all six measured ggplot2/zoo calls, including a
 2,500-color raster vector, a ten-color strip, translucent threshold colors, and opaque neutral/high-
@@ -2358,11 +2359,13 @@ archive/file/byte/package limits, rejects links, native/JVM code, install hooks,
 `useDynLib`, invalid paths, and unsupported NAMESPACE directives, preserves package resources and
 license metadata, and emits deterministic SHA-256 artifacts plus a dependency lock. The browser
 runtime remains network-free. Digest-pinned opt-in executable tests cover unchanged
-`pkgconfig 2.0.3`, `generics 0.1.4`, `withr 3.0.3`, and `R6 2.6.1` sources. They prove the
-repository-to-namespace path, package-owned S3 dispatch, and generated state-restoring wrappers
-through `with_options()`, plus R6 generator/object construction and public reference mutation,
-private-state method access, an active read/write field, shallow/deep cloning, and three-level
-inheritance with recursive `super` calls, without package patches.
+`pkgconfig 2.0.3`, `generics 0.1.4`, `withr 3.0.3`, `R6 2.6.1`, and `viridisLite 0.4.3` sources.
+They prove the repository-to-namespace path, package-owned S3 dispatch, and generated
+state-restoring wrappers through `with_options()`, plus R6 generator/object construction and public
+reference mutation, private-state method access, an active read/write field, shallow/deep cloning,
+and three-level inheritance with recursive `super` calls, plus package-owned 256-anchor Lab spline
+palettes through generic arithmetic/array and `grDevices::colorRamp` semantics, without package
+patches.
 
 Package admission is not universal execution compatibility. Package `data/*.R`, `.csv`, `.tab`,
 `.txt`, and XDR/gzip `.rda`/`.RData` discovery/loading is supported through `utils::data`, including

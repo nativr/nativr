@@ -374,6 +374,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "as.raster.numeric",
       "as.raster.raw",
       "col2rgb",
+      "colorRamp",
       "colorRampPalette",
       "colors",
       "colours",

@@ -2441,12 +2441,15 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("dim<-", ["x", "value"], "behavioral", builtinDimReplacement),
   defineBuiltin("drop", ["x"], "behavioral", builtinDrop),
   ...COLOUR_RAMP_BUILTIN_SPECS.map((definition) =>
-    definePackageBuiltin(
-      "grDevices",
-      definition.name,
-      definition.parameters,
-      definition.compatibility,
-      definition.implementation,
+    withBuiltinFormals(
+      definePackageBuiltin(
+        "grDevices",
+        definition.name,
+        definition.parameters,
+        definition.compatibility,
+        definition.implementation,
+      ),
+      colourRampFormals(definition.name),
     ),
   ),
   withBuiltinFormals(
@@ -4188,6 +4191,28 @@ function debugFunctionFormals(): readonly {
     { name: "text", defaultValue: { kind: "StringLiteral", value: "", span: SYNTHETIC_SPAN } },
     { name: "condition", defaultValue: nullAst() },
     { name: "signature", defaultValue: nullAst() },
+  ];
+}
+
+function colourRampFormals(name: "colorRamp" | "colorRampPalette"): readonly {
+  readonly name: string;
+  readonly defaultValue?: AstNode;
+}[] {
+  const choices = (values: readonly string[]): AstNode =>
+    callAst(
+      "c",
+      values.map((value) => ({
+        value: { kind: "StringLiteral", value, span: SYNTHETIC_SPAN },
+        span: SYNTHETIC_SPAN,
+      })),
+    );
+  if (name === "colorRampPalette") return [{ name: "colors" }, { name: "..." }];
+  return [
+    { name: "colors" },
+    { name: "bias", defaultValue: { kind: "DoubleLiteral", value: 1, span: SYNTHETIC_SPAN } },
+    { name: "space", defaultValue: choices(["rgb", "Lab"]) },
+    { name: "interpolate", defaultValue: choices(["linear", "spline"]) },
+    { name: "alpha", defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN } },
   ];
 }
 

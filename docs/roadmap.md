@@ -486,10 +486,11 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      constraints; applies Collate/platform source selection and portable encodings; verifies
      repository digests; writes deterministic SHA-256 artifacts and locks; and feeds dependency-
      first bundles directly to `createR`. Runtime `system.file` exposes immutable package resources.
-     Unchanged `pkgconfig 2.0.3`, `generics 0.1.4`, `withr 3.0.3`, and `R6 2.6.1` source packages
-     pass opt-in digest-pinned repository/install/load/execution tests, including S3 dispatch and
-     state restoration. Binary/lazy data, broader NAMESPACE/S4 forms, package test orchestration,
-     and audited native Wasm adapters remain later layers.
+     Unchanged `pkgconfig 2.0.3`, `generics 0.1.4`, `withr 3.0.3`, `R6 2.6.1`, and
+     `viridisLite 0.4.3` source packages pass opt-in digest-pinned repository/install/load/execution
+     tests, including S3 dispatch and state restoration, reference objects, and package-owned Lab
+     spline palettes. Binary/lazy data, broader NAMESPACE/S4 forms, package test orchestration, and
+     audited native Wasm adapters remain later layers.
 117. Package text and cooperative waits: `base::readLines` reads same-session temporary text plus
      immutable DESCRIPTION, NAMESPACE, retained R source, and UTF-8/Latin-1 package resources;
      `writeLines` supplies bounded temporary-file and stdout writes; and `Sys.sleep` yields in short
@@ -888,7 +889,9 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      three-level unchanged hierarchy through recursive `super$initialize()`/`super$greet()` calls,
      inherited fields/methods, and class-chain checks. Finalization, arbitrary/multiple inheritance
      breadth, portable-locking variants, broad R6 behavior, and arbitrary packages remain explicit
-     future work.
+     future work. The fifth digest-pinned proof, unchanged viridisLite 0.4.3, now composes generic
+     arithmetic attribute propagation with standalone RGB/Lab linear/FMM-spline `colorRamp` to
+     produce exact observed palettes; broader measured pure-R package execution remains future work.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means
@@ -903,12 +906,12 @@ the measured surface is runnable, not that NativR implements all R semantics or 
 2. Complete indexing, arrays, frames, conditions, dates/times, object systems, I/O, serialization,
    numeric algorithms, statistics, and graphics behind browser-safe host interfaces.
 3. Implement the full inventoried core namespace surface with per-callable differential evidence.
-4. Expand the executable package installer from the pinned `pkgconfig`/`generics`/`withr`/`R6`
-   proofs to the measured pure-R package corpus, binary/text data adapters, broader
-   namespace/object-system declarations, package test orchestration, and R CMD check scenarios
-   without embedding GNU R or webR. In parallel, turn the typed `.Call` seam into a reusable audited
-   Wasm package toolchain, including routine-registration extraction and the portable value/API
-   subset needed by measured compiled packages.
+4. Expand the executable package installer from the pinned
+   `pkgconfig`/`generics`/`withr`/`R6`/`viridisLite` proofs to the measured pure-R package corpus,
+   binary/text data adapters, broader namespace/object-system declarations, package test
+   orchestration, and R CMD check scenarios without embedding GNU R or webR. In parallel, turn the
+   typed `.Call` seam into a reusable audited Wasm package toolchain, including routine-registration
+   extraction and the portable value/API subset needed by measured compiled packages.
 5. Verify platform, browser, locale, time-zone, graphics, numeric, and performance behavior against
    the completion criteria in the GNU R compatibility ledger.
 6. Continue refreshing package-usage snapshots so high-reach gaps determine implementation order
