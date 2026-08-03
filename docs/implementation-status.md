@@ -189,6 +189,10 @@ Date: 2026-08-03
   environment and stream-redirection data, capture/status/timeout/warning/visibility semantics,
   explicit resource bounds, unchanged pure-R package execution, and inline/default-Worker host
   transport. Without a `systemCommand` policy it fails closed and launches no process.
+- Usage-ranked `.Call()` with explicit native-module/routine manifests, exact package confinement,
+  registered arity checks, bounded `RValueSnapshot` arguments/results, inline/default-Worker
+  transport, and a default-deny typed native/Wasm callback. Automatic compiled-package builds and
+  GNU R C-API/SEXP compatibility are not yet implemented.
 - Usage-ranked `utils::download.file()` composes that explicit byte adapter with session-owned
   files. GNU R 4.6 formals, preflight validation, invisible statuses, paired-vector `retvals`, exact
   replacement bytes, named headers, pure-R namespace calls, failure atomicity, default-deny inline
@@ -311,8 +315,9 @@ Date: 2026-08-03
   default Worker prompting through the existing explicit bounded `readline` exchange.
 - Usage-ranked `base::getLoadedDLLs` for ps's measured module-path probe, with no-argument formals,
   visible `DLLInfoList` shape, `vapply(..., "path")`, empty subsetting, source-package and Worker
-  evidence, and a truthful empty result while no R-callable native-module ABI exists. Synthetic GNU
-  R DLLs, host paths, handles, and compiled-package compatibility are explicitly excluded.
+  evidence, a truthful empty default, and records only for explicit virtual `nativeModules`.
+  Synthetic GNU R DLLs, host paths, pointer handles, and automatic compiled-package compatibility
+  are explicitly excluded.
 - Usage-ranked `grDevices::recordPlot`/`replayPlot` with a bounded independently owned display list,
   ragg's same-session record/replay shape, package-metadata retention, held replay, invisible replay
   return, namespace access, malformed-input guards, and explicit external-format/reload boundaries.

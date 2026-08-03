@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 659,
-    "overlappingNames": 641,
-    "missingReferenceNames": 1881,
+    "nativrRegisteredNames": 660,
+    "overlappingNames": 642,
+    "missingReferenceNames": 1880,
     "nativrExtensionNames": 18,
-    "nameCoverage": 0.254163
+    "nameCoverage": 0.25456
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 465, "nameCoverage": 0.340161 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 466, "nameCoverage": 0.340892 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 76, "nameCoverage": 0.163793 },
     {
       "package": "methods",
@@ -47,6 +47,7 @@
     "*",
     "+",
     "-",
+    ".Call",
     ".libPaths",
     "/",
     ":",
@@ -703,7 +704,6 @@
     "..getNamespace",
     ".AtNames",
     ".C",
-    ".Call",
     ".Call.graphics",
     ".Date",
     ".Defunct",

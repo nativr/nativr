@@ -139,11 +139,13 @@ characters, and results beyond the session output-byte budget are rejected. The 
 never opens a dialog or reads stdin.
 
 `getLoadedDLLs()` does not enumerate the browser, Worker implementation, JavaScript module graph,
-parser Wasm, or host process. Its `DLLInfoList` is sourced only from NativR's R-callable module
-boundary, which is currently empty. Consequently pure-R feature probes reveal neither local paths
-nor pointer-like handles, and no synthetic module can trick package code into attempting an
-unsupported native call. Any future Wasm/native package ABI must register bounded typed records
-explicitly; ambient dynamic-library discovery remains prohibited.
+parser Wasm, or host process. Its `DLLInfoList` is sourced only from explicit `nativeModules`
+metadata and is empty by default. Paths are application-chosen virtual identifiers; pointer fields
+are `NULL`. `.Call()` resolves only those registered names and invokes only the construction-time
+`nativeCall` callback. Arguments/results are validated data-only snapshots, not JavaScript source,
+host pointers, dynamic-library handles, or ambient exports. Hosts must bind exact module/routine
+allow-lists to audited Wasm instances and reject unexpected types. Ambient dynamic-library discovery
+and generated-code execution remain prohibited.
 
 `url()`, `utils::download.file()`, and `utils::available.packages()` are likewise inert unless the
 application supplies `createR({ url })`. The callback receives only copied URL/method/header data

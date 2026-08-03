@@ -274,11 +274,19 @@ formats, and pixel or byte equivalence with GNU R devices are not claimed.
 
 Usage-ranked `base::getLoadedDLLs` has shape-level GNU R 4.6 evidence for its no-argument formals,
 visible `DLLInfoList` result, class-preserving empty subset, and the measured ps
-`vapply(..., "path")` call. The current browser runtime has no R-callable native modules, so its
-result is intentionally empty. NativR does not synthesize GNU R's base DLL entries, expose parser
-Wasm or JavaScript modules, enumerate a host process, or fabricate external pointers. Populated
-`DLLInfo` records, dynamic symbol lookup, `.Call`/`.External` linkage, and compiled-package loading
-are not claimed.
+`vapply(..., "path")` call. Its default result is intentionally empty. Explicit `nativeModules`
+produce owned `DLLInfo` records with virtual paths, lookup flags, and `NULL` pointer fields. NativR
+does not synthesize GNU R's base DLL entries, expose parser Wasm or JavaScript modules, enumerate a
+host process, or fabricate external pointers.
+
+Usage-ranked `base::.Call` has GNU R 4.6 black-box evidence for primitive type, null formals,
+missing/invalid name errors, exact `PACKAGE` confinement, registered argument counts, and symbol
+lookup failure. NativR additionally has behavioral evidence for explicit routine resolution, bounded
+snapshot arguments/results, inline/default-Worker transport, handler failure propagation, and
+default-deny execution. The adapter is deliberately not binary-compatible with GNU R's SEXP C API.
+Native symbol objects, `.External`, external pointers, arbitrary attributes/cycles, R C API
+memory/protection semantics, shared-library loading, and automatic compiled-package installation
+remain incomplete.
 
 `image` has shape-level differential evidence for the rank-163 calls sampled from `scales`,
 `viridisLite`, and `RColorBrewer`. Its S3 generic preserves package-defined methods. The default

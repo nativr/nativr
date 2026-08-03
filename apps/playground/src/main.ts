@@ -4,6 +4,8 @@ import type {
   PublicBrowseEvent,
   PublicDataViewEvent,
   PublicGraphicsEvent,
+  PublicNativeCallRequest,
+  PublicNativeCallResult,
   PublicOutputEvent,
   PublicReadlineRequest,
   PublicRWarning,
@@ -52,6 +54,11 @@ const examples: readonly Example[] = [
     setup: async (runtime) => {
       await runtime.assign("x", new Float64Array([1, 2, 3, 4]));
     },
+  },
+  {
+    id: "native-call",
+    label: "Typed native adapter",
+    code: '.Call("nativr_sum", c(1, 2, 3, 4), PACKAGE = "nativr.demo")',
   },
   {
     id: "package",
@@ -245,6 +252,16 @@ async function initialize(): Promise<void> {
       packages: [playgroundPackage],
       environmentVariables: { NATIVR_PLAYGROUND: "worker" },
       executablePaths: { "nativr-echo": "nativr://host/bin/nativr-echo" },
+      nativeModules: [
+        {
+          name: "nativr.demo",
+          path: "wasm://playground/nativr-demo.wasm",
+          dynamicLookup: false,
+          forceSymbols: false,
+          routines: [{ name: "nativr_sum", numParameters: 1 }],
+        },
+      ],
+      nativeCall: playgroundNativeCall,
       systemCommand: playgroundSystemCommand,
       readline: playgroundReadline,
       url: playgroundUrl,
@@ -316,6 +333,23 @@ function playgroundSystemCommand(request: PublicSystemCommandRequest): PublicSys
     };
   }
   return { status: 0, stdout: `${(request.input ?? ["nativr-host"]).join("\n")}\n` };
+}
+
+function playgroundNativeCall(request: PublicNativeCallRequest): PublicNativeCallResult {
+  if (request.module !== "nativr.demo" || request.routine !== "nativr_sum") {
+    throw new Error(
+      `Playground native routine is not allow-listed: ${request.module}::${request.routine}`,
+    );
+  }
+  const input = request.arguments[0];
+  if (input?.type !== "double") throw new Error("nativr_sum expects one double vector");
+  return {
+    value: {
+      version: 1,
+      type: "double",
+      values: new Float64Array([input.values.reduce((sum, value) => sum + value, 0)]),
+    },
+  };
 }
 
 async function run(): Promise<void> {

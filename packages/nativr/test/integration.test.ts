@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createR, isComplex, isNA, isRaw, NA, RRuntimeDisposedError } from "../src/index.js";
 import type {
   PublicReadlineRequest,
+  PublicNativeCallRequest,
   PublicSocketRequest,
   PublicSystemCommandRequest,
   PublicUrlRequest,
@@ -341,6 +342,132 @@ describe("complete inline source-to-result vertical slice", () => {
     const runtime = await session();
     await expect(runtime.eval(code)).resolves.toEqual(expected);
     await runtime.dispose();
+  });
+
+  it("resolves .Call through an explicit typed native module adapter", async () => {
+    const requests: PublicNativeCallRequest[] = [];
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      nativeModules: [
+        {
+          name: "nativrfixture",
+          path: "wasm://nativrfixture/module.wasm",
+          dynamicLookup: false,
+          forceSymbols: false,
+          routines: [
+            { name: "fixture_sum", numParameters: 1 },
+            { name: "fixture_identity", numParameters: null },
+          ],
+        },
+      ],
+      nativeCall: (request) => {
+        requests.push(request);
+        if (request.routine === "fixture_identity") {
+          return { value: request.arguments[0] ?? { version: 1, type: "null" } };
+        }
+        const input = request.arguments[0];
+        if (input?.type !== "double") throw new Error("fixture_sum expects a double vector");
+        return {
+          value: {
+            version: 1,
+            type: "double",
+            values: new Float64Array([input.values.reduce((sum, value) => sum + value, 0)]),
+          },
+        };
+      },
+    });
+
+    await expect(
+      runtime.eval('.Call("fixture_sum", c(1, 2, 3), PACKAGE = "nativrfixture")'),
+    ).resolves.toBe(6);
+    expect(requests[0]).toMatchObject({
+      module: "nativrfixture",
+      routine: "fixture_sum",
+    });
+    expect(requests[0]?.arguments[0]).toMatchObject({ type: "double" });
+    await expect(runtime.eval('.Call(c("fixture_identity", "ignored"), 4L)')).resolves.toBe(4);
+    await expect(
+      runtime.eval(`
+        dll <- getLoadedDLLs()[["nativrfixture"]]
+        c(
+          inherits(getLoadedDLLs(), "DLLInfoList"),
+          inherits(dll, "DLLInfo"),
+          dll$name == "nativrfixture",
+          dll$path == "wasm://nativrfixture/module.wasm",
+          !dll$dynamicLookup,
+          !dll$forceSymbols,
+          is.null(dll$handle),
+          is.null(dll$info)
+        )
+      `),
+    ).resolves.toEqual([true, true, true, true, true, true, true, true]);
+    await expect(runtime.eval("typeof(.Call)")).resolves.toBe("builtin");
+    await expect(runtime.eval('.Call("fixture_sum", 1, 2)')).rejects.toMatchObject({
+      code: "NRE2259",
+    });
+    await expect(runtime.eval('.Call("missing")')).rejects.toMatchObject({ code: "NRE2258" });
+    await runtime.dispose();
+
+    const closed = await createR({
+      execution: "inline",
+      assets,
+      nativeModules: [
+        {
+          name: "closed",
+          path: "wasm://closed/module.wasm",
+          dynamicLookup: false,
+          forceSymbols: false,
+          routines: [{ name: "registered", numParameters: 0 }],
+        },
+      ],
+    });
+    await expect(closed.eval('.Call("registered")')).rejects.toMatchObject({ code: "NRU6210" });
+    await closed.dispose();
+
+    await expect(
+      createR({
+        execution: "inline",
+        assets,
+        limits: { maxVectorLength: 1 },
+        nativeModules: [
+          {
+            name: "one",
+            path: "wasm://one/module.wasm",
+            dynamicLookup: false,
+            forceSymbols: false,
+            routines: [],
+          },
+          {
+            name: "two",
+            path: "wasm://two/module.wasm",
+            dynamicLookup: false,
+            forceSymbols: false,
+            routines: [],
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({ code: "NRL4002" });
+
+    const limited = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 1 },
+      nativeModules: [
+        {
+          name: "limited",
+          path: "wasm://limited/module.wasm",
+          dynamicLookup: false,
+          forceSymbols: false,
+          routines: [{ name: "too_long", numParameters: 0 }],
+        },
+      ],
+      nativeCall: () => ({
+        value: { version: 1, type: "double", values: new Float64Array([1, 2]) },
+      }),
+    });
+    await expect(limited.eval('.Call("too_long")')).rejects.toMatchObject({ code: "NRL4002" });
+    await limited.dispose();
   });
 
   it("captures GNU R-style print and cat output with invisible return values", async () => {
@@ -12734,7 +12861,7 @@ NeedsCompilation: no
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.262.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.263.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

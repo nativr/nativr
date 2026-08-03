@@ -92,6 +92,49 @@ pure-R package code: `readLines(pipe("approved-report"))`. Open write pipes buff
 it as exact text when closed. The current adapter is one-shot and one-way; duplex `r+`, interactive
 streaming, shell discovery, and NUL-containing binary stdin are not claimed.
 
+## Typed native/Wasm calls
+
+`.Call()` is available only through an explicit module registry and data-only host adapter:
+
+```ts
+const r = await createR({
+  nativeModules: [
+    {
+      name: "mypackage",
+      path: "wasm://mypackage/module.wasm",
+      dynamicLookup: false,
+      forceSymbols: false,
+      routines: [{ name: "mypackage_sum", numParameters: 1 }],
+    },
+  ],
+  nativeCall: async ({ module, routine, arguments: args }) => {
+    if (module !== "mypackage" || routine !== "mypackage_sum") throw new Error("denied");
+    const input = args[0];
+    if (input?.type !== "double") throw new Error("double vector required");
+    return {
+      value: {
+        version: 1,
+        type: "double",
+        values: new Float64Array([input.values.reduce((a, b) => a + b, 0)]),
+      },
+    };
+  },
+});
+
+await r.eval('.Call("mypackage_sum", c(1, 2, 3), PACKAGE = "mypackage")'); // 6
+```
+
+`nativeModules` is snapshotted at construction. Registered names, `numParameters`, exact `PACKAGE`
+selection, `dynamicLookup`, and `forceSymbols` are enforced before the callback runs.
+`getLoadedDLLs()` exposes the owned registry using `DLLInfoList`/`DLLInfo` records and virtual
+paths; its `handle` and `info` fields are `NULL` because raw pointers never cross this boundary.
+Arguments and results use `RValueSnapshot`, so atomic vectors, lists, names, dimensions, missing
+values, raw, complex, symbols, language, expressions, and the documented formula representation can
+cross. Closures, environments, promises, arbitrary attributes, external pointers, and cyclic graphs
+cannot yet cross. The handler should instantiate and call an audited Wasm module; it is not a
+dynamic JavaScript evaluator. Results are checked against vector/output limits. Omitted modules
+expose no symbols; an omitted handler fails with `NRU6210`.
+
 `base::readline()` and interactive browser-page pauses requested by `grDevices::devAskNewPage(TRUE)`
 use a separate line-oriented host adapter. This enables unchanged pure-R package prompts without
 exposing DOM objects to R or the Worker:

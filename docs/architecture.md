@@ -45,10 +45,11 @@ command set. This preserves `base -> runtime`, avoids mutating normalized values
 package, and Worker calls one implementation.
 
 R-callable loaded-module identity is also an owned boundary. `getLoadedDLLs()` does not inspect the
-Worker implementation graph or treat parser Wasm/JavaScript bundles as R DLLs; today it returns an
-empty `DLLInfoList`. That stable query surface lets source-only packages detect an absent optional
-native backend. A future compiled-package subsystem can populate validated module records behind the
-same boundary without leaking raw host pointers or reversing package dependency direction.
+Worker implementation graph or treat parser Wasm/JavaScript bundles as R DLLs. It returns an empty
+`DLLInfoList` by default and populated records only for construction-time `nativeModules` metadata.
+`.Call` resolves that registry in `base`, while `runtime` carries internal values and `nativr`
+converts them to protocol snapshots for the inline/Worker adapter. No lower layer imports the public
+facade, and no raw host pointer crosses the boundary.
 
 High-level helpers reuse semantic runtime primitives instead of maintaining parallel behavior.
 `base::replace`, for example, delegates to the same immutable one-dimensional subset-replacement

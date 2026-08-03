@@ -1767,6 +1767,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("isNamespaceLoaded", ["name"], "behavioral", builtinIsNamespaceLoaded),
   defineBuiltin("loadedNamespaces", [], "behavioral", builtinLoadedNamespaces),
   defineBuiltin("getLoadedDLLs", [], "shape", builtinGetLoadedDLLs),
+  defineBuiltin(".Call", [".NAME", "...", "PACKAGE"], "behavioral", builtinNativeCall, "primitive"),
   defineBuiltin("getNamespaceExports", ["ns"], "behavioral", builtinGetNamespaceExports),
   defineBuiltin("sys.call", ["which"], "behavioral", builtinSystemCall),
   defineBuiltin("get", ["x", "pos", "envir", "mode", "inherits"], "behavioral", builtinGet),
@@ -16998,7 +16999,102 @@ function builtinGetLoadedDLLs(invocation: BuiltinInvocation): RList {
   if (invocation.arguments.length !== 0) {
     throw new REvaluationError("NRE2101", "getLoadedDLLs() does not accept arguments.");
   }
-  return withClasses(listValue([]), ["DLLInfoList"]);
+  const modules = invocation.nativeModules();
+  invocation.context.allocate(modules.length * 7);
+  return withClasses(
+    listValue(
+      modules.map((module) =>
+        withClasses(
+          listValue(
+            [
+              characterVector([module.name]),
+              characterVector([module.path]),
+              logicalVector([module.dynamicLookup]),
+              R_NULL,
+              R_NULL,
+              logicalVector([module.forceSymbols]),
+            ],
+            ["name", "path", "dynamicLookup", "handle", "info", "forceSymbols"],
+          ),
+          ["DLLInfo"],
+        ),
+      ),
+      modules.map((module) => module.name),
+    ),
+    ["DLLInfoList"],
+  );
+}
+
+async function builtinNativeCall(invocation: BuiltinInvocation): Promise<RValue> {
+  const packageArguments = invocation.arguments.filter((argument) => argument.name === "PACKAGE");
+  if (packageArguments.length > 1) {
+    throw new REvaluationError(
+      "NRE2102",
+      "Formal argument 'PACKAGE' matched by multiple actual arguments.",
+    );
+  }
+  const callArguments = invocation.arguments.filter((argument) => argument.name !== "PACKAGE");
+  const nameArgument = callArguments[0];
+  if (nameArgument === undefined || nameArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "'.NAME' is missing in .Call().");
+  }
+  const nameValue = await invocation.force(nameArgument.promise);
+  if (nameValue.type !== "character" || nameValue.length === 0) {
+    throw new RTypeMismatchError(
+      "NRT3219",
+      "The first argument to .Call must be a string or a native symbol reference.",
+    );
+  }
+  const routineName = nameValue.missing?.[0] === 1 ? "NA" : (nameValue.values[0] ?? "");
+  const packageArgument = packageArguments[0];
+  let packageName: string | undefined;
+  if (packageArgument !== undefined) {
+    if (packageArgument.promise.missing) {
+      throw new REvaluationError("NRE2103", "Argument 'PACKAGE' is missing in .Call().");
+    }
+    packageName = characterScalar(await invocation.force(packageArgument.promise), "PACKAGE");
+  }
+  const modules = invocation.nativeModules();
+  const module =
+    packageName === undefined
+      ? modules.find(
+          (candidate) =>
+            !candidate.forceSymbols &&
+            (candidate.routines.some((routine) => routine.name === routineName) ||
+              candidate.dynamicLookup),
+        )
+      : modules.find((candidate) => candidate.name === packageName);
+  if (
+    module === undefined ||
+    module.forceSymbols ||
+    (!module.dynamicLookup && !module.routines.some((routine) => routine.name === routineName))
+  ) {
+    const packageSuffix = packageName === undefined ? "" : ` for package '${packageName}'`;
+    throw new REvaluationError(
+      "NRE2258",
+      `C symbol name '${routineName}' is not in the load table${packageSuffix}.`,
+    );
+  }
+  const definition = module.routines.find((routine) => routine.name === routineName);
+  const nativeArguments: RValue[] = [];
+  for (const argument of callArguments.slice(1)) {
+    nativeArguments.push(await invocation.force(argument.promise));
+  }
+  if (
+    definition?.numParameters !== undefined &&
+    definition.numParameters !== null &&
+    definition.numParameters !== nativeArguments.length
+  ) {
+    throw new REvaluationError(
+      "NRE2259",
+      `Incorrect number of arguments (${nativeArguments.length}), expecting ${definition.numParameters} for '${routineName}'.`,
+    );
+  }
+  return invocation.nativeCall({
+    module: module.name,
+    routine: routineName,
+    arguments: nativeArguments,
+  });
 }
 
 async function builtinGetNamespaceExports(

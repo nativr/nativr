@@ -22,11 +22,15 @@ That gives NativR a two-layer compatibility target:
 
 1. implement the Base R and recommended-package language/API substrate once, with black-box GNU R
    evidence for each claimed behavior;
-2. admit and execute unchanged source-only packages through one generic installer and loader.
+2. admit and execute unchanged source-only packages through one generic installer and loader;
+3. for packages with compiled code, build their portable native component to an audited Wasm module
+   and register its exported routines through the generic typed `.Call` adapter.
 
-This is how package coverage can grow much faster than the TypeScript codebase. It cannot make a
-package's compiled C/C++/Fortran/JVM code portable; those packages require a separately reviewed
-Wasm ABI or explicit host capability and remain outside the source-only promise.
+This is how package coverage can grow much faster than the TypeScript codebase. The third layer now
+has a real `.Call` request/result seam, but not a GNU R C-API implementation: each compiled package
+still needs a reviewed Wasm build/adapter, and C/C++/Fortran/JVM code does not become portable
+merely because its R wrapper can load. The long-term engineering goal is one reusable Wasm ABI and
+package build pipeline, not a TypeScript rewrite of every native routine.
 
 ```text
 CRAN-like source package
@@ -35,7 +39,18 @@ CRAN-like source package
   -> ordered R source + immutable resources + extracted Rd examples/vignette index
   -> namespace + imports + sysdata
   -> ordinary NativR closure evaluation
+
+Package with compiled code
+  -> the same R-source installation path
+  -> separately audited C/C++/Fortran-to-Wasm build
+  -> registered module/routine manifest
+  -> typed `.Call` snapshots through the Worker
 ```
+
+Today the first path is executable. The second path's registration, lookup, argument-count checking,
+Worker transport, resource validation, and Playground proof are executable; automatic compilation,
+the full SEXP/external-pointer model, registration extraction, and arbitrary CRAN native-package
+loading remain future work.
 
 Source packages are the primary installation input because they retain portable R code. An already
 installed GNU R library commonly replaces that source with lazy-load `.rdx`/`.rdb` databases and

@@ -73,6 +73,8 @@ import type {
   REnvironment,
   RDataViewEvent,
   RLanguage,
+  RNativeCallRequest,
+  RNativeModuleDefinition,
   RGraphicsEvent,
   ROutput,
   RPromise,
@@ -124,6 +126,10 @@ export interface EvaluatorOptions {
   readonly systemCommand?: (
     request: RSystemCommandRequest,
   ) => Promise<RSystemCommandResult> | RSystemCommandResult;
+  /** Declarative routines available through the explicit nativeCall adapter. */
+  readonly nativeModules?: readonly RNativeModuleDefinition[];
+  /** Explicit typed native/Wasm capability. Undefined means that .Call cannot execute. */
+  readonly nativeCall?: (request: RNativeCallRequest) => Promise<RValue> | RValue;
 }
 
 /** One dependency imported by a normalized source-only package. */
@@ -529,6 +535,8 @@ export class Evaluator {
   readonly #urlRequest: EvaluatorOptions["urlRequest"];
   readonly #socketRequest: EvaluatorOptions["socketRequest"];
   readonly #systemCommand: EvaluatorOptions["systemCommand"];
+  readonly #nativeModules: readonly RNativeModuleDefinition[];
+  readonly #nativeCall: EvaluatorOptions["nativeCall"];
   readonly #sessionProcessId: number;
   #emptyEnvironment: REnvironment;
   #baseEnvironment: REnvironment;
@@ -567,6 +575,8 @@ export class Evaluator {
     this.#urlRequest = options.urlRequest;
     this.#socketRequest = options.socketRequest;
     this.#systemCommand = options.systemCommand;
+    this.#nativeModules = options.nativeModules ?? [];
+    this.#nativeCall = options.nativeCall;
     this.#sessionProcessId = options.sessionProcessId ?? allocateRuntimeSessionProcessId();
     if (
       !Number.isInteger(this.#sessionProcessId) ||
@@ -1982,6 +1992,16 @@ export class Evaluator {
             );
           }
           return this.#systemCommand(request);
+        },
+        nativeModules: () => this.#nativeModules,
+        nativeCall: async (request) => {
+          if (this.#nativeCall === undefined) {
+            throw new RUnsupportedFeatureError(
+              "NRU6210",
+              ".Call() requires an explicit createR({ nativeCall }) typed native/Wasm capability.",
+            );
+          }
+          return this.#nativeCall(request);
         },
         searchPath: () => Object.freeze([...this.#searchPath]),
         libraryPaths: () => Object.freeze([...this.#libraryPaths]),

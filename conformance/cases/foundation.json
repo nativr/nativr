@@ -9649,5 +9649,12 @@
     "expected": [true, true, true, true, true],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "native-call-usage-ranked-primitive-and-default-deny-boundaries",
+    "code": "c(typeof(.Call), is.null(formals(.Call)), inherits(try(.Call(), silent = TRUE), \"try-error\"), inherits(try(.Call(1), silent = TRUE), \"try-error\"), inherits(try(.Call(NULL), silent = TRUE), \"try-error\"), inherits(try(.Call(\"nativr_definitely_missing\"), silent = TRUE), \"try-error\"), inherits(try(.Call(\"nativr_definitely_missing\", PACKAGE = \"base\"), silent = TRUE), \"try-error\"))",
+    "expected": ["builtin", "TRUE", "TRUE", "TRUE", "TRUE", "TRUE", "TRUE"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

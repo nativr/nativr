@@ -339,10 +339,11 @@ loops are not claimed.
 The rank-345 increment adds shape-level GNU R 4.6 black-box evidence for ps's measured
 `vapply(getLoadedDLLs(), "[[", character(1), "path")` probe. NativR matches the no-argument formals,
 visible list/mode/class contract, named character path projection, and class-preserving empty
-subset. The runtime truthfully reports zero entries because it has no R-callable native modules; GNU
-R's process-loaded DLL contents are platform state, not values NativR imitates. DLLInfo handle
-classes, symbol lookup, compiled-package registration, and ps's native library inspection remain
-explicit gaps.
+subset. The runtime truthfully reports zero entries by default because GNU R's process-loaded DLL
+contents are platform state, not values NativR imitates. Explicit `nativeModules` produce owned
+records with virtual paths and `NULL` handles; `.Call` can resolve those registered names through
+the typed adapter. GNU DLLInfo handle classes, arbitrary symbol objects, automatic compiled-package
+registration, and ps's native library inspection remain gaps.
 
 The rank-451 increment adds GNU R differential evidence for zoo's measured `deltat(z)` regular
 sampling-interval call. The generic dispatches to independently declared package methods with lazy
@@ -995,8 +996,12 @@ capture, status/warning/visibility behavior and preflight errors. NativR-only ev
 explicit data-only host request, console/capture/discard/file redirection intent, resource limits,
 failed-start and timeout outcomes, unchanged source-only package execution, and inline/default-
 Worker transport. No handler means no process authority, and NativR does not claim host shell,
-filesystem, environment, or executable discovery. Rank 358 `.Call` is now the next measured missing
-callable and requires a future typed native/Wasm ABI rather than JavaScript or host pointers.
+filesystem, environment, or executable discovery.
+
+The typed-native-call increment raises current name overlap to 642 of 2,522. Rank 358 `.Call` now
+has a typed native/Wasm ABI foundation rather than JavaScript or host pointers. The new name overlap
+is 642 of 2,522; complete compiled-package compatibility still requires the portable R C-API/value
+subset and an automatic Wasm build/registration pipeline.
 
 ## Completion evidence
 

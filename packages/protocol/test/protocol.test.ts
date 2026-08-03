@@ -117,6 +117,15 @@ describe("Worker protocol guards", () => {
         },
       ],
       environmentVariables: { SEEDED: "value", EMPTY: "" },
+      nativeModules: [
+        {
+          name: "fixture",
+          path: "wasm://fixture/module.wasm",
+          dynamicLookup: false,
+          forceSymbols: false,
+          routines: [{ name: "fixture_sum", numParameters: 1 }],
+        },
+      ],
       readline: true,
       url: true,
       socket: true,
@@ -158,6 +167,20 @@ describe("Worker protocol guards", () => {
       id: "system-error",
       kind: "system-command-result",
       error: { code: "NRU6194", message: "denied" },
+    },
+    {
+      protocolVersion: 1,
+      id: "native-result",
+      kind: "native-call-result",
+      result: {
+        value: { version: 1, type: "double", values: new Float64Array([6]) },
+      },
+    },
+    {
+      protocolVersion: 1,
+      id: "native-error",
+      kind: "native-call-result",
+      error: { code: "NRU6210", message: "denied" },
     },
     {
       protocolVersion: 1,
@@ -220,8 +243,34 @@ describe("Worker protocol guards", () => {
         id: "x",
         kind: "init",
         assets: { treeSitterRuntimeWasm: "runtime.wasm", rGrammarWasm: "r.wasm" },
+        nativeModules: [
+          {
+            name: "fixture",
+            path: "wasm://fixture/module.wasm",
+            dynamicLookup: false,
+            forceSymbols: false,
+            routines: [{ name: "bad", numParameters: -1 }],
+          },
+        ],
+        debug: false,
+      }),
+    ).toBe(false);
+    expect(
+      isWorkerRequest({
+        protocolVersion: 1,
+        id: "x",
+        kind: "init",
+        assets: { treeSitterRuntimeWasm: "runtime.wasm", rGrammarWasm: "r.wasm" },
         socket: "yes",
         debug: false,
+      }),
+    ).toBe(false);
+    expect(
+      isWorkerRequest({
+        protocolVersion: 1,
+        id: "x",
+        kind: "native-call-result",
+        result: { value: { version: 1, type: "double", values: [1] } },
       }),
     ).toBe(false);
     expect(
@@ -421,6 +470,16 @@ describe("Worker protocol guards", () => {
     },
     {
       protocolVersion: 1,
+      id: "native",
+      kind: "native-call",
+      request: {
+        module: "fixture",
+        routine: "fixture_sum",
+        arguments: [{ version: 1, type: "double", values: new Float64Array([1, 2, 3]) }],
+      },
+    },
+    {
+      protocolVersion: 1,
       id: "readline",
       kind: "readline",
       request: { prompt: "Name: " },
@@ -471,6 +530,14 @@ describe("Worker protocol guards", () => {
         id: "x",
         kind: "system-command",
         request: { command: "probe" },
+      }),
+    ).toBe(false);
+    expect(
+      isWorkerResponse({
+        protocolVersion: 1,
+        id: "x",
+        kind: "native-call",
+        request: { module: "fixture", routine: "sum", arguments: [{ type: "double" }] },
       }),
     ).toBe(false);
     expect(

@@ -805,10 +805,9 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      devices remain nonblocking.
 168. Usage-ranked loaded-module introspection: rank-345 `base::getLoadedDLLs` covers ps's measured
      `vapply(..., "path")` probe with GNU R-shaped formals, visibility, `DLLInfoList` class, empty
-     subsetting, source-package execution, and Worker evidence. The result is truthfully empty while
-     NativR has no R-callable native ABI; it exposes no synthetic DLL, host path, or handle. A
-     future typed Wasm/native registration and foreign-call layer remains required for compiled
-     packages.
+     subsetting, source-package execution, and Worker evidence. It is truthfully empty by default
+     and reports only explicit virtual `nativeModules`; it exposes no synthetic DLL, host path, or
+     pointer handle.
 169. Usage-ranked socket connections: rank-346 `base::socketConnection` plus adjacent `isIncomplete`
      and `socketTimeout` provide GNU R-shaped connection metadata, text writes, and line/raw reads
      through an explicit `createR({ socket })` lifecycle adapter. Default sessions have no network
@@ -833,8 +832,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
 174. Usage-ranked structured command execution: rank-357 `base::system2` carries xfun's measured
      call through the explicit default-deny host policy, preserving executable/argument/environment
      and stream-redirection structure, GNU R formals/coercion/capture/status/visibility, resource
-     limits, unchanged pure-R package execution, and inline/Worker transport. Rank-358 `.Call` is
-     the next measured unresolved callable and requires a typed Wasm/native ABI.
+     limits, unchanged pure-R package execution, and inline/Worker transport.
+175. Usage-ranked typed native calls: rank-358 `base::.Call` resolves explicit module/routine
+     manifests with package confinement, lookup policy and argument counts, then crosses a bounded
+     `RValueSnapshot` request/result seam inline or through the default Worker. The default remains
+     native-capability-free. Automatic native-package builds, SEXP/external-pointer fidelity,
+     `.External`, and arbitrary compiled-package loading remain future depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means
@@ -852,7 +855,9 @@ the measured surface is runnable, not that NativR implements all R semantics or 
 4. Expand the executable package installer from the pinned `pkgconfig`/`generics`/`withr` proofs to
    the measured pure-R package corpus, binary/text data adapters, broader namespace/object-system
    declarations, package test orchestration, and R CMD check scenarios without embedding GNU R or
-   webR.
+   webR. In parallel, turn the typed `.Call` seam into a reusable audited Wasm package toolchain,
+   including routine-registration extraction and the portable value/API subset needed by measured
+   compiled packages.
 5. Verify platform, browser, locale, time-zone, graphics, numeric, and performance behavior against
    the completion criteria in the GNU R compatibility ledger.
 6. Continue refreshing package-usage snapshots so high-reach gaps determine implementation order

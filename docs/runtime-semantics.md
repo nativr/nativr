@@ -781,12 +781,13 @@ color-profile management, and GNU R byte-identical output remain explicit bounda
 
 `base::getLoadedDLLs()` is a separate R-native-module introspection surface, not a view of the
 parser Wasm, Worker bundle, JavaScript modules, graphics devices, or host process. It accepts no
-arguments and returns a visible list with class `DLLInfoList`. NativR currently has no R-callable
-native modules, so that list has length zero; ordinary list subsetting preserves the class and
-`vapply(getLoadedDLLs(), "[[", character(1), "path")` yields `character(0)`. This lets unchanged
-pure-R code probe for an optional compiled backend and select its fallback without revealing or
-inventing host state. A future compiled-package ABI must add validated `DLLInfo` records at its
-owned registration boundary; JavaScript object references and raw host pointers are never entries.
+arguments and returns a visible list with class `DLLInfoList`. The list has length zero by default;
+ordinary list subsetting preserves the class and `vapply(..., "path")` yields `character(0)`.
+Construction-time `nativeModules` add named `DLLInfo` records containing the registered name,
+virtual path, lookup flags, and `NULL` handle/info fields. `.Call` accepts a character routine name,
+applies exact `PACKAGE` confinement plus dynamic/force-symbol and registered-arity checks, forces
+the R arguments, and invokes the explicit typed adapter. JavaScript object references and raw host
+pointers are never entries or call arguments.
 
 `graphics::persp()` dispatches classed first arguments before its owned matrix default. The default
 requires increasing finite x/y coordinates and a two-dimensional real z grid, derives missing grids

@@ -99,6 +99,34 @@ export interface PureRPackageBundle {
   readonly resources?: readonly PureRPackageResource[];
 }
 
+/** One routine in an explicitly registered browser-safe native/Wasm module. */
+export interface PublicNativeRoutineDefinition {
+  readonly name: string;
+  /** Null denotes a variadic routine. */
+  readonly numParameters: number | null;
+}
+
+/** Data-only module metadata used to resolve .Call without loading ambient dynamic libraries. */
+export interface PublicNativeModuleDefinition {
+  readonly name: string;
+  readonly path: string;
+  readonly dynamicLookup: boolean;
+  readonly forceSymbols: boolean;
+  readonly routines: readonly PublicNativeRoutineDefinition[];
+}
+
+/** One resolved .Call request sent to the embedding application's native/Wasm adapter. */
+export interface PublicNativeCallRequest {
+  readonly module: string;
+  readonly routine: string;
+  readonly arguments: readonly RValueSnapshot[];
+}
+
+/** One data-only value returned by a native/Wasm adapter. */
+export interface PublicNativeCallResult {
+  readonly value: RValueSnapshot;
+}
+
 /** A structured warning crossing the Worker boundary. */
 export interface PublicRWarning {
   readonly code: string;
@@ -453,6 +481,7 @@ export interface InitRequest extends ProtocolEnvelope {
   readonly environmentVariables?: Readonly<Record<string, string>>;
   /** Explicit executable names and resolved paths available to base::Sys.which(). */
   readonly executablePaths?: Readonly<Record<string, string>>;
+  readonly nativeModules?: readonly PublicNativeModuleDefinition[];
   /** Whether the embedding facade configured an interactive line-prompt handler. */
   readonly readline?: boolean;
   /** Whether the embedding facade configured an explicit URL transport. */
@@ -513,6 +542,16 @@ export type SystemCommandResultRequest = ProtocolEnvelope &
       }
   );
 
+/** Resolve a .Call request emitted while Worker evaluation is suspended. */
+export type NativeCallResultRequest = ProtocolEnvelope &
+  (
+    | { readonly kind: "native-call-result"; readonly result: PublicNativeCallResult }
+    | {
+        readonly kind: "native-call-result";
+        readonly error: { readonly code: string; readonly message: string };
+      }
+  );
+
 /** Resolve a terminal-line request emitted while Worker evaluation is suspended. */
 export type ReadlineResultRequest = ProtocolEnvelope &
   (
@@ -554,6 +593,7 @@ export type WorkerRequest =
   | ResetRequest
   | DisposeRequest
   | SystemCommandResultRequest
+  | NativeCallResultRequest
   | ReadlineResultRequest
   | UrlResultRequest
   | SocketResultRequest;
@@ -608,6 +648,12 @@ export interface SystemCommandEvent extends ProtocolEnvelope {
   readonly request: PublicSystemCommandRequest;
 }
 
+/** A correlated .Call request handled by an explicitly configured typed adapter. */
+export interface NativeCallEvent extends ProtocolEnvelope {
+  readonly kind: "native-call";
+  readonly request: PublicNativeCallRequest;
+}
+
 /** A correlated terminal-line request handled by the embedding facade. */
 export interface ReadlineEvent extends ProtocolEnvelope {
   readonly kind: "readline";
@@ -633,6 +679,7 @@ export type WorkerResponse =
   | WarningEvent
   | OutputEvent
   | SystemCommandEvent
+  | NativeCallEvent
   | ReadlineEvent
   | UrlEvent
   | SocketEvent;
@@ -656,6 +703,8 @@ export function isWorkerRequest(value: unknown): value is WorkerRequest {
         (value.environmentVariables === undefined ||
           isEnvironmentVariableRecord(value.environmentVariables)) &&
         (value.executablePaths === undefined || isExecutablePathRecord(value.executablePaths)) &&
+        (value.nativeModules === undefined ||
+          (Array.isArray(value.nativeModules) && value.nativeModules.every(isNativeModule))) &&
         (value.readline === undefined || typeof value.readline === "boolean") &&
         (value.url === undefined || typeof value.url === "boolean") &&
         (value.socket === undefined || typeof value.socket === "boolean") &&
@@ -680,6 +729,14 @@ export function isWorkerRequest(value: unknown): value is WorkerRequest {
     case "system-command-result":
       return (
         (isSystemCommandResult(value.result) && value.error === undefined) ||
+        (isRecord(value.error) &&
+          typeof value.error.code === "string" &&
+          typeof value.error.message === "string" &&
+          value.result === undefined)
+      );
+    case "native-call-result":
+      return (
+        (isNativeCallResult(value.result) && value.error === undefined) ||
         (isRecord(value.error) &&
           typeof value.error.code === "string" &&
           typeof value.error.message === "string" &&
@@ -739,6 +796,8 @@ export function isWorkerResponse(value: unknown): value is WorkerResponse {
       return typeof value.text === "string" && typeof value.stream === "string";
     case "system-command":
       return isSystemCommandRequest(value.request);
+    case "native-call":
+      return isNativeCallRequest(value.request);
     case "readline":
       return isReadlineRequest(value.request);
     case "url":
@@ -878,6 +937,48 @@ function isExecutablePathRecord(value: unknown): value is Readonly<Record<string
         !entry.includes("\0"),
     )
   );
+}
+
+function isNativeModule(value: unknown): value is PublicNativeModuleDefinition {
+  return (
+    isRecord(value) &&
+    typeof value.name === "string" &&
+    value.name.length > 0 &&
+    !value.name.includes("\0") &&
+    typeof value.path === "string" &&
+    value.path.length > 0 &&
+    !value.path.includes("\0") &&
+    typeof value.dynamicLookup === "boolean" &&
+    typeof value.forceSymbols === "boolean" &&
+    Array.isArray(value.routines) &&
+    value.routines.every(
+      (routine) =>
+        isRecord(routine) &&
+        typeof routine.name === "string" &&
+        routine.name.length > 0 &&
+        !routine.name.includes("\0") &&
+        (routine.numParameters === null ||
+          (typeof routine.numParameters === "number" &&
+            Number.isInteger(routine.numParameters) &&
+            routine.numParameters >= 0)),
+    )
+  );
+}
+
+function isNativeCallRequest(value: unknown): value is PublicNativeCallRequest {
+  return (
+    isRecord(value) &&
+    typeof value.module === "string" &&
+    value.module.length > 0 &&
+    typeof value.routine === "string" &&
+    value.routine.length > 0 &&
+    Array.isArray(value.arguments) &&
+    value.arguments.every(isRValueSnapshot)
+  );
+}
+
+function isNativeCallResult(value: unknown): value is PublicNativeCallResult {
+  return isRecord(value) && isRValueSnapshot(value.value);
 }
 
 function isSystemCommandRequest(value: unknown): value is PublicSystemCommandRequest {

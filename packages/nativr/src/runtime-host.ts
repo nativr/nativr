@@ -11,6 +11,7 @@ import type {
   DetailedEvaluationResult,
   RSystemCommandRequest,
   RSystemCommandResult,
+  RNativeModuleDefinition,
   RSocketRequest,
   RSocketResult,
   RUrlRequest,
@@ -21,9 +22,15 @@ import type {
 import type { ProgramNode } from "@nativr/ast";
 
 import { CAPABILITIES } from "./capabilities.js";
-import { snapshotToValue } from "./conversion.js";
+import { snapshotToValue, valueToSnapshot } from "./conversion.js";
 import { compilePureRPackages } from "./pure-r-package.js";
-import type { CapabilityManifest, PureRPackageBundle, RValueSnapshot } from "@nativr/protocol";
+import type {
+  CapabilityManifest,
+  PublicNativeCallRequest,
+  PublicNativeCallResult,
+  PureRPackageBundle,
+  RValueSnapshot,
+} from "@nativr/protocol";
 
 /** Shared semantic host used unchanged by inline and Worker execution modes. */
 export class RuntimeHost {
@@ -43,9 +50,13 @@ export class RuntimeHost {
     packages: readonly PureRPackageBundle[] = [],
     environmentVariables: Readonly<Record<string, string>> = {},
     executablePaths: Readonly<Record<string, string>> = {},
+    nativeModules: readonly RNativeModuleDefinition[] = [],
     systemCommand?: (
       request: RSystemCommandRequest,
     ) => Promise<RSystemCommandResult> | RSystemCommandResult,
+    nativeCall?: (
+      request: PublicNativeCallRequest,
+    ) => Promise<PublicNativeCallResult> | PublicNativeCallResult,
     readline?: (prompt: string) => Promise<string> | string,
     urlRequest?: (request: RUrlRequest) => Promise<RUrlResult> | RUrlResult,
     socketRequest?: (request: RSocketRequest) => Promise<RSocketResult> | RSocketResult,
@@ -63,7 +74,20 @@ export class RuntimeHost {
         ...(sessionProcessId === undefined ? {} : { sessionProcessId }),
         parseSource: (source, maxExpressions) => parseProgram(parser, source, maxExpressions),
         packages: packageDefinitions,
+        nativeModules,
         ...(systemCommand === undefined ? {} : { systemCommand }),
+        ...(nativeCall === undefined
+          ? {}
+          : {
+              nativeCall: async (request) => {
+                const result = await nativeCall({
+                  module: request.module,
+                  routine: request.routine,
+                  arguments: request.arguments.map(valueToSnapshot),
+                });
+                return snapshotToValue(result.value, (source) => parseProgram(parser, source));
+              },
+            }),
         ...(readline === undefined ? {} : { readline }),
         ...(urlRequest === undefined ? {} : { urlRequest }),
         ...(socketRequest === undefined ? {} : { socketRequest }),

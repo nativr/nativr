@@ -1,9 +1,12 @@
-import { PROTOCOL_VERSION, isWorkerResponse } from "@nativr/protocol";
+import { PROTOCOL_VERSION, isRValueSnapshot, isWorkerResponse } from "@nativr/protocol";
 import type {
   CapabilityManifest,
   PublicBrowseEvent,
   PublicDataViewEvent,
   PublicGraphicsEvent,
+  PublicNativeCallRequest,
+  PublicNativeCallResult,
+  PublicNativeModuleDefinition,
   PublicOutputEvent,
   PublicReadlineRequest,
   PublicRWarning,
@@ -20,6 +23,7 @@ import type {
   WorkerResponse,
   WorkerSuccessPayload,
   SystemCommandResultRequest,
+  NativeCallResultRequest,
   ReadlineResultRequest,
   SocketResultRequest,
   UrlResultRequest,
@@ -46,6 +50,10 @@ export type {
   PublicBrowseEvent,
   PublicDataViewEvent,
   PublicGraphicsEvent,
+  PublicNativeCallRequest,
+  PublicNativeCallResult,
+  PublicNativeModuleDefinition,
+  PublicNativeRoutineDefinition,
   PublicOutputEvent,
   PublicReadlineRequest,
   PublicSocketRequest,
@@ -79,6 +87,10 @@ export interface CreateROptions {
   readonly executablePaths?: Readonly<Record<string, string>>;
   /** Explicit allow-list seam for system(), system2(), and pipe(); omitted sessions have no process capability. */
   readonly systemCommand?: SystemCommandHandler;
+  /** Explicitly registered Wasm/native routine metadata used by .Call resolution. */
+  readonly nativeModules?: readonly PublicNativeModuleDefinition[];
+  /** Typed, data-only .Call adapter; omitted sessions cannot execute native routines. */
+  readonly nativeCall?: NativeCallHandler;
   /** Host-owned line input for R and graphics prompts; omitted sessions remain non-interactive. */
   readonly readline?: ReadlineHandler;
   /** Explicit byte transport for url() connections; omitted sessions have no network capability. */
@@ -99,6 +111,11 @@ export interface CreateROptions {
 export type SystemCommandHandler = (
   request: PublicSystemCommandRequest,
 ) => PublicSystemCommandResult | Promise<PublicSystemCommandResult>;
+
+/** Host-owned adapter used only after .Call resolves an explicitly registered routine. */
+export type NativeCallHandler = (
+  request: PublicNativeCallRequest,
+) => PublicNativeCallResult | Promise<PublicNativeCallResult>;
 
 /** Host-owned line input used only for explicit R/debug/browser-graphics prompts. */
 export type ReadlineHandler = (request: PublicReadlineRequest) => string | Promise<string>;
@@ -178,10 +195,20 @@ export async function createR(options: CreateROptions = {}): Promise<NativRSessi
     ...(options.executablePaths === undefined
       ? {}
       : { executablePaths: snapshotExecutablePaths(options.executablePaths) }),
+    ...(options.nativeModules === undefined
+      ? {}
+      : {
+          nativeModules: snapshotNativeModules(
+            options.nativeModules,
+            options.limits?.maxVectorLength ?? DEFAULT_RUNTIME_LIMITS.maxVectorLength,
+            options.limits?.maxOutputBytes ?? DEFAULT_RUNTIME_LIMITS.maxOutputBytes,
+          ),
+        }),
   };
   if (sessionOptions.execution === "inline") {
     const { RuntimeHost: InlineRuntimeHost } = await import("./runtime-host.js");
     const systemCommand = sessionOptions.systemCommand;
+    const nativeCall = sessionOptions.nativeCall;
     const readline = sessionOptions.readline;
     const url = sessionOptions.url;
     const socket = sessionOptions.socket;
@@ -195,12 +222,22 @@ export async function createR(options: CreateROptions = {}): Promise<NativRSessi
       sessionOptions.packages,
       sessionOptions.environmentVariables,
       sessionOptions.executablePaths,
+      sessionOptions.nativeModules,
       systemCommand === undefined
         ? undefined
         : async (request) =>
             executeSystemCommandHandler(
               systemCommand,
               request,
+              sessionOptions.limits?.maxOutputBytes ?? DEFAULT_RUNTIME_LIMITS.maxOutputBytes,
+            ),
+      nativeCall === undefined
+        ? undefined
+        : async (request) =>
+            executeNativeCallHandler(
+              nativeCall,
+              request,
+              sessionOptions.limits?.maxVectorLength ?? DEFAULT_RUNTIME_LIMITS.maxVectorLength,
               sessionOptions.limits?.maxOutputBytes ?? DEFAULT_RUNTIME_LIMITS.maxOutputBytes,
             ),
       readline === undefined
@@ -289,6 +326,105 @@ function snapshotExecutablePaths(
     snapshot[name] = value;
   }
   return Object.freeze(snapshot);
+}
+
+function snapshotNativeModules(
+  nativeModules: readonly PublicNativeModuleDefinition[],
+  maxVectorLength: number,
+  maxOutputBytes: number,
+): readonly PublicNativeModuleDefinition[] {
+  const moduleInputs = asUnknownArray(nativeModules);
+  if (moduleInputs === undefined) {
+    throw new NativRError("NRS5010", "createR(nativeModules=) requires an array of modules.");
+  }
+  if (moduleInputs.length > maxVectorLength) {
+    throw new RResourceLimitError("NRL4002", "Native-module count limit exceeded.", {
+      details: { maxVectorLength, requested: moduleInputs.length },
+    });
+  }
+  const names = new Set<string>();
+  let metadataBytes = 0;
+  let routineCount = 0;
+  const snapshot = Object.freeze(
+    moduleInputs.map((module, moduleIndex) => {
+      if (!isUnknownRecord(module)) throw invalidNativeModule(moduleIndex);
+      const { name, path, dynamicLookup, forceSymbols } = module;
+      const routines = asUnknownArray(module["routines"]);
+      if (
+        typeof name !== "string" ||
+        name.length === 0 ||
+        name.includes("\0") ||
+        typeof path !== "string" ||
+        path.length === 0 ||
+        path.includes("\0") ||
+        typeof dynamicLookup !== "boolean" ||
+        typeof forceSymbols !== "boolean" ||
+        routines === undefined ||
+        names.has(name)
+      ) {
+        throw invalidNativeModule(moduleIndex);
+      }
+      names.add(name);
+      metadataBytes += new TextEncoder().encode(`${name}\0${path}`).byteLength;
+      routineCount += routines.length;
+      if (routineCount > maxVectorLength) {
+        throw new RResourceLimitError("NRL4002", "Native-routine count limit exceeded.", {
+          details: { maxVectorLength, requested: routineCount },
+        });
+      }
+      const routineNames = new Set<string>();
+      return Object.freeze({
+        name,
+        path,
+        dynamicLookup,
+        forceSymbols,
+        routines: Object.freeze(
+          routines.map((routine, routineIndex) => {
+            if (!isUnknownRecord(routine)) throw invalidNativeRoutine(moduleIndex, routineIndex);
+            const routineName = routine["name"];
+            const numParameters = routine["numParameters"];
+            if (
+              typeof routineName !== "string" ||
+              routineName.length === 0 ||
+              routineName.includes("\0") ||
+              routineNames.has(routineName) ||
+              !(
+                numParameters === null ||
+                (typeof numParameters === "number" &&
+                  Number.isSafeInteger(numParameters) &&
+                  numParameters >= 0)
+              )
+            ) {
+              throw invalidNativeRoutine(moduleIndex, routineIndex);
+            }
+            routineNames.add(routineName);
+            metadataBytes += new TextEncoder().encode(routineName).byteLength + 8;
+            return Object.freeze({ name: routineName, numParameters });
+          }),
+        ),
+      });
+    }),
+  );
+  if (metadataBytes > maxOutputBytes) {
+    throw new RResourceLimitError("NRL4007", "Native-module metadata size limit exceeded.", {
+      details: { maxOutputBytes, outputBytes: metadataBytes },
+    });
+  }
+  return snapshot;
+}
+
+function invalidNativeModule(index: number): NativRError {
+  return new NativRError(
+    "NRS5010",
+    `Native module at index ${index} must have a unique non-empty name, a non-empty path, boolean lookup flags, and a routines array.`,
+  );
+}
+
+function invalidNativeRoutine(moduleIndex: number, routineIndex: number): NativRError {
+  return new NativRError(
+    "NRS5010",
+    `Native routine at index ${moduleIndex}:${routineIndex} must have a unique non-empty name and a non-negative integer or null numParameters.`,
+  );
 }
 
 function snapshotPackageBundles(
@@ -432,6 +568,129 @@ async function executeSystemCommandHandler(
   } catch (error) {
     if (error instanceof NativRError) throw error;
     throw new NativRError("NRE2250", error instanceof Error ? error.message : String(error));
+  }
+}
+
+async function executeNativeCallHandler(
+  handler: NativeCallHandler,
+  request: PublicNativeCallRequest,
+  maxVectorLength: number,
+  maxOutputBytes: number,
+): Promise<PublicNativeCallResult> {
+  try {
+    const result = await handler({
+      module: request.module,
+      routine: request.routine,
+      arguments: request.arguments,
+    });
+    if (!isUnknownRecord(result) || !isRValueSnapshot(result["value"])) {
+      throw new NativRError(
+        "NRS5011",
+        "createR({ nativeCall }) must return { value: RValueSnapshot }.",
+      );
+    }
+    const limits = nativeSnapshotResources(result["value"]);
+    if (limits.maxVectorLength > maxVectorLength) {
+      throw new RResourceLimitError("NRL4002", "Native-call vector length limit exceeded.", {
+        details: { maxVectorLength, requested: limits.maxVectorLength },
+      });
+    }
+    if (limits.bytes > maxOutputBytes) {
+      throw new RResourceLimitError("NRL4007", "Native-call result size limit exceeded.", {
+        details: { maxOutputBytes, outputBytes: limits.bytes },
+      });
+    }
+    return { value: result["value"] };
+  } catch (error) {
+    if (error instanceof NativRError) throw error;
+    throw new NativRError("NRE2257", error instanceof Error ? error.message : String(error));
+  }
+}
+
+function nativeSnapshotResources(snapshot: RValueSnapshot): {
+  readonly maxVectorLength: number;
+  readonly bytes: number;
+} {
+  const metadataBytes =
+    16 +
+    ("names" in snapshot && snapshot.names !== undefined
+      ? new TextEncoder().encode(snapshot.names.join("\0")).byteLength
+      : 0) +
+    ("dim" in snapshot && snapshot.dim !== undefined ? snapshot.dim.length * 8 : 0);
+  switch (snapshot.type) {
+    case "null":
+      return { maxVectorLength: 0, bytes: metadataBytes };
+    case "logical":
+      return {
+        maxVectorLength: snapshot.values.length,
+        bytes: metadataBytes + snapshot.values.byteLength + (snapshot.missing?.byteLength ?? 0),
+      };
+    case "raw":
+      return {
+        maxVectorLength: snapshot.values.length,
+        bytes: metadataBytes + snapshot.values.byteLength,
+      };
+    case "integer":
+    case "double":
+      return {
+        maxVectorLength: snapshot.values.length,
+        bytes: metadataBytes + snapshot.values.byteLength + (snapshot.missing?.byteLength ?? 0),
+      };
+    case "complex":
+      return {
+        maxVectorLength: snapshot.real.length,
+        bytes:
+          metadataBytes +
+          snapshot.real.byteLength +
+          snapshot.imaginary.byteLength +
+          (snapshot.missing?.byteLength ?? 0),
+      };
+    case "character":
+      return {
+        maxVectorLength: snapshot.values.length,
+        bytes:
+          metadataBytes +
+          snapshot.values.reduce(
+            (total, value) => total + new TextEncoder().encode(value).byteLength,
+            0,
+          ) +
+          (snapshot.missing?.byteLength ?? 0),
+      };
+    case "list":
+    case "pairlist": {
+      const children = snapshot.values.map(nativeSnapshotResources);
+      return {
+        maxVectorLength: children.reduce(
+          (maximum, item) => Math.max(maximum, item.maxVectorLength),
+          snapshot.values.length,
+        ),
+        bytes: metadataBytes + children.reduce((total, item) => total + item.bytes, 0),
+      };
+    }
+    case "formula":
+      return {
+        maxVectorLength: snapshot.variables.length,
+        bytes:
+          metadataBytes +
+          new TextEncoder().encode(
+            [snapshot.response ?? "", ...snapshot.terms, ...snapshot.variables].join("\0"),
+          ).byteLength,
+      };
+    case "symbol":
+      return {
+        maxVectorLength: 1,
+        bytes: metadataBytes + new TextEncoder().encode(snapshot.name).byteLength,
+      };
+    case "language":
+      return {
+        maxVectorLength: 1,
+        bytes: metadataBytes + new TextEncoder().encode(snapshot.source).byteLength,
+      };
+    case "expression":
+      return {
+        maxVectorLength: snapshot.sources.length,
+        bytes: metadataBytes + new TextEncoder().encode(snapshot.sources.join("\0")).byteLength,
+      };
   }
 }
 
@@ -855,6 +1114,9 @@ class WorkerSession implements NativRSession {
         ...(this.#options.executablePaths === undefined
           ? {}
           : { executablePaths: this.#options.executablePaths }),
+        ...(this.#options.nativeModules === undefined
+          ? {}
+          : { nativeModules: this.#options.nativeModules }),
         ...(this.#options.readline === undefined ? {} : { readline: true }),
         ...(this.#options.url === undefined ? {} : { url: true }),
         ...(this.#options.socket === undefined ? {} : { socket: true }),
@@ -940,6 +1202,10 @@ class WorkerSession implements NativRSession {
       void this.#handleSystemCommand(worker, response.id, response.request);
       return;
     }
+    if (response.kind === "native-call") {
+      void this.#handleNativeCall(worker, response.id, response.request);
+      return;
+    }
     if (response.kind === "readline") {
       void this.#handleReadline(worker, response.id, response.request);
       return;
@@ -991,6 +1257,45 @@ class WorkerSession implements NativRSession {
         kind: "system-command-result",
         error: {
           code: error instanceof NativRError ? error.code : "NRE2250",
+          message: error instanceof Error ? error.message : String(error),
+        },
+      };
+    }
+    worker.postMessage(response);
+  }
+
+  async #handleNativeCall(
+    worker: Worker,
+    id: string,
+    request: PublicNativeCallRequest,
+  ): Promise<void> {
+    let response: NativeCallResultRequest;
+    try {
+      const handler = this.#options.nativeCall;
+      if (handler === undefined) {
+        throw new NativRError(
+          "NRU6210",
+          ".Call() requires an explicit createR({ nativeCall }) typed native/Wasm capability.",
+        );
+      }
+      response = {
+        protocolVersion: PROTOCOL_VERSION,
+        id,
+        kind: "native-call-result",
+        result: await executeNativeCallHandler(
+          handler,
+          request,
+          this.#options.limits?.maxVectorLength ?? DEFAULT_RUNTIME_LIMITS.maxVectorLength,
+          this.#options.limits?.maxOutputBytes ?? DEFAULT_RUNTIME_LIMITS.maxOutputBytes,
+        ),
+      };
+    } catch (error) {
+      response = {
+        protocolVersion: PROTOCOL_VERSION,
+        id,
+        kind: "native-call-result",
+        error: {
+          code: error instanceof NativRError ? error.code : "NRE2257",
           message: error instanceof Error ? error.message : String(error),
         },
       };

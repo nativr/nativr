@@ -278,6 +278,8 @@ export interface BuiltinInvocation {
   urlRequest(request: RUrlRequest): Promise<RUrlResult>;
   socketRequest(request: RSocketRequest): Promise<RSocketResult>;
   systemCommand(request: RSystemCommandRequest): Promise<RSystemCommandResult>;
+  nativeModules(): readonly RNativeModuleDefinition[];
+  nativeCall(request: RNativeCallRequest): Promise<RValue>;
   searchPath(): readonly string[];
   libraryPaths(): readonly string[];
   setLibraryPaths(paths: readonly string[]): void;
@@ -458,6 +460,29 @@ export interface RSystemCommandResult {
   readonly errorMessage?: string;
   readonly failedToStart?: boolean;
   readonly timedOut?: boolean;
+}
+
+/** One registered routine exposed by a browser-owned native module adapter. */
+export interface RNativeRoutineDefinition {
+  readonly name: string;
+  /** Null means that the adapter accepts a variable number of arguments. */
+  readonly numParameters: number | null;
+}
+
+/** Cloneable metadata for one explicitly registered Wasm/native package module. */
+export interface RNativeModuleDefinition {
+  readonly name: string;
+  readonly path: string;
+  readonly dynamicLookup: boolean;
+  readonly forceSymbols: boolean;
+  readonly routines: readonly RNativeRoutineDefinition[];
+}
+
+/** One resolved .Call invocation crossing the explicit native adapter seam. */
+export interface RNativeCallRequest {
+  readonly module: string;
+  readonly routine: string;
+  readonly arguments: readonly RValue[];
 }
 
 /** One character-formatted column sent to a host data viewer. */

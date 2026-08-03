@@ -39,6 +39,10 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("16");
 
+  await page.getByRole("button", { name: "Typed native adapter" }).click();
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("10");
+
   await page.getByRole("button", { name: "Pure-R package bundle" }).click();
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("6");
@@ -239,9 +243,15 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("true");
 
-  await page.locator("#source").fill("c(class(getLoadedDLLs()), length(getLoadedDLLs()))");
+  await page
+    .locator("#source")
+    .fill(
+      'c(class(getLoadedDLLs()), length(getLoadedDLLs()), getLoadedDLLs()[["nativr.demo"]]$path)',
+    );
   await page.getByRole("button", { name: /^Run/u }).click();
-  await expect(page.locator("#result")).toHaveText('["DLLInfoList", "0"]');
+  await expect(page.locator("#result")).toHaveText(
+    '["DLLInfoList", "1", "wasm://playground/nativr-demo.wasm"]',
+  );
 
   await page.getByRole("button", { name: "URL connection" }).click();
   await page.getByRole("button", { name: /^Run/u }).click();

@@ -13,11 +13,15 @@ import type {
   SuccessResponse,
   SystemCommandEvent,
   SystemCommandResultRequest,
+  NativeCallEvent,
+  NativeCallResultRequest,
   WarningEvent,
   WorkerRequest,
   WorkerSuccessPayload,
   PublicSystemCommandRequest,
   PublicSystemCommandResult,
+  PublicNativeCallRequest,
+  PublicNativeCallResult,
   PublicSocketRequest,
   PublicSocketResult,
   PublicUrlRequest,
@@ -33,6 +37,7 @@ let host: RuntimeHost | undefined;
 let debug = false;
 let queue: Promise<void> = Promise.resolve();
 let nextSystemCommandId = 1;
+let nextNativeCallId = 1;
 let nextReadlineId = 1;
 let nextUrlId = 1;
 let nextSocketId = 1;
@@ -40,6 +45,13 @@ const pendingSystemCommands = new Map<
   string,
   {
     readonly resolve: (result: PublicSystemCommandResult) => void;
+    readonly reject: (error: unknown) => void;
+  }
+>();
+const pendingNativeCalls = new Map<
+  string,
+  {
+    readonly resolve: (result: PublicNativeCallResult) => void;
     readonly reject: (error: unknown) => void;
   }
 >();
@@ -69,6 +81,10 @@ workerScope.addEventListener("message", (event: MessageEvent<unknown>) => {
   const immediate = event.data;
   if (isWorkerRequest(immediate) && immediate.kind === "system-command-result") {
     resolveSystemCommand(immediate);
+    return;
+  }
+  if (isWorkerRequest(immediate) && immediate.kind === "native-call-result") {
+    resolveNativeCall(immediate);
     return;
   }
   if (isWorkerRequest(immediate) && immediate.kind === "readline-result") {
@@ -105,7 +121,9 @@ async function handleRequest(request: WorkerRequest): Promise<void> {
         request.packages,
         request.environmentVariables,
         request.executablePaths,
+        request.nativeModules,
         requestSystemCommand,
+        requestNativeCall,
         request.readline === true ? requestReadline : undefined,
         request.url === true ? requestUrl : undefined,
         request.socket === true ? requestSocket : undefined,
@@ -218,6 +236,31 @@ function resolveSystemCommand(response: SystemCommandResultRequest): void {
   const pending = pendingSystemCommands.get(response.id);
   if (pending === undefined) return;
   pendingSystemCommands.delete(response.id);
+  if ("error" in response) {
+    pending.reject(new NativRError(response.error.code, response.error.message));
+  } else {
+    pending.resolve(response.result);
+  }
+}
+
+function requestNativeCall(request: PublicNativeCallRequest): Promise<PublicNativeCallResult> {
+  const id = `native-${nextNativeCallId++}`;
+  return new Promise((resolve, reject) => {
+    pendingNativeCalls.set(id, { resolve, reject });
+    const event: NativeCallEvent = {
+      protocolVersion: PROTOCOL_VERSION,
+      id,
+      kind: "native-call",
+      request,
+    };
+    workerScope.postMessage(event);
+  });
+}
+
+function resolveNativeCall(response: NativeCallResultRequest): void {
+  const pending = pendingNativeCalls.get(response.id);
+  if (pending === undefined) return;
+  pendingNativeCalls.delete(response.id);
   if ("error" in response) {
     pending.reject(new NativRError(response.error.code, response.error.message));
   } else {

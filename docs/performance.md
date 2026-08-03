@@ -810,3 +810,9 @@ environment, stdin and stdout/stderr redirection intent across inline and Worker
 still contains no process launcher or shell. The measured Worker is 404.2 KiB gzip (413,860 bytes),
 164 bytes above the previous 404 KiB ceiling, so the ceiling rises narrowly to 405 KiB; client and
 parser-Wasm budgets remain unchanged.
+
+Language subset 0.263 adds usage-ranked `base::.Call` through declarative native-module metadata and
+one typed request/result suspension path shared by inline and Worker sessions. It reuses the
+existing public R snapshot representation and adds no dynamic loader, JavaScript code generation,
+host pointer, or native dependency. The measured Worker is 405.0 KiB gzip (414,709 bytes), 11 bytes
+below the existing 405 KiB ceiling, so all budgets remain unchanged.
