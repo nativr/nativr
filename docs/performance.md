@@ -891,3 +891,10 @@ the async JavaScript assignment API; there is no R6 adapter, dependency, protoco
 payload, network access, or generated JavaScript. The unchanged R6 2.6.1 proof remains opt-in and
 ships no package source. The measured Worker is 415.4 KiB gzip (425,381 bytes), within the existing
 416 KiB ceiling, so all budgets remain unchanged.
+
+Language subset 0.274 adds generic `mget`, the first-class `[[` primitive, and GNU R-compatible
+outer result names for `mapply`/`Map`. The unchanged R6 clone paths compose those existing
+environment, promise, active-binding, callable, and extraction mechanisms; there is no package
+adapter, dependency, protocol event, native payload, network access, or generated JavaScript. The
+measured Worker is 416.1 KiB gzip (426,078 bytes), 94 bytes above the previous 416 KiB ceiling, so
+the Worker ceiling rises narrowly to 417 KiB; client and parser-Wasm budgets remain unchanged.

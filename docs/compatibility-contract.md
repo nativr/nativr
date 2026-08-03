@@ -1874,42 +1874,48 @@ canonical formal names, optional ellipsis expansion, and no promise forcing. Roo
 current-frame, and closure environments participate in lexical `eval()`. `do.call()` invokes a
 callable from an ordinary list, `force()` and `forceAndCall()` expose selective promise forcing, and
 `delayedAssign()` installs a memoizing promise with separate evaluation and assignment environments.
-Environment `$`/character-`[[` access, `get`, `get0`, `exists`, `assign`, `list2env`,
+Environment `$`/character-`[[` access, `get`, `get0`, `mget`, `exists`, `assign`, `list2env`,
 `as.environment`, and `environmentName` cover initial binding and conversion behavior, including
-inherited lookup and GNU R's eager evaluation of an explicitly supplied `get0(ifnotfound=)` value.
-Numeric and exact-name `as.environment()` selectors resolve the standard search list, with stable
-supported-export package environments and parent links. `ls` and its identical `objects` alias
-enumerate only local bindings without forcing promises, honor caller/explicit/search-list selection,
-hidden-name and pattern filtering, and deterministic sorted or unhashed order, and expose the exact
-GNU R 4.6 formals. `as.list` performs custom S3 dispatch, while `as.list.environment` enumerates
-only local bindings, supports `all.names` and `sorted`, returns an attribute-free empty list when
-appropriate, and forces selected promises in result order. Non-hashed environments retain reverse
-binding order and hashed environments retain deterministic insertion order when sorting is disabled.
-`search()` exposes the deterministic standard nine-entry GNU R startup path and resets with the
-session. Attached-package lookup mutation, `attach`, `detach`, `searchpaths`, locked/active
-bindings, search-path environment mutation, exact GNU R hash-bucket order, active-binding
-enumeration, locale collation and GNU TRE regexp edge cases, `do.call(quote = TRUE)`, and pairlist
-call arguments remain outside this increment. `typeof`, `mode`, `length`, `lengths`,
-`is.symbol`/`is.name`, `is.expression`, `is.language`, `is.call`, `is.recursive`, and the Worker
-boundary cover this value surface. Public snapshots contain only a stable name or R-like source
-string, never Tree-sitter or normalized-AST nodes. Pairlists have their own runtime and wire type,
-exact tags, coercion, predicates, lazy `alist()` construction, one- and two-dimensional extraction,
-GNU R-compatible replacement type transitions, arbitrary runtime attributes, classes, dimensions,
-and dimension names. `parse(text=)` creates owned expression vectors from atomic text, honors
-bounded `n` parsing, and drives the same normalized evaluator; parser-backed public
-symbol/language/expression records are accepted as inputs. File/connection parsing and
-source-reference preservation, `bquote`, inherited substitution lookup, alternate
-`match.call(definition=, call=, envir=)` inputs, pairlist rectangular replacement and out-of-range
-extension corner cases, generic pairlist attributes across the public snapshot, GNU R
-primitive-binding failures under an `emptyenv()`-terminated evaluation chain, full language
+inherited lookup and GNU R's eager evaluation of explicitly supplied `get0(ifnotfound=)` and
+`mget(ifnotfound=)` values. The measured `mget()` contract includes duplicate/missing request names,
+mode filtering, optional inheritance, delayed and active binding reads, scalar/per-name fallback
+lists, callable fallbacks, exact result names, and GNU R 4.6 formals. Numeric and exact-name
+`as.environment()` selectors resolve the standard search list, with stable supported-export package
+environments and parent links. `ls` and its identical `objects` alias enumerate only local bindings
+without forcing promises, honor caller/explicit/search-list selection, hidden-name and pattern
+filtering, and deterministic sorted or unhashed order, and expose the exact GNU R 4.6 formals.
+`as.list` performs custom S3 dispatch, while `as.list.environment` enumerates only local bindings,
+supports `all.names` and `sorted`, returns an attribute-free empty list when appropriate, and forces
+selected promises in result order. Non-hashed environments retain reverse binding order and hashed
+environments retain deterministic insertion order when sorting is disabled. `search()` exposes the
+deterministic standard nine-entry GNU R startup path and resets with the session. Attached-package
+lookup mutation, `attach`, `detach`, `searchpaths`, locked/active bindings, search-path environment
+mutation, exact GNU R hash-bucket order, active-binding enumeration, locale collation and GNU TRE
+regexp edge cases, `do.call(quote = TRUE)`, and pairlist call arguments remain outside this
+increment. `typeof`, `mode`, `length`, `lengths`, `is.symbol`/`is.name`, `is.expression`,
+`is.language`, `is.call`, `is.recursive`, and the Worker boundary cover this value surface. Public
+snapshots contain only a stable name or R-like source string, never Tree-sitter or normalized-AST
+nodes. Pairlists have their own runtime and wire type, exact tags, coercion, predicates, lazy
+`alist()` construction, one- and two-dimensional extraction, GNU R-compatible replacement type
+transitions, arbitrary runtime attributes, classes, dimensions, and dimension names. `parse(text=)`
+creates owned expression vectors from atomic text, honors bounded `n` parsing, and drives the same
+normalized evaluator; parser-backed public symbol/language/expression records are accepted as
+inputs. File/connection parsing and source-reference preservation, `bquote`, inherited substitution
+lookup, alternate `match.call(definition=, call=, envir=)` inputs, pairlist rectangular replacement
+and out-of-range extension corner cases, generic pairlist attributes across the public snapshot, GNU
+R primitive-binding failures under an `emptyenv()`-terminated evaluation chain, full language
 attributes/indexing, and numeric call-frame evaluation selectors remain outside this increment.
 
 The apply/map surface comprises `apply`, `lapply`, `sapply`, `vapply`, `mapply`, `Map`, `Reduce`,
 `Filter`, `by`, `aggregate`, `ave`, and `tapply`. Current implementations target atomic vectors,
-lists, matrices, and the documented grouping shapes. `ave` partitions an atomic input by zero or
-more same-length atomic grouping vectors, leaves missing-group positions unchanged, resolves a
-direct callable or one function name, and replaces each group with a nonempty atomic scalar or
-vector result using ordinary recycling and promotion. Forwarding extra arguments to its function,
+lists, matrices, and the documented grouping shapes. `mapply(..., SIMPLIFY = FALSE)` and `Map()`
+retain explicit first-input names or derive names from first-input character values, including
+missing and empty names; scalar simplification retains names and matrix simplification retains the
+outer dimension names. The primitive `[[` is a first-class special builtin, so package code may pass
+it to higher-order functions without a wrapper. `ave` partitions an atomic input by zero or more
+same-length atomic grouping vectors, leaves missing-group positions unchanged, resolves a direct
+callable or one function name, and replaces each group with a nonempty atomic scalar or vector
+result using ordinary recycling and promotion. Forwarding extra arguments to its function,
 class-specific method dispatch, and all simplification or grouping corner cases are not claimed.
 
 `base::tapply` has differential behavioral evidence for zoo's measured
@@ -2298,9 +2304,10 @@ are not claimed. The built-in `R6Class` compatibility helper supplies a generato
 public-field defaults. Separately, unchanged R6 2.6.1 now loads and exercises a real generator,
 mutable public `self`, reference field mutation, and public method calls through the generic package
 runtime. The same unchanged package now exercises private state through public methods and a
-read/write active field backed by `makeActiveBinding()`. Cloning/finalization, broad inheritance,
-and complete R6 behavior remain unclaimed. `new_class` and `new_vctr` provide vctrs-compatible class
-construction shapes, not the complete vctrs or S7 packages.
+read/write active field backed by `makeActiveBinding()`, shallow cloning with shared nested
+references, and deep cloning with an independent nested R6 object. Finalization, broad inheritance,
+portable-locking variants, and complete R6 behavior remain unclaimed. `new_class` and `new_vctr`
+provide vctrs-compatible class construction shapes, not the complete vctrs or S7 packages.
 
 Applications may provide `PureRPackageBundle` records at `createR()` initialization. DESCRIPTION and
 NAMESPACE metadata, package-relative `R/*.R` source, and optional base64 resources are validated and

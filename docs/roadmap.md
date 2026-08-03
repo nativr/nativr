@@ -882,8 +882,10 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      mutation, and `.subset`/`.subset2` expose non-dispatching extraction. Unchanged R6 2.6.1 now
      installs, loads, constructs a generator and object, calls a public method, and mutates a field.
      Generic active-binding read/write/inspection plus unchanged private-state and active-field R6
-     paths now add the next depth layer. Cloning/finalization, broader inheritance and R6 behavior,
-     and arbitrary packages remain explicit future work.
+     paths add the next depth layer. Generic `mget`, first-class `[[`, and exact unsimplified
+     `mapply`/`Map` result names now carry the same unchanged package through shallow and recursive
+     deep clone paths. Finalization, broader inheritance, portable-locking variants, broad R6
+     behavior, and arbitrary packages remain explicit future work.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

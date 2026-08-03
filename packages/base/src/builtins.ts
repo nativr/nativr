@@ -238,6 +238,13 @@ const FIRST_CLASS_OPERATOR_BUILTINS: readonly BuiltinDefinition[] = [
         "primitive",
       ),
   ),
+  defineBuiltin(
+    "[[",
+    ["x", "...", "exact"],
+    "behavioral",
+    (invocation) => builtinInternalSubset(invocation, true, "[["),
+    "special",
+  ),
 ];
 
 /** Base builtins for the current documented language subset. */
@@ -2002,6 +2009,44 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     ["x", "envir", "mode", "inherits", "ifnotfound"],
     "behavioral",
     builtinGet0,
+  ),
+  withBuiltinFormals(
+    defineBuiltin(
+      "mget",
+      ["x", "envir", "mode", "ifnotfound", "inherits", "pos"],
+      "behavioral",
+      builtinMGet,
+    ),
+    [
+      { name: "x" },
+      {
+        name: "envir",
+        defaultValue: callAst("as.environment", [
+          {
+            value: { kind: "Identifier", name: "pos", span: SYNTHETIC_SPAN },
+            span: SYNTHETIC_SPAN,
+          },
+        ]),
+      },
+      {
+        name: "mode",
+        defaultValue: { kind: "StringLiteral", value: "any", span: SYNTHETIC_SPAN },
+      },
+      { name: "ifnotfound" },
+      {
+        name: "inherits",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "pos",
+        defaultValue: {
+          kind: "UnaryExpression",
+          operator: "-",
+          operand: { kind: "IntegerLiteral", value: 1, span: SYNTHETIC_SPAN },
+          span: SYNTHETIC_SPAN,
+        },
+      },
+    ],
   ),
   defineBuiltin(
     "exists",
@@ -16172,8 +16217,9 @@ async function builtinLocal(invocation: BuiltinInvocation): Promise<RValue> {
 async function builtinInternalSubset(
   invocation: BuiltinInvocation,
   single: boolean,
+  callName?: string,
 ): Promise<RValue> {
-  const call = single ? ".subset2" : ".subset";
+  const call = callName ?? (single ? ".subset2" : ".subset");
   let targetArgument: BuiltinCallArgument | undefined;
   let exact = true;
   const indexArguments: BuiltinCallArgument[] = [];
@@ -16204,16 +16250,16 @@ async function builtinInternalSubset(
 
   if (target.type === "environment") {
     if (!single || indices.length !== 1 || indices[0] === undefined) {
-      throw new RTypeMismatchError("NRT3306", ".subset2() environment extraction needs one name.");
+      throw new RTypeMismatchError("NRT3306", `${call}() environment extraction needs one name.`);
     }
     const index = indices[0];
     if (index.type !== "character" || index.length !== 1 || index.missing !== undefined) {
-      throw new RTypeMismatchError("NRT3306", ".subset2() environment subscript must be a name.");
+      throw new RTypeMismatchError("NRT3306", `${call}() environment subscript must be a name.`);
     }
     const binding = target.bindings.get(index.values[0] ?? "");
     if (binding === undefined) return R_NULL;
     if (binding.type === "dots") {
-      throw new REvaluationError("NRE2204", ".subset2() cannot extract the internal dots binding.");
+      throw new REvaluationError("NRE2204", `${call}() cannot extract the internal dots binding.`);
     }
     return invocation.force(binding);
   }
@@ -16230,13 +16276,13 @@ async function builtinInternalSubset(
     const selected = subsetDimensions(target, indices, true, invocation.context);
     if (!single) return selected;
     if (selected.length !== 1) {
-      throw new REvaluationError("NRE2204", ".subset2() must select exactly one element.");
+      throw new REvaluationError("NRE2204", `${call}() must select exactly one element.`);
     }
     return extractVectorElement(selected, integerVector([1]), invocation.context);
   }
   if (!single) return subsetVector(target, indices[0], invocation.context);
   if (indices.length !== 1 || indices[0] === undefined) {
-    throw new REvaluationError("NRE2204", ".subset2() requires one non-missing subscript.");
+    throw new REvaluationError("NRE2204", `${call}() requires one non-missing subscript.`);
   }
   return extractVectorElement(target, indices[0], invocation.context, exact);
 }
@@ -18103,6 +18149,68 @@ async function builtinGet0(invocation: BuiltinInvocation): Promise<RValue> {
     if (matchesLookupMode(value, mode)) return value;
   }
   return fallback;
+}
+
+async function builtinMGet(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = matchLazyArguments(invocation, [
+    "x",
+    "envir",
+    "mode",
+    "ifnotfound",
+    "inherits",
+    "pos",
+  ]);
+  const namesArgument = matched.get("x");
+  if (namesArgument === undefined) {
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in mget().");
+  }
+  const names = await invocation.force(namesArgument.promise);
+  if (names.type !== "character") {
+    throw new RTypeMismatchError("NRT3215", "mget(x=) requires a character vector.");
+  }
+  const environment = await lookupEnvironment(invocation, matched, ["envir", "pos"]);
+  const mode = await lookupMode(invocation, matched.get("mode"));
+  const inherits = await lazyLogicalFlag(invocation, matched.get("inherits"), false, "inherits");
+  const fallbackArgument = matched.get("ifnotfound");
+  const fallbacks =
+    fallbackArgument === undefined ? undefined : await invocation.force(fallbackArgument.promise);
+  if (
+    fallbacks !== undefined &&
+    (fallbacks.type !== "list" || (fallbacks.length !== 1 && fallbacks.length !== names.length))
+  ) {
+    throw new RTypeMismatchError("NRT3215", "Wrong length or type for mget(ifnotfound=).");
+  }
+
+  const values: RValue[] = [];
+  for (let index = 0; index < names.length; index += 1) {
+    invocation.context.checkpoint();
+    const missingName = isMissing(names, index);
+    const name = names.values[index] ?? "";
+    const found = missingName ? undefined : findEnvironmentBinding(environment, name, inherits);
+    const value =
+      found?.binding.type === "dots"
+        ? R_NULL
+        : found === undefined
+          ? undefined
+          : await invocation.force(found.binding);
+    if (value !== undefined && matchesLookupMode(value, mode)) {
+      values.push(value);
+      continue;
+    }
+    if (fallbacks === undefined) {
+      throw new REvaluationError("NRE2001", `Value for '${missingName ? "NA" : name}' not found.`);
+    }
+    const fallback = fallbacks.values[fallbacks.length === 1 ? 0 : index] ?? R_NULL;
+    values.push(
+      fallback.type === "closure" || fallback.type === "builtin"
+        ? await invocation.invoke(fallback, [
+            { value: characterVector([name], missingName ? [1] : undefined) },
+          ])
+        : fallback,
+    );
+  }
+  invocation.context.allocate(values.length);
+  return withAttribute(listValue(values), "names", characterVector(names.values, names.missing));
 }
 
 async function builtinExists(invocation: BuiltinInvocation): Promise<RValue> {
@@ -46557,9 +46665,12 @@ async function builtinMapply(invocation: BuiltinInvocation, simplify: boolean): 
     }
     inputs.push(argument.name === undefined ? { value } : { name: argument.name, value });
   }
-  if (inputs.some((input) => input.value.length === 0))
-    return shouldSimplify ? R_NULL : listValue([]);
+  if (inputs.some((input) => input.value.length === 0)) {
+    return mapplyEmptyResult(inputs[0]?.value, useNames);
+  }
   const length = Math.max(...inputs.map((input) => input.value.length));
+  const names =
+    useNames && inputs[0] !== undefined ? mapplyResultNames(inputs[0].value, length) : undefined;
   for (const input of inputs) {
     if (length % input.value.length !== 0) {
       invocation.context.warn({
@@ -46579,9 +46690,65 @@ async function builtinMapply(invocation: BuiltinInvocation, simplify: boolean): 
     }));
     results.push(await invocation.invoke(callable, [...arguments_, ...fixed]));
   }
-  if (!shouldSimplify) return listValue(results);
-  const names = useNames && inputs[0] !== undefined ? vectorNames(inputs[0].value) : undefined;
+  if (!shouldSimplify) {
+    const output = listValue(results);
+    return names === undefined ? output : withAttribute(output, "names", names);
+  }
   return simplifyResults(results, names, invocation);
+}
+
+function mapplyEmptyResult(input: RVector | undefined, useNames: boolean): RList {
+  const output = listValue([]);
+  if (!useNames || input === undefined) return output;
+  const explicitNames = input.attributes.get("names");
+  if (explicitNames !== undefined) {
+    if (explicitNames.type !== "character" || explicitNames.length !== input.length) {
+      throw new RTypeMismatchError("NRT3003", "The names attribute is malformed.", {
+        details: { valueLength: input.length },
+      });
+    }
+    if (explicitNames.length !== 0) {
+      throw new RTypeMismatchError("NRT3004", "Names must match vector length.", {
+        details: { valueLength: 0, namesLength: explicitNames.length },
+      });
+    }
+    return withAttribute(output, "names", explicitNames);
+  }
+  return input.type === "character" ? withAttribute(output, "names", characterVector([])) : output;
+}
+
+function mapplyResultNames(input: RVector, outputLength: number): RCharacterVector | undefined {
+  const explicitNames = input.attributes.get("names");
+  const source = explicitNames ?? (input.type === "character" ? input : undefined);
+  if (source === undefined) return undefined;
+  if (source.type !== "character" || source.length !== input.length) {
+    throw new RTypeMismatchError("NRT3003", "The names attribute is malformed.", {
+      details: { valueLength: input.length },
+    });
+  }
+
+  const values: string[] = [];
+  const missing = new Uint8Array(outputLength);
+  const encodings: RCharacterEncoding[] = [];
+  const byteValues: Uint8Array[] = [];
+  for (let index = 0; index < outputLength; index += 1) {
+    if (index >= source.length || isMissing(source, index)) {
+      values.push("");
+      missing[index] = 1;
+      encodings.push("unknown");
+      byteValues.push(new Uint8Array());
+      continue;
+    }
+    values.push(source.values[index] ?? "");
+    encodings.push(characterEncodingAt(source, index));
+    byteValues.push(characterBytesAt(source, index));
+  }
+  return characterVector(
+    values,
+    missing.some((value) => value === 1) ? missing : undefined,
+    encodings,
+    byteValues,
+  );
 }
 
 async function builtinReduce(invocation: BuiltinInvocation): Promise<RValue> {
@@ -47151,20 +47318,27 @@ function listArguments(
 
 function simplifyResults(
   results: readonly RValue[],
-  names: readonly string[] | undefined,
+  names: readonly string[] | RCharacterVector | undefined,
   invocation: BuiltinInvocation,
 ): RValue {
-  if (results.length === 0) return listValue([]);
-  if (!results.every(isAtomic)) return listValue(results, names);
+  const namesAttribute: RCharacterVector | undefined =
+    names === undefined ? undefined : "type" in names ? names : characterVector(names);
+  const named = <T extends RVector>(value: T): T =>
+    namesAttribute === undefined ? value : withAttribute(value, "names", namesAttribute);
+  if (results.length === 0) return named(listValue([]));
+  if (!results.every(isAtomic)) return named(listValue(results));
   const atomic = results as AtomicVector[];
   const width = atomic[0]?.length ?? 0;
-  if (atomic.some((result) => result.length !== width)) return listValue(results, names);
+  if (atomic.some((result) => result.length !== width)) return named(listValue(results));
   const cells = atomic.flatMap((result) =>
     Array.from({ length: result.length }, (_, index) => ({ vector: result, index })),
   );
   const output = atomicCells(cells, invocation);
-  if (width === 1) return names === undefined ? output : withNames(output, names);
-  return withDimensions(output, [width, results.length]);
+  if (width === 1) return named(output);
+  const matrix = withDimensions(output, [width, results.length]);
+  return namesAttribute === undefined
+    ? matrix
+    : withAttribute(matrix, "dimnames", listValue([R_NULL, namesAttribute]));
 }
 
 async function builtinSimplify2Array(invocation: BuiltinInvocation): Promise<RValue> {

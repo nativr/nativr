@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.273.0",
+  "languageSubsetVersion": "0.274.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -80,6 +80,7 @@
         { "name": "&", "compatibility": "behavioral" },
         { "name": "|", "compatibility": "behavioral" },
         { "name": "%in%", "compatibility": "behavioral" },
+        { "name": "[[", "compatibility": "behavioral" },
         { "name": "c", "compatibility": "behavioral" },
         { "name": "switch", "compatibility": "behavioral" },
         { "name": "missing", "compatibility": "behavioral" },
@@ -289,6 +290,7 @@
         { "name": "sys.call", "compatibility": "behavioral" },
         { "name": "get", "compatibility": "behavioral" },
         { "name": "get0", "compatibility": "behavioral" },
+        { "name": "mget", "compatibility": "behavioral" },
         { "name": "exists", "compatibility": "behavioral" },
         { "name": "assign", "compatibility": "behavioral" },
         { "name": "rm", "compatibility": "behavioral" },

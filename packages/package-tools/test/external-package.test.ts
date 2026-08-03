@@ -77,6 +77,52 @@ it.runIf(runExternal)(
           )
         `),
       ).resolves.toEqual([2, 6, 12, 1, 1]);
+      await expect(
+        runtime.eval(`
+          Cloneable <- R6::R6Class(
+            "Cloneable",
+            private = list(secret = 2L),
+            public = list(
+              value = NULL,
+              initialize = function(value = 1L) self$value <- value,
+              get_secret = function() private$secret,
+              set_secret = function(value) private$secret <- value
+            ),
+            active = list(total = function() self$value + private$secret)
+          )
+          original <- Cloneable$new(3L)
+          original$set_secret(4L)
+          cloned <- original$clone()
+          cloned$value <- 10L
+          cloned$set_secret(7L)
+          c(
+            original$value, original$get_secret(), original$total,
+            cloned$value, cloned$get_secret(), cloned$total,
+            identical(original, cloned), bindingIsActive("total", cloned)
+          )
+        `),
+      ).resolves.toEqual([3, 4, 7, 10, 7, 17, 0, 1]);
+      await expect(
+        runtime.eval(`
+          Node <- R6::R6Class(
+            "Node",
+            public = list(
+              value = NULL,
+              child = NULL,
+              initialize = function(value) self$value <- value
+            )
+          )
+          root <- Node$new(1L)
+          root$child <- Node$new(2L)
+          shallow <- root$clone()
+          deep <- root$clone(deep = TRUE)
+          deep$child$value <- 9L
+          c(
+            root$child$value, shallow$child$value, deep$child$value,
+            identical(root$child, shallow$child), identical(root$child, deep$child)
+          )
+        `),
+      ).resolves.toEqual([2, 2, 9, 1, 0]);
     } finally {
       await runtime?.dispose();
     }

@@ -11,7 +11,7 @@ Date: 2026-08-03
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 670 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 672 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Character vectors own exact per-element bytes and canonical `unknown`/`latin1`/`UTF-8`/`bytes`
@@ -51,8 +51,8 @@ Date: 2026-08-03
   exposure.
 - Explicit global/base/empty/current/closure and named search-list environments, child creation,
   parent traversal, and lexical evaluation, plus mutable `$`/`[[` bindings, lookup, assignment,
-  existence checks, list conversion, environment naming, delayed bindings, and explicit promise
-  forcing.
+  multi-binding `mget` with fallbacks/modes/inheritance, existence checks, list conversion,
+  environment naming, delayed/active bindings, and explicit promise forcing.
 - Owned pairlists with tags, type/mode/predicate behavior, list/vector/expression coercion,
   constructor mode, indexing, replacement type transitions, attributes, classes, dimensions,
   dimension names, Worker transport, and non-forcing `alist()` syntax capture.
@@ -131,7 +131,8 @@ Date: 2026-08-03
   frames, hooks, and state restoration, plus `with_envvar()` mutation and cleanup through
   session-owned environment variables, plus unchanged R6 generator construction, object
   instantiation, public/private method calls, reference field mutation, and an active read/write
-  field, without translating or patching package code.
+  field, plus shallow and recursive deep cloning of nested R6 objects, without translating or
+  patching package code.
 - Session environment variables are explicit, isolated runtime state. `createR()` snapshots an
   optional string map for inline or Worker execution; GNU R-shaped `Sys.getenv()`, `Sys.setenv()`,
   and `Sys.unsetenv()` query and mutate it, while reset restores the original map and host process
@@ -880,10 +881,11 @@ Date: 2026-08-03
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 14 files and 469 tests, with three explicitly skipped tests.
+- Vitest currently passes 14 files and 475 tests; one opt-in file with four external-package tests
+  is skipped in the default run and passes when enabled.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 839/839 cases. The optional black-box R oracle passes all 798
+- Checked-in conformance passes 847/847 cases. The optional black-box R oracle passes all 806
   eligible cases and explicitly skips 41 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,

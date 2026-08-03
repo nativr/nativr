@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 682,
-    "overlappingNames": 662,
-    "missingReferenceNames": 1860,
+    "nativrRegisteredNames": 684,
+    "overlappingNames": 664,
+    "missingReferenceNames": 1858,
     "nativrExtensionNames": 20,
-    "nameCoverage": 0.26249
+    "nameCoverage": 0.263283
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 477, "nameCoverage": 0.348939 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 479, "nameCoverage": 0.350402 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 76, "nameCoverage": 0.163793 },
     {
       "package": "methods",
@@ -93,6 +93,7 @@
     "UseMethod",
     "View",
     "[.hexmode",
+    "[[",
     "^",
     "abline",
     "abs",
@@ -433,6 +434,7 @@
     "median",
     "merge",
     "message",
+    "mget",
     "min",
     "missing",
     "mode",
@@ -994,7 +996,6 @@
     "[<-.difftime",
     "[<-.factor",
     "[<-.numeric_version",
-    "[[",
     "[[.Date",
     "[[.POSIXct",
     "[[.POSIXlt",
@@ -1860,7 +1861,6 @@
     "methodSignatureMatrix",
     "methods",
     "methodsPackageMetaName",
-    "mget",
     "mirror2html",
     "missingArg",
     "mode<-",

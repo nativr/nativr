@@ -9950,5 +9950,12 @@
     "expected": ["0", "0", "0", "0", "FALSE", "FALSE", "FALSE", "TRUE", "0", "0", "character", "0"],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "mget-first-class-subset-and-mapply-result-name-semantics",
+    "code": "parent <- new.env(parent = baseenv()); parent$inherited <- 4L\ne <- new.env(parent = parent); e$x <- 2L\ntracker <- new.env(); tracker$lazy <- 0L; tracker$active <- 0L; tracker$fallback <- 0L\ndelayedAssign(\"lazy\", { tracker$lazy <- tracker$lazy + 1L; 3L }, assign.env = e)\nmakeActiveBinding(\"active\", function(value) { if (missing(value)) { tracker$active <- tracker$active + 1L; 5L } else invisible(NULL) }, e)\nfound <- mget(c(\"x\", \"lazy\", \"active\", \"inherited\", \"absent\"), e, ifnotfound = { tracker$fallback <- tracker$fallback + 1L; list(function(name) nchar(name)) }, inherits = TRUE)\nimplicit <- mapply(identity, c(\"a\", \"b\"), SIMPLIFY = FALSE)\nextended <- Map(function(x, y) y, c(\"a\", NA_character_), 1:3)\nemptied <- mapply(function(x, y) x, c(\"a\", \"b\"), integer(), SIMPLIFY = FALSE)\nmatrix_result <- mapply(function(x) c(x, x), c(\"a\", \"b\"))\nsubset_values <- unlist(lapply(list(list(a = 7L), list(a = 8L)), `[[`, \"a\"))\nc(unlist(found), tracker$fallback, tracker$lazy, tracker$active, identical(names(found), c(\"x\", \"lazy\", \"active\", \"inherited\", \"absent\")), identical(names(implicit), c(\"a\", \"b\")), identical(names(extended), c(\"a\", NA_character_, NA_character_)), identical(names(emptied), character()), identical(dimnames(matrix_result)[[2]], c(\"a\", \"b\")), subset_values, `[[`(matrix(1:4, 2), 2L, 2L))",
+    "expected": [2, 3, 5, 4, 6, 1, 1, 1, 1, 1, 1, 1, 1, 7, 8, 4],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

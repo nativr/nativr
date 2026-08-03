@@ -1101,6 +1101,15 @@ R6 2.6.1 proof uses those generic Base R semantics for private method state and 
 field. Active-binding substitution, R6 cloning/finalization and inheritance breadth, complete R6,
 and arbitrary-package compatibility remain unclaimed.
 
+The generic clone-path increment adds `mget` and the first-class `[[` primitive, raising current
+name overlap to 664 of 2,522. GNU R 4.6 differential evidence covers named multi-binding lookup,
+inheritance, mode filtering, delayed promises, active bindings, eager fallback preparation, callable
+fallbacks, missing request names, exact formals, higher-order `[[` calls, and `mapply()`/`Map()`
+result-name derivation including missing and empty names. The digest-pinned, unchanged R6 2.6.1
+proof now executes both shallow and recursive deep clone paths for nested R6 objects. This is
+reusable Base R semantic depth, not an R6 adapter; finalizers, broad inheritance, portable-locking
+variants, complete R6, and arbitrary-package compatibility remain unclaimed.
+
 ## Completion evidence
 
 The objective is complete only when:

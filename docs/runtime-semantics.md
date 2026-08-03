@@ -92,36 +92,38 @@ input. Parser-backed JavaScript symbol/language/expression records round-trip th
 implemented. `match.call()` uses the active closure's already-computed argument matching to
 canonicalize supplied names, omit unused defaults, and optionally retain dots as a pairlist-shaped
 call. Root, child, parent, current-frame, and closure environments are available for lexical
-evaluation. Environment `$` and character `[[` read or replace bindings; `get`, `get0`, `exists`,
-and `assign` support explicit environments and inherited lookup, while `list2env`, `as.environment`,
-`environmentName`, and `as.list.environment` cover initial conversion and identity operations.
-Environment-to-list conversion enumerates only local bindings, optionally includes dot-prefixed
-names, sorts before forcing when requested, and preserves the runtime's hash-aware unsorted order.
-The `as.list` entry point performs S3 dispatch. As in GNU R, `exists(mode = "any")` detects an
-unforced delayed binding without forcing it and an explicitly supplied `get0(ifnotfound=)` value is
-evaluated even when the requested object exists. `lockEnvironment()` prevents adding or removing
-bindings while permitting replacement of existing unlocked bindings; `lockBinding()`,
-`unlockBinding()`, `bindingIsLocked()`, and `environmentIsLocked()` expose the corresponding
-reference-semantics state. `makeActiveBinding()` stores a callable rather than a value; identifier,
-`$`, `[[`, `get`, `get0`, `.subset2`, and environment-to-list reads invoke it with no arguments,
-while evaluator assignment, `assign()`, and the async JavaScript `r.assign()` API invoke it with the
-replacement value and discard the callback result. `bindingIsActive()` and `activeBindingFunction()`
-inspect the binding without forcing it, and ordinary binding locks also protect active writes.
-Active-binding substitution, namespace mutation, arbitrary numeric search positions, and exact GNU R
-hash-bucket enumeration order are not implemented. Evaluator-native syntax does not yet reproduce
-GNU R's primitive-binding lookup failures when an evaluated expression's environment chain ends
-directly at `emptyenv()`. Pairlists are distinct runtime values with exact tags; `pairlist`,
-`as.pairlist`, `is.pairlist`, `as.list`, `vector("pairlist", n)`, `length`, type/mode inspection,
-`alist`, and Worker transport use that value model. Pairlist `[`, `[[`, and `$` extraction follows
-the measured GNU R list-return and unique-partial-name behavior. `[[<-` and `$<-` preserve pairlist
-type, `[<-` converts to an ordinary list, and names, arbitrary runtime attributes, classes,
-dimensions, dimension names, and implicit matrix/array classes are retained or dropped along the
-measured GNU R paths. GNU R's `lengths()`, `is.matrix()`, and `is.array()` rejection/false results
-for pairlists are preserved. This increment does not yet provide `bquote`, pairlist rectangular
-replacement or every extension edge case, generic pairlist attributes across the public snapshot,
-inherited substitution lookup, alternate `match.call` definitions/calls/environments, full language
-indexing/attributes, list/data-frame evaluation environments, source-reference preservation, or
-file/connection-driven parsing.
+evaluation. Environment `$` and character `[[` read or replace bindings; `get`, `get0`, `mget`,
+`exists`, and `assign` support explicit environments and inherited lookup, while `list2env`,
+`as.environment`, `environmentName`, and `as.list.environment` cover initial conversion and identity
+operations. Environment-to-list conversion enumerates only local bindings, optionally includes
+dot-prefixed names, sorts before forcing when requested, and preserves the runtime's hash-aware
+unsorted order. The `as.list` entry point performs S3 dispatch. As in GNU R, `exists(mode = "any")`
+detects an unforced delayed binding without forcing it and explicitly supplied `get0(ifnotfound=)`
+and `mget(ifnotfound=)` values are evaluated even when every requested object exists. `mget()`
+preserves duplicate and missing requested names, forces selected promises and active bindings,
+filters by mode, optionally inherits, and invokes callable fallbacks with the missing name.
+`lockEnvironment()` prevents adding or removing bindings while permitting replacement of existing
+unlocked bindings; `lockBinding()`, `unlockBinding()`, `bindingIsLocked()`, and
+`environmentIsLocked()` expose the corresponding reference-semantics state. `makeActiveBinding()`
+stores a callable rather than a value; identifier, `$`, `[[`, `get`, `get0`, `.subset2`, and
+environment-to-list reads invoke it with no arguments, while evaluator assignment, `assign()`, and
+the async JavaScript `r.assign()` API invoke it with the replacement value and discard the callback
+result. `bindingIsActive()` and `activeBindingFunction()` inspect the binding without forcing it,
+and ordinary binding locks also protect active writes. Active-binding substitution, namespace
+mutation, arbitrary numeric search positions, and exact GNU R hash-bucket enumeration order are not
+implemented. Evaluator-native syntax does not yet reproduce GNU R's primitive-binding lookup
+failures when an evaluated expression's environment chain ends directly at `emptyenv()`. Pairlists
+are distinct runtime values with exact tags; `pairlist`, `as.pairlist`, `is.pairlist`, `as.list`,
+`vector("pairlist", n)`, `length`, type/mode inspection, `alist`, and Worker transport use that
+value model. Pairlist `[`, `[[`, and `$` extraction follows the measured GNU R list-return and
+unique-partial-name behavior. `[[<-` and `$<-` preserve pairlist type, `[<-` converts to an ordinary
+list, and names, arbitrary runtime attributes, classes, dimensions, dimension names, and implicit
+matrix/array classes are retained or dropped along the measured GNU R paths. GNU R's `lengths()`,
+`is.matrix()`, and `is.array()` rejection/false results for pairlists are preserved. This increment
+does not yet provide `bquote`, pairlist rectangular replacement or every extension edge case,
+generic pairlist attributes across the public snapshot, inherited substitution lookup, alternate
+`match.call` definitions/calls/environments, full language indexing/attributes, list/data-frame
+evaluation environments, source-reference preservation, or file/connection-driven parsing.
 
 `textConnection()` supplies an always-open, session-owned input connection backed by a copied
 character vector. `source()` reads such connections or browser-owned virtual/package paths, parses
@@ -1629,11 +1631,11 @@ deterministic owned-value representation to the output journal and returns invis
 terminal, pager, ANSI capability, or package-specific display code is consulted. The bounded
 built-in R6 helper constructs classed public-field lists; the unchanged external R6 2.6.1 proof
 exercises its own package generator, environment locks, reference field mutation, public/private
-method state, and active-binding invocation. vctrs helpers construct class metadata. R6
-cloning/finalization, inheritance depth, and broad R6 behavior remain unclaimed. Ambiguous-method
-diagnostics, union classes, full formal/partial argument matching, automatic namespace/package
-registration, method caches, primitive/group generics, and complete external-package behavior are
-not claimed.
+method state, active-binding invocation, shallow clone aliasing, and recursive deep cloning of a
+nested R6 object. vctrs helpers construct class metadata. R6 finalization, inheritance depth,
+portable-locking variants, and broad R6 behavior remain unclaimed. Ambiguous-method diagnostics,
+union classes, full formal/partial argument matching, automatic namespace/package registration,
+method caches, primitive/group generics, and complete external-package behavior are not claimed.
 
 Default resource limits are 100,000 steps, 100 calls, 1,000,000 elements per vector, and 1,000,000
 output bytes. Structured resource errors reduce accidental denial of service but are not a formal

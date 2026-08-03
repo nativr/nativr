@@ -332,13 +332,17 @@ public source packages from the repository resolver and verifies a pinned artifa
 - [`R6 2.6.1`](https://cran.r-project.org/package=R6) proves that a real installed package takes
   precedence over a non-core compatibility shim, that namespace-qualified S3 registration loads, and
   that unchanged package code can construct a generator, instantiate a reference object, invoke
-  public/private-state methods, mutate reference state, and expose an active read/write field.
+  public/private-state methods, mutate reference state, expose an active read/write field, preserve
+  shared nested references through a shallow clone, and recursively copy a nested R6 object through
+  a deep clone.
 
 No package source is checked into this repository. Together these tests exercise repository
 installation, runtime package files, namespace loading, qualified S3 registration, metaprogramming,
 dynamic caller frames, closure-formal replacement, environment/closure attributes, environment and
 binding locks, function-backed active bindings, internal subset primitives, and reusable
-state-management behavior.
+state-management behavior. The clone paths additionally exercise generic `mget()`, first-class `[[`,
+`mapply()`/`Map()` naming, environment copying, active bindings, and recursive package-owned method
+invocation; there is no R6 adapter or package-source rewrite.
 
 The checked-in source-only fixture also exports a function that calls `grDevices::rainbow`,
 `terrain.colors`, `topo.colors`, and `cm.colors` through its namespace. This is a small executable

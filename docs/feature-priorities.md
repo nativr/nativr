@@ -1781,6 +1781,12 @@ ties:
      environment-to-list forcing, visibility, and binding locks. The unchanged R6 2.6.1 proof now
      runs public methods over private state and a read/write active field. Cloning, finalization,
      inheritance breadth, active-binding substitution, and arbitrary packages remain unclaimed.
+171. Download-ranked R6 clone depth: the unchanged package's ordinary `clone()` implementation
+     exposed missing generic `mget`, first-class `[[`, and `mapply`/`Map` result names. Those Base R
+     capabilities now have GNU R 4.6 differential evidence, and the digest-pinned R6 2.6.1 proof
+     verifies shallow nested-reference sharing plus recursive deep-copy independence. No R6 source,
+     adapter, or package-specific branch was added. Finalization, inheritance breadth,
+     portable-locking variants, and arbitrary packages remain unclaimed.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

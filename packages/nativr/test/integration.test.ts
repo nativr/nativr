@@ -13291,7 +13291,7 @@ NeedsCompilation: no
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.273.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.274.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -19564,6 +19564,34 @@ NeedsCompilation: no
     await expect(runtime.eval("Map(function(x, y) x + y, 1:3, 10:12)")).resolves.toEqual([
       11, 13, 15,
     ]);
+    await expect(
+      runtime.eval(`
+        implicit <- mapply(identity, c("a", "b"), SIMPLIFY = FALSE)
+        explicit <- Map(identity, structure(c("x", "y"), names = c("left", "right")))
+        extended <- mapply(function(x, y) y, c("a", NA_character_), 1:3, SIMPLIFY = FALSE)
+        empty <- Map(identity, character())
+        emptied <- mapply(function(x, y) x, c("a", "b"), integer(), SIMPLIFY = FALSE)
+        matrix_result <- mapply(function(x) c(x, x), c("a", "b"))
+        c(
+          identical(names(implicit), c("a", "b")),
+          identical(names(explicit), c("left", "right")),
+          identical(names(extended), c("a", NA_character_, NA_character_)),
+          identical(names(empty), character()),
+          identical(names(emptied), character()),
+          identical(dimnames(matrix_result)[[2]], c("a", "b"))
+        )
+      `),
+    ).resolves.toEqual([true, true, true, true, true, true]);
+    await expect(
+      runtime.eval(
+        "mapply(function(x, y) x, structure(1:2, names = c('a', 'b')), integer(), SIMPLIFY = FALSE)",
+      ),
+    ).rejects.toMatchObject({ code: "NRT3004" });
+    await expect(
+      runtime.eval('unlist(lapply(list(list(a = 1L), list(a = 2L)), `[[`, "a"))'),
+    ).resolves.toEqual([1, 2]);
+    await expect(runtime.eval("`[[`(matrix(1:4, 2), 2L, 2L)")).resolves.toBe(4);
+    await expect(runtime.eval('`[[`(list(foobar = 3L), "foo", exact = FALSE)')).resolves.toBe(3);
     await expect(runtime.eval("Reduce(function(x, y) x + y, 1:4)")).resolves.toBe(10);
     await expect(
       runtime.eval("Reduce(function(x, y) x + y, 1:4, accumulate = TRUE)"),
@@ -20309,6 +20337,53 @@ NeedsCompilation: no
     await expect(runtime.eval("e$x")).resolves.toBe(1);
     await expect(runtime.eval('e[["x"]]')).resolves.toBe(1);
     await expect(runtime.eval('get("x", envir = e)')).resolves.toBe(1);
+    await expect(
+      runtime.eval(`
+        parent <- new.env(parent = baseenv())
+        parent$inherited <- 4L
+        lookup <- new.env(parent = parent)
+        lookup$ordinary <- 2L
+        tracker <- new.env()
+        tracker$forced <- 0L
+        tracker$lazy <- 0L
+        tracker$active <- 0L
+        delayedAssign("lazy", { tracker$lazy <- tracker$lazy + 1L; 3L }, assign.env = lookup)
+        makeActiveBinding("active", function(value) {
+          if (missing(value)) {
+            tracker$active <- tracker$active + 1L
+            5L
+          } else invisible(NULL)
+        }, lookup)
+        found <- mget(
+          c("ordinary", "lazy", "active", "inherited", "absent"),
+          envir = lookup,
+          ifnotfound = { tracker$forced <- tracker$forced + 1L; list(function(name) nchar(name)) },
+          inherits = TRUE
+        )
+        c(unlist(found), tracker$forced, tracker$lazy, tracker$active)
+      `),
+    ).resolves.toEqual([2, 3, 5, 4, 6, 1, 1, 1]);
+    await runtime.eval(`
+      lookup <- new.env(parent = baseenv())
+      lookup$x <- 7L
+      values <- mget(c("x", "mean", "definitely_absent"), lookup,
+        mode = "function", ifnotfound = list(-1L), inherits = TRUE)
+      missing_name <- mget(NA_character_, lookup,
+        ifnotfound = list(function(name) name))[[1]]
+      NULL
+    `);
+    await expect(runtime.eval("values[[1]]")).resolves.toBe(-1);
+    await expect(runtime.eval("is.function(values[[2]])")).resolves.toBe(true);
+    await expect(runtime.eval("values[[3]]")).resolves.toBe(-1);
+    await expect(runtime.eval("is.na(missing_name)")).resolves.toBe(true);
+    await expect(
+      runtime.eval('identical(names(values), c("x", "mean", "definitely_absent"))'),
+    ).resolves.toBe(true);
+    await expect(
+      runtime.eval(
+        'identical(names(formals(mget)), c("x", "envir", "mode", "ifnotfound", "inherits", "pos"))',
+      ),
+    ).resolves.toBe(true);
     await expect(
       runtime.eval('get0("definitely.absent", envir = e, ifnotfound = 7)'),
     ).resolves.toBe(7);
