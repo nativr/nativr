@@ -95,8 +95,10 @@ stored/DEFLATE ZIP-member resources through read-only `unz()` connections, input
 plus `source()` into selected environments, package `data/*.R`/text/`.rda` loading through `data()`,
 and `R/sysdata.rda` namespace initialization, installed vignette discovery through `vignette()`,
 plus exports, `pkg::name`, `pkg:::name`, S3 registrations, `.onLoad()`, `.onAttach()`, `library()`,
-`require()`, and `requireNamespace()` in inline and Worker execution. Arbitrary pure-R source
-packages can enter this pipeline, but that is not a claim that every package already executes: all
+`require()`, `requireNamespace()`, and exact private-binding retrieval through
+`utils::getFromNamespace()` in inline and Worker execution. Private lookup uses the package's real
+isolated namespace and never falls through to imports or Base R. Arbitrary pure-R source packages
+can enter this pipeline, but that is not a claim that every package already executes: all
 dependencies, data formats, namespace directives, and R features it uses must also be supported.
 Unchanged, digest-pinned `pkgconfig 2.0.3`, `generics 0.1.4`, and `withr 3.0.3` source packages now
 provide end-to-end external proofs: package resources, package-owned S3 dispatch, and generated
@@ -225,7 +227,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 659 registered functions, including resettable
+an initial condition/handler slice. It exposes 666 registered functions, including resettable
 session options, isolated session environment variables, deterministic non-interactive host-mode
 detection, browser-owned `gc()` memory censuses, an S3-first `graphics::lines()` path over the
 existing Worker/Canvas journal, usage-ranked numeric and character time-interval construction
@@ -758,6 +760,14 @@ catalog from the same generic manifest emitted for every admitted pure-R package
 code runs inline or in the default Worker, while the Playground previews the resulting inert file
 event in a no-permissions sandbox; no help server, runtime fetch, host path, or package-specific
 rewrite is involved.
+
+Rank 368 `utils::getFromNamespace()` now covers all 37 measured backports calls through the generic
+package loader. Character namespace names, loaded namespace environments, attached-package
+`pos`/`envir` lookup, exact non-inheriting private binding resolution, lazy unused controls, GNU R
+formals, and bounded errors share one runtime path. The source-only fixture imports the callable and
+invokes an unexported package function unchanged, so this closes the measured private-implementation
+seam without a backports adapter or a core-only facade. It does not claim that all other backports
+dependencies or every pure-R package are already compatible.
 
 Rank 330 `base::sink()` now covers utf8's two measured output-redirection calls and the broader GNU
 R stack semantics they rely on. Output diversions persist across `r.eval()` calls and errors, nest

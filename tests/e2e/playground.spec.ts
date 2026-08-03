@@ -47,6 +47,10 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("6");
 
+  await page.locator("#source").fill('nativrdemo::private_call("hidden_helper", 5)');
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("105");
+
   await page.locator("#source").fill("nativrdemo::create_file()");
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("[1, 1, 0, 0]");

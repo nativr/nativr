@@ -4,11 +4,11 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 665,
-    "overlappingNames": 646,
-    "missingReferenceNames": 1876,
+    "nativrRegisteredNames": 666,
+    "overlappingNames": 647,
+    "missingReferenceNames": 1875,
     "nativrExtensionNames": 19,
-    "nameCoverage": 0.256146
+    "nameCoverage": 0.256542
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 466, "nameCoverage": 0.340892 },
@@ -19,7 +19,7 @@
       "overlappingNames": 10,
       "nameCoverage": 0.047847
     },
-    { "package": "utils", "callableNames": 262, "overlappingNames": 33, "nameCoverage": 0.125954 },
+    { "package": "utils", "callableNames": 262, "overlappingNames": 34, "nameCoverage": 0.129771 },
     {
       "package": "grDevices",
       "callableNames": 135,
@@ -300,6 +300,7 @@
     "get0",
     "getAllConnections",
     "getConnection",
+    "getFromNamespace",
     "getHook",
     "getLoadedDLLs",
     "getNamespaceExports",
@@ -1561,7 +1562,6 @@
     "getDataPart",
     "getElement",
     "getExportedValue",
-    "getFromNamespace",
     "getFunction",
     "getGeneric",
     "getGenerics",

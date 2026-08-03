@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.267.0",
+  "languageSubsetVersion": "0.268.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -744,7 +744,8 @@
         { "name": "type.convert", "compatibility": "behavioral" },
         { "name": "type.convert.default", "compatibility": "behavioral" },
         { "name": "type.convert.list", "compatibility": "behavioral" },
-        { "name": "type.convert.data.frame", "compatibility": "behavioral" }
+        { "name": "type.convert.data.frame", "compatibility": "behavioral" },
+        { "name": "getFromNamespace", "compatibility": "behavioral" }
       ]
     },
     { "name": "datasets", "referenceVersion": "R 4.6.x documented behavior", "functions": [] },

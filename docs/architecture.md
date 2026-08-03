@@ -250,6 +250,15 @@ operators, package loading, metadata, resources, and explicit virtual `lib.loc` 
 restores the two default roots. No host path, environment-derived R library, or network repository
 is inspected implicitly.
 
+Private namespace retrieval is another narrow evaluator-owned seam. `@nativr/base` performs GNU
+R-style argument matching for `utils::getFromNamespace`, while the runtime resolves one exact
+binding from the named or already-loaded namespace and forces only that binding. Source-package
+imports remain in the namespace's parent environment, so private lookup cannot accidentally inherit
+an imported or Base binding. Core namespaces are filtered by registered package ownership and
+explicit namespace constants; package namespaces use their actual isolated binding map. No package
+bundle, parser node, host object, or package-specific callback crosses the `runtime -> base`
+direction.
+
 Package-file access follows the same ownership rule. The facade retains DESCRIPTION, NAMESPACE,
 ordered `R/*.R` text, and base64 resources in immutable runtime definitions. `system.file()` creates
 opaque virtual identifiers; the evaluator resolves exact identifiers without URL, filesystem, or

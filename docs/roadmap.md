@@ -858,6 +858,11 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      `enable`/`inhibit`, reset-on-toggle behavior, screen/file defaults, invisible returns, argument
      boundaries, unchanged pure-R imports, record/replay, PDF bytes, and browser events have
      executable evidence without adding a device adapter or protocol message.
+180. Usage-ranked private namespace lookup: rank-368 `utils::getFromNamespace` resolves exact public
+     or private bindings from core and admitted pure-R package namespaces, including package
+     loading, actual namespace environments, attached-package `pos`/`envir`, lazy unused controls,
+     strict non-inheritance, GNU R formals/errors, unchanged source-only private-function execution,
+     inline/Worker compatibility, and differential evidence without a backports-specific adapter.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

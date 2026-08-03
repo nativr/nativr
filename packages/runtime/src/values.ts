@@ -304,6 +304,8 @@ export interface BuiltinInvocation {
   isNamespaceLoaded(name: string): boolean;
   loadedNamespaces(): readonly string[];
   namespaceExports(name: string): Promise<readonly string[]>;
+  namespaceName(environment: REnvironment): string | undefined;
+  namespaceBinding(name: string, binding: string): Promise<RValue | undefined>;
   packageResourcePath(
     name: string,
     path: string,

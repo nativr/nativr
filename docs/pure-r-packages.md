@@ -180,7 +180,8 @@ normalized AST. The runtime then provides:
 
 1. dependency-ordered isolated namespaces with version checks;
 2. `import` and `importFrom` binding resolution;
-3. explicit exports, `pkg::name`, and internal `pkg:::name` lookup;
+3. explicit exports, `pkg::name`, internal `pkg:::name`, and exact non-inheriting private lookup
+   through `utils::getFromNamespace()`;
 4. `S3method` registration without attaching implementation bindings globally;
 5. `.onLoad()` and `.onAttach()` lifecycle hooks;
 6. `library`, `require`, `requireNamespace`, namespace queries, attachment search paths, and reset;
@@ -551,6 +552,15 @@ generic namespace path. The checked-in source-only fixture imports and calls it 
 mode clears only replay recording while Canvas/PDF/PNG output continues; enable mode starts a fresh
 bounded recording that ordinary `recordPlot()` and `replayPlot()` consume. No knitr-specific code,
 device adapter, or Worker protocol message is involved.
+
+Rank-368 `utils::getFromNamespace()` removes the private-implementation lookup seam measured in all
+37 backports examples. The loader resolves a character package name or actual namespace environment,
+loads admitted bundles on demand, and returns only an exact namespace-owned binding: imports and
+Base parents are deliberately not searched. The checked-in source-only fixture imports the ordinary
+utility and invokes its own unexported `hidden_helper` without source translation. This is reusable
+namespace infrastructure for any admitted package, not a backports rewrite or proof that backports'
+remaining runtime dependencies are complete. Namespace mutation, installed lazy-load databases, and
+the wider namespace-management API remain explicit gates.
 
 Rank-195 `.libPaths()` makes package discovery state reusable by ordinary package code. The default
 order is the immutable supplied-bundle library `nativr://package` followed by the registered runtime

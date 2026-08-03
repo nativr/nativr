@@ -452,6 +452,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "download.file",
       "example",
       "glob2rx",
+      "getFromNamespace",
       "object.size",
       "packageName",
       "packageDescription",
@@ -2032,6 +2033,8 @@ export class Evaluator {
               .map(([name]) => name),
           ]),
         namespaceExports: async (name) => this.#namespaceExports(name, context),
+        namespaceName: (environment) => this.#namespaceName(environment),
+        namespaceBinding: async (name, binding) => this.#namespaceBinding(name, binding, context),
         packageResourcePath: (name, path, libraryPaths) =>
           this.#packageResourcePath(name, path, libraryPaths),
         packageResourcePaths: (name, prefix) => {
@@ -2804,6 +2807,47 @@ export class Evaluator {
     }
     context.allocate(record.definition.exports.length);
     return Object.freeze([...record.definition.exports]);
+  }
+
+  #namespaceName(environment: REnvironment): string | undefined {
+    if (environment === this.#baseEnvironment) return "base";
+    for (const [name, record] of this.#packages) {
+      if (record.namespace === environment) return name;
+    }
+    return undefined;
+  }
+
+  async #namespaceBinding(
+    name: string,
+    bindingName: string,
+    context: EvaluationContext,
+  ): Promise<RValue | undefined> {
+    const staticExports = REGISTERED_NAMESPACE_EXPORTS.get(name);
+    if (staticExports !== undefined) {
+      const packageOwned = this.#builtins.some(
+        (definition) => definition.package === name && definition.name === bindingName,
+      );
+      const baseConstant =
+        name === "base" &&
+        ["pi", "letters", ".Machine", ".LC.categories", ".Library", ".Library.site"].includes(
+          bindingName,
+        );
+      if (!packageOwned && !baseConstant) return undefined;
+      const binding = this.#baseEnvironment.bindings.get(bindingName);
+      if (binding === undefined) return undefined;
+      return binding.type === "promise" ? this.#force(binding, context) : binding;
+    }
+
+    const record = this.#packages.get(name);
+    if (record === undefined) {
+      throw new REvaluationError("NRE2221", `There is no installed package called '${name}'.`, {
+        details: { package: name },
+      });
+    }
+    if (record.namespace === undefined) await this.#loadPackage(name, false, context);
+    const binding = record.namespace?.bindings.get(bindingName);
+    if (binding === undefined) return undefined;
+    return binding.type === "promise" ? this.#force(binding, context) : binding;
   }
 
   #installedPackageVersion(name: string, libraryPaths?: readonly string[]): string | undefined {

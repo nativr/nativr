@@ -32,8 +32,8 @@ importFrom(grDevices, dev.control, devAskNewPage)
 importFrom(graphics, abline, axis, barplot, plot.new, plot.window, rect, title)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median, ts.plot)
-importFrom(utils, download.file, packageDescription, packageName, packageVersion)
-  export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, annotated_plot, reference_lines, control_display_list, ask_new_pages, find_tools, create_file, copy_resource, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, socket_exchange, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, package_files, installed_version, namespace_names, process_id, library_paths, loaded_module_paths, native_encoding, shell_quote, standard_output, sink_lines, write_sass_variable, browse_guides)
+importFrom(utils, download.file, getFromNamespace, packageDescription, packageName, packageVersion)
+  export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, annotated_plot, reference_lines, control_display_list, ask_new_pages, find_tools, create_file, copy_resource, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, socket_exchange, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, package_files, installed_version, namespace_names, private_call, process_id, library_paths, loaded_module_paths, native_encoding, shell_quote, standard_output, sink_lines, write_sass_variable, browse_guides)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -196,6 +196,11 @@ package_files <- function(package = "nativrfixture") {
 }
 installed_version <- function(package = "nativrfixture") as.character(packageVersion(package))
 namespace_names <- function(pattern = "") ls(envir = environment(namespace_names), pattern = pattern, all.names = TRUE)
+private_call <- function(name, x, use_environment = FALSE) {
+  namespace <- if (use_environment) environment(private_call) else "nativrfixture"
+  fun <- getFromNamespace(name, namespace)
+  fun(x)
+}
 process_id <- function() Sys.getpid()
 library_paths <- function() .libPaths()
 loaded_module_paths <- function() vapply(getLoadedDLLs(), "[[", character(1), "path")
@@ -4605,6 +4610,12 @@ describe("complete inline source-to-result vertical slice", () => {
     ]);
     await expect(runtime.eval("utils::packageName()")).resolves.toBe(null);
     await expect(runtime.eval("nativrfixture:::hidden_helper(1)")).resolves.toBe(101);
+    await expect(runtime.eval('nativrfixture::private_call("hidden_helper", 5)')).resolves.toBe(
+      105,
+    );
+    await expect(
+      runtime.eval('nativrfixture::private_call("hidden_helper", 6, TRUE)'),
+    ).resolves.toBe(106);
     await expect(runtime.eval("nativrfixture::hidden_helper(1)")).rejects.toMatchObject({
       code: "NRE2211",
     });
@@ -4674,6 +4685,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "package_state",
       "pipe_lines",
       "plot_series",
+      "private_call",
       "process_id",
       "reference_lines",
       "remote_lines",
@@ -13193,7 +13205,7 @@ NeedsCompilation: no
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.267.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.268.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",

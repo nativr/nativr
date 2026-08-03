@@ -1042,6 +1042,16 @@ PDF-byte, and Worker-compatible integration evidence cover this owned representa
 private recorded-plot binary layout, external devices, and cross-runtime replay remain outside the
 claim.
 
+The private-namespace increment raises current name overlap to 647 of 2,522. Rank 368
+`utils::getFromNamespace` covers all 37 measured backports calls with GNU R 4.6 differential
+evidence for the four exact formals/defaults, character namespace selection, first-element behavior,
+lazy unused `pos`/`envir`, attached-package lookup, visible callable identity, strict
+non-inheritance, and argument/package/object errors. NativR-only package evidence imports the same
+callable into an unchanged source-only namespace and invokes a real unexported helper. The
+implementation resolves the generic isolated namespace map rather than a core-only facade or
+backports adapter. This does not claim namespace mutation/locking, installed lazy-load databases,
+every namespace-management helper, or complete backports/package compatibility.
+
 ## Completion evidence
 
 The objective is complete only when:

@@ -1823,6 +1823,42 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("getLoadedDLLs", [], "shape", builtinGetLoadedDLLs),
   defineBuiltin(".Call", [".NAME", "...", "PACKAGE"], "behavioral", builtinNativeCall, "primitive"),
   defineBuiltin("getNamespaceExports", ["ns"], "behavioral", builtinGetNamespaceExports),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "utils",
+      "getFromNamespace",
+      ["x", "ns", "pos", "envir"],
+      "behavioral",
+      builtinGetFromNamespace,
+    ),
+    [
+      { name: "x" },
+      { name: "ns" },
+      {
+        name: "pos",
+        defaultValue: {
+          kind: "UnaryExpression",
+          operator: "-",
+          operand: { kind: "DoubleLiteral", value: 1, span: SYNTHETIC_SPAN },
+          span: SYNTHETIC_SPAN,
+        },
+      },
+      {
+        name: "envir",
+        defaultValue: {
+          kind: "CallExpression",
+          callee: { kind: "Identifier", name: "as.environment", span: SYNTHETIC_SPAN },
+          arguments: [
+            {
+              value: { kind: "Identifier", name: "pos", span: SYNTHETIC_SPAN },
+              span: SYNTHETIC_SPAN,
+            },
+          ],
+          span: SYNTHETIC_SPAN,
+        },
+      },
+    ],
+  ),
   defineBuiltin("sys.call", ["which"], "behavioral", builtinSystemCall),
   defineBuiltin("get", ["x", "pos", "envir", "mode", "inherits"], "behavioral", builtinGet),
   defineBuiltin(
@@ -17471,6 +17507,46 @@ async function builtinGetNamespaceExports(
   const exports = await invocation.namespaceExports(name);
   invocation.context.allocate(exports.length);
   return characterVector(exports);
+}
+
+async function builtinGetFromNamespace(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = matchLazyArguments(invocation, ["x", "ns", "pos", "envir"]);
+  const name = await forcedBindingName(invocation, matched.get("x"), "getFromNamespace");
+  const namespaceArgument = matched.get("ns");
+  let namespaceName: string | undefined;
+
+  if (namespaceArgument !== undefined) {
+    const namespace = await invocation.force(namespaceArgument.promise);
+    if (namespace.type === "character") {
+      if (namespace.length === 0) {
+        throw new RTypeMismatchError("NRT3267", "Namespace name must not be empty.");
+      }
+      namespaceName = isMissing(namespace, 0) ? "NA" : (namespace.values[0] ?? "");
+    } else if (namespace.type === "environment") {
+      namespaceName = invocation.namespaceName(namespace);
+      if (namespaceName === undefined) {
+        throw new RTypeMismatchError("NRT3267", "The supplied environment is not a namespace.");
+      }
+    } else {
+      throw new RTypeMismatchError("NRT3267", "The supplied value is not a namespace.");
+    }
+  } else {
+    const environment = await lookupEnvironment(invocation, matched, ["envir", "pos"]);
+    namespaceName = invocation.namespaceName(environment);
+    if (namespaceName === undefined) {
+      const environmentName = invocation.environmentName(environment);
+      if (environmentName?.startsWith("package:")) {
+        namespaceName = environmentName.slice("package:".length);
+      }
+    }
+    if (namespaceName === undefined) {
+      throw new RTypeMismatchError("NRT3267", "Environment specified is not a package.");
+    }
+  }
+
+  const value = await invocation.namespaceBinding(namespaceName, name);
+  if (value === undefined) throw objectLookupError(name, "any");
+  return value;
 }
 
 async function packageArgumentName(

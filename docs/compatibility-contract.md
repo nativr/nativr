@@ -98,7 +98,14 @@ boundaries. All loops consume the evaluator step budget.
 Namespace access resolves exact builtins from the registered `base`, `stats`, `methods`, `R6`,
 `vctrs`, and `tibble` namespaces, and exact owned base bindings such as `base::.Machine`. Public
 `::` and registered internal `:::` lookup never load code, consult the network, or imply general
-package compatibility.
+package compatibility. `utils::getFromNamespace(x, ns, pos, envir)` additionally resolves one exact
+public or private binding from a core or admitted pure-R package namespace. Character namespaces
+load on demand; actual loaded namespace environments and attached-package `pos`/`envir` selection
+are accepted; unused location controls remain lazy when `ns` is supplied. Lookup never inherits
+through the namespace's imports/Base parent, and missing packages, bindings, invalid names, and
+non-namespace environments fail before returning a value. Mutation helpers such as
+`assignInNamespace`, namespace locking/registration internals, complete `getNamespace*` inspection,
+and lazy-load database bindings remain separate surfaces.
 
 Random state is isolated per session and restored by reset. `RNGkind` queries and selects
 session-local uniform, normal, and discrete-sampling kinds with prior-state return, mutation
@@ -1588,8 +1595,9 @@ diagnostic wording are not claimed.
 backports, character-vector line joining, comments and blank input, expression/call/symbol/constant
 result types, missing text, single-expression enforcement, and invalid type or syntax boundaries.
 They reuse the owned parser and never expose its implementation nodes. Source references, encoding
-metadata, exact parser diagnostic text, files/connections, and backports' private namespace
-retrieval through `getFromNamespace` remain separate compatibility surfaces.
+metadata, exact parser diagnostic text, and files/connections remain separate compatibility
+surfaces. Backports' private retrieval seam is covered by the later generic `getFromNamespace`
+increment; that does not by itself establish complete backports compatibility.
 
 `textConnection` copies a character vector into a bounded, always-open input connection owned by the
 evaluator session. `source` accepts that connection, a browser-memory path, an immutable package
