@@ -228,7 +228,7 @@ The current milestone supports all 25 feature groups measured by the repository'
 study, including structured data, the measured vector-helper surface, native and magrittr-style
 pipes, registered namespaces, bounded object-system construction and dispatch, browser-safe
 `print`/`cat` output, initial `head`/`str` inspection, strict recursive `identical` comparison, and
-an initial condition/handler slice. It exposes 669 registered functions, including resettable
+an initial condition/handler slice. It exposes 670 registered functions, including resettable
 session options, isolated session environment variables, deterministic non-interactive host-mode
 detection, browser-owned `gc()` memory censuses, an S3-first `graphics::lines()` path over the
 existing Worker/Canvas journal, usage-ranked numeric and character time-interval construction
@@ -776,6 +776,15 @@ the runtime returns GNU R-shaped topic and package-index objects, prints portabl
 and can emit bounded, script-free HTML through the existing Worker browse journal. Core callable
 discovery and unchanged source-package topics use the same API. Exact GNU Rd conversion, `??`
 search, installed lazy help databases, and byte-identical GNU help pages remain compatibility work.
+
+Rank 380 `graphics::curve()` now runs numDeriv's unchanged `curve(func1, from=0, to=5)` example
+through one general expression/function-to-graphics path. Exact formals, lazy caller/package
+environments, configurable variable names, linear and logarithmic sampling, invisible `x`/`y`
+results, `add=TRUE`, style forwarding, errors, pure-R package calls, and Worker/Canvas rendering
+have GNU R 4.6 and browser evidence. It composes the existing `plot`/`lines` journal and also adds
+positive-coordinate logarithmic transforms to `plot.default`; `lines` and additive curves inherit
+the active log axes. Complete ticks/labels, other additive primitives, clipping, replayed log-axis
+metadata, and device-identical pixels remain graphics depth.
 
 Rank 330 `base::sink()` now covers utf8's two measured output-redirection calls and the broader GNU
 R stack semantics they rely on. Output diversions persist across `r.eval()` calls and errors, nest

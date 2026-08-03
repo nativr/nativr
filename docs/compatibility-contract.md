@@ -244,22 +244,22 @@ inline and Worker APIs retain stdout in `evalDetailed`; output and stored text s
 budgets. S3 print-method dispatch, global print options, line filling, labels, host files, and the
 complete connection stack are not claimed.
 
-`plot`, `plot.default`, `plot.new`, bounded `plot.window`, `axTicks`, `barplot`, `box`, `boxplot`,
-`image`, `image.default`, `persp`, `lines`, `lines.default`, `points`, `polygon`, `rasterImage`,
-`segments`, and `legend` provide the first browser-native graphics slice. Evaluation owns page and
-linear coordinate-window state, converts two-dimensional grayscale or character colors,
-three-/four-channel numeric/raw arrays, and packed `nativeRaster` integers to row-major RGBA, and
-emits commands for recycled raster placements, styled line segments, resolved point symbols and
-polygons, plot frames and boxplots, and resolved legend entries. Commands preserve raster
-angle/interpolation, finite coordinates, canonical colors, normalized line patterns, line widths,
-polygon fill rules, frame edges, text labels, point symbols, placement, and layout controls. They
-cross the Worker boundary, remain available in `evalDetailed.graphics`, and count toward the
-configured output budget. Inline and Worker callbacks receive the same command shapes, and the
-Playground renders them to Canvas. Evidence covers the measured systemfonts glyph-raster, httr
-PNG-array, posterior interval-segment, zoo filled-area, zoo plot-frame, zoo grouped-boxplot, and zoo
-legend patterns. The owned registry also supports `dev.cur`/`dev.list`, GNU R-shaped null device 1,
-simultaneous browser/PNG/PDF device identities, selected `dev.off`/`graphics.off` closure, nested
-`dev.hold`/`dev.flush` levels, per-device `par()` isolation and restoration, ordered
+`plot`, `plot.default`, `plot.new`, bounded `plot.window`, `curve`, `axTicks`, `barplot`, `box`,
+`boxplot`, `image`, `image.default`, `persp`, `lines`, `lines.default`, `points`, `polygon`,
+`rasterImage`, `segments`, and `legend` provide the first browser-native graphics slice. Evaluation
+owns page and linear or base-10-transformed coordinate-window state, converts two-dimensional
+grayscale or character colors, three-/four-channel numeric/raw arrays, and packed `nativeRaster`
+integers to row-major RGBA, and emits commands for recycled raster placements, styled line segments,
+resolved point symbols and polygons, plot frames and boxplots, and resolved legend entries. Commands
+preserve raster angle/interpolation, finite coordinates, canonical colors, normalized line patterns,
+line widths, polygon fill rules, frame edges, text labels, point symbols, placement, and layout
+controls. They cross the Worker boundary, remain available in `evalDetailed.graphics`, and count
+toward the configured output budget. Inline and Worker callbacks receive the same command shapes,
+and the Playground renders them to Canvas. Evidence covers the measured systemfonts glyph-raster,
+httr PNG-array, posterior interval-segment, zoo filled-area, zoo plot-frame, zoo grouped-boxplot,
+and zoo legend patterns. The owned registry also supports `dev.cur`/`dev.list`, GNU R-shaped null
+device 1, simultaneous browser/PNG/PDF device identities, selected `dev.off`/`graphics.off` closure,
+nested `dev.hold`/`dev.flush` levels, per-device `par()` isolation and restoration, ordered
 cross-evaluation command buffering, and `dev.control` separation of device output from the
 per-device recorded display list. Bounded same-session `recordPlot`/`replayPlot` covers the owned
 page/window/raster/segments/points/text/polygon/box/boxplot/legend command vocabulary.
@@ -309,16 +309,28 @@ numeric calls and package-owned S3 extension point. The generic probes class met
 the default, including methods registered by application-supplied pure-R packages; method return
 values and visibility remain package-owned. The default accepts one real vector, paired real x/y,
 two-column matrices, one-/two-column data frames, named x/y lists, and complex coordinates through
-the shared coordinate adapter. It computes GNU R-shaped linear ranges with 4% regular-axis padding,
-opens a page/window, and emits point, line, both, overplotted, histogram, lower/upper step, or
-no-draw geometry. Common color/fill/symbol/size/line controls recycle; incomplete coordinates are
-omitted and split paths. `panel.first` and `panel.last` are forced around the data geometry,
+the shared coordinate adapter. It computes GNU R-shaped ranges with 4% regular-axis padding, opens a
+page/window, and emits point, line, both, overplotted, histogram, lower/upper step, or no-draw
+geometry. Common color/fill/symbol/size/line controls recycle; incomplete coordinates are omitted
+and split paths. `panel.first` and `panel.last` are forced around the data geometry,
 `axes`/`frame.plot` control the owned frame, and supplied scalar character main/sub/x/y labels
-become bounded text commands. The default returns invisible `NULL` through inline and Worker
-sessions and participates in hold/flush and display-list replay. Automatic expression-derived
-labels, automatic axis generation, logarithmic or fixed-aspect axes, complete axis-gap layout,
-formula/function/time-series/raster and other specialized methods, arbitrary graphical parameters,
-margins/clipping, and device-identical pixels remain outside this shape-level claim.
+become bounded text commands. Positive values on requested logarithmic axes are transformed to
+base-10 device coordinates; nonpositive values are omitted with a warning, and supplied limits are
+validated and transformed through the same path. The default returns invisible `NULL` through inline
+and Worker sessions and participates in hold/flush and display-list replay. Automatic
+expression-derived labels, complete automatic linear/logarithmic axis generation, log-aware additive
+geometry, fixed-aspect axes, complete axis-gap layout, formula/function/time-series/raster and other
+specialized methods, arbitrary graphical parameters, margins/clipping, and device-identical pixels
+remain outside this shape-level claim.
+
+`graphics::curve` has GNU R 4.6 differential evidence for its exact formals, named-function and
+lazy-expression modes, caller/package environment lookup, alternate `xname`, linear/logarithmic
+sampling, point-count and limit coercion, invisible named `x`/`y` result, additive drawing, and
+boundary errors. New plots and additive curves delegate to the general `plot`/`lines` stack rather
+than a package-specific renderer, and source-only package plus Worker/Canvas tests traverse that
+same path. `lines` and additive curves inherit the active device's log axes. Inline anonymous
+function expressions, complete logarithmic axes, other additive primitives, clipping, replayed
+log-axis metadata, and device-identical geometry remain incomplete.
 
 `stats::ts.plot` has behavioral differential evidence for magrittr's measured exposition-pipe
 example and for equal-frequency regular-series union. Unnamed vectors, matrices/data frames, and
@@ -336,12 +348,13 @@ methods before the default and preserves their value and visibility. The default
 plot/points coordinate adapter for paired vectors, one-vector indices, matrices, data frames, named
 x/y lists, and complex coordinates; unequal paired lengths fail and missing/non-finite pairs split
 paths. Types `l`, `p`, `b`, `c`, `o`, `h`, `s`, `S`, and `n` reuse bounded segment and point
-commands. Ordinary connected paths use the first line colour/type/width, histogram lines recycle
-colour, point-bearing types recycle symbol, colour, fill, size, and width, and the default returns
-invisible `NULL`. Worker/Canvas rendering and same-session device recording therefore require no
-package-specific protocol. Line joins/caps/mitres, clipping and log transforms, broader coordinate
-classes, complete `par()` inheritance, every graphical parameter, and device-identical pixels are
-not claimed.
+commands. Active positive logarithmic axes transform coordinates before drawing and omit nonpositive
+values with a warning. Ordinary connected paths use the first line colour/type/width, histogram
+lines recycle colour, point-bearing types recycle symbol, colour, fill, size, and width, and the
+default returns invisible `NULL`. Worker/Canvas rendering and same-session device recording
+therefore require no package-specific protocol. Line joins/caps/mitres, clipping, replayed log-axis
+metadata, broader coordinate classes, complete `par()` inheritance, every graphical parameter, and
+device-identical pixels are not claimed.
 
 `graphics::axTicks` has differential evidence for zoo's measured secondary-axis tick lookup and
 ordinary horizontal-axis lookup. On the owned linear device, sides 1/3 derive ticks from the current

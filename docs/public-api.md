@@ -195,6 +195,12 @@ and disables the current device's `recordPlot()` display list without stopping s
 events or PNG/PDF generation; `dev.control("enable")` clears and starts a new recording. This is
 per-device session state and introduces no host callback or additional public protocol.
 
+`graphics::curve()` uses that same public graphics stream. Named R functions and package-scoped
+expressions produce ordinary plot/line commands and an invisible named coordinate result, so hosts
+need no curve-specific callback or protocol. Positive log-axis plot coordinates are transformed in
+the runtime, and `lines` plus additive curves inherit active log axes. Complete log ticks, other
+additive primitives, and replayed log-axis metadata remain compatibility work.
+
 Within R, `dir.create()` can create nested session directories and `getwd()`/`setwd()` plus relative
 paths work across session files and immutable package resources. `list.files()`/`dir()` and
 `list.dirs()` enumerate only those owned roots; `normalizePath()`, `basename()`, and `dirname()` are

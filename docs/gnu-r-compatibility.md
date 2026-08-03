@@ -538,12 +538,13 @@ evidence also decompresses IDAT pixels. Exact font metrics, anti-aliasing, color
 The rank-22 plot increment adds GNU R differential shape evidence for the highest-reach previously
 absent core name. `base::plot` dispatches user and registered package S3 methods before the owned
 `graphics::plot.default`; custom method values and visibility are preserved. Numeric one-vector and
-paired-coordinate calls cover regular linear range padding, point/line/both/overplotted/histogram/
+paired-coordinate calls cover regular range padding, point/line/both/overplotted/histogram/
 step/no-draw geometry, common styles, panel hooks, scalar character annotations, invisible default
-returns, Worker/Canvas output, display-list replay, errors, and allocation limits. Complete axes and
-auto labels, log/aspect layout, formula/function/time-series/raster and other core methods,
-margins/clipping, arbitrary graphical controls, exact diagnostics, long vectors, and
-device-identical rendering remain incomplete.
+returns, Worker/Canvas output, display-list replay, errors, and allocation limits. A later
+usage-ranked increment adds positive base-10 coordinate transforms for requested logarithmic axes.
+Complete automatic axes and labels, log-aware additive geometry, fixed-aspect layout,
+formula/function/time-series/raster and other core methods, margins/clipping, arbitrary graphical
+controls, exact diagnostics, long vectors, and device-identical rendering remain incomplete.
 
 The character-encoding increment added `Encoding`, `Encoding<-`, `enc2native`, and `enc2utf8`,
 raising name overlap at that increment to 543 of 2,522. Rank-144 `Encoding` accounts for 12 observed
@@ -602,9 +603,10 @@ name overlap to 557 of 2,522. Rank 174 represents 20 documented calls across `sc
 covers generic/default formals, package-owned S3 forwarding, visibility, accepted coordinate shapes,
 plot types, missing path breaks, styles, device errors, and input boundaries. NativR reuses its
 existing coordinate adapter plus segment/point journal for browser, Worker, PNG, hold/flush, and
-record/replay output; no package-specific translation or polyline protocol was added. Complete
-graphics parameters, clipping/log transforms, specialized coordinate classes, and device-identical
-rendering remain incomplete.
+record/replay output; no package-specific translation or polyline protocol was added. Lines now
+inherit active positive logarithmic axes and omit nonpositive values with a warning. Complete
+graphics parameters, clipping, replayed log-axis metadata, specialized coordinate classes, and
+device-identical rendering remain incomplete.
 
 The explicit-command increment adds `base::system`, raising current name overlap to 558 of 2,522.
 Rank 176 represents five documented calls across withr, knitr, and data.table, or 3.3%
@@ -1062,6 +1064,18 @@ bindings use the same lookup. Default text writes through the bounded output jou
 HTML uses escaped script-free content and the existing Worker browse event. This is portable
 documentation discovery and presentation, not complete Rd conversion, `?`/`??` search, installed
 lazy help databases, exact pagination/PDF, or byte-identical GNU pages.
+
+The function-curve increment raises current name overlap to 650 of 2,522. Rank 380 `graphics::curve`
+covers numDeriv's measured `curve(func1, from=0, to=5)` example through a general
+function/expression-to-graphics seam. GNU R 4.6 differential evidence covers exact formals, named
+functions, lazy caller-scoped expressions, alternate `xname`, bounded `n` and limit coercion,
+linear/logarithmic sampling, invisible named coordinates, `add`, style forwarding, and errors.
+NativR-only evidence evaluates the same mechanism from an unchanged source-package namespace and
+through the default Worker/Canvas journal; no numDeriv adapter or generated JavaScript is involved.
+The shared `plot.default` path now transforms positive logarithmic coordinates and omits nonpositive
+values with a warning; `lines` and additive curves inherit current device log axes. Complete log
+ticks/labels, other additive primitives, clipping, replayed log-axis metadata, inline
+anonymous-function interpretation, and device-identical pixels remain incomplete.
 
 ## Completion evidence
 

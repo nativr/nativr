@@ -865,6 +865,26 @@ test("runs the required Worker examples without evaluation network traffic", asy
   expect(referenceLinePixels.blue).toBeGreaterThan(0);
   expect(referenceLinePixels.green).toBeGreaterThan(0);
 
+  await page.getByRole("button", { name: "Pure-R package function curve" }).click();
+  await expect(page.locator("#source")).toHaveValue("nativrdemo::plot_curve()");
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("101");
+  await expect(page.locator("#graphics-count")).toHaveText("5");
+  const curvePixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
+    const context = canvas.getContext("2d");
+    if (context === null) return 0;
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    let purple = 0;
+    for (let index = 0; index < pixels.length; index += 4) {
+      const red = pixels[index] ?? 0;
+      const green = pixels[index + 1] ?? 0;
+      const blue = pixels[index + 2] ?? 0;
+      if (red > 80 && green < 100 && blue > 80 && (pixels[index + 3] ?? 0) > 0) purple += 1;
+    }
+    return purple;
+  });
+  expect(curvePixels).toBeGreaterThan(0);
+
   await page.locator("#source").fill("nativrdemo::sink_lines()");
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText('"package-worker-sink"');

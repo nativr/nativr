@@ -159,6 +159,11 @@ twice_mean(c(1, 2, 6))`,
     code: "nativrdemo::reference_lines()",
   },
   {
+    id: "curve-package",
+    label: "Pure-R package function curve",
+    code: "nativrdemo::plot_curve()",
+  },
+  {
     id: "package-vignettes",
     label: "Pure-R package vignette catalog",
     code: "nativrdemo::browse_guides()",

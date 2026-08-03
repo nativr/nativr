@@ -7954,8 +7954,8 @@
   },
   {
     "id": "plot-browser-subset-boundaries",
-    "code": "c(inherits(try(plot(), silent = TRUE), \"try-error\"), inherits(try(plot(1:3, 1:2), silent = TRUE), \"try-error\"), inherits(try(plot(c(NA, Inf)), silent = TRUE), \"try-error\"), inherits(try(plot(1:3, type = \"q\"), silent = TRUE), \"try-error\"), inherits(try(plot(1:3, log = \"x\"), silent = TRUE), \"try-error\"), inherits(try(plot(1:3, asp = 1), silent = TRUE), \"try-error\"), inherits(try(plot(1:3, lend = \"butt\"), silent = TRUE), \"try-error\"))",
-    "expected": [true, true, true, true, true, true, true],
+    "code": "c(inherits(try(plot(), silent = TRUE), \"try-error\"), inherits(try(plot(1:3, 1:2), silent = TRUE), \"try-error\"), inherits(try(plot(c(NA, Inf)), silent = TRUE), \"try-error\"), inherits(try(plot(1:3, type = \"q\"), silent = TRUE), \"try-error\"), inherits(try(plot(1:3, asp = 1), silent = TRUE), \"try-error\"), inherits(try(plot(1:3, lend = \"butt\"), silent = TRUE), \"try-error\"))",
+    "expected": [true, true, true, true, true, true],
     "expectedCompatibility": "shape",
     "rOracle": false,
     "tolerance": { "absolute": 0, "relative": 0 }
@@ -9810,5 +9810,63 @@
     "expected": [1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "curve-usage-ranked-formals-function-expression-and-visibility",
+    "code": "grDevices::pdf(NULL)\nf <- formals(graphics::curve)\nfun <- function(x) x^2\na <- withVisible(graphics::curve(fun, from = -1, to = 1, n = 5, type = \"n\"))\nscale <- 3\nb <- graphics::curve(scale * t^2, from = 0, to = 1, n = 3, xname = \"t\", type = \"n\")\ndefaulted <- graphics::curve(x^2, 0, 1, type = \"n\")\ngrDevices::dev.off()\nc(names(f), is.null(f$from), is.null(f$to), f$n, identical(f$add, FALSE), f$type, f$xname, deparse(f$xlab), is.null(f$ylab), is.null(f$log), is.null(f$xlim), a$value$x, a$value$y, a$visible, b$x, b$y, length(defaulted$x))",
+    "expected": [
+      "expr",
+      "from",
+      "to",
+      "n",
+      "add",
+      "type",
+      "xname",
+      "xlab",
+      "ylab",
+      "log",
+      "xlim",
+      "...",
+      "TRUE",
+      "TRUE",
+      "101",
+      "TRUE",
+      "l",
+      "x",
+      "xname",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "-1",
+      "-0.5",
+      "0",
+      "0.5",
+      "1",
+      "1",
+      "0.25",
+      "0",
+      "0.25",
+      "1",
+      "FALSE",
+      "0",
+      "0.5",
+      "1",
+      "0",
+      "0.75",
+      "3",
+      "101"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "curve-usage-ranked-add-sequence-coercion-and-boundaries",
+    "code": "grDevices::pdf(NULL)\nbase <- graphics::curve(x^2, from = c(0, 2), to = 1, n = \"3\", type = \"n\")\nadded <- withVisible(graphics::curve(sin, 0, pi, n = 4, add = TRUE))\nlogged <- graphics::curve(x^1, 1, 100, n = 3, log = \"x\", type = \"n\")\ninherited <- graphics::curve(x^1, 1, 100, n = 3, add = TRUE)\nerrors <- c(inherits(try(graphics::curve(function(x) x^2, 0, 1, n = 3), silent = TRUE), \"try-error\"), inherits(try(graphics::curve(c(x, x), 0, 1, n = 3), silent = TRUE), \"try-error\"), inherits(try(graphics::curve(x^2, -1, 1, n = 3, log = \"x\"), silent = TRUE), \"try-error\"), inherits(try(graphics::curve(x^1, 0, 100, n = 3, add = TRUE), silent = TRUE), \"try-error\"), inherits(try(graphics::curve(x^2, 0, 1, n = -1), silent = TRUE), \"try-error\"), inherits(try(graphics::curve(from = 0, to = 1), silent = TRUE), \"try-error\"), inherits(try(graphics::curve(x^2, 0, 1, n = 3, xname = \"\"), silent = TRUE), \"try-error\"))\ngrDevices::dev.off()\nc(base$x, base$y, round(logged$x, 12), round(inherited$x, 12), round(added$value$y, 6), added$visible, errors)",
+    "expected": [
+      0, 0.5, 1, 0, 0.25, 1, 1, 10, 100, 1, 10, 100, 0, 0.866025, 0.866025, 0, 0, 1, 1, 1, 1, 1, 1,
+      1
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 1e-12, "relative": 1e-12 }
   }
 ]

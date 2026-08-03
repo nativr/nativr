@@ -1,7 +1,7 @@
 {
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "languageSubsetVersion": "0.269.0",
+  "languageSubsetVersion": "0.270.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -631,6 +631,7 @@
       "name": "graphics",
       "referenceVersion": "R 4.6.x documented behavior",
       "functions": [
+        { "name": "curve", "compatibility": "behavioral" },
         { "name": "hist", "compatibility": "behavioral" },
         { "name": "hist.default", "compatibility": "behavioral" },
         { "name": "plot.histogram", "compatibility": "shape" },

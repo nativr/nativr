@@ -2636,6 +2636,33 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     ),
     classicPaletteFormals(),
   ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "graphics",
+      "curve",
+      ["expr", "from", "to", "n", "add", "type", "xname", "xlab", "ylab", "log", "xlim", "..."],
+      "behavioral",
+      builtinCurve,
+      "invisible",
+    ),
+    [
+      { name: "expr" },
+      { name: "from", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      { name: "to", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      { name: "n", defaultValue: { kind: "DoubleLiteral", value: 101, span: SYNTHETIC_SPAN } },
+      {
+        name: "add",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      { name: "type", defaultValue: { kind: "StringLiteral", value: "l", span: SYNTHETIC_SPAN } },
+      { name: "xname", defaultValue: { kind: "StringLiteral", value: "x", span: SYNTHETIC_SPAN } },
+      { name: "xlab", defaultValue: { kind: "Identifier", name: "xname", span: SYNTHETIC_SPAN } },
+      { name: "ylab", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      { name: "log", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      { name: "xlim", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      { name: "..." },
+    ],
+  ),
   defineBuiltin("plot", ["x", "..."], "shape", builtinPlot),
   ...defineHistogramBuiltins(),
   ...defineBarplotBuiltins(),
@@ -3891,6 +3918,8 @@ interface GraphicsState {
   askNewPage: boolean;
   xlim: readonly [number, number];
   ylim: readonly [number, number];
+  xlog: boolean;
+  ylog: boolean;
   holdLevel: number;
   pending: RGraphicsEvent[];
   pendingBytes: number;
@@ -30871,6 +30900,197 @@ function barplotLegend(
   });
 }
 
+async function builtinCurve(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched, dots } = matchLazyArgumentsWithDots(invocation, [
+    "expr",
+    "from",
+    "to",
+    "n",
+    "add",
+    "type",
+    "xname",
+    "xlab",
+    "ylab",
+    "log",
+    "xlim",
+  ]);
+  const expressionArgument = matched.get("expr");
+  if (expressionArgument === undefined || expressionArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'expr' is missing in curve().");
+  }
+  const value = async (name: string): Promise<RValue | undefined> => {
+    const argument = matched.get(name);
+    if (argument === undefined || argument.promise.missing) return undefined;
+    return invocation.force(argument.promise);
+  };
+
+  const xlimValue = await value("xlim");
+  const xlim = curveLimits(xlimValue, invocation);
+  const fromValue = await value("from");
+  const toValue = await value("to");
+  const noXlim = xlimValue === undefined || xlimValue.type === "null";
+  const from = curveFiniteScalar(fromValue, noXlim ? 0 : xlim?.[0], "from", invocation);
+  const to = curveFiniteScalar(toValue, noXlim ? 1 : xlim?.[1], "to", invocation);
+  const count = curvePointCount((await value("n")) ?? integerVector([101]), invocation);
+  const add = logicalFlag(await value("add"), false, "add");
+  const type = (await value("type")) ?? characterVector(["l"]);
+  const xname = characterScalar((await value("xname")) ?? characterVector(["x"]), "xname");
+  if (xname.length === 0) {
+    throw new RTypeMismatchError(
+      "NRT3355",
+      "'expr' must be a function, or a call or an expression containing ''",
+    );
+  }
+  const logValue = await value("log");
+  const suppliedLog = logValue !== undefined && logValue.type !== "null";
+  let log = curveLog(logValue);
+  if (add && !suppliedLog) {
+    const state = graphicsState(invocation, "curve");
+    log = `${state.xlog ? "x" : ""}${state.ylog ? "y" : ""}`;
+  }
+  if (log.includes("x") && (!(from > 0) || !(to > 0))) {
+    throw new RTypeMismatchError("NRT3355", `'from' and 'to' must be > 0 with log="x"`);
+  }
+
+  invocation.context.allocate(count * 2 + 8);
+  const sequenceStart = log.includes("x") ? Math.log(from) : from;
+  const sequenceEnd = log.includes("x") ? Math.log(to) : to;
+  const step = count > 1 ? (sequenceEnd - sequenceStart) / (count - 1) : 0;
+  const x = doubleVector(
+    Array.from({ length: count }, (_, index) => {
+      invocation.context.checkpoint();
+      if (index === 0) return from;
+      if (index === count - 1) return to;
+      const generated = sequenceStart + step * index;
+      return log.includes("x") ? Math.exp(generated) : generated;
+    }),
+  );
+
+  const expression = expressionArgument.promise.expression;
+  let y: RValue;
+  let label: string;
+  if (expression?.kind === "Identifier") {
+    const callable = await invocation.force(expressionArgument.promise);
+    if (!isCallable(callable)) {
+      throw new RTypeMismatchError("NRT3355", `could not find function "${expression.name}"`);
+    }
+    y = await invocation.invoke(callable, [{ value: x }]);
+    label = `${expression.name}(${xname})`;
+  } else if (expression === null) {
+    const supplied = await invocation.force(expressionArgument.promise);
+    if (!isCallable(supplied)) {
+      throw new RTypeMismatchError(
+        "NRT3355",
+        `'expr' must be a function, or a call or an expression containing '${xname}'`,
+      );
+    }
+    y = await invocation.invoke(supplied, [{ value: x }]);
+    label = `expr(${xname})`;
+  } else {
+    const environment = createEnvironment(expressionArgument.promise.environment);
+    setBinding(environment, xname, x);
+    y = await invocation.evaluate({ type: "language", expression }, environment);
+    label = deparseAst(expression);
+  }
+  if (valueLength(y) !== count) {
+    throw new RTypeMismatchError("NRT3355", "'expr' did not evaluate to an object of length 'n'");
+  }
+
+  const graphics = invocation.searchEnvironment("package:graphics");
+  const binding = add
+    ? graphics?.bindings.get("lines")
+    : lookupBinding(invocation.baseEnvironment(), "plot");
+  const callable = binding?.type === "promise" ? await invocation.force(binding) : binding;
+  if (callable === undefined || !isCallable(callable)) {
+    throw new REvaluationError("NRE2001", `Could not find function '${add ? "lines" : "plot"}'.`);
+  }
+  const callEnvironment = expressionArgument.promise.environment;
+  const callArguments: BuiltinCallArgument[] = [
+    { name: "x", promise: createForcedPromise(x, callEnvironment) },
+    { name: "y", promise: createForcedPromise(y, callEnvironment) },
+    { name: "type", promise: createForcedPromise(type, callEnvironment) },
+  ];
+  if (!add) {
+    const xlab = (await value("xlab")) ?? characterVector([xname]);
+    const suppliedYlab = await value("ylab");
+    const ylab =
+      suppliedYlab === undefined || suppliedYlab.type === "null"
+        ? characterVector([label])
+        : suppliedYlab;
+    callArguments.push(
+      { name: "xlim", promise: createForcedPromise(xlimValue ?? R_NULL, callEnvironment) },
+      { name: "log", promise: createForcedPromise(characterVector([log]), callEnvironment) },
+      { name: "xlab", promise: createForcedPromise(xlab, callEnvironment) },
+      { name: "ylab", promise: createForcedPromise(ylab, callEnvironment) },
+    );
+  }
+  callArguments.push(...dots);
+  await invocation.invokeLazy(callable, callArguments);
+  invocation.setResultVisibility("invisible");
+  return listValue([x, y], ["x", "y"]);
+}
+
+function curveLimits(
+  value: RValue | undefined,
+  invocation: BuiltinInvocation,
+): readonly number[] | undefined {
+  if (value === undefined || value.type === "null") return undefined;
+  if (!isAtomic(value)) return [];
+  const numeric = coerceAtomicToDouble(value, invocation);
+  return Array.from({ length: numeric.length }, (_, index) =>
+    isMissing(numeric, index) ? Number.NaN : (numeric.values[index] ?? Number.NaN),
+  );
+}
+
+function curveFiniteScalar(
+  value: RValue | undefined,
+  fallback: number | undefined,
+  name: "from" | "to",
+  invocation: BuiltinInvocation,
+): number {
+  let result = fallback;
+  if (value !== undefined && value.type !== "null") {
+    if (isAtomic(value) && value.length > 0) {
+      const numeric = coerceAtomicToDouble(value, invocation);
+      if (!isMissing(numeric, 0)) result = numeric.values[0];
+    } else {
+      result = undefined;
+    }
+  }
+  if (result === undefined || !Number.isFinite(result)) {
+    throw new RTypeMismatchError("NRT3355", `'${name}' must be a finite number`);
+  }
+  return result;
+}
+
+function curvePointCount(value: RValue | undefined, invocation: BuiltinInvocation): number {
+  if (value === undefined || !isAtomic(value) || value.length === 0) {
+    throw new RTypeMismatchError("NRT3355", "'length.out' must be a finite number");
+  }
+  const numeric = coerceAtomicToDouble(value, invocation);
+  const supplied = isMissing(numeric, 0) ? Number.NaN : (numeric.values[0] ?? Number.NaN);
+  if (!Number.isFinite(supplied)) {
+    throw new RTypeMismatchError("NRT3355", "'length.out' must be a finite number");
+  }
+  if (supplied < 0) {
+    throw new RTypeMismatchError("NRT3355", "'length.out' must be a non-negative number");
+  }
+  const count = Math.ceil(supplied);
+  if (!Number.isSafeInteger(count) || count > invocation.context.limits.maxVectorLength) {
+    throw new RResourceLimitError("NRL4010", "curve() requested an oversized point sequence.");
+  }
+  return count;
+}
+
+function curveLog(value: RValue | undefined): string {
+  if (value === undefined || value.type === "null") return "";
+  const source = characterScalar(value, "curve(log=)");
+  if (![...source].every((axis) => axis === "x" || axis === "y")) {
+    throw new RTypeMismatchError("NRT3355", "curve(log=) must contain only 'x' and/or 'y'.");
+  }
+  return source;
+}
+
 async function builtinPlot(invocation: BuiltinInvocation): Promise<RValue> {
   const generic = matchBuiltinArguments(invocation, ["x", "..."]);
   const xArgument = generic.matched.get("x");
@@ -30919,21 +31139,16 @@ async function builtinPlotDefault(invocation: BuiltinInvocation): Promise<RValue
     return invocation.force(argument.promise);
   };
   const y = await value("y");
-  const coordinates = graphicsXyCoordinates(input, y, invocation, "plot");
+  const sourceCoordinates = graphicsXyCoordinates(input, y, invocation, "plot");
   const type = plotType(await value("type"));
-  const log = await value("log");
-  if (log !== undefined && log.type !== "null" && characterScalar(log, "plot(log=)") !== "") {
-    throw new RUnsupportedFeatureError(
-      "NRU6170",
-      "plot.default(log=) awaits logarithmic browser axes and coordinate transforms.",
-    );
-  }
+  const log = plotLogAxes(await value("log"));
+  const coordinates = plotScaledCoordinates(sourceCoordinates, log, invocation);
   plotDefaultAspect(await value("asp"), "asp");
   plotDefaultAspect(await value("xgap.axis"), "xgap.axis");
   plotDefaultAspect(await value("ygap.axis"), "ygap.axis");
 
-  const xlim = plotWindowLimits(await value("xlim"), coordinates.x, "xlim");
-  const ylim = plotWindowLimits(await value("ylim"), coordinates.y, "ylim");
+  const xlim = plotScaledWindowLimits(await value("xlim"), coordinates.x, log.x, "xlim");
+  const ylim = plotScaledWindowLimits(await value("ylim"), coordinates.y, log.y, "ylim");
   const axes = logicalFlag(await value("axes"), true, "axes");
   const ann = logicalFlag(await value("ann"), true, "ann");
   const suppliedFrame = await value("frame.plot");
@@ -30971,6 +31186,8 @@ async function builtinPlotDefault(invocation: BuiltinInvocation): Promise<RValue
   const state = await beginGraphicsPage(invocation);
   state.xlim = xlim;
   state.ylim = ylim;
+  state.xlog = log.x;
+  state.ylog = log.y;
   writeGraphics(invocation, state, { kind: "window", xlim, ylim });
   await plotPanel(invocation, lazy.matched.get("panel.first"));
   if (frame) {
@@ -31020,6 +31237,73 @@ function plotDefaultAspect(value: RValue | undefined, name: string): void {
     "NRU6170",
     `plot.default(${name}=) awaits browser layout constraints beyond the measured numeric plot subset.`,
   );
+}
+
+function plotLogAxes(value: RValue | undefined): { readonly x: boolean; readonly y: boolean } {
+  if (value === undefined || value.type === "null") return { x: false, y: false };
+  const source = characterScalar(value, "plot(log=)");
+  if (![...source].every((axis) => axis === "x" || axis === "y")) {
+    throw new RTypeMismatchError("NRT3353", "plot(log=) must contain only 'x' and/or 'y'.");
+  }
+  return { x: source.includes("x"), y: source.includes("y") };
+}
+
+function plotScaledCoordinates(
+  coordinates: { readonly x: RDoubleVector; readonly y: RDoubleVector },
+  log: { readonly x: boolean; readonly y: boolean },
+  invocation: BuiltinInvocation,
+): { readonly x: RDoubleVector; readonly y: RDoubleVector } {
+  return {
+    x: plotScaledVector(coordinates.x, log.x, "x", invocation),
+    y: plotScaledVector(coordinates.y, log.y, "y", invocation),
+  };
+}
+
+function plotScaledVector(
+  value: RDoubleVector,
+  logarithmic: boolean,
+  axis: "x" | "y",
+  invocation: BuiltinInvocation,
+): RDoubleVector {
+  if (!logarithmic) return value;
+  const values = new Float64Array(value.length);
+  const missing = new Uint8Array(value.length);
+  let omitted = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    invocation.context.checkpoint();
+    const coordinate = graphicsPointCoordinate(value, index);
+    if (coordinate === undefined || !(coordinate > 0)) {
+      missing[index] = 1;
+      if (coordinate !== undefined) omitted += 1;
+    } else {
+      values[index] = Math.log10(coordinate);
+    }
+  }
+  if (omitted > 0) {
+    invocation.context.warn({
+      code: "NRW1141",
+      message: `${omitted} ${axis} value${omitted === 1 ? "" : "s"} <= 0 omitted from logarithmic plot`,
+    });
+  }
+  invocation.context.allocate(value.length);
+  return doubleVector(values, compactMask(missing));
+}
+
+function plotScaledWindowLimits(
+  supplied: RValue | undefined,
+  coordinates: RDoubleVector,
+  logarithmic: boolean,
+  name: "xlim" | "ylim",
+): readonly [number, number] {
+  if (!logarithmic || supplied === undefined || supplied.type === "null") {
+    return plotWindowLimits(supplied, coordinates, name);
+  }
+  const source = graphicsNumbers(supplied, name);
+  const transformed = source.map((entry) => (entry > 0 ? Math.log10(entry) : Number.NaN));
+  if (transformed.length !== 2 || !transformed.every(Number.isFinite)) {
+    throw new RTypeMismatchError("NRT3353", `need finite '${name}' values`);
+  }
+  return plotWindowLimits(doubleVector(transformed), coordinates, name);
 }
 
 function plotWindowLimits(
@@ -31454,6 +31738,8 @@ async function beginGraphicsPage(invocation: BuiltinInvocation): Promise<Graphic
   }
   state.xlim = [0, 1];
   state.ylim = [0, 1];
+  state.xlog = false;
+  state.ylog = false;
   writeGraphics(invocation, state, { kind: "new-page" });
   return state;
 }
@@ -31478,6 +31764,8 @@ async function builtinPlotWindow(invocation: BuiltinInvocation): Promise<RValue>
   if (asp !== undefined && asp.type !== "null") numericScalar(asp, "asp");
   state.xlim = xlim;
   state.ylim = ylim;
+  state.xlog = false;
+  state.ylog = false;
   writeGraphics(invocation, state, { kind: "window", xlim, ylim });
   return R_NULL;
 }
@@ -31610,6 +31898,8 @@ async function builtinMatplot(invocation: BuiltinInvocation): Promise<RValue> {
   const state = await beginGraphicsPage(invocation);
   state.xlim = xlim;
   state.ylim = ylim;
+  state.xlog = log.x;
+  state.ylog = log.y;
   writeGraphics(invocation, state, { kind: "window", xlim, ylim });
 
   const types = matplotTypes(values.get("type"));
@@ -32075,6 +32365,8 @@ async function builtinTimeSeriesPlot(invocation: BuiltinInvocation): Promise<RVa
   const state = await beginGraphicsPage(invocation);
   state.xlim = xlim;
   state.ylim = ylim;
+  state.xlog = log.x;
+  state.ylog = log.y;
   writeGraphics(invocation, state, { kind: "window", xlim, ylim });
   if (axes) {
     writeGraphics(invocation, state, {
@@ -34688,8 +34980,9 @@ async function builtinLinesDefault(
   const typeValue = await forceOptional("type");
   const type = typeValue === undefined ? "l" : plotType(typeValue);
   const state = graphicsState(invocation, "lines");
+  const scaled = plotScaledCoordinates(coordinates, { x: state.xlog, y: state.ylog }, invocation);
   invocation.setResultVisibility("invisible");
-  plotDefaultGeometry(invocation, state, coordinates, type, controls);
+  plotDefaultGeometry(invocation, state, scaled, type, controls);
   return R_NULL;
 }
 
@@ -36330,6 +36623,8 @@ async function builtinPdf(invocation: BuiltinInvocation): Promise<RValue> {
     askNewPage: deviceAskDefault(invocation),
     xlim: [0, 1],
     ylim: [0, 1],
+    xlog: false,
+    ylog: false,
     holdLevel: 0,
     pending: [],
     pendingBytes: 0,
@@ -36543,6 +36838,8 @@ async function builtinPng(invocation: BuiltinInvocation): Promise<RValue> {
     askNewPage: deviceAskDefault(invocation),
     xlim: [0, 1],
     ylim: [0, 1],
+    xlog: false,
+    ylog: false,
     holdLevel: 0,
     pending: [],
     pendingBytes: 0,
@@ -37038,6 +37335,8 @@ async function builtinReplayPlot(invocation: BuiltinInvocation): Promise<RValue>
     state.recordedDisplayList = [];
     state.recordedDisplayListBytes = 0;
   }
+  state.xlog = false;
+  state.ylog = false;
 
   for (const event of commands) {
     invocation.context.checkpoint();
@@ -38095,6 +38394,8 @@ function createBrowserGraphicsState(invocation: BuiltinInvocation): GraphicsStat
     askNewPage: deviceAskDefault(invocation),
     xlim: [0, 1],
     ylim: [0, 1],
+    xlog: false,
+    ylog: false,
     holdLevel: 0,
     pending: [],
     pendingBytes: 0,

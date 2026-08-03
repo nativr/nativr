@@ -4,11 +4,11 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 669,
-    "overlappingNames": 649,
-    "missingReferenceNames": 1873,
+    "nativrRegisteredNames": 670,
+    "overlappingNames": 650,
+    "missingReferenceNames": 1872,
     "nativrExtensionNames": 20,
-    "nameCoverage": 0.257335
+    "nameCoverage": 0.257732
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 467, "nameCoverage": 0.341624 },
@@ -29,8 +29,8 @@
     {
       "package": "graphics",
       "callableNames": 88,
-      "overlappingNames": 29,
-      "nameCoverage": 0.329545
+      "overlappingNames": 30,
+      "nameCoverage": 0.340909
     },
     { "package": "datasets", "callableNames": 0, "overlappingNames": 0, "nameCoverage": 1 }
   ],
@@ -207,6 +207,7 @@
     "cummin",
     "cumprod",
     "cumsum",
+    "curve",
     "cut",
     "cycle",
     "data",
@@ -1337,7 +1338,6 @@
     "create.post",
     "crossprod",
     "curlGetHeaders",
-    "curve",
     "cut.Date",
     "cut.POSIXt",
     "cut.default",

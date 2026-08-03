@@ -75,12 +75,11 @@ signal.
 
 | Priority | Measured rank | Callable          | Weighted reach | Packages | Observed calls |
 | -------: | ------------: | ----------------- | -------------: | -------: | -------------: |
-|        1 |           380 | `curve`           |           0.7% |        1 |              1 |
-|        2 |           392 | `tracemem`        |           0.7% |        1 |              2 |
-|        3 |           403 | `update.packages` |           0.7% |        1 |              1 |
-|        4 |           406 | `df`              |           0.7% |        1 |              1 |
-|        5 |           407 | `dist`            |           0.7% |        1 |              1 |
-|        6 |           409 | `simulate`        |           0.7% |        1 |              1 |
+|        1 |           392 | `tracemem`        |           0.7% |        1 |              2 |
+|        2 |           403 | `update.packages` |           0.7% |        1 |              1 |
+|        3 |           406 | `df`              |           0.7% |        1 |              1 |
+|        4 |           407 | `dist`            |           0.7% |        1 |              1 |
+|        5 |           409 | `simulate`        |           0.7% |        1 |              1 |
 
 “Not available” means absent from both the generated builtin registry and evaluator-native callable
 language forms. It is still only a prioritization signal: an available name is not proof of complete
@@ -763,63 +762,70 @@ R's non-finite arithmetic rather than inventing a normalization fallback. Rank 3
 complete for matrixStats' `mad(1:10)` and `mad(1:2)` reference values, again representing 901,775
 downloads and 0.7% weighted reach. The owned robust-scale path covers default/explicit centers,
 scale constants, ordinary/low/high even-sample medians, missing-value removal, empty inputs, and
-attribute-free scalars. Rank 389 `curve` is deferred with the broader expression-to-graphics helper;
-rank 390 `plot.window` is already registered. Rank 391 `rbeta` is now complete for loo's
-`rbeta(1, a0, b0)` prior draw and `as.matrix(rbeta(S, a, b))` posterior draw, representing 870,861
-downloads and 0.7% weighted reach. The independent session sampler covers recycled central and
-finite non-central parameters, stable log-gamma ratios, deterministic reseeding, distribution
-moments, zero/infinite limit distributions, documented `n` length behavior, and missing/invalid
-arguments. Exact GNU R beta-deviate stream identity is not claimed. Rank 392 `dbinom` is now
-complete for the same loo example's `dbinom(data_i$y, size = data_i$K, prob = draws, log = TRUE)`
-call, again representing 870,861 downloads and 0.7% weighted reach. The owned log-density path
-covers parameter recycling, ordinary/log output, longest-input metadata, large-count stability,
-boundary masses, missing/NaN distinctions, and domain/non-integer warnings. Exact Loader
-saddle-point rounding over every huge count remains outside the increment. Rank 393 `mat.or.vec` is
-now complete for loo's `b <- mat.or.vec(10, 3)` scratch allocation, again representing 870,861
-downloads and 0.7% weighted reach. It creates owned double zeros, returns an unclassed vector only
-when `nc == 1`, otherwise attaches the truncated nonnegative row/column dimensions, accepts
-zero-sized extents, drops input attributes, and rejects missing or invalid branch/extent inputs.
-Rank 394 `droplevels` is already registered. Rank 395 `seq.int` is now complete for data.table's
-three rolling-window helper calls: `seq.int(n)` and two uses of `seq.int(n - 1L)`, representing
-864,145 downloads and 0.7% weighted reach. The primitive path covers scalar numeric endpoints,
-length-based single inputs, ascending/descending steps, fractional `length.out` rounding,
-`along.with`, integer/double result selection, internal `seq` S3 dispatch, ignored dots, and strict
-finite/resource controls. Rank 396 methods `as` is now complete for data.table's two documented
-identity checks between its `as.IDate`/`as.ITime` constructors and `methods::as`, representing
-864,145 downloads and 0.7% weighted reach. NativR provides a session-local `setAs` source/target
-registry, inherited source-class lookup, core constructor fallback, identity behavior, namespace
-access, invisible registration, and bounded invalid-definition/unknown-target errors. The data.table
-classes and constructors remain package-owned and are not reproduced. Ranks 397 `as.name` and 398
-`is.list` are already registered. Ranks 399/400 `readRDS`/`saveRDS` now use the same XDR/gzip codec
-over browser-owned binary files, and rank 401 `tracemem` depends on object-identity instrumentation
-that the immutable value model does not yet expose. Rank 402 `weekdays` is now complete for
-data.table's two IDate grouping-label calls: `factor(weekdays(idate))` and
-`weekday = weekdays(tt$date)`, again representing 864,145 downloads and 0.7% weighted reach. The
-base S3 generic resolves the package's inherited Date class and covers deterministic C-locale
-full/abbreviated names, recycled coercible abbreviation flags, Date fractions, names,
-missing/non-finite values, UTC/GMT POSIXct/POSIXlt inputs, direct methods, custom dispatch, and
-invalid inputs. Other locale profiles and the broader `months`/`quarters`/`julian` family remain
-separate work. Rank 403 `write.table` is deferred until the browser connection/filesystem adapter
-exists. Rank 404 `anyDuplicated` is now complete for data.table's measured
-`anyDuplicated(DT, by = c("A", "B"))` query, representing 864,145 downloads and 0.7% weighted reach.
-NativR supplies the package-method S3 seam plus independent atomic, factor, list, and data-frame
-defaults with forward/reverse first positions, names, missing/NaN distinctions, incomparables, empty
-inputs, and bounded control errors. The data.table class and method remain package-owned. Ranks 405
-`Im`, 406 `new`, and 407 `Re` are already registered. Rank 408 `rep.int` is now complete for
-data.table's adaptive-window helper `an <- function(n, len) c(seq.int(n), rep.int(n, len - n))`,
-representing 864,145 downloads and 0.7% weighted reach. It covers scalar whole-vector and
-element-wise repetition, truncated/coercible counts, atomic/list/factor/expression storage,
-documented attribute removal, factor metadata, custom internal-S3 methods, and allocation guards.
-Rank 409 `methods::representation` is now complete for data.table's measured legacy S4 declaration
-`representation(x = "character", dt = "data.table")`, representing 864,145 downloads and 0.7%
-weighted reach. It returns an ordered plain parent/slot declaration list, decodes backtick slot
-names, validates scalar character declarations, rejects duplicate parent or slot entries, and feeds
-the bounded `setClass`/`new` path without bundling data.table. Rank 410 `trunc` is now complete for
-data.table's measured `trunc(seqtimes, "hours")` ITime method call, representing 864,145 downloads
-and 0.7% weighted reach. NativR supplies direct and Math-group S3 dispatch plus an independent
-toward-zero default with logical/integer coercion, signed zero, non-finite/missing values,
-attributes, eager default dots, and bounded invalid types; data.table retains ownership of ITime and
-its method. Rank 411 `utils::type.convert` is now complete for the callback in data.table's measured
+attribute-free scalars. Rank 380 `curve` is now complete for numDeriv's unchanged
+`curve(func1, from = 0, to = 5)` example, representing 898,716 downloads and 0.7% weighted reach.
+One package-independent path evaluates named functions or lazy caller/package-scoped expressions
+over bounded linear or logarithmic samples, returns invisible `x`/`y` coordinates, and forwards
+drawing to the existing `plot`/`lines` journal. Exact formals, coercion, errors, additive drawing,
+source-package use, active-log-axis lines, and Worker/Canvas rendering have executable evidence.
+Complete logarithmic ticks/labels, other additive primitives, clipping, replayed log-axis metadata,
+and device-identical output remain graphics depth. Rank 390 `plot.window` is already registered.
+Rank 391 `rbeta` is now complete for loo's `rbeta(1, a0, b0)` prior draw and
+`as.matrix(rbeta(S, a, b))` posterior draw, representing 870,861 downloads and 0.7% weighted reach.
+The independent session sampler covers recycled central and finite non-central parameters, stable
+log-gamma ratios, deterministic reseeding, distribution moments, zero/infinite limit distributions,
+documented `n` length behavior, and missing/invalid arguments. Exact GNU R beta-deviate stream
+identity is not claimed. Rank 392 `dbinom` is now complete for the same loo example's
+`dbinom(data_i$y, size = data_i$K, prob = draws, log = TRUE)` call, again representing 870,861
+downloads and 0.7% weighted reach. The owned log-density path covers parameter recycling,
+ordinary/log output, longest-input metadata, large-count stability, boundary masses, missing/NaN
+distinctions, and domain/non-integer warnings. Exact Loader saddle-point rounding over every huge
+count remains outside the increment. Rank 393 `mat.or.vec` is now complete for loo's
+`b <- mat.or.vec(10, 3)` scratch allocation, again representing 870,861 downloads and 0.7% weighted
+reach. It creates owned double zeros, returns an unclassed vector only when `nc == 1`, otherwise
+attaches the truncated nonnegative row/column dimensions, accepts zero-sized extents, drops input
+attributes, and rejects missing or invalid branch/extent inputs. Rank 394 `droplevels` is already
+registered. Rank 395 `seq.int` is now complete for data.table's three rolling-window helper calls:
+`seq.int(n)` and two uses of `seq.int(n - 1L)`, representing 864,145 downloads and 0.7% weighted
+reach. The primitive path covers scalar numeric endpoints, length-based single inputs,
+ascending/descending steps, fractional `length.out` rounding, `along.with`, integer/double result
+selection, internal `seq` S3 dispatch, ignored dots, and strict finite/resource controls. Rank 396
+methods `as` is now complete for data.table's two documented identity checks between its
+`as.IDate`/`as.ITime` constructors and `methods::as`, representing 864,145 downloads and 0.7%
+weighted reach. NativR provides a session-local `setAs` source/target registry, inherited
+source-class lookup, core constructor fallback, identity behavior, namespace access, invisible
+registration, and bounded invalid-definition/unknown-target errors. The data.table classes and
+constructors remain package-owned and are not reproduced. Ranks 397 `as.name` and 398 `is.list` are
+already registered. Ranks 399/400 `readRDS`/`saveRDS` now use the same XDR/gzip codec over
+browser-owned binary files, and rank 401 `tracemem` depends on object-identity instrumentation that
+the immutable value model does not yet expose. Rank 402 `weekdays` is now complete for data.table's
+two IDate grouping-label calls: `factor(weekdays(idate))` and `weekday = weekdays(tt$date)`, again
+representing 864,145 downloads and 0.7% weighted reach. The base S3 generic resolves the package's
+inherited Date class and covers deterministic C-locale full/abbreviated names, recycled coercible
+abbreviation flags, Date fractions, names, missing/non-finite values, UTC/GMT POSIXct/POSIXlt
+inputs, direct methods, custom dispatch, and invalid inputs. Other locale profiles and the broader
+`months`/`quarters`/`julian` family remain separate work. Rank 403 `write.table` is deferred until
+the browser connection/filesystem adapter exists. Rank 404 `anyDuplicated` is now complete for
+data.table's measured `anyDuplicated(DT, by = c("A", "B"))` query, representing 864,145 downloads
+and 0.7% weighted reach. NativR supplies the package-method S3 seam plus independent atomic, factor,
+list, and data-frame defaults with forward/reverse first positions, names, missing/NaN distinctions,
+incomparables, empty inputs, and bounded control errors. The data.table class and method remain
+package-owned. Ranks 405 `Im`, 406 `new`, and 407 `Re` are already registered. Rank 408 `rep.int` is
+now complete for data.table's adaptive-window helper
+`an <- function(n, len) c(seq.int(n), rep.int(n, len - n))`, representing 864,145 downloads and 0.7%
+weighted reach. It covers scalar whole-vector and element-wise repetition, truncated/coercible
+counts, atomic/list/factor/expression storage, documented attribute removal, factor metadata, custom
+internal-S3 methods, and allocation guards. Rank 409 `methods::representation` is now complete for
+data.table's measured legacy S4 declaration `representation(x = "character", dt = "data.table")`,
+representing 864,145 downloads and 0.7% weighted reach. It returns an ordered plain parent/slot
+declaration list, decodes backtick slot names, validates scalar character declarations, rejects
+duplicate parent or slot entries, and feeds the bounded `setClass`/`new` path without bundling
+data.table. Rank 410 `trunc` is now complete for data.table's measured `trunc(seqtimes, "hours")`
+ITime method call, representing 864,145 downloads and 0.7% weighted reach. NativR supplies direct
+and Math-group S3 dispatch plus an independent toward-zero default with logical/integer coercion,
+signed zero, non-finite/missing values, attributes, eager default dots, and bounded invalid types;
+data.table retains ownership of ITime and its method. Rank 411 `utils::type.convert` is now complete
+for the callback in data.table's measured
 `tstrsplit(v, " ", type.convert = list(..., function(x) type.convert(x, as.is = TRUE)))` example,
 representing 864,145 downloads and 0.7% weighted reach. Its owned S3 default/list/data-frame methods
 cover the logical/integer/double/complex inference ladder, missing/decimal controls,

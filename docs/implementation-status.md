@@ -11,7 +11,7 @@ Date: 2026-08-03
   ellipsis, and resource limits.
 - JavaScript reference operators with recycling warnings, comparison/logical semantics, control
   flow, rightward/non-local assignment, direct replacement-function assignment, simple nested
-  subset/member replacement chains, GNU R argument matching, and 669 registered functions. Supported
+  subset/member replacement chains, GNU R argument matching, and 670 registered functions. Supported
   arithmetic, comparison, logical, sequence, and matching operators are also first-class builtin
   bindings.
 - Character vectors own exact per-element bytes and canonical `unknown`/`latin1`/`UTF-8`/`bytes`
@@ -88,6 +88,14 @@ Date: 2026-08-03
   non-interactive default and requested HTML crosses the existing bounded Worker browse journal as
   script-free generated content. Exact GNU Rd conversion, `?`/`??` syntax/search, installed lazy
   help databases, and byte-identical text/HTML/PDF output remain incomplete.
+- Usage-ranked `graphics::curve()` evaluates a named R function or lazy caller/package-scoped
+  expression over bounded linear or logarithmic sample points, returns GNU R-shaped invisible
+  `x`/`y` values, and delegates new/additive drawing to the existing `plot`/`lines` graphics stack.
+  Pure-R package, Worker/Canvas, exact-formal, coercion, error, and GNU R differential evidence
+  cover the general seam. `plot.default` now transforms positive logarithmic coordinates and warns
+  when nonpositive values are omitted; `lines` and additive curves inherit active log axes. Complete
+  log axes, other additive primitives, clipping, replayed log-axis metadata, and device-identical
+  output remain incomplete.
 - Usage-ranked `utils::packageVersion()` reads core or validated bundle versions without loading a
   namespace. Shared `numeric_version`, `package_version`, and `R_system_version` values preserve
   integer components, missing entries, printing/formatting, concatenation, and padded vectorized
@@ -863,10 +871,10 @@ Date: 2026-08-03
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 14 files and 468 tests, with three explicitly skipped tests.
+- Vitest currently passes 14 files and 469 tests, with three explicitly skipped tests.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 837/837 cases. The optional black-box R oracle passes all 796
+- Checked-in conformance passes 839/839 cases. The optional black-box R oracle passes all 798
   eligible cases and explicitly skips 41 NativR-owned
   representation/random/platform/graphics/unsupported-boundary cases.
 - Chromium Worker/playground coverage passes 2/2 tests, including the source-only package bundle,

@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 412 KiB gzip;
+- Worker JavaScript: 414 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -856,3 +856,11 @@ session-file/`browseURL` path. It adds no dependency, protocol event, runtime Rd
 database, network/host capability, or package-specific adapter. The measured Worker is 411.7 KiB
 gzip (421,565 bytes), 1,725 bytes above the previous 410 KiB ceiling, so the ceiling rises narrowly
 to 412 KiB; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.270 adds usage-ranked `graphics::curve` plus shared positive-coordinate
+logarithmic transforms in `plot.default`. Function/expression evaluation composes the existing
+normalized-AST, promise/environment, numeric-vector, `plot`, and `lines` paths; rendering reuses the
+same journal, Worker protocol, Canvas/PNG/PDF consumers, and package loader. It adds no dependency,
+protocol event, renderer, host capability, generated JavaScript, or package-specific adapter. The
+measured Worker is 413.1 KiB gzip (423,045 bytes), 1,157 bytes above the previous 412 KiB ceiling,
+so the ceiling rises narrowly to 414 KiB; client and parser-Wasm budgets remain unchanged.

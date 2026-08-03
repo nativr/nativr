@@ -32,6 +32,13 @@ still needs a reviewed Wasm build/adapter, and C/C++/Fortran/JVM code does not b
 merely because its R wrapper can load. The long-term engineering goal is one reusable Wasm ABI and
 package build pipeline, not a TypeScript rewrite of every native routine.
 
+The usage-ranked `graphics::curve` increment is executable evidence for this strategy: an unchanged
+source-package function can import or namespace-qualify `curve`, evaluate its own caller-scoped R
+expression, and render through the same Worker graphics journal as inline code. The runtime contains
+no package-specific implementation for that fixture or for numDeriv's measured example. This proves
+the generic package seam for the exercised behavior, not compatibility with every numDeriv function
+or arbitrary pure-R package.
+
 ```text
 CRAN-like source package
   -> bounded archive + license inspection

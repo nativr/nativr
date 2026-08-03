@@ -274,6 +274,13 @@ performing I/O, or reversing the `base -> runtime` dependency. Core-package comp
 uses the same seam. Future library indexes can implement this query behind the facade without
 changing version comparison semantics.
 
+Function curves preserve the same dependency direction. `graphics::curve` receives its expression as
+a normalized AST or an ordinary R closure, evaluates it in a bounded child environment with the
+sample variable bound, and passes owned numeric vectors to the existing `plot` or `lines` builtin.
+Positive logarithmic coordinates are transformed inside the graphics layer before journal commands
+are emitted. No parser node, package-specific adapter, JavaScript code generation, host callback, or
+new wire command is introduced.
+
 An evaluator-owned directory index sits over the same identifiers. It supplies static runtime and
 package directories, mutable session directories, a resettable current working directory, and
 root-bounded dot-segment normalization. Directory listing and relative-path resolution therefore

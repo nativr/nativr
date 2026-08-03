@@ -378,7 +378,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 377,weighted.mean,true,1,matrixStats,6,1.0,0.7
 378,drop,true,1,matrixStats,4,1.0,0.7
 379,mad,true,1,matrixStats,2,1.0,0.7
-380,curve,false,1,numDeriv,1,1.0,0.7
+380,curve,true,1,numDeriv,1,1.0,0.7
 381,plot.window,true,1,systemfonts,1,1.0,0.7
 382,rbeta,true,1,loo,2,1.0,0.7
 383,dbinom,true,1,loo,1,1.0,0.7

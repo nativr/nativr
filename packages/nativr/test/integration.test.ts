@@ -29,11 +29,11 @@ Encoding: UTF-8
 NeedsCompilation: no`,
   namespace: `
 importFrom(grDevices, dev.control, devAskNewPage)
-importFrom(graphics, abline, axis, barplot, plot.new, plot.window, rect, title)
+importFrom(graphics, abline, axis, barplot, curve, plot.new, plot.window, rect, title)
 importFrom(methods, setClass, showClass)
 importFrom(stats, median, ts.plot)
 importFrom(utils, download.file, getFromNamespace, packageDescription, packageName, packageVersion)
-  export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, annotated_plot, reference_lines, control_display_list, ask_new_pages, find_tools, create_file, copy_resource, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, socket_exchange, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, package_files, installed_version, namespace_names, private_call, process_id, library_paths, loaded_module_paths, native_encoding, shell_quote, standard_output, sink_lines, write_sass_variable, browse_guides, browse_help)
+  export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, plot_curve, annotated_plot, reference_lines, control_display_list, ask_new_pages, find_tools, create_file, copy_resource, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, socket_exchange, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, package_files, installed_version, namespace_names, private_call, process_id, library_paths, loaded_module_paths, native_encoding, shell_quote, standard_output, sink_lines, write_sass_variable, browse_guides, browse_help)
 S3method(describe, score)
 S3method(plot, score)
 S3method(lines, score)
@@ -78,6 +78,10 @@ package_bars <- function(x = matrix(1:4, 2)) barplot(x, beside = TRUE, plot = FA
 plot_series <- function(z) {
   ts.plot(z)
   invisible(length(z))
+}
+plot_curve <- function(multiplier = 2) {
+  result <- withVisible(curve(multiplier * x^2, from = -1, to = 1, n = 5, type = "n"))
+  c(result$value$x, result$value$y, result$visible)
 }
 annotated_plot <- function(label = "package title") {
   plot.new()
@@ -4690,6 +4694,7 @@ describe("complete inline source-to-result vertical slice", () => {
       "package_name",
       "package_state",
       "pipe_lines",
+      "plot_curve",
       "plot_series",
       "private_call",
       "process_id",
@@ -8810,7 +8815,21 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(runtime.eval("plot(1:3, 1:2)")).rejects.toMatchObject({ code: "NRT3353" });
     await expect(runtime.eval("plot(c(NA, Inf))")).rejects.toMatchObject({ code: "NRT3353" });
     await expect(runtime.eval("plot(1:3, type = 'q')")).rejects.toMatchObject({ code: "NRT3353" });
-    await expect(runtime.eval("plot(1:3, log = 'x')")).rejects.toMatchObject({ code: "NRU6170" });
+    const logarithmic = await runtime.evalDetailed(
+      "plot(c(1, 10, 100), c(2, 3, 4), type = 'l', log = 'x', axes = FALSE, ann = FALSE)",
+    );
+    expect(logarithmic.graphics[1]).toEqual({
+      kind: "window",
+      xlim: [-0.08, 2.08],
+      ylim: [1.92, 4.08],
+    });
+    expect(logarithmic.graphics[2]).toMatchObject({
+      kind: "segments",
+      segments: [
+        { x0: 0, y0: 2, x1: 1, y1: 3 },
+        { x0: 1, y0: 3, x1: 2, y1: 4 },
+      ],
+    });
     await expect(runtime.eval("plot(1:3, asp = 1)")).rejects.toMatchObject({ code: "NRU6170" });
     await expect(runtime.eval("plot(1:3, lend = 'butt')")).rejects.toMatchObject({
       code: "NRU6170",
@@ -13211,7 +13230,7 @@ NeedsCompilation: no
       values: new Float64Array([2]),
     });
     const capabilities = await runtime.capabilities();
-    expect(capabilities.languageSubsetVersion).toBe("0.269.0");
+    expect(capabilities.languageSubsetVersion).toBe("0.270.0");
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
@@ -13233,6 +13252,7 @@ NeedsCompilation: no
       s3MethodDispatch: "supported",
     });
     expect(capabilities.packages.find((entry) => entry.name === "graphics")?.functions).toEqual([
+      { name: "curve", compatibility: "behavioral" },
       { name: "hist", compatibility: "behavioral" },
       { name: "hist.default", compatibility: "behavioral" },
       { name: "plot.histogram", compatibility: "shape" },
@@ -16543,6 +16563,128 @@ NeedsCompilation: no
     expect(unknown.warnings).toEqual([
       { code: "NRW1128", message: '"not-a-par" is not a graphical parameter' },
     ]);
+    await runtime.dispose();
+  });
+
+  it("draws usage-ranked expression and function curves through package and graphics paths", async () => {
+    const runtime = await createR({ execution: "inline", assets, packages: [pureRFixture] });
+    const drawn = await runtime.evalDetailed(`
+      f <- function(x) x^2
+      result <- withVisible(graphics::curve(f, from = -1, to = 1, n = 5, col = "red"))
+      c(result$value$x, result$value$y, result$visible)
+    `);
+    expect(drawn.value).toEqual([-1, -0.5, 0, 0.5, 1, 1, 0.25, 0, 0.25, 1, 0]);
+    expect(drawn.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "window",
+      "box",
+      "segments",
+      "text",
+    ]);
+    const segments = drawn.graphics[3];
+    expect(segments?.kind).toBe("segments");
+    if (segments?.kind === "segments") {
+      expect(segments.segments).toHaveLength(4);
+      expect(segments.segments.every((segment) => segment.color === "#FF0000FF")).toBe(true);
+    }
+
+    await expect(
+      runtime.eval(`
+        scale <- 3
+        value <- graphics::curve(scale * t^2, from = 0, to = 1, n = 3, xname = "t", type = "n")
+        c(value$x, value$y)
+      `),
+    ).resolves.toEqual([0, 0.5, 1, 0, 0.75, 3]);
+    await expect(runtime.eval("length(graphics::curve(x^2, 0, 1, type = 'n')$x)")).resolves.toBe(
+      101,
+    );
+    await expect(runtime.eval("nativrfixture::plot_curve(2)")).resolves.toEqual([
+      -1, -0.5, 0, 0.5, 1, 2, 0.5, 0, 0.5, 2, 0,
+    ]);
+    const added = await runtime.evalDetailed(`
+      graphics::curve(x^2, 0, 1, n = 3, type = "n")
+      result <- withVisible(graphics::curve(sin, 0, pi, n = 4, add = TRUE, col = "blue"))
+      c(round(result$value$y, 6), result$visible)
+    `);
+    expect(added.value).toEqual([0, 0.866025, 0.866025, 0, 0]);
+    expect(added.graphics.at(-1)?.kind).toBe("segments");
+    const logarithmic = await runtime.evalDetailed(`
+      value <- graphics::curve(x^1, 1, 100, n = 3, log = "x", axes = FALSE, ann = FALSE)
+      value$x
+    `);
+    expect(logarithmic.value).toEqual([1, 10.000000000000002, 100]);
+    expect(logarithmic.graphics[1]).toEqual({
+      kind: "window",
+      xlim: [-0.08, 2.08],
+      ylim: [-2.96, 103.96],
+    });
+    expect(logarithmic.graphics[2]).toMatchObject({
+      kind: "segments",
+      segments: [
+        { x0: 0, y0: 1, x1: 1, y1: 10.000000000000002 },
+        { x0: 1, y0: 10.000000000000002, x1: 2, y1: 100 },
+      ],
+    });
+    const inheritedLog = await runtime.evalDetailed(`
+      value <- graphics::curve(x^1, 1, 100, n = 3, add = TRUE)
+      value$x
+    `);
+    expect(inheritedLog.value).toEqual([1, 10.000000000000002, 100]);
+    expect(inheritedLog.graphics.at(-1)).toMatchObject({
+      kind: "segments",
+      segments: [
+        { x0: 0, y0: 1, x1: 1, y1: 10.000000000000002 },
+        { x0: 1, y0: 10.000000000000002, x1: 2, y1: 100 },
+      ],
+    });
+    await expect(
+      runtime.eval("graphics::curve(x^1, 0, 100, n = 3, add = TRUE)"),
+    ).rejects.toMatchObject({ code: "NRT3355" });
+
+    await expect(
+      runtime.eval(`
+        f <- formals(graphics::curve)
+        c(
+          names(f), identical(f$from, NULL), identical(f$to, NULL), f$n,
+          identical(f$add, FALSE), f$type, f$xname, deparse(f$xlab),
+          identical(f$ylab, NULL), identical(f$log, NULL), identical(f$xlim, NULL)
+        )
+      `),
+    ).resolves.toEqual([
+      "expr",
+      "from",
+      "to",
+      "n",
+      "add",
+      "type",
+      "xname",
+      "xlab",
+      "ylab",
+      "log",
+      "xlim",
+      "...",
+      "TRUE",
+      "TRUE",
+      "101",
+      "TRUE",
+      "l",
+      "x",
+      "xname",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    await expect(runtime.eval("graphics::curve(c(x, x), 0, 1, n = 3)")).rejects.toMatchObject({
+      code: "NRT3355",
+    });
+    await expect(
+      runtime.eval("graphics::curve(x^2, -1, 1, n = 3, log = 'x')"),
+    ).rejects.toMatchObject({
+      code: "NRT3355",
+    });
+    await expect(
+      runtime.eval("graphics::curve(function(x) x^2, 0, 1, n = 3)"),
+    ).rejects.toMatchObject({ code: "NRT3355" });
     await runtime.dispose();
   });
 

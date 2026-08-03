@@ -869,6 +869,13 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      bounded script-free HTML through the existing Worker browse journal. Exact GNU Rd conversion,
      `?`/`??` syntax/search, lazy installed help databases, and byte-identical output remain future
      compatibility depth.
+182. Usage-ranked function curves: rank-380 `graphics::curve` evaluates named functions or lazy
+     caller/package expressions over bounded linear/logarithmic samples, returns GNU R-shaped
+     invisible coordinates, and composes the existing `plot`/`lines` journal for new or additive
+     drawing. The same increment adds positive-coordinate log transforms to `plot.default` and has
+     unchanged pure-R package plus Worker/Canvas evidence. `lines` and additive curves inherit
+     active log axes; complete log ticks/labels, other additive primitives, clipping, replayed
+     log-axis metadata, and pixel identity remain future graphics depth.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means
