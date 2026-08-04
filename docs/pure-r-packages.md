@@ -318,9 +318,9 @@ prevents a safe archive scan from being mislabeled as full package compatibility
 
 ## External proof
 
-The opt-in test `packages/package-tools/test/external-package.test.ts` evaluates nine unchanged
+The opt-in test `packages/package-tools/test/external-package.test.ts` evaluates thirteen unchanged
 public source packages from the repository resolver. It verifies the pinned source-archive digest
-separately from each normalized NativR artifact digest. All nine reach the evidence described below:
+separately from each normalized NativR artifact digest. All thirteen reach at least P4 evidence:
 
 - [`pkgconfig 2.0.3`](https://cran.r-project.org/package=pkgconfig) proves namespace exports,
   package resources, classed DESCRIPTION metadata with a virtual installation path, and an ordinary
@@ -358,6 +358,14 @@ separately from each normalized NativR artifact digest. All nine reach the evide
   `tools/ansi-palettes.txt` build resource through the generic hidden source-evaluation context. It
   attaches normally and executes nested foreground/background styling plus `strip_style()` without a
   package adapter.
+- [`praise 1.0.0`](https://cran.r-project.org/package=praise) reaches P4 through generic PCRE
+  capture metadata and unchanged template replacement;
+- [`prettyunits 1.2.0`](https://cran.r-project.org/package=prettyunits) reaches P4 through unchanged
+  byte, duration, and compact-number formatting after bounded bzip2 data normalization;
+- [`evaluate 1.0.5`](https://cran.r-project.org/package=evaluate) reaches P4 through its public
+  output-handler constructor and condition/source/recorded-plot predicates;
+- [`numDeriv 2016.8-1.1`](https://cran.r-project.org/package=numDeriv) reaches P4 through public
+  finite-difference gradient and Jacobian calls whose rounded values match GNU R.
 
 No package source is checked into this repository. Together these tests exercise repository
 installation, runtime package files, namespace loading, qualified S3 registration, metaprogramming,
@@ -377,8 +385,9 @@ contains only reusable color interpolation, frame, warning, and arithmetic seman
 
 The machine-readable [package corpus](../compatibility/package-corpus.json) is authoritative for
 development/regression/holdout membership, source and artifact digests, completed tier, and first
-blocker. The current uninspected P0 holdouts are `praise 1.0.0` and `prettyunits 1.2.0`. These
-proofs must not be summarized as a single unqualified “supported packages” count.
+blocker. The current uninspected P0 holdouts are `abind 1.4-8` and `rprojroot 2.1.1`; only release
+metadata and source-archive digests have been admitted for them. These proofs must not be summarized
+as a single unqualified “supported packages” count.
 
 The checked-in source-only fixture also exports a function that calls `grDevices::rainbow`,
 `terrain.colors`, `topo.colors`, and `cm.colors` through its namespace. This is a small executable

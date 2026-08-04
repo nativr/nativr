@@ -128,22 +128,25 @@ Date: 2026-08-03
   startup `R_LIBS*`, runtime downloads, multiple installed versions, and binary trees remain gaps.
 - Unchanged external-package execution is pinned for `pkgconfig 2.0.3`, `generics 0.1.4`,
   `withr 3.0.3`, `R6 2.6.1`, `viridisLite 0.4.3`, `RColorBrewer 1.1-3`, `labeling 0.4.3`,
-  `assertthat 0.2.1`, `crayon 1.5.3`, `praise 1.0.0`, and `prettyunits 1.2.0`. Completed tiers and
-  blockers are generated from the package corpus rather than collapsed into a supported/unsupported
-  label. The latest proofs cover package-owned S3 dispatch, a generated `with_options()` wrapper
-  using call/formal/environment replacement, `bquote`, dynamic caller frames, hooks, and state
-  restoration, plus `with_envvar()` mutation and cleanup through session-owned environment
-  variables, plus unchanged R6 generator construction, object instantiation, public/private method
-  calls, reference field mutation, and an active read/write field, plus shallow and recursive deep
-  cloning of nested R6 objects, without translating or patching package code. The same unchanged
-  package now constructs a three-level hierarchy and executes recursive
-  `super$initialize()`/`super$greet()` paths with inherited fields, methods, and class membership.
-  Unchanged viridisLite loads its package-owned 256-anchor map and executes Viridis, Magma, and
-  reversed translucent palettes through generic Lab spline and matrix arithmetic. Unchanged
-  RColorBrewer constructs its exported 35-row palette metadata with explicit row names, then
-  executes exact Set1/Blues palettes and the recursive minimum-size warning path. Unchanged labeling
-  reaches P4 across all nine labeling algorithms; `extended.figures()` records `axis(xlab=)` as its
-  first P5 blocker after exercising shared parallel extrema and histogram paths.
+  `assertthat 0.2.1`, `crayon 1.5.3`, `praise 1.0.0`, `prettyunits 1.2.0`, `evaluate 1.0.5`, and
+  `numDeriv 2016.8-1.1`. Completed tiers and blockers are generated from the package corpus rather
+  than collapsed into a supported/unsupported label. The latest proofs cover package-owned S3
+  dispatch, a generated `with_options()` wrapper using call/formal/environment replacement,
+  `bquote`, dynamic caller frames, hooks, and state restoration, plus `with_envvar()` mutation and
+  cleanup through session-owned environment variables, plus unchanged R6 generator construction,
+  object instantiation, public/private method calls, reference field mutation, and an active
+  read/write field, plus shallow and recursive deep cloning of nested R6 objects, without
+  translating or patching package code. The same unchanged package now constructs a three-level
+  hierarchy and executes recursive `super$initialize()`/`super$greet()` paths with inherited fields,
+  methods, and class membership. Unchanged viridisLite loads its package-owned 256-anchor map and
+  executes Viridis, Magma, and reversed translucent palettes through generic Lab spline and matrix
+  arithmetic. Unchanged RColorBrewer constructs its exported 35-row palette metadata with explicit
+  row names, then executes exact Set1/Blues palettes and the recursive minimum-size warning path.
+  Unchanged labeling reaches P4 across all nine labeling algorithms; `extended.figures()` records
+  `axis(xlab=)` as its first P5 blocker after exercising shared parallel extrema and histogram
+  paths. The third blind rotation carries unchanged evaluate through its public handler/predicate
+  APIs and unchanged numDeriv through public gradient/Jacobian calculations; the next untouched P0
+  pair is abind and rprojroot.
 - Session environment variables are explicit, isolated runtime state. `createR()` snapshots an
   optional string map for inline or Worker execution; GNU R-shaped `Sys.getenv()`, `Sys.setenv()`,
   and `Sys.unsetenv()` query and mutate it, while reset restores the original map and host process

@@ -12,6 +12,8 @@ export function matchBuiltinArguments(
   parameters: readonly string[],
 ): MatchedBuiltinArguments {
   const formal = parameters.filter((name) => name !== "...");
+  const dotsIndex = parameters.indexOf("...");
+  const leading = dotsIndex < 0 ? formal : parameters.slice(0, dotsIndex);
   const resolved: (string | undefined)[] = invocation.arguments.map(() => undefined);
   const used = new Set<string>();
   for (const [index, argument] of invocation.arguments.entries()) {
@@ -24,7 +26,7 @@ export function matchBuiltinArguments(
   }
   for (const [index, argument] of invocation.arguments.entries()) {
     if (argument.name === undefined || resolved[index] !== undefined) continue;
-    const candidates = formal.filter((name) => name.startsWith(argument.name ?? ""));
+    const candidates = leading.filter((name) => name.startsWith(argument.name ?? ""));
     if (candidates.length > 1) {
       throw new REvaluationError(
         "NRE2104",
@@ -45,8 +47,8 @@ export function matchBuiltinArguments(
   for (const [index, argument] of invocation.arguments.entries()) {
     let name = resolved[index];
     if (argument.name === undefined) {
-      while (positional < formal.length && used.has(formal[positional] ?? "")) positional += 1;
-      name = formal[positional++];
+      while (positional < leading.length && used.has(leading[positional] ?? "")) positional += 1;
+      name = leading[positional++];
       if (name !== undefined) used.add(name);
     }
     if (name === undefined) {

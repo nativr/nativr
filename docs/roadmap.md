@@ -897,8 +897,10 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      execution remains future work. The second source-blind holdout rotation moves unchanged
      `praise 1.0.0` and `prettyunits 1.2.0` to P4 regression evidence through generic PCRE capture
      metadata, quoted call tags, string coercion, D65 `convertColor`, and build-time bzip2 package-
-     resource normalization. `evaluate 1.0.5` and `numDeriv 2016.8-1.1` are the next uninspected P0
-     holdouts.
+     resource normalization. The third source-blind rotation moves unchanged `evaluate 1.0.5` and
+     `numDeriv 2016.8-1.1` to P4 through generic callable lookup, exact builtin formals, condition
+     constructors, post-dots argument matching, and list/expression-column replacement.
+     `abind 1.4-8` and `rprojroot 2.1.1` are the next uninspected P0 holdouts.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

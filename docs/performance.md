@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 422 KiB gzip;
+- Worker JavaScript: 423 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -936,3 +936,10 @@ and `prettyunits 1.2.0` remain opt-in and ship no package source. After consolid
 construction, the measured Worker is 421.1 KiB gzip (431,230 bytes), 126 bytes above the previous
 421 KiB ceiling, so the ceiling rises narrowly to 422 KiB; client and parser-Wasm budgets remain
 unchanged.
+
+Language subset 0.282 adds generic `match.fun` resolution, exact `identity`/condition/source-file
+formals and shapes, shared post-ellipsis argument matching, and recursive/expression data-frame
+column replacement. The evaluate and numDeriv packages remain opt-in test inputs and contribute no
+source or resources to the shipped Worker. The measured Worker is 422.1 KiB gzip (432,275 bytes),
+147 bytes above the previous 422 KiB ceiling, so the ceiling rises narrowly to 423 KiB; client and
+parser-Wasm budgets remain unchanged.

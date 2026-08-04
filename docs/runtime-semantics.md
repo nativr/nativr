@@ -150,6 +150,13 @@ deletion, and `$`-driven creation of a missing list intermediate. Intermediate s
 are evaluated again while rebuilding the chain, matching GNU R's observable side effects. An
 intermediate multidimensional selection remains unsupported.
 
+Data-frame member replacement admits ordinary atomic columns, equal-length list columns, scalar
+list-column recycling, and pairlist-to-list normalization. Expression vectors are preserved as
+expression columns and singleton expressions recycle by row. `[[<-` treats a list replacement as one
+recursive column, while `[<-` distributes a list across selected columns. Incompatible row counts
+fail with bounded row, column, and replacement-length diagnostics rather than silently producing a
+malformed frame.
+
 Direct replacement-function targets invoke a registered `<-` function and rebind their first
 identifier. `names<-`, `attr<-`, `class<-`, and `dim<-` cover exact non-missing names, arbitrary
 owned vector attributes, explicit classes, and validated dimensions in both assignment directions.
@@ -1021,6 +1028,11 @@ quote, escape, backslash-doubling, and caret-prefix rules. Type names partially 
 methods can participate, and the output drops source attributes. This function never calls `system`,
 a Worker host handler, or any native shell.
 
+`match.fun()` accepts direct closures/builtins, symbols, and one-element character names. Name
+lookup begins in the parent of its caller and, when `descend = TRUE`, skips non-function bindings;
+direct callables leave `descend` lazy. This is the shared lookup path used by unchanged package
+code, not a package registry shortcut.
+
 `utils::sessionInfo()` assembles a classed named list from the same evaluator-owned state. It
 reports `wasm32-unknown-browser/nativr` and `Browser JavaScript (NativR)` instead of leaking or
 misrepresenting the host operating system, identifies R 4.6.1 as the compatibility target, exposes
@@ -1173,6 +1185,10 @@ Missing or empty custom class elements are explicitly rejected because the owned
 model cannot represent them. Signaling arbitrary classed warning objects, class-specific
 calling-handler dispatch, missing class metadata, and exhaustive legacy diagnostics remain outside
 this constructor slice.
+
+`simpleCondition()`, `simpleError()`, `simpleWarning()`, and `simpleMessage()` produce the standard
+two-field owned condition shapes with exact formals. `srcfilecopy()` creates the documented
+browser-owned source-file environment and metadata while remaining disconnected from host files.
 
 `stats::qnorm()` maps probabilities through the owned central-normal quantile approximation already
 used by the Student-t path, with stable tail symmetry, vectorized `mean`/`sd`, recycling, ordinary

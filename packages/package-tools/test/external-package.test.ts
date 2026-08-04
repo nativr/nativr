@@ -805,3 +805,169 @@ it.runIf(runExternal)(
   },
   30_000,
 );
+
+it.runIf(runExternal)(
+  "packs, loads, and exercises the unchanged public evaluate 1.0.5 pure-R package",
+  async () => {
+    let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    try {
+      const installed = await installPackagesFromRepository(["evaluate"]);
+      const artifact = installed.artifacts.find(
+        (candidate) => candidate.package.name === "evaluate",
+      );
+      expect(artifact).toMatchObject({
+        package: { name: "evaluate", version: "1.0.5" },
+        compatibility: { packaging: "ready", execution: "unchecked" },
+        integrity: {
+          algorithm: "sha256",
+          value: "4c69fe41198004538efce999d5be1b34cd9ec3641d476e09cb9ec350f02ef041",
+        },
+      });
+      runtime = await createR({
+        execution: "inline",
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+        packages: installed.bundles,
+      });
+      await expect(runtime.eval('requireNamespace("evaluate", quietly = TRUE)')).resolves.toBe(
+        true,
+      );
+      await expect(runtime.eval('as.character(packageVersion("evaluate"))')).resolves.toBe("1.0.5");
+      await expect(
+        runtime.eval('library("evaluate"); "package:evaluate" %in% search()'),
+      ).resolves.toBe(true);
+      await expect(runtime.eval('sort(getNamespaceExports("evaluate"))')).resolves.toEqual([
+        "create_traceback",
+        "evaluate",
+        "flush_console",
+        "inject_funs",
+        "is.error",
+        "is.message",
+        "is.recordedplot",
+        "is.source",
+        "is.warning",
+        "local_reproducible_output",
+        "new_output_handler",
+        "parse_all",
+        "remove_hooks",
+        "replay",
+        "set_hooks",
+        "trim_intermediate_plots",
+        "try_capture_stack",
+      ]);
+      await expect(
+        runtime.eval(`
+          handler <- evaluate::new_output_handler()
+          c(
+            names(handler),
+            class(handler),
+            vapply(handler[1:7], function(fun) length(formals(fun)), integer(1))
+          )
+        `),
+      ).resolves.toEqual([
+        "source",
+        "text",
+        "graphics",
+        "message",
+        "warning",
+        "error",
+        "value",
+        "calling_handlers",
+        "output_handler",
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "3",
+      ]);
+      await expect(
+        runtime.eval(`
+          c(
+            evaluate::is.source(structure("x", class = "source")),
+            evaluate::is.message(simpleMessage("x")),
+            evaluate::is.warning(simpleWarning("x")),
+            evaluate::is.error(simpleError("x")),
+            evaluate::is.recordedplot(structure(list(), class = "recordedplot"))
+          )
+        `),
+      ).resolves.toEqual([true, true, true, true, true]);
+    } finally {
+      await runtime?.dispose();
+    }
+  },
+  30_000,
+);
+
+it.runIf(runExternal)(
+  "packs, loads, and exercises the unchanged public numDeriv 2016.8-1.1 pure-R package",
+  async () => {
+    let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    try {
+      const installed = await installPackagesFromRepository(["numDeriv"]);
+      const artifact = installed.artifacts.find(
+        (candidate) => candidate.package.name === "numDeriv",
+      );
+      expect(artifact).toMatchObject({
+        package: { name: "numDeriv", version: "2016.8-1.1" },
+        compatibility: { packaging: "ready", execution: "unchecked" },
+        integrity: {
+          algorithm: "sha256",
+          value: "0a5bac977e0b258bc22dedf41adc2c48a0eaa8e197f48dfefede7ad0f3981e45",
+        },
+      });
+      runtime = await createR({
+        execution: "inline",
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+        packages: installed.bundles,
+      });
+      await expect(runtime.eval('requireNamespace("numDeriv", quietly = TRUE)')).resolves.toBe(
+        true,
+      );
+      await expect(runtime.eval('as.character(packageVersion("numDeriv"))')).resolves.toBe(
+        "2016.8.1.1",
+      );
+      await expect(
+        runtime.eval('library("numDeriv"); "package:numDeriv" %in% search()'),
+      ).resolves.toBe(true);
+      await expect(runtime.eval('sort(getNamespaceExports("numDeriv"))')).resolves.toEqual([
+        "genD",
+        "grad",
+        "hessian",
+        "jacobian",
+      ]);
+      await expect(
+        runtime.eval(`
+          gradient <- numDeriv::grad(
+            function(x) sum(x ^ 2),
+            c(1, 2),
+            method = "simple",
+            method.args = list(eps = 1e-6)
+          )
+          jacobian <- numDeriv::jacobian(
+            function(x) c(x[1] + x[2], x[1] * x[2]),
+            c(2, 3),
+            method = "simple",
+            method.args = list(eps = 1e-6)
+          )
+          c(round(gradient, 6), round(c(jacobian), 6), dim(jacobian))
+        `),
+      ).resolves.toEqual([2.000001, 4.000001, 1, 3, 1, 2, 2, 2]);
+    } finally {
+      await runtime?.dispose();
+    }
+  },
+  30_000,
+);

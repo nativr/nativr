@@ -476,6 +476,36 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "data-frame-list-column-replacement-and-recycling",
+    "code": "df <- data.frame(id = 1:2)\ndf$items <- list(1:2, c(\"a\", \"b\"))\ndf[[\"flags\"]] <- list(TRUE, FALSE)\nsingle <- data.frame(id = 1:2)\nsingle$items <- list(9L)\nsubset <- data.frame(id = 1:2)\nsubset[\"items\"] <- list(list(1L, 2L))\nexpr <- data.frame(id = 1:2)\nexpr$code <- expression(1, x + 2)\nsingleExpr <- data.frame(id = 1:2)\nsingleExpr$code <- expression(1)\nc(class(df), dim(df), names(df), vapply(df$items, typeof, \"\"), df$flags[[1]], identical(df$flags[[2]], FALSE), vapply(single$items, length, 0L), unlist(single$items), unlist(subset$items), typeof(expr$code), length(expr$code), identical(expr$code, expression(1, x + 2)), typeof(singleExpr$code), length(singleExpr$code), identical(singleExpr$code, expression(1, 1)))",
+    "expected": [
+      "data.frame",
+      "2",
+      "3",
+      "id",
+      "items",
+      "flags",
+      "integer",
+      "character",
+      "TRUE",
+      "TRUE",
+      "1",
+      "1",
+      "9",
+      "9",
+      "1",
+      "2",
+      "expression",
+      "2",
+      "TRUE",
+      "expression",
+      "2",
+      "TRUE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "factor-codes",
     "code": "factor(c(\"b\", \"a\", \"b\"))",
     "expected": [2, 1, 2],
@@ -1356,6 +1386,33 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "simple-condition-constructors-classes-values-and-formals",
+    "code": "constructors <- c(\"simpleCondition\", \"simpleError\", \"simpleWarning\", \"simpleMessage\")\nclasses <- unlist(lapply(constructors, function(name) class(do.call(name, list(1L)))))\nmessages <- vapply(constructors, function(name) typeof(unclass(do.call(name, list(1L)))$message), \"\")\nc(classes, messages, names(formals(simpleMessage)), identical(formals(simpleMessage)$call, NULL), conditionMessage(simpleWarning(\"shown\")))",
+    "expected": [
+      "simpleCondition",
+      "condition",
+      "simpleError",
+      "error",
+      "condition",
+      "simpleWarning",
+      "warning",
+      "condition",
+      "simpleMessage",
+      "message",
+      "condition",
+      "character",
+      "character",
+      "character",
+      "integer",
+      "message",
+      "call",
+      "TRUE",
+      "shown"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "pairlist-indexing-and-partial-member",
     "code": "p <- pairlist(alpha = 1, beta = 2, gamma = 3)\nq <- p[c(1, 3)]\nc(typeof(q), names(q), q[[2]], p[[\"beta\"]], p$alp, is.null(pairlist(alpha = 1, alpine = 2)$al))",
     "expected": ["list", "alpha", "gamma", "3", "2", "1", "TRUE"],
@@ -1440,6 +1497,13 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "identity-exact-formals-and-callable-shape",
+    "code": "c(names(formals(identity)), length(formals(identity)), is.function(identity))",
+    "expected": ["x", "1", "TRUE"],
+    "expectedCompatibility": "shape",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "environment-binding-lookup-and-inheritance",
     "code": "e <- new.env(parent = baseenv())\ne$x <- 1\nc(e$x, e[[\"x\"]], get(\"x\", envir = e), get0(\"definitely.absent\", envir = e, ifnotfound = 7), exists(\"x\", envir = e), exists(\"mean\", envir = e, inherits = TRUE), exists(\"mean\", envir = e, inherits = FALSE))",
     "expected": [1, 1, 1, 7, 1, 1, 0],
@@ -1471,6 +1535,13 @@
     "id": "vapply-safe-numeric-promotion",
     "code": "c(typeof(vapply(1:2, identity, 0)), vapply(1:2, identity, 0))",
     "expected": ["double", "1", "2"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "vapply-named-reordering-and-post-dots-exact-matching",
+    "code": "c(vapply(FUN.VALUE = integer(1), X = list(1:2, 1:4), FUN = length, USE.NAMES = FALSE), vapply(list(1:2), length, FUN.V = integer(1)), inherits(try(vapply(list(1), length, integer(1), USE = FALSE), silent = TRUE), \"try-error\"))",
+    "expected": [2, 4, 2, 1],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
   },
@@ -3785,6 +3856,20 @@
     "id": "match-arg-caller-formal-default-inference",
     "code": "choices <- c(\"alpha\", \"beta\")\nf <- function(method = c(\"alpha\", \"beta\", \"gamma\")) match.arg(method)\ng <- function(method = choices) match.arg(method)\nh <- function(method = NULL) match.arg(method)\nc(f(), f(\"be\"), f(method = \"g\"), f(c(\"alpha\", \"beta\", \"gamma\")), g(\"b\"), is.null(h()))",
     "expected": ["alpha", "beta", "gamma", "alpha", "beta", "TRUE"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "match-fun-function-symbol-character-descent-and-laziness",
+    "code": "outer <- 1:5\nwrapper <- function(FUN, descend = TRUE) match.fun(FUN, descend)\nlocal_string <- function() { hidden <- function() 1L; inherits(try(match.fun(\"hidden\"), silent = TRUE), \"try-error\") }\nlocal_value <- function() { outer <- 1L; inherits(try(match.fun(outer), silent = TRUE), \"try-error\") }\nc(identical(match.fun(mean), mean), identical(match.fun(\"mean\"), mean), identical(match.fun(as.name(\"sum\")), sum), identical(match.fun(mean, not.bound), mean), identical(wrapper(outer), base::outer), inherits(try(wrapper(outer, FALSE), silent = TRUE), \"try-error\"), local_string(), local_value())",
+    "expected": [true, true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "match-fun-formals-and-invalid-input-boundaries",
+    "code": "c(names(formals(match.fun)), identical(formals(match.fun)[[\"descend\"]], TRUE), inherits(try(match.fun(c(\"mean\", \"sum\")), silent = TRUE), \"try-error\"), inherits(try(match.fun(1L), silent = TRUE), \"try-error\"), inherits(try(match.fun(), silent = TRUE), \"try-error\"), inherits(try(match.fun(\"mean\", NA), silent = TRUE), \"try-error\"))",
+    "expected": ["FUN", "descend", "TRUE", "TRUE", "TRUE", "TRUE", "TRUE"],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
   },
@@ -9093,6 +9178,30 @@
       "keep.source"
     ],
     "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "srcfilecopy-browser-owned-source-shape-and-formals",
+    "code": "src <- srcfilecopy(\"demo.R\", c(\"a <- 1\", \"b\"), timestamp = as.POSIXct(0, origin = \"1970-01-01\", tz = \"UTC\"), isFile = TRUE)\nc(class(src), typeof(src), identical(parent.env(src), emptyenv()), src$filename, src$lines, src$Enc, src$isFile, src$fixedNewlines, identical(src$wd, getwd()), names(formals(srcfilecopy)), identical(formals(srcfilecopy)$isFile, FALSE))",
+    "expected": [
+      "srcfilecopy",
+      "srcfile",
+      "environment",
+      "TRUE",
+      "demo.R",
+      "a <- 1",
+      "b",
+      "unknown",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "filename",
+      "lines",
+      "timestamp",
+      "isFile",
+      "TRUE"
+    ],
+    "expectedCompatibility": "shape",
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {

@@ -63,21 +63,25 @@ a column; factor labels and other atomic types coerce to text, zero-column frame
 extent from explicit row names, and missing, duplicate, or incompatible-length values fail
 deterministically. Default name checking uses the owned syntactic/unique repair and
 `check.names = FALSE` preserves supplied tags. Full `check.rows`/`fix.empty.names` behavior,
-column-derived scalar row-name selection, recursive columns, and legacy `stringsAsFactors = TRUE`
-conversion remain outside this increment. Simple one-dimensional `$`, `[`, and `[[` replacement
-chains rebuild their containing lists or data-frame columns, support non-local rebinding and missing
-`$` intermediates, and preserve GNU R's repeated evaluation of intermediate subscripts. Global
-partial-match warning options, multidimensional intermediate replacement targets, nested
-replacement-function calls, and rectangular pairlist replacement remain outside the current
-contract. Direct or nested list and data-frame-column replacement with NULL deletes the selected
-component. One-dimensional data-frame replacement appends consecutively positioned or named columns,
-recycles scalar columns, distributes atomic replacements column-major, and rejects numeric gaps.
-Rectangular data-frame replacement extends numeric or character-named rows, fills intervening cells
-with each column's missing representation, updates row names, and can create a row and column
-together. Logical row overrun and every missing row subscript retain GNU R's rejection behavior. As
-in GNU R, extending an extracted column through `df$x[i] <- value` remains an incompatible
-column-length error rather than implicitly growing the frame. Factor replacement maps labels back to
-existing levels, extends with missing codes, and warns when an assigned label is not a level.
+column-derived scalar row-name selection, arbitrary recursive-column coercion, and legacy
+`stringsAsFactors = TRUE` conversion remain outside this increment. Equal-length list columns and
+scalar list-column recycling are preserved as recursive columns. Assigning an expression vector
+preserves that expression column and recycles a singleton expression when required. This also
+distinguishes `[[<-` list-column replacement from one-dimensional `[<-` column distribution. Simple
+one-dimensional `$`, `[`, and `[[` replacement chains rebuild their containing lists or data-frame
+columns, support non-local rebinding and missing `$` intermediates, and preserve GNU R's repeated
+evaluation of intermediate subscripts. Global partial-match warning options, multidimensional
+intermediate replacement targets, nested replacement-function calls, and rectangular pairlist
+replacement remain outside the current contract. Direct or nested list and data-frame-column
+replacement with NULL deletes the selected component. One-dimensional data-frame replacement appends
+consecutively positioned or named columns, recycles scalar columns, distributes atomic replacements
+column-major, and rejects numeric gaps. Rectangular data-frame replacement extends numeric or
+character-named rows, fills intervening cells with each column's missing representation, updates row
+names, and can create a row and column together. Logical row overrun and every missing row subscript
+retain GNU R's rejection behavior. As in GNU R, extending an extracted column through
+`df$x[i] <- value` remains an incompatible column-length error rather than implicitly growing the
+frame. Factor replacement maps labels back to existing levels, extends with missing codes, and warns
+when an assigned label is not a level.
 
 Replacing through `[<-`, `[[<-`, or `$<-` on `NULL` promotes the target using GNU R's replacement
 type, length, typed-gap, and name rules; replacement by `NULL` leaves it `NULL`. A long logical
@@ -1695,6 +1699,13 @@ owned class representation cannot preserve them. Arbitrary condition signaling, 
 calling-handler behavior, every constructor accepting `...`, and exact legacy diagnostics remain
 separate compatibility surfaces.
 
+The base `simpleCondition`, `simpleError`, `simpleWarning`, and `simpleMessage` constructors expose
+the exact `message, call = NULL` formals and GNU R class order. The first three use ordinary
+character coercion for `message`; `simpleMessage` preserves the supplied owned value. `srcfilecopy`
+creates an empty-parent browser-owned environment with the documented filename, lines, timestamp,
+encoding, file, working-directory, and newline fields plus `srcfilecopy/srcfile` classes; it is a
+source-reference shape, not host-file access.
+
 `stats::qbinom` and `stats::qnorm` have differential evidence for openssl's two measured
 uniform-to-distribution examples, registered namespace lookup, canonical quantiles, vectorized and
 recycled parameters, lower/upper tails, log probabilities, boundary infinities, degenerate
@@ -1850,6 +1861,11 @@ evaluates the matching caller-formal default through the owned closure frame, in
 defaults, without source reflection or generated code. Recursive choices, non-symbol caller
 expressions, exhaustive duplicate/missing tables, and exact legacy diagnostic text are not claimed.
 
+`match.fun` accepts an already-callable value without forcing `descend`, resolves a symbol or
+one-element character name from the parent of its caller, and optionally walks past non-functions.
+Forwarded promises retain their callable value; no source reflection or package-specific lookup is
+used. `identity` exposes the exact one-formal closure shape required by higher-order package APIs.
+
 Leftward, rightward, and non-local assignment are supported for identifiers, direct replacement
 targets, and simple one-dimensional subset/member replacement chains. Non-local assignment searches
 lexical parents, creates an otherwise absent binding in the global environment, and rejects attempts
@@ -1956,6 +1972,10 @@ same-length atomic grouping vectors, leaves missing-group positions unchanged, r
 callable or one function name, and replaces each group with a nonempty atomic scalar or vector
 result using ordinary recycling and promotion. Forwarding extra arguments to its function,
 class-specific method dispatch, and all simplification or grouping corner cases are not claimed.
+
+`vapply` uses the shared exact/partial/positional argument matcher: `X`, `FUN`, and `FUN.VALUE` may
+be reordered by name, arguments after `...` require exact names, and remaining arguments are
+forwarded without stealing `USE.NAMES`.
 
 `base::tapply` has differential behavioral evidence for zoo's measured
 `tapply(1:ncol(x), screens, f)` screen-range path. Single and multiple grouping vectors,
@@ -2394,9 +2414,11 @@ resource root and relative reads resolve there only while retained package sourc
 `system.file()` cannot expose that implementation root. This models a bounded read-only part of
 source installation, not a complete `R CMD INSTALL` snapshot. Digest-pinned opt-in executable tests
 cover unchanged `pkgconfig 2.0.3`, `generics 0.1.4`, `withr 3.0.3`, `R6 2.6.1`, `viridisLite 0.4.3`,
-`RColorBrewer 1.1-3`, `assertthat 0.2.1`, `crayon 1.5.3`, `praise 1.0.0`, and `prettyunits 1.2.0`
-sources. The second holdout rotation was evaluated without first using either package's R source to
-guide implementation; both now reach P4 through public APIs and have separate pinned source and
+`RColorBrewer 1.1-3`, `assertthat 0.2.1`, `crayon 1.5.3`, `praise 1.0.0`, `prettyunits 1.2.0`,
+`evaluate 1.0.5`, and `numDeriv 2016.8-1.1` sources. The third holdout rotation evaluated `evaluate`
+and `numDeriv` without first using either package's R source to guide implementation; both now reach
+P4 through public exports. The evidence covers evaluate's output-handler and condition predicates
+plus numDeriv's public finite-difference gradient and Jacobian, with separate pinned source and
 NativR-artifact digests. Together these tests prove the repository-to-namespace path, package-owned
 S3 dispatch, and generated state-restoring wrappers through `with_options()`, plus R6
 generator/object construction and public reference mutation, private-state method access, an active

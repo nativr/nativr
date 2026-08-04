@@ -484,7 +484,7 @@ export function replaceVectorElement(
   const dataFrameTarget: RList | undefined =
     target.type === "list" && isDataFrame(target) ? target : undefined;
   if (dataFrameTarget !== undefined) {
-    return replaceDataFrameColumns(dataFrameTarget, index, replacement, context);
+    return replaceDataFrameColumns(dataFrameTarget, index, replacement, context, true);
   }
   const selection = resolveElementReplacement(target, index);
   const position = selection.positions[0] ?? 0;
@@ -1173,6 +1173,7 @@ function replaceDataFrameColumns(
   index: RValue | undefined,
   replacement: RValue,
   context: OperatorContext,
+  elementReplacement = false,
 ): RVector {
   const selection = resolveReplacementSelection(target, index);
   if (selection.positions.some((position) => position === undefined)) {
@@ -1216,13 +1217,10 @@ function replaceDataFrameColumns(
   );
   for (let offset = 0; offset < selected.length; offset += 1) {
     const position = selected[offset] ?? 0;
-    values[position] = dataFrameColumnReplacement(
-      target,
-      replacement,
-      offset,
-      selected.length,
-      context,
-    );
+    values[position] =
+      elementReplacement && selected.length === 1
+        ? normalizeDataFrameColumn(target, replacement, context)
+        : dataFrameColumnReplacement(target, replacement, offset, selected.length, context);
     context.checkpoint();
   }
   context.allocate(values.length);
@@ -1943,16 +1941,39 @@ function normalizeDataFrameColumn(
   replacement: RValue,
   context: OperatorContext,
 ): RValue {
-  if (!isAtomic(replacement)) {
-    throw new RTypeMismatchError("NRT3131", "Data-frame replacement requires an atomic column.");
+  if (replacement.type === "expression") {
+    const rows = dataFrameRowCount(target);
+    if (replacement.values.length === rows) return replacement;
+    if (replacement.values.length === 1 && rows > 1) {
+      return {
+        type: "expression",
+        values: Object.freeze(Array.from({ length: rows }, () => replacement.values[0]!)),
+      };
+    }
+    throw new REvaluationError("NRE2116", "Data-frame columns have incompatible row counts.", {
+      details: { rows, columns: target.length, replacementLength: replacement.values.length },
+    });
+  }
+  if (!isVector(replacement) && replacement.type !== "pairlist") {
+    throw new RTypeMismatchError(
+      "NRT3131",
+      "Data-frame replacement requires an atomic or list column.",
+      { details: { type: replacement.type } },
+    );
   }
   const rows = dataFrameRowCount(target);
-  if (replacement.length === rows) return replacement;
+  if (replacement.length === rows) {
+    return replacement.type === "pairlist"
+      ? listValue(replacement.values, vectorNames(replacement))
+      : replacement;
+  }
   if (replacement.length === 1 && rows > 1) {
     const indices = integerVector(Array.from({ length: rows }, () => 1));
     return subsetVector(replacement, indices, context);
   }
-  throw new REvaluationError("NRE2116", "Data-frame columns have incompatible row counts.");
+  throw new REvaluationError("NRE2116", "Data-frame columns have incompatible row counts.", {
+    details: { rows, columns: target.length, replacementLength: replacement.length },
+  });
 }
 
 function recyclingWarning(context: OperatorContext): void {

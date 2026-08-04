@@ -280,7 +280,9 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "behavioral",
     builtinDelayedAssign,
   ),
-  defineBuiltin("identity", ["x"], "behavioral", builtinIdentity),
+  withBuiltinFormals(defineBuiltin("identity", ["x"], "behavioral", builtinIdentity), [
+    { name: "x" },
+  ]),
   defineBuiltin("I", ["x"], "behavioral", builtinAsIs),
   defineBuiltin(
     "on.exit",
@@ -1677,6 +1679,14 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "behavioral",
     builtinWarningCondition,
   ),
+  ...(["simpleCondition", "simpleError", "simpleWarning", "simpleMessage"] as const).map((name) =>
+    withBuiltinFormals(
+      defineBuiltin(name, ["message", "call"], "behavioral", (invocation) =>
+        builtinSimpleCondition(invocation, name),
+      ),
+      [{ name: "message" }, { name: "call", defaultValue: nullAst() }],
+    ),
+  ),
   defineBuiltin("conditionMessage", ["c"], "behavioral", builtinConditionMessage),
   defineBuiltin("suppressWarnings", ["expr", "classes"], "behavioral", (invocation) =>
     builtinSuppressCondition(invocation, "warning"),
@@ -1706,6 +1716,23 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     ["file", "n", "text", "prompt", "keep.source", "srcfile", "encoding"],
     "behavioral",
     builtinParse,
+  ),
+  withBuiltinFormals(
+    defineBuiltin(
+      "srcfilecopy",
+      ["filename", "lines", "timestamp", "isFile"],
+      "shape",
+      builtinSourceFileCopy,
+    ),
+    [
+      { name: "filename" },
+      { name: "lines" },
+      { name: "timestamp", defaultValue: callAst("Sys.time", []) },
+      {
+        name: "isFile",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+    ],
   ),
   withBuiltinFormals(
     defineBuiltin(
@@ -3855,6 +3882,16 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   defineBuiltin("setequal", ["x", "y"], "behavioral", builtinSetEqual),
   defineBuiltin("match", ["x", "table", "nomatch"], "behavioral", builtinMatch),
+  withBuiltinFormals(
+    defineBuiltin("match.fun", ["FUN", "descend"], "behavioral", builtinMatchFunction),
+    [
+      { name: "FUN" },
+      {
+        name: "descend",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
   defineBuiltin("match.arg", ["arg", "choices", "several.ok"], "behavioral", builtinMatchArgument),
   defineBuiltin("which", ["x"], "behavioral", builtinWhich),
   defineBuiltin("which.max", ["x"], "behavioral", (invocation) =>
@@ -14337,6 +14374,25 @@ async function builtinWarningCondition(invocation: BuiltinInvocation): Promise<R
   return withClasses(listValue(values, names), [...customClasses, "warning", "condition"]);
 }
 
+async function builtinSimpleCondition(
+  invocation: BuiltinInvocation,
+  constructor: "simpleCondition" | "simpleError" | "simpleWarning" | "simpleMessage",
+): Promise<RValue> {
+  const matched = await matchExact(invocation, ["message", "call"]);
+  const supplied = required(matched, "message", constructor);
+  const message =
+    constructor === "simpleMessage"
+      ? supplied
+      : conditionConstructorCharacters(supplied, "message", invocation);
+  const call = matched.get("call") ?? R_NULL;
+  const classes =
+    constructor === "simpleCondition"
+      ? ["simpleCondition", "condition"]
+      : [constructor, constructor.slice(6).toLowerCase(), "condition"];
+  invocation.context.allocate(classes.length + 2);
+  return withClasses(listValue([message, call], ["message", "call"]), classes);
+}
+
 function matchConditionConstructorArguments(invocation: BuiltinInvocation): {
   readonly formals: ReadonlyMap<"message" | "class" | "call", BuiltinCallArgument>;
   readonly dots: readonly BuiltinCallArgument[];
@@ -15209,6 +15265,39 @@ async function builtinParse(invocation: BuiltinInvocation): Promise<RExpression>
   const program = invocation.parse(parseTextSource(text), maxExpressions);
   invocation.context.allocate(program.body.length);
   return { type: "expression", values: Object.freeze([...program.body]) };
+}
+
+async function builtinSourceFileCopy(invocation: BuiltinInvocation): Promise<REnvironment> {
+  const matched = await matchExact(invocation, ["filename", "lines", "timestamp", "isFile"]);
+  const filename = characterScalar(required(matched, "filename", "srcfilecopy"), "filename");
+  const suppliedLines = required(matched, "lines", "srcfilecopy");
+  const lines =
+    suppliedLines.type === "null"
+      ? characterVector([])
+      : isAtomic(suppliedLines)
+        ? coerceAtomicToCharacter(suppliedLines, invocation)
+        : suppliedLines.type === "list" || suppliedLines.type === "pairlist"
+          ? characterVector(suppliedLines.values.map(globListElementText))
+          : undefined;
+  if (lines === undefined) {
+    throw new RTypeMismatchError("NRT3443", "srcfilecopy(lines=) must be coercible to character.");
+  }
+  const timestamp =
+    matched.get("timestamp") ??
+    withClasses(doubleVector([Date.now() / 1_000]), ["POSIXct", "POSIXt"]);
+  const isFile = logicalFlag(matched.get("isFile"), false, "isFile");
+  const environment = createEnvironment(invocation.emptyEnvironment(), true);
+  const state = virtualTextFileState(invocation);
+  setBinding(environment, "wd", characterVector([state.workingDirectory]));
+  setBinding(environment, "lines", lines);
+  setBinding(environment, "Enc", characterVector(["unknown"]));
+  setBinding(environment, "isFile", logicalVector([isFile]));
+  setBinding(environment, "timestamp", timestamp);
+  setBinding(environment, "filename", characterVector([filename]));
+  setBinding(environment, "fixedNewlines", logicalVector([true]));
+  environment.attributes.set("class", characterVector(["srcfilecopy", "srcfile"]));
+  invocation.context.allocate(lines.length + 9);
+  return environment;
 }
 
 async function builtinSource(invocation: BuiltinInvocation): Promise<RList> {
@@ -47111,26 +47200,23 @@ async function builtinSapply(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinVapply(invocation: BuiltinInvocation): Promise<RValue> {
-  let inputArgument: BuiltinCallArgument | undefined;
-  let functionArgument: BuiltinCallArgument | undefined;
-  let templateArgument: BuiltinCallArgument | undefined;
-  let useNames = true;
-  const extras: BuiltinCallArgument[] = [];
-  for (const argument of invocation.arguments) {
-    if (argument.name === "X") inputArgument = uniqueArgument(inputArgument, argument, "X");
-    else if (argument.name === "FUN")
-      functionArgument = uniqueArgument(functionArgument, argument, "FUN");
-    else if (argument.name === "FUN.VALUE")
-      templateArgument = uniqueArgument(templateArgument, argument, "FUN.VALUE");
-    else if (argument.name === "USE.NAMES") {
-      useNames = logicalFlag(await invocation.force(argument.promise), true, "USE.NAMES");
-    } else if (argument.name === undefined && inputArgument === undefined) inputArgument = argument;
-    else if (argument.name === undefined && functionArgument === undefined)
-      functionArgument = argument;
-    else if (argument.name === undefined && templateArgument === undefined)
-      templateArgument = argument;
-    else extras.push(argument);
-  }
+  const { matched, dots } = matchBuiltinArguments(invocation, [
+    "X",
+    "FUN",
+    "FUN.VALUE",
+    "...",
+    "USE.NAMES",
+  ]);
+  const inputArgument = matched.get("X");
+  const functionArgument = matched.get("FUN");
+  const templateArgument = matched.get("FUN.VALUE");
+  const useNames = logicalFlag(
+    matched.has("USE.NAMES")
+      ? await invocation.force(matched.get("USE.NAMES")!.promise)
+      : undefined,
+    true,
+    "USE.NAMES",
+  );
   if (
     inputArgument === undefined ||
     functionArgument === undefined ||
@@ -47144,7 +47230,7 @@ async function builtinVapply(invocation: BuiltinInvocation): Promise<RValue> {
   if ((input.type !== "null" && !isVector(input)) || !isAtomic(template)) {
     throw new RTypeMismatchError("NRT3176", "vapply() requires a vector X and atomic FUN.VALUE.");
   }
-  const forwarded = await forceForwarded(invocation, extras);
+  const forwarded = await forceForwarded(invocation, dots);
   const results =
     input.type === "null" ? [] : await mapVector(invocation, input, callable, forwarded);
   const inputNames = input.type === "null" ? undefined : vectorNames(input);
@@ -50479,6 +50565,66 @@ async function builtinMatchArgument(invocation: BuiltinInvocation): Promise<RVal
     }
   }
   return subsetVector(choices, integerVector(selected), invocation.context);
+}
+
+async function builtinMatchFunction(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = matchLazyArguments(invocation, ["FUN", "descend"]);
+  const argument = matched.get("FUN");
+  if (argument === undefined || argument.promise.missing) {
+    throw new REvaluationError("NRE2103", 'Argument "FUN" is missing in match.fun().');
+  }
+  const value = await invocation.force(argument.promise);
+  if (value.type === "closure" || value.type === "builtin") return value;
+
+  const descend = await lazyLogicalFlag(invocation, matched.get("descend"), true, "descend");
+  const name =
+    value.type === "symbol"
+      ? value.name
+      : value.type === "character" && value.length === 1
+        ? isMissing(value, 0)
+          ? "NA"
+          : (value.values[0] ?? "")
+        : matchFunctionArgumentName(invocation, argument);
+  if (name === undefined) {
+    throw new RTypeMismatchError(
+      "NRT3442",
+      "match.fun(FUN=) requires a function, one character string, or a symbol.",
+    );
+  }
+
+  let environment: REnvironment | null = invocation.parentFrame(1);
+  while (environment !== null) {
+    invocation.context.checkpoint();
+    const binding = environment.bindings.get(name);
+    if (binding !== undefined) {
+      const candidate = binding.type === "dots" ? R_NULL : await invocation.force(binding);
+      if (candidate.type === "closure" || candidate.type === "builtin") return candidate;
+      if (!descend) {
+        throw new RTypeMismatchError("NRT3442", `Found non-function '${name}'.`);
+      }
+    }
+    environment = environment.parent;
+  }
+  throw new REvaluationError("NRE2001", `Object '${name}' of mode 'function' was not found.`);
+}
+
+function matchFunctionArgumentName(
+  invocation: BuiltinInvocation,
+  argument: BuiltinCallArgument,
+): string | undefined {
+  let expression = argument.promise.expression;
+  let environment = argument.promise.environment;
+  const visited = new Set<RBinding>();
+  while (expression?.kind === "Identifier") {
+    const name = expression.name;
+    const binding = environment.bindings.get(name);
+    if (binding === undefined || invocation.isGlobalEnvironment(environment)) return name;
+    if (binding.type !== "promise" || visited.has(binding)) return undefined;
+    visited.add(binding);
+    expression = binding.expression;
+    environment = binding.environment;
+  }
+  return undefined;
 }
 
 async function matchArgumentSeveralOk(

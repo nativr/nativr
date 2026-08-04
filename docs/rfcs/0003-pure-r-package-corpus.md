@@ -26,6 +26,15 @@ normalization of bounded bzip2-compressed package data. Both packages moved to r
 usage-ranked pure-R packages `evaluate 1.0.5` and `numDeriv 2016.8-1.1` are the new uninspected P0
 holdouts.
 
+The third holdout rotation evaluated `evaluate 1.0.5` and `numDeriv 2016.8-1.1` using release
+metadata, public documentation, public API calls, and black-box GNU R observations without first
+inspecting their R source. Both install, load, attach, and execute declared representative public
+functions unchanged, so they move to P4 regression. Reusable gaps covered callable resolution and
+exact formals, simple condition/source-reference shapes, post-ellipsis builtin argument matching,
+and recursive data-frame columns. Usage-ranked pure-R packages `abind 1.4-8` and `rprojroot 2.1.1`
+are the new uninspected P0 holdouts; only their release metadata and source-archive digests have
+been admitted.
+
 ## Validation tiers
 
 | Tier | Required evidence                              |
