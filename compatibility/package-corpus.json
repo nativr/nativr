@@ -251,25 +251,49 @@
     {
       "package": "zeallot",
       "version": "0.2.0",
-      "partition": "holdout",
+      "partition": "regression",
       "sourceUrl": "https://cloud.r-project.org/src/contrib/zeallot_0.2.0.tar.gz",
       "sourceSha256": "7f6b97dbb7cd762f76f7319b3e2b38f3d4206fe625d363da1b5f96c928da92bb",
-      "artifactSha256": null,
-      "tier": "P0",
-      "status": "unevaluated",
-      "evidence": "Dependency-free pure-R release metadata and source-archive integrity only; package code has not been evaluated or used to guide implementation.",
+      "artifactSha256": "e679272f5d80b5146960fc707a147d6b160d423dfecf56d66523000be30e9971",
+      "tier": "P4",
+      "status": "passing",
+      "evidence": "packages/package-tools/test/external-package.test.ts",
       "firstBlocker": null
     },
     {
       "package": "ini",
       "version": "0.3.1",
-      "partition": "holdout",
+      "partition": "regression",
       "sourceUrl": "https://cloud.r-project.org/src/contrib/ini_0.3.1.tar.gz",
       "sourceSha256": "7b191a54019c8c52d6c2211c14878c95564154ec4865f57007953742868cd813",
+      "artifactSha256": "a379851668bc01062386e5e1d5cbc64157eb7cf9c69d14258e9eacec5b4bd30c",
+      "tier": "P4",
+      "status": "passing",
+      "evidence": "packages/package-tools/test/external-package.test.ts",
+      "firstBlocker": null
+    },
+    {
+      "package": "cpp11",
+      "version": "0.5.5",
+      "partition": "holdout",
+      "sourceUrl": "https://cloud.r-project.org/src/contrib/cpp11_0.5.5.tar.gz",
+      "sourceSha256": "72486beb0605c1229bf3d422cd536224af8dc09bd389a3116f62f4c7705c62f4",
       "artifactSha256": null,
       "tier": "P0",
       "status": "unevaluated",
-      "evidence": "Dependency-free pure-R release metadata and source-archive integrity only; package code has not been evaluated or used to guide implementation.",
+      "evidence": "Usage-ranked dependency-free pure-R release metadata and source-archive integrity only; package code has not been evaluated or used to guide implementation.",
+      "firstBlocker": null
+    },
+    {
+      "package": "otel",
+      "version": "0.2.0",
+      "partition": "holdout",
+      "sourceUrl": "https://cloud.r-project.org/src/contrib/otel_0.2.0.tar.gz",
+      "sourceSha256": "ef8afe5a1bc8074bbeb8a84134699ef348a1f8ac629ffba25ee43ea7bcd8dd17",
+      "artifactSha256": null,
+      "tier": "P0",
+      "status": "unevaluated",
+      "evidence": "Usage-ranked dependency-free pure-R release metadata and source-archive integrity only; package code has not been evaluated or used to guide implementation.",
       "firstBlocker": null
     }
   ]

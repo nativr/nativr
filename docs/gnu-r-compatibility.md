@@ -1180,3 +1180,14 @@ holdouts.
 The profile also closes advisory-oracle mismatches for symbol/language coercion in `Sys.which()` and
 eager logical validation of `help(verbose=)`. Executable discovery remains limited to the explicit
 session allow-list, and help rendering remains browser-owned.
+
+## Seventh source-blind package rotation
+
+Language subset 0.286 adds bounded `startsWith()`/`endsWith()` and `regexec()` capture locations,
+symbol/language equality, constructed assignment-call evaluation, promise-origin-aware
+`parent.frame()`, runtime constants in normalized language objects, and recursive `as.character()`
+coercion. The three new GNU R names raise current overlap to 691 of 2,522; this is inventory, not
+behavioral completion. Digest-pinned unchanged zeallot 0.2.0 and ini 0.3.1 install, load, attach,
+and reach P4 through representative public surfaces. This does not claim complete regex identity,
+every export, P5-P7, or arbitrary-package compatibility. Uninspected cpp11 0.5.5 and otel 0.2.0
+remain P0 holdouts.

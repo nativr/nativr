@@ -1818,6 +1818,12 @@ ties:
      apply-family matching, factor-label comparison, and atomic-to-list replacement semantics. Full
      regex-engine identity, every export, P5-P7, and arbitrary packages remain unclaimed; zeallot
      0.2.0 and ini 0.3.1 replace them as untouched P0 holdouts.
+176. Source-blind package generalization: unchanged zeallot 0.2.0 and ini 0.3.1 now reach P4 after
+     their public manuals and black-box GNU R behavior were frozen. The reusable increment covers
+     string affixes, capture locations, language equality, constructed assignment, promise-origin
+     caller frames, embedded runtime constants, and recursive character coercion. Every export,
+     complete regex identity, P5-P7, and arbitrary packages remain unclaimed; usage-ranked cpp11
+     0.5.5 (package rank 13) and otel 0.2.0 (rank 29) are the next untouched P0 holdouts.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

@@ -61,6 +61,15 @@ atomic replacement promotion by list values. Dependency-free pure-R releases `ze
 `ini 0.3.1` replace them as uninspected P0 holdouts; only release metadata and source-archive
 digests have been admitted.
 
+The seventh holdout rotation evaluated `zeallot 0.2.0` and `ini 0.3.1` only after their release
+metadata, public manuals, source-archive digests, and black-box GNU R behavior were frozen. Both
+install, load, attach, and execute representative declared public behavior unchanged, so they move
+to P4 regression. Reusable gaps covered `startsWith()`/`endsWith()`, `regexec()` capture locations,
+language equality, first-class constructed assignment, promise-origin-aware `parent.frame()`,
+runtime constants embedded in language objects, and recursive `as.character()` coercion. The next
+untouched P0 holdouts are usage-ranked `cpp11 0.5.5` and `otel 0.2.0`; only public metadata and
+source-archive integrity have been admitted.
+
 ## Validation tiers
 
 | Tier | Required evidence                              |

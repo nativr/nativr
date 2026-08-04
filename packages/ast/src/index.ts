@@ -235,6 +235,13 @@ export interface UnsupportedExpressionNode extends AstNodeBase {
   readonly feature: string;
 }
 
+/** A runtime-created constant embedded in a language object, with syntax used only for display. */
+export interface ConstantExpressionNode extends AstNodeBase {
+  readonly kind: "ConstantExpression";
+  readonly value: unknown;
+  readonly display: AstNode;
+}
+
 /** The normalized syntax union exposed by the parser package. */
 export type AstNode =
   | ProgramNode
@@ -264,6 +271,7 @@ export type AstNode =
   | NamespaceExpressionNode
   | FormulaExpressionNode
   | PipeExpressionNode
+  | ConstantExpressionNode
   | UnsupportedExpressionNode;
 
 /** Assert exhaustiveness in discriminated-union switches. */

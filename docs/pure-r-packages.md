@@ -379,6 +379,11 @@ separately from each normalized NativR artifact digest. All nineteen reach at le
   vector match/extract calls, named capture columns, no-match shapes, and factor input;
 - [`whisker 0.4.1`](https://cran.r-project.org/package=whisker) reaches P4 through public template
   rendering over scalars, sections, inverted sections, escaped/unescaped values, and triple braces.
+- [`zeallot 0.2.0`](https://cran.r-project.org/package=zeallot) reaches P4 through nested,
+  collected, skipped, defaulted, named, rightward, data-frame, and custom-S3 destructuring
+  assignment;
+- [`ini 0.3.1`](https://cran.r-project.org/package=ini) reaches P4 through browser-owned INI
+  parsing, exact section/key/value shapes, serialization, invisible return, and read-back.
 
 No package source is checked into this repository. Together these tests exercise repository
 installation, runtime package files, namespace loading, qualified S3 registration, metaprogramming,
@@ -398,7 +403,7 @@ contains only reusable color interpolation, frame, warning, and arithmetic seman
 
 The machine-readable [package corpus](../compatibility/package-corpus.json) is authoritative for
 development/regression/holdout membership, source and artifact digests, completed tier, and first
-blocker. The current uninspected P0 holdouts are `zeallot 0.2.0` and `ini 0.3.1`; only release
+blocker. The current uninspected P0 holdouts are `cpp11 0.5.5` and `otel 0.2.0`; only release
 metadata and source-archive digests have been admitted for them. These proofs must not be summarized
 as a single unqualified “supported packages” count.
 
@@ -425,6 +430,14 @@ backreferences, capture-free `strsplit()`, three-phase apply-family matching, fa
 equality/membership, and atomic `[<-` promotion for list right-hand sides. Unchanged rematch and
 whisker install, load, attach, and execute their declared public surfaces at P4. Full POSIX/PCRE
 equivalence, every exported function, P5-P7, and arbitrary package compatibility remain unclaimed.
+
+The seventh source-blind rotation likewise adds no package adapter. Generic semantics now preserve
+runtime constants embedded by `call()`, `as.call()`, `substitute()`, and `bquote()`; evaluate
+constructed assignment calls; resolve `parent.frame()` relative to the promise's evaluation origin;
+coerce language/list/pairlist/expression values through `as.character()`; and provide bounded
+`startsWith()`, `endsWith()`, `regexec()`, and language equality. Unchanged zeallot and ini reach
+P4, but this does not claim every export path, complete regex equivalence, P5-P7, or arbitrary
+packages.
 
 The checked-in source-only fixture also exports a function that calls `grDevices::rainbow`,
 `terrain.colors`, `topo.colors`, and `cm.colors` through its namespace. This is a small executable

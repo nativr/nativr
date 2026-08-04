@@ -203,6 +203,8 @@ export function estimateRObjectSize(value: RValue, checkpoint: () => void): numb
         );
       case "PipeExpression":
         return syntheticCallBytes(node.operator, [node.left, node.right]);
+      case "ConstantExpression":
+        return NODE_BYTES + visitValue(node.value as RValue);
     }
   };
 

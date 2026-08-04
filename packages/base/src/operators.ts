@@ -1,6 +1,8 @@
 import {
   RTypeMismatchError,
   RUnsupportedFeatureError,
+  characterVector,
+  deparseAst,
   complexVector,
   doubleVector,
   factorLevels,
@@ -384,13 +386,15 @@ function compareVectors(
   left: RValue,
   right: RValue,
 ): RLogicalVector {
-  if (left.type === "null" || right.type === "null") {
-    if (left.type !== "null") requireComparable(left, operator);
-    if (right.type !== "null") requireComparable(right, operator);
+  const normalizedLeft = languageComparisonValue(left, operator);
+  const normalizedRight = languageComparisonValue(right, operator);
+  if (normalizedLeft.type === "null" || normalizedRight.type === "null") {
+    if (normalizedLeft.type !== "null") requireComparable(normalizedLeft, operator);
+    if (normalizedRight.type !== "null") requireComparable(normalizedRight, operator);
     return logicalVector([]);
   }
-  const lhs = requireComparable(left, operator);
-  const rhs = requireComparable(right, operator);
+  const lhs = requireComparable(normalizedLeft, operator);
+  const rhs = requireComparable(normalizedRight, operator);
   if (isFactor(lhs) && isFactor(rhs)) {
     const leftLevels = factorLevels(lhs);
     const rightLevels = factorLevels(rhs);
@@ -437,6 +441,17 @@ function compareVectors(
     }
   }
   return logicalVector(values, compactMask(missing));
+}
+
+function languageComparisonValue(value: RValue, operator: string): RValue {
+  if (value.type !== "symbol" && value.type !== "language") return value;
+  if (operator !== "==" && operator !== "!=") {
+    throw new RTypeMismatchError(
+      "NRT3114",
+      `comparison (${operator}) is not possible for language types`,
+    );
+  }
+  return characterVector([value.type === "symbol" ? value.name : deparseAst(value.expression)]);
 }
 
 function logicalVectors(

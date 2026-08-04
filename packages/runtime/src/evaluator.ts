@@ -1,5 +1,6 @@
 import { assertNever } from "@nativr/ast";
 import type {
+  AssignmentExpressionNode,
   AstNode,
   CallArgument,
   CallExpressionNode,
@@ -1406,6 +1407,8 @@ export class Evaluator {
         };
       case "PipeExpression":
         return this.#evaluatePipe(node, environment, context);
+      case "ConstantExpression":
+        return { value: node.value as RValue, visible: true };
       case "UnsupportedExpression":
         throw unsupported(node.feature, node.span);
       default:
@@ -1909,6 +1912,54 @@ export class Evaluator {
     environment: REnvironment,
     context: EvaluationContext,
   ): Promise<EvaluationResult> {
+    if (
+      node.callee.kind === "Identifier" &&
+      ["<-", "=", "<<-", "->", "->>"].includes(node.callee.name)
+    ) {
+      const operator = node.callee.name as AssignmentExpressionNode["operator"];
+      if (node.arguments.length !== 2) {
+        throw new REvaluationError(
+          "NRE2102",
+          `Assignment operator '${node.callee.name}' requires exactly two arguments.`,
+          { span: node.span },
+        );
+      }
+      const rightward = operator === "->" || operator === "->>";
+      const target = node.arguments[rightward ? 1 : 0]?.value;
+      const value = node.arguments[rightward ? 0 : 1]?.value;
+      if (target === undefined || value === undefined) {
+        throw new REvaluationError("NRE2102", "Invalid assignment call.", { span: node.span });
+      }
+      if (target.kind === "Identifier") {
+        return this.#evaluateNode(
+          {
+            kind: "AssignmentExpression",
+            operator,
+            target,
+            value,
+            span: node.span,
+          },
+          environment,
+          context,
+        );
+      }
+      if (target.kind === "SubsetExpression" || target.kind === "CallExpression") {
+        return this.#evaluateNode(
+          {
+            kind: "ReplacementExpression",
+            operator,
+            target,
+            value,
+            span: node.span,
+          },
+          environment,
+          context,
+        );
+      }
+      throw new REvaluationError("NRE2102", "Invalid left-hand side in assignment call.", {
+        span: target.span,
+      });
+    }
     const callable = await this.#evaluateCallable(node.callee, environment, context);
     return this.#invokeCallableResult(
       callable,
@@ -2148,7 +2199,17 @@ export class Evaluator {
         currentEnvironment: () =>
           callerEnvironment ?? args[0]?.promise.environment ?? this.#globalEnvironment,
         parentFrame: (offset) => {
-          const index = this.#closureCallFrames.length - offset;
+          const evaluationEnvironment =
+            callerEnvironment ?? args[0]?.promise.environment ?? this.#globalEnvironment;
+          let currentIndex = -1;
+          for (let index = this.#closureCallFrames.length - 1; index >= 0; index -= 1) {
+            if (this.#closureCallFrames[index]?.environment === evaluationEnvironment) {
+              currentIndex = index;
+              break;
+            }
+          }
+          if (currentIndex < 0) currentIndex = this.#closureCallFrames.length - 1;
+          const index = currentIndex - (offset - 1);
           return index >= 0
             ? (this.#closureCallFrames[index]?.callerEnvironment ?? this.#globalEnvironment)
             : this.#globalEnvironment;

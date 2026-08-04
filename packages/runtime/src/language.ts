@@ -77,6 +77,8 @@ export function deparseAst(node: AstNode): string {
         : `${deparseAst(node.left)} ~ ${deparseAst(node.right)}`;
     case "PipeExpression":
       return `(${deparseAst(node.left)} ${node.operator} ${deparseAst(node.right)})`;
+    case "ConstantExpression":
+      return deparseAst(node.display);
     case "UnsupportedExpression":
       if (node.feature === "missing argument") return "";
       if (node.feature === "dots") return "...";

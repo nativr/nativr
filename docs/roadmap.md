@@ -908,11 +908,13 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      environment-scoped `utils::globalVariables` behavior. The sixth source-blind rotation moves
      unchanged `rematch 2.0.0` and `whisker 0.4.1` to P4 through generic dimension/name replacement,
      regex/replacement/splitting, apply-family matching, factor-label comparison, and atomic-to-list
-     replacement semantics. `zeallot 0.2.0` and `ini 0.3.1` are the next uninspected P0 holdouts.
-     RStudio host operations and inline's native compilation surface remain explicit
-     platform/Wasm-ABI work. Language-object subsetting still blocks deeper
-     `abind::acorn()`/`abind::asub()` breadth and remains foundational work rather than a
-     package-specific patch.
+     replacement semantics. The seventh rotation moves unchanged `zeallot 0.2.0` and `ini 0.3.1` to
+     P4 through generic string-affix/capture-location semantics, language equality, constructed
+     assignment, promise-origin caller frames, embedded runtime constants, and recursive character
+     coercion. `cpp11 0.5.5` and `otel 0.2.0` are the next uninspected P0 holdouts. RStudio host
+     operations and inline's native compilation surface remain explicit platform/Wasm-ABI work.
+     Language-object subsetting still blocks deeper `abind::acorn()`/`abind::asub()` breadth and
+     remains foundational work rather than a package-specific patch.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

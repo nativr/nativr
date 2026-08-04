@@ -1518,3 +1518,157 @@ it.runIf(runExternal)(
   },
   30_000,
 );
+
+it.runIf(runExternal)(
+  "packs, loads, and exercises the unchanged public zeallot 0.2.0 pure-R package",
+  async () => {
+    let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    try {
+      const installed = await installPackagesFromRepository(["zeallot"]);
+      expect(installed.artifacts[0]).toMatchObject({
+        package: { name: "zeallot", version: "0.2.0" },
+        compatibility: { packaging: "ready", execution: "unchecked" },
+        integrity: {
+          algorithm: "sha256",
+          value: "e679272f5d80b5146960fc707a147d6b160d423dfecf56d66523000be30e9971",
+        },
+      });
+      runtime = await createR({
+        execution: "inline",
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+        packages: installed.bundles,
+      });
+      await expect(runtime.eval('requireNamespace("zeallot", quietly = TRUE)')).resolves.toBe(true);
+      await expect(runtime.eval('as.character(packageVersion("zeallot"))')).resolves.toBe("0.2.0");
+      await expect(runtime.eval('sort(getNamespaceExports("zeallot"))')).resolves.toEqual([
+        "%->%",
+        "%<-%",
+        "destructure",
+        "zeallous",
+      ]);
+      await expect(
+        runtime.eval(`
+          library(zeallot)
+          c(first, second) %<-% list(1, 2)
+          c(first, second, "package:zeallot" %in% search())
+        `),
+      ).resolves.toEqual([1, 2, 1]);
+      await expect(
+        runtime.eval(`
+          c(head, c(middle, tail)) %<-% list("a", list("b", "c"))
+          c(head, middle, tail)
+        `),
+      ).resolves.toEqual(["a", "b", "c"]);
+      await expect(
+        runtime.eval(`
+          c(first, ..rest) %<-% as.list(1:4)
+          c(first, unlist(rest))
+        `),
+      ).resolves.toEqual([1, 2, 3, 4]);
+      await expect(
+        runtime.eval(`
+          c(alpha, ., omega) %<-% list(1, 2, 3)
+          c(required, fallback = "default") %<-% list("set")
+          c(second=) %<-% list(first = 1, second = 2, third = 3)
+          c(alpha, omega, required, fallback, second)
+        `),
+      ).resolves.toEqual(["1", "3", "set", "default", "2"]);
+      await expect(
+        runtime.eval(`
+          list(1, 2, "a", "b") %->% c(x, y, ..z)
+          shape <- function(sides = 4, color = "red") {
+            structure(list(sides = sides, color = color), class = "shape")
+          }
+          destructure.shape <- function(x) unclass(x)
+          c(sides, color) %<-% shape(3, "green")
+          c(x, y, unlist(z), sides, color)
+        `),
+      ).resolves.toEqual(["1", "2", "a", "b", "3", "green"]);
+      await expect(
+        runtime.eval(`
+          c(numbers, letters) %<-% data.frame(
+            numbers = 1:2, letters = c("a", "b"), stringsAsFactors = FALSE
+          )
+          c(numbers, letters)
+        `),
+      ).resolves.toEqual(["1", "2", "a", "b"]);
+    } finally {
+      await runtime?.dispose();
+    }
+  },
+  30_000,
+);
+
+it.runIf(runExternal)(
+  "packs, loads, and exercises the unchanged public ini 0.3.1 pure-R package",
+  async () => {
+    let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    try {
+      const installed = await installPackagesFromRepository(["ini"]);
+      expect(installed.artifacts[0]).toMatchObject({
+        package: { name: "ini", version: "0.3.1" },
+        compatibility: { packaging: "ready", execution: "unchecked" },
+        integrity: {
+          algorithm: "sha256",
+          value: "a379851668bc01062386e5e1d5cbc64157eb7cf9c69d14258e9eacec5b4bd30c",
+        },
+      });
+      runtime = await createR({
+        execution: "inline",
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+        packages: installed.bundles,
+      });
+      await expect(runtime.eval('requireNamespace("ini", quietly = TRUE)')).resolves.toBe(true);
+      await expect(runtime.eval('as.character(packageVersion("ini"))')).resolves.toBe("0.3.1");
+      await expect(runtime.eval('sort(getNamespaceExports("ini"))')).resolves.toEqual([
+        "read.ini",
+        "write.ini",
+      ]);
+      await expect(
+        runtime.eval(`
+          writeLines(c(
+            "; comment", "[  Hello World]", " Foo = Bar ", "Foo1=Bar=345", "",
+            "[second]", "answer=42", "empty="
+          ), "input.ini")
+          parsed <- ini::read.ini("input.ini")
+          c(names(parsed), names(parsed[[1]]), unname(unlist(parsed)))
+        `),
+      ).resolves.toEqual(["Hello World", "second", "Foo", "Foo1", "Bar", "Bar=345", "42"]);
+      await expect(
+        runtime.eval(`
+          parsed <- list(
+            "Hello World" = list(Foo = "Bar", Foo1 = "Bar=345"),
+            second = list(answer = "42", empty = "")
+          )
+          returned <- ini::write.ini(parsed, "output.ini")
+          c(is.null(returned), readLines("output.ini"))
+        `),
+      ).resolves.toEqual([
+        "TRUE",
+        "[Hello World]",
+        "Foo=Bar",
+        "Foo1=Bar=345",
+        "",
+        "[second]",
+        "answer=42",
+        "empty=",
+        "",
+      ]);
+    } finally {
+      await runtime?.dispose();
+    }
+  },
+  30_000,
+);

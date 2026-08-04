@@ -2467,6 +2467,16 @@ language values through ordinary character decomposition before its explicit all
 `help()` forces and validates `verbose=` even when it finds the topic. These are reusable Base/utils
 semantics, not host process discovery or desktop help integration.
 
+The seventh source-blind rotation evaluates zeallot and ini only after recording public manuals,
+formals, representative black-box GNU R results, and source digests. Both reach P4 unchanged. The
+reusable contract increment adds bounded `startsWith()`/`endsWith()`, `regexec()` capture locations,
+language equality, constructed assignment calls, promise-origin-aware `parent.frame()`, embedded
+runtime constants for `call()`/`as.call()`/`substitute()`/`bquote()`, and recursive `as.character()`
+coercion. Evidence covers nested/collector/default/named/rightward/data-frame/S3 destructuring plus
+browser-owned INI parsing and serialization. Complete regex identity, every export, P5-P7, and
+arbitrary-package execution remain unclaimed. `cpp11 0.5.5` and `otel 0.2.0` remain uninspected P0
+holdouts.
+
 Package admission is not universal execution compatibility. Package `data/*.R`, `.csv`, `.tab`,
 `.txt`, and XDR/gzip `.rda`/`.RData` discovery/loading is supported through `utils::data`, including
 explicit target environments and overwrite protection. The package tool normalizes bzip2-wrapped

@@ -130,32 +130,37 @@ Date: 2026-08-03
   `withr 3.0.3`, `R6 2.6.1`, `viridisLite 0.4.3`, `RColorBrewer 1.1-3`, `labeling 0.4.3`,
   `assertthat 0.2.1`, `crayon 1.5.3`, `praise 1.0.0`, `prettyunits 1.2.0`, `evaluate 1.0.5`,
   `numDeriv 2016.8-1.1`, `abind 1.4-8`, `rprojroot 2.1.1`, `rstudioapi 0.19.0`, `inline 0.3.21`,
-  `rematch 2.0.0`, and `whisker 0.4.1`. Completed tiers and blockers are generated from the package
-  corpus rather than collapsed into a supported/unsupported label. The latest proofs cover
-  package-owned S3 dispatch, a generated `with_options()` wrapper using call/formal/environment
-  replacement, `bquote`, dynamic caller frames, hooks, and state restoration, plus `with_envvar()`
-  mutation and cleanup through session-owned environment variables, plus unchanged R6 generator
-  construction, object instantiation, public/private method calls, reference field mutation, and an
-  active read/write field, plus shallow and recursive deep cloning of nested R6 objects, without
-  translating or patching package code. The same unchanged package now constructs a three-level
-  hierarchy and executes recursive `super$initialize()`/`super$greet()` paths with inherited fields,
-  methods, and class membership. Unchanged viridisLite loads its package-owned 256-anchor map and
-  executes Viridis, Magma, and reversed translucent palettes through generic Lab spline and matrix
-  arithmetic. Unchanged RColorBrewer constructs its exported 35-row palette metadata with explicit
-  row names, then executes exact Set1/Blues palettes and the recursive minimum-size warning path.
-  Unchanged labeling reaches P4 across all nine labeling algorithms; `extended.figures()` records
-  `axis(xlab=)` as its first P5 blocker after exercising shared parallel extrema and histogram
-  paths. The third blind rotation carries unchanged evaluate through its public handler/predicate
-  APIs and unchanged numDeriv through public gradient/Jacobian calculations. The fourth blind
-  rotation carries unchanged abind through array binding/drop operations and unchanged rprojroot
-  through S3 criterion composition plus virtual-filesystem root discovery. The fifth blind rotation
-  carries unchanged rstudioapi through document-position/range construction and outside-RStudio
-  availability checks, and unchanged inline through plugin registration/query. The sixth blind
-  rotation carries unchanged rematch through public match/extract shapes and unchanged whisker
-  through scalar, section, inverted, escaped, and triple-brace rendering. Its reusable increment
-  covers row/column dimensions and names, regex/replacement/splitting boundaries, apply-family
-  argument matching, factor-label comparisons, and list-valued atomic replacement promotion. Native
-  compilation remains outside P4 evidence. The next untouched P0 pair is zeallot and ini.
+  `rematch 2.0.0`, `whisker 0.4.1`, `zeallot 0.2.0`, and `ini 0.3.1`. Completed tiers and blockers
+  are generated from the package corpus rather than collapsed into a supported/unsupported label.
+  The latest proofs cover package-owned S3 dispatch, a generated `with_options()` wrapper using
+  call/formal/environment replacement, `bquote`, dynamic caller frames, hooks, and state
+  restoration, plus `with_envvar()` mutation and cleanup through session-owned environment
+  variables, plus unchanged R6 generator construction, object instantiation, public/private method
+  calls, reference field mutation, and an active read/write field, plus shallow and recursive deep
+  cloning of nested R6 objects, without translating or patching package code. The same unchanged
+  package now constructs a three-level hierarchy and executes recursive
+  `super$initialize()`/`super$greet()` paths with inherited fields, methods, and class membership.
+  Unchanged viridisLite loads its package-owned 256-anchor map and executes Viridis, Magma, and
+  reversed translucent palettes through generic Lab spline and matrix arithmetic. Unchanged
+  RColorBrewer constructs its exported 35-row palette metadata with explicit row names, then
+  executes exact Set1/Blues palettes and the recursive minimum-size warning path. Unchanged labeling
+  reaches P4 across all nine labeling algorithms; `extended.figures()` records `axis(xlab=)` as its
+  first P5 blocker after exercising shared parallel extrema and histogram paths. The third blind
+  rotation carries unchanged evaluate through its public handler/predicate APIs and unchanged
+  numDeriv through public gradient/Jacobian calculations. The fourth blind rotation carries
+  unchanged abind through array binding/drop operations and unchanged rprojroot through S3 criterion
+  composition plus virtual-filesystem root discovery. The fifth blind rotation carries unchanged
+  rstudioapi through document-position/range construction and outside-RStudio availability checks,
+  and unchanged inline through plugin registration/query. The sixth blind rotation carries unchanged
+  rematch through public match/extract shapes and unchanged whisker through scalar, section,
+  inverted, escaped, and triple-brace rendering. Its reusable increment covers row/column dimensions
+  and names, regex/replacement/splitting boundaries, apply-family argument matching, factor-label
+  comparisons, and list-valued atomic replacement promotion. Native compilation remains outside P4
+  evidence. The seventh blind rotation carries unchanged zeallot through
+  nested/collector/default/named/rightward/data-frame/S3 destructuring and unchanged ini through
+  browser-owned parsing and serialization. Its reusable increment covers constructed assignment,
+  promise-origin caller frames, embedded runtime constants, recursive character coercion, string
+  affixes, capture locations, and language equality. The next untouched P0 pair is cpp11 and otel.
 - Session environment variables are explicit, isolated runtime state. `createR()` snapshots an
   optional string map for inline or Worker execution; GNU R-shaped `Sys.getenv()`, `Sys.setenv()`,
   and `Sys.unsetenv()` query and mutate it, while reset restores the original map and host process
@@ -910,12 +915,12 @@ Date: 2026-08-03
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 14 files and 489 tests; one opt-in file with 19 external-package tests is
+- Vitest currently passes 14 files and 489 tests; one opt-in file with 21 external-package tests is
   skipped in the default run and passes when enabled.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 887/887 cases. The local GNU R 4.6.0 advisory oracle matches 835 of
-  839 eligible cases and skips 48 NativR-owned representation/random/platform/graphics/unsupported-
+- Checked-in conformance passes 890/890 cases. The local GNU R 4.6.0 advisory oracle matches 838 of
+  842 eligible cases and skips 48 NativR-owned representation/random/platform/graphics/unsupported-
   boundary cases; the four differences assert the pinned 4.6.1 target version itself. The recursive
   oracle-v2 suite passes 5/5. Release gating still requires GNU R 4.6.1 rather than this advisory
   installation.

@@ -18,6 +18,13 @@ the AST. `@nativr/base` supplies builtins and operators to the runtime. `@nativr
 wire-only schemas. `@nativr/nativr` is the only composition root and public import; the playground
 imports only it. `scripts/check-boundaries.mjs` enforces this graph.
 
+The parser emits syntax-only nodes. Runtime language constructors may additionally create a
+`ConstantExpression` node when GNU R would embed an already evaluated atomic/list value directly in
+a call object. Its opaque value remains evaluator-owned and session-local, while its syntax-only
+display node supplies deterministic deparsing; Tree-sitter never creates or observes it. This keeps
+literal list constants distinct from executable `list(...)` calls without adding a runtime
+dependency to `@nativr/ast`, generated JavaScript, or a package adapter.
+
 The default session owns a module Worker and a global environment. Requests are serialized. Inline
 mode dynamically loads the same semantic host and exists for tests and constrained environments; it
 can block its calling thread.

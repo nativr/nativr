@@ -2441,6 +2441,18 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   defineBuiltin("nchar", ["x"], "behavioral", builtinNchar),
   defineBuiltin("nzchar", ["x", "keepNA"], "behavioral", builtinNzchar, "primitive"),
+  withBuiltinFormals(
+    defineBuiltin("startsWith", ["x", "prefix"], "behavioral", (invocation) =>
+      builtinStringAffix(invocation, "prefix"),
+    ),
+    [{ name: "x" }, { name: "prefix" }],
+  ),
+  withBuiltinFormals(
+    defineBuiltin("endsWith", ["x", "suffix"], "behavioral", (invocation) =>
+      builtinStringAffix(invocation, "suffix"),
+    ),
+    [{ name: "x" }, { name: "suffix" }],
+  ),
   defineBuiltin("tolower", ["x"], "behavioral", (invocation) =>
     builtinCharacterCase(invocation, "lower"),
   ),
@@ -2503,6 +2515,34 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     ["pattern", "text", "ignore.case", "perl", "fixed", "useBytes"],
     "behavioral",
     (invocation) => builtinRegexLocations(invocation, true),
+  ),
+  withBuiltinFormals(
+    defineBuiltin(
+      "regexec",
+      ["pattern", "text", "ignore.case", "perl", "fixed", "useBytes"],
+      "behavioral",
+      builtinRegexExec,
+    ),
+    [
+      { name: "pattern" },
+      { name: "text" },
+      {
+        name: "ignore.case",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "perl",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "fixed",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "useBytes",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+    ],
   ),
   defineBuiltin("regmatches", ["x", "m", "invert"], "behavioral", builtinRegexMatches),
   defineBuiltin(
@@ -5471,7 +5511,7 @@ async function bquoteAst(
       { type: "language", expression: argument.value },
       environment,
     );
-    return valueToAst(value);
+    return embeddedCallArgumentAst(value);
   }
   switch (node.kind) {
     case "Program":
@@ -5577,6 +5617,8 @@ async function bquoteAst(
         left: await bquoteAst(node.left, environment, invocation),
         right: await bquoteAst(node.right, environment, invocation),
       };
+    case "ConstantExpression":
+      return node;
     default:
       return assertNever(node);
   }
@@ -5742,6 +5784,8 @@ function substituteAst(
       return node.feature === "dots"
         ? substituteIdentifier({ kind: "Identifier", name: "...", span: node.span }, resolve)
         : node;
+    case "ConstantExpression":
+      return node;
     default:
       return assertNever(node);
   }
@@ -5795,12 +5839,12 @@ function substituteIdentifier(
     );
   }
   if (binding.type === "promise") return promiseAst(binding);
-  return valueToAst(binding);
+  return embeddedCallArgumentAst(binding);
 }
 
 function promiseAst(promise: RBinding & { readonly type: "promise" }): AstNode {
   if (promise.expression !== null) return promise.expression;
-  if (promise.value !== undefined) return valueToAst(promise.value);
+  if (promise.value !== undefined) return embeddedCallArgumentAst(promise.value);
   return {
     kind: "UnsupportedExpression",
     feature: "missing argument",
@@ -13637,7 +13681,9 @@ function numericVersionClasses(kind: NumericVersionKind): readonly string[] {
   return ["numeric_version"];
 }
 
-function isNumericVersionValue(value: RValue): value is RList {
+function isNumericVersionValue(value: RList): boolean;
+function isNumericVersionValue(value: RValue): value is RList;
+function isNumericVersionValue(value: RValue): boolean {
   return value.type === "list" && (vectorClasses(value) ?? []).includes("numeric_version");
 }
 
@@ -17053,7 +17099,7 @@ async function builtinCall(invocation: BuiltinInvocation): Promise<RLanguage> {
   const arguments_: CallArgument[] = [];
   for (const [index, argument] of invocation.arguments.entries()) {
     if (index === nameIndex) continue;
-    const value = valueToAst(await invocation.force(argument.promise));
+    const value = embeddedCallArgumentAst(await invocation.force(argument.promise));
     arguments_.push({
       ...(argument.name === undefined ? {} : { name: argument.name }),
       value,
@@ -17077,7 +17123,9 @@ async function builtinAsCall(invocation: BuiltinInvocation): Promise<RLanguage> 
   const input = required(matched, "x", "as.call");
   const entries =
     input.type === "list"
-      ? input.values.map(valueToAst)
+      ? input.values.map((value, index) =>
+          index === 0 ? valueToAst(value) : embeddedCallArgumentAst(value),
+        )
       : input.type === "expression"
         ? [...input.values]
         : undefined;
@@ -17131,6 +17179,8 @@ async function builtinDeparse(invocation: BuiltinInvocation): Promise<RValue> {
 
 function quoteAst(node: AstNode): RValue {
   switch (node.kind) {
+    case "ConstantExpression":
+      return node.value as RValue;
     case "Identifier":
       return { type: "symbol", name: node.name } satisfies RSymbol;
     case "DoubleLiteral":
@@ -17288,6 +17338,17 @@ function valueToAst(value: RValue): AstNode {
     "NRT3209",
     `Values of type '${value.type}' cannot yet be converted into language syntax.`,
   );
+}
+
+function embeddedCallArgumentAst(value: RValue): AstNode {
+  const display = valueToAst(value);
+  if (value.type === "symbol" || value.type === "language") return display;
+  return {
+    kind: "ConstantExpression",
+    value,
+    display,
+    span: SYNTHETIC_SPAN,
+  };
 }
 
 function atomicElementAst(value: AtomicVector, index: number): AstNode {
@@ -20246,14 +20307,33 @@ async function builtinAsCharacter(invocation: BuiltinInvocation): Promise<RValue
   const input = await invocation.force(argument.promise);
   if (isHexmodeValue(input)) return asCharacterHexmode(invocation);
   if (isRomanValue(input)) return asCharacterRoman(invocation);
-  if (isNumericVersionValue(input)) return numericVersionStrings(input, invocation);
+  if (input.type === "list") {
+    if (isNumericVersionValue(input)) return numericVersionStrings(input, invocation);
+    invocation.context.allocate(input.values.length);
+    return characterVector(input.values.map(globListElementText));
+  }
   if (input.type === "null") return characterVector([]);
   if (input.type === "symbol") {
     invocation.context.allocate(1);
     return characterVector([input.name]);
   }
+  if (input.type === "language") return asVectorLanguageCharacter(input, invocation);
+  if (input.type === "expression") {
+    invocation.context.allocate(input.values.length);
+    return characterVector(input.values.map(asVectorLanguageCharacterNode));
+  }
+  if (input.type === "pairlist") {
+    invocation.context.allocate(input.values.length);
+    return characterVector(input.values.map(globListElementText));
+  }
+  if (input.type === "formula") {
+    return characterVector(formulaCharacterParts(input, invocation));
+  }
   if (!isAtomic(input)) {
-    throw new RTypeMismatchError("NRT3197", "as.character() requires NULL or an atomic vector.");
+    throw new RTypeMismatchError(
+      "NRT3197",
+      `cannot coerce type '${input.type}' to vector of type 'character'`,
+    );
   }
   return coerceAtomicToCharacter(input, invocation);
 }
@@ -25132,6 +25212,39 @@ async function builtinNzchar(invocation: BuiltinInvocation): Promise<RValue> {
   return logicalVector(values, compactMask(missing));
 }
 
+async function builtinStringAffix(
+  invocation: BuiltinInvocation,
+  kind: "prefix" | "suffix",
+): Promise<RValue> {
+  const affixName = kind === "prefix" ? "prefix" : "suffix";
+  const call = kind === "prefix" ? "startsWith" : "endsWith";
+  const matched = await matchExact(invocation, ["x", affixName]);
+  const input = required(matched, "x", call);
+  const affix = required(matched, affixName, call);
+  if (input.type !== "character" || affix.type !== "character") {
+    throw new RTypeMismatchError("NRT3280", "non-character object(s)");
+  }
+  if (input.length === 0 || affix.length === 0) return logicalVector([]);
+  const length = Math.max(input.length, affix.length);
+  const values = new Uint8Array(length);
+  const missing = new Uint8Array(length);
+  for (let index = 0; index < length; index += 1) {
+    invocation.context.checkpoint();
+    const inputIndex = index % input.length;
+    const affixIndex = index % affix.length;
+    if (isMissing(input, inputIndex) || isMissing(affix, affixIndex)) {
+      missing[index] = 1;
+      continue;
+    }
+    const text = input.values[inputIndex] ?? "";
+    const needle = affix.values[affixIndex] ?? "";
+    values[index] =
+      kind === "prefix" ? Number(text.startsWith(needle)) : Number(text.endsWith(needle));
+  }
+  invocation.context.allocate(length);
+  return logicalVector(values, compactMask(missing));
+}
+
 function nzcharKeepMissing(value: RValue): boolean {
   if (value.type === "null" || !isAtomic(value) || value.length === 0 || isMissing(value, 0)) {
     return false;
@@ -28947,6 +29060,83 @@ async function builtinRegexLocations(
   );
 }
 
+async function builtinRegexExec(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, [
+    "pattern",
+    "text",
+    "ignore.case",
+    "perl",
+    "fixed",
+    "useBytes",
+  ]);
+  const patterns = requireCharacterVector(required(matched, "pattern", "regexec"), "pattern");
+  if (patterns.length === 0 || isMissing(patterns, 0)) {
+    throw new RTypeMismatchError("NRT3255", "Invalid pattern in regexec().");
+  }
+  if (patterns.length > 1) {
+    invocation.context.warn({
+      code: "NRW1019",
+      message: "argument 'pattern' has length > 1 and only the first element will be used",
+    });
+  }
+  const pattern = patterns.values[0] ?? "";
+  const input = requireCharacterVector(required(matched, "text", "regexec"), "text");
+  const fixed = logicalFlag(matched.get("fixed"), false, "fixed");
+  let ignoreCase = logicalFlag(matched.get("ignore.case"), false, "ignore.case");
+  const perl = logicalFlag(matched.get("perl"), false, "perl");
+  if (logicalFlag(matched.get("useBytes"), false, "useBytes")) {
+    throw new RUnsupportedFeatureError(
+      "NRU6142",
+      "regexec() byte-oriented matching is outside the browser string contract.",
+    );
+  }
+  if (fixed && ignoreCase) {
+    invocation.context.warn({
+      code: "NRW1020",
+      message: "argument 'ignore.case = TRUE' will be ignored",
+    });
+    ignoreCase = false;
+  }
+  if (fixed && perl) {
+    invocation.context.warn({
+      code: "NRW1020",
+      message: "argument 'perl = TRUE' will be ignored",
+    });
+  }
+  const captureCount = fixed ? 0 : regexCaptureNames(pattern).length;
+  const output = input.values.map((text, index) => {
+    invocation.context.checkpoint();
+    if (isMissing(input, index)) {
+      let missing = integerVector([0], [1]);
+      missing = withAttribute(missing, "match.length", integerVector([0], [1]));
+      return missing;
+    }
+    const span = browserMatchSpans(
+      invocation,
+      pattern,
+      text,
+      fixed,
+      ignoreCase,
+      false,
+      captureCount > 0,
+      perl,
+    )[0];
+    if (span === undefined) return regexLocationVector([-1], [-1]);
+    const captures = Array.from(
+      { length: captureCount },
+      (_, capture) => span.captures?.[capture] ?? { start: 0, length: 0 },
+    );
+    return regexLocationVector(
+      [span.start, ...captures.map((capture) => capture.start)],
+      [span.length, ...captures.map((capture) => capture.length)],
+    );
+  });
+  invocation.context.allocate(
+    output.reduce((total, value) => total + value.length * 2, output.length),
+  );
+  return listValue(output);
+}
+
 async function builtinRegexMatches(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["x", "m", "invert"]);
   const input = requireCharacterVector(required(matched, "x", "regmatches"), "x");
@@ -29929,7 +30119,13 @@ function normalizeBrowserRegexSource(pattern: string): string {
       output = output.slice(0, -1);
     }
     if (!escaped && character === "[") inCharacterClass = true;
-    if (!escaped && character === "]") inCharacterClass = false;
+    if (!escaped && character === "]") {
+      if (inCharacterClass) inCharacterClass = false;
+      else {
+        output += "\\]";
+        continue;
+      }
+    }
     if (!inCharacterClass && !escaped && character === "{") {
       const quantifier = /^\{\d+(?:,\d*)?\}/u.exec(pattern.slice(index));
       if (quantifier === null) {
