@@ -971,3 +971,169 @@ it.runIf(runExternal)(
   },
   30_000,
 );
+
+it.runIf(runExternal)(
+  "packs, loads, and exercises the unchanged public abind 1.4-8 pure-R package",
+  async () => {
+    let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    try {
+      const installed = await installPackagesFromRepository(["abind"]);
+      expect(installed.artifacts[0]).toMatchObject({
+        package: { name: "abind", version: "1.4-8" },
+        compatibility: { packaging: "ready", execution: "unchecked" },
+        integrity: {
+          algorithm: "sha256",
+          value: "e9862a710e03ef978409dbd3c4138dd4cdf96b0584c6f228ffe2b42d1e0e9dee",
+        },
+      });
+      runtime = await createR({
+        execution: "inline",
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+        packages: installed.bundles,
+      });
+      await expect(runtime.eval('requireNamespace("abind", quietly = TRUE)')).resolves.toBe(true);
+      await expect(runtime.eval('as.character(packageVersion("abind"))')).resolves.toBe("1.4.8");
+      await expect(runtime.eval('library("abind"); "package:abind" %in% search()')).resolves.toBe(
+        true,
+      );
+      await expect(runtime.eval('sort(getNamespaceExports("abind"))')).resolves.toEqual([
+        "abind",
+        "acorn",
+        "adrop",
+        "afill<-",
+        "asub",
+      ]);
+      await expect(
+        runtime.eval(`
+          x <- matrix(1:6, nrow = 2)
+          y <- x + 10
+          combined <- abind::abind(x, y, along = 3)
+          dropped <- abind::adrop(array(1:6, c(2, 3, 1)), drop = 3)
+          c(typeof(combined), dim(combined), c(combined), dim(dropped), c(dropped))
+        `),
+      ).resolves.toEqual([
+        "double",
+        "2",
+        "3",
+        "2",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "2",
+        "3",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+      ]);
+    } finally {
+      await runtime?.dispose();
+    }
+  },
+  30_000,
+);
+
+it.runIf(runExternal)(
+  "packs, loads, and exercises the unchanged public rprojroot 2.1.1 pure-R package",
+  async () => {
+    let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    try {
+      const installed = await installPackagesFromRepository(["rprojroot"]);
+      expect(installed.artifacts[0]).toMatchObject({
+        package: { name: "rprojroot", version: "2.1.1" },
+        compatibility: { packaging: "ready", execution: "unchecked" },
+        integrity: {
+          algorithm: "sha256",
+          value: "086ed9af48d2f4e917f40bdf3364e395115f25fff5017d5527d00b20df343744",
+        },
+      });
+      runtime = await createR({
+        execution: "inline",
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+        packages: installed.bundles,
+      });
+      await expect(runtime.eval('requireNamespace("rprojroot", quietly = TRUE)')).resolves.toBe(
+        true,
+      );
+      await expect(runtime.eval('as.character(packageVersion("rprojroot"))')).resolves.toBe(
+        "2.1.1",
+      );
+      await expect(
+        runtime.eval('library("rprojroot"); "package:rprojroot" %in% search()'),
+      ).resolves.toBe(true);
+      await expect(
+        runtime.eval(`
+          criterion <- rprojroot::has_file("DESCRIPTION")
+          composite <- criterion | rprojroot::has_dir(".git")
+          c(
+            class(criterion), names(criterion), length(criterion$testfun), criterion$desc,
+            class(composite), length(composite$testfun), composite$desc
+          )
+        `),
+      ).resolves.toEqual([
+        "root_criterion",
+        "testfun",
+        "desc",
+        "subdir",
+        "find_file",
+        "make_fix_file",
+        "1",
+        "contains a file 'DESCRIPTION'",
+        "root_criterion",
+        "2",
+        "contains a file 'DESCRIPTION'",
+        "contains a directory '.git'",
+      ]);
+      await expect(
+        runtime.eval(`
+          dir.create("probe-project/sub", recursive = TRUE)
+          writeLines("Package: demo", "probe-project/DESCRIPTION")
+          criterion <- rprojroot::has_file("DESCRIPTION")
+          found <- rprojroot::find_root(criterion, "probe-project/sub")
+          root_file <- rprojroot::find_root_file(
+            "DESCRIPTION", criterion = criterion, path = "probe-project/sub"
+          )
+          c(
+            criterion$testfun[[1]]("probe-project"),
+            basename(found), basename(root_file), basename(dirname(root_file)),
+            basename(criterion$find_file("DESCRIPTION", path = "probe-project/sub")),
+            rprojroot::get_root_desc(criterion | rprojroot::has_dir(".git"), found)
+          )
+        `),
+      ).resolves.toEqual([
+        "TRUE",
+        "probe-project",
+        "DESCRIPTION",
+        "probe-project",
+        "DESCRIPTION",
+        "contains a file 'DESCRIPTION'",
+      ]);
+    } finally {
+      await runtime?.dispose();
+    }
+  },
+  30_000,
+);

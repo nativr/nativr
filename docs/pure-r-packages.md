@@ -366,6 +366,10 @@ separately from each normalized NativR artifact digest. All thirteen reach at le
   output-handler constructor and condition/source/recorded-plot predicates;
 - [`numDeriv 2016.8-1.1`](https://cran.r-project.org/package=numDeriv) reaches P4 through public
   finite-difference gradient and Jacobian calls whose rounded values match GNU R.
+- [`abind 1.4-8`](https://cran.r-project.org/package=abind) reaches P4 through public array binding
+  and singleton-dimension removal calls;
+- [`rprojroot 2.1.1`](https://cran.r-project.org/package=rprojroot) reaches P4 through public S3
+  criterion construction/composition and browser-owned project-root/file discovery.
 
 No package source is checked into this repository. Together these tests exercise repository
 installation, runtime package files, namespace loading, qualified S3 registration, metaprogramming,
@@ -385,9 +389,18 @@ contains only reusable color interpolation, frame, warning, and arithmetic seman
 
 The machine-readable [package corpus](../compatibility/package-corpus.json) is authoritative for
 development/regression/holdout membership, source and artifact digests, completed tier, and first
-blocker. The current uninspected P0 holdouts are `abind 1.4-8` and `rprojroot 2.1.1`; only release
-metadata and source-archive digests have been admitted for them. These proofs must not be summarized
-as a single unqualified “supported packages” count.
+blocker. The current uninspected P0 holdouts are `rstudioapi 0.19.0` and `inline 0.3.21`; only
+release metadata and source-archive digests have been admitted for them. These proofs must not be
+summarized as a single unqualified “supported packages” count.
+
+The fourth source-blind rotation used only release metadata, public documentation, public API calls,
+and GNU R as a black-box oracle before the packages were executed. The reusable runtime work adds
+specific and `Ops`-group S3 dispatch for syntax and first-class operators, incremental S3 method
+registration while a namespace is initialized, numbered ellipsis identifiers, missing-endpoint
+`seq()`, `sign()`, `dimnames<-`, `methods::Quote`, trailing `as.data.frame()` controls, and
+list/data-frame `is.na()` shapes. `abind::acorn()` and `abind::asub()` still encounter the generic
+language-object subsetting gap, so this is P4 evidence rather than a claim of complete package
+behavior.
 
 The checked-in source-only fixture also exports a function that calls `grDevices::rainbow`,
 `terrain.colors`, `topo.colors`, and `cm.colors` through its namespace. This is a small executable

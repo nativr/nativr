@@ -59,6 +59,13 @@ describe("Tree-sitter normalization", () => {
     });
   });
 
+  it("normalizes numbered ellipsis references as owned identifiers", () => {
+    expect(parser.parse("missing(..2)").ast.body[0]).toMatchObject({
+      kind: "CallExpression",
+      arguments: [{ value: { kind: "Identifier", name: "..2" } }],
+    });
+  });
+
   it("decodes backtick-delimited identifiers into their R binding names", () => {
     expect(parser.parse("`+`(1, 2)").ast.body[0]).toMatchObject({
       kind: "CallExpression",

@@ -53,7 +53,11 @@ export function matchBuiltinArguments(
     }
     if (name === undefined) {
       if (parameters.includes("...")) dots.push(argument);
-      else throw new REvaluationError("NRE2101", "Unused argument.");
+      else {
+        throw new REvaluationError("NRE2101", "Unused argument.", {
+          details: { name: argument.name, parameters },
+        });
+      }
     } else {
       matched.set(name, argument);
     }

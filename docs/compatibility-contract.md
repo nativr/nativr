@@ -2415,18 +2415,29 @@ resource root and relative reads resolve there only while retained package sourc
 source installation, not a complete `R CMD INSTALL` snapshot. Digest-pinned opt-in executable tests
 cover unchanged `pkgconfig 2.0.3`, `generics 0.1.4`, `withr 3.0.3`, `R6 2.6.1`, `viridisLite 0.4.3`,
 `RColorBrewer 1.1-3`, `assertthat 0.2.1`, `crayon 1.5.3`, `praise 1.0.0`, `prettyunits 1.2.0`,
-`evaluate 1.0.5`, and `numDeriv 2016.8-1.1` sources. The third holdout rotation evaluated `evaluate`
-and `numDeriv` without first using either package's R source to guide implementation; both now reach
-P4 through public exports. The evidence covers evaluate's output-handler and condition predicates
-plus numDeriv's public finite-difference gradient and Jacobian, with separate pinned source and
-NativR-artifact digests. Together these tests prove the repository-to-namespace path, package-owned
-S3 dispatch, and generated state-restoring wrappers through `with_options()`, plus R6
-generator/object construction and public reference mutation, private-state method access, an active
-read/write field, shallow/deep cloning, and three-level inheritance with recursive `super` calls,
-plus package-owned 256-anchor Lab spline palettes through generic arithmetic/array and
-`grDevices::colorRamp` semantics, plus exported RColorBrewer palette metadata through
-explicit-row-name `data.frame()` construction and exact palette/warning execution, without package
-patches.
+`evaluate 1.0.5`, `numDeriv 2016.8-1.1`, `abind 1.4-8`, and `rprojroot 2.1.1` sources. The third
+holdout rotation evaluated `evaluate` and `numDeriv` without first using either package's R source
+to guide implementation; both now reach P4 through public exports. The evidence covers evaluate's
+output-handler and condition predicates plus numDeriv's public finite-difference gradient and
+Jacobian, with separate pinned source and NativR-artifact digests. Together these tests prove the
+repository-to-namespace path, package-owned S3 dispatch, and generated state-restoring wrappers
+through `with_options()`, plus R6 generator/object construction and public reference mutation,
+private-state method access, an active read/write field, shallow/deep cloning, and three-level
+inheritance with recursive `super` calls, plus package-owned 256-anchor Lab spline palettes through
+generic arithmetic/array and `grDevices::colorRamp` semantics, plus exported RColorBrewer palette
+metadata through explicit-row-name `data.frame()` construction and exact palette/warning execution,
+without package patches.
+
+The fourth source-blind rotation evaluates `abind` and `rprojroot` only after collecting release
+metadata, public documentation, public API expectations, and black-box GNU R results. Both reach P4:
+abind binds two matrices along a new dimension and removes a singleton dimension; rprojroot
+constructs and combines S3 root criteria and resolves roots/files in the browser-owned virtual
+filesystem. The reusable contract increment includes syntax and first-class specific/`Ops` operator
+dispatch on either operand, incremental namespace S3 registration, `..N`, `missing(..N)`,
+missing-endpoint `seq()`, `sign()`, `dimnames<-`, `methods::Quote`, trailing `as.data.frame()`
+controls, and list/data-frame `is.na()` shape. Language-object subsetting remains incomplete and is
+the first observed deeper blocker for `abind::acorn()` and `abind::asub()`; P5-P7 and arbitrary
+package execution are not claimed.
 
 Package admission is not universal execution compatibility. Package `data/*.R`, `.csv`, `.tab`,
 `.txt`, and XDR/gzip `.rda`/`.RData` discovery/loading is supported through `utils::data`, including

@@ -1739,3 +1739,12 @@ active device's `par()` values without mutating them. Browser callbacks, Worker 
 display-list replay, PNG, and PDF share the same text event. Expressions currently use deterministic
 normalized deparse text; mathematical plotmath glyph construction and exact platform font/margin
 metrics remain explicit depth work.
+
+## Operator dispatch during package initialization
+
+Operator evaluation consults an operand's specific S3 method and then the `Ops` group for both
+syntax and first-class operator calls, including a classed right operand. Package namespaces expose
+declared S3 registrations after each top-level source expression so later initialization expressions
+can use earlier methods without a package-specific load-order exception. Numbered `..N` identifiers
+resolve against the current dots binding and participate in `missing()`. These semantics are covered
+by differential cases and by unchanged rprojroot criterion composition.

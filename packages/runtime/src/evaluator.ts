@@ -355,6 +355,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "as",
       "is",
       "new",
+      "Quote",
       "representation",
       "signature",
       "setAs",
@@ -502,7 +503,31 @@ const BASE_NAMESPACE_CONSTANTS = new Set([
   ".Library",
   ".Library.site",
 ]);
-const PRIMITIVE_S3_GENERICS = new Set(["$", "[", "[[", "$<-", "[<-", "[[<-"]);
+const PRIMITIVE_S3_GENERICS = new Set([
+  "$",
+  "[",
+  "[[",
+  "$<-",
+  "[<-",
+  "[[<-",
+  "Ops",
+  "+",
+  "-",
+  "*",
+  "/",
+  "^",
+  "%%",
+  "%/%",
+  "<",
+  "<=",
+  ">",
+  ">=",
+  "==",
+  "!=",
+  "!",
+  "&",
+  "|",
+]);
 const CORE_R_PACKAGE_NAMES = new Set([
   "base",
   "stats",
@@ -817,6 +842,26 @@ export class Evaluator {
         return { value: missingValue(node.declaredType), visible: true };
       case "Identifier": {
         if (node.name === "...") throw unsupported("ellipsis arguments", node.span);
+        const dotDot = /^\.\.([1-9][0-9]*)$/u.exec(node.name);
+        if (dotDot !== null) {
+          const dots = lookupBinding(environment, "...");
+          if (dots?.type !== "dots") {
+            throw new REvaluationError(
+              "NRE2001",
+              `'${node.name}' used in an incorrect context, no '...' to look in.`,
+              { span: node.span, details: { symbol: node.name } },
+            );
+          }
+          const argument = dots.arguments[Number(dotDot[1]) - 1];
+          if (argument === undefined) {
+            throw new REvaluationError(
+              "NRE2103",
+              `The ... list contains fewer than ${dotDot[1]} elements.`,
+              { span: node.span },
+            );
+          }
+          return this.#forceDetailed(argument.promise, context);
+        }
         const binding = lookupBinding(environment, node.name);
         if (binding === undefined) {
           throw new REvaluationError("NRE2001", `Object '${node.name}' not found.`, {
@@ -831,6 +876,14 @@ export class Evaluator {
       }
       case "UnaryExpression": {
         const operand = await this.#evaluateValue(node.operand, environment, context);
+        const dispatched = await this.#dispatchOperatorS3(
+          node.operator,
+          [operand],
+          environment,
+          [node.operand.span],
+          context,
+        );
+        if (dispatched !== undefined) return dispatched;
         return { value: this.#operators.unary(context, node.operator, operand), visible: true };
       }
       case "BinaryExpression": {
@@ -865,6 +918,14 @@ export class Evaluator {
           };
         }
         const right = await this.#evaluateValue(node.right, environment, context);
+        const dispatched = await this.#dispatchOperatorS3(
+          node.operator,
+          [left, right],
+          environment,
+          [node.left.span, node.right.span],
+          context,
+        );
+        if (dispatched !== undefined) return dispatched;
         return {
           value: this.#operators.binary(context, node.operator, left, right),
           visible: true,
@@ -2180,13 +2241,14 @@ export class Evaluator {
         registerS3Method: async (generic, className, method, environment) =>
           this.#registerS3Method(generic, className, method, environment, context),
         dispatchS3: async (generic, object) => this.#dispatchS3(generic, object, context),
-        dispatchS3IfPresent: async (generic, object, arguments_, includeDefault) => {
+        dispatchS3IfPresent: async (generic, object, arguments_, includeDefault, argumentIndex) => {
           const result = await this.#dispatchS3IfPresentResult(
             generic,
             object,
             arguments_,
             context,
             includeDefault,
+            argumentIndex,
           );
           if (result === undefined) return undefined;
           resultVisibility = result.visible ? "visible" : "invisible";
@@ -2821,6 +2883,41 @@ export class Evaluator {
         }
         const namespace = createEnvironment(importsEnvironment, true);
         record.namespace = namespace;
+        const registeredMethodIndexes = new Set<number>();
+        const registerAvailableS3Methods = async (requireAll: boolean): Promise<void> => {
+          for (const [index, method] of record.definition.s3Methods.entries()) {
+            if (registeredMethodIndexes.has(index)) continue;
+            const binding = lookupBinding(namespace, method.method);
+            if (binding === undefined) {
+              if (requireAll) {
+                throw new REvaluationError(
+                  "NRE2225",
+                  `Package '${name}' registers missing S3 method '${method.method}'.`,
+                );
+              }
+              continue;
+            }
+            if (
+              method.genericPackage === undefined &&
+              !PRIMITIVE_S3_GENERICS.has(method.generic) &&
+              lookupBinding(namespace, method.generic) === undefined
+            ) {
+              if (requireAll) {
+                throw new REvaluationError("NRE2001", `object '${method.generic}' not found`);
+              }
+              continue;
+            }
+            await this.#registerS3Method(
+              method.generic,
+              method.class,
+              binding,
+              namespace,
+              context,
+              method.genericPackage,
+            );
+            registeredMethodIndexes.add(index);
+          }
+        };
         await this.#loadPackageSysdata(record, namespace, context);
         const hadSourceDirectory = this.#builtinState.has(
           PACKAGE_SOURCE_EVALUATION_DIRECTORY_STATE_KEY,
@@ -2834,7 +2931,10 @@ export class Evaluator {
         );
         try {
           for (const program of record.definition.programs) {
-            await this.#evaluateNode(program, namespace, context);
+            for (const expression of program.body) {
+              await this.#evaluateNode(expression, namespace, context);
+              await registerAvailableS3Methods(false);
+            }
           }
         } finally {
           if (hadSourceDirectory) {
@@ -2854,23 +2954,7 @@ export class Evaluator {
             );
           }
         }
-        for (const method of record.definition.s3Methods) {
-          const binding = lookupBinding(namespace, method.method);
-          if (binding === undefined) {
-            throw new REvaluationError(
-              "NRE2225",
-              `Package '${name}' registers missing S3 method '${method.method}'.`,
-            );
-          }
-          await this.#registerS3Method(
-            method.generic,
-            method.class,
-            binding,
-            namespace,
-            context,
-            method.genericPackage,
-          );
-        }
+        await registerAvailableS3Methods(true);
         await this.#invokePackageHook(record, ".onLoad", context);
       } catch (error) {
         for (const [key, previous] of replacedMethods) {
@@ -3315,6 +3399,7 @@ export class Evaluator {
     arguments_: readonly BuiltinCallArgument[],
     context: EvaluationContext,
     includeDefault = true,
+    argumentIndex = 0,
   ): Promise<EvaluationResult | undefined> {
     if (generic.length === 0) {
       throw new REvaluationError("NRE2213", "UseMethod() generic name must be non-empty.");
@@ -3326,13 +3411,14 @@ export class Evaluator {
               promise: createForcedPromise(object, this.#globalEnvironment),
             },
           ]
-        : [
-            {
-              ...arguments_[0],
-              promise: createForcedPromise(object, this.#globalEnvironment),
-            },
-            ...arguments_.slice(1),
-          ];
+        : arguments_.map((argument, index) =>
+            index === argumentIndex
+              ? {
+                  ...argument,
+                  promise: createForcedPromise(object, this.#globalEnvironment),
+                }
+              : argument,
+          );
     return this.#invokeS3MethodIfPresentResult(
       generic,
       this.#baseEnvironment,
@@ -3342,6 +3428,37 @@ export class Evaluator {
       context,
       includeDefault,
     );
+  }
+
+  async #dispatchOperatorS3(
+    operator: string,
+    operands: readonly RValue[],
+    environment: REnvironment,
+    spans: readonly SourceSpan[],
+    context: EvaluationContext,
+  ): Promise<EvaluationResult | undefined> {
+    const arguments_: ClosureCallFrame["arguments"] = operands.map((operand, index) => {
+      const span = spans[index];
+      return span === undefined
+        ? { promise: createForcedPromise(operand, environment) }
+        : { promise: createForcedPromise(operand, environment), span };
+    });
+    for (const operand of operands) {
+      if (objectClasses(operand) === undefined) continue;
+      for (const generic of [operator, "Ops"]) {
+        const dispatched = await this.#invokeS3MethodIfPresentResult(
+          generic,
+          this.#baseEnvironment,
+          runtimeClassNames(operand),
+          0,
+          arguments_,
+          context,
+          false,
+        );
+        if (dispatched !== undefined) return dispatched;
+      }
+    }
+    return undefined;
   }
 
   async #nextS3Method(generic: string | undefined, context: EvaluationContext): Promise<RValue> {

@@ -2264,6 +2264,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ]),
   defineBuiltin("sqrt", ["x"], "numeric", (invocation) => builtinMath(invocation, "sqrt")),
   defineBuiltin("abs", ["x"], "numeric", (invocation) => builtinMath(invocation, "abs")),
+  defineBuiltin("sign", ["x"], "behavioral", builtinSign),
   defineBuiltin("round", ["x", "digits"], "numeric", builtinRound),
   defineBuiltin("signif", ["x", "digits"], "behavioral", builtinSignif),
   defineBuiltin("floor", ["x"], "behavioral", builtinFloor),
@@ -2343,6 +2344,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     builtinAxisNames(invocation, "column"),
   ),
   defineBuiltin("dimnames", ["x"], "behavioral", builtinDimNames),
+  defineBuiltin("dimnames<-", ["x", "value"], "behavioral", builtinDimNamesReplacement),
   defineBuiltin("seq", ["from", "to", "by", "length.out", "along.with"], "numeric", builtinSeq),
   defineBuiltin(
     "seq.int",
@@ -3705,7 +3707,23 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "behavioral",
     builtinMerge,
   ),
-  defineBuiltin("as.data.frame", ["x"], "shape", builtinAsDataFrame),
+  withBuiltinFormals(
+    defineBuiltin(
+      "as.data.frame",
+      ["x", "row.names", "optional", "..."],
+      "shape",
+      builtinAsDataFrame,
+    ),
+    [
+      { name: "x" },
+      { name: "row.names", defaultValue: nullAst() },
+      {
+        name: "optional",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      { name: "..." },
+    ],
+  ),
   defineBuiltin("tibble", ["..."], "behavioral", builtinTibble),
   defineBuiltin("tribble", ["..."], "behavioral", builtinTribble),
   defineBuiltin(
@@ -3942,6 +3960,15 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     ["object", "Class", "strict", "ext"],
     "behavioral",
     builtinMethodsAs,
+  ),
+  definePackageBuiltin(
+    "methods",
+    "Quote",
+    ["expr"],
+    "behavioral",
+    builtinQuote,
+    "visible",
+    "special",
   ),
   definePackageBuiltin("methods", "is", ["object", "class2"], "behavioral", builtinMethodsIs),
   definePackageBuiltin(
@@ -4939,9 +4966,13 @@ async function builtinArithmeticOperator(
 ): Promise<RValue> {
   const values = await forceAll(invocation);
   if (values.length === 1) {
+    const dispatched = await dispatchOperatorS3(invocation, operator, values);
+    if (dispatched !== undefined) return dispatched;
     return jsReferenceOperators.unary(invocation.context, operator, values[0] ?? R_NULL);
   }
   if (values.length === 2) {
+    const dispatched = await dispatchOperatorS3(invocation, operator, values);
+    if (dispatched !== undefined) return dispatched;
     return jsReferenceOperators.binary(
       invocation.context,
       operator,
@@ -4960,6 +4991,8 @@ async function builtinUnaryOperator(
   if (values.length !== 1) {
     throw new REvaluationError("NRE2140", `Operator '${operator}' requires one argument.`);
   }
+  const dispatched = await dispatchOperatorS3(invocation, operator, values);
+  if (dispatched !== undefined) return dispatched;
   if (operator === "!" && isHexmodeValue(values[0] ?? R_NULL)) {
     return notHexmodeValue(values[0] ?? R_NULL, invocation.context);
   }
@@ -4974,6 +5007,8 @@ async function builtinBinaryOperator(
   if (values.length !== 2) {
     throw new REvaluationError("NRE2140", `Operator '${operator}' requires two arguments.`);
   }
+  const dispatched = await dispatchOperatorS3(invocation, operator, values);
+  if (dispatched !== undefined) return dispatched;
   if (
     (operator === "&" || operator === "|") &&
     (isHexmodeValue(values[0] ?? R_NULL) || isHexmodeValue(values[1] ?? R_NULL))
@@ -5002,6 +5037,27 @@ async function builtinBinaryOperator(
     values[0] ?? R_NULL,
     values[1] ?? R_NULL,
   );
+}
+
+async function dispatchOperatorS3(
+  invocation: BuiltinInvocation,
+  operator: string,
+  operands: readonly RValue[],
+): Promise<RValue | undefined> {
+  for (const [index, operand] of operands.entries()) {
+    if (objectClasses(operand) === undefined) continue;
+    for (const generic of [operator, "Ops"]) {
+      const dispatched = await invocation.dispatchS3IfPresent(
+        generic,
+        operand,
+        invocation.arguments,
+        false,
+        index,
+      );
+      if (dispatched !== undefined) return dispatched;
+    }
+  }
+  return undefined;
 }
 
 async function builtinC(invocation: BuiltinInvocation): Promise<RValue> {
@@ -5206,9 +5262,28 @@ function builtinMissing(invocation: BuiltinInvocation): RValue {
         ? "..."
         : undefined;
   if (name === undefined) {
-    throw new REvaluationError("NRE2105", "Invalid use of missing().");
+    throw new REvaluationError("NRE2105", "Invalid use of missing().", {
+      details: {
+        expression: expression === null ? null : deparseAst(expression),
+        kind: expression?.kind,
+      },
+    });
   }
-  const binding = lookupBinding(argument.promise.environment, name);
+  const dotDot = /^\.\.([1-9][0-9]*)$/u.exec(name);
+  let binding: RBinding | undefined;
+  if (dotDot === null) {
+    binding = lookupBinding(argument.promise.environment, name);
+  } else {
+    const dots = lookupBinding(argument.promise.environment, "...");
+    if (dots?.type !== "dots") {
+      throw new REvaluationError(
+        "NRE2105",
+        `missing(${name}) used in an incorrect context, no '...' to look in.`,
+      );
+    }
+    binding = dots.arguments[Number(dotDot[1]) - 1]?.promise;
+    if (binding === undefined) return logicalVector([true]);
+  }
   if (binding === undefined) {
     throw new REvaluationError("NRE2105", `missing(${name}) did not find an argument.`);
   }
@@ -20589,6 +20664,31 @@ async function builtinMath(
   };
 }
 
+async function builtinSign(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = matchLazyArguments(invocation, ["x"]);
+  const argument = matched.get("x");
+  if (argument === undefined || argument.promise.missing) {
+    throw new REvaluationError("NRE2103", "sign requires x.");
+  }
+  const value = await invocation.force(argument.promise);
+  const dispatched = await invocation.dispatchS3IfPresent("sign", value, invocation.arguments);
+  if (dispatched !== undefined) return dispatched;
+  const groupDispatched = await invocation.dispatchS3IfPresent("Math", value, invocation.arguments);
+  if (groupDispatched !== undefined) return groupDispatched;
+  const input = requireNumeric(value, "sign");
+  if (input.type === "complex") {
+    throw new RUnsupportedFeatureError("NRU6254", "sign() for complex values is not implemented.");
+  }
+  invocation.context.allocate(input.length);
+  return {
+    ...doubleVector(
+      Array.from({ length: input.length }, (_, index) => Math.sign(numberAt(input, index))),
+      input.missing,
+    ),
+    attributes: new Map(input.attributes),
+  };
+}
+
 async function builtinRound(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["x", "digits"]);
   const input = requireNumeric(required(matched, "x", "round"), "round");
@@ -21702,6 +21802,34 @@ async function builtinConjugate(invocation: BuiltinInvocation): Promise<RValue> 
 async function builtinIsNa(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["x"]);
   const input = required(matched, "x", "is.na");
+  if (input.type === "list" || input.type === "pairlist") {
+    if (input.type === "list" && isDataFrame(input)) {
+      const rows = dataFrameRowCount(input);
+      const output = new Uint8Array(rows * input.length);
+      for (let column = 0; column < input.length; column += 1) {
+        const value = input.values[column] ?? R_NULL;
+        for (let row = 0; row < rows; row += 1) {
+          invocation.context.checkpoint();
+          output[column * rows + row] = recursiveMissingAt(value, row) ? 1 : 0;
+        }
+      }
+      invocation.context.allocate(output.length);
+      const rowNames = input.attributes.get("row.names") ?? R_NULL;
+      const columnNames = characterVector(
+        vectorNames(input) ?? Array.from({ length: input.length }, (_, index) => `V${index + 1}`),
+      );
+      return withAttribute(
+        withDimensions(logicalVector(output), [rows, input.length]),
+        "dimnames",
+        listValue([rowNames, columnNames]),
+      );
+    }
+    invocation.context.allocate(input.length);
+    return withStructuralAttributes(
+      logicalVector(input.values.map((value) => recursiveMissingAt(value, 0, true))),
+      input,
+    );
+  }
   if (!isAtomic(input)) {
     throw new RUnsupportedFeatureError("NRU6103", "is.na() currently supports atomic vectors.");
   }
@@ -21718,6 +21846,23 @@ async function builtinIsNa(invocation: BuiltinInvocation): Promise<RValue> {
         : 0;
   }
   return withStructuralAttributes(logicalVector(output), input);
+}
+
+function recursiveMissingAt(value: RValue, index: number, scalarOnly = false): boolean {
+  if (
+    !isAtomic(value) ||
+    (scalarOnly && value.length !== 1) ||
+    (value.length !== 1 && index >= value.length)
+  ) {
+    return false;
+  }
+  const position = value.length === 1 ? 0 : index;
+  if (isMissing(value, position)) return true;
+  if (value.type === "double") return Number.isNaN(value.values[position]);
+  if (value.type === "complex") {
+    return Number.isNaN(value.real[position]) || Number.isNaN(value.imaginary[position]);
+  }
+  return false;
 }
 
 async function builtinIsNan(invocation: BuiltinInvocation): Promise<RValue> {
@@ -21741,7 +21886,7 @@ async function builtinIsNan(invocation: BuiltinInvocation): Promise<RValue> {
   return withStructuralAttributes(logicalVector(output), input);
 }
 
-function withStructuralAttributes<T extends RVector>(value: T, source: RVector): T {
+function withStructuralAttributes<T extends RVector>(value: T, source: RVector | RPairlist): T {
   const attributes = new Map<string, RValue>();
   for (const name of ["names", "dim", "dimnames"]) {
     const attribute = source.attributes.get(name);
@@ -22353,6 +22498,7 @@ async function builtinAttrReplacement(invocation: BuiltinInvocation): Promise<RV
   if (name === "names") return replaceNamesAttribute(value, replacement, invocation);
   if (name === "class") return replaceClassAttribute(value, replacement, invocation);
   if (name === "dim") return replaceDimensionAttribute(value, replacement, invocation);
+  if (name === "dimnames") return replaceDimensionNamesAttribute(value, replacement);
   if (name === "comment") return replaceCommentAttribute(value, replacement, invocation);
   if (!isAttributedRuntimeObject(value)) {
     throw new RTypeMismatchError(
@@ -22456,6 +22602,30 @@ async function builtinDimNames(invocation: BuiltinInvocation): Promise<RValue> {
   return validatedDimensionNames(value) ?? R_NULL;
 }
 
+async function builtinDimNamesReplacement(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["x", "value"]);
+  return replaceDimensionNamesAttribute(
+    required(matched, "x", "dimnames<-"),
+    required(matched, "value", "dimnames<-"),
+  );
+}
+
+function replaceDimensionNamesAttribute(value: RValue, replacement: RValue): RValue {
+  if (!isAttributedSequence(value)) {
+    throw new RTypeMismatchError(
+      "NRT3153",
+      "dimnames<- requires a vector, pairlist, matrix, or array.",
+    );
+  }
+  if (replacement.type === "null") return withoutAttribute(value, "dimnames");
+  if (replacement.type !== "list") {
+    throw new RTypeMismatchError("NRT3159", "dimnames must be a list or NULL.");
+  }
+  const output = withAttribute(value, "dimnames", replacement);
+  validatedDimensionNames(output);
+  return output;
+}
+
 function validatedDimensionNames(value: AttributedSequence): RList | undefined {
   const attribute = value.attributes.get("dimnames");
   if (attribute === undefined) return undefined;
@@ -22497,33 +22667,48 @@ async function builtinSeq(invocation: BuiltinInvocation): Promise<RValue> {
 
   const suppliedFrom = matched.get("from");
   const suppliedTo = matched.get("to");
-  if (suppliedFrom === undefined && suppliedTo === undefined) {
-    throw new REvaluationError("NRE2103", "Argument 'from' is missing in seq().");
-  }
-  const oneArgument = suppliedFrom !== undefined && suppliedTo === undefined && matched.size === 1;
-  const from = suppliedFrom === undefined || oneArgument ? 1 : numericScalar(suppliedFrom, "from");
-  const to =
-    suppliedTo !== undefined
-      ? numericScalar(suppliedTo, "to")
-      : numericScalar(required(matched, "from", "seq"), "from");
   const byValue = matched.get("by");
   const lengthValue = matched.get("length.out");
-  if (byValue !== undefined && lengthValue !== undefined) {
-    throw new REvaluationError("NRE2104", "seq() cannot use both 'by' and 'length.out'.");
-  }
 
   let values: number[];
   if (lengthValue !== undefined) {
     const length = nonNegativeInteger(lengthValue, "length.out");
+    if (suppliedFrom === undefined && suppliedTo === undefined && byValue === undefined) {
+      return integerSequence(invocation, length);
+    }
+    if (suppliedFrom !== undefined && suppliedTo !== undefined && byValue !== undefined) {
+      throw new REvaluationError("NRE2104", "Too many arguments in seq().");
+    }
     invocation.context.allocate(length);
     if (length === 0) return doubleVector([]);
+    const by = byValue === undefined ? 1 : numericScalar(byValue, "by");
+    const suppliedFromNumber =
+      suppliedFrom === undefined ? undefined : numericScalar(suppliedFrom, "from");
+    const suppliedToNumber = suppliedTo === undefined ? undefined : numericScalar(suppliedTo, "to");
+    const from =
+      suppliedFromNumber ??
+      (suppliedToNumber === undefined ? 1 : suppliedToNumber - by * Math.max(0, length - 1));
+    const to =
+      suppliedToNumber ??
+      (suppliedFromNumber === undefined ? from + by * Math.max(0, length - 1) : undefined);
     if (length === 1) return doubleVector([from]);
-    const step = (to - from) / (length - 1);
+    const step = to === undefined ? by : (to - from) / (length - 1);
     values = Array.from({ length }, (_, index) => {
       invocation.context.checkpoint();
-      return index === length - 1 ? to : from + step * index;
+      return index === length - 1 && to !== undefined ? to : from + step * index;
     });
   } else {
+    if (suppliedFrom === undefined && suppliedTo === undefined) {
+      throw new REvaluationError("NRE2103", "Argument 'from' is missing in seq().");
+    }
+    const oneArgument =
+      suppliedFrom !== undefined && suppliedTo === undefined && matched.size === 1;
+    const from =
+      suppliedFrom === undefined || oneArgument ? 1 : numericScalar(suppliedFrom, "from");
+    const to =
+      suppliedTo !== undefined
+        ? numericScalar(suppliedTo, "to")
+        : numericScalar(required(matched, "from", "seq"), "from");
     const by = byValue === undefined ? (to >= from ? 1 : -1) : numericScalar(byValue, "by");
     if (by === 0 || (Math.sign(to - from) !== 0 && Math.sign(to - from) !== Math.sign(by))) {
       throw new REvaluationError("NRE2105", "Invalid '(to - from)/by' in seq().");
@@ -45837,8 +46022,22 @@ async function builtinTribble(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinAsDataFrame(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = await matchExact(invocation, ["x"]);
-  const value = required(matched, "x", "as.data.frame");
+  const { matched } = matchLazyArgumentsWithDots(invocation, ["x", "row.names", "optional"]);
+  const argument = matched.get("x");
+  if (argument === undefined || argument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in as.data.frame().");
+  }
+  const value = await invocation.force(argument.promise);
+  const dispatched = await invocation.dispatchS3IfPresent(
+    "as.data.frame",
+    value,
+    invocation.arguments,
+  );
+  if (dispatched !== undefined) return dispatched;
+  const optional = matched.get("optional");
+  if (optional !== undefined && !optional.promise.missing) {
+    logicalFlag(await invocation.force(optional.promise), false, "optional");
+  }
   if (value.type === "list") {
     if (vectorClasses(value)?.includes("data.frame") === true) return value;
     if (!value.values.every((column) => isAtomic(column))) {

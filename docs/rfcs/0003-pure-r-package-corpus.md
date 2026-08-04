@@ -35,6 +35,15 @@ and recursive data-frame columns. Usage-ranked pure-R packages `abind 1.4-8` and
 are the new uninspected P0 holdouts; only their release metadata and source-archive digests have
 been admitted.
 
+The fourth holdout rotation evaluated `abind 1.4-8` and `rprojroot 2.1.1` using only release
+metadata, public documentation, public API calls, and black-box GNU R observations before runtime
+execution. Both install, load, attach, and execute declared representative functions unchanged, so
+they move to P4 regression. Reusable gaps covered specific and `Ops`-group operator dispatch,
+incremental package S3 registration, numbered ellipsis identifiers, missing-endpoint sequences,
+dimension-name replacement, quoting, data-frame coercion controls, and recursive missingness.
+`rstudioapi 0.19.0` and `inline 0.3.21` are the new uninspected P0 holdouts; only official release
+metadata and source-archive digests have been admitted.
+
 ## Validation tiers
 
 | Tier | Required evidence                              |

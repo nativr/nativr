@@ -364,6 +364,7 @@ export interface BuiltinInvocation {
     object: RValue,
     arguments_: readonly BuiltinCallArgument[],
     includeDefault?: boolean,
+    argumentIndex?: number,
   ): Promise<RValue | undefined>;
   nextMethod(generic?: string): Promise<RValue>;
 }

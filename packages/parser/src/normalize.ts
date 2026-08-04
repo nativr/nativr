@@ -144,8 +144,9 @@ function normalizeNode(node: Node, mapper: Utf8SourceMap): AstNode {
         span,
       };
     case "dots":
-    case "dot_dot_i":
       return { kind: "UnsupportedExpression", feature: node.type, span };
+    case "dot_dot_i":
+      return { kind: "Identifier", name: node.text, span };
     default:
       return { kind: "UnsupportedExpression", feature: node.type, span };
   }

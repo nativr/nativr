@@ -899,8 +899,13 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      metadata, quoted call tags, string coercion, D65 `convertColor`, and build-time bzip2 package-
      resource normalization. The third source-blind rotation moves unchanged `evaluate 1.0.5` and
      `numDeriv 2016.8-1.1` to P4 through generic callable lookup, exact builtin formals, condition
-     constructors, post-dots argument matching, and list/expression-column replacement.
-     `abind 1.4-8` and `rprojroot 2.1.1` are the next uninspected P0 holdouts.
+     constructors, post-dots argument matching, and list/expression-column replacement. The fourth
+     source-blind rotation moves unchanged `abind 1.4-8` and `rprojroot 2.1.1` to P4 through generic
+     operator S3 dispatch, incremental method registration, numbered dots, missing-endpoint
+     sequences, dimension-name replacement, quoting, data-frame coercion, and recursive missingness.
+     `rstudioapi 0.19.0` and `inline 0.3.21` are the next uninspected P0 holdouts. Language-object
+     subsetting still blocks deeper `abind::acorn()`/`abind::asub()` breadth and remains
+     foundational work rather than a package-specific patch.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

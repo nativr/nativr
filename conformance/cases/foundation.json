@@ -10234,5 +10234,95 @@
     "expected": ["left", "right", "1", "3", "5", "2", "4", "6", "TRUE"],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "s3-specific-and-ops-group-operator-dispatch",
+    "code": "`+.probe` <- function(e1, e2) 41L\nOps.grouped <- function(e1, e2) 42L\nleft <- structure(1, class = \"probe\")\ngrouped <- structure(1, class = \"grouped\")\nc(left + 2, 2 + left, `+`(left, 2), grouped * 2)",
+    "expected": [41, 41, 41, 42],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "seq-missing-endpoints-and-length-out",
+    "code": "c(typeof(seq(length.out = 4)), seq(length.out = 4), typeof(seq(to = 5, length.out = 3)), seq(to = 5, length.out = 3), seq(from = 5, length.out = 3), seq(by = 2, length.out = 3), seq(from = 2, by = 3, length.out = 4), seq(to = 11, by = 3, length.out = 4), seq(2, 4, length.out = 1), inherits(try(seq(from = 1, to = 2, by = 1, length.out = 2), silent = TRUE), \"try-error\"))",
+    "expected": [
+      "integer",
+      "1",
+      "2",
+      "3",
+      "4",
+      "double",
+      "3",
+      "4",
+      "5",
+      "5",
+      "6",
+      "7",
+      "1",
+      "3",
+      "5",
+      "2",
+      "5",
+      "8",
+      "11",
+      "2",
+      "5",
+      "8",
+      "11",
+      "2",
+      "TRUE"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "sign-attributes-missingness-and-complex-boundary",
+    "code": "x <- structure(c(-2, 0, 3, NA_real_, NaN), names = letters[1:5])\ny <- sign(x)\nc(y[1:3], is.na(y[4]), is.nan(y[5]), typeof(y), identical(names(y), letters[1:5]), inherits(try(sign(1 + 1i), silent = TRUE), \"try-error\"))",
+    "expected": ["-1", "0", "1", "TRUE", "TRUE", "double", "TRUE", "TRUE"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "dimnames-replacement-and-removal",
+    "code": "x <- array(1:4, c(2, 2))\ndimnames(x) <- list(c(\"r1\", \"r2\"), c(\"c1\", \"c2\"))\nassigned <- unlist(dimnames(x))\nattr(x, \"dimnames\") <- NULL\nc(assigned, is.null(dimnames(x)), inherits(try({ dimnames(x) <- list(\"only-one\") }, silent = TRUE), \"try-error\"))",
+    "expected": ["r1", "r2", "c1", "c2", "TRUE", "TRUE"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "numbered-ellipsis-identifiers-and-missing",
+    "code": "f <- function(...) c(..1, ..2, missing(..3))\ng <- function(...) missing(..1)\nc(f(1, 2), g())",
+    "expected": [1, 2, 1, 1],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "methods-quote-and-as-data-frame-trailing-controls",
+    "code": "quoted <- methods::Quote(x + y)\nd <- as.data.frame(list(x = 1:2), stringsAsFactors = FALSE)\nc(typeof(quoted), class(quoted), identical(quoted, quote(x + y)), names(formals(as.data.frame)), names(d), dim(d))",
+    "expected": ["language", "call", "TRUE", "x", "row.names", "optional", "...", "x", "2", "1"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "is-na-list-and-data-frame-shape",
+    "code": "values <- is.na(list(NA, 1:2, NaN, NULL))\nd <- data.frame(a = c(1, NA), b = c(NA_character_, \"x\"), row.names = c(\"r1\", \"r2\"))\nmissing <- is.na(d)\nc(values, c(missing), dim(missing), unlist(dimnames(missing)))",
+    "expected": [
+      "TRUE",
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "FALSE",
+      "TRUE",
+      "TRUE",
+      "FALSE",
+      "2",
+      "2",
+      "r1",
+      "r2",
+      "a",
+      "b"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

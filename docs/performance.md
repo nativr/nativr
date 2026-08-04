@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 423 KiB gzip;
+- Worker JavaScript: 424 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -943,3 +943,10 @@ column replacement. The evaluate and numDeriv packages remain opt-in test inputs
 source or resources to the shipped Worker. The measured Worker is 422.1 KiB gzip (432,275 bytes),
 147 bytes above the previous 422 KiB ceiling, so the ceiling rises narrowly to 423 KiB; client and
 parser-Wasm budgets remain unchanged.
+
+Language subset 0.283 adds generic specific/`Ops` S3 operator dispatch, incremental package-method
+registration, numbered ellipsis identifiers, missing-endpoint sequences, `sign`, dimension-name
+replacement, quoting, data-frame coercion controls, and recursive missingness. The abind and
+rprojroot packages remain opt-in test inputs and contribute no source or resources to the shipped
+Worker. The measured Worker is 423.4 KiB gzip (433,521 bytes), 369 bytes above the previous 423 KiB
+ceiling, so the ceiling rises narrowly to 424 KiB; client and parser-Wasm budgets remain unchanged.

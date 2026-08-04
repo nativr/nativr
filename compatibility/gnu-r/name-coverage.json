@@ -4,20 +4,20 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 700,
-    "overlappingNames": 680,
-    "missingReferenceNames": 1842,
+    "nativrRegisteredNames": 703,
+    "overlappingNames": 683,
+    "missingReferenceNames": 1839,
     "nativrExtensionNames": 20,
-    "nameCoverage": 0.269627
+    "nameCoverage": 0.270817
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 489, "nameCoverage": 0.357718 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 491, "nameCoverage": 0.359181 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 76, "nameCoverage": 0.163793 },
     {
       "package": "methods",
       "callableNames": 209,
-      "overlappingNames": 12,
-      "nameCoverage": 0.057416
+      "overlappingNames": 13,
+      "nameCoverage": 0.062201
     },
     { "package": "utils", "callableNames": 262, "overlappingNames": 39, "nameCoverage": 0.148855 },
     {
@@ -72,6 +72,7 @@
     "Map",
     "Mod",
     "NextMethod",
+    "Quote",
     "R.home",
     "RNGkind",
     "RNGversion",
@@ -248,6 +249,7 @@
     "dim",
     "dim<-",
     "dimnames",
+    "dimnames<-",
     "dir",
     "dir.create",
     "dir.exists",
@@ -602,6 +604,7 @@
     "show",
     "showClass",
     "showConnections",
+    "sign",
     "signature",
     "signif",
     "simpleCondition",
@@ -919,7 +922,6 @@
     "PP.test",
     "Pair",
     "Position",
-    "Quote",
     "R.Version",
     "RShowDoc",
     "RSiteSearch",
@@ -1424,7 +1426,6 @@
     "digamma",
     "dim.data.frame",
     "dimnames.data.frame",
-    "dimnames<-",
     "dimnames<-.data.frame",
     "dist",
     "dlnorm",
@@ -2292,7 +2293,6 @@
     "showMethods",
     "sigToEnv",
     "sigma",
-    "sign",
     "signalCondition",
     "simulate",
     "single",
