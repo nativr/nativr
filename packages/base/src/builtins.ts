@@ -111,7 +111,7 @@ import { assertNever } from "@nativr/ast";
 import type { AstNode, CallArgument, FunctionParameter, SourceSpan } from "@nativr/ast";
 import { matchBuiltinArguments, matchLeadingDotsArguments } from "./arguments.js";
 import { CLUSTERING_BUILTIN_SPECS } from "./clustering.js";
-import { COLOUR_RAMP_BUILTIN_SPECS } from "./colour-ramp.js";
+import { COLOUR_RAMP_BUILTIN_SPECS, CONVERT_COLOUR_BUILTIN_SPEC } from "./colour-ramp.js";
 import {
   R_COLOUR_NAMES,
   R_DEFAULT_PALETTE,
@@ -2509,6 +2509,13 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
       ),
       colourRampFormals(definition.name),
     ),
+  ),
+  definePackageBuiltin(
+    "grDevices",
+    CONVERT_COLOUR_BUILTIN_SPEC.name,
+    CONVERT_COLOUR_BUILTIN_SPEC.parameters,
+    CONVERT_COLOUR_BUILTIN_SPEC.compatibility,
+    CONVERT_COLOUR_BUILTIN_SPEC.implementation,
   ),
   withBuiltinFormals(
     definePackageBuiltin(
@@ -24584,14 +24591,21 @@ async function builtinPaste(
       continue;
     }
     const value = await invocation.force(argument.promise);
-    if (!isAtomic(value)) {
-      throw new RTypeMismatchError("NRT3119", "paste() inputs must be atomic vectors.");
+    if (value.type === "null") {
+      inputs.push(characterVector([]));
+    } else if (value.type === "list" || value.type === "pairlist") {
+      inputs.push(characterVector(value.values.map(globListElementText)));
+    } else if (isAtomic(value)) {
+      inputs.push(value);
+    } else {
+      throw new RTypeMismatchError("NRT3119", "paste() inputs must be atomic vectors.", {
+        details: { type: value.type },
+      });
     }
-    inputs.push(value);
   }
 
   const length =
-    inputs.length === 0 || inputs.some((input) => input.length === 0)
+    inputs.length === 0 || inputs.every((input) => input.length === 0)
       ? 0
       : Math.max(...inputs.map((input) => input.length));
   invocation.context.allocate(length);
@@ -24599,6 +24613,7 @@ async function builtinPaste(
     invocation.context.checkpoint();
     return inputs
       .map((input) => {
+        if (input.length === 0) return "";
         const position = index % input.length;
         return isMissing(input, position) ? "NA" : stringAt(input, position);
       })
@@ -28339,6 +28354,7 @@ async function builtinGrep(invocation: BuiltinInvocation, logical: boolean): Pro
 interface BrowserMatchSpan {
   readonly start: number;
   readonly length: number;
+  readonly captures?: readonly BrowserMatchSpan[];
 }
 
 async function builtinRegexLocations(
@@ -28369,6 +28385,7 @@ async function builtinRegexLocations(
   const fixed = logicalFlag(matched.get("fixed"), false, "fixed");
   let ignoreCase = logicalFlag(matched.get("ignore.case"), false, "ignore.case");
   const perl = logicalFlag(matched.get("perl"), false, "perl");
+  const captureNames = perl && !fixed ? regexCaptureNames(pattern) : [];
   if (logicalFlag(matched.get("useBytes"), false, "useBytes")) {
     throw new RUnsupportedFeatureError(
       "NRU6142",
@@ -28395,11 +28412,32 @@ async function builtinRegexLocations(
       if (isMissing(input, index)) {
         return regexLocationVector([0], [0], [1]);
       }
-      const spans = browserMatchSpans(invocation, pattern, text, fixed, ignoreCase, true);
-      if (spans.length === 0) return regexLocationVector([-1], [-1]);
+      const spans = browserMatchSpans(
+        invocation,
+        pattern,
+        text,
+        fixed,
+        ignoreCase,
+        true,
+        captureNames.length > 0,
+      );
+      if (spans.length === 0) {
+        return regexLocationVector(
+          [-1],
+          [-1],
+          undefined,
+          captureNames.map(() => ({ start: -1, length: -1 })),
+          captureNames,
+        );
+      }
       return regexLocationVector(
         spans.map((span) => span.start),
         spans.map((span) => span.length),
+        undefined,
+        captureNames.flatMap((_, capture) =>
+          spans.map((span) => span.captures?.[capture] ?? { start: 0, length: 0 }),
+        ),
+        captureNames,
       );
     });
     invocation.context.allocate(
@@ -28411,12 +28449,18 @@ async function builtinRegexLocations(
   const positions: number[] = [];
   const lengths: number[] = [];
   const missing = new Uint8Array(input.length);
+  const captures: BrowserMatchSpan[] = [];
+  const captureMissing = new Uint8Array(input.length * captureNames.length);
   for (let index = 0; index < input.length; index += 1) {
     invocation.context.checkpoint();
     if (isMissing(input, index)) {
       positions.push(0);
       lengths.push(0);
       missing[index] = 1;
+      for (let capture = 0; capture < captureNames.length; capture += 1) {
+        captures.push({ start: 0, length: 0 });
+        captureMissing[index + capture * input.length] = 1;
+      }
       continue;
     }
     const span = browserMatchSpans(
@@ -28426,12 +28470,26 @@ async function builtinRegexLocations(
       fixed,
       ignoreCase,
       false,
+      captureNames.length > 0,
     )[0];
     positions.push(span?.start ?? -1);
     lengths.push(span?.length ?? -1);
+    for (let capture = 0; capture < captureNames.length; capture += 1) {
+      captures.push(span?.captures?.[capture] ?? { start: -1, length: -1 });
+    }
   }
   invocation.context.allocate(input.length * 2);
-  return regexLocationVector(positions, lengths, compactMask(missing));
+  const columnMajorCaptures = captureNames.flatMap((_, capture) =>
+    input.values.map((__, row) => captures[row * captureNames.length + capture]!),
+  );
+  return regexLocationVector(
+    positions,
+    lengths,
+    compactMask(missing),
+    columnMajorCaptures,
+    captureNames,
+    compactMask(captureMissing),
+  );
 }
 
 async function builtinRegexMatches(invocation: BuiltinInvocation): Promise<RValue> {
@@ -28501,8 +28559,9 @@ function browserMatchSpans(
   fixed: boolean,
   ignoreCase: boolean,
   global: boolean,
+  includeCaptures = false,
 ): readonly BrowserMatchSpan[] {
-  const expression = compileBrowserPattern(pattern, fixed, ignoreCase, global);
+  const expression = compileBrowserPattern(pattern, fixed, ignoreCase, global, includeCaptures);
   const spans: BrowserMatchSpan[] = [];
   while (true) {
     invocation.context.checkpoint();
@@ -28517,9 +28576,24 @@ function browserMatchSpans(
     ) {
       break;
     }
+    const indices = (
+      match as RegExpExecArray & {
+        readonly indices?: readonly (readonly [number, number] | undefined)[];
+      }
+    ).indices;
     spans.push({
       start: Array.from(text.slice(0, match.index)).length + 1,
       length: Array.from(matched).length,
+      captures: includeCaptures
+        ? Array.from({ length: Math.max(0, match.length - 1) }, (_, capture) => {
+            const bounds = indices?.[capture + 1];
+            if (bounds === undefined) return { start: 0, length: 0, captures: [] };
+            return {
+              start: Array.from(text.slice(0, bounds[0])).length + 1,
+              length: Array.from(text.slice(bounds[0], bounds[1])).length,
+            };
+          })
+        : [],
     });
     if (!global) break;
     if (matched === "") {
@@ -28535,11 +28609,40 @@ function regexLocationVector(
   positions: readonly number[],
   lengths: readonly number[],
   missing?: Uint8Array | readonly number[],
+  captures: readonly BrowserMatchSpan[] = [],
+  captureNames: readonly string[] = [],
+  captureMissing?: Uint8Array | readonly number[],
 ): RIntegerVector {
   let output = integerVector(positions, missing);
   output = withAttribute(output, "match.length", integerVector(lengths, missing));
   output = withAttribute(output, "index.type", characterVector(["chars"]));
-  return withAttribute(output, "useBytes", logicalVector([0]));
+  output = withAttribute(output, "useBytes", logicalVector([0]));
+  if (captureNames.length === 0) return output;
+  const dimensions = [positions.length, captureNames.length];
+  const dimnames = listValue([R_NULL, characterVector(captureNames)]);
+  const matrix = (field: "start" | "length") =>
+    withAttribute(
+      withDimensions(
+        integerVector(
+          captures.map((capture) => capture[field]),
+          captureMissing,
+        ),
+        dimensions,
+      ),
+      "dimnames",
+      dimnames,
+    );
+  output = withAttribute(output, "capture.start", matrix("start"));
+  output = withAttribute(output, "capture.length", matrix("length"));
+  return withAttribute(output, "capture.names", characterVector(captureNames));
+}
+
+function regexCaptureNames(pattern: string): readonly string[] {
+  const names: string[] = [];
+  for (const match of pattern.matchAll(/\\.|\[(?:\\.|[^\]])*\]|\((?:\?<([^=!][^>]*)>|(?!\?))/gu)) {
+    if (match[0].startsWith("(")) names.push(match[1] ?? "");
+  }
+  return names;
 }
 
 function regexSpansFromVector(
@@ -28618,7 +28721,10 @@ async function builtinStringSubstitute(
     required(matched, "replacement", global ? "gsub" : "sub"),
     "replacement",
   );
-  const input = requireCharacterVector(required(matched, "x", global ? "gsub" : "sub"), "x");
+  const input = stringSubstitutionInput(
+    required(matched, "x", global ? "gsub" : "sub"),
+    invocation,
+  );
   const fixed = logicalFlag(matched.get("fixed"), false, "fixed");
   logicalFlag(matched.get("perl"), false, "perl");
   if (
@@ -28653,6 +28759,30 @@ async function builtinStringSubstitute(
   });
   invocation.context.allocate(output.length);
   return characterVector(output, compactMask(missing));
+}
+
+function stringSubstitutionInput(input: RValue, invocation: BuiltinInvocation): RCharacterVector {
+  if (input.type === "null") return characterVector([]);
+  if (isAtomic(input)) return coerceAtomicToCharacter(input, invocation);
+  if (input.type === "list" || input.type === "pairlist") {
+    const values: string[] = [];
+    const missing = new Uint8Array(input.length);
+    for (let index = 0; index < input.length; index += 1) {
+      const element = input.values[index] ?? R_NULL;
+      if (element.type === "character" && element.length === 1 && isMissing(element, 0)) {
+        missing[index] = 1;
+        values.push("");
+      } else {
+        values.push(globListElementText(element));
+      }
+    }
+    invocation.context.allocate(values.length);
+    return characterVector(values, compactMask(missing));
+  }
+  throw new RTypeMismatchError(
+    "NRT3165",
+    `'x' cannot be coerced from ${input.type} to a character vector.`,
+  );
 }
 
 function isAsciiByteInvariantPattern(pattern: string): boolean {
@@ -29131,6 +29261,7 @@ function compileBrowserPattern(
   fixed: boolean,
   ignoreCase: boolean,
   global: boolean,
+  captureIndices = false,
 ): RegExp {
   if (pattern.length > 4096) {
     throw new RResourceLimitError("NRL4008", "Regular-expression pattern length limit exceeded.");
@@ -29148,7 +29279,10 @@ function compileBrowserPattern(
         return `\\u{${digits}}`;
       });
   try {
-    return new RegExp(source, `${global ? "g" : ""}${ignoreCase ? "i" : ""}u`);
+    return new RegExp(
+      source,
+      `${global ? "g" : ""}${ignoreCase ? "i" : ""}${captureIndices ? "d" : ""}u`,
+    );
   } catch (error) {
     throw new REvaluationError("NRE2129", "Invalid browser regular expression.", {
       details: { message: error instanceof Error ? error.message : String(error) },

@@ -43,6 +43,22 @@ export const COLOUR_RAMP_BUILTIN_SPECS: readonly ColourRampBuiltinSpec[] = [
   },
 ];
 
+export const CONVERT_COLOUR_BUILTIN_SPEC = {
+  name: "convertColor",
+  parameters: [
+    "color",
+    "from",
+    "to",
+    "from.ref.white",
+    "to.ref.white",
+    "scale.in",
+    "scale.out",
+    "clip",
+  ],
+  compatibility: "numeric",
+  implementation: builtinConvertColor,
+} as const;
+
 type Rgba = readonly [number, number, number, number];
 type Triple = readonly [number, number, number];
 
@@ -51,9 +67,9 @@ type RampSpace = "rgb" | "Lab";
 type RampInterpolation = "linear" | "spline";
 // Measured through the documented convertColor() boundary. R is used only as a black-box oracle.
 const SRGB_TO_XYZ: readonly Triple[] = [
-  [0.4168213, 0.3565767, 0.1798077],
-  [0.2149235, 0.7131534, 0.0719231],
-  [0.0195385, 0.1188589, 0.946987],
+  [0.41682134188531705, 0.35657671707797467, 0.17980765358608541],
+  [0.2149235044096166, 0.7131534341559493, 0.07192306143443417],
+  [0.01953850040087425, 0.11885890569265833, 0.9469869755533833],
 ];
 const XYZ_TO_SRGB: readonly Triple[] = [
   [3.2065205, -1.5210418, -0.4933108],
@@ -61,6 +77,100 @@ const XYZ_TO_SRGB: readonly Triple[] = [
   [0.0558383, -0.2047406, 1.0609284],
 ];
 const D65 = SRGB_TO_XYZ.map((row) => row[0] + row[1] + row[2]) as unknown as Triple;
+
+type ConversionSpace = "sRGB" | "Lab" | "XYZ";
+
+async function builtinConvertColor(invocation: BuiltinInvocation): Promise<RValue> {
+  const parameters = CONVERT_COLOUR_BUILTIN_SPEC.parameters;
+  const { matched } = matchBuiltinArguments(invocation, parameters);
+  const requirePromise = (name: "color" | "from" | "to") => {
+    const argument = matched.get(name);
+    if (argument === undefined || argument.promise.missing) {
+      throw new REvaluationError("NRE2144", `Argument '${name}' is missing in convertColor().`);
+    }
+    return argument.promise;
+  };
+  const color = await invocation.force(requirePromise("color"));
+  const from = conversionSpace(await invocation.force(requirePromise("from")), "from");
+  const to = conversionSpace(await invocation.force(requirePromise("to")), "to");
+  for (const name of ["from.ref.white", "to.ref.white"] as const) {
+    const argument = matched.get(name);
+    if (argument !== undefined && (await invocation.force(argument.promise)).type !== "null") {
+      throw new RUnsupportedFeatureError(
+        "NRU6149",
+        `convertColor(${name}=) is outside the current numeric contract.`,
+      );
+    }
+  }
+  const scaleIn = await rampNumber(invocation, matched.get("scale.in"), 1, "scale.in");
+  const scaleOut = await rampNumber(invocation, matched.get("scale.out"), 1, "scale.out");
+  if (scaleIn === 0) {
+    throw new RTypeMismatchError("NRT3292", "'scale.in' must be non-zero.");
+  }
+  const clip = await rampFlag(invocation, matched.get("clip"), true, "clip");
+  if (color.type !== "logical" && color.type !== "integer" && color.type !== "double") {
+    throw new RTypeMismatchError("NRT3292", "'color' must be a numeric three-column matrix.");
+  }
+  const dimensions = color.attributes.get("dim");
+  const matrix = dimensions?.type === "integer" && dimensions.length === 2;
+  const rows = matrix ? (dimensions.values[0] ?? 0) : color.length === 3 ? 1 : -1;
+  if (rows < 0 || (matrix && dimensions.values[1] !== 3) || rows * 3 !== color.length) {
+    throw new RTypeMismatchError("NRT3292", "'color' must have exactly three columns.");
+  }
+  const values = new Float64Array(rows * 3);
+  const missing = new Uint8Array(rows * 3);
+  for (let row = 0; row < rows; row += 1) {
+    invocation.context.checkpoint();
+    const source = [0, 1, 2].map((column) => row + column * rows);
+    if (source.some((index) => isMissing(color, index))) {
+      for (const index of source) missing[index] = 1;
+      continue;
+    }
+    const input = source.map(
+      (index) => (color.values[index] ?? Number.NaN) / scaleIn,
+    ) as unknown as Triple;
+    const xyz = conversionToXyz(input, from);
+    const converted = conversionFromXyz(xyz, to, clip);
+    for (let column = 0; column < 3; column += 1) {
+      values[row + column * rows] = (converted[column] ?? Number.NaN) * scaleOut;
+    }
+  }
+  invocation.context.allocate(values.length);
+  let output = withDimensions(
+    doubleVector(values, missing.some((entry) => entry === 1) ? missing : undefined),
+    [rows, 3],
+  );
+  if (to === "Lab") {
+    output = withAttribute(
+      output,
+      "dimnames",
+      listValue([R_NULL, characterVector(["L", "a", "b"])]),
+    );
+  }
+  return output;
+}
+
+function conversionSpace(value: RValue, name: "from" | "to"): ConversionSpace {
+  if (value.type !== "character" || value.length !== 1 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3292", `'${name}' must name one colour space.`);
+  }
+  const input = value.values[0] ?? "";
+  if (input === "sRGB" || input === "Lab" || input === "XYZ") return input;
+  throw new RUnsupportedFeatureError(
+    "NRU6149",
+    `convertColor() does not support colour space '${input}'.`,
+  );
+}
+
+function conversionToXyz(value: Triple, space: ConversionSpace): Triple {
+  if (space === "XYZ") return value;
+  return space === "sRGB" ? srgbToXyz(value) : labToXyz(value);
+}
+
+function conversionFromXyz(value: Triple, space: ConversionSpace, clip: boolean): Triple {
+  if (space === "XYZ") return value;
+  return space === "sRGB" ? xyzToSrgb(value, clip) : xyzToLab(value);
+}
 
 async function builtinColorRamp(invocation: BuiltinInvocation): Promise<RValue> {
   const settings = await rampSettings(invocation, "colorRamp");
@@ -536,26 +646,42 @@ function splineSecondDerivatives(
 }
 
 function srgbToLab(rgb: Triple): Triple {
-  const xyz = multiplyMatrix(
+  return xyzToLab(srgbToXyz(rgb));
+}
+
+function srgbToXyz(rgb: Triple): Triple {
+  return multiplyMatrix(
     SRGB_TO_XYZ,
     rgb.map((channel) =>
       channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
     ) as unknown as Triple,
   );
+}
+
+function xyzToLab(xyz: Triple): Triple {
   const scaled = xyz.map((value, index) => labForward(value / D65[index]!)) as unknown as Triple;
   return [116 * scaled[1] - 16, 500 * (scaled[0] - scaled[1]), 200 * (scaled[1] - scaled[2])];
 }
 
 function labToSrgb(lab: Triple): Triple {
+  return xyzToSrgb(labToXyz(lab), true).map(
+    (channel) => Math.round(channel * 100_000) / 100_000,
+  ) as unknown as Triple;
+}
+
+function labToXyz(lab: Triple): Triple {
   const y = (lab[0] + 16) / 116;
-  const xyz: Triple = [
+  return [
     D65[0] * labInverse(y + lab[1] / 500),
     D65[1] * labInverse(y),
     D65[2] * labInverse(y - lab[2] / 200),
   ];
+}
+
+function xyzToSrgb(xyz: Triple, clip: boolean): Triple {
   return multiplyMatrix(XYZ_TO_SRGB, xyz).map((channel) => {
     const encoded = channel <= 0.0031308 ? 12.92 * channel : 1.055 * channel ** (1 / 2.4) - 0.055;
-    return Math.round(Math.max(0, Math.min(1, encoded)) * 100_000) / 100_000;
+    return clip ? Math.max(0, Math.min(1, encoded)) : encoded;
   }) as unknown as Triple;
 }
 

@@ -3,3 +3,6 @@ Copyright 2026 the NativR contributors
 
 This package depends on tar 7.5.22 by Isaac Z. Schlueter and contributors, licensed under the Blue
 Oak Model License 1.0.0: https://blueoakcouncil.org/license/1.0.0
+
+This package depends on bz2 1.0.1 by SheetJS contributors, licensed under the MIT License:
+https://github.com/sheetjs/bz2

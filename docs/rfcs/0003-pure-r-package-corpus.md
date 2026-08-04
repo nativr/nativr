@@ -18,6 +18,14 @@ source-resource context for standard package `tools/` files. Both now reach P4 t
 public source and have moved to regression. `praise 1.0.0` and `prettyunits 1.2.0` replace them as
 uninspected P0 holdouts.
 
+The second holdout rotation evaluated `praise 1.0.0` and `prettyunits 1.2.0` without first using
+their R source to guide implementation. Both now reach P4 through unchanged public source. The
+evaluation exposed reusable PCRE capture metadata, quoted call-tag normalization, `paste()` and
+`sub()` coercion semantics, the `grDevices::convertColor` import surface, and build-time
+normalization of bounded bzip2-compressed package data. Both packages moved to regression;
+usage-ranked pure-R packages `evaluate 1.0.5` and `numDeriv 2016.8-1.1` are the new uninspected P0
+holdouts.
+
 ## Validation tiers
 
 | Tier | Required evidence                              |

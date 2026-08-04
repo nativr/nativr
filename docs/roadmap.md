@@ -894,7 +894,11 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      produce exact observed palettes. The sixth proof, unchanged RColorBrewer 1.1-3, composes
      generic trailing `data.frame()` controls and explicit row-name construction with existing
      subsetting, warning, recursion, `switch`, and `rgb` semantics; broader measured pure-R package
-     execution remains future work.
+     execution remains future work. The second source-blind holdout rotation moves unchanged
+     `praise 1.0.0` and `prettyunits 1.2.0` to P4 regression evidence through generic PCRE capture
+     metadata, quoted call tags, string coercion, D65 `convertColor`, and build-time bzip2 package-
+     resource normalization. `evaluate 1.0.5` and `numDeriv 2016.8-1.1` are the next uninspected P0
+     holdouts.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means
@@ -910,12 +914,12 @@ the measured surface is runnable, not that NativR implements all R semantics or 
    numeric algorithms, statistics, and graphics behind browser-safe host interfaces.
 3. Implement the full inventoried core namespace surface with per-callable differential evidence.
 4. Expand the executable package installer from the pinned
-   `pkgconfig`/`generics`/`withr`/`R6`/`viridisLite`/`RColorBrewer` proofs to the measured pure-R
-   package corpus, binary/text data adapters, broader namespace/object-system declarations, package
-   test orchestration, and R CMD check scenarios without embedding GNU R or webR. In parallel, turn
-   the typed `.Call` seam into a reusable audited Wasm package toolchain, including
-   routine-registration extraction and the portable value/API subset needed by measured compiled
-   packages.
+   `pkgconfig`/`generics`/`withr`/`R6`/`viridisLite`/`RColorBrewer`/`assertthat`/`crayon`/`praise`/
+   `prettyunits` proofs to the measured pure-R package corpus, binary/text data adapters, broader
+   namespace/object-system declarations, package test orchestration, and R CMD check scenarios
+   without embedding GNU R or webR. In parallel, turn the typed `.Call` seam into a reusable audited
+   Wasm package toolchain, including routine-registration extraction and the portable value/API
+   subset needed by measured compiled packages.
 5. Verify platform, browser, locale, time-zone, graphics, numeric, and performance behavior against
    the completion criteria in the GNU R compatibility ledger.
 6. Continue refreshing package-usage snapshots so high-reach gaps determine implementation order

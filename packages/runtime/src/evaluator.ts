@@ -379,6 +379,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "col2rgb",
       "colorRamp",
       "colorRampPalette",
+      "convertColor",
       "colors",
       "colours",
       "cm.colors",

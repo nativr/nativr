@@ -306,9 +306,9 @@ function normalizeFunction(node: Node, mapper: Utf8SourceMap, span: SourceSpan):
       const defaultNode = parameter.childForFieldName("default");
       const parameterSpan = mapper.span(parameter.startIndex, parameter.endIndex);
       return defaultNode === null
-        ? { name: name.text, span: parameterSpan }
+        ? { name: decodeRIdentifier(name.text), span: parameterSpan }
         : {
-            name: name.text,
+            name: decodeRIdentifier(name.text),
             defaultValue: normalizeNode(defaultNode, mapper),
             span: parameterSpan,
           };
@@ -398,8 +398,16 @@ function decodeRString(text: string): string {
 }
 
 function decodeRIdentifier(text: string): string {
-  if (!text.startsWith("`") || !text.endsWith("`")) return text;
-  return text.slice(1, -1).replace(/\\([\\`])/gu, "$1");
+  if (text.startsWith("`") && text.endsWith("`")) {
+    return text.slice(1, -1).replace(/\\([\\`])/gu, "$1");
+  }
+  if (
+    (text.startsWith('"') && text.endsWith('"')) ||
+    (text.startsWith("'") && text.endsWith("'"))
+  ) {
+    return decodeRString(text);
+  }
+  return text;
 }
 
 function collectSyntaxDiagnostics(

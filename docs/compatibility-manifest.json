@@ -2,8 +2,8 @@
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
   "targetRVersion": "4.6.1",
-  "semanticProfileVersion": "0.280.0",
-  "languageSubsetVersion": "0.280.0",
+  "semanticProfileVersion": "0.281.0",
+  "languageSubsetVersion": "0.281.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -687,6 +687,7 @@
       "functions": [
         { "name": "colorRamp", "compatibility": "numeric" },
         { "name": "colorRampPalette", "compatibility": "numeric" },
+        { "name": "convertColor", "compatibility": "numeric" },
         { "name": "hcl", "compatibility": "behavioral" },
         { "name": "col2rgb", "compatibility": "behavioral" },
         { "name": "rgb", "compatibility": "behavioral" },

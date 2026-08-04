@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
 
+import bz2 from "bz2";
+
 import {
   parseDcf,
   parsePackageDependencies,
@@ -88,12 +90,20 @@ export async function inspectPackage(
     path: file.path,
     source: decodePackageText(file, "R source", decodedDescription.encoding),
   }));
-  const resources = files.flatMap((file) => {
+  const resources: { path: string; data: string }[] = [];
+  let installedResourceBytes = 0;
+  for (const file of files) {
     const installedPath = installedResourcePath(file.path);
-    return installedPath === undefined
-      ? []
-      : [{ path: installedPath, data: Buffer.from(file.data).toString("base64") }];
-  });
+    if (installedPath === undefined) continue;
+    const data = normalizeInstalledResource(file, limits);
+    installedResourceBytes += data.byteLength;
+    if (installedResourceBytes > limits.maxTotalBytes) {
+      throw new Error(
+        `Installed package resources exceed the ${limits.maxTotalBytes}-byte normalized limit.`,
+      );
+    }
+    resources.push({ path: installedPath, data: Buffer.from(data).toString("base64") });
+  }
   if (
     resources.some(
       (resource) =>
@@ -196,6 +206,32 @@ export async function inspectPackage(
   });
 }
 
+function normalizeInstalledResource(
+  file: PackageSourceFile,
+  limits: PackagePackLimits,
+): Uint8Array {
+  const serializable = /^(?:R\/(?:.*\/)?sysdata|(?:data|demo)\/.*)\.(?:rda|rdata|rds)$/iu.test(
+    file.path,
+  );
+  if (!serializable || file.data[0] !== 0x42 || file.data[1] !== 0x5a || file.data[2] !== 0x68) {
+    return file.data;
+  }
+  let output: Uint8Array;
+  try {
+    output = bz2.decompress(file.data);
+  } catch (error) {
+    throw new Error(`Package resource '${file.path}' contains invalid bzip2 data.`, {
+      cause: error,
+    });
+  }
+  if (output.byteLength > limits.maxFileBytes) {
+    throw new Error(
+      `Package resource '${file.path}' expands beyond the ${limits.maxFileBytes}-byte normalized limit.`,
+    );
+  }
+  return output;
+}
+
 /** Build a loadable candidate, refusing install surfaces the current browser runtime cannot model. */
 export async function packPackage(
   source: string | URL,
@@ -293,7 +329,7 @@ function inspectInstallSurface(
         issues,
         "NRPKG1004",
         "warning",
-        "Internal sysdata uses the browser runtime's bounded GNU R serialization decoder; unsupported serialized value types still fail explicitly.",
+        "Internal sysdata uses build-time bzip2 normalization when needed and the browser runtime's bounded GNU R serialization decoder; unsupported serialized value types and compression remain explicit.",
         file.path,
       );
     } else if (/^(?:data|demo)\/.*\.(?:rda|rdata|rds)$/iu.test(file.path)) {
@@ -301,7 +337,7 @@ function inspectInstallSurface(
         issues,
         "NRPKG1005",
         "warning",
-        "GNU R binary data uses the bounded XDR/gzip decoder; unsupported compression or value types still fail explicitly.",
+        "GNU R binary data uses build-time bzip2 normalization when needed and the bounded browser XDR/gzip decoder; unsupported compression or value types still fail explicitly.",
         file.path,
       );
     }

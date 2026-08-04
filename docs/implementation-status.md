@@ -127,23 +127,23 @@ Date: 2026-08-03
   locations; unchanged `withr 3.0.3` runs `with_libpaths()` and restores state. Host library scans,
   startup `R_LIBS*`, runtime downloads, multiple installed versions, and binary trees remain gaps.
 - Unchanged external-package execution is pinned for `pkgconfig 2.0.3`, `generics 0.1.4`,
-  `withr 3.0.3`, `R6 2.6.1`, `viridisLite 0.4.3`, `RColorBrewer 1.1-3`, and `labeling 0.4.3`.
-  Completed tiers and blockers are generated from the package corpus rather than collapsed into a
-  supported/unsupported label. The latest proofs cover package-owned S3 dispatch, a generated
-  `with_options()` wrapper using call/formal/environment replacement, `bquote`, dynamic caller
-  frames, hooks, and state restoration, plus `with_envvar()` mutation and cleanup through
-  session-owned environment variables, plus unchanged R6 generator construction, object
-  instantiation, public/private method calls, reference field mutation, and an active read/write
-  field, plus shallow and recursive deep cloning of nested R6 objects, without translating or
-  patching package code. The same unchanged package now constructs a three-level hierarchy and
-  executes recursive `super$initialize()`/`super$greet()` paths with inherited fields, methods, and
-  class membership. Unchanged viridisLite loads its package-owned 256-anchor map and executes
-  Viridis, Magma, and reversed translucent palettes through generic Lab spline and matrix
-  arithmetic. Unchanged RColorBrewer constructs its exported 35-row palette metadata with explicit
-  row names, then executes exact Set1/Blues palettes and the recursive minimum-size warning path.
-  Unchanged labeling reaches P4 across all nine labeling algorithms; `extended.figures()` records
-  `axis(xlab=)` as its first P5 blocker after exercising shared parallel extrema and histogram
-  paths.
+  `withr 3.0.3`, `R6 2.6.1`, `viridisLite 0.4.3`, `RColorBrewer 1.1-3`, `labeling 0.4.3`,
+  `assertthat 0.2.1`, `crayon 1.5.3`, `praise 1.0.0`, and `prettyunits 1.2.0`. Completed tiers and
+  blockers are generated from the package corpus rather than collapsed into a supported/unsupported
+  label. The latest proofs cover package-owned S3 dispatch, a generated `with_options()` wrapper
+  using call/formal/environment replacement, `bquote`, dynamic caller frames, hooks, and state
+  restoration, plus `with_envvar()` mutation and cleanup through session-owned environment
+  variables, plus unchanged R6 generator construction, object instantiation, public/private method
+  calls, reference field mutation, and an active read/write field, plus shallow and recursive deep
+  cloning of nested R6 objects, without translating or patching package code. The same unchanged
+  package now constructs a three-level hierarchy and executes recursive
+  `super$initialize()`/`super$greet()` paths with inherited fields, methods, and class membership.
+  Unchanged viridisLite loads its package-owned 256-anchor map and executes Viridis, Magma, and
+  reversed translucent palettes through generic Lab spline and matrix arithmetic. Unchanged
+  RColorBrewer constructs its exported 35-row palette metadata with explicit row names, then
+  executes exact Set1/Blues palettes and the recursive minimum-size warning path. Unchanged labeling
+  reaches P4 across all nine labeling algorithms; `extended.figures()` records `axis(xlab=)` as its
+  first P5 blocker after exercising shared parallel extrema and histogram paths.
 - Session environment variables are explicit, isolated runtime state. `createR()` snapshots an
   optional string map for inline or Worker execution; GNU R-shaped `Sys.getenv()`, `Sys.setenv()`,
   and `Sys.unsetenv()` query and mutate it, while reset restores the original map and host process
@@ -461,7 +461,9 @@ Date: 2026-08-03
   wrapper. Exact black-box GNU R bytes, package `.rda`, `R/sysdata.rda`, raw-vector roundtrips,
   return visibility, malformed input, and resource limits have executable coverage.
   ASCII/native-endian formats, ordinary environments, closures/language objects, more ALTREP
-  classes, bzip2/xz/zstd, host files, and installed lazy-load databases remain explicit boundaries.
+  classes, direct runtime bzip2/xz/zstd, host files, and installed lazy-load databases remain
+  explicit boundaries. The Node-only package tool can normalize bzip2-wrapped package data/sysdata
+  into size-checked raw serialization resources before the artifact reaches the browser.
 - Usage-ranked `graphics::polygon` for zoo's measured filled-area panel helper, including paired
   vector/matrix/data-frame/list/complex coordinates, missing-coordinate polygon splitting, recycled
   fill/border colors and line types/widths, solid/no-fill density, even-odd rules, invisible

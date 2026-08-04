@@ -76,6 +76,13 @@ describe("Tree-sitter normalization", () => {
       kind: "CallExpression",
       arguments: [{ name: "slot name", value: { kind: "DoubleLiteral", value: 1 } }],
     });
+    expect(parser.parse("list(\"quoted name\" = 1, 'single' = 2)").ast.body[0]).toMatchObject({
+      kind: "CallExpression",
+      arguments: [
+        { name: "quoted name", value: { kind: "DoubleLiteral", value: 1 } },
+        { name: "single", value: { kind: "DoubleLiteral", value: 2 } },
+      ],
+    });
     expect(parser.parse("x %o% y").ast.body[0]).toMatchObject({
       kind: "CallExpression",
       callee: { kind: "Identifier", name: "%o%" },

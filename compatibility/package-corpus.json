@@ -131,25 +131,49 @@
     {
       "package": "praise",
       "version": "1.0.0",
-      "partition": "holdout",
+      "partition": "regression",
       "sourceUrl": "https://cloud.r-project.org/src/contrib/praise_1.0.0.tar.gz",
       "sourceSha256": "5c035e74fd05dfa59b03afe0d5f4c53fbf34144e175e90c53d09c6baedf5debd",
-      "artifactSha256": null,
-      "tier": "P0",
-      "status": "unevaluated",
-      "evidence": "Source release metadata and archive integrity only; package code has not guided implementation.",
+      "artifactSha256": "2b019b6f6363cfd1ddbf20694b6cdf6e6ce0fcb67f1775d5c64697d6ef5c2cae",
+      "tier": "P4",
+      "status": "passing",
+      "evidence": "packages/package-tools/test/external-package.test.ts",
       "firstBlocker": null
     },
     {
       "package": "prettyunits",
       "version": "1.2.0",
-      "partition": "holdout",
+      "partition": "regression",
       "sourceUrl": "https://cloud.r-project.org/src/contrib/prettyunits_1.2.0.tar.gz",
       "sourceSha256": "f059f27e2a5c82e351fe05b87ad712f7afc273c651450453f59d99af5deeacea",
+      "artifactSha256": "69d93f2b9a1190f907f14d7fb03f8f8c1ab424570544d9e27a8d52aa4ecd9a18",
+      "tier": "P4",
+      "status": "passing",
+      "evidence": "packages/package-tools/test/external-package.test.ts",
+      "firstBlocker": null
+    },
+    {
+      "package": "evaluate",
+      "version": "1.0.5",
+      "partition": "holdout",
+      "sourceUrl": "https://cloud.r-project.org/src/contrib/evaluate_1.0.5.tar.gz",
+      "sourceSha256": "47aac79f889a828a5f8b4756cb972d7c2966bb984cbae17a4bd2389a73270794",
       "artifactSha256": null,
       "tier": "P0",
       "status": "unevaluated",
-      "evidence": "Source release metadata and archive integrity only; package code has not guided implementation.",
+      "evidence": "Usage-ranked source release metadata and archive integrity only; package code has not been evaluated or used to guide implementation.",
+      "firstBlocker": null
+    },
+    {
+      "package": "numDeriv",
+      "version": "2016.8-1.1",
+      "partition": "holdout",
+      "sourceUrl": "https://cloud.r-project.org/src/contrib/numDeriv_2016.8-1.1.tar.gz",
+      "sourceSha256": "d8c4d19ff9aeb31b0c628bd4a16378e51c1c9a3813b525469a31fe89af00b345",
+      "artifactSha256": null,
+      "tier": "P0",
+      "status": "unevaluated",
+      "evidence": "Usage-ranked source release metadata and archive integrity only; package code has not been evaluated or used to guide implementation.",
       "firstBlocker": null
     }
   ]

@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 421 KiB gzip;
+- Worker JavaScript: 422 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -927,3 +927,12 @@ assertthat 0.2.1 and crayon 1.5.3 remain opt-in and contribute no package source
 to the shipped Worker. The measured Worker is 420.1 KiB gzip (430,189 bytes), 1,133 bytes above the
 previous 419 KiB ceiling, so the ceiling rises narrowly to 421 KiB; client and parser-Wasm budgets
 remain unchanged.
+
+Language subset 0.281 adds generic PCRE capture-location metadata, quoted call-tag normalization,
+NULL/recursive `paste` coercion, atomic/recursive substitution coercion, and a numeric D65
+`grDevices::convertColor` slice. The Node-only package tool additionally normalizes bzip2 package
+resources without adding a decompressor or package payload to the browser. Unchanged `praise 1.0.0`
+and `prettyunits 1.2.0` remain opt-in and ship no package source. After consolidating capture-matrix
+construction, the measured Worker is 421.1 KiB gzip (431,230 bytes), 126 bytes above the previous
+421 KiB ceiling, so the ceiling rises narrowly to 422 KiB; client and parser-Wasm budgets remain
+unchanged.

@@ -685,3 +685,123 @@ it.runIf(runExternal)(
   },
   30_000,
 );
+
+it.runIf(runExternal)(
+  "packs, loads, and exercises the unchanged public praise 1.0.0 pure-R package",
+  async () => {
+    let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    try {
+      const installed = await installPackagesFromRepository(["praise"]);
+      const artifact = installed.artifacts.find((candidate) => candidate.package.name === "praise");
+      expect(artifact).toMatchObject({
+        package: { name: "praise", version: "1.0.0" },
+        compatibility: { packaging: "ready", execution: "unchecked" },
+        integrity: {
+          algorithm: "sha256",
+          value: "2b019b6f6363cfd1ddbf20694b6cdf6e6ce0fcb67f1775d5c64697d6ef5c2cae",
+        },
+      });
+      runtime = await createR({
+        execution: "inline",
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+        packages: installed.bundles,
+      });
+      await expect(runtime.eval('requireNamespace("praise", quietly = TRUE)')).resolves.toBe(true);
+      await expect(runtime.eval('as.character(packageVersion("praise"))')).resolves.toBe("1.0.0");
+      await expect(runtime.eval('sort(getNamespaceExports("praise"))')).resolves.toEqual([
+        "praise",
+        "praise_parts",
+      ]);
+      await expect(
+        runtime.eval(`
+          set.seed(1)
+          replacement <- sample(praise::praise_parts[["adjective"]], 1)
+          c(typeof(replacement), length(replacement), replacement)
+        `),
+      ).resolves.toEqual(["character", "1", "praiseworthy"]);
+      await expect(
+        runtime.eval(`
+          set.seed(1)
+          c(
+            praise::praise(),
+            praise::praise("A \${adjective} \${rpackage}!")
+          )
+        `),
+      ).resolves.toEqual(["You are praiseworthy!", "A gnarly code!"]);
+    } finally {
+      await runtime?.dispose();
+    }
+  },
+  30_000,
+);
+
+it.runIf(runExternal)(
+  "packs, loads, and exercises the unchanged public prettyunits 1.2.0 pure-R package",
+  async () => {
+    let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    try {
+      const installed = await installPackagesFromRepository(["prettyunits"]);
+      const artifact = installed.artifacts.find(
+        (candidate) => candidate.package.name === "prettyunits",
+      );
+      expect(artifact).toMatchObject({
+        package: { name: "prettyunits", version: "1.2.0" },
+        compatibility: { packaging: "ready", execution: "unchecked" },
+        integrity: {
+          algorithm: "sha256",
+          value: "69d93f2b9a1190f907f14d7fb03f8f8c1ab424570544d9e27a8d52aa4ecd9a18",
+        },
+      });
+      runtime = await createR({
+        execution: "inline",
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+        packages: installed.bundles,
+      });
+      await expect(runtime.eval('requireNamespace("prettyunits", quietly = TRUE)')).resolves.toBe(
+        true,
+      );
+      await expect(runtime.eval('as.character(packageVersion("prettyunits"))')).resolves.toBe(
+        "1.2.0",
+      );
+      await expect(
+        runtime.eval(`
+          computed <- prettyunits::compute_bytes(c(0, 1024, 1e6))
+          c(computed$amount, computed$unit, computed$negative)
+        `),
+      ).resolves.toEqual(["0", "1.024", "1", "B", "kB", "MB", "FALSE", "FALSE", "FALSE"]);
+      await expect(
+        runtime.eval('prettyunits::pretty_bytes(c(0, 1024, 1e6), style = "default")'),
+      ).resolves.toEqual(["    0 B", "1.02 kB", "   1 MB"]);
+      await expect(runtime.eval("prettyunits::pretty_bytes(c(0, 1024, 1e6))")).resolves.toEqual([
+        "    0 B",
+        "1.02 kB",
+        "   1 MB",
+      ]);
+      await expect(runtime.eval("prettyunits::pretty_ms(c(1, 1000, 60000))")).resolves.toEqual([
+        "1ms",
+        "1s",
+        "1m",
+      ]);
+      await expect(runtime.eval("prettyunits::pretty_num(c(1, 1000, 1e6))")).resolves.toEqual([
+        " 1 ",
+        "1 k",
+        "1 M",
+      ]);
+    } finally {
+      await runtime?.dispose();
+    }
+  },
+  30_000,
+);

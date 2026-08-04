@@ -608,6 +608,12 @@ reports the stream version, writer/minimum-reader versions, format, and native e
 native-endian, ordinary environment/closure/language graphs, reference hooks, unsupported ALTREP
 classes, bzip2/xz/zstd, cycles, and host persistence fail explicitly.
 
+The Node-only package tool may normalize bzip2-wrapped `.rda`, `.RData`, and `.rds` package
+resources to raw serialization bytes while constructing a size-checked immutable artifact. The
+browser still receives only the existing raw/XDR/gzip surface: direct runtime bzip2, xz, and zstd
+streams remain unsupported, and no decompressor or install-time filesystem authority is added to the
+browser bundle.
+
 `save(..., list, file, envir)` selects bindings without evaluating direct object names, forces their
 promises by default, serializes a named pairlist behind the GNU R `RDX2`/`RDX3` workspace header,
 and writes a binary session file. `load(file, envir, verbose)` decodes session or immutable package

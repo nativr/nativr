@@ -237,10 +237,13 @@ The string surface includes `paste`, `paste0`, `sprintf`, `format`, `grep`, `gre
 `strsplit`, `substring`, `substr`, `nchar`, `nzchar`, `tolower`, `toupper`, `chartr`, `trimws`,
 `regexpr`, `gregexpr`, and `regmatches`. `trimws` covers both/left/right selection, configurable
 whitespace patterns, missing values, atomic and bounded list coercion, and character-vector
-attributes. Regex location objects use one-based Unicode-character positions and `match.length`
+attributes. `paste`/`paste0` cover NULL/zero-length recycling and bounded list/pairlist coercion;
+`sub`/`gsub` coerce atomic, factor, list, pairlist, and NULL input through the same owned string
+surface. Regex location objects use one-based Unicode-character positions and `match.length`
 metadata. First/global matching, unmatched and missing text, zero-width matches, names, full-match
-extraction, and inverse gaps have differential coverage. Regular-expression operations use a bounded
-ECMAScript-compatible subset. Byte-oriented matching, capture start/length/name matrices,
+extraction, and inverse gaps have differential coverage. In `perl = TRUE` mode, named and unnamed
+capture groups additionally expose `capture.start`, `capture.length`, and `capture.names` matrices.
+Regular-expression operations use a bounded ECMAScript-compatible subset. Byte-oriented matching,
 `regexec`/`gregexec`, replacement through `regmatches<-`, locale-sensitive collation, exhaustive
 recursive list stringification, and full GNU R TRE/PCRE/format compatibility are not claimed.
 
@@ -921,14 +924,18 @@ zero/singleton output lengths. Isoband's six-anchor 21-color palette and unchang
 657 catalog names are accepted as color inputs. Wide-gamut/device profiles, other color spaces, and
 exhaustive coercion/out-of-gamut rounding remain outside this bounded slice.
 
+`grDevices::convertColor` has numeric differential evidence for numeric three-column matrices and
+vectors converted among D65 sRGB, CIE Lab, and XYZ, including input/output scaling, sRGB clipping,
+missing rows, matrix shape, and Lab column names. Custom reference whites, Apple RGB, CIE RGB, Luv,
+chromatic adaptation, and device-profile color management remain explicit unsupported boundaries.
+
 `grDevices::hcl` has differential evidence for all six measured ggplot2/zoo calls, including a
 2,500-color raster vector, a ten-color strip, translucent threshold colors, and opaque neutral/high-
 chroma colors. The browser-owned polar CIE-LUV/D65-to-sRGB path covers vector recycling, default and
 exact formals, optional/recycled alpha, zero-length inputs, missing/non-finite coordinates, finite
 range validation, clamped gamut fixup, and `NA` for out-of-gamut colors when `fixup = FALSE`.
 Source-only package and default Worker execution use the same registered callable. ICC profiles,
-device-dependent color management, `hcl.colors`, and the broader color-conversion API remain
-separate compatibility depth.
+device-dependent color management, and `hcl.colors` remain separate compatibility depth.
 
 `grDevices::col2rgb` has differential evidence for stringr's measured named-color-to-hex helper, the
 complete 657-name catalog, short and long RGB(A) hexadecimal forms, transparent and missing values,
@@ -2387,22 +2394,27 @@ resource root and relative reads resolve there only while retained package sourc
 `system.file()` cannot expose that implementation root. This models a bounded read-only part of
 source installation, not a complete `R CMD INSTALL` snapshot. Digest-pinned opt-in executable tests
 cover unchanged `pkgconfig 2.0.3`, `generics 0.1.4`, `withr 3.0.3`, `R6 2.6.1`, `viridisLite 0.4.3`,
-and `RColorBrewer 1.1-3`, `assertthat 0.2.1`, and `crayon 1.5.3` sources. They prove the
-repository-to-namespace path, package-owned S3 dispatch, and generated state-restoring wrappers
-through `with_options()`, plus R6 generator/object construction and public reference mutation,
-private-state method access, an active read/write field, shallow/deep cloning, and three-level
-inheritance with recursive `super` calls, plus package-owned 256-anchor Lab spline palettes through
-generic arithmetic/array and `grDevices::colorRamp` semantics, plus exported RColorBrewer palette
-metadata through explicit-row-name `data.frame()` construction and exact palette/warning execution,
-without package patches.
+`RColorBrewer 1.1-3`, `assertthat 0.2.1`, `crayon 1.5.3`, `praise 1.0.0`, and `prettyunits 1.2.0`
+sources. The second holdout rotation was evaluated without first using either package's R source to
+guide implementation; both now reach P4 through public APIs and have separate pinned source and
+NativR-artifact digests. Together these tests prove the repository-to-namespace path, package-owned
+S3 dispatch, and generated state-restoring wrappers through `with_options()`, plus R6
+generator/object construction and public reference mutation, private-state method access, an active
+read/write field, shallow/deep cloning, and three-level inheritance with recursive `super` calls,
+plus package-owned 256-anchor Lab spline palettes through generic arithmetic/array and
+`grDevices::colorRamp` semantics, plus exported RColorBrewer palette metadata through
+explicit-row-name `data.frame()` construction and exact palette/warning execution, without package
+patches.
 
 Package admission is not universal execution compatibility. Package `data/*.R`, `.csv`, `.tab`,
 `.txt`, and XDR/gzip `.rda`/`.RData` discovery/loading is supported through `utils::data`, including
-explicit target environments and overwrite protection. `R/sysdata.rda` initializes the namespace
-before package source. Depends-style attachment, installed `.rdx`/`.rdb` lazy-load databases, data
-indexes/aliases, broader NAMESPACE and S4 registration, bytecode, compiled code, arbitrary
-connections, unsupported serialized types/compressors, license-policy decisions, and R CMD check
-behavior remain outside this slice.
+explicit target environments and overwrite protection. The package tool normalizes bzip2-wrapped
+`.rda`/`.RData`/`.rds` resources to size-checked raw serialization bytes at build time; no bzip2
+decoder or package-installation authority enters the browser bundle. `R/sysdata.rda` initializes the
+namespace before package source. Depends-style attachment, installed `.rdx`/`.rdb` lazy-load
+databases, data indexes/aliases, broader NAMESPACE and S4 registration, bytecode, compiled code,
+arbitrary connections, direct runtime bzip2 streams, xz/zstd, unsupported serialized types,
+license-policy decisions, and R CMD check behavior remain outside this slice.
 
 Usage-ranked `base::args()` has GNU R 4.6 differential evidence for ordinary closures, registered
 builtins, first-class operators, character function names, default expressions, ellipsis, global

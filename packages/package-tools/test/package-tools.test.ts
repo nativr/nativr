@@ -499,6 +499,42 @@ describe("pure-R package packager", () => {
     }
   });
 
+  it("normalizes bzip2-compressed sysdata before it enters a browser bundle", async () => {
+    const packageRoot = await fixturePackage();
+    await writeFile(
+      path.join(packageRoot, "R", "sysdata.rda"),
+      Buffer.from(
+        "425a6839314159265359ab3e0de30000347f80ffb1480000020840c500164022074b404001200054354f4d200d340683d41a6d41a6a4641a3d4d00d00037dba457295954854a7adbe680c290c1810072181416a100104018903200c804d581fbb60638e5e9766928aafd28aacd6b528362c07e2ee48a70a121567c1bc6",
+        "hex",
+      ),
+    );
+    await writeFile(
+      path.join(packageRoot, "R", "main.R"),
+      "sysdata_total <- function() sum(example$value)\n",
+    );
+    await writeFile(path.join(packageRoot, "NAMESPACE"), "export(sysdata_total)\n");
+
+    const artifact = await packPackage(packageRoot);
+    const sysdata = artifact.bundle.resources.find((resource) => resource.path === "R/sysdata.rda");
+    const normalized = Buffer.from(sysdata?.data ?? "", "base64");
+    expect(normalized.subarray(0, 3).toString("ascii")).not.toBe("BZh");
+    expect(normalized.subarray(0, 4).toString("ascii")).toBe("RDX3");
+
+    const runtime = await createR({
+      execution: "inline",
+      assets: {
+        treeSitterRuntimeWasm: new URL("../../parser/assets/web-tree-sitter.wasm", import.meta.url),
+        rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+      },
+      packages: [artifact.bundle],
+    });
+    try {
+      await expect(runtime.eval("demopkg::sysdata_total()")).resolves.toBe(3);
+    } finally {
+      await runtime.dispose();
+    }
+  });
+
   it("reads the canonical one-directory source tarball shape without extracting links", async () => {
     const packageRoot = await fixturePackage();
     const parent = path.dirname(packageRoot);

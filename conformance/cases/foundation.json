@@ -376,6 +376,13 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "paste-null-empty-and-recursive-coercion",
+    "code": "c(length(paste(NULL)), paste(\"x\", NULL, \"y\"), paste(list(\"a\", \"b\"), 1:2), paste(list(1:2, c(\"a\", \"b\"))))",
+    "expected": ["0", "x  y", "a 1", "b 2", "1:2", "c(\"a\", \"b\")"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "character-length",
     "code": "nchar(c(\"R\", \"abc\", NA))",
     "expected": [1, 3, { "__nativr__": "NA" }],
@@ -628,9 +635,54 @@
     "tolerance": { "absolute": 0, "relative": 0 }
   },
   {
+    "id": "string-substitution-input-coercion",
+    "code": "c(sub(\"1\", \"x\", 1:3), gsub(\"a\", \"x\", factor(c(\"a\", \"b\", NA))), sub(\"a\", \"x\", list(\"a\", \"b\")), length(sub(\"a\", \"x\", NULL)))",
+    "expected": ["x", "2", "3", "x", "b", { "__nativr__": "NA" }, "x", "b", "0"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
     "id": "regex-first-match-locations-and-lengths",
     "code": "m <- regexpr(\"a+\", c(\"caaab\", \"x\", NA))\nc(m, attr(m, \"match.length\"), attr(m, \"index.type\"))",
     "expected": ["2", "-1", { "__nativr__": "NA" }, "3", "-1", { "__nativr__": "NA" }, "chars"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "regex-perl-capture-location-matrices",
+    "code": "m <- regexpr(\"(?<word>a+)(b)?\", c(\"aaab\", \"a\", \"x\", NA), perl = TRUE)\nc(m, attr(m, \"match.length\"), attr(m, \"capture.start\"), attr(m, \"capture.length\"), attr(m, \"capture.names\"), dim(attr(m, \"capture.start\")), colnames(attr(m, \"capture.start\")))",
+    "expected": [
+      "1",
+      "1",
+      "-1",
+      { "__nativr__": "NA" },
+      "4",
+      "1",
+      "-1",
+      { "__nativr__": "NA" },
+      "1",
+      "1",
+      "-1",
+      { "__nativr__": "NA" },
+      "4",
+      "0",
+      "-1",
+      { "__nativr__": "NA" },
+      "3",
+      "1",
+      "-1",
+      { "__nativr__": "NA" },
+      "1",
+      "0",
+      "-1",
+      { "__nativr__": "NA" },
+      "word",
+      "",
+      "4",
+      "2",
+      "word",
+      ""
+    ],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
   },
@@ -803,6 +855,13 @@
     "id": "lazy-switch-fall-through",
     "code": "switch(\"a\", unused = not.bound, a = , b = 2, 3)",
     "expected": 2,
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "switch-character-function-selection",
+    "code": "choose <- function(style = c(\"default\", \"nopad\", \"6\")) {\n  style <- match.arg(style)\n  style <- switch(style, \"default\" = function(x) paste0(\"d\", x), \"nopad\" = function(x) paste0(\"n\", x), \"6\" = function(x) paste0(\"s\", x))\n  style(2)\n}\nc(choose(), choose(\"no\"), choose(\"6\"))",
+    "expected": ["d2", "n2", "s2"],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
   },
@@ -5577,6 +5636,13 @@
       "#DFE234",
       "#FDE625"
     ],
+    "expectedCompatibility": "numeric",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "convert-color-srgb-lab-d65-matrix",
+    "code": "x <- matrix(c(1, .2, 0, .4, 0, .6), nrow = 2)\ny <- grDevices::convertColor(x, from = \"sRGB\", to = \"Lab\")\nc(round(c(y), 6), dim(y), identical(colnames(y), c(\"L\", \"a\", \"b\")))",
+    "expected": [53.484184, 41.966163, 80.010272, -0.342611, 67.384075, -32.906721, 2, 3, 1],
     "expectedCompatibility": "numeric",
     "tolerance": { "absolute": 0, "relative": 0 }
   },
