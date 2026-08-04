@@ -506,6 +506,8 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
 const BASE_NAMESPACE_CONSTANTS = new Set([
   "pi",
   "letters",
+  "T",
+  "F",
   ".Machine",
   ".Platform",
   ".LC.categories",
@@ -3290,6 +3292,8 @@ export class Evaluator {
       names.push(
         "pi",
         "letters",
+        "T",
+        "F",
         ".Machine",
         ".Platform",
         ".LC.categories",
@@ -3745,6 +3749,8 @@ export class Evaluator {
     const listObjects = this.#baseEnvironment.bindings.get("ls");
     if (listObjects !== undefined) setBinding(this.#baseEnvironment, "objects", listObjects);
     setBinding(this.#baseEnvironment, "pi", doubleVector([Math.PI]));
+    setBinding(this.#baseEnvironment, "T", logicalVector([1]));
+    setBinding(this.#baseEnvironment, "F", logicalVector([0]));
     setBinding(
       this.#baseEnvironment,
       "letters",

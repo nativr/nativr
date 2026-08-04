@@ -905,9 +905,12 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      sequences, dimension-name replacement, quoting, data-frame coercion, and recursive missingness.
      The fifth source-blind rotation moves unchanged `rstudioapi 0.19.0` and `inline 0.3.21` to P4
      through generic S4 method-export metadata, correct `utils` ownership for `head`/`tail`, and
-     environment-scoped `utils::globalVariables` behavior. `rematch 2.0.0` and `whisker 0.4.1` are
-     the next uninspected P0 holdouts. RStudio host operations and inline's native compilation
-     surface remain explicit platform/Wasm-ABI work. Language-object subsetting still blocks deeper
+     environment-scoped `utils::globalVariables` behavior. The sixth source-blind rotation moves
+     unchanged `rematch 2.0.0` and `whisker 0.4.1` to P4 through generic dimension/name replacement,
+     regex/replacement/splitting, apply-family matching, factor-label comparison, and atomic-to-list
+     replacement semantics. `zeallot 0.2.0` and `ini 0.3.1` are the next uninspected P0 holdouts.
+     RStudio host operations and inline's native compilation surface remain explicit
+     platform/Wasm-ABI work. Language-object subsetting still blocks deeper
      `abind::acorn()`/`abind::asub()` breadth and remains foundational work rather than a
      package-specific patch.
 

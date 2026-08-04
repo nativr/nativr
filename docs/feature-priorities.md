@@ -1811,6 +1811,13 @@ ties:
      digest-pinned sixth external proof executes exported 35-row metadata, Set1 and Blues palettes,
      and the recursive minimum-size warning without copied package source, an adapter, or
      evaluation-time network access. Display helpers and arbitrary packages remain unclaimed.
+175. Source-blind package generalization: dependency-free rematch 2.0.0 and whisker 0.4.1 were
+     admitted as holdouts before their source was inspected or executed. Public documentation and
+     black-box GNU R observations identified representative surfaces; unchanged packages now reach
+     P4 through reusable `NROW`/`NCOL`, dimension-name replacement, regex/replacement/splitting,
+     apply-family matching, factor-label comparison, and atomic-to-list replacement semantics. Full
+     regex-engine identity, every export, P5-P7, and arbitrary packages remain unclaimed; zeallot
+     0.2.0 and ini 0.3.1 replace them as untouched P0 holdouts.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

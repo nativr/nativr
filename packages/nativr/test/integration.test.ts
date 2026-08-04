@@ -12546,12 +12546,10 @@ NeedsCompilation: no
       "/approved/bin/bash",
       "",
     ]);
-    await expect(runtime.eval("unname(Sys.which(quote(bash)))")).rejects.toMatchObject({
-      code: "NRT3405",
-    });
-    await expect(runtime.eval("unname(Sys.which(quote(f(1, 2))))")).rejects.toMatchObject({
-      code: "NRT3405",
-    });
+    await expect(runtime.eval("unname(Sys.which(quote(bash)))")).resolves.toBe(
+      "/approved/bin/bash",
+    );
+    await expect(runtime.eval("unname(Sys.which(quote(f(1, 2))))")).resolves.toEqual(["", "", ""]);
     await expect(runtime.eval("Sys.which(na = 'bash')")).resolves.toBe("/approved/bin/bash");
     await expect(runtime.eval("Sys.which(x = 'bash')")).rejects.toMatchObject({ code: "NRE2101" });
     await expect(runtime.eval("Sys.which()")).rejects.toMatchObject({ code: "NRE2103" });
@@ -13584,8 +13582,8 @@ NeedsCompilation: no
     const capabilities = await runtime.capabilities();
     expect(capabilities).toMatchObject({
       targetRVersion: "4.6.1",
-      semanticProfileVersion: "0.284.0",
-      languageSubsetVersion: "0.284.0",
+      semanticProfileVersion: "0.285.0",
+      languageSubsetVersion: "0.285.0",
     });
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",

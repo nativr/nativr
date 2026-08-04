@@ -318,9 +318,9 @@ prevents a safe archive scan from being mislabeled as full package compatibility
 
 ## External proof
 
-The opt-in test `packages/package-tools/test/external-package.test.ts` evaluates seventeen unchanged
+The opt-in test `packages/package-tools/test/external-package.test.ts` evaluates nineteen unchanged
 public source packages from the repository resolver. It verifies the pinned source-archive digest
-separately from each normalized NativR artifact digest. All seventeen reach at least P4 evidence:
+separately from each normalized NativR artifact digest. All nineteen reach at least P4 evidence:
 
 - [`pkgconfig 2.0.3`](https://cran.r-project.org/package=pkgconfig) proves namespace exports,
   package resources, classed DESCRIPTION metadata with a virtual installation path, and an ordinary
@@ -375,6 +375,10 @@ separately from each normalized NativR artifact digest. All seventeen reach at l
 - [`inline 0.3.21`](https://cran.r-project.org/package=inline) reaches P4 through its public plugin
   registry. Its C/C++ compilation entry points remain outside the browser-native ABI and are not
   counted as executable compatibility.
+- [`rematch 2.0.0`](https://cran.r-project.org/package=rematch) reaches P4 through public scalar and
+  vector match/extract calls, named capture columns, no-match shapes, and factor input;
+- [`whisker 0.4.1`](https://cran.r-project.org/package=whisker) reaches P4 through public template
+  rendering over scalars, sections, inverted sections, escaped/unescaped values, and triple braces.
 
 No package source is checked into this repository. Together these tests exercise repository
 installation, runtime package files, namespace loading, qualified S3 registration, metaprogramming,
@@ -394,7 +398,7 @@ contains only reusable color interpolation, frame, warning, and arithmetic seman
 
 The machine-readable [package corpus](../compatibility/package-corpus.json) is authoritative for
 development/regression/holdout membership, source and artifact digests, completed tier, and first
-blocker. The current uninspected P0 holdouts are `rematch 2.0.0` and `whisker 0.4.1`; only release
+blocker. The current uninspected P0 holdouts are `zeallot 0.2.0` and `ini 0.3.1`; only release
 metadata and source-archive digests have been admitted for them. These proofs must not be summarized
 as a single unqualified “supported packages” count.
 
@@ -413,6 +417,14 @@ namespace metadata, correct `utils` ownership for `head()`/`tail()`, and behavio
 `utils::globalVariables()` state. Unchanged rstudioapi and inline now install, load, attach, and run
 their declared representative public calls. The result is P4 evidence only: RStudio host APIs and
 inline's native compiler/dynamic-library paths remain explicit platform and future Wasm-ABI gaps.
+
+The sixth source-blind rotation adds no package adapter. Generic runtime work covers
+stored-dimension `NROW()`/`NCOL()` without class dispatch, `rownames<-`/`colnames<-`, base logical
+constants, GNU R-observed regex identity escapes and lazy-overlap behavior, R replacement
+backreferences, capture-free `strsplit()`, three-phase apply-family matching, factor-label
+equality/membership, and atomic `[<-` promotion for list right-hand sides. Unchanged rematch and
+whisker install, load, attach, and execute their declared public surfaces at P4. Full POSIX/PCRE
+equivalence, every exported function, P5-P7, and arbitrary package compatibility remain unclaimed.
 
 The checked-in source-only fixture also exports a function that calls `grDevices::rainbow`,
 `terrain.colors`, `topo.colors`, and `cm.colors` through its namespace. This is a small executable

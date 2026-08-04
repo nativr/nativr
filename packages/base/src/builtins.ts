@@ -2357,8 +2357,20 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("rownames", ["x"], "behavioral", (invocation) =>
     builtinAxisNames(invocation, "row"),
   ),
+  withBuiltinFormals(
+    defineBuiltin("rownames<-", ["x", "value"], "behavioral", (invocation) =>
+      builtinAxisNamesReplacement(invocation, "row"),
+    ),
+    [{ name: "x" }, { name: "value" }],
+  ),
   defineBuiltin("colnames", ["x"], "behavioral", (invocation) =>
     builtinAxisNames(invocation, "column"),
+  ),
+  withBuiltinFormals(
+    defineBuiltin("colnames<-", ["x", "value"], "behavioral", (invocation) =>
+      builtinAxisNamesReplacement(invocation, "column"),
+    ),
+    [{ name: "x" }, { name: "value" }],
   ),
   defineBuiltin("dimnames", ["x"], "behavioral", builtinDimNames),
   defineBuiltin("dimnames<-", ["x", "value"], "behavioral", builtinDimNamesReplacement),
@@ -2505,7 +2517,30 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "behavioral",
     (invocation) => builtinStringSubstitute(invocation, false),
   ),
-  defineBuiltin("strsplit", ["x", "split", "fixed"], "behavioral", builtinStrsplit),
+  withBuiltinFormals(
+    defineBuiltin(
+      "strsplit",
+      ["x", "split", "fixed", "perl", "useBytes"],
+      "behavioral",
+      builtinStrsplit,
+    ),
+    [
+      { name: "x" },
+      { name: "split" },
+      {
+        name: "fixed",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "perl",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "useBytes",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
   withBuiltinFormals(defineBuiltin("Encoding", ["x"], "behavioral", builtinEncoding), [
     { name: "x" },
   ]),
@@ -3332,6 +3367,14 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   definePackageBuiltin("graphics", "persp", ["x", "..."], "shape", builtinPerspective),
   definePackageBuiltin("graphics", "pairs", ["x", "..."], "shape", builtinPairs),
+  withBuiltinFormals(
+    defineBuiltin("NROW", ["x"], "behavioral", (invocation) => builtinLongDimension(invocation, 0)),
+    [{ name: "x" }],
+  ),
+  withBuiltinFormals(
+    defineBuiltin("NCOL", ["x"], "behavioral", (invocation) => builtinLongDimension(invocation, 1)),
+    [{ name: "x" }],
+  ),
   defineBuiltin("nrow", ["x"], "behavioral", (invocation) => builtinDimension(invocation, 0)),
   defineBuiltin("ncol", ["x"], "behavioral", (invocation) => builtinDimension(invocation, 1)),
   defineBuiltin("as.matrix", ["x"], "shape", builtinAsMatrix),
@@ -6725,6 +6768,9 @@ function parseAspellFinding(
 function systemWhichCharacters(value: RValue, invocation: BuiltinInvocation): RCharacterVector {
   if (value.type === "null") return characterVector([]);
   if (isAtomic(value)) return coerceAtomicToCharacter(value, invocation);
+  if (value.type === "symbol" || value.type === "language") {
+    return asVectorLanguageCharacter(value, invocation);
+  }
   if (value.type === "list" || value.type === "pairlist") {
     const output = value.values.map((entry) => globListElementText(entry));
     invocation.context.allocate(output.length);
@@ -22660,6 +22706,68 @@ async function builtinAxisNames(
   return dimNames?.values[axis === "row" ? 0 : 1] ?? R_NULL;
 }
 
+async function builtinAxisNamesReplacement(
+  invocation: BuiltinInvocation,
+  axis: "row" | "column",
+): Promise<RValue> {
+  const matched = await matchExact(invocation, ["x", "value"]);
+  const value = required(matched, "x", axis === "row" ? "rownames<-" : "colnames<-");
+  const replacement = required(matched, "value", axis === "row" ? "rownames<-" : "colnames<-");
+  if (!isAttributedSequence(value)) {
+    throw new RTypeMismatchError(
+      "NRT3153",
+      `attempt to set '${axis}names' on an object with no dimensions`,
+    );
+  }
+  const axisIndex = axis === "row" ? 0 : 1;
+  const dimensions = ordinaryDimensions(value);
+  if (dimensions === undefined || dimensions[axisIndex] === undefined) {
+    throw new RTypeMismatchError(
+      "NRT3153",
+      `attempt to set '${axis}names' on an object with ${axis === "row" ? "no" : "less than two"} dimensions`,
+    );
+  }
+  const names = axisNamesReplacement(replacement, dimensions[axisIndex] ?? 0, invocation);
+  if (isDataFrame(value)) {
+    if (axis === "column") {
+      return names.type === "null"
+        ? withoutAttribute(value, "names")
+        : withAttribute(value, "names", names);
+    }
+    return withAttribute(
+      value,
+      "row.names",
+      names.type === "null"
+        ? characterVector(Array.from({ length: dimensions[0] ?? 0 }, (_, index) => `${index + 1}`))
+        : names,
+    );
+  }
+  const existing = validatedDimensionNames(value);
+  const entries = Array.from(
+    { length: dimensions.length },
+    (_, index) => existing?.values[index] ?? R_NULL,
+  );
+  entries[axisIndex] = names;
+  const dimNames = listValue(entries, existing === undefined ? undefined : vectorNames(existing));
+  return replaceDimensionNamesAttribute(value, dimNames);
+}
+
+function axisNamesReplacement(
+  value: RValue,
+  expectedLength: number,
+  invocation: BuiltinInvocation,
+): RCharacterVector | typeof R_NULL {
+  if (value.type === "null") return R_NULL;
+  if (!isAtomic(value)) {
+    throw new RTypeMismatchError("NRT3159", "invalid dimnames given for array");
+  }
+  const names = coerceAtomicToCharacter(value, invocation);
+  if (names.length !== expectedLength) {
+    throw new RTypeMismatchError("NRT3159", "length of 'dimnames' not equal to array extent");
+  }
+  return names;
+}
+
 async function builtinDimNames(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["x"]);
   const value = required(matched, "x", "dimnames");
@@ -26874,6 +26982,7 @@ async function builtinHelp(invocation: BuiltinInvocation): Promise<RValue> {
           await invocation.force(libraryArgument.promise),
           "help",
         );
+  await helpLogicalControl(invocation, matched.get("verbose"), "verbose", false);
   const helpType = await helpTypeArgument(invocation, matched.get("help_type"));
   const explicitPackages = await helpPackageArgument(
     invocation,
@@ -28658,7 +28767,7 @@ async function builtinGrep(invocation: BuiltinInvocation, logical: boolean): Pro
   const input = requireCharacterVector(required(matched, "x", logical ? "grepl" : "grep"), "x");
   const ignoreCase = logicalFlag(matched.get("ignore.case"), false, "ignore.case");
   const fixed = logicalFlag(matched.get("fixed"), false, "fixed");
-  logicalFlag(matched.get("perl"), false, "perl");
+  const perl = logicalFlag(matched.get("perl"), false, "perl");
   if (
     logicalFlag(matched.get("useBytes"), false, "useBytes") &&
     !isAsciiByteInvariantPattern(pattern)
@@ -28668,7 +28777,7 @@ async function builtinGrep(invocation: BuiltinInvocation, logical: boolean): Pro
       `${logical ? "grepl" : "grep"}() byte-oriented matching is outside the browser string contract.`,
     );
   }
-  const expression = compileBrowserPattern(pattern, fixed, ignoreCase, false);
+  const expression = compileBrowserPattern(pattern, fixed, ignoreCase, false, false, perl);
   const flags = new Uint8Array(input.length);
   const missing = new Uint8Array(input.length);
   for (let index = 0; index < input.length; index += 1) {
@@ -28764,6 +28873,7 @@ async function builtinRegexLocations(
         ignoreCase,
         true,
         captureNames.length > 0,
+        perl,
       );
       if (spans.length === 0) {
         return regexLocationVector(
@@ -28815,6 +28925,7 @@ async function builtinRegexLocations(
       ignoreCase,
       false,
       captureNames.length > 0,
+      perl,
     )[0];
     positions.push(span?.start ?? -1);
     lengths.push(span?.length ?? -1);
@@ -28904,9 +29015,18 @@ function browserMatchSpans(
   ignoreCase: boolean,
   global: boolean,
   includeCaptures = false,
+  perl = true,
 ): readonly BrowserMatchSpan[] {
-  const expression = compileBrowserPattern(pattern, fixed, ignoreCase, global, includeCaptures);
-  const spans: BrowserMatchSpan[] = [];
+  const refinePosixLazy = !fixed && !perl && hasUnescapedLazyQuantifier(pattern);
+  const expression = compileBrowserPattern(
+    pattern,
+    fixed,
+    ignoreCase,
+    global || refinePosixLazy,
+    includeCaptures,
+    perl,
+  );
+  const matches: RegExpExecArray[] = [];
   while (true) {
     invocation.context.checkpoint();
     const match = expression.exec(text);
@@ -28916,37 +29036,104 @@ function browserMatchSpans(
       global &&
       matched === "" &&
       match.index === text.length &&
-      (text.length === 0 || spans.length > 0)
+      (text.length === 0 || matches.length > 0)
     ) {
       break;
     }
-    const indices = (
-      match as RegExpExecArray & {
-        readonly indices?: readonly (readonly [number, number] | undefined)[];
-      }
-    ).indices;
-    spans.push({
-      start: Array.from(text.slice(0, match.index)).length + 1,
-      length: Array.from(matched).length,
-      captures: includeCaptures
-        ? Array.from({ length: Math.max(0, match.length - 1) }, (_, capture) => {
-            const bounds = indices?.[capture + 1];
-            if (bounds === undefined) return { start: 0, length: 0, captures: [] };
-            return {
-              start: Array.from(text.slice(0, bounds[0])).length + 1,
-              length: Array.from(text.slice(bounds[0], bounds[1])).length,
-            };
-          })
-        : [],
-    });
-    if (!global) break;
+    matches.push(match);
+    if (!global && !refinePosixLazy) break;
     if (matched === "") {
       if (match.index >= text.length) break;
       const point = text.codePointAt(match.index) ?? 0;
       expression.lastIndex = match.index + (point > 0xffff ? 2 : 1);
     }
   }
-  return spans;
+  const selectedMatches = global ? matches : matches.slice(0, 1);
+  return selectedMatches.map((minimalMatch, matchIndex) => {
+    const boundary = matches[matchIndex + 1]?.index ?? text.length;
+    const match = refinePosixLazy
+      ? refinePosixLazyMatch(pattern, text, minimalMatch, boundary, ignoreCase, includeCaptures)
+      : minimalMatch;
+    const matchOffset = match === minimalMatch ? 0 : minimalMatch.index;
+    const matched = match[0] ?? "";
+    const indices = (
+      match as RegExpExecArray & {
+        readonly indices?: readonly (readonly [number, number] | undefined)[];
+      }
+    ).indices;
+    return {
+      start: Array.from(text.slice(0, minimalMatch.index)).length + 1,
+      length: Array.from(matched).length,
+      captures: includeCaptures
+        ? Array.from({ length: Math.max(0, match.length - 1) }, (_, capture) => {
+            const bounds = indices?.[capture + 1];
+            if (bounds === undefined) return { start: 0, length: 0, captures: [] };
+            return {
+              start: Array.from(text.slice(0, bounds[0] + matchOffset)).length + 1,
+              length: Array.from(text.slice(bounds[0] + matchOffset, bounds[1] + matchOffset))
+                .length,
+            };
+          })
+        : [],
+    };
+  });
+}
+
+function refinePosixLazyMatch(
+  pattern: string,
+  text: string,
+  minimal: RegExpExecArray,
+  boundary: number,
+  ignoreCase: boolean,
+  includeCaptures: boolean,
+): RegExpExecArray {
+  const minimalEnd = minimal.index + (minimal[0]?.length ?? 0);
+  const endPositions = [minimalEnd];
+  for (let end = minimalEnd; end < boundary;) {
+    const point = text.codePointAt(end) ?? 0;
+    end += point > 0xffff ? 2 : 1;
+    endPositions.push(end);
+  }
+  const fullExpression = compileBrowserPattern(
+    `^(?:${pattern})$`,
+    false,
+    ignoreCase,
+    false,
+    includeCaptures,
+    true,
+  );
+  for (let index = endPositions.length - 1; index > 0; index -= 1) {
+    const end = endPositions[index] ?? minimalEnd;
+    const candidate = fullExpression.exec(text.slice(minimal.index, end));
+    if (candidate !== null) return candidate;
+  }
+  return minimal;
+}
+
+function hasUnescapedLazyQuantifier(pattern: string): boolean {
+  let inCharacterClass = false;
+  let escaped = false;
+  for (let index = 0; index < pattern.length - 1; index += 1) {
+    const character = pattern[index] ?? "";
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (character === "\\") {
+      escaped = true;
+      continue;
+    }
+    if (character === "[") inCharacterClass = true;
+    else if (character === "]") inCharacterClass = false;
+    else if (
+      !inCharacterClass &&
+      (character === "*" || character === "+" || character === "?" || character === "}") &&
+      pattern[index + 1] === "?"
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function regexLocationVector(
@@ -29070,7 +29257,7 @@ async function builtinStringSubstitute(
     invocation,
   );
   const fixed = logicalFlag(matched.get("fixed"), false, "fixed");
-  logicalFlag(matched.get("perl"), false, "perl");
+  const perl = logicalFlag(matched.get("perl"), false, "perl");
   if (
     logicalFlag(matched.get("useBytes"), false, "useBytes") &&
     !isAsciiByteInvariantPattern(pattern)
@@ -29085,13 +29272,9 @@ async function builtinStringSubstitute(
     fixed,
     logicalFlag(matched.get("ignore.case"), false, "ignore.case"),
     global,
+    false,
+    perl,
   );
-  const translatedReplacement = fixed
-    ? replacement.replaceAll("$", "$$$$")
-    : replacement
-        .replaceAll("$", "$$$$")
-        .replace(/\\([1-9])/gu, (_match, group: string) => `$${group}`)
-        .replaceAll("&", "$&");
   const missing = new Uint8Array(input.length);
   const output = input.values.map((value, index) => {
     invocation.context.checkpoint();
@@ -29099,10 +29282,59 @@ async function builtinStringSubstitute(
       missing[index] = 1;
       return "";
     }
-    return value.replace(expression, translatedReplacement);
+    return replaceBrowserMatches(value, expression, replacement, fixed);
   });
   invocation.context.allocate(output.length);
   return characterVector(output, compactMask(missing));
+}
+
+function replaceBrowserMatches(
+  value: string,
+  expression: RegExp,
+  replacement: string,
+  fixed: boolean,
+): string {
+  if (fixed) return value.replace(expression, () => replacement);
+  return value.replace(expression, (...arguments_: unknown[]) => {
+    const hasNamedGroups =
+      arguments_.length >= 3 &&
+      typeof arguments_[arguments_.length - 1] === "object" &&
+      arguments_[arguments_.length - 1] !== null;
+    const trailingArguments = hasNamedGroups ? 3 : 2;
+    const captures = arguments_
+      .slice(1, -trailingArguments)
+      .map((capture) => (typeof capture === "string" ? capture : ""));
+    return expandRSubstitutionReplacement(replacement, captures);
+  });
+}
+
+function expandRSubstitutionReplacement(replacement: string, captures: readonly string[]): string {
+  let output = "";
+  for (let index = 0; index < replacement.length; index += 1) {
+    const character = replacement[index] ?? "";
+    if (character !== "\\") {
+      output += character;
+      continue;
+    }
+    let end = index;
+    while (replacement[end] === "\\") end += 1;
+    const backslashCount = end - index;
+    output += "\\".repeat(Math.floor(backslashCount / 2));
+    const escaped = replacement[end];
+    if (escaped === undefined) {
+      if (backslashCount % 2 === 1) output += "\\";
+      break;
+    }
+    if (backslashCount % 2 === 0) {
+      output += escaped;
+    } else if (/^[1-9]$/u.test(escaped)) {
+      output += captures[Number(escaped) - 1] ?? "";
+    } else {
+      output += escaped;
+    }
+    index = end;
+  }
+  return output;
 }
 
 function stringSubstitutionInput(input: RValue, invocation: BuiltinInvocation): RCharacterVector {
@@ -29150,10 +29382,23 @@ function isAsciiByteInvariantPattern(pattern: string): boolean {
 }
 
 async function builtinStrsplit(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = await matchExact(invocation, ["x", "split", "fixed"]);
+  const matched = await matchExact(invocation, ["x", "split", "fixed", "perl", "useBytes"]);
   const input = requireCharacterVector(required(matched, "x", "strsplit"), "x");
   const split = requireCharacterVector(required(matched, "split", "strsplit"), "split");
   const fixed = logicalFlag(matched.get("fixed"), false, "fixed");
+  const perl = logicalFlag(matched.get("perl"), false, "perl");
+  if (logicalFlag(matched.get("useBytes"), false, "useBytes")) {
+    throw new RUnsupportedFeatureError(
+      "NRU6142",
+      "strsplit() byte-oriented matching is outside the browser string contract.",
+    );
+  }
+  if (fixed && perl) {
+    invocation.context.warn({
+      code: "NRW1020",
+      message: "argument 'perl = TRUE' will be ignored",
+    });
+  }
   if (split.length === 0) {
     throw new RTypeMismatchError("NRT3164", "strsplit() requires at least one split pattern.");
   }
@@ -29164,10 +29409,32 @@ async function builtinStrsplit(invocation: BuiltinInvocation): Promise<RValue> {
     }
     const separator = split.values[index % split.length] ?? "";
     if (separator === "") return characterVector(Array.from(value));
-    return characterVector(value.split(compileBrowserPattern(separator, fixed, false, true)));
+    return characterVector(splitBrowserString(invocation, value, separator, fixed, perl));
   });
   invocation.context.allocate(output.length);
   return listValue(output, vectorNames(input));
+}
+
+function splitBrowserString(
+  invocation: BuiltinInvocation,
+  value: string,
+  separator: string,
+  fixed: boolean,
+  perl: boolean,
+): readonly string[] {
+  if (value.length === 0) return [];
+  const characters = Array.from(value);
+  const spans = browserMatchSpans(invocation, separator, value, fixed, false, true, false, perl);
+  if (spans.length === 0) return [value];
+  const output: string[] = [];
+  let cursor = 0;
+  for (const span of spans) {
+    const start = span.start - 1;
+    output.push(characters.slice(cursor, start).join(""));
+    cursor = start + span.length;
+  }
+  if (cursor < characters.length) output.push(characters.slice(cursor).join(""));
+  return output;
 }
 
 async function builtinStrwrap(invocation: BuiltinInvocation): Promise<RValue> {
@@ -29606,22 +29873,25 @@ function compileBrowserPattern(
   ignoreCase: boolean,
   global: boolean,
   captureIndices = false,
+  _perl = true,
 ): RegExp {
   if (pattern.length > 4096) {
     throw new RResourceLimitError("NRL4008", "Regular-expression pattern length limit exceeded.");
   }
   const source = fixed
     ? pattern.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")
-    : pattern.replace(/\\x\{([0-9A-Fa-f]{1,6})\}/gu, (_match, digits: string) => {
-        const codePoint = Number.parseInt(digits, 16);
-        if (codePoint > 0x10ffff) {
-          throw new REvaluationError(
-            "NRE2129",
-            "Invalid Unicode code point in regular expression.",
-          );
-        }
-        return `\\u{${digits}}`;
-      });
+    : normalizeBrowserRegexSource(
+        pattern.replace(/\\x\{([0-9A-Fa-f]{1,6})\}/gu, (_match, digits: string) => {
+          const codePoint = Number.parseInt(digits, 16);
+          if (codePoint > 0x10ffff) {
+            throw new REvaluationError(
+              "NRE2129",
+              "Invalid Unicode code point in regular expression.",
+            );
+          }
+          return `\\u{${digits}}`;
+        }),
+      );
   try {
     return new RegExp(
       source,
@@ -29632,6 +29902,55 @@ function compileBrowserPattern(
       details: { message: error instanceof Error ? error.message : String(error) },
     });
   }
+}
+
+function normalizeBrowserRegexSource(pattern: string): string {
+  let output = "";
+  let inCharacterClass = false;
+  let backslashes = 0;
+  for (let index = 0; index < pattern.length; index += 1) {
+    const character = pattern[index] ?? "";
+    if (character === "\\") {
+      output += character;
+      backslashes += 1;
+      continue;
+    }
+    const escaped = backslashes % 2 === 1;
+    backslashes = 0;
+    if (escaped && character === "u") {
+      const unicodeEscape = /^\{[0-9A-Fa-f]{1,6}\}/u.exec(pattern.slice(index + 1));
+      if (unicodeEscape !== null) {
+        output += `${character}${unicodeEscape[0]}`;
+        index += unicodeEscape[0].length;
+        continue;
+      }
+    }
+    if (!inCharacterClass && escaped && isPcreIdentityEscape(character)) {
+      output = output.slice(0, -1);
+    }
+    if (!escaped && character === "[") inCharacterClass = true;
+    if (!escaped && character === "]") inCharacterClass = false;
+    if (!inCharacterClass && !escaped && character === "{") {
+      const quantifier = /^\{\d+(?:,\d*)?\}/u.exec(pattern.slice(index));
+      if (quantifier === null) {
+        output += "\\{";
+        continue;
+      }
+      output += quantifier[0];
+      index += quantifier[0].length - 1;
+      continue;
+    }
+    if (!inCharacterClass && !escaped && character === "}") {
+      output += "\\}";
+      continue;
+    }
+    output += character;
+  }
+  return output;
+}
+
+function isPcreIdentityEscape(character: string): boolean {
+  return /^[ !"#%&',\-/:;<=>@_`~]$/u.test(character);
 }
 
 function requireCharacterVector(value: RValue, name: string): RCharacterVector {
@@ -40585,6 +40904,30 @@ async function builtinDimension(invocation: BuiltinInvocation, index: 0 | 1): Pr
   return dimension === undefined ? R_NULL : integerVector([dimension]);
 }
 
+async function builtinLongDimension(invocation: BuiltinInvocation, index: 0 | 1): Promise<RValue> {
+  const matched = await matchExact(invocation, ["x"]);
+  const value = required(matched, "x", index === 0 ? "NROW" : "NCOL");
+  const dimensions = ordinaryDimensions(value);
+  const extent =
+    dimensions === undefined
+      ? index === 0
+        ? valueLength(value)
+        : value.type === "null"
+          ? 0
+          : 1
+      : index === 0
+        ? (dimensions[0] ?? 0)
+        : (dimensions[1] ?? 1);
+  invocation.context.allocate(1);
+  return integerVector([extent]);
+}
+
+function ordinaryDimensions(value: RValue): readonly number[] | undefined {
+  if (!isAttributedSequence(value)) return undefined;
+  if (isDataFrame(value)) return [dataFrameRowCount(value), value.length];
+  return vectorDimensions(value);
+}
+
 async function builtinAsMatrix(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["x"]);
   const value = required(matched, "x", "as.matrix");
@@ -47412,28 +47755,9 @@ async function builtinDropLevels(invocation: BuiltinInvocation): Promise<RValue>
 }
 
 async function builtinLapply(invocation: BuiltinInvocation): Promise<RValue> {
-  let inputArgument: BuiltinCallArgument | undefined;
-  let functionArgument: BuiltinCallArgument | undefined;
-  const extras: BuiltinCallArgument[] = [];
-  for (const argument of invocation.arguments) {
-    if (argument.name === "X") {
-      if (inputArgument !== undefined) {
-        throw new REvaluationError("NRE2102", "Argument 'X' matched more than once.");
-      }
-      inputArgument = argument;
-    } else if (argument.name === "FUN") {
-      if (functionArgument !== undefined) {
-        throw new REvaluationError("NRE2102", "Argument 'FUN' matched more than once.");
-      }
-      functionArgument = argument;
-    } else if (argument.name === undefined && inputArgument === undefined) {
-      inputArgument = argument;
-    } else if (argument.name === undefined && functionArgument === undefined) {
-      functionArgument = argument;
-    } else {
-      extras.push(argument);
-    }
-  }
+  const { matched, dots: extras } = matchBuiltinArguments(invocation, ["X", "FUN", "..."]);
+  const inputArgument = matched.get("X");
+  const functionArgument = matched.get("FUN");
   if (inputArgument === undefined || functionArgument === undefined) {
     throw new REvaluationError("NRE2103", "lapply() requires both 'X' and 'FUN'.");
   }
@@ -47574,28 +47898,34 @@ function coerceVapplyResult(value: AtomicVector, target: AtomicVector["type"]): 
 }
 
 async function builtinMapply(invocation: BuiltinInvocation, simplify: boolean): Promise<RValue> {
-  let functionArgument: BuiltinCallArgument | undefined;
+  const { matched, dots: inputArguments } = matchBuiltinArguments(
+    invocation,
+    simplify ? ["FUN", "...", "MoreArgs", "SIMPLIFY", "USE.NAMES"] : ["f", "..."],
+  );
+  const functionArgument = matched.get(simplify ? "FUN" : "f");
   let moreArguments: RList | undefined;
   let shouldSimplify = simplify;
   let useNames = true;
-  const inputArguments: BuiltinCallArgument[] = [];
-  for (const argument of invocation.arguments) {
-    if (argument.name === (simplify ? "FUN" : "f")) {
-      functionArgument = uniqueArgument(functionArgument, argument, simplify ? "FUN" : "f");
-    } else if (simplify && argument.name === "MoreArgs") {
-      const value = await invocation.force(argument.promise);
+  if (simplify) {
+    const moreArgumentsArgument = matched.get("MoreArgs");
+    if (moreArgumentsArgument !== undefined) {
+      const value = await invocation.force(moreArgumentsArgument.promise);
       if (value.type !== "list") {
         throw new RTypeMismatchError("NRT3178", "mapply(MoreArgs=) requires a list.");
       }
       moreArguments = value;
-    } else if (simplify && argument.name === "SIMPLIFY") {
-      shouldSimplify = logicalFlag(await invocation.force(argument.promise), true, "SIMPLIFY");
-    } else if (simplify && argument.name === "USE.NAMES") {
-      useNames = logicalFlag(await invocation.force(argument.promise), true, "USE.NAMES");
-    } else if (argument.name === undefined && functionArgument === undefined) {
-      functionArgument = argument;
-    } else {
-      inputArguments.push(argument);
+    }
+    const simplifyArgument = matched.get("SIMPLIFY");
+    if (simplifyArgument !== undefined) {
+      shouldSimplify = logicalFlag(
+        await invocation.force(simplifyArgument.promise),
+        true,
+        "SIMPLIFY",
+      );
+    }
+    const useNamesArgument = matched.get("USE.NAMES");
+    if (useNamesArgument !== undefined) {
+      useNames = logicalFlag(await invocation.force(useNamesArgument.promise), true, "USE.NAMES");
     }
   }
   if (functionArgument === undefined || inputArguments.length === 0) {
@@ -48132,26 +48462,18 @@ async function parseVectorApply(
   readonly forwarded: readonly { readonly name?: string; readonly value: RValue }[];
   readonly controls: ReadonlyMap<string, RValue>;
 }> {
-  let inputArgument: BuiltinCallArgument | undefined;
-  let functionArgument: BuiltinCallArgument | undefined;
-  const extras: BuiltinCallArgument[] = [];
+  const { matched, dots: extras } = matchBuiltinArguments(invocation, [
+    "X",
+    "FUN",
+    "...",
+    ...controlNames,
+  ]);
+  const inputArgument = matched.get("X");
+  const functionArgument = matched.get("FUN");
   const controls = new Map<string, RValue>();
-  for (const argument of invocation.arguments) {
-    if (argument.name === "X") inputArgument = uniqueArgument(inputArgument, argument, "X");
-    else if (argument.name === "FUN")
-      functionArgument = uniqueArgument(functionArgument, argument, "FUN");
-    else if (argument.name !== undefined && controlNames.includes(argument.name)) {
-      if (controls.has(argument.name)) {
-        throw new REvaluationError(
-          "NRE2102",
-          `Argument '${argument.name}' matched more than once.`,
-        );
-      }
-      controls.set(argument.name, await invocation.force(argument.promise));
-    } else if (argument.name === undefined && inputArgument === undefined) inputArgument = argument;
-    else if (argument.name === undefined && functionArgument === undefined)
-      functionArgument = argument;
-    else extras.push(argument);
+  for (const name of controlNames) {
+    const argument = matched.get(name);
+    if (argument !== undefined) controls.set(name, await invocation.force(argument.promise));
   }
   if (inputArgument === undefined || functionArgument === undefined) {
     throw new REvaluationError("NRE2103", `${call}() requires X and FUN.`);
@@ -48178,22 +48500,8 @@ async function parseThreeArgumentApply(
   readonly callable: RValue;
   readonly forwarded: readonly { readonly name?: string; readonly value: RValue }[];
 }> {
-  const selected: (BuiltinCallArgument | undefined)[] = [undefined, undefined, undefined];
-  const extras: BuiltinCallArgument[] = [];
-  for (const argument of invocation.arguments) {
-    const namedIndex = argument.name === undefined ? -1 : names.indexOf(argument.name);
-    if (namedIndex >= 0) {
-      selected[namedIndex] = uniqueArgument(
-        selected[namedIndex],
-        argument,
-        names[namedIndex] ?? "",
-      );
-      continue;
-    }
-    const positional = selected.findIndex((item) => item === undefined);
-    if (argument.name === undefined && positional >= 0) selected[positional] = argument;
-    else extras.push(argument);
-  }
+  const { matched, dots: extras } = matchBuiltinArguments(invocation, [...names, "..."]);
+  const selected = names.map((name) => matched.get(name));
   if (selected.some((argument) => argument === undefined)) {
     throw new REvaluationError("NRE2103", `${call}() requires ${names.join(", ")}.`);
   }

@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 424 KiB gzip;
+- Worker JavaScript: 426 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -956,3 +956,11 @@ for `head`/`tail`, and session-owned `utils::globalVariables` declarations. The 
 inline packages remain opt-in test inputs and contribute no source or resources to the shipped
 Worker. The measured Worker is 423.8 KiB gzip (433,929 bytes), within the existing 424 KiB ceiling;
 all budgets remain unchanged.
+
+Language subset 0.285 adds generic row/column dimension and name replacement, bounded GNU R regex
+normalization/replacement/splitting, standard apply-family argument matching, factor-label
+comparison, atomic-to-list replacement promotion, `Sys.which()` language coercion, and
+`help(verbose=)` validation. The rematch and whisker packages remain opt-in test inputs and
+contribute no source or resources to the shipped Worker. The measured Worker is 425.1 KiB gzip
+(435,284 bytes), 1,108 bytes above the previous 424 KiB ceiling, so the ceiling rises narrowly to
+426 KiB; client and parser-Wasm budgets remain unchanged.

@@ -3,8 +3,10 @@ import {
   RUnsupportedFeatureError,
   complexVector,
   doubleVector,
+  factorLevels,
   integerVector,
   isAtomic,
+  isFactor,
   isMissing,
   logicalVector,
   rawVector,
@@ -389,11 +391,22 @@ function compareVectors(
   }
   const lhs = requireComparable(left, operator);
   const rhs = requireComparable(right, operator);
+  if (isFactor(lhs) && isFactor(rhs)) {
+    const leftLevels = factorLevels(lhs);
+    const rightLevels = factorLevels(rhs);
+    if (
+      leftLevels.length !== rightLevels.length ||
+      leftLevels.some((level) => !rightLevels.includes(level))
+    ) {
+      throw new RTypeMismatchError("NRT3116", "level sets of factors are different");
+    }
+  }
   const length = recycledLength(context, lhs.length, rhs.length);
   context.allocate(length);
   const values = new Uint8Array(length);
   const missing = new Uint8Array(length);
-  const characterMode = lhs.type === "character" || rhs.type === "character";
+  const characterMode =
+    lhs.type === "character" || rhs.type === "character" || isFactor(lhs) || isFactor(rhs);
   const complexMode = lhs.type === "complex" || rhs.type === "complex";
   if (complexMode && !characterMode && !["==", "!="].includes(operator)) {
     throw new RTypeMismatchError("NRT3115", "Invalid comparison with complex values.");
@@ -473,7 +486,8 @@ function membershipVector(context: OperatorContext, left: RValue, right: RValue)
   }
   const lhs = requireComparable(left, "%in%");
   const rhs = requireComparable(right, "%in%");
-  const characterMode = lhs.type === "character" || rhs.type === "character";
+  const characterMode =
+    lhs.type === "character" || rhs.type === "character" || isFactor(lhs) || isFactor(rhs);
   context.allocate(lhs.length + rhs.length);
   const table = new Set<string>();
   for (let index = 0; index < rhs.length; index += 1) {
@@ -599,6 +613,9 @@ function comparisonMissing(vector: AtomicVector, index: number): boolean {
 }
 
 function comparableString(vector: AtomicVector, index: number): string {
+  if (isFactor(vector)) {
+    return factorLevels(vector)[(vector.values[index] ?? 0) - 1] ?? "";
+  }
   if (vector.type === "character") return vector.values[index] ?? "";
   if (vector.type === "logical") return numericAt(vector, index) === 0 ? "FALSE" : "TRUE";
   if (vector.type === "raw") return (vector.values[index] ?? 0).toString(16).padStart(2, "0");

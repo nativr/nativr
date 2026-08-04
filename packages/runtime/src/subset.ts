@@ -445,10 +445,35 @@ export function replaceVectorSubset(
     context.allocate(values.length);
     return cloneAsList(target, values, selection.names);
   }
+  if (!isFactor(target) && (replacement.type === "list" || replacement.type === "pairlist")) {
+    if (replacement.length === 0) {
+      throw new RTypeMismatchError("NRT3129", "Atomic replacement requires a non-empty list.");
+    }
+    if (selected.length % replacement.length !== 0) recyclingWarning(context);
+    const values: RValue[] = Array.from({ length: selection.resultLength }, (_, position) =>
+      position < target.length ? subsetAtomic(target, [position], undefined, context) : R_NULL,
+    );
+    for (let offset = 0; offset < selected.length; offset += 1) {
+      values[selected[offset] ?? 0] = replacement.values[offset % replacement.length] ?? R_NULL;
+      context.checkpoint();
+    }
+    context.allocate(values.length);
+    return listValue(values, selection.names);
+  }
   if (!isAtomic(replacement) || replacement.length === 0) {
     throw new RTypeMismatchError(
       "NRT3129",
       "Atomic replacement requires a non-empty atomic vector.",
+      {
+        details: {
+          targetType: target.type,
+          targetLength: target.length,
+          selected,
+          resultLength: selection.resultLength,
+          replacementType: replacement.type,
+          replacementLength,
+        },
+      },
     );
   }
   if (selected.length % replacement.length !== 0) recyclingWarning(context);

@@ -52,6 +52,15 @@ ownership of `utils::head`/`utils::tail`, and `utils::globalVariables()` metadat
 Dependency-free pure-R releases `rematch 2.0.0` and `whisker 0.4.1` replace them as uninspected P0
 holdouts; only metadata and source-archive digests have been admitted.
 
+The sixth holdout rotation evaluated `rematch 2.0.0` and `whisker 0.4.1` through the same
+source-blind gate. Both install, load, attach, and execute their declared representative public
+functions unchanged, so they move to P4 regression. Reusable gaps covered `NROW()`/`NCOL()`
+dimensional extents, row/column-name replacement, GNU R regex and replacement boundaries,
+capture-free `strsplit()`, standard apply-family argument matching, factor-label equality, and
+atomic replacement promotion by list values. Dependency-free pure-R releases `zeallot 0.2.0` and
+`ini 0.3.1` replace them as uninspected P0 holdouts; only release metadata and source-archive
+digests have been admitted.
+
 ## Validation tiers
 
 | Tier | Required evidence                              |

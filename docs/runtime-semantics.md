@@ -1762,3 +1762,30 @@ namespace environment. Missing `names` queries current declarations; additive up
 occurrence order and replacement updates preserve the supplied vector. The state is session-owned
 and reset with the runtime. This models package metadata used during source loading; it does not
 implement global-variable diagnostics from R CMD check.
+
+## Dimension, regex, apply, factor, and replacement depth
+
+`NROW()` and `NCOL()` use GNU R scalar/vector defaults and stored dimensions without dispatching a
+class-specific `dim()` method; `rownames<-` and `colnames<-` update matrix/array dimension names and
+data-frame row or column names without exposing parser or Tree-sitter nodes. The predefined `T` and
+`F` bindings are ordinary mutable logical bindings, matching their Base R role rather than treating
+them as syntax.
+
+Regex calls normalize the evidenced GNU R boundary for literal braces, PCRE identity escapes, and
+default-engine lazy-overlap matches while preserving Unicode code-point escapes. `sub()` and
+`gsub()` interpret GNU R capture backreferences and literal `&`/`$`; `strsplit()` omits separator
+capture groups and has explicit empty, leading, trailing, and zero-width behavior. This is a bounded
+browser implementation, not a claim that JavaScript RegExp is a complete TRE or PCRE replacement.
+
+`lapply()`, `sapply()`, `vapply()`, `mapply()`, `Map()`, and adjacent apply helpers use the standard
+exact, unique-partial, then positional matcher for their formal arguments. Exact `FUN=`/`f=` names
+therefore win before earlier positional dots, and controls after `...` remain exact-only. Factor
+`==`, `!=`, and `%in%` compare labels instead of internal integer codes. Atomic `[<-` with a list
+right-hand side promotes a non-factor target to a list while preserving names and inserted `NULL`
+gaps. Ordered/unordered factor relational warnings and the broader replacement matrix remain
+compatibility depth.
+
+`Sys.which()` applies ordinary character-vector coercion to symbols and decomposes language calls
+into their character components before consulting the explicit executable allow-list. `help()`
+forces and validates its `verbose` logical control even when a topic is found; neither behavior
+grants process discovery or a desktop help browser.

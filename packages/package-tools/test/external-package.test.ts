@@ -1308,3 +1308,213 @@ it.runIf(runExternal)(
   },
   30_000,
 );
+
+it.runIf(runExternal)(
+  "packs, loads, and exercises the unchanged public rematch 2.0.0 pure-R package",
+  async () => {
+    let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    try {
+      const installed = await installPackagesFromRepository(["rematch"]);
+      expect(installed.artifacts[0]).toMatchObject({
+        package: { name: "rematch", version: "2.0.0" },
+        compatibility: { packaging: "ready", execution: "unchecked" },
+        integrity: {
+          algorithm: "sha256",
+          value: "9ebf25642db777d3a9d50470064a894ae773dcfb0419b0ceb969374c503196f0",
+        },
+      });
+      runtime = await createR({
+        execution: "inline",
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+        packages: installed.bundles,
+      });
+      await expect(runtime.eval('requireNamespace("rematch", quietly = TRUE)')).resolves.toBe(true);
+      await expect(runtime.eval('as.character(packageVersion("rematch"))')).resolves.toBe("2.0.0");
+      await expect(runtime.eval('sort(getNamespaceExports("rematch"))')).resolves.toEqual([
+        "re_match",
+        "re_match_all",
+      ]);
+      await expect(
+        runtime.eval(`
+          pattern <- "(?<year>[0-9]{4})-(?<month>[0-1][0-9])-(?<day>[0-3][0-9])"
+          matched <- rematch::re_match(
+            pattern, c("2016-04-20", "not a date", "1977-08-08")
+          )
+          output <- c(
+            typeof(matched), class(matched), dim(matched), colnames(matched),
+            c(matched), as.character(c(is.na(matched)))
+          )
+          output[is.na(output)] <- "<NA>"
+          output
+        `),
+      ).resolves.toEqual([
+        "character",
+        "matrix",
+        "array",
+        "3",
+        "4",
+        ".match",
+        "year",
+        "month",
+        "day",
+        "2016-04-20",
+        "<NA>",
+        "1977-08-08",
+        "2016",
+        "<NA>",
+        "1977",
+        "04",
+        "<NA>",
+        "08",
+        "20",
+        "<NA>",
+        "08",
+        "FALSE",
+        "TRUE",
+        "FALSE",
+        "FALSE",
+        "TRUE",
+        "FALSE",
+        "FALSE",
+        "TRUE",
+        "FALSE",
+        "FALSE",
+        "TRUE",
+        "FALSE",
+      ]);
+      await expect(
+        runtime.eval(`
+          matched <- rematch::re_match_all(
+            "(?<letter>[a-z])(?<number>[0-9]+)", c("a1 b22", "none")
+          )
+          c(
+            length(matched), dim(matched[[1]]), colnames(matched[[1]]),
+            c(matched[[1]]), dim(matched[[2]]), colnames(matched[[2]]),
+            c(matched[[2]])
+          )
+        `),
+      ).resolves.toEqual([
+        "2",
+        "2",
+        "3",
+        ".match",
+        "letter",
+        "number",
+        "a1",
+        "b22",
+        "a",
+        "b",
+        "1",
+        "22",
+        "0",
+        "3",
+        ".match",
+        "letter",
+        "number",
+      ]);
+      await expect(
+        runtime.eval('library("rematch"); "package:rematch" %in% search()'),
+      ).resolves.toBe(true);
+    } finally {
+      await runtime?.dispose();
+    }
+  },
+  30_000,
+);
+
+it.runIf(runExternal)(
+  "packs, loads, and exercises the unchanged public whisker 0.4.1 pure-R package",
+  async () => {
+    let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    try {
+      const installed = await installPackagesFromRepository(["whisker"]);
+      expect(installed.artifacts[0]).toMatchObject({
+        package: { name: "whisker", version: "0.4.1" },
+        compatibility: { packaging: "ready", execution: "unchecked" },
+        integrity: {
+          algorithm: "sha256",
+          value: "29f934c71cb22d51e7cdaae64df35e2484b7797c44b6ab78371d18d50072c9c6",
+        },
+      });
+      runtime = await createR({
+        execution: "inline",
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+        packages: installed.bundles,
+      });
+      await expect(runtime.eval('requireNamespace("whisker", quietly = TRUE)')).resolves.toBe(true);
+      await expect(runtime.eval('as.character(packageVersion("whisker"))')).resolves.toBe("0.4.1");
+      await expect(runtime.eval('sort(getNamespaceExports("whisker"))')).resolves.toEqual([
+        "iteratelist",
+        "rowSplit",
+        "whisker.escape",
+        "whisker.render",
+      ]);
+      await expect(
+        runtime.eval(`c(
+          whisker::whisker.render("Hello {{place}}!", list(place = "World")),
+          whisker::whisker.render(
+            "escaped={{name}} raw={{{name}}}", list(name = '<Nescio&"x">')
+          ),
+          whisker::whisker.render(
+            "{{#items}}{{>row}}{{/items}}{{^items}}empty{{/items}}",
+            list(items = list(list(name = "A"), list(name = "B"))),
+            partials = list(row = "[{{name}}]")
+          ),
+          whisker::whisker.render(
+            "{{#ok}}yes{{/ok}}{{^missing}}/none{{/missing}}", list(ok = TRUE)
+          )
+        )`),
+      ).resolves.toEqual([
+        "Hello World!",
+        'escaped=&lt;Nescio&amp;&quot;x&quot;&gt; raw=<Nescio&"x">',
+        "[A][B]",
+        "yes/none",
+      ]);
+      await expect(
+        runtime.eval(`
+          escaped <- whisker::whisker.escape(c("<&\\"'>", NA_character_))
+          escaped[is.na(escaped)] <- "<NA>"
+          iterated <- whisker::iteratelist(c(a = 1, b = 2))
+          rows <- whisker::rowSplit(data.frame(
+            x = c(1, 2), y = c("a", "b"), stringsAsFactors = FALSE
+          ))
+          c(
+            escaped, unname(unlist(iterated)), is.null(names(iterated)),
+            unname(unlist(rows)), is.null(names(rows))
+          )
+        `),
+      ).resolves.toEqual([
+        "&lt;&amp;&quot;'&gt;",
+        "<NA>",
+        "a",
+        "1",
+        "b",
+        "2",
+        "TRUE",
+        "1",
+        "a",
+        "2",
+        "b",
+        "TRUE",
+      ]);
+      await expect(
+        runtime.eval('library("whisker"); "package:whisker" %in% search()'),
+      ).resolves.toBe(true);
+    } finally {
+      await runtime?.dispose();
+    }
+  },
+  30_000,
+);
