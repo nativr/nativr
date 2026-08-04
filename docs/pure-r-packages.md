@@ -320,7 +320,7 @@ prevents a safe archive scan from being mislabeled as full package compatibility
 
 The opt-in test `packages/package-tools/test/external-package.test.ts` evaluates nine unchanged
 public source packages from the repository resolver. It verifies the pinned source-archive digest
-separately from each normalized NativR artifact digest. Seven reach the evidence described below:
+separately from each normalized NativR artifact digest. All nine reach the evidence described below:
 
 - [`pkgconfig 2.0.3`](https://cran.r-project.org/package=pkgconfig) proves namespace exports,
   package resources, classed DESCRIPTION metadata with a virtual installation path, and an ordinary
@@ -351,12 +351,13 @@ separately from each normalized NativR artifact digest. Seven reach the evidence
   downloads in the committed snapshot, reaches P4 with all nine exported labeling algorithms
   executing unchanged. Its deeper `extended.figures()` path exercises shared `pmax`, histogram, and
   graphics behavior before stopping explicitly at the recorded `axis(xlab=)` P5 blocker.
-- [`assertthat 0.2.1`](https://cran.r-project.org/package=assertthat) completes P1 and records the
-  absent standard `tools` namespace dependency as its first P2 blocker;
-- [`crayon 1.5.3`](https://cran.r-project.org/package=crayon) completes P1 and records its relative
-  `tools/ansi-palettes.txt` namespace resource read as its first P2 blocker. The evaluation also
-  exposed reusable `methods::is`, `parent.env<-`, and inert host-install utility bindings, but the
-  package remains explicitly blocked rather than being counted as compatible.
+- [`assertthat 0.2.1`](https://cran.r-project.org/package=assertthat) reaches P4 through the
+  standard `tools` namespace dependency and executes representative `assert_that()`,
+  `validate_that()`, and `noNA()` calls unchanged;
+- [`crayon 1.5.3`](https://cran.r-project.org/package=crayon) reaches P4 after reading its standard
+  `tools/ansi-palettes.txt` build resource through the generic hidden source-evaluation context. It
+  attaches normally and executes nested foreground/background styling plus `strip_style()` without a
+  package adapter.
 
 No package source is checked into this repository. Together these tests exercise repository
 installation, runtime package files, namespace loading, qualified S3 registration, metaprogramming,
@@ -369,10 +370,10 @@ replacement promotion used by package-owned super environments; there is no R6 a
 package-source rewrite. Finalization, arbitrary/multiple inheritance breadth, portable-locking
 variants, and complete R6 remain outside the evidence.
 
-The viridisLite, RColorBrewer, and labeling paths contain no palette table or package source copied
-into NativR. Their sources are downloaded only by the opt-in test, digest-pinned, installed through
-the public package pipeline, and discarded with the test process. The browser bundle contains only
-reusable color interpolation, frame, warning, and arithmetic semantics.
+The viridisLite, RColorBrewer, labeling, and crayon paths contain no palette table or package source
+copied into NativR. Their sources are downloaded only by the opt-in test, digest-pinned, installed
+through the public package pipeline, and discarded with the test process. The browser bundle
+contains only reusable color interpolation, frame, warning, and arithmetic semantics.
 
 The machine-readable [package corpus](../compatibility/package-corpus.json) is authoritative for
 development/regression/holdout membership, source and artifact digests, completed tier, and first

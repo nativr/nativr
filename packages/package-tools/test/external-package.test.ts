@@ -592,17 +592,56 @@ it.runIf(runExternal)(
 );
 
 it.runIf(runExternal)(
-  "records the first unchanged public assertthat 0.2.1 pure-R package blocker",
+  "packs, loads, and exercises the unchanged public assertthat 0.2.1 pure-R package",
   async () => {
-    await expect(installPackagesFromRepository(["assertthat"])).rejects.toThrow(
-      "Package 'assertthat' requires 'tools', which is absent from https://cran.r-project.org/.",
-    );
+    let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    try {
+      const installed = await installPackagesFromRepository(["assertthat"]);
+      expect(installed.artifacts[0]).toMatchObject({
+        package: { name: "assertthat", version: "0.2.1" },
+        compatibility: { packaging: "ready", execution: "unchecked" },
+        integrity: {
+          algorithm: "sha256",
+          value: "26678946c287baad27a9b359fb27ea64e349e0fd10a5e9b5346d1d8e38f69ca2",
+        },
+      });
+      expect(installed.lock.providedPackages.tools).toBe("4.6.1");
+      runtime = await createR({
+        execution: "inline",
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+        packages: installed.bundles,
+      });
+      await expect(runtime.eval('requireNamespace("assertthat", quietly = TRUE)')).resolves.toBe(
+        true,
+      );
+      await expect(runtime.eval('as.character(packageVersion("assertthat"))')).resolves.toBe(
+        "0.2.1",
+      );
+      await expect(
+        runtime.eval(`
+          library(assertthat)
+          c(
+            assert_that(is.string("nativr")),
+            validate_that(is.flag(TRUE)),
+            noNA(c(1, 2, 3))
+          )
+        `),
+      ).resolves.toEqual([true, true, true]);
+    } finally {
+      await runtime?.dispose();
+    }
   },
   30_000,
 );
 
 it.runIf(runExternal)(
-  "records the first unchanged public crayon 1.5.3 pure-R package blocker",
+  "packs, loads, and exercises the unchanged public crayon 1.5.3 pure-R package",
   async () => {
     let runtime: Awaited<ReturnType<typeof createR>> | undefined;
     try {
@@ -614,7 +653,7 @@ it.runIf(runExternal)(
         compatibility: { packaging: "ready", execution: "unchecked" },
         integrity: {
           algorithm: "sha256",
-          value: "8e1e46992f4e3348cb03ab87850c5efd4305f6a2f4cda5fc201bcdf438cc0bdf",
+          value: "1d7035a894f2b3aea604bf1af9a155a143c27e7889d0b95fd2f2be48e96a23d7",
         },
       });
       runtime = await createR({
@@ -628,12 +667,18 @@ it.runIf(runExternal)(
         },
         packages: installed.bundles,
       });
+      await expect(runtime.eval('requireNamespace("crayon", quietly = TRUE)')).resolves.toBe(true);
+      await expect(runtime.eval('as.character(packageVersion("crayon"))')).resolves.toBe("1.5.3");
       await expect(
-        runtime.eval('requireNamespace("crayon", quietly = TRUE)'),
-      ).rejects.toMatchObject({
-        code: "NRE2195",
-        message: "Cannot open virtual text file 'nativr://session-temp/tools/ansi-palettes.txt'.",
-      });
+        runtime.eval(`
+          library(crayon)
+          c(
+            "package:crayon" %in% search(),
+            strip_style(red(bold("nativr"))),
+            strip_style(bgBlue(white("browser")))
+          )
+        `),
+      ).resolves.toEqual(["TRUE", "nativr", "browser"]);
     } finally {
       await runtime?.dispose();
     }

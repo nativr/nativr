@@ -582,15 +582,17 @@ use `nativr://runtime/library/<name>`. `verbose` is retained as an unforced comp
 This is package discovery, not host library scanning or package installation.
 
 `utils::read.table` and its CSV/delimited variants consume that same text layer or inline `text=`.
-The owned bounded scanner recognizes LF/CRLF/CR records, explicit or whitespace separators, quoted
-fields, doubled quotes, embedded quoted newlines, comments, skipped/blank lines, filling, headers,
-row/column names, missing strings, and syntactic name repair. Columns pass through the same
-deterministic `utils::type.convert` ladder used by package code. `write.table` and its CSV variants
-serialize owned atomic matrices, lists, and data frames with explicit row/header conventions,
-missing markers, decimal separators, and escape/double quote modes. Files remain evaluator memory;
-automatic compressed-path detection, host paths, URLs, arbitrary encodings, `colClasses`, and the
-complete GNU R scanner are outside this slice. Callers can explicitly unwrap an owned connection
-through `gzcon()` where a reader accepts a connection.
+When `header` is omitted, the whitespace-table path recognizes GNU R's first-row-one-field-shorter
+automatic header convention; `fill` follows the documented inverse of `blank.lines.skip` when it is
+also omitted. The owned bounded scanner recognizes LF/CRLF/CR records, explicit or whitespace
+separators, quoted fields, doubled quotes, embedded quoted newlines, comments, skipped/blank lines,
+filling, headers, row/column names, missing strings, and syntactic name repair. Columns pass through
+the same deterministic `utils::type.convert` ladder used by package code. `write.table` and its CSV
+variants serialize owned atomic matrices, lists, and data frames with explicit row/header
+conventions, missing markers, decimal separators, and escape/double quote modes. Files remain
+evaluator memory; automatic compressed-path detection, host paths, URLs, arbitrary encodings,
+`colClasses`, and the complete GNU R scanner are outside this slice. Callers can explicitly unwrap
+an owned connection through `gzcon()` where a reader accepts a connection.
 
 The independent binary serializer reads and writes GNU R's documented XDR version-2/version-3 stream
 shape for owned atomic storage, explicit missing masks versus ordinary `NaN`, infinities, complex
@@ -622,8 +624,11 @@ attachment, and exported bindings enter the attached-package search environment 
 `library()`. Reset clears namespaces, hooks, attachment state, S3 registrations, and search entries
 but retains the immutable bundle catalog for deterministic reload. Source size, source count,
 dependency cycles, imports, exports, and lifecycle evaluation all remain resource-checked. Unchanged
-R6 2.6.1 additionally proves that an installed package can replace the built-in compatibility shim
-of the same non-core name, register a namespace-qualified S3 method, construct a generator, create a
+source evaluation may read retained standard `tools/**` files from a hidden, immutable package root;
+the scoped root is restored across nested loads and failures and is not returned by `system.file`.
+Writes to that source root and a complete install-time filesystem remain unsupported. Unchanged R6
+2.6.1 additionally proves that an installed package can replace the built-in compatibility shim of
+the same non-core name, register a namespace-qualified S3 method, construct a generator, create a
 reference object, call public methods, mutate public and private state, and expose a read/write
 active field without source changes. Core package names remain reserved. This is an executable
 package/version proof, not universal R6 or pure-R package compatibility. Unchanged

@@ -7,8 +7,8 @@ export const CAPABILITIES = Object.freeze({
   nativrVersion: "0.1.1",
   protocolVersion: PROTOCOL_VERSION,
   targetRVersion: "4.6.1",
-  semanticProfileVersion: "0.279.0",
-  languageSubsetVersion: "0.279.0",
+  semanticProfileVersion: "0.280.0",
+  languageSubsetVersion: "0.280.0",
   syntax: {
     literals: "supported",
     assignment: "supported",
@@ -64,7 +64,7 @@ export const CAPABILITIES = Object.freeze({
     textParsing: "supported",
     dynamicEvaluation: "supported",
   },
-  packages: ["base", "stats", "graphics", "grDevices", "utils", "datasets", "methods"].map(
+  packages: ["base", "stats", "graphics", "grDevices", "utils", "datasets", "methods", "tools"].map(
     (packageName) => ({
       name: packageName,
       referenceVersion: "GNU R 4.6.1 documented behavior",

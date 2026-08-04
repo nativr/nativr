@@ -44,7 +44,9 @@ import {
   missingValue,
   objectClasses,
   NATIVR_PACKAGE_LIBRARY_PATH,
+  NATIVR_PACKAGE_SOURCE_RESOURCE_ROOT,
   NATIVR_SYSTEM_LIBRARY_PATH,
+  PACKAGE_SOURCE_EVALUATION_DIRECTORY_STATE_KEY,
   R_NULL,
   vectorDimensions,
   withClasses,
@@ -485,6 +487,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
     ]),
   ],
   ["datasets", new Set()],
+  ["tools", new Set()],
   ["R6", new Set(["R6Class"])],
   ["vctrs", new Set(["new_class", "new_vctr"])],
   ["tibble", new Set(["tibble", "tribble"])],
@@ -493,10 +496,12 @@ const BASE_NAMESPACE_CONSTANTS = new Set([
   "pi",
   "letters",
   ".Machine",
+  ".Platform",
   ".LC.categories",
   ".Library",
   ".Library.site",
 ]);
+const PRIMITIVE_S3_GENERICS = new Set(["$", "[", "[[", "$<-", "[<-", "[[<-"]);
 const CORE_R_PACKAGE_NAMES = new Set([
   "base",
   "stats",
@@ -505,6 +510,7 @@ const CORE_R_PACKAGE_NAMES = new Set([
   "utils",
   "datasets",
   "methods",
+  "tools",
 ]);
 
 function corePackageDescriptionFields(
@@ -1130,6 +1136,24 @@ export class Evaluator {
             throw new RTypeMismatchError("NRT3305", "The $ member name must be an identifier.");
           }
           const name = member.kind === "Identifier" ? member.name : member.value;
+          if (objectClasses(target) !== undefined) {
+            const dispatched = await this.#invokeS3MethodIfPresentResult(
+              "$",
+              this.#baseEnvironment,
+              runtimeClassNames(target),
+              0,
+              [
+                { promise: createForcedPromise(target, environment), span: node.target.span },
+                {
+                  promise: createForcedPromise(characterVector([name]), environment),
+                  span: member.span,
+                },
+              ],
+              context,
+              false,
+            );
+            if (dispatched !== undefined) return dispatched;
+          }
           if (target.type === "environment") {
             const binding = target.bindings.get(name);
             return {
@@ -2061,6 +2085,7 @@ export class Evaluator {
         },
         currentCall: () => (call === undefined ? R_NULL : { type: "language", expression: call }),
         systemCall: (which) => this.#systemCall(which),
+        systemFunction: (which) => this.#systemFunction(which),
         isInteractive: () => this.#readline !== undefined,
         hasSocketCapability: () => this.#socketRequest !== undefined,
         readline: async (prompt) => (this.#readline === undefined ? "" : this.#readline(prompt)),
@@ -2126,6 +2151,10 @@ export class Evaluator {
               .filter(([, record]) => record.namespace !== undefined)
               .map(([name]) => name),
           ]),
+        namespaceEnvironment: (name) =>
+          REGISTERED_NAMESPACE_EXPORTS.has(name)
+            ? this.#baseEnvironment
+            : this.#packages.get(name)?.namespace,
         namespaceExports: async (name) => this.#namespaceExports(name, context),
         namespaceName: (environment) => this.#namespaceName(environment),
         namespaceBinding: async (name, binding) => this.#namespaceBinding(name, binding, context),
@@ -2580,6 +2609,16 @@ export class Evaluator {
     return call === undefined ? R_NULL : { type: "language", expression: call };
   }
 
+  #systemFunction(which: number): RClosure | typeof R_NULL {
+    const frameCount = this.#closureCallFrames.length;
+    const position = which === 0 ? frameCount : which > 0 ? which : frameCount + which;
+    if (position === 0) return R_NULL;
+    if (position < 0 || position > frameCount) {
+      throw new REvaluationError("NRE2218", "Not that many frames on the stack.");
+    }
+    return this.#closureCallFrames[position - 1]?.closure ?? R_NULL;
+  }
+
   #s3RegistrationKey(environment: REnvironment, generic: string, className: string): string {
     return `${environment.id}:${generic}.${className}`;
   }
@@ -2600,6 +2639,13 @@ export class Evaluator {
     context: EvaluationContext,
     genericPackage?: string,
   ): Promise<void> {
+    if (genericPackage === undefined && PRIMITIVE_S3_GENERICS.has(generic)) {
+      this.#setRegisteredS3Method(
+        this.#s3RegistrationKey(this.#baseEnvironment, generic, className),
+        method,
+      );
+      return;
+    }
     const genericValue =
       genericPackage === undefined
         ? await (async () => {
@@ -2775,8 +2821,29 @@ export class Evaluator {
         const namespace = createEnvironment(importsEnvironment, true);
         record.namespace = namespace;
         await this.#loadPackageSysdata(record, namespace, context);
-        for (const program of record.definition.programs) {
-          await this.#evaluateNode(program, namespace, context);
+        const hadSourceDirectory = this.#builtinState.has(
+          PACKAGE_SOURCE_EVALUATION_DIRECTORY_STATE_KEY,
+        );
+        const previousSourceDirectory = this.#builtinState.get(
+          PACKAGE_SOURCE_EVALUATION_DIRECTORY_STATE_KEY,
+        );
+        this.#builtinState.set(
+          PACKAGE_SOURCE_EVALUATION_DIRECTORY_STATE_KEY,
+          `${NATIVR_PACKAGE_LIBRARY_PATH}/${encodeURIComponent(name)}/${NATIVR_PACKAGE_SOURCE_RESOURCE_ROOT}`,
+        );
+        try {
+          for (const program of record.definition.programs) {
+            await this.#evaluateNode(program, namespace, context);
+          }
+        } finally {
+          if (hadSourceDirectory) {
+            this.#builtinState.set(
+              PACKAGE_SOURCE_EVALUATION_DIRECTORY_STATE_KEY,
+              previousSourceDirectory,
+            );
+          } else {
+            this.#builtinState.delete(PACKAGE_SOURCE_EVALUATION_DIRECTORY_STATE_KEY);
+          }
         }
         for (const exportedName of record.definition.exports) {
           if (lookupBinding(namespace, exportedName) === undefined) {
@@ -3126,7 +3193,15 @@ export class Evaluator {
       .filter((definition) => definition.metadata.package === name)
       .map((definition) => definition.name);
     if (name === "base") {
-      names.push("pi", "letters", ".Machine", ".LC.categories", ".Library", ".Library.site");
+      names.push(
+        "pi",
+        "letters",
+        ".Machine",
+        ".Platform",
+        ".LC.categories",
+        ".Library",
+        ".Library.site",
+      );
     }
     return [...new Set(names)];
   }
@@ -3547,6 +3622,7 @@ export class Evaluator {
       characterVector(Array.from({ length: 26 }, (_, index) => String.fromCharCode(97 + index))),
     );
     setBinding(this.#baseEnvironment, ".Machine", machineConstants());
+    setBinding(this.#baseEnvironment, ".Platform", platformConstants());
     setBinding(this.#baseEnvironment, ".Library", characterVector([NATIVR_SYSTEM_LIBRARY_PATH]));
     setBinding(this.#baseEnvironment, ".Library.site", characterVector([]));
     setBinding(
@@ -3667,6 +3743,23 @@ function machineConstants(): RValue {
   ];
   return listValue(
     entries.map(([, value]) => value),
+    entries.map(([name]) => name),
+  );
+}
+
+function platformConstants(): RValue {
+  const entries = [
+    ["OS.type", "unix"],
+    ["file.sep", "/"],
+    ["dynlib.ext", ".wasm"],
+    ["GUI", "NativR"],
+    ["endian", "little"],
+    ["pkgType", "source"],
+    ["path.sep", ":"],
+    ["r_arch", "wasm32"],
+  ] as const;
+  return listValue(
+    entries.map(([, value]) => characterVector([value])),
     entries.map(([name]) => name),
   );
 }

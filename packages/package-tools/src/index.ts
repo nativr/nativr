@@ -58,6 +58,7 @@ const INSTALL_HOOKS = new Set([
 const LEGAL_FILES = new Set(["LICENSE", "LICENCE", "COPYING", "NOTICE"]);
 const SUPPORTED_NAMESPACE_DIRECTIVES = new Set(["export", "import", "importFrom", "S3method"]);
 const R_SOURCE_PATH = /^R\/(?:[^/]+\/)*[^/]+\.[Rr]$/u;
+const PACKAGE_SOURCE_RESOURCE_ROOT = ".nativr/source";
 
 /** Inspect any directory or source tarball and return a deterministic artifact plus diagnostics. */
 export async function inspectPackage(
@@ -93,6 +94,22 @@ export async function inspectPackage(
       ? []
       : [{ path: installedPath, data: Buffer.from(file.data).toString("base64") }];
   });
+  if (
+    resources.some(
+      (resource) =>
+        resource.path === PACKAGE_SOURCE_RESOURCE_ROOT ||
+        resource.path.startsWith(`${PACKAGE_SOURCE_RESOURCE_ROOT}/`),
+    )
+  ) {
+    throw new Error(`Package resource path '${PACKAGE_SOURCE_RESOURCE_ROOT}' is reserved.`);
+  }
+  const sourceEvaluationResources = files
+    .filter((file) => file.path.startsWith("tools/"))
+    .map((file) => ({
+      path: `${PACKAGE_SOURCE_RESOURCE_ROOT}/${file.path}`,
+      data: Buffer.from(file.data).toString("base64"),
+    }));
+  resources.push(...sourceEvaluationResources);
   for (const reservedPath of [
     PACKAGE_EXAMPLES_RESOURCE_PATH,
     PACKAGE_HELP_RESOURCE_PATH,
@@ -143,7 +160,7 @@ export async function inspectPackage(
     });
     generatedPackageMetadata = true;
   }
-  if (generatedPackageMetadata) {
+  if (generatedPackageMetadata || sourceEvaluationResources.length > 0) {
     resources.sort((left, right) => compareCPath(left.path, right.path));
   }
   const compatibility = {

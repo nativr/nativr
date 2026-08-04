@@ -197,6 +197,19 @@ describe("Tree-sitter normalization", () => {
     });
   });
 
+  it("normalizes quoted assignment names as direct bindings", () => {
+    expect(parser.parse('"quoted name" <- 1').ast.body[0]).toMatchObject({
+      kind: "AssignmentExpression",
+      target: { kind: "Identifier", name: "quoted name" },
+      value: { kind: "DoubleLiteral", value: 1 },
+    });
+    expect(parser.parse('2 -> "right name"').ast.body[0]).toMatchObject({
+      kind: "AssignmentExpression",
+      operator: "->",
+      target: { kind: "Identifier", name: "right name" },
+    });
+  });
+
   it("returns structured syntax diagnostics", () => {
     const result = parser.parse("1 +");
     expect(result.diagnostics[0]).toMatchObject({

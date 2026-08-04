@@ -46,6 +46,7 @@ export async function installPackagesFromRepository(
     grDevices: "4.6.1",
     methods: "4.6.1",
     utils: "4.6.1",
+    tools: "4.6.1",
     ...options.providedPackages,
   };
   const artifacts = new Map<string, NativRPackageArtifact>();

@@ -5,25 +5,25 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.279.0",
-  "capabilityManifestHash": "c8a995ef3e4cd08b1d6f0b18f28a400e822f5fd3803fa604d6629589434643b9",
+  "semanticProfileVersion": "0.280.0",
+  "capabilityManifestHash": "237df6dd31361e99d2d9ceb1d317402ab24491255117d905549af8ec5fb98f23",
   "evidence": {
-    "checkedInConformanceCases": 858,
-    "liveREligibleCases": 810,
+    "checkedInConformanceCases": 860,
+    "liveREligibleCases": 812,
     "recursiveOracleV2Cases": 5,
     "recursiveBehaviorallyProvenBindings": null,
     "note": "Recursive behavioral binding counts remain null until oracle-v2 cases are associated with registry bindings; name overlap is inventory only."
   },
   "nameInventory": {
     "referenceVersion": "R version 4.6.0 (2026-04-24 ucrt)",
-    "registeredBindings": 691,
-    "gnuRNameOverlaps": 671,
+    "registeredBindings": 693,
+    "gnuRNameOverlaps": 673,
     "referenceCoreCallableNames": 2522
   },
   "packageCorpus": {
     "total": 11,
-    "partitions": { "development": 4, "regression": 5, "holdout": 2 },
-    "statuses": { "passing": 6, "blocked": 3, "unevaluated": 2 },
-    "completedAtLeast": { "P0": 11, "P1": 9, "P2": 7, "P3": 7, "P4": 7, "P5": 0, "P6": 0, "P7": 0 }
+    "partitions": { "development": 2, "regression": 7, "holdout": 2 },
+    "statuses": { "passing": 8, "blocked": 1, "unevaluated": 2 },
+    "completedAtLeast": { "P0": 11, "P1": 9, "P2": 9, "P3": 9, "P4": 9, "P5": 0, "P6": 0, "P7": 0 }
   }
 }

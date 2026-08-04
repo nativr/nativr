@@ -8,6 +8,13 @@ export const NATIVR_PACKAGE_LIBRARY_PATH = "nativr://package";
 /** Browser-owned library containing the runtime's registered base and recommended namespaces. */
 export const NATIVR_SYSTEM_LIBRARY_PATH = "nativr://runtime/library";
 
+/** Hidden package-resource root used while evaluating retained source-package programs. */
+export const NATIVR_PACKAGE_SOURCE_RESOURCE_ROOT = ".nativr/source";
+
+/** Evaluator-owned state selecting the current package's read-only source resource root. */
+export const PACKAGE_SOURCE_EVALUATION_DIRECTORY_STATE_KEY =
+  "runtime.packageSourceEvaluationDirectory";
+
 /** Attribute storage prepared for names, dimensions, class, and later extensions. */
 export type RAttributes = ReadonlyMap<string, RValue>;
 
@@ -285,6 +292,7 @@ export interface BuiltinInvocation {
   parentFrame(offset: number): REnvironment;
   currentCall(): RLanguage | RNull;
   systemCall(which: number): RLanguage | RNull;
+  systemFunction(which: number): RClosure | RNull;
   isInteractive(): boolean;
   hasSocketCapability(): boolean;
   readline(prompt: string): Promise<string>;
@@ -302,7 +310,11 @@ export interface BuiltinInvocation {
     name: string,
     attach: boolean,
     libraryPaths?: readonly string[],
-  ): Promise<{ readonly name: string; readonly version: string }>;
+  ): Promise<{
+    readonly name: string;
+    readonly version: string;
+    readonly namespace: REnvironment;
+  }>;
   installedPackageVersion(name: string, libraryPaths?: readonly string[]): string | undefined;
   installedPackageDescription(
     name: string,
@@ -316,6 +328,7 @@ export interface BuiltinInvocation {
   installedPackageNames(libraryPaths?: readonly string[]): readonly string[];
   isNamespaceLoaded(name: string): boolean;
   loadedNamespaces(): readonly string[];
+  namespaceEnvironment(name: string): REnvironment | undefined;
   namespaceExports(name: string): Promise<readonly string[]>;
   namespaceName(environment: REnvironment): string | undefined;
   namespaceBinding(name: string, binding: string): Promise<RValue | undefined>;

@@ -81,6 +81,49 @@ describe("pure-R package packager", () => {
     }
   });
 
+  it("evaluates retained tools resources in a hidden read-only source context", async () => {
+    const packageRoot = await fixturePackage();
+    await mkdir(path.join(packageRoot, "tools"));
+    await writeFile(path.join(packageRoot, "tools", "palette.txt"), "red\nblue\n");
+    await writeFile(
+      path.join(packageRoot, "NAMESPACE"),
+      "importFrom(stats, median)\nexport(square, source_lines, hidden_source_path)\n",
+    );
+    await writeFile(
+      path.join(packageRoot, "R", "main.R"),
+      [
+        'source_lines <- readLines("tools/palette.txt")',
+        'hidden_source_path <- system.file(".nativr", "source", "tools", "palette.txt", package = "demopkg")',
+        "square <- function(x) x ^ 2",
+        "",
+      ].join("\n"),
+    );
+
+    const artifact = await packPackage(packageRoot);
+    expect(artifact.bundle.resources.map((resource) => resource.path)).toContain(
+      ".nativr/source/tools/palette.txt",
+    );
+    const resolved = resolvePackageArtifacts([artifact]);
+    expect(resolved.lock.providedPackages.tools).toBe("4.6.1");
+
+    const runtime = await createR({
+      execution: "inline",
+      assets: {
+        treeSitterRuntimeWasm: new URL("../../parser/assets/web-tree-sitter.wasm", import.meta.url),
+        rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+      },
+      packages: [artifact.bundle],
+    });
+    try {
+      await expect(runtime.eval("demopkg::source_lines")).resolves.toEqual(["red", "blue"]);
+      await expect(runtime.eval("demopkg::hidden_source_path")).resolves.toBe("");
+      await expect(runtime.eval('requireNamespace("tools", quietly = TRUE)')).resolves.toBe(true);
+      await expect(runtime.eval('as.character(packageVersion("tools"))')).resolves.toBe("4.6.1");
+    } finally {
+      await runtime.dispose();
+    }
+  });
+
   it("extracts Rd examples into a deterministic package manifest and executes their controls", async () => {
     const packageRoot = await fixturePackage();
     await mkdir(path.join(packageRoot, "man"));

@@ -113,6 +113,12 @@ digest. Package archives are extracted only into a fresh temporary directory and
 inspection. Applications should retain the generated package set as a reviewed build artifact; the
 browser runtime neither downloads nor unpacks source packages.
 
+Retained source-package `tools/**` files are immutable bundle bytes under a reserved hidden path.
+Only the owning package's source-evaluation scope resolves relative paths there; public
+`system.file()` lookup omits the path, writes are rejected with the ordinary immutable-package
+boundary, and the scope is removed after success or failure. This is not access to the original
+archive, a host build directory, or an install command.
+
 `browseURL()` grants no navigation capability. It records a bounded request only after explicit R
 code calls it. External URLs are never resolved or fetched, and virtual-file requests contain a
 fresh byte snapshot rather than a filesystem handle. Embedding hosts must allow-list schemes and

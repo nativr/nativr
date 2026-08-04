@@ -164,9 +164,11 @@ function normalizeBinary(node: Node, mapper: Utf8SourceMap, span: SourceSpan): A
   const operator = requiredField(node, "operator").text;
   const left = normalizeNode(requiredField(node, "lhs"), mapper);
   const right = normalizeNode(requiredField(node, "rhs"), mapper);
+  const leftTarget = assignmentIdentifier(left);
+  const rightTarget = assignmentIdentifier(right);
 
-  if ((operator === "<-" || operator === "=" || operator === "<<-") && left.kind === "Identifier") {
-    return { kind: "AssignmentExpression", operator, target: left, value: right, span };
+  if ((operator === "<-" || operator === "=" || operator === "<<-") && leftTarget !== undefined) {
+    return { kind: "AssignmentExpression", operator, target: leftTarget, value: right, span };
   }
   if (
     (operator === "<-" || operator === "=" || operator === "<<-") &&
@@ -174,14 +176,28 @@ function normalizeBinary(node: Node, mapper: Utf8SourceMap, span: SourceSpan): A
   ) {
     return { kind: "ReplacementExpression", operator, target: left, value: right, span };
   }
-  if ((operator === "->" || operator === "->>") && right.kind === "Identifier") {
-    return { kind: "AssignmentExpression", operator, target: right, value: left, span };
+  if ((operator === "->" || operator === "->>") && rightTarget !== undefined) {
+    return { kind: "AssignmentExpression", operator, target: rightTarget, value: left, span };
   }
   if (
     (operator === "->" || operator === "->>") &&
     (right.kind === "SubsetExpression" || right.kind === "CallExpression")
   ) {
     return { kind: "ReplacementExpression", operator, target: right, value: left, span };
+  }
+  if (operator === "<-" || operator === "=" || operator === "<<-") {
+    return {
+      kind: "UnsupportedExpression",
+      feature: `${left.kind} assignment target`,
+      span,
+    };
+  }
+  if (operator === "->" || operator === "->>") {
+    return {
+      kind: "UnsupportedExpression",
+      feature: `${right.kind} assignment target`,
+      span,
+    };
   }
   if (operator === "|>" || operator === "%>%") {
     return { kind: "PipeExpression", operator, left, right, span };
@@ -208,6 +224,14 @@ function normalizeBinary(node: Node, mapper: Utf8SourceMap, span: SourceSpan): A
     return { kind: "UnsupportedExpression", feature: `assignment operator ${operator}`, span };
   }
   return { kind: "BinaryExpression", operator, left, right, span };
+}
+
+function assignmentIdentifier(node: AstNode): IdentifierNode | undefined {
+  if (node.kind === "Identifier") return node;
+  if (node.kind === "StringLiteral") {
+    return { kind: "Identifier", name: node.value, span: node.span };
+  }
+  return undefined;
 }
 
 function normalizeCall(node: Node, mapper: Utf8SourceMap, span: SourceSpan): AstNode {

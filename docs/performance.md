@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 416 KiB gzip;
+- Worker JavaScript: 421 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -918,3 +918,12 @@ validation/coercion, and default syntactic/unique column-name repair. Unchanged 
 remains opt-in and contributes no package source or palette tables to the browser bundle. The
 measured Worker is 418.1 KiB gzip (428,126 bytes), 94 bytes above the previous 418 KiB ceiling, so
 the Worker ceiling rises narrowly to 419 KiB; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.280 adds reusable pure-R package installation foundations: the standard `tools`
+namespace dependency, scoped immutable `tools/**` source resources, quoted assignment names,
+automatic `read.table` headers, data-frame row binding, deterministic `.Platform`, `asNamespace`,
+`sys.function`, primitive S3 registration, and bounded ASCII byte-pattern substitution. Unchanged
+assertthat 0.2.1 and crayon 1.5.3 remain opt-in and contribute no package source or resource bytes
+to the shipped Worker. The measured Worker is 420.1 KiB gzip (430,189 bytes), 1,133 bytes above the
+previous 419 KiB ceiling, so the ceiling rises narrowly to 421 KiB; client and parser-Wasm budgets
+remain unchanged.

@@ -687,14 +687,14 @@ responsibilities. Browser-owned failure reasons are deterministic rather than cl
 or Unix native diagnostics.
 
 `utils::read.table`, `read.csv`, `read.csv2`, `read.delim`, and `read.delim2` have behavioral
-differential evidence for bounded browser-memory text, headers, quoted separators and doubled
-quotes, missing strings, syntactic names, row names, and logical/integer/double conversion.
-`write.table`, `write.csv`, and `write.csv2` have evidence for data-frame rows, headers, row-name
-conventions, quoted character fields, missing values, invisible returns, and session-file
-roundtrips. Existing readable/writable text connections are accepted with GNU R-style
-operation-scoped destruction when initially closed. `colClasses`, escape processing, compression,
-URLs, host paths, arbitrary encodings, locale-dependent formatting, and the full scanner/writer
-surface are not claimed.
+differential evidence for bounded browser-memory text, explicit and one-fewer-field automatic
+headers, quoted separators and doubled quotes, missing strings, syntactic names, row names, and
+logical/integer/double conversion. `write.table`, `write.csv`, and `write.csv2` have evidence for
+data-frame rows, headers, row-name conventions, quoted character fields, missing values, invisible
+returns, and session-file roundtrips. Existing readable/writable text connections are accepted with
+GNU R-style operation-scoped destruction when initially closed. `colClasses`, escape processing,
+compression, URLs, host paths, arbitrary encodings, locale-dependent formatting, and the full
+scanner/writer surface are not claimed.
 
 `base::Sys.sleep` accepts GNU R's non-negative scalar-coercible interval shape, permits `Inf`,
 returns invisible `NULL`, and cooperatively checks cancellation between short asynchronous timer
@@ -1613,11 +1613,13 @@ reference, returns through ordinary replacement-assignment semantics, rejects no
 parents, and prevents self or indirect cycles. `sys.call` returns owned R-language calls for the
 current closure frame, positive absolute frame positions, and negative relative positions, with NULL
 for position zero and GNU R-compatible out-of-range errors. Promise-evaluation and method-dispatch
-frames, internal/native API frames, `sys.calls`, `sys.frames`, `sys.function`, and the remaining
-`sys.*` call-stack API are not yet claimed. `t` transposes named vectors, factors, and
-two-dimensional matrices in column-major order, swaps matrix dimension-name axes, and converts
-atomic-column data frames to a common matrix shape. Arbitrary-dimensional arrays, custom methods,
-and recursive/mixed data-frame columns remain outside this increment.
+frames and `sys.function` returns owned closure identities for the same current, absolute, and
+relative frame positions. Promise-evaluation and method-dispatch frames, internal/native API frames,
+`sys.calls`, `sys.frames`, and the remaining `sys.*` call-stack API are not yet claimed. `t`
+transposes named vectors, factors, and two-dimensional matrices in column-major order, swaps matrix
+dimension-name axes, and converts atomic-column data frames to a common matrix shape.
+Arbitrary-dimensional arrays, custom methods, and recursive/mixed data-frame columns remain outside
+this increment.
 
 `formals` returns an owned pairlist for NativR closures and registered closure-like builtins,
 preserving parameter names, missing-default symbols, literal defaults, and normalized
@@ -1811,19 +1813,22 @@ claimed.
 
 Matrices and arrays use validated dimensions and column-major storage. Matrix/array construction,
 dimension names and axis labels, arbitrary-dimensional and coordinate-matrix selection/replacement,
-`rbind`, `cbind`, and `as.matrix` are supported. `diag` constructs square or rectangular matrices
-from scalar dimensions and recycled logical, integer, double, complex, or raw diagonal values,
-including factor codes, scalar-list coercion, character-to-double warnings, and zero dimensions. It
-also extracts type-preserving diagonals from two-dimensional atomic or list matrices and retains
-names only when row and column dimension names match. Method dispatch and exotic class-specific
-coercion remain outside this bounded diagonal subset. Data frames use named list columns, row names,
-rectangular and coordinate-matrix selection/replacement, common-type cell extraction, and scalar
-recycling. `expand.grid` accepts direct atomic vectors or one list of atomic vectors, varies the
-first input fastest, preserves factor inputs, optionally converts character inputs to factors in
-first-occurrence level order, handles empty Cartesian products, and can attach dimension metadata.
-Recursive grid values, class-specific coercion, locale formatting, and every `out.attrs` display
-corner case remain outside this bounded subset. `tibble` and formula-header `tribble` provide
-construction subsets, not the full tibble package API.
+`rbind`, `cbind`, and `as.matrix` are supported. `rbind` additionally combines atomic-column data
+frames by unique column name, including reordered columns and common factor levels, with fresh
+automatic row names. Mixed data-frame/atomic inputs and recursive columns remain incomplete. `diag`
+constructs square or rectangular matrices from scalar dimensions and recycled logical, integer,
+double, complex, or raw diagonal values, including factor codes, scalar-list coercion,
+character-to-double warnings, and zero dimensions. It also extracts type-preserving diagonals from
+two-dimensional atomic or list matrices and retains names only when row and column dimension names
+match. Method dispatch and exotic class-specific coercion remain outside this bounded diagonal
+subset. Data frames use named list columns, row names, rectangular and coordinate-matrix
+selection/replacement, common-type cell extraction, and scalar recycling. `expand.grid` accepts
+direct atomic vectors or one list of atomic vectors, varies the first input fastest, preserves
+factor inputs, optionally converts character inputs to factors in first-occurrence level order,
+handles empty Cartesian products, and can attach dimension metadata. Recursive grid values,
+class-specific coercion, locale formatting, and every `out.attrs` display corner case remain outside
+this bounded subset. `tibble` and formula-header `tribble` provide construction subsets, not the
+full tibble package API.
 
 Factors support explicit levels, labels, exclusions, ordering, level dropping, and bounded
 `as.factor` coercion. Model contrasts and the full factor method surface remain outside this
@@ -2376,15 +2381,20 @@ archives, or resolves required `Depends`/`Imports` from a CRAN-like `PACKAGES` i
 archive/file/byte/package limits, rejects links, native/JVM code, install hooks, `LinkingTo`,
 `useDynLib`, invalid paths, and unsupported NAMESPACE directives, preserves package resources and
 license metadata, and emits deterministic SHA-256 artifacts plus a dependency lock. The browser
-runtime remains network-free. Digest-pinned opt-in executable tests cover unchanged
-`pkgconfig 2.0.3`, `generics 0.1.4`, `withr 3.0.3`, `R6 2.6.1`, `viridisLite 0.4.3`, and
-`RColorBrewer 1.1-3` sources. They prove the repository-to-namespace path, package-owned S3
-dispatch, and generated state-restoring wrappers through `with_options()`, plus R6 generator/object
-construction and public reference mutation, private-state method access, an active read/write field,
-shallow/deep cloning, and three-level inheritance with recursive `super` calls, plus package-owned
-256-anchor Lab spline palettes through generic arithmetic/array and `grDevices::colorRamp`
-semantics, plus exported RColorBrewer palette metadata through explicit-row-name `data.frame()`
-construction and exact palette/warning execution, without package patches.
+runtime remains network-free. Standard `tools` is an admitted core namespace dependency with an
+explicitly partial callable surface. Package `tools/**` files are retained under a hidden immutable
+resource root and relative reads resolve there only while retained package source is evaluated;
+`system.file()` cannot expose that implementation root. This models a bounded read-only part of
+source installation, not a complete `R CMD INSTALL` snapshot. Digest-pinned opt-in executable tests
+cover unchanged `pkgconfig 2.0.3`, `generics 0.1.4`, `withr 3.0.3`, `R6 2.6.1`, `viridisLite 0.4.3`,
+and `RColorBrewer 1.1-3`, `assertthat 0.2.1`, and `crayon 1.5.3` sources. They prove the
+repository-to-namespace path, package-owned S3 dispatch, and generated state-restoring wrappers
+through `with_options()`, plus R6 generator/object construction and public reference mutation,
+private-state method access, an active read/write field, shallow/deep cloning, and three-level
+inheritance with recursive `super` calls, plus package-owned 256-anchor Lab spline palettes through
+generic arithmetic/array and `grDevices::colorRamp` semantics, plus exported RColorBrewer palette
+metadata through explicit-row-name `data.frame()` construction and exact palette/warning execution,
+without package patches.
 
 Package admission is not universal execution compatibility. Package `data/*.R`, `.csv`, `.tab`,
 `.txt`, and XDR/gzip `.rda`/`.RData` discovery/loading is supported through `utils::data`, including

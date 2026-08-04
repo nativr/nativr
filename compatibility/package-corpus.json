@@ -107,34 +107,26 @@
     {
       "package": "assertthat",
       "version": "0.2.1",
-      "partition": "development",
+      "partition": "regression",
       "sourceUrl": "https://cloud.r-project.org/src/contrib/assertthat_0.2.1.tar.gz",
       "sourceSha256": "85cf7fcc4753a8c86da9a6f454e46c2a58ffc70c4f47cac4d3e3bcefda2a9e9f",
       "artifactSha256": "26678946c287baad27a9b359fb27ea64e349e0fd10a5e9b5346d1d8e38f69ca2",
-      "tier": "P1",
-      "status": "blocked",
+      "tier": "P4",
+      "status": "passing",
       "evidence": "packages/package-tools/test/external-package.test.ts",
-      "firstBlocker": {
-        "domain": "package.standard-library",
-        "feature": "tools namespace dependency",
-        "evidenceId": "assertthat-0.2.1-tools-dependency"
-      }
+      "firstBlocker": null
     },
     {
       "package": "crayon",
       "version": "1.5.3",
-      "partition": "development",
+      "partition": "regression",
       "sourceUrl": "https://cloud.r-project.org/src/contrib/crayon_1.5.3.tar.gz",
       "sourceSha256": "3e74a0685541efb5ea763b92cfd5c859df71c46b0605967a0b5dbb7326e9da69",
-      "artifactSha256": "8e1e46992f4e3348cb03ab87850c5efd4305f6a2f4cda5fc201bcdf438cc0bdf",
-      "tier": "P1",
-      "status": "blocked",
+      "artifactSha256": "1d7035a894f2b3aea604bf1af9a155a143c27e7889d0b95fd2f2be48e96a23d7",
+      "tier": "P4",
+      "status": "passing",
       "evidence": "packages/package-tools/test/external-package.test.ts",
-      "firstBlocker": {
-        "domain": "package.resources",
-        "feature": "relative tools/ansi-palettes.txt read during namespace load",
-        "evidenceId": "crayon-1.5.3-namespace-resource"
-      }
+      "firstBlocker": null
     },
     {
       "package": "praise",

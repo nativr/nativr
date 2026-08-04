@@ -5044,6 +5044,12 @@ describe("complete inline source-to-result vertical slice", () => {
           fill = TRUE,
           col.names = c("number", "label")
         )
+        implicit_fill <- read.table(
+          text = "1 a\n2",
+          blank.lines.skip = FALSE,
+          col.names = c("number", "label")
+        )
+        auto_header <- read.table(text = "left right\nr1 1 2\nr2 3 4")
         limited <- read.csv(
           text = "drop\\na\\nb\\nc",
           skip = 1,
@@ -5058,6 +5064,8 @@ describe("complete inline source-to-result vertical slice", () => {
           names(csv2), typeof(csv2$amount), csv2$amount, csv2$label,
           names(tab), rownames(tab), tab$value, tab$flag,
           names(filled), filled$number, filled$label,
+          implicit_fill$number, implicit_fill$label,
+          names(auto_header), rownames(auto_header), auto_header$left, auto_header$right,
           names(limited), limited$picked,
           rownames(named_rows), named_rows$x,
           rownames(implicit), implicit$value,
@@ -5088,6 +5096,18 @@ describe("complete inline source-to-result vertical slice", () => {
       "a",
       "",
       "c",
+      "1",
+      "2",
+      "a",
+      "",
+      "left",
+      "right",
+      "r1",
+      "r2",
+      "1",
+      "3",
+      "2",
+      "4",
       "picked",
       "a",
       "left",
@@ -5103,6 +5123,123 @@ describe("complete inline source-to-result vertical slice", () => {
       "r1",
       "10",
     ]);
+    await runtime.dispose();
+  });
+
+  it("row-binds data frames by column name while preserving atomic and factor columns", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        left <- data.frame(
+          number = 1:2,
+          label = c("a", "b"),
+          group = factor(c("x", "y"))
+        )
+        right <- data.frame(
+          group = factor("z"),
+          label = "c",
+          number = 3L
+        )
+        bound <- rbind(left, right)
+        c(
+          names(bound), nrow(bound), bound$number, bound$label,
+          as.character(bound$group), levels(bound$group), rownames(bound)
+        )
+      `),
+    ).resolves.toEqual([
+      "number",
+      "label",
+      "group",
+      "3",
+      "1",
+      "2",
+      "3",
+      "a",
+      "b",
+      "c",
+      "x",
+      "y",
+      "z",
+      "x",
+      "y",
+      "z",
+      "1",
+      "2",
+      "3",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("exposes the documented platform shape with deterministic browser-native values", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        c(
+          names(.Platform),
+          .Platform$OS.type,
+          .Platform$file.sep,
+          .Platform$dynlib.ext,
+          .Platform$endian,
+          .Platform$pkgType,
+          .Platform$path.sep,
+          .Platform$r_arch
+        )
+      `),
+    ).resolves.toEqual([
+      "OS.type",
+      "file.sep",
+      "dynlib.ext",
+      "GUI",
+      "endian",
+      "pkgType",
+      "path.sep",
+      "r_arch",
+      "unix",
+      "/",
+      ".wasm",
+      "little",
+      "source",
+      ":",
+      "wasm32",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("loads package namespace environments through asNamespace", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        ns <- asNamespace("base")
+        c(
+          is.environment(ns),
+          identical(asNamespace(ns), ns),
+          environmentName(ns),
+          isNamespaceLoaded("base")
+        )
+      `),
+    ).resolves.toEqual(["TRUE", "TRUE", "base", "TRUE"]);
+    await expect(runtime.eval('asNamespace("base", base.OK = FALSE)')).rejects.toMatchObject({
+      code: "NRE2221",
+    });
+    await runtime.dispose();
+  });
+
+  it("returns closure frames through sys.function", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        outer <- function() {
+          inner <- function() c(
+            identical(sys.function(), inner),
+            identical(sys.function(-1), outer),
+            is.null(sys.function(-2))
+          )
+          inner()
+        }
+        outer()
+      `),
+    ).resolves.toEqual([true, true, true]);
+    await expect(runtime.eval("is.null(sys.function())")).resolves.toBe(true);
     await runtime.dispose();
   });
 
@@ -13406,8 +13543,8 @@ NeedsCompilation: no
     const capabilities = await runtime.capabilities();
     expect(capabilities).toMatchObject({
       targetRVersion: "4.6.1",
-      semanticProfileVersion: "0.279.0",
-      languageSubsetVersion: "0.279.0",
+      semanticProfileVersion: "0.280.0",
+      languageSubsetVersion: "0.280.0",
     });
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",

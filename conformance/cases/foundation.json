@@ -10045,5 +10045,19 @@
     "expected": ["class", "levels", "TRUE"],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "quoted-assignment-platform-and-system-function-semantics",
+    "code": "\"quoted name\" <- 7L\nouter <- function() { inner <- function() c(identical(sys.function(), inner), identical(sys.function(-1), outer)); inner() }\nc(get(\"quoted name\"), .Platform$OS.type %in% c(\"unix\", \"windows\"), outer(), is.environment(asNamespace(\"base\")), identical(asNamespace(asNamespace(\"base\")), asNamespace(\"base\")))",
+    "expected": [7, 1, 1, 1, 1, 1],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "automatic-table-header-and-data-frame-row-binding",
+    "code": "auto <- read.table(text = \"left right\\nr1 1 2\\nr2 3 4\")\ncombined <- rbind(auto, data.frame(right = 6, left = 5, row.names = \"r3\"))\nc(names(combined), combined$left, combined$right, is.data.frame(combined))",
+    "expected": ["left", "right", "1", "3", "5", "2", "4", "6", "TRUE"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

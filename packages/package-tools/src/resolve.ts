@@ -13,6 +13,7 @@ const DEFAULT_PROVIDED_PACKAGES: Readonly<Record<string, string>> = Object.freez
   grDevices: "4.6.1",
   methods: "4.6.1",
   utils: "4.6.1",
+  tools: "4.6.1",
 });
 
 export function resolvePackageArtifacts(

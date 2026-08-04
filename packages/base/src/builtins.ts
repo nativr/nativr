@@ -44,7 +44,9 @@ import {
   objectAttributes,
   objectClasses,
   NATIVR_PACKAGE_LIBRARY_PATH,
+  NATIVR_PACKAGE_SOURCE_RESOURCE_ROOT,
   NATIVR_SYSTEM_LIBRARY_PATH,
+  PACKAGE_SOURCE_EVALUATION_DIRECTORY_STATE_KEY,
   pairlistValue,
   rawVector,
   removeBinding,
@@ -2014,6 +2016,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   defineBuiltin("isNamespaceLoaded", ["name"], "behavioral", builtinIsNamespaceLoaded),
   defineBuiltin("loadedNamespaces", [], "behavioral", builtinLoadedNamespaces),
+  defineBuiltin("asNamespace", ["ns", "base.OK"], "behavioral", builtinAsNamespace),
   defineBuiltin("getLoadedDLLs", [], "shape", builtinGetLoadedDLLs),
   defineBuiltin(".Call", [".NAME", "...", "PACKAGE"], "behavioral", builtinNativeCall, "primitive"),
   defineBuiltin("getNamespaceExports", ["ns"], "behavioral", builtinGetNamespaceExports),
@@ -2054,6 +2057,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     ],
   ),
   defineBuiltin("sys.call", ["which"], "behavioral", builtinSystemCall),
+  defineBuiltin("sys.function", ["which"], "behavioral", builtinSystemFunction),
   defineBuiltin("get", ["x", "pos", "envir", "mode", "inherits"], "behavioral", builtinGet),
   defineBuiltin(
     "get0",
@@ -2420,12 +2424,15 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   defineBuiltin(
     "grep",
-    ["pattern", "x", "ignore.case", "value", "fixed", "invert"],
+    ["pattern", "x", "ignore.case", "perl", "value", "fixed", "useBytes", "invert"],
     "behavioral",
     (invocation) => builtinGrep(invocation, false),
   ),
-  defineBuiltin("grepl", ["pattern", "x", "ignore.case", "fixed"], "behavioral", (invocation) =>
-    builtinGrep(invocation, true),
+  defineBuiltin(
+    "grepl",
+    ["pattern", "x", "ignore.case", "perl", "fixed", "useBytes"],
+    "behavioral",
+    (invocation) => builtinGrep(invocation, true),
   ),
   defineBuiltin(
     "regexpr",
@@ -2442,13 +2449,13 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("regmatches", ["x", "m", "invert"], "behavioral", builtinRegexMatches),
   defineBuiltin(
     "gsub",
-    ["pattern", "replacement", "x", "ignore.case", "fixed"],
+    ["pattern", "replacement", "x", "ignore.case", "perl", "fixed", "useBytes"],
     "behavioral",
     (invocation) => builtinStringSubstitute(invocation, true),
   ),
   defineBuiltin(
     "sub",
-    ["pattern", "replacement", "x", "ignore.case", "fixed"],
+    ["pattern", "replacement", "x", "ignore.case", "perl", "fixed", "useBytes"],
     "behavioral",
     (invocation) => builtinStringSubstitute(invocation, false),
   ),
@@ -8096,7 +8103,14 @@ async function builtinSystemFile(invocation: BuiltinInvocation): Promise<RCharac
       if (!valid) break;
     }
     if (!valid) continue;
-    const path = invocation.packageResourcePath(packageName, parts.join("/"), libraryPaths);
+    const resourcePath = parts.join("/");
+    if (
+      resourcePath === NATIVR_PACKAGE_SOURCE_RESOURCE_ROOT ||
+      resourcePath.startsWith(`${NATIVR_PACKAGE_SOURCE_RESOURCE_ROOT}/`)
+    ) {
+      continue;
+    }
+    const path = invocation.packageResourcePath(packageName, resourcePath, libraryPaths);
     if (path !== undefined) paths.push(path);
   }
   if (paths.length === 0) return systemFileNotFound(invocation, mustWork);
@@ -12086,7 +12100,11 @@ function readVirtualTextFile(
 
 function resolvePackageDataRelativePath(invocation: BuiltinInvocation, path: string): string {
   if (path.includes("://") || path.startsWith("/") || /^[A-Za-z]:[\\/]/u.test(path)) return path;
-  const root = invocation.state.get(PACKAGE_DATA_DIRECTORY_STATE_KEY);
+  const sourceRoot = invocation.state.get(PACKAGE_SOURCE_EVALUATION_DIRECTORY_STATE_KEY);
+  const root =
+    typeof sourceRoot === "string"
+      ? sourceRoot
+      : invocation.state.get(PACKAGE_DATA_DIRECTORY_STATE_KEY);
   if (typeof root !== "string" || path.length === 0 || path.includes("\\")) return path;
   const parts = path.split("/");
   if (parts.some((part) => part.length === 0 || part === "." || part === "..")) return path;
@@ -18011,6 +18029,25 @@ function builtinLoadedNamespaces(invocation: BuiltinInvocation): RCharacterVecto
   return characterVector(names);
 }
 
+async function builtinAsNamespace(invocation: BuiltinInvocation): Promise<REnvironment> {
+  const matched = await matchExact(invocation, ["ns", "base.OK"]);
+  const supplied = required(matched, "ns", "asNamespace");
+  if (supplied.type === "environment") {
+    if (invocation.namespaceName(supplied) === undefined) {
+      throw new RTypeMismatchError("NRT3267", "The supplied environment is not a namespace.");
+    }
+    return supplied;
+  }
+  const name = characterScalar(supplied, "ns");
+  const baseAllowed = logicalFlag(matched.get("base.OK"), true, "base.OK");
+  if (name === "base" && !baseAllowed) {
+    throw new REvaluationError("NRE2221", "Operation not allowed on base namespace.");
+  }
+  const existing = invocation.namespaceEnvironment(name);
+  if (existing !== undefined) return existing;
+  return (await invocation.loadPackage(name, false)).namespace;
+}
+
 function builtinGetLoadedDLLs(invocation: BuiltinInvocation): RList {
   if (invocation.arguments.length !== 0) {
     throw new REvaluationError("NRE2101", "getLoadedDLLs() does not accept arguments.");
@@ -18220,11 +18257,25 @@ async function validatePackageAttachControls(
 
 async function builtinSystemCall(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["which"]);
-  const which = matched.has("which") ? systemCallIndex(invocation, matched.get("which")) : 0;
+  const which = matched.has("which")
+    ? systemCallIndex(invocation, matched.get("which"), "sys.call")
+    : 0;
   return invocation.systemCall(which);
 }
 
-function systemCallIndex(invocation: BuiltinInvocation, value: RValue | undefined): number {
+async function builtinSystemFunction(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["which"]);
+  const which = matched.has("which")
+    ? systemCallIndex(invocation, matched.get("which"), "sys.function")
+    : 0;
+  return invocation.systemFunction(which);
+}
+
+function systemCallIndex(
+  invocation: BuiltinInvocation,
+  value: RValue | undefined,
+  call: "sys.call" | "sys.function",
+): number {
   if (
     value === undefined ||
     value.type === "null" ||
@@ -18232,7 +18283,7 @@ function systemCallIndex(invocation: BuiltinInvocation, value: RValue | undefine
     value.length === 0 ||
     isMissing(value, 0)
   ) {
-    throw new RTypeMismatchError("NRT3251", "Invalid 'which' argument in sys.call().");
+    throw new RTypeMismatchError("NRT3251", `Invalid 'which' argument in ${call}().`);
   }
 
   let numeric: number;
@@ -18267,7 +18318,7 @@ function systemCallIndex(invocation: BuiltinInvocation, value: RValue | undefine
     });
   }
   if (!Number.isFinite(numeric) || numeric < -2_147_483_648 || numeric > 2_147_483_647) {
-    throw new RTypeMismatchError("NRT3251", "Invalid 'which' argument in sys.call().");
+    throw new RTypeMismatchError("NRT3251", `Invalid 'which' argument in ${call}().`);
   }
   return Math.trunc(numeric);
 }
@@ -25561,11 +25612,11 @@ function dataIndex(invocation: BuiltinInvocation, packages: readonly string[]): 
 type ReadTableVariant = "table" | "csv" | "csv2" | "delim" | "delim2" | "data-csv" | "data-table";
 
 interface ReadTableDefaults {
-  readonly header: boolean;
+  readonly header: boolean | "auto";
   readonly separator: string;
   readonly quotes: string;
   readonly decimal: string;
-  readonly fill: boolean;
+  readonly fill: boolean | "inverse-blank-lines-skip";
   readonly comment: string;
 }
 
@@ -25587,16 +25638,16 @@ function tableDefaults(variant: ReadTableVariant): ReadTableDefaults {
         separator: "",
         quotes: "\"'",
         decimal: ".",
-        fill: false,
+        fill: "inverse-blank-lines-skip",
         comment: "#",
       };
     case "table":
       return {
-        header: false,
+        header: "auto",
         separator: "",
         quotes: "\"'",
         decimal: ".",
-        fill: false,
+        fill: "inverse-blank-lines-skip",
         comment: "#",
       };
     default:
@@ -25867,7 +25918,9 @@ function readTableSource(
   defaults: ReadTableDefaults,
   controls: ReadonlyMap<string, RValue>,
 ): RList {
-  const header = logicalFlag(controls.get("header"), defaults.header, "header");
+  const requestedHeader = controls.has("header")
+    ? logicalFlag(controls.get("header"), false, "header")
+    : defaults.header;
   const separator = controls.has("sep")
     ? characterScalar(controls.get("sep") as RValue, "sep")
     : defaults.separator;
@@ -25894,9 +25947,13 @@ function readTableSource(
   }
   const stripWhite = logicalFlag(controls.get("strip.white"), false, "strip.white");
   const blankLinesSkip = logicalFlag(controls.get("blank.lines.skip"), true, "blank.lines.skip");
-  const fill = logicalFlag(controls.get("fill"), defaults.fill, "fill");
   const skip = tableCount(controls.get("skip"), 0, "skip");
   const nrows = tableCount(controls.get("nrows"), -1, "nrows");
+  const fill = logicalFlag(
+    controls.get("fill"),
+    defaults.fill === "inverse-blank-lines-skip" ? !blankLinesSkip : defaults.fill,
+    "fill",
+  );
   let records = parseTableRecords(
     invocation,
     source,
@@ -25909,6 +25966,12 @@ function readTableSource(
   if (records.length === 0 && !controls.has("col.names")) {
     throw new REvaluationError("NRE2245", "no lines available in input");
   }
+  const firstWidth = records[0]?.length ?? 0;
+  const laterWidth = Math.max(...records.slice(1).map((record) => record.length), 0);
+  const header =
+    requestedHeader === "auto"
+      ? records.length > 1 && firstWidth === laterWidth - 1
+      : requestedHeader;
   let headerFields: readonly ParsedTableField[] | undefined;
   if (header) headerFields = records.shift();
   if (nrows >= 0) records = records.slice(0, nrows);
@@ -25926,7 +25989,20 @@ function readTableSource(
     records.some((record) => record.length === headerFields.length + 1);
   const dataWidth = Math.max(0, maximumWidth - (implicitRowNames ? 1 : 0));
   if (!fill && records.some((record) => record.length !== maximumWidth)) {
-    throw new REvaluationError("NRE2243", "line did not have the expected number of elements");
+    throw new REvaluationError("NRE2243", "line did not have the expected number of elements", {
+      details: {
+        expectedWidth: maximumWidth,
+        rowWidths: records.map((record) => record.length),
+        headerWidth: headerFields?.length,
+        suppliedNames: suppliedNames?.length,
+        fill,
+        blankLinesSkip,
+        separator: separator.length === 0 ? "whitespace" : separator,
+        quotes,
+        comment,
+        controls: [...controls.keys()],
+      },
+    });
   }
   const normalized = records.map((record) => {
     if (record.length > maximumWidth) {
@@ -28213,8 +28289,8 @@ function formatPrintNumber(value: number, digits: number): string {
 
 async function builtinGrep(invocation: BuiltinInvocation, logical: boolean): Promise<RValue> {
   const parameters = logical
-    ? ["pattern", "x", "ignore.case", "fixed"]
-    : ["pattern", "x", "ignore.case", "value", "fixed", "invert"];
+    ? ["pattern", "x", "ignore.case", "perl", "fixed", "useBytes"]
+    : ["pattern", "x", "ignore.case", "perl", "value", "fixed", "useBytes", "invert"];
   const matched = await matchExact(invocation, parameters);
   const pattern = characterScalar(
     required(matched, "pattern", logical ? "grepl" : "grep"),
@@ -28223,6 +28299,16 @@ async function builtinGrep(invocation: BuiltinInvocation, logical: boolean): Pro
   const input = requireCharacterVector(required(matched, "x", logical ? "grepl" : "grep"), "x");
   const ignoreCase = logicalFlag(matched.get("ignore.case"), false, "ignore.case");
   const fixed = logicalFlag(matched.get("fixed"), false, "fixed");
+  logicalFlag(matched.get("perl"), false, "perl");
+  if (
+    logicalFlag(matched.get("useBytes"), false, "useBytes") &&
+    !isAsciiByteInvariantPattern(pattern)
+  ) {
+    throw new RUnsupportedFeatureError(
+      "NRU6142",
+      `${logical ? "grepl" : "grep"}() byte-oriented matching is outside the browser string contract.`,
+    );
+  }
   const expression = compileBrowserPattern(pattern, fixed, ignoreCase, false);
   const flags = new Uint8Array(input.length);
   const missing = new Uint8Array(input.length);
@@ -28523,7 +28609,9 @@ async function builtinStringSubstitute(
     "replacement",
     "x",
     "ignore.case",
+    "perl",
     "fixed",
+    "useBytes",
   ]);
   const pattern = characterScalar(required(matched, "pattern", global ? "gsub" : "sub"), "pattern");
   const replacement = characterScalar(
@@ -28532,6 +28620,16 @@ async function builtinStringSubstitute(
   );
   const input = requireCharacterVector(required(matched, "x", global ? "gsub" : "sub"), "x");
   const fixed = logicalFlag(matched.get("fixed"), false, "fixed");
+  logicalFlag(matched.get("perl"), false, "perl");
+  if (
+    logicalFlag(matched.get("useBytes"), false, "useBytes") &&
+    !isAsciiByteInvariantPattern(pattern)
+  ) {
+    throw new RUnsupportedFeatureError(
+      "NRU6142",
+      `${global ? "gsub" : "sub"}() byte-oriented matching is outside the browser string contract.`,
+    );
+  }
   const expression = compileBrowserPattern(
     pattern,
     fixed,
@@ -28555,6 +28653,26 @@ async function builtinStringSubstitute(
   });
   invocation.context.allocate(output.length);
   return characterVector(output, compactMask(missing));
+}
+
+function isAsciiByteInvariantPattern(pattern: string): boolean {
+  let escaped = false;
+  for (let index = 0; index < pattern.length; index += 1) {
+    const character = pattern[index] ?? "";
+    if ((character.codePointAt(0) ?? 128) >= 128) return false;
+    if (escaped) {
+      if (character === "s" || character === "S") return false;
+      escaped = false;
+      continue;
+    }
+    if (character === "\\") {
+      escaped = true;
+      continue;
+    }
+    if (character === ".") return false;
+    if (character === "[" && pattern[index + 1] === "^") return false;
+  }
+  return !escaped;
 }
 
 async function builtinStrsplit(invocation: BuiltinInvocation): Promise<RValue> {
@@ -29017,7 +29135,18 @@ function compileBrowserPattern(
   if (pattern.length > 4096) {
     throw new RResourceLimitError("NRL4008", "Regular-expression pattern length limit exceeded.");
   }
-  const source = fixed ? pattern.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&") : pattern;
+  const source = fixed
+    ? pattern.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")
+    : pattern.replace(/\\x\{([0-9A-Fa-f]{1,6})\}/gu, (_match, digits: string) => {
+        const codePoint = Number.parseInt(digits, 16);
+        if (codePoint > 0x10ffff) {
+          throw new REvaluationError(
+            "NRE2129",
+            "Invalid Unicode code point in regular expression.",
+          );
+        }
+        return `\\u{${digits}}`;
+      });
   try {
     return new RegExp(source, `${global ? "g" : ""}${ignoreCase ? "i" : ""}u`);
   } catch (error) {
@@ -40479,8 +40608,21 @@ function transposeDataFrame(input: RList, invocation: BuiltinInvocation): RVecto
 async function builtinBind(invocation: BuiltinInvocation, axis: "row" | "column"): Promise<RValue> {
   const values = await forceAll(invocation);
   if (values.length === 0) return R_NULL;
+  if (axis === "row" && values.every(isDataFrame)) {
+    return bindDataFrameRows(values, invocation);
+  }
   if (!values.every(isAtomic)) {
-    throw new RTypeMismatchError("NRT3160", "rbind()/cbind() currently require atomic inputs.");
+    throw new RTypeMismatchError("NRT3160", "rbind()/cbind() currently require atomic inputs.", {
+      details: {
+        axis,
+        inputs: values.map((value) => ({
+          type: value.type,
+          classes: objectClasses(value),
+          length: valueLength(value),
+          dimensions: isVector(value) ? vectorDimensions(value) : undefined,
+        })),
+      },
+    });
   }
   const blocks = (values as AtomicVector[]).map((value) => {
     const dimensions = vectorDimensions(value);
@@ -40549,6 +40691,74 @@ async function builtinBind(invocation: BuiltinInvocation, axis: "row" | "column"
   }
   invocation.context.allocate(cells.length);
   return withDimensions(atomicCells(cells, invocation), [rows, columns]);
+}
+
+function bindDataFrameRows(frames: readonly RList[], invocation: BuiltinInvocation): RList {
+  const first = frames[0];
+  if (first === undefined) return dataFrameValue([], [], [], true);
+  const names = vectorNames(first) ?? [];
+  if (new Set(names).size !== names.length) {
+    throw new RTypeMismatchError(
+      "NRT3162",
+      "rbind() data-frame inputs currently require unique column names.",
+    );
+  }
+  const columnIndexes = frames.map((frame) => {
+    const candidateNames = vectorNames(frame) ?? [];
+    if (
+      candidateNames.length !== names.length ||
+      new Set(candidateNames).size !== candidateNames.length ||
+      names.some((name) => !candidateNames.includes(name))
+    ) {
+      throw new REvaluationError("NRE2123", "rbind() data-frame columns do not match by name.");
+    }
+    return names.map((name) => candidateNames.indexOf(name));
+  });
+  const rowCounts = frames.map((frame) => dataFrameRowCount(frame));
+  const columns = names.map((name, columnIndex) => {
+    const sourceColumns = frames.map((frame, frameIndex) => {
+      const source = frame.values[columnIndexes[frameIndex]?.[columnIndex] ?? -1];
+      if (source === undefined || !isAtomic(source)) {
+        throw new RTypeMismatchError(
+          "NRT3160",
+          `rbind() data-frame column '${name}' must be atomic.`,
+        );
+      }
+      return source;
+    });
+    if (sourceColumns.every(isFactor)) {
+      const levels = [...new Set(sourceColumns.flatMap((column) => factorLevels(column)))];
+      const codes: number[] = [];
+      const missing: number[] = [];
+      for (const column of sourceColumns) {
+        const sourceLevels = factorLevels(column);
+        for (let index = 0; index < column.length; index += 1) {
+          invocation.context.checkpoint();
+          if (isMissing(column, index)) {
+            codes.push(0);
+            missing.push(1);
+          } else {
+            const label = sourceLevels[(column.values[index] ?? 0) - 1] ?? "";
+            codes.push(levels.indexOf(label) + 1);
+            missing.push(0);
+          }
+        }
+      }
+      return factorValue(codes, levels, compactMask(Uint8Array.from(missing)));
+    }
+    const cells = sourceColumns.flatMap((column) =>
+      Array.from({ length: column.length }, (_, index) => ({ vector: column, index })),
+    );
+    return atomicCells(cells, invocation);
+  });
+  const rowCount = rowCounts.reduce((total, count) => total + count, 0);
+  invocation.context.allocate(rowCount * Math.max(1, names.length));
+  return dataFrameValue(
+    columns,
+    names,
+    Array.from({ length: rowCount }, (_, index) => String(index + 1)),
+    true,
+  );
 }
 
 function atomicCells(

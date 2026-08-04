@@ -2,8 +2,8 @@
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
   "targetRVersion": "4.6.1",
-  "semanticProfileVersion": "0.279.0",
-  "languageSubsetVersion": "0.279.0",
+  "semanticProfileVersion": "0.280.0",
+  "languageSubsetVersion": "0.280.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -287,10 +287,12 @@
         { "name": "requireNamespace", "compatibility": "behavioral" },
         { "name": "isNamespaceLoaded", "compatibility": "behavioral" },
         { "name": "loadedNamespaces", "compatibility": "behavioral" },
+        { "name": "asNamespace", "compatibility": "behavioral" },
         { "name": "getLoadedDLLs", "compatibility": "shape" },
         { "name": ".Call", "compatibility": "behavioral" },
         { "name": "getNamespaceExports", "compatibility": "behavioral" },
         { "name": "sys.call", "compatibility": "behavioral" },
+        { "name": "sys.function", "compatibility": "behavioral" },
         { "name": "get", "compatibility": "behavioral" },
         { "name": "get0", "compatibility": "behavioral" },
         { "name": "mget", "compatibility": "behavioral" },
@@ -787,7 +789,8 @@
         { "name": "show", "compatibility": "shape" },
         { "name": "showClass", "compatibility": "behavioral" }
       ]
-    }
+    },
+    { "name": "tools", "referenceVersion": "GNU R 4.6.1 documented behavior", "functions": [] }
   ],
   "backends": ["js"]
 }
