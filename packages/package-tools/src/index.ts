@@ -58,7 +58,13 @@ const INSTALL_HOOKS = new Set([
   "cleanup.ucrt",
 ]);
 const LEGAL_FILES = new Set(["LICENSE", "LICENCE", "COPYING", "NOTICE"]);
-const SUPPORTED_NAMESPACE_DIRECTIVES = new Set(["export", "import", "importFrom", "S3method"]);
+const SUPPORTED_NAMESPACE_DIRECTIVES = new Set([
+  "export",
+  "exportMethods",
+  "import",
+  "importFrom",
+  "S3method",
+]);
 const R_SOURCE_PATH = /^R\/(?:[^/]+\/)*[^/]+\.[Rr]$/u;
 const PACKAGE_SOURCE_RESOURCE_ROOT = ".nativr/source";
 

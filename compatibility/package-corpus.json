@@ -203,25 +203,49 @@
     {
       "package": "rstudioapi",
       "version": "0.19.0",
-      "partition": "holdout",
+      "partition": "regression",
       "sourceUrl": "https://cloud.r-project.org/src/contrib/rstudioapi_0.19.0.tar.gz",
       "sourceSha256": "f1e3bb445a90aadc07b043493022d120493eba7ff30c0b3055442d8b77d8069a",
-      "artifactSha256": null,
-      "tier": "P0",
-      "status": "unevaluated",
-      "evidence": "Usage-ranked source release metadata and archive integrity only; package code has not been evaluated or used to guide implementation.",
+      "artifactSha256": "d3834a7e3c17f04c0808e50afe5fa80575fe87f3ed0ab8fc5c69fbb1ab645ab0",
+      "tier": "P4",
+      "status": "passing",
+      "evidence": "packages/package-tools/test/external-package.test.ts",
       "firstBlocker": null
     },
     {
       "package": "inline",
       "version": "0.3.21",
-      "partition": "holdout",
+      "partition": "regression",
       "sourceUrl": "https://cloud.r-project.org/src/contrib/inline_0.3.21.tar.gz",
       "sourceSha256": "7ef9410a933a47f6a346bc8c0e55b62931379b464b92696aee9865ec6378bc98",
+      "artifactSha256": "1de1adf3d804477438730e68d81c9bf6173a4a1cedf0081dc838a0286b805af0",
+      "tier": "P4",
+      "status": "passing",
+      "evidence": "packages/package-tools/test/external-package.test.ts",
+      "firstBlocker": null
+    },
+    {
+      "package": "rematch",
+      "version": "2.0.0",
+      "partition": "holdout",
+      "sourceUrl": "https://cloud.r-project.org/src/contrib/rematch_2.0.0.tar.gz",
+      "sourceSha256": "15daf7bf2907aef8503635bc8631fce9fd75248a1fc2496825588c4bdf785c26",
       "artifactSha256": null,
       "tier": "P0",
       "status": "unevaluated",
-      "evidence": "Usage-ranked source release metadata and archive integrity only; package code has not been evaluated or used to guide implementation.",
+      "evidence": "Dependency-free pure-R release metadata and source-archive integrity only; package code has not been evaluated or used to guide implementation.",
+      "firstBlocker": null
+    },
+    {
+      "package": "whisker",
+      "version": "0.4.1",
+      "partition": "holdout",
+      "sourceUrl": "https://cloud.r-project.org/src/contrib/whisker_0.4.1.tar.gz",
+      "sourceSha256": "bf5151494508032f68ac41e211bda80da9087c65c7068ffdd12f16669bf1f2bc",
+      "artifactSha256": null,
+      "tier": "P0",
+      "status": "unevaluated",
+      "evidence": "Dependency-free pure-R release metadata and source-archive integrity only; package code has not been evaluated or used to guide implementation.",
       "firstBlocker": null
     }
   ]

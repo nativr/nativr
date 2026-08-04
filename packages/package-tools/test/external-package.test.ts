@@ -1137,3 +1137,174 @@ it.runIf(runExternal)(
   },
   30_000,
 );
+
+it.runIf(runExternal)(
+  "packs, loads, and exercises the unchanged public rstudioapi 0.19.0 pure-R package",
+  async () => {
+    let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    try {
+      const installed = await installPackagesFromRepository(["rstudioapi"]);
+      expect(installed.artifacts[0]).toMatchObject({
+        package: { name: "rstudioapi", version: "0.19.0" },
+        compatibility: { packaging: "ready", execution: "unchecked" },
+        integrity: {
+          algorithm: "sha256",
+          value: "d3834a7e3c17f04c0808e50afe5fa80575fe87f3ed0ab8fc5c69fbb1ab645ab0",
+        },
+      });
+      runtime = await createR({
+        execution: "inline",
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+        packages: installed.bundles,
+      });
+      await expect(runtime.eval('requireNamespace("rstudioapi", quietly = TRUE)')).resolves.toBe(
+        true,
+      );
+      await expect(runtime.eval('as.character(packageVersion("rstudioapi"))')).resolves.toBe(
+        "0.19.0",
+      );
+      await expect(
+        runtime.eval('library("rstudioapi"); "package:rstudioapi" %in% search()'),
+      ).resolves.toBe(true);
+      await expect(
+        runtime.eval(`
+          exports <- getNamespaceExports("rstudioapi")
+          all(c(
+            "document_position", "document_range", "isAvailable", "verifyAvailable"
+          ) %in% exports)
+        `),
+      ).resolves.toBe(true);
+      await expect(
+        runtime.eval(`
+          p <- rstudioapi::document_position(3, 5)
+          p2 <- rstudioapi::as.document_position(c(7, 9))
+          range <- rstudioapi::document_range(p, p2)
+          range2 <- rstudioapi::document_range(c(1, 2, 4, 6))
+          c(
+            class(p), names(p), unlist(p), rstudioapi::is.document_position(p),
+            class(range), names(range), unlist(range), unlist(range2),
+            rstudioapi::is.document_range(range)
+          )
+        `),
+      ).resolves.toEqual([
+        "document_position",
+        "row",
+        "column",
+        "3",
+        "5",
+        "TRUE",
+        "document_range",
+        "start",
+        "end",
+        "3",
+        "5",
+        "7",
+        "9",
+        "1",
+        "2",
+        "4",
+        "6",
+        "TRUE",
+      ]);
+      await expect(
+        runtime.eval(`c(
+          rstudioapi::isAvailable(),
+          rstudioapi::isAvailable("1.0"),
+          inherits(try(rstudioapi::verifyAvailable(), silent = TRUE), "try-error")
+        )`),
+      ).resolves.toEqual([false, false, true]);
+    } finally {
+      await runtime?.dispose();
+    }
+  },
+  30_000,
+);
+
+it.runIf(runExternal)(
+  "packs, loads, and exercises the unchanged public inline 0.3.21 pure-R package",
+  async () => {
+    let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    try {
+      const installed = await installPackagesFromRepository(["inline"]);
+      expect(installed.artifacts[0]).toMatchObject({
+        package: { name: "inline", version: "0.3.21" },
+        compatibility: { packaging: "ready", execution: "unchecked" },
+        integrity: {
+          algorithm: "sha256",
+          value: "1de1adf3d804477438730e68d81c9bf6173a4a1cedf0081dc838a0286b805af0",
+        },
+      });
+      runtime = await createR({
+        execution: "inline",
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+        packages: installed.bundles,
+      });
+      await expect(runtime.eval('requireNamespace("inline", quietly = TRUE)')).resolves.toBe(true);
+      await expect(runtime.eval('as.character(packageVersion("inline"))')).resolves.toBe("0.3.21");
+      await expect(runtime.eval('library("inline"); "package:inline" %in% search()')).resolves.toBe(
+        true,
+      );
+      await expect(runtime.eval('sort(getNamespaceExports("inline"))')).resolves.toEqual([
+        "cfunction",
+        "code",
+        "cxxfunction",
+        "getDynLib",
+        "getPlugin",
+        "moveDLL",
+        "package.skeleton",
+        "print",
+        "rcpp",
+        "readCFunc",
+        "registerPlugin",
+        "setCMethod",
+        "writeCFunc",
+      ]);
+      await expect(
+        runtime.eval(`
+          plugin_function <- function(prefix = "") list(
+            includes = paste0(prefix, "header"),
+            LinkingTo = c("alpha", "beta"),
+            env = list(PKG_LIBS = "-lm")
+          )
+          registration <- withVisible(inline::registerPlugin("nativr_probe", plugin_function))
+          plugin <- inline::getPlugin("nativr_probe", prefix = "// ")
+          c(
+            typeof(registration$value), registration$visible,
+            identical(registration$value, plugin_function),
+            names(plugin), plugin$includes, plugin$LinkingTo,
+            names(plugin$env), unlist(plugin$env),
+            inherits(try(inline::getPlugin("not_registered"), silent = TRUE), "try-error")
+          )
+        `),
+      ).resolves.toEqual([
+        "closure",
+        "FALSE",
+        "TRUE",
+        "includes",
+        "LinkingTo",
+        "env",
+        "// header",
+        "alpha",
+        "beta",
+        "PKG_LIBS",
+        "-lm",
+        "TRUE",
+      ]);
+    } finally {
+      await runtime?.dispose();
+    }
+  },
+  30_000,
+);

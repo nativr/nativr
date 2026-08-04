@@ -318,9 +318,9 @@ prevents a safe archive scan from being mislabeled as full package compatibility
 
 ## External proof
 
-The opt-in test `packages/package-tools/test/external-package.test.ts` evaluates thirteen unchanged
+The opt-in test `packages/package-tools/test/external-package.test.ts` evaluates seventeen unchanged
 public source packages from the repository resolver. It verifies the pinned source-archive digest
-separately from each normalized NativR artifact digest. All thirteen reach at least P4 evidence:
+separately from each normalized NativR artifact digest. All seventeen reach at least P4 evidence:
 
 - [`pkgconfig 2.0.3`](https://cran.r-project.org/package=pkgconfig) proves namespace exports,
   package resources, classed DESCRIPTION metadata with a virtual installation path, and an ordinary
@@ -370,6 +370,11 @@ separately from each normalized NativR artifact digest. All thirteen reach at le
   and singleton-dimension removal calls;
 - [`rprojroot 2.1.1`](https://cran.r-project.org/package=rprojroot) reaches P4 through public S3
   criterion construction/composition and browser-owned project-root/file discovery.
+- [`rstudioapi 0.19.0`](https://cran.r-project.org/package=rstudioapi) reaches P4 through public
+  document-position/range constructors and the outside-RStudio availability/error path;
+- [`inline 0.3.21`](https://cran.r-project.org/package=inline) reaches P4 through its public plugin
+  registry. Its C/C++ compilation entry points remain outside the browser-native ABI and are not
+  counted as executable compatibility.
 
 No package source is checked into this repository. Together these tests exercise repository
 installation, runtime package files, namespace loading, qualified S3 registration, metaprogramming,
@@ -389,9 +394,9 @@ contains only reusable color interpolation, frame, warning, and arithmetic seman
 
 The machine-readable [package corpus](../compatibility/package-corpus.json) is authoritative for
 development/regression/holdout membership, source and artifact digests, completed tier, and first
-blocker. The current uninspected P0 holdouts are `rstudioapi 0.19.0` and `inline 0.3.21`; only
-release metadata and source-archive digests have been admitted for them. These proofs must not be
-summarized as a single unqualified “supported packages” count.
+blocker. The current uninspected P0 holdouts are `rematch 2.0.0` and `whisker 0.4.1`; only release
+metadata and source-archive digests have been admitted for them. These proofs must not be summarized
+as a single unqualified “supported packages” count.
 
 The fourth source-blind rotation used only release metadata, public documentation, public API calls,
 and GNU R as a black-box oracle before the packages were executed. The reusable runtime work adds
@@ -401,6 +406,13 @@ registration while a namespace is initialized, numbered ellipsis identifiers, mi
 list/data-frame `is.na()` shapes. `abind::acorn()` and `abind::asub()` still encounter the generic
 language-object subsetting gap, so this is P4 evidence rather than a claim of complete package
 behavior.
+
+The fifth source-blind rotation likewise used release metadata, public documentation, public API
+calls, and black-box GNU R observations before execution. It adds generic `exportMethods()`
+namespace metadata, correct `utils` ownership for `head()`/`tail()`, and behavioral
+`utils::globalVariables()` state. Unchanged rstudioapi and inline now install, load, attach, and run
+their declared representative public calls. The result is P4 evidence only: RStudio host APIs and
+inline's native compiler/dynamic-library paths remain explicit platform and future Wasm-ABI gaps.
 
 The checked-in source-only fixture also exports a function that calls `grDevices::rainbow`,
 `terrain.colors`, `topo.colors`, and `cm.colors` through its namespace. This is a small executable

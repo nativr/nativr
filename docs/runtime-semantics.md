@@ -1748,3 +1748,17 @@ declared S3 registrations after each top-level source expression so later initia
 can use earlier methods without a package-specific load-order exception. Numbered `..N` identifiers
 resolve against the current dots binding and participate in `missing()`. These semantics are covered
 by differential cases and by unchanged rprojroot criterion composition.
+
+## Package method exports and global-variable declarations
+
+`exportMethods()` names are retained in a package's reported namespace exports and are attached when
+an ordinary binding exists, but namespace loading does not require an S4 method name to be a normal
+variable binding. This matches the distinction needed by generated NAMESPACE files without adding
+package-specific exceptions. `utils::head` and `utils::tail` now carry their GNU R namespace
+ownership while remaining available through the default search path.
+
+`utils::globalVariables(names, package, add = TRUE)` stores declarations against the selected
+namespace environment. Missing `names` queries current declarations; additive updates retain first
+occurrence order and replacement updates preserve the supplied vector. The state is session-owned
+and reset with the runtime. This models package metadata used during source loading; it does not
+implement global-variable diagnostics from R CMD check.

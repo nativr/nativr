@@ -950,3 +950,9 @@ replacement, quoting, data-frame coercion controls, and recursive missingness. T
 rprojroot packages remain opt-in test inputs and contribute no source or resources to the shipped
 Worker. The measured Worker is 423.4 KiB gzip (433,521 bytes), 369 bytes above the previous 423 KiB
 ceiling, so the ceiling rises narrowly to 424 KiB; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.284 adds generic S4 method-export metadata, correct `utils` namespace ownership
+for `head`/`tail`, and session-owned `utils::globalVariables` declarations. The rstudioapi and
+inline packages remain opt-in test inputs and contribute no source or resources to the shipped
+Worker. The measured Worker is 423.8 KiB gzip (433,929 bytes), within the existing 424 KiB ceiling;
+all budgets remain unchanged.

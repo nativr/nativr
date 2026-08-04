@@ -5397,6 +5397,47 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("loads bindings declared by standard S4 method export directives", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [
+        {
+          description: "Package: methodexportfixture\nVersion: 1.0.0\nNeedsCompilation: no",
+          namespace: "exportMethods(answer)",
+          rSources: [{ path: "R/method.R", source: "answer <- function() 42L" }],
+        },
+      ],
+    });
+    await expect(runtime.eval("methodexportfixture::answer()")).resolves.toBe(42);
+    await expect(runtime.eval('getNamespaceExports("methodexportfixture")')).resolves.toBe(
+      "answer",
+    );
+    await runtime.dispose();
+  });
+
+  it("does not require or inherit ordinary bindings for S4 method export metadata", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [
+        {
+          description: "Package: methodmetadatafixture\nVersion: 1.0.0\nNeedsCompilation: no",
+          namespace: "exportMethods(print)",
+          rSources: [{ path: "R/marker.R", source: "marker <- 42L" }],
+        },
+      ],
+    });
+    await expect(runtime.eval('requireNamespace("methodmetadatafixture")')).resolves.toBe(true);
+    await expect(runtime.eval('getNamespaceExports("methodmetadatafixture")')).resolves.toBe(
+      "print",
+    );
+    await expect(runtime.eval("methodmetadatafixture::print")).rejects.toMatchObject({
+      code: "NRE2211",
+    });
+    await runtime.dispose();
+  });
+
   it("lets installed packages replace non-core compatibility shim namespaces", async () => {
     const runtime = await createR({
       execution: "inline",
@@ -13543,8 +13584,8 @@ NeedsCompilation: no
     const capabilities = await runtime.capabilities();
     expect(capabilities).toMatchObject({
       targetRVersion: "4.6.1",
-      semanticProfileVersion: "0.283.0",
-      languageSubsetVersion: "0.283.0",
+      semanticProfileVersion: "0.284.0",
+      languageSubsetVersion: "0.284.0",
     });
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",

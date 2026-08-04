@@ -10324,5 +10324,28 @@
     ],
     "expectedCompatibility": "behavioral",
     "tolerance": { "absolute": 0, "relative": 0 }
+  },
+  {
+    "id": "global-variables-package-metadata-accumulation",
+    "code": "e <- new.env()\nfirst <- utils::globalVariables(c(\"b\", \"a\", \"b\"), package = e)\nqueried <- utils::globalVariables(package = e)\nsecond <- utils::globalVariables(c(\"c\", \"a\"), package = e)\nreplaced <- utils::globalVariables(c(\"z\", \"y\", \"z\"), package = e, add = FALSE)\nnormalized <- utils::globalVariables(character(), package = e)\nc(first, queried, second, replaced, normalized, names(formals(utils::globalVariables)))",
+    "expected": [
+      "b",
+      "a",
+      "b",
+      "a",
+      "b",
+      "a",
+      "c",
+      "z",
+      "y",
+      "z",
+      "z",
+      "y",
+      "names",
+      "package",
+      "add"
+    ],
+    "expectedCompatibility": "behavioral",
+    "tolerance": { "absolute": 0, "relative": 0 }
   }
 ]

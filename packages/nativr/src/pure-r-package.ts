@@ -113,6 +113,7 @@ export function compilePureRPackages(
       dependencies,
       imports: namespace.imports,
       exports: namespace.exports,
+      methodExports: namespace.methodExports,
       s3Methods: namespace.s3Methods,
       programs: Object.freeze(programs),
       textResources,
@@ -247,11 +248,13 @@ function parseNamespace(
 ): {
   readonly imports: readonly RuntimePackageImport[];
   readonly exports: readonly string[];
+  readonly methodExports: readonly string[];
   readonly s3Methods: readonly RuntimeS3Method[];
 } {
   const normalized = stripNamespaceComments(source);
   const imports = new Map<string, Set<string> | undefined>();
   const exports: string[] = [];
+  const methodExports: string[] = [];
   const s3Methods: RuntimeS3Method[] = [];
   let consumed = "";
   let lastIndex = 0;
@@ -264,6 +267,9 @@ function parseNamespace(
     switch (name) {
       case "export":
         exports.push(...arguments_);
+        break;
+      case "exportMethods":
+        methodExports.push(...arguments_);
         break;
       case "import":
         for (const dependency of arguments_) imports.set(dependency, undefined);
@@ -330,6 +336,7 @@ function parseNamespace(
       })),
     ),
     exports: Object.freeze([...new Set(exports)]),
+    methodExports: Object.freeze([...new Set(methodExports)]),
     s3Methods: Object.freeze(s3Methods),
   };
 }

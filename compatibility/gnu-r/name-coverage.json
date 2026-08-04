@@ -4,11 +4,11 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 703,
-    "overlappingNames": 683,
-    "missingReferenceNames": 1839,
+    "nativrRegisteredNames": 704,
+    "overlappingNames": 684,
+    "missingReferenceNames": 1838,
     "nativrExtensionNames": 20,
-    "nameCoverage": 0.270817
+    "nameCoverage": 0.271213
   },
   "byPackage": [
     { "package": "base", "callableNames": 1367, "overlappingNames": 491, "nameCoverage": 0.359181 },
@@ -19,7 +19,7 @@
       "overlappingNames": 13,
       "nameCoverage": 0.062201
     },
-    { "package": "utils", "callableNames": 262, "overlappingNames": 39, "nameCoverage": 0.148855 },
+    { "package": "utils", "callableNames": 262, "overlappingNames": 40, "nameCoverage": 0.152672 },
     {
       "package": "grDevices",
       "callableNames": 135,
@@ -324,6 +324,7 @@
     "gl",
     "glob2rx",
     "globalCallingHandlers",
+    "globalVariables",
     "globalenv",
     "graphics.off",
     "gray",
@@ -1631,7 +1632,6 @@
     "glm",
     "glm.control",
     "glm.fit",
-    "globalVariables",
     "glyphAnchor",
     "glyphFont",
     "glyphFontList",

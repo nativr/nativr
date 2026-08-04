@@ -1615,6 +1615,23 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "invisible",
   ),
   definePackageBuiltin("utils", "URLdecode", ["URL"], "behavioral", builtinUrlDecode),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "utils",
+      "globalVariables",
+      ["names", "package", "add"],
+      "behavioral",
+      builtinGlobalVariables,
+    ),
+    [
+      { name: "names" },
+      { name: "package" },
+      {
+        name: "add",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
   definePackageBuiltin(
     "utils",
     "glob2rx",
@@ -2441,8 +2458,8 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "regular",
     "invisible",
   ),
-  defineBuiltin("head", ["x", "n", "..."], "behavioral", builtinHead),
-  defineBuiltin("tail", ["x", "n", "..."], "behavioral", builtinTail),
+  definePackageBuiltin("utils", "head", ["x", "n", "..."], "behavioral", builtinHead),
+  definePackageBuiltin("utils", "tail", ["x", "n", "..."], "behavioral", builtinTail),
   defineBuiltin(
     "str",
     ["object", "...", "max.level", "vec.len", "list.len"],
@@ -4058,6 +4075,7 @@ const HOOKS_STATE_KEY = "base.hooks";
 const VIRTUAL_TEXT_FILES_STATE_KEY = "base.virtualTextFiles";
 const PACKAGE_DATA_DIRECTORY_STATE_KEY = "utils.packageDataDirectory";
 const AVAILABLE_PACKAGES_CACHE_STATE_KEY = "utils.availablePackages.cache";
+const GLOBAL_VARIABLES_STATE_KEY = "utils.globalVariables";
 
 const AVAILABLE_PACKAGE_FIELDS = Object.freeze([
   "Package",
@@ -15776,6 +15794,58 @@ async function builtinUrlDecode(invocation: BuiltinInvocation): Promise<RCharact
   );
   invocation.context.allocate(values.length);
   return characterVector(values);
+}
+
+async function builtinGlobalVariables(invocation: BuiltinInvocation): Promise<RCharacterVector> {
+  const matched = matchLazyArguments(invocation, ["names", "package", "add"]);
+  let environment = invocation.currentEnvironment();
+  const packageArgument = matched.get("package");
+  if (packageArgument !== undefined && !packageArgument.promise.missing) {
+    const supplied = await invocation.force(packageArgument.promise);
+    if (supplied.type === "environment") {
+      environment = supplied;
+    } else if (supplied.type === "character" && supplied.length === 1 && !isMissing(supplied, 0)) {
+      const packageName = supplied.values[0] ?? "";
+      environment =
+        invocation.namespaceEnvironment(packageName) ??
+        (await invocation.loadPackage(packageName, false)).namespace;
+    } else {
+      throw new RTypeMismatchError("NRT3419", "invalid 'package' argument");
+    }
+  }
+
+  const state = globalVariablesState(invocation);
+  const current = state.get(environment.id) ?? [];
+  const namesArgument = matched.get("names");
+  if (namesArgument === undefined || namesArgument.promise.missing) {
+    invocation.context.allocate(current.length);
+    return characterVector(current);
+  }
+  const suppliedNames = await invocation.force(namesArgument.promise);
+  if (!isAtomic(suppliedNames)) {
+    throw new RTypeMismatchError("NRT3419", "invalid 'names' argument");
+  }
+  const characters = coerceAtomicToCharacter(suppliedNames, invocation);
+  const names = characters.values.map((value, index) =>
+    isMissing(characters, index) ? "NA" : value,
+  );
+  const addArgument = matched.get("add");
+  const add =
+    addArgument === undefined || addArgument.promise.missing
+      ? true
+      : logicalFlag(await invocation.force(addArgument.promise), true, "add");
+  const result = add ? [...new Set([...current, ...names])] : [...names];
+  state.set(environment.id, result);
+  invocation.context.allocate(result.length);
+  return characterVector(result);
+}
+
+function globalVariablesState(invocation: BuiltinInvocation): Map<number, readonly string[]> {
+  const existing = invocation.state.get(GLOBAL_VARIABLES_STATE_KEY);
+  if (existing instanceof Map) return existing as Map<number, readonly string[]>;
+  const created = new Map<number, readonly string[]>();
+  invocation.state.set(GLOBAL_VARIABLES_STATE_KEY, created);
+  return created;
 }
 
 async function builtinGlobToRegex(invocation: BuiltinInvocation): Promise<RCharacterVector> {

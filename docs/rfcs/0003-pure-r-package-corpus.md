@@ -44,6 +44,14 @@ dimension-name replacement, quoting, data-frame coercion controls, and recursive
 `rstudioapi 0.19.0` and `inline 0.3.21` are the new uninspected P0 holdouts; only official release
 metadata and source-archive digests have been admitted.
 
+The fifth holdout rotation evaluated `rstudioapi 0.19.0` and `inline 0.3.21` through release
+metadata, public documentation/API calls, and black-box GNU R observations before runtime execution.
+Both install, load, attach, and execute declared representative public functions unchanged, so they
+move to P4 regression. Reusable gaps covered `exportMethods()` namespace metadata, GNU R namespace
+ownership of `utils::head`/`utils::tail`, and `utils::globalVariables()` metadata state.
+Dependency-free pure-R releases `rematch 2.0.0` and `whisker 0.4.1` replace them as uninspected P0
+holdouts; only metadata and source-archive digests have been admitted.
+
 ## Validation tiers
 
 | Tier | Required evidence                              |

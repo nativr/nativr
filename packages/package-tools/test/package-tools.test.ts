@@ -617,6 +617,19 @@ describe("pure-R package packager", () => {
     await expect(packPackage(packageRoot)).rejects.toBeInstanceOf(PackageCompatibilityError);
   });
 
+  it("admits standard S4 method export directives for the runtime loader", async () => {
+    const packageRoot = await fixturePackage();
+    await writeFile(
+      path.join(packageRoot, "NAMESPACE"),
+      "export(square)\nexportMethods(print, code)\n",
+    );
+    const inspected = await inspectPackage(packageRoot);
+    expect(inspected.compatibility.packaging).toBe("ready");
+    await expect(packPackage(packageRoot)).resolves.toMatchObject({
+      bundle: { namespace: "export(square)\nexportMethods(print, code)\n" },
+    });
+  });
+
   it("enforces bounded input before constructing an artifact", async () => {
     const packageRoot = await fixturePackage();
     await expect(inspectPackage(packageRoot, { limits: { maxFiles: 2 } })).rejects.toThrow(

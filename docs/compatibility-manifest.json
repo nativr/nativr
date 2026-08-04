@@ -2,8 +2,8 @@
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
   "targetRVersion": "4.6.1",
-  "semanticProfileVersion": "0.283.0",
-  "languageSubsetVersion": "0.283.0",
+  "semanticProfileVersion": "0.284.0",
+  "languageSubsetVersion": "0.284.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -434,8 +434,6 @@
         { "name": "format", "compatibility": "shape" },
         { "name": "print", "compatibility": "shape" },
         { "name": "cat", "compatibility": "shape" },
-        { "name": "head", "compatibility": "behavioral" },
-        { "name": "tail", "compatibility": "behavioral" },
         { "name": "str", "compatibility": "shape" },
         { "name": "grep", "compatibility": "behavioral" },
         { "name": "grepl", "compatibility": "behavioral" },
@@ -775,13 +773,16 @@
         { "name": "package.skeleton", "compatibility": "shape" },
         { "name": "tar", "compatibility": "shape" },
         { "name": "URLdecode", "compatibility": "behavioral" },
+        { "name": "globalVariables", "compatibility": "behavioral" },
         { "name": "glob2rx", "compatibility": "behavioral" },
         { "name": "View", "compatibility": "behavioral" },
         { "name": "type.convert", "compatibility": "behavioral" },
         { "name": "type.convert.default", "compatibility": "behavioral" },
         { "name": "type.convert.list", "compatibility": "behavioral" },
         { "name": "type.convert.data.frame", "compatibility": "behavioral" },
-        { "name": "getFromNamespace", "compatibility": "behavioral" }
+        { "name": "getFromNamespace", "compatibility": "behavioral" },
+        { "name": "head", "compatibility": "behavioral" },
+        { "name": "tail", "compatibility": "behavioral" }
       ]
     },
     { "name": "datasets", "referenceVersion": "GNU R 4.6.1 documented behavior", "functions": [] },

@@ -182,6 +182,8 @@ export interface RuntimePackageDefinition {
   readonly dependencies: readonly RuntimePackageDependency[];
   readonly imports: readonly RuntimePackageImport[];
   readonly exports: readonly string[];
+  /** S4 method names declared by exportMethods(); they need not be ordinary namespace bindings. */
+  readonly methodExports: readonly string[];
   readonly s3Methods: readonly RuntimeS3Method[];
   readonly programs: readonly ProgramNode[];
   readonly textResources: readonly RuntimePackageTextResource[];
@@ -193,6 +195,10 @@ interface RuntimePackageRecord {
   namespace: REnvironment | undefined;
   loading: boolean;
   attached: boolean;
+}
+
+function runtimePackageExportNames(definition: RuntimePackageDefinition): readonly string[] {
+  return Object.freeze([...new Set([...definition.exports, ...definition.methodExports])]);
 }
 
 function parsePackageVirtualPath(
@@ -462,6 +468,8 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "example",
       "glob2rx",
       "getFromNamespace",
+      "globalVariables",
+      "head",
       "help",
       "install.packages",
       "object.size",
@@ -475,6 +483,7 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
       "read.delim2",
       "read.table",
       "sessionInfo",
+      "tail",
       "tar",
       "type.convert",
       "type.convert.data.frame",
@@ -1377,11 +1386,8 @@ export class Evaluator {
           });
         }
         const loaded = await this.#loadPackage(namespace, false, context);
-        const exported = loaded.record.definition.exports.includes(member);
-        const binding =
-          node.operator === "::" && exported
-            ? lookupBinding(loaded.namespace, member)
-            : loaded.namespace.bindings.get(member);
+        const exported = runtimePackageExportNames(loaded.record.definition).includes(member);
+        const binding = loaded.namespace.bindings.get(member);
         if (binding === undefined || (node.operator === "::" && !exported)) {
           throw new REvaluationError(
             "NRE2211",
@@ -2809,6 +2815,7 @@ export class Evaluator {
               dependencies: [],
               imports: [],
               exports: await this.#namespaceExports(name, context),
+              methodExports: [],
               s3Methods: [],
               programs: [],
               textResources: [],
@@ -2947,7 +2954,7 @@ export class Evaluator {
           }
         }
         for (const exportedName of record.definition.exports) {
-          if (lookupBinding(namespace, exportedName) === undefined) {
+          if (namespace.bindings.get(exportedName) === undefined) {
             throw new REvaluationError(
               "NRE2224",
               `Package '${name}' exports missing binding '${exportedName}'.`,
@@ -2981,9 +2988,10 @@ export class Evaluator {
     }
     if (attach && !record.attached) {
       await this.#invokePackageHook(record, ".onAttach", context);
-      context.allocate(record.definition.exports.length);
-      for (const exportedName of record.definition.exports) {
-        const binding = lookupBinding(namespace, exportedName);
+      const exportNames = runtimePackageExportNames(record.definition);
+      context.allocate(exportNames.length);
+      for (const exportedName of exportNames) {
+        const binding = namespace.bindings.get(exportedName);
         if (binding !== undefined)
           setBinding(this.#attachedPackagesEnvironment, exportedName, binding);
       }
@@ -3070,8 +3078,9 @@ export class Evaluator {
     if (record.namespace === undefined && !record.loading) {
       await this.#loadPackage(name, false, context);
     }
-    context.allocate(record.definition.exports.length);
-    return Object.freeze([...record.definition.exports]);
+    const exportNames = runtimePackageExportNames(record.definition);
+    context.allocate(exportNames.length);
+    return exportNames;
   }
 
   #namespaceName(environment: REnvironment): string | undefined {
@@ -3323,7 +3332,7 @@ export class Evaluator {
     const environment = createEnvironment(parent, true);
     const record = this.#packages.get(name);
     if (record?.namespace !== undefined) {
-      for (const exportedName of record.definition.exports) {
+      for (const exportedName of runtimePackageExportNames(record.definition)) {
         const binding = record.namespace.bindings.get(exportedName);
         if (binding !== undefined) setBinding(environment, exportedName, binding);
       }
@@ -3378,7 +3387,9 @@ export class Evaluator {
         const source = staticExports === undefined ? record?.namespace : this.#baseEnvironment;
         const exports =
           staticExports === undefined
-            ? (record?.definition.exports ?? [])
+            ? record === undefined
+              ? []
+              : runtimePackageExportNames(record.definition)
             : this.#registeredNamespaceExportNames(name, staticExports);
         if (source !== undefined) {
           for (const exportedName of exports) {

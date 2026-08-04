@@ -1153,3 +1153,14 @@ The objective is complete only when:
 5. The compatibility ledger, runtime capability manifest, public API, and generated reports agree.
 
 Until all five conditions hold, NativR must describe itself as incomplete GNU R compatibility.
+
+## Namespace metadata increment
+
+Language subset 0.284 adds the registered `utils::globalVariables` binding and raises current GNU R
+name overlap to 684 of 2,522. GNU R 4.6 black-box evidence covers its exact formals, namespace-
+scoped query/add/replace behavior, plus the `utils` ownership of `head` and `tail`. Pure-R package
+metadata now distinguishes `exportMethods()` names from ordinary binding exports while reporting
+both through `getNamespaceExports()`. Digest-pinned unchanged rstudioapi 0.19.0 and inline 0.3.21
+reach P4 through document range/availability and plugin-registry calls, respectively. Complete S4,
+RStudio host APIs, inline native compilation/loading, P5-P7, and arbitrary-package compatibility
+remain unclaimed.

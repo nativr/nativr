@@ -903,9 +903,13 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      source-blind rotation moves unchanged `abind 1.4-8` and `rprojroot 2.1.1` to P4 through generic
      operator S3 dispatch, incremental method registration, numbered dots, missing-endpoint
      sequences, dimension-name replacement, quoting, data-frame coercion, and recursive missingness.
-     `rstudioapi 0.19.0` and `inline 0.3.21` are the next uninspected P0 holdouts. Language-object
-     subsetting still blocks deeper `abind::acorn()`/`abind::asub()` breadth and remains
-     foundational work rather than a package-specific patch.
+     The fifth source-blind rotation moves unchanged `rstudioapi 0.19.0` and `inline 0.3.21` to P4
+     through generic S4 method-export metadata, correct `utils` ownership for `head`/`tail`, and
+     environment-scoped `utils::globalVariables` behavior. `rematch 2.0.0` and `whisker 0.4.1` are
+     the next uninspected P0 holdouts. RStudio host operations and inline's native compilation
+     surface remain explicit platform/Wasm-ABI work. Language-object subsetting still blocks deeper
+     `abind::acorn()`/`abind::asub()` breadth and remains foundational work rather than a
+     package-specific patch.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means
