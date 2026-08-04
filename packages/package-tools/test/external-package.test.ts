@@ -1,4 +1,4 @@
-import { createR } from "@nativr/nativr";
+import { createR, NA } from "@nativr/nativr";
 import { expect, it } from "vitest";
 
 import { installPackagesFromRepository } from "../src/index.js";
@@ -1665,6 +1665,193 @@ it.runIf(runExternal)(
         "answer=42",
         "empty=",
         "",
+      ]);
+    } finally {
+      await runtime?.dispose();
+    }
+  },
+  30_000,
+);
+
+it.runIf(runExternal)(
+  "packs, loads, and exercises the unchanged public cpp11 0.5.5 pure-R package",
+  async () => {
+    let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    try {
+      const installed = await installPackagesFromRepository(["cpp11"]);
+      expect(installed.artifacts[0]).toMatchObject({
+        package: { name: "cpp11", version: "0.5.5" },
+        compatibility: { packaging: "ready", execution: "unchecked" },
+        integrity: {
+          algorithm: "sha256",
+          value: "779706e05b9b47e2a408a92092cd58a5dca86c1ed9668860722dee255fa65be9",
+        },
+      });
+      runtime = await createR({
+        execution: "inline",
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+        packages: installed.bundles,
+      });
+      await expect(runtime.eval('requireNamespace("cpp11", quietly = TRUE)')).resolves.toBe(true);
+      await expect(runtime.eval('as.character(packageVersion("cpp11"))')).resolves.toBe("0.5.5");
+      await expect(runtime.eval('sort(getNamespaceExports("cpp11"))')).resolves.toEqual([
+        "cpp_eval",
+        "cpp_function",
+        "cpp_register",
+        "cpp_source",
+        "cpp_vendor",
+      ]);
+      await expect(
+        runtime.eval(`
+          dir.create("vendor-target")
+          copied <- cpp11::cpp_vendor("vendor-target")
+          c(
+            copied,
+            length(list.files("vendor-target", recursive = TRUE)),
+            file.exists(file.path(dirname(copied), "cpp11.hpp"))
+          )
+        `),
+      ).resolves.toEqual(["vendor-target/inst/include/cpp11", "24", "TRUE"]);
+    } finally {
+      await runtime?.dispose();
+    }
+  },
+  30_000,
+);
+
+it.runIf(runExternal)(
+  "packs, loads, and exercises the unchanged public otel 0.2.0 pure-R package",
+  async () => {
+    let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    try {
+      const installed = await installPackagesFromRepository(["otel"]);
+      expect(installed.artifacts[0]).toMatchObject({
+        package: { name: "otel", version: "0.2.0" },
+        compatibility: { packaging: "ready", execution: "unchecked" },
+        integrity: {
+          algorithm: "sha256",
+          value: "5820974e12d10781ab4fd1b443ed1f1f352ce6561d3e5c2926814906c291cf77",
+        },
+      });
+      runtime = await createR({
+        execution: "inline",
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+        packages: installed.bundles,
+      });
+      await expect(runtime.eval('requireNamespace("otel", quietly = TRUE)')).resolves.toBe(true);
+      await expect(runtime.eval('as.character(packageVersion("otel"))')).resolves.toBe("0.2.0");
+      await expect(runtime.eval('length(getNamespaceExports("otel"))')).resolves.toBe(39);
+      await expect(
+        runtime.eval(`
+          c(
+            class(otel::get_default_tracer_provider()),
+            class(otel::get_tracer("probe")),
+            class(otel::start_span("work")),
+            class(otel::get_active_span_context())
+          )
+        `),
+      ).resolves.toEqual([
+        "otel_tracer_provider_noop",
+        "otel_tracer_provider",
+        "otel_tracer_noop",
+        "otel_tracer",
+        "otel_span_noop",
+        "otel_span",
+        "otel_span_context_noop",
+        "otel_span_context",
+      ]);
+      await expect(
+        runtime.eval(`c(
+          tracing = otel::is_tracing_enabled(),
+          measuring = otel::is_measuring_enabled(),
+          logging = otel::is_logging_enabled()
+        )`),
+      ).resolves.toEqual([false, false, false]);
+      await expect(
+        runtime.eval(`
+          tracer_name <- otel::default_tracer_name("custom")
+          attrs <- otel::as_attributes(list(a = 1L, b = TRUE, c = "x"))
+          c(unlist(tracer_name), unlist(attrs))
+        `),
+      ).resolves.toEqual(["custom", NA, "TRUE", "1", "TRUE", "x"]);
+      await expect(runtime.eval("otel::pack_http_context()")).resolves.toEqual([]);
+      await expect(
+        runtime.eval(`c(
+          class(otel::counter_add("requests", 1)),
+          class(otel::gauge_record("load", 2)),
+          class(otel::histogram_record("latency", 3)),
+          class(otel::up_down_counter_add("queue", -1)),
+          class(otel::log_info("hello"))
+        )`),
+      ).resolves.toEqual([
+        "otel_counter_noop",
+        "otel_counter",
+        "otel_gauge_noop",
+        "otel_gauge",
+        "otel_histogram_noop",
+        "otel_histogram",
+        "otel_up_down_counter_noop",
+        "otel_up_down_counter",
+        "otel_logger_noop",
+        "otel_logger",
+      ]);
+      await expect(
+        runtime.eval(`
+          span <- otel::start_span("work", attributes = list(a = 1L))
+          context <- span$get_context()
+          returned <- c(
+            identical(span$set_attribute("b", 2L), span),
+            identical(span$add_event("event", list(c = 3L)), span),
+            identical(span$set_status("ok"), span),
+            identical(span$update_name("renamed"), span),
+            identical(otel::end_span(span), span)
+          )
+          c(
+            span$is_valid(), span$is_recording(), returned,
+            class(context), class(otel::extract_http_context(character()))
+          )
+        `),
+      ).resolves.toEqual([
+        "FALSE",
+        "FALSE",
+        "TRUE",
+        "TRUE",
+        "TRUE",
+        "TRUE",
+        "TRUE",
+        "otel_span_context_noop",
+        "otel_span_context",
+        "otel_span_context_noop",
+        "otel_span_context",
+      ]);
+      await expect(
+        runtime.eval(`c(
+          unname(otel::span_kinds), unname(otel::span_status_codes),
+          otel::invalid_span_id, otel::invalid_trace_id
+        )`),
+      ).resolves.toEqual([
+        "internal",
+        "server",
+        "client",
+        "producer",
+        "consumer",
+        "unset",
+        "ok",
+        "error",
+        "0000000000000000",
+        "00000000000000000000000000000000",
       ]);
     } finally {
       await runtime?.dispose();

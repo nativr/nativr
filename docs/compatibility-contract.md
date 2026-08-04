@@ -2474,8 +2474,16 @@ language equality, constructed assignment calls, promise-origin-aware `parent.fr
 runtime constants for `call()`/`as.call()`/`substitute()`/`bquote()`, and recursive `as.character()`
 coercion. Evidence covers nested/collector/default/named/rightward/data-frame/S3 destructuring plus
 browser-owned INI parsing and serialization. Complete regex identity, every export, P5-P7, and
-arbitrary-package execution remain unclaimed. `cpp11 0.5.5` and `otel 0.2.0` remain uninspected P0
-holdouts.
+arbitrary-package execution remain unclaimed. At that rotation boundary, `cpp11 0.5.5` and
+`otel 0.2.0` became the uninspected P0 holdouts.
+
+The eighth source-blind rotation evaluates cpp11 and otel only after freezing public manuals,
+formals, GNU R black-box outputs, and source digests. The reusable contract separates executable
+R-source units from immutable resource bytes and adds list/factor `%s` formatting, recycled bounded
+`strrep()`, vector/list/pairlist/expression `length<-`, recursive `anyNA()`, and stable
+`make.unique()`. Both unchanged packages reach P4 through public resource-vendoring and no-op
+telemetry surfaces. Native compilation, telemetry exporters, every export, P5-P7, and universal
+package execution remain outside the claim. `BH 1.90.0-1` is the next untouched P0 holdout.
 
 Package admission is not universal execution compatibility. Package `data/*.R`, `.csv`, `.tab`,
 `.txt`, and XDR/gzip `.rda`/`.RData` discovery/loading is supported through `utils::data`, including

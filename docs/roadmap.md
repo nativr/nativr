@@ -911,10 +911,13 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      replacement semantics. The seventh rotation moves unchanged `zeallot 0.2.0` and `ini 0.3.1` to
      P4 through generic string-affix/capture-location semantics, language equality, constructed
      assignment, promise-origin caller frames, embedded runtime constants, and recursive character
-     coercion. `cpp11 0.5.5` and `otel 0.2.0` are the next uninspected P0 holdouts. RStudio host
-     operations and inline's native compilation surface remain explicit platform/Wasm-ABI work.
-     Language-object subsetting still blocks deeper `abind::acorn()`/`abind::asub()` breadth and
-     remains foundational work rather than a package-specific patch.
+     coercion. The eighth rotation moves unchanged `cpp11 0.5.5` and `otel 0.2.0` to P4 through
+     separately bounded package resources, list-aware formatting, string repetition, length
+     replacement, missingness inspection, and stable unique-name repair. `BH 1.90.0-1` is the next
+     uninspected P0 holdout. RStudio host operations and inline's native compilation surface remain
+     explicit platform/Wasm-ABI work. Language-object subsetting still blocks deeper
+     `abind::acorn()`/`abind::asub()` breadth and remains foundational work rather than a
+     package-specific patch.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means

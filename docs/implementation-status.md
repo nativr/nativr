@@ -160,7 +160,11 @@ Date: 2026-08-03
   nested/collector/default/named/rightward/data-frame/S3 destructuring and unchanged ini through
   browser-owned parsing and serialization. Its reusable increment covers constructed assignment,
   promise-origin caller frames, embedded runtime constants, recursive character coercion, string
-  affixes, capture locations, and language equality. The next untouched P0 pair is cpp11 and otel.
+  affixes, capture locations, and language equality. The eighth blind rotation carries unchanged
+  cpp11 through immutable header vendoring and unchanged otel through no-op tracing, metrics,
+  logging, and HTTP-context paths. Its reusable increment separates source/resource budgets and adds
+  list-aware `sprintf`, `strrep`, `length<-`, `anyNA`, and `make.unique`. The next untouched P0
+  holdout is BH 1.90.0-1. cpp11 native compilation remains future Wasm-ABI work.
 - Session environment variables are explicit, isolated runtime state. `createR()` snapshots an
   optional string map for inline or Worker execution; GNU R-shaped `Sys.getenv()`, `Sys.setenv()`,
   and `Sys.unsetenv()` query and mutate it, while reset restores the original map and host process
@@ -915,12 +919,12 @@ Date: 2026-08-03
 
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 14 files and 489 tests; one opt-in file with 21 external-package tests is
+- Vitest currently passes 14 files and 490 tests; one opt-in file with 23 external-package tests is
   skipped in the default run and passes when enabled.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 890/890 cases. The local GNU R 4.6.0 advisory oracle matches 838 of
-  842 eligible cases and skips 48 NativR-owned representation/random/platform/graphics/unsupported-
+- Checked-in conformance passes 895/895 cases. The local GNU R 4.6.0 advisory oracle matches 843 of
+  847 eligible cases and skips 48 NativR-owned representation/random/platform/graphics/unsupported-
   boundary cases; the four differences assert the pinned 4.6.1 target version itself. The recursive
   oracle-v2 suite passes 5/5. Release gating still requires GNU R 4.6.1 rather than this advisory
   installation.

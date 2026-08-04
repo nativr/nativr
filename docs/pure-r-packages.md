@@ -318,9 +318,10 @@ prevents a safe archive scan from being mislabeled as full package compatibility
 
 ## External proof
 
-The opt-in test `packages/package-tools/test/external-package.test.ts` evaluates nineteen unchanged
-public source packages from the repository resolver. It verifies the pinned source-archive digest
-separately from each normalized NativR artifact digest. All nineteen reach at least P4 evidence:
+The opt-in test `packages/package-tools/test/external-package.test.ts` evaluates twenty-one
+unchanged public source packages from the repository resolver. It verifies the pinned source-archive
+digest separately from each normalized NativR artifact digest. All twenty-one reach at least P4
+evidence:
 
 - [`pkgconfig 2.0.3`](https://cran.r-project.org/package=pkgconfig) proves namespace exports,
   package resources, classed DESCRIPTION metadata with a virtual installation path, and an ordinary
@@ -384,6 +385,13 @@ separately from each normalized NativR artifact digest. All nineteen reach at le
   assignment;
 - [`ini 0.3.1`](https://cran.r-project.org/package=ini) reaches P4 through browser-owned INI
   parsing, exact section/key/value shapes, serialization, invisible return, and read-back.
+- [`cpp11 0.5.5`](https://cran.r-project.org/package=cpp11), package rank 13, reaches P4 through
+  unchanged namespace loading and `cpp_vendor()` copying all 24 immutable header resources into the
+  browser-owned filesystem. Its C++ compilation/evaluation entry points remain outside this tier and
+  await the reusable native Wasm ABI.
+- [`otel 0.2.0`](https://cran.r-project.org/package=otel), package rank 29, reaches P4 through its
+  default no-op tracing, metrics, logging, span-context, HTTP-context, attribute, and constant APIs.
+  No network exporter or host telemetry capability is granted.
 
 No package source is checked into this repository. Together these tests exercise repository
 installation, runtime package files, namespace loading, qualified S3 registration, metaprogramming,
@@ -403,9 +411,11 @@ contains only reusable color interpolation, frame, warning, and arithmetic seman
 
 The machine-readable [package corpus](../compatibility/package-corpus.json) is authoritative for
 development/regression/holdout membership, source and artifact digests, completed tier, and first
-blocker. The current uninspected P0 holdouts are `cpp11 0.5.5` and `otel 0.2.0`; only release
-metadata and source-archive digests have been admitted for them. These proofs must not be summarized
-as a single unqualified “supported packages” count.
+blocker. The current uninspected P0 holdout is `BH 1.90.0-1`; only release metadata and the
+source-archive digest have been admitted. It is the only remaining package in the committed top-100
+download snapshot whose current source release has no non-core runtime dependency and declares no
+native compilation. These proofs must not be summarized as a single unqualified “supported packages”
+count.
 
 The fourth source-blind rotation used only release metadata, public documentation, public API calls,
 and GNU R as a black-box oracle before the packages were executed. The reusable runtime work adds
@@ -438,6 +448,13 @@ coerce language/list/pairlist/expression values through `as.character()`; and pr
 `startsWith()`, `endsWith()`, `regexec()`, and language equality. Unchanged zeallot and ini reach
 P4, but this does not claim every export path, complete regex equivalence, P5-P7, or arbitrary
 packages.
+
+The eighth source-blind rotation evaluates cpp11 and otel only after public manuals, formals,
+representative black-box GNU R results, and source digests were frozen. Generic work separates
+executable R-source budgets from bounded immutable resources and adds list-aware `sprintf("%s")`,
+`strrep()`, `length<-`, `anyNA()`, and `make.unique()`. Both unchanged packages reach P4. cpp11's
+native compiler path, real telemetry exporters, every export, P5-P7, and arbitrary-package
+compatibility remain unclaimed.
 
 The checked-in source-only fixture also exports a function that calls `grDevices::rainbow`,
 `terrain.colors`, `topo.colors`, and `cm.colors` through its namespace. This is a small executable

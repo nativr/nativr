@@ -273,6 +273,11 @@ network access; and base `readLines()` performs bounded text decoding. Session w
 evaluator-owned namespace, so package resources cannot be mutated and no host path crosses the
 `base -> runtime` boundary.
 
+Executable package text and immutable resources have separate admission budgets. DESCRIPTION,
+NAMESPACE, and `R/*.R` consume the parser-facing source-unit limit; resource count remains bounded
+and decoded resource bytes have a fixed 64 MiB aggregate ceiling. Header/data payload size therefore
+cannot silently raise the executable-code parsing budget.
+
 The build tool additionally maps standard source-package `tools/**` files into a reserved hidden
 resource root. The evaluator exposes that root through scoped builtin state only while it evaluates
 the owning package's retained R programs, then restores the previous state even across nested loads

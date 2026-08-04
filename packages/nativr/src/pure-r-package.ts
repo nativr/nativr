@@ -13,6 +13,7 @@ const PACKAGE_NAME = /^[A-Za-z](?:[A-Za-z0-9.]*[A-Za-z0-9])?$/u;
 const CANONICAL_BASE64 = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/u;
 const BASE64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 const NAMESPACE_DIRECTIVE = /([A-Za-z][A-Za-z0-9.]*)\s*\(([^()]*)\)/gu;
+const MAX_PACKAGE_RESOURCE_BYTES = 64 * 1024 * 1024;
 
 export function compilePureRPackages(
   bundles: readonly PureRPackageBundle[],
@@ -157,6 +158,8 @@ function isPackageSourcePath(value: string): boolean {
 function validateBundleBudget(bundles: readonly PureRPackageBundle[], limits: RuntimeLimits): void {
   let sourceCount = 0;
   let sourceUnits = 0;
+  let resourceCount = 0;
+  let resourceBytes = 0;
   for (const bundle of bundles) {
     sourceCount += bundle.rSources.length;
     sourceUnits += bundle.description.length + bundle.namespace.length;
@@ -164,8 +167,8 @@ function validateBundleBudget(bundles: readonly PureRPackageBundle[], limits: Ru
       sourceUnits += entry.path.length + entry.source.length;
     }
     for (const resource of bundle.resources ?? []) {
-      sourceCount += 1;
-      sourceUnits += resource.path.length + resource.data.length;
+      resourceCount += 1;
+      resourceBytes += resource.path.length + Math.ceil((resource.data.length * 3) / 4);
     }
     if (sourceCount > limits.maxVectorLength || sourceUnits > limits.maxVectorLength) {
       throw new RResourceLimitError("NRL4002", "Pure-R package bundle source limit exceeded.", {
@@ -174,6 +177,20 @@ function validateBundleBudget(bundles: readonly PureRPackageBundle[], limits: Ru
           maxSourceUnits: limits.maxVectorLength,
           sourceCount,
           sourceUnits,
+        },
+      });
+    }
+    if (
+      resourceCount > limits.maxVectorLength ||
+      !Number.isSafeInteger(resourceBytes) ||
+      resourceBytes > MAX_PACKAGE_RESOURCE_BYTES
+    ) {
+      throw new RResourceLimitError("NRL4002", "Pure-R package resource limit exceeded.", {
+        details: {
+          maxResourceFiles: limits.maxVectorLength,
+          maxResourceBytes: MAX_PACKAGE_RESOURCE_BYTES,
+          resourceCount,
+          resourceBytes,
         },
       });
     }

@@ -113,6 +113,11 @@ digest. Package archives are extracted only into a fresh temporary directory and
 inspection. Applications should retain the generated package set as a reviewed build artifact; the
 browser runtime neither downloads nor unpacks source packages.
 
+Runtime bundle validation independently bounds executable R source and immutable resources. Resource
+count is capped by the session vector limit and decoded resource bytes by 64 MiB, while DESCRIPTION,
+NAMESPACE, and `R/*.R` remain under the parser-facing source-unit limit. Large inert headers cannot
+disable the code budget, and large R programs cannot borrow the resource allowance.
+
 Retained source-package `tools/**` files are immutable bundle bytes under a reserved hidden path.
 Only the owning package's source-evaluation scope resolves relative paths there; public
 `system.file()` lookup omits the path, writes are rejected with the ordinary immutable-package

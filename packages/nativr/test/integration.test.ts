@@ -5548,6 +5548,48 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     ).rejects.toMatchObject({ code: "NRL4002" });
   });
 
+  it("budgets executable package source separately from immutable resources", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      limits: { maxVectorLength: 128 },
+      packages: [
+        {
+          description: "Package: resourcebudget\nVersion: 1.0.0",
+          namespace: "",
+          rSources: [],
+          resources: [{ path: "include/header.hpp", data: "AAAA".repeat(100) }],
+        },
+      ],
+    });
+    await expect(
+      runtime.eval('file.exists(system.file("include", "header.hpp", package = "resourcebudget"))'),
+    ).resolves.toBe(true);
+    await runtime.dispose();
+
+    await expect(
+      createR({
+        execution: "inline",
+        assets,
+        limits: { maxVectorLength: 64 },
+        packages: [
+          {
+            description: "Package: resourcecount\nVersion: 1.0.0",
+            namespace: "",
+            rSources: [],
+            resources: Array.from({ length: 65 }, (_, index) => ({
+              path: `data/item-${index}.bin`,
+              data: "AA==",
+            })),
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      code: "NRL4002",
+      details: { maxResourceFiles: 64, resourceCount: 65 },
+    });
+  });
+
   it("generates the frequency-ranked grDevices heat palette", async () => {
     const runtime = await session();
     await expect(runtime.eval("grDevices::heat.colors(5)")).resolves.toEqual([
@@ -13582,8 +13624,8 @@ NeedsCompilation: no
     const capabilities = await runtime.capabilities();
     expect(capabilities).toMatchObject({
       targetRVersion: "4.6.1",
-      semanticProfileVersion: "0.286.0",
-      languageSubsetVersion: "0.286.0",
+      semanticProfileVersion: "0.287.0",
+      languageSubsetVersion: "0.287.0",
     });
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",

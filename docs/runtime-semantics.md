@@ -689,19 +689,20 @@ semantics. `packageEvent()` plus `setHook()`/`getHook()` provide a session regis
 are executable through the pinned `withr 3.0.3` `with_options()` proof rather than inferred from
 successful parsing. `gctorture2()` exposes only its documented argument/formal and previous-state
 API for wrapper construction; it does not and cannot force a browser JavaScript engine's garbage
-collector. DESCRIPTION, NAMESPACE, retained `R/*.R` text, and base64 package resources share one
-immutable package-file lookup seam. UTF-8 uses the browser-standard fatal decoder, Latin-1 uses
-deterministic byte mapping, and both paths are bounded; package paths cannot be written through
-`writeLines()`. One packaged `R/sysdata.rda` workspace is decoded into the namespace before R source
-evaluation. `utils::data()` enumerates direct `data/` resources in attached or explicitly named
-packages. An `.R` dataset is decoded according to the package encoding, parsed to the normalized
-AST, and evaluated in the selected environment; overwrite protection restores pre-existing direct
-bindings. `.csv`, `.tab`, and `.txt` datasets use the owned table reader and bind one frame under
-the requested dataset name. `.rda`/`.RData` entries use the same XDR/gzip workspace decoder and
-install every named binding. The return vector and `packageIQR` listing shape follow GNU R's
-visible/invisible contract. Installed-package `.rdx`/`.rdb` lazy-load databases, aliases/index
-metadata, unsupported serialized types/compressors, and temporary working-directory changes remain
-explicit boundaries.
+collector. DESCRIPTION, NAMESPACE, and retained `R/*.R` text share the executable-source-unit
+budget; package resource count is independently bounded and decoded immutable resource bytes have a
+64 MiB aggregate ceiling. All enter one immutable package-file lookup seam. UTF-8 uses the
+browser-standard fatal decoder, Latin-1 uses deterministic byte mapping, and both paths are bounded;
+package paths cannot be written through `writeLines()`. One packaged `R/sysdata.rda` workspace is
+decoded into the namespace before R source evaluation. `utils::data()` enumerates direct `data/`
+resources in attached or explicitly named packages. An `.R` dataset is decoded according to the
+package encoding, parsed to the normalized AST, and evaluated in the selected environment; overwrite
+protection restores pre-existing direct bindings. `.csv`, `.tab`, and `.txt` datasets use the owned
+table reader and bind one frame under the requested dataset name. `.rda`/`.RData` entries use the
+same XDR/gzip workspace decoder and install every named binding. The return vector and `packageIQR`
+listing shape follow GNU R's visible/invisible contract. Installed-package `.rdx`/`.rdb` lazy-load
+databases, aliases/index metadata, unsupported serialized types/compressors, and temporary
+working-directory changes remain explicit boundaries.
 
 The Node-only packager converts package-owned `man/*.Rd` example sections into one versioned JSON
 resource containing canonical topics, aliases, titles, and ordered `run`, `dontrun`, or `donttest`

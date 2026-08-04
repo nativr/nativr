@@ -275,25 +275,37 @@
     {
       "package": "cpp11",
       "version": "0.5.5",
-      "partition": "holdout",
+      "partition": "regression",
       "sourceUrl": "https://cloud.r-project.org/src/contrib/cpp11_0.5.5.tar.gz",
       "sourceSha256": "72486beb0605c1229bf3d422cd536224af8dc09bd389a3116f62f4c7705c62f4",
-      "artifactSha256": null,
-      "tier": "P0",
-      "status": "unevaluated",
-      "evidence": "Usage-ranked dependency-free pure-R release metadata and source-archive integrity only; package code has not been evaluated or used to guide implementation.",
+      "artifactSha256": "779706e05b9b47e2a408a92092cd58a5dca86c1ed9668860722dee255fa65be9",
+      "tier": "P4",
+      "status": "passing",
+      "evidence": "packages/package-tools/test/external-package.test.ts",
       "firstBlocker": null
     },
     {
       "package": "otel",
       "version": "0.2.0",
-      "partition": "holdout",
+      "partition": "regression",
       "sourceUrl": "https://cloud.r-project.org/src/contrib/otel_0.2.0.tar.gz",
       "sourceSha256": "ef8afe5a1bc8074bbeb8a84134699ef348a1f8ac629ffba25ee43ea7bcd8dd17",
+      "artifactSha256": "5820974e12d10781ab4fd1b443ed1f1f352ce6561d3e5c2926814906c291cf77",
+      "tier": "P4",
+      "status": "passing",
+      "evidence": "packages/package-tools/test/external-package.test.ts",
+      "firstBlocker": null
+    },
+    {
+      "package": "BH",
+      "version": "1.90.0-1",
+      "partition": "holdout",
+      "sourceUrl": "https://cloud.r-project.org/src/contrib/BH_1.90.0-1.tar.gz",
+      "sourceSha256": "2e1fafb05938e81073561ae4892dc543ef15807e375e0ea8fa75e3ab79f0281b",
       "artifactSha256": null,
       "tier": "P0",
       "status": "unevaluated",
-      "evidence": "Usage-ranked dependency-free pure-R release metadata and source-archive integrity only; package code has not been evaluated or used to guide implementation.",
+      "evidence": "Usage-ranked dependency-free pure-R release metadata and source-archive integrity only; package code and packaged headers have not been evaluated or used to guide implementation.",
       "firstBlocker": null
     }
   ]

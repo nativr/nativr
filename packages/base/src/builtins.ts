@@ -1891,6 +1891,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("formals", ["fun"], "behavioral", builtinFormals),
   defineBuiltin("formals<-", ["fun", "value"], "behavioral", builtinFormalsReplacement),
   defineBuiltin("length", ["x"], "behavioral", builtinLength),
+  defineBuiltin("length<-", ["x", "value"], "behavioral", builtinLengthReplacement),
   defineBuiltin("lengths", ["x", "use.names"], "behavioral", builtinLengths),
   defineBuiltin("logical", ["length"], "behavioral", (invocation) =>
     builtinAtomicConstructor(invocation, "logical"),
@@ -2331,6 +2332,13 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   defineBuiltin("Conj", ["z"], "behavioral", builtinConjugate),
   defineBuiltin("is.na", ["x"], "behavioral", builtinIsNa),
+  withBuiltinFormals(defineBuiltin("anyNA", ["x", "recursive"], "behavioral", builtinAnyNa), [
+    { name: "x" },
+    {
+      name: "recursive",
+      defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+    },
+  ]),
   defineBuiltin("is.nan", ["x"], "behavioral", builtinIsNan),
   defineBuiltin("list", ["..."], "behavioral", builtinList),
   defineBuiltin("alist", ["..."], "behavioral", builtinAlist, "special"),
@@ -2347,6 +2355,16 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("names", ["x"], "behavioral", builtinNames),
   defineBuiltin("names<-", ["x", "value"], "behavioral", builtinNamesReplacement),
   defineBuiltin("make.names", ["names", "unique", "allow_"], "behavioral", builtinMakeNames),
+  withBuiltinFormals(
+    defineBuiltin("make.unique", ["names", "sep"], "behavioral", builtinMakeUnique),
+    [
+      { name: "names" },
+      {
+        name: "sep",
+        defaultValue: { kind: "StringLiteral", value: ".", span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
   defineBuiltin("setNames", ["object", "nm"], "behavioral", builtinSetNames),
   defineBuiltin("unname", ["obj"], "behavioral", builtinUnname),
   defineBuiltin("attr", ["x", "which", "exact"], "behavioral", builtinAttr),
@@ -2459,6 +2477,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("toupper", ["x"], "behavioral", (invocation) =>
     builtinCharacterCase(invocation, "upper"),
   ),
+  defineBuiltin("strrep", ["x", "times"], "behavioral", builtinStrrep),
   defineBuiltin("sprintf", ["fmt", "..."], "behavioral", builtinSprintf),
   defineBuiltin(
     "format",
@@ -16225,6 +16244,14 @@ function globListElementText(value: RValue): string {
   return formatPrintedValue(value, DEFAULT_PRINT_OPTIONS);
 }
 
+function sprintfListElementText(value: RValue): string {
+  if (value.type === "language" && value.expression.kind === "BinaryExpression") {
+    const rendered = deparseAst(value.expression);
+    return rendered.slice(1, -1);
+  }
+  return globListElementText(value);
+}
+
 function globDeparseAtomicElement(value: AtomicVector, index: number): string {
   if (isMissing(value, index)) return "NA";
   if (value.type === "character") return JSON.stringify(value.values[index] ?? "");
@@ -17763,6 +17790,65 @@ async function builtinLength(invocation: BuiltinInvocation): Promise<RValue> {
   const length = isPosixLt(value) ? posixLtLength(value) : valueLength(value);
   invocation.context.allocate(1);
   return integerVector([length]);
+}
+
+async function builtinLengthReplacement(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["x", "value"]);
+  const input = required(matched, "x", "length<-");
+  const suppliedLength = required(matched, "value", "length<-");
+  if (
+    !isAtomic(suppliedLength) ||
+    suppliedLength.type === "complex" ||
+    suppliedLength.length !== 1
+  ) {
+    throw new RTypeMismatchError("NRT3389", "invalid value");
+  }
+  const coercedLength = coerceAtomicToInteger(suppliedLength, invocation);
+  if (isMissing(coercedLength, 0) || (coercedLength.values[0] ?? -1) < 0) {
+    throw new RTypeMismatchError("NRT3389", "invalid value");
+  }
+  const length = coercedLength.values[0] ?? 0;
+  if (input.type === "null") {
+    if (length !== 0) {
+      invocation.context.warn({
+        code: "NRW1143",
+        message: "length of NULL cannot be changed",
+      });
+    }
+    return R_NULL;
+  }
+  if (input.type === "expression") {
+    invocation.context.allocate(length);
+    return {
+      type: "expression",
+      values: Object.freeze(Array.from({ length }, (_, index) => input.values[index] ?? nullAst())),
+    };
+  }
+  if (input.type === "list" || input.type === "pairlist") {
+    invocation.context.allocate(length);
+    const values = Array.from({ length }, (_, index) => input.values[index] ?? R_NULL);
+    const inputNames = vectorNames(input);
+    const names =
+      inputNames === undefined
+        ? undefined
+        : Array.from({ length }, (_, index) => inputNames[index] ?? "");
+    return input.type === "list" ? listValue(values, names) : pairlistValue(values, names);
+  }
+  if (!isAtomic(input)) {
+    throw new RTypeMismatchError("NRT3389", "cannot set length of non-(vector or list)");
+  }
+  const positions = integerVector(Array.from({ length }, (_, index) => index + 1));
+  const resized = subsetVector(input, positions, invocation.context);
+  const names = vectorNames(resized);
+  let output = { ...resized, attributes: new Map<string, RValue>() };
+  if (names !== undefined) output = withNames(output, names);
+  if (isFactor(input)) {
+    const levels = input.attributes.get("levels");
+    const classes = input.attributes.get("class");
+    if (levels !== undefined) output = withAttribute(output, "levels", levels);
+    if (classes !== undefined) output = withAttribute(output, "class", classes);
+  }
+  return output;
 }
 
 async function builtinLengths(invocation: BuiltinInvocation): Promise<RValue> {
@@ -22044,6 +22130,46 @@ async function builtinIsNa(invocation: BuiltinInvocation): Promise<RValue> {
   return withStructuralAttributes(logicalVector(output), input);
 }
 
+async function builtinAnyNa(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["x", "recursive"]);
+  const input = required(matched, "x", "anyNA");
+  if (objectClasses(input) !== undefined) {
+    const dispatched = await invocation.dispatchS3IfPresent(
+      "anyNA",
+      input,
+      invocation.arguments,
+      false,
+    );
+    if (dispatched !== undefined) return dispatched;
+  }
+  const recursive = logicalFlag(matched.get("recursive"), false, "recursive");
+  const result = anyMissingValue(input, recursive || isDataFrame(input), invocation);
+  invocation.context.allocate(1);
+  return logicalVector([result]);
+}
+
+function anyMissingValue(
+  value: RValue,
+  recursive: boolean,
+  invocation: BuiltinInvocation,
+): boolean {
+  invocation.context.checkpoint();
+  if (value.type === "null") return false;
+  if (isAtomic(value)) {
+    for (let index = 0; index < value.length; index += 1) {
+      invocation.context.checkpoint();
+      if (recursiveMissingAt(value, index)) return true;
+    }
+    return false;
+  }
+  if (value.type === "list" || value.type === "pairlist") {
+    return value.values.some((item) =>
+      recursive ? anyMissingValue(item, true, invocation) : recursiveMissingAt(item, 0, true),
+    );
+  }
+  throw new RTypeMismatchError("NRT3390", `anyNA() is not implemented for type '${value.type}'`);
+}
+
 function recursiveMissingAt(value: RValue, index: number, scalarOnly = false): boolean {
   if (
     !isAtomic(value) ||
@@ -22473,6 +22599,55 @@ async function builtinMakeNames(invocation: BuiltinInvocation): Promise<RValue> 
   const repaired = original.map((value) => syntacticName(value, allowUnderscore));
   invocation.context.allocate(repaired.length);
   return characterVector(unique ? makeSyntacticNamesUnique(original, repaired) : repaired);
+}
+
+async function builtinMakeUnique(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["names", "sep"]);
+  const input = required(matched, "names", "make.unique");
+  if (input.type !== "character") {
+    throw new RTypeMismatchError("NRT3391", "'names' must be a character vector");
+  }
+  const separatorValue = matched.get("sep");
+  let separator = ".";
+  if (separatorValue !== undefined) {
+    if (
+      separatorValue.type !== "character" ||
+      separatorValue.length !== 1 ||
+      isMissing(separatorValue, 0)
+    ) {
+      throw new RTypeMismatchError("NRT3391", "'sep' must be a character string");
+    }
+    separator = separatorValue.values[0] ?? "";
+  }
+  const usedText = new Set(input.values.filter((_, index) => !isMissing(input, index)));
+  const seen = new Set<string>();
+  const nextSuffix = new Map<string, number>();
+  const output = new Array<string>(input.length);
+  const missing = new Uint8Array(input.length);
+  for (let index = 0; index < input.length; index += 1) {
+    invocation.context.checkpoint();
+    const inputMissing = isMissing(input, index);
+    const value = inputMissing ? "NA" : (input.values[index] ?? "");
+    const key = inputMissing ? "\u0000NA" : `\u0001${value}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      output[index] = value;
+      if (inputMissing) missing[index] = 1;
+      continue;
+    }
+    let suffix = nextSuffix.get(key) ?? 1;
+    let candidate = `${value}${separator}${suffix}`;
+    while (usedText.has(candidate)) {
+      invocation.context.checkpoint();
+      suffix += 1;
+      candidate = `${value}${separator}${suffix}`;
+    }
+    nextSuffix.set(key, suffix + 1);
+    usedText.add(candidate);
+    output[index] = candidate;
+  }
+  invocation.context.allocate(input.length);
+  return characterVector(output, compactMask(missing));
 }
 
 function makeNamesCharacterInput(input: RValue, invocation: BuiltinInvocation): RCharacterVector {
@@ -25344,6 +25519,85 @@ async function builtinCharacterCase(
   return characterVector(values, compactMask(missing));
 }
 
+async function builtinStrrep(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["x", "times"]);
+  const supplied = required(matched, "x", "strrep");
+  const source = strrepCharacterSource(supplied, invocation);
+  const timesValue = required(matched, "times", "strrep");
+  const times =
+    timesValue.type === "null"
+      ? integerVector([])
+      : isAtomic(timesValue)
+        ? coerceAtomicToInteger(timesValue, invocation)
+        : undefined;
+  if (times === undefined) {
+    throw new RTypeMismatchError("NRT3388", "invalid 'times' value");
+  }
+  if (source.length === 0 || times.length === 0) return characterVector([]);
+  const length = Math.max(source.length, times.length);
+  invocation.context.allocate(length);
+  const output = new Array<string>(length);
+  const missing = new Uint8Array(length);
+  let outputBytes = 0;
+  for (let index = 0; index < length; index += 1) {
+    invocation.context.checkpoint();
+    const sourceIndex = index % source.length;
+    const timesIndex = index % times.length;
+    if (isMissing(source, sourceIndex) || isMissing(times, timesIndex)) {
+      missing[index] = 1;
+      output[index] = "";
+      continue;
+    }
+    const count = times.values[timesIndex] ?? 0;
+    if (count < 0) throw new RTypeMismatchError("NRT3388", "invalid 'times' value");
+    const text = source.values[sourceIndex] ?? "";
+    outputBytes += virtualTextByteLength(text) * count;
+    if (
+      !Number.isSafeInteger(outputBytes) ||
+      outputBytes > invocation.context.limits.maxOutputBytes
+    ) {
+      throw new RResourceLimitError("NRL4007", "strrep() output byte limit exceeded.", {
+        details: {
+          maxOutputBytes: invocation.context.limits.maxOutputBytes,
+          outputBytes,
+        },
+      });
+    }
+    output[index] = text.repeat(count);
+  }
+  const result = characterVector(output, compactMask(missing));
+  if (supplied.type === "character" && supplied.length === length) {
+    const names = vectorNames(supplied);
+    if (names !== undefined) return withNames(result, names);
+  }
+  return result;
+}
+
+function strrepCharacterSource(input: RValue, invocation: BuiltinInvocation): RCharacterVector {
+  if (input.type === "null") return characterVector([]);
+  if (input.type === "list" || input.type === "pairlist") {
+    invocation.context.allocate(input.values.length);
+    return characterVector(input.values.map(globListElementText));
+  }
+  if (input.type === "symbol") {
+    invocation.context.allocate(1);
+    return characterVector([input.name]);
+  }
+  if (input.type === "language") return asVectorLanguageCharacter(input, invocation);
+  if (input.type === "expression") {
+    invocation.context.allocate(input.values.length);
+    return characterVector(input.values.map(asVectorLanguageCharacterNode));
+  }
+  if (input.type === "formula") {
+    return characterVector(formulaCharacterParts(input, invocation));
+  }
+  if (isAtomic(input)) return coerceAtomicToCharacter(input, invocation);
+  throw new RTypeMismatchError(
+    "NRT3388",
+    `cannot coerce type '${input.type}' to vector of type 'character'`,
+  );
+}
+
 async function builtinSprintf(invocation: BuiltinInvocation): Promise<RValue> {
   let formatArgument: BuiltinCallArgument | undefined;
   const valueArguments: BuiltinCallArgument[] = [];
@@ -25360,11 +25614,14 @@ async function builtinSprintf(invocation: BuiltinInvocation): Promise<RValue> {
     throw new REvaluationError("NRE2103", "Argument 'fmt' is missing in sprintf().");
   }
   const formats = requireCharacterVector(await invocation.force(formatArgument.promise), "sprintf");
-  const values: AtomicVector[] = [];
+  const values: (AtomicVector | RList | RPairlist)[] = [];
   for (const argument of valueArguments) {
     const value = await invocation.force(argument.promise);
-    if (!isAtomic(value)) {
-      throw new RTypeMismatchError("NRT3162", "sprintf() values must be atomic vectors.");
+    if (!isAtomic(value) && value.type !== "list" && value.type !== "pairlist") {
+      throw new RTypeMismatchError(
+        "NRT3162",
+        "sprintf() values must be atomic vectors, lists, or pairlists.",
+      );
     }
     values.push(value);
   }
@@ -25399,10 +25656,20 @@ async function builtinSprintf(invocation: BuiltinInvocation): Promise<RValue> {
         }
         const position = index % value.length;
         let formatted: string;
-        if (isMissing(value, position)) {
+        if (value.type === "list" || value.type === "pairlist") {
+          if (kind !== "s") {
+            throw new RTypeMismatchError(
+              "NRT3162",
+              "sprintf() list and pairlist values support only the '%s' conversion.",
+            );
+          }
+          formatted = sprintfListElementText(value.values[position] ?? R_NULL);
+        } else if (isMissing(value, position)) {
           formatted = "NA";
         } else if (kind === "s") {
-          formatted = stringAt(value, position);
+          formatted = isFactor(value)
+            ? (factorLevels(value)[(value.values[position] ?? 0) - 1] ?? "")
+            : stringAt(value, position);
         } else {
           const numeric = numberAt(value, position);
           const precision = precisionText === undefined ? 6 : Number(precisionText);

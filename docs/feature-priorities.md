@@ -1824,6 +1824,13 @@ ties:
      caller frames, embedded runtime constants, and recursive character coercion. Every export,
      complete regex identity, P5-P7, and arbitrary packages remain unclaimed; usage-ranked cpp11
      0.5.5 (package rank 13) and otel 0.2.0 (rank 29) are the next untouched P0 holdouts.
+177. Source-blind package generalization: unchanged cpp11 0.5.5 and otel 0.2.0 now reach P4 after
+     public manuals, formals, and GNU R black-box outputs were frozen. The reusable increment splits
+     executable-source and immutable-resource budgets and adds list-aware `sprintf`, `strrep`,
+     `length<-`, `anyNA`, and `make.unique`. cpp11 native compilation, real telemetry exporters,
+     every export, P5-P7, and arbitrary packages remain unclaimed. Rank-50 BH 1.90.0-1 is the only
+     remaining top-100 package with no non-core runtime dependency and `NeedsCompilation: no`, so it
+     becomes the next untouched P0 holdout.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

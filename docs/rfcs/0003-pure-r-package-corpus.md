@@ -70,6 +70,14 @@ runtime constants embedded in language objects, and recursive `as.character()` c
 untouched P0 holdouts are usage-ranked `cpp11 0.5.5` and `otel 0.2.0`; only public metadata and
 source-archive integrity have been admitted.
 
+The eighth holdout rotation evaluated `cpp11 0.5.5` and `otel 0.2.0` only after freezing public
+manuals, exported formals, representative GNU R black-box behavior, and archive digests. Both move
+to P4 regression through unchanged code. Reusable gaps covered separate executable-source and
+immutable-resource budgets, list/factor `%s` formatting, `strrep()`, `length<-`, `anyNA()`, and
+`make.unique()`. cpp11's native compilation path remains outside the tier. The committed top-100
+usage snapshot leaves `BH 1.90.0-1` as the sole dependency-free, `NeedsCompilation: no` untouched
+candidate; only its metadata and source-archive digest are admitted as the next P0 holdout.
+
 ## Validation tiers
 
 | Tier | Required evidence                              |
