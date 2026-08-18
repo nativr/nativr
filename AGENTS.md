@@ -21,3 +21,9 @@ normalized AST and TypeScript runtime to the Worker-first `@nativr/nativr` API.
   development, regression, and holdout partitions in `compatibility/package-corpus.json`.
 - Architecture, parser, runtime, public API, security, and performance details live under `docs/`.
 - Do not publish, push, add a remote, or commit unless the user explicitly requests it.
+- Never add `Co-authored-by` or other authorship trailers for Codex, ChatGPT, Copilot, another AI
+  agent, or a bot. When the user explicitly requests a commit, retain the configured human Git
+  identity; do not replace it with an automation identity.
+- Dependency and release automation may report or validate changes, but it must not author version,
+  dependency-update, merge, or other commits. Version and dependency-update commits must be made
+  under a verified human identity and reach `main` through a pull request.

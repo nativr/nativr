@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Prepare a release PR or publish the already-versioned main branch
+        description: Preview pending versions or publish an already human-versioned main branch
         required: true
         type: choice
         options:
-          - prepare
+          - preview
           - publish
 
 concurrency:
@@ -16,12 +16,11 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  prepare:
-    if: github.event.inputs.mode == 'prepare' && github.ref == 'refs/heads/main'
+  preview:
+    if: github.event.inputs.mode == 'preview' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
@@ -33,17 +32,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
-      - name: Configure release commit identity
-        run: |
-          git config user.name "Yaoxiang Li"
-          git config user.email "18198096+YaoxiangLi@users.noreply.github.com"
-      - name: Create or update release pull request
-        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1
-        with:
-          version: pnpm version-packages
-          setupGitUser: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Report pending release versions without committing
+        run: pnpm changeset status
 
   publish:
     if: github.event.inputs.mode == 'publish' && github.ref == 'refs/heads/main'
@@ -63,5 +53,9 @@ jobs:
           registry-url: https://registry.npmjs.org
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Require human-authored reachable history
+        run: node scripts/check-commit-authors.mjs --all
+      - name: Refuse publishing while changesets still need a human version commit
+        run: node scripts/check-release-ready.mjs
       - run: pnpm check
       - run: pnpm release
