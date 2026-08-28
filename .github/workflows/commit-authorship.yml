@@ -1,12 +1,17 @@
 name: Commit authorship
 
 on:
-  pull_request:
+  # Run the workflow definition and policy script from the trusted default branch. A pull request
+  # must not be able to weaken the authorship check that evaluates that same pull request.
+  pull_request_target:
   push:
     branches: [main]
 
 permissions:
   contents: read
+  # The trusted pull-request-target run must report its result on the PR head SHA so branch
+  # protection can require it. This does not grant content, review, or merge access.
+  statuses: write
 
 jobs:
   verify:
@@ -15,10 +20,37 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref:
+            ${{ github.event_name == 'pull_request_target' && github.event.repository.default_branch
+            || github.sha }}
           fetch-depth: 0
-      - name: Reject bot and AI-agent authorship
+      - name: Fetch pull-request commits without checking out untrusted code
+        if: github.event_name == 'pull_request_target'
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run:
+          git fetch --no-tags origin
+          "+refs/pull/${PR_NUMBER}/head:refs/remotes/pull/${PR_NUMBER}/head"
+      - name: Inspect bot and AI-agent authorship
+        id: authorship
+        continue-on-error: true
         env:
           NATIVR_COMMIT_RANGE:
             ${{ github.event.pull_request.base.sha || github.event.before }}..${{
             github.event.pull_request.head.sha || github.sha }}
         run: node scripts/check-commit-authors.mjs
+      - name: Report the trusted result on the pull-request head
+        if: github.event_name == 'pull_request_target' && always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          RESULT: ${{ steps.authorship.outcome == 'success' && 'success' || 'failure' }}
+          RUN_URL:
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run:
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/statuses/${HEAD_SHA}" -f state="$RESULT"
+          -f context="Human-authored commits" -f description="Trusted human-authorship policy" -f
+          target_url="$RUN_URL"
+      - name: Enforce the authorship result
+        if: steps.authorship.outcome != 'success'
+        run: exit 1

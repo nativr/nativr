@@ -1,4 +1,14 @@
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+
+const authorPolicy = JSON.parse(
+  readFileSync(new URL("../.github/human-authors.json", import.meta.url), "utf8"),
+);
+const approvedHumanIdentities = new Set(
+  authorPolicy.authors.flatMap(({ name, emails }) =>
+    emails.map((email) => `${name.trim().toLowerCase()} <${email.trim().toLowerCase()}>`),
+  ),
+);
 
 const blockedIdentityPatterns = [
   { label: "GitHub bot account", pattern: /\[bot\]/iu },
@@ -35,7 +45,10 @@ if (requested.length === 1 && requested[0] === "--all") {
   const [before, after] = explicitRange.split("..", 2);
   revisionArgs = zeroBefore.test(before ?? "") && after ? [after] : [explicitRange];
 } else {
-  revisionArgs = ["HEAD^..HEAD"];
+  const hasParent = spawnSync("git", ["rev-parse", "--verify", "HEAD^"], {
+    encoding: "utf8",
+  });
+  revisionArgs = hasParent.status === 0 ? ["HEAD^..HEAD"] : ["HEAD"];
 }
 
 const log = spawnSync(
@@ -67,14 +80,16 @@ for (const record of commits) {
   ];
 
   for (const identity of identities) {
+    const normalizedIdentity = identity.value.trim().toLowerCase();
     const blocked = blockedIdentityPatterns.find(({ pattern }) => pattern.test(identity.value));
-    const exceptionKey = `${hash}|${identity.kind}|${identity.value.toLowerCase()}`;
-    if (blocked && !historicalTrailerExceptions.has(exceptionKey)) {
+    const exceptionKey = `${hash}|${identity.kind}|${normalizedIdentity}`;
+    const approved = approvedHumanIdentities.has(normalizedIdentity);
+    if ((!approved || blocked) && !historicalTrailerExceptions.has(exceptionKey)) {
       violations.push({
         hash: hash.slice(0, 12),
         kind: identity.kind,
         identity: identity.value,
-        reason: blocked.label,
+        reason: blocked?.label ?? "an identity not listed in .github/human-authors.json",
       });
     }
   }
@@ -88,7 +103,7 @@ if (violations.length > 0) {
     );
   }
   console.error(
-    "\nRecreate the affected commit under a verified human identity and remove bot/AI co-author trailers.",
+    "\nRecreate the affected commit under an approved human identity and remove bot/AI co-author trailers. Add a real contributor to .github/human-authors.json only through an already-approved human-authored commit.",
   );
   process.exit(1);
 }
