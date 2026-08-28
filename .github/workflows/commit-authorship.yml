@@ -4,9 +4,6 @@ on:
   # Run the workflow definition and policy script from the trusted default branch. A pull request
   # must not be able to weaken the authorship check that evaluates that same pull request.
   pull_request_target:
-  # Transitional trigger: keep this until the trusted pull_request_target workflow is present on
-  # main, then remove it in a follow-up human-authored pull request.
-  pull_request:
   push:
     branches: [main]
 
