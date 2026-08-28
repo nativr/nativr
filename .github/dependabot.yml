@@ -1,0 +1,20 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/New_York
+    open-pull-requests-limit: 1
+    groups:
+      dependency-availability-report:
+        patterns:
+          - "*"
+    labels:
+      - dependencies
+      - report-only
+    commit-message:
+      prefix: "report(deps)"
