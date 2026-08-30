@@ -39,6 +39,19 @@ export interface AstNodeBase {
 export interface ProgramNode extends AstNodeBase {
   readonly kind: "Program";
   readonly body: readonly AstNode[];
+  /** Stable concrete-token metadata used by source-aware browser tooling. */
+  readonly parseData?: readonly ParseDataNode[];
+}
+
+/** Parser-owned concrete syntax record that does not expose Tree-sitter node objects. */
+export interface ParseDataNode {
+  readonly id: number;
+  readonly parent: number;
+  readonly type: string;
+  readonly parentType?: string;
+  readonly terminal: boolean;
+  readonly text: string;
+  readonly span: SourceSpan;
 }
 
 /** A braced sequence of expressions. */
@@ -149,6 +162,8 @@ export interface FunctionParameter {
 /** An R function expression. */
 export interface FunctionExpressionNode extends AstNodeBase {
   readonly kind: "FunctionExpression";
+  /** Surface spelling retained independently from the parser backend. */
+  readonly syntax?: "function" | "lambda";
   readonly parameters: readonly FunctionParameter[];
   readonly body: AstNode;
 }
@@ -164,7 +179,8 @@ export interface IfExpressionNode extends AstNodeBase {
 /** A parsed for expression. */
 export interface ForExpressionNode extends AstNodeBase {
   readonly kind: "ForExpression";
-  readonly variable: IdentifierNode;
+  /** Normally an identifier; quoted/bquote syntax may temporarily carry a computed target. */
+  readonly variable: AstNode;
   readonly sequence: AstNode;
   readonly body: AstNode;
 }

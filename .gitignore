@@ -4,6 +4,8 @@ coverage/
 *.tsbuildinfo
 playwright-report/
 test-results/
+.playwright-cli/
+Rplots.pdf
 .vite/
 .pnpm-store/
 packages/parser/assets/*.wasm
@@ -18,3 +20,5 @@ packages/package-tools/LICENSE
 apps/playground/public/assets/
 *.tgz
 .tmp/
+bundle-build.log
+trust-build.log

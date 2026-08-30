@@ -1,4 +1,5 @@
 import type { SourceSpan } from "@nativr/ast";
+import type { RValue } from "./values.js";
 
 /** Optional structured fields accepted by NativR runtime errors. */
 export interface NativRErrorOptions {
@@ -27,6 +28,21 @@ export class RParseError extends NativRError {}
 
 /** A general evaluation failure. */
 export class REvaluationError extends NativRError {}
+
+/** A catchable R condition raised with stop(condition), retaining its original S3 classes. */
+export class RConditionError extends REvaluationError {
+  public readonly condition: RValue;
+
+  public constructor(
+    code: string,
+    message: string,
+    condition: RValue,
+    options: NativRErrorOptions = {},
+  ) {
+    super(code, message, options);
+    this.condition = condition;
+  }
+}
 
 /** A value failed a documented type or shape requirement. */
 export class RTypeMismatchError extends NativRError {}

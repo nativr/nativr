@@ -1,5 +1,6 @@
 export { EvaluationContext, DEFAULT_RUNTIME_LIMITS, RUNTIME_LIMIT_PROFILES } from "./context.js";
 export type { RuntimeProfile } from "./context.js";
+export { isCanonicalBase64 } from "./base64.js";
 export {
   createEnvironment,
   createForcedPromise,
@@ -14,6 +15,7 @@ export {
 } from "./environment.js";
 export {
   NativRError,
+  RConditionError,
   REvaluationError,
   RParseError,
   RResourceLimitError,
@@ -22,7 +24,7 @@ export {
   RUnsupportedFeatureError,
 } from "./errors.js";
 export type { NativRErrorOptions } from "./errors.js";
-export { Evaluator } from "./evaluator.js";
+export { coreBuiltinPackageName, Evaluator } from "./evaluator.js";
 export type {
   DetailedEvaluationResult,
   EvaluationResult,
@@ -32,10 +34,21 @@ export type {
   RuntimePackageImport,
   RuntimePackageResource,
   RuntimePackageTextResource,
+  RuntimeBuiltinBinding,
+  RuntimeStaticPackageDefinition,
   RuntimeS3Method,
 } from "./evaluator.js";
-export { deparseAst } from "./language.js";
+export {
+  deparseAst,
+  deparseSourceAst,
+  deparseSourceLinesAst,
+  languageEntries,
+  languageFromEntries,
+  languageValueAst,
+  quoteLanguageAst,
+} from "./language.js";
 export { censusRuntimeMemory, estimateRObjectSize } from "./memory.js";
+export { normalizePosixCharacterClasses } from "./regex.js";
 export {
   compressGzipBytes,
   decodeRBase64Resource,
@@ -79,10 +92,13 @@ export {
   NATIVR_PACKAGE_SOURCE_RESOURCE_ROOT,
   NATIVR_SYSTEM_LIBRARY_PATH,
   PACKAGE_SOURCE_EVALUATION_DIRECTORY_STATE_KEY,
+  SOURCE_REFERENCE_CONTEXT_STATE_KEY,
+  S4_SLOT_REPLACEMENT_VALIDATOR_STATE_KEY,
   objectAttributes,
   objectClasses,
   pairlistValue,
   rawVector,
+  rVersionValue,
   R_NULL,
   vectorClasses,
   vectorDimensions,
@@ -95,8 +111,15 @@ export {
   withoutClasses,
   functionDebugRegistry,
   FUNCTION_DEBUG_STATE_KEY,
+  CONDITION_HANDLER_SEQUENCE_STATE_KEY,
+  DYNAMIC_CALLING_HANDLERS_STATE_KEY,
+  EXITING_HANDLER_STACK_STATE_KEY,
+  ExitingHandlerJump,
   GLOBAL_CALLING_HANDLERS_STATE_KEY,
   OUTPUT_ROUTER_STATE_KEY,
+  RESTART_FRAME_COUNTER_STATE_KEY,
+  RESTART_STACK_STATE_KEY,
+  RestartJump,
   runtimeOutputRouter,
 } from "./values.js";
 export {
@@ -104,6 +127,8 @@ export {
   extractVectorElement,
   replaceDimensions,
   replaceCoordinateMatrix,
+  replaceExpressionElement,
+  replaceExpressionSubset,
   replaceListMember,
   replaceTwoDimensions,
   replaceVectorElement,
@@ -134,6 +159,7 @@ export type {
   RDots,
   REnvironment,
   RExpression,
+  RExternalPointer,
   RFormula,
   RFunctionDebugMetadata,
   RFunctionDebugRegistry,
@@ -170,8 +196,11 @@ export type {
   RuntimeMemoryAreaStatistics,
   RuntimeMemoryStatistics,
   RuntimeOperators,
+  ExitingConditionHandlerFrame,
+  RestartFrame,
   RValue,
   RVector,
   RVectorBase,
   RWarning,
+  S4SlotReplacementValidator,
 } from "./values.js";

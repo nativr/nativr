@@ -30,9 +30,9 @@ enforce the same byte ceiling before constructing a result vector or writing a s
 target. File-connection targets resolve only through the evaluator's opaque session map, so capture
 cannot become an implicit filesystem escape.
 
-`tempdir()`, `tempfile()`, `file()`, `gzcon()`, `file.exists()`, `file.remove()`, `readChar()`, line
-I/O, `cat()`, `capture.output()`, `dput()`, `dget()`, and `unlink()` expose only opaque
-session-memory or immutable package paths. The mutable file/connection maps are owned by the
+`tempdir()`, `tempfile()`, `file()`, `gzcon()`, `file.exists()`, `file.remove()`, `readChar()`,
+`read.dcf()`, line I/O, `cat()`, `capture.output()`, `dput()`, `dget()`, and `unlink()` expose only
+opaque session-memory or immutable package paths. The mutable file/connection maps are owned by the
 evaluator, cleared on reset/disposal, limited by output-byte and vector budgets, and never resolve a
 path through browser or operating-system APIs. Connection records use object identity as well as an
 integer slot, so user-constructed classed integers cannot forge a live handle. `dget()` can parse
@@ -45,6 +45,11 @@ directory, runtime/package resource, or anything resolved outside the owned virt
 `readChar()` can consume only a supplied raw vector or bytes already admitted to those roots and
 connection records; it cannot resolve a host path or initiate a network request without the existing
 explicit URL capability.
+
+`read.dcf()` parses only text already reachable through that virtual file/connection capability.
+Record count, result cells, text bytes, and cooperative work remain under evaluator limits;
+malformed records fail locally and never delegate to a host parser. DCF fields remain inert strings
+and are not interpreted as paths, URLs, package-install instructions, or executable code.
 
 GNU R XDR serialization is decoded directly from raw vectors or the same closed virtual-file
 capability set. Input bytes, decompressed bytes, nesting, vector lengths, references, and result
@@ -113,16 +118,32 @@ digest. Package archives are extracted only into a fresh temporary directory and
 inspection. Applications should retain the generated package set as a reviewed build artifact; the
 browser runtime neither downloads nor unpacks source packages.
 
+Compressed installed data is normalized under a 64 MiB per-file ceiling and the independent 192 MiB
+aggregate package-resource ceiling. Both bounds apply before base64 artifact encoding, so a
+compressed-data expansion cannot become unbounded; callers may select stricter positive limits.
+
 Runtime bundle validation independently bounds executable R source and immutable resources. Resource
-count is capped by the session vector limit and decoded resource bytes by 64 MiB, while DESCRIPTION,
-NAMESPACE, and `R/*.R` remain under the parser-facing source-unit limit. Large inert headers cannot
-disable the code budget, and large R programs cannot borrow the resource allowance.
+count is capped by the session vector limit and decoded resource bytes by the selected
+`maxPackageResourceBytes` limit (192 MiB in the default profile), while DESCRIPTION, NAMESPACE, and
+`R/*.R` remain under the parser-facing source-unit limit. Validation occurs before Worker transfer
+and again inside the runtime host. Large inert headers cannot disable the code budget, and large R
+programs cannot borrow the resource allowance.
+
+Loading a reviewed package's internal serialized data uses that same package-resource ceiling for
+transport and serialized-input bytes, while ordinary user serialization remains bounded by
+`maxOutputBytes`. Deserialized values still consume the session's vector and allocation budgets.
 
 Retained source-package `tools/**` files are immutable bundle bytes under a reserved hidden path.
 Only the owning package's source-evaluation scope resolves relative paths there; public
 `system.file()` lookup omits the path, writes are rejected with the ordinary immutable-package
 boundary, and the scope is removed after success or failure. This is not access to the original
 archive, a host build directory, or an install command.
+
+Source-package tests are excluded by default. When a trusted build explicitly enables test
+retention, `tests/**` files are admitted under the same path, count, and byte validation as other
+immutable resources and remain inert until a test runner sources them. No test is auto-executed at
+package load, and the browser runtime gains no host filesystem or process authority. Expensive test
+suites require explicit finite runtime-limit overrides.
 
 `browseURL()` grants no navigation capability. It records a bounded request only after explicit R
 code calls it. External URLs are never resolved or fetched, and virtual-file requests contain a
@@ -232,3 +253,143 @@ code. Large union ranges fail before a page or partial series is emitted.
 
 Dependencies are locked, build scripts are explicitly approved in `pnpm-workspace.yaml`, browser
 bundles are audited for Node built-ins/dynamic code, and CI includes CodeQL and Dependabot.
+
+Constructed calls may retain a closure as an owned constant, but the evaluator invokes that value
+only through normal R callable dispatch. It does not stringify the closure, compile JavaScript, use
+`eval`/`new Function`, or expose host stack frames. `sys.calls()` and `sys.frames()` reveal only
+normalized R calls and session-owned environments. Environment finalizers are registered only for
+owned R environments and owned R closures. `gc()` computes reachability from evaluator roots and
+runs newly unreachable callbacks under the ordinary step, recursion, allocation, output, and host-
+capability policies; it does not expose JavaScript garbage collectors, weak references, host
+objects, or arbitrary callbacks. Session-exit finalizers run before reset/dispose tears down the
+runtime and parser. Callback failures are reported to the bounded R error stream and do not prevent
+later registered finalizers from running.
+
+`sys.nframe()` reports only the evaluator-owned closure-frame count. `topenv()` follows only owned
+environment parent links, and `.GlobalEnv` is an owned locked binding refreshed on reset. None of
+these surfaces reveals JavaScript/browser stacks, host globals, DOM objects, or ambient process
+state.
+
+Retained package tests remain inert immutable resources. The generic evidence runner evaluates only
+their normalized R expressions under ordinary step, allocation, vector, output, and recursion
+limits. A script-installed `options(error=)` value is invoked as an R closure after a top-level
+failure; it grants no host callback, code generation, filesystem, process, or network authority.
+Large corpus cases use explicit finite test-only overrides rather than weakening default browser
+limits.
+
+Files below `nativr://runtime` are explicit immutable resources composed into the browser bundle.
+Profile 0.313 admits only a concise NativR Apache-2.0 `COPYING` notice for the public `R.home()`
+contract. Reads use the same bounded virtual connection and allocation accounting as package
+resources; writes, traversal, ambient host paths, network lookup, and GNU R installation discovery
+remain unavailable.
+
+Profile 0.314's `compiler::compile` seam does not add a code-generation capability. It retains the
+normalized AST as the executable representation and evaluates it through the existing bounded
+interpreter. No bytecode loader, `eval`-like JavaScript primitive, `new Function`, native library,
+network access, or host compiler is introduced. External package archives and GNU R oracle runs
+remain development-time inputs outside the browser bundle.
+
+Profile 0.315's browser `parallel` adapter grants no process, thread, socket, command, filesystem,
+remote-host, or network authority. Cluster handles are data-only classed R lists, and all work runs
+sequentially through the existing evaluator with its normal step, allocation, recursion, vector, and
+output limits. Genuine Worker-backed concurrency, if added later, remains a separately reviewed
+capability layer rather than an implicit property of these compatibility shims.
+
+Profile 0.316 does not evaluate arbitrary NAMESPACE conditions. The packager recognizes only a small
+platform-predicate grammar and rejects filesystem, environment-variable, network, command, or
+general R expressions. Progress handles contain runtime-owned R state only, and the added parallel
+aliases remain sequential; neither surface acquires a host stream, process, socket, thread, or
+network capability.
+
+Profile 0.323 distinguishes inert package assets from executable capabilities. Java source and JAR
+files may be retained under the immutable package-resource root, but neither the Node packager nor
+the browser runtime compiles, loads, reflects over, or executes them. There is no classpath, JVM
+handle, host callback, or implicit network/process authority. Package behavior that requires those
+assets remains unavailable and must not be inferred from successful packaging.
+
+Profile 0.343 keeps xz and bzip2 processing in the Node-only package build pipeline. Compressed
+input is bounded before and during normalization, and the emitted browser artifact is validated
+again against package-resource and decoded-byte ceilings. The production Worker gains no compressor,
+filesystem, process, network, or host callback. LazyData promises reference immutable package
+resources and execute only through the existing parser, serialization, and evaluator limits.
+
+Profile 0.352 embeds a minimal LAPACK 3.12.1 `DSYEVR` WebAssembly closure for symmetric
+eigendecomposition. The reproducible build discovers only the required routine graph and validates
+the final module's import table. Production permits exactly `env.emscripten_resize_heap`; it exposes
+no WASI, filesystem, network, process, clock, randomness, DOM, host compiler, or dynamic loader. The
+module is compiled once and instantiated per runtime, while matrix copying and evaluator allocation
+accounting remain explicit. This audited internal module does not grant R packages a native-code ABI
+or weaken the later Phase 3 security gate.
+
+## Profile 0.409 serialized ASCII boundary
+
+Installed version-3 package data may declare standard ASCII native-encoding aliases. The runtime
+handles those labels with an internal seven-bit decoder, rejects any byte above `0x7f`, and applies
+the existing serialization and package-resource limits before exposing values. It does not query a
+host locale, invoke a platform codec, load an encoding table, or add filesystem or network
+authority. Other native code pages remain an explicit deterministic failure.
+
+## Profile 0.410 in-memory semantic boundary
+
+One-dimensional subset/sort metadata handling and `charmatch()` operate entirely on owned runtime
+values under existing allocation and checkpoint limits. Table argument-label reflection reads only
+the normalized call AST. This profile adds no filesystem, network, locale, dynamic-code-generation,
+native-code, or host-service authority, and the dynamicTreeCut package result does not introduce a
+package identity branch.
+
+## Profile 0.472 browser-owned PostScript device
+
+PostScript output is generated from NativR's bounded, typed graphics journal. The encoder contains
+no JavaScript generation, DOM access, network access, Node.js built-ins, subprocess calls, or host
+filesystem access. DSC title text and PostScript strings are escaped or reduced to the admitted
+single-byte subset, raster work checks runtime checkpoints, and the final byte stream is limited by
+`maxOutputBytes` before it enters the virtual file store.
+
+The device does not treat a PostScript `command` argument as authority. `print.it = TRUE` fails
+closed, and package examples that request a viewer remain outside the default browser-admissible
+contract unless the embedding application independently supplies an explicit system-command host
+adapter. PostScript's missing alpha channel is also explicit: unsupported semi-transparent vector
+output is rejected rather than silently rendered with misleading opacity.
+
+## Profile 0.473 native text encoding boundary
+
+`readLines(encoding = "native")` is an internal alias for the already declared browser-native UTF-8
+codec. It does not inspect the operating-system locale, use a host codec, read environment settings,
+load encoding tables, or acquire filesystem/network authority. Unsupported encodings continue to
+fail before data leaves the evaluator-owned virtual file and connection layer.
+
+## Profile 0.474 assertion evaluation boundary
+
+`stopifnot` expression blocks are evaluated only through the normalized AST evaluator in an existing
+caller environment or a newly owned child environment. They do not parse generated source, invoke
+JavaScript evaluation, access the DOM, or acquire filesystem, network, process, or package-specific
+authority. Runtime checkpoints apply between expressions and ordinary evaluator limits remain
+active.
+
+## Profile 0.475 error-assertion boundary
+
+`tools::assertError` catches only ordinary evaluator conditions through the existing in-memory
+condition machinery. It cannot catch resource-limit termination, grant host access, execute
+generated code, or alter filesystem, network, process, DOM, locale, or package authority. Verbose
+output uses the bounded message journal.
+
+## Profile 0.476 version-metadata boundary
+
+Version metadata conversion operates only on evaluator-owned list and atomic values. It adds no
+parser, generated-code, host locale, filesystem, network, process, DOM, or package-specific path.
+The joined value is accepted only by the bounded strict system-version parser; unrelated list shapes
+remain rejected.
+
+## Profile 0.477 compiler-report boundary
+
+`R_compiled_by()` returns fixed browser-owned metadata. It performs no host probing, environment
+read, subprocess execution, network request, filesystem access, generated-code evaluation, or
+package-specific dispatch, and its base binding is locked.
+
+## Profiles 0.478–0.480 runtime metadata boundary
+
+External-software, LAPACK, and regular-expression capability functions return fixed, audited
+browser-owned metadata. They do not probe host libraries, inspect the operating system, access the
+network or filesystem, spawn processes, parse generated source, or grant capabilities. All bindings
+are locked, and unavailable or unversioned external components are reported as empty rather than
+invented.

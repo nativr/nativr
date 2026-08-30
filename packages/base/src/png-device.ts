@@ -6,6 +6,12 @@ import type {
   RGraphicsPolygon,
   RGraphicsText,
 } from "@nativr/runtime";
+import {
+  type GraphicsRgba as Rgba,
+  parseGraphicsColour as parseCssColour,
+  pointVertices,
+  polygonHatchSegments,
+} from "./graphics-device-utils.js";
 
 export interface PngRenderOptions {
   readonly width: number;
@@ -16,15 +22,26 @@ export interface PngRenderOptions {
   readonly checkpoint: () => void;
 }
 
+export interface RgbaRenderResult {
+  readonly width: number;
+  readonly height: number;
+  readonly pixels: Uint8Array;
+}
+
 interface PixelWindow {
   xlim: readonly [number, number];
   ylim: readonly [number, number];
+  viewport?: readonly [number, number, number, number];
 }
-
-type Rgba = readonly [number, number, number, number];
 
 /** Render the owned graphics command vocabulary and encode one standards-compliant RGBA PNG. */
 export async function renderGraphicsPng(options: PngRenderOptions): Promise<Uint8Array> {
+  const rendered = renderGraphicsRgba(options);
+  return encodePng(rendered.width, rendered.height, rendered.pixels);
+}
+
+/** Render the shared browser bitmap-device journal to owned top-down RGBA pixels. */
+export function renderGraphicsRgba(options: PngRenderOptions): RgbaRenderResult {
   const pixels = new Uint8Array(options.width * options.height * 4);
   const canvas = new SoftwareCanvas(
     options.width,
@@ -51,6 +68,8 @@ export async function renderGraphicsPng(options: PngRenderOptions): Promise<Uint
           parseCssColour(segment.color),
           segment.lineWidth,
           segment.lineType,
+          undefined,
+          segment.lineCap,
         );
       }
     } else if (event.kind === "points") {
@@ -62,7 +81,7 @@ export async function renderGraphicsPng(options: PngRenderOptions): Promise<Uint
     } else if (event.kind === "raster") {
       drawRaster(canvas, event, window);
     } else if (event.kind === "box") {
-      drawBox(canvas, event);
+      drawBox(canvas, event, window);
     } else if (event.kind === "boxplot") {
       for (const group of event.groups)
         drawBoxplot(canvas, event.horizontal, event.notch, group, window);
@@ -70,7 +89,7 @@ export async function renderGraphicsPng(options: PngRenderOptions): Promise<Uint
       drawLegend(canvas, event, window, options.pointsize);
     }
   }
-  return encodePng(options.width, options.height, pixels);
+  return { width: options.width, height: options.height, pixels };
 }
 
 class SoftwareCanvas {
@@ -114,7 +133,13 @@ class SoftwareCanvas {
     this.pixels[offset + 3] = Math.round(outputAlpha * 255);
   }
 
-  public disc(x: number, y: number, radius: number, colour: Rgba): void {
+  public disc(
+    x: number,
+    y: number,
+    radius: number,
+    colour: Rgba,
+    clip?: (x: number, y: number) => boolean,
+  ): void {
     const bounded = Math.max(0.5, radius);
     const lowerX = Math.floor(x - bounded);
     const upperX = Math.ceil(x + bounded);
@@ -123,7 +148,12 @@ class SoftwareCanvas {
     const squared = bounded * bounded;
     for (let row = lowerY; row <= upperY; row += 1) {
       for (let column = lowerX; column <= upperX; column += 1) {
-        if ((column - x) ** 2 + (row - y) ** 2 <= squared) this.pixel(column, row, colour);
+        if (
+          (column - x) ** 2 + (row - y) ** 2 <= squared &&
+          (clip === undefined || clip(column, row))
+        ) {
+          this.pixel(column, row, colour);
+        }
       }
     }
   }
@@ -136,9 +166,28 @@ class SoftwareCanvas {
     colour: Rgba,
     width = 1,
     lineType = "solid",
+    clip?: (x: number, y: number) => boolean,
+    lineCap: "round" | "butt" | "square" = "round",
   ): void {
     if (lineType === "blank" || colour[3] === 0) return;
-    const distance = Math.hypot(x1 - x0, y1 - y0);
+    let distance = Math.hypot(x1 - x0, y1 - y0);
+    const unitX = distance === 0 ? 1 : (x1 - x0) / distance;
+    const unitY = distance === 0 ? 0 : (y1 - y0) / distance;
+    if (lineCap === "square" && distance > 0) {
+      const extension = width / 2;
+      x0 -= unitX * extension;
+      y0 -= unitY * extension;
+      x1 += unitX * extension;
+      y1 += unitY * extension;
+      distance += extension * 2;
+    }
+    const capClip =
+      lineCap === "round"
+        ? clip
+        : (x: number, y: number): boolean => {
+            const projection = (x - x0) * unitX + (y - y0) * unitY;
+            return projection >= 0 && projection <= distance && (clip === undefined || clip(x, y));
+          };
     const steps = Math.max(1, Math.ceil(distance));
     const dashes =
       lineType === "solid"
@@ -159,11 +208,19 @@ class SoftwareCanvas {
         if (!visible) continue;
       }
       const fraction = step / steps;
-      this.disc(x0 + (x1 - x0) * fraction, y0 + (y1 - y0) * fraction, width / 2, colour);
+      this.disc(x0 + (x1 - x0) * fraction, y0 + (y1 - y0) * fraction, width / 2, colour, capClip);
     }
   }
 
   public fillPolygon(points: readonly (readonly [number, number])[], colour: Rgba): void {
+    this.fillPolygonRings([points], colour);
+  }
+
+  public fillPolygonRings(
+    rings: readonly (readonly (readonly [number, number])[])[],
+    colour: Rgba,
+  ): void {
+    const points = rings.flat();
     if (points.length < 3 || colour[3] === 0) return;
     const minimumY = Math.max(0, Math.floor(Math.min(...points.map((point) => point[1]))));
     const maximumY = Math.min(
@@ -173,16 +230,18 @@ class SoftwareCanvas {
     for (let row = minimumY; row <= maximumY; row += 1) {
       this.checkpoint();
       const intersections: number[] = [];
-      for (let index = 0; index < points.length; index += 1) {
-        const first = points[index];
-        const second = points[(index + 1) % points.length];
-        if (first === undefined || second === undefined || first[1] === second[1]) continue;
-        const lower = first[1] < second[1] ? first : second;
-        const upper = first[1] < second[1] ? second : first;
-        if (row < lower[1] || row >= upper[1]) continue;
-        intersections.push(
-          lower[0] + ((row - lower[1]) * (upper[0] - lower[0])) / (upper[1] - lower[1]),
-        );
+      for (const ring of rings) {
+        for (let index = 0; index < ring.length; index += 1) {
+          const first = ring[index];
+          const second = ring[(index + 1) % ring.length];
+          if (first === undefined || second === undefined || first[1] === second[1]) continue;
+          const lower = first[1] < second[1] ? first : second;
+          const upper = first[1] < second[1] ? second : first;
+          if (row < lower[1] || row >= upper[1]) continue;
+          intersections.push(
+            lower[0] + ((row - lower[1]) * (upper[0] - lower[0])) / (upper[1] - lower[1]),
+          );
+        }
       }
       intersections.sort((left, right) => left - right);
       for (let index = 0; index + 1 < intersections.length; index += 2) {
@@ -210,23 +269,24 @@ class SoftwareCanvas {
 }
 
 function pixelX(value: number, window: PixelWindow, width: number): number {
-  return ((value - window.xlim[0]) / (window.xlim[1] - window.xlim[0])) * (width - 1);
+  const viewport = window.viewport ?? [0, 1, 0, 1];
+  return (
+    (viewport[0] +
+      ((value - window.xlim[0]) / (window.xlim[1] - window.xlim[0])) *
+        (viewport[1] - viewport[0])) *
+    (width - 1)
+  );
 }
 
 function pixelY(value: number, window: PixelWindow, height: number): number {
-  return height - 1 - ((value - window.ylim[0]) / (window.ylim[1] - window.ylim[0])) * (height - 1);
-}
-
-function parseCssColour(source: string): Rgba {
-  const match = /^#([0-9a-f]{8})$/iu.exec(source);
-  if (match === null) return [0, 0, 0, 255];
-  const value = match[1] ?? "000000FF";
-  return [
-    Number.parseInt(value.slice(0, 2), 16),
-    Number.parseInt(value.slice(2, 4), 16),
-    Number.parseInt(value.slice(4, 6), 16),
-    Number.parseInt(value.slice(6, 8), 16),
-  ];
+  const viewport = window.viewport ?? [0, 1, 0, 1];
+  return (
+    (1 -
+      viewport[2] -
+      ((value - window.ylim[0]) / (window.ylim[1] - window.ylim[0])) *
+        (viewport[3] - viewport[2])) *
+    (height - 1)
+  );
 }
 
 function drawPoint(
@@ -271,43 +331,10 @@ function drawPoint(
     canvas.line(x - radius, y + radius, x + radius, y - radius, border, point.lineWidth);
   }
   if ([3, 4, 8].includes(symbol)) return;
-  const points = pointVertices(symbol, x, y, radius);
+  const points = pointVertices(symbol, x, y, radius, -1);
   if (points.length === 0) return;
   if (filled) canvas.fillPolygon(points, symbol >= 21 ? fill : border);
   canvas.strokePolygon(points, border, point.lineWidth, "solid");
-}
-
-function pointVertices(
-  symbol: number,
-  x: number,
-  y: number,
-  radius: number,
-): readonly (readonly [number, number])[] {
-  if ([2, 17, 24].includes(symbol))
-    return [
-      [x, y - radius],
-      [x + radius, y + radius],
-      [x - radius, y + radius],
-    ];
-  if ([6, 25].includes(symbol))
-    return [
-      [x, y + radius],
-      [x + radius, y - radius],
-      [x - radius, y - radius],
-    ];
-  if ([5, 9, 18, 23].includes(symbol))
-    return [
-      [x, y - radius],
-      [x + radius, y],
-      [x, y + radius],
-      [x - radius, y],
-    ];
-  return [
-    [x - radius, y - radius],
-    [x + radius, y - radius],
-    [x + radius, y + radius],
-    [x - radius, y + radius],
-  ];
 }
 
 function strokeCircle(
@@ -331,14 +358,64 @@ function strokeCircle(
 }
 
 function drawPolygon(canvas: SoftwareCanvas, polygon: RGraphicsPolygon, window: PixelWindow): void {
-  const points = polygon.x.flatMap((x, index) => {
+  const rings: Array<Array<readonly [number, number]>> = [[]];
+  for (let index = 0; index < polygon.x.length; index += 1) {
+    const x = polygon.x[index];
     const y = polygon.y[index];
-    return y === undefined
-      ? []
-      : [[pixelX(x, window, canvas.width), pixelY(y, window, canvas.height)] as const];
-  });
-  canvas.fillPolygon(points, parseCssColour(polygon.fill));
-  canvas.strokePolygon(points, parseCssColour(polygon.border), polygon.lineWidth, polygon.lineType);
+    if (x === undefined || y === undefined || !Number.isFinite(x) || !Number.isFinite(y)) {
+      if ((rings.at(-1)?.length ?? 0) > 0) rings.push([]);
+      continue;
+    }
+    rings.at(-1)!.push([pixelX(x, window, canvas.width), pixelY(y, window, canvas.height)]);
+  }
+  const usable = rings.filter((ring) => ring.length >= 3);
+  const points = usable.flat();
+  canvas.fillPolygonRings(usable, parseCssColour(polygon.fill));
+  if (polygon.hatch !== undefined) {
+    const inside = (x: number, y: number): boolean =>
+      usable.reduce((value, ring) => (pointInPolygon(x, y, ring) ? !value : value), false);
+    for (const [start, end] of polygonHatchSegments(
+      points,
+      polygon.hatch.density,
+      -polygon.hatch.angle,
+      96,
+    )) {
+      canvas.line(
+        start[0],
+        start[1],
+        end[0],
+        end[1],
+        parseCssColour(polygon.hatch.color),
+        polygon.lineWidth,
+        "solid",
+        inside,
+      );
+    }
+  }
+  for (const ring of usable) {
+    canvas.strokePolygon(ring, parseCssColour(polygon.border), polygon.lineWidth, polygon.lineType);
+  }
+}
+
+function pointInPolygon(
+  x: number,
+  y: number,
+  points: readonly (readonly [number, number])[],
+): boolean {
+  let inside = false;
+  for (let index = 0, previous = points.length - 1; index < points.length; previous = index++) {
+    const currentPoint = points[index];
+    const previousPoint = points[previous];
+    if (currentPoint === undefined || previousPoint === undefined) continue;
+    const crosses =
+      currentPoint[1] > y !== previousPoint[1] > y &&
+      x <
+        ((previousPoint[0] - currentPoint[0]) * (y - currentPoint[1])) /
+          (previousPoint[1] - currentPoint[1]) +
+          currentPoint[0];
+    if (crosses) inside = !inside;
+  }
+  return inside;
 }
 
 function drawRaster(
@@ -380,14 +457,20 @@ function drawRaster(
 function drawBox(
   canvas: SoftwareCanvas,
   event: Extract<RGraphicsEvent, { readonly kind: "box" }>,
+  window: PixelWindow,
 ): void {
   const colour = parseCssColour(event.color);
   const inset = event.lineWidth / 2;
+  const viewport = window.viewport ?? [0, 1, 0, 1];
+  const left = viewport[0] * (canvas.width - 1) + inset;
+  const right = viewport[1] * (canvas.width - 1) - inset;
+  const top = (1 - viewport[3]) * (canvas.height - 1) + inset;
+  const bottom = (1 - viewport[2]) * (canvas.height - 1) - inset;
   const edges = {
-    top: [inset, inset, canvas.width - inset, inset],
-    right: [canvas.width - inset, inset, canvas.width - inset, canvas.height - inset],
-    bottom: [canvas.width - inset, canvas.height - inset, inset, canvas.height - inset],
-    left: [inset, canvas.height - inset, inset, inset],
+    top: [left, top, right, top],
+    right: [right, top, right, bottom],
+    bottom: [right, bottom, left, bottom],
+    left: [left, bottom, left, top],
   } as const;
   for (const edge of event.edges) {
     const line = edges[edge];
@@ -499,6 +582,20 @@ function drawLegend(
     const row = index % rows;
     const x = left + padding + column * columnWidth;
     const y = top + padding + (titleRows + row + 0.5) * rowHeight;
+    if (entry.fill !== undefined) {
+      const swatchWidth = symbolWidth * 0.58;
+      const swatchHeight = rowHeight * 0.62;
+      const swatch = [
+        [x, y - swatchHeight / 2],
+        [x + swatchWidth, y - swatchHeight / 2],
+        [x + swatchWidth, y + swatchHeight / 2],
+        [x, y + swatchHeight / 2],
+      ] as const;
+      canvas.fillPolygon(swatch, parseCssColour(entry.fill));
+      if (entry.border !== undefined) {
+        canvas.strokePolygon(swatch, parseCssColour(entry.border), 1, "solid");
+      }
+    }
     if (entry.lineType !== undefined && entry.lineWidth !== undefined) {
       canvas.line(
         x,
@@ -531,8 +628,8 @@ function drawLegend(
       Math.max(1, Math.round(fontSize / 8)),
       parseCssColour(entry.textColor),
       0,
-      0,
-      0.5,
+      event.textAdjustment[0],
+      event.textAdjustment[1],
     );
   }
 }
@@ -544,8 +641,12 @@ function legendTopLeft(
   canvas: SoftwareCanvas,
   window: PixelWindow,
 ): readonly [number, number] {
-  if (position.kind === "coordinates")
-    return [pixelX(position.x, window, canvas.width), pixelY(position.y, window, canvas.height)];
+  if (position.kind === "coordinates") {
+    return [
+      pixelX(position.x, window, canvas.width) - position.xJust * width,
+      pixelY(position.y, window, canvas.height) - (1 - position.yJust) * height,
+    ];
+  }
   const insetX = position.inset[0] * canvas.width;
   const insetY = position.inset[1] * canvas.height;
   const left = position.value.endsWith("left")

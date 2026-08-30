@@ -116,12 +116,12 @@ async function builtinDensityDefault(invocation: BuiltinInvocation): Promise<RVa
   );
   if (giveKernel) {
     invocation.context.allocate(1);
-    return doubleVector([1 / (2 * Math.sqrt(Math.PI))]);
+    return doubleVector([densityKernelRoughness(kernel)]);
   }
-  if (kernel !== "gaussian") {
+  if (kernel !== "gaussian" && kernel !== "epanechnikov") {
     throw new RUnsupportedFeatureError(
       "NRU6136",
-      `density.default(kernel='${kernel}') is outside the initial Gaussian path.`,
+      `density.default(kernel='${kernel}') is outside the current Gaussian and Epanechnikov paths.`,
     );
   }
 
@@ -173,7 +173,7 @@ async function builtinDensityDefault(invocation: BuiltinInvocation): Promise<RVa
   const x = new Float64Array(pointCount);
   const y = new Float64Array(pointCount);
   const spacing = pointCount === 1 ? 0 : (to - from) / (pointCount - 1);
-  const normalizer = bandwidth * Math.sqrt(2 * Math.PI);
+  const normalizer = bandwidth * (kernel === "gaussian" ? Math.sqrt(2 * Math.PI) : 1);
   for (let point = 0; point < pointCount; point += 1) {
     const coordinate = from + point * spacing;
     x[point] = coordinate;
@@ -181,7 +181,11 @@ async function builtinDensityDefault(invocation: BuiltinInvocation): Promise<RVa
     for (let index = 0; index < observations.length; index += 1) {
       invocation.context.checkpoint();
       const standardized = (coordinate - (observations[index] ?? 0)) / bandwidth;
-      estimate += (weights[index] ?? 0) * Math.exp(-0.5 * standardized * standardized);
+      estimate +=
+        (weights[index] ?? 0) *
+        (kernel === "gaussian"
+          ? Math.exp(-0.5 * standardized * standardized)
+          : epanechnikovKernelValue(standardized));
     }
     y[point] = estimate / normalizer;
   }
@@ -206,6 +210,26 @@ async function builtinDensityDefault(invocation: BuiltinInvocation): Promise<RVa
     ),
     ["density"],
   );
+}
+
+function epanechnikovKernelValue(standardized: number): number {
+  const radius = Math.sqrt(5);
+  if (Math.abs(standardized) >= radius) return 0;
+  return (3 / (4 * radius)) * (1 - (standardized * standardized) / 5);
+}
+
+function densityKernelRoughness(kernel: string): number {
+  switch (kernel) {
+    case "gaussian":
+      return 1 / (2 * Math.sqrt(Math.PI));
+    case "epanechnikov":
+      return 3 / (5 * Math.sqrt(5));
+    default:
+      throw new RUnsupportedFeatureError(
+        "NRU6136",
+        `density.default(kernel='${kernel}', give.Rkern=TRUE) is outside the current Gaussian and Epanechnikov paths.`,
+      );
+  }
 }
 
 async function forceRequired(

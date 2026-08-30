@@ -23,12 +23,27 @@ const blockedIdentityPatterns = [
   { label: "AI agent", pattern: /(?:^|\W)ai[- +_]*agent(?:\W|$)/iu },
 ];
 
-// This human-authored, already-published main-branch commit retained Dependabot trailers from its
-// source PR. Rewriting it would change public history. Keep the exception exact so no later commit
-// or different identity can inherit it.
+// These human-authored, already-published main-branch commits retained Dependabot attribution
+// trailers from their source PRs. Rewriting them would change public history. Keep every exception
+// exact so no later commit, trailer kind, or different identity can inherit it.
 const historicalTrailerExceptions = new Set([
   "684c44ca1bae7b7588831a23eae232f6f90eaa76|co-author|dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+  "684c44ca1bae7b7588831a23eae232f6f90eaa76|signed-off-by|dependabot[bot] <support@github.com>",
+  "a88083a4be3fdba15bd7a48d5551c679540e4288|signed-off-by|dependabot[bot] <support@github.com>",
+  "13387fa5bff57c2bbc9a457f0d15a531f14e1eab|signed-off-by|dependabot[bot] <support@github.com>",
+  "9778ee6fd71cdbc4541d9ec74278bee8473af414|signed-off-by|dependabot[bot] <support@github.com>",
+  "f664bf7bc31be08978d315bccfbe3d594d0ca1c3|signed-off-by|dependabot[bot] <support@github.com>",
+  "cd301aebcfbc102283e603ae047977140ece8a7a|signed-off-by|dependabot[bot] <support@github.com>",
+  "736ec6dfb938b2beb75ab46756b8baa9ce8bc7b4|signed-off-by|dependabot[bot] <support@github.com>",
 ]);
+
+const attributionTrailers = [
+  { kind: "co-author", key: "Co-authored-by" },
+  { kind: "signed-off-by", key: "Signed-off-by" },
+  { kind: "reviewed-by", key: "Reviewed-by" },
+  { kind: "acked-by", key: "Acked-by" },
+  { kind: "tested-by", key: "Tested-by" },
+];
 
 const zeroBefore = /^0+$/u;
 const explicitRange = process.env.NATIVR_COMMIT_RANGE?.trim();
@@ -73,10 +88,12 @@ for (const record of commits) {
   const message = messageParts.join("\x1f");
   const identities = [
     { kind: "author", value: `${authorName} <${authorEmail}>` },
-    ...[...message.matchAll(/^Co-authored-by:\s*(.+)$/gimu)].map((match) => ({
-      kind: "co-author",
-      value: match[1].trim(),
-    })),
+    ...attributionTrailers.flatMap(({ kind, key }) =>
+      [...message.matchAll(new RegExp(`^${key}:\\s*(.+)$`, "gimu"))].map((match) => ({
+        kind,
+        value: match[1].trim(),
+      })),
+    ),
   ];
 
   for (const identity of identities) {
@@ -103,7 +120,7 @@ if (violations.length > 0) {
     );
   }
   console.error(
-    "\nRecreate the affected commit under an approved human identity and remove bot/AI co-author trailers. Add a real contributor to .github/human-authors.json only through an already-approved human-authored commit.",
+    "\nRecreate the affected commit under an approved human identity and remove bot/AI attribution trailers. Add a real contributor to .github/human-authors.json only through an already-approved human-authored commit.",
   );
   process.exit(1);
 }

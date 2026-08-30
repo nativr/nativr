@@ -1,4 +1,153 @@
-import type { OperatorContext } from "@nativr/runtime";
+import {
+  REvaluationError,
+  RTypeMismatchError,
+  complexVector,
+  isMissing,
+  vectorDimensions,
+} from "@nativr/runtime";
+import type {
+  BuiltinCallArgument,
+  BuiltinInvocation,
+  OperatorContext,
+  RComplexVector,
+  RDoubleVector,
+  RIntegerVector,
+  RLogicalVector,
+  RValue,
+} from "@nativr/runtime";
+import { matchBuiltinArguments } from "./arguments.js";
+
+type FourierInput = RLogicalVector | RIntegerVector | RDoubleVector | RComplexVector;
+
+export const FFT_BUILTIN_SPEC = {
+  name: "fft",
+  parameters: ["z", "inverse"],
+  compatibility: "numeric" as const,
+  implementation: builtinFft,
+};
+
+async function builtinFft(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched } = matchBuiltinArguments(invocation, ["z", "inverse"]);
+  const inputArgument = matched.get("z");
+  if (inputArgument === undefined || inputArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'z' is missing in fft().");
+  }
+  const input = fourierInput(await invocation.force(inputArgument.promise));
+  const inverse = await fourierInverseFlag(invocation, matched.get("inverse"));
+  invocation.context.allocate(input.length);
+  invocation.context.allocate(input.length);
+  const real = new Float64Array(input.length);
+  const imaginary = new Float64Array(input.length);
+  if (input.type === "complex") {
+    real.set(input.real);
+    imaginary.set(input.imaginary);
+  } else {
+    real.set(input.values);
+  }
+
+  if (hasFourierMissing(input)) {
+    const output = complexVector(real, imaginary, new Uint8Array(input.length).fill(1));
+    return { ...output, attributes: new Map(input.attributes) };
+  }
+
+  const dimensions = vectorDimensions(input);
+  if (dimensions === undefined) {
+    transformFourier(real, imaginary, inverse, invocation.context);
+  } else {
+    transformFourierAxes(real, imaginary, dimensions, inverse, invocation.context);
+  }
+  if (inverse) {
+    for (let index = 0; index < input.length; index += 1) {
+      real[index] = real[index]! * input.length;
+      imaginary[index] = imaginary[index]! * input.length;
+    }
+  }
+  const output = complexVector(real, imaginary);
+  return { ...output, attributes: new Map(input.attributes) };
+}
+
+function fourierInput(value: RValue): FourierInput {
+  if (
+    value.type === "logical" ||
+    value.type === "integer" ||
+    value.type === "double" ||
+    value.type === "complex"
+  ) {
+    return value;
+  }
+  throw new RTypeMismatchError("NRT3466", "non-numeric argument");
+}
+
+function hasFourierMissing(input: FourierInput): boolean {
+  for (let index = 0; index < input.length; index += 1) {
+    if (isMissing(input, index)) return true;
+  }
+  return false;
+}
+
+async function fourierInverseFlag(
+  invocation: BuiltinInvocation,
+  argument: BuiltinCallArgument | undefined,
+): Promise<boolean> {
+  if (argument === undefined || argument.promise.missing) return false;
+  const value = await invocation.force(argument.promise);
+  if (!("length" in value) || value.length === 0 || isMissing(value, 0)) return false;
+  switch (value.type) {
+    case "logical":
+    case "integer":
+    case "double":
+    case "raw":
+      return (value.values[0] ?? 0) !== 0 && !Number.isNaN(value.values[0] ?? 0);
+    case "complex":
+      return (
+        (!Number.isNaN(value.real[0] ?? 0) || !Number.isNaN(value.imaginary[0] ?? 0)) &&
+        ((value.real[0] ?? 0) !== 0 || (value.imaginary[0] ?? 0) !== 0)
+      );
+    case "character": {
+      const text = (value.values[0] ?? "").toUpperCase();
+      return text === "TRUE" || text === "T";
+    }
+    default:
+      return false;
+  }
+}
+
+function transformFourierAxes(
+  real: Float64Array,
+  imaginary: Float64Array,
+  dimensions: readonly number[],
+  inverse: boolean,
+  context: OperatorContext,
+): void {
+  let stride = 1;
+  for (const axisLength of dimensions) {
+    if (axisLength > 1) {
+      const blockLength = stride * axisLength;
+      const blockCount = real.length / blockLength;
+      context.allocate(axisLength);
+      context.allocate(axisLength);
+      const axisReal = new Float64Array(axisLength);
+      const axisImaginary = new Float64Array(axisLength);
+      for (let block = 0; block < blockCount; block += 1) {
+        const blockStart = block * blockLength;
+        for (let offset = 0; offset < stride; offset += 1) {
+          for (let coordinate = 0; coordinate < axisLength; coordinate += 1) {
+            const index = blockStart + offset + coordinate * stride;
+            axisReal[coordinate] = real[index]!;
+            axisImaginary[coordinate] = imaginary[index]!;
+          }
+          transformFourier(axisReal, axisImaginary, inverse, context);
+          for (let coordinate = 0; coordinate < axisLength; coordinate += 1) {
+            const index = blockStart + offset + coordinate * stride;
+            real[index] = axisReal[coordinate]!;
+            imaginary[index] = axisImaginary[coordinate]!;
+          }
+        }
+      }
+    }
+    stride *= axisLength;
+  }
+}
 
 /** In-place browser-native complex DFT. Inverse transforms include the 1/n normalization. */
 export function transformFourier(
@@ -7,7 +156,7 @@ export function transformFourier(
   inverse: boolean,
   context: OperatorContext,
 ): void {
-  if (real.length !== imaginary.length) throw new Error("Fourier storage length mismatch.");
+  if (real.length !== imaginary.length) throw new Error();
   if (real.length <= 1) return;
   if (inverse) {
     for (let index = 0; index < imaginary.length; index += 1) imaginary[index] = -imaginary[index]!;

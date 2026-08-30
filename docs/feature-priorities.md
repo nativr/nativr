@@ -352,14 +352,15 @@ subsets, missing-value controls, unused levels, and table metadata. Rank 295 `RN
 complete for the six sampled query calls in the
 [`withr` reference manual](https://cran.r-project.org/web/packages/withr/refman/withr.html) plus
 partial/default kind selection, prior-state return and visibility, warnings, the default
-Mersenne-Twister/Inversion pair, and both discrete samplers. Rank 296 `sample.int` is now complete
-for the two sampled calls in the same `withr` manual, where it generates a seed from
-`.Machine$integer.max`. The implementation also has differential evidence for replacement,
-no-replacement, optional hash selection, weighted draws, and populations above the 32-bit integer
-range. Rank 297 `Sys.localeconv` is now complete for both sampled `withr` calls: its 18-name
-character-vector contract follows session-local monetary state, including the observed `it_IT` and
-`en_US` profiles. Rank 298 `attributes` is already supported; ranks 299–302 require filesystem,
-process/PATH, or graphics host adapters. Rank 303 `tan` is now complete for the measured
+Mersenne-Twister/Inversion pair, historical uniform kinds, L'Ecuyer-CMRG stream/substream state,
+supported normal kinds, and both discrete samplers. Rank 296 `sample.int` is now complete for the
+two sampled calls in the same `withr` manual, where it generates a seed from `.Machine$integer.max`.
+The implementation also has differential evidence for replacement, no-replacement, optional hash
+selection, weighted draws, and populations above the 32-bit integer range. Rank 297 `Sys.localeconv`
+is now complete for both sampled `withr` calls: its 18-name character-vector contract follows
+session-local monetary state, including the observed `it_IT` and `en_US` profiles. Rank 298
+`attributes` is already supported; ranks 299–302 require filesystem, process/PATH, or graphics host
+adapters. Rank 303 `tan` is now complete for the measured
 [`testthat`](https://cran.r-project.org/web/packages/testthat/refman/testthat.html) call
 `expect_equal(tan(pi / 4), 1)` and the
 [`data.table`](https://cran.r-project.org/web/packages/data.table/refman/data.table.html) expression
@@ -450,58 +451,58 @@ representing 1,680,147 snapshot downloads and 1.4% download reach. Posterior con
 scalar `density(dist, 2)` shape with and without `log = TRUE`, while the remainder use character,
 matrix, list, and vector evaluation points. NativR implements the independent `stats::density` S3
 generic and lazy argument forwarding these package methods require; it does not copy either
-package's method algorithms. A bounded `density.default` additionally covers Gaussian direct-kernel
-grids, numeric bandwidths and `nrd0`, adjustment, weights, missing-value removal, explicit ranges,
-and the documented result shape. Other kernels, FFT-coordinate identity, alternate automatic
-bandwidth selectors, infinite point masses, `width`/`ext`/legacy coordinates, arbitrary package
-methods, and exact source-derived `data.name` remain explicit boundaries. Rank 318 `sd` is already
-registered. Rank 319 `setequal` is now complete for the two calls in
-[`dplyr`](https://cran.r-project.org/web/packages/dplyr/refman/dplyr.html), representing 1,675,114
-snapshot downloads and 1.4% download reach. Both calls compare data-frame rows: one unequal pair and
-one reversed-row equality check. NativR covers those owned data-frame/tibble shapes with
-order-insensitive, duplicate-insensitive row matching and compatible column reordering; it also
-covers GNU R's base atomic, factor, list, NULL, common-type, duplicate, NA, and NaN set-equality
-rules. Tibble rectangular selection now retains tibble class and does not drop a single selected
-column, allowing the measured `df1[3:1, ]` expression to remain a table. Arbitrary dplyr methods,
-grouped or remote tables, namespace/package loading, pairlists, locale-specific encodings, and
-exhaustive recursive-object identity remain outside this increment. Rank 310 `grep` is already
-registered. Rank 311 `download.file` now uses the explicit byte adapter and bounded session-owned
-files without weakening the default network-free browser boundary, or adding ambient host access;
-rank 312 `eigen` is now complete for jsonlite's `lapply(eigen(matrix(-rnorm(9), 3)), round, 3)`
-serialization fixture, representing 1,601,911 snapshot downloads and 1.3% download reach. NativR
-computes real symmetric matrices of arbitrary owned order with an independent Jacobi rotation path,
-including normalized eigenvectors, decreasing eigenvalues, automatic or explicit symmetry,
-`only.values`, lower-triangle selection, and classed result shape. Real non-symmetric matrices of
-order one through three use independent characteristic roots and complex null-space eigenvectors,
-covering jsonlite's exact random 3-by-3 shape and GNU R's small complex-pair examples. Complex input
-matrices, non-symmetric order above three, defective and ill-conditioned exhaustive cases, LAPACK
-convergence/rounding identity, and eigenvector phase/sign identity remain explicit boundaries. Rank
-313 `pipe` is now complete for jsonlite's measured source-only call through lazy/explicit read and
-buffered write connections over the default-deny `systemCommand` capability. It reuses ordinary
-line/raw/source/table/serialization consumers, exact close statuses, pure-R namespaces, and Worker
-execution; duplex streaming and ambient processes remain outside the contract. Rank 314 `unz` is now
-complete for jsonlite's measured archive-member call and exposes exact stored/DEFLATE members from
-package or session ZIP bytes through the ordinary connection stack. Bounds, CRC, closed/open
-cursors, raw/text reads, pure-R package use, downloaded archives, and Worker execution have
-evidence; encryption, ZIP64, multi-disk archives, other codecs, seeking, and writes remain explicit
-boundaries. Rank 324 `object.size` is now complete for data.table/bit64's three measured calls,
-including GNU R 4.6-shaped vector/list/attribute sizes and object-size unit formatting. Rank 328
-`title` is complete for Shiny/bit64's seven measured annotations through shared `par()` styles,
-Worker text events, browser/file devices, and unchanged source-only package code. Rank 330 `sink` is
-complete for utf8's two measured redirection calls, with reusable session stack, split, message,
-connection, pure-R package, and Worker evidence. Rank 338 `write` is complete for sass's measured
-source-line call with GNU R column layout and owned file/connection targets. Rank 340
-`available.packages` is complete for curl's measured repository database; rank 343 `barplot` is
-complete for zoo and bit64's measured vector/matrix calls; and rank 344 `devAskNewPage` is complete
-for RColorBrewer's ten measured prompts. Rank 345 `getLoadedDLLs` is shape-complete for ps's
-measured `vapply(..., "path")` probe over NativR's empty-by-default native-module set. Rank 346
-`socketConnection` is complete for ps's measured call and the reusable connection lifecycle; rank
-348 `file.copy` is complete for xfun's package-resource staging path; rank 349 `find.package` is
-complete for its installed-root lookup; rank 351 `l10n_info` is complete for xfun's UTF-8 branch;
-rank 353 `shQuote` is complete for its deterministic string-quoting path; rank 357 `system2` is
-complete for its explicit structured host-policy path; rank 358 `.Call` now has registered lookup,
-arity, bounded value transport, and default-deny adapter evidence. Rank 316 `colSums` is now
-complete for three observed calls across
+package's method algorithms. A bounded `density.default` additionally covers Gaussian and
+Epanechnikov direct-kernel grids, numeric bandwidths and `nrd0`, adjustment, weights, missing-value
+removal, explicit ranges, kernel roughness, and the documented result shape. Other kernels,
+FFT-coordinate identity, alternate automatic bandwidth selectors, infinite point masses,
+`width`/`ext`/legacy coordinates, arbitrary package methods, and exact source-derived `data.name`
+remain explicit boundaries. Rank 318 `sd` is already registered. Rank 319 `setequal` is now complete
+for the two calls in [`dplyr`](https://cran.r-project.org/web/packages/dplyr/refman/dplyr.html),
+representing 1,675,114 snapshot downloads and 1.4% download reach. Both calls compare data-frame
+rows: one unequal pair and one reversed-row equality check. NativR covers those owned
+data-frame/tibble shapes with order-insensitive, duplicate-insensitive row matching and compatible
+column reordering; it also covers GNU R's base atomic, factor, list, NULL, common-type, duplicate,
+NA, and NaN set-equality rules. Tibble rectangular selection now retains tibble class and does not
+drop a single selected column, allowing the measured `df1[3:1, ]` expression to remain a table.
+Arbitrary dplyr methods, grouped or remote tables, namespace/package loading, pairlists,
+locale-specific encodings, and exhaustive recursive-object identity remain outside this increment.
+Rank 310 `grep` is already registered. Rank 311 `download.file` now uses the explicit byte adapter
+and bounded session-owned files without weakening the default network-free browser boundary, or
+adding ambient host access; rank 312 `eigen` is now complete for jsonlite's
+`lapply(eigen(matrix(-rnorm(9), 3)), round, 3)` serialization fixture, representing 1,601,911
+snapshot downloads and 1.3% download reach. NativR computes real symmetric matrices of arbitrary
+owned order with an independent Jacobi rotation path, including normalized eigenvectors, decreasing
+eigenvalues, automatic or explicit symmetry, `only.values`, lower-triangle selection, and classed
+result shape. Real non-symmetric matrices of order one through three use independent characteristic
+roots and complex null-space eigenvectors, covering jsonlite's exact random 3-by-3 shape and GNU R's
+small complex-pair examples. Complex input matrices, non-symmetric order above three, defective and
+ill-conditioned exhaustive cases, LAPACK convergence/rounding identity, and eigenvector phase/sign
+identity remain explicit boundaries. Rank 313 `pipe` is now complete for jsonlite's measured
+source-only call through lazy/explicit read and buffered write connections over the default-deny
+`systemCommand` capability. It reuses ordinary line/raw/source/table/serialization consumers, exact
+close statuses, pure-R namespaces, and Worker execution; duplex streaming and ambient processes
+remain outside the contract. Rank 314 `unz` is now complete for jsonlite's measured archive-member
+call and exposes exact stored/DEFLATE members from package or session ZIP bytes through the ordinary
+connection stack. Bounds, CRC, closed/open cursors, raw/text reads, pure-R package use, downloaded
+archives, and Worker execution have evidence; encryption, ZIP64, multi-disk archives, other codecs,
+seeking, and writes remain explicit boundaries. Rank 324 `object.size` is now complete for
+data.table/bit64's three measured calls, including GNU R 4.6-shaped vector/list/attribute sizes and
+object-size unit formatting. Rank 328 `title` is complete for Shiny/bit64's seven measured
+annotations through shared `par()` styles, Worker text events, browser/file devices, and unchanged
+source-only package code. Rank 330 `sink` is complete for utf8's two measured redirection calls,
+with reusable session stack, split, message, connection, pure-R package, and Worker evidence. Rank
+338 `write` is complete for sass's measured source-line call with GNU R column layout and owned
+file/connection targets. Rank 340 `available.packages` is complete for curl's measured repository
+database; rank 343 `barplot` is complete for zoo and bit64's measured vector/matrix calls; and rank
+344 `devAskNewPage` is complete for RColorBrewer's ten measured prompts. Rank 345 `getLoadedDLLs` is
+shape-complete for ps's measured `vapply(..., "path")` probe over NativR's empty-by-default
+native-module set. Rank 346 `socketConnection` is complete for ps's measured call and the reusable
+connection lifecycle; rank 348 `file.copy` is complete for xfun's package-resource staging path;
+rank 349 `find.package` is complete for its installed-root lookup; rank 351 `l10n_info` is complete
+for xfun's UTF-8 branch; rank 353 `shQuote` is complete for its deterministic string-quoting path;
+rank 357 `system2` is complete for its explicit structured host-policy path; rank 358 `.Call` now
+has registered lookup, arity, bounded value transport, and default-deny adapter evidence. Rank 316
+`colSums` is now complete for three observed calls across
 [`loo`](https://cran.r-project.org/web/packages/loo/refman/loo.html) and
 [`zoo`](https://cran.r-project.org/web/packages/zoo/refman/zoo.html), representing 1,601,512
 snapshot downloads and 1.3% download reach. Loo calls `colSums(tab_10)` and `colSums(tab_9)` on
@@ -951,74 +952,75 @@ matching, prefix selection, visibility, and the newline-terminator rule used by 
 call. Files, connections, warning/error sinks, arbitrary print-method behavior, and complete sink
 stack semantics are not claimed. Rank 437 `demo` is now complete for the documented
 `demo("echo", package = "httpuv")` call boundary, representing the same 770,373 downloads and 0.6%
-weighted reach. NativR reproduces GNU R's empty `packageIQR` catalog shape without consulting an
-installed R library, while topic lookup, external package demo discovery, and script execution fail
-explicitly until package loading and virtual package resources exist. It does not claim that the
-httpuv demo—or any external package demo—currently runs. Rank 438 `RNGversion` is now complete for
-zoo's repeated `suppressWarnings(RNGversion("3.5.0")); set.seed(1)` example setup, representing
-731,390 downloads, 17 measured calls, and 0.6% weighted reach. It selects
-Mersenne-Twister/Inversion/Rounding for R versions from 1.7 through 3.5, emits the historical
-Rounding warning, returns the prior kind vector invisibly, and restores Rejection for R 3.6 or
-newer. The Wichmann-Hill/Marsaglia and Buggy Kinderman-Ramage defaults needed before R 1.7 fail
-explicitly rather than silently using the wrong generator. Ranks 439 `window`, 440 `as.ts`, 442
-`frequency`, and 443 `ts` are now complete as one dependency-ordered regular time-series foundation,
-representing zoo's 731,390 downloads, respectively 14, 7, 6, and 5 measured calls, and 0.6% weighted
-reach. GNU R differential evidence covers vector/matrix construction, calendar coordinates, endpoint
-recycling, coercion, frequency lookup, regular windows, integral downsampling, extension with typed
-missing values, warnings, namespace access, and independently registered package methods. Zoo's own
-irregular index constructors and methods remain package-owned and are not claimed until an audited
-bundle fits the loader and supported runtime surface. Rank 444 `legend` is now complete for zoo's
-731,390 downloads, three measured calls, and 0.6% weighted reach. The browser-owned subset covers
-the observed bottom-left, bottom-right, and top-left line/point keys plus coordinate placement,
-recycled colors/styles, boxes, columns, titles, invisible geometry results, Worker transport, Canvas
-pixels, and display-list replay. General graphical `...`, fill/density legends, expression labels,
-exact device text metrics, and the complete base-graphics stack remain explicit boundaries. Rank 445
-`comment` and its replacement form are now complete for zoo's two measured calls, representing
-731,390 downloads and 0.6% weighted reach. The observed example attaches two character metadata
-lines to a classed series and reads them back without affecting default printing. Differential
-evidence also covers absent comments, missing values, `NULL`/empty removal, attribute preservation,
-`attr<-` validation, visibility, namespace access, and invalid replacements. Comments on closures,
-environments, and language objects await the future general attribute model. Rank 446 `cycle` is now
-complete for zoo's two measured calls, representing 731,390 downloads and 0.6% weighted reach. The
-owned default derives observation numbers from validated regular `tsp` metadata for vectors and
-matrix rows, including calendar starts and fractional frequencies, while the S3 generic forwards
-lazy dots to independently supplied methods such as `cycle.zoo`. Zoo's irregular-series method,
-index storage, and package loading remain package-owned. Rank 447 `signif` is now complete for zoo's
-two measured calls, again representing 731,390 downloads and 0.6% weighted reach. The observed
-maxima are rounded to two significant digits before sizing a primary/secondary plot axis.
-Differential evidence covers real and complex vectors, decimal ties-to-even, recycled and clamped
-1–22 digit controls, missing and non-finite values, metadata retention, allocation limits, and
-direct/Math-group S3 methods. Exact identity for every platform decimal-to-binary boundary remains
-outside the claim. Rank 448 `axTicks` is now complete for zoo's measured secondary-axis tick lookup,
-representing 731,390 downloads, one measured call, and 0.6% weighted reach. The owned linear path
-derives horizontal or vertical ticks from `plot.window()` state, supports explicit `axp`, ascending
-and descending axes, coercible sides, lazy `usr`/`nintLog`, namespace access, and allocation limits.
-Logarithmic axes, `par("xaxp"/"yaxp")`, and complete `pretty` boundary identity remain explicit
-boundaries; a separate session-local `par()` subset covers common query/update/restoration patterns,
-and the later rank-215 `axis` increment supplies bounded linear drawing. Rank 449 `box` is now
-complete for zoo's measured plot-frame redraw, representing 731,390 downloads, one measured call,
-and 0.6% weighted reach. The owned plot-region path resolves all documented `bty` edge shapes,
-`col`/`fg`, line type, and positive width before a bounded event crosses the Worker boundary and
-reaches Canvas or same-session record/replay. Figure, inner, and outer regions require a future
-margin/layout model. Rank 450 `boxplot` is now complete for zoo's measured grouped-series call,
-representing 731,390 downloads, one measured call, and 0.6% weighted reach. The owned S3/default
-path computes Tukey statistics for vector, list, and matrix groups and carries resolved boxes,
-whiskers, notches, and outliers through Worker/Canvas and same-session record/replay.
-Formula/data-frame methods, logarithmic axes, arbitrary `pars`, complete annotation/axes, and
-device-identical layout remain explicit boundaries. Rank 451 `deltat` is now complete for zoo's
-measured regular-series sampling-interval call, representing 731,390 downloads, one measured call,
-and 0.6% weighted reach. The generic forwards lazy dots to package methods such as `deltat.zoo`; its
-owned default returns one or the reciprocal of validated `tsp` frequency. Zoo's irregular-series
-inference and package methods remain package-owned. Rank 452 `embed` is now complete for zoo's
-measured lagged-window dependency, representing 731,390 downloads, one measured call, and 0.6%
-weighted reach. The owned path produces current-to-past column-major windows for supported vectors
-and multivariate matrices with source-type preservation, attribute removal, fractional-vector
-behavior, GNU R matrix coercions, and pre-allocation result limits. Factor vectors, data frames,
-expression vectors, raw/list matrices, and fractional nonempty-matrix dimensions remain explicit
-boundaries. Rank 453 `findInterval` is now complete for
-[zoo's](https://cran.r-project.org/web/packages/zoo/refman/zoo.html) measured irregular-Date
-rolling-window width expression, representing 731,390 downloads, one measured call, and 0.6%
-weighted reach. The owned
+weighted reach. NativR reproduces GNU R's `packageIQR` catalog without consulting an installed R
+library. Profile 0.407 adds generic discovery and execution for demo scripts retained in
+browser-owned installed package resources, including optional `00Index` titles, package attachment,
+declared encoding, and echo control. Host libraries, ambient I/O, and complete interactive
+presentation remain outside the contract. Rank 438 `RNGversion` is now complete for zoo's repeated
+`suppressWarnings(RNGversion("3.5.0")); set.seed(1)` example setup, representing 731,390 downloads,
+17 measured calls, and 0.6% weighted reach. It selects Mersenne-Twister/Inversion/Rounding for R
+versions from 1.7 through 3.5, emits the historical Rounding warning, returns the prior kind vector
+invisibly, and restores Rejection for R 3.6 or newer. At that increment, the Wichmann-Hill/Marsaglia
+and Buggy Kinderman-Ramage defaults needed before R 1.7 failed explicitly rather than silently using
+the wrong generator; increments 186-187 below close those historical paths. Ranks 439 `window`, 440
+`as.ts`, 442 `frequency`, and 443 `ts` are now complete as one dependency-ordered regular
+time-series foundation, representing zoo's 731,390 downloads, respectively 14, 7, 6, and 5 measured
+calls, and 0.6% weighted reach. GNU R differential evidence covers vector/matrix construction,
+calendar coordinates, endpoint recycling, coercion, frequency lookup, regular windows, integral
+downsampling, extension with typed missing values, warnings, namespace access, and independently
+registered package methods. Zoo's own irregular index constructors and methods remain package-owned
+and are not claimed until an audited bundle fits the loader and supported runtime surface. Rank 444
+`legend` is now complete for zoo's 731,390 downloads, three measured calls, and 0.6% weighted reach.
+The browser-owned subset covers the observed bottom-left, bottom-right, and top-left line/point keys
+plus coordinate placement, recycled colors/styles, boxes, columns, titles, invisible geometry
+results, Worker transport, Canvas pixels, and display-list replay. General graphical `...`,
+fill/density legends, expression labels, exact device text metrics, and the complete base-graphics
+stack remain explicit boundaries. Rank 445 `comment` and its replacement form are now complete for
+zoo's two measured calls, representing 731,390 downloads and 0.6% weighted reach. The observed
+example attaches two character metadata lines to a classed series and reads them back without
+affecting default printing. Differential evidence also covers absent comments, missing values,
+`NULL`/empty removal, attribute preservation, `attr<-` validation, visibility, namespace access, and
+invalid replacements. Comments on closures, environments, and language objects await the future
+general attribute model. Rank 446 `cycle` is now complete for zoo's two measured calls, representing
+731,390 downloads and 0.6% weighted reach. The owned default derives observation numbers from
+validated regular `tsp` metadata for vectors and matrix rows, including calendar starts and
+fractional frequencies, while the S3 generic forwards lazy dots to independently supplied methods
+such as `cycle.zoo`. Zoo's irregular-series method, index storage, and package loading remain
+package-owned. Rank 447 `signif` is now complete for zoo's two measured calls, again representing
+731,390 downloads and 0.6% weighted reach. The observed maxima are rounded to two significant digits
+before sizing a primary/secondary plot axis. Differential evidence covers real and complex vectors,
+decimal ties-to-even, recycled and clamped 1–22 digit controls, missing and non-finite values,
+metadata retention, allocation limits, and direct/Math-group S3 methods. Exact identity for every
+platform decimal-to-binary boundary remains outside the claim. Rank 448 `axTicks` is now complete
+for zoo's measured secondary-axis tick lookup, representing 731,390 downloads, one measured call,
+and 0.6% weighted reach. The owned linear path derives horizontal or vertical ticks from
+`plot.window()` state, supports explicit `axp`, ascending and descending axes, coercible sides, lazy
+`usr`/`nintLog`, namespace access, and allocation limits. Logarithmic axes, `par("xaxp"/"yaxp")`,
+and complete `pretty` boundary identity remain explicit boundaries; a separate session-local `par()`
+subset covers common query/update/restoration patterns, and the later rank-215 `axis` increment
+supplies bounded linear drawing. Rank 449 `box` is now complete for zoo's measured plot-frame
+redraw, representing 731,390 downloads, one measured call, and 0.6% weighted reach. The owned
+plot-region path resolves all documented `bty` edge shapes, `col`/`fg`, line type, and positive
+width before a bounded event crosses the Worker boundary and reaches Canvas or same-session
+record/replay. Figure, inner, and outer regions require a future margin/layout model. Rank 450
+`boxplot` is now complete for zoo's measured grouped-series call, representing 731,390 downloads,
+one measured call, and 0.6% weighted reach. The owned S3/default path computes Tukey statistics for
+vector, list, and matrix groups and carries resolved boxes, whiskers, notches, and outliers through
+Worker/Canvas and same-session record/replay. Formula/data-frame methods, logarithmic axes,
+arbitrary `pars`, complete annotation/axes, and device-identical layout remain explicit boundaries.
+Rank 451 `deltat` is now complete for zoo's measured regular-series sampling-interval call,
+representing 731,390 downloads, one measured call, and 0.6% weighted reach. The generic forwards
+lazy dots to package methods such as `deltat.zoo`; its owned default returns one or the reciprocal
+of validated `tsp` frequency. Zoo's irregular-series inference and package methods remain
+package-owned. Rank 452 `embed` is now complete for zoo's measured lagged-window dependency,
+representing 731,390 downloads, one measured call, and 0.6% weighted reach. The owned path produces
+current-to-past column-major windows for supported vectors and multivariate matrices with
+source-type preservation, attribute removal, fractional-vector behavior, GNU R matrix coercions, and
+pre-allocation result limits. Factor vectors, data frames, expression vectors, raw/list matrices,
+and fractional nonempty-matrix dimensions remain explicit boundaries. Rank 453 `findInterval` is now
+complete for [zoo's](https://cran.r-project.org/web/packages/zoo/refman/zoo.html) measured
+irregular-Date rolling-window width expression, representing 731,390 downloads, one measured call,
+and 0.6% weighted reach. The owned
 [documented interval search](https://stat.ethz.ch/R-manual/R-devel/library/base/html/findInterval.html)
 uses bounded binary search with missing-query propagation, duplicate/infinite breakpoints,
 left/right closure and inside controls, numeric coercion, and sortedness validation. Unsafe
@@ -1295,7 +1297,8 @@ ties:
     documented missing/unused-level controls.
 66. Random-kind control: `RNGkind()` queries or selects session-local uniform, normal, and discrete
     generators with GNU R-compatible names, abbreviations, defaults, warnings, return visibility,
-    and fixed-seed evidence for the default independently implemented Mersenne-Twister engine.
+    and fixed-seed evidence for independently implemented Mersenne-Twister, historical, and
+    L'Ecuyer-CMRG engines, including exact parallel stream/substream jumps.
 67. Integer sampling: `sample.int()` implements default-size, replacement, swap-with-last,
     fixed-population hash, weighted, and large-population rejection paths; returns integer or double
     storage at the documented population boundary; and exposes the `.Machine` constants required by
@@ -1831,6 +1834,129 @@ ties:
      every export, P5-P7, and arbitrary packages remain unclaimed. Rank-50 BH 1.90.0-1 is the only
      remaining top-100 package with no non-core runtime dependency and `NeedsCompilation: no`, so it
      becomes the next untouched P0 holdout.
+178. Source-blind package generalization: unchanged BH 1.90.0-1 now reaches P3 after its official
+     metadata and GNU R resource shape were frozen. The reusable increment raises still-bounded
+     package admission to 16,384 files and 192 MiB, makes archive-limit errors reject promptly,
+     validates resources before Worker transfer, and resolves standard `exportPattern()`
+     declarations from loaded local namespace bindings. BH exposes 12,554 headers totaling
+     128,040,580 bytes and exports no R functions, so P4 is not applicable rather than claimed. This
+     exhausts eligible standalone candidates in the committed top-100 snapshot; the next
+     package-priority step must measure dependency closures, including explicit native/Wasm
+     blockers, rather than inventing a replacement holdout.
+179. Package-depth graphics closure: unchanged labeling 0.4.3 advances from P4 to P5 through
+     `extended.figures(2)`. The reusable increment adds GNU R-shaped shared-control handling for
+     `axis(xlab=)`, `barplot` category/numeric suppression through `xaxt`/`yaxt`, the ordered
+     72-entry `par()` inventory, the 66-entry mutable view, and read-only restoration warnings. The
+     figures path runs under an explicit 128 MB output bound because it emits many browser graphics
+     events. This is a package-depth proof, not complete graphical-parameter effects, package tests,
+     package check, or arbitrary-package compatibility.
+180. Usage-prioritized example depth: package-rank-6 R6 2.6.1 advances from P4 to P5 by executing
+     both official `R6Class` Rd example blocks unchanged through generic `utils::example()`. The
+     evidence pins the GNU R-observed invisible returned visibility record and all eight stdout
+     events. No R6 source, package adapter, or package-specific runtime branch is added; finalizers,
+     arbitrary inheritance breadth, P6 tests, P7 check behavior, and arbitrary packages remain
+     unclaimed.
+181. Generic P6 package-test depth: unchanged numDeriv 2016.8-1.1 advances from P4 to P6. The
+     packager can opt in to bounded `tests/**` retention and a versioned top-level test manifest;
+     normal artifacts still omit tests. All four Rd topics and all seven original package scripts
+     execute through the generic virtual filesystem and normalized-AST runtime. Reusable semantic
+     closure adds empty `NULL` subsetting, `diag<-`, browser-safe `Sys.info()`, exact complex
+     integer powers, and real/complex `asin`/`acos`/`atan`. The computationally large CSD test uses
+     explicit finite resource overrides. This is P6 evidence for one regression package, not P7,
+     universal package compatibility, or permission to weaken default browser limits.
+182. Generic P6 metaprogramming and array depth: unchanged abind 1.4-8 advances from P4 to P6 after
+     all five Rd topics and five original test scripts execute through the generic package runner.
+     Reusable closure covers language/expression entry operations, replacement-call introspection,
+     pairlist apply-family inputs, standard constants and `prod`, matrix/data-frame coercion, array
+     defaults, nested `NULL` replacement, and short-name padding. The largest array case uses an
+     explicit finite resource override. This does not claim automatic `.Rout.save` comparison, P7,
+     complete `R CMD check`, or arbitrary-package compatibility.
+183. Generic package-example and call-lifecycle depth: unchanged generics 0.1.4 advances from P4 to
+     P5 by executing all three applicable Rd topics. The withr `defer` path adds closure-valued
+     `as.call` heads, target-environment `do.call(on.exit, ...)`, function-scoped `local` cleanup,
+     and aligned `sys.calls`/`sys.frames`. It identified `reg.finalizer` as a reusable lifecycle
+     gap.
+184. Environment lifecycle and full withr topic traversal: reachability-based `reg.finalizer`,
+     reverse-order GC callbacks, session-exit callbacks, circular device navigation, timezone-cache
+     restoration, POSIXct formatting, NULL-aware `mapply`, and list-path `unlink` coercion let the
+     unchanged `defer` and other applicable topics complete. Withr remains P4 because its first P5
+     blocker is now `datasets::mtcars`; `datasets::iris` and pre-R-1.7 RNG engines are separately
+     mapped later gaps. No no-op finalizer or package-specific branch is counted as compatibility.
+185. Generic core-package data admission: provenance-audited `datasets` resources load through the
+     same `data/*.R` and CSV machinery used by source packages, populate an isolated static
+     namespace, and appear on the default search path. Exact GNU R differential evidence covers
+     `mtcars` types, dimensions, row names and namespace identity plus corrected `iris` values and
+     factor levels. Unchanged withr `with_par` and `with_tempfile` examples now pass; its first P5
+     blocker moves to the historical pre-R-1.7 RNG engines used by `with_rng_version`.
+186. Historical uniform RNG closure: independently implemented Wichmann-Hill and
+     Marsaglia-Multicarry recurrences, versioned seed initialization, warning order, and Rounding
+     sampling reproduce fixed-seed GNU R sequences. Unchanged withr `with_rng_version` now passes,
+     so all applicable withr Rd topics reach P5. At this increment, Buggy Kinderman-Ramage normal
+     draws remained an explicit reusable runtime gap; increment 187 closes it without delegating to
+     Inversion.
+187. Historical normal RNG closure: the independently reconstructed Buggy Kinderman-Ramage generator
+     preserves its legacy triangular coefficient and omitted near-zero density acceptance test.
+     Fixed-seed GNU R black-box sequences cover all five rejection regions and the complete pre-1.7
+     Marsaglia normal stream. Corrected Kinderman-Ramage and the remaining alternative normal
+     engines stay explicit boundaries. Withr's retained `testthat.R` driver establishes its first P6
+     blocker as the unavailable native-compilation testthat dependency; this is deferred to the
+     reusable native-package ABI rather than replaced with a package-specific shim.
+188. Corrected normal RNG closure: `normal.kind = "Kinderman-Ramage"` reuses the owned published
+     transform with the corrected triangular coefficient, restored near-zero density acceptance, and
+     negative-candidate rejection. Fixed-seed and targeted correction-region GNU R black-box cases
+     pass. Ahrens-Dieter, Box-Muller, and user-supplied normal engines remain explicit gaps.
+189. Download-ranked package example depth: package-rank-35 RColorBrewer 1.1-3 advances from P4 to
+     P5 by executing its sole installed Rd topic unchanged. The example closes reusable
+     `plot.default(bty=)` frame selection and GNU R's ASCII-space-insensitive named-color lookup;
+     invalid box types, tabs, and hyphenated color spellings remain strict errors. Package-rank-30
+     viridisLite's unchanged `viridis` topic is now executable evidence for its exact first P5
+     blocker, the unavailable external package `ggplot2`, rather than an inferred package status.
+190. Higher-ranked package metadata depth: package-rank-13 cpp11 0.5.5 drives a reusable
+     browser-owned `read.dcf()` implementation with record continuation, selected/missing fields,
+     duplicate-field `all = TRUE` data frames, whitespace controls, exact formals, and malformed
+     input failures. The unchanged `cpp_vendor` topic passes; `cpp_register` and `cpp_source`
+     deterministically stop at their declared missing R-package dependency closures. cpp11 remains
+     P4, and no compiler or package-specific bypass is introduced.
+191. Higher-ranked package example depth: package-rank-29 otel 0.2.0 advances from P4 to P5 by
+     executing all 45 frozen installed Rd topics unchanged. The example chain closes reusable
+     primitive `is.finite()` semantics, aligned owned-stack `sys.nframe()`, top-level environment
+     discovery through `topenv()`, and the locked reset-safe `.GlobalEnv` binding. No telemetry
+     exporter, network capability, package branch, or rewritten package source is introduced.
+192. Package condition and reflection depth: unchanged assertthat 0.2.1 advances from P4 to P5 by
+     executing all 11 frozen installed Rd topics, while praise 1.0.0 advances through its sole
+     topic. The failure chain closes reusable `is.primitive`, explicit-definition `match.call`,
+     unique-partial `all.equal` controls, class-preserving custom conditions, and browser-owned
+     `file.access` semantics. No assertion-package branch, host permission probe, or source rewrite
+     is introduced.
+193. Package formatting and time-unit depth: unchanged prettyunits 1.2.0 advances from P4 to P5 by
+     executing all eight frozen installed Rd topics. The failure chain closes reusable S3
+     `units`/`units<-` difftime rescaling, primitive `is.infinite`, and browser-owned `formatC`
+     controls. No prettyunits branch, host formatter, locale probe, or source rewrite is introduced.
+194. Package evaluation-lifecycle depth: unchanged evaluate 1.0.5 advances from P4 to P5 by
+     executing all six frozen installed Rd topics. Shared dynamic calling handlers, standard muffle
+     and named restarts, cooperative interrupt control, hook composition, source references,
+     recursive mixed-value `unlist`, expression-vector/data-frame behavior, sequence controls, and
+     recorded plots close the observed blockers. The example's system query uses a caller-supplied
+     generic host adapter; no evaluate branch, ambient process authority, or source rewrite is
+     introduced.
+195. Core-data and broad package-example depth: provenance-audited `InsectSprays` and `faithful`
+     enter the generic static `datasets` path, and unchanged rprojroot 2.1.1, rstudioapi 0.19.0,
+     rematch 2.0.0, whisker 0.4.1, zeallot 0.2.0, and ini 0.3.1 advance from P4 to P5 by executing
+     every runnable block in their exact frozen installed help manifests. No package branch,
+     rewritten source, ambient IDE authority, or host filesystem access is introduced.
+196. Recursive function and environment evidence: `body()` preserves symbol, atomic literal, NULL,
+     call, and block storage types at the AST boundary, while empty `formals()` is NULL. Oracle v2
+     traverses captured closure bindings, environment parents/cycles, nested attributes, language
+     structure, and shared reference identity. Seven exact cases are associated with 19 validated
+     behavioral registry bindings rather than inferred from callable-name overlap.
+197. Function reflection replacement: GNU R-shaped `body<-` and `formals<-` preserve closure
+     structure and explicit enclosures, while primitive `environment<-` supports closure, formula,
+     and ordinary attributed-object paths. Recursive exact evidence verifies the shared enclosure
+     graph instead of counting the three callable names alone.
+198. Dynamic closure construction: S3-aware `as.function()` and its default method construct
+     closures from named lists through the shared formal/body converters, preserve caller or
+     explicit enclosures, and retain lazy package-method dots. Recursive evidence observes the
+     constructed function and captured environment as one graph.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.
@@ -1870,3 +1996,1412 @@ manuals come from the [CRAN package repository](https://cran.r-project.org/web/p
 
 Refresh before a major roadmap revision and compare multiple snapshots before treating small rank
 changes as a trend.
+
+## Profile 0.309 package-driven priority check
+
+The usage tables remain the ecosystem-level ordering input, while source-blind packages test whether
+that ordering closes reusable semantic domains in practice. The `docopt 0.7.2` holdout exposed
+Reference Classes as its first blocker and subsequently exercised generic replacement,
+regular-expression, logical, substring, membership, and equality behavior. Those primitives were
+implemented and evidenced because they closed the unchanged package path, not to inflate callable
+counts. Untouched `getopt 1.21.1` is the next holdout; its first observed blocker will be compared
+with the measured feature priorities before the next implementation increment.
+
+## Profile 0.310 package-driven priority check
+
+The frozen `getopt 1.21.1` holdout first failed at `match(..., nomatch = NA_integer_)`, then exposed
+generic function negation, storage-mode replacement, and command-line discovery seams. Those shared
+contracts were implemented with black-box evidence and carry the unchanged package through all four
+applicable installed Rd examples at P5. The result adds package reach through semantic closure, not
+through callable-count inflation or a package-specific branch. `optparse 1.8.2` is now the untouched
+holdout whose first runtime blocker will be compared with the usage-ranked priorities.
+
+## Profile 0.311 package-driven priority check
+
+The frozen `optparse 1.8.2` holdout first failed at `exportClasses()`, then exposed reusable S4 slot
+and validity semantics, namespace-local replacement generics, and `cat(fill=)` output behavior.
+Those contracts carry the unchanged package through its representative GNU R-matched parser path and
+all four applicable installed Rd examples at P5. The committed top-100 snapshot remains the
+ecosystem-level priority input, but it has no untouched eligible standalone pure-R candidate;
+`argparser 0.7.3` is therefore admitted as an independently authored same-domain generalization
+probe rather than as a claim that command-line packages are the highest ecosystem-frequency group.
+
+## Profile 0.312 package-driven priority check
+
+The `argparser 0.7.3` generalization probe reaches its first public execution failure at
+`as.logical()` list coercion and later its installed examples require S4 `coerce` dispatch. Both
+features close reusable Base/methods domains and carry the unchanged package through P5; neither is
+a package-specific branch or callable-count exercise. To avoid repeatedly choosing a low-frequency
+same-domain parser after exhausting eligible top-100 candidates, the repository's frozen 2026-06-30
+through 2026-07-29 window was applied to an explicit independent pure-R shortlist. `iterators`
+records 304,194 downloads, ahead of the compared standalone candidates, and is admitted as the next
+untouched holdout. This shortlist comparison is a sequencing input, not a claim of a global rank
+across every CRAN package.
+
+## Profile 0.313 package-driven priority check
+
+The frozen `iterators 1.0.14` holdout first fails at a reusable S3 lookup rule rather than at an
+iterator-specific API. Its exact examples then expose browser-owned runtime text resources and
+`levels()`/`nlevels()`. Those contracts carry the unchanged package through all nine applicable
+examples at P5. With `iterators` now available, usage-ranked `foreach 1.5.2` is admitted next as a
+transitive dependency-closure probe: its imports require unchanged `iterators`, core `utils`, and
+untouched pure-R `codetools`. This prioritizes reusable package-system closure over isolated
+callable counts.
+
+## Profile 0.314 package-driven priority check
+
+The frozen `foreach 1.5.2` closure first fails at the missing `compiler` namespace and then exposes
+named language-call entries and `%*%`. All three blockers close reusable Base/package-runtime
+domains and carry the unchanged package through P5. The next holdout is `doParallel 1.0.17`, which
+records 172,058 downloads in the same frozen 2026-06-30 through 2026-07-29 cranlogs window and
+depends on the now-passing `foreach`/`iterators` stack plus core `parallel`. Selection is based on
+dependency-closure leverage and ecosystem frequency; it is not a claim that a parallel backend is
+already supported or that package-count growth establishes compatibility.
+
+## Profile 0.315 package-driven priority check
+
+`doParallel` first exposes core-package provisioning and then the semantic distinction between
+`Depends` attachment and namespace imports. Its representative and installed-example paths require
+both foreach-style single-lane mapping and PSOCK-shaped cluster calls, so the accepted work closes a
+reusable browser `parallel` domain rather than adding a doParallel branch. Among compared eligible
+pure-R follow-ups, `pbapply 1.7-4` records 121,725 downloads in the same frozen window and depends
+only on `parallel`; it is selected as an independently authored generalization probe. Higher-count
+`future`/`parallelly` paths are deferred because their required closure contains native code.
+
+## Profile 0.316 package-driven priority check
+
+`pbapply` exposed safe conditional NAMESPACE selection first, then reusable progress-state,
+`parLapply`, `crossprod`, vectorized `rnorm`, and model-frame gaps. Those primitives now have
+executable evidence. Its remaining first blocker is language/model reflection: `mod$call$formula`
+must retain or reconstruct a valid two-sided formula for reuse by `lm()`. That semantic domain
+outranks adding more isolated parallel names. `globals 0.19.1` is the next untouched
+frequency-backed pure-R holdout.
+
+## Profile 0.317 package-driven priority check
+
+`globals` converted a package load failure into reusable `R.version`, environment-name,
+language-length, class-removal, and nested data-frame-cell semantics. Its remaining installed
+example blocker is list-valued subscript normalization in conservative code traversal, so that
+language/subsetting seam outranks isolated callable additions. In the same frozen 2026-06-30 through
+2026-07-29 cranlogs window, dependency-free `listenv 1.0.0` records 304,016 downloads and is the
+next untouched pure-R holdout.
+
+## Profile 0.318 package-driven priority check
+
+`listenv` converted an ordinary-environment indexing failure into reusable primitive S3 dispatch
+across extraction, replacement, length, names, dimensions, and transposition. Its installed examples
+also closed small Base message and atomic-membership gaps. The unchanged package reaches P5, so the
+next independent priority probe is dependency-free pure-R `R.methodsS3 1.8.2`: its generic S3
+construction surface and broad reverse-dependency role provide more semantic leverage than another
+isolated callable.
+
+## Profile 0.319 package-driven priority check
+
+`R.methodsS3` converted an imported-lookup failure into reusable namespace lookup, self-namespace,
+qualified replacement, substitute, system-frame, startup-condition, and S3-registry semantics. The
+unchanged package reaches P5 across all installed examples. The next priority is `R.oo 1.27.1`, a
+pure-R dependency-closure probe with 183,372 downloads in the frozen comparison window; it provides
+more semantic leverage than adding unrelated API names.
+
+## Profile 0.320 package-driven priority check
+
+`R.oo` converted its conditional-NAMESPACE blocker and subsequent example failures into reusable
+namespace, S3, caller-frame, NULL Ops, metadata, string, attribute, delayed-binding, and
+serialization semantics. All 90 installed topics now pass at P5. The next priority is the already
+frozen, uninspected `R.utils 2.13.0` holdout, which exercises this dependency closure and provides a
+fresh first-blocker signal. Isolated callable-count growth and native ABI work remain lower
+priority.
+
+## Profile 0.321 package-driven priority check
+
+`R.utils` converted its first imported-graphics blocker and later example failures into reusable
+parser, virtual I/O, graphics, condition, source-reference, time-limit, digest, environment, and
+array-name semantics. The unchanged three-package closure reaches P5 without a package-name branch.
+The next priority probe is frozen pure-R `here 1.0.2`, selected before source inspection and backed
+by 196,779 downloads in the same comparison window; it independently reuses the already-P5
+`rprojroot` dependency. First-blocker semantic closure remains higher priority than callable-count
+growth or native ABI expansion.
+
+## Profile 0.322 package-driven priority check
+
+The frozen `here 1.0.2` probe reaches P5 without a new blocker, confirming that the existing package
+and filesystem substrate generalizes across another independently authored package. Because no
+semantic gap was exposed, this rotation adds no callable and does not alter the usage-ranked feature
+order. `R.matlab 3.7.0` is now the untouched P0 probe: it records 8,450 downloads in the frozen
+comparison window and composes the already-P5 `R.methodsS3`/`R.oo`/`R.utils` closure without a
+mandatory native dependency. Its archive metadata, size, and digest were frozen before source
+evaluation. `R.cache` was rejected because mandatory native `digest` would test Phase 3 rather than
+the current pure-R package path. First-blocker semantic closure remains higher priority than
+isolated callable-count growth or native ABI expansion.
+
+## Profile 0.323 package-driven priority check
+
+`R.matlab 3.7.0` converts its source-blind inert-Java packaging blocker and later namespace/runtime
+failures into reusable asset, re-export, load-hook, version-object, and S3-dispatch semantics. Its
+unchanged dependency closure reaches P5 with executable MAT v5 and installed-example evidence. The
+next priority is frozen dependency-free `combinat 0.0-8`, with 35,946 downloads in the shared
+comparison window. It was selected over lower-usage `matrixcalc`; candidates whose mandatory closure
+enters native `digest` or `base64enc` were rejected for this Phase 2 rotation. Its first
+source-blind blocker, not an isolated API name, will choose the next semantic increment.
+
+## Profile 0.324 package-driven priority check
+
+The `combinat 0.0-8` source-blind run validates first-blocker prioritization: three broadly useful
+Base primitives and a generic Rd parser correction were required before all six examples passed. No
+package-specific rewrite was needed. The next priority remains a metadata-frozen pure-R holdout
+whose first blocker closes another reusable semantic domain; callable-name growth and native ABI
+expansion remain secondary to that evidence.
+
+The replacement P0 probe is `matrixcalc 1.0-6`, the metadata-only alternative already ranked during
+the combinat selection. It remains unopened until the next source-blind attempt.
+
+## Profile 0.325 package-driven priority check
+
+The source-blind matrixcalc run validates the same first-blocker rule across a substantially broader
+semantic chain: one standards-compatible namespace-regex seam and reusable real linear-algebra
+operations close all 60 installed examples without package-specific code. The next priority is a new
+metadata-frozen pure-R holdout, chosen by usage and dependency admissibility before opening its
+archive. Callable-count growth, complex/full LAPACK work, and native-package ABI expansion remain
+secondary unless that independent blocker evidence promotes them.
+
+The replacement P0 probe is `Formula 1.2-6`, with 331,936 downloads in the shared comparison window.
+Higher-usage `clipr` was excluded because its product contract centers on a host clipboard, and
+`parallelly` was excluded by `NeedsCompilation: yes`. Formula depends only on R and core `stats`, so
+its independently observed first blocker can exercise the current browser-admissible pure-R phase.
+Its archive remains unopened at this selection checkpoint.
+
+## Profile 0.326 package-driven priority check
+
+The Formula source-blind run confirms that model-language closure had higher package reach than
+adding isolated callable names. Generic formula attributes/classes and call mutation, string
+function resolution, terms metadata, dot expansion, precomputed model-frame expression columns,
+formula equality, response helpers, and offsets carry unchanged Formula 1.2-6 through both exact
+installed examples to P5. The next priority is another independently frozen browser-admissible
+pure-R holdout or an existing explicit first blocker; callable-count growth and native ABI work do
+not outrank that evidence.
+
+## Profile 0.327 package-driven priority check
+
+The frozen unchanged `DBI 1.3.0` candidate now reaches P5 after reusable methods, S3/S4, Date/class,
+namespace-export, and row-name work carries every runnable block in its exact 58-topic installed
+manifest. The next priority is another independently frozen browser-admissible holdout or the
+highest-leverage explicit P6/P7 first blocker. Optional database backends, connectivity, native ABI
+work, and callable-count growth do not gain priority merely from DBI's interface-package result.
+
+That next holdout is frozen at P0 as `xtable 1.8-8`: 606,555 downloads, no native compilation or OS
+restriction, and only core `stats`, `utils`, and `methods` in its mandatory dependency closure. Its
+unopened archive identity is pinned before execution. The next semantic priority must be selected by
+xtable's first source-blind failure, not by its package name or anticipated rendering features.
+
+## Profile 0.330 package-driven priority check
+
+The frozen unchanged `xtable 1.8-8` candidate now reaches P5 after its sequential source-blind
+failures selected reusable data-frame, model, GLM, PCA, flat-table, and argument-matching semantics.
+Every runnable block in the exact eight-topic installed manifest passes without a package-identity
+branch. The next priority is either a newly and independently frozen browser-admissible holdout or
+the highest-leverage explicit P6/P7 first blocker. Callable-count growth and native ABI work do not
+outrank evidence for semantic closure during the pure-R phase.
+
+## Profile 0.331 package-driven priority check
+
+The recorded globals P4 blocker was reclassified after source-blind reproduction: GNU R does not
+accept list-valued subscripts here. The reusable fault sequence was core namespace leakage,
+top-level substitution, absent first-class language primitives, and missing primitive `NextMethod()`
+continuation. Closing those domains advances unchanged globals/codetools through all installed
+examples and raises the package to P5.
+
+The next known pure-R blocker with reusable reach is pbapply's LM call/formula reflection. It should
+be compared against any newly frozen metadata-only holdout before implementation. Package-specific
+branches, isolated callable growth, and native ABI expansion remain lower priority than the selected
+pure-R semantic closure.
+
+## Profile 0.332 package-driven priority check
+
+The recorded pbapply blocker expanded into a reusable semantic chain rather than an `lm`-only fix.
+Closing caller-frame evaluation, numeric/apply behavior, replacement/reflection state, data-resource
+ownership, table/array normalization, and data-frame summaries now makes all four installed topics
+pass unchanged. This promotes `pbapply 1.7-4` to P5 without recognizing the package identity.
+
+The next priority must be selected before source inspection from a frozen, usage-ranked pure-R
+holdout or an existing explicit P6/P7 first blocker. Callable-name overlap remains inventory, and
+native ABI work remains behind broad pure-R semantic and package-system closure.
+
+## Post-0.332 package-check priority
+
+The new identity-agnostic runner makes P7 measurable rather than equating successful test sourcing
+with package-check success. NumDeriv has no remaining applicable planned check and reaches P7.
+Abind's first saved-output comparison fails on printed names/dimnames, a reusable Base presentation
+contract with package-wide reach. That explicit blocker now competes with the next independently
+frozen pure-R holdout; package counts and native ABI work do not outrank either evidence source.
+
+## Profile 0.333 package-check priority result
+
+The reusable presentation, visibility, replacement-call, condition-stack, and batch-output work
+closes abind's recorded blocker and advances the unchanged release to P7. The next priority must now
+be selected independently from frozen usage/metadata or another already recorded blocker; neither
+numDeriv nor abind should be mined for additional work merely because they are familiar. Broad Base
+semantic closure and diverse P7 evidence continue to outrank native ABI expansion.
+
+## Post-0.333 metadata-frozen package priority
+
+The next source-blind rotation is frozen as `selectr 0.6-0` before any archive listing, extraction,
+parsing, installation, or execution. A refreshed official CRAN metadata comparison retains 3,384
+current packages with no native compilation or OS restriction and with mandatory dependencies
+limited to browser core or already-passing corpus packages. The shared 2026-06-30 through 2026-07-29
+cranlogs window excludes higher-count `clipr` because its declared purpose requires a host clipboard
+and excludes `remotes` because its declared purpose and system requirements require
+network/process-backed remote installation. `selectr` is the next purpose-admissible candidate at
+368,242 downloads; its only non-core mandatory dependency is the already-passing `R6`.
+
+The unopened 85,422-byte archive is pinned by source SHA-256
+`b877dfd9cc8b7d9afda1be9e45dfafc942e14b4279a430e5f8f75325c05eddd9`. Its first source-blind failure,
+rather than anticipated CSS or package-specific behavior, must choose the next reusable semantic
+increment.
+
+## Profile 0.334 package-driven priority result
+
+The frozen unchanged `selectr 0.6-0` run first stops in the generic `regexec()`/`regmatches()`
+capture path: GNU R represents an unmatched optional group by a `0/0` location that extracts as an
+empty string. Closing that contract, including exact ASCII index metadata, advances the package
+through both installed example topics. The generic check runner also accepts only the specific
+missing-package warning produced by a guarded probe for an edge declared in `Suggests`; unrelated
+warnings still fail.
+
+Selectr reaches P5 without a package-identity production branch. Its explicit P6 first blocker is
+the unavailable `testthat` suggested dependency required by retained `test-all.R`. That dependency
+closure now competes with the next independently frozen holdout; it is not silently skipped and does
+not justify premature native-ABI work.
+
+## Post-0.334 metadata-frozen package priority
+
+`timeDate 4052.112` is the next independently frozen P0 holdout at 321,191 downloads in the fixed
+comparison window. Official metadata declares `NeedsCompilation: no`, no OS restriction, and only R
+plus core methods, graphics, utils, and stats in the mandatory closure; RUnit is optional. The
+unopened 367,313-byte archive is pinned by SHA-256
+`7f5b8e294f9fdf977cb721e711a6fcd664e379ee1b0ddb4c733374940e0e4646`. No source content has been
+listed or inspected, and its first observed blocker must determine the next semantic priority.
+
+## Profile 0.335 package-driven priority result
+
+The blind first blocker was `graphics::axis.POSIXct`; the subsequent ordered chain exposed XDR
+`S4SXP`, `.POSIXct`, `setReplaceMethod`, inherited `setGeneric` defaults, `callGeneric`, numeric
+`pretty`, date-label generics, and `getDataPart`. Closing those reusable seams advances unchanged
+`timeDate 4052.112` to P4 without a package-name branch. The next priority is not another isolated
+callable: first reconcile S4 class/method documentation aliases, then close the highest-frequency
+shared S4 primitive/operator and POSIX gaps visible across its remaining installed examples.
+
+## Profile 0.336 package-driven priority result
+
+The documentation alias seam is closed generically, followed by reusable S4 primitive operator and
+subset dispatch and S3 forwarding for `as.double`/`as.numeric`, `sort`, and `diff`. This moves the
+unchanged `timeDate 4052.112` package's ordered example frontier through `c`, `diff`, and
+`difftimeDate` without package-specific production code.
+
+The next priority is Base R `round.POSIXt` (and the shared POSIX rounding/truncation primitives it
+depends on), because `example:round` is now the first executable blocker. Native-package ABI work
+remains deferred behind this pure-R semantic closure.
+
+## Profile 0.337 package-driven priority result
+
+The former POSIX rounding blocker is closed with reusable UTC/GMT calendar semantics. Subsequent
+source-blind progression exposed and closed S4 identity loss in internal subsetting, missing S3
+`range` forwarding, and omitted prototype-slot completion in `new()`. The unchanged timeDate package
+now reaches `example:align`; its unused-argument mismatch is the next ordered semantic priority.
+Native-package ABI work remains behind this pure-R package frontier.
+
+## Profile 0.338 package-driven priority result
+
+The former `align` blocker decomposed into reusable `seq` forwarding, S4 named-dot positioning,
+`pmatch`, forwarded-default presence, POSIXlt parsing/formatting, callable replacement, and
+observation-level `[<-.POSIXlt`. The same source-blind run then exposed and closed method dispatch
+gaps in `is.na`, `unique`, and `duplicated`, followed by `julian.POSIXt`. This advances unchanged
+`timeDate 4052.112` past `align`, `isBizday`, and `nDay` without a package-name production branch.
+
+The next priority is the generic sequence direction/step behavior exposed by `example:periods`.
+Native-package ABI work remains deferred behind this pure-R semantic frontier.
+
+## Profile 0.339 package-driven priority result
+
+The former `periods` blocker decomposed into reusable S3/S4 length dispatch, recursive element
+lengths, POSIXlt short-component recycling, the Base `.leap.seconds` object, logical-missing POSIXlt
+conversion, and `...length`/`...elt`. The unchanged `timeDate 4052.112` package now passes that
+ordered example and independently reproduces GNU R's 86 `periods` and 86 `monthlyRolling` windows.
+
+The next priority is generic `base::asplit` array-margin slicing, exposed by
+`example:timeDate-class`. Native-package ABI work remains deferred behind this reusable pure-R
+semantic frontier.
+
+## Profile 0.340 package-driven priority result
+
+The former `timeDate-class`, `plot-methods`, and `holiday` blockers decomposed into reusable
+`asplit`, empty-result `apply` typing, S4 graphics dispatch, measured axis styles, non-vector
+`names`, and recursive `all.names`. The unchanged `timeDate 4052.112` package now passes all three
+ordered topics without a package-specific production branch.
+
+The next priority is generic object-system closure for the non-S4 `@` path exposed by
+`example:in_int`. Native-package ABI work remains deferred behind this pure-R semantic frontier.
+
+## Profile 0.341 package-driven priority result
+
+The ordered unchanged timeDate frontier selected four reusable foundations: S4 constructor
+initialization with `callNextMethod`, registered S4 `names` replacement, `seq.int` by-plus-length
+controls, and the Base `is.na<-` subscript contract. These close multiple object-system, sequence,
+and replacement gaps rather than adding isolated package callables. The package's new first blocker
+is POSIXlt validation in `example:timeCeiling`; that explicit semantic gap outranks unrelated API
+name additions for the next package-driven increment.
+
+## Profile 0.342 package-driven priority result
+
+The former `timeCeiling` and `timeSequence` blockers selected reusable `[.POSIXlt` extraction,
+balanced-state invalidation/normalization, and `%b`/`%B`/`%h` parsing. Those changes carry the
+unchanged package from P4 to P7 rather than merely adding isolated names. With no remaining timeDate
+blocker, the next priority must come from a newly frozen metadata-first holdout or a higher
+ledger-wide semantic closure gap; API-name overlap alone remains non-authoritative.
+
+## Profile 0.343 package-driven priority result
+
+The frozen `carData 3.0-6` candidate exposed four reusable layers in order: an installed
+package-data environment for `LazyData`, build-time xz normalization, independent byte/vector
+resource accounting, and factor contrast attributes/generators. These changes carry an unchanged
+data package through all applicable checks at P7 and also close foundations used by model-oriented
+packages. No package name, version, or data-set identity is recognized in production code.
+
+The next priority is not another isolated callable. Freeze the next purpose-admissible metadata-only
+candidate or select a recurring blocker across the 47-release corpus, then implement the smallest
+general semantic closure. `.rdx`/`.rdb`, aliases and nonmatching data archives, ordered/sparse
+contrasts, and broader package dependency closure remain higher-value frontiers than API-name count.
+
+## Profile 0.344 package-driven priority result
+
+The metadata-first `rex 1.2.2` rotation selected a reusable language-object invariant rather than a
+regex callable: arbitrary values stored as a call's first entry must survive generic decomposition
+and reconstruction without character-to-symbol promotion. Closing that invariant advances the
+unchanged package through every installed example at P5 and strengthens metaprogramming for other
+packages.
+
+The new ordered blocker is reusable dependency/test closure: retained `testthat.R` requires the
+suggested `testthat` package. That blocker recurs elsewhere in the corpus, but it does not by itself
+justify premature package-specific shims or native/Wasm expansion. The next increment should compare
+this cross-corpus dependency frontier with the next independently frozen browser-admissible holdout,
+then choose the smallest general closure with executable evidence.
+
+## Profile 0.345 package-driven priority result
+
+Unchanged brew reaches P5 without selecting any new callable or semantic exception. That is useful
+negative evidence: the current parser, language evaluation, connections, capture, regex, namespace,
+and virtual-file foundations already cover the package's complete installed examples and an
+independent template/parser probe. Adding code merely to make the profile look larger would reduce
+reuse discipline rather than improve compatibility.
+
+The retained test produces a third recurring `testthat` dependency blocker, but current testthat's
+compiled closure remains downstream of mature pure-R foundations. The next active priority is the
+metadata-frozen `shape 1.4.6.1` source-blind run; its first concrete failure, if any, outranks
+isolated callable-name growth.
+
+## Profile 0.346 package-driven priority result
+
+Shape's ordered failures selected a reusable graphics seam rather than isolated name coverage:
+browser device creation, arrows, physical aspect-ratio windows, axis expansion styles, polygon
+controls, and Base matrix binding with `NULL` accumulators. The bind closure clears six installed
+shape example failures and generalizes the common `out <- rbind(out, block)` pure-R pattern.
+
+The current first blocker, `datasets::volcano`, is provenance-constrained by clean-room policy and
+must not be closed by copying GNU R data. Until an admissible independent source is audited,
+reusable `filled.contour`, argument matching, and vignette lookup gaps remain valid parallel
+priorities. `corrplot 0.95` is frozen as the next untouched source-blind holdout.
+
+## Profile 0.347 package-driven priority result
+
+Shape's remaining generic argument failure was not an argument matcher defect: unchanged code
+required `sort.default(..., index.return = TRUE)$ix`. Closing indexed sorting advances the complete
+`filledellipse` example and strengthens a common ordering primitive for unrelated packages. Fixing
+the package-check generator's canonical vignette `File` lookup also closes the installed shape
+vignette without runtime or package identity branching.
+
+Neither result outranks the existing `datasets::volcano` first blocker or advances shape beyond P4.
+Until exact clean-room-compatible data provenance is available, the next priority should come from
+the frozen `corrplot 0.95` source-blind first failure or the reusable `graphics::filled.contour`
+surface, not from isolated callable-name growth.
+
+## Profile 0.348 package-driven priority result
+
+The corrplot source-blind rotation selected two high-reuse invariants in order. Exact actual names
+must remove only their selected formal from later partial matching, allowing an otherwise ambiguous
+short name to select a remaining formal or fall through dots. Numeric data frames and matrices must
+then flow through Pearson `cor`/`cov` with matrix shape and column labels intact. Both closures
+apply well beyond visualization packages.
+
+Corrplot now stops at `stats::hclust`, not another color or drawing helper. The next increment
+should close a coherent distance, hierarchical-clustering, dendrogram-conversion, and leaf-order
+path with recursive evidence. The replacement source-blind holdout is metadata-frozen
+`insight 1.5.2`; it must remain unopened until scheduled.
+
+## Profile 0.349 package-driven priority result
+
+The corrplot first blocker closed the full distance-to-dendrogram path with direct and recursive
+evidence. Its next failure selected `which(..., arr.ind = TRUE)`, a Base array-coordinate primitive
+used well beyond plotting. Both choices satisfy the rule that package work must close reusable
+semantic domains instead of adding names or recognizing a package.
+
+The ordered corrplot blocker is now `graphics::symbols` while rendering `example:corrMatOrder`. That
+bounded browser graphics primitive is the next development candidate. The untouched `insight 1.5.2`
+holdout must remain unopened until scheduled, and isolated callable-count growth must not displace
+the observed blocker.
+
+## Profile 0.350 package-driven priority result
+
+The corrplot-selected symbol layer is now a reusable browser polygon primitive, and the secondary
+multi-key `order` failure is closed with exact recursive evidence. The unchanged package can render
+its default correlation plot, demonstrating package reach rather than callable-name growth.
+
+The ordered first blocker is now `stats::cutree` in `example:corrMatOrder`. The next increment
+should implement tree cutting over the owned `hclust` structure with GNU-shaped membership and label
+behavior, then rerun the complete source-blind topic. `insight 1.5.2` must remain unopened until
+scheduled, and native/Wasm work remains downstream of broad pure-R closure.
+
+## Profile 0.351 package-driven priority result
+
+The corrplot-selected `cutree` gap is closed as a general merge-tree operation with exact recursive
+evidence. This advances a complete example topic rather than increasing callable-name counts.
+
+The ordered first blocker is now deterministic symmetric-eigenvector orientation in
+`example:corrRect`. The next increment should measure the GNU R 4.6.1 orientation contract across a
+held-out symmetric-matrix set, define tolerances for eigenspaces and exact requirements for
+sign-sensitive consumers, and improve the reusable eigensolver without recognizing corrplot or
+mtcars. `insight 1.5.2` must remain unopened until scheduled.
+
+## Profile 0.352 package-driven priority result
+
+The corrplot-selected symmetric-eigen gap is closed through a source-reproducible numerical backend
+rather than a package or dataset branch. The following fractional-sequence gap is also closed as a
+general Base rule. These changes advance complete installed example topics and add exact recursive
+evidence instead of increasing callable-name counts.
+
+The ordered first blocker is now the remaining `graphics::symbols` parameter surface reached by
+`example:corrplot`, reported as `invalid symbol parameter`. The next increment should isolate the
+unsupported shape or normalization path, implement it as a reusable browser graphics primitive, and
+rerun the unchanged topic. `insight 1.5.2` must remain unopened until scheduled, and the native
+package ABI remains downstream of broad pure-R closure.
+
+## Profile 0.353 package-driven priority result
+
+All corrplot examples now pass through reusable Pearson-test, data-frame, and graphics semantics,
+advancing the package to P5. The change is measured by complete example-topic execution and a new
+recursive differential graph, not by callable-name growth.
+
+The ordered first blocker is the suggested `testthat` dependency at `test:testthat.R`. The next
+increment should resolve the pinned testthat dependency closure through the generic repository,
+installation, namespace, and evaluator pipeline, then implement the first concrete reusable semantic
+gap it exposes. No corrplot-specific test bypass is permitted. The unopened holdout and Phase 3
+native-package ABI remain downstream of broader pure-R closure.
+
+## Profile 0.354 package-driven priority result
+
+All applicable unchanged insight examples now pass, advancing the package from P3 to P5. The work
+closed reusable Base/model/RNG/data seams and is measured by complete example-topic execution plus
+new flat and recursive differential evidence, not callable-name counts.
+
+The ordered first blocker is `test:testthat.R`, where suggested dependency `testthat` is absent. The
+next priority is generic dependency-closure planning for testthat and its native requirements, or
+another scheduled development-package rotation if that closure belongs to the later native ABI
+phase. `GPArotation` remains unopened, and package-specific test bypasses are forbidden.
+
+## Profile 0.355 package-driven priority result
+
+The scheduled GPArotation rotation selected four reusable foundations: browser grid lines, bounded
+scalar roots, covariance-to-correlation normalization, and transposed cross-products. The package
+now reaches P3 unchanged. Its first example is a deliberate 100-random-start numerical workload and
+hits the standard allocation budget before completion.
+
+The next priority is evidence-driven resource/algorithm efficiency for that workload or the next
+scheduled pure-R rotation; the resource gate must not be bypassed per package. Testthat/native
+dependency closure remains a later cross-package signal rather than an excuse for package-specific
+rewrites.
+
+## Profile 0.356 package-driven priority result
+
+The first GPArotation workload selected reusable Base naming, array margin application,
+maximum-likelihood factor analysis, loadings extraction, and programmatic callback-call semantics.
+Those closures complete `example:CCAI` and advance the unchanged artifact to P4; callable-name
+growth is not the success criterion.
+
+The next measured blocker is the later `example:GPA` multi-rotation workload at the bounded
+100,000,000-step ceiling. Priority should remain on reusable numerical efficiency and semantic
+closure, with formula/scores/control gaps in `factanal` kept explicit. No GPArotation-specific fast
+path or package rewrite is permitted.
+
+## Profile 0.360 package-driven priority result
+
+The scheduled palmerpenguins rotation shows why package depth outranks a green installation result.
+The applicable generic package-check plan passed, while an independent LazyData scenario exposed the
+namespace-consistency gap at the commonly used `as_tibble` generic and then a Base Date coercion
+gap. Closing those reusable surfaces carries the unchanged pinned artifact to P7 without adding a
+package-specific branch.
+
+The next priority input must be either an existing recorded P5/P6 dependency or test blocker, or a
+new source-blind holdout selected from frozen usage/dependency metadata. A replacement holdout must
+be recorded at P0 with its unopened source digest before inspection. Callable-name growth and native
+ABI work do not displace these evidence sources.
+
+## Post-0.360 metadata-frozen package priority
+
+The replacement source-blind holdout is `polynom 1.4-1`, selected before source inspection from a
+complete current-CRAN admissibility filter and the fixed 2026-07-12 through 2026-08-10 download
+window. It records 126,371 downloads and imports only core `stats` and `graphics`. Higher-count
+candidates whose declared purpose fundamentally requires an operating-system clipboard, remote
+package management, project-library/lockfile management, or Git credentials remain host-bound rather
+than being mistaken for browser-admissible pure-R probes.
+
+The archive digest and metadata are frozen at P0. Its first scheduled source-blind failure—not an
+anticipated polynomial feature or isolated callable name—must select the next reusable semantic or
+package-system increment.
+
+## Profile 0.361 package-driven priority result
+
+The unchanged `polynom 1.4-1` run reached P7 after a chain of reusable blockers: Stats generic and
+basis behavior, implicit S3 group registration/context, `NextMethod()` state, callable operators,
+Summary dispatch, list distinctness, and general real eigendecomposition. This validates the
+selection policy: one source-blind package forced several cross-package primitives rather than a
+package-specific rewrite.
+
+The next priority is not an isolated callable inferred from polynom. The holdout partition must
+first receive a new metadata-frozen candidate, after which its observed first blocker competes with
+the nine existing blocked corpus entries. `stats::deriv.default`, multivariate `poly`, broader
+numerical conditioning, test/dependency closure, and package namespace/object-system gaps remain
+eligible only when measured evidence selects them.
+
+## Profile 0.362 package-driven priority result
+
+The frozen estimability holdout selected shared model semantics rather than isolated callable
+counts. Closing lazy NA actions, visible QR/model reconstruction, rank-deficient prediction,
+stored-call formula updates, and reusable factor contrasts carried the unchanged package to P7 and
+also strengthened Base/stats consumers outside that package.
+
+The next package-driven priority requires another metadata-first holdout selection. Its first
+ordered blocker must compete with the nine existing blocked corpus entries; native-package ABI work
+remains later than broad pure-R semantic and package-test closure.
+
+## Profile 0.363 package-driven priority result
+
+The opened `formatR 1.14` holdout selected shared parser/deparse, language-object, regex,
+substitution, condition-handler, and comparison semantics. It reaches P5, while width-sensitive
+deparse layout remains its first ordered blocker. That blocker retains priority over isolated API
+name additions because it closes a reusable source-language domain and is backed by unchanged
+package tests.
+
+## Profile 0.366 package-driven priority result
+
+The lambda.r frame-reflection blocker is closed through reusable evaluator, parse-data,
+missing-name, and model NA-policy semantics, carrying the unchanged pinned package to P7 with flat
+and recursive GNU differential evidence. This does not establish arbitrary pure-R package support.
+
+The next source-blind candidate is metadata-frozen `SQUAREM 2026.1`, selected from 3,334 admissible
+current releases after the recorded host-service exclusions. Its unopened source digest and size are
+pinned at P0. The scheduled unchanged run and its first concrete reusable blocker now outrank
+isolated callable-name growth; native testthat closure and the provenance-gated `volcano` resource
+remain explicit later-phase or external-provenance constraints.
+
+## Profile 0.367 package-driven priority result
+
+SQUAREM's first blockers formed a coherent reusable chain rather than a package-specific patch:
+recursive `modifyList()` configuration, paired Box-Muller normals, forwarding `qr()` dots to the
+default method, and `solve.qr` dispatch. Those changes carry every applicable unchanged example and
+retained test plus an independent fixed-point scenario to P7.
+
+The next priority input requires a newly metadata-frozen holdout or a higher-leverage existing
+non-native blocker. Acceptance of `LAPACK = TRUE` is deliberately bounded and does not establish
+column-pivot identity; broader QR conditioning remains eligible when differential/package evidence
+selects it. Native testthat closures remain downstream of mature Phase 2 evidence.
+
+## Profile 0.368 package-driven priority result
+
+The metadata-first ranking selected `snow 0.4-4` after excluding higher-ranked host-service
+packages. Its first unchanged failure was a reusable Base coercion gap in namespace initialization:
+an empty environment variable incorrectly produced a warning when converted to integer. Closing
+empty/whitespace and character-`NaN` warning semantics carried the complete applicable package check
+and an independent in-memory cluster protocol scenario to P7.
+
+This result does not elevate process launch or external SOCK/MPI transports into the browser
+contract. The next increment must again begin with a metadata-frozen source-blind candidate or a
+higher-leverage existing semantic blocker, not callable-name growth.
+
+## Profile 0.369 package-driven priority result
+
+The metadata-first ranking selected untouched `futile.options 1.0.1`. Its first independently
+authored source-blind scenario found that `UseMethod()` and `NextMethod()` discarded an invisible
+method result. Closing visibility propagation in the generic evaluator carries the unchanged package
+and its OptionsManager scenario to P7 without a package-specific rewrite.
+
+The holdout partition is empty again. The next increment must freeze a new purpose-admissible
+candidate before source inspection or select a higher-leverage blocker already recorded in the
+corpus. Native-package ABI work remains downstream of broader pure-R semantic closure.
+
+## Profile 0.370 package-driven priority result
+
+The fixed 2026-07-14 through 2026-08-12 metadata and usage window selected untouched
+`futile.logger 1.4.9` at 118,068 downloads after the recorded host-service exclusions. Its ordered
+unchanged failures selected four reusable gaps: character conditions, numeric factor ordering in
+`split()`, environment formatting, and `tryCatch()` handler-list evaluation. Closing them carries
+the unchanged artifact, its transitive pure-R dependencies, complete applicable checks, and an
+independent logger scenario to P7.
+
+The holdout partition is empty again. The next increment must freeze another purpose-admissible
+candidate before source inspection or select a higher-leverage recorded semantic blocker. Native
+package ABI work remains downstream of broader pure-R semantic closure.
+
+## Profile 0.420 semantic-evidence result
+
+Before opening the next holdout, the evidence audit selected reusable discrepancies in matrix-tail
+controls and formals, time-series attribute order, S4 data-part generic promotion, formal matrix
+representation, and binary bind dispatch. Those discrepancies are now closed with exact flat and
+recursive evidence and no package-specific branch. The corpus remains 96 pinned artifacts: 81
+passing, 14 blocked, and unopened `pls` 2.9-0 as the sole holdout at P0. Its next run must remain
+source-blind and follow the first package-neutral blocker. Native-package ABI work remains
+downstream of mature pure-R semantic and package-system evidence.
+
+## Profile 0.419 package-driven priority result
+
+Unchanged timeSeries 4052.112 selected reusable smoothing, S4 vector/generic fallback,
+aggregate/filter/product, core-data, year-day parsing, and POSIX sequence work and now reaches
+scoped P7. Metadata-first ranking in the unchanged 2026-07-22 through 2026-08-20 window selects
+unopened pls 2.9-0 next at 25,918 downloads after the recorded host-service, project-management,
+credential, font/static-data, native-header, scaffolding, and documentation-asset exclusions.
+Continue with its first unchanged generic blocker rather than isolated callable count growth.
+
+## Profile 0.418 package-driven priority result
+
+The scheduled unchanged NLP 0.3-3 run selected reusable gaps in actual argument counting, builtin
+generic call frames, explicit date and time parsing, DCF output, and character sequence endpoints.
+Closing those shared contracts carries the package through all applicable generic checks and an
+independent GNU-matched scenario to P7 without package-specific rewriting or branching.
+
+The fixed 2026-07-22 through 2026-08-20 metadata and usage window selects unopened timeSeries
+4052.112 next at 25,290 downloads after recorded host, package-management, credential, font,
+static-data, header, scaffolding, and documentation exclusions. Continue from its first unchanged
+generic blocker; native-package ABI work remains downstream of broader pure-R semantic closure.
+
+## Profile 0.417 priority outcome
+
+The scheduled proto 1.0.0 run selected three ordered reusable gaps: environment-reference deparsing,
+`base::eapply`, and loss of the target expression across S3 subset dispatch. The implementation
+closes those shared environment, callback, promise, and call-syntax contracts rather than adding a
+proto-specific branch. Exact flat and recursive evidence accompanies each increment.
+
+The fixed 2026-07-22 through 2026-08-20 ranking next selects purpose-admissible NLP 0.3-3 at 26,367
+downloads after documented exclusions for host services, project/package managers, static assets and
+datasets, native headers, scaffolding, and documentation tooling. Its metadata and unopened archive
+digest are frozen before any source listing or evaluation. The next increment must follow NLP's
+first unchanged reusable blocker.
+
+## Profile 0.416 priority outcome
+
+The scheduled ica 1.0-3 run selected missing exponential and Student-t density bindings in order.
+Both reusable stats contracts now have exact GNU evidence and carry the unchanged package to P7
+without source rewriting or package recognition. The observed signed-zero, warning-call, and
+attribute-order differences were retained rather than normalized away.
+
+The fixed ranking next selects purpose-admissible proto 1.0.0 at 27,390 downloads after the
+documented host-service, static-resource, native-header, scaffolding, documentation-tool, data-only,
+and target-version deferrals. Its unopened 541,398-byte archive is the sole P0 holdout. Its first
+source-blind blocker determines the next reusable increment; native ABI work remains downstream of
+broader pure-R semantic closure.
+
+## Profile 0.415 priority outcome
+
+The scheduled RUnit 0.4.33.1 run first selected direct `all.equal.numeric`, then methods generic
+introspection. Both reusable contracts now have exact GNU evidence and carry the unchanged package
+to P7 without source rewriting or package recognition.
+
+The fixed ranking next selects purpose-admissible ica 1.0-3 at 27,832 downloads after the documented
+host-service, static-resource, header/scaffolding, documentation-tool, target-version, and data-only
+exclusions. Its unopened 12,825-byte archive is the sole P0 holdout.
+
+## Profile 0.414 priority outcome
+
+The scheduled dichromat 2.0-1 examples identify serialized `loess` prediction as the first reusable
+blocker. A browser-native local-polynomial method now closes that path and gains independent GNU
+numeric evidence. Broader exact kd-tree interpolation remains prioritized separately rather than
+being inferred from package execution.
+
+The fixed ranking next selects purpose-admissible RUnit 0.4.33.1 at 25,985 downloads, after
+excluding the documented host-service, static-resource, native-header, scaffolding,
+documentation-tool, data-only, and target-version candidates. Its unopened archive is the sole P0
+holdout.
+
+## Profile 0.413 priority outcome
+
+The scheduled RSpincalc 1.0.2 run turns a package example failure into a reusable semantic priority:
+three-dimensional rotation arrays require `apply(X, 3, FUN)` to pass each complementary 3-by-3
+matrix to `FUN`. NativR now supports arbitrary array rank and ordered multi-axis margins with GNU
+shape and dimname evidence. The unchanged package reaches scoped P7 without package-specific logic.
+
+The fixed 2026-07-22 through 2026-08-20 ranking next selects purpose-admissible dichromat 2.0-1 at
+26,939 downloads after the documented host-service, static-resource, native-header, scaffolding,
+documentation-tool, data-only, and target-version exclusions. Its unopened digest-pinned archive is
+the sole P0 holdout. Native ABI work remains downstream of broader pure-R semantic closure.
+
+## Profile 0.411 priority outcome
+
+The frozen pixmap holdout selected reusable S4 coercion-target, inherited initialization, slot
+access/replacement, and image aspect-window contracts. Its embedded GNU R batch-session transcript
+also selected a generic evidence rule: a version/platform-bound reference is explicitly not
+applicable, while the corresponding retained test must still pass. The unchanged artifact and an
+independent image-object scenario now reach scoped P7.
+
+Metadata-first ranking over the fixed 2026-07-22 through 2026-08-20 window selects unopened moments
+0.14.1 at 30,170 downloads after the documented host-service, asset/header, documentation-time,
+target-version, and static-data exclusions. Its 7,640-byte official archive is frozen at P0 with
+SHA-256 `2ed2b84802da132ae0cf826a65de5bfa85042b82e086be844002fe1ce270d864`. No archive member or
+source content has been listed or read.
+
+## Profile 0.412 priority outcome
+
+The frozen moments holdout passes unchanged through every applicable generic package-check step and
+an independent scenario spanning all 12 exports. It exposes no reusable semantic or package-system
+blocker. The small high-order floating tails are explicitly bounded by nine-decimal comparison and
+are not used to justify package-specific arithmetic.
+
+Metadata-first ranking over the fixed 2026-07-22 through 2026-08-20 window selects unopened
+RSpincalc 1.0.2 at 28,766 downloads after the documented host-service, asset/header,
+documentation-time, target-version, and static-data exclusions. Its 16,542-byte official archive is
+frozen at P0 with SHA-256 `fa8c867ba4d0b393982e671a5872ae097214270ab2ffbb8262ebfe15bee3d225`. No
+archive member or source content has been listed or read.
+
+## Profile 0.410 priority outcome
+
+The frozen dynamicTreeCut holdout selected reusable one-dimensional table sort/subset metadata and
+Base `charmatch()` as its ordered blockers. Closing those contracts carried the unchanged artifact,
+all applicable generic checks, and an independent all-export scenario to scoped P7. This outcome
+raises reusable package reach; it is not evidence that clustering semantics or arbitrary package
+installation are complete.
+
+Metadata-first ranking replenishes the holdout partition with unopened pixmap 0.4-14 at 31,237
+downloads. Its browser-core graphics dependency closure makes it a useful probe of reusable S4,
+graphics, data-resource, and package-lifecycle semantics. The next increment must preserve its P0
+source-blind boundary until scheduled rotation and stop at the first concrete generic blocker.
+Native-package ABI work remains downstream of broader pure-R semantic closure.
+
+## Profile 0.404 package-driven priority result
+
+The fixed 2026-07-22 through 2026-08-20 ranking selected untouched rbenchmark 1.0.1 at 39,477
+downloads. Its ordered source-blind failure selected the reusable language/expression-vector
+`mapply` contract. The unchanged artifact now reaches P4 and passes a bounded independent benchmark;
+its intentionally high-workload installed example hits the browser package-test step limit, which is
+retained as the explicit P5 resource blocker. The next candidate, untouched ca 0.71.1 at 39,260
+downloads, is frozen at P0 before source inspection. Its scheduled run must follow its first shared
+blocker without package-specific behavior.
+
+## Profile 0.403 package-driven priority result
+
+The fixed 2026-07-22 through 2026-08-20 ranking selected untouched GlobalOptions 0.1.4 at 44,676
+downloads. Its ordered failures selected reusable utils completion/settings behavior and Reference
+Class superclass dispatch rather than option-package-specific code. Closing those contracts carries
+the unchanged artifact and all applicable checks to P7. The next increment should freeze another
+metadata-first holdout or select a higher-reach recorded blocker such as the existing
+`stats::arima0` gap. Native-package ABI work remains downstream of broader pure-R closure.
+
+## Profile 0.402 package-driven priority result
+
+The metadata-frozen ellipse 0.5.0 run selected reusable central chi-square and F quantile semantics
+before reaching `stats::arima0` in its first installed example. Ellipse remains P4. The arima0
+contract now competes with a new metadata-first holdout and other recorded semantic blockers by
+reusable reach; it must not be approximated with a package-specific ellipse fixture. Native test
+framework closures remain downstream of the Phase 2 foundation.
+
+## Profile 0.401 priority update
+
+The synchronized S4/model-environment omission blocker is closed through shared frame, model, NA
+dispatch, and generic-promotion contracts. Unchanged modeltools 0.2-24 reaches scoped P7. The next
+priority is the remaining corpus blocker with the greatest reusable semantic or dependency-closure
+reach; package-specific branches and premature native-ABI work remain out of scope for this phase.
+
+## Profile 0.400 package-driven priority result
+
+Callable contrast and direct multi-response QR gaps are closed at shared stats/model layers. This
+moves modeltools from the final example blocker into its retained regression test. The next
+highest-leverage measured gap is synchronized missing-row omission across S4 model-environment
+components: 90 design rows versus 100 response rows immediately before `lm.fit()`. That data/object
+interaction takes priority over isolated callable-count work.
+
+## Profile 0.399 package-driven priority result
+
+The unchanged `modeltools 0.2-24` sequence selected call-object `$<-`, model-frame subset
+evaluation, top-level S4 generic promotion, and explicit superclass queries as the reusable
+blockers. Closing those contracts completes `example:MEapply`. The next measured blocker is callable
+contrast generators supplied through `model.matrix(..., contrasts.arg=)`, reached by
+`example:ModelEnvFormula`. This remains higher priority than isolated callable-count work because it
+is a standard model-interface extension point used by pure-R packages.
+
+## Profile 0.398 package-driven priority result
+
+The fixed 2026-07-22 through 2026-08-20 metadata/cranlogs window ranked `modeltools 0.2-24` as the
+next purpose-admissible candidate after excluding host clipboard, remote installation, project
+library, credential, static-font, native-header, and scaffolding packages. Its source-blind run
+selected cleanup-only packaging, `stats4` dependency registration, S4 prototype defaults, and the
+`logLik` generic as reusable foundations. The next measured blocker is the package-neutral S4 `$`
+path reached by `example:MEapply`; the provenance-gated `volcano` blocker remains open in parallel.
+
+## Profile 0.397 package-driven priority result
+
+The numeric matrix/data-frame `pairs` path removes retained expressions 24 and 25 without a package
+identity branch. The unchanged `gridGraphics 0.5-1` run now selects `datasets::volcano` at
+expression 26. The next priority is to locate and audit an independent lawful source for the exact
+topographic matrix, record its dimensions, storage, values, checksum, and identity semantics, then
+rerun the frozen artifact. Do not source the asset from GNU R or a GPL package data file.
+
+## Profile 0.395 package-driven priority result
+
+The unchanged `gridGraphics 0.5-1` test selected reusable grid polygon, segment, line, and point
+grob families plus primitive `recordPlot()` descriptors. Those contracts now carry the artifact
+through demo1, demo2, and demo3. The next highest-leverage blocker is generic lowering of composite
+boxplot journal events into ordered GNU-compatible primitive operations. Native ABI work remains
+downstream of broader pure-R semantic closure.
+
+## Profile 0.396 package-driven priority result
+
+Generic ordered boxplot lowering removes the unchanged `gridGraphics 0.5-1` expression-20 blocker
+and carries its retained test through expression 23. Expression 24 now selects the next reusable
+semantic domain: `pairs.default` scatterplot layout, lazy panel callbacks, axes, and primitive
+recorded operations. This shared graphics slice is the next package-first priority; native ABI work
+remains downstream of broader pure-R semantic closure.
+
+## Profile 0.428 package-driven priority result
+
+The first unchanged `gsubfn` run selected generic lifecycle-hook documentation classification. After
+that reusable fix, the artifact reaches P4. The next ordered priority is independently sourced
+browser-owned `datasets::BOD`, exposed by `example:fn`; later example failures remain behind it in
+the first-blocker ledger.
+
+## Profile 0.427 package-driven priority result
+
+Source-blind execution of the frozen `gridBase` 0.4-7 artifact selected four ordered reusable
+domains: viewport transform and current extent, graphical-parameter defaults and inheritance,
+rectangle grobs and drawing, and base graphics layout-cell selection. Implementing those shared
+contracts carries both installed example topics, the vignette, the complete applicable check plan,
+and a separate all-export scenario to P7 without package-specific behavior.
+
+The next unopened holdout is `gsubfn` 0.7 at 22,594 downloads in the same fixed usage window, after
+the established browser-purpose exclusions. Its official archive is frozen from metadata only and
+must remain unopened until the scheduled source-blind run. The next increment must follow its first
+reusable semantic or package-infrastructure blocker; native package ABI work remains downstream of
+broader pure-R semantic closure.
+
+## Profile 0.393 package-driven priority result
+
+The unchanged `gridGraphics 0.5-1` retained test selected two reusable gaps in order. The standard
+runner now provides an isolated writable package-test copy, and grid now provides retained viewport
+tree navigation plus justification normalization. These close the former filesystem, `upViewport`,
+justification, and `downViewport` failures without package-specific behavior.
+
+The next highest-leverage blocker is the recorded-graphics contract: `recordPlot()` journal entries
+must preserve GNU-compatible operation provenance, named `C_*` descriptors, and argument shapes so
+generic display-list consumers can dispatch them. Native package ABI work remains downstream of
+broader pure-R semantic closure.
+
+## Profile 0.392 next package-driven priority
+
+The shared `grDevices::pdf.options` contract closes the unchanged `gridGraphics 0.5-1` expression 16
+blocker. The retained runner now selects expression 17's first reusable host gap: package tests need
+a writable, isolated browser-memory working directory so relative generated PDF/PNG paths are
+admissible without writing into the installed artifact. Implement that generic package-check
+sandbox, rerun the unchanged test plan, and retain the next observed blocker. Do not recognize
+`gridGraphics`, special-case its filenames, or mark P6 before every retained test passes.
+
+## Profile 0.391 next package-driven priority
+
+The shared grid grob lifecycle closes both `makeContent` and its symmetric `makeContext` generic,
+advancing unchanged `gridGraphics 0.5-1` through all applicable examples at P5. The ordered generic
+check runner now selects `grDevices::pdf.options` in retained test `demo-graphics.R` expression 16.
+The next increment should implement GNU-compatible PDF device default option query/update/reset
+state and its interaction with `pdf()`, then rerun the unchanged test. It must not bypass the test
+or recognize `gridGraphics`.
+
+## Profile 0.390 next package-driven priority
+
+The frozen unchanged `gridGraphics 0.5-1` run has closed its reusable `grDevices::contourLines`
+blocker with exact flat and recursive black-box evidence. The artifact remains P1 because namespace
+loading now stops at `grid::makeContent`. The next increment should implement the generic grob
+content lifecycle—together with dispatch, mutation, and child-content contracts exposed by black-box
+evidence—rather than recognize `gridGraphics` or bypass its namespace imports.
+
+## Profile 0.374 package-driven priority result
+
+The fixed 2026-07-14 through 2026-08-12 metadata and usage window selected untouched `pracma 2.4.6`
+at 80,335 downloads. Its ordered unchanged failures selected reusable numerical and model semantics
+rather than callable-count work: optimization, interpolation, probability, complex/QR/Cholesky
+algebra, matrix model terms, exact pi trigonometry, and GNU array/vector Ops. Closing those gaps
+carries the unchanged artifact, all applicable generic checks, and an independent four-function
+numerical scenario to P7. Optional `NlcOptim` and `quadprog` paths remain explicitly not-applicable
+without those declared Suggests.
+
+The holdout partition is empty again. The next increment must freeze another purpose-admissible
+candidate before source inspection or select a higher-leverage recorded semantic blocker. Native
+package ABI work remains downstream of broader pure-R semantic closure.
+
+## Profile 0.409 package-first result and next priority
+
+Unchanged vipor 0.4.7 selected four reusable foundations in order: grouped `split<-` replacement,
+`plot.default(las=)` validation, standard ASCII native-encoding aliases for installed package data,
+and the `stats::ave` namespace export revealed by an independent all-export scenario. With those
+shared contracts, all applicable checks and both vignettes pass and the pinned artifact reaches
+scoped P7.
+
+The fixed-window metadata ranking now selects unopened dynamicTreeCut 1.63-1 at 33,315 downloads as
+the next P0 holdout. Its official archive is pinned before inspection. The next semantic priority
+will be its first unchanged generic failure, if any; callable-name expansion remains subordinate to
+that measured package blocker and recursive semantic closure.
+
+## Profile 0.408 package-driven priority result
+
+The fixed 2026-07-22 through 2026-08-20 usage window selected untouched corpcor 1.6.10 at 34,052
+downloads. Its ordered unchanged failure exposed the reusable wide-matrix SVD allocation strategy,
+not a missing isolated callable. Choosing the smaller Gram matrix closes the blocker and carries all
+13 examples plus an independent all-export scenario to scoped P7 without relaxing resource limits.
+
+Metadata-only ranking now selects untouched vipor 0.4.7 at 33,579 downloads as the next
+browser-purpose-admissible candidate. Its only mandatory imports are core stats and graphics. The
+official archive is frozen before listing or inspection; its first scheduled failure must select a
+reusable semantic or package-system contract. Native-package ABI work remains downstream of broader
+pure-R semantic closure.
+
+## Post-0.373 package-driven priority
+
+The fixed 2026-07-14 through 2026-08-12 metadata and usage window selects untouched `pracma 2.4.6`
+at 80,335 downloads after the established host-service exclusions and deferral of two static
+font-asset packages. It is pure R and imports only core graphics, grDevices, stats, and utils,
+making its numerical-analysis surface a broad browser-admissible semantic target. The unopened
+official source archive is pinned at P0 before listing, extraction, parsing, installation, or
+execution. Its first scheduled failure must drive reusable runtime or package infrastructure rather
+than package-specific behavior.
+
+## Post-0.372 package-driven priority
+
+The fixed 2026-07-14 through 2026-08-12 metadata and usage window selects untouched `bigD 0.3.1` at
+82,656 downloads after the established host-service exclusions and deferral of two static font-asset
+packages. Its date, time-zone, locale, parsing, and formatting focus provides a broad
+browser-admissible semantic target. The unopened official source archive is pinned at P0 before
+listing, extraction, parsing, installation, or execution. Its first scheduled failure must drive
+reusable runtime or package infrastructure rather than package-specific behavior.
+
+## Profile 0.373 package-driven priority result
+
+The fixed 2026-07-14 through 2026-08-12 metadata and usage window selected untouched `bigD 0.3.1` at
+82,656 downloads. Its ordered unchanged failures selected reusable bounded package-resource
+handling, separate reviewed serialization-input limits, and browser-safe null external-pointer
+semantics. Closing them carries the unchanged artifact, all applicable generic checks, and an
+independent date/locale scenario to P7. The optional `testthat` launcher and absent vignette surface
+remain explicitly not-applicable rather than counted as passing.
+
+The holdout partition is empty again. The next increment must freeze another purpose-admissible
+candidate before source inspection or select a higher-leverage recorded semantic blocker. Native
+package ABI work remains downstream of broader pure-R semantic closure.
+
+## Post-0.371 package-driven priority
+
+The fixed 2026-07-14 through 2026-08-12 metadata and usage window selects untouched `permute 0.9-10`
+at 82,685 downloads after the recorded host-service and static-asset exclusions. Its unopened
+official source archive is pinned at P0 before listing, extraction, parsing, installation, or
+execution. The scheduled run must follow the first reusable semantic or package infrastructure
+blocker rather than add package-specific behavior.
+
+## Profile 0.371 package-driven priority result
+
+The fixed 2026-07-14 through 2026-08-12 metadata and usage window selected untouched
+`tinytest 1.4.3` at 85,045 downloads after the recorded host-service and static-asset exclusions.
+Its ordered unchanged failures selected reusable gaps in argument matching, dynamic frames,
+runtime-owned parsing/connections, factor and table semantics, PCRE replacement, core datasets, and
+condition signaling. Closing them carries the unchanged artifact, all applicable generic checks, and
+its retained 159-test self-test to P7.
+
+The holdout partition is empty again. The next increment must freeze another purpose-admissible
+candidate before source inspection or select a higher-leverage recorded semantic blocker. Native
+package ABI work remains downstream of broader pure-R semantic closure.
+
+## Profile 0.372 package-driven priority result
+
+The fixed 2026-07-14 through 2026-08-12 metadata and usage window selected untouched
+`permute 0.9-10` at 82,685 downloads. Its ordered unchanged failures selected reusable gaps in exact
+extraction, symbol conversion, log-factorials, nested update frames, condition restarts, classed
+cumulative values, formula graphics, group reconstruction, and formula t-tests. Closing them carries
+the unchanged artifact, all applicable generic checks, and an independent permutation-control
+scenario to P7. The optional `testthat` launcher remains explicitly not-applicable without that
+suggested dependency.
+
+The holdout partition is empty again. The next increment must freeze another purpose-admissible
+candidate before source inspection or select a higher-leverage recorded semantic blocker. Native
+package ABI work remains downstream of broader pure-R semantic closure.
+
+## Profile 0.426 package-driven priority result
+
+The fixed 2026-07-22 through 2026-08-20 metadata and usage window selected untouched `formula.tools`
+1.7.1 at 24,221 downloads. Ordered unchanged execution exposed package-neutral gaps in search-path
+introspection, expression replacement, formula terms metadata, symbol coercion, and language
+deparsing. Closing them carries the unchanged artifact, every applicable generic check, and an
+independently authored all-export scenario to P7. Its optional `testthat` launcher and absent
+vignette surface remain explicitly not applicable rather than counted as passing.
+
+The next unopened holdout is `gridBase` 0.4-7 at 23,103 downloads. Its official archive is frozen
+from metadata only and must remain unopened until the scheduled source-blind run. The next increment
+must follow its first reusable semantic or package-infrastructure blocker; native package ABI work
+remains downstream of broader pure-R semantic closure.
+
+## Profile 0.429 package-driven priority result
+
+Ordered unchanged `gsubfn` execution selected reusable work in core data, grouped aggregation,
+formula language, graphics type geometry, conjugate-gradient optimization, and repetition-count
+coercion. Closing those contracts moves the first blocker from `datasets::BOD` through six installed
+example topics to the unresolved Suggested `chron` dependency in `example:list`.
+
+The next priority decision is package-system-wide: define how browser-admissible Suggested packages
+are selected, resolved, bundled, and reported without installing every Suggests edge or creating
+package-specific rules. Native ABI work remains downstream of broader pure-R semantic and package
+closure.
+
+## Profile 0.430 package-driven priority result
+
+The package-system decision is now executable: callers may request an explicit declared Suggests
+subset, and lock format v2 records the normalized none/all/selected policy. Unchanged `gsubfn` with
+selected `chron` proves that resolution reaches the concrete optional artifact and then stops at its
+native-code contract; default installation stays mandatory-only.
+
+The same blocker sequence selected two reusable Base R fixes: GNU-compatible `isOpen(rw=)` selection
+and inherited lookup that skips same-named values of the wrong requested mode. The first makes
+`read.pattern` pass, while the second closes additional `strapply` paths. Continue semantic closure
+from an independently reproducible browser-applicable blocker; do not implement a package-specific
+`chron` substitute or start native ABI work ahead of the mature pure-R foundation.
+
+The next usage-ranked source-blind probe is unopened `tinytable 0.18.0` at 21,458 downloads in the
+fixed 2026-07-27 through 2026-08-25 window. Its mandatory surface is R plus browser-core `methods`,
+and its declared table-conversion behavior supplies an executable semantic probe. Freeze it at P0,
+then let the unchanged generic package-check path identify the next reusable blocker; optional
+document/image integrations must be classified at their concrete Suggested or host boundary.
+
+## Profile 0.431 package-driven priority result
+
+The frozen `tinytable` probe selected two high-leverage runtime closures—S4 slot replacement for
+`NULL` class unions and lazy `...names()`—and one package-system closure: example/test applicability
+must understand both standard optional metadata categories, `Suggests` and `Enhances`. The package
+now reaches regression P7 through unchanged source and an independently authored GNU-matched
+scenario. This validates the priority method: package blockers become shared semantics rather than
+package-specific shims.
+
+The holdout partition is empty after promotion. The next increment should repeat the complete
+metadata-first, usage-ranked rotation with a fresh fixed window, freeze the selected archive before
+inspection, and follow its first browser-admissible reusable blocker. Native-package work remains
+downstream of broader pure-R semantic and corpus maturity.
+
+## Profile 0.489 priority outcome
+
+The VennDiagram holdout selected matrix-valued data-frame binding and graphics annotations rather
+than another isolated callable. Both are shared semantic domains with recursive GNU evidence, and
+the unchanged artifact now reaches scoped P7. The next package-driven priority is metadata-frozen
+`httpcode 0.3.0`; it reaches scoped P7 after selecting source-preserving `stopifnot` diagnostics as
+its only shared gap. The next package-driven priority is metadata-frozen `shades 1.5.0`. Complete
+plotmath glyph layout, broader data-frame binding shapes, and the remaining blocked regression
+corpus remain explicit competing semantic priorities.
+
+## Profile 0.490 priority outcome
+
+The source-blind shades holdout selected shared colour-converter objects, custom XYZ routing, the
+non-callable `colorspaces` namespace binding, HSV conversion, and structural attribute semantics
+instead of isolated callable-count work. Those reusable contracts carry the unchanged artifact to
+scoped P7 with recursive GNU evidence. The next package-driven priority is metadata-frozen, unopened
+`relimp 1.0-5`; its first execution must determine the next reusable semantic blocker. Broader
+colour spaces, the 15 blocked corpus releases, and still-unevidenced semantic domains remain
+competing priorities rather than being hidden by the successful holdout.
+
+## Profile 0.491 priority outcome
+
+The unchanged relimp holdout required no new compatibility branch or isolated callable. Its generic
+success strengthens evidence that the existing model, namespace, package-check, and expression
+semantics compose across independently selected code. The next package-driven priority is the
+metadata-frozen, unopened `codetools 0.2-20` archive. Static analysis of R language objects is a
+high-leverage probe of calls, expressions, closures, traversal, scoping, and namespace behavior; its
+first unchanged execution must select any next reusable blocker.
+
+## Profile 0.492 priority outcome
+
+The codetools rotation selected a compact but high-leverage language-reflection closure rather than
+package-specific API work: missing-formal identity, syntax-object lookup, escape continuations,
+zero-argument control-flow call entries, symbol output, call-head canonicalization, and exact
+`bquote()` call matching. The unchanged package now reaches scoped P7 through the ordinary pipeline.
+
+The next package-driven increment must be selected anew from the frozen usage ranking and declared
+browser-purpose policy. The 15 explicit corpus blockers and still-unclosed Base R semantic domains
+remain eligible higher-leverage work; codetools success does not justify callable-count expansion or
+an arbitrary-package claim.
+
+## Profile 0.493 priority outcome
+
+The fixed-window ranking selects `stinepack 1.5` as the highest-ranked remaining executable package
+after excluding host services, remote/project package managers, static assets, native headers,
+profilers, and scaffolding. The source-blind run passes the complete applicable generic pipeline and
+independent GNU R interpolation probes without identifying a new semantic gap. This validates
+composition across an unseen numerical package and avoids manufacturing isolated callable work.
+
+The replacement holdout is unopened `qvcalc 1.0.4`, selected from the same fixed window at 14,811
+downloads after excluding model-ecosystem integration, parallel-host execution, and handbook/asset
+surfaces ahead of it. Its first run should probe reusable factor-model, covariance, S3 object, and
+printing semantics. The 15 explicit blockers, including `stats::arima0`, core-data provenance, and
+broader dependency closures, remain competing priorities.
+
+## Profile 0.494 priority outcome
+
+The qvcalc rotation selected shared model semantics rather than package exports. GNU R black-box
+evidence established that `vcov.lm()` rematches `complete` at the method and ignores unrelated lazy
+dots. Package-neutral custom-family evidence then required callback execution for links, variance,
+deviance, AIC, initialization, validation, residuals, Pearson dispersion, fixed dispersion, and
+response prediction. Those seams now carry the unchanged artifact to scoped P7.
+
+The next priority remains whichever newly frozen holdout or explicit corpus blocker closes the most
+recursive browser-admissible behavior. Matrix-response custom-family initialization and mutation of
+`y`, `weights`, or `n` remain explicit model gaps; native-package blockers stay deferred to the
+common ABI phase rather than receiving per-package workarounds.
+
+## Profile 0.495 priority outcome
+
+The aod rotation selected shared model and S4 closure rather than isolated exports: residual-row
+restoration, formal slot reflection, family-aware GLM covariance, formula normalization, factor
+refactoring, and generic optional-dependency diagnostics. The unchanged artifact now reaches scoped
+P7 through the standard package pipeline.
+
+The next source-blind priority is `trust 0.1-9`, chosen from the fixed-window ranking after applying
+the established browser-purpose exclusions. Its derivative-driven trust-region optimizer is a
+high-leverage probe of closures, repeated callbacks, numerical linear algebra, convergence state,
+conditions, and model-like result structures. No implementation work should begin until public
+metadata and independent GNU R expectations are frozen.
+
+## Profile 0.496 priority outcome
+
+The trust rotation selected two high-leverage stats foundations rather than package exports.
+`glm.fit` exposes the reusable matrix-level IRLS seam used by older pure-R statistical packages,
+while `D` supplies evaluable normalized-language derivatives without generated JavaScript. Their
+combined closure carries every applicable unchanged trust example, retained test, and vignette
+through the standard package pipeline.
+
+The next priority is not an isolated derivative-table expansion by default. Select the next
+source-blind holdout or highest-reach recorded blocker first, then implement the smallest reusable
+semantic closure it proves necessary. Complete `deriv.default`, additional derivative functions, and
+exotic direct-GLM initialization remain explicit candidates rather than silently claimed coverage.
+
+## Profile 0.497 priority outcome
+
+The fixed-window rotation selected `itertools 0.1-3` after excluding host-service, asset-only,
+native-header, profiling, package-management, model-ecosystem-dominated, and true-host-parallel
+surfaces. Its source-blind run selected L'Ecuyer-CMRG rather than another isolated iterator helper:
+the same generator and exact stream/substream jumps support reproducible parallel workflows across
+unrelated packages.
+
+The unchanged artifact now passes the complete applicable generic plan and an independent iterator
+scenario. The next priority should be chosen from the next unopened purpose-admissible package or a
+higher-reach recorded blocker; callable-count growth and unmeasured RNG variants remain secondary.
+
+## Profile 0.498 priority outcome
+
+The fixed-window rotation selected `optimParallel 1.0-3` because its mandatory closure isolates two
+high-reach foundations: core parallel state semantics and bounded optimization. Ordered unchanged
+execution selected persistent browser cluster environments first and public L-BFGS-B routing second;
+neither implementation recognizes the package. The unchanged artifact now passes the full applicable
+plan plus an independent scenario.
+
+The next priority must again be selected from a metadata-frozen source-blind holdout or a
+higher-reach explicit ledger blocker. True CPU parallelism is not automatically next: browser-safe
+semantic closure and package reach remain the decision criteria.
+
+## Profile 0.499 priority outcome
+
+The refreshed fixed-window rotation selected `tictoc 1.2.1` as the next purpose-admissible
+executable package after excluding host services, asset/header packages, profiling, scaffolding,
+documentation-only surfaces, and optional-model-dominated integrations. Its ordinary package check
+passed, while the independently authored scenario selected the reusable `as.vector` S3 seam.
+
+This result reinforces why package counts and installed examples are insufficient: generic S3
+conversion of a classed environment was missing even though the package appeared green. The next
+priority must again come from a pre-frozen holdout or a higher-reach explicit first blocker, with an
+independent scenario retained as a required gate.
+
+## Profile 0.500 priority outcome
+
+The refreshed metadata-only rotation selected `dfoptim 2023.1.0` after excluding host-service,
+package-management, credential, asset/header, profiling, scaffolding, and data-only candidates. Its
+package-owned checks passed; an independent all-export scenario selected the higher-reach discrete
+RNG-state seam because a correct sample result can still leave an incompatible future stream.
+
+The shared fix restores reproducible repeated sampling and randomized optimizer trajectories. The
+next priority must again be selected before source inspection from a purpose-admissible holdout or a
+higher-reach recorded blocker; adding isolated optimizer names is not the default priority.
+
+## Profile 0.501 priority outcome
+
+The metadata-first rotation selected `DFBA 0.1.0`. Its ordered failures first justified reusable
+beta/logistic/Weibull distribution contracts, then exposed a broader runtime cost: repeated indexed
+updates to one unaliased local vector copied the complete growing value. The package-neutral owner
+proof and bounded growth path has higher package reach than increasing a package-test budget or
+recognizing DFBA.
+
+DFBA now reaches scoped P7. The next priority remains a metadata-frozen holdout or an explicit
+high-reach blocker; callable-name growth and package counts remain secondary to recursive semantic
+closure and unchanged-package evidence.
+
+## Profile 0.502 priority outcome
+
+The frozen `lm.beta 1.7-3` run selected list-backed environment enclosure rather than another model
+callable. A list supplied through positional lookup must not inherit ambient functions, even when
+`inherits = TRUE`; by contrast, an eval/with data mask retains its explicit enclosing environment.
+This distinction has broader metaprogramming and package reach than a package-specific weights
+workaround.
+
+The unchanged artifact now reaches scoped P7. The next priority must again come from a
+metadata-frozen holdout or a higher-reach recorded blocker, with independent behavior retained as a
+gate after package-owned examples pass.
+
+## Profile 0.503 priority outcome
+
+Usage-ranked source-blind evaluation selected `alabama` and exposed `stats::nlminb` before any
+package source guided implementation. The chosen increment closes a reusable bounded optimizer and
+shared `optim` control/line-search domain, unblocking future constrained-optimization packages
+rather than adding isolated package API names.
+
+## Profile 0.507 priority outcome
+
+The complete package regression, rather than callable-name growth, selected source reconstruction
+and dots-position S3 dispatch. One parse-data omission and one leading-`NULL` bind duplication
+blocked the high-reach lambda.r → futile.logger → VennDiagram chain. Fixing the parser/runtime/Base
+contracts restored all three unchanged checks without package-specific logic, validating explicit
+first blockers as the priority signal for the next corpus failures.
+
+## Profile 0.509 priority outcome
+
+The recorded ellipse blocker selected a reusable regular/seasonal ARIMA fitter rather than a
+package-specific result. Its unchanged execution then exposed shared core-data and NLS model-frame,
+summary, and profile seams. After those repairs, the first blocker is no longer a core semantic
+name: it is the optional MASS dependency that owns `profile.glm`. Future work should compare that
+dependency closure against other corpus blockers by package reach and phase fit.
+
+## Profile 0.510 priority outcome
+
+One audited core dataset closed two independent package blockers. Profile 0.511 completes the nearer
+depth-ordered `persp(col=)` primitive and advances unchanged `shape` to `graphics::filled.contour`.
+Generic filled contours and conditional plotting for `gridGraphics` are now the respective ordered
+gaps; both require broader reusable panel/layout and annotation contracts.
+
+## Profile 0.511 priority outcome
+
+The package-first graphics slice now admits colored perspective facets through the shared polygon
+journal. `shape` advances from `example:drapecol` to `example:femmecol`, selecting
+`graphics::filled.contour` as its next reusable blocker. `gridGraphics` remains independently pinned
+at `graphics::coplot`; dependency-only and later native-ABI blockers do not displace these explicit
+Phase 1/2 semantic gaps.
+
+## Profile 0.518 priority outcome
+
+The recorded `gridGraphics` blocker selected a reusable numeric single-condition `graphics::coplot`
+slice rather than an isolated API-name addition. The unchanged package now exposes
+`datasets::quakes` as the ordered first blocker. That dataset is high leverage only if its exact
+subsample has independent redistribution provenance and can be delivered lazily without inflating
+the initial Worker; otherwise rotate to another recorded semantic gate while keeping this provenance
+boundary explicit.
+
+## Profile 0.519 priority outcome
+
+The rbenchmark resource blocker exposed three reusable foundations rather than a package-specific
+exception: bounded bulk `:` accounting, Math-group data-frame dispatch, and deferred bulk RNG seed
+publication. Closing those contracts moves an unchanged, dependency-free source-blind package
+through its full installed example and P7 while retaining browser resource guards. This is higher
+leverage than raising `maxSteps` or skipping the benchmark example, because the same vector, S3,
+data-frame, and RNG paths recur across the broader package corpus.
+
+## Profile 0.520 priority outcome
+
+The fixed-window metadata rotation selected dependency-free `invgamma 1.2`. Ordered unchanged
+execution exposed exponential p/q namespace closure, then non-central chi-square d/q/r semantics,
+then bulk gamma-family RNG cost. The resulting primitives serve unrelated statistical packages and
+close a coherent distribution domain rather than adding package-owned names. The next increment must
+again come from a frozen source-blind holdout or a higher-reach explicit blocker.
+
+## Profile 0.521 priority outcome
+
+The next metadata-frozen holdout, dependency-free `entropy 1.3.2`, selected the missing
+`stats::chisq.test` contract through its unchanged `Gstat` example. Implementing Pearson tests,
+table provenance, residual structure, warnings, and formals at the shared stats layer closes a
+reusable inference domain used beyond this package. The unchanged artifact then passes all
+applicable checks and an independent multi-family scenario at scoped P7. The next increment must be
+selected from a newly frozen holdout or a higher-reach recorded blocker.
+
+## Profile 0.522 priority outcome
+
+The recorded simulated-p-value subdomain was the highest-leverage reusable semantic gap after the
+remaining package blockers resolved to provenance, Suggested-dependency closure, or native-code
+boundaries. The resulting AS 159 fixed-margin sampler and categorical goodness-of-fit path close a
+general Monte Carlo inference primitive with exact random-stream evidence. Future work should return
+to a newly frozen source-blind holdout or a higher-reach concrete blocker; adding isolated low-use
+names solely to increase inventory overlap remains lower priority.
+
+## Next source-blind rotation: profileModel 0.6.2 P0
+
+The fixed 2026-07-31 through 2026-08-29 metadata ranking retained 3,366 eligible releases outside
+the 134-release corpus. After the established browser-purpose exclusions for host services,
+installers, credentials, static assets and datasets, development headers, scaffolding, project
+libraries, profiling, and documentation-only delivery, `profileModel 0.6.2` is the next executable
+statistical candidate at 10,803 downloads. It has no mandatory non-core package dependency; `MASS`
+and `gnm` are Suggested only.
+
+Before archive inspection, the official 21,461-byte source was frozen outside Dropbox at SHA-256
+`a2b0b9af8b5ebe9bd732f1f6663f171929c0831f77c260b5aa9a126a12cf2ac1`. The holdout remains P0 and
+unevaluated. Its next action is the ordered generic install/load/check run, with the first
+failure—not package source familiarity—selecting the next reusable semantic increment.
+
+## Profile 0.523 priority outcome
+
+The frozen `profileModel 0.6.2` run selected three recursive, reusable gaps in order: missing
+argument positions inside formula language, canonical matched-call retention for `glm()`, and
+formula offsets that were represented in model frames but not applied to fitting. All three now have
+GNU R black-box differential and integration evidence. The unchanged artifact passes every
+applicable generic package-check step and an independent profile-likelihood scenario, so it moves to
+development P7. This is scoped evidence for one pinned artifact, not a package-count completion
+claim.
+
+## aplpack 1.3.5 platform-boundary outcome
+
+After `profileModel 0.6.2` reached scoped P7, the refreshed fixed 2026-07-31 through 2026-08-29
+window contains 3,365 metadata-eligible releases outside the 135-package corpus. Established purpose
+exclusions remove host clipboard, remote package/project management, credentials, static fonts and
+datasets, documentation/web assets, native headers, scaffolding, and profiling. The native-ecosystem
+support package `bigmemory.sri` and mandatory-`tcltk` `misc3d` are also excluded.
+
+`aplpack 1.3.5` was the next executable candidate at 10,770 downloads. Its official metadata lists
+`tcltk` only under Suggests, so the archive was frozen source-blind at SHA-256
+`4454bc05cf70d5f3690b211e46b89b90a817de768b986098a3500c84f8d2664f`. The generic pipeline packages
+and parses it, then stops at P1 because its unchanged NAMESPACE unconditionally imports `tcltk`.
+That platform dependency cannot be made browser-admissible by pretending Tcl/Tk exists or rewriting
+the package. The deterministic `NRE2221` result and artifact SHA-256
+`1bf3afaae279ae0abc7e023c85167f25c9dcff876ccb23d564a7c6974ead224f` remain explicit boundary
+evidence.
+
+## Next source-blind rotation: nor1mix 1.3-3 P0
+
+From the same fixed window, `nor1mix 1.3-3` is the next purpose-admissible executable statistical
+candidate at 10,603 downloads. Official metadata declares no native compilation and imports only
+browser-core `stats` and `graphics`; `cluster` and `copula` are Suggested. Before any archive
+listing, extraction, parsing, installation, or NativR execution, its official 43,051-byte archive
+was frozen outside Dropbox at SHA-256
+`97bfd0f8c847fa68bf607aaa465845a34ac8a7a262315073026a6a1937dd076e`. It remains holdout P0 until the
+unchanged generic pipeline records its first blocker.
+
+## Profile 0.524 priority outcome
+
+The frozen nor1mix run selected `stats::rmultinom`, then public `mean.default`, then Summary
+handling of `NULL`, with a reusable package-check correction for top-level optional `require()`
+calls. These changes move the unchanged artifact to P4 and leave call-valued `stats::deriv` as the
+first applicable P5 blocker. Symbolic differentiation has higher recursive reach than adding
+unrelated callable names, but it must return GNU-shaped executable derivative expressions rather
+than merely silencing the example. The holdout partition is empty until the next metadata-first
+rotation.
+
+## Profile 0.525 priority outcome
+
+The nor1mix blocker sequence justified reusable `deriv.default`, warning assertion, deprecation, and
+BFGS trace work. Each now has differential and integration evidence, and the unchanged package
+advances to `density.default(bw = "sj")`. Sheather-Jones bandwidth selection is the next ordered
+semantic blocker because it unlocks an applicable installed example and extends a shared stats
+primitive; unrelated callable-name additions remain lower priority.

@@ -32,7 +32,8 @@ describe("browser-owned PDF renderer", () => {
     expect(text).toContain("/CreationDate (D:");
     expect(text).toContain("/ExtGState");
     expect(text).toContain("BI /W 2 /H 2 /CS /RGB /BPC 8 /F /AHx ID");
-    expect(text).toContain("B*");
+    expect(text).toContain("f*");
+    expect(text).toContain("W* n");
     expect(text).toContain("xref\n");
     expect(text.endsWith("%%EOF\n")).toBe(true);
     const xrefOffset = Number(/startxref\n(\d+)\n%%EOF\n$/u.exec(text)?.[1]);
@@ -161,6 +162,7 @@ function graphicsEvents(): RGraphicsEvent[] {
           lineType: "13",
           lineWidth: 1.5,
           fillRule: "evenodd",
+          hatch: { color: "#FF0000FF", density: 10, angle: 30 },
         },
         {
           x: [0.1, 0.2, 0.15],
@@ -202,6 +204,8 @@ function graphicsEvents(): RGraphicsEvent[] {
           label: "line",
           textColor: "#000000FF",
           color: "#FF00FFFF",
+          fill: index === 0 ? "#FF000080" : undefined,
+          border: index === 0 ? "#000000FF" : undefined,
           lineType: index % 2 === 0 ? "44" : undefined,
           lineWidth: 1,
           pointSymbol: index % 2 === 0 ? "1" : undefined,
@@ -211,6 +215,7 @@ function graphicsEvents(): RGraphicsEvent[] {
       background: index % 2 === 0 ? "#FFFFFFFF" : "#00000000",
       columns: 1,
       cex: 0.6,
+      textAdjustment: index === 0 ? [0.25, 0.75] : [0, 0.5],
       title: index === 0 ? "Key" : undefined,
     })),
   ];

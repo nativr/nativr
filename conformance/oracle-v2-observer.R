@@ -7,6 +7,13 @@ nativr_oracle_observe_graph <- function(value, max_depth = 64L) {
   state$environments <- list()
   state$environment_ids <- integer()
 
+  is_standard_environment <- function(x) {
+    identical(x, emptyenv()) ||
+      identical(x, baseenv()) ||
+      identical(x, globalenv()) ||
+      nzchar(environmentName(x))
+  }
+
   scalar_token <- function(x, index) {
     type <- typeof(x)
     item <- as.vector(x, mode = type)[[index]]
@@ -45,8 +52,10 @@ nativr_oracle_observe_graph <- function(value, max_depth = 64L) {
 
   walk <- NULL
   walk <- function(x, depth = 0L) {
-    if (depth > max_depth) stop("Oracle observation depth limit exceeded.", call. = FALSE)
     type <- typeof(x)
+    if (depth > max_depth) {
+      stop(paste0("Oracle observation depth limit exceeded at type ", type, "."), call. = FALSE)
+    }
 
     if (type == "environment") {
       if (length(state$environments) > 0L) {
@@ -99,6 +108,19 @@ nativr_oracle_observe_graph <- function(value, max_depth = 64L) {
       node$environment <- walk(environment(x), depth + 1L)
     } else if (type == "environment") {
       node$name <- environmentName(x)
+      if (!is_standard_environment(x)) {
+        # The JavaScript harness stores its own observation intermediates in an enclosing local
+        # frame. They are instrumentation, not part of the value graph under test.
+        binding_names <- setdiff(sort(ls(x, all.names = TRUE)), c(".result", ".graph"))
+        node$length <- length(binding_names)
+        node$parent <- walk(parent.env(x), depth + 1L)
+        node$bindings <- lapply(binding_names, function(name) {
+          binding_value <- get(name, envir = x, inherits = FALSE)
+          list(name = name, node = walk(binding_value, depth + 1L))
+        })
+      } else {
+        node$length <- 0L
+      }
     } else if (type == "NULL") {
       # NULL has no additional payload.
     } else {

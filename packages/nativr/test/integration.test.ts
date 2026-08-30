@@ -43,6 +43,8 @@ importFrom(stats, median, ts.plot)
 importFrom(utils, download.file, getFromNamespace, packageDescription, packageName, packageVersion)
   export(square, centered, duration, histogram_counts, hcl_colours, classic_palettes, usage_rectangles, package_bars, plot_series, plot_curve, annotated_plot, reference_lines, control_display_list, ask_new_pages, find_tools, create_file, copy_resource, remove_files, fixed_text, archive_lines, axis_ticks, sourced_value, ask_value, remote_lines, download_resource, repository_versions, pipe_lines, socket_exchange, filtered_flow, class_summary, signature_names, new_score, describe, dynamic_describe, package_state, package_name, package_libname, package_metadata, package_files, installed_version, namespace_names, private_call, process_id, library_paths, loaded_module_paths, native_encoding, shell_quote, standard_output, sink_lines, write_sass_variable, browse_guides, browse_help)
 S3method(describe, score)
+S3method(Math, score)
+S3method(Ops, score)
 S3method(plot, score)
 S3method(lines, score)
 S3method(utils::.DollarNames, score)
@@ -186,6 +188,8 @@ signature_names <- function(fun = square) names(formals(args(fun)))
 new_score <- function(x) structure(x, class = c("score", "numeric"))
 describe.score <- function(x, ...) paste0(.package_state, ":", sum(x))
 dynamic_describe.score <- function(x, ...) paste0("dynamic:", sum(x))
+Math.score <- function(x, ...) -sum(unclass(x))
+Ops.score <- function(e1, e2) .Generic
 plot.score <- function(x, ..., marker = "package-plot") c(marker, sum(x), list(...)$extra)
 lines.score <- function(x, ..., marker = "package-lines") c(marker, sum(x), list(...)$extra)
 .DollarNames.score <- function(x, pattern = "") grep(pattern, c("alpha", "beta"), value = TRUE)
@@ -282,6 +286,10 @@ hidden_helper <- function(x) x + 100
       data: "ZXhhbXBsZSA8LSBkYXRhLmZyYW1lKGxhYmVsID0gYygiYSIsICJiIiksIHZhbHVlID0gYygxTCwgMkwpKQpzZWNvbmRhcnkgPC0gOTlMCg==",
     },
     { path: "data/csvset.csv", data: "bmFtZTt2YWx1ZQphbHBoYTsxCmJldGE7Mgo=" },
+    {
+      path: "data/gzipset.txt.gz",
+      data: "H4sIAAAAAAAACstLzE1VKEvMKU3lSswpyEhUMORKSi1JVDDiAgBuk2HWGgAAAA==",
+    },
     { path: "data/derived.R", data: "ZGVyaXZlZCA8LSByZWFkLmNzdigicmF3L3Jhdy5jc3YiKQo=" },
     { path: "data/raw/raw.csv", data: "bGFiZWwsdmFsdWUKeCwxMAp5LDIwCg==" },
   ],
@@ -326,6 +334,18 @@ const pureRBinaryDataFixture: PureRPackageBundle = {
   ],
 };
 
+const pureRLazyBinaryDataFixture: PureRPackageBundle = {
+  description: "Package: nativrlazydata\nVersion: 0.1.0\nLazyData: yes\nNeedsCompilation: no",
+  namespace: "",
+  rSources: [],
+  resources: [
+    {
+      path: "data/example.rda",
+      data: "H4sIAAAAAAAABgtyiTDiiuBiYGBgYmBhA5LMQCYLE5BgZGBh4ATS7KkVibkFOakMDMzCYGUMDAIQ5WBpxkQYIwlI8EJVMEJoFINY8xJzU4vRtLPmJCal5sA4ZYk5pano2pJzEoth2mCCXCmJJYl6aUVAE9GUcxbll+vBbAI7pwFI/P///x+QAmMAY4tevfMAAAA=",
+    },
+  ],
+};
+
 const pureRInvalidBinaryDataFixture: PureRPackageBundle = {
   description: "Package: nativrinvalidbinary\nVersion: 0.1.0\nNeedsCompilation: no",
   namespace: "",
@@ -362,6 +382,33 @@ dynamic_describe.score <- function(x, ...) "wrong method"
   registerS3method("dynamic_describe", "score", "dynamic_describe.score")
   stop("intentional load failure")
 }
+`,
+    },
+  ],
+};
+
+const optionalS3GenericPackage: PureRPackageBundle = {
+  description: "Package: nativroptionalgeneric\nVersion: 0.1.0\nNeedsCompilation: no",
+  namespace: "export(optional_generic)",
+  rSources: [
+    {
+      path: "R/generic.R",
+      source: 'optional_generic <- function(x, ...) UseMethod("optional_generic")',
+    },
+  ],
+};
+
+const optionalS3MethodPackage: PureRPackageBundle = {
+  description:
+    "Package: nativroptionalmethod\nVersion: 0.1.0\nSuggests: nativroptionalgeneric\nNeedsCompilation: no",
+  namespace:
+    "export(make_optional_score)\nS3method(nativroptionalgeneric::optional_generic, optional_score)",
+  rSources: [
+    {
+      path: "R/method.R",
+      source: `
+make_optional_score <- function(x) structure(x, class = "optional_score")
+optional_generic.optional_score <- function(x, ...) paste0("deferred:", unclass(x))
 `,
     },
   ],
@@ -539,11 +586,64 @@ describe("complete inline source-to-result vertical slice", () => {
     ]);
     const terminated = await runtime.evalDetailed('cat(1:7, sep = c(" ", " ", " ", " ", "\\n"))');
     expect(terminated.output).toEqual([{ stream: "stdout", text: "1 2 3 4 5\n6 7\n" }]);
+    const filled = await runtime.evalDetailed(`
+      options(width = 10)
+      cat(c("abc", "def", "ghi"), fill = TRUE)
+      cat(c("abc", "def", "ghi"), sep = "", fill = 5)
+      cat(c("abc", "def", "ghi"), sep = "|", fill = 7)
+      cat(c("abc", "def", "ghi"), fill = 8, labels = c("L1:", "L2:"))
+    `);
+    expect(filled.output).toEqual([
+      { stream: "stdout", text: "abc def \nghi\n" },
+      { stream: "stdout", text: "abc\ndef\nghi\n" },
+      { stream: "stdout", text: "abc|\ndef|\nghi\n" },
+      { stream: "stdout", text: "L1: abc \nL2: def \nL1: ghi\n" },
+    ]);
 
     const matrix = await runtime.evalDetailed("print(matrix(1:6, nrow = 2))");
     expect(matrix.output[0]?.text).toBe(
       "     [,1] [,2] [,3]\n[1,]    1    3    5\n[2,]    2    4    6\n",
     );
+    await expect(
+      runtime.eval(`
+        populated <- matrix(1:5)
+        empty <- matrix(numeric())
+        unclassed <- unclass(populated)
+        c(dim(populated), dim(empty), dim(unclassed), ncol(unclassed))
+      `),
+    ).resolves.toEqual([5, 1, 0, 1, 5, 1, 1]);
+    const oneDimensional = await runtime.evalDetailed(
+      "print(array(1:4, 4, dimnames = list(c('x1', 'x2', 'y1', 'y2'))))",
+    );
+    expect(oneDimensional.output[0]?.text).toBe("x1 x2 y1 y2\n 1  2  3  4\n");
+    const namedMatrix = await runtime.evalDetailed(
+      "print(matrix(1:6, 3, dimnames = list(c('a', '', 'c'), c('x', 'y'))))",
+    );
+    expect(namedMatrix.output[0]?.text).toBe("  x y\na 1 4\n  2 5\nc 3 6\n");
+    const axisNamedMatrix = await runtime.evalDetailed(
+      "print(matrix(1:4, 2, dimnames = list(W = c('A', 'B'), Z = c('D', 'E'))))",
+    );
+    expect(axisNamedMatrix.output[0]?.text).toBe("   Z\nW   D E\n  A 1 3\n  B 2 4\n");
+    const namedArray = await runtime.evalDetailed(
+      "print(array(1:8, c(2, 2, 2), dimnames = list(c('r1', 'r2'), c('c1', 'c2'), c('A', 'B'))))",
+    );
+    expect(namedArray.output[0]?.text).toBe(
+      ", , A\n\n   c1 c2\nr1  1  3\nr2  2  4\n\n, , B\n\n   c1 c2\nr1  5  7\nr2  6  8\n\n",
+    );
+    const printedTable = await runtime.evalDetailed("print(table(c(FALSE, TRUE, TRUE)))");
+    expect(printedTable.output[0]?.text).toBe("\nFALSE  TRUE \n    1     2 \n");
+    expect(printedTable.visible).toBe(false);
+    await expect(
+      runtime.eval(`
+        automatic <- as.matrix(data.frame(x = 1:3))
+        converted <- as.matrix(as.data.frame(matrix(1:6, 3)))
+        explicit <- as.matrix(data.frame(x = 1:2, row.names = c("a", "b")))
+        c(is.null(rownames(automatic)), is.null(rownames(converted)), rownames(explicit))
+      `),
+    ).resolves.toEqual(["TRUE", "TRUE", "a", "b"]);
+    await expect(
+      runtime.eval("c(dim(matrix(1:6, c(2, 3))), matrix(1:6, c(2, 3)))"),
+    ).resolves.toEqual([2, 3, 1, 2, 3, 4, 5, 6]);
     const closure = await runtime.evalDetailed("(function() return(print(1)))()");
     expect(closure.visible).toBe(false);
     expect(closure.output).toEqual([{ stream: "stdout", text: "[1] 1\n" }]);
@@ -560,20 +660,243 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("coerces atomic dimname components through every public assignment path", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        constructed <- matrix(
+          1:8,
+          nrow = 2,
+          dimnames = list(rows = letters[1:2], columns = 1:4)
+        )
+        replaced <- array(1:4, c(2, 2))
+        dimnames(replaced) <- list(c(TRUE, FALSE), 2:3)
+        attributed <- matrix(1:4, 2)
+        attr(attributed, "dimnames") <- list(1:2, c("x", "y"))
+        c(
+          names(dimnames(constructed)),
+          dimnames(constructed)[[2]],
+          dimnames(replaced)[[1]],
+          dimnames(replaced)[[2]],
+          dimnames(attributed)[[1]]
+        )
+      `),
+    ).resolves.toEqual([
+      "rows",
+      "columns",
+      "1",
+      "2",
+      "3",
+      "4",
+      "TRUE",
+      "FALSE",
+      "2",
+      "3",
+      "1",
+      "2",
+    ]);
+    await expect(
+      runtime.eval("c(prod(NULL), prod(), typeof(prod(NULL)), typeof(prod()))"),
+    ).resolves.toEqual(["1", "1", "double", "double"]);
+    await runtime.dispose();
+  });
+
+  it("subsets arrays with character and missing dimnames without malformed-mask failures", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        splits <- strsplit(c("A-B", "A-C", "B-C"), "-")
+        x2 <- t(as.matrix(as.data.frame(splits)))
+        dimnames(x2) <- list(c("A-B", "A-C", "B-C"), NULL)
+        selected <- x2[c(FALSE, FALSE, TRUE), , drop = FALSE]
+        m <- matrix(
+          1:6,
+          3,
+          2,
+          dimnames = list(c("r1", NA_character_, "r3"), c("a", "b"))
+        )
+        named <- m[c(TRUE, TRUE, FALSE), , drop = FALSE]
+        empty <- m[seq_len(0), , drop = FALSE]
+        cube <- array(
+          1:12,
+          c(2, 3, 2),
+          dimnames = list(
+            row = c("r1", "r2"),
+            column = c("c1", "c2", "c3"),
+            layer = c("z1", "z2")
+          )
+        )
+        emptyCube <- cube[seq_len(0), , , drop = FALSE]
+        as.character(c(
+          selected,
+          dim(selected),
+          dimnames(selected)[[1]],
+          is.null(dimnames(selected)[[2]]),
+          named,
+          dim(named),
+          dimnames(named)[[1]],
+          is.na(dimnames(named)[[1]]),
+          is.null(dimnames(empty)[[1]]),
+          is.null(dimnames(emptyCube)[[1]])
+        ))
+      `),
+    ).resolves.toEqual([
+      "B",
+      "C",
+      "1",
+      "2",
+      "B-C",
+      "TRUE",
+      "1",
+      "2",
+      "4",
+      "5",
+      "2",
+      "2",
+      "r1",
+      NA,
+      "FALSE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          La_version(), La_library(),
+          typeof(La_version), length(formals(La_version)),
+          typeof(La_library), length(formals(La_library)),
+          bindingIsLocked("La_version", baseenv()),
+          bindingIsLocked("La_library", baseenv())
+        )
+      `),
+    ).resolves.toEqual(["3.12.1", "", "closure", "0", "closure", "0", "TRUE", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        config <- pcre_config()
+        c(
+          typeof(pcre_config), length(formals(pcre_config)),
+          typeof(config), names(config), config,
+          bindingIsLocked("pcre_config", baseenv())
+        )
+      `),
+    ).resolves.toEqual([
+      "closure",
+      "0",
+      "logical",
+      "UTF-8",
+      "Unicode properties",
+      "JIT",
+      "stack",
+      "TRUE",
+      "TRUE",
+      "FALSE",
+      "FALSE",
+      "TRUE",
+    ]);
+    await expect(
+      runtime.eval(`
+        software <- extSoftVersion()
+        c(
+          typeof(extSoftVersion), length(formals(extSoftVersion)),
+          typeof(software), length(software), names(software),
+          nzchar(software), software[["bzlib"]],
+          bindingIsLocked("extSoftVersion", baseenv())
+        )
+      `),
+    ).resolves.toEqual([
+      "closure",
+      "0",
+      "character",
+      "11",
+      "zlib",
+      "bzlib",
+      "xz",
+      "libdeflate",
+      "zstd",
+      "PCRE",
+      "ICU",
+      "TRE",
+      "iconv",
+      "readline",
+      "BLAS",
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "1.0.8, 13-Jul-2019 (Wasm)",
+      "TRUE",
+    ]);
+    await runtime.dispose();
+  });
+
   it("implements frequency-prioritized head and structural inspection", async () => {
     const runtime = await session();
     await expect(
       runtime.eval('head(setNames(1:10, c("a", "b", "c", "d", "e", "f", "g", "h", "i", "j")))'),
     ).resolves.toEqual([1, 2, 3, 4, 5, 6]);
     await expect(runtime.eval("head(1:10, -3)")).resolves.toEqual([1, 2, 3, 4, 5, 6, 7]);
+    await expect(runtime.eval("c(is.null(head(NULL)), is.null(tail(NULL, -1)))")).resolves.toEqual([
+      true,
+      true,
+    ]);
     await expect(runtime.eval("head(list(a = 1, b = 2, c = 3), 2)")).resolves.toEqual([1, 2]);
     const matrix = await runtime.evalDetailed("head(matrix(1:12, nrow = 4), 2)");
     expect(matrix.value).toEqual([1, 2, 5, 6, 9, 10]);
     expect(matrix.raw).toMatchObject({ type: "integer", dim: [2, 3] });
+    await expect(
+      runtime.eval("rownames(tail.matrix(matrix(1:30, nrow = 10), 2))"),
+    ).resolves.toEqual([" [9,]", "[10,]"]);
+    await expect(
+      runtime.eval("is.null(rownames(tail.matrix(matrix(1:30, nrow = 10), 2, keepnums = FALSE)))"),
+    ).resolves.toBe(true);
+    await expect(runtime.eval("names(formals(tail.matrix))")).resolves.toEqual([
+      "x",
+      "n",
+      "keepnums",
+      "addrownums",
+      "...",
+    ]);
+    const deprecatedTail = await runtime.evalDetailed(
+      "is.null(rownames(tail.matrix(matrix(1:30, nrow = 10), 2, addrownums = FALSE)))",
+    );
+    expect(deprecatedTail.value).toBe(true);
+    expect(deprecatedTail.warnings).toEqual([
+      {
+        code: "NRW1155",
+        message: "tail(., addrownums = V) is deprecated.\nUse tail(., keepnums = V) instead.",
+      },
+    ]);
     await expect(runtime.eval('as.character(head(factor(c("a", "b", "a")), 2))')).resolves.toEqual([
       "a",
       "b",
     ]);
+    await expect(
+      runtime.eval(`
+        x <- setNames(1:2, c("r1", "r2"))
+        a <- cbind(start = x, finish = 3:4)
+        b <- cbind(1:2, 3:4, deparse.level = 2L)
+        c(unlist(dimnames(a)), unlist(dimnames(b)), names(formals(cbind)))
+      `),
+    ).resolves.toEqual(["r1", "r2", "start", "finish", "1:2", "3:4", "...", "deparse.level"]);
+    await expect(
+      runtime.eval(
+        "f <- function(x) cbind(x[1] + x[2], x[1] * x[2], x); c(f(c(2, 3)), dim(f(c(2, 3))))",
+      ),
+    ).resolves.toEqual([5, 5, 6, 6, 2, 3, 2, 3]);
+    await expect(
+      runtime.eval(`
+        bound <- cbind.data.frame(data.frame(a = 1:2), b = 3:4)
+        c(dim(bound), names(bound), names(formals(cbind.data.frame)))
+      `),
+    ).resolves.toEqual(["2", "2", "a", "b", "...", "deparse.level"]);
 
     const structure = await runtime.evalDetailed("str(c(1, NA, NaN))");
     expect(structure.value).toBeNull();
@@ -588,6 +911,12 @@ describe("complete inline source-to-result vertical slice", () => {
     const frame = await runtime.evalDetailed('str(data.frame(a = 1:2, b = c("x", "y")))');
     expect(frame.output[0]?.text).toContain("'data.frame':\t2 obs. of  2 variables:");
     expect(frame.output[0]?.text).toContain("$ a: int");
+    await expect(
+      runtime.eval(`
+        str.marker <- function(object, ...) paste0("dispatched:", unclass(object))
+        str(structure(42, class = "marker"), extra = TRUE)
+      `),
+    ).resolves.toBe("dispatched:42");
     await runtime.dispose();
   });
 
@@ -639,6 +968,9 @@ describe("complete inline source-to-result vertical slice", () => {
       ),
     ).resolves.toEqual([true, true]);
     await expect(
+      runtime.eval("isTRUE(all.equal(c(a = 1, b = 2), c(a = 1, c = 2), check.names = FALSE))"),
+    ).resolves.toBe(true);
+    await expect(
       runtime.eval(
         "c(isTRUE(all.equal(list(a = 1, b = list(2, 3)), list(a = 1, b = list(2, 3)))), is.character(all.equal(list(a = 1, b = list(2, 3)), list(a = 1, b = list(2, 4)))))",
       ),
@@ -648,6 +980,41 @@ describe("complete inline source-to-result vertical slice", () => {
         "c(isTRUE(all.equal(c(NA, NaN, Inf, -Inf), c(NaN, NA, Inf, -Inf))), isTRUE(TRUE), isFALSE(FALSE), isFALSE(NA))",
       ),
     ).resolves.toEqual([true, true, true, false]);
+    await expect(
+      runtime.eval(`
+        parsed <- quote(-1:-4)
+        constructed <- as.call(list(as.name(":"), -1, -4))
+        nested.parsed <- quote(f(-1))
+        nested.constructed <- as.call(list(as.name("f"), -1))
+        c(
+          identical(parsed, constructed), isTRUE(all.equal(parsed, constructed)),
+          identical(nested.parsed, nested.constructed),
+          isTRUE(all.equal(nested.parsed, nested.constructed)),
+          is.character(all.equal(quote(f(1L)), quote(f(1))))
+        )
+      `),
+    ).resolves.toEqual([false, true, false, true, true]);
+    await expect(
+      runtime.eval(`
+        generated <- do.call("expression", list(substitute(10^E, list(E = -3))))
+        literal <- expression(10^-3)
+        left <- structure(generated, marker = 1L)
+        right <- structure(literal, marker = 2L)
+        c(
+          identical(generated, literal), isTRUE(all.equal(generated, literal)),
+          deparse(generated), deparse(literal),
+          is.character(all.equal(left, right)),
+          isTRUE(all.equal(left, right, check.attributes = FALSE))
+        )
+      `),
+    ).resolves.toEqual([
+      "FALSE",
+      "TRUE",
+      "expression(10^-3)",
+      "expression(10^-3)",
+      "TRUE",
+      "FALSE",
+    ]);
     await runtime.dispose();
   });
 
@@ -704,6 +1071,12 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(
       runtime.eval("tracker <- 0\nvalue <- any(TRUE, { tracker <- 1; FALSE })\nc(value, tracker)"),
     ).resolves.toEqual([1, 1]);
+    await expect(
+      runtime.eval(`
+        installed <- structure(c(TRUE, FALSE), class = "check_if_installed")
+        c(all(installed), any(installed))
+      `),
+    ).resolves.toEqual([false, true]);
     await expect(runtime.eval('any(factor("no"))')).rejects.toThrow(/not meaningful/u);
     await runtime.dispose();
   });
@@ -797,6 +1170,13 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(
       runtime.eval('x <- setNames(1:3, c("a", "b", "c"))\nnames(cumsum(x))'),
     ).resolves.toEqual(["a", "b", "c"]);
+    await expect(
+      runtime.eval(`
+        counts <- table(factor(c(1, 1, 2), levels = 1:3))
+        result <- cumsum(counts)
+        c(result, names(result), class(result), is.null(dim(result)))
+      `),
+    ).resolves.toEqual(["2", "3", "3", "1", "2", "3", "integer", "TRUE"]);
     await expect(runtime.eval("is.null(dim(cumsum(matrix(1:4, 2))))")).resolves.toBe(true);
     const overflow = await runtime.evalDetailed("cumsum(c(2147483647L, 1L))");
     expect(overflow.value).toEqual([2_147_483_647, NA]);
@@ -883,14 +1263,82 @@ describe("complete inline source-to-result vertical slice", () => {
     const runtime = await session();
     await expect(
       runtime.eval("f <- function(x) { y <- x + 1; y * 2 }\ndeparse1(body(f))"),
-    ).resolves.toBe("{ (y <- (x + 1)); (y * 2) }");
-    await expect(runtime.eval('deparse1(body("f"))')).resolves.toBe("{ (y <- (x + 1)); (y * 2) }");
+    ).resolves.toBe("{     y <- x + 1     y * 2 }");
+    await expect(
+      runtime.eval(`
+        bodies <- list(
+          symbol = function() x,
+          integer = function() 1L,
+          double = function() 1,
+          character = function() "x",
+          logical = function() TRUE,
+          null = function() NULL,
+          call = function() x + 1,
+          block = function() { x }
+        )
+        c(
+          vapply(bodies, function(fun) typeof(body(fun)), character(1L)),
+          is.symbol(body(bodies$symbol)),
+          identical(body(bodies$integer), 1L),
+          identical(body(bodies$call), quote(x + 1)),
+          is.null(formals(function() NULL)),
+          is.pairlist(formals(function(x) x))
+        )
+      `),
+    ).resolves.toEqual([
+      "symbol",
+      "integer",
+      "double",
+      "character",
+      "logical",
+      "NULL",
+      "language",
+      "language",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    await expect(
+      runtime.eval(`
+        rebuild_language <- function(expr) {
+          if (is.language(expr)) {
+            for (index in seq_along(expr)) {
+              entry <- try(expr[[index]], silent = TRUE)
+              if (!inherits(entry, "try-error") && !is.null(entry)) {
+                expr[[index]] <- rebuild_language(entry)
+              }
+            }
+          }
+          expr
+        }
+        roundtrip <- stopifnot
+        body(roundtrip) <- rebuild_language(body(roundtrip))
+        c(
+          identical(roundtrip(TRUE), NULL),
+          inherits(try(roundtrip(FALSE), silent = TRUE), "try-error")
+        )
+      `),
+    ).resolves.toEqual([true, true]);
+    await expect(runtime.eval('deparse1(body("f"))')).resolves.toBe("{     y <- x + 1     y * 2 }");
     await expect(runtime.eval("body(sum)")).resolves.toBeNull();
     const nonFunction = await runtime.evalDetailed("body(NULL)");
     expect(nonFunction.value).toBeNull();
     expect(nonFunction.warnings).toEqual([
       { code: "NRW1013", message: "argument is not a function" },
     ]);
+
+    await expect(
+      runtime.eval(`
+        factorial <- function(n, accumulator = 1L) {
+          if (n <= 1L) accumulator else Recall(n - 1L, accumulator * n)
+        }
+        alias <- factorial
+        rm(factorial)
+        c(alias(5L), names(formals(Recall)))
+      `),
+    ).resolves.toEqual(["120", "..."]);
 
     await expect(runtime.eval("unlist(NULL)")).resolves.toBeNull();
     await expect(runtime.eval("unlist(list(TRUE, 2L, 3.5, 4 + 2i, 'x'))")).resolves.toEqual([
@@ -912,11 +1360,165 @@ describe("complete inline source-to-result vertical slice", () => {
       ),
     ).resolves.toEqual(["4", "a1", "a2", "b.c", "b.d", "4", "5"]);
     await expect(
+      runtime.eval(`
+        x <- unlist(list(a = 1:2, b = 3:4), recursive = FALSE)
+        c(typeof(x), x, names(x))
+      `),
+    ).resolves.toEqual(["integer", "1", "2", "3", "4", "a1", "a2", "b1", "b2"]);
+    await expect(
       runtime.eval(
         'x <- unlist(list(a = factor(c("x", "y")), b = factor("x")))\nc(as.character(x), class(x), levels(x), names(x))',
       ),
     ).resolves.toEqual(["x", "y", "x", "factor", "x", "y", "a1", "a2", "b"]);
     await expect(runtime.eval("unlist(pairlist(a = 1L, b = 2L))")).resolves.toEqual([1, 2]);
+    await runtime.dispose();
+  });
+
+  it("replaces closure bodies, formals, and environments with GNU R reflection shapes", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        target <- new.env(parent = baseenv())
+        target$answer <- 42L
+        f <- function(old = 1L) old
+        body(f) <- 1:2
+        atomic <- c(identical(body(f), 1:2), identical(f(), 1:2))
+        body_updated <- \`body<-\`(f, envir = target, value = quote(answer))
+        g <- function(x) x
+        formals_updated <- \`formals<-\`(g, envir = target, value = alist(x = answer))
+        c(
+          atomic,
+          body_updated(),
+          formals_updated(),
+          identical(environment(body_updated), target),
+          identical(environment(formals_updated), target),
+          names(formals(\`body<-\`)),
+          names(formals(\`formals<-\`)),
+          typeof(\`body<-\`),
+          typeof(\`formals<-\`)
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "TRUE",
+      "42",
+      "42",
+      "TRUE",
+      "TRUE",
+      "fun",
+      "envir",
+      "value",
+      "fun",
+      "envir",
+      "value",
+      "closure",
+      "closure",
+    ]);
+    await expect(
+      runtime.eval(`
+        modified <- stopifnot
+        body(modified) <- quote({ warning("modified assertion"); invisible(NULL) })
+        result <- withVisible(suppressWarnings(modified(FALSE)))
+        c(
+          typeof(modified), names(formals(modified)),
+          is.language(body(stopifnot)), is.null(result$value),
+          inherits(try(stopifnot(FALSE), silent = TRUE), "try-error")
+        )
+      `),
+    ).resolves.toEqual(["closure", "...", "exprs", "exprObject", "local", "TRUE", "TRUE", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        target <- new.env(parent = emptyenv())
+        x <- 1L
+        environment(x) <- target
+        call <- quote(a + 1L)
+        environment(call) <- target
+        formula <- y ~ a
+        environment(formula) <- target
+        c(
+          identical(environment(x), target),
+          identical(attr(x, ".Environment"), target),
+          identical(environment(call), target),
+          identical(attr(call, ".Environment"), target),
+          identical(environment(formula), target),
+          is.null(formals(\`environment<-\`)),
+          typeof(\`environment<-\`)
+        )
+      `),
+    ).resolves.toEqual(["TRUE", "TRUE", "TRUE", "TRUE", "TRUE", "TRUE", "builtin"]);
+    const expressionBody = await runtime.evalDetailed(`
+      f <- function() NULL
+      body(f) <- expression(1L, 2L)
+      c(f(), identical(body(f), 1L))
+    `);
+    expect(expressionBody.value).toEqual([1, 1]);
+    expect(expressionBody.warnings.map((warning) => warning.message)).toEqual([
+      `using the first element of 'value' of type "expression"`,
+    ]);
+    await expect(runtime.eval("f <- function() NULL; environment(f) <- NULL")).rejects.toThrow(
+      /NULL environment is defunct/u,
+    );
+    await expect(runtime.eval("f <- function() NULL; body(f) <- globalenv()")).rejects.toThrow(
+      /invalid body for function/u,
+    );
+    await runtime.dispose();
+  });
+
+  it("constructs closures from lists through as.function default and S3 paths", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        target <- new.env(parent = baseenv())
+        target$marker <- 10L
+        f <- as.function(as.list(alist(x = , y = 2L, x + y)), envir = target)
+        caller <- local({ marker <- 17L; made <- as.function(list(quote(marker))); c(made(), identical(environment(made), environment())) })
+        original <- function(x) x
+        unchanged <- as.function(original, envir = stop("must stay lazy"), marker = stop("dots stay lazy"))
+        as.function.probe <- function(x, ...) c("dispatched", names(list(...)), unlist(list(...)))
+        custom <- as.function(structure(1L, class = "probe"), marker = 2L)
+        c(
+          f(3L),
+          names(formals(f)),
+          identical(body(f), quote(x + y)),
+          identical(environment(f), target),
+          caller,
+          identical(unchanged, original),
+          custom,
+          names(formals(as.function)),
+          names(formals(as.function.default)),
+          identical(formals(as.function.default)$envir, quote(parent.frame())),
+          typeof(as.function),
+          typeof(as.function.default)
+        )
+      `),
+    ).resolves.toEqual([
+      "5",
+      "x",
+      "y",
+      "TRUE",
+      "TRUE",
+      "17",
+      "1",
+      "TRUE",
+      "dispatched",
+      "marker",
+      "2",
+      "x",
+      "...",
+      "x",
+      "envir",
+      "...",
+      "TRUE",
+      "closure",
+      "closure",
+    ]);
+    await expect(runtime.eval("as.function(pairlist(quote(1L)))")).rejects.toThrow(
+      /list argument expected/u,
+    );
+    await expect(runtime.eval("as.function(list())")).rejects.toThrow(/length at least 1/u);
+    await expect(runtime.eval("as.function(list(quote(1L)), NULL)")).rejects.toThrow(
+      /NULL environment is defunct/u,
+    );
     await runtime.dispose();
   });
 
@@ -993,6 +1595,22 @@ describe("complete inline source-to-result vertical slice", () => {
         "f <- function() parent.frame(2)\ng <- function() f()\nidentical(g(), globalenv())",
       ),
     ).resolves.toBe(true);
+    await expect(
+      runtime.eval(`
+        frameProbe <- function(x) UseMethod("frameProbe")
+        frameProbe.default <- function(x) {
+          c(
+            exists("dispatch_marker", envir = parent.frame(), inherits = FALSE),
+            identical(parent.frame(2L), globalenv())
+          )
+        }
+        frameWrapper <- function() {
+          dispatch_marker <- 1L
+          frameProbe(1L)
+        }
+        frameWrapper()
+      `),
+    ).resolves.toEqual([true, true]);
     await expect(runtime.eval("parent.frame(0)")).rejects.toThrow(/positive integer/u);
 
     await expect(
@@ -1004,11 +1622,44 @@ describe("complete inline source-to-result vertical slice", () => {
       ),
     ).resolves.toEqual(["3", "2", "1", "3", "5", "2", "4", "6", "c1", "c2", "c3", "r1", "r2"]);
     await expect(
+      runtime.eval(`
+        x <- matrix(1:4, 2, dimnames = list(c("r1", "r2"), c("c1", "c2")))
+        names(dimnames(x)) <- c("row", "column")
+        names(dimnames(x))
+      `),
+    ).resolves.toEqual(["row", "column"]);
+    await expect(
       runtime.eval("x <- t(factor(c('a', 'b')))\nc(dim(x), as.character(x), class(x), levels(x))"),
     ).resolves.toEqual(["1", "2", "a", "b", "factor", "a", "b"]);
     await expect(
       runtime.eval("x <- t(data.frame(a = 1:2, b = 3:4))\nc(dim(x), x, unlist(dimnames(x)))"),
     ).resolves.toEqual(["2", "2", "1", "3", "2", "4", "a", "b"]);
+    await expect(
+      runtime.eval(`
+        x <- t(structure(
+          1:3,
+          dim = 3L,
+          dimnames = structure(list(c("a", "b", "c")), names = "axis")
+        ))
+        c(dim(x), x, unlist(dimnames(x)), names(dimnames(x)))
+      `),
+    ).resolves.toEqual(["1", "3", "1", "2", "3", "a", "b", "c", "", "axis"]);
+    await expect(
+      runtime.eval(`
+        x <- matrix(
+          1:4,
+          2,
+          dimnames = structure(
+            list(c("r1", "r2"), c("c1", "c2")),
+            names = c("rows", "cols")
+          )
+        )
+        names(dimnames(t(x)))
+      `),
+    ).resolves.toEqual(["cols", "rows"]);
+    await expect(
+      runtime.eval("tryCatch(t(array(1:8, c(2, 2, 2))), error = function(e) conditionMessage(e))"),
+    ).resolves.toBe("argument is not a matrix");
     await runtime.dispose();
   });
 
@@ -1038,6 +1689,62 @@ describe("complete inline source-to-result vertical slice", () => {
     expect(nonFunction.warnings).toEqual([
       { code: "NRW1013", message: "argument is not a function" },
     ]);
+    await expect(
+      runtime.eval(`
+        probe <- function(a = 1, b, ...) formals()
+        lookup <- new.env(parent = baseenv())
+        lookup$f <- function(alpha = 2, beta) NULL
+        caller <- probe()
+        selected <- formals("f", lookup)
+        as.character(c(
+          names(formals(formals)), deparse(formals(formals)$fun),
+          deparse(formals(formals)$envir), names(caller), deparse(caller$a),
+          deparse(caller$b), deparse(caller$...), names(selected),
+          deparse(selected$alpha), deparse(selected$beta)
+        ))
+      `),
+    ).resolves.toEqual([
+      "fun",
+      "envir",
+      "sys.function(sys.parent())",
+      "parent.frame()",
+      "a",
+      "b",
+      "...",
+      "1",
+      "",
+      "",
+      "alpha",
+      "beta",
+      "2",
+      "",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          methods::formalArgs(function(x, y = 1, ...) NULL),
+          methods::formalArgs(mean), methods::formalArgs("mean"),
+          is.null(methods::formalArgs(sum)), is.null(methods::formalArgs(function() NULL)),
+          names(formals(methods::formalArgs)), typeof(methods::formalArgs)
+        )
+      `),
+    ).resolves.toEqual(["x", "y", "...", "x", "...", "x", "...", "TRUE", "TRUE", "def", "closure"]);
+    const invalidFormalArgs = await runtime.evalDetailed("methods::formalArgs(1)");
+    expect(invalidFormalArgs.value).toBeNull();
+    expect(invalidFormalArgs.warnings).toEqual([
+      { code: "NRW1013", message: "argument is not a function" },
+    ]);
+    await expect(
+      runtime.eval(`
+        f <- function(x) x + 1
+        probe <- function() methods::functionBody()
+        c(
+          typeof(methods::functionBody(f)), deparse(methods::functionBody(f)),
+          is.null(methods::functionBody(sum)), deparse(probe()),
+          names(formals(methods::functionBody)), typeof(methods::functionBody)
+        )
+      `),
+    ).resolves.toEqual(["language", "x + 1", "TRUE", "methods::functionBody()", "fun", "closure"]);
 
     await expect(runtime.eval("replicate(4, 2 + 3)")).resolves.toEqual([5, 5, 5, 5]);
     await expect(runtime.eval("x <- replicate(3, 1:2)\nc(dim(x), x)")).resolves.toEqual([
@@ -1087,6 +1794,72 @@ describe("complete inline source-to-result vertical slice", () => {
       "...",
       "x",
       "...",
+    ]);
+    await expect(
+      runtime.eval(`
+        a <- array(1:8, c(2, 2, 2), dimnames = list(
+          A = c("a1", "a2"), B = c("b1", "b2"), C = c("c1", "c2")
+        ))
+        tab <- as.table(a)
+        m12 <- margin.table(tab, 1:2)
+        m21 <- margin.table(tab, c(2, 1))
+        m1 <- margin.table(tab, "A")
+        raw <- margin.table(a, 1:2)
+        vector <- margin.table(1:4, 1)
+        c(
+          unclass(m12), dim(m12), names(dimnames(m12)), unlist(dimnames(m12)), class(m12),
+          unclass(m21), names(dimnames(m21)),
+          unclass(m1), names(m1), names(dimnames(m1)),
+          margin.table(tab), typeof(margin.table(tab)),
+          unclass(raw), class(raw),
+          unclass(vector), dim(vector), class(vector),
+          identical(m1, margin.table(tab, 1))
+        )
+      `),
+    ).resolves.toEqual([
+      "6",
+      "8",
+      "10",
+      "12",
+      "2",
+      "2",
+      "A",
+      "B",
+      "a1",
+      "a2",
+      "b1",
+      "b2",
+      "table",
+      "6",
+      "10",
+      "8",
+      "12",
+      "B",
+      "A",
+      "16",
+      "20",
+      "a1",
+      "a2",
+      "A",
+      "36",
+      "integer",
+      "6",
+      "8",
+      "10",
+      "12",
+      "matrix",
+      "array",
+      "1",
+      "2",
+      "3",
+      "4",
+      "4",
+      "array",
+      "TRUE",
+    ]);
+    await expect(runtime.eval("capture.output(args(var))")).resolves.toEqual([
+      "function (x, y = NULL, na.rm = FALSE, use) ",
+      "NULL",
     ]);
     await expect(
       runtime.eval(`
@@ -1159,8 +1932,166 @@ describe("complete inline source-to-result vertical slice", () => {
         'x <- split(1:4, list(c("a", "b", "a", "b"), c("x", "x", "y", "y")), sep = ":", lex.order = TRUE)\nc(names(x), unlist(x))',
       ),
     ).resolves.toEqual(["a:x", "a:y", "b:x", "b:y", "1", "3", "2", "4"]);
+    await expect(
+      runtime.eval(
+        "x <- split(1:5, c(10, 2, 1, NaN, NA_real_))\nc(names(x), lengths(x), unlist(x))",
+      ),
+    ).resolves.toEqual(["1", "2", "10", "NaN", "1", "1", "1", "1", "3", "2", "1", "4"]);
+    await expect(
+      runtime.eval(`
+        f <- factor(c("a", "a", "b", "b", "c", "c"), levels = c("a", "b", "c", "z"))
+        atomic <- setNames(1:6, letters[1:6])
+        split(atomic, f) <- list(c(10L, 20L), 30L, c(40L, 50L))
+        listed <- as.list(1:6)
+        split(listed, f) <- list(list("x", "y"), list("z"), list("q", "r"))
+        frame <- data.frame(a = 1:4, b = letters[1:4], row.names = paste0("r", 1:4))
+        groups <- factor(c("x", "x", "y", "y"))
+        split(frame, groups) <- list(
+          data.frame(a = c(10, 11), b = c("u", "v")),
+          data.frame(a = c(20, 21), b = c("w", "z"))
+        )
+        \`split<-.probe\` <- function(x, f, drop = FALSE, ..., value) c("method", value)
+        dispatched <- \`split<-\`(structure(1:3, class = "probe"), 1:3, value = 4)
+        missing.groups <- 1:6
+        split(missing.groups, factor(c("a", NA, "b", "b", "c", NA))) <- list(10L, 20L, 30L)
+        empty <- NULL
+        split(empty, integer()) <- list(1)
+        as.character(c(
+          atomic, names(atomic), unlist(listed), frame$a, frame$b, rownames(frame),
+          dispatched, missing.groups, is.null(empty), typeof(\`split<-\`),
+          is.primitive(\`split<-\`), names(formals(\`split<-\`))
+        ))
+      `),
+    ).resolves.toEqual([
+      "10",
+      "20",
+      "30",
+      "30",
+      "40",
+      "50",
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "f",
+      "x",
+      "y",
+      "z",
+      "z",
+      "q",
+      "r",
+      "10",
+      "11",
+      "20",
+      "21",
+      "u",
+      "v",
+      "w",
+      "z",
+      "r1",
+      "r2",
+      "r3",
+      "r4",
+      "method",
+      "4",
+      "10",
+      "2",
+      "20",
+      "20",
+      "30",
+      "6",
+      "TRUE",
+      "closure",
+      "FALSE",
+      "x",
+      "f",
+      "drop",
+      "...",
+      "value",
+    ]);
+    await expect(runtime.eval("x <- 1:3; split(x, 1:3) <- NULL")).rejects.toMatchObject({
+      code: "NRT3314",
+      message: "replacement has length zero",
+    });
+    await expect(
+      runtime.eval(`
+        f <- factor(c("b", "a", "b", "a"), levels = c("b", "unused", "a"))
+        numeric <- unsplit(split(1:4, f), f)
+        listed <- unsplit(split(as.list(letters[1:4]), f, drop = TRUE), f, drop = TRUE)
+        c(numeric, unlist(listed), class(numeric), class(listed))
+      `),
+    ).resolves.toEqual(["1", "2", "3", "4", "a", "b", "c", "d", "integer", "list"]);
     await expect(runtime.eval("split(1:3, character())")).rejects.toMatchObject({
       code: "NRE2142",
+    });
+    await runtime.dispose();
+  });
+
+  it("formats registered environments for namespace-sensitive pure-R code", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(
+        'c(format(.GlobalEnv), format(emptyenv()), format(asNamespace("base")), grepl("^<environment: 0x", format(new.env())))',
+      ),
+    ).resolves.toEqual([
+      "<environment: R_GlobalEnv>",
+      "<environment: R_EmptyEnv>",
+      "<environment: namespace:base>",
+      "TRUE",
+    ]);
+    await expect(
+      runtime.eval(`
+        named <- as.matrix(setNames(1:3, letters[1:3]))
+        one <- as.matrix(array(1:3, 3, dimnames = list(axis = letters[1:3])))
+        classed <- as.matrix.default(
+          structure(setNames(1:3, letters[1:3]), class = "probe", marker = "drop")
+        )
+        cube <- as.matrix(array(
+          1:8,
+          c(2, 2, 2),
+          dimnames = list(A = c("a", "b"), B = c("c", "d"), C = c("e", "f"))
+        ))
+        as.character(c(
+          dim(named), dimnames(named)[[1]], is.null(dimnames(named)[[2]]),
+          is.null(names(named)), identical(one, named), is.null(names(dimnames(one))),
+          class(classed), is.null(attr(classed, "marker")), is.null(attr(classed, "class")),
+          dim(cube), is.null(dimnames(cube))
+        ))
+      `),
+    ).resolves.toEqual([
+      "3",
+      "1",
+      "a",
+      "b",
+      "c",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "matrix",
+      "array",
+      "TRUE",
+      "TRUE",
+      "8",
+      "1",
+      "TRUE",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("evaluates tryCatch handlers before the expression and retains empty handler names", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        marker <- 0
+        value <- tryCatch(marker, error = function(error) -1, { marker <- 3 })
+        eager <- tryCatch(marker, error = { marker <- 4; function(error) -2 })
+        c(value, marker, eager)
+      `),
+    ).resolves.toEqual([3, 4, 4]);
+    await expect(runtime.eval("tryCatch(1, function(error) 2)")).rejects.toMatchObject({
+      code: "NRE2101",
     });
     await runtime.dispose();
   });
@@ -1381,7 +2312,7 @@ describe("complete inline source-to-result vertical slice", () => {
       runtime.eval(
         "d <- as.Date(c('2020-01-01', '2020-01-11'))\nout <- approx(d, c(2000, 2010), xout = as.Date('2020-01-06'))\nc(out$y, class(out$x), as.character(out$x))",
       ),
-    ).resolves.toEqual(["2005", "Date", "18267"]);
+    ).resolves.toEqual(["2005", "Date", "2020-01-06"]);
     await expect(
       runtime.eval(
         "a <- approx(c(1, 3), c(10, 30), xout = c(0, 2, 4), rule = 2)\nb <- approx(c(1, 3), c(10, 30), xout = 2, method = 'constant', f = .25)\nc(a$y, b$y)",
@@ -1405,6 +2336,751 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(
       runtime.eval("approx(c(1, NA, 3), c(10, 20, 30), xout = 2, na.rm = FALSE)"),
     ).rejects.toMatchObject({ code: "NRT3290" });
+    await runtime.dispose();
+  });
+
+  it("evaluates reusable GNU-compatible cubic spline methods through stats", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(
+        "a <- spline(c(0, 1, 2, 4), c(0, 1, 0, 2), xout = c(-1, .5, 3, 5), method = 'fmm')\nb <- spline(c(0, 1, 2, 4), c(0, 1, 0, 2), xout = c(-1, .5, 3, 5), method = 'natural')\nc(round(a$y, 12), round(b$y, 12))",
+      ),
+    ).resolves.toEqual([
+      -5.5, 0.90625, -0.5, 10, -1.608695652174, 0.728260869565, 0.347826086957, 3.869565217391,
+    ]);
+    await expect(
+      runtime.eval(
+        "p <- spline(0:4, c(0, 1, 0, -1, 0), xout = -1:5, method = 'periodic')\nh <- spline(0:4, c(0, 1, 1.5, 1.75, 2), xout = seq(0, 4, .5), method = 'hyman')\nc(round(p$y, 12), round(h$y, 12))",
+      ),
+    ).resolves.toEqual([
+      -1, 0, 1, 0, -1, 0, 1, 0, 0.578125, 1, 1.296875, 1.5, 1.640625, 1.75, 1.859375, 2,
+    ]);
+    await expect(
+      runtime.eval(
+        "a <- spline(1:6, c(16, 18, 21, 17, 15, 12), n = 7)\nb <- spline(1, 2, xout = c(0, 1, 2))\nc(round(a$x, 12), round(a$y, 12), b$y)",
+      ),
+    ).resolves.toEqual([
+      1, 1.833333333333, 2.666666666667, 3.5, 4.333333333333, 5.166666666667, 6, 16,
+      17.302014440035, 20.678240740741, 19.377604166667, 16.01774691358, 14.715153769841, 12, 2, 2,
+      2,
+    ]);
+    await expect(runtime.eval("names(formals(stats::spline))")).resolves.toEqual([
+      "x",
+      "y",
+      "n",
+      "method",
+      "xmin",
+      "xmax",
+      "xout",
+      "ties",
+    ]);
+    const duplicate = await runtime.evalDetailed(
+      "spline(c(2, 1, 1, 3), c(4, 1, 3, 9), xout = 1:3)$y",
+    );
+    expect(duplicate.value).toEqual([2, 4, 9]);
+    expect(duplicate.warnings).toEqual([
+      { code: "NRW1104", message: "collapsing to unique 'x' values" },
+    ]);
+    await expect(
+      runtime.eval("spline(1:4, c(0, 1, 0, 2), method = 'hyman')"),
+    ).rejects.toMatchObject({ code: "NRT3290" });
+    await runtime.dispose();
+  });
+
+  it("fits and predicts reusable natural cubic smoothing splines through stats", async () => {
+    const runtime = await session();
+    const result = await runtime.eval(
+      "fit <- smooth.spline(0:5, c(0, 1, 0, 1, 0, 1), df = 4)\npred <- predict(fit, c(.5, 2.5, 6))\nc(fit$df, fit$y, fit$lev, pred$y)",
+    );
+    expect(result).toHaveLength(16);
+    const values = result as number[];
+    expect(values[0]).toBeCloseTo(4, 3);
+    const expected = [
+      0.160615, 0.573823, 0.475455, 0.524545, 0.426177, 0.839385, 0.886911, 0.563953, 0.549371,
+      0.549371, 0.563953, 0.886911, 0.42447, 0.5, 1.404908,
+    ];
+    for (let index = 0; index < expected.length; index += 1) {
+      expect(values[index + 1]).toBeCloseTo(expected[index]!, 3);
+    }
+    await expect(runtime.eval("class(fit)")).resolves.toBe("smooth.spline");
+    await expect(
+      runtime.eval(`
+        vector.fit <- smooth.spline(c(10, 20, 15, 40), spar = 0.5)
+        matrix.fit <- smooth.spline(cbind(1:4, c(5, 7, 6, 9)), spar = 0.5)
+        c(vector.fit$x, vector.fit$yin, matrix.fit$x, matrix.fit$yin)
+      `),
+    ).resolves.toEqual([1, 2, 3, 4, 10, 20, 15, 40, 1, 2, 3, 4, 5, 7, 6, 9]);
+    await expect(
+      runtime.eval(`
+        large.x <- seq(0, 10, length.out = 500)
+        large <- smooth.spline(large.x, sin(large.x))
+        predicted <- predict(large, c(0, 5, 10), deriv = 1)
+        c(
+          large$n, length(large$x), length(large$y), length(large$lev),
+          all(is.finite(large$y)), all(is.finite(large$lev)), length(predicted$y)
+        )
+      `),
+    ).resolves.toEqual([500, 500, 500, 500, 1, 1, 3]);
+    await expect(
+      runtime.eval(`
+        x <- seq(0, 10, length.out = 500)
+        smooth.spline(x, sin(x), all.knots = TRUE)
+      `),
+    ).rejects.toMatchObject({ code: "NRT3420" });
+    await expect(runtime.eval("names(formals(stats::smooth.spline))")).resolves.toEqual([
+      "x",
+      "y",
+      "w",
+      "df",
+      "spar",
+      "lambda",
+      "cv",
+      "all.knots",
+      "nknots",
+      "keep.data",
+      "df.offset",
+      "penalty",
+      "control.spar",
+      "tol",
+      "keep.stuff",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("computes reusable box and normal kernel regression smoothers", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        box <- ksmooth(
+          c(0, 1, 2), c(0, 10, 20), kernel = "box", bandwidth = 2,
+          x.points = c(3, 1.5, 0, -1)
+        )
+        normal <- ksmooth(
+          c(0, 1, 2), c(0, 10, 20), kernel = "normal", bandwidth = 2,
+          x.points = c(-1, 0, .5, 1, 1.5, 2, 3)
+        )
+        round(c(box$x, box$y, normal$x, normal$y), 12)
+      `),
+    ).resolves.toEqual([
+      -1, 0, 1.5, 3, 0, 5, 15, 20, -1, 0, 0.5, 1, 1.5, 2, 3, 0.612481303635, 3.185147086074,
+      6.124389509845, 10, 13.875610490155, 16.814852913926, 19.387518696365,
+    ]);
+    await expect(runtime.eval("ksmooth(1:3, c(2, 4, 8), n.points = 5)$x")).resolves.toEqual([
+      1, 1.5, 2, 2.5, 3,
+    ]);
+    await expect(runtime.eval("names(formals(stats::ksmooth))")).resolves.toEqual([
+      "x",
+      "y",
+      "kernel",
+      "bandwidth",
+      "range.x",
+      "n.points",
+      "x.points",
+    ]);
+    await expect(runtime.eval('ksmooth(1:3, 1:3, kernel = "x")')).rejects.toMatchObject({
+      code: "NRT3430",
+    });
+    await runtime.dispose();
+  });
+
+  it("smooths ordered and duplicate numeric coordinates through robust LOWESS", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        fit <- stats::lowess(c(1, 2, 4, 3, 5), f = 0.8, iter = 0, delta = 0)
+        round(c(fit$x, fit$y), 12)
+      `),
+    ).resolves.toEqual([
+      1, 2, 3, 4, 5, 0.880227727681, 2.286310517529, 3.141068447412, 3.858931552588, 4.640683183044,
+    ]);
+    await expect(
+      runtime.eval(`
+        fit <- stats::lowess(
+          c(3, 1, 2, 2, 5),
+          c(9, 1, 4, 6, 25),
+          f = 0.8,
+          iter = 2,
+          delta = 0
+        )
+        round(c(fit$x, fit$y), 12)
+      `),
+    ).resolves.toEqual([1, 2, 2, 3, 5, 1, 5, 5, 9, 25]);
+    await expect(runtime.eval("names(formals(stats::lowess))")).resolves.toEqual([
+      "x",
+      "y",
+      "f",
+      "iter",
+      "delta",
+    ]);
+    await expect(runtime.eval("stats::lowess(1:3, f = 0)")).rejects.toMatchObject({
+      code: "NRT3453",
+    });
+    await runtime.dispose();
+  });
+
+  it("fits deterministic running-line supersmoother spans through stats", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        fit <- stats::supsmu(
+          1:8,
+          c(1, 2, 1, 4, 3, 7, 6, 8),
+          span = 0.5
+        )
+        round(c(fit$x, fit$y), 12)
+      `),
+    ).resolves.toEqual([1, 2, 3, 4, 5, 6, 7, 8, 1, 1.6, 2.2, 3.4, 4.2, 5.6, 6.7, 7.8]);
+    await expect(runtime.eval("names(formals(stats::supsmu))")).resolves.toEqual([
+      "x",
+      "y",
+      "wt",
+      "span",
+      "periodic",
+      "bass",
+      "trace",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("constructs and plots normal and two-sample quantile comparisons through stats", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(
+        "z <- qqnorm(c(3, NA, 1, 2), plot.it = FALSE)\ns <- qqplot(c(3, 1, 2), c(20, 10, 30, 40), plot.it = FALSE)\nc(round(z$x, 6), z$y, s$x, s$y)",
+      ),
+    ).resolves.toEqual([
+      0.869424,
+      { __nativr__: "NA" },
+      -0.869424,
+      0,
+      3,
+      { __nativr__: "NA" },
+      1,
+      2,
+      1,
+      2,
+      3,
+      10,
+      25,
+      40,
+    ]);
+    await expect(
+      runtime.eval(
+        "qqnorm.probe <- function(y, ...) 'method'; qqnorm(structure(1:3, class = 'probe'), plot.it = FALSE)",
+      ),
+    ).resolves.toBe("method");
+    const plotted = await runtime.evalDetailed("qqnorm(c(3, 1, 2))");
+    expect(plotted.visible).toBe(false);
+    expect(plotted.graphics.length).toBeGreaterThan(0);
+    await runtime.dispose();
+  });
+
+  it("draws reusable quantile reference lines with custom distributions and axis orientation", async () => {
+    const runtime = await session();
+    const ordinary = await runtime.evalDetailed(`
+      plot.new()
+      plot.window(c(0, 10), c(0, 40))
+      shown <- withVisible(stats::qqline(
+        c(0, 10, 20, 30),
+        distribution = function(p) p * 10,
+        probs = c(.2, .8),
+        qtype = 1,
+        col = "blue",
+        lwd = 3
+      ))
+      c(is.null(shown$value), shown$visible, names(formals(stats::qqline)))
+    `);
+    expect(ordinary.value).toEqual([
+      "TRUE",
+      "FALSE",
+      "y",
+      "datax",
+      "distribution",
+      "probs",
+      "qtype",
+      "...",
+    ]);
+    expect(ordinary.graphics.at(-1)).toMatchObject({
+      kind: "segments",
+      segments: [{ x0: 10, y0: 40, x1: 2, y1: 0, color: "#0000FFFF", lineWidth: 3 }],
+    });
+
+    const transposed = await runtime.evalDetailed(`
+      plot.new()
+      plot.window(c(0, 30), c(0, 10))
+      stats::qqline(
+        c(0, 10, 20, 30),
+        datax = TRUE,
+        distribution = function(p) p * 10,
+        probs = c(.2, .8),
+        qtype = 1
+      )
+    `);
+    expect(transposed.visible).toBe(false);
+    expect(transposed.graphics.at(-1)).toMatchObject({
+      kind: "segments",
+      segments: [{ x0: 0, y0: 2, x1: 30, y1: 8 }],
+    });
+    await expect(runtime.eval("stats::qqline(1:4, probs = .5)")).rejects.toMatchObject({
+      code: "NRT3422",
+    });
+    await expect(runtime.eval("stats::qqline(1:4, distribution = 'qnorm')")).rejects.toMatchObject({
+      code: "NRT3422",
+    });
+    await runtime.dispose();
+  });
+
+  it("converts a call tail to a pairlist when double-bracket deletion removes its head", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        call <- structure(quote(f(a = 1, b = 2)), marker = "keep")
+        call[[1]] <- NULL
+        other <- quote(f(a = 1, b = 2))
+        other[[2]] <- NULL
+        formula <- structure(y ~ x, marker = "formula")
+        formula[[1]] <- NULL
+        as.character(c(
+          typeof(call), is.list(call), is.pairlist(call), names(call), unlist(as.list(call)),
+          attr(call, "marker"), typeof(other), deparse(other), typeof(formula),
+          is.pairlist(formula), class(formula), vapply(as.list(formula), deparse1, character(1)),
+          attr(formula, "marker")
+        ))
+      `),
+    ).resolves.toEqual([
+      "pairlist",
+      "TRUE",
+      "TRUE",
+      "a",
+      "b",
+      "1",
+      "2",
+      "keep",
+      "language",
+      "f(b = 2)",
+      "pairlist",
+      "TRUE",
+      "formula",
+      "y",
+      "x",
+      "formula",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("evaluates vectorized normal densities through stats", async () => {
+    const runtime = await session();
+    const values = (await runtime.eval(
+      "c(dnorm(c(-Inf, -1, 0, 1, Inf)), dnorm(c(-Inf, -1, 0, 1, Inf), log = TRUE), dnorm(c(-1, 0, 1, Inf), 0, 0), dnorm(0:3, c(0, 1), c(1, 2, 3)))",
+    )) as number[];
+    const expected = [
+      0,
+      0.241970724519143,
+      0.398942280401433,
+      0.241970724519143,
+      0,
+      Number.NEGATIVE_INFINITY,
+      -1.41893853320467,
+      -0.918938533204673,
+      -1.41893853320467,
+      Number.NEGATIVE_INFINITY,
+      0,
+      Number.POSITIVE_INFINITY,
+      0,
+      0,
+      0.398942280401433,
+      0.199471140200716,
+      0.106482668507451,
+      0.0539909665131881,
+    ];
+    expect(values).toHaveLength(expected.length);
+    for (let index = 0; index < expected.length; index += 1) {
+      if (!Number.isFinite(expected[index]!)) expect(values[index]).toBe(expected[index]);
+      else expect(values[index]).toBeCloseTo(expected[index]!, 13);
+    }
+    await expect(
+      runtime.eval(
+        "x <- structure(c(0, 1), names = c('a', 'b'), marker = 'x'); m <- structure(c(0, 1, 2), names = c('m1', 'm2', 'm3'), marker = 'm'); c(names(dnorm(x)), attr(dnorm(x), 'marker'), names(dnorm(x, m)), attr(dnorm(x, m), 'marker'), names(formals(stats::dnorm)))",
+      ),
+    ).resolves.toEqual(["a", "b", "x", "m1", "m2", "m3", "m", "x", "mean", "sd", "log"]);
+    const invalid = await runtime.evalDetailed("dnorm(c(0, 1), 0, -1)");
+    expect(invalid.value).toEqual([Number.NaN, Number.NaN]);
+    expect(invalid.warnings).toEqual([
+      { code: "NRW1003", message: "NaNs produced", call: "dnorm(c(0, 1), 0, -1)" },
+    ]);
+    await runtime.dispose();
+  });
+
+  it("fits reusable univariate Yule-Walker autoregressions", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        fit <- ar(ts(c(1, 2, 1, 3, 2, 5, 4, 6, 5, 8)), aic = FALSE, order.max = 3)
+        selected <- ar(c(1, 2, 1, 3, 2, 5, 4, 6, 5, 8), aic = TRUE, order.max = 3)
+        c(
+          fit$order, round(fit$ar, 12), round(fit$var.pred, 12), fit$x.mean,
+          round(fit$aic, 12), fit$n.used, fit$n.obs, fit$order.max,
+          round(as.vector(fit$partialacf), 12),
+          round(fit$resid[c(4, 5, 10)], 12), class(fit), class(fit$resid),
+          start(fit$resid), end(fit$resid), frequency(fit$resid), selected$order,
+          round(selected$resid[c(1, 10)], 12), names(formals(stats::ar))
+        )
+      `),
+    ).resolves.toEqual([
+      "3",
+      "0.417220820031",
+      "0.522288318717",
+      "-0.427472881436",
+      "4.486120701558",
+      "3.7",
+      "0",
+      "0.161822929572",
+      "0.212551450095",
+      "0.194656341292",
+      "10",
+      "10",
+      "3",
+      "0.409771309771",
+      "0.4208389176",
+      "-0.427472881436",
+      "0.160209576024",
+      "-0.724470863883",
+      "2.684591665341",
+      "ar",
+      "ts",
+      "1",
+      "1",
+      "10",
+      "1",
+      "1",
+      "0",
+      "-2.7",
+      "4.3",
+      "x",
+      "aic",
+      "order.max",
+      "method",
+      "na.action",
+      "series",
+      "...",
+    ]);
+    await expect(runtime.eval("arima.sim(list(ar = 1), n = 3, innov = 1:3)")).rejects.toMatchObject(
+      { code: "NRE2255", message: "'ar' part of model is not stationary" },
+    );
+    await expect(
+      runtime.eval("arima.sim(list(order = c(0, 1, 0)), n = 3, innov = 1:3)"),
+    ).rejects.toMatchObject({ code: "NRU6131" });
+    await runtime.dispose();
+  });
+
+  it("generates reusable geometric random variates", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        set.seed(1)
+        draws <- rgeom(1000, .25)
+        c(typeof(draws), length(draws), all(draws >= 0), abs(mean(draws) - 3) < .5,
+          rgeom(4, 1), names(formals(stats::rgeom)))
+      `),
+    ).resolves.toEqual(["integer", "1000", "TRUE", "TRUE", "0", "0", "0", "0", "n", "prob"]);
+    const invalid = await runtime.evalDetailed("rgeom(4, c(1, NA, 0, -1))");
+    expect(invalid.value).toEqual([
+      0,
+      { __nativr__: "NA" },
+      { __nativr__: "NA" },
+      { __nativr__: "NA" },
+    ]);
+    expect(invalid.warnings).toEqual([
+      { code: "NRW1003", message: "NAs produced", call: "rgeom(4, c(1, NA, 0, -1))" },
+    ]);
+    await runtime.dispose();
+  });
+
+  it("simulates reusable univariate ARMA processes", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        ar <- arima.sim(list(ar = .5), n = 6, innov = 1:6, n.start = 3,
+          start.innov = c(0, 0, 0))
+        ma <- arima.sim(list(ma = c(.5, -.25)), n = 6, innov = 1:6, n.start = 3,
+          start.innov = c(0, 0, 0))
+        mixed <- arima.sim(list(ar = .5, ma = .25), n = 6, innov = 1:6, n.start = 3,
+          start.innov = c(0, 0, 0))
+        generated <- arima.sim(list(ar = .5), n = 4,
+          rand.gen = function(n, offset) rep(offset, n), n.start = 2, offset = 1)
+        c(ar, ma, mixed, generated, class(ar), start(ar), end(ar), frequency(ar),
+          names(formals(stats::arima.sim)))
+      `),
+    ).resolves.toEqual([
+      "1",
+      "2.5",
+      "4.25",
+      "6.125",
+      "8.0625",
+      "10.03125",
+      "1",
+      "2.5",
+      "3.75",
+      "5",
+      "6.25",
+      "7.5",
+      "1",
+      "2.75",
+      "4.875",
+      "7.1875",
+      "9.59375",
+      "12.046875",
+      "1.75",
+      "1.875",
+      "1.9375",
+      "1.96875",
+      "ts",
+      "1",
+      "1",
+      "6",
+      "1",
+      "1",
+      "model",
+      "n",
+      "rand.gen",
+      "innov",
+      "n.start",
+      "start.innov",
+      "...",
+    ]);
+    await expect(
+      runtime.eval(`
+        matrix.value <- structure(
+          matrix(c(1.2, 12, NA, 4), 2, dimnames = list(Row = c("r1", "r2"), Col = c("a", "b"))),
+          marker = "drop"
+        )
+        array.value <- structure(
+          array(1:8, c(2, 2, 2), dimnames = list(
+            A = c("a1", "a2"), B = c("b1", "b2"), C = c("c1", "c2")
+          )),
+          marker = "drop"
+        )
+        matrix.formatted <- format(matrix.value, trim = TRUE)
+        array.formatted <- format(array.value, trim = TRUE)
+        list(
+          matrix = matrix.formatted,
+          array = array.formatted,
+          matrix.attributes = names(attributes(matrix.formatted)),
+          array.attributes = names(attributes(array.formatted)),
+          markers = c(is.null(attr(matrix.formatted, "marker")), is.null(attr(array.formatted, "marker")))
+        )
+      `),
+    ).resolves.toEqual([
+      ["1.2", "12.0", "NA", "4.0"],
+      ["1", "2", "3", "4", "5", "6", "7", "8"],
+      ["dim", "dimnames"],
+      ["dim", "dimnames"],
+      [true, true],
+    ]);
+    await runtime.dispose();
+  });
+
+  it("fits reusable seasonal ARIMA models with arima0", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        fit <- stats::arima0(
+          datasets::USAccDeaths,
+          order = c(0, 1, 1),
+          seasonal = list(order = c(0, 1, 1))
+        )
+        c(
+          class(fit), names(fit$coef),
+          all(abs(fit$coef - c(ma1 = -0.431534698301054,
+            sma1 = -0.548671377153827)) < 0.005),
+          abs(fit$sigma2 - 99655.4522533144) < 500,
+          max(abs(fit$var.coef - matrix(c(0.0151318939704872, -0.00174916740551137,
+            -0.00174916740551137, 0.0293855537220647), 2))) < 0.003,
+          abs(fit$loglik - (-425.448142432806)) < 0.02 &&
+            abs(fit$aic - 856.896284865612) < 0.02,
+          identical(fit$arma, c(ar = 0, ma = 1, sar = 0, sma = 1,
+            period = 12, diff = 1, sdiff = 1)),
+          identical(dim(fit$var.coef), c(2L, 2L)),
+          identical(dimnames(fit$var.coef), list(c("ma1", "sma1"), c("ma1", "sma1"))),
+          length(fit$residuals), start(fit$residuals), end(fit$residuals),
+          frequency(fit$residuals), names(formals(stats::arima0))
+        )
+      `),
+    ).resolves.toEqual([
+      "arima0",
+      "ma1",
+      "sma1",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "59",
+      "1974",
+      "2",
+      "1978",
+      "12",
+      "12",
+      "x",
+      "order",
+      "seasonal",
+      "xreg",
+      "include.mean",
+      "delta",
+      "transform.pars",
+      "fixed",
+      "init",
+      "method",
+      "n.cond",
+      "optim.control",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("constructs reusable GLM iteration controls through stats", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(
+        "a <- glm.control(); b <- glm.control(1e-6, 10L, TRUE); c(a$epsilon, a$maxit, a$trace, b$epsilon, b$maxit, b$trace, names(a), names(formals(glm.control)))",
+      ),
+    ).resolves.toEqual([
+      "1e-08",
+      "25",
+      "FALSE",
+      "0.000001",
+      "10",
+      "TRUE",
+      "epsilon",
+      "maxit",
+      "trace",
+      "epsilon",
+      "maxit",
+      "trace",
+    ]);
+    await expect(runtime.eval("glm.control(epsilon = 0)")).rejects.toMatchObject({
+      code: "NRT3265",
+    });
+    await runtime.dispose();
+  });
+
+  it("creates reusable stats::approxfun interpolation functions", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(
+        "f <- approxfun(c(1, 3), c(10, 30), rule = 2)\ng <- approxfun(c(1, 3), c(10, 30), method = 'constant', f = .25)\nh <- approxfun(c(10, 20, 40))\nc(f(c(0, 2, 4, NA, NaN)), g(2), h(1:3), names(formals(f)), names(formals(approxfun)))",
+      ),
+    ).resolves.toEqual([
+      "10",
+      "20",
+      "30",
+      { __nativr__: "NA" },
+      "NaN",
+      "15",
+      "10",
+      "20",
+      "40",
+      "v",
+      "x",
+      "y",
+      "method",
+      "yleft",
+      "yright",
+      "rule",
+      "f",
+      "ties",
+      "na.rm",
+    ]);
+    const duplicate = await runtime.evalDetailed(
+      "f <- approxfun(c(1, 1, 2), c(10, 20, 30)); f(c(1, 1.5))",
+    );
+    expect(duplicate.value).toEqual([15, 22.5]);
+    expect(duplicate.warnings).toEqual([
+      { code: "NRW1104", message: "collapsing to unique 'x' values" },
+    ]);
+    await expect(runtime.eval("approxfun(1, 10)")).rejects.toMatchObject({ code: "NRT3290" });
+    await runtime.dispose();
+  });
+
+  it("creates GNU-shaped stats::ecdf closures with exact missing-value boundaries", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        F <- stats::ecdf(c(a = 3, b = 1, c = 1, d = 2, e = NA))
+        e <- environment(F)
+        c(
+          identical(class(F), c("ecdf", "stepfun", "function")),
+          identical(names(formals(F)), "v"),
+          identical(ls(e, all.names = TRUE), c("f", "method", "na.rm", "nobs", "x", "y", "yleft", "yright")),
+          identical(e$f, 0),
+          identical(e$method, 2L),
+          identical(e$na.rm, TRUE),
+          identical(e$nobs, 4L),
+          identical(e$x, c(1, 2, 3)),
+          identical(e$y, c(.5, .75, 1)),
+          identical(e$yleft, 0),
+          identical(e$yright, 1),
+          identical(F(c(-Inf, 0, 1, 1.5, 2, 3, Inf, NA, NaN)), c(0, 0, .5, .5, .75, 1, 1, NA, NaN)),
+          is.null(names(F(c(a = 1, b = 2)))),
+          identical(F(numeric()), numeric()),
+          identical(deparse(body(F)), ".approxfun(x, y, v, method, yleft, yright, f, na.rm)"),
+          identical(names(formals(stats::ecdf)), "x"),
+          identical(names(formals(stats::plot.ecdf)), c("x", "...", "ylab", "verticals", "col.01line", "pch")),
+          identical(names(formals(graphics::rug)), c("x", "ticksize", "side", "lwd", "col", "quiet", "...")),
+          identical(names(formals(grDevices::adjustcolor)), c("col", "alpha.f", "red.f", "green.f", "blue.f", "offset", "transform"))
+        )
+      `),
+    ).resolves.toEqual(Array.from({ length: 19 }, () => true));
+    await expect(
+      runtime.eval("grDevices::adjustcolor(c('gray', 'red', '#01020380', NA), alpha.f = .2)"),
+    ).resolves.toEqual(["#BEBEBE33", "#FF000033", "#0102031A", "#FFFFFF00"]);
+    await expect(
+      runtime.eval(
+        "grDevices::adjustcolor('gray', red.f = .5, green.f = 2, blue.f = 0, offset = c(.1, .2, .3, 0))",
+      ),
+    ).resolves.toBe("#79FF4DFF");
+
+    const plotted = await runtime.evalDetailed(
+      "plot(F, do.points = TRUE, verticals = TRUE, col = 'steelblue', main = 'ECDF')",
+    );
+    expect(plotted.value).toBeNull();
+    expect(plotted.visible).toBe(false);
+    expect(plotted.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "window",
+      "box",
+      "text",
+      "segments",
+      "segments",
+      "points",
+      "segments",
+    ]);
+    const rugged = await runtime.evalDetailed(
+      "graphics::rug(c(1, 2, 3, NA, Inf), side = 3, col = 'red')",
+    );
+    expect(rugged.value).toBeNull();
+    expect(rugged.visible).toBe(false);
+    expect(rugged.graphics).toHaveLength(1);
+    expect(rugged.graphics[0]).toMatchObject({ kind: "segments" });
+    if (rugged.graphics[0]?.kind === "segments") {
+      expect(rugged.graphics[0].segments).toHaveLength(3);
+      expect(rugged.graphics[0].segments.every((segment) => segment.color === "#FF0000FF")).toBe(
+        true,
+      );
+    }
+
+    const coerced = await runtime.evalDetailed(
+      "F <- stats::ecdf(c('2', '1', 'x', NA)); F(c(0, 1, 2, Inf, NA, NaN))",
+    );
+    expect(coerced.value).toEqual([0, 0.5, 1, 1, NA, Number.NaN]);
+    expect(coerced.warnings.map((warning) => warning.message)).toEqual([
+      "NAs introduced by coercion",
+    ]);
+    await expect(runtime.eval("stats::ecdf(c(NA_real_, NaN))")).rejects.toMatchObject({
+      code: "NRT3348",
+      message: "'x' must have 1 or more non-missing values",
+    });
     await runtime.dispose();
   });
 
@@ -1471,12 +3147,532 @@ describe("complete inline source-to-result vertical slice", () => {
     ).rejects.toMatchObject({
       code: "NRE2005",
     });
-    await expect(runtime.eval("optim(1, function(x) x ^ 2)")).rejects.toMatchObject({
-      code: "NRU6145",
-    });
+    await expect(
+      runtime.eval(
+        "out <- optim(c(a = 3, b = -4), function(x) sum((x - c(1, 2)) ^ 2))\nc(all(abs(out$par - c(1, 2)) < 2e-3), out$value < 1e-5, out$convergence == 0, is.na(out$counts[['gradient']]), names(out$par))",
+      ),
+    ).resolves.toEqual(["TRUE", "TRUE", "TRUE", "TRUE", "a", "b"]);
     await expect(
       runtime.eval("optim(c(1, 2), function(x) sum(x ^ 2), function(x) 1, method = 'BFGS')"),
     ).rejects.toMatchObject({ code: "NRT3292" });
+    await expect(
+      runtime.eval(`
+        trace <- capture.output(
+          fit <- optim(
+            c(3, -2), function(p) sum((p - c(1, 1)) ^ 2),
+            method = "BFGS", control = list(trace = 1, REPORT = 1, maxit = 5)
+          )
+        )
+        c(
+          grepl("^initial  value", trace[1]),
+          any(grepl("^iter ", trace)),
+          grepl("^final  value", trace[length(trace) - 1L]),
+          trace[length(trace)] == "converged",
+          fit$convergence == 0,
+          all(abs(fit$par - c(1, 1)) < 1e-5)
+        )
+      `),
+    ).resolves.toEqual([true, true, true, true, true, true]);
+    await runtime.dispose();
+  });
+
+  it("runs stats::optim simulated annealing with a reusable proposal callback", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        objective_calls <- 0L
+        proposal_calls <- 0L
+        fit <- optim(
+          c(a = 5, b = 3),
+          function(x, target) {
+            objective_calls <<- objective_calls + 1L
+            sum((x - target) ^ 2)
+          },
+          gr = function(x, target) {
+            proposal_calls <<- proposal_calls + 1L
+            x - sign(x - target)
+          },
+          target = c(0, 0),
+          method = "SANN",
+          control = list(maxit = 4, temp = 2, tmax = 2)
+        )
+        c(
+          fit$par,
+          fit$value,
+          objective_calls,
+          proposal_calls,
+          fit$counts[["function"]],
+          is.na(fit$counts[["gradient"]]),
+          fit$convergence,
+          is.null(fit$message),
+          identical(names(fit), c("par", "value", "counts", "convergence", "message"))
+        )
+      `),
+    ).resolves.toEqual([2, 0, 4, 4, 3, 4, 1, 0, 1, 1]);
+    await expect(
+      runtime.eval(`
+        fit <- optim(
+          2,
+          function(x) (x - 1) ^ 2,
+          gr = function(x) x - 0.25,
+          method = "SANN",
+          control = list(maxit = 3),
+          hessian = TRUE
+        )
+        c(fit$par, fit$value, fit$counts[["function"]], is.na(fit$counts[["gradient"]]),
+          fit$convergence, round(fit$hessian, 8), dim(fit$hessian))
+      `),
+    ).resolves.toEqual([1.5, 0.25, 3, 1, 0, 1, 1, 1]);
+    await expect(
+      runtime.eval(`
+        calls <- 0L
+        fit <- optim(5, function(x) { calls <<- calls + 1L; x ^ 2 },
+                     gr = function(x) x - 1, method = "SANN", control = list(maxit = 0))
+        c(fit$par, fit$value, fit$counts[["function"]], calls)
+      `),
+    ).resolves.toEqual([5, 25, 0, 1]);
+    await runtime.dispose();
+  });
+
+  it("runs reusable stats::optim conjugate-gradient methods", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        objective <- function(x, target) sum((x - target) ^ 2)
+        gradient <- function(x, target) 2 * (x - target)
+        fits <- lapply(1:3, function(type) optim(
+          c(a = 8, b = -4), objective, gradient,
+          target = c(1, 2), method = "CG",
+          control = list(type = type, maxit = 200, reltol = 1e-10)
+        ))
+        one <- optim(1, function(x) x ^ 2, method = "CG")
+        maximum <- optim(
+          0, function(x) -(x - 3) ^ 2, method = "CG",
+          control = list(fnscale = -1, reltol = 1e-10)
+        )
+        c(
+          vapply(fits, function(fit) all(abs(fit$par - c(1, 2)) < 1e-5), logical(1)),
+          vapply(fits, function(fit) fit$value < 1e-9, logical(1)),
+          vapply(fits, function(fit) fit$convergence == 0, logical(1)),
+          abs(one$par) < 1e-5, one$value < 1e-9, one$convergence == 0,
+          abs(maximum$par - 3) < 1e-5, abs(maximum$value) < 1e-9,
+          identical(names(one$counts), c("function", "gradient")), all(one$counts > 0)
+        )
+      `),
+    ).resolves.toEqual(Array.from({ length: 16 }, () => true));
+    await expect(
+      runtime.eval("optim(1, function(x) x ^ 2, method = 'CG', control = list(type = 4))"),
+    ).rejects.toMatchObject({ code: "NRT3292" });
+    await runtime.dispose();
+  });
+
+  it("runs bounded stats::nlminb and accepts shared optim control fields", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        objective <- function(x) sum((x - c(1, 2)) ^ 2)
+        gradient <- function(x) 2 * (x - c(1, 2))
+        bounded <- stats::nlminb(
+          c(a = 3, b = -3), objective, gradient,
+          lower = c(0, 0), upper = c(2, 3), control = list(iter.max = 100)
+        )
+        shared <- stats::optim(
+          c(a = 3, b = -3), objective, gradient, method = "BFGS",
+          control = list(
+            REPORT = 10, type = 1, lmm = 5, factr = 1e7,
+            pgtol = 0, tmax = 10, temp = 10
+          )
+        )
+        c(
+          all(abs(bounded$par - c(1, 2)) < 1e-8),
+          bounded$objective < 1e-12,
+          bounded$convergence == 0,
+          identical(names(bounded), c(
+            "par", "objective", "convergence", "iterations", "evaluations", "message"
+          )),
+          identical(names(bounded$evaluations), c("function", "gradient")),
+          identical(names(formals(stats::nlminb)), c(
+            "start", "objective", "gradient", "hessian", "...", "scale", "control",
+            "lower", "upper"
+          )),
+          all(abs(shared$par - c(1, 2)) < 1e-5),
+          shared$value < 1e-9,
+          shared$convergence == 0
+        )
+      `),
+    ).resolves.toEqual(Array.from({ length: 9 }, () => true));
+    await runtime.dispose();
+  });
+
+  it("optimizes scalar callbacks through stats::optimize and its British alias", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        minimum <- stats::optimize(function(x, target, offset) (x - target) ^ 2 + offset,
+          c(-5, 8), target = 2, offset = 7)
+        maximum <- optimise(function(x) -(x - 2) ^ 2, c(-5, 8), maximum = TRUE)
+        overridden <- optimize(function(x) (x - 2) ^ 2, c(100, 200), lower = -5, upper = 8)
+        linear <- optimize(identity, c(0, 1))
+        c(
+          abs(minimum$minimum - 2) < 1e-12, minimum$objective == 7,
+          abs(maximum$maximum - 2) < 1e-12, maximum$objective == 0,
+          abs(overridden$minimum - 2) < 1e-12,
+          abs(linear$minimum - 6.61069613518961e-05) < 1e-15,
+          identical(names(minimum), c("minimum", "objective")),
+          identical(names(maximum), c("maximum", "objective")),
+          identical(optimize, optimise),
+          names(formals(optimize))
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "f",
+      "interval",
+      "...",
+      "lower",
+      "upper",
+      "maximum",
+      "tol",
+    ]);
+    const nonfinite = await runtime.evalDetailed("optimize(function(x) NaN, c(0, 1))");
+    expect(nonfinite.value).toEqual([0.9999338930386481, Number.NaN]);
+    expect(nonfinite.warnings).toHaveLength(20);
+    expect(nonfinite.warnings.every((warning) => warning.code === "NRW1149")).toBe(true);
+    await expect(runtime.eval("optimize(function(x) c(x, x), c(0, 1))")).rejects.toMatchObject({
+      code: "NRT3294",
+    });
+    await expect(runtime.eval("optimize(identity, c(1, 1))")).rejects.toMatchObject({
+      code: "NRT3294",
+    });
+    await runtime.dispose();
+  });
+
+  it("constructs Base Vectorize wrappers with selected arguments and controls", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        f <- function(x = 10, y = 20, ..., z = 30) list(x = x, y = y, dots = list(...), z = z)
+        v <- Vectorize(f, "x")
+        g <- function(x, y = 2) x + y
+        named <- Vectorize(g)(c(a = 1, b = 2), 10:11)
+        plain <- Vectorize(g, USE.NAMES = FALSE)(c(a = 1, b = 2), 10:11)
+        unsimplified <- Vectorize(g, SIMPLIFY = FALSE)(1:2, 10:11)
+        c(
+          names(formals(v)), length(v()), v(x = 1:2)[[1]]$x, v(x = 1:2)[[2]]$x,
+          named, names(named), plain, is.null(names(plain)),
+          unlist(unsimplified), is.list(unsimplified),
+          identical(Vectorize(g, character()), g),
+          inherits(try(Vectorize(g, "missing"), silent = TRUE), "try-error")
+        )
+      `),
+    ).resolves.toEqual([
+      "x",
+      "y",
+      "...",
+      "z",
+      "0",
+      "1",
+      "2",
+      "11",
+      "13",
+      "a",
+      "b",
+      "11",
+      "13",
+      "TRUE",
+      "11",
+      "13",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("computes reusable real and complex matrix norms", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- matrix(c(1, -2, 3, 4), 2)
+        z <- matrix(c(3 + 4i, 0i, 1i, -2i), 2)
+        c(
+          norm(x), norm(x, "I"), abs(norm(x, "F") - sqrt(30)) < 1e-12,
+          norm(x, "M"), abs(norm(x, "2") - 5.11667273601693) < 1e-12,
+          norm(x, "1"), abs(norm(x, "f") - sqrt(30)) < 1e-12,
+          abs(norm(z, "F") - sqrt(30)) < 1e-12, norm(z, "M"),
+          norm(matrix(numeric(), 0, 2), "F"), is.na(norm(matrix(c(1, NA), 2), "F")),
+          names(formals(norm))
+        )
+      `),
+    ).resolves.toEqual([
+      "7",
+      "6",
+      "TRUE",
+      "4",
+      "TRUE",
+      "7",
+      "TRUE",
+      "TRUE",
+      "5",
+      "0",
+      "TRUE",
+      "x",
+      "type",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("dispatches as.matrix methods and rebuilds non-matrix attributes and dimension names", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        as.matrix.nativr_probe <- function(x, marker, ...) matrix(marker, nrow = 1)
+        ignored <- as.matrix(1:3, ncol = 99)
+        dispatched <- as.matrix(structure(1, class = "nativr_probe"), marker = 7, extra = 9)
+        automatic <- data.frame(a = 1:2)
+        named <- as.matrix(setNames(1:3, letters[1:3]))
+        one.dim <- as.matrix(array(1:3, 3, dimnames = list(axis = letters[1:3])))
+        classed <- as.matrix.default(
+          structure(setNames(1:3, letters[1:3]), class = "probe", marker = "drop")
+        )
+        cube <- as.matrix(array(
+          1:8,
+          c(2, 2, 2),
+          dimnames = list(A = c("a", "b"), B = c("c", "d"), C = c("e", "f"))
+        ))
+        c(
+          names(formals(as.matrix)),
+          names(formals(as.matrix.default)),
+          names(formals(as.matrix.data.frame)),
+          identical(dim(ignored), c(3L, 1L)),
+          dispatched,
+          identical(dim(dispatched), c(1L, 1L)),
+          is.null(dimnames(as.matrix(automatic))[[1]]),
+          dimnames(as.matrix(automatic, rownames.force = TRUE))[[1]],
+          identical(dim(named), c(3L, 1L)),
+          identical(dimnames(named), list(c("a", "b", "c"), NULL)),
+          is.null(names(named)),
+          identical(one.dim, named),
+          is.null(names(dimnames(one.dim))),
+          identical(class(classed), c("matrix", "array")),
+          is.null(attr(classed, "marker")),
+          is.null(attr(classed, "class")),
+          identical(dim(cube), c(8L, 1L)),
+          is.null(dimnames(cube))
+        )
+      `),
+    ).resolves.toEqual([
+      "x",
+      "...",
+      "x",
+      "...",
+      "x",
+      "rownames.force",
+      "...",
+      "TRUE",
+      "7",
+      "TRUE",
+      "TRUE",
+      "1",
+      "2",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("converts mixed data frames to numeric data.matrix storage and row-name modes", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        frame <- data.frame(
+          num = c(1.5, 2.5), int = 1:2, log = c(TRUE, FALSE),
+          fac = factor(c("b", "a"), levels = c("a", "b")),
+          ord = ordered(c("low", "high"), levels = c("low", "high")),
+          chr = I(c("z", "a")),
+          date = as.Date(c("2020-01-01", "2020-01-02")),
+          row.names = c("r1", "r2")
+        )
+        converted <- data.matrix(frame)
+        automatic <- data.matrix(data.frame(a = 1:2))
+        omitted <- data.matrix(frame, rownames.force = FALSE)
+        forced <- data.matrix(data.frame(a = 1:2), rownames.force = TRUE)
+        c(
+          converted, dim(converted), rownames(converted), colnames(converted),
+          typeof(converted), names(formals(data.matrix)),
+          is.null(rownames(automatic)), is.null(rownames(omitted)), rownames(forced),
+          identical(data.matrix(matrix(1:4, 2)), matrix(1:4, 2))
+        )
+      `),
+    ).resolves.toEqual([
+      "1.5",
+      "2.5",
+      "1",
+      "2",
+      "1",
+      "0",
+      "2",
+      "1",
+      "1",
+      "2",
+      "2",
+      "1",
+      "18262",
+      "18263",
+      "2",
+      "7",
+      "r1",
+      "r2",
+      "num",
+      "int",
+      "log",
+      "fac",
+      "ord",
+      "chr",
+      "date",
+      "double",
+      "frame",
+      "rownames.force",
+      "TRUE",
+      "TRUE",
+      "1",
+      "2",
+      "TRUE",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("finds scalar roots through reusable stats::uniroot interval semantics", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        out <- stats::uniroot(function(x) x ^ 2 - 2, c(0, 2))
+        c(
+          abs(out$root - sqrt(2)) < 1e-6,
+          abs(out$f.root) < 1e-5,
+          out$iter > 0,
+          is.na(out$init.it),
+          out$estim.prec >= 0,
+          identical(names(out), c("root", "f.root", "iter", "init.it", "estim.prec"))
+        )
+      `),
+    ).resolves.toEqual([true, true, true, true, true, true]);
+    await expect(
+      runtime.eval("uniroot(function(x, target) x - target, c(0, 5), target = 3)$root"),
+    ).resolves.toBe(3);
+    await expect(
+      runtime.eval("uniroot(function(x) x - 3, c(0, 1), extendInt = 'yes')$root"),
+    ).resolves.toBeCloseTo(3, 5);
+    await expect(
+      runtime.eval(`
+        points <- numeric()
+        out <- uniroot(function(x) {
+          points <<- c(points, x)
+          exp(x) - 3
+        }, c(0, 2))
+        c(out$root, out$f.root, out$iter, out$estim.prec, points)
+      `),
+    ).resolves.toEqual([
+      1.0986319277799661, 0.000058917914115053094, 6, 0.00006103515625044409, 0, 2,
+      0.6260705709986626, 1.3130352854993315, 1.0462217813292771, 1.0931520949371956,
+      1.0986319277799661, 1.0985708926237157, 1.0986319277799661,
+    ]);
+    await expect(runtime.eval("names(formals(stats::uniroot))")).resolves.toEqual([
+      "f",
+      "interval",
+      "...",
+      "lower",
+      "upper",
+      "f.lower",
+      "f.upper",
+      "extendInt",
+      "check.conv",
+      "tol",
+      "maxiter",
+      "trace",
+    ]);
+    await expect(runtime.eval("uniroot(function(x) x ^ 2 + 1, c(-1, 1))")).rejects.toMatchObject({
+      code: "NRT3293",
+    });
+    await runtime.dispose();
+  });
+
+  it("integrates vectorized callbacks over finite and infinite intervals", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        largest.batch <- 0L
+        polynomial <- function(x, scale) {
+          largest.batch <<- max(largest.batch, length(x))
+          scale * x ^ 2
+        }
+        finite <- stats::integrate(polynomial, 0, 1, scale = 3)
+        trigonometric <- integrate(sin, 0, pi)
+        upper.tail <- integrate(function(x) exp(-x), 0, Inf, rel.tol = 1e-10, abs.tol = 1e-10)
+        whole.line <- integrate(function(x) exp(-x ^ 2), -Inf, Inf, rel.tol = 1e-10, abs.tol = 1e-10)
+        reversed <- integrate(function(x) x, 1, 0)
+        limited <- integrate(function(x) sin(100 * x), 0, 1, subdivisions = 1, stop.on.error = FALSE)
+        c(
+          abs(finite$value - 1) < 1e-12,
+          finite$abs.error < 1e-10,
+          finite$subdivisions >= 1,
+          finite$message,
+          names(finite), class(finite), largest.batch > 1,
+          abs(trigonometric$value - 2) < 1e-12,
+          abs(upper.tail$value - 1) < 1e-8,
+          abs(whole.line$value - sqrt(pi)) < 1e-8,
+          abs(reversed$value + 0.5) < 1e-12,
+          limited$message,
+          names(formals(integrate))
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "OK",
+      "value",
+      "abs.error",
+      "subdivisions",
+      "message",
+      "call",
+      "integrate",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "maximum number of subdivisions reached",
+      "f",
+      "lower",
+      "upper",
+      "...",
+      "subdivisions",
+      "rel.tol",
+      "abs.tol",
+      "stop.on.error",
+      "keep.xy",
+      "aux",
+    ]);
+    await expect(runtime.eval("integrate(function(x) 1, 0, 1)")).rejects.toMatchObject({
+      code: "NRT3468",
+    });
     await runtime.dispose();
   });
 
@@ -1492,8 +3688,75 @@ describe("complete inline source-to-result vertical slice", () => {
         "pairs.lazy <- function(x, ..., marker = 'ok') marker\npairs(structure(1, class = 'lazy'), stop('unused dot remains lazy'))",
       ),
     ).resolves.toBe("ok");
-    await expect(runtime.eval("pairs(matrix(1:4, 2))")).rejects.toMatchObject({
+    const drawn = await runtime.evalDetailed(`
+      pairs(
+        data.frame(alpha = 1:3, beta = c(3, 2, 1), gamma = c(2, 1, 3)),
+        main = "scatter matrix", font.main = 4, pch = 19,
+        bg = c("red", "green", "blue")
+      )
+    `);
+    expect(drawn.value).toBeNull();
+    expect(drawn.visible).toBe(false);
+    expect(drawn.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "window",
+      "segments",
+      "points",
+      "text",
+      "text",
+    ]);
+    expect(drawn.graphics[1]).toEqual({ kind: "window", xlim: [0, 3], ylim: [0, 3] });
+    const points = drawn.graphics.find((event) => event.kind === "points");
+    expect(points?.kind === "points" ? points.points : []).toHaveLength(18);
+    const labels = drawn.graphics
+      .filter((event) => event.kind === "text")
+      .flatMap((event) => event.labels.map((label) => label.label));
+    expect(labels).toEqual(["alpha", "beta", "gamma", "scatter matrix"]);
+    await expect(runtime.eval("pairs(matrix(1:3, ncol = 1))")).rejects.toMatchObject({
+      code: "NRT3350",
+    });
+    await expect(runtime.eval("pairs(matrix(1:4, 2), upper.panel = NULL)")).rejects.toMatchObject({
       code: "NRU6146",
+    });
+    await runtime.dispose();
+  });
+
+  it("draws numeric single-condition coplots through the shared graphics journal", async () => {
+    const runtime = await session();
+    const drawn = await runtime.evalDetailed(`
+      observations <- data.frame(y = 1:12, x = seq(10, 120, 10), z = 1:12, w = 12:1)
+      coplot(
+        y ~ x | z,
+        data = observations,
+        number = 3,
+        overlap = .5,
+        pch = 21,
+        bg = "green3"
+      )
+    `);
+    expect(drawn.value).toBeNull();
+    expect(drawn.visible).toBe(false);
+    expect(drawn.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "window",
+      "segments",
+      "points",
+      "text",
+    ]);
+    expect(drawn.graphics[1]).toEqual({ kind: "window", xlim: [0, 2], ylim: [0, 2] });
+    const points = drawn.graphics.find((event) => event.kind === "points");
+    expect(points?.kind === "points" ? points.points : []).toHaveLength(18);
+    const labels = drawn.graphics.find((event) => event.kind === "text");
+    expect(labels?.kind === "text" ? labels.labels.map((label) => label.label) : []).toEqual([
+      "z: 0.5–6.5",
+      "z: 3.5–9.5",
+      "z: 6.5–12.5",
+    ]);
+    await expect(
+      runtime.eval("coplot(y ~ x | z, data = observations, panel = panel.smooth)"),
+    ).rejects.toMatchObject({ code: "NRU6237" });
+    await expect(runtime.eval("coplot(y ~ x | z * w, data = observations)")).rejects.toMatchObject({
+      code: "NRU6237",
     });
     await runtime.dispose();
   });
@@ -1526,12 +3789,41 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(runtime.eval("update(list())")).rejects.toMatchObject({ code: "NRU6166" });
     await expect(
       runtime.eval(`
+        stored_call <- function(x = 1, gain = 2) {
+          structure(list(x = x, gain = gain, call = match.call()), class = "stored_call")
+        }
+        original <- stored_call(3, gain = 4)
+        changed <- update(original, gain = 9)
+        rewritten <- update(original, x = stop("must remain lazy"), evaluate = FALSE)
+        c(
+          changed$x,
+          changed$gain,
+          identical(rewritten[[1L]], quote(stored_call)),
+          identical(rewritten$x, quote(stop("must remain lazy"))),
+          identical(rewritten$gain, 4)
+        )
+      `),
+    ).resolves.toEqual([3, 9, 1, 1, 1]);
+    await expect(
+      runtime.eval(`
         update.default <- function(object, ..., evaluate = TRUE) {
           c(object, evaluate, list(...)$gain)
         }
         stats::update(3, gain = 2, evaluate = FALSE)
       `),
     ).resolves.toEqual([3, 0, 2]);
+    await expect(
+      runtime.eval(`
+        rm(update.default)
+        stored_call <- function(x = 1, gain = 2) {
+          structure(list(x = x, gain = gain, call = match.call()), class = "stored_call")
+        }
+        wrapper <- function(object, replacement) update(object, x = replacement)
+        original <- stored_call(3, gain = 4)
+        nested <- wrapper(original, update(stored_call(8), gain = 9))
+        c(nested$x$x, nested$x$gain, nested$gain)
+      `),
+    ).resolves.toEqual([8, 9, 4]);
     await expect(runtime.eval("update()")).rejects.toMatchObject({ code: "NRE2147" });
     await runtime.dispose();
   });
@@ -1560,7 +3852,7 @@ describe("complete inline source-to-result vertical slice", () => {
     `);
     expect(plotted.value).toBeNull();
     expect(plotted.visible).toBe(false);
-    expect(plotted.graphics).toHaveLength(4);
+    expect(plotted.graphics).toHaveLength(5);
     expect(plotted.graphics[0]).toEqual({ kind: "new-page" });
     expect(plotted.graphics[1]).toEqual({
       kind: "window",
@@ -1599,6 +3891,10 @@ describe("complete inline source-to-result vertical slice", () => {
         { x: 1, y: 10, symbol: "i", color: "#0000FFFF", lineWidth: 2 },
         { x: 3, y: 30, symbol: "i", color: "#0000FFFF", lineWidth: 2 },
       ],
+    });
+    expect(plotted.graphics[4]).toMatchObject({
+      kind: "text",
+      labels: [{ label: "tasks" }, { label: "relative speed" }],
     });
     expect(observed).toEqual(plotted.graphics);
 
@@ -1645,6 +3941,29 @@ describe("complete inline source-to-result vertical slice", () => {
       expect(loggedPoints.points[5]?.symbol).toBe("i");
     }
 
+    const mixedTypes = await listening.evalDetailed(`
+      matplot(1:3, matrix(1:24, 3, 8), type = "blobcsSh", axes = FALSE)
+    `);
+    expect(mixedTypes.graphics).toHaveLength(4);
+    expect(mixedTypes.graphics[1]).toEqual({
+      kind: "window",
+      xlim: [0.92, 3.08],
+      ylim: [0.07999999999999996, 24.92],
+    });
+    const mixedSegments = mixedTypes.graphics[2];
+    expect(mixedSegments?.kind).toBe("segments");
+    if (mixedSegments?.kind === "segments") {
+      expect(mixedSegments.segments).toHaveLength(21);
+      expect(mixedSegments.segments[10]).toMatchObject({ x0: 1, y0: 16, x1: 2, y1: 16 });
+      expect(mixedSegments.segments[11]).toMatchObject({ x0: 2, y0: 16, x1: 2, y1: 17 });
+      expect(mixedSegments.segments[14]).toMatchObject({ x0: 1, y0: 19, x1: 1, y1: 20 });
+      expect(mixedSegments.segments[15]).toMatchObject({ x0: 1, y0: 20, x1: 2, y1: 20 });
+      expect(mixedSegments.segments[18]).toMatchObject({ x0: 1, y0: 0, x1: 1, y1: 22 });
+    }
+    const mixedPoints = mixedTypes.graphics[3];
+    expect(mixedPoints?.kind).toBe("points");
+    if (mixedPoints?.kind === "points") expect(mixedPoints.points).toHaveLength(9);
+
     const framed = await listening.evalDetailed(
       "matplot(matrix(1:6, 3, 2), type = 'n', col = 'green')",
     );
@@ -1662,6 +3981,84 @@ describe("complete inline source-to-result vertical slice", () => {
     await listening.eval("saved <- recordPlot()");
     const replayed = await listening.evalDetailed("replayPlot(saved)");
     expect(replayed.graphics).toEqual(framed.graphics);
+
+    const annotated = await listening.evalDetailed(`
+      matplot(
+        1:2,
+        type = "n",
+        axes = FALSE,
+        main = "Ranks",
+        sub = "Source",
+        xlab = "Year",
+        ylab = "Rank",
+        length = 0.2
+      )
+    `);
+    expect(annotated.warnings).toMatchObject([
+      { message: '"length" is not a graphical parameter' },
+    ]);
+    expect(annotated.graphics).toHaveLength(3);
+    expect(annotated.graphics[2]).toMatchObject({
+      kind: "text",
+      labels: [{ label: "Ranks" }, { label: "Source" }, { label: "Year" }, { label: "Rank" }],
+    });
+
+    const multiAnnotated = await listening.evalDetailed(`
+      matplot(
+        1:2,
+        type = "n",
+        axes = FALSE,
+        xlab = expression(alpha, beta),
+        ylab = c("Prime count", "n <= limit")
+      )
+    `);
+    expect(multiAnnotated.graphics).toHaveLength(3);
+    expect(multiAnnotated.graphics[2]).toMatchObject({
+      kind: "text",
+      labels: [
+        { label: "alpha" },
+        { label: "beta" },
+        { label: "Prime count" },
+        { label: "n <= limit" },
+      ],
+    });
+
+    const paneled = await listening.evalDetailed(`
+      .GlobalEnv$matplot_panel_order <- character()
+      matplot(
+        1:3,
+        type = "l",
+        axes = FALSE,
+        panel.first = {
+          .GlobalEnv$matplot_panel_order <- c(.GlobalEnv$matplot_panel_order, "first")
+          segments(1, 1, 2, 2, col = "red")
+        },
+        panel.last = {
+          .GlobalEnv$matplot_panel_order <- c(.GlobalEnv$matplot_panel_order, "last")
+          points(2, 2, col = "blue")
+        }
+      )
+      .GlobalEnv$matplot_panel_order
+    `);
+    expect(paneled.value).toEqual(["first", "last"]);
+    expect(paneled.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "window",
+      "segments",
+      "segments",
+      "points",
+    ]);
+    expect(paneled.graphics[2]).toMatchObject({
+      kind: "segments",
+      segments: [{ color: "#FF0000FF" }],
+    });
+    expect(paneled.graphics[4]).toMatchObject({
+      kind: "points",
+      points: [{ color: "#0000FFFF" }],
+    });
+    await expect(
+      listening.eval("matplot(1:3, type = 'l', axes = FALSE, panel.first = grid(2, 2))"),
+    ).resolves.toBeNull();
     await listening.dispose();
 
     await expect(runtime.eval("matplot()")).rejects.toMatchObject({ code: "NRE2103" });
@@ -1669,15 +4066,14 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(runtime.eval("matplot(c(-1, 0), log = 'y')")).rejects.toMatchObject({
       code: "NRT3350",
     });
-    await expect(runtime.eval("matplot(1:3, type = 'h')")).rejects.toMatchObject({
-      code: "NRU6167",
+    await expect(runtime.eval("matplot(1:3, type = 'h')")).resolves.toBeNull();
+    await expect(runtime.eval("matplot(1:3, type = 'z')")).rejects.toMatchObject({
+      code: "NRT3350",
     });
     await expect(runtime.eval("matplot(1:3, add = TRUE)")).rejects.toMatchObject({
       code: "NRU6167",
     });
-    await expect(runtime.eval("matplot(1:3, main = 'unsupported')")).rejects.toMatchObject({
-      code: "NRU6167",
-    });
+    await expect(runtime.eval("matplot(1:3, main = 'supported')")).resolves.toBeNull();
     await runtime.dispose();
 
     const limited = await createR({
@@ -1886,6 +4282,22 @@ describe("complete inline source-to-result vertical slice", () => {
       `),
     ).resolves.toEqual(["alpha", "", "NA", "TRUE", "FALSE", "0"]);
 
+    await expect(
+      runtime.eval(`
+        path <- tempfile(fileext = ".txt")
+        writeLines(c("ascii", "café"), path, useBytes = TRUE)
+        aliases <- vapply(
+          c("native", "native.enc", "nativeenc"),
+          function(encoding) identical(
+            readLines(path, encoding = encoding),
+            c("ascii", "café")
+          ),
+          logical(1)
+        )
+        c(unname(aliases), Encoding(readLines(path, encoding = "native")), unlink(path))
+      `),
+    ).resolves.toEqual(["TRUE", "TRUE", "TRUE", "unknown", "unknown", "0"]);
+
     const output = await runtime.evalDetailed('writeLines(c("a", "b"), sep = "|")');
     expect(output).toMatchObject({ value: null, visible: false });
     expect(output.output).toEqual([{ stream: "stdout", text: "a|b|" }]);
@@ -1910,6 +4322,234 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(runtime.eval("writeLines(1:2, tempfile())")).rejects.toMatchObject({
       code: "NRT3355",
     });
+    await runtime.dispose();
+  });
+
+  it("scans atomic fields from owned text, files, and connections", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        path <- tempfile()
+        writeLines(c("alpha beta", "'quoted value' NA", "# ignored", "gamma"), path)
+        words <- scan(path, what = "", comment.char = "#", quiet = TRUE)
+        numbers <- scan(
+          text = "1,2,NA\n3,4,5", what = double(), sep = ",", nlines = 1L, quiet = TRUE
+        )
+        con <- textConnection(c("10 20", "30 40"))
+        limited <- scan(con, what = integer(), n = 3L, quiet = TRUE)
+        destroyed <- inherits(try(isOpen(con), silent = TRUE), "try-error")
+        c(words, is.na(words), numbers, is.na(numbers), limited, destroyed)
+      `),
+    ).resolves.toEqual([
+      "alpha",
+      "beta",
+      "quoted value",
+      NA,
+      "gamma",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "1",
+      "2",
+      NA,
+      "FALSE",
+      "FALSE",
+      "TRUE",
+      "10",
+      "20",
+      "30",
+      "FALSE",
+    ]);
+    await expect(
+      runtime.eval(
+        "c(names(formals(scan)), scan(text = c('left', 'right'), what = '', sep = '\\n', quiet = TRUE))",
+      ),
+    ).resolves.toEqual([
+      "file",
+      "what",
+      "nmax",
+      "n",
+      "sep",
+      "quote",
+      "dec",
+      "skip",
+      "nlines",
+      "na.strings",
+      "flush",
+      "fill",
+      "strip.white",
+      "quiet",
+      "blank.lines.skip",
+      "multi.line",
+      "comment.char",
+      "allowEscapes",
+      "fileEncoding",
+      "encoding",
+      "text",
+      "skipNul",
+      "left",
+      "right",
+    ]);
+    const visible = await runtime.evalDetailed("scan(text = '1 2', what = integer())");
+    expect(visible.value).toEqual([1, 2]);
+    expect(visible.output).toEqual([{ stream: "stdout", text: "Read 2 items\n" }]);
+    await runtime.dispose();
+  });
+
+  it("counts physical text fields with GNU-compatible records, quotes, and connections", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        defaults.con <- textConnection(c(
+          "a b c", "  a\\tb  ", "", "   ", "# comment", "a b # c", "\\"a b\\" c"
+        ))
+        defaults <- utils::count.fields(defaults.con)
+        default.open <- isOpen(defaults.con)
+        default.exhausted <- length(readLines(defaults.con))
+        close(defaults.con)
+
+        csv.con <- textConnection(c(
+          "a,b,c", "a,,c", ",", "", "\\"a,b\\",c", "a,b#cut,c"
+        ))
+        csv <- utils::count.fields(csv.con, sep = ",")
+        close(csv.con)
+
+        multiline.con <- textConnection(c(
+          "a,\\"b", "c\\",d", "x,y", "p,\\"q", "r", "s\\",t"
+        ))
+        multiline <- utils::count.fields(multiline.con, sep = ",")
+        close(multiline.con)
+
+        kept.con <- textConnection(c("a b", "", "   ", "# comment", "x"))
+        kept <- utils::count.fields(kept.con, blank.lines.skip = FALSE)
+        close(kept.con)
+
+        path <- tempfile()
+        writeLines(c("skip", "left,right", "one,two,three"), path)
+        from.path <- utils::count.fields(path, sep = ",", skip = 1L)
+        unlink(path)
+
+        list(
+          defaults = defaults,
+          default.open = default.open,
+          default.exhausted = default.exhausted,
+          csv = csv,
+          multiline = multiline,
+          kept = kept,
+          from.path = from.path,
+          formal.names = names(formals(utils::count.fields)),
+          formal.defaults = c(
+            deparse(formals(utils::count.fields)$sep),
+            deparse(formals(utils::count.fields)$quote),
+            deparse(formals(utils::count.fields)$skip),
+            deparse(formals(utils::count.fields)$blank.lines.skip),
+            deparse(formals(utils::count.fields)$comment.char)
+          )
+        )
+      `),
+    ).resolves.toEqual([
+      [3, 2, 2, 2],
+      true,
+      0,
+      [3, 3, 2, 2, 2],
+      [NA, 3, 2, NA, NA, 3],
+      [2, 0, 0, 0, 1],
+      [2, 3],
+      ["file", "sep", "quote", "skip", "blank.lines.skip", "comment.char"],
+      ['""', '"' + "\\" + "\"'" + '"', "0", "TRUE", '"#"'],
+    ]);
+    await expect(
+      runtime.eval(`
+        con <- textConnection("a,b")
+        value <- utils::count.fields(con, sep = NA_character_)
+        close(con)
+        value
+      `),
+    ).resolves.toBe(1);
+    await expect(
+      runtime.eval(`
+        con <- textConnection("a,b")
+        utils::count.fields(con, comment.char = "##")
+      `),
+    ).rejects.toMatchObject({ code: "NRT3450" });
+    await runtime.dispose();
+  });
+
+  it("reads Debian-control-format records through owned files and connections", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        path <- tempfile()
+        writeLines(c(
+          "Package: one", "Version: 1.0", "Description: first", " second", "",
+          "Package: two", "Title: T", " continuation", "Empty:"
+        ), path)
+        x <- read.dcf(path)
+        selected <- read.dcf(path, fields = c("Package", "Version", "Missing"))
+        c(x, dim(x), is.null(rownames(x)), colnames(x), selected)
+      `),
+    ).resolves.toEqual([
+      "one",
+      "two",
+      "1.0",
+      NA,
+      "first\nsecond",
+      NA,
+      NA,
+      "T\ncontinuation",
+      NA,
+      "",
+      "2",
+      "5",
+      "TRUE",
+      "Package",
+      "Version",
+      "Description",
+      "Title",
+      "Empty",
+      "one",
+      "two",
+      "1.0",
+      NA,
+      NA,
+      NA,
+    ]);
+    await expect(
+      runtime.eval(`
+        path <- tempfile()
+        writeLines(c("A: one", "A: two", "B: b"), path)
+        x <- read.dcf(path, all = TRUE)
+        c(class(x), names(x), nrow(x), length(x$A[[1]]), x$A[[1]], x$B)
+      `),
+    ).resolves.toEqual(["data.frame", "A", "B", "1", "2", "one", "two", "b"]);
+    await expect(
+      runtime.eval(`
+        path <- tempfile()
+        writeLines(c("A: first", "  second  ", "\tthird\t", "B: x"), path)
+        c(read.dcf(path), read.dcf(path, keep.white = "A"))
+      `),
+    ).resolves.toEqual(["first\nsecond\nthird", "x", "first\n  second  \n\tthird\t", "x"]);
+    await expect(
+      runtime.eval(`
+        path <- tempfile(); writeLines(c("A: x", "B: y"), path)
+        con <- file(path); before <- isOpen(con); closed <- read.dcf(con); after <- isOpen(con)
+        open(con); opened <- read.dcf(con); still <- isOpen(con); close(con)
+        c(closed, before, after, opened, still)
+      `),
+    ).resolves.toEqual(["x", "y", "FALSE", "FALSE", "x", "y", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        f <- formals(read.dcf)
+        c(names(f), identical(f$fields, NULL), identical(f$all, FALSE), identical(f$keep.white, NULL))
+      `),
+    ).resolves.toEqual(["file", "fields", "all", "keep.white", "TRUE", "TRUE", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        path <- tempfile(); writeLines("Malformed", path); read.dcf(path)
+      `),
+    ).rejects.toMatchObject({ code: "NRE2245" });
     await runtime.dispose();
   });
 
@@ -2057,6 +4697,50 @@ describe("complete inline source-to-result vertical slice", () => {
     expect(echoed.output.map((entry) => entry.text).join("")).toContain("> ");
     expect(echoed.output.map((entry) => entry.text).join("")).toContain("[1] 7\n");
 
+    const autoprinted = await runtime.evalDetailed(`
+      state <- withVisible(withAutoprint({
+        auto_value <- 4
+        auto_value + 1
+        invisible(6)
+      }, echo = FALSE))
+      evaluated <- withAutoprint(expression(1, 2), evaluated = TRUE, echo = FALSE, print. = FALSE)
+      c(
+        state$value$value, state$value$visible, state$visible, auto_value,
+        evaluated$value, evaluated$visible, names(formals(withAutoprint))
+      )
+    `);
+    expect(autoprinted.value).toEqual([
+      "6",
+      "FALSE",
+      "FALSE",
+      "4",
+      "2",
+      "TRUE",
+      "exprs",
+      "evaluated",
+      "local",
+      "print.",
+      "echo",
+      "max.deparse.length",
+      "width.cutoff",
+      "deparseCtrl",
+      "skip.echo",
+      "...",
+    ]);
+    expect(autoprinted.output.map((entry) => entry.text).join("")).toContain("[1] 5\n");
+
+    await expect(
+      runtime.eval(`
+        target <- new.env()
+        con <- textConnection(c("f <- function(x) {", "  x + 1", "}"))
+        source(con, local = target, keep.source = TRUE)
+        close(con)
+        reference <- attr(target$f, "srcref")
+        c(names(attributes(target$f)), class(reference), unclass(reference),
+          inherits(attr(reference, "srcfile"), "srcfilecopy"))
+      `),
+    ).resolves.toEqual(["srcref", "srcref", "1", "6", "3", "1", "6", "1", "1", "3", "TRUE"]);
+
     await expect(
       runtime.eval(`
         con <- textConnection(c("atomic_value <- 1", "broken )"))
@@ -2120,6 +4804,41 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(runtime.eval("file.info('x', extra_cols = NA)")).rejects.toMatchObject({
       code: "NRT3355",
     });
+    await expect(
+      runtime.eval(`
+        path <- tempfile()
+        writeLines("x", path)
+        root <- dirname(path)
+        paths <- c(path, root, "missing", NA_character_)
+        result <- c(
+          file.access(paths, 0),
+          file.access(paths, 1),
+          file.access(paths, 2),
+          file.access(paths, 4)
+        )
+        unlink(path)
+        c(result, names(formals(file.access)))
+      `),
+    ).resolves.toEqual([
+      "0",
+      "0",
+      "-1",
+      "-1",
+      "-1",
+      "0",
+      "-1",
+      "-1",
+      "0",
+      "0",
+      "-1",
+      "-1",
+      "0",
+      "0",
+      "-1",
+      "-1",
+      "names",
+      "mode",
+    ]);
     await runtime.dispose();
   });
 
@@ -2650,6 +5369,260 @@ describe("complete inline source-to-result vertical slice", () => {
     await limitedOutput.dispose();
   });
 
+  it("round-trips portable binary scalars and fixed-width character fields", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        one <- writeBin(as.integer(c(-128, -1, 0, 1, 127, 255)), raw(), size = 1L)
+        two <- writeBin(as.integer(c(-32768, -1, 0, 32767)), raw(), size = 2L, endian = "big")
+        eight <- writeBin(as.integer(c(1, -1, NA)), raw(), size = 8L)
+        eight_roundtrip <- readBin(eight, integer(), n = 3L, size = 8L)
+        text <- writeBin(c("a", "bc"), raw())
+        fields <- writeChar(c("a", "bc"), raw(), nchars = c(3L, 1L), eos = NULL)
+        c(as.integer(one), as.integer(two), eight_roundtrip, as.integer(text), as.integer(fields))
+      `),
+    ).resolves.toEqual([
+      128,
+      255,
+      0,
+      1,
+      127,
+      255,
+      128,
+      0,
+      255,
+      255,
+      0,
+      0,
+      127,
+      255,
+      1,
+      -1,
+      NA,
+      97,
+      0,
+      98,
+      99,
+      0,
+      97,
+      0,
+      0,
+      98,
+    ]);
+
+    const connection = await runtime.evalDetailed(`
+      path <- tempfile()
+      out <- file(path, "wb")
+      writeBin(as.integer(-128:127), out, size = 1L)
+      writeBin(as.integer(c(-32768, 32767)), out, size = 2L, endian = "big")
+      writeChar("ok", out, eos = NULL)
+      close(out)
+      inn <- file(path, "rb")
+      signed <- readBin(inn, integer(), n = 256L, size = 1L)
+      shorts <- readBin(inn, integer(), n = 2L, size = 2L, endian = "big")
+      label <- readChar(inn, 2L)
+      close(inn)
+      removed <- file.remove(path)
+      c(signed[c(1L, 128L, 129L, 256L)], shorts, label, removed)
+    `);
+    expect(connection.value).toEqual(["-128", "-1", "0", "127", "-32768", "32767", "ok", "TRUE"]);
+    expect(connection.warnings).toEqual([]);
+    await expect(
+      runtime.eval(`
+        path <- tempfile()
+        writeBin(1:4, path, size = 2L)
+        con <- file(path, "r+b")
+        first_previous <- seek(con, where = 2L, origin = "start", rw = "read")
+        second <- readBin(con, integer(), n = 1L, size = 2L)
+        write_previous <- seek(con, where = 4L, origin = "start", rw = "write")
+        writeBin(99L, con, size = 2L)
+        end_previous <- seek(con, where = 0L, origin = "end", rw = "read")
+        rewind_previous <- seek(con, where = 0L, origin = "start", rw = "read")
+        values <- readBin(con, integer(), n = 4L, size = 2L)
+        close(con)
+        c(first_previous, second, write_previous, end_previous, rewind_previous, values, unlink(path))
+      `),
+    ).resolves.toEqual([0, 2, 4, 6, 8, 1, 2, 99, 4, 0]);
+    await expect(
+      runtime.eval(`
+        path <- tempfile()
+        writeBin(1:2, path)
+        file_con <- file(path, "rb")
+        text_con <- textConnection("x")
+        raw_con <- rawConnection(raw())
+        gzip_con <- gzfile(tempfile(), "wb")
+        result <- c(
+          isSeekable(file_con), isSeekable(text_con), isSeekable(raw_con),
+          isSeekable(gzip_con), isSeekable(stdin()), names(formals(isSeekable))
+        )
+        close(file_con); close(text_con); close(raw_con); close(gzip_con); unlink(path)
+        result
+      `),
+    ).resolves.toEqual(["TRUE", "FALSE", "TRUE", "TRUE", "FALSE", "con"]);
+    await expect(
+      runtime.eval(`
+        c(
+          names(formals(readBin)),
+          names(formals(writeBin)),
+          names(formals(writeChar)),
+          identical(formals(readBin)$endian, quote(.Platform$endian)),
+          identical(formals(writeBin)$size, NA_integer_)
+        )
+      `),
+    ).resolves.toEqual([
+      "con",
+      "what",
+      "n",
+      "size",
+      "signed",
+      "endian",
+      "object",
+      "con",
+      "size",
+      "endian",
+      "useBytes",
+      "object",
+      "con",
+      "nchars",
+      "eos",
+      "useBytes",
+      "TRUE",
+      "TRUE",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("reduces matrix and array margins with missing-value and dimname semantics", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- matrix(1:6, 2L, dimnames = list(c("r1", "r2"), c("c1", "c2", "c3")))
+        c(rowSums(x), colSums(x), rowMeans(x), colMeans(x))
+      `),
+    ).resolves.toEqual([9, 12, 3, 7, 11, 3, 4, 1.5, 3.5, 5.5]);
+    await expect(
+      runtime.eval(`
+        x <- matrix(c(1, NA, NaN, 4), 2L)
+        c(
+          is.nan(rowSums(x)[1L]), is.na(rowSums(x)[2L]) && !is.nan(rowSums(x)[2L]),
+          rowSums(x, na.rm = TRUE), rowMeans(x, na.rm = TRUE)
+        )
+      `),
+    ).resolves.toEqual([1, 1, 1, 4, 1, 4]);
+    await expect(
+      runtime.eval(`
+        a <- array(
+          1:24,
+          c(2L, 3L, 4L),
+          dimnames = list(c("a", "b"), c("c", "d", "e"), letters[1:4])
+        )
+        rows <- rowSums(a, dims = 2L)
+        columns <- colSums(a, dims = 1L)
+        c(
+          rows, dim(rows), dimnames(rows)[[1L]], dimnames(rows)[[2L]],
+          columns, dim(columns), dimnames(columns)[[1L]], dimnames(columns)[[2L]]
+        )
+      `),
+    ).resolves.toEqual([
+      "40",
+      "44",
+      "48",
+      "52",
+      "56",
+      "60",
+      "2",
+      "3",
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "3",
+      "7",
+      "11",
+      "15",
+      "19",
+      "23",
+      "27",
+      "31",
+      "35",
+      "39",
+      "43",
+      "47",
+      "3",
+      "4",
+      "c",
+      "d",
+      "e",
+      "a",
+      "b",
+      "c",
+      "d",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          names(formals(rowSums)), names(formals(colSums)),
+          names(formals(rowMeans)), names(formals(colMeans))
+        )
+      `),
+    ).resolves.toEqual([
+      "x",
+      "na.rm",
+      "dims",
+      "x",
+      "na.rm",
+      "dims",
+      "x",
+      "na.rm",
+      "dims",
+      "x",
+      "na.rm",
+      "dims",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("sweeps reusable functions across named array margins", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- matrix(1:6, 2, dimnames = list(c("r1", "r2"), c("a", "b", "c")))
+        by.column <- sweep(x, 2, c(10, 20, 30), "+")
+        by.row <- sweep(x, 1, c(1, 2))
+        c(by.column, by.row, dim(by.column), unlist(dimnames(by.column)),
+          names(formals(sweep)))
+      `),
+    ).resolves.toEqual([
+      "11",
+      "12",
+      "23",
+      "24",
+      "35",
+      "36",
+      "0",
+      "0",
+      "2",
+      "2",
+      "4",
+      "4",
+      "2",
+      "3",
+      "r1",
+      "r2",
+      "a",
+      "b",
+      "c",
+      "x",
+      "MARGIN",
+      "STATS",
+      "FUN",
+      "check.margin",
+      "...",
+    ]);
+    await runtime.dispose();
+  });
+
   it("manages browser-owned directories, relative paths, and deterministic runtime roots", async () => {
     const runtime = await session();
     const result = await runtime.evalDetailed(`
@@ -2745,6 +5718,40 @@ describe("complete inline source-to-result vertical slice", () => {
       "FALSE",
     ]);
     expect(result.warnings).toEqual([]);
+    await runtime.dispose();
+  });
+
+  it("exposes immutable browser-owned runtime text resources", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        path <- file.path(R.home(), "COPYING")
+        info <- file.info(path, extra_cols = FALSE)
+        list(
+          lines = readLines(path, n = 3L),
+          exists = file.exists(path),
+          size = info$size,
+          isdir = info$isdir,
+          mode = as.integer(info$mode)
+        )
+      `),
+    ).resolves.toEqual([
+      [
+        "NativR",
+        "Copyright 2026 NativR contributors",
+        "Licensed under the Apache License, Version 2.0.",
+      ],
+      true,
+      138,
+      false,
+      292,
+    ]);
+    await expect(
+      runtime.eval('writeLines("replacement", file.path(R.home(), "COPYING"))'),
+    ).rejects.toMatchObject({ code: "NRU6169" });
+    await expect(
+      runtime.eval('readLines(file.path(R.home(), "missing-runtime-file"))'),
+    ).rejects.toMatchObject({ code: "NRE2195" });
     await runtime.dispose();
   });
 
@@ -2897,6 +5904,62 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(runtime.eval("nativrfixture::write_sass_variable()")).resolves.toBe(
       '$color: "red";',
     );
+    await runtime.dispose();
+  });
+
+  it("matches GNU R isOpen access selection and partial matching", async () => {
+    const runtime = await createR({ execution: "inline", assets });
+    await expect(
+      runtime.eval(`
+        input <- textConnection("a")
+        path <- tempfile()
+        output <- file(path, "w")
+        result <- c(
+          isOpen(input, ""), isOpen(input, "rw"),
+          isOpen(input, "r"), isOpen(input, "read"),
+          isOpen(input, "rt"), isOpen(input, "rb"),
+          isOpen(input, "w"), isOpen(input, "write"),
+          isOpen(input, "wt"), isOpen(input, "wb"),
+          isOpen(input, "foo"), isOpen(input, "READ"),
+          isOpen(input, "reading"), isOpen(input, "wr"),
+          isOpen(input, NA_character_), isOpen(input, c("read", "write")),
+          isOpen(input, factor("read")), isOpen(input, 1L),
+          isOpen(output, "r"), isOpen(output, "w"),
+          isOpen(output, "rt"), isOpen(output, "wr"),
+          inherits(try(isOpen(input, character()), silent = TRUE), "try-error"),
+          inherits(try(isOpen(input, NULL), silent = TRUE), "try-error")
+        )
+        close(input)
+        close(output)
+        unlink(path)
+        result
+      `),
+    ).resolves.toEqual([
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+    ]);
     await runtime.dispose();
   });
 
@@ -3102,6 +6165,106 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("round-trips browser-memory files through GNU-compatible bzip2 connections", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        path <- tempfile(fileext = ".bz2")
+        output <- bzfile(path, open = "wb", compression = 9)
+        details <- summary(output)
+        writeBin(charToRaw("alpha\\nbeta\\n"), output)
+        closed <- withVisible(close(output))
+        magic <- as.integer(readBin(path, "raw", n = 4L))
+        input <- bzfile(path, open = "rb")
+        restored <- rawToChar(readBin(input, "raw", n = 99L))
+        input_details <- summary(input)
+        close(input)
+        removed <- file.remove(path)
+        c(
+          class(output), details$class, details$mode, details$text,
+          details[["can read"]], details[["can write"]],
+          closed$value, closed$visible, magic, restored,
+          input_details$class, input_details$mode, removed,
+          names(formals(bzfile)), identical(formals(bzfile)$compression, 9)
+        )
+      `),
+    ).resolves.toEqual([
+      "bzfile",
+      "connection",
+      "bzfile",
+      "wb",
+      "binary",
+      "no",
+      "yes",
+      "0",
+      "FALSE",
+      "66",
+      "90",
+      "104",
+      "57",
+      "alpha\nbeta\n",
+      "bzfile",
+      "rb",
+      "TRUE",
+      "description",
+      "open",
+      "encoding",
+      "compression",
+      "TRUE",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("round-trips browser-memory files through GNU-compatible gzip file connections", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        path <- tempfile(fileext = ".gz")
+        output <- gzfile(path, open = "wb", compression = "9")
+        details <- summary(output)
+        writeBin(charToRaw("alpha\\nbeta\\n"), output)
+        close(output)
+        magic <- as.integer(readBin(path, "raw", n = 3L))
+        input <- gzfile(path, open = "rb")
+        restored <- rawToChar(readBin(input, "raw", n = 99L))
+        input_details <- summary(input)
+        close(input)
+        plain <- gzfile(system.file("DESCRIPTION", package = "base"), open = "rb")
+        plain_prefix <- rawToChar(readBin(plain, "raw", n = 8L))
+        close(plain)
+        removed <- file.remove(path)
+        c(
+          class(output), details$class, details$mode, details$text,
+          details[["can read"]], details[["can write"]], magic, restored,
+          input_details$class, input_details$mode, plain_prefix, removed,
+          names(formals(gzfile)), identical(formals(gzfile)$compression, 6)
+        )
+      `),
+    ).resolves.toEqual([
+      "gzfile",
+      "connection",
+      "gzfile",
+      "wb",
+      "binary",
+      "no",
+      "yes",
+      "31",
+      "139",
+      "8",
+      "alpha\nbeta\n",
+      "gzfile",
+      "rb",
+      "Package:",
+      "TRUE",
+      "description",
+      "open",
+      "encoding",
+      "compression",
+      "TRUE",
+    ]);
+    await runtime.dispose();
+  });
+
   it("reads stored and deflated ZIP members through usage-ranked unz() connections", async () => {
     const zipBody = Uint8Array.from(
       atob(
@@ -3254,6 +6417,22 @@ describe("complete inline source-to-result vertical slice", () => {
 
   it("routes cat() and capture.output() through virtual file connections", async () => {
     const runtime = await session();
+    await expect(runtime.eval('capture.output(cat(as.name("symbolic")))')).resolves.toBe(
+      "symbolic",
+    );
+    await expect(runtime.eval("cat(quote(a + b))")).rejects.toMatchObject({ code: "NRT3168" });
+    await expect(runtime.eval('capture.output(invisible(c("a", "b")))')).resolves.toEqual([]);
+    await expect(
+      runtime.eval('quiet <- function() invisible(c("a", "b")); capture.output(quiet())'),
+    ).resolves.toEqual([]);
+    await expect(
+      runtime.eval(
+        'quiet_warning <- function() { warning("quiet"); invisible(c("a", "b")) }; capture.output(suppressWarnings(quiet_warning()))',
+      ),
+    ).resolves.toEqual([]);
+    await expect(runtime.eval("withVisible(suppressWarnings(invisible(1)))$visible")).resolves.toBe(
+      false,
+    );
     await expect(
       runtime.eval(`
         path <- tempfile()
@@ -3281,6 +6460,15 @@ describe("complete inline source-to-result vertical slice", () => {
         )
       `),
     ).resolves.toEqual(["abc", "TRUE", "FALSE", "TRUE", "d[1] 1", "TRUE", "[1] 2", "0"]);
+    await expect(
+      runtime.eval(`
+        sink("nul:")
+        cat("discarded")
+        active <- sink.number()
+        sink(NULL)
+        c(active, sink.number())
+      `),
+    ).resolves.toEqual([1, 0]);
     await runtime.dispose();
   });
 
@@ -3296,6 +6484,51 @@ describe("complete inline source-to-result vertical slice", () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
     await runtime.interrupt();
     await expect(pending).rejects.toMatchObject({ code: "NRL4005" });
+
+    await runtime.eval("marker <- 0L");
+    const suspended = runtime.eval("suspendInterrupts({ Sys.sleep(0.05); marker <<- 1L }); 2L");
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    await runtime.interrupt();
+    await expect(suspended).rejects.toMatchObject({ code: "NRL4005" });
+    await expect(runtime.eval("marker")).resolves.toBe(1);
+
+    const allowed = runtime.eval(
+      "suspendInterrupts({ allowInterrupts(Sys.sleep(10)); marker <<- 2L })",
+    );
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await runtime.interrupt();
+    await expect(allowed).rejects.toMatchObject({ code: "NRL4005" });
+    await expect(runtime.eval("marker")).resolves.toBe(1);
+    await runtime.dispose();
+  });
+
+  it("enforces cooperative setTimeLimit elapsed deadlines", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        f <- formals(setTimeLimit)
+        timeout <- tryCatch({
+          setTimeLimit(cpu = Inf, elapsed = 0.01, transient = TRUE)
+          Sys.sleep(0.05)
+          "not reached"
+        }, error = function(error) conditionMessage(error))
+        reset <- withVisible(setTimeLimit(cpu = Inf, elapsed = Inf, transient = FALSE))
+        c(timeout, reset$visible, names(f), identical(f$cpu, Inf),
+          identical(f$elapsed, Inf), identical(f$transient, FALSE))
+      `),
+    ).resolves.toEqual([
+      "reached elapsed time limit",
+      "FALSE",
+      "cpu",
+      "elapsed",
+      "transient",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    await expect(runtime.eval("setTimeLimit(elapsed = -1)")).rejects.toMatchObject({
+      code: "NRT3415",
+    });
     await runtime.dispose();
   });
 
@@ -3896,6 +7129,149 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("runs environment finalizers by R reachability and at bounded session exit", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        timezone <- get0(".sys.timezone", baseenv(), inherits = FALSE)
+        c(typeof(timezone), length(timezone), is.na(timezone), bindingIsLocked(".sys.timezone", baseenv()))
+      `),
+    ).resolves.toEqual(["character", "1", "TRUE", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        events <- character()
+        register <- function(tag) {
+          e <- new.env()
+          e$tag <- tag
+          reg.finalizer(e, function(target) {
+            events <<- c(events, paste0(tag, ":", target$tag))
+          })
+        }
+        first <- withVisible(register("first"))
+        register("second")
+        before <- events
+        report <- gc()
+        fmls <- formals(reg.finalizer)
+        c(
+          before,
+          events,
+          is.null(first$value), first$visible,
+          typeof(reg.finalizer), names(fmls), identical(fmls$onexit, FALSE),
+          identical(dim(report), c(2L, 6L))
+        )
+      `),
+    ).resolves.toEqual([
+      "second:second",
+      "first:first",
+      "TRUE",
+      "TRUE",
+      "closure",
+      "e",
+      "f",
+      "onexit",
+      "TRUE",
+      "TRUE",
+    ]);
+
+    await expect(
+      runtime.eval(`
+        events <- character()
+        retained <- new.env()
+        retained$value <- "retained"
+        reg.finalizer(retained, function(target) events <<- c(events, target$value))
+        gc()
+        before <- events
+        rm(retained)
+        gc()
+        c(before, events)
+      `),
+    ).resolves.toBe("retained");
+
+    await expect(
+      runtime.eval(`
+        events <- character()
+        e <- new.env()
+        reg.finalizer(e, function(target) events <<- c(events, "old"))
+        reg.finalizer(e, function(target) events <<- c(events, "new"))
+        rm(e)
+        gc()
+        events
+      `),
+    ).resolves.toEqual(["new", "old"]);
+    await expect(
+      runtime.eval(`
+        events <- character()
+        make_finalizer <- function(target) {
+          force(target)
+          function(object) events <<- c(events, identical(target, object), target$value)
+        }
+        captured <- new.env()
+        captured$value <- "captured"
+        reg.finalizer(captured, make_finalizer(captured))
+        rm(captured)
+        gc()
+        events
+      `),
+    ).resolves.toEqual(["TRUE", "captured"]);
+    const continued = await runtime.evalDetailed(`
+      events <- character()
+      old <- new.env(); bad <- new.env(); newest <- new.env()
+      reg.finalizer(old, function(object) events <<- c(events, "old"))
+      reg.finalizer(bad, function(object) stop("finalizer boom"))
+      reg.finalizer(newest, function(object) events <<- c(events, "newest"))
+      rm(old, bad, newest)
+      gc()
+      events
+    `);
+    expect(continued.value).toEqual(["newest", "old"]);
+    expect(continued.output).toContainEqual({
+      stream: "stderr",
+      text: "Error in finalizer: finalizer boom\n",
+    });
+    await expect(runtime.eval("reg.finalizer(1L, function(x) NULL)")).rejects.toMatchObject({
+      code: "NRT3398",
+    });
+    await expect(runtime.eval("reg.finalizer(new.env(), sum)")).rejects.toMatchObject({
+      code: "NRT3399",
+    });
+    await expect(
+      runtime.eval("reg.finalizer(new.env(), function(x) NULL, NA)"),
+    ).rejects.toMatchObject({ code: "NRT3400" });
+    await runtime.dispose();
+
+    const exitCommands: string[] = [];
+    const lifecycle = await createR({
+      execution: "inline",
+      assets,
+      systemCommand: (request) => {
+        exitCommands.push(request.command);
+        return { status: 0 };
+      },
+    });
+    await lifecycle.eval(`
+      reset_target <- new.env()
+      reg.finalizer(
+        reset_target,
+        function(target) system2("reset-finalizer"),
+        onexit = TRUE
+      )
+    `);
+    await lifecycle.reset();
+    expect(exitCommands).toEqual(["reset-finalizer"]);
+    await lifecycle.eval(`
+      skipped_target <- new.env()
+      reg.finalizer(skipped_target, function(target) system2("skipped-finalizer"))
+      dispose_target <- new.env()
+      reg.finalizer(
+        dispose_target,
+        function(target) system2("dispose-finalizer"),
+        onexit = TRUE
+      )
+    `);
+    await lifecycle.dispose();
+    expect(exitCommands).toEqual(["reset-finalizer", "dispose-finalizer"]);
+  });
+
   it("reports usage-ranked object sizes with GNU R 4.6 vector, graph, and display semantics", async () => {
     const runtime = await session();
     await expect(
@@ -3924,8 +7300,8 @@ describe("complete inline source-to-result vertical slice", () => {
           format(s, units = "auto", standard = "IEC"),
           format(s, units = "auto", standard = "SI"),
           names(formals(utils::object.size)),
-          names(formals(format.object_size)),
-          names(formals(print.object_size))
+          names(formals(utils:::format.object_size)),
+          names(formals(utils:::print.object_size))
         )
       `),
     ).resolves.toEqual([
@@ -4025,6 +7401,16 @@ describe("complete inline source-to-result vertical slice", () => {
         c(loaded, relative_value, unlink("relative.RData"))
       `),
     ).resolves.toEqual(["relative_value", "12", "0"]);
+    await expect(
+      runtime.eval(`
+        collapsed_value <- 13L
+        collapsed_path <- gsub("///*", "/", file.path(tempdir(), "collapsed.RData"))
+        save(collapsed_value, file = collapsed_path)
+        rm(collapsed_value)
+        loaded <- load(collapsed_path)
+        c(loaded, collapsed_value, unlink(collapsed_path))
+      `),
+    ).resolves.toEqual(["collapsed_value", "13", "0"]);
     await expect(runtime.eval("save(d, file = '/host.RData')")).rejects.toMatchObject({
       code: "NRU6169",
     });
@@ -4224,6 +7610,32 @@ describe("complete inline source-to-result vertical slice", () => {
       "doc",
       "extdata",
     ]);
+    await expect(
+      runtime.eval(`
+        core.files <- list.files(system.file(package = "base"), full.names = TRUE)
+        c(basename(core.files), all(file.exists(core.files)))
+      `),
+    ).resolves.toEqual(["DESCRIPTION", "NAMESPACE", "TRUE"]);
+    const shown = await runtime.evalDetailed(`
+      shown.path <- tempfile()
+      writeLines(c("alpha", "beta"), shown.path)
+      shown <- withVisible(file.show(shown.path, pager = "console", delete.file = TRUE))
+      c(shown$visible, is.null(shown$value), file.exists(shown.path))
+    `);
+    expect(shown.value).toEqual([false, true, false]);
+    expect(shown.output).toEqual([{ stream: "stdout", text: "alpha\nbeta\n" }]);
+    await expect(
+      runtime.eval(`
+        input.raw <- rawConnection(as.raw(c(1L, 2L, 3L)), "r")
+        first <- readBin(input.raw, "raw", 2L)
+        close(input.raw)
+        output.raw <- rawConnection(raw(), "w")
+        capture.output(cat("captured\n"), file = output.raw)
+        captured <- rawToChar(rawConnectionValue(output.raw))
+        closed <- withVisible(close(output.raw))
+        c(first, captured, closed$visible, is.null(closed$value))
+      `),
+    ).resolves.toEqual(["01", "02", "captured\n", "FALSE", "TRUE"]);
     await expect(
       runtime.eval('length(find.package("nativrfixture", lib.loc = tempdir(), quiet = TRUE))'),
     ).resolves.toBe(0);
@@ -4438,6 +7850,46 @@ describe("complete inline source-to-result vertical slice", () => {
     expect(cleanupAttempts).toBe(2);
   });
 
+  it("defers qualified S3 registration until an optional generic namespace loads", async () => {
+    const deferred = await createR({
+      execution: "inline",
+      assets,
+      packages: [optionalS3GenericPackage, optionalS3MethodPackage],
+    });
+    await expect(
+      deferred.eval('requireNamespace("nativroptionalmethod", quietly = TRUE)'),
+    ).resolves.toBe(true);
+    await expect(deferred.eval('isNamespaceLoaded("nativroptionalgeneric")')).resolves.toBe(false);
+    await expect(
+      deferred.eval(`
+        nativroptionalgeneric::optional_generic(
+          nativroptionalmethod::make_optional_score(4L)
+        )
+      `),
+    ).resolves.toBe("deferred:4");
+    await deferred.dispose();
+
+    const immediate = await createR({
+      execution: "inline",
+      assets,
+      packages: [optionalS3GenericPackage, optionalS3MethodPackage],
+    });
+    await expect(
+      immediate.eval('requireNamespace("nativroptionalgeneric", quietly = TRUE)'),
+    ).resolves.toBe(true);
+    await expect(
+      immediate.eval('requireNamespace("nativroptionalmethod", quietly = TRUE)'),
+    ).resolves.toBe(true);
+    await expect(
+      immediate.eval(`
+        nativroptionalgeneric::optional_generic(
+          nativroptionalmethod::make_optional_score(5L)
+        )
+      `),
+    ).resolves.toBe("deferred:5");
+    await immediate.dispose();
+  });
+
   it("loads source-only R package bundles with namespaces, imports, hooks, and S3 methods", async () => {
     const runtime = await createR({
       execution: "inline",
@@ -4446,6 +7898,14 @@ describe("complete inline source-to-result vertical slice", () => {
     });
     await expect(runtime.eval("system.file(package = 'base')")).resolves.toBe(
       "nativr://package/base",
+    );
+    await expect(
+      runtime.eval("system.file('demo', 'image.R', package = 'graphics')"),
+    ).resolves.toBe("nativr://package/graphics/demo/image.R");
+    await expect(
+      runtime.eval("readLines(system.file('demo', 'image.R', package = 'graphics'), n = 1)"),
+    ).resolves.toBe(
+      "# Browser-owned image demonstration source used for package-resource compatibility.",
     );
     await expect(runtime.eval("system.file(package = 'nativrfixture')")).resolves.toBe(
       "nativr://package/nativrfixture",
@@ -4564,7 +8024,26 @@ describe("complete inline source-to-result vertical slice", () => {
     ).resolves.toBe("");
     await expect(
       runtime.eval("system.file('missing', package = 'nativrfixture', mustWork = TRUE)"),
-    ).rejects.toMatchObject({ code: "NRE2234" });
+    ).rejects.toMatchObject({
+      code: "NRE2234",
+      message: "no file found",
+      details: {
+        operation: "system.file",
+        package: "nativrfixture",
+        packageInstalled: true,
+      },
+    });
+    await expect(
+      runtime.eval("system.file('resource.txt', package = 'optionalfixture', mustWork = TRUE)"),
+    ).rejects.toMatchObject({
+      code: "NRE2234",
+      message: "no file found",
+      details: {
+        operation: "system.file",
+        package: "optionalfixture",
+        packageInstalled: false,
+      },
+    });
     await expect(runtime.eval('isNamespaceLoaded("nativrfixture")')).resolves.toBe(false);
     await expect(
       runtime.eval(
@@ -4620,6 +8099,8 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(
       runtime.eval("nativrfixture::dynamic_describe(nativrfixture::new_score(1:3))"),
     ).resolves.toBe("dynamic:6");
+    await expect(runtime.eval("sqrt(nativrfixture::new_score(1:3))")).resolves.toBe(-6);
+    await expect(runtime.eval("nativrfixture::new_score(1:3) + 1")).resolves.toBe("+");
     await expect(runtime.eval("nativrfixture::package_bars()")).resolves.toEqual([
       1.5, 2.5, 4.5, 5.5,
     ]);
@@ -4779,6 +8260,167 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("re-exports imported namespace bindings without attaching the provider", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [
+        {
+          description: "Package: reexportprovider\nVersion: 1.0.0",
+          namespace: "export(shared)",
+          rSources: [
+            { path: "R/provider.R", source: 'shared <- function(value) paste0("shared:", value)' },
+          ],
+        },
+        {
+          description: "Package: reexportconsumer\nVersion: 1.0.0\nImports: reexportprovider",
+          namespace: "importFrom(reexportprovider, shared)\nexport(shared, use_shared)",
+          rSources: [
+            { path: "R/consumer.R", source: "use_shared <- function(value) shared(value)" },
+          ],
+        },
+      ],
+    });
+    await expect(
+      runtime.eval(`
+        loaded <- requireNamespace("reexportconsumer", quietly = TRUE)
+        direct <- reexportconsumer::shared("direct")
+        internal <- reexportconsumer::use_shared("internal")
+        exports <- sort(getNamespaceExports("reexportconsumer"))
+        library(reexportconsumer)
+        c(
+          loaded, direct, internal, shared("attached"), exports,
+          "package:reexportprovider" %in% search()
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "shared:direct",
+      "shared:internal",
+      "shared:attached",
+      "shared",
+      "use_shared",
+      "FALSE",
+    ]);
+    await expect(runtime.eval("identical(lfactorial(c(0, 1)), c(0, 0))")).resolves.toBe(true);
+    await runtime.dispose();
+  });
+
+  it("validates explicit exports after the namespace load hook", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [
+        {
+          description: "Package: onloadexport\nVersion: 1.0.0",
+          namespace: "export(late_export)",
+          rSources: [
+            {
+              path: "R/zzz.R",
+              source:
+                '.onLoad <- function(libname, pkgname) assign("late_export", function() "ready", envir = getNamespace(pkgname))',
+            },
+          ],
+        },
+      ],
+    });
+    await expect(runtime.eval("onloadexport::late_export()")).resolves.toBe("ready");
+    await runtime.dispose();
+  });
+
+  it("attaches DESCRIPTION Depends packages before the requested package", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [
+        {
+          description: "Package: dependsprovider\nVersion: 1.0.0",
+          namespace: "export(provider_value)",
+          rSources: [{ path: "R/provider.R", source: 'provider_value <- function() "provider"' }],
+        },
+        {
+          description:
+            "Package: dependsconsumer\nVersion: 1.0.0\nDepends: R (>= 4.0), dependsprovider",
+          namespace: "export(consumer_value)",
+          rSources: [{ path: "R/consumer.R", source: 'consumer_value <- function() "consumer"' }],
+        },
+      ],
+    });
+    await expect(
+      runtime.eval(`
+        library(dependsconsumer)
+        c(
+          provider_value(), consumer_value(),
+          match("package:dependsconsumer", search()),
+          match("package:dependsprovider", search())
+        )
+      `),
+    ).resolves.toEqual(["provider", "consumer", "2", "3"]);
+    await runtime.dispose();
+  });
+
+  it("exposes transitive Depends exports only while evaluating package sources", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [
+        {
+          description: "Package: dependsleaf\nVersion: 1.0.0",
+          namespace: "export(install_visible)",
+          rSources: [
+            {
+              path: "R/leaf.R",
+              source: 'install_visible <- function() "leaf"',
+            },
+          ],
+        },
+        {
+          description: "Package: dependsprovider\nVersion: 1.0.0\nDepends: dependsleaf",
+          namespace: "export(provider_value)",
+          rSources: [
+            {
+              path: "R/provider.R",
+              source: 'provider_value <- function() "provider"',
+            },
+          ],
+        },
+        {
+          description: "Package: dependsconsumer\nVersion: 1.0.0\nDepends: dependsprovider",
+          namespace: "export(captured_value, late_value)",
+          rSources: [
+            {
+              path: "R/consumer.R",
+              source: `
+                captured <- install_visible()
+                captured_value <- function() captured
+                late_value <- function() install_visible()
+              `,
+            },
+          ],
+        },
+      ],
+    });
+    await expect(
+      runtime.eval(`
+        loaded <- requireNamespace("dependsconsumer", quietly = TRUE)
+        c(
+          loaded,
+          dependsconsumer::captured_value(),
+          inherits(try(dependsconsumer::late_value(), silent = TRUE), "try-error"),
+          "package:dependsleaf" %in% search(),
+          "package:dependsprovider" %in% search()
+        )
+      `),
+    ).resolves.toEqual(["TRUE", "leaf", "TRUE", "FALSE", "FALSE"]);
+    await expect(
+      runtime.eval(`
+        library(dependsconsumer)
+        c(late_value(), match("package:dependsprovider", search()), match("package:dependsleaf", search()))
+      `),
+    ).resolves.toEqual(["leaf", "3", "4"]);
+    await runtime.dispose();
+  });
+
   it("loads GNU R sysdata workspaces into pure-R package namespaces", async () => {
     const runtime = await createR({
       execution: "inline",
@@ -4836,6 +8478,62 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("round-trips ordinary environments with shared and self references", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        source <- new.env(parent = emptyenv(), hash = FALSE)
+        source$value <- 7L
+        source$self <- source
+        attr(source, "label") <- "owned"
+        restored <- unserialize(serialize(list(left = source, right = source), NULL))
+        c(
+          restored$left$value,
+          identical(restored$left, restored$right),
+          identical(restored$left$self, restored$left),
+          identical(parent.env(restored$left), emptyenv()),
+          attr(restored$left, "label")
+        )
+      `),
+    ).resolves.toEqual(["7", "TRUE", "TRUE", "TRUE", "owned"]);
+    await runtime.dispose();
+  });
+
+  it("round-trips closures with normalized bodies, formals, and owned environments", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        source <- local({
+          offset <- 3L
+          function(x = 1L, ...) x + offset
+        })
+        restored <- unserialize(serialize(source, NULL))
+        c(restored(), restored(4L), names(formals(restored)), formals(restored)$x)
+      `),
+    ).resolves.toEqual(["4", "7", "x", "...", "1"]);
+    await runtime.dispose();
+  });
+
+  it("renames browser-owned text and binary files without copying their payload", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        text_from <- tempfile()
+        text_to <- tempfile()
+        writeLines("moved", text_from)
+        binary_from <- tempfile(fileext = ".rds")
+        binary_to <- tempfile(fileext = ".rds")
+        saveRDS(list(value = 7L), binary_from)
+        moved <- file.rename(c(text_from, binary_from), c(text_to, binary_to))
+        c(
+          moved, !file.exists(c(text_from, binary_from)),
+          readLines(text_to), readRDS(binary_to)$value
+        )
+      `),
+    ).resolves.toEqual(["TRUE", "TRUE", "TRUE", "TRUE", "moved", "7"]);
+    await runtime.dispose();
+  });
+
   it("discovers and loads package data scripts and text datasets without rewriting package code", async () => {
     const runtime = await createR({
       execution: "inline",
@@ -4848,7 +8546,7 @@ describe("complete inline source-to-result vertical slice", () => {
         index <- data(package = "nativrfixture")
         c(class(index), nrow(index$results), index$results[, "Item"])
       `),
-    ).resolves.toEqual(["packageIQR", "3", "csvset", "derived", "example"]);
+    ).resolves.toEqual(["packageIQR", "4", "csvset", "derived", "example", "gzipset"]);
     await expect(
       runtime.eval(`
         root <- system.file(package = "nativrfixture")
@@ -4927,6 +8625,12 @@ describe("complete inline source-to-result vertical slice", () => {
       `),
     ).resolves.toEqual(["data.frame", "name", "value", "alpha", "beta", "1", "2"]);
     await expect(
+      runtime.eval(`
+        data("gzipset", package = "nativrfixture")
+        c(class(gzipset), names(gzipset), gzipset$name, gzipset$value)
+      `),
+    ).resolves.toEqual(["data.frame", "name", "value", "alpha", "beta", "1", "2"]);
+    await expect(
       runtime.eval('data("latin", package = "nativrlatindata"); latin_label'),
     ).resolves.toBe("café");
     await expect(
@@ -4957,6 +8661,1543 @@ describe("complete inline source-to-result vertical slice", () => {
       `),
     ).resolves.toEqual(["blob", "data.frame", "a", "b", "1", "2"]);
     await runtime.dispose();
+  });
+
+  it("realizes external LazyData in a separate package-data environment", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [pureRLazyBinaryDataFixture],
+    });
+    await expect(
+      runtime.eval(`
+        loaded <- requireNamespace("nativrlazydata", quietly = TRUE)
+        c(
+          loaded,
+          exists("example", envir = asNamespace("nativrlazydata"), inherits = FALSE),
+          "example" %in% getNamespaceExports("nativrlazydata"),
+          class(nativrlazydata::example),
+          nrow(nativrlazydata::example)
+        )
+      `),
+    ).resolves.toEqual(["TRUE", "FALSE", "FALSE", "data.frame", "2"]);
+    await expect(runtime.eval("nativrlazydata:::example")).rejects.toMatchObject({
+      code: "NRE2211",
+    });
+    await expect(
+      runtime.eval(`
+        library(nativrlazydata)
+        c(
+          "package:nativrlazydata" %in% search(),
+          exists(
+            "example",
+            envir = as.environment("package:nativrlazydata"),
+            inherits = FALSE
+          ),
+          identical(example, nativrlazydata::example),
+          example$label,
+          example$value
+        )
+      `),
+    ).resolves.toEqual(["TRUE", "TRUE", "TRUE", "a", "b", "1", "2"]);
+    await expect(
+      runtime.eval(`
+        detach("package:nativrlazydata")
+        c(
+          "package:nativrlazydata" %in% search(),
+          exists("example", envir = .GlobalEnv, inherits = FALSE),
+          class(nativrlazydata::example)
+        )
+      `),
+    ).resolves.toEqual(["FALSE", "FALSE", "data.frame"]);
+    await runtime.reset();
+    await expect(
+      runtime.eval(`
+        library(nativrlazydata)
+        c(
+          "package:nativrlazydata" %in% search(),
+          exists(
+            "example",
+            envir = as.environment("package:nativrlazydata"),
+            inherits = FALSE
+          ),
+          example$value
+        )
+      `),
+    ).resolves.toEqual([1, 1, 1, 2]);
+    await runtime.dispose();
+  });
+
+  it("exposes browser-owned core datasets through data, search, and namespace paths", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(
+        "mysubset <- mtcars[substr(dimnames(mtcars)[[1]], 1, 1) == 'M', c('mpg', 'hp', 'wt', 'disp')]; c(dim(mysubset), rownames(mysubset)[c(1, nrow(mysubset))], colnames(mysubset))",
+      ),
+    ).resolves.toEqual(["10", "4", "Mazda RX4", "Maserati Bora", "mpg", "hp", "wt", "disp"]);
+    await expect(
+      runtime.eval(`
+        index <- data(package = "datasets")
+        c(
+          index$results[, "Item"],
+          identical(mtcars, datasets::mtcars),
+          dim(mtcars), names(mtcars), rownames(mtcars)[c(1, 32)],
+          vapply(mtcars, typeof, ""),
+          dim(iris), names(iris), levels(iris$Species),
+          iris[1, 1], iris[35, 4], iris[150, 4]
+        )
+      `),
+    ).resolves.toEqual([
+      "ability.cov",
+      "AirPassengers",
+      "airquality",
+      "anscombe",
+      "attitude",
+      "BOD",
+      "cars",
+      "CO2",
+      "esoph",
+      "EuStockMarkets",
+      "faithful",
+      "HairEyeColor",
+      "InsectSprays",
+      "iris",
+      "iris3",
+      "LifeCycleSavings",
+      "lynx",
+      "mtcars",
+      "precip",
+      "presidents",
+      "Puromycin",
+      "stack.loss",
+      "stack.x",
+      "stackloss",
+      "state",
+      "sunspots",
+      "swiss",
+      "Theoph",
+      "trees",
+      "UCBAdmissions",
+      "USAccDeaths",
+      "USArrests",
+      "USJudgeRatings",
+      "volcano",
+      "warpbreaks",
+      "women",
+      "TRUE",
+      "32",
+      "11",
+      "mpg",
+      "cyl",
+      "disp",
+      "hp",
+      "drat",
+      "wt",
+      "qsec",
+      "vs",
+      "am",
+      "gear",
+      "carb",
+      "Mazda RX4",
+      "Volvo 142E",
+      ...Array.from({ length: 11 }, () => "double"),
+      "150",
+      "5",
+      "Sepal.Length",
+      "Sepal.Width",
+      "Petal.Length",
+      "Petal.Width",
+      "Species",
+      "setosa",
+      "versicolor",
+      "virginica",
+      "5.1",
+      "0.2",
+      "1.8",
+    ]);
+    await expect(
+      runtime.eval(`
+        local({
+          x <- datasets::iris3
+          derived <- c(
+            as.double(as.matrix(iris[1:50, 1:4])),
+            as.double(as.matrix(iris[51:100, 1:4])),
+            as.double(as.matrix(iris[101:150, 1:4]))
+          )
+          as.character(c(
+            identical(iris3, x), typeof(x), class(x), dim(x),
+            dimnames(x)[[2]], dimnames(x)[[3]],
+            x[c(1, 50, 51, 200, 201, 400, 401, 600)],
+            identical(as.double(x), derived)
+          ))
+        })
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "double",
+      "array",
+      "50",
+      "4",
+      "3",
+      "Sepal L.",
+      "Sepal W.",
+      "Petal L.",
+      "Petal W.",
+      "Setosa",
+      "Versicolor",
+      "Virginica",
+      "5.1",
+      "5",
+      "3.5",
+      "0.2",
+      "7",
+      "1.3",
+      "6.3",
+      "1.8",
+      "TRUE",
+    ]);
+    await expect(
+      runtime.eval(`
+        local({
+          x <- datasets::esoph
+          as.character(c(
+            identical(esoph, x), typeof(x), class(x), dim(x), names(x),
+            vapply(x, typeof, ""), class(x$agegp), levels(x$agegp),
+            class(x$alcgp), levels(x$alcgp), class(x$tobgp), levels(x$tobgp),
+            sum(x$ncases), sum(x$ncontrols),
+            sum(seq_len(nrow(x)) * as.integer(x$agegp)),
+            sum(seq_len(nrow(x)) * as.integer(x$alcgp)),
+            sum(seq_len(nrow(x)) * as.integer(x$tobgp)),
+            sum(seq_len(nrow(x)) * x$ncases),
+            sum(seq_len(nrow(x)) * x$ncontrols),
+            rownames(x)[c(1, 88)]
+          ))
+        })
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "list",
+      "data.frame",
+      "88",
+      "5",
+      "agegp",
+      "alcgp",
+      "tobgp",
+      "ncases",
+      "ncontrols",
+      "integer",
+      "integer",
+      "integer",
+      "double",
+      "double",
+      "ordered",
+      "factor",
+      "25-34",
+      "35-44",
+      "45-54",
+      "55-64",
+      "65-74",
+      "75+",
+      "ordered",
+      "factor",
+      "0-39g/day",
+      "40-79",
+      "80-119",
+      "120+",
+      "ordered",
+      "factor",
+      "0-9g/day",
+      "10-19",
+      "20-29",
+      "30+",
+      "200",
+      "775",
+      "16874",
+      "9986",
+      "9355",
+      "11051",
+      "27805",
+      "1",
+      "88",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          identical(Puromycin, datasets::Puromycin),
+          typeof(Puromycin), class(Puromycin), dim(Puromycin), names(Puromycin),
+          vapply(Puromycin, typeof, ""), levels(Puromycin$state),
+          sum(Puromycin$conc), sum(Puromycin$rate),
+          as.character(Puromycin$state[c(1, 12, 13, 23)])
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "list",
+      "data.frame",
+      "23",
+      "3",
+      "conc",
+      "rate",
+      "state",
+      "double",
+      "double",
+      "integer",
+      "treated",
+      "untreated",
+      "7.18",
+      "2917",
+      "treated",
+      "treated",
+      "untreated",
+      "untreated",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          identical(Theoph, datasets::Theoph),
+          typeof(Theoph), class(Theoph), dim(Theoph), names(Theoph),
+          vapply(Theoph, typeof, ""), class(Theoph$Subject), levels(Theoph$Subject),
+          round(c(sum(Theoph$Wt), sum(Theoph$Dose), sum(Theoph$Time), sum(Theoph$conc)), 2),
+          as.character(attr(Theoph, "formula")),
+          unlist(attr(Theoph, "labels"), use.names = FALSE),
+          unlist(attr(Theoph, "units"), use.names = FALSE),
+          nrow(Theoph[Theoph$Subject == "4", ]),
+          Theoph$Time[Theoph$Subject == "4"],
+          Theoph$conc[Theoph$Subject == "4"]
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "list",
+      "nfnGroupedData",
+      "nfGroupedData",
+      "groupedData",
+      "data.frame",
+      "132",
+      "5",
+      "Subject",
+      "Wt",
+      "Dose",
+      "Time",
+      "conc",
+      "integer",
+      "double",
+      "double",
+      "double",
+      "double",
+      "ordered",
+      "factor",
+      "6",
+      "7",
+      "8",
+      "11",
+      "3",
+      "2",
+      "4",
+      "9",
+      "12",
+      "10",
+      "1",
+      "5",
+      "9185",
+      "610.61",
+      "778.09",
+      "654.78",
+      "~",
+      "conc",
+      "Time | Subject",
+      "Time since drug administration",
+      "Theophylline concentration in serum",
+      "(hr)",
+      "(mg/l)",
+      "11",
+      "0",
+      "0.35",
+      "0.6",
+      "1.07",
+      "2.13",
+      "3.5",
+      "5.02",
+      "7.02",
+      "9.02",
+      "11.98",
+      "24.65",
+      "0",
+      "1.89",
+      "4.6",
+      "8.6",
+      "8.38",
+      "7.54",
+      "6.88",
+      "5.78",
+      "5.33",
+      "4.19",
+      "1.15",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          identical(LifeCycleSavings, datasets::LifeCycleSavings),
+          typeof(LifeCycleSavings), class(LifeCycleSavings), dim(LifeCycleSavings),
+          names(LifeCycleSavings), vapply(LifeCycleSavings, typeof, ""),
+          round(colSums(LifeCycleSavings), 6),
+          unname(unlist(LifeCycleSavings[c(1, 25, 26, 50), ], use.names = FALSE)),
+          rownames(LifeCycleSavings)[c(1, 25, 26, 50)]
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "list",
+      "data.frame",
+      "50",
+      "5",
+      "sr",
+      "pop15",
+      "pop75",
+      "dpi",
+      "ddpi",
+      ...Array.from({ length: 5 }, () => "double"),
+      "483.55",
+      "1754.48",
+      "114.65",
+      "55337.92",
+      "187.88",
+      "11.43",
+      "10.35",
+      "15.48",
+      "4.71",
+      "29.35",
+      "21.8",
+      "32.54",
+      "47.2",
+      "2.87",
+      "3.73",
+      "2.47",
+      "0.66",
+      "2329.68",
+      "2449.39",
+      "601.05",
+      "242.69",
+      "2.87",
+      "1.57",
+      "8.12",
+      "5.08",
+      "Australia",
+      "Luxembourg",
+      "Malta",
+      "Malaysia",
+    ]);
+    await expect(
+      runtime.eval(`
+        state.loaded <- new.env()
+        data(state, package = "datasets", envir = state.loaded)
+        as.character(c(
+          identical(state.abb, datasets::state.abb),
+          identical(state.area, datasets::state.area),
+          identical(state.center, datasets::state.center),
+          identical(state.division, datasets::state.division),
+          identical(state.name, datasets::state.name),
+          identical(state.region, datasets::state.region),
+          identical(state.x77, datasets::state.x77),
+          paste(sort(ls(state.loaded)), collapse = ","),
+          vapply(list(state.abb, state.area, state.center, state.division,
+            state.name, state.region, state.x77), typeof, ""),
+          class(state.division), class(state.region), class(state.x77),
+          names(state.center), dim(state.x77), colnames(state.x77),
+          levels(state.division), levels(state.region),
+          round(c(sum(state.center$x), sum(state.center$y)), 4),
+          round(colSums(state.x77), 6), state.x77[c(1, 50), c(1, 8)]
+        ))
+      `),
+    ).resolves.toEqual([
+      ...Array.from({ length: 7 }, () => "TRUE"),
+      "state.abb,state.area,state.center,state.division,state.name,state.region,state.x77",
+      "character",
+      "double",
+      "list",
+      "integer",
+      "character",
+      "integer",
+      "double",
+      "factor",
+      "factor",
+      "matrix",
+      "array",
+      "x",
+      "y",
+      "50",
+      "8",
+      "Population",
+      "Income",
+      "Illiteracy",
+      "Life Exp",
+      "Murder",
+      "HS Grad",
+      "Frost",
+      "Area",
+      "New England",
+      "Middle Atlantic",
+      "South Atlantic",
+      "East South Central",
+      "West South Central",
+      "East North Central",
+      "West North Central",
+      "Mountain",
+      "Pacific",
+      "Northeast",
+      "South",
+      "North Central",
+      "West",
+      "-4623.2069",
+      "1970.537",
+      "212321",
+      "221790",
+      "58.5",
+      "3543.93",
+      "368.9",
+      "2655.4",
+      "5223",
+      "3536794",
+      "3615",
+      "376",
+      "50708",
+      "97203",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          identical(airquality, datasets::airquality), typeof(airquality), class(airquality),
+          dim(airquality), names(airquality), vapply(airquality, typeof, ""),
+          colSums(is.na(airquality)), round(colSums(airquality, na.rm = TRUE), 6),
+          unname(unlist(airquality[c(1, 153), ], use.names = FALSE)),
+          rownames(airquality)[c(1, 153)]
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "list",
+      "data.frame",
+      "153",
+      "6",
+      "Ozone",
+      "Solar.R",
+      "Wind",
+      "Temp",
+      "Month",
+      "Day",
+      "integer",
+      "integer",
+      "double",
+      "integer",
+      "integer",
+      "integer",
+      "37",
+      "7",
+      "0",
+      "0",
+      "0",
+      "0",
+      "4887",
+      "27146",
+      "1523.5",
+      "11916",
+      "1070",
+      "2418",
+      "41",
+      "20",
+      "190",
+      "223",
+      "7.4",
+      "11.5",
+      "67",
+      "68",
+      "5",
+      "9",
+      "1",
+      "30",
+      "1",
+      "153",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          identical(stack.x, datasets::stack.x), typeof(stack.x), class(stack.x), dim(stack.x),
+          colnames(stack.x), colSums(stack.x), as.numeric(stack.x[c(1, 21), ]),
+          identical(stack.loss, datasets::stack.loss), typeof(stack.loss), sum(stack.loss),
+          stack.loss[c(1, 21)], identical(unname(stack.x), unname(as.matrix(stackloss[1:3]))),
+          identical(stack.loss, stackloss[[4]]), class(stackloss), dim(stackloss), names(stackloss),
+          vapply(stackloss, typeof, "")
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "double",
+      "matrix",
+      "array",
+      "21",
+      "3",
+      "Air.Flow",
+      "Water.Temp",
+      "Acid.Conc.",
+      "1269",
+      "443",
+      "1812",
+      "80",
+      "70",
+      "27",
+      "20",
+      "89",
+      "91",
+      "TRUE",
+      "double",
+      "368",
+      "42",
+      "15",
+      "TRUE",
+      "TRUE",
+      "data.frame",
+      "21",
+      "4",
+      "Air.Flow",
+      "Water.Temp",
+      "Acid.Conc.",
+      "stack.loss",
+      "double",
+      "double",
+      "double",
+      "double",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          identical(BOD, datasets::BOD), typeof(BOD), class(BOD), dim(BOD), names(BOD),
+          vapply(BOD, typeof, ""), row.names(BOD),
+          unname(unlist(BOD[c(1, 6), ], use.names = FALSE)),
+          unname(colSums(BOD)), attr(BOD, "reference")
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "list",
+      "data.frame",
+      "6",
+      "2",
+      "Time",
+      "demand",
+      "double",
+      "double",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "1",
+      "7",
+      "8.3",
+      "19.8",
+      "22",
+      "89",
+      "A1.4, p. 270",
+    ]);
+    await expect(
+      runtime.eval(`
+        x <- datasets::CO2
+        as.character(c(
+          identical(x, CO2), typeof(x), class(x), dim(x), names(x), vapply(x, typeof, ""),
+          class(x$Plant), levels(x$Plant), levels(x$Type), levels(x$Treatment),
+          as.character(x$Plant[c(1, 7, 8, 42, 43, 78, 84)]),
+          as.character(x$Type[c(1, 42, 43, 84)]),
+          as.character(x$Treatment[c(1, 21, 22, 42, 43, 63, 64, 84)]),
+          x$conc[c(1, 7, 8, 84)], x$uptake[c(1, 7, 8, 42, 43, 78, 84)],
+          sum(x$conc), sum(x$uptake), round(unname(tapply(x$uptake, x$Plant, sum)), 1),
+          deparse(attr(x, "formula")), deparse(attr(x, "outer")),
+          identical(environment(attr(x, "formula")), emptyenv()),
+          identical(environment(attr(x, "outer")), emptyenv()),
+          unlist(attr(x, "labels"), use.names = FALSE),
+          unlist(attr(x, "units"), use.names = FALSE)
+        ))
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "list",
+      "nfnGroupedData",
+      "nfGroupedData",
+      "groupedData",
+      "data.frame",
+      "84",
+      "5",
+      "Plant",
+      "Type",
+      "Treatment",
+      "conc",
+      "uptake",
+      "integer",
+      "integer",
+      "integer",
+      "double",
+      "double",
+      "ordered",
+      "factor",
+      "Qn1",
+      "Qn2",
+      "Qn3",
+      "Qc1",
+      "Qc3",
+      "Qc2",
+      "Mn3",
+      "Mn2",
+      "Mn1",
+      "Mc2",
+      "Mc3",
+      "Mc1",
+      "Quebec",
+      "Mississippi",
+      "nonchilled",
+      "chilled",
+      "Qn1",
+      "Qn1",
+      "Qn2",
+      "Qc3",
+      "Mn1",
+      "Mc3",
+      "Mc3",
+      "Quebec",
+      "Quebec",
+      "Mississippi",
+      "Mississippi",
+      "nonchilled",
+      "nonchilled",
+      "chilled",
+      "chilled",
+      "nonchilled",
+      "nonchilled",
+      "chilled",
+      "chilled",
+      "95",
+      "1000",
+      "95",
+      "1000",
+      "16",
+      "39.7",
+      "13.6",
+      "41.4",
+      "10.6",
+      "10.6",
+      "19.9",
+      "36540",
+      "2285.9",
+      "232.6",
+      "246.1",
+      "263.3",
+      "209.8",
+      "228.1",
+      "228.9",
+      "168.8",
+      "191.4",
+      "184.8",
+      "85",
+      "121.1",
+      "126",
+      "uptake ~ conc | Plant",
+      "~Treatment * Type",
+      "TRUE",
+      "TRUE",
+      "Ambient carbon dioxide concentration",
+      "CO2 uptake rate",
+      "(uL/L)",
+      "(umol/m^2 s)",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          identical(attitude, datasets::attitude), dim(attitude), names(attitude),
+          vapply(attitude, typeof, ""),
+          unname(unlist(attitude[c(1, 30), ], use.names = FALSE)),
+          unname(colSums(attitude)), round(unname(colMeans(attitude)), 10)
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "30",
+      "7",
+      "rating",
+      "complaints",
+      "privileges",
+      "learning",
+      "raises",
+      "critical",
+      "advance",
+      ...Array.from({ length: 7 }, () => "double"),
+      "43",
+      "82",
+      "51",
+      "82",
+      "30",
+      "39",
+      "39",
+      "59",
+      "61",
+      "64",
+      "92",
+      "78",
+      "45",
+      "39",
+      "1939",
+      "1998",
+      "1594",
+      "1691",
+      "1939",
+      "2243",
+      "1288",
+      "64.6333333333",
+      "66.6",
+      "53.1333333333",
+      "56.3666666667",
+      "64.6333333333",
+      "74.7666666667",
+      "42.9333333333",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          identical(HairEyeColor, datasets::HairEyeColor),
+          dim(HairEyeColor), names(dimnames(HairEyeColor)),
+          unlist(dimnames(HairEyeColor)), class(HairEyeColor), typeof(HairEyeColor),
+          as.vector(HairEyeColor), sum(HairEyeColor),
+          unclass(margin.table(HairEyeColor, 1)),
+          unclass(margin.table(HairEyeColor, 2)),
+          unclass(margin.table(HairEyeColor, 3))
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "4",
+      "4",
+      "2",
+      "Hair",
+      "Eye",
+      "Sex",
+      "Black",
+      "Brown",
+      "Red",
+      "Blond",
+      "Brown",
+      "Blue",
+      "Hazel",
+      "Green",
+      "Male",
+      "Female",
+      "table",
+      "double",
+      "32",
+      "53",
+      "10",
+      "3",
+      "11",
+      "50",
+      "10",
+      "30",
+      "10",
+      "25",
+      "7",
+      "5",
+      "3",
+      "15",
+      "7",
+      "8",
+      "36",
+      "66",
+      "16",
+      "4",
+      "9",
+      "34",
+      "7",
+      "64",
+      "5",
+      "29",
+      "7",
+      "5",
+      "2",
+      "14",
+      "7",
+      "8",
+      "592",
+      "108",
+      "286",
+      "71",
+      "127",
+      "220",
+      "215",
+      "93",
+      "64",
+      "279",
+      "313",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          identical(UCBAdmissions, datasets::UCBAdmissions),
+          dim(UCBAdmissions), names(dimnames(UCBAdmissions)),
+          unlist(dimnames(UCBAdmissions)), class(UCBAdmissions), typeof(UCBAdmissions),
+          as.vector(UCBAdmissions), sum(UCBAdmissions),
+          unclass(margin.table(UCBAdmissions, 1)),
+          unclass(margin.table(UCBAdmissions, 2)),
+          unclass(margin.table(UCBAdmissions, 3))
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "2",
+      "2",
+      "6",
+      "Admit",
+      "Gender",
+      "Dept",
+      "Admitted",
+      "Rejected",
+      "Male",
+      "Female",
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "table",
+      "double",
+      "512",
+      "313",
+      "89",
+      "19",
+      "353",
+      "207",
+      "17",
+      "8",
+      "120",
+      "205",
+      "202",
+      "391",
+      "138",
+      "279",
+      "131",
+      "244",
+      "53",
+      "138",
+      "94",
+      "299",
+      "22",
+      "351",
+      "24",
+      "317",
+      "4526",
+      "1755",
+      "2771",
+      "2691",
+      "1835",
+      "933",
+      "585",
+      "918",
+      "792",
+      "584",
+      "714",
+    ]);
+    await expect(
+      runtime.eval(`
+        d <- as.data.frame(UCBAdmissions)
+        s <- as.data.frame(UCBAdmissions, responseName = "Count", stringsAsFactors = FALSE)
+        c(
+          dim(d), names(d), vapply(d, typeof, ""),
+          levels(d$Admit), levels(d$Gender), levels(d$Dept),
+          as.character(d$Admit[c(1, 2, 24)]),
+          as.character(d$Gender[c(1, 3, 24)]),
+          as.character(d$Dept[c(1, 5, 24)]), d$Freq[c(1, 8, 24)],
+          names(s), vapply(s, typeof, ""),
+          s$Admit[c(1, 2, 24)], s$Gender[c(1, 3, 24)], s$Dept[c(1, 5, 24)],
+          s$Count[c(1, 8, 24)]
+        )
+      `),
+    ).resolves.toEqual([
+      "24",
+      "4",
+      "Admit",
+      "Gender",
+      "Dept",
+      "Freq",
+      "integer",
+      "integer",
+      "integer",
+      "double",
+      "Admitted",
+      "Rejected",
+      "Male",
+      "Female",
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "Admitted",
+      "Rejected",
+      "Rejected",
+      "Male",
+      "Female",
+      "Female",
+      "A",
+      "B",
+      "F",
+      "512",
+      "8",
+      "317",
+      "Admit",
+      "Gender",
+      "Dept",
+      "Count",
+      "character",
+      "character",
+      "character",
+      "double",
+      "Admitted",
+      "Rejected",
+      "Rejected",
+      "Male",
+      "Female",
+      "Female",
+      "A",
+      "B",
+      "F",
+      "512",
+      "8",
+      "317",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          identical(ability.cov, datasets::ability.cov),
+          names(ability.cov), typeof(ability.cov$cov), class(ability.cov$cov),
+          dim(ability.cov$cov), rownames(ability.cov$cov), colnames(ability.cov$cov),
+          ability.cov$cov[cbind(c(1, 2, 6), c(1, 3, 6))],
+          round(sum(ability.cov$cov), 3), typeof(ability.cov$center), ability.cov$center,
+          typeof(ability.cov$n.obs), ability.cov$n.obs
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "cov",
+      "center",
+      "n.obs",
+      "double",
+      "matrix",
+      "array",
+      "6",
+      "6",
+      "general",
+      "picture",
+      "blocks",
+      "maze",
+      "reading",
+      "vocab",
+      "general",
+      "picture",
+      "blocks",
+      "maze",
+      "reading",
+      "vocab",
+      "24.641",
+      "18.137",
+      "135.292",
+      "1002.279",
+      "double",
+      "0",
+      "0",
+      "0",
+      "0",
+      "0",
+      "0",
+      "double",
+      "112",
+    ]);
+    await expect(
+      runtime.eval(`
+        fit <- factanal(factors = 2, covmat = ability.cov, rotation = "varimax")
+        c(round(unclass(fit$loadings), 4), round(fit$uniquenesses, 4), colSums(fit$loadings) > 0)
+      `),
+    ).resolves.toEqual([
+      0.4994, 0.1561, 0.2058, 0.1085, 0.9562, 0.7848, 0.5434, 0.6215, 0.8599, 0.4678, 0.1821,
+      0.2248, 0.4552, 0.5893, 0.2182, 0.7694, 0.0524, 0.3336, 1, 1,
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          round(unclass(fit$loadings), 7),
+          round(fit$uniquenesses, 7),
+          round(fit$criteria[["objective"]], 12),
+          fit$criteria[["counts.function"]],
+          fit$criteria[["counts.gradient"]],
+          fit$converged
+        )
+      `),
+    ).resolves.toEqual([
+      0.4994378, 0.1560701, 0.205787, 0.1085308, 0.9562425, 0.7847682, 0.543449, 0.621538,
+      0.8599259, 0.467761, 0.1820963, 0.2248221, 0.4552226, 0.5893326, 0.2181789, 0.7694167,
+      0.0524412, 0.3335897, 0.057160217025, 18, 18, 1,
+    ]);
+    await expect(
+      runtime.eval(`
+        source <- matrix(
+          c(.8, .7, .6, .2, .3, .4),
+          3,
+          2,
+          dimnames = list(letters[1:3], c("A", "B"))
+        )
+        plain <- stats::varimax(source, normalize = FALSE)
+        normalized <- stats::varimax(source)
+        c(
+          round(unclass(plain$loadings), 10),
+          round(plain$rotmat, 10),
+          round(unclass(normalized$loadings), 10),
+          round(normalized$rotmat, 10)
+        )
+      `),
+    ).resolves.toEqual([
+      0.748195941, 0.6311929457, 0.5141899504, 0.3467028034, 0.4261401945, 0.5055775855,
+      0.9822019316, -0.1878280214, 0.1878280214, 0.9822019316, 0.6800795627, 0.5514901676,
+      0.4229007726, 0.4663601488, 0.5252224243, 0.5840846998, 0.9372583528, -0.3486355978,
+      0.3486355978, 0.9372583528,
+    ]);
+    await expect(
+      runtime.eval(
+        "v <- stats::varimax(source); c(names(v), class(v$loadings), dim(v$loadings), unlist(dimnames(v$loadings)), dim(v$rotmat), names(formals(stats::varimax)))",
+      ),
+    ).resolves.toEqual([
+      "loadings",
+      "rotmat",
+      "loadings",
+      "3",
+      "2",
+      "a",
+      "b",
+      "c",
+      "A",
+      "B",
+      "2",
+      "2",
+      "x",
+      "normalize",
+      "eps",
+    ]);
+    await expect(
+      runtime.eval(
+        "c(identical(anscombe, datasets::anscombe), dim(anscombe), names(anscombe), round(colSums(anscombe), 2))",
+      ),
+    ).resolves.toEqual([
+      "TRUE",
+      "11",
+      "8",
+      "x1",
+      "x2",
+      "x3",
+      "x4",
+      "y1",
+      "y2",
+      "y3",
+      "y4",
+      "99",
+      "99",
+      "99",
+      "99",
+      "82.51",
+      "82.51",
+      "82.5",
+      "82.51",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          identical(InsectSprays, datasets::InsectSprays),
+          dim(InsectSprays), names(InsectSprays),
+          vapply(InsectSprays, typeof, ""), class(InsectSprays$spray),
+          levels(InsectSprays$spray),
+          InsectSprays$count[c(1, 12, 13, 72)],
+          as.character(InsectSprays$spray[c(1, 12, 13, 72)]),
+          sum(InsectSprays$count), mean(InsectSprays$count),
+          identical(faithful, datasets::faithful),
+          dim(faithful), names(faithful), vapply(faithful, typeof, ""),
+          faithful$eruptions[c(1, 2, 271, 272)],
+          faithful$waiting[c(1, 2, 271, 272)],
+          round(sum(faithful$eruptions), 3), mean(faithful$waiting)
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "72",
+      "2",
+      "count",
+      "spray",
+      "double",
+      "integer",
+      "factor",
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "10",
+      "13",
+      "11",
+      "13",
+      "A",
+      "A",
+      "B",
+      "F",
+      "684",
+      "9.5",
+      "TRUE",
+      "272",
+      "2",
+      "eruptions",
+      "waiting",
+      "double",
+      "double",
+      "3.6",
+      "1.8",
+      "1.817",
+      "4.467",
+      "79",
+      "54",
+      "46",
+      "74",
+      "948.677",
+      "70.8970588235294",
+    ]);
+    await expect(
+      runtime.eval(`
+        grouped <- tapply(warpbreaks$breaks, list(warpbreaks$wool, warpbreaks$tension), sum)
+        c(
+          identical(warpbreaks, datasets::warpbreaks),
+          dim(warpbreaks), names(warpbreaks), vapply(warpbreaks, typeof, ""),
+          class(warpbreaks$wool), levels(warpbreaks$wool),
+          class(warpbreaks$tension), levels(warpbreaks$tension),
+          rownames(warpbreaks)[c(1, 54)],
+          warpbreaks$breaks[c(1, 9, 10, 18, 19, 27, 28, 36, 37, 45, 46, 54)],
+          sum(warpbreaks$breaks), as.double(grouped)
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "54",
+      "3",
+      "breaks",
+      "wool",
+      "tension",
+      "double",
+      "integer",
+      "integer",
+      "factor",
+      "A",
+      "B",
+      "factor",
+      "L",
+      "M",
+      "H",
+      "1",
+      "54",
+      "26",
+      "67",
+      "18",
+      "36",
+      "36",
+      "26",
+      "27",
+      "44",
+      "42",
+      "29",
+      "20",
+      "28",
+      "1520",
+      "401",
+      "254",
+      "216",
+      "259",
+      "221",
+      "169",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          identical(presidents, datasets::presidents), typeof(presidents), class(presidents),
+          length(presidents), start(presidents), end(presidents), frequency(presidents),
+          sum(is.na(presidents)), sum(presidents, na.rm = TRUE),
+          presidents[c(1, 2, 3, 14, 15, 16, 119, 120)],
+          cycle(presidents)[c(1, 4, 5, 120)]
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "double",
+      "ts",
+      "120",
+      "1945",
+      "1",
+      "1974",
+      "4",
+      "4",
+      "6",
+      "6419",
+      NA,
+      "87",
+      "82",
+      "39",
+      NA,
+      NA,
+      "24",
+      "24",
+      "1",
+      "4",
+      "1",
+      "4",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          identical(lynx, datasets::lynx), typeof(lynx), class(lynx), length(lynx),
+          start(lynx), end(lynx), frequency(lynx),
+          lynx[c(1, 2, 57, 58, 69, 84, 114)],
+          sum(lynx), round(mean(lynx), 6), min(lynx), max(lynx)
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "double",
+      "ts",
+      "114",
+      "1821",
+      "1",
+      "1934",
+      "1",
+      "1",
+      "269",
+      "321",
+      "756",
+      "299",
+      "39",
+      "6991",
+      "3396",
+      "175334",
+      "1538.017544",
+      "39",
+      "6991",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          identical(AirPassengers, datasets::AirPassengers),
+          typeof(AirPassengers), class(AirPassengers), length(AirPassengers),
+          start(AirPassengers), end(AirPassengers), frequency(AirPassengers),
+          AirPassengers[c(1, 12, 73, 144)], sum(AirPassengers),
+          min(AirPassengers), max(AirPassengers)
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "double",
+      "ts",
+      "144",
+      "1949",
+      "1",
+      "1960",
+      "12",
+      "12",
+      "112",
+      "118",
+      "242",
+      "432",
+      "40363",
+      "104",
+      "622",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          identical(EuStockMarkets, datasets::EuStockMarkets),
+          typeof(EuStockMarkets), class(EuStockMarkets), dim(EuStockMarkets),
+          start(EuStockMarkets), end(EuStockMarkets), frequency(EuStockMarkets),
+          colnames(EuStockMarkets),
+          c(EuStockMarkets)[c(1, 1860, 1861, 3720, 3721, 5580, 5581, 7440)],
+          round(sum(EuStockMarkets[, "DAX"]), 2),
+          round(sum(EuStockMarkets[, "SMI"]), 2),
+          round(sum(EuStockMarkets[, "CAC"]), 2),
+          round(sum(EuStockMarkets[, "FTSE"]), 2),
+          min(EuStockMarkets), max(EuStockMarkets)
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "double",
+      "mts",
+      "ts",
+      "matrix",
+      "array",
+      "1860",
+      "4",
+      "1991",
+      "130",
+      "1998",
+      "169",
+      "260",
+      "DAX",
+      "SMI",
+      "CAC",
+      "FTSE",
+      "1628.75",
+      "5473.72",
+      "1678.1",
+      "7676.3",
+      "1772.8",
+      "3995",
+      "2443.6",
+      "5455",
+      "4707021.8",
+      "6279776.1",
+      "4143761",
+      "6632096.3",
+      "1402.34",
+      "8412",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          identical(sunspots, datasets::sunspots),
+          typeof(sunspots), class(sunspots), length(sunspots),
+          start(sunspots), end(sunspots), frequency(sunspots),
+          sunspots[c(1, 12, 1000, 2000, 2810, 2820)],
+          round(sum(sunspots), 1), min(sunspots), max(sunspots)
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "double",
+      "ts",
+      "2820",
+      "1749",
+      "1",
+      "1983",
+      "12",
+      "12",
+      "58",
+      "85.2",
+      "26.9",
+      "69.6",
+      "51",
+      "33.4",
+      "144570",
+      "0",
+      "253.8",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          identical(women, datasets::women), dim(women), names(women),
+          vapply(women, typeof, ""), women$height[c(1, 15)],
+          women$weight[c(1, 8, 15)], sum(women$height), sum(women$weight)
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "15",
+      "2",
+      "height",
+      "weight",
+      "double",
+      "double",
+      "58",
+      "72",
+      "115",
+      "135",
+      "164",
+      "975",
+      "2051",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          identical(cars, datasets::cars), dim(cars), names(cars),
+          vapply(cars, typeof, ""), cars$speed[c(1, 50)],
+          cars$dist[c(1, 23, 49, 50)], colSums(cars)
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "50",
+      "2",
+      "speed",
+      "dist",
+      "double",
+      "double",
+      "4",
+      "25",
+      "2",
+      "80",
+      "120",
+      "85",
+      "770",
+      "2149",
+    ]);
+    await runtime.reset();
+    await expect(
+      runtime.eval(
+        "c(nrow(mtcars), nrow(datasets::iris), nrow(InsectSprays), nrow(faithful), nrow(warpbreaks), length(presidents), datasets::ability.cov$n.obs, nrow(women), nrow(cars), length(AirPassengers), nrow(EuStockMarkets))",
+      ),
+    ).resolves.toEqual([32, 150, 72, 272, 54, 120, 112, 15, 50, 144, 1860]);
+    await runtime.dispose();
+  });
+
+  it("fits and profiles a reusable nonlinear least-squares model", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        data(Puromycin)
+        Treat <- Puromycin[Puromycin$state == "treated", ]
+        fm <- nls(rate ~ T1*conc/(T2+conc), data = Treat,
+                  start = list(T1 = 207, T2 = 0.06))
+        fm.subset <- nls(rate ~ T1*conc/(T2+conc), data = Puromycin,
+                  subset = state == "treated", start = list(T1 = 207, T2 = 0.06), model = TRUE)
+        sm <- summary(fm.subset)
+        c(round(coef(fm)[1], 3), round(coef(fm)[2], 6), round(deviance(fm), 6), df.residual(fm),
+          class(fm), fm$convInfo$isConv, identical(coef(fm), coef(fm.subset)),
+          identical(deviance(fm), deviance(fm.subset)), nrow(fm.subset$model),
+          row.names(fm.subset$model)[c(1, 12)], class(sm), round(sm$sigma, 6), sm$df,
+          dim(sm$cov.unscaled), identical(fm.subset$m$getPars(), coef(fm.subset)))
+      `),
+    ).resolves.toEqual([
+      "212.684",
+      "0.064121",
+      "1195.448814",
+      "10",
+      "nls",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "12",
+      "1",
+      "12",
+      "summary.nls",
+      "10.933658",
+      "2",
+      "10",
+      "2",
+      "2",
+      "TRUE",
+    ]);
+    await expect(
+      runtime.eval(`
+        pr <- profile(fm)
+        c(class(pr), names(pr), length(pr[[1]]$tau), dim(pr[[1]]$par.vals),
+          all(is.finite(pr[[1]]$tau)), all(is.finite(pr[[2]]$par.vals)))
+      `),
+    ).resolves.toEqual(["profile.nls", "profile", "T1", "T2", "12", "12", "2", "TRUE", "TRUE"]);
   });
 
   it("round-trips common CSV and delimited table data through browser-memory files", async () => {
@@ -5024,6 +10265,76 @@ describe("complete inline source-to-result vertical slice", () => {
         c(d$x, d$y, destroyed, remains_open, readLines(target), unlink(c(source, target)))
       `),
     ).resolves.toEqual(["1", "2", "a", "b", "TRUE", "TRUE", '"x","y"', '1,"a"', '2,"b"', "0"]);
+    await runtime.dispose();
+  });
+
+  it("initializes and fits the reusable SSfol self-starting model", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        c(
+          class(stats::SSfol), names(attributes(stats::SSfol)),
+          names(formals(stats::SSfol)), attr(stats::SSfol, "pnames"),
+          round(stats::SSfol(c(4.4, 4.4), c(0, 1), -2, -1, 1), 12)
+        )
+      `),
+    ).resolves.toEqual([
+      "selfStart",
+      "initial",
+      "pnames",
+      "class",
+      "Dose",
+      "input",
+      "lKe",
+      "lKa",
+      "lCl",
+      "lKe",
+      "lKa",
+      "lCl",
+      "0",
+      "0.062803113017",
+    ]);
+    const observed = (await runtime.eval(`
+      d <- datasets::Theoph[datasets::Theoph$Subject == "4", ]
+      initial <- stats::getInitial(
+        conc ~ stats::SSfol(Dose, Time, lKe, lKa, lCl), data = d
+      )
+      fit <- stats::nls(conc ~ stats::SSfol(Dose, Time, lKe, lKa, lCl), data = d)
+      prediction <- stats::predict(
+        fit, newdata = data.frame(Dose = rep(4.4, 3), Time = c(0, .5, 1))
+      )
+      c(initial, stats::coef(fit), stats::deviance(fit), stats::df.residual(fit),
+        fit$convInfo$isConv, prediction, names(formals(stats:::predict.nls)))
+    `)) as string[];
+    const numeric = observed.slice(0, 12).map(Number);
+    expect(numeric.slice(0, 3)).toEqual([
+      expect.closeTo(-2.4612695132, 1),
+      expect.closeTo(0.1731542318, 1),
+      expect.closeTo(-3.3013225914, 1),
+    ]);
+    expect(numeric.slice(3, 6)).toEqual([
+      expect.closeTo(-2.4364940224, 5),
+      expect.closeTo(0.1582638256, 5),
+      expect.closeTo(-3.286086898, 5),
+    ]);
+    expect(numeric[6]).toBeCloseTo(5.7319506042, 5);
+    expect(numeric[7]).toBe(8);
+    expect(observed[8]).toBe("TRUE");
+    expect(numeric.slice(9, 12)).toEqual([
+      expect.closeTo(0, 10),
+      expect.closeTo(4.4539397451, 5),
+      expect.closeTo(6.74283773, 5),
+    ]);
+    expect(observed.slice(12)).toEqual([
+      "object",
+      "newdata",
+      "se.fit",
+      "scale",
+      "df",
+      "interval",
+      "level",
+      "...",
+    ]);
     await runtime.dispose();
   });
 
@@ -5141,9 +10452,13 @@ describe("complete inline source-to-result vertical slice", () => {
           number = 3L
         )
         bound <- rbind(left, right)
+        class(left) <- c("extended.frame", "data.frame")
+        attr(left, "marker") <- "preserved"
+        extended <- rbind(left, left)
         c(
           names(bound), nrow(bound), bound$number, bound$label,
-          as.character(bound$group), levels(bound$group), rownames(bound)
+          as.character(bound$group), levels(bound$group), rownames(bound),
+          class(extended), attr(extended, "marker")
         )
       `),
     ).resolves.toEqual([
@@ -5166,6 +10481,9 @@ describe("complete inline source-to-result vertical slice", () => {
       "1",
       "2",
       "3",
+      "extended.frame",
+      "data.frame",
+      "preserved",
     ]);
     await runtime.dispose();
   });
@@ -5220,6 +10538,38 @@ describe("complete inline source-to-result vertical slice", () => {
     ).resolves.toEqual(["TRUE", "TRUE", "base", "TRUE"]);
     await expect(runtime.eval('asNamespace("base", base.OK = FALSE)')).rejects.toMatchObject({
       code: "NRE2221",
+    });
+    await runtime.dispose();
+  });
+
+  it("retrieves only exported namespace bindings through getExportedValue", async () => {
+    const runtime = await createR({ execution: "inline", assets, packages: [pureRFixture] });
+    await expect(
+      runtime.eval(`
+        package_ns <- asNamespace("nativrfixture")
+        mean_a <- getExportedValue("base", "mean")
+        mean_b <- getExportedValue(asNamespace("base"), quote(mean))
+        square_a <- getExportedValue("nativrfixture", "square")
+        square_b <- getExportedValue(package_ns, c("square", "centered"))
+        list(
+          identity = c(identical(mean_a, mean), identical(mean_b, mean)),
+          values = c(square_a(5), square_b(6)),
+          type = typeof(getExportedValue),
+          formals = names(formals(getExportedValue))
+        )
+      `),
+    ).resolves.toEqual([[true, true], [25, 36], "closure", ["ns", "name"]]);
+    await expect(
+      runtime.eval('getExportedValue("nativrfixture", ".package_state")'),
+    ).rejects.toMatchObject({ code: "NRE2275" });
+    await expect(runtime.eval('getExportedValue("missing.package", "x")')).rejects.toMatchObject({
+      code: "NRE2221",
+    });
+    await expect(runtime.eval('getExportedValue(new.env(), "x")')).rejects.toMatchObject({
+      code: "NRE2273",
+    });
+    await expect(runtime.eval('getExportedValue("base", character())')).rejects.toMatchObject({
+      code: "NRE2274",
     });
     await runtime.dispose();
   });
@@ -5346,6 +10696,7 @@ describe("complete inline source-to-result vertical slice", () => {
       ['data("example", package = "nativrfixture", envir = 1)', "NRT3357"],
       ['data(list = 1, package = "nativrfixture")', "NRT3357"],
       ['data(list = "a/b", package = "nativrfixture")', "NRT3357"],
+      ['data("example", package = "nativrmissing")', "NRE2291"],
       ['data("broken", package = "nativrinvalidbinary")', "NRE2247"],
       ["read.table()", "NRE2103"],
       ['read.table(file = "unused", text = "x")', "NRE2241"],
@@ -5438,6 +10789,176 @@ describe("complete inline source-to-result vertical slice", () => {
     await runtime.dispose();
   });
 
+  it("loads S4 method-provider namespaces without importing ordinary bindings", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [
+        {
+          description: "Package: methodprovider\nVersion: 1.0.0\nNeedsCompilation: no",
+          namespace:
+            "export(make_probe, describeImport)\nexportClasses(MethodImportProbe)\nexportMethods(describeImport)",
+          rSources: [
+            {
+              path: "R/method.R",
+              source: `
+setClass("MethodImportProbe", representation(value = "numeric"))
+setGeneric("describeImport", function(x) standardGeneric("describeImport"))
+setMethod("describeImport", "MethodImportProbe", function(x) x@value)
+make_probe <- function(value) new("MethodImportProbe", value = value)
+`,
+            },
+          ],
+        },
+        {
+          description: "Package: methodconsumer\nVersion: 1.0.0\nNeedsCompilation: no",
+          namespace: "importMethodsFrom(methodprovider, describeImport)\nexport(run_probe)",
+          rSources: [
+            {
+              path: "R/consumer.R",
+              source:
+                "run_probe <- function(value) methodprovider::describeImport(methodprovider::make_probe(value))",
+            },
+          ],
+        },
+      ],
+    });
+    await expect(runtime.eval("methodconsumer::run_probe(7)")).resolves.toBe(7);
+    await expect(
+      runtime.eval('exists("describeImport", getNamespace("methodconsumer"), inherits = FALSE)'),
+    ).resolves.toBe(false);
+    await runtime.dispose();
+  });
+
+  it("imports methods namespace internals required by full methods imports without exporting them", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [
+        {
+          description: "Package: methodsinternalconsumer\nVersion: 1.0.0\nImports: methods",
+          namespace: "import(methods)\nexport(toggle_s4)",
+          rSources: [
+            {
+              path: "R/toggle.R",
+              source:
+                "toggle_s4 <- function(x) c(enabled = isS4(asS4(x, TRUE)), disabled = isS4(asS4(x, FALSE)))",
+            },
+          ],
+        },
+      ],
+    });
+    await expect(runtime.eval("methodsinternalconsumer::toggle_s4(list(1))")).resolves.toEqual([
+      true,
+      false,
+    ]);
+    await expect(runtime.eval("methods::asS4")).rejects.toMatchObject({ code: "NRE2211" });
+    await runtime.dispose();
+  });
+
+  it("exports S4 class metadata through standard exportClasses directives", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [
+        {
+          description: "Package: classexportfixture\nVersion: 1.0.0\nNeedsCompilation: no",
+          namespace: "export(make_demo)\nexportClasses(Demo)",
+          rSources: [
+            {
+              path: "R/class.R",
+              source: `
+setClass("Demo", representation(value = "numeric"))
+make_demo <- function(value) new("Demo", value = value)
+`,
+            },
+          ],
+        },
+      ],
+    });
+    await expect(
+      runtime.eval(`
+        exports <- getNamespaceExports("classexportfixture")
+        c(
+          all(c("make_demo", ".__C__Demo") %in% exports),
+          class(classexportfixture::.__C__Demo),
+          classexportfixture::.__C__Demo$className,
+          class(classexportfixture::make_demo(1))
+        )
+      `),
+    ).resolves.toEqual(["TRUE", "classRepresentation", "Demo", "Demo"]);
+    await expect(
+      runtime.eval(
+        'library(classexportfixture); ".__C__Demo" %in% ls("package:classexportfixture", all.names = TRUE)',
+      ),
+    ).resolves.toBe(true);
+    await runtime.dispose();
+  });
+
+  it("exports exportPattern S4 class and method-table metadata", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [
+        {
+          description:
+            "Package: patternmetadatafixture\nVersion: 1.0.0\nNeedsCompilation: no\nImports: methods",
+          namespace: 'import(methods)\nexportPattern("^[^\\\\.]")',
+          rSources: [
+            {
+              path: "R/metadata.R",
+              source: `
+setClass("PatternFormal", representation(value = "numeric"))
+setOldClass("PatternOld")
+publicGeneric <- function(x) standardGeneric("publicGeneric")
+setGeneric("publicGeneric")
+setMethod("publicGeneric", "PatternFormal", function(x) x@value)
+setMethod("show", "PatternFormal", function(object) invisible(object))
+`,
+            },
+          ],
+        },
+      ],
+    });
+    await expect(
+      runtime.eval(`
+        exports <- getNamespaceExports("patternmetadatafixture")
+        table <- getExportedValue(
+          "patternmetadatafixture", ".__T__publicGeneric:patternmetadatafixture"
+        )
+        c(
+          all(c(
+            ".__C__PatternFormal", ".__C__PatternOld",
+            ".__T__$:base", ".__T__$<-:base", ".__T__[:base",
+            ".__T__[<-:base", ".__T__[[<-:base",
+            ".__T__publicGeneric:patternmetadatafixture", "publicGeneric"
+          ) %in% exports),
+          class(patternmetadatafixture::.__C__PatternOld),
+          class(table), sort(ls(table, all.names = TRUE))
+        )
+      `),
+    ).resolves.toEqual(["TRUE", "classRepresentation", "environment", "ANY", "PatternFormal"]);
+    await runtime.dispose();
+  });
+
+  it("rejects an exportClasses declaration without registered class metadata", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [
+        {
+          description: "Package: missingclassexport\nVersion: 1.0.0\nNeedsCompilation: no",
+          namespace: "exportClasses(Absent)",
+          rSources: [{ path: "R/empty.R", source: "marker <- 1L" }],
+        },
+      ],
+    });
+    await expect(runtime.eval('requireNamespace("missingclassexport")')).rejects.toMatchObject({
+      code: "NRE2224",
+    });
+    await runtime.dispose();
+  });
+
   it("lets installed packages replace non-core compatibility shim namespaces", async () => {
     const runtime = await createR({
       execution: "inline",
@@ -5488,6 +11009,33 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
         ],
       }),
     ).rejects.toMatchObject({ code: "NRE2220" });
+  });
+
+  it("loads every standard R package source-file extension", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [
+        {
+          description: "Package: sourceextensions\nVersion: 1.0.0\nNeedsCompilation: no",
+          namespace: "export(source_extensions)",
+          rSources: [
+            { path: "R/legacy.q", source: "legacy_q <- 1L" },
+            { path: "R/upper.S", source: "upper_s <- 2L" },
+            { path: "R/lower.r", source: "lower_r <- 3L" },
+            { path: "R/lower.s", source: "lower_s <- 4L" },
+            {
+              path: "R/main.R",
+              source: "source_extensions <- function() c(legacy_q, upper_s, lower_r, lower_s)",
+            },
+          ],
+        },
+      ],
+    });
+    await expect(runtime.eval("sourceextensions::source_extensions()")).resolves.toEqual([
+      1, 2, 3, 4,
+    ]);
+    await runtime.dispose();
   });
 
   it("rejects native and malformed package bundles before evaluation", async () => {
@@ -5587,6 +11135,663 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     ).rejects.toMatchObject({
       code: "NRL4002",
       details: { maxResourceFiles: 64, resourceCount: 65 },
+    });
+
+    await expect(
+      createR({
+        execution: "inline",
+        assets,
+        limits: { maxPackageResourceBytes: 128 },
+        packages: [
+          {
+            description: "Package: resourcebytes\nVersion: 1.0.0",
+            namespace: "",
+            rSources: [],
+            resources: [{ path: "data/value.bin", data: "AAAA".repeat(100) }],
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      code: "NRL4002",
+      details: { maxResourceBytes: 128 },
+    });
+  });
+
+  it("resolves NAMESPACE exportPattern declarations after local package bindings load", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [
+        {
+          description: "Package: patternpkg\nVersion: 1.0.0",
+          namespace: 'exportPattern("^[[:alpha:]]+")',
+          rSources: [
+            {
+              path: "R/values.R",
+              source:
+                "visible <- 42L\nother <- 43L\n.hidden <- 99L\n.onLoad <- function(libname, pkgname) delayedAssign('dynamic', 44L, assign.env = getNamespace(pkgname))",
+            },
+          ],
+        },
+      ],
+    });
+    await expect(runtime.eval('sort(getNamespaceExports("patternpkg"))')).resolves.toEqual([
+      "dynamic",
+      "other",
+      "visible",
+    ]);
+    await expect(runtime.eval("patternpkg::visible")).resolves.toBe(42);
+    await expect(runtime.eval("patternpkg::dynamic")).resolves.toBe(44);
+    await expect(runtime.eval('"package:patternpkg" %in% search()')).resolves.toBe(false);
+    await expect(runtime.eval("library(patternpkg); c(visible, dynamic)")).resolves.toEqual([
+      42, 44,
+    ]);
+    await runtime.dispose();
+  });
+
+  it("normalizes quoted qualified replacement generics in S3method declarations", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [
+        {
+          description: "Package: replacementprovider\nVersion: 1.0.0",
+          namespace: "export(`time<-`)",
+          rSources: [
+            {
+              path: "R/generic.R",
+              source: '`time<-` <- function(x, value) UseMethod("time<-")',
+            },
+          ],
+        },
+        {
+          description: "Package: replacementconsumer\nVersion: 1.0.0\nImports: replacementprovider",
+          namespace:
+            "importFrom(replacementprovider, `time<-`)\nexport(make_probe)\nS3method(replacementprovider::`time<-`, probe)",
+          rSources: [
+            {
+              path: "R/method.R",
+              source:
+                "make_probe <- function(x) structure(x, class = 'probe')\n`time<-.probe` <- function(x, value) paste('method', unclass(x), value, sep = ':')",
+            },
+          ],
+        },
+      ],
+    });
+    await expect(
+      runtime.eval(
+        'getNamespace("replacementconsumer"); replacementprovider::`time<-`(replacementconsumer::make_probe(2), 7)',
+      ),
+    ).resolves.toBe("method:2:7");
+    await runtime.dispose();
+  });
+
+  it("promotes vectors for conformable matrix products and cross-products", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        a <- 1:3 %*% matrix(1:2, 1, 2)
+        b <- matrix(1:2, 2, 1) %*% 1:3
+        d <- crossprod(matrix(1:2, 1, 2), 1:3)
+        e <- 2 %*% 1:3
+        f <- tcrossprod(1:2, 3:5)
+        g <- tcrossprod(matrix(1:6, 2, 3))
+        c(
+          dim(a), as.numeric(a), dim(b), as.numeric(b), dim(d), as.numeric(d),
+          dim(e), as.numeric(e), dim(f), as.numeric(f), dim(g), as.numeric(g)
+        )
+      `),
+    ).resolves.toEqual([
+      3, 2, 1, 2, 3, 2, 4, 6, 2, 3, 1, 2, 2, 4, 3, 6, 2, 3, 1, 2, 2, 4, 3, 6, 1, 3, 2, 4, 6, 2, 3,
+      3, 6, 4, 8, 5, 10, 2, 2, 35, 44, 44, 56,
+    ]);
+    await expect(runtime.eval("1:3 %*% 2")).rejects.toMatchObject({ code: "NRE2141" });
+    await expect(runtime.eval("crossprod(1:3, matrix(1:2, 1, 2))")).rejects.toMatchObject({
+      code: "NRE2141",
+    });
+    await expect(
+      runtime.eval(
+        "x <- matrix(1:6, 2, 3, dimnames = list(c('r1', 'r2'), c('a', 'b', 'c'))); dimnames(tcrossprod(x))",
+      ),
+    ).resolves.toEqual([
+      ["r1", "r2"],
+      ["r1", "r2"],
+    ]);
+    await expect(
+      runtime.eval("c(is.primitive(tcrossprod), is.null(formals(tcrossprod)))"),
+    ).resolves.toEqual([true, true]);
+  });
+
+  it("computes upper and lower triangular indicator matrices", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- matrix(1:6, 2, 3, dimnames = list(c("r1", "r2"), c("a", "b", "c")))
+        c(upper.tri(x), upper.tri(x, diag = TRUE), lower.tri(x))
+      `),
+    ).resolves.toEqual([
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          dim(upper.tri(1:3)),
+          dim(upper.tri(data.frame(a = 1:2, b = 3:4))),
+          is.null(dimnames(upper.tri(matrix(1:4, 2)))),
+          names(formals(upper.tri)),
+          is.primitive(upper.tri)
+        )
+      `),
+    ).resolves.toEqual(["3", "1", "2", "2", "TRUE", "x", "diag", "FALSE"]);
+    await expect(runtime.eval("upper.tri(NULL)")).rejects.toMatchObject({ code: "NRT3125" });
+  });
+
+  it("constructs row and column coordinate matrices and factors", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- matrix(1:6, 2, 3, dimnames = list(c("r1", "r2"), c("a", "b", "c")))
+        c(row(x), col(x), .row(c(2, 3)), .col(c(2, 3)))
+      `),
+    ).resolves.toEqual([1, 2, 1, 2, 1, 2, 1, 1, 2, 2, 3, 3, 1, 2, 1, 2, 1, 2, 1, 1, 2, 2, 3, 3]);
+    await expect(
+      runtime.eval(`
+        x <- matrix(1:6, 2, 3, dimnames = list(c("r1", "r2"), c("a", "b", "c")))
+        r <- row(x, as.factor = TRUE)
+        d <- row(data.frame(a = 1:2, b = 3:4))
+        c(as.character(r), levels(r), dim(d), names(formals(row)), names(formals(.row)))
+      `),
+    ).resolves.toEqual([
+      "r1",
+      "r2",
+      "r1",
+      "r2",
+      "r1",
+      "r2",
+      "r1",
+      "r2",
+      "2",
+      "2",
+      "x",
+      "as.factor",
+      "dim",
+    ]);
+    await expect(runtime.eval("row(1:3)")).rejects.toMatchObject({ code: "NRT3452" });
+    await expect(runtime.eval(".row(c(-1, 2))")).rejects.toMatchObject({ code: "NRT3453" });
+    await expect(
+      runtime.eval(`
+        result <- factor(
+          c(FALSE, TRUE, NA),
+          levels = c(FALSE, TRUE, NA),
+          labels = c("fails", "passes", "sidefx"),
+          exclude = character()
+        )
+        c(unclass(result), levels(result), is.na(result))
+      `),
+    ).resolves.toEqual(["1", "2", "3", "fails", "passes", "sidefx", "FALSE", "FALSE", "FALSE"]);
+  });
+
+  it("computes Kronecker products for vectors, matrices, and named dimensions", async () => {
+    const runtime = await session();
+    await expect(runtime.eval("1:2 %x% 3:4")).resolves.toEqual([3, 4, 6, 8]);
+    await expect(
+      runtime.eval(`
+        a <- matrix(1:4, 2)
+        b <- matrix(c(1, 0, 2, 3), 2)
+        as.numeric(a %x% b)
+      `),
+    ).resolves.toEqual([1, 0, 2, 0, 2, 3, 4, 6, 3, 0, 4, 0, 6, 9, 8, 12]);
+    await expect(
+      runtime.eval(`
+        x <- kronecker(
+          matrix(1:4, 2, dimnames = list(c("r1", "r2"), c("a", "b"))),
+          matrix(1:4, 2, dimnames = list(c("s1", "s2"), c("x", "y"))),
+          make.dimnames = TRUE
+        )
+        c(dim(x), dimnames(x)[[1]], dimnames(x)[[2]], dim(1:2 %x% 3:4), names(formals(kronecker)))
+      `),
+    ).resolves.toEqual([
+      "4",
+      "4",
+      "r1:s1",
+      "r1:s2",
+      "r2:s1",
+      "r2:s2",
+      "a:x",
+      "a:y",
+      "b:x",
+      "b:y",
+      "4",
+      "X",
+      "Y",
+      "FUN",
+      "make.dimnames",
+      "...",
+    ]);
+    await expect(runtime.eval('kronecker(1:2, 3:4, FUN = "+")')).rejects.toMatchObject({
+      code: "NRU6151",
+    });
+  });
+
+  it("computes vectorized binomial coefficients and logarithms", async () => {
+    const runtime = await session();
+    await expect(runtime.eval("choose(c(5, 5.5, -3, -3.5), c(2, 2, 2, 2))")).resolves.toEqual([
+      10, 12.375, 6, 7.875,
+    ]);
+    await expect(runtime.eval("round(lchoose(c(5, -3, -3.5), 2), 12)")).resolves.toEqual([
+      2.302585092994, 1.791759469228, 2.063693184712,
+    ]);
+    const detailed = await runtime.evalDetailed("choose(5, c(-1, 0, 1, 5, 6, 2.2))");
+    expect(detailed.value).toEqual([0, 1, 5, 1, 0, 10]);
+    expect(detailed.warnings).toEqual([
+      { code: "NRW1146", message: "'k' (2.20) must be integer, rounded to 2" },
+    ]);
+    await expect(
+      runtime.eval(`
+        x <- structure(c(5, 6), names = c("a", "b"), marker = "kept")
+        y <- choose(x, 2)
+        c(y, names(y), attr(y, "marker"), names(formals(choose)), is.primitive(choose))
+      `),
+    ).resolves.toEqual(["10", "15", "a", "b", "kept", "n", "k", "FALSE"]);
+    await expect(runtime.eval("choose(1 + 1i, 2)")).rejects.toMatchObject({ code: "NRT3451" });
+    await expect(runtime.eval("choose(factor(3), 2)")).rejects.toMatchObject({ code: "NRT3451" });
+  });
+
+  it("computes determinants, logarithmic modulus objects, and method dispatch", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        a <- matrix(c(0, 1, 2, 3), 2)
+        singular <- matrix(c(1, 2, 2, 4), 2)
+        c(det(diag(3)), det(a), det(singular), det(matrix(numeric(), 0, 0)))
+      `),
+    ).resolves.toEqual([1, -2, 0, 1]);
+    await expect(
+      runtime.eval(`
+        plain <- determinant(matrix(c(0, 1, 2, 3), 2), logarithm = FALSE)
+        logged <- determinant(matrix(c(0, 1, 2, 3), 2))
+        c(
+          plain$modulus, plain$sign, attr(plain$modulus, "logarithm"), class(plain),
+          round(logged$modulus, 12), logged$sign, attr(logged$modulus, "logarithm"),
+          names(formals(det)), names(formals(determinant))
+        )
+      `),
+    ).resolves.toEqual([
+      "2",
+      "-1",
+      "FALSE",
+      "det",
+      "0.69314718056",
+      "-1",
+      "TRUE",
+      "x",
+      "...",
+      "x",
+      "logarithm",
+      "...",
+    ]);
+    await expect(
+      runtime.eval(`
+        determinant.marker <- function(x, logarithm = TRUE, ...) {
+          structure(list(modulus = structure(log(7), logarithm = TRUE), sign = -1L), class = "det")
+        }
+        round(det(structure(1, class = "marker")), 12)
+      `),
+    ).resolves.toBe(-7);
+    await expect(runtime.eval("det(matrix(1:6, 2, 3))")).rejects.toMatchObject({
+      code: "NRT3455",
+    });
+    await expect(runtime.eval("det(matrix(1 + 1i, 1, 1))")).rejects.toMatchObject({
+      code: "NRT3455",
+    });
+  });
+
+  it("solves real and complex square systems with vector and matrix right-hand sides", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        a <- matrix(c(1, 2, 2, 1), 2, dimnames = list(c("r1", "r2"), c("c1", "c2")))
+        round(as.numeric(solve(a)), 12)
+      `),
+    ).resolves.toEqual([-0.333333333333, 0.666666666667, 0.666666666667, -0.333333333333]);
+    await expect(
+      runtime.eval(`
+        a <- matrix(c(1, 2, 2, 1), 2, dimnames = list(c("r1", "r2"), c("c1", "c2")))
+        vector <- solve(a, c(x = 1, y = 3))
+        matrix <- solve(a, matrix(1:4, 2, dimnames = list(c("r1", "r2"), c("u", "v"))))
+        c(round(vector, 12), names(vector), round(matrix, 12), rownames(matrix), colnames(matrix))
+      `),
+    ).resolves.toEqual([
+      "1.666666666667",
+      "-0.333333333333",
+      "c1",
+      "c2",
+      "1",
+      "0",
+      "1.666666666667",
+      "0.666666666667",
+      "c1",
+      "c2",
+      "u",
+      "v",
+    ]);
+    await expect(runtime.eval("solve(2, 4)")).resolves.toBe(2);
+    await expect(
+      runtime.eval(`
+        solve.marker <- function(a, b, ...) 99
+        solve(structure(1, class = "marker"))
+      `),
+    ).resolves.toBe(99);
+    await expect(runtime.eval("solve(matrix(c(1, 2, 2, 4), 2))")).rejects.toMatchObject({
+      code: "NRE2271",
+    });
+    await expect(
+      runtime.eval(`
+        a <- matrix(
+          c(2 + 1i, 1 - 2i, 3i, 4 + 0i), 2,
+          dimnames = list(c("r1", "r2"), c("c1", "c2"))
+        )
+        rhs <- c(1 + 2i, 3 - 1i)
+        inverse <- solve(a)
+        solution <- solve(a, rhs)
+        mixed <- solve(Re(a), rhs)
+        c(
+          round(Re(inverse), 12), round(Im(inverse), 12),
+          round(Re(solution), 12), round(Im(solution), 12),
+          round(Re(mixed), 12), round(Im(mixed), 12),
+          max(Mod(a %*% inverse - diag(2))) < 1e-12,
+          typeof(inverse), typeof(solution), typeof(mixed), dim(inverse),
+          rownames(inverse), colnames(inverse), names(solution)
+        )
+      `),
+    ).resolves.toEqual([
+      "1.6",
+      "0",
+      "-0.6",
+      "1",
+      "-0.8",
+      "1",
+      "-1.2",
+      "0",
+      "0.2",
+      "1",
+      "-0.6",
+      "0",
+      "0.5",
+      "0.625",
+      "1",
+      "-0.5",
+      "TRUE",
+      "complex",
+      "complex",
+      "complex",
+      "2",
+      "2",
+      "c1",
+      "c2",
+      "r1",
+      "r2",
+      "c1",
+      "c2",
+    ]);
+  });
+
+  it("constructs reusable QR decompositions and coefficient solutions", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- matrix(1:6, 3, 2, dimnames = list(c("a", "b", "c"), c("u", "v")))
+        z <- qr(x)
+        q <- qr.Q(z)
+        r <- qr.R(z)
+        c(
+          z$rank, names(z), class(z), dim(q), dim(r),
+          round(as.numeric(q %*% r), 12),
+          round(as.numeric(crossprod(q)), 12),
+          round(qr.coef(z, 1:3), 12),
+          round(qr.solve(x, 1:3), 12),
+          round(solve(qr(matrix(c(4, 1, 1, 3), 2), LAPACK = TRUE), c(1, 2)), 12)
+        )
+      `),
+    ).resolves.toEqual([
+      "2",
+      "qr",
+      "rank",
+      "qraux",
+      "pivot",
+      "qr",
+      "3",
+      "2",
+      "2",
+      "2",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "1",
+      "0",
+      "0",
+      "1",
+      "1",
+      "0",
+      "1",
+      "0",
+      "0.090909090909",
+      "0.636363636364",
+    ]);
+    await expect(
+      runtime.eval(`
+        a <- matrix(c(1, 0, 0, 1, 1, 1), 2, 3,
+          dimnames = list(c("r1", "r2"), c("u", "v", "w")))
+        b <- matrix(c(2, 3, 4, 5), 2, 2, dimnames = list(NULL, c("d", "e")))
+        x <- qr.solve(a, b)
+        c(as.numeric(x), dim(x), dimnames(x)[[1]], dimnames(x)[[2]],
+          qr.solve(matrix(c(1, 1, 1), 1, 3), 1),
+          qr.solve(matrix(c(0, 1), 1, 2), 1))
+      `),
+    ).resolves.toEqual([
+      "2",
+      "3",
+      "0",
+      "4",
+      "5",
+      "0",
+      "3",
+      "2",
+      "u",
+      "v",
+      "w",
+      "d",
+      "e",
+      "1",
+      "0",
+      "0",
+      "0",
+      "1",
+    ]);
+    await expect(
+      runtime.eval("qr.solve(matrix(c(1, 2, 2, 4, 3, 6), 2, 3), c(1, 2))"),
+    ).rejects.toMatchObject({ code: "NRE2272" });
+    await expect(
+      runtime.eval(`
+        a <- matrix(c(1, 2, 3, 4, 5, 7), 3, 2)
+        z <- qr(a)
+        y <- setNames(c(2, 3, 5), c("u", "v", "w"))
+        Y <- matrix(1:6, 3, 2,
+          dimnames = list(c("i", "j", "k"), c("c1", "c2")))
+        transformed <- qr.qty(z, Y)
+        restored <- qr.qy(z, transformed)
+        c(
+          round(restored - Y, 12), names(qr.qty(z, y)),
+          unlist(dimnames(transformed)),
+          names(formals(qr.qty)), names(formals(qr.qy))
+        )
+      `),
+    ).resolves.toEqual([
+      "0",
+      "0",
+      "0",
+      "0",
+      "0",
+      "0",
+      "u",
+      "v",
+      "w",
+      "i",
+      "j",
+      "k",
+      "c1",
+      "c2",
+      "qr",
+      "y",
+      "qr",
+      "y",
+    ]);
+    await expect(
+      runtime.eval(`
+        upper <- matrix(c(2, 0, 0, 1, 3, 0, 4, 5, 6), 3)
+        lower <- t(upper)
+        y <- setNames(c(8, 9, 12), c("x", "y", "z"))
+        Y <- matrix(c(8, 9, 12, 4, 3, 6), 3, 2)
+        c(
+          round(backsolve(upper, y), 12),
+          round(backsolve(upper, Y), 12),
+          round(backsolve(upper, y, transpose = TRUE), 12),
+          round(forwardsolve(lower, y), 12),
+          round(backsolve(upper, y, k = 2), 12),
+          is.null(names(backsolve(upper, y))),
+          names(formals(backsolve)), names(formals(forwardsolve))
+        )
+      `),
+    ).resolves.toEqual([
+      "0.166666666667",
+      "-0.333333333333",
+      "2",
+      "0.166666666667",
+      "-0.333333333333",
+      "2",
+      "0.333333333333",
+      "-0.666666666667",
+      "1",
+      "4",
+      "1.666666666667",
+      "-2.055555555556",
+      "4",
+      "1.666666666667",
+      "-2.055555555556",
+      "2.5",
+      "3",
+      "TRUE",
+      "r",
+      "x",
+      "k",
+      "upper.tri",
+      "transpose",
+      "l",
+      "x",
+      "k",
+      "upper.tri",
+      "transpose",
+    ]);
+    await expect(
+      runtime.eval(`
+        qr.marker <- function(x, ...) "method"
+        qr(structure(1, class = "marker"))
+      `),
+    ).resolves.toBe("method");
+    await expect(runtime.eval("qr(matrix(c(1, NA, 2, 3), 2))")).rejects.toMatchObject({
+      code: "NRT3457",
+    });
+  });
+
+  it("computes real rectangular singular value decompositions", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- matrix(1:6, 3, 2)
+        z <- svd(x)
+        la <- La.svd(x)
+        c(
+          round(z$d, 12), dim(z$u), dim(z$v),
+          round(as.numeric(z$u %*% diag(z$d) %*% t(z$v)), 12),
+          round(as.numeric(crossprod(z$u)), 12),
+          round(as.numeric(crossprod(z$v)), 12),
+          round(as.numeric(la$u %*% diag(la$d) %*% la$vt), 12),
+          names(z), names(la)
+        )
+      `),
+    ).resolves.toEqual([
+      "9.508032000696",
+      "0.772869635673",
+      "3",
+      "2",
+      "2",
+      "2",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "1",
+      "0",
+      "0",
+      "1",
+      "1",
+      "0",
+      "0",
+      "1",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "d",
+      "u",
+      "v",
+      "d",
+      "u",
+      "vt",
+    ]);
+    await expect(
+      runtime.eval(`
+        x <- matrix(1:6, 2, 3)
+        z <- svd(x, nu = 2, nv = 3)
+        c(
+          round(z$d, 12), dim(z$u), dim(z$v),
+          round(max(abs(z$u %*% diag(z$d) %*% t(z$v[, 1:2]) - x)), 12),
+          round(abs(as.numeric(crossprod(z$u))), 12),
+          round(abs(as.numeric(crossprod(z$v))), 12)
+        )
+      `),
+    ).resolves.toEqual([
+      9.525518091565, 0.514300580659, 2, 2, 3, 3, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1,
+    ]);
+    await expect(runtime.eval("svd(matrix(c(1, NA, 2, 3), 2))")).rejects.toMatchObject({
+      code: "NRT3457",
+    });
+    await expect(runtime.eval("svd(matrix(1 + 1i, 1))")).rejects.toMatchObject({
+      code: "NRU6153",
     });
   });
 
@@ -5868,6 +12073,46 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     await runtime.dispose();
   });
 
+  it("computes log-factorials through the reusable lgamma path", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- structure(c(a = 0, b = 1, c = 5, d = 10.5), marker = "kept")
+        plain <- lfactorial(x)
+        Math.probe <- function(x, ...) "math-dispatch"
+        c(
+          round(plain, 12), names(plain), attr(plain, "marker"),
+          lfactorial(c(-Inf, -3, -2, -1, Inf)),
+          is.nan(lfactorial(NaN)), is.na(lfactorial(NA_real_)),
+          lfactorial(structure(2, class = "probe")),
+          names(formals(lfactorial)), typeof(lfactorial), is.primitive(lfactorial)
+        )
+      `),
+    ).resolves.toEqual([
+      "0",
+      "0",
+      "4.787491742782",
+      "16.292000476567",
+      "a",
+      "b",
+      "c",
+      "d",
+      "kept",
+      "Inf",
+      "Inf",
+      "Inf",
+      "Inf",
+      "Inf",
+      "TRUE",
+      "TRUE",
+      "math-dispatch",
+      "x",
+      "closure",
+      "FALSE",
+    ]);
+    await runtime.dispose();
+  });
+
   it("fits the frequency-ranked bounded stats::lsfit surface", async () => {
     const runtime = await session();
     await expect(
@@ -5933,6 +12178,59 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       "NA",
       "1",
     ]);
+    await expect(
+      runtime.eval(`
+        z <- t.test(1:10, y = 7:20)
+        c(
+          round(c(z$statistic, z$parameter, z$p.value, z$conf.int, z$estimate, z$stderr), 12),
+          class(z), names(z$estimate), z$method, z$data.name
+        )
+      `),
+    ).resolves.toEqual([
+      "-5.434929763894",
+      "21.982212340189",
+      "0.000018552818",
+      "-11.052801725158",
+      "-4.947198274842",
+      "5.5",
+      "13.5",
+      "1.471960144388",
+      "htest",
+      "mean of x",
+      "mean of y",
+      "Welch Two Sample t-test",
+      "1:10 and 7:20",
+    ]);
+    await expect(
+      runtime.eval(`
+        one <- t.test(c(1, 2, 3, NA), mu = 1, alternative = "greater")
+        paired <- t.test(c(2, 4, 8), c(1, 2, 4), paired = TRUE)
+        round(c(one$statistic, one$parameter, one$p.value, paired$statistic, paired$parameter), 12)
+      `),
+    ).resolves.toEqual([1.732050807569, 2, 0.112701665379, 2.645751311065, 2]);
+    await expect(
+      runtime.eval(`
+        samples <- data.frame(
+          score = c(1, 2, 3, 5, 6, 7),
+          group = factor(rep(c("a", "b"), each = 3))
+        )
+        result <- t.test(score ~ group, data = samples, var.equal = TRUE)
+        c(
+          round(c(result$statistic, result$parameter, result$p.value, result$estimate), 12),
+          names(result$estimate), names(result$null.value), result$data.name
+        )
+      `),
+    ).resolves.toEqual([
+      "-4.898979485566",
+      "4",
+      "0.008049893101",
+      "2",
+      "6",
+      "mean in group a",
+      "mean in group b",
+      "difference in means between group a and group b",
+      "score by group",
+    ]);
     await expect(runtime.eval("strwrap('one', width = 5, indent = -1)")).rejects.toMatchObject({
       code: "NRT3296",
     });
@@ -5974,6 +12272,37 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       85, 153, 85, 255, 85, 153, 85, 255, 17, 34, 51, 68, 16, 32, 48, 64, 0, 0, 0, 158, 158, 158, 0,
       0, 0, 154, 205, 50, 255, 255, 255, 255, 0,
     ]);
+    await expect(
+      runtime.eval(
+        "c(col2rgb(c('light grey', ' light grey ', 'light  grey', 'Light Grey'), alpha = TRUE))",
+      ),
+    ).resolves.toEqual([
+      211, 211, 211, 255, 211, 211, 211, 255, 211, 211, 211, 255, 211, 211, 211, 255,
+    ]);
+    await expect(runtime.eval("c(col2rgb(c('2', '9', '2.5', '02', '1e0')))")).resolves.toEqual([
+      223, 83, 107, 0, 0, 0, 223, 83, 107, 223, 83, 107, 0, 0, 0,
+    ]);
+    const numericStringGraphics = await runtime.evalDetailed(`
+      plot.new()
+      plot.window(c(0, 5), c(0, 1))
+      rect(0:4, 0, 1:5, 1, col = as.character(c(2, 3, 7, 4, 8)))
+    `);
+    const numericStringRectangles = numericStringGraphics.graphics.find(
+      (event) => event.kind === "polygon",
+    );
+    expect(numericStringRectangles?.kind).toBe("polygon");
+    if (numericStringRectangles?.kind === "polygon") {
+      expect(numericStringRectangles.polygons.map((polygon) => polygon.fill)).toEqual([
+        "#DF536BFF",
+        "#61D04FFF",
+        "#F5C710FF",
+        "#2297E6FF",
+        "#9E9E9EFF",
+      ]);
+    }
+    await expect(runtime.eval("col2rgb('light\\tgrey')")).rejects.toMatchObject({
+      code: "NRT3297",
+    });
     await expect(runtime.eval("col2rgb('not-a-colour')")).rejects.toMatchObject({
       code: "NRT3297",
     });
@@ -6235,6 +12564,36 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       "b",
       "array",
     ]);
+    await expect(
+      runtime.eval(`
+        x <- ts(1:12, start = 2000, frequency = 4)
+        m <- ts(matrix(1:12, 6, 2), start = 2000, frequency = 4)
+        whole <- x[]
+        selected <- x[c(1, 3)]
+        column <- m[, 1]
+        rows <- m[1:3, ]
+        c(
+          class(whole), attr(whole, "tsp"),
+          class(selected), is.null(attr(selected, "tsp")),
+          class(column), attr(column, "tsp"),
+          class(rows), is.null(attr(rows, "tsp"))
+        )
+      `),
+    ).resolves.toEqual([
+      "ts",
+      "2000",
+      "2002.75",
+      "4",
+      "integer",
+      "TRUE",
+      "ts",
+      "2000",
+      "2001.25",
+      "4",
+      "matrix",
+      "array",
+      "TRUE",
+    ]);
     await runtime.eval(
       "as.array.stanfit <- function(x, ..., pars = c('a', 'b', 'c')) array(as.vector(x), c(1, 2, 3), list('iteration', c('chain1', 'chain2'), pars))\nNULL",
     );
@@ -6326,7 +12685,7 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     );
     await expect(
       runtime.eval("as.ordered(structure(1:2, class = 'custom'), marker = 'ok', extra = 'dot')"),
-    ).resolves.toEqual(["ok", "dot"]);
+    ).rejects.toMatchObject({ code: "NRE2101" });
     await expect(runtime.eval("as.ordered(list(1))")).rejects.toMatchObject({ code: "NRT3132" });
     await expect(
       runtime.eval(
@@ -6350,6 +12709,9 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       4, 2, 4, 4, 5,
     ]);
     await expect(runtime.eval("ave(1:4)")).resolves.toEqual([2.5, 2.5, 2.5, 2.5]);
+    await expect(runtime.eval('stats::ave(1:6, rep(1:2, 3), FUN = "sum")')).resolves.toEqual([
+      9, 12, 9, 12, 9, 12,
+    ]);
     await expect(
       runtime.eval(
         'x <- factor(c("a", "b", "a"))\ny <- ave(x, c(1, 1, 2), FUN = function(v) v[1])\nc(as.character(y), class(y), levels(y))',
@@ -6574,7 +12936,7 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       runtime.eval(
         "x <- append(expression(a, b + 1), expression(c), after = 1)\nc(length(x), deparse(x))",
       ),
-    ).resolves.toEqual(["3", "expression(a, c, (b + 1))"]);
+    ).resolves.toEqual(["3", "expression(a, c, b + 1)"]);
     await expect(runtime.eval("append(1:3, 4, after = -1)")).rejects.toMatchObject({
       code: "NRT3242",
     });
@@ -6702,7 +13064,7 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     await limited.dispose();
   });
 
-  it("computes usage-ranked real and complex tangent values", async () => {
+  it("computes usage-ranked real, circular, and hyperbolic tangent values", async () => {
     const runtime = await session();
     await expect(runtime.eval("c(typeof(pi), pi == base::pi)")).resolves.toEqual([
       "double",
@@ -6747,6 +13109,166 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     ]);
     await expect(runtime.eval("tan(factor('a'))")).rejects.toMatchObject({ code: "NRT3277" });
     await expect(runtime.eval("tan('1')")).rejects.toMatchObject({ code: "NRT3102" });
+    await expect(
+      runtime.eval(`
+        x <- structure(c(-Inf, -2, 0, 2, Inf, NA, NaN), marker = "kept")
+        sh <- sinh(x)
+        ch <- cosh(x)
+        z <- c(1 + 2i, -1 + 0.5i)
+        zsh <- sinh(z)
+        zch <- cosh(z)
+        edge <- complex(real = c(Inf, 0), imaginary = c(0, Inf))
+        c(
+          round(sh[1:5], 12), is.na(sh[6]), is.nan(sh[7]), attr(sh, "marker") == "kept",
+          round(ch[1:5], 12), is.na(ch[6]), is.nan(ch[7]), attr(ch, "marker") == "kept",
+          round(Re(zsh), 12), round(Im(zsh), 12),
+          round(Re(zch), 12), round(Im(zch), 12),
+          is.infinite(Re(sinh(edge)[1])), Im(sinh(edge)[1]) == 0,
+          is.nan(Re(sinh(edge)[2])), is.nan(Im(cosh(edge)[2])),
+          is.null(formals(sinh)), is.null(formals(cosh))
+        )
+      `),
+    ).resolves.toEqual([
+      -Infinity,
+      -3.626860407847,
+      0,
+      3.626860407847,
+      Infinity,
+      1,
+      1,
+      1,
+      Infinity,
+      3.762195691084,
+      1,
+      3.762195691084,
+      Infinity,
+      1,
+      1,
+      1,
+      -0.489056259041,
+      -1.031336074255,
+      1.403119250622,
+      0.739792264456,
+      -0.642148124716,
+      1.354180656705,
+      1.068607421383,
+      -0.563421465231,
+      1,
+      1,
+      0,
+      0,
+      1,
+      1,
+    ]);
+    const hyperbolicWarnings = await runtime.evalDetailed(`
+      c(
+        Re(sinh(complex(real = 0, imaginary = Inf))),
+        Re(cosh(complex(real = 0, imaginary = Inf)))
+      )
+    `);
+    expect(hyperbolicWarnings.warnings).toEqual([
+      { code: "NRW1003", message: 'NaNs produced in function "sinh"' },
+      { code: "NRW1003", message: 'NaNs produced in function "cosh"' },
+    ]);
+    await expect(
+      runtime.eval(`
+        x <- structure(c(-Inf, -2, -0, 0, 2, Inf, NA, NaN), marker = "kept")
+        y <- tanh(x)
+        z <- tanh(c(1 + 2i, -1 + 0.5i, Inf + 0i, NA_complex_, NaN + 1i))
+        c(
+          round(y[1:6], 12), is.na(y[7]), is.nan(y[8]), attr(y, "marker") == "kept",
+          round(Re(z[1:3]), 12), round(Im(z[1:3]), 12),
+          is.na(z[4]), is.nan(Re(z[5])), is.nan(Im(z[5])),
+          is.null(formals(tanh))
+        )
+      `),
+    ).resolves.toEqual([
+      -1, -0.964027580076, -0, 0, 0.964027580076, 1, 1, 1, 1, 1.166736257241, -0.842966204846, 1,
+      -0.243458201186, 0.195577310066, 0, 1, 1, 1, 1,
+    ]);
+    await expect(runtime.eval("tanh(factor('a'))")).rejects.toMatchObject({ code: "NRT3313" });
+    await expect(runtime.eval("tanh('1')")).rejects.toMatchObject({ code: "NRT3102" });
+    await expect(runtime.eval("sinh(factor('a'))")).rejects.toMatchObject({ code: "NRT3313" });
+    await expect(runtime.eval("cosh('1')")).rejects.toMatchObject({ code: "NRT3102" });
+    await expect(
+      runtime.eval(`
+        x <- structure(c(-Inf, -2, 0, 2, Inf, NA, NaN), marker = "kept")
+        inverse.sinh <- asinh(x)
+        z <- c(1 + 2i, -1 + .5i, 2 + 0i, -2 + 0i, 0 + 2i)
+        zasinh <- asinh(z)
+        zacosh <- acosh(z)
+        zatanh <- atanh(z)
+        c(
+          round(inverse.sinh[1:5], 12), is.na(inverse.sinh[6]),
+          is.nan(inverse.sinh[7]), attr(inverse.sinh, "marker") == "kept",
+          round(Re(zasinh), 12), round(Im(zasinh), 12),
+          round(Re(zacosh), 12), round(Im(zacosh), 12),
+          round(Re(zatanh), 12), round(Im(zatanh), 12),
+          is.null(formals(asinh)), is.null(formals(acosh)), is.null(formals(atanh))
+        )
+      `),
+    ).resolves.toEqual([
+      -Infinity,
+      -1.443635475179,
+      0,
+      1.443635475179,
+      Infinity,
+      1,
+      1,
+      1,
+      1.469351744368,
+      -0.92613303135,
+      1.443635475179,
+      -1.443635475179,
+      1.316957896925,
+      1.063440023578,
+      0.349439062857,
+      -0,
+      0,
+      1.570796326795,
+      1.528570919481,
+      0.732857675974,
+      -1.316957896925,
+      1.316957896925,
+      1.443635475179,
+      1.143717740402,
+      2.466703808004,
+      0,
+      3.14159265359,
+      1.570796326795,
+      0.17328679514,
+      -0.708303336014,
+      0.549306144334,
+      -0.549306144334,
+      0,
+      1.178097245096,
+      0.907887494961,
+      -1.570796326795,
+      1.570796326795,
+      1.107148717794,
+      1,
+      1,
+      1,
+    ]);
+    const inverseWarnings = await runtime.evalDetailed(
+      "c(acosh(c(-1, 0, 1, 2)), atanh(c(-2, -1, -.5, .5, 1, 2)))",
+    );
+    expect(inverseWarnings.value).toEqual([
+      Number.NaN,
+      Number.NaN,
+      0,
+      1.3169578969248166,
+      Number.NaN,
+      Number.NEGATIVE_INFINITY,
+      -0.5493061443340548,
+      0.5493061443340548,
+      Number.POSITIVE_INFINITY,
+      Number.NaN,
+    ]);
+    expect(inverseWarnings.warnings).toEqual([
+      { code: "NRW1003", message: "NaNs produced" },
+      { code: "NRW1003", message: "NaNs produced" },
+    ]);
     await runtime.dispose();
   });
 
@@ -6754,7 +13276,7 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     const runtime = await session();
     await expect(
       runtime.eval(
-        "tbl <- tibble(x = 1, x = 2, .name_repair = ~ make.names(., unique = TRUE))\nc(names(tbl), unlist(tbl))",
+        "tbl <- tibble::tibble(x = 1, x = 2, .name_repair = ~ make.names(., unique = TRUE))\nc(names(tbl), unlist(tbl))",
       ),
     ).resolves.toEqual(["x", "x.1", "1", "2"]);
     await expect(
@@ -6879,7 +13401,7 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     ).resolves.toEqual([true, true, true, true, true, true, true, true, true, true]);
     await expect(
       runtime.eval(
-        "df1 <- tibble(x = 1:3)\ndf2 <- tibble(x = 3:5)\na <- data.frame(left = c(1, 1), right = c('x', 'x'))\nb <- data.frame(right = 'x', left = 1)\nc(!setequal(df1, df2), setequal(df1, df1[3:1, ]), setequal(a, b))",
+        "df1 <- tibble::tibble(x = 1:3)\ndf2 <- tibble::tibble(x = 3:5)\na <- data.frame(left = c(1, 1), right = c('x', 'x'))\nb <- data.frame(right = 'x', left = 1)\nc(!setequal(df1, df2), setequal(df1, df1[3:1, ]), setequal(a, b))",
       ),
     ).resolves.toEqual([true, true, true]);
     await expect(runtime.eval("setequal(pairlist(a = 1), pairlist(a = 1))")).rejects.toMatchObject({
@@ -6973,6 +13495,17 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
         "c(names(formals(pmin)), names(formals(pmax)), formals(pmin)$na.rm, formals(pmax)$na.rm, typeof(pmax(integer(), 1:3)), length(pmax(NULL, 1:3)), is.null(pmax(NULL)))",
       ),
     ).resolves.toEqual(["...", "na.rm", "...", "na.rm", "FALSE", "FALSE", "integer", "0", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        x <- structure(matrix(1:4, 2), label = "x")
+        c(
+          pmin.int(c(3L, 1L, 4L), c(2L, 5L, 0L)),
+          pmax.int(c(1, NA, NaN), c(2, 3, 4), na.rm = TRUE),
+          is.null(attributes(pmax.int(x, 4:1))),
+          typeof(pmin.int), names(formals(pmax.int)), formals(pmax.int)$na.rm
+        )
+      `),
+    ).resolves.toEqual(["2", "1", "0", "2", "3", "4", "TRUE", "closure", "...", "na.rm", "FALSE"]);
     await expect(runtime.eval("pmax()")).rejects.toMatchObject({ code: "NRE2103" });
     await expect(runtime.eval("pmax(as.raw(1), as.raw(2))")).rejects.toMatchObject({
       code: "NRT3244",
@@ -7325,6 +13858,14 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       "2",
       "ts",
     ]);
+    await expect(
+      runtime.eval(`
+        identical(
+          filter(1:6, c(1, 2, 3), method = c("convolution", "recursive")),
+          filter(1:6, c(1, 2, 3), method = "convolution")
+        )
+      `),
+    ).resolves.toBe(true);
     await expect(runtime.eval("ts(numeric())")).rejects.toMatchObject({ code: "NRT3284" });
     await expect(runtime.eval("ts(1:3, frequency = -1)")).rejects.toMatchObject({
       code: "NRT3284",
@@ -7332,6 +13873,15 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     await expect(runtime.eval("as.ts(data.frame(x = 1:3))")).rejects.toMatchObject({
       code: "NRT3284",
     });
+    await expect(
+      runtime.eval(`
+        x <- ts(c(NA, 1, 2, NA, 3, 4, 5, NA), start = c(2000, 3), frequency = 4)
+        attr(x, "marker") <- "dropped"
+        names(x) <- letters[1:8]
+        y <- na.contiguous(x)
+        c(names(attributes(y)), is.null(attr(y, "marker")))
+      `),
+    ).resolves.toEqual(["names", "na.action", "tsp", "class", "TRUE"]);
     await runtime.dispose();
   });
 
@@ -7917,6 +14467,74 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     await runtime.dispose();
   });
 
+  it("converts numeric date-times with optional and reusable origins", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        direct <- as.POSIXct(c(a = 0L, b = -1L))
+        explicit <- as.POSIXct(c(a = 0, b = 1.5), origin = "1970-01-02 01:02:03", tz = "UTC")
+        date.origin <- as.POSIXct(0:1, origin = as.Date(c("1970-01-01", "1970-01-02")), tz = "UTC")
+        numeric.origin <- as.POSIXct(0:1, origin = c(1, 2), tz = "GMT")
+        matrix.input <- matrix(1:4, 2, dimnames = list(c("r1", "r2"), c("a", "b")))
+        matrix.output <- as.POSIXct(matrix.input, tz = "UTC")
+        missing <- as.POSIXct(c(NA, NA), origin = "1970-01-02", tz = "UTC")
+        special <- as.POSIXct(c(NA_real_, NaN, Inf, -Inf, 0.25), tz = "UTC")
+        c(
+          typeof(unclass(direct)), unclass(direct), attr(direct, "tzone"), names(direct),
+          unclass(explicit), names(explicit), unclass(date.origin), unclass(numeric.origin),
+          dim(matrix.output), dimnames(matrix.output)[[1]], dimnames(matrix.output)[[2]],
+          as.numeric(missing), as.numeric(special), class(matrix.output)
+        )
+      `),
+    ).resolves.toEqual([
+      "integer",
+      "0",
+      "-1",
+      "",
+      "a",
+      "b",
+      "90123",
+      "90124.5",
+      "a",
+      "b",
+      "0",
+      "86401",
+      "1",
+      "3",
+      "2",
+      "2",
+      "r1",
+      "r2",
+      "a",
+      "b",
+      NA,
+      NA,
+      NA,
+      "NaN",
+      "Inf",
+      "-Inf",
+      "0.25",
+      "POSIXct",
+      "POSIXt",
+    ]);
+    const recycled = await runtime.evalDetailed(`
+      as.POSIXct(c(a = 1, b = 2, c = 3), origin = c(o1 = 10, o2 = 20), tz = "UTC")
+    `);
+    expect(recycled.value).toEqual([11, 22, 13]);
+    expect(recycled.warnings).toEqual([
+      {
+        code: "NRW1001",
+        message: "longer object length is not a multiple of shorter object length",
+        classes: ["simpleWarning", "warning", "condition"],
+        call: "unclass(e1) + unclass(e2)",
+      },
+    ]);
+    await expect(runtime.eval("as.POSIXct(TRUE, tz = 'UTC')")).rejects.toMatchObject({
+      code: "NRT3137",
+    });
+    await runtime.dispose();
+  });
+
   it("decomposes usage-ranked UTC date-times into POSIXlt components", async () => {
     const runtime = await session();
     await expect(
@@ -7961,6 +14579,34 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       ),
     ).resolves.toEqual(["56.25", "34", "12", "29", "1", "100", "UTC", "0"]);
     await expect(
+      runtime.eval(`
+        x <- as.POSIXlt("1601-01-01", tz = "UTC")
+        converted <- as.POSIXct(x)
+        forward <- x + c(0, 1)
+        reverse <- c(0, 1) + x
+        elapsed <- x + as.difftime(1, units = "days")
+        c(
+          unclass(converted), unclass(forward), unclass(reverse), unclass(elapsed),
+          class(forward), attr(forward, "tzone"), names(formals(get("+.POSIXt")))
+        )
+      `),
+    ).resolves.toEqual([
+      "-11644473600",
+      "-11644473600",
+      "-11644473599",
+      "-11644473600",
+      "-11644473599",
+      "-11644387200",
+      "POSIXct",
+      "POSIXt",
+      "UTC",
+      "e1",
+      "e2",
+    ]);
+    await expect(
+      runtime.eval("x <- as.POSIXlt('2000-01-01', tz = 'UTC'); x + x"),
+    ).rejects.toMatchObject({ code: "NRE2267" });
+    await expect(
       runtime.eval(
         "a <- as.POSIXlt(0, tz = 'UTC')\nb <- as.POSIXlt(c('1970-01-01', '2000-02-29 12:34:56'), tz = 'GMT')\nd <- as.POSIXlt(factor('2024-12-31'), tz = 'UTC')\nc(a$mday, a$year, b$mday, b$hour, b$zone, d$mday, d$yday)",
       ),
@@ -8000,8 +14646,59 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     await expect(
       runtime.eval("as.POSIXlt(as.POSIXct('2024-01-01', tz = 'UTC'), tz = 'America/New_York')"),
     ).rejects.toMatchObject({ code: "NRU6142" });
+    await expect(
+      runtime.eval(
+        "x <- as.POSIXlt(c(NA, NA), tz = 'GMT'); c(length(x), is.na(x), attr(x, 'tzone'))",
+      ),
+    ).resolves.toEqual(["2", "TRUE", "TRUE", "GMT"]);
+    await expect(runtime.eval("length(as.POSIXlt(logical(0), tz = 'GMT'))")).resolves.toBe(0);
     await expect(runtime.eval("as.POSIXlt(TRUE)")).rejects.toMatchObject({ code: "NRT3275" });
     await expect(runtime.eval("as.POSIXlt(list(0))")).rejects.toMatchObject({ code: "NRT3275" });
+    await expect(
+      runtime.eval(`
+        x <- as.POSIXlt(
+          setNames(
+            c("2024-01-10 01:02:03", "2024-02-20 04:05:06", "2024-03-30 07:08:09"),
+            c("a", "b", "c")
+          ),
+          tz = "GMT"
+        )
+        selected <- x[c(TRUE, FALSE, TRUE)]
+        short <- x
+        short$mday <- 1L
+        recycled <- short[c(1, 3)]
+        c(
+          format(selected, tz = "GMT"), names(selected), lengths(unclass(selected)),
+          attr(selected, "balanced"), selected[, "mday"], recycled[, "mday"],
+          names(formals(get("[.POSIXlt")))
+        )
+      `),
+    ).resolves.toEqual([
+      "2024-01-10 01:02:03",
+      "2024-03-30 07:08:09",
+      "a",
+      "c",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "TRUE",
+      "10",
+      "30",
+      "1",
+      "1",
+      "x",
+      "i",
+      "j",
+      "drop",
+    ]);
     await runtime.dispose();
   });
 
@@ -8095,9 +14792,24 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     await expect(runtime.eval("axTicks(1, axp = c(0, 1), log = FALSE)")).rejects.toMatchObject({
       code: "NRT3335",
     });
-    await expect(runtime.eval("axTicks(1, axp = c(0, 1, 5), log = TRUE)")).rejects.toMatchObject({
-      code: "NRU6159",
-    });
+    await expect(
+      runtime.eval("axTicks(1, axp = c(10, 1000, 2), usr = c(1, 3), log = TRUE)"),
+    ).resolves.toEqual([10, 50, 100, 500, 1000]);
+    await expect(
+      runtime.eval(`
+        x <- 1e7 * (-10:50)
+        y <- dnorm(x, m = 10e7, s = 20e7)
+        plot(x, y, xaxt = "n", log = "x")
+        axp <- par("xaxp")
+        e10 <- c(-1, 1) + round(log10(axp[1:2]))
+        c(
+          axp, par("yaxp"), par("xlog"), par("ylog"), axTicks(1),
+          e10[1]:e10[2]
+        )
+      `),
+    ).resolves.toEqual([
+      1e7, 1e8, 3, 5e-10, 2e-9, 3, 1, 0, 1e7, 2e7, 5e7, 1e8, 2e8, 5e8, 6, 7, 8, 9,
+    ]);
     await runtime.dispose();
 
     const fresh = await session();
@@ -8113,6 +14825,722 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       code: "NRL4002",
     });
     await limited.dispose();
+  });
+
+  it("normalizes graphics annotations while preserving language and non-object values", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        as.character.graphics_probe <- function(x, ...) paste0("probe:", unclass(x))
+        named <- structure(1:2, names = c("a", "b"))
+        symbol <- quote(alpha)
+        call <- quote(alpha + beta)
+        expr <- expression(alpha, beta + 1)
+        pair <- pairlist(a = 1, b = 2)
+        items <- list(a = 1, b = "x")
+        formula <- y ~ x
+        env <- new.env()
+        fun <- function(x) x
+        c(
+          identical(grDevices::as.graphicsAnnot(NULL), NULL),
+          identical(grDevices::as.graphicsAnnot(named), named),
+          typeof(grDevices::as.graphicsAnnot(factor(c("b", "a")))),
+          grDevices::as.graphicsAnnot(factor(c("b", "a"))),
+          grDevices::as.graphicsAnnot(as.Date("2020-01-02")),
+          grDevices::as.graphicsAnnot(structure(7, class = "graphics_probe")),
+          identical(grDevices::as.graphicsAnnot(symbol), symbol),
+          identical(grDevices::as.graphicsAnnot(call), call),
+          identical(grDevices::as.graphicsAnnot(expr), expr),
+          identical(grDevices::as.graphicsAnnot(pair), pair),
+          identical(grDevices::as.graphicsAnnot(items), items),
+          identical(grDevices::as.graphicsAnnot(formula), formula),
+          identical(grDevices::as.graphicsAnnot(env), env),
+          identical(grDevices::as.graphicsAnnot(fun), fun),
+          names(formals(grDevices::as.graphicsAnnot))
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "TRUE",
+      "character",
+      "b",
+      "a",
+      "2020-01-02",
+      "probe:7",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "x",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("computes graphics-engine-independent linear and logarithmic axis ticks", async () => {
+    const runtime = await session();
+    await expect(runtime.eval("grDevices::axisTicks(c(-3.2, 8.7), FALSE)")).resolves.toEqual([
+      -2, 0, 2, 4, 6, 8,
+    ]);
+    await expect(runtime.eval("grDevices::axisTicks(c(1, 3), TRUE)")).resolves.toEqual([
+      10, 20, 50, 100, 200, 500, 1000,
+    ]);
+    await expect(runtime.eval("grDevices::axisTicks(c(0, 10), TRUE, nint = 3)")).resolves.toEqual([
+      1, 1000, 1_000_000, 1_000_000_000,
+    ]);
+    await expect(
+      runtime.eval("p <- grDevices:::.axisPars(c(0, .5), TRUE); c(p$axp, p$n)"),
+    ).resolves.toEqual([1, 3, -4]);
+    await expect(runtime.eval("names(formals(grDevices::axisTicks))")).resolves.toEqual([
+      "usr",
+      "log",
+      "axp",
+      "nint",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("extracts reusable numeric contour polylines without a graphics device", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        grDevices::contourLines(
+          z = matrix(c(0, 1, 1, 2), 2, 2),
+          levels = c(.5, 1, 1.5)
+        )
+      `),
+    ).resolves.toEqual([
+      [0.5, [0.5, 0], [0, 0.5]],
+      [1, [0.998003992015968, 0], [0, 0.998003992015968]],
+      [1.5, [1, 0.5], [0.5, 1]],
+    ]);
+    await expect(
+      runtime.eval(`
+        grDevices::contourLines(
+          0:1, 0:1, matrix(c(0, 1, 1, 0), 2, 2), levels = .5
+        )
+      `),
+    ).resolves.toEqual([
+      [0.5, [0.5, 1], [1, 0.5]],
+      [0.5, [0, 0.5], [0.5, 0]],
+    ]);
+    await expect(
+      runtime.eval(`
+        grDevices::contourLines(
+          0:1, 0:1, matrix(c(2, 0, 0, 2), 2, 2), levels = .5
+        )
+      `),
+    ).resolves.toEqual([
+      [0.5, [0.75, 1], [0, 0.25]],
+      [0.5, [0, 0.25], [0.75, 1]],
+    ]);
+    await expect(
+      runtime.eval(`
+        grDevices::contourLines(
+          1:3, 10:12, outer(1:3, 10:12, "+"), levels = 12.5
+        )
+      `),
+    ).resolves.toEqual([[12.5, [2.5, 2, 1.5, 1], [10, 10.5, 11, 11.5]]]);
+    await expect(
+      runtime.eval(`
+        grDevices::contourLines(
+          1:3, 1:3,
+          matrix(c(0, 1, 2, 1, NA, 3, 2, 3, 4), 3, 3),
+          levels = 1.5
+        )
+      `),
+    ).resolves.toEqual([
+      [1.5, [1, 1.25], [2.5, 2.25]],
+      [1.5, [2.5, 2.25], [1, 1.25]],
+    ]);
+    await expect(
+      runtime.eval(`
+        grDevices::contourLines(
+          -1:1, -1:1,
+          -outer(-1:1, -1:1, function(x, y) x^2 + y^2),
+          levels = -.5
+        )
+      `),
+    ).resolves.toEqual([[-0.5, [0, -0.5, 0, 0.5, 0], [-0.5, 0, 0.5, 0, -0.5]]]);
+    await expect(
+      runtime.eval(`
+        p <- list(x = 2:3, y = 4:5, z = matrix(c(0, 1, 1, 2), 2))
+        grDevices::contourLines(p, levels = .5)
+      `),
+    ).resolves.toEqual([[0.5, [2.5, 2], [4, 4.5]]]);
+    const limited = await runtime.evalDetailed(`
+      old <- options(max.contour.segments = 2L)
+      value <- grDevices::contourLines(z = outer(1:4, 1:4, "+"), levels = 4.5)
+      options(old)
+      value
+    `);
+    expect(limited.value).toEqual([
+      [
+        4.5,
+        [0.8333333333333333, 0.6666666666666666, 0.5],
+        [0, 0.16666666666666666, 0.3333333333333333],
+      ],
+    ]);
+    expect(limited.warnings).toMatchObject([{ code: "NRW1155" }]);
+    const constant = await runtime.evalDetailed(
+      "grDevices::contourLines(z = matrix(1, 2, 2), levels = 1)",
+    );
+    expect(constant.value).toBeNull();
+    expect(constant.warnings).toEqual([{ code: "NRW1154", message: "all z values are equal" }]);
+    await expect(runtime.eval("names(formals(grDevices::contourLines))")).resolves.toEqual([
+      "x",
+      "y",
+      "z",
+      "nlevels",
+      "levels",
+    ]);
+    await expect(runtime.eval('getOption("max.contour.segments")')).resolves.toBe(25_000);
+    await runtime.dispose();
+  });
+
+  it("dispatches reusable grid grob content and context lifecycle generics", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        plain <- structure(list(a = 1), class = c("grob", "gDesc"))
+        content <- grid::makeContent(plain)
+        context <- grid::makeContext(plain)
+        c(identical(content, plain), identical(context, plain))
+      `),
+    ).resolves.toEqual([true, true]);
+    await expect(
+      runtime.eval(`
+        makeContent.foo <- function(x) {
+          x$path <- c(x$path, "foo")
+          NextMethod()
+        }
+        makeContent.bar <- function(x) {
+          x$path <- c(x$path, "bar")
+          NextMethod()
+        }
+        value <- grid::makeContent(
+          structure(list(path = "start"), class = c("foo", "bar", "grob", "gDesc"))
+        )
+        c(value$path, class(value))
+      `),
+    ).resolves.toEqual(["start", "foo", "bar", "foo", "bar", "grob", "gDesc"]);
+    await expect(
+      runtime.eval(`
+        makeContext.foo <- function(x) structure(x + 1L, class = "bar")
+        value <- grid::makeContext(structure(1:3, class = "foo"))
+        c(unclass(value), class(value))
+      `),
+    ).resolves.toEqual(["2", "3", "4", "bar"]);
+    await expect(
+      runtime.eval(`
+        c(
+          names(formals(grid::makeContent)),
+          names(formals(grid:::makeContent.default)),
+          names(formals(grid::makeContext)),
+          names(formals(grid:::makeContext.default))
+        )
+      `),
+    ).resolves.toEqual(["x", "x", "x", "x"]);
+    await expect(runtime.eval("grid::makeContent(1, extra = 2)")).rejects.toMatchObject({
+      code: "NRE2101",
+    });
+    await runtime.dispose();
+  });
+
+  it("navigates upward through the shared grid viewport stack", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        single <- grid::viewport(just = "left")
+        paired <- grid::viewport(just = c("right", "top"))
+        numeric <- grid::viewport(just = c(.2, .8))
+        c(
+          single$justification, single$valid.just,
+          paired$justification, paired$valid.just,
+          numeric$justification, numeric$valid.just
+        )
+      `),
+    ).resolves.toEqual([0, 0.5, 0, 0.5, 1, 1, 1, 1, 0.2, 0.8, 0.2, 0.8]);
+    await expect(runtime.eval('grid::viewport(just = c("bottom", "left"))')).rejects.toMatchObject({
+      code: "NRT3384",
+      message: "invalid horizontal justification",
+    });
+    await expect(
+      runtime.eval(`
+        grid::grid.newpage()
+        grid::pushViewport(
+          grid::viewport(name = "a"),
+          grid::viewport(name = "b"),
+          grid::viewport(name = "c")
+        )
+        first <- withVisible(grid::upViewport())
+        second <- withVisible(grid::upViewport(2, recording = FALSE))
+        c(
+          is.null(first$value$path), first$value$name, first$value$n,
+          class(first$value), first$visible,
+          second$value$path, second$value$name, second$value$n,
+          class(second$value), second$visible
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "c",
+      "1",
+      "vpPath",
+      "path",
+      "FALSE",
+      "a",
+      "b",
+      "2",
+      "vpPath",
+      "path",
+      "FALSE",
+    ]);
+    await expect(
+      runtime.eval(`
+        grid::grid.newpage()
+        grid::pushViewport(grid::viewport(name = "a"), grid::viewport(name = "b"))
+        value <- grid::upViewport(0)
+        c(value$path, value$name, value$n)
+      `),
+    ).resolves.toEqual(["a", "b", "2"]);
+    await expect(runtime.eval("grid::upViewport()")).rejects.toMatchObject({ code: "NRT3382" });
+    await expect(runtime.eval("grid::upViewport(-1)")).rejects.toMatchObject({
+      code: "NRT3382",
+      message: "must navigate up at least one viewport",
+    });
+    await expect(runtime.eval("names(formals(grid::upViewport))")).resolves.toEqual([
+      "n",
+      "recording",
+    ]);
+    await expect(
+      runtime.eval(`
+        grid::grid.newpage()
+        grid::pushViewport(grid::viewport(name = "a"), grid::viewport(name = "b"))
+        grid::upViewport(2)
+        first <- withVisible(grid::downViewport("a", strict = TRUE))
+        first_name <- grid::current.viewport()$name
+        grid::upViewport()
+        path <- grid::vpPath("a", "b")
+        second <- withVisible(grid::downViewport(path, strict = TRUE, recording = FALSE))
+        c(
+          path$path, path$name, path$n, class(path),
+          first$value, first$visible, first_name,
+          second$value, second$visible, grid::current.viewport()$name
+        )
+      `),
+    ).resolves.toEqual(["a", "b", "2", "vpPath", "path", "1", "FALSE", "a", "2", "FALSE", "b"]);
+    await expect(
+      runtime.eval(`
+        c(
+          names(formals(grid::downViewport)),
+          names(formals(grid::vpPath)),
+          length(formals(grid::current.viewport))
+        )
+      `),
+    ).resolves.toEqual(["name", "strict", "recording", "...", "0"]);
+    await runtime.dispose();
+  });
+
+  it("reports the current grid viewport transform in device inches", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        grid::grid.newpage()
+        root <- grid::current.transform()
+        c(typeof(root), class(root), dim(root), length(formals(grid::current.transform)))
+      `),
+    ).resolves.toEqual(["double", "matrix", "array", "3", "3", "0"]);
+    await expect(
+      runtime.eval(`
+        grid::grid.newpage()
+        root <- grid::current.transform()
+        grid::pushViewport(grid::viewport(
+          x = .25, y = .75, width = .5, height = .25,
+          just = c("left", "top"), name = "placed"
+        ))
+        placed <- grid::current.transform()
+        grid::pushViewport(grid::viewport(
+          x = .5, y = .5, width = .5, height = .5,
+          angle = 30, name = "rotated"
+        ))
+        rotated <- grid::current.transform()
+        size <- c(
+          grid::convertWidth(grid::unit(1, "npc"), "inches", valueOnly = TRUE),
+          grid::convertHeight(grid::unit(1, "npc"), "inches", valueOnly = TRUE)
+        )
+        round(c(root, placed, rotated, size), 6)
+      `),
+    ).resolves.toEqual([
+      1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1.75, 0, 1, 3.5, 0, 0, 1, 0.866025, -0.5, 2.960978, 0.5,
+      0.866025, 3.558614, 0, 0, 1, 1.75, 0.875,
+    ]);
+    await runtime.dispose();
+  });
+
+  it("resolves inherited grid graphical parameters", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        grid::grid.newpage()
+        root <- grid::get.gpar()
+        c(class(root), names(root), length(formals(grid::get.gpar)), names(formals(grid::get.gpar)))
+      `),
+    ).resolves.toEqual([
+      "gpar",
+      "fill",
+      "col",
+      "lty",
+      "lwd",
+      "cex",
+      "fontsize",
+      "lineheight",
+      "font",
+      "fontfamily",
+      "alpha",
+      "lineend",
+      "linejoin",
+      "linemitre",
+      "lex",
+      "1",
+      "names",
+    ]);
+    await expect(
+      runtime.eval(`
+        grid::grid.newpage()
+        grid::pushViewport(grid::viewport(
+          gp = grid::gpar(col = "red", cex = 2, alpha = .5, lex = 3, fontsize = 10)
+        ))
+        grid::pushViewport(grid::viewport(
+          gp = grid::gpar(fill = "green", cex = 3, alpha = .4, lex = 2, lwd = 5)
+        ))
+        selected <- grid::get.gpar(c("col", "fill", "cex", "alpha", "lex", "fontsize", "lwd"))
+        c(names(selected), unlist(selected, use.names = FALSE))
+      `),
+    ).resolves.toEqual([
+      "col",
+      "fill",
+      "cex",
+      "alpha",
+      "lex",
+      "fontsize",
+      "lwd",
+      "red",
+      "green",
+      "6",
+      "0.2",
+      "6",
+      "10",
+      "5",
+    ]);
+    await expect(runtime.eval('names(grid::get.gpar(c("col", "col")))')).resolves.toEqual([
+      "col",
+      "col",
+    ]);
+    await expect(runtime.eval('grid::get.gpar("not-a-gpar")')).rejects.toMatchObject({
+      code: "NRT3381",
+      message: "must specify only valid 'gpar' names",
+    });
+    await runtime.dispose();
+  });
+
+  it("constructs and draws reusable grid rectangle grobs", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        grob <- grid::rectGrob(
+          x = c(.25, .75), y = c(.3, .7), width = c(.2, .4), height = .1,
+          just = c("left", "top"), hjust = .2, vjust = .8,
+          default.units = "native", name = "boxes",
+          gp = grid::gpar(col = "red", fill = "blue"), vp = "panel"
+        )
+        hidden <- withVisible(grid::grid.rect(draw = FALSE))
+        c(
+          class(grob), names(grob), grob$name,
+          attr(grob$x, "unit"), grob$just, grob$hjust, grob$vjust, grob$vp$name,
+          hidden$visible, class(hidden$value),
+          names(formals(grid::rectGrob)), names(formals(grid::grid.rect))
+        )
+      `),
+    ).resolves.toEqual([
+      "rect",
+      "grob",
+      "gDesc",
+      "x",
+      "y",
+      "width",
+      "height",
+      "just",
+      "hjust",
+      "vjust",
+      "name",
+      "gp",
+      "vp",
+      "boxes",
+      "4",
+      "left",
+      "top",
+      "0.2",
+      "0.8",
+      "panel",
+      "FALSE",
+      "rect",
+      "grob",
+      "gDesc",
+      "x",
+      "y",
+      "width",
+      "height",
+      "just",
+      "hjust",
+      "vjust",
+      "default.units",
+      "name",
+      "gp",
+      "vp",
+      "x",
+      "y",
+      "width",
+      "height",
+      "just",
+      "hjust",
+      "vjust",
+      "default.units",
+      "name",
+      "gp",
+      "draw",
+      "vp",
+    ]);
+    const drawn = await runtime.evalDetailed(`
+      grid::grid.newpage()
+      grid::grid.rect(
+        x = .25, y = .75, width = .2, height = .4, just = c("left", "top"),
+        gp = grid::gpar(col = "red", fill = "blue", lty = 2, lwd = 3)
+      )
+    `);
+    expect(drawn.visible).toBe(false);
+    expect(drawn.graphics).toEqual([
+      { kind: "new-page" },
+      {
+        kind: "polygon",
+        polygons: [
+          {
+            x: [0.25, 0.45, 0.45, 0.25],
+            y: [0.35, 0.35, 0.75, 0.75],
+            fill: "#0000ffff",
+            border: "#ff0000ff",
+            lineType: "44",
+            lineWidth: 3,
+            fillRule: "nonzero",
+          },
+        ],
+      },
+    ]);
+    await runtime.dispose();
+  });
+
+  it("constructs and recursively flattens GNU-compatible grid grob lists", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        a <- grid::rectGrob(name = "a")
+        b <- grid::rectGrob(name = "b")
+        empty <- grid::gList()
+        direct <- grid::gList(first = a, b)
+        nested <- grid::gList(first = grid::gList(inner = a, b), last = a)
+        invalid <- tryCatch(grid::gList(1), error = function(e) conditionMessage(e))
+        draw.null <- withVisible(grid::grid.draw(NULL))
+        draw.invalid <- tryCatch(grid::grid.draw(1), error = function(e) conditionMessage(e))
+        as.character(c(
+          typeof(empty), class(empty), length(empty), is.null(names(empty)),
+          names(direct), class(direct[[1]]), direct[[1]]$name,
+          names(nested), vapply(nested, function(x) x$name, character(1)),
+          names(formals(grid::gList)), invalid,
+          is.null(draw.null$value), draw.null$visible,
+          names(formals(grid::grid.draw)), draw.invalid
+        ))
+      `),
+    ).resolves.toEqual([
+      "list",
+      "gList",
+      "0",
+      "TRUE",
+      "first",
+      "",
+      "rect",
+      "grob",
+      "gDesc",
+      "a",
+      "first.inner",
+      "first2",
+      "last",
+      "a",
+      "b",
+      "a",
+      "...",
+      "only 'grobs' allowed in \"gList\"",
+      "TRUE",
+      "FALSE",
+      "x",
+      "recording",
+      "no applicable method for 'grid.draw' applied to an object of class \"c('double', 'numeric')\"",
+    ]);
+    const drawn = await runtime.evalDetailed(`
+      grid::grid.newpage()
+      grid::grid.draw(grid::gList(
+        grid::rectGrob(),
+        grid::linesGrob(c(0, 1), c(0, 1)),
+        grid::pointsGrob(),
+        grid::textGrob("label")
+      ))
+    `);
+    expect(drawn.visible).toBe(false);
+    expect(drawn.value).toBeNull();
+    expect(drawn.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "polygon",
+      "segments",
+      "points",
+      "text",
+    ]);
+    await expect(
+      runtime.eval(
+        "c(names(grDevices::dev.cur()), unname(grDevices::dev.cur()), unname(grDevices::dev.off()))",
+      ),
+    ).resolves.toEqual(["NativR", "2", "1"]);
+    await runtime.dispose();
+  });
+
+  it("preserves and draws expression, language, symbol, and atomic grid text labels", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        expression.grob <- grid::textGrob(expression(bold(A[1]), B^2))
+        language.grob <- grid::textGrob(quote(alpha[1]))
+        symbol.grob <- grid::textGrob(as.name("alpha"))
+        atomic.grob <- grid::textGrob(c(TRUE, NA))
+        c(
+          typeof(expression.grob$label), length(expression.grob$label),
+          as.character(expression.grob$label),
+          typeof(language.grob$label), paste(deparse(language.grob$label), collapse = " "),
+          typeof(symbol.grob$label), as.character(symbol.grob$label),
+          typeof(atomic.grob$label), length(atomic.grob$label), as.character(atomic.grob$label)
+        )
+      `),
+    ).resolves.toEqual([
+      "expression",
+      "2",
+      "bold(A[1])",
+      "B ^ 2",
+      "language",
+      "alpha[1]",
+      "symbol",
+      "alpha",
+      "character",
+      "2",
+      "TRUE",
+      { __nativr__: "NA" },
+    ]);
+    const drawn = await runtime.evalDetailed(`
+      grid::grid.newpage()
+      grid::grid.text(expression(bold(A[1]), B^2), x = c(.25, .75))
+    `);
+    expect(drawn.graphics.at(-1)).toMatchObject({
+      kind: "text",
+      labels: [{ label: "bold(A[1])" }, { label: "B^2" }],
+    });
+    await runtime.dispose();
+  });
+
+  it("constructs and draws reusable grid polygon grobs", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        grob <- grid::polygonGrob(
+          x = c(.1, .9, .5), y = c(.2, .2, .8), id = c(1, 1, 1),
+          default.units = "native", name = "shape",
+          gp = grid::gpar(col = "red", fill = "blue", lty = 2, lwd = 3),
+          vp = "panel"
+        )
+        drawn <- withVisible(grid::grid.polygon(c(0, 1, .5), c(0, 0, 1), draw = FALSE))
+        c(
+          class(grob), names(grob), grob$name, grob$id,
+          attr(grob$x, "unit"), grob$vp$name, drawn$visible,
+          class(drawn$value),
+          names(formals(grid::polygonGrob)), names(formals(grid::grid.polygon))
+        )
+      `),
+    ).resolves.toEqual([
+      "polygon",
+      "grob",
+      "gDesc",
+      "x",
+      "y",
+      "id",
+      "id.lengths",
+      "name",
+      "gp",
+      "vp",
+      "shape",
+      "1",
+      "1",
+      "1",
+      "4",
+      "panel",
+      "FALSE",
+      "polygon",
+      "grob",
+      "gDesc",
+      "x",
+      "y",
+      "id",
+      "id.lengths",
+      "default.units",
+      "name",
+      "gp",
+      "vp",
+      "x",
+      "y",
+      "id",
+      "id.lengths",
+      "default.units",
+      "name",
+      "gp",
+      "draw",
+      "vp",
+    ]);
+    const drawn = await runtime.evalDetailed(`
+      grid::grid.newpage()
+      grid::grid.polygon(
+        c(0, 1, 1, 0), c(0, 0, 1, 1),
+        gp = grid::gpar(col = "red", fill = "blue", lty = 2, lwd = 3)
+      )
+    `);
+    expect(drawn.visible).toBe(false);
+    expect(drawn.graphics).toEqual([
+      { kind: "new-page" },
+      {
+        kind: "polygon",
+        polygons: [
+          {
+            x: [0, 1, 1, 0],
+            y: [0, 0, 1, 1],
+            fill: "#0000ffff",
+            border: "#ff0000ff",
+            lineType: "44",
+            lineWidth: 3,
+            fillRule: "nonzero",
+          },
+        ],
+      },
+    ]);
+    await expect(runtime.eval("grid::polygonGrob(id = 1:4, id.lengths = 4)")).rejects.toMatchObject(
+      { code: "NRT3385" },
+    );
+    await runtime.dispose();
   });
 
   it("draws zoo's usage-ranked plot boxes through the graphics journal", async () => {
@@ -8163,6 +15591,16 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
         lineWidth: 1,
       },
     ]);
+    const upperLeft = await runtime.evalDetailed("box(bty = 'L')");
+    expect(upperLeft.graphics).toEqual([
+      {
+        kind: "box",
+        edges: ["bottom", "left"],
+        color: "#000000FF",
+        lineType: "solid",
+        lineWidth: 1,
+      },
+    ]);
     await expect(runtime.eval("box(bty = 'n')")).resolves.toBeNull();
     await expect(runtime.eval("box(col = 'transparent')")).resolves.toBeNull();
 
@@ -8198,6 +15636,7 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       code: "NRT3344",
     });
     await expect(runtime.eval("box(bty = 'x')")).rejects.toMatchObject({ code: "NRT3344" });
+    await expect(runtime.eval("box(bty = 'N')")).rejects.toMatchObject({ code: "NRT3344" });
     await expect(runtime.eval("box(lty = c(1, 2))")).rejects.toMatchObject({ code: "NRT3344" });
     await expect(runtime.eval("box(lwd = 0)")).rejects.toMatchObject({ code: "NRT3344" });
     await runtime.reset();
@@ -8321,8 +15760,98 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     });
 
     await runtime.eval("recorded <- recordPlot()\ndev.hold()");
+    await expect(
+      runtime.eval(`
+        commands <- lapply(recorded[[1]], \`[[\`, 2)
+        vapply(commands, function(command) command[[1]]$name, character(1))
+      `),
+    ).resolves.toEqual([
+      "C_plot_new",
+      "C_plot_window",
+      "C_polygon",
+      "C_segments",
+      "C_plotXY",
+      "C_segments",
+      "C_segments",
+      "C_polygon",
+      "C_polygon",
+      "C_segments",
+      "C_plotXY",
+      "C_segments",
+      "C_segments",
+      "C_polygon",
+      "C_segments",
+      "C_plotXY",
+      "C_segments",
+      "C_text",
+      "C_segments",
+      "C_text",
+      "C_box",
+    ]);
     const replayed = await runtime.evalDetailed("replayPlot(recorded)\ndev.flush()");
-    expect(replayed.graphics.at(-1)).toEqual(drawn.graphics[2]);
+    expect(replayed.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "window",
+      "polygon",
+      "segments",
+      "points",
+      "segments",
+      "segments",
+      "polygon",
+      "polygon",
+      "segments",
+      "points",
+      "segments",
+      "segments",
+      "polygon",
+      "segments",
+      "points",
+      "segments",
+      "text",
+      "segments",
+      "text",
+      "box",
+    ]);
+    expect(replayed.graphics.some((event) => event.kind === "boxplot")).toBe(false);
+    const axesSuppressed = await runtime.evalDetailed(`
+      values <- 1:6
+      groups <- factor(c("a", "a", "a", "b", "b", "b"))
+      boxplot(values ~ groups, axes = FALSE, frame.plot = FALSE)
+    `);
+    expect(axesSuppressed.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "window",
+      "boxplot",
+    ]);
+    expect(axesSuppressed.graphics[2]).toMatchObject({
+      kind: "boxplot",
+      groups: [{ label: "a" }, { label: "b" }],
+    });
+    const annotated = await runtime.evalDetailed(
+      "boxplot(1:5, main = 'Age', sub = 'sample', xlab = 'group', ylab = 'years')",
+    );
+    expect(
+      annotated.graphics
+        .filter((event) => event.kind === "text")
+        .flatMap((event) => event.labels.map((label) => label.label))
+        .slice(-4),
+    ).toEqual(["Age", "sample", "group", "years"]);
+    const formulaDrawn = await runtime.evalDetailed(`
+      measurements <- data.frame(
+        length = c(12, 14, 15, 20, 22, 28),
+        sex = factor(c("female", "female", "female", "male", "male", "male"))
+      )
+      plot(length ~ sex, data = measurements)
+    `);
+    expect(formulaDrawn.value).toBeNull();
+    expect(formulaDrawn.visible).toBe(false);
+    expect(formulaDrawn.graphics[2]).toMatchObject({
+      kind: "boxplot",
+      groups: [
+        { label: "female", stats: [12, 13, 14, 14.5, 15] },
+        { label: "male", stats: [20, 21, 22, 25, 28] },
+      ],
+    });
     await expect(
       runtime.eval(`
         replayPlot(structure(
@@ -8455,8 +15984,9 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
           dim(vector), vector,
           length(dim(stacked)), stacked,
           dim(beside), beside,
-          custom,
-          names(formals(barplot)),
+        custom,
+        barplot(structure(c(3, 2, 1), dim = 3L, dimnames = list(c("L", "M", "H"))), plot = FALSE),
+        names(formals(barplot)),
           names(formals(graphics::barplot.default))
         )
       `),
@@ -8484,6 +16014,9 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       "10.25",
       "14",
       "15.875",
+      "0.7",
+      "1.9",
+      "3.1",
       "height",
       "...",
       "height",
@@ -8553,6 +16086,25 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
           event.kind === "text" ? event.labels.map((label) => label.label) : [],
         ),
     ).toEqual(["alpha", "beta"]);
+
+    const suppressedCategoryAxis = await runtime.evalDetailed(
+      "barplot(c(alpha = 1, beta = 2), xaxt = 'n')",
+    );
+    expect(
+      suppressedCategoryAxis.graphics
+        .filter((event) => event.kind === "text")
+        .flatMap((event) =>
+          event.kind === "text" ? event.labels.map((label) => label.label) : [],
+        ),
+    ).not.toEqual(expect.arrayContaining(["alpha", "beta"]));
+    const suppressedBothAxes = await runtime.evalDetailed(
+      "barplot(c(alpha = 1, beta = 2), xaxt = 'n', yaxt = 'n', ann = FALSE)",
+    );
+    expect(suppressedBothAxes.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "window",
+      "polygon",
+    ]);
 
     const drawn = await runtime.evalDetailed(`
       visible <- withVisible(barplot(
@@ -8640,6 +16192,105 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     await expect(runtime.eval("barplot(1:2, log = 'y')")).rejects.toMatchObject({
       code: "NRU6201",
     });
+    await runtime.dispose();
+  });
+
+  it("draws formula and list stripcharts through the generic graphics contract", async () => {
+    const runtime = await createR({ execution: "inline", assets });
+    const formula = await runtime.evalDetailed(`
+      score <- structure(c(1, 2, 3, 4), dim = 4)
+      group <- factor(c("a", "a", "b", "b"))
+      stripchart(
+        score ~ group,
+        vertical = TRUE,
+        xlim = c(0.5, 2.5),
+        ylim = c(0, 5),
+        col = c("red", "blue"),
+        pch = c(1, 2)
+      )
+    `);
+    expect(formula.value).toBeNull();
+    expect(formula.visible).toBe(false);
+    expect(formula.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "window",
+      "points",
+      "segments",
+      "text",
+      "segments",
+      "text",
+      "box",
+      "text",
+    ]);
+    expect(formula.graphics[2]).toMatchObject({
+      kind: "points",
+      points: [
+        { x: 1, y: 1, symbol: 1, color: "#FF0000FF" },
+        { x: 1, y: 2, symbol: 2, color: "#0000FFFF" },
+        { x: 2, y: 3, symbol: 1, color: "#FF0000FF" },
+        { x: 2, y: 4, symbol: 2, color: "#0000FFFF" },
+      ],
+    });
+    expect(formula.graphics.at(-1)).toMatchObject({
+      kind: "text",
+      labels: [{ label: "score" }],
+    });
+
+    const list = await runtime.evalDetailed(
+      "stripchart(list(left = c(1, NA, 2), right = c(3, 4)), axes = FALSE, frame.plot = FALSE)",
+    );
+    expect(list.value).toBeNull();
+    expect(list.visible).toBe(false);
+    expect(list.graphics.map((event) => event.kind)).toEqual(["new-page", "window", "points"]);
+    expect(await runtime.eval("names(formals(stripchart))")).toEqual(["x", "..."]);
+    expect(await runtime.eval("names(formals(graphics:::stripchart.default))")).toEqual([
+      "x",
+      "method",
+      "jitter",
+      "offset",
+      "vertical",
+      "group.names",
+      "add",
+      "at",
+      "xlim",
+      "ylim",
+      "ylab",
+      "xlab",
+      "dlab",
+      "glab",
+      "log",
+      "pch",
+      "col",
+      "cex",
+      "axes",
+      "frame.plot",
+      "...",
+    ]);
+    await expect(runtime.eval("stripchart(1:3, method = 'stack')")).rejects.toMatchObject({
+      code: "NRU6162",
+    });
+    await runtime.dispose();
+  });
+
+  it("keeps membership and colon outside Ops S3 dispatch", async () => {
+    const runtime = await session();
+    expect(
+      await runtime.eval(`
+        calls <- 0L
+        Ops.probe <- function(e1, e2) { calls <<- calls + 1L; FALSE }
+        probe <- structure(1L, class = "probe")
+        frame <- data.frame(A = c(0, 1), B = c(1, 0))
+        c(frame %in% c(TRUE, FALSE), probe %in% 1L, 1:3 %in% 2L, calls == 0L)
+      `),
+    ).toEqual([false, false, true, false, true, false, true]);
+    expect(
+      await runtime.eval("apply(data.frame(A = c(0, 1), B = c(1, 0)), 1, '==', c(0, 1))"),
+    ).toEqual([true, true, false, false]);
+    expect(
+      await runtime.eval(
+        "apply(data.frame(id = 1:2, label = c('a', 'b')), 1, paste, collapse = ':')",
+      ),
+    ).toEqual(["1:a", "2:b"]);
     await runtime.dispose();
   });
 
@@ -8767,10 +16418,40 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     const numericLabels = await runtime.evalDetailed(`
       hist(1:3, breaks = c(0, 1, 2, 3), labels = c(3, NA, 4))
     `);
-    const numericText = numericLabels.graphics.find((event) => event.kind === "text");
+    const numericText = numericLabels.graphics.find(
+      (event) =>
+        event.kind === "text" &&
+        event.labels.length === 2 &&
+        event.labels.some((label) => label.label === "4"),
+    );
     expect(numericText).toMatchObject({
       kind: "text",
       labels: [{ label: "3" }, { label: "4" }],
+    });
+
+    const defaultAxes = await runtime.evalDetailed("hist(1:5, breaks = 1:5, ann = FALSE)");
+    const suppressedX = await runtime.evalDetailed(
+      "hist(1:5, breaks = 1:5, xaxt = c('n', 's'), ann = FALSE)",
+    );
+    const suppressedY = await runtime.evalDetailed(
+      "hist(1:5, breaks = 1:5, yaxt = 'n', ann = FALSE)",
+    );
+    const suppressedBoth = await runtime.evalDetailed(
+      "hist(1:5, breaks = 1:5, xaxt = 'n', yaxt = 'n', ann = FALSE)",
+    );
+    const axisRecordCount = (result: typeof defaultAxes) =>
+      result.graphics.filter((event) => event.kind === "segments").length;
+    expect(axisRecordCount(defaultAxes)).toBe(2);
+    expect(axisRecordCount(suppressedX)).toBe(1);
+    expect(axisRecordCount(suppressedY)).toBe(1);
+    expect(axisRecordCount(suppressedBoth)).toBe(0);
+    await expect(
+      runtime.eval(
+        "before <- par(c('xaxt', 'yaxt')); hist(1:5, xaxt = 'n', yaxt = 'n'); identical(before, par(c('xaxt', 'yaxt')))",
+      ),
+    ).resolves.toBe(true);
+    await expect(runtime.eval("hist(1:5, xaxt = 1)")).rejects.toMatchObject({
+      code: "NRT3394",
     });
 
     await expect(
@@ -8875,6 +16556,61 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       expect(missingCell.graphics[2].segments).toHaveLength(2);
     }
 
+    const coloured = await runtime.evalDetailed(`
+      persp(
+        1:3, 1:3, matrix(1:9, 3, 3), theta = 135, phi = 30,
+        col = c("#FF0000", "#00FF00", "#0000FF", "#FFFF00"),
+        box = FALSE, axes = FALSE
+      )
+    `);
+    expect(coloured.graphics.map((event) => event.kind)).toEqual(["new-page", "window", "polygon"]);
+    expect(coloured.graphics[2]).toMatchObject({
+      kind: "polygon",
+      polygons: [
+        { fill: "#FF0000FF", border: "#000000FF", lineType: "solid" },
+        { fill: "#00FF00FF", border: "#000000FF", lineType: "solid" },
+        { fill: "#0000FFFF", border: "#000000FF", lineType: "solid" },
+        { fill: "#FFFF00FF", border: "#000000FF", lineType: "solid" },
+      ],
+    });
+    if (coloured.graphics[2]?.kind === "polygon") {
+      for (const polygon of coloured.graphics[2].polygons) {
+        expect(polygon.x).toHaveLength(4);
+        expect(polygon.y).toHaveLength(4);
+      }
+    }
+    const borderless = await runtime.evalDetailed(
+      "persp(1:2, 1:2, matrix(1:4, 2, 2), col = 'red', border = NA, box = FALSE, axes = FALSE)",
+    );
+    expect(borderless.graphics[2]).toMatchObject({
+      kind: "polygon",
+      polygons: [{ fill: "#FF0000FF", border: "#FFFFFF00", lineType: "blank" }],
+    });
+
+    const titled = await runtime.evalDetailed(
+      "persp(1:2, 1:2, matrix(1:4, 2, 2), main = 'topography')",
+    );
+    expect(titled.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "window",
+      "segments",
+      "text",
+    ]);
+    expect(titled.graphics[3]).toMatchObject({
+      kind: "text",
+      labels: [
+        {
+          label: "topography",
+          color: "#000000FF",
+          size: 1.2,
+          font: 2,
+          rotation: 0,
+          horizontalAdjustment: 0.5,
+          verticalAdjustment: 1.2,
+        },
+      ],
+    });
+
     await expect(
       runtime.eval(`
         persp.probe <- function(x, ..., marker = "default") {
@@ -8896,14 +16632,14 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       code: "NRT3346",
     });
     await expect(
-      runtime.eval("persp(1:2, 1:2, matrix(1:4, 2, 2), col = 'red')"),
-    ).rejects.toMatchObject({ code: "NRU6163" });
-    await expect(
       runtime.eval("persp(1:2, 1:2, matrix(1:4, 2, 2), shade = 0.5)"),
     ).rejects.toMatchObject({ code: "NRU6163" });
     await expect(
       runtime.eval("persp(1:2, 1:2, matrix(1:4, 2, 2), ticktype = 'detailed')"),
     ).rejects.toMatchObject({ code: "NRU6163" });
+    await expect(
+      runtime.eval("dim(persp(1:2, 1:2, matrix(1:4, 2, 2), axes = FALSE, ticktype = 'detailed'))"),
+    ).resolves.toEqual([4, 4]);
     await runtime.dispose();
 
     const limited = await createR({
@@ -9007,6 +16743,20 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     await expect(runtime.eval("stats::ts.plot(1:3, gpars = 1)")).rejects.toMatchObject({
       code: "NRT3413",
     });
+    await expect(
+      runtime.eval("stats::ts.plot(ts(1:3), gpars = list(xaxt = 'n', yaxt = 's', ann = FALSE))"),
+    ).resolves.toBeNull();
+    await expect(
+      runtime.eval("stats::plot.ts(ts(1:3), xaxt = 'n', yaxt = 's', ann = FALSE)"),
+    ).resolves.toBeNull();
+    await expect(runtime.eval("stats::plot.ts(ts(1:3), xaxt = 'i')")).rejects.toMatchObject({
+      code: "NRU6170",
+    });
+    await expect(
+      runtime.eval(
+        "x <- window(ts(1:12, start = 2000, frequency = 4), end = c(2001, 2.5)); c(x, attr(x, 'tsp'))",
+      ),
+    ).resolves.toEqual([1, 2, 3, 4, 5, 6, 2000, 2001.25, 4]);
     await runtime.dispose();
 
     const packaged = await createR({ execution: "inline", assets, packages: [pureRFixture] });
@@ -9031,6 +16781,110 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       limited.eval("stats::ts.plot(ts(1:3, start = 1), ts(1:3, start = 20))"),
     ).rejects.toMatchObject({ code: "NRL4002" });
     await limited.dispose();
+  });
+
+  it("routes univariate and single-panel time series through plot.ts", async () => {
+    const runtime = await session();
+    const univariate = await runtime.evalDetailed(`
+      shown <- withVisible(plot(ts(1:4), axes = FALSE, ann = FALSE))
+      c(shown$visible, is.null(shown$value), par("usr"))
+    `);
+    expect(univariate.value).toEqual([0, 1, 0.88, 4.12, 0.88, 4.12]);
+    expect(univariate.warnings).toEqual([]);
+    expect(univariate.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "window",
+      "segments",
+    ]);
+    expect(univariate.graphics[1]).toEqual({
+      kind: "window",
+      xlim: [0.88, 4.12],
+      ylim: [0.88, 4.12],
+    });
+
+    const singlePanel = await runtime.evalDetailed(`
+      stats::plot.ts(
+        ts(matrix(1:8, 4, 2)), plot.type = "s",
+        axes = FALSE, ann = FALSE, col = c("red", "blue")
+      )
+    `);
+    expect(singlePanel.value).toBeNull();
+    expect(singlePanel.visible).toBe(false);
+    expect(singlePanel.warnings).toEqual([]);
+    expect(singlePanel.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "window",
+      "segments",
+      "segments",
+    ]);
+    expect(singlePanel.graphics[1]).toEqual({
+      kind: "window",
+      xlim: [0.88, 4.12],
+      ylim: [0.72, 8.28],
+    });
+    expect(singlePanel.graphics[2]).toMatchObject({ kind: "segments" });
+    expect(
+      singlePanel.graphics[2]?.kind === "segments" && singlePanel.graphics[2].segments,
+    ).toEqual(expect.arrayContaining([expect.objectContaining({ color: "#FF0000FF" })]));
+    expect(singlePanel.graphics[3]).toMatchObject({ kind: "segments" });
+    expect(
+      singlePanel.graphics[3]?.kind === "segments" && singlePanel.graphics[3].segments,
+    ).toEqual(expect.arrayContaining([expect.objectContaining({ color: "#0000FFFF" })]));
+
+    await expect(runtime.eval("stats::plot.ts(ts(matrix(1:8, 4, 2)))")).rejects.toMatchObject({
+      code: "NRU6206",
+    });
+    await expect(runtime.eval("stats::plot.ts(ts(1:4), ts(5:8))")).rejects.toMatchObject({
+      code: "NRU6206",
+    });
+    await runtime.dispose();
+  });
+
+  it("renders the standard lm diagnostic panels through plot.lm", async () => {
+    const runtime = await session();
+    const drawn = await runtime.evalDetailed(`
+      fit <- lm(c(1, 2, 4, 8) ~ c(0, 1, 2, 3))
+      shown <- withVisible(plot(
+        fit, which = c(1, 2, 3, 5), add.smooth = FALSE,
+        id.n = 0, qqline = FALSE, axes = FALSE, ann = FALSE
+      ))
+      c(shown$visible, is.null(shown$value), names(formals(stats:::plot.lm)))
+    `);
+    expect(drawn.value).toEqual([
+      "FALSE",
+      "TRUE",
+      "x",
+      "which",
+      "caption",
+      "panel",
+      "sub.caption",
+      "main",
+      "ask",
+      "...",
+      "id.n",
+      "labels.id",
+      "cex.id",
+      "qqline",
+      "cook.levels",
+      "cook.col",
+      "cook.lty",
+      "cook.legendChanges",
+      "add.smooth",
+      "iter.smooth",
+      "panel.raw",
+      "label.pos",
+      "cex.caption",
+      "cex.oma.main",
+      "extend.ylim.f",
+    ]);
+    expect(drawn.warnings).toEqual([]);
+    expect(drawn.graphics.filter((event) => event.kind === "new-page")).toHaveLength(4);
+    expect(drawn.graphics.filter((event) => event.kind === "window")).toHaveLength(4);
+
+    await expect(
+      runtime.eval("plot(lm(c(1,2,4,8) ~ c(0,1,2,3)), which = 4)"),
+    ).rejects.toMatchObject({ code: "NRU6207" });
+    await runtime.dispose();
   });
 
   it("draws the usage-ranked numeric plot generic and preserves package S3 seams", async () => {
@@ -9104,11 +16958,58 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     });
     expect(observed).toEqual(drawn.graphics);
 
+    const nullLabels = await runtime.evalDetailed("text(1, 2, labels = NULL)");
+    expect(nullLabels).toMatchObject({ value: null, visible: false, warnings: [], graphics: [] });
+
     const scalar = await runtime.evalDetailed("plot(1, axes = FALSE, ann = FALSE)");
     expect(scalar.graphics).toEqual([
       { kind: "new-page" },
       { kind: "window", xlim: [0.568, 1.432], ylim: [0.568, 1.432] },
       expect.objectContaining({ kind: "points" }),
+    ]);
+    await expect(
+      runtime.eval(`
+        before <- par("mar")
+        drawn <- withVisible(plot(1, 1, mar = c(0, 0, 0, 0), axes = FALSE, ann = FALSE))
+        c(identical(before, par("mar")), is.null(drawn$value), drawn$visible)
+      `),
+    ).resolves.toEqual([true, true, false]);
+    await expect(
+      runtime.eval(`
+        c(
+          is.null(plot(1:3, las = 1.5, axes = FALSE, ann = FALSE)),
+          is.null(plot(1:3, las = "1", axes = FALSE, ann = FALSE)),
+          is.null(plot(1:3, las = TRUE, axes = FALSE, ann = FALSE))
+        )
+      `),
+    ).resolves.toEqual([true, true, true]);
+    await expect(runtime.eval("plot(1:3, las = 4)")).rejects.toMatchObject({ code: "NRT3394" });
+    await expect(runtime.eval("plot(1:3, las = NA)")).rejects.toMatchObject({ code: "NRT3394" });
+    await expect(runtime.eval("plot(1:3, las = c(1, 2))")).rejects.toMatchObject({
+      code: "NRT3393",
+    });
+    await expect(
+      runtime.eval(`
+        before <- par("xpd")
+        values <- list(FALSE, TRUE, NA, 1, "not-logical", list(TRUE), NULL)
+        admitted <- vapply(values, function(value) {
+          is.null(plot(1:3, xpd = value, axes = FALSE, ann = FALSE))
+        }, logical(1))
+        c(admitted, identical(before, par("xpd")))
+      `),
+    ).resolves.toEqual([true, true, true, true, true, true, true, true]);
+    await expect(runtime.eval("plot(1:3, xpd = c(TRUE, FALSE))")).rejects.toMatchObject({
+      code: "NRT3393",
+    });
+    await expect(runtime.eval("plot(1:3, xpd = logical())")).rejects.toMatchObject({
+      code: "NRT3393",
+    });
+    const unknownControls = await runtime.evalDetailed(
+      "plot(1, type = 'n', axes = FALSE, ann = FALSE, total.col = 'gray', inc.col = 2:4)",
+    );
+    expect(unknownControls.warnings).toEqual([
+      { code: "NRW1128", message: '"total.col" is not a graphical parameter' },
+      { code: "NRW1128", message: '"inc.col" is not a graphical parameter' },
     ]);
     const histogram = await runtime.evalDetailed(
       "plot(1:3, type = 'h', axes = FALSE, ann = FALSE)",
@@ -9143,12 +17044,64 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       ],
     });
     await expect(
+      runtime.evalDetailed("plot(1:3, xaxt = 'n', yaxt = 's', axes = FALSE, ann = FALSE)"),
+    ).resolves.toMatchObject({ value: null, visible: false });
+    const partialFrame = await runtime.evalDetailed(
+      "plot(1:3, type = 'n', axes = FALSE, frame.plot = TRUE, ann = FALSE, bty = 'c')",
+    );
+    expect(partialFrame.graphics[2]).toEqual({
+      kind: "box",
+      edges: ["top", "bottom", "left"],
+      color: "#000000FF",
+      lineType: "solid",
+      lineWidth: 1,
+    });
+    const noFrame = await runtime.evalDetailed(
+      "plot(1:3, type = 'n', axes = FALSE, frame.plot = TRUE, ann = FALSE, bty = 'n')",
+    );
+    expect(noFrame.graphics.map((event) => event.kind)).toEqual(["new-page", "window"]);
+    await expect(runtime.eval("plot(1:3, bty = 'x', frame.plot = FALSE)")).rejects.toMatchObject({
+      code: "NRT3344",
+    });
+    await expect(
       runtime.eval(`
         plot.probe <- function(x, ..., marker = "custom") c(class(x), marker, list(...)$extra)
         custom <- withVisible(plot(structure(1:3, class = "probe"), extra = 7))
         c(custom$value, custom$visible)
       `),
     ).resolves.toEqual(["probe", "custom", "7", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        setClass("PlotSignatureProbe0340", representation(value = "numeric"))
+        setMethod(
+          "plot",
+          signature(x = "PlotSignatureProbe0340", y = "missing"),
+          function(x, y, ...) c("missing", missing(y), list(...)[["marker"]])
+        )
+        setMethod(
+          "plot",
+          signature(x = "PlotSignatureProbe0340", y = "numeric"),
+          function(x, y, ...) c("numeric", length(y))
+        )
+        setMethod(
+          "points",
+          signature(x = "PlotSignatureProbe0340"),
+          function(x, ...) c("points", list(...)[["marker"]])
+        )
+        setMethod(
+          "lines",
+          signature(x = "PlotSignatureProbe0340"),
+          function(x, ...) c("lines", list(...)[["marker"]])
+        )
+        object <- new("PlotSignatureProbe0340", value = 1)
+        c(
+          plot(object, marker = 7),
+          plot(object, c(1, 2.5, 3)),
+          points(object, marker = 8),
+          lines(object, marker = 9)
+        )
+      `),
+    ).resolves.toEqual(["missing", "TRUE", "7", "numeric", "3", "points", "8", "lines", "9"]);
     await expect(runtime.eval("plot()")).rejects.toMatchObject({ code: "NRE2103" });
     await expect(runtime.eval("plot(1:3, 1:2)")).rejects.toMatchObject({ code: "NRT3353" });
     await expect(runtime.eval("plot(c(NA, Inf))")).rejects.toMatchObject({ code: "NRT3353" });
@@ -9168,7 +17121,11 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
         { x0: 1, y0: 3, x1: 2, y1: 4 },
       ],
     });
-    await expect(runtime.eval("plot(1:3, asp = 1)")).rejects.toMatchObject({ code: "NRU6170" });
+    await expect(runtime.evalDetailed("plot(1:3, asp = 1)")).resolves.toMatchObject({
+      value: null,
+      visible: false,
+      warnings: [],
+    });
     await expect(runtime.eval("plot(1:3, lend = 'butt')")).rejects.toMatchObject({
       code: "NRU6170",
     });
@@ -9308,8 +17265,10 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     await expect(runtime.eval("lines(1:3, 4:6, type = 'q')")).rejects.toMatchObject({
       code: "NRT3353",
     });
-    await expect(runtime.eval("lines(1:3, 4:6, lend = 'butt')")).rejects.toMatchObject({
-      code: "NRU6171",
+    await expect(runtime.evalDetailed("lines(1:3, 4:6, lend = 'butt')")).resolves.toMatchObject({
+      value: null,
+      visible: false,
+      graphics: [{ kind: "segments" }],
     });
     await runtime.reset();
     await expect(runtime.eval("lines(1, 2)")).rejects.toMatchObject({ code: "NRE2190" });
@@ -9324,6 +17283,74 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       code: "NRL4002",
     });
     await limited.dispose();
+  });
+
+  it("draws plot.xy geometry with GNU R formals on the current graphics page", async () => {
+    const runtime = await createR({ execution: "inline", assets });
+    await expect(
+      runtime.eval(`
+        f <- formals(graphics::plot.xy)
+        c(
+          names(f),
+          identical(f$pch, quote(par("pch"))),
+          identical(f$lty, quote(par("lty"))),
+          identical(f$col, quote(par("col"))),
+          identical(f$bg, NA),
+          identical(f$cex, 1),
+          identical(f$lwd, quote(par("lwd")))
+        )
+      `),
+    ).resolves.toEqual([
+      "xy",
+      "type",
+      "pch",
+      "lty",
+      "col",
+      "bg",
+      "cex",
+      "lwd",
+      "...",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    const result = await runtime.evalDetailed(`
+      plot.new()
+      plot.window(c(0, 3), c(0, 4))
+      visible <- withVisible(graphics::plot.xy(
+        list(x = 1:3, y = 2:4), type = "both", pch = 19, col = "red"
+      ))
+      c(is.null(visible$value), visible$visible)
+    `);
+    expect(result.value).toEqual([true, false]);
+    expect(result.warnings).toEqual([
+      { code: "NRW1142", message: "plot type 'both' will be truncated to first character" },
+    ]);
+    expect(result.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "window",
+      "segments",
+      "points",
+    ]);
+    await expect(
+      runtime.eval('do.call("plot", list(x = 1:3, y = 2:4, type = "n"))'),
+    ).resolves.toBeNull();
+    await expect(
+      runtime.eval(`
+        args <- list(x = 1:3, y = 2:4, col = "red", dummyArg = 54)
+        functions <- as.list(c("plot", "plot.xy"))
+        for (kk in seq_along(functions)) functions[[kk]] <- get(functions[[kk]], mode = "function")
+        fcnArgs <- unlist(lapply(functions, function(fcn) names(formals(fcn))), use.names = FALSE)
+        keep <- intersect(names(args), fcnArgs)
+        args <- args[keep]
+        args <- c(args, list(xlab = "x", ylab = "y"))
+        c(keep, names(args))
+      `),
+    ).resolves.toEqual(["x", "y", "col", "x", "y", "col", "xlab", "ylab"]);
+    await runtime.dispose();
   });
 
   it("draws zoo's usage-ranked point generic through the Worker graphics protocol", async () => {
@@ -9405,6 +17432,37 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
         ],
       },
     ]);
+    const asciiBoundary = await runtime.evalDetailed("points(c(2, 3), c(6, 6), pch = c(127, 255))");
+    expect(asciiBoundary.graphics).toEqual([
+      {
+        kind: "points",
+        points: [
+          {
+            x: 2,
+            y: 6,
+            symbol: "\u007f",
+            color: "#000000FF",
+            fill: "#FFFFFF00",
+            size: 1,
+            lineWidth: 1,
+          },
+          {
+            x: 3,
+            y: 6,
+            symbol: "ÿ",
+            color: "#000000FF",
+            fill: "#FFFFFF00",
+            size: 1,
+            lineWidth: 1,
+          },
+        ],
+      },
+    ]);
+    const invalidLocalePch = await runtime.evalDetailed("points(4, 6, pch = 256)");
+    expect(invalidLocalePch.graphics).toEqual([]);
+    expect(invalidLocalePch.warnings).toEqual([
+      { code: "NRW1133", message: "pch value '256' is invalid in this locale" },
+    ]);
     const filled = await runtime.evalDetailed(
       "points(4, 5, pch = 21, col = 'transparent', bg = 'magenta')",
     );
@@ -9429,6 +17487,47 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     if (matrix.graphics[0]?.kind === "points") {
       expect(matrix.graphics[0].points).toHaveLength(3);
     }
+    const formula = await runtime.evalDetailed(`
+      frame <- data.frame(sample_sizes = c(10, 20, 30), power = c(.2, .5, .8))
+      visible <- withVisible(points(power ~ sample_sizes, data = frame, pch = 16, col = "red"))
+      c(is.null(visible$value), visible$visible,
+        names(formals(getS3method("points", "formula"))))
+    `);
+    expect(formula.value).toEqual(["TRUE", "FALSE", "formula", "data", "...", "subset"]);
+    expect(formula.graphics).toEqual([
+      {
+        kind: "points",
+        points: [
+          {
+            x: 10,
+            y: 0.2,
+            symbol: 16,
+            color: "#FF0000FF",
+            fill: "#FFFFFF00",
+            size: 1,
+            lineWidth: 1,
+          },
+          {
+            x: 20,
+            y: 0.5,
+            symbol: 16,
+            color: "#FF0000FF",
+            fill: "#FFFFFF00",
+            size: 1,
+            lineWidth: 1,
+          },
+          {
+            x: 30,
+            y: 0.8,
+            symbol: 16,
+            color: "#FF0000FF",
+            fill: "#FFFFFF00",
+            size: 1,
+            lineWidth: 1,
+          },
+        ],
+      },
+    ]);
     await expect(runtime.evalDetailed("points(1:3, 4:6, type = 'n')")).resolves.toMatchObject({
       value: null,
       visible: false,
@@ -9438,8 +17537,8 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
 
     await runtime.eval("recorded <- recordPlot()\ndev.hold()");
     const replayed = await runtime.evalDetailed("replayPlot(recorded)\ndev.flush()");
-    expect(replayed.graphics.filter((event) => event.kind === "points")).toHaveLength(4);
-    expect(replayed.graphics.at(-1)).toEqual(matrix.graphics[0]);
+    expect(replayed.graphics.filter((event) => event.kind === "points")).toHaveLength(6);
+    expect(replayed.graphics.at(-1)).toEqual(formula.graphics[0]);
     await expect(
       runtime.eval(`
         replayPlot(structure(
@@ -9475,8 +17574,10 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       `),
     ).resolves.toEqual(["probe", "custom", "7", "TRUE"]);
     await expect(runtime.eval("points(1:3, 4:5)")).rejects.toMatchObject({ code: "NRT3347" });
-    await expect(runtime.eval("points(1:3, 4:6, type = 'l')")).rejects.toMatchObject({
-      code: "NRU6164",
+    await expect(runtime.evalDetailed("points(1:3, 4:6, type = 'l')")).resolves.toMatchObject({
+      value: null,
+      visible: false,
+      graphics: [{ kind: "segments" }],
     });
     await expect(runtime.eval("points(1:3, 4:6, pch = 'AB')")).rejects.toMatchObject({
       code: "NRU6164",
@@ -9610,11 +17711,40 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       kind: "text",
       labels: [{ label: "1" }, { label: "2" }],
     });
-
     await runtime.eval("recorded <- recordPlot()\ndev.hold()");
     const replayed = await runtime.evalDetailed("replayPlot(recorded)\ndev.flush()");
     expect(replayed.graphics.filter((event) => event.kind === "text")).toHaveLength(3);
     expect(replayed.graphics.at(-1)).toEqual(defaults.graphics[0]);
+    const coordinateListLabels = await runtime.evalDetailed(
+      "text(lapply(list(x = 8:9, y = c(6, 7)), '-', 0.5), c('left', 'right'))",
+    );
+    expect(coordinateListLabels.graphics[0]).toMatchObject({
+      kind: "text",
+      labels: [
+        { x: 7.5, y: 5.5, label: "left" },
+        { x: 8.5, y: 6.5, label: "right" },
+      ],
+    });
+    const coordinateMatrixLabels = await runtime.evalDetailed(
+      "text(matrix(c(7.5, 8.5, 5.5, 6.5), 2), c('left', 'right'))",
+    );
+    expect(coordinateMatrixLabels.graphics[0]).toMatchObject({
+      kind: "text",
+      labels: [
+        { x: 7.5, y: 5.5, label: "left" },
+        { x: 8.5, y: 6.5, label: "right" },
+      ],
+    });
+    const forwardedTextControls = await runtime.evalDetailed(
+      "text(1, 2, 'forwarded', main = 'ignored annotation', bogus = 3)",
+    );
+    expect(forwardedTextControls.warnings).toEqual([
+      { code: "NRW1128", message: '"bogus" is not a graphical parameter' },
+    ]);
+    expect(forwardedTextControls.graphics[0]).toMatchObject({
+      kind: "text",
+      labels: [{ x: 1, y: 2, label: "forwarded" }],
+    });
     await expect(
       runtime.eval(`
         replayPlot(structure(
@@ -9644,8 +17774,22 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     await expect(runtime.eval("text(1, 2, character())")).rejects.toMatchObject({
       code: "NRT3349",
     });
-    await expect(runtime.eval("text(1, 2, expression(alpha))")).rejects.toMatchObject({
-      code: "NRU6165",
+    const expressionText = await runtime.evalDetailed(
+      'text(c(1, 2), c(2, 3), expression(alpha^sqrt(beta), "velocity ("*gamma*", furlongs/fortnight)"))',
+    );
+    expect(expressionText.graphics[0]).toMatchObject({
+      kind: "text",
+      labels: [
+        { label: "(alpha ^ sqrt(beta))" },
+        { label: '(("velocity (" * gamma) * ", furlongs/fortnight)")' },
+      ],
+    });
+    const recursiveText = await runtime.evalDetailed(
+      "text(c(1, 2), c(2, 3), list(quote(alpha[1]), expression(beta^2)))",
+    );
+    expect(recursiveText.graphics[0]).toMatchObject({
+      kind: "text",
+      labels: [{ label: "alpha[1]" }, { label: "(beta ^ 2)" }],
     });
     await expect(runtime.eval("text(1, 2, 'x', font = 5)")).rejects.toMatchObject({
       code: "NRU6165",
@@ -9757,11 +17901,47 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     await expect(
       runtime.evalDetailed("polygon(list(x = numeric(), y = numeric()))"),
     ).resolves.toMatchObject({ value: null, visible: false, graphics: [] });
+    const obsoleteType = await runtime.evalDetailed(
+      'polygon(c(1, 2, 1), c(1, 1, 2), type = "l", xpd = NA, col = "red")',
+    );
+    expect(obsoleteType.graphics).toHaveLength(1);
+    expect(obsoleteType.warnings).toEqual([
+      { code: "NRW1141", message: 'graphical parameter "type" is obsolete' },
+    ]);
+    const forwardedControls = await runtime.evalDetailed(
+      "polygon(c(1, 2, 1), c(1, 1, 2), pch = 6, main = 'ignored', unknown.control = 1)",
+    );
+    expect(forwardedControls.graphics).toHaveLength(1);
+    expect(forwardedControls.warnings).toEqual([
+      { code: "NRW1128", message: '"unknown.control" is not a graphical parameter' },
+    ]);
+
+    const shaded = await runtime.evalDetailed(
+      "polygon(c(1, 3, 3, 1), c(1, 1, 3, 3), density = 10, angle = 30, col = 'red', border = 'blue', lwd = 2)",
+    );
+    expect(shaded.graphics[0]).toEqual({
+      kind: "polygon",
+      polygons: [
+        {
+          x: [1, 3, 3, 1],
+          y: [1, 1, 3, 3],
+          fill: "#FFFFFF00",
+          border: "#0000FFFF",
+          lineType: "solid",
+          lineWidth: 2,
+          fillRule: "nonzero",
+          hatch: { color: "#FF0000FF", density: 10, angle: 30 },
+        },
+      ],
+    });
 
     await runtime.eval("recorded <- recordPlot()\ndev.hold()");
     const replayed = await runtime.evalDetailed("replayPlot(recorded)\ndev.flush()");
-    expect(replayed.graphics.filter((event) => event.kind === "polygon")).toHaveLength(3);
-    expect(replayed.graphics.at(-1)).toEqual(noFill.graphics[0]);
+    expect(replayed.graphics.filter((event) => event.kind === "polygon")).toHaveLength(6);
+    expect(replayed.graphics.at(-4)).toEqual(noFill.graphics[0]);
+    expect(replayed.graphics.at(-3)).toEqual(obsoleteType.graphics[0]);
+    expect(replayed.graphics.at(-2)).toEqual(forwardedControls.graphics[0]);
+    expect(replayed.graphics.at(-1)).toEqual(shaded.graphics[0]);
     await expect(
       runtime.eval(`
         replayPlot(structure(
@@ -9785,11 +17965,11 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       `),
     ).rejects.toMatchObject({ code: "NRT3333" });
     await expect(runtime.eval("polygon(1:3, 1:2)")).rejects.toMatchObject({ code: "NRT3348" });
-    await expect(runtime.eval("polygon(1:3, 1:3, density = 10)")).rejects.toMatchObject({
-      code: "NRU6165",
+    await expect(runtime.eval("polygon(1:3, 1:3, density = Inf)")).rejects.toMatchObject({
+      code: "NRT3348",
     });
-    await expect(runtime.eval("polygon(1:3, 1:3, xpd = TRUE)")).rejects.toMatchObject({
-      code: "NRU6165",
+    await expect(runtime.eval("polygon(1:3, 1:3, xpd = 1:2)")).rejects.toMatchObject({
+      code: "NRT3348",
     });
     await runtime.reset();
     await expect(runtime.eval("polygon(1:3, 1:3)")).rejects.toMatchObject({ code: "NRE2190" });
@@ -9900,18 +18080,36 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
         ],
       },
     ]);
+    const shaded = await runtime.evalDetailed(
+      "rect(1, 1, 2, 2, density = 8, angle = 60, col = 'magenta', border = FALSE, lwd = 2)",
+    );
+    expect(shaded.graphics[0]).toMatchObject({
+      kind: "polygon",
+      polygons: [
+        {
+          fill: "#FFFFFF00",
+          border: "#FFFFFF00",
+          lineWidth: 2,
+          hatch: { color: "#FF00FFFF", density: 8, angle: 60 },
+        },
+      ],
+    });
     await runtime.eval("recorded <- recordPlot()\ndev.hold()");
     const replayed = await runtime.evalDetailed("replayPlot(recorded)\ndev.flush()");
-    expect(replayed.graphics.at(-1)).toEqual(noFill.graphics[0]);
+    expect(replayed.graphics.at(-2)).toEqual(noFill.graphics[0]);
+    expect(replayed.graphics.at(-1)).toEqual(shaded.graphics[0]);
     await expect(runtime.eval("rect(numeric(), 0, 1, 1)")).rejects.toMatchObject({
       code: "NRT3348",
     });
-    await expect(runtime.eval("rect(0, 0, 1, 1, density = 10)")).rejects.toMatchObject({
-      code: "NRU6165",
+    await expect(runtime.eval("rect(0, 0, 1, 1, density = Inf)")).rejects.toMatchObject({
+      code: "NRT3348",
     });
-    await expect(runtime.eval("rect(0, 0, 1, 1, foo = 1)")).rejects.toMatchObject({
-      code: "NRU6165",
-    });
+    const ignoredControls = await runtime.evalDetailed("rect(0, 0, 1, 1, foo = 1, main = 'x')");
+    expect(ignoredControls.value).toBeNull();
+    expect(ignoredControls.warnings).toEqual([
+      { code: "NRW1128", message: '"foo" is not a graphical parameter' },
+      { code: "NRW1128", message: '"main" is not a graphical parameter' },
+    ]);
     await expect(
       runtime.eval(`
         f <- formals(graphics::rect)
@@ -9959,6 +18157,216 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       ],
     });
     await packaged.dispose();
+  });
+
+  it("draws corrplot's user-coordinate symbols through reusable polygon graphics", async () => {
+    const runtime = await session();
+    const rectangles = await runtime.evalDetailed(`
+      plot.new()
+      plot.window(c(-1, 6), c(0, 4))
+      visible <- withVisible(graphics::symbols(
+        cbind(c(1, 3), c(1, 2)),
+        rectangles = matrix(c(2, 4, 1, 2), 2, 2),
+        inches = FALSE,
+        add = TRUE,
+        fg = c("blue", NA),
+        bg = c("red", "green"),
+        lty = c("dashed", "solid"),
+        lwd = c(2, 3)
+      ))
+      c(is.null(visible$value), visible$visible)
+    `);
+    expect(rectangles.value).toEqual([true, false]);
+    expect(rectangles.graphics).toEqual([
+      { kind: "new-page" },
+      { kind: "window", xlim: [-1, 6], ylim: [0, 4] },
+      {
+        kind: "polygon",
+        polygons: [
+          {
+            x: [0, 2, 2, 0],
+            y: [0.5, 0.5, 1.5, 1.5],
+            fill: "#FF0000FF",
+            border: "#0000FFFF",
+            lineType: "44",
+            lineWidth: 2,
+            fillRule: "nonzero",
+          },
+          {
+            x: [1, 5, 5, 1],
+            y: [1, 1, 3, 3],
+            fill: "#00FF00FF",
+            border: "#FFFFFF00",
+            lineType: "solid",
+            lineWidth: 3,
+            fillRule: "nonzero",
+          },
+        ],
+      },
+    ]);
+
+    const circles = await runtime.evalDetailed(
+      "symbols(c(0, 2), c(0, 2), circles = c(.5, 1), inches = FALSE, add = TRUE, bg = 'yellow')",
+    );
+    expect(circles).toMatchObject({ value: null, visible: false });
+    const circleEvent = circles.graphics.at(-1);
+    expect(circleEvent).toMatchObject({ kind: "polygon" });
+    if (circleEvent?.kind === "polygon") {
+      expect(circleEvent.polygons).toHaveLength(2);
+      expect(circleEvent.polygons[0]?.x).toHaveLength(32);
+      expect(circleEvent.polygons[0]?.y).toHaveLength(32);
+      expect(circleEvent.polygons[1]).toMatchObject({
+        fill: "#FFFF00FF",
+        border: "#000000FF",
+      });
+    }
+
+    const zeroCircle = await runtime.evalDetailed(
+      "symbols(c(0, 2), c(0, 2), circles = c(0, 1), inches = FALSE, add = TRUE, bg = 'yellow')",
+    );
+    expect(zeroCircle).toMatchObject({ value: null, visible: false });
+    const zeroCircleEvent = zeroCircle.graphics.at(-1);
+    expect(zeroCircleEvent).toMatchObject({ kind: "polygon" });
+    if (zeroCircleEvent?.kind === "polygon") {
+      expect(zeroCircleEvent.polygons).toHaveLength(1);
+      expect(zeroCircleEvent.polygons[0]?.x).toHaveLength(32);
+    }
+
+    const physicalCircle = await runtime.evalDetailed(`
+      scale <- xyinch(1)
+      symbols(2, 2, circles = 2, inches = 2, add = TRUE, bg = "cyan")
+      scale
+    `);
+    expect(physicalCircle.value).toEqual(expect.any(Array));
+    const physicalScale = physicalCircle.value as number[];
+    const physicalCircleEvent = physicalCircle.graphics.at(-1);
+    expect(physicalCircleEvent).toMatchObject({ kind: "polygon" });
+    if (physicalCircleEvent?.kind === "polygon") {
+      const circle = physicalCircleEvent.polygons[0];
+      expect(circle?.x[0]).toBeCloseTo(2 + (physicalScale[0] ?? 0), 12);
+      expect(circle?.y[8]).toBeCloseTo(2 + (physicalScale[1] ?? 0), 12);
+      expect(circle).toMatchObject({ fill: "#00FFFFFF", border: "#000000FF" });
+    }
+
+    await expect(
+      runtime.eval(`
+        f <- formals(graphics::symbols)
+        c(
+          names(f),
+          identical(f$y, NULL),
+          identical(f$inches, TRUE),
+          identical(f$add, FALSE),
+          deparse(f$fg),
+          is.na(f$bg),
+          identical(f$xlab, NULL),
+          identical(f$ylim, NULL)
+        )
+      `),
+    ).resolves.toEqual([
+      "x",
+      "y",
+      "circles",
+      "squares",
+      "rectangles",
+      "stars",
+      "thermometers",
+      "boxplots",
+      "inches",
+      "add",
+      "fg",
+      "bg",
+      "xlab",
+      "ylab",
+      "main",
+      "xlim",
+      "ylim",
+      "...",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      'par("col")',
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    await expect(
+      runtime.eval("symbols(1:2, 1:2, circles = c(1, 2), add = TRUE)"),
+    ).resolves.toBeNull();
+    await expect(
+      runtime.eval("symbols(1:2, 1:2, stars = matrix(1, 2, 2), inches = FALSE, add = TRUE)"),
+    ).rejects.toMatchObject({ code: "NRU6201" });
+    await expect(
+      runtime.eval("symbols(1:2, 1:2, squares = 1, inches = FALSE, add = TRUE)"),
+    ).rejects.toMatchObject({ code: "NRT3422", message: "x/y/parameter length mismatch" });
+    await expect(
+      runtime.eval("symbols(1, 1, circles = -1, inches = FALSE, add = TRUE)"),
+    ).rejects.toMatchObject({ code: "NRT3422", message: "invalid symbol parameter" });
+    await runtime.dispose();
+  });
+
+  it("draws pie wedges, labels, and annotations through generic polygon graphics", async () => {
+    const runtime = await session();
+    const result = await runtime.evalDetailed(`
+      visible <- withVisible(graphics::pie(
+        c(first = 1, second = 3),
+        edges = 40,
+        radius = .8,
+        clockwise = TRUE,
+        init.angle = 90,
+        col = c("red", "blue"),
+        border = "black",
+        main = "Shares"
+      ))
+      c(is.null(visible$value), visible$visible)
+    `);
+    expect(result.value).toEqual([true, false]);
+    expect(result.graphics.slice(0, 2)).toEqual([
+      { kind: "new-page" },
+      { kind: "window", xlim: [-1, 1], ylim: [-1, 1] },
+    ]);
+    const wedges = result.graphics.find((event) => event.kind === "polygon");
+    expect(wedges).toMatchObject({
+      kind: "polygon",
+      polygons: [
+        { fill: "#FF0000FF", border: "#000000FF" },
+        { fill: "#0000FFFF", border: "#000000FF" },
+      ],
+    });
+    const labels = result.graphics.find(
+      (event) => event.kind === "text" && event.labels.some((label) => label.label === "first"),
+    );
+    expect(labels).toMatchObject({
+      kind: "text",
+      labels: [{ label: "first" }, { label: "second" }],
+    });
+    await expect(
+      runtime.eval(`
+        f <- formals(graphics::pie)
+        c(names(f), deparse(f$labels), identical(f$edges, 200), identical(f$radius, .8),
+          identical(f$clockwise, FALSE), deparse(f$init.angle))
+      `),
+    ).resolves.toEqual([
+      "x",
+      "labels",
+      "edges",
+      "radius",
+      "clockwise",
+      "init.angle",
+      "density",
+      "angle",
+      "col",
+      "border",
+      "lty",
+      "main",
+      "...",
+      "names(x)",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "if (clockwise) 90 else 0",
+    ]);
+    await expect(runtime.eval("pie(c(1, -1))")).rejects.toMatchObject({ code: "NRT3423" });
+    await runtime.dispose();
   });
 
   it("renders usage-ranked image grids through generic browser graphics commands", async () => {
@@ -10046,6 +18454,140 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     await runtime.dispose();
   });
 
+  it("renders GNU-compatible filled-contour bands, key layout, and lazy callbacks", async () => {
+    const runtime = await createR({ execution: "inline", assets });
+    await expect(
+      runtime.eval(`
+        f <- formals(graphics::filled.contour)
+        c(
+          names(f),
+          deparse(f$x), deparse(f$y), deparse(f$xlim), deparse(f$zlim),
+          deparse(f$levels), identical(f$nlevels, 20), deparse(f$col),
+          identical(f$asp, NA), identical(f$xaxs, "i"), identical(f$las, 1),
+          identical(f$axes, TRUE), deparse(f$frame.plot)
+        )
+      `),
+    ).resolves.toEqual([
+      "x",
+      "y",
+      "z",
+      "xlim",
+      "ylim",
+      "zlim",
+      "levels",
+      "nlevels",
+      "color.palette",
+      "col",
+      "plot.title",
+      "plot.axes",
+      "key.title",
+      "key.axes",
+      "key.border",
+      "asp",
+      "xaxs",
+      "yaxs",
+      "las",
+      "axes",
+      "frame.plot",
+      "...",
+      "seq(0, 1, length.out = nrow(z))",
+      "seq(0, 1, length.out = ncol(z))",
+      "range(x, finite = TRUE)",
+      "range(z, finite = TRUE)",
+      "pretty(zlim, nlevels)",
+      "TRUE",
+      "color.palette(length(levels) - 1)",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "axes",
+    ]);
+
+    const result = await runtime.evalDetailed(`
+      trace <- character()
+      before <- c(par("fig"), par("plt"), par("usr"), par("mar"), par("mfg"))
+      visible <- withVisible(graphics::filled.contour(
+        c(0, 1), c(0, 1), matrix(c(0, 1, 1, 2), 2, 2),
+        levels = c(0, .5, 1, 1.5, 2),
+        color = function(n) c("red", "green", "blue", "yellow"),
+        key.border = "purple",
+        axes = FALSE, frame.plot = FALSE,
+        key.axes = { trace <<- c(trace, "key.axes") },
+        key.title = { trace <<- c(trace, "key.title") },
+        plot.axes = { trace <<- c(trace, "plot.axes") },
+        plot.title = { trace <<- c(trace, "plot.title") }
+      ))
+      after <- c(par("fig"), par("plt"), par("usr"), par("mar"), par("mfg"))
+      list(visible$value, visible$visible, trace, identical(before, after))
+    `);
+    expect(result.value).toEqual([
+      null,
+      false,
+      ["key.axes", "key.title", "plot.axes", "plot.title"],
+      true,
+    ]);
+    expect(result.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "window",
+      "polygon",
+      "box",
+      "window",
+      "polygon",
+      "window",
+    ]);
+    const keyWindow = result.graphics[1];
+    expect(keyWindow).toMatchObject({ kind: "window", xlim: [0, 1], ylim: [0, 2] });
+    if (keyWindow?.kind === "window") {
+      expect(keyWindow.viewport).toHaveLength(4);
+      [0.8257142857142857, 0.8828571428571429, 0.1457142857142857, 0.8828571428571429].forEach(
+        (expected, index) => expect(keyWindow.viewport?.[index]).toBeCloseTo(expected, 14),
+      );
+    }
+    const key = result.graphics[2];
+    expect(key?.kind).toBe("polygon");
+    if (key?.kind === "polygon") {
+      expect(key.polygons.map((polygon) => polygon.fill)).toEqual([
+        "#FF0000FF",
+        "#00FF00FF",
+        "#0000FFFF",
+        "#FFFF00FF",
+      ]);
+      expect(key.polygons.map((polygon) => polygon.border)).toEqual([
+        "#A020F0FF",
+        "#A020F0FF",
+        "#A020F0FF",
+        "#A020F0FF",
+      ]);
+    }
+    const mainWindow = result.graphics[4];
+    expect(mainWindow).toMatchObject({ kind: "window", xlim: [0, 1], ylim: [0, 1] });
+    if (mainWindow?.kind === "window") {
+      expect(mainWindow.viewport).toHaveLength(4);
+      [0.11714285714285713, 0.7685714285714286, 0.1457142857142857, 0.8828571428571429].forEach(
+        (expected, index) => expect(mainWindow.viewport?.[index]).toBeCloseTo(expected, 14),
+      );
+    }
+    const bands = result.graphics[5];
+    expect(bands?.kind).toBe("polygon");
+    if (bands?.kind === "polygon") {
+      expect(bands.polygons).toHaveLength(4);
+      expect(bands.polygons.map((polygon) => polygon.x.length)).toEqual([4, 6, 6, 4]);
+      expect(bands.polygons.every((polygon) => polygon.fillRule === "evenodd")).toBe(true);
+    }
+    await expect(
+      runtime.eval(
+        "withVisible(filled.contour(matrix(1:4, 2), levels = 1:4, col = c('red', 'green', 'blue'))) ",
+      ),
+    ).resolves.toEqual([null, false]);
+    await expect(
+      runtime.eval(
+        "filled.contour(z = matrix(1:4, 2), levels = c(1, 1, 2), col = c('red', 'blue'))",
+      ),
+    ).rejects.toMatchObject({ code: "NRT3472" });
+    await runtime.dispose();
+  });
+
   it("emits browser-native raster graphics for usage-ranked package patterns", async () => {
     const observed: unknown[] = [];
     const runtime = await createR({
@@ -10128,6 +18670,51 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       code: "NRL4002",
     });
     await commandLimited.dispose();
+  });
+
+  it("draws reusable graphics grids through the browser journal", async () => {
+    const runtime = await createR({ execution: "inline", assets });
+    await runtime.eval(`
+      plot(
+        0,
+        type = "n",
+        xlim = c(0, 9),
+        ylim = c(0, 8),
+        axes = FALSE,
+        ann = FALSE,
+        xaxs = "i",
+        yaxs = "i"
+      )
+    `);
+    const result = await runtime.evalDetailed(
+      'graphics::grid(nx = 3, ny = 4, col = "red", lty = 2, lwd = 2)',
+    );
+    expect(result.visible).toBe(false);
+    expect(result.graphics).toEqual([
+      {
+        kind: "segments",
+        segments: [
+          { x0: 3, y0: 0, x1: 3, y1: 8, color: "#FF0000FF", lineType: "44", lineWidth: 2 },
+          { x0: 6, y0: 0, x1: 6, y1: 8, color: "#FF0000FF", lineType: "44", lineWidth: 2 },
+          { x0: 0, y0: 2, x1: 9, y1: 2, color: "#FF0000FF", lineType: "44", lineWidth: 2 },
+          { x0: 0, y0: 4, x1: 9, y1: 4, color: "#FF0000FF", lineType: "44", lineWidth: 2 },
+          { x0: 0, y0: 6, x1: 9, y1: 6, color: "#FF0000FF", lineType: "44", lineWidth: 2 },
+        ],
+      },
+    ]);
+    await expect(runtime.eval("result <- grid(3, 4); c(result$atx, result$aty)")).resolves.toEqual([
+      3, 6, 2, 4, 6,
+    ]);
+    await expect(runtime.eval("names(formals(graphics::grid))")).resolves.toEqual([
+      "nx",
+      "ny",
+      "col",
+      "lty",
+      "lwd",
+      "equilogs",
+      "nintLog",
+    ]);
+    await runtime.dispose();
   });
 
   it("draws knitr's usage-ranked reference lines through the graphics journal", async () => {
@@ -10391,6 +18978,93 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       },
     ]);
     await expect(
+      runtime.eval(`
+        segments <- grid::segmentsGrob(name = "segments")
+        lines <- grid::linesGrob(name = "lines")
+        points <- grid::pointsGrob(name = "points")
+        c(
+          class(segments), names(segments), segments$name,
+          class(lines), names(lines), lines$name,
+          class(points), names(points), points$name,
+          names(formals(grid::grid.segments)),
+          names(formals(grid::grid.lines)),
+          names(formals(grid::grid.points))
+        )
+      `),
+    ).resolves.toEqual([
+      "segments",
+      "grob",
+      "gDesc",
+      "x0",
+      "y0",
+      "x1",
+      "y1",
+      "arrow",
+      "name",
+      "gp",
+      "vp",
+      "segments",
+      "lines",
+      "grob",
+      "gDesc",
+      "x",
+      "y",
+      "arrow",
+      "name",
+      "gp",
+      "vp",
+      "lines",
+      "points",
+      "grob",
+      "gDesc",
+      "x",
+      "y",
+      "pch",
+      "size",
+      "name",
+      "gp",
+      "vp",
+      "points",
+      "x0",
+      "y0",
+      "x1",
+      "y1",
+      "default.units",
+      "arrow",
+      "name",
+      "gp",
+      "draw",
+      "vp",
+      "x",
+      "y",
+      "default.units",
+      "arrow",
+      "name",
+      "gp",
+      "draw",
+      "vp",
+      "x",
+      "y",
+      "pch",
+      "size",
+      "default.units",
+      "name",
+      "gp",
+      "draw",
+      "vp",
+    ]);
+    const primitives = await runtime.evalDetailed(`
+      grid::grid.segments(0, 0, 1, 1, gp = grid::gpar(col = "red", lty = 2, lwd = 2))
+      grid::grid.lines(c(0, .5, 1), c(0, 1, 0), gp = grid::gpar(col = "blue"))
+      grid::grid.points(c(.25, .75), c(.25, .75), pch = c(1, 2), gp = grid::gpar(col = "red", fill = "blue"))
+    `);
+    expect(primitives.visible).toBe(false);
+    expect(primitives.graphics.map((event) => event.kind)).toEqual([
+      "segments",
+      "segments",
+      "points",
+    ]);
+    await expect(
       runtime.eval("segments(numeric(), numeric(), numeric(), numeric())"),
     ).resolves.toBeNull();
     await expect(runtime.eval("segments(1, 2)")).rejects.toMatchObject({ code: "NRE2192" });
@@ -10413,6 +19087,13 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     `);
     const replayed = await runtime.evalDetailed("replayPlot(recorded)\ndev.flush()");
     expect(replayed.graphics.at(-1)).toEqual(recycled.graphics[0]);
+    const optionalWidths = await runtime.evalDetailed(`
+      segments(1, 1, 2, 2, lwd = NULL)
+      segments(1, 1, 2, 2, lwd = numeric())
+    `);
+    expect(optionalWidths.graphics).toMatchObject([
+      { kind: "segments", segments: [{ lineWidth: 1 }] },
+    ]);
     await expect(
       runtime.eval(`
         replayPlot(structure(
@@ -10448,6 +19129,119 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     await limited.dispose();
   });
 
+  it("draws reusable arrow shafts and device-scaled heads through the graphics journal", async () => {
+    const runtime = await session();
+    const result = await runtime.evalDetailed(`
+      plot.new()
+      plot.window(c(0, 10), c(0, 10))
+      opened <- withVisible(graphics::arrows(
+        c(1, 2), c(2, 3), c(9, 8), c(8, 7),
+        length = 0.25, angle = 30, code = 3,
+        col = c("red", "blue"), lty = c(1, 2), lwd = c(1, 2)
+      ))
+      c(is.null(opened$value), opened$visible)
+    `);
+    expect(result.value).toEqual([true, false]);
+    expect(result.graphics.map((event) => event.kind)).toEqual(["new-page", "window", "segments"]);
+    const event = result.graphics[2];
+    expect(event?.kind).toBe("segments");
+    if (event?.kind === "segments") {
+      expect(event.segments).toHaveLength(10);
+      expect(event.segments[0]).toEqual({
+        x0: 1,
+        y0: 2,
+        x1: 9,
+        y1: 8,
+        color: "#FF0000FF",
+        lineType: "solid",
+        lineWidth: 1,
+      });
+      expect(event.segments[5]).toEqual({
+        x0: 2,
+        y0: 3,
+        x1: 8,
+        y1: 7,
+        color: "#0000FFFF",
+        lineType: "44",
+        lineWidth: 2,
+      });
+      for (const head of [event.segments[1], event.segments[2]]) {
+        expect(head?.x0).toBe(1);
+        expect(head?.y0).toBe(2);
+        expect(head?.x1).toBeGreaterThan(1);
+      }
+      for (const head of [event.segments[3], event.segments[4]]) {
+        expect(head?.x0).toBe(9);
+        expect(head?.y0).toBe(8);
+        expect(head?.x1).toBeLessThan(9);
+      }
+    }
+    await expect(
+      runtime.eval(`
+        f <- formals(graphics::arrows)
+        c(
+          names(f), identical(f$x1, quote(x0)), identical(f$y1, quote(y0)),
+          identical(f$length, 0.25), identical(f$angle, 30), identical(f$code, 2),
+          identical(f$col, quote(par("fg"))), identical(f$lty, quote(par("lty"))),
+          identical(f$lwd, quote(par("lwd")))
+        )
+      `),
+    ).resolves.toEqual([
+      "x0",
+      "y0",
+      "x1",
+      "y1",
+      "length",
+      "angle",
+      "code",
+      "col",
+      "lty",
+      "lwd",
+      "...",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    await expect(runtime.eval("graphics::arrows(0, 0, 1, 1, code = 4)")).rejects.toMatchObject({
+      code: "NRT3421",
+    });
+    await expect(runtime.eval("graphics::arrows(0, 0, 1, 1, length = -1)")).rejects.toMatchObject({
+      code: "NRT3421",
+    });
+    await runtime.dispose();
+  });
+
+  it("preserves requested plot aspect ratios by expanding the browser user window", async () => {
+    const runtime = await session();
+    const result = await runtime.evalDetailed(`
+      grDevices::dev.new(width = 7, height = 7)
+      opened <- withVisible(plot(0:1, 0:1, asp = 1))
+      c(round(graphics::par("usr"), 12), is.null(opened$value), opened$visible)
+    `);
+    expect(result.value).toEqual([-0.102790697674, 1.102790697674, -0.04, 1.04, 1, 0]);
+    expect(result.graphics[1]).toEqual({
+      kind: "window",
+      xlim: [-0.10279069767441862, 1.1027906976744186],
+      ylim: [-0.04, 1.04],
+    });
+    await expect(
+      runtime.eval(`
+        grDevices::graphics.off()
+        grDevices::dev.new(width = 7, height = 7)
+        plot(0:1, 0:1, asp = 1, xaxs = "i", yaxs = "i")
+        c(round(par("usr"), 12), par("xaxs"), par("yaxs"))
+      `),
+    ).resolves.toEqual(["-0.058139534884", "1.058139534884", "0", "1", "i", "i"]);
+    await expect(runtime.eval("plot(0:1, asp = 0)")).resolves.toBeNull();
+    await expect(runtime.eval("plot(0:1, asp = NA_real_)")).resolves.toBeNull();
+    await runtime.dispose();
+  });
+
   it("draws zoo's usage-ranked legends through the graphics journal", async () => {
     const observed: unknown[] = [];
     const runtime = await createR({
@@ -10465,6 +19259,7 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
         pch = 1:2,
         col = 1:2,
         text.col = c("blue", "red"),
+        adj = c(0.25, 0.75),
         inset = 0.05,
         title = "Groups"
       ))
@@ -10503,6 +19298,7 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       background: "#FFFFFFFF",
       columns: 1,
       cex: 1,
+      textAdjustment: [0.25, 0.75],
       title: "Groups",
     });
     expect(observed).toEqual(result.graphics);
@@ -10520,7 +19316,7 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       third <- withVisible(legend(
         x = "topleft",
         bty = "n",
-        lty = c(1, 1),
+        lty = c(1, NA),
         col = c("black", "blue"),
         legend = paste(sites[1:2], c("(left scale)", "(right scale)"))
       ))
@@ -10551,6 +19347,7 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       kind: "legend",
       position: { kind: "keyword", value: "topleft" },
       box: false,
+      entries: [{ lineType: "solid" }, { label: "site 2 (right scale)" }],
     });
 
     await runtime.eval("recorded <- recordPlot()\ndev.hold()");
@@ -10558,14 +19355,80 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     expect(replayed.graphics.filter((event) => event.kind === "legend")).toHaveLength(4);
     expect(replayed.graphics.at(-1)).toEqual(zooShapes.graphics.at(-1));
 
+    const filled = await runtime.evalDetailed(`
+      legend(
+        "top",
+        c("concern", "watch"),
+        fill = c("red", "blue"),
+        border = c(NA, "black")
+      )
+    `);
+    expect(filled.graphics.at(-1)).toMatchObject({
+      kind: "legend",
+      entries: [
+        { label: "concern", fill: "#FF0000FF", border: "#FFFFFF00" },
+        { label: "watch", fill: "#0000FFFF", border: "#000000FF" },
+      ],
+    });
+    const expressionLabels = await runtime.evalDetailed(`
+      legend(
+        "left",
+        legend = c(
+          quote(ihs10(x) == asinh(x / 2) / log(10)),
+          quote(log[10](1 + x)),
+          quote(log[10](x))
+        ),
+        col = c(1, 2, 5),
+        bty = "n",
+        lwd = 2
+      )
+    `);
+    expect(expressionLabels.graphics.at(-1)).toMatchObject({
+      kind: "legend",
+      entries: [
+        { label: "(ihs10(x) == (asinh((x / 2)) / log(10)))" },
+        { label: "log[10]((1 + x))" },
+        { label: "log[10](x)" },
+      ],
+      box: false,
+    });
+    await expect(
+      runtime.eval(
+        "names(legend('center', expression(alpha, beta[2]), title = expression(theta), plot = FALSE))",
+      ),
+    ).resolves.toEqual(["rect", "text"]);
+    const pairedCoordinates = await runtime.evalDetailed(
+      "legend(c(2.8, 8), legend = c('alpha', 'beta'), plot = FALSE)",
+    );
+    expect(pairedCoordinates.graphics).toEqual([]);
+    expect(
+      await runtime.eval("names(legend(c(2.8, 8), legend = c('alpha', 'beta'), plot = FALSE))"),
+    ).toEqual(["rect", "text"]);
+    expect(pairedCoordinates.value).toEqual([
+      [1.2, 1, 2.8, 8],
+      [
+        [3.4, 3.4],
+        [7.65, 7.15],
+      ],
+    ]);
+    const keywordWithIgnoredY = await runtime.evalDetailed(
+      "legend('topright', y = NA, legend = 'alpha')",
+    );
+    expect(keywordWithIgnoredY.graphics.at(-1)).toMatchObject({
+      kind: "legend",
+      position: { kind: "keyword", value: "topright" },
+    });
+    await runtime.eval("filledRecorded <- recordPlot()\ndev.hold()");
+    const replayedFilled = await runtime.evalDetailed("replayPlot(filledRecorded)\ndev.flush()");
+    expect(replayedFilled.graphics.filter((event) => event.kind === "legend")).toContainEqual(
+      filled.graphics.at(-1),
+    );
+
     await expect(runtime.eval("legend('middle', 'x')")).rejects.toMatchObject({
       code: "NRT3334",
     });
     await expect(runtime.eval("legend(1, legend = 'x')")).rejects.toMatchObject({
       code: "NRE2193",
-    });
-    await expect(runtime.eval("legend('top', 'x', fill = 'red')")).rejects.toMatchObject({
-      code: "NRU6159",
     });
     await runtime.reset();
     await expect(runtime.eval("legend('top', 'x')")).rejects.toMatchObject({ code: "NRE2190" });
@@ -10685,6 +19548,19 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
         )
       `),
     ).resolves.toEqual(["list", "list", "recordedplot", "2", "TRUE", "stats", "utils"]);
+    await expect(
+      runtime.eval(`
+        c(
+          recorded[[1]][[1]][[2]][[1]]$name,
+          recorded[[1]][[2]][[2]][[1]]$name,
+          length(recorded[[1]][[2]][[2]]),
+          recorded[[1]][[2]][[2]][[2]],
+          recorded[[1]][[2]][[2]][[3]],
+          recorded[[1]][[2]][[2]][[4]],
+          is.na(recorded[[1]][[2]][[2]][[5]])
+        )
+      `),
+    ).resolves.toEqual(["C_plot_new", "C_plot_window", "5", "0", "2", "0", "1", "", "TRUE"]);
     expect(observed).toHaveLength(3);
     const recordedEvents = observed.slice();
 
@@ -10785,6 +19661,26 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     ]);
     await expect(
       runtime.eval(
+        "u <- structure(matrix(c(2, 999, 1, 3), 2), dimnames = list(c('r1', 'r2'), c('c1', 'c2')), marker = 'drop')\na <- chol2inv(u)\nb <- chol2inv(u, size = 1.9)\nc(round(a, 12), dim(a), is.null(dimnames(a)), is.null(attr(a, 'marker')), b, dim(b), names(formals(chol2inv)))",
+      ),
+    ).resolves.toEqual([
+      "0.277777777778",
+      "-0.055555555556",
+      "-0.055555555556",
+      "0.111111111111",
+      "2",
+      "2",
+      "TRUE",
+      "TRUE",
+      "0.25",
+      "1",
+      "1",
+      "x",
+      "size",
+      "LINPACK",
+    ]);
+    await expect(
+      runtime.eval(
         "data <- data.frame(a = c(2, 0), b = c(0, 3))\nr <- chol(data)\nc(r, dim(r), identical(dimnames(r), list(NULL, c('a', 'b'))))",
       ),
     ).resolves.toEqual([1.4142135623730951, 0, 0, 1.7320508075688772, 2, 2, 1]);
@@ -10819,6 +19715,12 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     });
     await expect(runtime.eval("chol(matrix(c(2 + 0i, 0, 0, 2), 2, 2))")).rejects.toMatchObject({
       code: "NRT3335",
+    });
+    await expect(runtime.eval("chol2inv(matrix(1:6, 2, 3))")).rejects.toMatchObject({
+      code: "NRT3336",
+    });
+    await expect(runtime.eval("chol2inv(diag(2), LINPACK = FALSE)")).rejects.toMatchObject({
+      code: "NRE2193",
     });
     await runtime.dispose();
   });
@@ -10940,6 +19842,17 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
 
   it("reorders grouped factor levels through usage-ranked scores and S3 dispatch", async () => {
     const runtime = await session();
+    await expect(
+      runtime.eval(`
+        merged <- factor(c("a", "b", "a"), levels = c("a", "b"))
+        levels(merged) <- c("x", "x")
+        omitted <- factor(c("a", "b", "a"), levels = c("a", "b"))
+        levels(omitted) <- c("A", NA)
+        plain <- 1:2
+        levels(plain) <- c("low", "high")
+        c(as.character(merged), levels(merged), as.integer(omitted), levels(omitted), levels(plain))
+      `),
+    ).resolves.toEqual(["x", "x", "x", "x", "1", NA, "1", "A", "low", "high"]);
     await expect(
       runtime.eval(
         "x <- factor(c('b', 'a', 'b', 'c', 'a'), levels = c('a', 'b', 'c'))\ny <- reorder(x, c(5, 2, 1, 9, 4), mean)\ns <- attr(y, 'scores')\nc(as.integer(y), levels(y), s, dim(s), dimnames(s)[[1]], class(y))",
@@ -11179,6 +20092,61 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
 
   it("coerces owned values through frequency-ranked as.vector modes", async () => {
     const runtime = await session();
+    await expect(
+      runtime.eval(`
+        local({
+          assign("as.vector.probe", function(x, mode = "any")
+            structure(c("probe", mode, class(x)), marker = names(match.call())),
+            envir = .GlobalEnv)
+          e <- structure(new.env(), class = c("probe", "environment"))
+          f <- factor(c("b", "a", NA))
+          d <- data.frame(a = 1:2, b = 3:4)
+          a <- as.vector(e)
+          b <- as.vector(e, mode = "character")
+          fv <- as.vector(f)
+          dv <- as.vector(d)
+          as.character(c(
+            a, attr(a, "marker"), b, attr(b, "marker"),
+            fv[1:2], is.na(fv[3]), typeof(dv), names(dv), vapply(dv, length, 0L),
+            names(formals(as.vector)), deparse(formals(as.vector)$mode),
+            names(formals(as.vector.factor)), deparse(formals(as.vector.factor)$mode),
+            names(formals(as.vector.data.frame)), deparse(formals(as.vector.data.frame)$mode)
+          ))
+        })
+      `),
+    ).resolves.toEqual([
+      "probe",
+      "any",
+      "probe",
+      "environment",
+      "",
+      "x",
+      "mode",
+      "probe",
+      "character",
+      "probe",
+      "environment",
+      "",
+      "x",
+      "mode",
+      "b",
+      "a",
+      "TRUE",
+      "list",
+      "a",
+      "b",
+      "2",
+      "2",
+      "x",
+      "mode",
+      '"any"',
+      "x",
+      "mode",
+      '"any"',
+      "x",
+      "mode",
+      '"any"',
+    ]);
     await expect(
       runtime.eval(
         "x <- structure(matrix(c(a = 1L, b = 2L, c = 3L, d = 4L), 2), tag = 'x')\ny <- as.vector(x)\nd <- as.vector(structure(c(a = 1, b = 2), class = 'Date', tag = 'x'))\nc(y, typeof(y), is.null(names(y)), is.null(dim(y)), is.null(attr(y, 'tag')), d, is.null(attr(d, 'class')), is.null(names(d)))",
@@ -11499,6 +20467,183 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     await expect(runtime.eval("diag(matrix(1:4, 2), names = NA)")).rejects.toMatchObject({
       code: "NRT3248",
     });
+
+    await expect(
+      runtime.eval(
+        "m <- matrix(1:6, 2, dimnames = list(c('r1', 'r2'), c('c1', 'c2', 'c3')))\ndiag(m) <- c(9, 8)\nas.character(c(typeof(m), dim(m), m, unlist(dimnames(m))))",
+      ),
+    ).resolves.toEqual([
+      "double",
+      "2",
+      "3",
+      "9",
+      "2",
+      "3",
+      "8",
+      "5",
+      "6",
+      "r1",
+      "r2",
+      "c1",
+      "c2",
+      "c3",
+    ]);
+    await expect(
+      runtime.eval(
+        "m <- matrix(1:4, 2)\ndiag(m) <- list('x', TRUE)\nas.character(c(typeof(m), typeof(m[[1]]), m[[1]], m[[2]], m[[3]], m[[4]]))",
+      ),
+    ).resolves.toEqual(["list", "character", "x", "2", "3", "TRUE"]);
+    await expect(
+      runtime.eval(
+        "d <- data.frame(a = 1:3, b = 4:6)\ndiag(d) <- c('x', 'y')\nas.character(c(typeof(d), class(d), unlist(d)))",
+      ),
+    ).resolves.toEqual(["list", "data.frame", "x", "2", "3", "4", "y", "6"]);
+    await expect(
+      runtime.eval(
+        "f <- structure(factor(c('a', 'b', 'c', 'd')), dim = c(2L, 2L))\ndiag(f) <- factor(c('b', 'a'), levels = letters[1:4])\nas.character(c(typeof(f), class(f), levels(f), f))",
+      ),
+    ).resolves.toEqual(["integer", "factor", "a", "b", "c", "d", "2", "2", "3", "1"]);
+    await expect(
+      runtime.eval("z <- matrix(numeric(), 0, 3)\ndiag(z) <- numeric()\nc(dim(z), length(z))"),
+    ).resolves.toEqual([0, 3, 0]);
+    await expect(runtime.eval("m <- matrix(1:9, 3); diag(m) <- 1:2")).rejects.toMatchObject({
+      code: "NRT3249",
+    });
+    await expect(runtime.eval("x <- 1:3; diag(x) <- 9")).rejects.toMatchObject({
+      code: "NRT3249",
+    });
+    await expect(runtime.eval("names(formals(`diag<-`))")).resolves.toEqual(["x", "value"]);
+    await runtime.dispose();
+  });
+
+  it("preserves complex-step derivatives for exact integer powers", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(
+        "eps <- .Machine$double.eps\nz <- -0.7 + eps * 1i\nc(Re(z ^ 2), Im(z ^ 2) / eps, Re(z ^ -2), Im(z ^ -2) / eps)",
+      ),
+    ).resolves.toEqual([0.48999999999999994, -1.4, 2.0408163265306127, 5.830903790087465]);
+    await runtime.dispose();
+  });
+
+  it("evaluates inverse trigonometric vectors with missing, warning, and complex branches", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval("round(c(asin(c(0, 0.5, NA)), acos(c(1, 0)), atan(c(-1, 0, 1))), 12)"),
+    ).resolves.toEqual([
+      0,
+      0.523598775598,
+      NA,
+      0,
+      1.570796326795,
+      -0.785398163397,
+      0,
+      0.785398163397,
+    ]);
+    const domain = await runtime.evalDetailed("asin(c(-2, 0, 2))");
+    expect(domain.value).toEqual([Number.NaN, 0, Number.NaN]);
+    expect(domain.warnings).toMatchObject([{ code: "NRW1003", message: "NaNs produced" }]);
+    await expect(
+      runtime.eval(
+        "round(c(Re(asin(2 + 1i)), Im(asin(2 + 1i)), Re(atan(2 + 1i)), Im(atan(2 + 1i))), 12)",
+      ),
+    ).resolves.toEqual([1.063440023578, 1.469351744368, 1.178097245096, 0.17328679514]);
+    await expect(runtime.eval("asin(factor('a'))")).rejects.toMatchObject({ code: "NRT3421" });
+    await expect(
+      runtime.eval(`
+        y <- matrix(c(0, 1, -1, NA), 2, dimnames = list(c("a", "b"), c("c", "d")))
+        value <- atan2(y, 1)
+        c(round(value, 12), dim(value), dimnames(value)[[1]], dimnames(value)[[2]],
+          names(formals(atan2)), is.primitive(atan2))
+      `),
+    ).resolves.toEqual([
+      "0",
+      "0.785398163397",
+      "-0.785398163397",
+      NA,
+      "2",
+      "2",
+      "a",
+      "b",
+      "c",
+      "d",
+      "y",
+      "x",
+      "FALSE",
+    ]);
+    const recycled = await runtime.evalDetailed("atan2(1:3, 1:2)");
+    expect(recycled.value).toEqual([Math.atan2(1, 1), Math.atan2(2, 2), Math.atan2(3, 1)]);
+    expect(recycled.warnings).toMatchObject([{ code: "NRW1001" }]);
+    await runtime.dispose();
+  });
+
+  it("evaluates exact pi-scaled trigonometric primitives", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(
+        "x <- structure(c(-2, -1.5, -1, -.5, -0, 0, .5, 1, 1.5, 2), names = letters[1:10], marker = 'kept')\na <- sinpi(x)\nb <- cospi(x)\nc <- suppressWarnings(tanpi(x))\nc(a, b, is.nan(c), names(a), attr(a, 'marker'), is.null(formals(sinpi)), is.primitive(sinpi))",
+      ),
+    ).resolves.toEqual([
+      "0",
+      "1",
+      "0",
+      "-1",
+      "0",
+      "0",
+      "1",
+      "0",
+      "-1",
+      "0",
+      "1",
+      "0",
+      "-1",
+      "0",
+      "1",
+      "1",
+      "0",
+      "-1",
+      "0",
+      "1",
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "f",
+      "g",
+      "h",
+      "i",
+      "j",
+      "kept",
+      "TRUE",
+      "TRUE",
+    ]);
+    const invalid = await runtime.evalDetailed("c(sinpi(Inf), cospi(-Inf), tanpi(.5))");
+    expect(invalid.value).toEqual([Number.NaN, Number.NaN, Number.NaN]);
+    expect(invalid.warnings).toEqual([
+      { code: "NRW1003", message: "NaNs produced" },
+      { code: "NRW1003", message: "NaNs produced" },
+      { code: "NRW1003", message: "NaNs produced" },
+    ]);
+    await runtime.eval(
+      "sinpi.pi_class <- function(x) 42\nMath.pi_group <- function(x, ...) 99\nNULL",
+    );
+    await expect(
+      runtime.eval(
+        "c(sinpi(structure(1, class = 'pi_class')), cospi(structure(1, class = 'pi_group')), tanpi(structure(1, class = 'pi_group')))",
+      ),
+    ).resolves.toEqual([42, 99, 99]);
+    await expect(runtime.eval("sinpi(1 + 1i)")).rejects.toMatchObject({ code: "NRT3460" });
     await runtime.dispose();
   });
 
@@ -11513,7 +20658,26 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     const warning = await runtime.evalDetailed('warning("careful", call. = FALSE)');
     expect(warning.value).toBe("careful");
     expect(warning.visible).toBe(false);
-    expect(warning.warnings).toEqual([{ code: "NRW1100", message: "careful" }]);
+    expect(warning.warnings).toEqual([
+      {
+        code: "NRW1100",
+        message: "careful",
+        classes: ["simpleWarning", "warning", "condition"],
+      },
+    ]);
+    await expect(
+      runtime.eval(`
+        current <- warnings(2L)
+        c(names(current), length(current), class(current), attr(current, "dots")[[1]])
+      `),
+    ).resolves.toEqual(["careful", "1", "warnings", "2"]);
+    await expect(
+      runtime.eval(`
+        warning("first", call. = FALSE)
+        warning("second", call. = FALSE)
+        names(warnings())
+      `),
+    ).resolves.toEqual(["first", "second"]);
 
     const attempted = await runtime.evalDetailed('try(stop("boom", call. = FALSE))');
     expect(attempted.value).toBe("Error : boom\n");
@@ -11532,6 +20696,25 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     expect(suppressed.warnings).toEqual([]);
     expect(suppressed.output).toEqual([]);
 
+    const startupSuppressed = await runtime.evalDetailed(`
+      suppressPackageStartupMessages({
+        packageStartupMessage("hidden startup")
+        message("ordinary message")
+        invisible(5)
+      })
+    `);
+    expect(startupSuppressed.value).toBe(5);
+    expect(startupSuppressed.visible).toBe(false);
+    expect(startupSuppressed.output).toEqual([{ stream: "message", text: "ordinary message\n" }]);
+    await expect(
+      runtime.eval(`
+        absent <- withVisible(tryInvokeRestart("not-installed"))
+        present <- withRestarts(tryInvokeRestart("ready"), ready = function(...) 7)
+        c(is.null(absent$value), absent$visible, present,
+          names(formals(suppressPackageStartupMessages)))
+      `),
+    ).resolves.toEqual(["TRUE", "FALSE", "7", "expr"]);
+
     await expect(
       runtime.eval(
         'tracker <- new.env()\ntracker$value <- 0\nvalue <- tryCatch(stop("caught", call. = FALSE), error = function(e) conditionMessage(e), finally = tracker$value <- 1)\nc(value, tracker$value)',
@@ -11543,6 +20726,56 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     await expect(
       runtime.eval("tryCatch(stopifnot(FALSE), error = function(e) conditionMessage(e))"),
     ).resolves.toBe("FALSE is not TRUE");
+    await expect(
+      runtime.eval(
+        "tryCatch(stopifnot(length(1:2) == 1), error = function(e) conditionMessage(e))",
+      ),
+    ).resolves.toBe("length(1:2) == 1 is not TRUE");
+    await expect(
+      runtime.eval(`
+        trace <- character()
+        checked <- withVisible(stopifnot(exprs = {
+          is.logical(flag <- TRUE)
+          flag
+        }))
+        failed <- tryCatch(stopifnot(exprs = {
+          is.character(trace <- c(trace, "first"))
+          FALSE
+          trace <- c(trace, "late")
+        }), error = function(error) conditionMessage(error))
+        object <- withVisible(stopifnot(exprObject = expression(TRUE, 1 == 1)))
+        mixed <- tryCatch(
+          stopifnot(TRUE, exprs = { TRUE }),
+          error = function(error) conditionMessage(error)
+        )
+        list(
+          checked = c(is.null(checked$value), checked$visible, flag),
+          failure = c(failed, trace),
+          object = c(is.null(object$value), object$visible),
+          mixed = mixed
+        )
+      `),
+    ).resolves.toEqual([
+      [true, false, true],
+      ["FALSE is not TRUE", "first"],
+      [true, false],
+      "Only one of 'exprs', 'exprObject' or expressions, not more",
+    ]);
+    const asserted = await runtime.evalDetailed(`
+      caught <- tools::assertError(stop("asserted", call. = FALSE), verbose = TRUE)
+      c(
+        length(caught), inherits(caught[[1]], "error"), conditionMessage(caught[[1]]),
+        names(formals(tools::assertError))
+      )
+    `);
+    expect(asserted.value).toEqual(["1", "TRUE", "asserted", "expr", "classes", "verbose"]);
+    expect(asserted.output).toEqual([{ stream: "message", text: "Asserted error: asserted\n" }]);
+    expect(asserted.visible).toBe(true);
+    await expect(
+      runtime.eval(
+        "tryCatch(tools::assertError(1 + 1), error = function(error) conditionMessage(error))",
+      ),
+    ).resolves.toBe("Failed to get error in evaluating 1 + 1");
 
     const registered = await runtime.evalDetailed(
       "trace <- character()\nglobalCallingHandlers(warning = function(c) trace <<- c(trace, paste0('w:', conditionMessage(c))))",
@@ -11558,7 +20791,13 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       "suppressWarnings(warning('hidden', call. = FALSE))\nwarning('shown', call. = FALSE)\ntrace",
     );
     expect(globallyHandled.value).toEqual(["c:simpleWarning", "w:shown"]);
-    expect(globallyHandled.warnings).toEqual([{ code: "NRW1100", message: "shown" }]);
+    expect(globallyHandled.warnings).toEqual([
+      {
+        code: "NRW1100",
+        message: "shown",
+        classes: ["simpleWarning", "warning", "condition"],
+      },
+    ]);
 
     await runtime.eval(
       "globalCallingHandlers(message = function(c) trace <<- c(trace, paste0('m:', conditionMessage(c))))",
@@ -11567,7 +20806,7 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     expect(globallyMessaged.value).toEqual([
       "c:simpleWarning",
       "w:shown",
-      "m:note",
+      "m:note\n",
       "c:simpleMessage",
     ]);
     expect(globallyMessaged.output).toEqual([{ stream: "message", text: "note\n" }]);
@@ -11651,13 +20890,17 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       maxSteps: 100_000,
       maxCallDepth: 100,
       maxVectorLength: 1_000_000,
+      maxAllocatedElements: 10_000_000,
       maxOutputBytes: 1_000_000,
+      maxPackageResourceBytes: 192 * 1024 * 1024,
     });
     expect(RUNTIME_LIMIT_PROFILES["package-test"]).toEqual({
-      maxSteps: 5_000_000,
+      maxSteps: 100_000_000,
       maxCallDepth: 200,
-      maxVectorLength: 2_000_000,
+      maxVectorLength: 4_000_000,
+      maxAllocatedElements: 750_000_000,
       maxOutputBytes: 32_000_000,
+      maxPackageResourceBytes: 256 * 1024 * 1024,
     });
 
     const runtime = await createR({
@@ -11672,6 +20915,52 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     await expect(
       createR({ execution: "inline", assets, runtimeProfile: "unknown" as "package-test" }),
     ).rejects.toMatchObject({ code: "NRS5009" });
+  });
+
+  it("reuses exclusively owned local atomic storage without weakening copy-on-modify", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      limits: {
+        maxSteps: 1_000_000,
+        maxVectorLength: 2_000,
+        maxAllocatedElements: 700_000,
+      },
+    });
+    await expect(
+      runtime.eval(`
+        grow_and_update <- function(n) {
+          x <- rep(NA_real_, length(n))
+          for (i in 1:n) {
+            x[i] <- 0
+            for (j in 1:4) x[i] <- x[i] + j
+          }
+          c(length(x), sum(x))
+        }
+        grow_and_update(1000)
+      `),
+    ).resolves.toEqual([1_000, 10_000]);
+    await expect(
+      runtime.eval(`
+        direct_alias <- function() {
+          x <- c(0, 0)
+          x[1] <- 1
+          y <- x
+          x[2] <- 2
+          c(y, x)
+        }
+        promised_alias <- function() {
+          keep <- function(value) list(value)
+          x <- c(0, 0)
+          x[1] <- 1
+          y <- keep(x)
+          x[2] <- 2
+          c(y[[1]], x)
+        }
+        c(direct_alias(), promised_alias())
+      `),
+    ).resolves.toEqual([1, 0, 1, 2, 1, 0, 1, 2]);
+    await runtime.dispose();
   });
 
   it("routes readline through an explicit host capability while preserving non-interactive defaults", async () => {
@@ -11784,6 +21073,39 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     await expect(nonInteractive.eval("debug(identity, signature = 'ANY')")).rejects.toMatchObject({
       code: "NRU6204",
     });
+    await expect(
+      nonInteractive.eval(`
+        counter <- new.env()
+        counter$value <- 0L
+        targets <- new.env()
+        targets$closure <- function(x) x + 1L
+        targets$primitive <- identity
+        trace(quote(closure), exit = quote(counter$value <- counter$value + 1L), where = targets, print = FALSE)
+        trace(quote(primitive), exit = quote(counter$value <- counter$value + 10L), where = targets, print = FALSE)
+        values <- c(targets$closure(1L), targets$primitive(3L), counter$value)
+        untrace(quote(closure), where = targets)
+        untrace(quote(primitive), where = targets)
+        targets$closure(1L)
+        targets$primitive(3L)
+        c(values, counter$value, names(formals(trace)), names(formals(untrace)))
+      `),
+    ).resolves.toEqual([
+      "2",
+      "3",
+      "11",
+      "11",
+      "what",
+      "tracer",
+      "exit",
+      "at",
+      "print",
+      "signature",
+      "where",
+      "edit",
+      "what",
+      "signature",
+      "where",
+    ]);
     await nonInteractive.dispose();
 
     const commands = ["n", "c"];
@@ -12371,9 +21693,43 @@ NeedsCompilation: no
   it("keeps frequency-prioritized options as resettable session state", async () => {
     const runtime = await session();
     await expect(
+      runtime.eval(`
+        c(
+          typeof(.Options), class(.Options),
+          exists(".Options", baseenv(), inherits = FALSE),
+          bindingIsLocked(".Options", baseenv()),
+          .Options$prompt, .Options$continue,
+          .Options$expressions, .Options$width, .Options$echo,
+          .Options$quiet, .Options$verbose, .Options$check.bounds
+        )
+      `),
+    ).resolves.toEqual([
+      "pairlist",
+      "pairlist",
+      "TRUE",
+      "TRUE",
+      "> ",
+      "+ ",
+      "5000",
+      "80",
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "FALSE",
+    ]);
+    await expect(
       runtime.eval('c(getOption("digits"), getOption("definitely.missing", 42))'),
     ).resolves.toEqual([7, 42]);
     await expect(runtime.eval("interactive()")).resolves.toBe(false);
+    await expect(
+      runtime.eval(`
+        list(
+          commandArgs(), commandArgs(trailingOnly = TRUE),
+          names(formals(commandArgs)),
+          identical(formals(commandArgs)$trailingOnly, FALSE)
+        )
+      `),
+    ).resolves.toEqual(["nativr", [], "trailingOnly", true]);
     await expect(
       runtime.eval('tracker <- 0\ngetOption("digits", { tracker <- 1; 99 })\ntracker'),
     ).resolves.toBe(0);
@@ -12384,6 +21740,9 @@ NeedsCompilation: no
     await expect(runtime.eval('c(getOption("nativr.test"), getOption("digits"))')).resolves.toEqual(
       [1, 10],
     );
+    await expect(runtime.eval("c(.Options$nativr.test, .Options$digits)")).resolves.toEqual([
+      1, 10,
+    ]);
 
     const queried = await runtime.evalDetailed('options(c("digits", "nativr.test"))');
     expect(queried.value).toEqual([10, 1]);
@@ -12397,6 +21756,25 @@ NeedsCompilation: no
     ]);
     await runtime.eval("options(nativr.test = NULL)");
     await expect(runtime.eval('getOption("nativr.test")')).resolves.toBeNull();
+    await expect(runtime.eval('"nativr.test" %in% names(.Options)')).resolves.toBe(false);
+    await expect(
+      runtime.eval(`
+        options(nativr.shadow = 1L)
+        .Options$nativr.shadow <- 2L
+        c(
+          .Options$nativr.shadow,
+          getOption("nativr.shadow"),
+          baseenv()$.Options$nativr.shadow,
+          exists(".Options", globalenv(), inherits = FALSE)
+        )
+      `),
+    ).resolves.toEqual([2, 1, 1, 1]);
+    await expect(
+      runtime.eval(`
+        empty <- withVisible(options(list()))
+        c(length(empty$value), length(names(empty$value)), empty$visible)
+      `),
+    ).resolves.toEqual([0, 0, 0]);
 
     const printed = await runtime.evalDetailed("options(digits = 3)\nprint(1 / 3)");
     expect(printed.output).toEqual([{ stream: "stdout", text: "[1] 0.333\n" }]);
@@ -12404,8 +21782,10 @@ NeedsCompilation: no
 
     await runtime.reset();
     await expect(
-      runtime.eval('c(getOption("digits"), is.null(getOption("nativr.a")))'),
-    ).resolves.toEqual([7, 1]);
+      runtime.eval(
+        'c(getOption("digits"), is.null(getOption("nativr.a")), bindingIsLocked(".Options", baseenv()))',
+      ),
+    ).resolves.toEqual([7, 1, 1]);
     await runtime.dispose();
   });
 
@@ -12435,9 +21815,9 @@ NeedsCompilation: no
     await expect(runtime.eval("names(capabilities())")).resolves.toEqual(capabilityNames);
     await expect(
       runtime.eval(
-        "c(typeof(capabilities()), length(capabilities()), all(!capabilities()), capabilities(c('cairo', 'profmem', 'unknown')))",
+        "c(typeof(capabilities()), length(capabilities()), capabilities('png'), sum(capabilities()), capabilities(c('cairo', 'profmem', 'unknown')))",
       ),
-    ).resolves.toEqual(["logical", "19", "TRUE", "FALSE", "FALSE"]);
+    ).resolves.toEqual(["logical", "19", "TRUE", "1", "FALSE", "FALSE"]);
     await expect(
       runtime.eval(
         "c(names(capabilities(c('cairo', 'unknown', 'cairo'))), names(capabilities(factor(c('profmem', 'cairo')))), length(capabilities(character())), length(capabilities(NULL)))",
@@ -12616,6 +21996,53 @@ NeedsCompilation: no
     await expect(
       createR({ execution: "inline", assets, executablePaths: { bash: 1 as never } }),
     ).rejects.toMatchObject({ code: "NRS5008" });
+  });
+
+  it("reports no host symbolic-link targets for browser-memory paths", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        path <- tempfile("readlink-")
+        writeLines("ordinary", path)
+        out <- Sys.readlink(c(named = path, "missing", NA_character_, ""))
+        c(
+          out,
+          typeof(out),
+          length(out),
+          is.null(attributes(out)),
+          names(formals(Sys.readlink)),
+          inherits(try(Sys.readlink(NULL), silent = TRUE), "try-error")
+        )
+      `),
+    ).resolves.toEqual(["", "", "", "", "character", "4", "TRUE", "paths", "TRUE"]);
+    await runtime.dispose();
+  });
+
+  it("reports a stable browser-safe Sys.info shape without host identity leakage", async () => {
+    const runtime = await session();
+    await expect(runtime.eval("length(formals(Sys.info))")).resolves.toBe(0);
+    await expect(runtime.eval("names(Sys.info())")).resolves.toEqual([
+      "sysname",
+      "release",
+      "version",
+      "nodename",
+      "machine",
+      "login",
+      "user",
+      "effective_user",
+    ]);
+    await expect(runtime.eval("unname(Sys.info())")).resolves.toEqual([
+      "NativR",
+      "browser",
+      "GNU R 4.6.1-compatible NativR runtime",
+      "browser",
+      "wasm32",
+      "nativr",
+      "nativr",
+      "nativr",
+    ]);
+    await expect(runtime.eval("Sys.info(1)")).rejects.toMatchObject({ code: "NRE2101" });
+    await runtime.dispose();
   });
 
   it("runs utils::aspell through an admitted Ispell pipe host with arbitrary R filters", async () => {
@@ -13075,13 +22502,28 @@ NeedsCompilation: no
           as.character(as.numeric_version("1.3")),
           as.character(as.package_version(package_version("2.1"))),
           as.character(as.package_version("2.2")),
+          class(package_version(R.version)),
+          as.character(package_version(R.version)),
           is.numeric_version("1.2"),
           is.package_version(numeric_version("1.2")),
           as.character(R_system_version("4.6.0")),
           as.character(utils::packageVersion(factor("stats")))
         )
       `),
-    ).resolves.toEqual(["1.2", "1.3", "2.1", "2.2", "FALSE", "FALSE", "4.6.0", "4.6.1"]);
+    ).resolves.toEqual([
+      "1.2",
+      "1.3",
+      "2.1",
+      "2.2",
+      "R_system_version",
+      "package_version",
+      "numeric_version",
+      "4.6.1",
+      "FALSE",
+      "FALSE",
+      "4.6.0",
+      "4.6.1",
+    ]);
     await expect(
       runtime.eval('capture.output(print(package_version(c("1.2.3", "2.0", NA))))'),
     ).resolves.toBe("[1] '1.2.3' '2.0'   <NA>   ");
@@ -13093,8 +22535,49 @@ NeedsCompilation: no
       "lib.loc",
     ]);
     await expect(runtime.eval("names(formals(package_version))")).resolves.toEqual(["x", "strict"]);
+    await expect(
+      runtime.eval(`
+        e <- new.env(hash = FALSE)
+        e$b <- 1L
+        e$.a <- 2L
+        e$c <- 3L
+        c(
+          typeof(R.version), length(R.version), R.version$major, R.version$minor,
+          R.version$nickname, identical(R.version, version),
+          bindingIsLocked("R.version", baseenv()), names(e), length(names(new.env()))
+        )
+      `),
+    ).resolves.toEqual([
+      "list",
+      "15",
+      "4",
+      "6.1",
+      "Happy Hop",
+      "TRUE",
+      "TRUE",
+      "c",
+      ".a",
+      "b",
+      "0",
+    ]);
+    await expect(
+      runtime.eval(`
+        compiled <- R_compiled_by()
+        c(
+          typeof(R_compiled_by), names(formals(R_compiled_by)),
+          typeof(compiled), length(compiled), names(compiled), nzchar(compiled),
+          bindingIsLocked("R_compiled_by", baseenv())
+        )
+      `),
+    ).resolves.toEqual(["closure", "character", "2", "C", "Fortran", "TRUE", "TRUE", "TRUE"]);
     await expect(runtime.eval('package_version("1")')).rejects.toMatchObject({ code: "NRE2244" });
     await expect(runtime.eval("numeric_version(1.2)")).rejects.toMatchObject({ code: "NRT3354" });
+    await expect(runtime.eval("package_version(list(major = '4'))")).rejects.toMatchObject({
+      code: "NRT3354",
+    });
+    await expect(
+      runtime.eval("package_version(list(major = '4', minor = '6'))"),
+    ).rejects.toMatchObject({ code: "NRE2244" });
     await expect(runtime.eval('packageVersion("does.not.exist")')).rejects.toMatchObject({
       code: "NRE2221",
     });
@@ -13104,6 +22587,45 @@ NeedsCompilation: no
     await expect(runtime.eval('compareVersion("not-a-version", "1.0")')).rejects.toMatchObject({
       code: "NRE2244",
     });
+    await runtime.dispose();
+  });
+
+  it("constructs, combines, and formats common Authors@R person values", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        people <- c(
+          utils::person("Henrik", "Bengtsson", role = c("aut", "cre"), email = "h@x"),
+          utils::person("Ada", "Lovelace")
+        )
+        c(
+          length(people),
+          class(people),
+          format(people),
+          format(people, include = c("family", "given")),
+          as.character(people)
+        )
+      `),
+    ).resolves.toEqual([
+      "2",
+      "person",
+      "Henrik Bengtsson <h@x> [aut, cre]",
+      "Ada Lovelace",
+      "Bengtsson Henrik",
+      "Lovelace Ada",
+      "Henrik Bengtsson <h@x> [aut, cre]",
+      "Ada Lovelace",
+    ]);
+    await expect(runtime.eval("names(formals(utils::person))")).resolves.toEqual([
+      "given",
+      "family",
+      "middle",
+      "email",
+      "role",
+      "comment",
+      "first",
+      "last",
+    ]);
     await runtime.dispose();
   });
 
@@ -13125,6 +22647,7 @@ NeedsCompilation: no
         )
         c(
           class(description), names(description), attr(description, "file"),
+          description$Built,
           selected$Package, selected$Version, is.na(selected$Missing), attr(selected, "fields"),
           packageDescription("nativrfixture", fields = "Version"),
           class(listed), listed$Version, attr(listed, "fields"),
@@ -13143,7 +22666,9 @@ NeedsCompilation: no
       "Imports",
       "Encoding",
       "NeedsCompilation",
+      "Built",
       "nativr://package/nativrfixture/DESCRIPTION",
+      "R 4.6.1; ; 2026-06-24 00:00:00 UTC; browser",
       "nativrfixture",
       "0.1.0",
       "TRUE",
@@ -13212,6 +22737,231 @@ NeedsCompilation: no
     expect(isNA(missing)).toBe(true);
     expect(await runtime.eval("is.na(c(1, NA, NaN))")).toEqual([false, true, true]);
     expect(await runtime.eval("is.nan(c(1, NA, NaN))")).toEqual([false, false, true]);
+    await expect(
+      runtime.eval(
+        "x <- structure(c('a', '', NA), marker = 'kept'); is.na(x) <- c(FALSE, TRUE, FALSE); c(x, is.na(x), attr(x, 'marker'), integer() && TRUE)",
+      ),
+    ).resolves.toEqual(["a", NA, NA, "FALSE", "TRUE", "TRUE", "kept", NA]);
+    await expect(
+      runtime.eval(`
+        x <- structure(list(a = 1L, b = "x", c = NULL, d = list(1)), marker = "kept")
+        is.na(x) <- c(2L, 4L)
+        y <- 1:3
+        is.na(y) <- c(FALSE, NA)
+        f <- factor(c("a", "b"))
+        is.na(f) <- 2L
+        c(is.na(x), is.null(x[[3]]), attr(x, "marker"), y, is.na(y),
+          is.na(f), levels(f), names(x))
+      `),
+    ).resolves.toEqual([
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "TRUE",
+      "TRUE",
+      "kept",
+      "1",
+      "2",
+      "3",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "TRUE",
+      "a",
+      "b",
+      "a",
+      "b",
+      "c",
+      "d",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("matches primitive is.finite semantics across atomic storage modes", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        z <- c(1 + 2i, Inf + 1i, 1 + Inf * 1i, NaN + 1i, NA_complex_)
+        c(
+          is.finite(c(FALSE, TRUE, NA)),
+          is.finite(c(-1L, 0L, NA_integer_)),
+          is.finite(c(-Inf, -0, 1, Inf, NaN, NA_real_)),
+          is.finite(z),
+          is.finite(as.raw(c(0, 255))),
+          is.finite(c("1", "Inf", NA_character_)),
+          length(is.finite(NULL))
+        )
+      `),
+    ).resolves.toEqual([1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    await expect(
+      runtime.eval(`
+        x <- structure(
+          matrix(c(1, Inf, NA, NaN), 2,
+            dimnames = list(c("r1", "r2"), c("c1", "c2"))),
+          class = c("custom", "matrix", "array"), marker = "dropped"
+        )
+        y <- is.finite(x)
+        c(y, dim(y), unlist(dimnames(y)), is.null(attr(y, "marker")), class(y))
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "2",
+      "2",
+      "r1",
+      "r2",
+      "c1",
+      "c2",
+      "TRUE",
+      "matrix",
+      "array",
+    ]);
+    await expect(runtime.eval("is.finite(list(1, Inf))")).rejects.toMatchObject({
+      code: "NRT3391",
+    });
+    await runtime.dispose();
+  });
+
+  it("matches primitive is.infinite semantics and structural attribute retention", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        z <- complex(
+          real = c(1, Inf, 1, NaN, Inf, NA_real_),
+          imaginary = c(2, 1, Inf, Inf, NaN, NA_real_)
+        )
+        c(
+          is.infinite(c(FALSE, TRUE, NA)),
+          is.infinite(c(-1L, 0L, NA_integer_)),
+          is.infinite(c(-Inf, -0, Inf, NaN, NA_real_)),
+          is.infinite(z),
+          is.infinite(as.raw(c(0, 255))),
+          is.infinite(c("Inf", NA_character_)),
+          length(is.infinite(NULL))
+        )
+      `),
+    ).resolves.toEqual([0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0]);
+    await expect(
+      runtime.eval(`
+        x <- structure(
+          matrix(c(1, Inf, NA, NaN), 2,
+            dimnames = list(c("r1", "r2"), c("c1", "c2"))),
+          class = c("custom", "matrix", "array"), marker = "dropped"
+        )
+        y <- is.infinite(x)
+        c(y, dim(y), unlist(dimnames(y)), is.null(attr(y, "marker")), class(y))
+      `),
+    ).resolves.toEqual([
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "FALSE",
+      "2",
+      "2",
+      "r1",
+      "r2",
+      "c1",
+      "c2",
+      "TRUE",
+      "matrix",
+      "array",
+    ]);
+    await expect(runtime.eval("is.infinite(list(1, Inf))")).rejects.toMatchObject({
+      code: "NRT3391",
+    });
+    await runtime.dispose();
+  });
+
+  it("counts aligned owned closure frames through sys.nframe", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(
+        "c(sys.nframe(), length(sys.calls()), length(sys.frames()), sys.parent(), length(sys.parents()))",
+      ),
+    ).resolves.toEqual([0, 0, 0, 0, 0]);
+    await expect(
+      runtime.eval(`
+        initial <- sys.nframe()
+        inner <- function() c(
+          n = sys.nframe() - initial,
+          calls = length(sys.calls()) - initial,
+          frames = length(sys.frames()) - initial,
+          type = typeof(sys.nframe())
+        )
+        outer <- function() inner()
+        outer()
+      `),
+    ).resolves.toEqual(["2", "2", "2", "integer"]);
+    await expect(
+      runtime.eval(`
+        inner <- function(n = 1) c(
+          parent = sys.parent(n),
+          nframe = sys.nframe(),
+          parents = sys.parents(),
+          same = identical(sys.frame(sys.parent()), parent.frame())
+        )
+        outer <- function(n = 1) inner(n)
+        c(outer(), outer(0), outer(2))
+      `),
+    ).resolves.toEqual([1, 2, 0, 1, 1, 2, 2, 0, 1, 1, 0, 2, 0, 1, 1]);
+    await expect(runtime.eval("length(formals(sys.nframe))")).resolves.toBe(0);
+    await expect(
+      runtime.eval("c(names(formals(sys.parent)), identical(formals(sys.parent)$n, 1L))"),
+    ).resolves.toEqual(["n", "TRUE"]);
+    await runtime.dispose();
+  });
+
+  it("finds top-level global, base, namespace, package, and configured environments", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        global_child <- new.env(parent = new.env(parent = globalenv()))
+        root <- new.env(parent = emptyenv())
+        leaf <- new.env(parent = root)
+        namespace_child <- new.env(parent = asNamespace("stats"))
+        c(
+          identical(topenv(global_child), globalenv()),
+          identical(topenv(leaf), globalenv()),
+          identical(topenv(leaf, root), root),
+          identical(topenv(baseenv()), baseenv()),
+          identical(topenv(namespace_child), asNamespace("stats")),
+          environmentName(topenv(1)) == "base",
+          identical((function() topenv())(), globalenv())
+        )
+      `),
+    ).resolves.toEqual([true, true, true, true, true, true, true]);
+    await expect(
+      runtime.eval(`
+        root <- new.env(parent = emptyenv())
+        leaf <- new.env(parent = root)
+        options(topLevelEnvironment = root)
+        identical(topenv(leaf), root)
+      `),
+    ).resolves.toBe(true);
+    await expect(runtime.eval("names(formals(topenv))")).resolves.toEqual([
+      "envir",
+      "matchThisEnv",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("exposes the session's current global environment through the locked .GlobalEnv binding", async () => {
+    const runtime = await session();
+    for (let generation = 0; generation < 2; generation += 1) {
+      await expect(
+        runtime.eval(`c(
+          identical(.GlobalEnv, globalenv()),
+          identical(base::.GlobalEnv, globalenv()),
+          environmentName(.GlobalEnv),
+          bindingIsLocked(".GlobalEnv", baseenv()),
+          bindingIsActive(".GlobalEnv", baseenv())
+        )`),
+      ).resolves.toEqual(["TRUE", "TRUE", "R_GlobalEnv", "TRUE", "FALSE"]);
+      if (generation === 0) await runtime.reset();
+    }
     await runtime.dispose();
   });
 
@@ -13268,6 +23018,55 @@ NeedsCompilation: no
       imaginary: 0,
     });
     await expect(runtime.eval("Conj(c(1, 2))")).resolves.toEqual([1, 2]);
+    await expect(
+      runtime.eval(`
+        x <- structure(
+          matrix(c(1 + 2i, 3 - 4i), 1, dimnames = list("r", c("a", "b"))),
+          marker = "kept"
+        )
+        real <- Re(x)
+        imaginary <- Im(x)
+        modulus <- Mod(x)
+        argument <- Arg(x)
+        conjugate <- Conj(x)
+        integer <- structure(1:2, names = c("a", "b"), marker = "integer")
+        c(
+          typeof(real), typeof(imaginary), typeof(modulus), typeof(argument), typeof(conjugate),
+          identical(attributes(real), attributes(x)),
+          identical(attributes(imaginary), attributes(x)),
+          identical(attributes(modulus), attributes(x)),
+          identical(attributes(argument), attributes(x)),
+          identical(attributes(conjugate), attributes(x)),
+          dim(real), rownames(real), colnames(real), attr(real, "marker"),
+          typeof(Re(integer)), typeof(Im(integer)), typeof(Mod(integer)),
+          typeof(Arg(integer)), typeof(Conj(integer)),
+          identical(attributes(Conj(integer)), attributes(integer))
+        )
+      `),
+    ).resolves.toEqual([
+      "double",
+      "double",
+      "double",
+      "double",
+      "complex",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "1",
+      "2",
+      "r",
+      "a",
+      "b",
+      "kept",
+      "double",
+      "double",
+      "double",
+      "double",
+      "double",
+      "TRUE",
+    ]);
     await expect(runtime.eval("sum(c(NA, 1i), na.rm = FALSE)")).resolves.toEqual(NA);
     await runtime.dispose();
   });
@@ -13357,6 +23156,14 @@ NeedsCompilation: no
     ).resolves.toEqual([true, true, true, true, true, false, true, false, true, true, true]);
     await expect(
       runtime.eval(
+        "c(is.primitive(sum), is.primitive(quote), is.primitive(length), is.primitive(identity), is.primitive(mean), is.primitive(is.primitive), is.primitive(function() 1), is.primitive(1))",
+      ),
+    ).resolves.toEqual([true, true, true, false, false, false, false, false]);
+    await expect(
+      runtime.eval("c(typeof(is.primitive), names(formals(is.primitive)))"),
+    ).resolves.toEqual(["closure", "x"]);
+    await expect(
+      runtime.eval(
         'c(is.vector(setNames(1, "x")), is.vector(structure(1, class = "x")), is.vector(1L, "numeric"), is.vector(1, "integer"), is.vector(NULL), is.vector(NULL, "NULL"))',
       ),
     ).resolves.toEqual([true, false, true, false, false, true]);
@@ -13403,19 +23210,66 @@ NeedsCompilation: no
     await expect(
       runtime.eval('as.logical(factor(c("TRUE", "FALSE", "other", NA)))'),
     ).resolves.toEqual([true, false, NA, NA]);
+    await expect(
+      runtime.eval(
+        'as.logical(structure(list(TRUE, 0L, 2.5, "FALSE", NA_character_), names = letters[1:5]))',
+      ),
+    ).resolves.toEqual([true, false, true, false, NA]);
+    await expect(
+      runtime.eval(
+        'c(as.logical(pairlist(TRUE, 0L, "TRUE")), as.logical(list(factor("a"), factor(NA), list(TRUE), expression(x))))',
+      ),
+    ).resolves.toEqual([true, false, true, true, NA, NA, NA]);
+    await expect(
+      runtime.eval(
+        'c(is.null(attributes(as.logical(structure(list(TRUE), marker = "drop")))), inherits(try(as.logical(list(NULL)), silent = TRUE), "try-error"), inherits(try(as.logical(list(c(TRUE, FALSE))), silent = TRUE), "try-error"), inherits(try(as.logical(list(quote(x))), silent = TRUE), "try-error"))',
+      ),
+    ).resolves.toEqual([true, true, true, true]);
+    await expect(
+      runtime.eval(`
+        setClass("NativRCoerceDispatch")
+        setMethod(
+          "coerce",
+          c(from = "ANY", to = "NativRCoerceDispatch"),
+          function(from, to) paste("any", from, missing(to), sep = ":")
+        )
+        setMethod(
+          "coerce",
+          c(from = "character", to = "NativRCoerceDispatch"),
+          function(from, to) paste("character", from, missing(to), sep = ":")
+        )
+        c(as("value", "NativRCoerceDispatch"), as(2L, "NativRCoerceDispatch"))
+      `),
+    ).resolves.toEqual(["character:value:TRUE", "any:2:TRUE"]);
     await expect(runtime.eval("as.integer(NULL)")).resolves.toEqual([]);
     await expect(runtime.eval("as.integer(as.raw(c(1, 255)))")).resolves.toEqual([1, 255]);
-    const parsedIntegers = await runtime.evalDetailed('as.integer(c("0x10", "", "1e2"))');
-    expect(parsedIntegers.value).toEqual([16, NA, 100]);
-    expect(parsedIntegers.warnings).toMatchObject([{ code: "NRW1006" }]);
+    await expect(
+      runtime.eval(`
+        as.integer.nativr_probe <- function(x, ...) {
+          dots <- list(...)
+          c(99L, dots$offset)
+        }
+        dispatched <- as.integer(structure(c(2, 4), class = "nativr_probe"), offset = 10L)
+        fallback <- as.integer(structure(c(2, 4), names = c("a", "b")))
+        c(dispatched, fallback, is.null(attributes(fallback)))
+      `),
+    ).resolves.toEqual([99, 10, 2, 4, 1]);
+    const parsedIntegers = await runtime.evalDetailed(
+      'as.integer(c("0x10", "", " ", "1.9", "1e2", "NaN"))',
+    );
+    expect(parsedIntegers.value).toEqual([16, NA, NA, 1, 100, NA]);
+    expect(parsedIntegers.warnings).toEqual([]);
+    const invalidIntegers = await runtime.evalDetailed('as.integer(c("bad", "Inf"))');
+    expect(invalidIntegers.value).toEqual([NA, NA]);
+    expect(invalidIntegers.warnings).toMatchObject([{ code: "NRW1006" }, { code: "NRW1007" }]);
     const complexIntegers = await runtime.evalDetailed(
       "as.integer(c(complex(real = 1), complex(real = 1, imaginary = 2), complex(real = NaN)))",
     );
     expect(complexIntegers.value).toEqual([1, 1, NA]);
     expect(complexIntegers.warnings).toMatchObject([{ code: "NRW1005" }]);
     await expect(runtime.eval("as.double(NULL)")).resolves.toEqual([]);
-    const parsedDoubles = await runtime.evalDetailed('as.double(c("Inf", "NaN", "bad"))');
-    expect(parsedDoubles.value).toEqual([Number.POSITIVE_INFINITY, Number.NaN, NA]);
+    const parsedDoubles = await runtime.evalDetailed('as.double(c("", " ", "Inf", "NaN", "bad"))');
+    expect(parsedDoubles.value).toEqual([NA, NA, Number.POSITIVE_INFINITY, Number.NaN, NA]);
     expect(parsedDoubles.warnings).toMatchObject([{ code: "NRW1006" }]);
     await expect(
       runtime.eval("as.double(complex(real = c(1, 1), imaginary = c(0, NaN)))"),
@@ -13462,6 +23316,14 @@ NeedsCompilation: no
     await expect(runtime.eval('is.complex(vector("complex", 2))')).resolves.toBe(true);
     await expect(runtime.eval('is.raw(vector("raw", 2))')).resolves.toBe(true);
     await expect(runtime.eval("lengths(list(1:2, NULL, 'x'))")).resolves.toEqual([2, 0, 1]);
+    await expect(
+      runtime.eval(`
+        length.length_probe <- function(x) 4L
+        setClass("LengthProbe", representation(Data = "numeric"))
+        setMethod("length", "LengthProbe", function(x) length(x@Data))
+        lengths(list(new("LengthProbe", Data = c(1, 2, 3)), structure(1, class = "length_probe")))
+      `),
+    ).resolves.toEqual([3, 4]);
     await expect(runtime.eval("c(length(function() 1), length(~x))")).resolves.toEqual([1, 2]);
     await expect(
       runtime.eval(
@@ -13480,6 +23342,81 @@ NeedsCompilation: no
     expect(result.value).toEqual([11, 22, 13]);
     expect(result.warnings).toHaveLength(1);
     expect(result.warnings[0]?.code).toBe("NRW1001");
+    expect(result.warnings[0]?.message).toBe(
+      "longer object length is not a multiple of shorter object length",
+    );
+    await expect(
+      runtime.eval(`
+        caught <- tryCatch(
+          { 1:3 + 1:2; "not reached" },
+          warning = function(condition) c(class(condition), conditionMessage(condition))
+        )
+        seen <- character()
+        muffled <- withCallingHandlers(1:3 + 1:2, warning = function(condition) {
+          seen <<- c(class(condition), conditionMessage(condition))
+          invokeRestart("muffleWarning")
+        })
+        c(caught, seen, muffled)
+      `),
+    ).resolves.toEqual([
+      "simpleWarning",
+      "warning",
+      "condition",
+      "longer object length is not a multiple of shorter object length",
+      "simpleWarning",
+      "warning",
+      "condition",
+      "longer object length is not a multiple of shorter object length",
+      "2",
+      "4",
+      "4",
+    ]);
+    const muffled = await runtime.evalDetailed(`
+      withCallingHandlers(1:3 + 1:2, warning = function(condition) {
+        invokeRestart("muffleWarning")
+      })
+    `);
+    expect(muffled.value).toEqual([2, 4, 4]);
+    expect(muffled.warnings).toEqual([]);
+    await runtime.dispose();
+  });
+
+  it("drops singleton-array dimensions during deprecated array-vector recycling", async () => {
+    const runtime = await session();
+    const leftArray = await runtime.evalDetailed(
+      "structure(1, dim = c(1L, 1L), marker = 'array') + setNames(1:5, letters[1:5])",
+    );
+    expect(leftArray.value).toEqual([2, 3, 4, 5, 6]);
+    expect(leftArray.warnings).toEqual([
+      {
+        code: "NRW1152",
+        message:
+          "Recycling array of length 1 in array-vector arithmetic is deprecated.\nUse c() or as.vector() instead.",
+      },
+    ]);
+    await expect(
+      runtime.eval(
+        "x <- structure(1, dim = c(1L, 1L)) + setNames(1:5, letters[1:5]); c(is.null(dim(x)), is.null(names(x)))",
+      ),
+    ).resolves.toEqual([true, true]);
+
+    const rightArray = await runtime.evalDetailed("1:5 * matrix(1, 1, 1)");
+    expect(rightArray.value).toEqual([1, 2, 3, 4, 5]);
+    expect(rightArray.warnings).toEqual([
+      {
+        code: "NRW1153",
+        message:
+          "Recycling array of length 1 in vector-array arithmetic is deprecated.\nUse c() or as.vector() instead.",
+      },
+    ]);
+    await expect(runtime.eval("matrix(1:2, 2, 1) + 1:4")).rejects.toMatchObject({
+      code: "NRT3109",
+    });
+    await expect(
+      runtime.eval(
+        "li <- matrix(1:4, 2, 2) > 1 & matrix(1:4, 2, 2) < 4; c(dim(li), apply(li, 2, sum))",
+      ),
+    ).resolves.toEqual([2, 2, 1, 1]);
     await runtime.dispose();
   });
 
@@ -13491,6 +23428,54 @@ NeedsCompilation: no
     expect(await runtime.call("mean", [2, 4])).toBe(3);
     await runtime.assign("missing", [1, NA, 3]);
     expect(await runtime.eval("mean(missing, na.rm = TRUE)")).toBe(2);
+    await runtime.dispose();
+  });
+
+  it("extracts exact elements through the Base getElement wrapper", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        environment <- new.env()
+        environment$alpha <- 3L
+        setClass("ElementProbe", slots = c(alpha = "numeric"))
+        s4 <- new("ElementProbe", alpha = 4)
+        \`[[.element_probe\` <- function(x, i, ...) c("dispatch", i, list(...)$exact)
+        dispatched <- getElement(structure(list(alpha = 1L), class = "element_probe"), "alpha")
+        c(
+          getElement(list(alpha = 1L), "alpha"),
+          is.null(getElement(list(alpha = 1L), "al")),
+          getElement(c(alpha = 2L), "alpha"),
+          getElement(environment, "alpha"),
+          getElement(s4, "alpha"),
+          typeof(getElement(expression(symbol), 1L)),
+          dispatched,
+          names(formals(getElement)), typeof(getElement), is.primitive(getElement)
+        )
+      `),
+    ).resolves.toEqual([
+      "1",
+      "TRUE",
+      "2",
+      "3",
+      "4",
+      "symbol",
+      "1",
+      "object",
+      "name",
+      "closure",
+      "FALSE",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("converts a language symbol to a one-element list", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        value <- as.list(as.name("how"))
+        c(length(value), typeof(value[[1L]]), as.character(value[[1L]]), names(formals(as.list)))
+      `),
+    ).resolves.toEqual(["1", "symbol", "how", "x", "..."]);
     await runtime.dispose();
   });
 
@@ -13528,6 +23513,26 @@ NeedsCompilation: no
     await expect(runtime.eval("f <- function(apple, apricot) 1\nf(ap = 1)")).rejects.toMatchObject({
       code: "NRE2007",
     });
+    await expect(
+      runtime.eval(`
+        f <- function(color, colbar, ...) list(color = color, colbar = colbar, dots = list(...))
+        list(
+          exact.color = f(color = 1, col = 2),
+          exact.colbar = f(colbar = 1, col = 2),
+          both.exact = f(color = 1, colbar = 2, col = 3)
+        )
+      `),
+    ).resolves.toEqual([
+      [1, 2, []],
+      [2, 1, []],
+      [1, 2, [3]],
+    ]);
+    await expect(
+      runtime.eval("f <- function(foo, ...) NULL\nf(f = 1, fo = 2)"),
+    ).rejects.toMatchObject({ code: "NRE2004" });
+    await expect(
+      runtime.eval("f <- function(colbar, labels) NULL\nf(colbar = 1, col = 2)"),
+    ).rejects.toMatchObject({ code: "NRE2005" });
     await runtime.dispose();
   });
 
@@ -13542,6 +23547,35 @@ NeedsCompilation: no
     await expect(
       runtime.eval("g <- function(y) missing(y)\nf <- function(x) g(x)\nc(f(), f(1))"),
     ).resolves.toEqual([true, false]);
+    await expect(
+      runtime.eval(
+        "f <- function(a = 1, b = 2, ...) c(a, b, length(list(...)))\nf(9, x = 1, , z = 2)",
+      ),
+    ).resolves.toEqual([9, 2, 2]);
+    await expect(
+      runtime.eval("f <- function(a = 1, b = 2, ...) c(a, b, length(list(...)))\nf(, 9)"),
+    ).resolves.toEqual([1, 9, 0]);
+    await expect(
+      runtime.eval("f <- function(...) c(...length(), ...elt(2), ..1)\nf(4, 5)"),
+    ).resolves.toEqual([2, 5, 4]);
+    await expect(
+      runtime.eval(`
+        names_only <- function(...) ...names()
+        list(
+          names_only(),
+          names_only(1, alpha = 2, 3, beta =),
+          names_only(danger = stop("must stay lazy")),
+          typeof(...names),
+          is.primitive(...names),
+          formals(...names)
+        )
+      `),
+    ).resolves.toEqual([null, ["", "alpha", "", "beta"], "danger", "builtin", true, null]);
+    await expect(runtime.eval("rep(1:2, each = 2, times = c(1, 2, 3, 4))")).resolves.toEqual([
+      1, 1, 1, 2, 2, 2, 2, 2, 2, 2,
+    ]);
+    await expect(runtime.eval("...length()")).rejects.toMatchObject({ code: "NRE2105" });
+    await expect(runtime.eval("...names()")).rejects.toMatchObject({ code: "NRE2105" });
     await expect(runtime.eval("f <- function(x) 2\nf()")).resolves.toBe(2);
     await expect(runtime.eval("f <- function(x) x\nf()")).rejects.toMatchObject({
       code: "NRE2006",
@@ -13565,6 +23599,22 @@ NeedsCompilation: no
       ),
     ).resolves.toEqual([7, 2]);
     await expect(
+      runtime.eval(`
+        f <- function(x, y = 2L, ...) {
+          c(x, y, length(list(...)), missing(x), missing(y))
+        }
+        first <- do.call(f, c(list(7L), alist(x = )))
+        second <- do.call(f, c(alist(x = ), list(8L)))
+        c(first, second)
+      `),
+    ).resolves.toEqual([7, 2, 0, 0, 1, 8, 2, 0, 0, 1]);
+    await expect(
+      runtime.eval('f <- function() { mean <- FALSE; do.call("mean", list(1:3)) }\nf()'),
+    ).resolves.toBe(2);
+    await expect(runtime.eval("f <- function(x) x\ndo.call(f, alist(x = ))")).rejects.toMatchObject(
+      { code: "NRE2006" },
+    );
+    await expect(
       runtime.eval(
         'source <- 10\ne <- new.env()\ndelayedAssign("x", { source <- source + 1; source }, eval.env = globalenv(), assign.env = e)\nc(source, e$x, e$x, source)',
       ),
@@ -13575,9 +23625,11 @@ NeedsCompilation: no
       ),
     ).resolves.toEqual([11, 11, 11]);
     await expect(runtime.eval("names(identity(c(a = 1, b = 2)))")).resolves.toEqual(["a", "b"]);
-    await expect(runtime.eval('do.call("identity", list(1), quote = TRUE)')).rejects.toMatchObject({
-      code: "NRU6135",
-    });
+    await expect(
+      runtime.eval(
+        "a <- 10L\nquoted <- do.call(identity, list(quote(a + 1L)), quote = TRUE)\nevaluated <- do.call(identity, list(quote(a + 1L)))\nc(is.call(quoted), eval(quoted), evaluated)",
+      ),
+    ).resolves.toEqual([1, 11, 11]);
     await expect(runtime.eval("do.call(sum, pairlist(1, 2))")).rejects.toMatchObject({
       code: "NRT3214",
     });
@@ -13624,8 +23676,8 @@ NeedsCompilation: no
     const capabilities = await runtime.capabilities();
     expect(capabilities).toMatchObject({
       targetRVersion: "4.6.1",
-      semanticProfileVersion: "0.287.0",
-      languageSubsetVersion: "0.287.0",
+      semanticProfileVersion: "0.525.0",
+      languageSubsetVersion: "0.525.0",
     });
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
@@ -13648,37 +23700,82 @@ NeedsCompilation: no
       s3MethodDispatch: "supported",
     });
     expect(capabilities.packages.find((entry) => entry.name === "graphics")?.functions).toEqual([
+      { name: "axis.Date", compatibility: "behavioral" },
       { name: "curve", compatibility: "behavioral" },
+      { name: "plot", compatibility: "shape" },
+      { name: "rug", compatibility: "behavioral" },
+      { name: "identify", compatibility: "behavioral" },
+      { name: "locator", compatibility: "behavioral" },
+      { name: "plot.formula", compatibility: "shape" },
+      { name: "points.formula", compatibility: "shape" },
+      { name: "plot.function", compatibility: "behavioral" },
       { name: "hist", compatibility: "behavioral" },
       { name: "hist.default", compatibility: "behavioral" },
       { name: "plot.histogram", compatibility: "shape" },
       { name: "barplot", compatibility: "behavioral" },
       { name: "barplot.default", compatibility: "behavioral" },
       { name: "par", compatibility: "behavioral" },
+      { name: "layout", compatibility: "behavioral" },
+      { name: "layout.show", compatibility: "behavioral" },
       { name: "plot.default", compatibility: "shape" },
       { name: "plot.new", compatibility: "behavioral" },
+      { name: "frame", compatibility: "behavioral" },
       { name: "title", compatibility: "behavioral" },
-      { name: "plot.window", compatibility: "shape" },
+      { name: "mtext", compatibility: "behavioral" },
+      { name: "plot.window", compatibility: "behavioral" },
+      { name: "plot.xy", compatibility: "behavioral" },
       { name: "matplot", compatibility: "shape" },
       { name: "axTicks", compatibility: "behavioral" },
       { name: "axis", compatibility: "behavioral" },
-      { name: "box", compatibility: "shape" },
+      { name: "axis.POSIXct", compatibility: "behavioral" },
+      { name: "box", compatibility: "behavioral" },
       { name: "boxplot", compatibility: "shape" },
+      { name: "stripchart", compatibility: "shape" },
+      { name: "stripchart.formula", compatibility: "shape" },
+      { name: "stripchart.default", compatibility: "shape" },
+      { name: "clip", compatibility: "shape" },
+      { name: "xinch", compatibility: "behavioral" },
+      { name: "yinch", compatibility: "behavioral" },
+      { name: "xyinch", compatibility: "behavioral" },
       { name: "image", compatibility: "shape" },
+      { name: "filled.contour", compatibility: "shape" },
       { name: "image.default", compatibility: "shape" },
       { name: "rasterImage", compatibility: "shape" },
+      { name: "grid", compatibility: "behavioral" },
       { name: "abline", compatibility: "shape" },
-      { name: "segments", compatibility: "shape" },
+      { name: "segments", compatibility: "behavioral" },
+      { name: "arrows", compatibility: "behavioral" },
       { name: "lines", compatibility: "shape" },
       { name: "lines.default", compatibility: "shape" },
-      { name: "points", compatibility: "shape" },
-      { name: "text", compatibility: "shape" },
-      { name: "polygon", compatibility: "shape" },
+      { name: "points", compatibility: "behavioral" },
+      { name: "symbols", compatibility: "shape" },
+      { name: "pie", compatibility: "behavioral" },
+      { name: "text", compatibility: "behavioral" },
+      { name: "strwidth", compatibility: "shape" },
+      { name: "strheight", compatibility: "shape" },
+      { name: "polygon", compatibility: "behavioral" },
       { name: "rect", compatibility: "shape" },
-      { name: "legend", compatibility: "shape" },
+      { name: "legend", compatibility: "behavioral" },
       { name: "persp", compatibility: "shape" },
+      { name: "coplot", compatibility: "shape" },
       { name: "pairs", compatibility: "shape" },
     ]);
+    expect(capabilities.packages.find((entry) => entry.name === "grid")?.functions).toEqual(
+      expect.arrayContaining([
+        { name: "makeContent", compatibility: "behavioral" },
+        { name: "makeContent.default", compatibility: "behavioral" },
+        { name: "makeContext", compatibility: "behavioral" },
+        { name: "makeContext.default", compatibility: "behavioral" },
+        { name: "polygonGrob", compatibility: "behavioral" },
+        { name: "grid.polygon", compatibility: "behavioral" },
+        { name: "segmentsGrob", compatibility: "behavioral" },
+        { name: "grid.segments", compatibility: "behavioral" },
+        { name: "linesGrob", compatibility: "behavioral" },
+        { name: "grid.lines", compatibility: "behavioral" },
+        { name: "pointsGrob", compatibility: "behavioral" },
+        { name: "grid.points", compatibility: "behavioral" },
+      ]),
+    );
     await runtime.reset();
     await expect(runtime.get("x")).rejects.toMatchObject({ code: "NRE2001" });
     await runtime.dispose();
@@ -13784,6 +23881,19 @@ NeedsCompilation: no
     await expect(runtime.eval("length(c(1, 2, 3))")).resolves.toBe(3);
     await expect(runtime.eval("sum(1, 2, 3)")).resolves.toBe(6);
     await expect(runtime.eval("sum(c(1, NA, 3), na.rm = TRUE)")).resolves.toBe(4);
+    await expect(runtime.eval("tabulate(c(1, 2, 2, 3, 0, -1, NA, NaN, 2.9))")).resolves.toEqual([
+      1, 3, 1,
+    ]);
+    await expect(runtime.eval("tabulate(factor(c('b', 'a', 'b')), 4)")).resolves.toEqual([
+      1, 2, 0, 0,
+    ]);
+    const tabulateRange = await runtime.evalDetailed("tabulate(c(1, Inf, 2147483648), 3)");
+    expect(tabulateRange.value).toEqual([1, 0, 0]);
+    expect(tabulateRange.warnings).toEqual([
+      { code: "NRW1003", message: "NAs introduced by coercion to integer range" },
+    ]);
+    await expect(runtime.eval("tabulate(TRUE)")).rejects.toMatchObject({ code: "NRT3449" });
+    await expect(runtime.eval("tabulate(1:3, -1)")).rejects.toMatchObject({ code: "NRT3449" });
     await expect(runtime.eval("abs(c(-2, 3))")).resolves.toEqual([2, 3]);
     await expect(runtime.eval("sqrt(c(4, 9))")).resolves.toEqual([2, 3]);
     await expect(
@@ -13805,6 +23915,32 @@ NeedsCompilation: no
     });
     await expect(runtime.eval("log(c(1, 8, 16), c(2, 4))")).resolves.toEqual([0, 1.5, 4]);
     await expect(runtime.eval("c(log10(100), log2(8))")).resolves.toEqual([2, 3]);
+    await expect(runtime.eval("round(lgamma(c(-2.5, 0.5, 1, 2, 10)), 12)")).resolves.toEqual([
+      -0.056243716498, 0.572364942925, -0, 0, 12.801827480081,
+    ]);
+    await expect(
+      runtime.eval("c(lgamma(c(-Inf, -3, -1, 0, Inf)), is.nan(lgamma(NaN)), is.na(lgamma(NA)))"),
+    ).resolves.toEqual([Infinity, Infinity, Infinity, Infinity, Infinity, 1, 1]);
+    await expect(
+      runtime.eval(`
+        lgamma.direct <- function(x) "direct"
+        Math.grouped <- function(x, ...) paste0("group:", unclass(x))
+        c(lgamma(structure(1, class = "direct")), lgamma(structure(2, class = "grouped")))
+      `),
+    ).resolves.toEqual(["direct", "group:2"]);
+    await expect(
+      runtime.eval('attr(lgamma(structure(c(1, 2), marker = "kept")), "marker")'),
+    ).resolves.toBe("kept");
+    await expect(runtime.eval("lgamma(1 + 2i)")).rejects.toMatchObject({ code: "NRT3448" });
+    await expect(runtime.eval("lgamma(factor('a'))")).rejects.toMatchObject({ code: "NRT3448" });
+    await expect(runtime.eval("round(gamma(c(-2.5, 0.5, 1, 2, 7)), 12)")).resolves.toEqual([
+      -0.945308720483, 1.772453850906, 1, 1, 720,
+    ]);
+    const gammaPoles = await runtime.evalDetailed("gamma(c(-Inf, -3, 0, 172, Inf, NaN, NA))");
+    expect(gammaPoles.value).toEqual([NaN, NaN, NaN, Infinity, Infinity, NaN, NA]);
+    expect(gammaPoles.warnings).toEqual([{ code: "NRW1003", message: "NaNs produced" }]);
+    await expect(runtime.eval("gamma(1 + 2i)")).rejects.toMatchObject({ code: "NRT3451" });
+    await expect(runtime.eval("gamma(factor('a'))")).rejects.toMatchObject({ code: "NRT3451" });
     const invalidLog = await runtime.evalDetailed("is.nan(log(-1))");
     expect(invalidLog.value).toBe(true);
     expect(invalidLog.warnings).toEqual([{ code: "NRW1003", message: "NaNs produced." }]);
@@ -13843,6 +23979,45 @@ NeedsCompilation: no
     await expect(runtime.eval("rep(c(1, 2), times = 2)")).resolves.toEqual([1, 2, 1, 2]);
     await expect(runtime.eval("rep(c(1, 2), each = 2)")).resolves.toEqual([1, 1, 2, 2]);
     await expect(runtime.eval("rep(c(1, 2), length.out = 5)")).resolves.toEqual([1, 2, 1, 2, 1]);
+    await expect(
+      runtime.eval(`
+        c(
+          rep("X", "3"),
+          rep(c("a", "b"), c("2", "3")),
+          rep(1:2, each = "2"),
+          rep(1:2, length.out = "3"),
+          rep("raw", as.raw(2)),
+          rep("complex", 2 + 0i),
+          rep("factor", factor("2"))
+        )
+      `),
+    ).resolves.toEqual([
+      "X",
+      "X",
+      "X",
+      "a",
+      "a",
+      "b",
+      "b",
+      "b",
+      "1",
+      "1",
+      "2",
+      "2",
+      "1",
+      "2",
+      "1",
+      "raw",
+      "raw",
+      "complex",
+      "complex",
+      "factor",
+    ]);
+    const invalidTimes = await runtime.evalDetailed(
+      "inherits(try(rep('X', 'bad'), silent = TRUE), 'try-error')",
+    );
+    expect(invalidTimes.value).toBe(true);
+    expect(invalidTimes.warnings).toMatchObject([{ message: "NAs introduced by coercion" }]);
     await runtime.dispose();
   });
 
@@ -13966,9 +24141,22 @@ NeedsCompilation: no
     await expect(runtime.eval("names(c(1, 2))")).resolves.toBeNull();
     await expect(runtime.eval("names(list(1, b = 2))")).resolves.toEqual(["", "b"]);
     await expect(runtime.eval("seq(3)")).resolves.toEqual([1, 2, 3]);
+    await expect(runtime.eval("seq(c(.45, .5, .55, .475))")).resolves.toEqual([1, 2, 3, 4]);
+    await expect(runtime.eval("seq(c('a', 'b'))")).resolves.toEqual([1, 2]);
+    await expect(runtime.eval("seq(list(1, 2, 3))")).resolves.toEqual([1, 2, 3]);
+    await expect(runtime.eval("seq(numeric())")).resolves.toEqual([]);
+    await expect(
+      runtime.eval("c(typeof(seq(3)), seq(-2), typeof(seq(-2)), seq(2.5), seq('5'))"),
+    ).resolves.toEqual(["integer", "1", "0", "-1", "-2", "integer", "1", "2", "1"]);
     await expect(runtime.eval("seq(3, 1)")).resolves.toEqual([3, 2, 1]);
     await expect(runtime.eval("seq(2, 4, length.out = 1)")).resolves.toBe(2);
     await expect(runtime.eval("seq(2, 4, length.out = 0)")).resolves.toEqual([]);
+    await expect(runtime.eval("seq(0, 1, length.out = 3.2)")).resolves.toEqual([
+      0,
+      1 / 3,
+      2 / 3,
+      1,
+    ]);
     await expect(runtime.eval("seq(along.with = list(1, 2))")).resolves.toEqual([1, 2]);
     await expect(runtime.eval("seq_along(NULL)")).resolves.toEqual([]);
     await expect(runtime.eval("rep(NULL)")).resolves.toBeNull();
@@ -13982,12 +24170,16 @@ NeedsCompilation: no
     await expect(runtime.eval("rep(seq_len(0), length.out = 1)")).rejects.toMatchObject({
       code: "NRE2106",
     });
-    await expect(runtime.eval('setNames(c(1, 2), c("a"))')).rejects.toMatchObject({
-      code: "NRT3004",
-    });
-    await expect(runtime.eval('setNames(c(1, 2), c("a", NA))')).rejects.toMatchObject({
-      code: "NRU6106",
-    });
+    await expect(
+      runtime.eval(`
+        short <- setNames(c(1, 2), "a")
+        missing <- setNames(c(1, 2), c("a", NA))
+        coerced <- setNames(c(1, 2), factor(c("left", "right")))
+        removed <- setNames(setNames(c(1, 2), c("a", "b")), NULL)
+        c(names(short)[1], is.na(names(short)[2]), names(missing)[1],
+          is.na(names(missing)[2]), names(coerced), is.null(names(removed)))
+      `),
+    ).resolves.toEqual(["a", "TRUE", "a", "TRUE", "left", "right", "TRUE"]);
     await runtime.dispose();
   });
 
@@ -14021,12 +24213,46 @@ NeedsCompilation: no
     await expect(runtime.eval("mean()")).rejects.toMatchObject({ code: "NRE2103" });
     await expect(runtime.eval('mean("x")')).rejects.toMatchObject({ code: "NRT3102" });
     await expect(runtime.eval("mean(1, na.rm = NA)")).rejects.toMatchObject({ code: "NRT3103" });
-    await expect(runtime.eval("mean(1, extra = TRUE)")).rejects.toMatchObject({
-      code: "NRE2101",
-    });
-    await expect(runtime.eval("sum(1, nope = TRUE)")).rejects.toMatchObject({
-      code: "NRE2101",
-    });
+    await expect(runtime.eval("mean(1, extra = TRUE)")).resolves.toBe(1);
+    await expect(runtime.eval("sum(1, nope = TRUE)")).resolves.toBe(2);
+    await expect(
+      runtime.eval(
+        "f <- function() tryCatch(stop('x'), error = function(error) deparse(conditionCall(error))); f()",
+      ),
+    ).resolves.toBe("f()");
+    await expect(
+      runtime.eval(
+        "f <- function() tryCatch(stop('x', call. = FALSE), error = function(error) is.null(conditionCall(error))); f()",
+      ),
+    ).resolves.toBe(true);
+    await expect(
+      runtime.eval(`
+        fail <- function(x) UseMethod("fail")
+        fail.default <- function(x) stop("x")
+        calls <- character()
+        tryCatch(
+          withCallingHandlers(
+            fail(1L),
+            error = function(error) calls <<- c(deparse(sys.call(-1L)), deparse(conditionCall(error)))
+          ),
+          error = function(error) NULL
+        )
+        calls
+      `),
+    ).resolves.toEqual(["fail.default(1L)", "fail.default(1L)"]);
+    await expect(
+      runtime.eval(`
+        \`setter<-\` <- function(x, value) UseMethod("setter<-")
+        \`setter<-.default\` <- function(x, value) stop("x")
+        target <- 1L
+        tryCatch({ setter(target) <- 1:3; "" }, error = function(error) deparse(conditionCall(error)))
+      `),
+    ).resolves.toBe("`setter<-.default`(`*tmp*`, value = 1:3)");
+    await expect(
+      runtime.eval(
+        "plain <- withVisible(x <- 1L); grouped <- withVisible((x <- 2L)); c(plain$visible, grouped$visible, grouped$value)",
+      ),
+    ).resolves.toEqual([0, 1, 2]);
     await expect(runtime.eval("sum(1, na.rm = TRUE, na.rm = FALSE)")).rejects.toMatchObject({
       code: "NRE2102",
     });
@@ -14039,6 +24265,11 @@ NeedsCompilation: no
     await expect(runtime.eval("-c(1, 2)")).resolves.toEqual([-1, -2]);
     await expect(runtime.eval("!c(TRUE, FALSE)")).resolves.toEqual([false, true]);
     await expect(runtime.eval("!c(FALSE, NA, NaN)")).resolves.toEqual([true, NA, NA]);
+    await expect(
+      runtime.eval(
+        "c(typeof(!list()), length(!list()), length(!expression()), length(!character()))",
+      ),
+    ).resolves.toEqual(["logical", "0", "0", "0"]);
     await expect(runtime.eval("c(2, 4) / 2")).resolves.toEqual([1, 2]);
     await expect(runtime.eval("c(2L, 3L) * 2L")).resolves.toEqual([4, 6]);
     await expect(runtime.eval("c(-5L, 5L) %% 2L")).resolves.toEqual([1, 1]);
@@ -14050,6 +24281,30 @@ NeedsCompilation: no
     await expect(
       runtime.eval('c(length(NULL == ""), length(NULL < 1), length(NULL != NULL))'),
     ).resolves.toEqual([0, 0, 0]);
+    await expect(
+      runtime.eval(`
+        c(
+          typeof(NULL + 1L), length(NULL + 1L),
+          typeof(NULL + 1), length(NULL + 1),
+          typeof(NULL + (0+1i)), length(NULL + (0+1i)),
+          typeof(NULL / 1L), length(NULL / 1L),
+          typeof(NULL & TRUE), length(NULL & TRUE)
+        )
+      `),
+    ).resolves.toEqual([
+      "integer",
+      "0",
+      "double",
+      "0",
+      "complex",
+      "0",
+      "double",
+      "0",
+      "logical",
+      "0",
+    ]);
+    await expect(runtime.eval("+NULL")).rejects.toMatchObject({ code: "NRT3101" });
+    await expect(runtime.eval('NULL + "x"')).rejects.toMatchObject({ code: "NRT3101" });
     await expect(runtime.eval("new.env() == NULL")).rejects.toMatchObject({ code: "NRT3114" });
     await expect(runtime.eval("c(TRUE, NA) & c(NA, FALSE)")).resolves.toEqual([NA, false]);
     await expect(runtime.eval("c(FALSE, NA) | c(NA, TRUE)")).resolves.toEqual([NA, true]);
@@ -14059,10 +24314,53 @@ NeedsCompilation: no
     expect(isNA(await runtime.eval("NA && TRUE"))).toBe(true);
     await expect(runtime.eval("NA || TRUE")).resolves.toBe(true);
     expect(isNA(await runtime.eval("NA || FALSE"))).toBe(true);
+    await expect(
+      runtime.eval(
+        "c(xor(c(TRUE, FALSE, NA), c(FALSE, TRUE, TRUE)), xor(c(0, 1, NA_real_, NaN, 2), c(1, 1, 0, 0, 0)))",
+      ),
+    ).resolves.toEqual([true, true, NA, true, false, NA, NA, true]);
+    const xorRecycling = await runtime.evalDetailed("xor(c(TRUE, FALSE, TRUE), c(FALSE, TRUE))");
+    expect(xorRecycling.warnings).toEqual([
+      {
+        code: "NRW1001",
+        message: "longer object length is not a multiple of shorter object length",
+        call: "x | y",
+        classes: ["simpleWarning", "warning", "condition"],
+      },
+      {
+        code: "NRW1001",
+        message: "longer object length is not a multiple of shorter object length",
+        call: "x & y",
+        classes: ["simpleWarning", "warning", "condition"],
+      },
+    ]);
+    await expect(
+      runtime.eval(
+        "x <- structure(c(TRUE, FALSE), names = c('a', 'b'), dim = c(2L, 1L), marker = 'x')\ny <- structure(c(FALSE, TRUE), names = c('c', 'd'), marker = 'y')\nout <- xor(x, y)\nc(out, dim(out), is.null(names(out)), is.null(attr(out, 'marker')), names(formals(xor)), typeof(xor), is.primitive(xor))",
+      ),
+    ).resolves.toEqual(["TRUE", "TRUE", "2", "1", "TRUE", "TRUE", "x", "y", "closure", "FALSE"]);
     await expect(runtime.eval("c(TRUE, FALSE) && TRUE")).rejects.toMatchObject({
       code: "NRT3113",
     });
     await expect(runtime.eval('"one" + 2')).rejects.toMatchObject({ code: "NRT3101" });
+    await runtime.dispose();
+  });
+
+  it("dispatches as.character for classed closures before primitive coercion", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        as.character.callable_probe <- function(x, prefix = "") {
+          paste0(prefix, class(x)[[1L]])
+        }
+        f <- function() NULL
+        class(f) <- "callable_probe"
+        as.character(f, prefix = "closure:")
+      `),
+    ).resolves.toBe("closure:callable_probe");
+    await expect(runtime.eval("as.character(function() NULL)")).rejects.toMatchObject({
+      code: "NRT3197",
+    });
     await runtime.dispose();
   });
 
@@ -14080,8 +24378,53 @@ NeedsCompilation: no
     ).resolves.toBe(2);
     await expect(runtime.eval("f <- function() return()\nf()")).resolves.toBeNull();
     await expect(runtime.eval("if (NA) 1")).rejects.toMatchObject({ code: "NRE2207" });
-    await expect(runtime.eval("if (c(TRUE, FALSE)) 1")).rejects.toMatchObject({ code: "NRT3113" });
+    await expect(runtime.eval("if (c(TRUE, FALSE)) 1")).rejects.toMatchObject({
+      code: "NRT3113",
+      message: "the condition has length > 1",
+    });
     await expect(runtime.eval("return(1)")).rejects.toMatchObject({ code: "NRE2209" });
+    await runtime.dispose();
+  });
+
+  it("coerces exact GNU logical strings only for if and while conditions", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`c(
+        if ("TRUE") 1L else 0L,
+        if ("T") 2L else 0L,
+        if ("true") 3L else 0L,
+        if ("FALSE") 0L else 4L,
+        if ("F") 0L else 5L,
+        if ("false") 0L else 6L,
+        if (factor("FALSE")) 7L else 0L
+      )`),
+    ).resolves.toEqual([1, 2, 3, 4, 5, 6, 7]);
+    await expect(
+      runtime.eval(`
+        Sys.unsetenv("NATIVR_PROFILE_0370_UNSET")
+        fallback <- Sys.getenv("NATIVR_PROFILE_0370_UNSET", FALSE)
+        count <- 0L
+        while ("FALSE") count <- count + 1L
+        c(fallback, if (fallback) "wrong" else "false", count)
+      `),
+    ).resolves.toEqual(["FALSE", "false", "0"]);
+    await expect(runtime.eval('if ("not-logical") 1L')).rejects.toMatchObject({
+      code: "NRT3113",
+      message: "argument is not interpretable as logical",
+    });
+    await expect(runtime.eval("if (NA_character_) 1L")).rejects.toMatchObject({
+      code: "NRT3113",
+      message: "argument is not interpretable as logical",
+    });
+    await expect(runtime.eval("if (character()) 1L")).rejects.toMatchObject({
+      code: "NRT3113",
+      message: "argument is of length zero",
+    });
+    await expect(runtime.eval('if (c("TRUE", "FALSE")) 1L')).rejects.toMatchObject({
+      code: "NRT3113",
+      message: "the condition has length > 1",
+    });
+    await expect(runtime.eval('"TRUE" && TRUE')).rejects.toMatchObject({ code: "NRT3113" });
     await runtime.dispose();
   });
 
@@ -14127,7 +24470,12 @@ NeedsCompilation: no
     await expect(runtime.eval("mean <- 100\nbase::mean(c(2, 4))")).resolves.toBe(3);
     await expect(runtime.eval('base::length(c("a", "b"))')).resolves.toBe(2);
     await expect(runtime.eval("base::.Machine$integer.max")).resolves.toBe(2_147_483_647);
-    await expect(runtime.eval("stats::mean(c(2, 4))")).resolves.toBe(3);
+    await expect(
+      runtime.eval(
+        "as.character(c(length(base::.leap.seconds), class(base::.leap.seconds), attr(base::.leap.seconds, 'tzone'), unclass(base::.leap.seconds)[c(1, 27)]))",
+      ),
+    ).resolves.toEqual(["27", "POSIXct", "POSIXt", "GMT", "78796800", "1483228800"]);
+    await expect(runtime.eval("base::mean(c(2, 4))")).resolves.toBe(3);
     await expect(runtime.eval("tibble::tibble(x = 1:2)$x")).resolves.toEqual([1, 2]);
     await expect(runtime.eval('R6::R6Class("Box")$new() |> class()')).resolves.toEqual([
       "Box",
@@ -14144,6 +24492,25 @@ NeedsCompilation: no
   it("provides session-local deterministic random generation and sampling", async () => {
     const runtime = await session();
     await expect(
+      runtime.eval(`
+        before <- exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+        set.seed(123)
+        saved <- .Random.seed
+        first <- runif(3)
+        advanced <- .Random.seed
+        .Random.seed <- saved
+        replayed <- runif(3)
+        c(
+          before,
+          typeof(saved) == "integer",
+          length(saved) == 626L,
+          all(saved[1:3] == c(10403L, 624L, -983674937L)),
+          !identical(saved, advanced),
+          identical(first, replayed)
+        )
+      `),
+    ).resolves.toEqual([false, true, true, true, true, true]);
+    await expect(
       runtime.eval("set.seed(123)\nx <- runif(4)\nset.seed(123)\nx == runif(4)"),
     ).resolves.toEqual([true, true, true, true]);
     await expect(runtime.eval("set.seed(7)\nrnorm(3, mean = 5, sd = 0)")).resolves.toEqual([
@@ -14157,10 +24524,46 @@ NeedsCompilation: no
     ).resolves.toHaveLength(5);
     await expect(runtime.eval("sample(2, size = 3)")).rejects.toMatchObject({ code: "NRE2112" });
     await expect(runtime.eval("sample(3, prob = c(1, 1, 1))")).resolves.toHaveLength(3);
-    await expect(runtime.eval("runif(1, min = 2, max = 1)")).rejects.toMatchObject({
-      code: "NRE2110",
-    });
-    await expect(runtime.eval("rnorm(1, sd = -1)")).rejects.toMatchObject({ code: "NRE2111" });
+    await expect(
+      runtime.eval(`
+        set.seed(123)
+        c(round(runif(4, c(0, 10), c(1, 20)), 12), length(runif(c(a = 1, b = 2))),
+          names(formals(runif)))
+      `),
+    ).resolves.toEqual([
+      "0.287577520125",
+      "17.883051354438",
+      "0.408976921812",
+      "18.830174040049",
+      "2",
+      "n",
+      "min",
+      "max",
+    ]);
+    const invalidUniform = await runtime.evalDetailed(
+      "runif(5, c(2, NA, 0, -Inf, Inf), c(1, 2, Inf, 1, Inf))",
+    );
+    expect(invalidUniform.value).toEqual([
+      Number.NaN,
+      Number.NaN,
+      Number.NaN,
+      Number.NaN,
+      Number.NaN,
+    ]);
+    expect(invalidUniform.warnings).toEqual([
+      expect.objectContaining({ code: "NRW1003", message: "NAs produced" }),
+    ]);
+    await expect(
+      runtime.eval(`
+        set.seed(42); baseline <- runif(2); set.seed(42); constant <- runif(3, 2, 2)
+        c(constant, identical(baseline, runif(2)))
+      `),
+    ).resolves.toEqual([2, 2, 2, 1]);
+    const invalidNormal = await runtime.evalDetailed("rnorm(1, sd = -1)");
+    expect(invalidNormal.value).toBeNaN();
+    expect(invalidNormal.warnings).toEqual([
+      expect.objectContaining({ code: "NRW1003", message: "NAs produced" }),
+    ]);
     await runtime.dispose();
   });
 
@@ -14417,8 +24820,77 @@ NeedsCompilation: no
       ),
     ).resolves.toEqual([true, true]);
     await expect(runtime.eval("RNGkind('K')")).rejects.toMatchObject({ code: "NRT3273" });
-    await expect(runtime.eval("RNGkind('Wichmann-Hill')")).rejects.toMatchObject({
-      code: "NRU6143",
+    await expect(
+      runtime.eval("set.seed(42, kind = 'Wichmann-Hill')\nround(runif(3), 12)"),
+    ).resolves.toEqual([0.250809643534, 0.761803344363, 0.203907939306]);
+    await expect(
+      runtime.eval("set.seed(42, kind = 'Marsaglia-Multicarry')\nround(runif(3), 12)"),
+    ).resolves.toEqual([0.323131449596, 0.44243435246, 0.32476948768]);
+    await expect(
+      runtime.eval(
+        "set.seed(42, kind = 'Marsaglia-Multicarry', normal.kind = 'Kinderman-Ramage')\nround(rnorm(12), 12)",
+      ),
+    ).resolves.toEqual([
+      -0.425_615_045_269, -0.071_830_166_725, 0.378_154_373_144, 1.187_252_650_827,
+      0.071_140_861_618, -3.227_234_830_78, -0.395_757_062_556, 0.841_881_286_125,
+      -0.113_665_797_545, -0.885_514_771_132, -0.648_534_849_064, -0.059_775_196_518,
+    ]);
+    await expect(
+      runtime.eval(`
+        set.seed(14); corrected_near_zero <- rnorm(1)
+        set.seed(63); corrected_negative_retry <- rnorm(1)
+        round(c(corrected_near_zero, corrected_negative_retry), 12)
+      `),
+    ).resolves.toEqual([-0.179_194_894_83, 0.223_489_713_996]);
+    await expect(
+      runtime.eval(`
+        set.seed(123, kind = "Mersenne-Twister", normal.kind = "Box-Muller")
+        values <- round(rnorm(8), 12)
+        set.seed(123, kind = "Mersenne-Twister", normal.kind = "Box-Muller")
+        first <- rnorm(1)
+        position.one <- .Random.seed[2]
+        second <- rnorm(1)
+        position.two <- .Random.seed[2]
+        third <- rnorm(1)
+        position.three <- .Random.seed[2]
+        list(values, round(c(first, second, third), 12), c(position.one, position.two, position.three))
+      `),
+    ).resolves.toEqual([
+      [
+        -0.161_343_055_045, 0.670_603_080_296, -0.419_440_279_775, 0.269_982_571_063,
+        2.313_615_980_44, -0.908_176_773_591, -0.469_695_197_379, -0.083_817_501_555,
+      ],
+      [-0.161_343_055_045, 0.670_603_080_296, -0.419_440_279_775],
+      [2, 2, 4],
+    ]);
+    await expect(
+      runtime.eval(`
+        set.seed(313, kind = "L'Ecuyer-CMRG", normal.kind = "Inversion", sample.kind = "Rejection")
+        seed <- .Random.seed
+        values <- round(runif(8), 12)
+        set.seed(313, kind = "L'Ecuyer-CMRG", normal.kind = "Inversion", sample.kind = "Rejection")
+        list(
+          RNGkind(), seed, values,
+          parallel::nextRNGStream(.Random.seed),
+          parallel::nextRNGSubStream(.Random.seed),
+          names(formals(parallel::nextRNGStream)),
+          names(formals(parallel::nextRNGSubStream))
+        )
+      `),
+    ).resolves.toEqual([
+      ["L'Ecuyer-CMRG", "Inversion", "Rejection"],
+      [10407, 231424372, -1618326043, 362414434, 533140859, -1543605632, -1324207999],
+      [
+        0.256816466436, 0.933949960457, 0.738455392094, 0.751660177565, 0.788853090741,
+        0.100426708555, 0.536805162126, 0.02179161588,
+      ],
+      [10407, -148706266, 816896415, -423200657, 64647451, -1536586263, 64930425],
+      [10407, 1827655223, -964783607, -1107215706, -1012491509, 38390990, -180772714],
+      "seed",
+      "seed",
+    ]);
+    await expect(runtime.eval("parallel::nextRNGStream(as.double(1:7))")).rejects.toMatchObject({
+      code: "NRT3276",
     });
     await expect(runtime.eval("RNGkind('Knuth-TAOCP')")).rejects.toMatchObject({
       code: "NRU6143",
@@ -14467,7 +24939,42 @@ NeedsCompilation: no
     ]);
     expect(current.visible).toBe(true);
     await expect(runtime.eval("RNGversion('garbage')")).rejects.toMatchObject({ code: "NRT3274" });
-    await expect(runtime.eval("RNGversion('1.6.2')")).rejects.toMatchObject({ code: "NRU6158" });
+    const legacy = await runtime.evalDetailed(`
+      old <- suppressWarnings(RNGversion("1.6.0"))
+      set.seed(42)
+      c(old, RNGkind(), sample(1:100, 3))
+    `);
+    expect(legacy.value).toEqual([
+      "Mersenne-Twister",
+      "Inversion",
+      "Rejection",
+      "Marsaglia-Multicarry",
+      "Buggy Kinderman-Ramage",
+      "Rounding",
+      "33",
+      "44",
+      "32",
+    ]);
+    expect(legacy.warnings).toEqual([]);
+    await expect(runtime.eval("round(rnorm(1), 12)")).resolves.toBe(0.853_648_992_564);
+    await expect(runtime.eval("set.seed(42)\nround(rnorm(12), 12)")).resolves.toEqual([
+      -0.425_615_045_271, -0.071_830_166_726, 0.378_154_373_14, 1.187_252_650_824,
+      0.071_140_861_616, -3.227_234_830_78, -0.395_757_062_557, 0.841_881_286_121,
+      -0.113_665_797_549, -0.885_514_771_133, -0.648_534_849_064, -0.059_775_196_521,
+    ]);
+    await expect(
+      runtime.eval(`
+        set.seed(14); near_zero_retry <- rnorm(1)
+        set.seed(241); near_zero_accept <- rnorm(1)
+        set.seed(26); middle_low <- rnorm(1)
+        set.seed(81); middle_high <- rnorm(1)
+        set.seed(38); tail <- rnorm(1)
+        round(c(near_zero_retry, near_zero_accept, middle_low, middle_high, tail), 12)
+      `),
+    ).resolves.toEqual([
+      0.134_393_555_203, -0.331_120_586_963, 0.585_209_658_508, 1.935_517_210_633,
+      2.838_117_309_235,
+    ]);
     await expect(runtime.eval("RNGversion()")).rejects.toMatchObject({ code: "NRE2103" });
     await runtime.dispose();
   });
@@ -14483,6 +24990,20 @@ NeedsCompilation: no
       1_235_143_119,
     );
     await expect(runtime.eval("set.seed(123)\nsample.int(5)")).resolves.toEqual([3, 2, 5, 4, 1]);
+    await expect(
+      runtime.eval(`
+        set.seed(17)
+        singleton <- sample.int(1, 1)
+        singleton.next <- round(runif(3), 12)
+        set.seed(17)
+        a <- sample(c(20, 0))
+        b <- sample(c(3, 20))
+        c(singleton, singleton.next, a, b, round(runif(4), 12))
+      `),
+    ).resolves.toEqual([
+      1, 0.968378808815, 0.468263085932, 0.776819651714, 0, 20, 3, 20, 0.40788574121,
+      0.538797148503, 0.206887663575, 0.187103555305,
+    ]);
     await expect(runtime.eval("set.seed(123)\nsample.int(10, 6)")).resolves.toEqual([
       3, 10, 2, 8, 6, 9,
     ]);
@@ -14597,6 +25118,148 @@ NeedsCompilation: no
     await runtime.dispose();
   });
 
+  it("coerces abbreviate inputs through as.character including NULL and S3 methods", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        as.character.abbr_probe <- function(x, ...) c("custom method", "Second Name")
+        empty.named <- abbreviate(NULL, minlength = 6L, strict = TRUE)
+        empty.unnamed <- abbreviate(NULL, minlength = 6L, strict = TRUE, named = FALSE)
+        custom <- abbreviate(structure(list(1L), class = "abbr_probe"), minlength = 4L)
+        as.character(c(
+          typeof(empty.named),
+          length(empty.named),
+          identical(names(empty.named), character()),
+          is.null(names(empty.unnamed)),
+          abbreviate(list("New York", 12L), minlength = 4L),
+          abbreviate(pairlist(a = 1L), minlength = 4L),
+          custom,
+          names(custom)
+        ))
+      `),
+    ).resolves.toEqual([
+      "character",
+      "0",
+      "TRUE",
+      "TRUE",
+      "NwYr",
+      "12",
+      "1",
+      "cstm",
+      "ScnN",
+      "custom method",
+      "Second Name",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("implements nchar type, missing, encoding, coercion, and attribute semantics", async () => {
+    const runtime = await session();
+    await expect(runtime.eval("names(formals(nchar))")).resolves.toEqual([
+      "x",
+      "type",
+      "allowNA",
+      "keepNA",
+    ]);
+    const unicode =
+      'c("abc", "\\u00e9", "e\\u0301", "\\u754c", "\\U0001f600", "\\U0001f1fa\\U0001f1f8", "\\U0001f469\\u200d\\U0001f4bb", NA_character_)';
+    await expect(runtime.eval(`nchar(${unicode}, type = "chars")`)).resolves.toEqual([
+      3,
+      1,
+      2,
+      1,
+      1,
+      2,
+      3,
+      NA,
+    ]);
+    await expect(runtime.eval(`nchar(${unicode}, type = "bytes")`)).resolves.toEqual([
+      3,
+      2,
+      3,
+      3,
+      4,
+      8,
+      11,
+      NA,
+    ]);
+    await expect(runtime.eval(`nchar(${unicode}, type = "width")`)).resolves.toEqual([
+      3, 1, 1, 2, 2, 2, 4, 2,
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          nchar(NA_character_, keepNA = FALSE),
+          nchar(NA_character_, keepNA = TRUE),
+          nchar(NA_character_, type = "width", keepNA = NA),
+          nchar("\\u00e9", type = "b")
+        )
+      `),
+    ).resolves.toEqual([2, NA, 2, 2]);
+    await expect(
+      runtime.eval(`
+        probe <- structure(
+          matrix(c("\\u00e9", "\\u754c"), 1L,
+            dimnames = list("r", c("a", "b"))),
+          class = c("custom", "matrix", "array"), marker = "drop"
+        )
+        measured <- nchar(probe, type = "width")
+        c(measured, dim(measured), unlist(dimnames(measured)),
+          is.null(attr(measured, "marker")), class(measured))
+      `),
+    ).resolves.toEqual(["1", "2", "1", "2", "r", "a", "b", "TRUE", "matrix", "array"]);
+    await expect(
+      runtime.eval(`
+        c(
+          nchar(c(TRUE, FALSE, NA)),
+          nchar(list("ab", 1L, NULL)),
+          nchar(expression(x, f(1L))),
+          nchar(quote(f(1L)))
+        )
+      `),
+    ).resolves.toEqual([4, 5, NA, 2, 1, 4, 1, 5, 1, 1]);
+
+    await runtime.eval(`
+      binary <- rawToChar(as.raw(c(0x66, 0x6f, 0x80)))
+      Encoding(binary) <- "bytes"
+    `);
+    await expect(
+      runtime.eval('c(nchar(binary, "bytes"), nchar(binary, "chars", allowNA = TRUE))'),
+    ).resolves.toEqual([3, NA]);
+    await expect(runtime.eval('nchar(binary, "chars")')).rejects.toMatchObject({ code: "NRT3120" });
+    await expect(runtime.eval('nchar("x", type = c("chars", "bytes"))')).rejects.toMatchObject({
+      code: "NRT3120",
+    });
+    await runtime.dispose();
+  });
+
+  it("trims character values by recycled browser display widths", async () => {
+    const runtime = await session();
+    await expect(runtime.eval("names(formals(strtrim))")).resolves.toEqual(["x", "width"]);
+    await expect(
+      runtime.eval(`
+        x <- structure(c(a = "abcdef", b = "xy", c = NA_character_, d = ""), marker = "kept")
+        trimmed <- strtrim(x, c(3.9, 1))
+        c(trimmed, attr(trimmed, "marker"), names(trimmed))
+      `),
+    ).resolves.toEqual(["abc", "x", NA, "", "kept", "a", "b", "c", "d"]);
+    await expect(
+      runtime.eval(`
+        c(
+          strtrim(c("a\\u754cb", "\\u754ca", "e\\u0301x"), c(2L, 2L, 1L)),
+          strtrim(c(123.4, TRUE), c(2L, 1L)),
+          strtrim(factor(c("abc", "de")), 2L)
+        )
+      `),
+    ).resolves.toEqual(["a", "界", "é", "12", "1", "ab", "de"]);
+    await expect(runtime.eval("strtrim(character(), 1L)")).resolves.toEqual([]);
+    await expect(runtime.eval("strtrim('abc', -1L)")).rejects.toMatchObject({ code: "NRT3490" });
+    await expect(runtime.eval("strtrim('abc', integer())")).rejects.toMatchObject({
+      code: "NRT3490",
+    });
+    await runtime.dispose();
+  });
+
   it("constructs column-major matrices and arrays with lossless dimensions", async () => {
     const runtime = await session();
     await expect(runtime.eval("m <- matrix(1:6, nrow = 2)\ndim(m)")).resolves.toEqual([2, 3]);
@@ -14611,6 +25274,14 @@ NeedsCompilation: no
     await expect(runtime.eval("a <- array(1:4, dim = c(2, 2, 1))\ndim(a)")).resolves.toEqual([
       2, 2, 1,
     ]);
+    await expect(
+      runtime.eval(`
+        numeric_array <- array(numeric(), c(2, 2))
+        list_array <- array(list(), c(2, 2))
+        raw_array <- array(raw(), c(2, 2))
+        c(all(is.na(numeric_array)), all(vapply(list_array, is.null, FALSE)), as.integer(raw_array))
+      `),
+    ).resolves.toEqual([1, 1, 0, 0, 0, 0]);
     await expect(runtime.eval("nrow(m)")).resolves.toBe(2);
     await expect(runtime.eval("ncol(m)")).resolves.toBe(3);
     await expect(runtime.eval("dim(as.matrix(c(1, 2, 3)))")).resolves.toEqual([3, 1]);
@@ -14708,6 +25379,52 @@ NeedsCompilation: no
     await runtime.dispose();
   });
 
+  it("preserves matrix-valued data-frame columns when selecting rows", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        constructed <- data.frame(
+          signal = I(matrix(1:12, 3, 4)),
+          id = c("a", "b", "c")
+        )
+        frame <- data.frame(id = c("a", "b", "c"))
+        frame$signal <- I(matrix(1:12, 3, 4))
+        rows <- frame[c(3, 1),]
+        design <- model.matrix(~ signal, rows)
+        c(
+          class(constructed$signal), class(rows$signal),
+          dim(constructed$signal), dim(frame$signal),
+          dim(rows$signal), rows$signal, dim(design), colnames(design)
+        )
+      `),
+    ).resolves.toEqual([
+      "AsIs",
+      "AsIs",
+      "3",
+      "4",
+      "3",
+      "4",
+      "2",
+      "4",
+      "3",
+      "1",
+      "6",
+      "4",
+      "9",
+      "7",
+      "12",
+      "10",
+      "2",
+      "5",
+      "(Intercept)",
+      "signal1",
+      "signal2",
+      "signal3",
+      "signal4",
+    ]);
+    await runtime.dispose();
+  });
+
   it("indexes and replaces arbitrary-dimensional arrays by coordinate matrices", async () => {
     const runtime = await session();
     await runtime.eval(
@@ -14747,9 +25464,9 @@ NeedsCompilation: no
     await expect(
       runtime.eval("a[matrix(c(1, 1, 1, -1, 2, 1), ncol = 3, byrow = TRUE)]"),
     ).rejects.toMatchObject({ code: "NRE2219" });
-    await expect(
-      runtime.eval("a[matrix(c(1, 1, 2, 2), ncol = 2, byrow = TRUE)]"),
-    ).rejects.toMatchObject({ code: "NRT3316" });
+    await expect(runtime.eval("a[matrix(c(1, 1, 2, 2), ncol = 2, byrow = TRUE)]")).resolves.toEqual(
+      [300, 2, 300, 2],
+    );
     await expect(
       runtime.eval('a[matrix(c("r1", "c1", "z1", "missing", "c2", "z1"), ncol = 3, byrow = TRUE)]'),
     ).rejects.toMatchObject({ code: "NRE2202" });
@@ -14825,9 +25542,55 @@ NeedsCompilation: no
     await expect(runtime.eval("min(c(3, 1, 2))")).resolves.toBe(1);
     await expect(runtime.eval("max(c(3, 1, 2))")).resolves.toBe(3);
     await expect(runtime.eval("range(c(3, 1, 2))")).resolves.toEqual([1, 3]);
+    await expect(runtime.eval("range(list(0:3, 1:6, 2:5))")).resolves.toEqual([0, 6]);
+    await expect(runtime.eval('range(list(1:2, c("b", "a")))')).resolves.toEqual(["1", "b"]);
+    await expect(runtime.eval("range(c(-Inf, NA, 4, Inf), finite = TRUE)")).resolves.toEqual([
+      4, 4,
+    ]);
+    await expect(runtime.eval("range(left = 3, right = 1, finite = TRUE)")).resolves.toEqual([
+      1, 3,
+    ]);
+    await expect(
+      runtime.eval(
+        "c(names(formals(range.default)), formals(range.default)$na.rm, formals(range.default)$finite)",
+      ),
+    ).resolves.toEqual(["...", "na.rm", "finite", "FALSE", "FALSE"]);
     await expect(runtime.eval("median(c(1, 4, 2, 3))")).resolves.toBe(2.5);
     await expect(runtime.eval("median(c(1, NA, 3), na.rm = TRUE)")).resolves.toBe(2);
+    await expect(runtime.eval("mean(1:5, trim = 0.2)")).resolves.toBe(3);
+    await expect(runtime.eval("mean(c(1, NA, 10), trim = 0.2, na.rm = TRUE)")).resolves.toBe(5.5);
+    await expect(
+      runtime.eval("c(typeof(mean(1:3, trim = 0.6)), mean(1:3, ignored = 1))"),
+    ).resolves.toEqual(["integer", "2"]);
+    await expect(runtime.eval("fivenum(1:6)")).resolves.toEqual([1, 2, 3.5, 5, 6]);
+    await expect(runtime.eval("typeof(fivenum(1:6))")).resolves.toBe("double");
+    await expect(
+      runtime.eval("dim(vapply(3:9, function(n) fivenum(seq_len(n)), numeric(5)))"),
+    ).resolves.toEqual([5, 7]);
+    await expect(runtime.eval("fivenum(c(NA, 3, 1))")).resolves.toEqual([1, 1, 2, 3, 3]);
+    await expect(
+      runtime.eval("x <- fivenum(c(NA, 3, 1), na.rm = FALSE); c(typeof(x), all(is.na(x)))"),
+    ).resolves.toEqual(["logical", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        x <- fivenum(c(a = 4, b = 1, c = 9))
+        c(x, names(x))
+      `),
+    ).resolves.toEqual(["1", "2.5", "4", "6.5", "9", "b", "b", "a", "a", "c"]);
+    await expect(
+      runtime.eval(`
+        x <- fivenum(c(3 + 1i, 1 + 2i, 2 + 0i))
+        c(Re(x), Im(x))
+      `),
+    ).resolves.toEqual([1, 1.5, 2, 2.5, 3, 2, 1, 0, 0.5, 1]);
     await expect(runtime.eval("var(c(1, 2, 3))")).resolves.toBe(1);
+    await expect(runtime.eval("var(c(1, 2, 3), c(2, 5, 4))")).resolves.toBe(1);
+    await expect(
+      runtime.eval(
+        "c(var(c(1, NA, 3), c(2, 5, 4), na.rm = TRUE), var(c(1, NA, 3), c(2, 5, 4), use = 'complete.obs'))",
+      ),
+    ).resolves.toEqual([2, 2]);
+    expect(isNA(await runtime.eval("var(c(1, NA, 3), c(2, 5, 4))"))).toBe(true);
     await expect(runtime.eval("sd(c(1, 2, 3))")).resolves.toBe(1);
     await expect(runtime.eval("IQR(1:4)")).resolves.toBe(1.5);
     await expect(runtime.eval("IQR(c(1, NA, 4), na.rm = 1)")).resolves.toBe(1.5);
@@ -14899,8 +25662,175 @@ NeedsCompilation: no
     await runtime.dispose();
   });
 
+  it("applies factor contrast attributes and the reusable treatment and sum generators", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- factor(c("b", "a", "c", "b"))
+        default <- contrasts(x)
+        attr(x, "contrasts") <- "contr.sum"
+        summed <- contrasts(x)
+        c(
+          default, dim(default), rownames(default), colnames(default),
+          summed, dim(summed), rownames(summed),
+          contr.treatment(c("a", "b", "c"), base = 2),
+          contr.sum(3),
+          contrasts(x, contrasts = FALSE)
+        )
+      `),
+    ).resolves.toEqual([
+      "0",
+      "1",
+      "0",
+      "0",
+      "0",
+      "1",
+      "3",
+      "2",
+      "a",
+      "b",
+      "c",
+      "b",
+      "c",
+      "1",
+      "0",
+      "-1",
+      "0",
+      "1",
+      "-1",
+      "3",
+      "2",
+      "a",
+      "b",
+      "c",
+      "1",
+      "0",
+      "0",
+      "0",
+      "0",
+      "1",
+      "1",
+      "0",
+      "-1",
+      "0",
+      "1",
+      "-1",
+      "1",
+      "0",
+      "0",
+      "0",
+      "1",
+      "0",
+      "0",
+      "0",
+      "1",
+    ]);
+    await expect(runtime.eval("contrasts(1:3)")).rejects.toMatchObject({ code: "NRT3265" });
+    await expect(runtime.eval("contr.sum(3, sparse = TRUE)")).rejects.toMatchObject({
+      code: "NRU6130",
+    });
+    await expect(
+      runtime.eval(`
+        seen <- NULL
+        generator <- function(n, contrasts = TRUE, sparse = FALSE) {
+          seen <<- list(n = n, contrasts = contrasts, sparse = sparse)
+          matrix(seq_along(n), length(n), 1, dimnames = list(rev(n), "z"))
+        }
+        d <- data.frame(f = factor(c("a", "b", "c")))
+        m <- model.matrix(~ f, d, contrasts.arg = list(f = generator))
+        generated <- attr(m, "contrasts")$f
+        c(
+          round(unclass(m), 12), colnames(m), round(generated, 12),
+          rownames(generated), colnames(generated),
+          seen$n, seen$contrasts, seen$sparse
+        )
+      `),
+    ).resolves.toEqual([
+      "1",
+      "1",
+      "1",
+      "1",
+      "2",
+      "3",
+      "0.408248290464",
+      "-0.816496580928",
+      "0.408248290464",
+      "(Intercept)",
+      "fz",
+      "f",
+      "1",
+      "2",
+      "3",
+      "0.408248290464",
+      "-0.816496580928",
+      "0.408248290464",
+      "a",
+      "b",
+      "c",
+      "z",
+      "",
+      "a",
+      "b",
+      "c",
+      "TRUE",
+      "FALSE",
+    ]);
+    await expect(
+      runtime.eval(`
+        badContrast <- function(n) matrix(1, length(n), 1)
+        model.matrix(~ f, data.frame(f = factor(c("a", "b", "c"))),
+          contrasts.arg = list(f = badContrast))
+      `),
+    ).rejects.toMatchObject({ code: "NRT3265", message: "singular contrast matrix" });
+    await runtime.dispose();
+  });
+
   it("fits the frequency-ranked linear-model vertical slice and model accessors", async () => {
     const runtime = await session();
+    await expect(
+      runtime.eval(`
+        direct <- lm.fit(
+          cbind(i = 1, x = 0:3),
+          cbind(a = c(1, 3, 5, 7), b = c(2, 5, 8, 11))
+        )
+        c(
+          round(direct$coefficients, 12), dim(direct$coefficients),
+          colnames(direct$coefficients), direct$rank, direct$df.residual,
+          names(direct), names(direct$qr), names(formals(lm.fit))
+        )
+      `),
+    ).resolves.toEqual([
+      "1",
+      "2",
+      "2",
+      "3",
+      "2",
+      "2",
+      "a",
+      "b",
+      "2",
+      "2",
+      "coefficients",
+      "residuals",
+      "effects",
+      "rank",
+      "fitted.values",
+      "assign",
+      "qr",
+      "df.residual",
+      "qr",
+      "qraux",
+      "pivot",
+      "tol",
+      "rank",
+      "x",
+      "y",
+      "offset",
+      "method",
+      "tol",
+      "singular.ok",
+      "...",
+    ]);
     await runtime.eval("fit <- lm(y ~ x, data = data.frame(x = 1:4, y = c(3, 5, 7, 9)))");
     await expect(runtime.eval("round(coef(fit), 12)")).resolves.toEqual([1, 2]);
     await expect(runtime.eval("round(fitted(fit), 12)")).resolves.toEqual([3, 5, 7, 9]);
@@ -14935,8 +25865,20 @@ NeedsCompilation: no
       "model",
     ]);
     await expect(
-      runtime.eval("round(predict(fit, newdata = data.frame(x = c(0, 5))), 12)"),
+      runtime.eval(
+        "round(stats::predict(fit, newdata = data.frame(x = c(0, 5)), type = 'response'), 12)",
+      ),
     ).resolves.toEqual([1, 11]);
+    await expect(
+      runtime.eval("round(stats::predict(fit, new = data.frame(x = c(4, 5))), 12)"),
+    ).resolves.toEqual([9, 11]);
+    await expect(
+      runtime.eval("round(stats::predict(fit, newd = data.frame(x = c(6, 7))), 12)"),
+    ).resolves.toEqual([13, 15]);
+    await expect(
+      runtime.eval("stats::predict(fit, data.frame(x = 4), new = data.frame(x = 5))"),
+    ).rejects.toMatchObject({ code: "NRE2102" });
+    await expect(runtime.eval("stats::predict(fit, n = data.frame(x = 8))")).rejects.toBeDefined();
     await expect(
       runtime.eval(
         "m <- model.matrix(y ~ x + z, data.frame(y = 1:3, x = 2:4, z = c(0, 1, 0)))\nc(m, dim(m), colnames(m), attr(m, 'assign'))",
@@ -14958,6 +25900,46 @@ NeedsCompilation: no
       "z",
       "0",
       "1",
+      "2",
+    ]);
+    await expect(
+      runtime.eval(
+        "x <- cbind(a = 0:5, b = c(1, 0, 2, 1, 4, 3))\ny <- 1 + 2 * x[, 1] + 3 * x[, 2]\nm <- model.matrix(y ~ x)\nfit.matrix <- lm(y ~ x)\nc(m, dim(m), colnames(m), attr(m, 'assign'), round(coef(fit.matrix), 12), names(coef(fit.matrix)), dim(model.frame(fit.matrix)$x))",
+      ),
+    ).resolves.toEqual([
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "1",
+      "0",
+      "2",
+      "1",
+      "4",
+      "3",
+      "6",
+      "3",
+      "(Intercept)",
+      "xa",
+      "xb",
+      "0",
+      "1",
+      "1",
+      "1",
+      "2",
+      "3",
+      "(Intercept)",
+      "xa",
+      "xb",
+      "6",
       "2",
     ]);
     await expect(
@@ -15023,6 +26005,632 @@ NeedsCompilation: no
         "object <- structure(list(), class = 'custom')\nc(coef(object), fitted(object), predict(object))",
       ),
     ).resolves.toEqual([42, 43, 44]);
+    await runtime.dispose();
+  });
+
+  it("preserves model-frame rows and composes nested frames with implicit S4 NA methods", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        m <- matrix(1:6, 3, 2, dimnames = list(c("r1", "r2", "r3"), c("x", "z")))
+        d <- data.frame(x = c(1, NA, 3), y = 4:6, row.names = c("r1", "r2", "r3"))
+        f <- as.data.frame(list(
+          designMatrix = m,
+          input = d,
+          response = data.frame(y = 7:9),
+          responseMatrix = matrix(10:12, 3, 1, dimnames = list(NULL, "y"))
+        ))
+        as.character(c(names(f), dim(f), row.names(f), which(!complete.cases(f))))
+      `),
+    ).resolves.toEqual([
+      "designMatrix.x",
+      "designMatrix.z",
+      "input.x",
+      "input.y",
+      "y",
+      "y.1",
+      "3",
+      "6",
+      "r1",
+      "r2",
+      "r3",
+      "2",
+    ]);
+    await expect(
+      runtime.eval(`
+        d <- data.frame(y = 4:6, x = c(1, NA, 3), z = 7:9)
+        mf <- model.frame(y ~ x + z - 1, d, na.action = na.pass)
+        input <- model.matrix(attr(mf, "terms"), mf)
+        responseTerms <- terms(~ y)
+        attr(responseTerms, "intercept") <- 0
+        response <- model.matrix(responseTerms, mf, keep.subset = TRUE, ignored = "ok")
+        as.character(c(
+          dim(input), dim(response), which(is.na(input)), which(is.na(response)),
+          colnames(input), colnames(response), rownames(input), rownames(response)
+        ))
+      `),
+    ).resolves.toEqual(["3", "2", "3", "1", "2", "x", "z", "y", "1", "2", "3", "1", "2", "3"]);
+    await expect(
+      runtime.eval(`
+        setClass("IntegrationNaBox0401", representation(data = "ANY"))
+        setMethod("na.omit", "IntegrationNaBox0401", function(object, ...) {
+          object@data <- na.omit(object@data)
+          object
+        })
+        box <- na.omit(new(
+          "IntegrationNaBox0401",
+          data = data.frame(x = c(1, NA, 3), y = 4:6)
+        ))
+        integrationSlice0401 <- function(x, keep, ...) x[keep, , drop = FALSE]
+        setGeneric(
+          "integrationSlice0401",
+          function(x, keep, ...) standardGeneric("integrationSlice0401")
+        )
+        setClass("IntegrationSlice0401", representation(value = "numeric"))
+        setMethod(
+          "integrationSlice0401", "IntegrationSlice0401",
+          function(x, keep, ...) x@value[keep]
+        )
+        c(
+          nrow(box@data), box@data$x,
+          integrationSlice0401(data.frame(x = 1:3), c(TRUE, FALSE, TRUE))$x,
+          integrationSlice0401(
+            new("IntegrationSlice0401", value = 4:6), c(FALSE, TRUE, TRUE)
+          ),
+          names(formals(integrationSlice0401))
+        )
+      `),
+    ).resolves.toEqual(["2", "1", "3", "1", "3", "5", "6", "x", "keep", "..."]);
+    await runtime.dispose();
+  });
+
+  it("reconstructs model formulas from retained call components", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        data <- data.frame(y = c(1, 3, 5), x = 1:3)
+        fit <- lm(y ~ x, data)
+        retained <- fit$call$formula
+        c(typeof(retained), class(retained), is.language(retained), is.call(retained), deparse(retained))
+      `),
+    ).resolves.toEqual(["language", "call", "TRUE", "TRUE", "y ~ x"]);
+    await expect(
+      runtime.eval("refit <- lm(retained, data); round(unname(coef(refit)), 12)"),
+    ).resolves.toEqual([-1, 2]);
+    await expect(runtime.eval("deparse(quote(mpg ~ log(wt) + I(gear^2) + exp(am)))")).resolves.toBe(
+      "mpg ~ log(wt) + I(gear^2) + exp(am)",
+    );
+    await runtime.dispose();
+  });
+
+  it("computes reusable linear-model and GLM influence diagnostics", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(
+        "fit <- lm(c(1, 2, 4, 8) ~ c(0, 1, 2, 3))\ninfl <- stats::lm.influence(fit)\nc(round(infl$hat, 12), round(infl$coefficients, 12), round(infl$sigma, 12), round(infl$wt.res, 12), dim(infl$coefficients), names(infl), names(stats::lm.influence(fit, FALSE)))",
+      ),
+    ).resolves.toEqual([
+      "0.7",
+      "0.3",
+      "0.3",
+      "0.7",
+      "1.633333333333",
+      "-0.342857142857",
+      "-0.128571428571",
+      "-0.533333333333",
+      "-0.7",
+      "0.085714285714",
+      "-0.128571428571",
+      "0.8",
+      "0.816496580928",
+      "1.336306209562",
+      "1.06904496765",
+      "0.408248290464",
+      "0.7",
+      "-0.6",
+      "-0.9",
+      "0.8",
+      "4",
+      "2",
+      "hat",
+      "coefficients",
+      "sigma",
+      "wt.res",
+      "hat",
+      { __nativr__: "NA" },
+      "sigma",
+      "wt.res",
+    ]);
+    await expect(
+      runtime.eval(
+        "weighted <- lm(c(1, 3, 6, 10) ~ c(0, 1, 2, 3), weights = c(1, 2, 3, 4))\nround(c(lm.influence(weighted)$hat, lm.influence(weighted)$wt.res), 12)",
+      ),
+    ).resolves.toEqual([0.5, 0.4, 0.3, 0.8, 0.9, -0.424264068712, -0.866025403784, 0.6]);
+    await expect(
+      runtime.eval(
+        "binary <- glm(c(0, 0, 1, 0, 1, 1) ~ c(-2, -1, 0, 1, 2, 3), family = binomial())\nround(lm.influence(binary)$hat, 5)",
+      ),
+    ).resolves.toEqual([0.28361, 0.37762, 0.33877, 0.33877, 0.37762, 0.28361]);
+    await runtime.dispose();
+  });
+
+  it("dispatches reusable hatvalues diagnostics across lm, glm, and package methods", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        ordinary <- lm(c(1, 2, 4, 8) ~ c(0, 1, 2, 3))
+        weighted <- lm(c(1, 3, 6, 10) ~ c(0, 1, 2, 3), weights = c(1, 2, 3, 4))
+        binary <- glm(c(0, 0, 1, 0, 1, 1) ~ c(-2, -1, 0, 1, 2, 3), family = binomial())
+        hatvalues.graphics_probe <- function(model, ...) c(custom = length(model))
+        probe <- structure(list(1, 2), class = "graphics_probe")
+        as.character(c(
+          round(stats::hatvalues(ordinary), 12),
+          identical(names(stats::hatvalues(ordinary)), as.character(1:4)),
+          round(stats::hatvalues(weighted), 12),
+          round(stats::hatvalues(binary), 5),
+          stats::hatvalues(probe, extra = TRUE),
+          names(formals(stats::hatvalues)),
+          names(formals(stats:::hatvalues.lm)),
+          stats:::hatvalues.lm(ordinary, infl = list(hat = c(left = 9, right = 8)))
+        ))
+      `),
+    ).resolves.toEqual([
+      "0.7",
+      "0.3",
+      "0.3",
+      "0.7",
+      "TRUE",
+      "0.5",
+      "0.4",
+      "0.3",
+      "0.8",
+      "0.28361",
+      "0.37762",
+      "0.33877",
+      "0.33877",
+      "0.37762",
+      "0.28361",
+      "2",
+      "model",
+      "...",
+      "model",
+      "infl",
+      "...",
+      "9",
+      "8",
+    ]);
+    await expect(runtime.eval("stats::hatvalues(1:3)")).rejects.toMatchObject({ code: "NRE2268" });
+    await runtime.dispose();
+  });
+
+  it("summarizes linear models and fits reusable GLM and PCA foundations", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        fit <- lm(c(2, 4, 5, 4, 5) ~ c(1, 2, 3, 4, 5))
+        s <- summary(fit)
+        round(c(s$coefficients, s$sigma, s$r.squared, s$adj.r.squared, s$fstatistic), 9)
+      `),
+    ).resolves.toEqual([
+      2.2, 0.6, 0.938083152, 0.282842712, 2.34520788, 2.121320344, 0.100743456, 0.124027063,
+      0.894427191, 0.6, 0.466666667, 4.5, 1, 3,
+    ]);
+    await expect(runtime.eval("class(summary(fit))")).resolves.toBe("summary.lm");
+    await expect(
+      runtime.eval("c(class(stats::formula(fit)), deparse(stats::formula(fit)))"),
+    ).resolves.toEqual(["formula", "c(2, 4, 5, 4, 5) ~ c(1, 2, 3, 4, 5)"]);
+    await expect(runtime.eval("c(is.null(fit$weights), length(fit$weights))")).resolves.toEqual([
+      1, 0,
+    ]);
+    await expect(runtime.eval("round(stats::deviance(fit), 12)")).resolves.toBe(2.4);
+    await expect(
+      runtime.eval("c(family(fit)$family, family(fit)$link, class(family(fit)))"),
+    ).resolves.toEqual(["gaussian", "identity", "family"]);
+
+    await expect(
+      runtime.eval(`
+        d <- data.frame(
+          x = c(-2, -1, 0, 1, 2, 3),
+          y = c(0, 0, 0, 1, 1, 1),
+          count = c(0, 1, 1, 3, 4, 7)
+        )
+        logistic <- glm(y ~ x, d, family = binomial())
+        counts <- glm(count ~ x, d, family = poisson())
+        round(c(
+          coef(logistic), stats::deviance(logistic), logistic$null.deviance, logistic$iter,
+          coef(counts), deviance(counts), counts$null.deviance, counts$iter
+        ), 6)
+      `),
+    ).resolves.toEqual([
+      -23.616833, 47.233665, 0, 8.317766, 25, 0.221537, 0.5912, 1.181185, 13.538235, 4,
+    ]);
+    await expect(
+      runtime.eval(`
+        response <- c(1, 1, 0, 0)
+        predictor1 <- c(1, 0, 1, 0)
+        predictor2 <- c(1, 1, 0, 0)
+        environment_fit <- glm(
+          response ~ predictor1 + predictor2,
+          family = binomial
+        )
+        c(
+          deparse(environment_fit$call),
+          is.null(environment_fit$call$data),
+          names(as.list(environment_fit$call))
+        )
+      `),
+    ).resolves.toEqual([
+      "glm(formula = response ~ predictor1 + predictor2, family = binomial)",
+      "TRUE",
+      "",
+      "formula",
+      "family",
+    ]);
+    await expect(
+      runtime.eval(`
+        x <- c(-2, -1, 0, 1, 2, 3)
+        y <- c(0, 0, 1, 0, 1, 1)
+        profile_at <- function(b) {
+          o <- rep(b, length(y))
+          fit <- glm(y ~ -1 + offset(o) + x, family = binomial)
+          c(coef(fit), deviance(fit))
+        }
+        round(c(profile_at(-2.10701379), profile_at(-0.60701379), profile_at(0.89298621)), 6)
+      `),
+    ).resolves.toEqual([1.867833, 6.065929, 1.214028, 4.955974, 1.201027, 6.703135]);
+    await expect(
+      runtime.eval(`
+        newdata <- data.frame(x = c(-1, 1))
+        round(c(
+          stats::predict(logistic, newdata = newdata, type = "link"),
+          stats::predict(logistic, newdata = newdata, type = "response")
+        ), 6)
+      `),
+    ).resolves.toEqual([-70.850498, 23.616833, 0, 1]);
+    await expect(
+      runtime.eval(
+        "c(class(logistic), class(summary(logistic)), class(anova(logistic)), family(logistic)$family)",
+      ),
+    ).resolves.toEqual(["glm", "lm", "summary.glm", "anova", "data.frame", "binomial"]);
+    await expect(
+      runtime.eval(`
+        quasi_logistic <- glm(y ~ x, d, family = quasibinomial())
+        quasi_counts <- glm(count ~ x, d, family = stats::quasipoisson())
+        c(
+          family(quasi_logistic)$family,
+          family(quasi_counts)$family,
+          is.na(quasi_logistic$aic),
+          is.na(quasi_counts$aic),
+          round(coef(quasi_logistic), 6),
+          round(coef(quasi_counts), 6)
+        )
+      `),
+    ).resolves.toEqual([
+      "quasibinomial",
+      "quasipoisson",
+      "TRUE",
+      "TRUE",
+      "-23.616833",
+      "47.233665",
+      "0.221537",
+      "0.5912",
+    ]);
+    await expect(
+      runtime.eval(`
+        grouped <- data.frame(
+          success = c(1, 3, 5, 8), failure = c(9, 7, 5, 2),
+          x = 0:3, w = c(1, 2, 1, .5)
+        )
+        grouped_fit <- glm(
+          cbind(success, failure) ~ x,
+          grouped,
+          weights = w,
+          family = binomial()
+        )
+        round(c(coef(grouped_fit), grouped_fit$prior.weights, fitted(grouped_fit)), 6)
+      `),
+    ).resolves.toEqual([
+      -2.043937, 1.097423, 10, 20, 10, 5, 0.114666, 0.279586, 0.537656, 0.777011,
+    ]);
+    const gammaFit = (await runtime.eval(`
+        clotting <- data.frame(
+          u = c(5, 10, 15, 20, 30, 40, 60, 80, 100),
+          lot1 = c(118, 58, 42, 35, 27, 25, 21, 19, 18)
+        )
+        gamma_fit <- glm(lot1 ~ log(u), clotting, family = Gamma())
+        gamma_family <- family(gamma_fit)
+        round(c(
+          coef(gamma_fit), deviance(gamma_fit), summary(gamma_fit)$dispersion,
+          gamma_fit$iter, gamma_family$variance(2), gamma_family$dev.resids(2, 3, 1)
+        ), 12)
+      `)) as number[];
+    expect(gammaFit.slice(0, 3)).toEqual([-0.016554381728, 0.015343114911, 0.016729715178]);
+    expect(gammaFit[3]).toBeCloseTo(0.002446059333, 7);
+    expect(gammaFit.slice(4)).toEqual([3, 4, 0.14426354955]);
+    await expect(
+      runtime.eval(`
+        custom_family <- function(dispersion = NA_real_) structure(list(
+          family = "customScale", link = "half",
+          linkfun = function(mu) mu / 2,
+          linkinv = function(eta) eta * 2,
+          variance = function(mu) rep(2, length(mu)),
+          dev.resids = function(y, mu, wt) wt * (y - mu)^2 / 2,
+          aic = function(y, n, mu, wt, dev) dev + 42,
+          mu.eta = function(eta) rep(2, length(eta)),
+          initialize = expression({ n <- rep.int(1, nobs); mustart <- y + 0.1 }),
+          validmu = function(mu) all(is.finite(mu)),
+          valideta = function(eta) all(is.finite(eta)),
+          dispersion = dispersion
+        ), class = "family")
+        custom_data <- data.frame(x = 1:5, y = c(1, 2, 2, 4, 5))
+        custom_fit <- glm(y ~ x, custom_data, family = custom_family())
+        custom_summary <- summary(custom_fit)
+        round(c(
+          coef(custom_fit), custom_fit$deviance, custom_fit$aic, custom_fit$iter,
+          fitted(custom_fit), residuals(custom_fit, "deviance"),
+          residuals(custom_fit, "pearson"), residuals(custom_fit, "response"),
+          custom_summary$dispersion, custom_summary$deviance.resid,
+          predict(custom_fit, data.frame(x = c(0, 6)), type = "link"),
+          predict(custom_fit, data.frame(x = c(0, 6)), type = "response")
+        ), 12)
+      `),
+    ).resolves.toEqual([
+      -0.1, 0.5, 0.4, 46.4, 2, 0.8, 1.8, 2.8, 3.8, 4.8, 0.141421356237, 0.141421356237,
+      -0.565685424949, 0.141421356237, 0.141421356237, 0.141421356237, 0.141421356237,
+      -0.565685424949, 0.141421356237, 0.141421356237, 0.2, 0.2, -0.8, 0.2, 0.2, 0.133333333333,
+      0.141421356237, 0.141421356237, -0.565685424949, 0.141421356237, 0.141421356237, -0.1, 2.9,
+      -0.2, 5.8,
+    ]);
+    await expect(
+      runtime.eval(`
+        fixed_custom_fit <- glm(y ~ x, custom_data, family = custom_family(2))
+        fixed_custom_summary <- summary(fixed_custom_fit)
+        c(
+          colnames(custom_summary$coefficients), fixed_custom_summary$dispersion,
+          colnames(fixed_custom_summary$coefficients)
+        )
+      `),
+    ).resolves.toEqual([
+      "Estimate",
+      "Std. Error",
+      "t value",
+      "Pr(>|t|)",
+      "2",
+      "Estimate",
+      "Std. Error",
+      "z value",
+      "Pr(>|z|)",
+    ]);
+    await expect(
+      runtime.eval("c(nobs(fit), nobs(logistic), stats::nobs(gamma_fit), names(formals(nobs)))"),
+    ).resolves.toEqual(["5", "6", "9", "object", "..."]);
+    await expect(
+      runtime.eval(
+        "data(USArrests); p <- prcomp(USArrests); c(round(p$sdev, 9), class(p), class(summary(p)), dim(summary(p)$importance))",
+      ),
+    ).resolves.toEqual([
+      "83.732400246",
+      "14.212401849",
+      "6.489426073",
+      "2.48279",
+      "prcomp",
+      "summary.prcomp",
+      "3",
+      "4",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("flattens multiway categorical tables with GNU R row and column partitions", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        tbl <- ftable(
+          factor(c("a", "b", "a")), factor(c("x", "x", "y")),
+          row.vars = 1, dnn = c("A", "B")
+        )
+        c(
+          unclass(tbl), dim(tbl), class(tbl), names(attr(tbl, "row.vars")),
+          unlist(attr(tbl, "row.vars")), names(attr(tbl, "col.vars")),
+          unlist(attr(tbl, "col.vars")), dim(format(tbl, method = "compact", quote = FALSE))
+        )
+      `),
+    ).resolves.toEqual([
+      "1",
+      "1",
+      "1",
+      "0",
+      "2",
+      "2",
+      "ftable",
+      "A",
+      "a",
+      "b",
+      "B",
+      "x",
+      "y",
+      "3",
+      "3",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("preserves atomic storage and missing values when flattening existing arrays", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        dn <- list(A = c("a1", "a2"), B = c("b1", "b2"), C = c("c1", "c2"))
+        ch <- ftable(
+          array(c("a", NA, "c", "d", "e", "f", "g", "h"), c(2, 2, 2), dimnames = dn),
+          row.vars = c("C", "A"), col.vars = "B"
+        )
+        dbl <- ftable(array(c(1.5, NA, 3.25, 4), c(2, 2), dimnames = dn[1:2]))
+        logi <- ftable(array(c(TRUE, NA, FALSE, TRUE), c(2, 2), dimnames = dn[1:2]))
+        bytes <- ftable(array(as.raw(1:4), c(2, 2), dimnames = dn[1:2]))
+        cmp <- ftable(array(c(1+2i, NA_complex_, 3+0i, 4-1i), c(2, 2), dimnames = dn[1:2]))
+        observed <- as.character(c(
+          typeof(unclass(ch)), dim(ch), unclass(ch), names(attr(ch, "row.vars")),
+          unlist(attr(ch, "row.vars")), names(attr(ch, "col.vars")),
+          unlist(attr(ch, "col.vars")), typeof(unclass(dbl)), unclass(dbl), is.na(dbl),
+          typeof(unclass(logi)), unclass(logi), is.na(logi), typeof(unclass(bytes)),
+          as.integer(unclass(bytes)), typeof(unclass(cmp)), Re(unclass(cmp)),
+          Im(unclass(cmp)), is.na(cmp)
+        ))
+        ifelse(is.na(observed), "<NA>", observed)
+      `),
+    ).resolves.toEqual([
+      "character",
+      "4",
+      "2",
+      "a",
+      "<NA>",
+      "e",
+      "f",
+      "c",
+      "d",
+      "g",
+      "h",
+      "C",
+      "A",
+      "c1",
+      "c2",
+      "a1",
+      "a2",
+      "B",
+      "b1",
+      "b2",
+      "double",
+      "1.5",
+      "<NA>",
+      "3.25",
+      "4",
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "FALSE",
+      "logical",
+      "TRUE",
+      "<NA>",
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "FALSE",
+      "raw",
+      "1",
+      "2",
+      "3",
+      "4",
+      "complex",
+      "1",
+      "<NA>",
+      "3",
+      "4",
+      "2",
+      "<NA>",
+      "0",
+      "-1",
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "FALSE",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("summarizes factor cells and renders reusable interaction plots", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        calls <- list()
+        summarize <- function(z) {
+          calls[[length(calls) + 1]] <<- z
+          mean(z)
+        }
+        grDevices::pdf(NULL)
+        observed <- withVisible(stats::interaction.plot(
+          factor(c("a", "a", "b", "b", "a", "b")),
+          factor(c("x", "y", "x", "y", "x", "y")),
+          c(1, 4, 3, 2, 5, 6), fun = summarize, type = "b", legend = FALSE,
+          axes = FALSE
+        ))
+        grDevices::dev.off()
+        as.character(c(
+          is.null(observed$value), observed$visible, lengths(calls), unlist(calls),
+          names(formals(stats::interaction.plot))
+        ))
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "FALSE",
+      "2",
+      "1",
+      "1",
+      "2",
+      "1",
+      "5",
+      "3",
+      "4",
+      "2",
+      "6",
+      "x.factor",
+      "trace.factor",
+      "response",
+      "fun",
+      "type",
+      "legend",
+      "trace.label",
+      "fixed",
+      "xlab",
+      "ylab",
+      "ylim",
+      "lty",
+      "col",
+      "pch",
+      "xpd",
+      "leg.bg",
+      "leg.bty",
+      "xtick",
+      "xaxt",
+      "axes",
+      "...",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("extracts and subsets call-language and expression entries", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        call <- quote(f(a = 1, b = 2))
+        expr <- expression(a = 1 + 2, b = x)
+        as.character(c(
+          typeof(call[[1]]), deparse(call[[1]]), typeof(call[[2]]), call[[2]], call[["a"]],
+          typeof(call[1]), deparse(call[1]), length(call[1]), deparse(call[2:3]),
+          names(call[2:3]), typeof(expr[[1]]), deparse(expr[[1]]), deparse(expr[["a"]]),
+          typeof(expr[1]), deparse(expr[1]), names(expr[1])
+        ))
+      `),
+    ).resolves.toEqual([
+      "symbol",
+      "f",
+      "double",
+      "1",
+      "1",
+      "language",
+      "f()",
+      "1",
+      "1(b = 2)",
+      "a",
+      "b",
+      "language",
+      "1 + 2",
+      "1 + 2",
+      "expression",
+      "expression(a = 1 + 2)",
+      "a",
+    ]);
     await runtime.dispose();
   });
 
@@ -15207,6 +26815,119 @@ NeedsCompilation: no
     await runtime.dispose();
   });
 
+  it("supports reusable grDevices colorConverter objects, colorspaces, and rgb2hsv", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        converter <- grDevices::colorConverter(
+          function(color, white) structure(color * 2, names = c("X", "Y", "Z")),
+          function(color, white) color / 2,
+          "scaled",
+          white = c(1, 2, 3)
+        )
+        c(
+          class(converter), names(converter), converter$name,
+          as.character(converter$white), as.character(converter$reference.white),
+          names(formals(converter$toXYZ)), names(formals(grDevices::colorConverter)),
+          names(grDevices::colorspaces), class(grDevices::colorspaces$sRGB),
+          as.character(grDevices::colorspaces$sRGB$gamma),
+          names(formals(grDevices::rgb2hsv))
+        )
+      `),
+    ).resolves.toEqual([
+      "colorConverter",
+      "toXYZ",
+      "fromXYZ",
+      "name",
+      "white",
+      "reference.white",
+      "scaled",
+      "1",
+      "2",
+      "3",
+      "1",
+      "2",
+      "3",
+      "color",
+      "white",
+      "toXYZ",
+      "fromXYZ",
+      "name",
+      "white",
+      "vectorized",
+      "XYZ",
+      "Apple RGB",
+      "sRGB",
+      "CIE RGB",
+      "Lab",
+      "Luv",
+      "RGBcolorConverter",
+      "colorConverter",
+      "sRGB",
+      "r",
+      "g",
+      "b",
+      "maxColorValue",
+    ]);
+    await expect(
+      runtime.eval(`
+        converter <- grDevices::colorConverter(
+          function(color, white) structure(color * 2, names = c("X", "Y", "Z")),
+          function(color, white) color / 2,
+          "scaled",
+          white = c(1, 2, 3)
+        )
+        input <- matrix(1:6, 2, 3, dimnames = list(c("a", "b"), c("r", "g", "b")))
+        converted <- converter$toXYZ(input, converter$reference.white)
+        c(unname(converted), dim(converted))
+      `),
+    ).resolves.toEqual([2, 4, 6, 8, 10, 12, 2, 3]);
+    await expect(
+      runtime.eval(`
+        converter <- grDevices::colorConverter(
+          function(color, white) color * 2,
+          function(color, white) color / 2,
+          "scaled",
+          vectorized = TRUE
+        )
+        input <- matrix(1:6, 2, 3)
+        c(unname(grDevices::convertColor(input, converter, "XYZ")),
+          unname(grDevices::convertColor(input, "XYZ", converter)))
+      `),
+    ).resolves.toEqual([2, 4, 6, 8, 10, 12, 0.5, 1, 1.5, 2, 2.5, 3]);
+    await expect(
+      runtime.eval(`
+        hsv <- grDevices::rgb2hsv(
+          matrix(c(1,0,0, 0,1,0, 0,0,1), 3, 3,
+                 dimnames = list(c("R", "G", "B"), c("red", "green", "blue"))),
+          maxColorValue = 1
+        )
+        round(c(unname(hsv), dim(hsv)), 12)
+      `),
+    ).resolves.toEqual([0, 1, 1, 0.333333333333, 1, 1, 0.666666666667, 1, 1, 3, 3]);
+    await expect(
+      runtime.eval(`
+        hsv <- grDevices::rgb2hsv(
+          matrix(c(1,0,0, 0,1,0, 0,0,1), 3, 3,
+                 dimnames = list(c("R", "G", "B"), c("red", "green", "blue"))),
+          maxColorValue = 1
+        )
+        c(rownames(hsv), colnames(hsv))
+      `),
+    ).resolves.toEqual(["h", "s", "v", "red", "green", "blue"]);
+    await expect(
+      runtime.eval(`
+        original <- structure(matrix(1:4, 2, 2), marker = "kept",
+                              dimnames = list(c("a", "b"), c("x", "y")))
+        stripped <- structure(original, dim = NULL)
+        padded <- structure(1:2, names = "a")
+        c(is.null(dim(stripped)), is.null(dimnames(stripped)), attr(stripped, "marker"),
+          names(padded), is.na(names(padded)))
+      `),
+    ).resolves.toEqual(["TRUE", "TRUE", "kept", "a", NA, "FALSE", "TRUE"]);
+    await runtime.dispose();
+  });
+
   it("converts usage-ranked polar CIE-LUV colors through grDevices hcl", async () => {
     const runtime = await session();
     await expect(
@@ -15277,11 +26998,37 @@ NeedsCompilation: no
     await expect(runtime.eval("hcl(0, c = -1)")).rejects.toMatchObject({ code: "NRT3407" });
     await expect(runtime.eval("hcl(0, l = 101)")).rejects.toMatchObject({ code: "NRT3407" });
     await expect(runtime.eval("hcl(0, alpha = 1.1)")).rejects.toMatchObject({ code: "NRT3407" });
+    await expect(
+      runtime.eval(
+        "c(hsv(c(0, 1/6, 1/3, 1/2, 2/3, 5/6, 1), 1, 1), hsv(c(0, .5), c(1, .5), c(1, .5), alpha = c(0, .5, 1)), length(hsv(numeric(), 1, 1)), names(formals(hsv)))",
+      ),
+    ).resolves.toEqual([
+      "#FF0000",
+      "#FFFF00",
+      "#00FF00",
+      "#00FFFF",
+      "#0000FF",
+      "#FF00FF",
+      "#FF0000",
+      "#FF000000",
+      "#40808080",
+      "#FF0000FF",
+      "0",
+      "h",
+      "s",
+      "v",
+      "alpha",
+    ]);
+    await expect(runtime.eval("hsv(NA, 1, 1)")).rejects.toMatchObject({ code: "NRT3408" });
+    await expect(runtime.eval("hsv(0, -1, 1)")).rejects.toMatchObject({ code: "NRT3408" });
     await runtime.dispose();
   });
 
   it("computes usage-ranked vector and array outer products through lazy call dispatch", async () => {
     const runtime = await session();
+    await expect(
+      runtime.eval("c(typeof(outer(1:3, 1:5)), typeof(outer(TRUE, 1L)), typeof(1:2 %o% 3:4))"),
+    ).resolves.toEqual(["double", "double", "double"]);
     await expect(
       runtime.eval(
         "x <- seq(-1, 1, length.out = 5)\nr <- sqrt(outer(x ^ 2, x ^ 2, '+'))\nround(c(dim(r), r[c(1, 2, 3, 7, 13, 25)], sum(r)), 12)",
@@ -15362,7 +27109,7 @@ NeedsCompilation: no
     await runtime.dispose();
   });
 
-  it("dispatches usage-ranked density methods and estimates bounded Gaussian defaults", async () => {
+  it("dispatches usage-ranked density methods and estimates bounded Gaussian and Epanechnikov defaults", async () => {
     const runtime = await session();
     await expect(
       runtime.eval(
@@ -15407,7 +27154,7 @@ NeedsCompilation: no
       "call",
       "data.name",
       "has.na",
-      "x",
+      "c(0, 1, 2)",
       "FALSE",
     ]);
     await expect(
@@ -15415,6 +27162,17 @@ NeedsCompilation: no
         "round(density.default(c(0, 2), bw = 1, weights = c(.25, .75), n = 3, from = 0, to = 2)$y, 12)",
       ),
     ).resolves.toEqual([0.140228794985, 0.241970724519, 0.312704451929]);
+    await expect(
+      runtime.eval(`
+        d.epan <- density.default(
+          c(0, 2), bw = 1, weights = c(.25, .75),
+          kernel = "epanechnikov", n = 5, from = -1, to = 3
+        )
+        round(c(d.epan$y, density.default(0, kernel = "epanechnikov", give.Rkern = TRUE)), 12)
+      `),
+    ).resolves.toEqual([
+      0.067082039325, 0.13416407865, 0.2683281573, 0.2683281573, 0.201246117975, 0.2683281573,
+    ]);
     await expect(runtime.eval("density(c(1, NA, 2), bw = 1)")).rejects.toMatchObject({
       code: "NRT3281",
     });
@@ -15459,15 +27217,42 @@ NeedsCompilation: no
     ).resolves.toEqual([2, 3, 3, 3]);
     await expect(
       runtime.eval(
+        "e <- eigen(cor(mtcars))\nalpha <- atan(e$vectors[, 2] / e$vectors[, 1])\nalpha[e$vectors[, 1] < 0] <- alpha[e$vectors[, 1] < 0] + pi\nc(order(e$vectors[, 1]), order(alpha))",
+      ),
+    ).resolves.toEqual([2, 3, 6, 4, 11, 7, 10, 9, 5, 8, 1, 10, 9, 5, 1, 8, 7, 6, 3, 2, 4, 11]);
+    await expect(
+      runtime.eval(
         "e <- eigen(matrix(c(3, 0, 0, 1, 2, 0, 1, 1, 1), 3), symmetric = FALSE)\no <- eigen(matrix(c(2, 1, 1, 2), 2), only.values = TRUE)\nc(round(e$values, 12), o$values, is.null(o$vectors), identical(class(o), 'list'))",
       ),
     ).resolves.toEqual([3, 2, 1, 3, 1, 1, 1]);
     await expect(runtime.eval("eigen(matrix(c(1, NA, 0, 1), 2))")).rejects.toMatchObject({
       code: "NRT3282",
     });
-    await expect(runtime.eval("eigen(matrix(1:16, 4), symmetric = FALSE)")).rejects.toMatchObject({
-      code: "NRU6137",
-    });
+    await expect(
+      runtime.eval(`
+        a <- matrix(c(1, 0, 0, 0, 1, 2, 0, 0, 0, 1, 3, 0, 0, 0, 1, 4), 4)
+        e <- eigen(a, symmetric = FALSE)
+        c(
+          round(Re(e$values), 12),
+          round(max(Mod(a %*% e$vectors - e$vectors %*% diag(e$values))), 12),
+          dim(e$vectors)
+        )
+      `),
+    ).resolves.toEqual([4, 3, 2, 1, 0, 4, 4]);
+    await expect(
+      runtime.eval(`
+        rotation <- eigen(matrix(c(1, 1, -1, 1), 2))
+        hermitian <- eigen(matrix(c(0, 1i, -1i, 0), 2))
+        general <- eigen(matrix(c(1 + 1i, 2, 3i, 4 - 1i), 2))
+        c(
+          round(Re(rotation$values), 12), round(Im(rotation$values), 12),
+          round(hermitian$values, 12),
+          max(Mod(matrix(c(0, 1i, -1i, 0), 2) %*% hermitian$vectors - hermitian$vectors %*% diag(hermitian$values))) < 1e-10,
+          max(Mod(matrix(c(1 + 1i, 2, 3i, 4 - 1i), 2) %*% general$vectors - general$vectors %*% diag(general$values))) < 1e-8,
+          dim(general$vectors)
+        )
+      `),
+    ).resolves.toEqual([1, 1, 1, -1, 1, -1, 1, 1, 2, 2]);
     await runtime.dispose();
   });
 
@@ -15785,6 +27570,11 @@ NeedsCompilation: no
     ).resolves.toEqual([1, 1.3, 1.6, 1.9, 2, 3, 4, 5, 1, 2, 3, 4, 1, 2, 3]);
     await expect(
       runtime.eval(
+        "c(seq.int(from = 2, by = 3, length.out = 4), seq.int(to = 10, by = 2, length.out = 3), seq.int(by = 2, along.with = letters[1:4]))",
+      ),
+    ).resolves.toEqual([2, 5, 8, 11, 6, 8, 10, 1, 3, 5, 7]);
+    await expect(
+      runtime.eval(
         "seq.foo <- function(from, ..., marker = 'default') c('method', unclass(from), marker, list(...)[['extra']])\nseq.int(structure(3, class = 'foo'), marker = 'ok', extra = 7)",
       ),
     ).resolves.toEqual(["method", "3", "ok", "7"]);
@@ -15822,6 +27612,44 @@ NeedsCompilation: no
         "setClass('parent')\nsetClass('child', contains = 'parent')\nsetAs('parent', 'label', function(from) structure(unclass(from), class = 'label'))\nx <- structure(c(a = 4), class = 'child')\ny <- methods::as(x, 'label')\nc(class(y), unclass(y), names(y))",
       ),
     ).resolves.toEqual(["label", "4", "a"]);
+    await expect(
+      runtime.eval(`
+        setClass("coercion_target_argument")
+        setAs("numeric", "coercion_target_argument", function(from, to) {
+          c(target = to, missing = missing(to))
+        })
+        methods::as(1, "coercion_target_argument")
+      `),
+    ).resolves.toEqual(["coercion_target_argument", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        setClass("initialize_parent_profile", slots = c(x = "numeric"))
+        setClass(
+          "initialize_child_profile",
+          contains = "initialize_parent_profile",
+          slots = c(label = "character")
+        )
+        parent <- new("initialize_parent_profile", x = 4)
+        child <- new("initialize_child_profile", parent, label = "ok")
+        before <- slot(child, "x")
+        slot(child, "x") <- 6
+        c(
+          class(child), before, child@x, child@label,
+          names(formals(slot)), names(formals(get("slot<-")))
+        )
+      `),
+    ).resolves.toEqual([
+      "initialize_child_profile",
+      "4",
+      "6",
+      "ok",
+      "object",
+      "name",
+      "object",
+      "name",
+      "check",
+      "value",
+    ]);
     const registration = await runtime.evalDetailed(
       "setAs('numeric', 'score', function(from) structure(from, class = 'score'))",
     );
@@ -15871,8 +27699,574 @@ NeedsCompilation: no
     await runtime.dispose();
   });
 
+  it("resolves as.environment(-1) to the caller frame", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        probe <- function() {
+          caller <- as.environment(-1L)
+          c(identical(caller, parent.frame()), exists("frame_marker", envir = caller, inherits = FALSE))
+        }
+        wrapper <- function() {
+          frame_marker <- 1L
+          probe()
+        }
+        wrapper()
+      `),
+    ).resolves.toEqual([true, true]);
+    await runtime.dispose();
+  });
+
+  it("separates the Base namespace from the attached Base environment", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        namespace_probe <- 1L
+        base_namespace <- getNamespace("base")
+        c(
+          identical(base_namespace, baseenv()),
+          environmentName(base_namespace),
+          environmentName(baseenv()),
+          identical(parent.env(base_namespace), globalenv()),
+          identical(parent.env(baseenv()), emptyenv()),
+          exists("namespace_probe", envir = base_namespace, inherits = TRUE),
+          exists("namespace_probe", envir = base_namespace, inherits = FALSE)
+        )
+      `),
+    ).resolves.toEqual(["FALSE", "base", "base", "TRUE", "TRUE", "TRUE", "FALSE"]);
+    await runtime.dispose();
+  });
+
+  it("keeps core package bindings in their namespaces while preserving the default search path", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        c(
+          exists("Quote", baseenv(), inherits = FALSE),
+          exists("Quote", asNamespace("methods"), inherits = FALSE),
+          exists("capture.output", baseenv(), inherits = FALSE),
+          exists("capture.output", asNamespace("utils"), inherits = FALSE),
+          exists("lm", baseenv(), inherits = FALSE),
+          exists("lm", asNamespace("stats"), inherits = FALSE),
+          exists("mean", baseenv(), inherits = FALSE),
+          exists("mean", asNamespace("stats"), inherits = FALSE),
+          is.function(Quote), is.function(capture.output), is.function(lm),
+          environmentName(asNamespace("stats")),
+          environmentName(asNamespace("methods")),
+          identical(get(".BaseNamespaceEnv", baseenv()), asNamespace("base"))
+        )
+      `),
+    ).resolves.toEqual([
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "TRUE",
+      "TRUE",
+      "FALSE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "stats",
+      "methods",
+      "TRUE",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("attaches empty lists as writable search environments", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        attached <- attach(list(), pos = 2L, name = "empty-probe")
+        assign("attached_value", 7L, pos = 2L)
+        c(
+          is.environment(attached), search()[2L], environmentName(pos.to.env(2L)),
+          attached_value, exists("attached_value", envir = attached, inherits = FALSE),
+          attr(attached, "name"), identical(attached, pos.to.env(2L))
+        )
+      `),
+    ).resolves.toEqual(["TRUE", "empty-probe", "empty-probe", "7", "TRUE", "empty-probe", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        package_env <- pos.to.env(match("package:utils", search()))
+        original_position <- match("package:utils", search())
+        original_name <- attr(package_env, "name")
+        detach("package:utils")
+        moved <- attach(package_env, pos = 2L, name = original_name)
+        c(original_position > 2L, original_name, search()[2L], attr(moved, "name"))
+      `),
+    ).resolves.toEqual(["TRUE", "package:utils", "package:utils", "package:utils"]);
+    await expect(runtime.eval('detach("empty-probe"); "empty-probe" %in% search()')).resolves.toBe(
+      false,
+    );
+    await runtime.dispose();
+  });
+
+  it("resolves character literal function heads through ordinary function lookup", async () => {
+    const runtime = await session();
+    await expect(runtime.eval('"mean"(c(1, 2, 3))')).resolves.toBe(2);
+    await expect(
+      runtime.eval(`
+        literalHead <- function(x) x + 1L
+        wrapper <- function() {
+          literalHead <- "masked non-function"
+          "literalHead"(4L)
+        }
+        wrapper()
+      `),
+    ).resolves.toBe(5);
+    await expect(runtime.eval('"missingLiteralHead"()')).rejects.toMatchObject({
+      code: "NRE2001",
+    });
+    await runtime.dispose();
+  });
+
+  it("reports GNU R data classes for implicit and explicit objects", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        c(
+          data.class(NULL), data.class(1), data.class(1L), data.class(TRUE),
+          data.class("x"), data.class(list()), data.class(pairlist(a = 1L)),
+          data.class(expression(x)), data.class(quote(x)), data.class(quote(x + y)),
+          data.class(function() NULL), data.class(new.env()),
+          data.class(matrix(1:4, 2)), data.class(array(1:8, c(2, 2, 2))),
+          data.class(factor("a")), data.class(data.frame(x = 1L)),
+          data.class(structure(1L, class = c("first", "second")))
+        )
+      `),
+    ).resolves.toEqual([
+      "NULL",
+      "numeric",
+      "numeric",
+      "logical",
+      "character",
+      "list",
+      "pairlist",
+      "expression",
+      "name",
+      "call",
+      "function",
+      "environment",
+      "matrix",
+      "array",
+      "factor",
+      "data.frame",
+      "first",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("replaces substrings with GNU R recycling and attribute preservation", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- structure(c("abcdef", "xyz"), names = c("a", "b"), class = "marked")
+        substr(x, c(2L, 1L), c(4L, 2L)) <- c("Q", "12345")
+        c(unclass(x), names(x), class(x))
+      `),
+    ).resolves.toEqual(["aQcdef", "12z", "a", "b", "marked"]);
+    await expect(
+      runtime.eval(`
+        x <- c("abcdef", "abcdef", "abcdef", "abcdef")
+        substr(x, c(2L, 20L, 4L, NA_integer_), c(4L, 30L, 2L, 4L)) <- "Q"
+        x
+      `),
+    ).resolves.toEqual(["aQcdef", "abcdef", "abcdef", NA]);
+    await expect(runtime.eval('x <- "a"; substr(x, 1L, 1L) <- character()')).rejects.toThrow(
+      /invalid value/u,
+    );
+    await runtime.dispose();
+  });
+
+  it("replaces complete attribute sets from named lists or NULL", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- matrix(list("a", "b"), nrow = 1L)
+        attributes(x) <- NULL
+        c(typeof(x), length(x), is.null(dim(x)), is.null(names(x)))
+      `),
+    ).resolves.toEqual(["list", "2", "TRUE", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        x <- 1:2
+        attributes(x) <- list(names = c("a", "b"), class = "marked")
+        c(unclass(x), names(x), class(x))
+      `),
+    ).resolves.toEqual(["1", "2", "a", "b", "marked"]);
+    await expect(
+      runtime.eval(`
+        empty <- NULL
+        attributes(empty) <- NULL
+        promoted <- NULL
+        attributes(promoted) <- list(class = "marked")
+        c(is.null(empty), typeof(promoted), length(promoted), class(promoted))
+      `),
+    ).resolves.toEqual(["TRUE", "list", "0", "marked"]);
+    await expect(runtime.eval("x <- 1:2; attributes(x) <- list(1L)")).rejects.toThrow(
+      /attributes must be named/u,
+    );
+    await runtime.dispose();
+  });
+
+  it("exposes print.default as the non-dispatching Base S3 fallback", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        output <- capture.output(print.default(c(a = 1L, b = 2L), width = 80L, cutoff = 100L))
+        c(
+          is.function(getS3method("print", "default")),
+          length(output),
+          any(grepl("1", output)),
+          identical(names(formals(print)), c("x", "...")),
+          identical(tail(names(formals(print.default)), 2L), c("useSource", "..."))
+        )
+      `),
+    ).resolves.toEqual([1, 2, 1, 1, 1]);
+    await expect(runtime.eval("print.default(1, width = 9L)")).rejects.toMatchObject({
+      code: "NRT3166",
+    });
+    await runtime.dispose();
+  });
+
+  it("enumerates S4 class definitions in an environment with optional inheritance", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        before <- methods::getClasses(where = globalenv(), inherits = FALSE)
+        setClass("NativRGetClassesParent")
+        setClass("NativRGetClassesChild", contains = "NativRGetClassesParent")
+        after <- methods::getClasses(where = globalenv(), inherits = FALSE)
+        local <- new.env(parent = globalenv())
+        c(
+          all(c("NativRGetClassesParent", "NativRGetClassesChild") %in% after),
+          length(setdiff(after, before)),
+          length(methods::getClasses(where = local, inherits = FALSE)),
+          all(c("NativRGetClassesParent", "NativRGetClassesChild") %in%
+            methods::getClasses(where = local, inherits = TRUE)),
+          names(formals(methods::getClasses))
+        )
+      `),
+    ).resolves.toEqual(["TRUE", "2", "0", "TRUE", "where", "inherits"]);
+    await runtime.dispose();
+  });
+
+  it("looks up explicit and implicit S4 class definitions", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        setClass("NativRGetClassParent")
+        setClass("NativRGetClassChild", contains = "NativRGetClassParent")
+        definition <- methods::getClass("NativRGetClassChild", where = globalenv())
+        forced <- methods::getClass("NativRForcedClass", .Force = TRUE)
+        c(
+          methods::isClass("NativRGetClassChild", where = globalenv()),
+          methods::isClass("numeric"),
+          !methods::isClass("NativRMissingClass", where = globalenv()),
+          class(definition),
+          definition$className,
+          definition$contains,
+          class(forced),
+          forced$className,
+          names(formals(methods::getClass)),
+          names(formals(methods::isClass))
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "classRepresentation",
+      "NativRGetClassChild",
+      "NativRGetClassParent",
+      "classRepresentation",
+      "NativRForcedClass",
+      "Class",
+      ".Force",
+      "where",
+      "Class",
+      "formal",
+      "where",
+    ]);
+    await expect(runtime.eval('methods::getClass("NativRMissingClass")')).rejects.toMatchObject({
+      code: "NRE2263",
+    });
+    await runtime.dispose();
+  });
+
+  it("extracts and replaces S4 slots and enforces registered validity methods", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        setClass("Validated", representation(value = "numeric"))
+        definition <- setValidity("Validated", function(object) {
+          if (length(object@value) == 1L && object@value >= 0) TRUE
+          else "value must be one non-negative number"
+        })
+        x <- new("Validated", value = 1)
+        x@value <- 2
+        holder <- list(item = x)
+        holder$item@value <- 3
+        c(
+          class(definition),
+          x@value,
+          holder$item@value,
+          validObject(x),
+          names(formals(methods::setValidity)),
+          names(formals(methods::validObject))
+        )
+      `),
+    ).resolves.toEqual([
+      "classRepresentation",
+      "2",
+      "3",
+      "TRUE",
+      "Class",
+      "method",
+      "where",
+      "object",
+      "test",
+      "complete",
+    ]);
+    await expect(runtime.eval('new("Validated", value = -1)')).rejects.toMatchObject({
+      code: "NRE2262",
+    });
+    await expect(
+      runtime.eval(`
+        x <- new("Validated", value = 1)
+        setValidity("Validated", function(object) c("first", "second"))
+        validObject(x, test = TRUE)
+      `),
+    ).resolves.toEqual(["first", "second"]);
+    await expect(
+      runtime.eval(`
+        setValidity("Validated", NULL)
+        validObject(new("Validated", value = -1), test = TRUE)
+      `),
+    ).resolves.toBe(true);
+    await expect(runtime.eval('new("Validated", value = 1)@absent')).rejects.toMatchObject({
+      code: "NRE2260",
+    });
+    await expect(runtime.eval("1@value")).rejects.toMatchObject({ code: "NRT3360" });
+    await runtime.dispose();
+  });
+
+  it("validates S4 slot replacement classes while admitting NULL class unions", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        setClassUnion("NativRNULLorCharacter", c("NULL", "character"))
+        setClass(
+          "NativRNullableSlots",
+          slots = c(
+            nullable = "NativRNULLorCharacter",
+            text = "character",
+            anything = "ANY",
+            items = "list"
+          )
+        )
+        object <- new(
+          "NativRNullableSlots",
+          nullable = NULL,
+          text = "kept",
+          anything = 1,
+          items = list()
+        )
+        object@nullable <- NULL
+        slot(object, "nullable") <- NULL
+        holder <- list(item = object)
+        holder$item@nullable <- NULL
+        invalid_at <- tryCatch({
+          object@text <- NULL
+          "missing error"
+        }, error = conditionMessage)
+        invalid_slot <- tryCatch({
+          slot(object, "items") <- NULL
+          "missing error"
+        }, error = conditionMessage)
+        object@anything <- NULL
+        slot(object, "items", check = FALSE) <- NULL
+        list(
+          is.null(object@nullable),
+          is.null(holder$item@nullable),
+          invalid_at,
+          invalid_slot,
+          is.null(object@anything),
+          is.null(object@items),
+          validObject(object, test = TRUE)
+        )
+      `),
+    ).resolves.toEqual([
+      true,
+      true,
+      'assignment of an object of class "NULL" is not valid for @\'text\' in an object of class "NativRNullableSlots"; is(value, "character") is not TRUE',
+      'assignment of an object of class "NULL" is not valid for slot \'items\' in an object of class "NativRNullableSlots"; is(value, "list") is not TRUE',
+      true,
+      true,
+      'invalid object for slot "items" in class "NativRNullableSlots": got class "NULL", should be or extend class "list"',
+    ]);
+    await expect(
+      runtime.eval(`
+        setClass(
+          "NativRAtomicSlotDefaults",
+          contains = "matrix",
+          slots = c(units = "character", positions = "numeric")
+        )
+        defaulted <- new("NativRAtomicSlotDefaults", matrix(1:4, 2, 2))
+        supplied <- new(
+          "NativRAtomicSlotDefaults",
+          matrix(1:4, 2, 2),
+          units = "old",
+          positions = c(1, 2)
+        )
+        c(
+          length(defaulted@units),
+          length(defaulted@positions),
+          supplied@units == "old",
+          supplied@positions,
+          validObject(defaulted),
+          validObject(supplied)
+        )
+      `),
+    ).resolves.toEqual([0, 0, 1, 1, 2, 1, 1]);
+    await runtime.dispose();
+  });
+
+  it("constructs inherited reference classes with fields, accessors, and methods", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        RefBase <- methods::setRefClass(
+          "RefBase",
+          fields = list(x = "numeric", doubled = function() x * 2),
+          methods = list(
+            initialize = function(value = 1) x <<- value,
+            bump = function() { x <<- x + 1; invisible(.self) }
+          )
+        )
+        RefChild <- methods::setRefClass(
+          "RefChild",
+          contains = "RefBase",
+          fields = c("label"),
+          methods = list(
+            initialize = function(value = 1, text = "item") {
+              x <<- value
+              label <<- text
+            },
+            labelled = function() paste(label, x)
+          )
+        )
+        setMethod("as.character", signature(x = "RefChild"), function(x, ...) x$labelled())
+        a <- RefBase$new(3)
+        b <- RefChild(4, "score")
+        c(
+          class(a), a$x, a$doubled, identical(a$bump(), a), a$x,
+          class(b), b$labelled(), methods::is(b, "RefBase"), as.character(b),
+          names(formals(methods::setRefClass))
+        )
+      `),
+    ).resolves.toEqual([
+      "RefBase",
+      "3",
+      "6",
+      "TRUE",
+      "4",
+      "RefChild",
+      "score 4",
+      "TRUE",
+      "score 4",
+      "Class",
+      "fields",
+      "contains",
+      "methods",
+      "where",
+      "inheritPackage",
+      "...",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("routes reference-class callSuper through inherited methods and root initialization", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        RefSuperBase <- methods::setRefClass(
+          "RefSuperBase",
+          fields = c(x = "numeric"),
+          methods = list(
+            initialize = function(value = 1) { x <<- value; invisible(.self) },
+            describe = function(delta = 0) c("base", x + delta),
+            nested = function(delta = 0) c("base", x + delta)
+          )
+        )
+        RefSuperChild <- methods::setRefClass(
+          "RefSuperChild",
+          contains = "RefSuperBase",
+          methods = list(
+            initialize = function(value = 2) callSuper(value),
+            describe = function(delta = 0) c("child", callSuper(delta + 1)),
+            nested = function(delta = 0) local(function() callSuper(delta + 2))()
+          )
+        )
+        RefSuperRoot <- methods::setRefClass(
+          "RefSuperRoot",
+          fields = c(x = "numeric", label = "character"),
+          methods = list(
+            initialize = function(...) callSuper(...),
+            naked = function() callSuper()
+          )
+        )
+        child <- RefSuperChild(4)
+        root <- RefSuperRoot(x = 3, label = "item")
+        c(
+          class(child), child$x, child$describe(3), child$nested(3),
+          class(root), root$x, root$label,
+          exists("callSuper", envir = child, inherits = FALSE)
+        )
+      `),
+    ).resolves.toEqual([
+      "RefSuperChild",
+      "4",
+      "child",
+      "base",
+      "8",
+      "base",
+      "9",
+      "RefSuperRoot",
+      "3",
+      "item",
+      "FALSE",
+    ]);
+    await expect(runtime.eval("root$naked()")).rejects.toMatchObject({ code: "NRE2264" });
+    await expect(runtime.eval("RefSuperRoot(unknown = 1)")).rejects.toMatchObject({
+      code: "NRE2264",
+    });
+    await runtime.dispose();
+  });
+
   it("constructs method signatures and dispatches across multiple arguments", async () => {
     const runtime = await session();
+    await expect(
+      runtime.eval(`
+        implicitProbe <- function(x) standardGeneric(implicitProbe)
+        setMethod("implicitProbe", "numeric", function(x) x + 2)
+        implicitProbe(2)
+      `),
+    ).resolves.toBe(4);
+    await expect(
+      runtime.eval(`
+        tryCatch(
+          local({
+            localOnlyProbe <- function(x) standardGeneric(localOnlyProbe)
+            setMethod("localOnlyProbe", "numeric", function(x) x)
+          }),
+          error = function(e) conditionMessage(e)
+        )
+      `),
+    ).resolves.toBe("no existing definition for function 'localOnlyProbe'");
     await expect(
       runtime.eval(
         "a <- methods::signature()\nb <- signature('numeric', y = 'character', z = NA_character_)\nd <- signature('', x = 'A', x = 'B')\nc(length(a), is.null(names(a)), b[1:2], is.na(b[3]), names(b), names(formals(methods::signature)), d, names(d))",
@@ -15919,13 +28313,517 @@ NeedsCompilation: no
         b <- new("SignatureB", value = 2)
         child <- new("SignatureBChild", value = 3)
         c(
+          extends("SignatureBChild", "SignatureB"),
+          !extends("SignatureB", "SignatureBChild"),
           signaturePair(a, b),
           signaturePair(a, 1),
           signaturePair(y = b, x = a),
           signaturePair(a, child)
         )
       `),
-    ).resolves.toEqual(["AB-replaced", "A-any", "AB-replaced", "AB-replaced"]);
+    ).resolves.toEqual(["TRUE", "TRUE", "AB-replaced", "A-any", "AB-replaced", "AB-replaced"]);
+    await expect(
+      runtime.eval(`
+        setClass("ReplaceProbe", representation(value = "numeric"))
+        setGeneric("stamp<-", function(object, value) standardGeneric("stamp<-"))
+        registered <- withVisible(setReplaceMethod(
+          "stamp", "ReplaceProbe", function(object, value) {
+            object@value <- value
+            object
+          }
+        ))
+        object <- new("ReplaceProbe", value = 1)
+        stamp(object) <- 7
+        c(registered$value, registered$visible, object@value,
+          names(formals(methods::setReplaceMethod)))
+      `),
+    ).resolves.toEqual(["stamp<-", "FALSE", "7", "f", "...", "where"]);
+    await expect(
+      runtime.eval(`
+        inheritedDefault <- function(x) paste("fallback", class(x))
+        setGeneric("inheritedDefault")
+        setMethod("inheritedDefault", "SignatureA", function(x) "method")
+        namedFallback <- function(a = NULL, b = NULL, h = NULL) h
+        setGeneric("namedFallback")
+        c(inheritedDefault(1), inheritedDefault(a), namedFallback(h = 7))
+      `),
+    ).resolves.toEqual(["fallback numeric", "method", "7"]);
+    await expect(
+      runtime.eval(`
+        setGeneric("callGenericProbe", function(x, y = 2, ...) standardGeneric("callGenericProbe"))
+        setMethod("callGenericProbe", "numeric", function(x, y = 2, ...) paste(x, y, ...))
+        setMethod("callGenericProbe", "character", function(x, y = 2, ...) {
+          x <- as.numeric(x)
+          callGeneric()
+        })
+        setClass("DataPartProbe", representation(Data = "numeric"))
+        setMethod("getDataPart", "DataPartProbe", function(object) object@Data)
+        dataPart <- new("DataPartProbe", Data = c(6, 7))
+        c(
+          callGenericProbe("3", 4, 5),
+          methods::getDataPart(dataPart),
+          names(formals(methods::callGeneric)),
+          names(formals(methods::getDataPart)),
+          tryCatch(methods::callGeneric(1), error = function(e) conditionMessage(e))
+        )
+      `),
+    ).resolves.toEqual([
+      "3 4 5",
+      "6",
+      "7",
+      "...",
+      "object",
+      "NULL.for.none",
+      "no generic function found for 'callGeneric'",
+    ]);
+    const promotedDataPart = await runtime.evalDetailed(`
+      setClass("SetDataPartProbe0419", representation(Data = "numeric", checked = "logical"))
+      before <- isGeneric("setDataPart")
+      setMethod(
+        "setDataPart", "SetDataPartProbe0419",
+        function(object, value, check = TRUE) {
+          object@Data <- value
+          object@checked <- check
+          object
+        }
+      )
+      object <- new("SetDataPartProbe0419", Data = 1, checked = TRUE)
+      updated <- setDataPart(object, c(4, 5), check = FALSE)
+      c(before, isGeneric("setDataPart"), updated@Data, updated@checked)
+    `);
+    expect(promotedDataPart.value).toEqual([0, 1, 4, 5, 0]);
+    expect(promotedDataPart.output).toEqual([
+      {
+        stream: "message",
+        text: "Creating a generic function for 'setDataPart' from package 'methods' in the global environment\n",
+      },
+    ]);
+    await expect(
+      runtime.eval(`
+        probe <- function(x, ..., y = 1) c(
+          methods::hasArg(x), methods::hasArg("x"),
+          methods::hasArg(y), methods::hasArg("y"),
+          methods::hasArg(a), methods::hasArg("a"), methods::hasArg("..."),
+          names(formals(methods::hasArg))
+        )
+        c(probe(), probe(1), probe(y = 2), probe(a = 4), probe(x = ))
+      `),
+    ).resolves.toEqual([
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "name",
+      "TRUE",
+      "TRUE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "name",
+      "FALSE",
+      "FALSE",
+      "TRUE",
+      "TRUE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "name",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "name",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "name",
+    ]);
+    await expect(
+      runtime.eval(`
+        frame <- data.frame(x = 1:2, f = factor(c("a", "b")))
+        accepted <- stats::.checkMFClasses(c(x = "numeric", f = "factor"), frame)
+        mismatch <- tryCatch(
+          stats::.checkMFClasses(c(x = "factor", f = "factor"), frame),
+          error = function(error) conditionMessage(error)
+        )
+        c(is.null(accepted), mismatch, names(formals(stats::.checkMFClasses)))
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      'variable \'x\' was fitted with type "factor" but type "numeric" was supplied',
+      "cl",
+      "m",
+      "ordNotOK",
+    ]);
+    await expect(
+      runtime.eval(`
+        plain <- makepredictcall(1:3, quote(foo(x)))
+        scaled <- makepredictcall(scale(1:3), quote(scale(x)))
+        polynomial <- poly(1:5, 2)
+        polynomial.call <- makepredictcall(polynomial, quote(stats::poly(x, 2)))
+        makepredictcall.oracle_predict_call <- function(var, call) {
+          call("tagged", call, marker = attr(var, "marker"))
+        }
+        custom <- makepredictcall(
+          structure(1, class = "oracle_predict_call", marker = "yes"),
+          quote(foo(x))
+        )
+        as.character(c(
+          identical(plain, quote(foo(x))),
+          scaled$center, scaled$scale,
+          identical(polynomial.call$coefs, attr(polynomial, "coefs")),
+          deparse(custom),
+          names(formals(stats::makepredictcall)),
+          names(formals(stats:::makepredictcall.default))
+        ))
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "2",
+      "1",
+      "TRUE",
+      'tagged(foo(x), marker = "yes")',
+      "var",
+      "call",
+      "var",
+      "call",
+    ]);
+    await expect(
+      runtime.eval(`
+        excluded.action <- structure(c(2L, 4L), names = c("b", "d"), class = "exclude")
+        omitted.action <- structure(c(2L, 4L), class = "omit")
+        x <- c(a = 10, c = 30, e = 50)
+        restored <- napredict(excluded.action, x)
+        restored.matrix <- napredict(
+          excluded.action,
+          matrix(1:6, 3, 2, dimnames = list(c("a", "c", "e"), c("u", "v")))
+        )
+        napredict.oracle_na <- function(omit, x, ...) paste0("custom:", x)
+        custom <- napredict(structure(1, class = "oracle_na"), 7)
+        as.character(c(
+          identical(napredict(NULL, x), x), identical(napredict(omitted.action, x), x),
+          restored, names(restored), dim(restored.matrix), restored.matrix,
+          unlist(dimnames(restored.matrix)), custom,
+          names(formals(stats::napredict)), names(formals(stats:::napredict.default)),
+          names(formals(stats:::napredict.exclude))
+        ))
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "TRUE",
+      "10",
+      NA,
+      "30",
+      NA,
+      "50",
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "5",
+      "2",
+      "1",
+      NA,
+      "2",
+      NA,
+      "3",
+      "4",
+      NA,
+      "5",
+      NA,
+      "6",
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "u",
+      "v",
+      "custom:7",
+      "omit",
+      "x",
+      "...",
+      "omit",
+      "x",
+      "...",
+      "omit",
+      "x",
+      "...",
+    ]);
+    await expect(
+      runtime.eval(`
+        excluded.action <- structure(c(2L, 4L), names = c("b", "d"), class = "exclude")
+        omitted.action <- structure(c(2L, 4L), class = "omit")
+        x <- c(a = 10, c = 30, e = 50)
+        restored <- naresid(excluded.action, x)
+        restored.matrix <- naresid(
+          excluded.action,
+          matrix(1:6, 3, 2, dimnames = list(c("a", "c", "e"), c("u", "v")))
+        )
+        naresid.oracle_na <- function(omit, x, ...) paste0("custom:", x)
+        custom <- naresid(structure(1, class = "oracle_na"), 7)
+        as.character(c(
+          identical(naresid(NULL, x), x), identical(naresid(omitted.action, x), x),
+          restored, names(restored), dim(restored.matrix), restored.matrix,
+          unlist(dimnames(restored.matrix)), custom,
+          names(formals(stats::naresid)), names(formals(stats:::naresid.default)),
+          names(formals(stats:::naresid.exclude))
+        ))
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "TRUE",
+      "10",
+      NA,
+      "30",
+      NA,
+      "50",
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "5",
+      "2",
+      "1",
+      NA,
+      "2",
+      NA,
+      "3",
+      "4",
+      NA,
+      "5",
+      NA,
+      "6",
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "u",
+      "v",
+      "custom:7",
+      "omit",
+      "x",
+      "...",
+      "omit",
+      "x",
+      "...",
+      "omit",
+      "x",
+      "...",
+    ]);
+    await expect(
+      runtime.eval(`
+        coefficients <- matrix(
+          c(1, .1, 10, .001, 2, .2, 10, .02), 2, 4, byrow = TRUE,
+          dimnames = list(c("alpha", "beta"), c("Estimate", "Std. Error", "t value", "Pr(>|t|)"))
+        )
+        output <- capture.output(result <- withVisible(printCoefmat(coefficients, signif.stars = FALSE)))
+        as.character(c(
+          identical(result$value, coefficients), result$visible, length(output),
+          any(grepl("Estimate", output)), any(grepl("alpha", output)),
+          names(formals(stats::printCoefmat))
+        ))
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "FALSE",
+      "3",
+      "TRUE",
+      "TRUE",
+      "x",
+      "digits",
+      "signif.stars",
+      "signif.legend",
+      "dig.tst",
+      "cs.ind",
+      "tst.ind",
+      "zap.ind",
+      "P.values",
+      "has.Pvalue",
+      "eps.Pvalue",
+      "na.print",
+      "quote",
+      "right",
+      "...",
+    ]);
+    await expect(
+      runtime.eval(`
+        biplot.oracle_biplot <- function(x, marker = "ok", ...) paste0(marker, ":", unclass(x))
+        dispatched <- biplot(structure(3, class = "oracle_biplot"), marker = "custom")
+        boundary <- tryCatch(biplot(matrix(1:4, 2)), error = function(error) conditionMessage(error))
+        c(
+          dispatched, grepl("dual-coordinate graphics contract", boundary),
+          names(formals(stats::biplot)), names(formals(stats:::biplot.default))
+        )
+      `),
+    ).resolves.toEqual([
+      "custom:3",
+      "TRUE",
+      "x",
+      "...",
+      "x",
+      "y",
+      "var.axes",
+      "col",
+      "cex",
+      "xlabs",
+      "ylabs",
+      "expand",
+      "xlim",
+      "ylim",
+      "arrow.len",
+      "main",
+      "sub",
+      "xlab",
+      "ylab",
+      "...",
+    ]);
+    await expect(
+      runtime.eval(`
+        setClass("MatrixDataInitializer0419", contains = "matrix", slots = c(label = "character"))
+        setMethod(
+          "initialize", "MatrixDataInitializer0419",
+          function(.Object, .Data = matrix(numeric(), 0, 0), label = character()) {
+            slot(.Object, ".Data") <- .Data
+            slot(.Object, "label") <- label
+            .Object
+          }
+        )
+        object <- new(
+          "MatrixDataInitializer0419", .Data = matrix(1:3, 3, 1), label = "kept"
+        )
+        c(names(attributes(object)), object@label)
+      `),
+    ).resolves.toEqual(["dim", "label", "class", "kept"]);
+    await expect(
+      runtime.eval(`
+        setClass("BindPrecedence0419", representation(value = "numeric"))
+        cbind.BindPrecedence0419 <- function(..., deparse.level = 1) {
+          matrix(c(11, 12), nrow = 1, dimnames = list("s3", c("x", "y")))
+        }
+        rbind.BindPrecedence0419 <- function(..., deparse.level = 1) {
+          matrix(c(13, 14), ncol = 1, dimnames = list(c("x", "y"), "s3"))
+        }
+        setMethod(
+          "cbind2", c("BindPrecedence0419", "BindPrecedence0419"),
+          function(x, y) matrix(c(21, 22), nrow = 1, dimnames = list("s4", c("x", "y")))
+        )
+        setMethod(
+          "rbind2", c("BindPrecedence0419", "BindPrecedence0419"),
+          function(x, y) matrix(c(23, 24), ncol = 1, dimnames = list(c("x", "y"), "s4"))
+        )
+        x <- new("BindPrecedence0419", value = 2)
+        y <- new("BindPrecedence0419", value = 3)
+        column <- cbind(x, y)
+        row <- rbind(x, y)
+        c(
+          column, row, cbind2(x, y), rbind2(x, y),
+          colnames(column), rownames(row), rownames(column), colnames(row),
+          names(formals(cbind2)), names(formals(rbind2))
+        )
+      `),
+    ).resolves.toEqual([
+      "21",
+      "22",
+      "23",
+      "24",
+      "21",
+      "22",
+      "23",
+      "24",
+      "x",
+      "y",
+      "x",
+      "y",
+      "s4",
+      "s4",
+      "x",
+      "y",
+      "...",
+      "x",
+      "y",
+      "...",
+    ]);
+    await expect(
+      runtime.eval(`
+        setClass("BindResume0420", contains = "matrix")
+        cbind.BindResume0420 <- function(..., deparse.level = 1) "s3-column"
+        rbind.BindResume0420 <- function(..., deparse.level = 1) "s3-row"
+        setMethod(
+          "cbind2", c("BindResume0420", "BindResume0420"),
+          function(x, y) cbind(x, y)
+        )
+        setMethod(
+          "rbind2", c("BindResume0420", "BindResume0420"),
+          function(x, y) rbind(x, y)
+        )
+        x <- new("BindResume0420", matrix(2, 1, 1))
+        y <- new("BindResume0420", matrix(3, 1, 1))
+        c(cbind(x, y), rbind(x, y), cbind2(x, y), rbind2(x, y))
+      `),
+    ).resolves.toEqual(["s3-column", "s3-row", "s3-column", "s3-row"]);
+    await expect(
+      runtime.eval(`
+        setClass(
+          "InitCopyProbe0341",
+          slots = c(left = "numeric", right = "character"),
+          prototype = list(left = 1, right = "p")
+        )
+        setMethod(
+          "initialize", "InitCopyProbe0341",
+          function(.Object, ...) callNextMethod()
+        )
+        setMethod("names", "InitCopyProbe0341", function(x) c("left", "right"))
+        setReplaceMethod("names", "InitCopyProbe0341", function(x, value) {
+          x@right <- paste(value, collapse = ":")
+          x
+        })
+        source <- new("InitCopyProbe0341", left = 4, right = "r")
+        copy <- new("InitCopyProbe0341", source)
+        names(copy) <- c("a", "b")
+
+        setClass("NextParent0341")
+        setClass("NextChild0341", contains = "NextParent0341")
+        setGeneric("route0341", function(x) standardGeneric("route0341"))
+        setMethod("route0341", "NextParent0341", function(x) c("parent", class(x)))
+        setMethod("route0341", "NextChild0341", function(x) c("child", callNextMethod()))
+
+        c(
+          copy@left,
+          copy@right,
+          names(copy),
+          route0341(new("NextChild0341")),
+          names(formals(initialize)),
+          names(formals(callNextMethod))
+        )
+      `),
+    ).resolves.toEqual([
+      "4",
+      "a:b",
+      "left",
+      "right",
+      "child",
+      "parent",
+      "NextChild0341",
+      ".Object",
+      "...",
+      "...",
+    ]);
     await expect(
       runtime.eval(
         "c(inherits(try(signature(c('A', 'B')), silent = TRUE), 'try-error'), inherits(try(signature(factor('A')), silent = TRUE), 'try-error'), inherits(try(signature(1), silent = TRUE), 'try-error'), inherits(try(signature(NULL), silent = TRUE), 'try-error'), inherits(try(signature(x = ), silent = TRUE), 'try-error'))",
@@ -16004,6 +28902,56 @@ NeedsCompilation: no
       "Class",
       "complete",
       "propertiesAreCalled",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("reports formal S4 slot names for objects, class definitions, and data classes", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        setClass("SlotNamesParent0432", slots = c(parent = "numeric"))
+        setClass(
+          "SlotNamesChild0432",
+          contains = "SlotNamesParent0432",
+          slots = c(child = "character", flag = "logical")
+        )
+        setClass("SlotNamesData0432", contains = "numeric", slots = c(tag = "character"))
+        object <- new("SlotNamesChild0432", parent = 1, child = "x", flag = TRUE)
+        data.object <- new("SlotNamesData0432", 1:2, tag = "kept")
+        s3 <- structure(1, class = "SlotNamesChild0432")
+        as.character(c(
+          slotNames(object), "|", slotNames("SlotNamesChild0432"), "|",
+          slotNames(getClass("SlotNamesChild0432")), "|", slotNames(s3), "|",
+          slotNames(data.object), length(slotNames("NoSuchSlotClass0432")),
+          is.null(slotNames(1)), identical(methods:::.slotNames(object), slotNames(object)),
+          names(formals(methods::slotNames)), names(formals(methods:::.slotNames))
+        ))
+      `),
+    ).resolves.toEqual([
+      "child",
+      "flag",
+      "parent",
+      "|",
+      "child",
+      "flag",
+      "parent",
+      "|",
+      "child",
+      "flag",
+      "parent",
+      "|",
+      "child",
+      "flag",
+      "parent",
+      "|",
+      ".Data",
+      "tag",
+      "0",
+      "TRUE",
+      "TRUE",
+      "x",
+      "x",
     ]);
     await runtime.dispose();
   });
@@ -16171,6 +29119,75 @@ NeedsCompilation: no
         "singular <- lm(y ~ x + z, data.frame(y = 1:4, x = 1:4, z = 2 * (1:4)))\nc(round(vcov(singular, complete = FALSE), 12), is.na(vcov(singular)), is.na(confint(singular)))",
       ),
     ).resolves.toEqual([0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1]);
+    await expect(
+      runtime.eval(`
+        reduced <- vcov(singular, complete = FALSE)
+        c(
+          identical(vcov(singular, FALSE), reduced),
+          identical(vcov(singular, comp = FALSE), reduced),
+          identical(vcov(singular, dispersion = stop("must remain lazy")), vcov(singular)),
+          dim(vcov(singular, complete = FALSE, dispersion = NULL))
+        )
+      `),
+    ).resolves.toEqual([1, 1, 1, 2, 2]);
+    await expect(
+      runtime.eval(`
+        glm.data <- data.frame(
+          y = c(2, 3, 7, 9, 12, 18),
+          x = c(0, 0, 1, 1, 2, 2)
+        )
+        fixed.glm <- glm(
+          y ~ x, glm.data, family = poisson(),
+          weights = 1 / (1 + .1 * c(2.5, 2.5, 8, 8, 15, 15))
+        )
+        quasi.glm <- glm(y ~ x, glm.data, family = quasipoisson())
+        singular.glm <- glm(
+          y ~ x + z,
+          data.frame(y = c(1, 2, 4, 8), x = 1:4, z = 2 * (1:4)),
+          family = gaussian()
+        )
+        as.character(c(
+          round(vcov(fixed.glm), 6), round(summary(fixed.glm)$cov.scaled, 6),
+          summary(fixed.glm)$dispersion, round(vcov(quasi.glm), 6),
+          round(summary(quasi.glm)$dispersion, 6),
+          round(vcov(quasi.glm, dispersion = 2), 6),
+          round(vcov(singular.glm, complete = FALSE), 6),
+          dim(vcov(singular.glm, complete = FALSE)), sum(is.na(vcov(singular.glm))),
+          names(formals(stats::vcov)), names(formals(stats:::vcov.glm))
+        ))
+      `),
+    ).resolves.toEqual([
+      "0.158443",
+      "-0.089497",
+      "-0.089497",
+      "0.067728",
+      "0.158443",
+      "-0.089497",
+      "-0.089497",
+      "0.067728",
+      "1",
+      "0.059927",
+      "-0.032952",
+      "-0.032952",
+      "0.022112",
+      "0.551945",
+      "0.217149",
+      "-0.119402",
+      "-0.119402",
+      "0.080125",
+      "1.725",
+      "-0.575",
+      "-0.575",
+      "0.23",
+      "2",
+      "2",
+      "5",
+      "object",
+      "...",
+      "object",
+      "complete",
+      "...",
+    ]);
     await runtime.eval(
       "vcov.custom <- function(object, ...) 42\nconfint.custom <- function(object, ...) 43\ndf.residual.custom <- function(object, ...) 44\nNULL",
     );
@@ -16180,6 +29197,52 @@ NeedsCompilation: no
       ),
     ).resolves.toEqual([42, 43, 44]);
     await expect(runtime.eval("qt(.5, 3, ncp = 1)")).rejects.toMatchObject({ code: "NRU6131" });
+    await runtime.dispose();
+  });
+
+  it("fits reusable maximum-likelihood factor models from correlation matrices", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        truth <- c(0.8, 0.7, 0.6, 0.5)
+        correlation <- tcrossprod(truth)
+        diag(correlation) <- 1
+        dimnames(correlation) <- list(letters[1:4], letters[1:4])
+        fit <- factanal(factors = 1, covmat = correlation, n.obs = 500,
+                       rotation = "none")
+        listed <- factanal(factors = 1, covmat = list(cov = correlation, n.obs = 501),
+                           rotation = "none")
+        custom <- factanal(factors = 1, covmat = correlation,
+                           rotation = function(x) list(loadings = x))
+        c(inherits(fit, "factanal"), fit$converged,
+          max(abs(fit$uniquenesses - (1 - truth ^ 2))) < 1e-3,
+          fit$criteria[["objective"]] < 1e-8,
+          identical(loadings(fit), fit$loadings),
+          dim(fit$loadings), rownames(fit$loadings), colnames(fit$loadings),
+          fit$factors, fit$dof, fit$method, fit$n.obs, fit$PVAL > 0.99,
+          listed$n.obs, identical(custom$loadings, fit$loadings))
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "4",
+      "1",
+      "a",
+      "b",
+      "c",
+      "d",
+      "Factor1",
+      "1",
+      "2",
+      "mle",
+      "500",
+      "TRUE",
+      "501",
+      "TRUE",
+    ]);
     await runtime.dispose();
   });
 
@@ -16269,6 +29332,332 @@ NeedsCompilation: no
     await expect(runtime.eval("kmeans(x, initial, iter.max = 0)")).rejects.toMatchObject({
       code: "NRT3268",
     });
+    await runtime.dispose();
+  });
+
+  it("builds distance, hierarchical-clustering, and dendrogram objects", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- matrix(c(0, 0, 1, 0, 0, 2, 3, 0), 4, 2, byrow = TRUE,
+                    dimnames = list(c("a", "b", "c", "d"), c("x", "y")))
+        d <- dist(x)
+        c(
+          round(d, 12), attr(d, "Size"), attr(d, "Labels"), attr(d, "Diag"),
+          attr(d, "Upper"), attr(d, "method"), class(d), names(formals(dist))
+        )
+      `),
+    ).resolves.toEqual([
+      "1",
+      "2",
+      "3",
+      "2.2360679775",
+      "2",
+      "3.605551275464",
+      "4",
+      "a",
+      "b",
+      "c",
+      "d",
+      "FALSE",
+      "FALSE",
+      "euclidean",
+      "dist",
+      "x",
+      "method",
+      "diag",
+      "upper",
+      "p",
+    ]);
+    await expect(
+      runtime.eval(`
+        m <- matrix(c(0, 1, 2, 3, 1, 0, sqrt(5), 2,
+                      2, sqrt(5), 0, sqrt(13), 3, 2, sqrt(13), 0), 4, 4,
+                    byrow = TRUE, dimnames = list(letters[1:4], letters[1:4]))
+        d <- as.dist(m)
+        z <- hclust(d, method = "complete")
+        c(z$merge, round(z$height, 12), z$order, z$labels, z$method,
+          class(z), names(z), names(formals(hclust)))
+      `),
+    ).resolves.toEqual([
+      "-1",
+      "-3",
+      "-4",
+      "-2",
+      "1",
+      "2",
+      "1",
+      "2.2360679775",
+      "3.605551275464",
+      "4",
+      "3",
+      "1",
+      "2",
+      "a",
+      "b",
+      "c",
+      "d",
+      "complete",
+      "hclust",
+      "merge",
+      "height",
+      "order",
+      "labels",
+      "method",
+      "call",
+      "dist.method",
+      "d",
+      "method",
+      "members",
+    ]);
+    await expect(
+      runtime.eval(`
+        x <- matrix(c(0, 0, 1, 0, 0, 2, 3, 0), 4, 2, byrow = TRUE)
+        d <- dist(x)
+        methods <- c("single", "complete", "average", "mcquitty", "median",
+                     "centroid", "ward.D", "ward.D2")
+        round(unlist(lapply(methods, function(method) hclust(d, method = method)$height)), 12)
+      `),
+    ).resolves.toEqual([
+      1, 2, 2, 1, 2.2360679775, 3.605551275464, 1, 2.11803398875, 2.868517091821, 1, 2.11803398875,
+      3.052775637732, 1, 1.86803398875, 2.460767140545, 1, 1.86803398875, 2.286731760988, 1,
+      2.490711985, 3.430097641482, 1, 2.380476142848, 3.366501646121,
+    ]);
+    await expect(
+      runtime.eval(`
+        x <- matrix(c(0, 0, 1, 0, 0, 2, 3, 0), 4, 2, byrow = TRUE,
+                    dimnames = list(c("a", "b", "c", "d"), NULL))
+        tree <- as.dendrogram(hclust(dist(x)))
+        c(
+          order.dendrogram(tree), attr(tree, "members"), round(attr(tree, "midpoint"), 12),
+          round(attr(tree, "height"), 12), class(tree), attr(tree[[1]], "label"),
+          attr(tree[[1]], "leaf"), names(formals(as.dendrogram)),
+          names(formals(as.dendrogram.hclust)), names(formals(order.dendrogram))
+        )
+      `),
+    ).resolves.toEqual([
+      "4",
+      "3",
+      "1",
+      "2",
+      "4",
+      "0.875",
+      "3.605551275464",
+      "dendrogram",
+      "d",
+      "TRUE",
+      "object",
+      "...",
+      "object",
+      "hang",
+      "check",
+      "...",
+      "x",
+    ]);
+    await expect(
+      runtime.eval(`
+        x <- matrix(c(0, 0, 1, 0, 0, 2, 3, 0), 4, 2, byrow = TRUE,
+                    dimnames = list(c("a", "b", "c", "d"), NULL))
+        z <- hclust(dist(x), method = "complete")
+        one <- stats::cutree(z, k = 2)
+        many <- cutree(z, k = c(1, 2, 4, 2))
+        by.height <- cutree(z, h = c(0, 1, 2.5, 4))
+        c(
+          one, names(one), many, dim(many), rownames(many), colnames(many),
+          by.height, dim(by.height), rownames(by.height), colnames(by.height),
+          names(formals(stats::cutree))
+        )
+      `),
+    ).resolves.toEqual([
+      "1",
+      "1",
+      "1",
+      "2",
+      "a",
+      "b",
+      "c",
+      "d",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "2",
+      "1",
+      "2",
+      "3",
+      "4",
+      "1",
+      "1",
+      "1",
+      "2",
+      "4",
+      "4",
+      "a",
+      "b",
+      "c",
+      "d",
+      "1",
+      "2",
+      "4",
+      "2",
+      "1",
+      "2",
+      "3",
+      "4",
+      "1",
+      "1",
+      "2",
+      "3",
+      "1",
+      "1",
+      "1",
+      "2",
+      "1",
+      "1",
+      "1",
+      "1",
+      "4",
+      "4",
+      "a",
+      "b",
+      "c",
+      "d",
+      "0",
+      "1",
+      "2.5",
+      "4",
+      "tree",
+      "k",
+      "h",
+    ]);
+    await expect(
+      runtime.eval(`
+        custom <- structure(list(
+          merge = matrix(c(-2L, -1L, 1L, -4L, -3L, 2L), 3, 2),
+          height = c(1, 2, 3), order = 1:4,
+          labels = c("w", "x", "y", "z"), method = "complete",
+          call = quote(custom), dist.method = "euclidean"
+        ), class = "hclust")
+        c(cutree(custom, k = 2), cutree(custom, k = c(3.9, 2.1)))
+      `),
+    ).resolves.toEqual([1, 2, 1, 2, 1, 2, 3, 2, 1, 2, 1, 2]);
+    await expect(runtime.eval("cutree(hclust(dist(matrix(1:8, 4))), k = 0)")).rejects.toMatchObject(
+      { code: "NRT3273", message: "elements of 'k' must be between 1 and 4" },
+    );
+    await expect(
+      runtime.eval(`
+        custom <- structure(list(
+          merge = matrix(c(-2L, -1L, 1L, -4L, -3L, 2L), 3, 2),
+          height = c(2, 1, 3), order = 1:4, labels = NULL,
+          method = "centroid", call = quote(custom), dist.method = "euclidean"
+        ), class = "hclust")
+        cutree(custom, h = 2)
+      `),
+    ).rejects.toMatchObject({
+      code: "NRE2258",
+      message: "the 'height' component of 'tree' is not sorted (increasingly)",
+    });
+    await runtime.dispose();
+  });
+
+  it("computes Base-compatible one- and multi-dimensional Fourier transforms", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- structure(c(a = 1, b = 2, c = 3, d = 4), marker = "kept")
+        transformed <- fft(x)
+        matrix.input <- matrix(1:6, 2, dimnames = list(c("r1", "r2"), letters[1:3]))
+        matrix.output <- fft(matrix.input)
+        bluestein <- 1:127
+        c(
+          round(Re(transformed), 12), round(Im(transformed), 12),
+          max(abs(fft(transformed, inverse = TRUE) / length(x) - x)) < 1e-12,
+          names(transformed), attr(transformed, "marker"),
+          round(Re(matrix.output), 12), round(Im(matrix.output), 12),
+          identical(dim(matrix.output), c(2L, 3L)), identical(dimnames(matrix.output), dimnames(matrix.input)),
+          max(abs(fft(fft(bluestein), inverse = TRUE) / length(bluestein) - bluestein)) < 1e-9,
+          all(is.na(fft(c(1, NA, 3)))), all(is.nan(fft(c(1, NaN, 3)))),
+          names(formals(fft))
+        )
+      `),
+    ).resolves.toEqual([
+      "10",
+      "-2",
+      "-2",
+      "-2",
+      "0",
+      "2",
+      "0",
+      "-2",
+      "TRUE",
+      "a",
+      "b",
+      "c",
+      "d",
+      "kept",
+      "21",
+      "-3",
+      "-6",
+      "0",
+      "-6",
+      "0",
+      "0",
+      "0",
+      "3.464101615138",
+      "0",
+      "-3.464101615138",
+      "0",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "z",
+      "inverse",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("detects unsorted atomic vectors with missing and strict controls", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        c(
+          is.unsorted(numeric()), is.unsorted(1), is.unsorted(c(1, 2, 2)),
+          is.unsorted(c(1, 2, 2), strictly = TRUE), is.unsorted(c(2, 1)),
+          is.na(is.unsorted(c(1, NA, 2))),
+          is.unsorted(c(1, NA, 2), na.rm = TRUE),
+          is.unsorted(c(2, NA, 1), na.rm = 1),
+          is.unsorted(c("a", "b")), is.unsorted(c(TRUE, FALSE)),
+          is.unsorted(c(2 + 0i, 1 + 100i)),
+          is.unsorted(c(1 + 1i, 1 + 2i)),
+          is.unsorted(as.raw(c(2, 1))), is.unsorted(factor(c("b", "a"))),
+          is.na(is.unsorted(list(1, 2))), names(formals(is.unsorted))
+        )
+      `),
+    ).resolves.toEqual([
+      "FALSE",
+      "FALSE",
+      "FALSE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "TRUE",
+      "TRUE",
+      "FALSE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "x",
+      "na.rm",
+      "strictly",
+    ]);
     await runtime.dispose();
   });
 
@@ -16691,10 +30080,66 @@ NeedsCompilation: no
     await expect(runtime.eval("df$x")).resolves.toEqual([1, 2, 3]);
     await expect(runtime.eval("df$constant")).resolves.toEqual([10, 10, 10]);
     await expect(runtime.eval("nrow(as.data.frame(c(4, 5)))")).resolves.toBe(2);
+    await expect(
+      runtime.eval(`
+        package_frame <- vector("list", 2L)
+        names(package_frame) <- c("a", "b")
+        package_frame[[1L]] <- integer(10L)
+        package_frame[[2L]] <- double(10L)
+        attr(package_frame, "row.names") <- seq_len(10L)
+        class(package_frame) <- "data.frame"
+        c(is.data.frame(package_frame), nrow(package_frame), ncol(package_frame), dim(package_frame))
+      `),
+    ).resolves.toEqual([1, 10, 2, 10, 2]);
     await expect(runtime.eval("data.frame(a = 1:2, b = 1:3)")).rejects.toMatchObject({
       code: "NRE2116",
     });
-    await expect(runtime.eval("names(data.frame(1:3))")).resolves.toBe("X1");
+    await expect(runtime.eval("names(data.frame(1:3))")).resolves.toBe("X1.3");
+    await expect(
+      runtime.eval(
+        "d <- data.frame(NULL, x = integer(), omitted = NULL); c(names(d), nrow(d), ncol(d))",
+      ),
+    ).resolves.toEqual(["x", "0", "1"]);
+    await expect(runtime.eval("data.frame(NULL, x = 1:2)")).rejects.toMatchObject({
+      code: "NRE2116",
+    });
+    await expect(
+      runtime.eval(`
+        x <- 1:2; y <- 3:4
+        arguments <- data.frame(x, y, radius = 1:2, angle1 = 0, angle2 = c(.5, 1))
+        target <- function(x, y, radius, angle1, angle2) angle2
+        c(names(arguments), do.call(target, c(arguments[1, ])))
+      `),
+    ).resolves.toEqual(["x", "y", "radius", "angle1", "angle2", "0.5"]);
+    await expect(
+      runtime.eval(`
+        source <- data.frame(a = 1:2, b = 3:4, row.names = c("r1", "r2"))
+        expanded <- data.frame(source, z = 5:6)
+        nested <- data.frame(nested = source, z = 5:6)
+        duplicated <- data.frame(source, source)
+        empty <- data.frame(data.frame(a = integer()), z = integer())
+        c(
+          names(expanded), rownames(expanded), names(nested), rownames(nested),
+          names(duplicated), typeof(attr(empty, "row.names"))
+        )
+      `),
+    ).resolves.toEqual([
+      "a",
+      "b",
+      "z",
+      "r1",
+      "r2",
+      "nested.a",
+      "nested.b",
+      "z",
+      "r1",
+      "r2",
+      "a",
+      "b",
+      "a.1",
+      "b.1",
+      "integer",
+    ]);
     await expect(
       runtime.eval(`
         explicit <- data.frame(\`value label\` = 1:2, row.names = c("left", "right"))
@@ -16734,6 +30179,47 @@ NeedsCompilation: no
       code: "NRE2244",
       message: "'row.names' should specify one of the variables",
     });
+    await runtime.dispose();
+  });
+
+  it("coerces inherited data-frame subclasses through the first applicable S3 method", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- structure(
+          data.frame(a = 1:2, b = c("x", "y")),
+          class = c("tbl_df", "tbl", "data.frame"),
+          tag = "kept"
+        )
+        plain <- as.data.frame(x)
+        renamed <- as.data.frame(x, row.names = c("r1", "r2"), optional = TRUE)
+        as.data.frame.tbl_df <- function(x, ...) "tbl_df"
+        first <- as.data.frame(x)
+        rm(as.data.frame.tbl_df)
+        as.data.frame.tbl <- function(x, ...) "tbl"
+        second <- as.data.frame(x)
+        c(
+          class(plain), attr(plain, "tag"), row.names(plain), typeof(plain[, "b"]),
+          plain[, "b"], row.names(renamed), first, second,
+          names(formals(as.data.frame.data.frame))
+        )
+      `),
+    ).resolves.toEqual([
+      "data.frame",
+      "kept",
+      "1",
+      "2",
+      "character",
+      "x",
+      "y",
+      "r1",
+      "r2",
+      "tbl_df",
+      "tbl",
+      "x",
+      "row.names",
+      "...",
+    ]);
     await runtime.dispose();
   });
 
@@ -16828,6 +30314,508 @@ NeedsCompilation: no
     await runtime.dispose();
   });
 
+  it("evaluates vectorized gamma probabilities with rate and scale parameterizations", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- structure(c(0, 1, 2, Inf), names = letters[1:4], marker = "kept")
+        lower <- stats::pgamma(x, shape = 2)
+        upper.log <- pgamma(x, shape = 2, lower.tail = FALSE, log.p = TRUE)
+        recycled <- pgamma(c(1, 2, 3), c(1, 2), rate = c(1, 2, 3, 4))
+        c(round(lower, 12), round(upper.log, 12), round(recycled, 12),
+          names(lower), attr(lower, "marker"),
+          abs(pgamma(2, shape = 3, scale = 4) - 0.0143876779669707) < 1e-14,
+          names(formals(pgamma)))
+      `),
+    ).resolves.toEqual([
+      "0",
+      "0.264241117657",
+      "0.59399415029",
+      "1",
+      "0",
+      "-0.30685281944",
+      "-0.901387711332",
+      "-Inf",
+      "0.632120558829",
+      "0.908421805556",
+      "0.999876590196",
+      "0.908421805556",
+      "a",
+      "b",
+      "c",
+      "d",
+      "kept",
+      "TRUE",
+      "q",
+      "shape",
+      "rate",
+      "scale",
+      "lower.tail",
+      "log.p",
+    ]);
+    const invalid = await runtime.evalDetailed(
+      "pgamma(c(-1, 0, 1, Inf), 2, scale = c(0, Inf, 0, Inf))",
+    );
+    expect(invalid.value).toEqual([Number.NaN, 0, Number.NaN, Number.NaN]);
+    expect(invalid.warnings).toEqual([{ code: "NRW1003", message: "NaNs produced." }]);
+    const redundant = await runtime.evalDetailed("pgamma(2, 3, rate = 2, scale = .5)");
+    expect(redundant.value).toBeCloseTo(0.761896694446456, 14);
+    expect(redundant.warnings).toEqual([
+      { code: "NRW1024", message: "specify 'rate' or 'scale' but not both" },
+    ]);
+    await expect(runtime.eval("pgamma(2, 3, rate = 2, scale = 1)")).rejects.toMatchObject({
+      code: "NRE2194",
+    });
+    await runtime.dispose();
+  });
+
+  it("provides vectorized exponential probabilities, quantiles, and bounded bulk RNG", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        p <- stats::pexp(structure(c(-Inf, 0, 1, Inf), names = letters[1:4]), 2)
+        c(
+          p,
+          stats::pexp(c(0, 1, Inf), 2, lower.tail = FALSE),
+          stats::pexp(c(0, 1, Inf), 2, log.p = TRUE),
+          stats::pexp(c(0, 1, Inf), 2, lower.tail = FALSE, log.p = TRUE),
+          stats::qexp(c(0, .25, 1), 2),
+          stats::qexp(c(0, .25, 1), 2, lower.tail = FALSE),
+          stats::qexp(log(c(.25, .75)), 2, log.p = TRUE),
+          names(p), names(formals(stats::pexp)), names(formals(stats::qexp)),
+          names(formals(stats::rexp)), names(formals(stats::rchisq))
+        )
+      `),
+    ).resolves.toEqual([
+      "0",
+      "0",
+      "0.8646647167633873",
+      "1",
+      "1",
+      "0.1353352832366127",
+      "0",
+      "-Inf",
+      "-0.14541345786885906",
+      "0",
+      "0",
+      "-2",
+      "-Inf",
+      "0",
+      "0.14384103622589045",
+      "Inf",
+      "Inf",
+      "0.6931471805599453",
+      "0",
+      "0.14384103622589045",
+      "0.6931471805599453",
+      "a",
+      "b",
+      "c",
+      "d",
+      "q",
+      "rate",
+      "lower.tail",
+      "log.p",
+      "p",
+      "rate",
+      "lower.tail",
+      "log.p",
+      "n",
+      "rate",
+      "n",
+      "df",
+      "ncp",
+    ]);
+    const degenerate = await runtime.evalDetailed(`
+      c(
+        stats::pexp(c(-1, 0, 1, Inf), Inf),
+        stats::pexp(c(-1, 0, 1, Inf), Inf, lower.tail = FALSE),
+        stats::qexp(c(0, .5, 1), Inf),
+        stats::qexp(c(0, .5, 1), Inf, lower.tail = FALSE),
+        stats::rexp(2, c(Inf, 0))
+      )
+    `);
+    expect(degenerate.value).toEqual([
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      Number.NaN,
+      Number.NaN,
+      0,
+      0,
+      0,
+      Number.NaN,
+    ]);
+    expect(degenerate.warnings).toEqual([
+      {
+        code: "NRW1003",
+        message: "NaNs produced",
+        call: "stats::qexp(c(0, 0.5, 1), Inf)",
+      },
+      {
+        code: "NRW1003",
+        message: "NaNs produced",
+        call: "stats::qexp(c(0, 0.5, 1), Inf, lower.tail = FALSE)",
+      },
+      {
+        code: "NRW1003",
+        message: "NAs produced",
+        call: "stats::rexp(2, c(Inf, 0))",
+      },
+    ]);
+    await expect(
+      runtime.eval(`
+        observed <- stats::dchisq(c(0, .25, 1, 1.5, 3, Inf), 3, ncp = 2)
+        expected <- c(0, 0.0702918958066333, 0.121800567532151,
+          0.134201891723777, 0.133100383959106, 0)
+        boundary <- stats::dchisq(c(0, 0, 0), c(0, 1, 2), ncp = 2)
+        quantiles <- stats::qchisq(c(.01, .25, .5, .9, .99), 3, ncp = 2)
+        expected.quantiles <- c(0.221918791010745, 2.21117534027356,
+          4.13751512339913, 10.0471985166407, 17.1624570835415)
+        c(max(abs(observed - expected)) < 1e-13,
+          is.infinite(boundary[1]), is.infinite(boundary[2]),
+          abs(boundary[3] - 0.183939720585721) < 1e-14,
+          max(abs(quantiles - expected.quantiles)) < 1e-10,
+          abs(stats::qchisq(stats::pchisq(1.5, 3, ncp = 2), 3, ncp = 2) - 1.5) < 1e-10)
+      `),
+    ).resolves.toEqual([true, true, true, true, true, true]);
+    const invalid = await runtime.evalDetailed(
+      "c(pexp(c(1, Inf), c(-1, 0)), qexp(c(-.1, 1.1), 2), rexp(2, -1), rchisq(2, -1))",
+    );
+    expect(invalid.value).toEqual([
+      Number.NaN,
+      Number.NaN,
+      Number.NaN,
+      Number.NaN,
+      Number.NaN,
+      Number.NaN,
+      Number.NaN,
+      Number.NaN,
+    ]);
+    expect(invalid.warnings).toEqual([
+      {
+        code: "NRW1003",
+        message: "NaNs produced",
+        call: "pexp(c(1, Inf), c(-1, 0))",
+      },
+      {
+        code: "NRW1003",
+        message: "NaNs produced",
+        call: "qexp(c(-0.1, 1.1), 2)",
+      },
+      { code: "NRW1003", message: "NAs produced", call: "rexp(2, -1)" },
+      { code: "NRW1003", message: "NAs produced" },
+    ]);
+    await expect(
+      runtime.eval(`
+        set.seed(519)
+        central <- rchisq(20000, 3)
+        noncentral <- rchisq(20000, 3, ncp = 2)
+        exponential <- rexp(20000, 2)
+        c(
+          abs(mean(central) - 3) < .1,
+          abs(mean(noncentral) - 5) < .15,
+          abs(mean(exponential) - .5) < .02,
+          length(rchisq(c(1, 2), 3))
+        )
+      `),
+    ).resolves.toEqual([1, 1, 1, 2]);
+    await runtime.dispose();
+  });
+
+  it("evaluates central chi-square and F quantiles across tails and log probabilities", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        p <- structure(c(.001, .025, .5, .975, .999),
+          names = letters[1:5], marker = "kept")
+        chi <- stats::qchisq(p, df = 2)
+        f <- stats::qf(p, df1 = 2, df2 = 10)
+        c(
+          max(abs(chi - c(
+            0.002001000667167067, 0.050635615968579753,
+            1.386294361119890350, 7.377758908227870727,
+            13.815510557964271854))) < 1e-10,
+          max(abs(f - c(
+            0.0010006004403517732, 0.025382015451479445,
+            0.743491774985175491, 5.456395525912729028,
+            14.905358527674859914))) < 1e-10,
+          identical(names(chi), letters[1:5]),
+          identical(attr(chi, "marker"), "kept"),
+          identical(names(f), letters[1:5]),
+          identical(attr(f, "marker"), "kept"),
+          identical(names(formals(stats::qchisq)), c("p", "df", "ncp", "lower.tail", "log.p")),
+          identical(names(formals(stats::qf)), c("p", "df1", "df2", "ncp", "lower.tail", "log.p"))
+        )
+      `),
+    ).resolves.toEqual([true, true, true, true, true, true, true, true]);
+    await expect(
+      runtime.eval(`
+        p <- c(.001, .025, .5, .975, .999)
+        c(
+          max(abs(stats::qchisq(p, c(1, 2), lower.tail = FALSE) - c(
+            10.827566170662729, 7.377758908227868,
+            0.45493642311957283, 0.050635615968579795,
+            0.0000015707971492624932))) < 1e-9,
+          max(abs(stats::qf(log(p), 3, 8, log.p = TRUE) - c(
+            0.007655853535111963, 0.068776327460118594,
+            0.86003780852218203, 5.4159623395602381,
+            15.829489581520669))) < 1e-9,
+          identical(stats::qchisq(c(0, 1), 2), c(0, Inf)),
+          identical(stats::qf(c(0, 1), 2, 10), c(0, Inf)),
+          identical(stats::qchisq(c(.25, .75), c(1, 2, 3)),
+            stats::qchisq(c(.25, .75, .25), c(1, 2, 3)))
+        )
+      `),
+    ).resolves.toEqual([true, true, true, true, true]);
+    const invalid = await runtime.evalDetailed("c(stats::qchisq(-.1, 2), stats::qf(1.1, 2, 10))");
+    expect(invalid.value).toEqual([Number.NaN, Number.NaN]);
+    expect(invalid.warnings).toEqual([
+      { code: "NRW1003", message: "NaNs produced." },
+      { code: "NRW1003", message: "NaNs produced." },
+    ]);
+    await expect(runtime.eval("stats::qchisq(.5, 2, ncp = 1)")).resolves.toBeCloseTo(
+      2.1770385503039771,
+      11,
+    );
+    await expect(runtime.eval("stats::qf(.5, 2, 10, ncp = 1)")).rejects.toMatchObject({
+      code: "NRU6131",
+    });
+    await runtime.dispose();
+  });
+
+  it("evaluates central F probabilities across tails, recycling, and infinite degrees", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- structure(c(0, 1, 2, Inf), names = letters[1:4], marker = "kept")
+        lower <- stats::pf(x, 2, 10)
+        upper.log <- pf(c(0, 1, 3, Inf), 2, 10, lower.tail = FALSE, log.p = TRUE)
+        recycled <- pf(c(1, 2, 3), c(1, 2), c(5, 10, 20, 40))
+        special <- c(pf(1, 2, Inf), pf(1, Inf, 2), pf(c(.5, 1, 2), Inf, Inf))
+        c(round(lower, 12), round(upper.log, 12), round(recycled, 12),
+          round(special, 12), names(lower), attr(lower, "marker"),
+          names(formals(stats::pf)))
+      `),
+    ).resolves.toEqual([
+      "0",
+      "0.598122427984",
+      "0.814065567918",
+      "1",
+      "0",
+      "-0.91160778397",
+      "-2.350018146229",
+      "-Inf",
+      "0.636782532351",
+      "0.814065567918",
+      "0.901339553451",
+      "0.623110517127",
+      "0.632120558829",
+      "0.367879441171",
+      "0",
+      "0.5",
+      "1",
+      "a",
+      "b",
+      "c",
+      "d",
+      "kept",
+      "q",
+      "df1",
+      "df2",
+      "ncp",
+      "lower.tail",
+      "log.p",
+    ]);
+    const invalid = await runtime.evalDetailed("pf(c(1, 1), c(0, -1), 2)");
+    expect(invalid.value).toEqual([Number.NaN, Number.NaN]);
+    expect(invalid.warnings).toEqual([
+      {
+        code: "NRW1003",
+        message: "NaNs produced",
+        call: "pf(c(1, 1), c(0, -1), 2)",
+      },
+    ]);
+    await runtime.dispose();
+  });
+
+  it("evaluates non-central chi-square, F, and Student-t probabilities", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        round(c(
+          pchisq(c(0, .5, 2, 10, Inf), c(1, 2), ncp = c(.5, 3)),
+          pchisq(c(.5, 2, 10), 3, ncp = 2, lower.tail = FALSE, log.p = TRUE),
+          pf(c(0, .5, 1, 3, Inf), c(1, 2), c(5, 10, 20), ncp = c(.5, 3)),
+          pf(c(.5, 1, 3), 3, 8, ncp = 2, lower.tail = FALSE, log.p = TRUE),
+          pt(c(-3, -1, 0, 1, 3), c(1, 5, 30), ncp = c(-1, .5, 2)),
+          pt(c(-3, -1, 0, 1, 3), 10, ncp = 1.5, lower.tail = FALSE, log.p = TRUE)
+        ), 10)
+      `),
+    ).resolves.toEqual([
+      0, 0.0587849494, 0.7433025121, 0.8874767217, 1, -0.0333908841, -0.2494016565, -2.28833672, 0,
+      0.122456132, 0.562071917, 0.5955576576, 1, -0.1692257045, -0.4231583435, -1.4878684716,
+      0.2698974014, 0.0824440911, 0.0227501319, 0.9425199082, 0.961760812, -0.0000785127,
+      -0.0078095104, -0.0691434556, -0.3625627128, -2.1485912046,
+    ]);
+    await expect(
+      runtime.eval(`
+        x <- structure(c(.5, 2), names = c("a", "b"), marker = "kept")
+        values <- pchisq(x, 3, ncp = 2)
+        c(identical(names(values), c("a", "b")), identical(attr(values, "marker"), "kept"),
+          names(formals(pchisq)), names(formals(pf)), names(formals(pt)))
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "TRUE",
+      "q",
+      "df",
+      "ncp",
+      "lower.tail",
+      "log.p",
+      "q",
+      "df1",
+      "df2",
+      "ncp",
+      "lower.tail",
+      "log.p",
+      "q",
+      "df",
+      "ncp",
+      "lower.tail",
+      "log.p",
+    ]);
+    const invalid = await runtime.evalDetailed("c(pchisq(1, 2, ncp = -1), pf(1, 2, 10, ncp = -1))");
+    expect(invalid.value).toEqual([Number.NaN, Number.NaN]);
+    expect(invalid.warnings).toEqual([
+      {
+        code: "NRW1003",
+        message: "NaNs produced",
+        call: "pchisq(1, 2, ncp = -1)",
+      },
+      {
+        code: "NRW1003",
+        message: "NaNs produced",
+        call: "pf(1, 2, 10, ncp = -1)",
+      },
+    ]);
+    await runtime.dispose();
+  });
+
+  it("evaluates hypergeometric tails with GNU rounding, recycling, and metadata", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- structure(
+          c(-Inf, -1, 0, .9999998, .99999995, 1, 2, Inf, NA, NaN),
+          names = letters[1:10], marker = "kept"
+        )
+        values <- stats::phyper(x, 3, 4, 2)
+        list(
+          values = round(values, 12),
+          names = names(values),
+          marker = attr(values, "marker"),
+          tails = round(c(
+            stats::phyper(c(0, 1, 2), 3, 4, 2, lower.tail = FALSE),
+            stats::phyper(c(0, 1, 2), 3, 4, 2, log.p = TRUE)
+          ), 12),
+          large = round(c(
+            stats::phyper(10, 50, 100, 30),
+            stats::phyper(20, 50, 100, 30, lower.tail = FALSE, log.p = TRUE)
+          ), 12),
+          rounded = round(stats::phyper(1, c(3.2, 3.5), 4, 2), 12),
+          formals = names(formals(stats::phyper)),
+          defaults = c(
+            deparse(formals(stats::phyper)$lower.tail),
+            deparse(formals(stats::phyper)$log.p)
+          )
+        )
+      `),
+    ).resolves.toEqual([
+      [0, 0, 0.285714285714, 0.285714285714, 0.857142857143, 0.857142857143, 1, 1, NA, Number.NaN],
+      ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"],
+      "kept",
+      [0.714285714286, 0.142857142857, 0, -1.252762968495, -0.154150679827, 0],
+      [0.590971199944, -12.300604397851],
+      [0.857142857143, 0.785714285714],
+      ["q", "m", "n", "k", "lower.tail", "log.p"],
+      ["TRUE", "FALSE"],
+    ]);
+    const invalid = await runtime.evalDetailed(
+      "c(stats::phyper(1, -1, 4, 2), stats::phyper(1, 3, 4, 8))",
+    );
+    expect(invalid.value).toEqual([Number.NaN, Number.NaN]);
+    expect(invalid.warnings).toEqual([
+      { code: "NRW1003", message: "NaNs produced" },
+      { code: "NRW1003", message: "NaNs produced" },
+    ]);
+    await runtime.dispose();
+  });
+
+  it("matches utils completion candidates with session-local rc settings", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        initial <- utils::rc.settings()
+        exact <- utils::findMatches("ap", c("apple", "ape", "banana"), FALSE, FALSE)
+        named <- utils::findMatches("a", setNames(c("apple", "banana"), c("x", "y")), FALSE, FALSE)
+        quoted <- utils::findMatches("foo", c("foo bar", "foo.b", "foobar"), FALSE, TRUE)
+        empty <- utils::findMatches("", c("", "foo bar"), FALSE, TRUE)
+        changed <- withVisible(utils::rc.settings(fuzzy = TRUE, backtick = TRUE))
+        defaults <- utils::findMatches("App", c("apple", "apply", "Ape", "map"))
+        c(
+          identical(unname(initial), c(TRUE, TRUE, TRUE, TRUE, FALSE, FALSE,
+            TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE)),
+          identical(names(initial), c("ops", "ns", "args", "dots", "func", "ipck",
+            "S3", "data", "help", "argdb", "fuzzy", "backtick", "files", "quotes")),
+          identical(exact, c("apple", "ape")),
+          identical(named, setNames(c("apple", "banana"), c("x", "y"))),
+          identical(quoted, setNames(c("\`foo bar\`", "foo.b", "foobar"),
+            c("foo bar", "foo.b", "foobar"))),
+          identical(empty, c("", "foo bar")),
+          is.null(names(empty)),
+          is.null(changed$value),
+          identical(changed$visible, FALSE),
+          identical(defaults, setNames(c("apple", "apply"), c("apple", "apply"))),
+          identical(names(formals(utils::findMatches)), c("pattern", "values", "fuzzy", "backtick")),
+          identical(names(formals(utils::rc.settings)), c("ops", "ns", "args", "dots", "func",
+            "ipck", "S3", "data", "help", "argdb", "fuzzy", "quotes", "files", "backtick"))
+        )
+      `),
+    ).resolves.toEqual([true, true, true, true, true, true, true, true, true, true, true, true]);
+    await expect(
+      runtime.eval(`
+        utils::rc.settings(fuzzy = 1, backtick = NA)
+        c(
+          unname(utils::rc.settings()[c("fuzzy", "backtick")]),
+          identical(utils::findMatches(1, c(10, 21, NA), FALSE, FALSE), c("10", "21")),
+          identical(utils::findMatches("A", "apple", 1, FALSE), "apple")
+        )
+      `),
+    ).resolves.toEqual([true, true, true, true]);
+    const warned = await runtime.evalDetailed(
+      'utils::findMatches(c("a", "b"), c("apple", "banana"), FALSE, FALSE)',
+    );
+    expect(warned.value).toEqual(["apple", "banana"]);
+    expect(warned.warnings).toEqual([
+      {
+        code: "NRW1019",
+        message: "argument 'pattern' has length > 1 and only the first element will be used",
+      },
+    ]);
+    await expect(runtime.eval('utils::findMatches("A", "apple", NA, FALSE)')).rejects.toMatchObject(
+      { code: "NRT3103" },
+    );
+    await runtime.dispose();
+  });
+
   it("performs immutable direct-binding subset and member replacement", async () => {
     const runtime = await session();
     await expect(runtime.eval("x <- 1:3\nx[2] <- 10\nx")).resolves.toEqual([1, 10, 3]);
@@ -16855,6 +30843,37 @@ NeedsCompilation: no
     await runtime.eval("m <- matrix(1:4, nrow = 2)\nm[1] <- 9");
     await expect(runtime.evalRaw("m")).resolves.toMatchObject({ dim: [2, 2] });
     await expect(runtime.eval("x <- 1:2\nx[5] <- 9L\nx")).resolves.toEqual([1, 2, NA, NA, 9]);
+    await expect(
+      runtime.eval(`
+        x <- setNames(1:3, c("a", "b", "c"))
+        empty <- x[NULL]
+        x[NULL] <- 9L
+        items <- list(a = 1L, b = 2L)
+        items[NULL] <- list(9L)
+        matrix <- matrix(1:4, 2)
+        matrix[NULL] <- 9L
+        frame <- data.frame(a = 1:2, b = 3:4)
+        frame[NULL] <- list(9L)
+        as.character(c(typeof(empty), length(empty), is.null(names(empty)), x, unlist(items), matrix,
+          identical(frame, data.frame(a = 1:2, b = 3:4)),
+          inherits(try(x[[NULL]], silent = TRUE), "try-error")))
+      `),
+    ).resolves.toEqual([
+      "integer",
+      "0",
+      "FALSE",
+      "1",
+      "2",
+      "3",
+      "1",
+      "2",
+      "1",
+      "2",
+      "3",
+      "4",
+      "TRUE",
+      "TRUE",
+    ]);
     await expect(runtime.eval("x[1] <- seq_len(0)")).rejects.toMatchObject({ code: "NRT3129" });
     await runtime.dispose();
   });
@@ -16952,6 +30971,198 @@ NeedsCompilation: no
     expect(invalidFactor.warnings).toEqual([
       expect.objectContaining({ code: "NRW1009", message: "invalid factor level, NA generated" }),
     ]);
+    await runtime.dispose();
+  });
+
+  it("preserves whole-column objects for missing-row data-frame replacement", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        whole <- data.frame(a = c("x", "y", "z"), b = 10:12)
+        whole[, 1] <- factor(c("A", "B", "A"))
+        cells <- data.frame(a = c("x", "y", "z"), b = 10:12)
+        cells[1:3, 1] <- factor(c("A", "B", "A"))
+        custom <- data.frame(a = 1:3)
+        custom[, 1] <- structure(1:3, class = "probe")
+        many <- data.frame(a = 1:3, b = 4:6)
+        many[, c(1, 2)] <- list(
+          factor(c("A", "B", "A")),
+          factor(c("C", "C", "D"))
+        )
+        grouped <- data.frame(
+          offset = rep(c("G1", "G2"), each = 4),
+          axis = rep(c("A", "B", "C", "D"), 2)
+        )
+        grouped[, 1] <- factor(grouped[, 1])
+        grouped[, 2] <- factor(grouped[, 2])
+        partition <- split(grouped, grouped[, 1])[[1]]
+        as.character(c(
+          class(whole$a), levels(whole$a), typeof(whole$a),
+          class(cells$a), is.null(levels(cells$a)), typeof(cells$a),
+          class(custom$a), typeof(custom$a),
+          class(many$a), class(many$b), levels(many$a), levels(many$b),
+          length(levels(grouped$axis)), length(split(partition[, 2], partition[, 2])),
+          names(attributes(whole))
+        ))
+      `),
+    ).resolves.toEqual([
+      "factor",
+      "A",
+      "B",
+      "integer",
+      "character",
+      "TRUE",
+      "character",
+      "probe",
+      "integer",
+      "factor",
+      "factor",
+      "A",
+      "B",
+      "C",
+      "D",
+      "4",
+      "4",
+      "names",
+      "row.names",
+      "class",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("applies Math group generics column-wise to numeric-alike data frames", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        d <- data.frame(
+          a = c(1.234, 2.345),
+          b = c(TRUE, FALSE),
+          row.names = c("left", "right")
+        )
+        rounded <- round(d, 1)
+        rooted <- sqrt(data.frame(x = c(1, 4), y = c(9, 16)))
+        is.numeric.probe <- function(x) FALSE
+        as.character(c(
+          class(rounded), names(attributes(rounded)), names(rounded),
+          rounded$a, rounded$b, typeof(rounded$a), typeof(rounded$b), rownames(rounded),
+          rooted$x, rooted$y,
+          is.numeric(as.Date("2020-01-01")),
+          is.numeric(as.difftime(1, units = "secs")),
+          is.numeric(structure(1, class = "probe"))
+        ))
+      `),
+    ).resolves.toEqual([
+      "data.frame",
+      "names",
+      "row.names",
+      "class",
+      "a",
+      "b",
+      "1.2",
+      "2.3",
+      "1",
+      "0",
+      "double",
+      "double",
+      "left",
+      "right",
+      "1",
+      "2",
+      "3",
+      "4",
+      "FALSE",
+      "FALSE",
+      "FALSE",
+    ]);
+    await expect(runtime.eval("round(data.frame(a = 1, label = 'x'), 2)")).rejects.toMatchObject({
+      message: "non-numeric-alike variable(s) in data frame: label",
+    });
+    await runtime.dispose();
+  });
+
+  it("constructs large colon vectors with bounded kernel checkpoints", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      limits: {
+        maxSteps: 500,
+        maxVectorLength: 1_000_000,
+        maxAllocatedElements: 2_000_000,
+      },
+    });
+    await expect(
+      runtime.eval("x <- 1:1000000; c(typeof(x), length(x), x[c(1, 500000, 1000000)])"),
+    ).resolves.toEqual(["integer", "1000000", "1", "500000", "1000000"]);
+    await runtime.dispose();
+  });
+
+  it("applies arithmetic Ops to data-frame columns in both operand orders", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        d <- data.frame(a = 1:3, b = c(4, NA, 6), row.names = c("r1", "r2", "r3"))
+        e <- data.frame(a = 10:12, b = 20:22, row.names = c("x", "y", "z"))
+        scaled <- d / 2
+        reversed <- 12 / d
+        paired <- d + e
+        vectorized <- d + 1:6
+        listed <- d + list(10, 100)
+        matrixed <- d + matrix(1:6, 3, 2)
+        as.character(c(
+          class(scaled), names(attributes(scaled)), scaled$a, scaled$b, rownames(scaled),
+          reversed$a, reversed$b, paired$a, paired$b,
+          vectorized$a, vectorized$b, listed$a, listed$b,
+          matrixed$a, matrixed$b
+        ))
+      `),
+    ).resolves.toEqual([
+      "data.frame",
+      "names",
+      "class",
+      "row.names",
+      "0.5",
+      "1",
+      "1.5",
+      "2",
+      NA,
+      "3",
+      "r1",
+      "r2",
+      "r3",
+      "12",
+      "6",
+      "4",
+      "3",
+      NA,
+      "2",
+      "11",
+      "13",
+      "15",
+      "24",
+      NA,
+      "28",
+      "2",
+      "4",
+      "6",
+      "8",
+      NA,
+      "12",
+      "11",
+      "12",
+      "13",
+      "104",
+      NA,
+      "106",
+      "2",
+      "4",
+      "6",
+      "8",
+      NA,
+      "12",
+    ]);
+    await expect(
+      runtime.eval("data.frame(a = 1:3, b = 4:6) + data.frame(a = 1:2, b = 3:4)"),
+    ).rejects.toMatchObject({ message: "'+' only defined for equally-sized data frames" });
     await runtime.dispose();
   });
 
@@ -17061,6 +31272,24 @@ NeedsCompilation: no
     await runtime.eval("dim(y) <- NULL");
     await expect(runtime.eval("dim(y)")).resolves.toBeNull();
     await expect(
+      runtime.eval(`
+        reshaped <- structure(
+          matrix(
+            1:6, 2, 3,
+            dimnames = list(row = c("r1", "r2"), col = c("c1", "c2", "c3"))
+          ),
+          tag = "kept"
+        )
+        dim(reshaped) <- c(1, 6)
+        same <- matrix(1:4, 2, 2, dimnames = list(c("a", "b"), c("x", "y")))
+        dim(same) <- dim(same)
+        c(
+          dim(reshaped), is.null(names(reshaped)), is.null(dimnames(reshaped)),
+          attr(reshaped, "tag"), is.null(dimnames(same))
+        )
+      `),
+    ).resolves.toEqual(["1", "6", "TRUE", "TRUE", "kept", "TRUE"]);
+    await expect(
       runtime.eval(
         'outer <- 1:2\nf <- function() { names(outer) <- c("local.a", "local.b"); names(outer) }\nc(f(), is.null(names(outer)))',
       ),
@@ -17070,9 +31299,23 @@ NeedsCompilation: no
         'outer <- 1:2\nf <- function() names(outer) <<- c("global.a", "global.b")\nf()\nnames(outer)',
       ),
     ).resolves.toEqual(["global.a", "global.b"]);
-    await expect(runtime.eval('names(x) <- "short"')).rejects.toMatchObject({
-      code: "NRT3199",
-    });
+    await expect(
+      runtime.eval('names(x) <- "short"; c(names(x), is.na(names(x)))'),
+    ).resolves.toEqual(["short", NA, "FALSE", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        empty <- list()
+        names(empty) <- sapply(empty, identity)
+        values <- 1:2
+        names(values) <- list("left", "right")
+        factors <- 1:2
+        names(factors) <- factor(c("second", "first"), levels = c("first", "second"))
+        as.character.name_probe <- function(x, ...) c("custom-a", "custom-b")
+        custom <- 1:2
+        names(custom) <- structure(list(1L, 2L), class = "name_probe")
+        c(length(names(empty)), names(values), names(factors), names(custom))
+      `),
+    ).resolves.toEqual(["0", "left", "right", "second", "first", "custom-a", "custom-b"]);
     await expect(runtime.eval("class(x) <- as.character(NULL)")).rejects.toMatchObject({
       code: "NRT3203",
     });
@@ -17083,8 +31326,36 @@ NeedsCompilation: no
       code: "NRE2001",
     });
     await expect(runtime.eval('names(1:2) <- c("a", "b")')).rejects.toMatchObject({
-      code: "NRU6001",
+      code: "NRT3306",
     });
+    await expect(
+      runtime.eval(`
+        \`[[<-.element_probe\` <- function(x, i, value) c("method", i, value)
+        atomic <- \`[[<-\`(c(a = 1L, b = 2L), 2L, value = 9L)
+        nested <- \`[[<-\`(list(a = list(b = 1L)), c(1L, 1L), value = 8L)
+        named <- \`[[<-\`(list(a = 1L), "new", value = 2L)
+        deleted <- \`[[<-\`(list(a = 1L, b = 2L), 1L, value = NULL)
+        dispatched <- \`[[<-\`(structure(1L, class = "element_probe"), 2L, value = 3L)
+        c(
+          atomic, names(atomic), unlist(nested), names(named), length(deleted), dispatched,
+          typeof(\`[[<-\`), is.null(formals(\`[[<-\`))
+        )
+      `),
+    ).resolves.toEqual([
+      "1",
+      "9",
+      "a",
+      "b",
+      "8",
+      "a",
+      "new",
+      "1",
+      "method",
+      "2",
+      "3",
+      "special",
+      "TRUE",
+    ]);
     await runtime.dispose();
   });
 
@@ -17134,6 +31405,307 @@ NeedsCompilation: no
     await runtime.dispose();
   });
 
+  it("rebuilds nested multidimensional and coordinate-matrix replacements", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        frame <- data.frame(a = c("x", "y"), b = 1:2)
+        frame[, "a"][frame[, "a"] == "y"] <- "z"
+        frame$a
+      `),
+    ).resolves.toEqual(["x", "z"]);
+    await expect(
+      runtime.eval(`
+        matrix_value <- matrix(1:6, nrow = 2)
+        matrix_value[, 2][1] <- 99L
+        coordinates <- matrix(c(1L, 1L, 2L, 2L), ncol = 2, byrow = TRUE)
+        matrix_value[coordinates][2] <- 77L
+        array_value <- array(1:8, dim = c(2L, 2L, 2L))
+        array_value[, 1, 2][2] <- 88L
+        callable <- \`[<-\`(matrix(1:6, nrow = 2), 1L, 2:3, value = c(50L, 60L))
+        open_rows <- \`[<-\`(matrix(1:6, nrow = 2), , 2L, value = c(70L, 80L))
+        setClass("replace_probe", contains = "numeric")
+        formal <- new("replace_probe", c(1, 2, 3))
+        formal[2] <- NA
+        c(matrix_value, array_value[2, 1, 2], callable, open_rows,
+          isS4(formal), class(formal), is.na(formal[2]))
+      `),
+    ).resolves.toEqual([
+      "1",
+      "2",
+      "99",
+      "77",
+      "5",
+      "6",
+      "88",
+      "1",
+      "2",
+      "50",
+      "4",
+      "60",
+      "6",
+      "1",
+      "2",
+      "70",
+      "80",
+      "5",
+      "6",
+      "TRUE",
+      "replace_probe",
+      "TRUE",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("evaluates replacement values before subscripts and retains chained mutations", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        events <- character()
+        x <- 1:3
+        index <- function() { events <<- c(events, "index"); 2L }
+        value <- function() { events <<- c(events, "value"); 9L }
+        x[index()] <- value()
+        chained <- integer(3)
+        chained[1] <- chained[3] <- 7L
+        c(events, x, chained)
+      `),
+    ).resolves.toEqual(["value", "index", "1", "9", "3", "7", "0", "7"]);
+    await runtime.dispose();
+  });
+
+  it("treats a matrix subscript with the wrong coordinate width as a linear subscript", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- matrix(11:19, 3, dimnames = list(letters[1:3], LETTERS[1:3]))
+        linear <- matrix(c(2L, 7L, 6L, 9L, 5L, 1L, 4L, 3L, 8L), 3, 3)
+        extracted <- x[linear]
+        x[linear] <- seq_along(linear)
+        coordinate <- matrix(c(1L, 1L, 3L, 2L), ncol = 2L, byrow = TRUE)
+        c(extracted, is.null(dim(extracted)), x, x[coordinate])
+      `),
+    ).resolves.toEqual([12, 17, 16, 19, 15, 11, 14, 13, 18, 1, 6, 1, 8, 7, 5, 3, 2, 9, 4, 6, 3]);
+    await runtime.dispose();
+  });
+
+  it("promotes atomic storage for empty replacement selections", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- array(1:6, c(2, 3), dimnames = list(c("r1", "r2"), c("a", "b", "c")))
+        x[integer(), ] <- numeric()
+        y <- 1:3
+        y[integer()] <- character()
+        z <- 1:3
+        z[integer()] <- integer()
+        c(typeof(x), x, dim(x), unlist(dimnames(x)), typeof(y), y, typeof(z), z)
+      `),
+    ).resolves.toEqual([
+      "double",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "2",
+      "3",
+      "r1",
+      "r2",
+      "a",
+      "b",
+      "c",
+      "character",
+      "1",
+      "2",
+      "3",
+      "integer",
+      "1",
+      "2",
+      "3",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("retains array shape and attributes when the linear subscript is wholly missing", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- structure(
+          array(1:6, c(1, 2, 3), dimnames = list("row", c("a", "b"), NULL)),
+          note = "kept"
+        )
+        direct <- x[]
+        no_arguments <- do.call("[", list(x))
+        drop_false <- do.call("[", list(x, drop = FALSE))
+        drop_true <- do.call("[", list(x, drop = TRUE))
+        c(
+          identical(direct, x), identical(no_arguments, x),
+          identical(drop_false, x), identical(drop_true, x),
+          dim(drop_false), unlist(dimnames(drop_false)), attr(drop_false, "note")
+        )
+      `),
+    ).resolves.toEqual(["TRUE", "TRUE", "TRUE", "TRUE", "1", "2", "3", "row", "a", "b", "kept"]);
+    await runtime.dispose();
+  });
+
+  it("preserves formal S4 identity through elementwise exponential Math primitives", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        setClass(
+          "MathDataProbe",
+          contains = "numeric"
+        )
+        source <- new("MathDataProbe", c(0, 1, NA))
+        exponential <- exp(source)
+        one_less <- expm1(source)
+        c(
+          class(exponential), isS4(exponential),
+          identical(as.numeric(exponential), c(1, exp(1), NA_real_)),
+          class(one_less), isS4(one_less),
+          identical(as.numeric(one_less), c(0, expm1(1), NA_real_))
+        )
+      `),
+    ).resolves.toEqual(["MathDataProbe", "TRUE", "TRUE", "MathDataProbe", "TRUE", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        setClass("ExplicitPackageProbe", slots = c(value = "numeric"), package = "examplepkg")
+        explicit <- new("ExplicitPackageProbe", value = 1)
+        local_package <- local({
+          setClass("LocalTopLevelProbe", slots = c(value = "numeric"))
+          attr(class(new("LocalTopLevelProbe", value = 2)), "package")
+        })
+        c(
+          attr(class(source), "package"),
+          attr(attr(source, "class"), "package"),
+          attr(class(exponential), "package"),
+          attr(class(explicit), "package"),
+          local_package,
+          exists(".__C__LocalTopLevelProbe", envir = globalenv(), inherits = FALSE)
+        )
+      `),
+    ).resolves.toEqual([
+      ".GlobalEnv",
+      ".GlobalEnv",
+      ".GlobalEnv",
+      "examplepkg",
+      ".GlobalEnv",
+      "TRUE",
+    ]);
+    await expect(
+      runtime.eval(`
+        setClass("LogicalDataProbe", contains = "logical")
+        logical_source <- new("LogicalDataProbe", c(TRUE, FALSE, NA))
+        negated <- !logical_source
+        c(
+          class(negated), isS4(negated),
+          identical(as.logical(negated), c(FALSE, TRUE, NA))
+        )
+      `),
+    ).resolves.toEqual(["LogicalDataProbe", "TRUE", "TRUE"]);
+    await runtime.dispose();
+  });
+
+  it("recursively applies functions across nested lists", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        source <- list(a = list("\`x\`", 1L), b = "\`y\`")
+        replaced <- rapply(
+          source,
+          function(x) gsub("\`", "", x, fixed = TRUE),
+          classes = "character",
+          how = "replace"
+        )
+        listed <- rapply(
+          source,
+          function(x) paste0(x, "!"),
+          classes = "character",
+          deflt = NA_character_,
+          how = "list"
+        )
+        c(replaced$a[[1]], replaced$a[[2]], replaced$b, listed$a[[1]], is.na(listed$a[[2]]))
+      `),
+    ).resolves.toEqual(["x", "1", "y", "`x`!", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        flat <- rapply(list(a = 1L, b = list(c = 2L)), function(x) x * 10L)
+        c(flat, names(flat), names(formals(rapply)))
+      `),
+    ).resolves.toEqual(["10", "20", "a", "b.c", "object", "f", "classes", "deflt", "how", "..."]);
+    await runtime.dispose();
+  });
+
+  it("computes tools::md5sum over browser-owned files", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        path <- tempfile()
+        cat("Hello world!", file = path)
+        missing <- tempfile()
+        digest <- tools::md5sum(c(path, missing))
+        c(unname(digest[1]), is.na(digest[2]), identical(names(digest), c(path, missing)),
+          names(formals(tools::md5sum)))
+      `),
+    ).resolves.toEqual(["86fb269d190d2c85f6e0468ceca42a20", "TRUE", "TRUE", "files"]);
+    await runtime.dispose();
+  });
+
+  it("extracts portable file extensions through the tools namespace", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        c(
+          tools::file_ext(c(
+            "file.txt", "archive.tar.gz", ".hidden", "noext",
+            "dir.with.dot/file", "a.", "", NA_character_, "C:/x/y.R",
+            "a\\\\b.txt", ".a.b", "a..b", "a.b-c"
+          )),
+          tools::file_ext(1:2),
+          tools::file_ext(factor(c("a.txt", "b"))),
+          names(formals(tools::file_ext))
+        )
+      `),
+    ).resolves.toEqual([
+      "txt",
+      "gz",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "R",
+      "txt",
+      "b",
+      "b",
+      "",
+      "",
+      "",
+      "txt",
+      "",
+      "x",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("exposes tools::Rcmd only as an explicit host-process capability boundary", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        c(names(formals(tools::Rcmd)), typeof(tools::Rcmd), is.primitive(tools::Rcmd))
+      `),
+    ).resolves.toEqual(["args", "...", "closure", "FALSE"]);
+    await expect(
+      runtime.eval('tools::Rcmd(c("config", "CC"), stdout = TRUE)'),
+    ).rejects.toMatchObject({
+      code: "NRU6256",
+    });
+    await runtime.dispose();
+  });
+
   it("exposes closure-like builtin formals and session-scoped graphics parameters", async () => {
     const runtime = await session();
     await expect(
@@ -17151,11 +31723,148 @@ NeedsCompilation: no
         c(before, during, graphics::par("mar"), changed$visible)
       `),
     ).resolves.toEqual([5.1, 4.1, 4.1, 2.1, 1, 2, 3, 4, 2, 3, 5.1, 4.1, 4.1, 2.1, 0]);
+    await expect(
+      runtime.eval(`
+        graphics::par(mfrow = c(2, 3))
+        first <- c(graphics::par("mfrow"), graphics::par("mfcol"), graphics::par("mfg"))
+        previous <- graphics::par(mfg = c(1, 2))
+        second <- graphics::par("mfg")
+        joint <- graphics::par(mfrow = c(4, 5), mfg = c(2, 3))
+        c(
+          first, previous$mfg, second, joint$mfrow, joint$mfg,
+          graphics::par("mfrow"), graphics::par("mfcol"), graphics::par("mfg")
+        )
+      `),
+    ).resolves.toEqual([
+      2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 1, 2, 2, 3, 2, 3, 4, 5, 4, 5, 4, 5, 4, 5, 2, 3, 4, 5,
+    ]);
+    const mfgDimensions = await runtime.evalDetailed(`
+      graphics::par(mfrow = c(2, 3))
+      graphics::par(mfg = c(1, 1, 9, 8))
+      graphics::par("mfg")
+    `);
+    expect(mfgDimensions.value).toEqual([1, 1, 2, 3]);
+    expect(mfgDimensions.warnings).toEqual([
+      { code: "NRW1142", message: "value of 'nr' in \"mfg\" is wrong and will be ignored" },
+      { code: "NRW1142", message: "value of 'nc' in \"mfg\" is wrong and will be ignored" },
+    ]);
+    await expect(
+      runtime.eval(`
+        previous <- graphics::par(xpd = NA)
+        observed <- c(is.na(graphics::par("xpd")), identical(previous$xpd, FALSE))
+        graphics::par(previous)
+        c(observed, identical(graphics::par("xpd"), FALSE))
+      `),
+    ).resolves.toEqual([true, true, true]);
     const unknown = await runtime.evalDetailed('graphics::par("not-a-par")');
     expect(unknown.value).toBeNull();
     expect(unknown.warnings).toEqual([
       { code: "NRW1128", message: '"not-a-par" is not a graphical parameter' },
     ]);
+    const ignored = await runtime.evalDetailed(`
+      old <- graphics::par("mar")
+      one <- withVisible(graphics::par(old))
+      many <- suppressWarnings(graphics::par(1, 2))
+      empty <- graphics::par(character())
+      c(
+        is.null(one$value),
+        one$visible,
+        length(many),
+        identical(names(many), c("", "")),
+        all(vapply(many, is.null, logical(1))),
+        length(empty),
+        identical(names(empty), character())
+      )
+    `);
+    expect(ignored.value).toEqual([1, 1, 2, 1, 1, 0, 1]);
+    expect(ignored.warnings).toEqual([
+      { code: "NRW1128", message: "argument 1 does not name a graphical parameter" },
+    ]);
+    await expect(
+      runtime.eval(`
+        all <- graphics::par()
+        mutable <- graphics::par(no.readonly = TRUE)
+        c(length(all), length(mutable),
+          identical(setdiff(names(all), names(mutable)), c("cin", "cra", "csi", "cxy", "din", "page")))
+      `),
+    ).resolves.toEqual([72, 66, 1]);
+    const restored = await runtime.evalDetailed(`
+      visible <- withVisible(graphics::par(graphics::par()))
+      c(length(visible$value), visible$visible)
+    `);
+    expect(restored.value).toEqual([72, 0]);
+    expect(restored.warnings).toEqual(
+      ["cin", "cra", "csi", "cxy", "din", "page"].map((name) => ({
+        code: "NRW1141",
+        message: `graphical parameter "${name}" cannot be set`,
+      })),
+    );
+    await expect(
+      runtime.eval(`
+        old <- graphics::par(lend = 1)
+        first <- graphics::par("lend")
+        graphics::par(lend = 2.9)
+        second <- graphics::par("lend")
+        graphics::par(lend = 0)
+        c(old$lend, first, second, graphics::par("lend"))
+      `),
+    ).resolves.toEqual(["round", "butt", "square", "round"]);
+    await expect(runtime.eval('graphics::par(lend = "r")')).rejects.toMatchObject({
+      message: "invalid line end",
+    });
+    await expect(runtime.eval("graphics::par(lend = 1:2)")).rejects.toMatchObject({
+      message: 'graphical parameter "lend" has the wrong length',
+    });
+    const capped = await runtime.evalDetailed(`
+      graphics::plot.new()
+      graphics::plot.window(c(0, 1), c(0, 1))
+      graphics::par(lend = 1)
+      graphics::segments(0, 0, 1, 1)
+    `);
+    expect(capped.graphics.at(-1)).toMatchObject({
+      kind: "segments",
+      segments: [{ lineCap: "butt" }],
+    });
+    const titled = await runtime.evalDetailed(
+      'graphics::plot(1:2, main = "scaled", cex.main = 2, col.main = "red")',
+    );
+    expect(titled.graphics.at(-1)).toMatchObject({
+      kind: "text",
+      labels: [{ label: "scaled", size: 2, color: "#FF0000FF" }],
+    });
+    await runtime.dispose();
+  });
+
+  it("owns graphics layout state and renders layout.show diagnostics", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        f <- formals(graphics::layout)
+        c(names(f), identical(f$respect, FALSE), names(formals(graphics::layout.show)))
+    `),
+    ).resolves.toEqual(["mat", "widths", "heights", "respect", "TRUE", "n"]);
+    await expect(
+      runtime.eval(`
+        count <- graphics::layout(1L)
+        c(count, graphics::par("mfrow"), graphics::par("mfg"), graphics::par("fig"))
+      `),
+    ).resolves.toEqual([1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1]);
+    await expect(runtime.eval("graphics::layout(matrix(1:6, nrow = 2L))")).resolves.toBe(6);
+    const result = await runtime.evalDetailed(`
+      mat <- matrix(c(1L, 2L, 3L, 3L), nrow = 2L)
+      figures <- graphics::layout(
+        mat,
+        widths = c(1, 2),
+        heights = c(3, 4),
+        respect = TRUE
+      )
+      shown <- withVisible(graphics::layout.show(3L))
+      c(figures, graphics::par("mfrow"), graphics::par("mfg"), graphics::par("fig"), shown$visible)
+    `);
+    expect(result.value).toEqual([3, 2, 2, 1, 1, 2, 2, 0, 1 / 3, 4 / 7, 1, 0]);
+    expect(result.graphics.map((event) => event.kind)).toEqual(["new-page", "segments", "text"]);
+    expect(result.graphics[1]).toMatchObject({ kind: "segments" });
+    expect(result.graphics[2]).toMatchObject({ kind: "text" });
     await runtime.dispose();
   });
 
@@ -17180,6 +31889,64 @@ NeedsCompilation: no
       expect(segments.segments).toHaveLength(4);
       expect(segments.segments.every((segment) => segment.color === "#FF0000FF")).toBe(true);
     }
+
+    const plottedFunction = await runtime.evalDetailed(`
+      seen <- NULL
+      f <- function(x) { seen <<- x; x^2 }
+      result <- withVisible(graphics::plot(
+        f, -2, 3, n = 5, type = "l", xlab = "input", ylab = "square"
+      ))
+      c(result$value$x, result$value$y, seen, result$visible)
+    `);
+    expect(plottedFunction.value).toEqual([
+      -2, -0.75, 0.5, 1.75, 3, 4, 0.5625, 0.25, 3.0625, 9, -2, -0.75, 0.5, 1.75, 3, 0,
+    ]);
+    expect(plottedFunction.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "window",
+      "box",
+      "segments",
+      "text",
+    ]);
+    await expect(
+      runtime.eval(`
+        first <- graphics::plot(cos, xlim = c(-2, 3), n = 3, type = "n")$x
+        second <- graphics::plot(cos, -2, to = 3, n = 3, type = "n")$x
+        third <- graphics::plot(cos, -2, xlim = c(-10, 10), n = 3, type = "n")$x
+        c(first, second, third)
+      `),
+    ).resolves.toEqual([-2, 0.5, 3, -2, 0.5, 3, -2, 4, 10]);
+    await expect(
+      runtime.eval(`
+        value <- graphics::plot(
+          cos, 0, 10, n = 3, ylim = c(-1.5, 1.5), lwd = 2,
+          main = expression(cos(x))
+        )
+        c(value$x, round(value$y, 6))
+      `),
+    ).resolves.toEqual([0, 5, 10, 1, 0.283662, -0.839072]);
+    await expect(
+      runtime.eval(`
+        f <- formals(graphics::plot.function)
+        c(
+          names(f), f$y, f$to, deparse(f$from), identical(f$xlim, NULL),
+          identical(f$ylab, NULL)
+        )
+      `),
+    ).resolves.toEqual([
+      "x",
+      "y",
+      "to",
+      "from",
+      "xlim",
+      "ylab",
+      "...",
+      "0",
+      "1",
+      "y",
+      "TRUE",
+      "TRUE",
+    ]);
 
     await expect(
       runtime.eval(`
@@ -17230,6 +31997,9 @@ NeedsCompilation: no
         { x0: 1, y0: 10.000000000000002, x1: 2, y1: 100 },
       ],
     });
+    await expect(
+      runtime.eval("graphics::curve(x^1, n = 3, add = TRUE, type = 'n')$x"),
+    ).resolves.toEqual([1, 10.000000000000002, 100]);
     await expect(
       runtime.eval("graphics::curve(x^1, 0, 100, n = 3, add = TRUE)"),
     ).rejects.toMatchObject({ code: "NRT3355" });
@@ -17364,6 +32134,132 @@ NeedsCompilation: no
     await runtime.dispose();
   });
 
+  it("draws vectorized margin text with GNU-shaped formals and invisibility", async () => {
+    const runtime = await session();
+    const drawn = await runtime.evalDetailed(`
+      plot.new()
+      plot.window(c(0, 10), c(0, 20))
+      visible <- withVisible(graphics::mtext(
+        c("bottom", "top"), side = c(1, 3), line = c(1, 2),
+        at = c(2, 8), adj = c(0, 1), padj = 0.25,
+        cex = c(1, 1.5), col = c("red", "blue"), font = c(2, 3),
+        family = "serif", las = 1
+      ))
+      c(is.null(visible$value), visible$visible)
+    `);
+    expect(drawn.value).toEqual([true, false]);
+    expect(drawn.graphics.map((event) => event.kind)).toEqual(["new-page", "window", "text"]);
+    const text = drawn.graphics[2];
+    expect(text?.kind).toBe("text");
+    if (text?.kind === "text") {
+      expect(text.labels).toMatchObject([
+        {
+          x: 2,
+          y: 0,
+          label: "bottom",
+          color: "#FF0000FF",
+          size: 1,
+          font: 2,
+          family: "serif",
+          rotation: 0,
+          horizontalAdjustment: 0,
+        },
+        {
+          x: 8,
+          y: 20,
+          label: "top",
+          color: "#0000FFFF",
+          size: 1.5,
+          font: 3,
+          family: "serif",
+          rotation: 0,
+          horizontalAdjustment: 1,
+        },
+      ]);
+      expect(text.labels[0]?.verticalAdjustment).toBeCloseTo(-0.45);
+      expect(text.labels[1]?.verticalAdjustment).toBeCloseTo(1.45);
+    }
+    await expect(
+      runtime.eval(`
+        f <- formals(graphics::mtext)
+        c(names(f), f$side, f$line, identical(f$outer, FALSE),
+          is.na(f$at), is.na(f$adj), is.na(f$padj), is.na(f$cex),
+          is.na(f$col), is.na(f$font))
+      `),
+    ).resolves.toEqual([
+      "text",
+      "side",
+      "line",
+      "outer",
+      "at",
+      "adj",
+      "padj",
+      "cex",
+      "col",
+      "font",
+      "...",
+      "3",
+      "0",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    await runtime.reset();
+    await expect(runtime.eval('graphics::mtext("before")')).rejects.toMatchObject({
+      code: "NRE2190",
+    });
+    await runtime.dispose();
+  });
+
+  it("measures browser text with explicit shape-level device units", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        plot.new()
+        plot.window(c(0, 10), c(0, 20))
+        c(
+          graphics::strwidth(c("", "abc", NA), units = "user"),
+          graphics::strheight(c("", "abc", NA), units = "user"),
+          graphics::strwidth("abc", units = "inches"),
+          graphics::strheight("abc", units = "inches")
+        )
+      `),
+    ).resolves.toEqual([
+      0, 0.5555555555555556, 0, 0.5555555555555556, 0.5555555555555556, 0, 0.2777777777777778,
+      0.1388888888888889,
+    ]);
+    await expect(
+      runtime.eval(`
+        w <- formals(graphics::strwidth)
+        h <- formals(graphics::strheight)
+        c(names(w), names(h), identical(w$units, "user"),
+          identical(w$cex, NULL), identical(w$font, NULL), identical(w$vfont, NULL))
+      `),
+    ).resolves.toEqual([
+      "s",
+      "units",
+      "cex",
+      "font",
+      "vfont",
+      "...",
+      "s",
+      "units",
+      "cex",
+      "font",
+      "vfont",
+      "...",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    await runtime.dispose();
+  });
+
   it("draws usage-ranked linear axes for labeling, zoo, and bit64 call shapes", async () => {
     const runtime = await session();
     const defaults = await runtime.evalDetailed(`
@@ -17399,6 +32295,17 @@ NeedsCompilation: no
       expect(explicitText.labels.every((label) => label.size === 0.7)).toBe(true);
     }
 
+    const expressions = await runtime.evalDetailed(
+      'axis(1, at = 0:4, labels = expression("0", pi/2, pi, 3*pi/2, 2*pi))',
+    );
+    const expressionText = expressions.graphics.find((event) => event.kind === "text");
+    expect(expressionText?.kind).toBe("text");
+    if (expressionText?.kind === "text") {
+      expect(expressionText.labels).toHaveLength(5);
+      expect(expressionText.labels[0]?.label).toBe("0");
+      expect(expressionText.labels[1]?.label).toContain("pi");
+    }
+
     const zoo = await runtime.evalDetailed(
       "axis(side = 4, at = c(-2, 0, 2), labels = c('low', 'zero', 'high'))",
     );
@@ -17416,6 +32323,26 @@ NeedsCompilation: no
     );
     expect(suppressed.value).toEqual([1, 2, 3]);
     expect(suppressed.graphics).toEqual([]);
+    const sharedControls = await runtime.evalDetailed(
+      "axis(1, at = 1:3, labels = FALSE, xlab = 'ignored', mar = 1:4, definitely.unknown = 1)",
+    );
+    expect(sharedControls.value).toEqual([1, 2, 3]);
+    expect(sharedControls.warnings).toEqual([
+      { code: "NRW1140", message: '"definitely.unknown" is not a graphical parameter' },
+    ]);
+    const fontFallbacks = await runtime.evalDetailed(`
+      par(font.axis = 2)
+      axis(1, at = 1, labels = "missing", font = NA)
+      axis(1, at = 2, labels = "null", font = NULL)
+      axis(1, at = 3, labels = "empty", font = integer())
+      axis(1, at = 4, labels = "explicit", font = c(3, 2))
+      axis(1, at = 5, labels = "axis-null", font.axis = NULL)
+    `);
+    expect(
+      fontFallbacks.graphics
+        .filter((event) => event.kind === "text")
+        .map((event) => event.labels[0]?.font),
+    ).toEqual([2, 2, 2, 3, 2]);
 
     await expect(
       runtime.eval(`
@@ -17458,8 +32385,295 @@ NeedsCompilation: no
       code: "NRU6197",
     });
     await expect(runtime.eval("axis(1, at = numeric())")).resolves.toBeNull();
+    await expect(runtime.eval("axis(1, at = 1, font.axis = NA)")).rejects.toMatchObject({
+      code: "NRT3110",
+    });
     await runtime.reset();
     await expect(runtime.eval("axis(1)")).rejects.toMatchObject({ code: "NRE2190" });
+    await runtime.dispose();
+  });
+
+  it("draws and returns explicit POSIXct axes with GNU-compatible ordering and metadata", async () => {
+    const runtime = await session();
+    const result = await runtime.evalDetailed(`
+      plot.new()
+      x <- as.POSIXct("2020-01-01", tz = "UTC") + 0:5 * 86400
+      plot.window(as.numeric(range(x)), c(0, 1))
+      graphics::axis.POSIXct(1, x, at = x[c(3, 1)], format = "%F")
+    `);
+    expect(result.value).toEqual([1577836800, 1578009600]);
+    expect(result.visible).toBe(false);
+    expect(result.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "window",
+      "segments",
+      "text",
+    ]);
+    const text = result.graphics[3];
+    expect(text?.kind).toBe("text");
+    if (text?.kind === "text") {
+      expect(text.labels.map((label) => label.label)).toEqual(["2020-01-01", "2020-01-03"]);
+    }
+    const forwarded = await runtime.evalDetailed(`
+      plot.new()
+      plot.window(as.numeric(range(x)), c(0, 1))
+      forward.axis <- function(format) {
+        graphics::axis.POSIXct(1, x, at = x[c(3, 1)], format = format)
+        TRUE
+      }
+      forward.axis()
+    `);
+    expect(forwarded.value).toBe(true);
+    expect(forwarded.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "window",
+      "segments",
+      "text",
+    ]);
+    await expect(
+      runtime.eval(`
+        value <- graphics::axis.POSIXct(1, x, at = x[c(3, 1)], format = "%F", labels = FALSE)
+        c(class(value), attr(value, "tzone"), unclass(value))
+      `),
+    ).resolves.toEqual(["POSIXct", "POSIXt", "UTC", "1577836800", "1578009600"]);
+    await expect(
+      runtime.eval(`
+        f <- formals(graphics::axis.POSIXct)
+        c(names(f), identical(f$labels, TRUE))
+      `),
+    ).resolves.toEqual(["side", "x", "at", "format", "labels", "...", "TRUE"]);
+    await runtime.dispose();
+  });
+
+  it("draws automatic and explicit Date axes with classed invisible tick results", async () => {
+    const runtime = await session();
+    const automatic = await runtime.evalDetailed(`
+      plot.new()
+      plot.window(c(0, 20), c(0, 1))
+      graphics::axis.Date(1, seq.Date(as.Date("2024-01-01"), by = "day", length.out = 15L))
+    `);
+    expect(automatic.value).toEqual([4, 11, 18]);
+    expect(automatic.visible).toBe(false);
+    expect(automatic.graphics.map((event) => event.kind)).toEqual([
+      "new-page",
+      "window",
+      "segments",
+      "text",
+    ]);
+    await expect(
+      runtime.eval(`
+        forward.axis <- function(format) {
+          graphics::axis.Date(
+            1,
+            as.Date(c("2024-01-01", "2024-01-02", "2024-01-03")),
+            format = format
+          )
+          TRUE
+        }
+        forward.axis()
+      `),
+    ).resolves.toBe(true);
+    await expect(
+      runtime.eval(`
+        at <- as.Date(c("2024-01-03", "2024-01-01"))
+        value <- graphics::axis.Date(1, at = at, format = "%F", labels = FALSE)
+        c(class(value), as.character(value), names(formals(graphics::axis.Date)))
+      `),
+    ).resolves.toEqual([
+      "Date",
+      "2024-01-01",
+      "2024-01-03",
+      "side",
+      "x",
+      "at",
+      "format",
+      "labels",
+      "...",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("normalizes three-dimensional coordinates through grDevices xyz.coords", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        matrix.value <- grDevices::xyz.coords(matrix(1:9, 3, 3,
+          dimnames = list(NULL, c("u", "v", "w"))))
+        frame.value <- grDevices::xyz.coords(data.frame(a = 1:2, b = 3:4, c = 5:6))
+        list.value <- grDevices::xyz.coords(list(x = 1:2, y = 3:4, z = 5:6))
+        recycled <- grDevices::xyz.coords(1:3, 4:5, 6, recycle = TRUE)
+        c(matrix.value$x, matrix.value$y, matrix.value$z,
+          matrix.value$xlab, matrix.value$ylab, matrix.value$zlab,
+          frame.value$xlab, frame.value$ylab, frame.value$zlab,
+          list.value$xlab, list.value$ylab, list.value$zlab,
+          recycled$x, recycled$y, recycled$z,
+          names(formals(grDevices::xyz.coords)))
+      `),
+    ).resolves.toEqual([
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "u",
+      "v",
+      "w",
+      "a",
+      "b",
+      "c",
+      "$x",
+      "$y",
+      "$z",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "4",
+      "6",
+      "6",
+      "6",
+      "x",
+      "y",
+      "z",
+      "xlab",
+      "ylab",
+      "zlab",
+      "log",
+      "recycle",
+      "setLab",
+    ]);
+    await expect(runtime.eval("grDevices::xyz.coords(1:3, 4:5, 6:8)")).rejects.toMatchObject({
+      code: "NRT3353",
+    });
+    await runtime.dispose();
+  });
+
+  it("generates core pretty scales and dispatches package-defined methods", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        pretty.pretty_probe <- function(x, ...) c("method", unclass(x))
+        julian.pretty_probe <- function(x, ...) c("julian", unclass(x))
+        months.pretty_probe <- function(x, abbreviate = FALSE) c("months", abbreviate)
+        quarters.pretty_probe <- function(x, abbreviate = FALSE) c("quarters", abbreviate)
+        weekdays.pretty_probe <- function(x, abbreviate = FALSE) c("weekdays", abbreviate)
+        c(
+          pretty(1:5),
+          pretty(c(0, 1)),
+          pretty(c(-3.2, 8.7)),
+          pretty(c(1, NA, 3)),
+          pretty(numeric()),
+          pretty(structure(7, class = "pretty_probe")),
+          julian(structure(8, class = "pretty_probe")),
+          months(structure(8, class = "pretty_probe")),
+          quarters(structure(8, class = "pretty_probe"), TRUE),
+          weekdays(structure(8, class = "pretty_probe")),
+          names(formals(pretty)),
+          names(formals(julian)),
+          names(formals(months)),
+          names(formals(pretty.default))
+        )
+      `),
+    ).resolves.toEqual([
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "0",
+      "0.2",
+      "0.4",
+      "0.6000000000000001",
+      "0.8",
+      "1",
+      "-4",
+      "-2",
+      "0",
+      "2",
+      "4",
+      "6",
+      "8",
+      "10",
+      "1",
+      "1.5",
+      "2",
+      "2.5",
+      "3",
+      "method",
+      "7",
+      "julian",
+      "8",
+      "months",
+      "FALSE",
+      "quarters",
+      "TRUE",
+      "weekdays",
+      "FALSE",
+      "x",
+      "...",
+      "x",
+      "...",
+      "x",
+      "abbreviate",
+      "x",
+      "n",
+      "min.n",
+      "shrink.sml",
+      "high.u.bias",
+      "u5.bias",
+      "eps.correct",
+      "f.min",
+      "bounds",
+      "...",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("generates calendar-aware Date and POSIXt pretty scales with reusable metadata", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        posix <- pretty(as.POSIXct(c("2005-11-01", "2007-04-11"), tz = "GMT"))
+        dates <- pretty(as.Date(c("2024-01-02", "2024-01-22")))
+        c(
+          class(posix), attr(posix, "tzone"), attr(posix, "format"), as.character(posix),
+          class(dates), attr(dates, "format"), as.character(dates),
+          names(formals(pretty.POSIXt)), names(formals(pretty.Date))
+        )
+      `),
+    ).resolves.toEqual([
+      "POSIXct",
+      "POSIXt",
+      "GMT",
+      "%Y-%m",
+      "2005-07-01",
+      "2006-01-01",
+      "2006-07-01",
+      "2007-01-01",
+      "2007-07-01",
+      "Date",
+      "%b %d",
+      "2024-01-01",
+      "2024-01-08",
+      "2024-01-15",
+      "2024-01-22",
+      "2024-01-29",
+      "x",
+      "n",
+      "min.n",
+      "sep",
+      "...",
+      "x",
+      "n",
+      "min.n",
+      "sep",
+      "...",
+    ]);
     await runtime.dispose();
   });
 
@@ -17526,6 +32740,88 @@ NeedsCompilation: no
     });
     await expect(runtime.eval("grDevices::dev.off(2:3)")).rejects.toMatchObject({
       code: "NRT3398",
+    });
+    await runtime.dispose();
+  });
+
+  it("opens browser graphics devices through dev.new and delegates configured devices", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        grDevices::graphics.off()
+        opened <- withVisible(grDevices::dev.new(
+          width = 3, height = 4, pointsize = 9, bg = "red", noRStudioGD = TRUE
+        ))
+        first <- c(
+          unname(grDevices::dev.cur()), names(grDevices::dev.list()),
+          round(graphics::par("din"), 12), round(graphics::par("pin"), 12),
+          graphics::par("ps"), graphics::par("bg"), round(graphics::par("cin"), 12),
+          round(graphics::par("cra"), 12), round(graphics::par("csi"), 12),
+          round(graphics::par("cxy"), 12)
+        )
+        grDevices::dev.new()
+        devices <- c(unname(grDevices::dev.list()), names(grDevices::dev.list()))
+        closed <- unname(grDevices::dev.off())
+        c(
+          is.null(opened$value), opened$visible,
+          names(formals(grDevices::dev.new)),
+          identical(formals(grDevices::dev.new)$noRStudioGD, FALSE),
+          first, devices, closed, unname(grDevices::dev.cur())
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "FALSE",
+      "...",
+      "noRStudioGD",
+      "TRUE",
+      "2",
+      "NativR",
+      "3",
+      "4",
+      "2.07",
+      "2.62",
+      "9",
+      "red",
+      "0.1125",
+      "0.15",
+      "8.1",
+      "10.8",
+      "0.15",
+      "0.054347826087",
+      "0.057251908397",
+      "2",
+      "3",
+      "NativR",
+      "NativR",
+      "2",
+      "2",
+    ]);
+
+    await expect(
+      runtime.eval(`
+        grDevices::graphics.off()
+        captured <- NULL
+        probe <- function(width = 7, height = 7, pointsize = 12, bg = "white", foo = 0, ...) {
+          captured <<- c(width, height, pointsize, bg, foo, length(list(...)))
+          grDevices::pdf(NULL, width = 2, height = 2)
+        }
+        old <- options(device = probe)
+        opened <- withVisible(grDevices::dev.new(
+          width = 3, height = 4, pointsize = 9, bg = "red", foo = 11,
+          noRStudioGD = NA
+        ))
+        result <- c(
+          captured, is.null(opened$value), opened$visible,
+          unname(grDevices::dev.cur()), names(grDevices::dev.list())
+        )
+        grDevices::graphics.off()
+        options(old)
+        result
+      `),
+    ).resolves.toEqual(["3", "4", "9", "red", "11", "0", "TRUE", "FALSE", "2", "pdf"]);
+    await expect(runtime.eval("grDevices::dev.new(noRStudioGD = 1:2)")).rejects.toMatchObject({
+      code: "NRT3420",
     });
     await runtime.dispose();
   });
@@ -17867,6 +33163,277 @@ NeedsCompilation: no
     await runtime.dispose();
   });
 
+  it("writes browser-owned uncompressed and LZW TIFF through the shared bitmap device", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        path <- tempfile(fileext = ".tif")
+        f <- formals(grDevices::tiff)
+        opened <- withVisible(grDevices::tiff(
+          path, width = 96, height = 64, units = "px", pointsize = 12,
+          compression = "none", bg = "red", res = 72, family = "sans", type = "cairo"
+        ))
+        before <- c(
+          file.exists(path), names(grDevices::dev.cur()), unname(grDevices::dev.cur()),
+          round(grDevices::dev.size("px"), 12), round(grDevices::dev.size("in"), 12),
+          graphics::par("ps"), graphics::par("family"), graphics::par("bg")
+        )
+        graphics::par(mar = c(0, 0, 0, 0))
+        graphics::plot.new()
+        graphics::segments(0, 0, 1, 1)
+        closed <- withVisible(grDevices::dev.off())
+        bytes <- as.integer(readBin(path, "raw", n = 1000000L))
+        invalid <- c(
+          inherits(try(grDevices::tiff(tempfile(), width = 0), silent = TRUE), "try-error"),
+          inherits(try(grDevices::tiff(tempfile(), units = "in"), silent = TRUE), "try-error"),
+          inherits(try(grDevices::tiff(tempfile(), compression = "zip"), silent = TRUE), "try-error")
+        )
+        lzw.path <- tempfile(fileext = ".tif")
+        grDevices::tiff(lzw.path, width = 96, height = 64, compression = "lzw")
+        graphics::par(mar = c(0, 0, 0, 0))
+        graphics::plot.new()
+        grDevices::dev.off()
+        lzw.bytes <- as.integer(readBin(lzw.path, "raw", n = 1000000L))
+        graphics.off()
+        unlink(c(path, lzw.path))
+        as.character(c(
+          names(f), f$filename, f$width, f$height, f$units, f$pointsize,
+          deparse(f$compression), f$bg, typeof(f$res), f$family, f$restoreConsole,
+          deparse(f$type), deparse(f$antialias), f$symbolfamily,
+          opened$value, opened$visible, before, unname(closed$value), closed$visible,
+          length(bytes) > 100, bytes[1:4], invalid,
+          length(lzw.bytes) > 100, lzw.bytes[1:4]
+        ))
+      `),
+    ).resolves.toEqual([
+      "filename",
+      "width",
+      "height",
+      "units",
+      "pointsize",
+      "compression",
+      "bg",
+      "res",
+      "family",
+      "restoreConsole",
+      "type",
+      "antialias",
+      "symbolfamily",
+      "Rplot%03d.tif",
+      "480",
+      "480",
+      "px",
+      "12",
+      'c("none", "rle", "lzw", "jpeg", "zip", "lzw+p", "zip+p", "lerc", ',
+      '    "lzma", "zstd", "webp")',
+      "white",
+      "logical",
+      "sans",
+      "TRUE",
+      'c("windows", "cairo")',
+      'c("default", "none", "cleartype", "gray", "subpixel")',
+      "default",
+      "FALSE",
+      "FALSE",
+      "tiff",
+      "2",
+      "96",
+      "64",
+      "1.333333333333",
+      "0.888888888889",
+      "12",
+      "",
+      "red",
+      "1",
+      "TRUE",
+      "TRUE",
+      "73",
+      "73",
+      "42",
+      "0",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "73",
+      "73",
+      "42",
+      "0",
+    ]);
+    await expect(
+      runtime.eval('grDevices::tiff(tempfile(), compression = "zip")'),
+    ).rejects.toMatchObject({
+      code: "NRU6213",
+    });
+    await runtime.dispose();
+  });
+
+  it("exposes an explicit JPEG encoder boundary without producing mislabeled PNG bytes", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        f <- formals(grDevices::jpeg)
+        c(names(f), identical(f$filename, "Rplot%03d.jpg"), identical(f$width, 480),
+          identical(f$height, 480), identical(f$units, "px"), identical(f$pointsize, 12),
+          identical(f$quality, 75), identical(f$bg, "white"), is.na(f$res),
+          identical(f$family, "sans"), identical(f$restoreConsole, TRUE),
+          identical(f$type, quote(c("windows", "cairo"))),
+          identical(f$antialias, quote(c("default", "none", "cleartype", "gray", "subpixel"))),
+          identical(f$symbolfamily, "default"))
+      `),
+    ).resolves.toEqual([
+      "filename",
+      "width",
+      "height",
+      "units",
+      "pointsize",
+      "quality",
+      "bg",
+      "res",
+      "family",
+      "restoreConsole",
+      "type",
+      "antialias",
+      "symbolfamily",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    await expect(runtime.eval("grDevices::jpeg(tempfile())")).rejects.toMatchObject({
+      code: "NRU6209",
+    });
+    await runtime.dispose();
+  });
+
+  it("queries, updates, resets, and consumes session PDF device defaults", async () => {
+    const runtime = await session();
+    await expect(runtime.eval("names(formals(grDevices::pdf.options))")).resolves.toEqual([
+      "...",
+      "reset",
+    ]);
+    await expect(
+      runtime.eval(`
+        defaults <- grDevices::pdf.options()
+        c(
+          names(defaults),
+          defaults$width, defaults$height, defaults$onefile,
+          defaults$family, defaults$title, is.null(defaults$fonts),
+          defaults$version, defaults$paper, defaults$encoding,
+          defaults$bg, defaults$fg, defaults$pointsize,
+          defaults$pagecentre, defaults$colormodel,
+          defaults$useDingbats, defaults$useKerning,
+          defaults$fillOddEven, defaults$compress,
+          defaults$timestamp, defaults$producer, defaults$author
+        )
+      `),
+    ).resolves.toEqual([
+      "width",
+      "height",
+      "onefile",
+      "family",
+      "title",
+      "fonts",
+      "version",
+      "paper",
+      "encoding",
+      "bg",
+      "fg",
+      "pointsize",
+      "pagecentre",
+      "colormodel",
+      "useDingbats",
+      "useKerning",
+      "fillOddEven",
+      "compress",
+      "timestamp",
+      "producer",
+      "author",
+      "7",
+      "7",
+      "TRUE",
+      "Helvetica",
+      "R Graphics Output",
+      "TRUE",
+      "1.4",
+      "special",
+      "default",
+      "transparent",
+      "black",
+      "12",
+      "TRUE",
+      "srgb",
+      "FALSE",
+      "TRUE",
+      "FALSE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "",
+    ]);
+    await expect(
+      runtime.eval(`
+        changed <- withVisible(grDevices::pdf.options(
+          width = 8, height = 4, onefile = FALSE,
+          bg = "white", fg = "blue", pointsize = 20,
+          compress = FALSE, timestamp = FALSE, producer = FALSE
+        ))
+        grDevices::pdf(NULL)
+        size <- grDevices::dev.size("in")
+        parameters <- graphics::par(c("bg", "fg", "ps"))
+        grDevices::dev.off()
+        c(
+          changed$value$width, changed$visible,
+          size, parameters$bg, parameters$fg, parameters$ps,
+          grDevices::pdf.options()$width,
+          grDevices::pdf.options()$onefile
+        )
+      `),
+    ).resolves.toEqual(["7", "FALSE", "8", "4", "white", "blue", "20", "8", "FALSE"]);
+    await expect(
+      runtime.eval(`
+        grDevices::pdf(NULL, width = 3, height = 2, bg = "red", fg = "black", pointsize = 9)
+        explicit <- c(grDevices::dev.size("in"), graphics::par("ps"))
+        grDevices::dev.off()
+        c(explicit, grDevices::pdf.options()$width, grDevices::pdf.options()$pointsize)
+      `),
+    ).resolves.toEqual([3, 2, 9, 8, 20]);
+    const rejectedMode = await runtime.evalDetailed(`
+      grDevices::pdf.options(width = "9")
+      grDevices::pdf.options()$width
+    `);
+    expect(rejectedMode.value).toBe(8);
+    expect(rejectedMode.warnings).toEqual([
+      {
+        code: "NRW1156",
+        message: "'mode(width)' differs between new and previous\n\t ==> NOT changing 'width'",
+      },
+    ]);
+    await expect(
+      runtime.eval(`
+        failed <- inherits(try(grDevices::pdf.options(width = 11, nope = 1), silent = TRUE), "try-error")
+        c(failed, grDevices::pdf.options()$width)
+      `),
+    ).resolves.toEqual([1, 8]);
+    await expect(
+      runtime.eval(`
+        old <- withVisible(grDevices::pdf.options(reset = TRUE))
+        current <- grDevices::pdf.options()
+        c(old$value$width, old$visible, current$width, current$height, current$onefile)
+      `),
+    ).resolves.toEqual([8, 0, 7, 7, 1]);
+    await runtime.dispose();
+  });
+
   it("writes browser-native PDF files and supports recording-only PDF devices", async () => {
     const runtime = await session();
     await expect(runtime.eval("names(formals(grDevices::pdf))")).resolves.toEqual([
@@ -17908,6 +33475,14 @@ NeedsCompilation: no
         )
       `),
     ).resolves.toEqual(["TRUE", "FALSE", "list", "list", "recordedplot", "1", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        opened <- withVisible(grDevices::pdf("nul:"))
+        graphics::plot.new()
+        closed <- withVisible(grDevices::dev.off())
+        c(is.null(opened$value), opened$visible, unname(closed$value), closed$visible)
+      `),
+    ).resolves.toEqual([1, 0, 1, 1]);
 
     const opened = await runtime.eval(`
       path <- tempfile(fileext = ".pdf")
@@ -18017,6 +33592,1054 @@ NeedsCompilation: no
     await limited.eval("grDevices::pdf(tempfile(), compress = FALSE)");
     await expect(limited.eval("grDevices::dev.off()")).rejects.toMatchObject({ code: "NRL4007" });
     await limited.dispose();
+  });
+
+  it("opens cairo_pdf through the shared browser PDF device contract", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        path <- tempfile(fileext = ".pdf")
+        f <- formals(grDevices::cairo_pdf)
+        opened <- withVisible(grDevices::cairo_pdf(
+          path,
+          width = 3,
+          height = 2,
+          pointsize = 9,
+          family = "sans",
+          bg = "red",
+          antialias = "gray",
+          fallback_resolution = 144,
+          symbolfamily = "serif",
+          onefile = FALSE
+        ))
+        before <- c(
+          file.exists(path),
+          names(grDevices::dev.cur()),
+          unname(grDevices::dev.cur()),
+          round(grDevices::dev.size("in"), 12),
+          graphics::par("ps"),
+          graphics::par("family"),
+          graphics::par("bg")
+        )
+        graphics::plot.new()
+        graphics::segments(0, 0, 1, 1)
+        closed <- withVisible(grDevices::dev.off())
+        after <- c(file.exists(path), file.info(path)$size > 100)
+        invalid <- c(
+          inherits(try(grDevices::cairo_pdf(NULL), silent = TRUE), "try-error"),
+          inherits(try(grDevices::cairo_pdf(tempfile(), antialias = "bad"), silent = TRUE), "try-error"),
+          inherits(try(grDevices::cairo_pdf(tempfile(), fallback_resolution = 0), silent = TRUE), "try-error")
+        )
+        graphics.off()
+        unlink(path)
+        as.character(c(
+          names(f), deparse(f$filename), f$width, f$height, f$pointsize, f$onefile,
+          f$family, f$bg, deparse(f$antialias), f$fallback_resolution,
+          typeof(f$symbolfamily), opened$value, opened$visible, before,
+          unname(closed$value), closed$visible, after, invalid
+        ))
+      `),
+    ).resolves.toEqual([
+      "filename",
+      "width",
+      "height",
+      "pointsize",
+      "onefile",
+      "family",
+      "bg",
+      "antialias",
+      "fallback_resolution",
+      "symbolfamily",
+      'if (onefile) "Rplots.pdf" else "Rplot%03d.pdf"',
+      "7",
+      "7",
+      "12",
+      "TRUE",
+      "sans",
+      "white",
+      'c("default", "none", "gray", "subpixel")',
+      "300",
+      "symbol",
+      "FALSE",
+      "TRUE",
+      "cairo_pdf",
+      "2",
+      "3",
+      "2",
+      "9",
+      "",
+      "red",
+      "1",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("writes an owned browser SVG device with GNU-compatible lifecycle and formals", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        path <- tempfile(fileext = ".svg")
+        f <- formals(grDevices::svg)
+        opened <- withVisible(grDevices::svg(
+          path,
+          width = 3,
+          height = 2,
+          pointsize = 9,
+          family = "sans",
+          bg = "red",
+          antialias = "gray",
+          symbolfamily = "serif",
+          onefile = FALSE
+        ))
+        before <- c(
+          file.exists(path), file.info(path)$size == 0,
+          names(grDevices::dev.cur()), unname(grDevices::dev.cur()),
+          round(grDevices::dev.size("in"), 12), graphics::par("ps"),
+          graphics::par("family"), graphics::par("bg")
+        )
+        graphics::plot.new()
+        graphics::plot.window(c(0, 1), c(0, 1))
+        graphics::segments(0, 0, 1, 1, col = "blue", lwd = 2)
+        graphics::points(.5, .5, pch = 21, bg = "white")
+        graphics::polygon(c(.1, .2, .3), c(.8, .6, .8), col = "green")
+        graphics::text(.5, .75, "A&B")
+        closed <- withVisible(grDevices::dev.off())
+        text <- paste(readLines(path), collapse = "\n")
+        after <- c(
+          file.exists(path), file.info(path)$size > 100,
+          grepl("<?xml", text, fixed = TRUE),
+          grepl("<svg", text, fixed = TRUE),
+          grepl("<line", text, fixed = TRUE),
+          grepl("<circle", text, fixed = TRUE),
+          grepl("<path", text, fixed = TRUE),
+          grepl("<text", text, fixed = TRUE),
+          grepl("A&amp;B", text, fixed = TRUE)
+        )
+        invalid <- c(
+          inherits(try(grDevices::svg(NULL), silent = TRUE), "try-error"),
+          inherits(try(grDevices::svg(tempfile(), width = 0), silent = TRUE), "try-error"),
+          inherits(try(grDevices::svg(tempfile(), antialias = "bad"), silent = TRUE), "try-error")
+        )
+        graphics.off()
+        unlink(path)
+        as.character(c(
+          names(f), deparse(f$filename), f$width, f$height, f$pointsize, f$onefile,
+          f$family, f$bg, deparse(f$antialias), typeof(f$symbolfamily),
+          opened$value, opened$visible, before, unname(closed$value), closed$visible,
+          after, invalid
+        ))
+      `),
+    ).resolves.toEqual([
+      "filename",
+      "width",
+      "height",
+      "pointsize",
+      "onefile",
+      "family",
+      "bg",
+      "antialias",
+      "symbolfamily",
+      'if (onefile) "Rplots.svg" else "Rplot%03d.svg"',
+      "7",
+      "7",
+      "12",
+      "FALSE",
+      "sans",
+      "white",
+      'c("default", "none", "gray", "subpixel")',
+      "symbol",
+      "FALSE",
+      "TRUE",
+      "TRUE",
+      "svg",
+      "2",
+      "3",
+      "2",
+      "9",
+      "",
+      "red",
+      "1",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("reports the browser graphics-library surface through grSoftVersion", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        versions <- grDevices::grSoftVersion()
+        list(
+          values = unname(versions),
+          names = names(versions),
+          type = typeof(versions),
+          formals = formals(grDevices::grSoftVersion)
+        )
+      `),
+    ).resolves.toEqual([
+      ["", "", "", "", "", ""],
+      ["cairo", "cairoFT", "pango", "libpng", "jpeg", "libtiff"],
+      "character",
+      null,
+    ]);
+    await runtime.dispose();
+  });
+
+  it("selects GNU-compatible graphics layouts with n2mfrow", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        list(
+          default = c(
+            grDevices::n2mfrow(0), grDevices::n2mfrow(1), grDevices::n2mfrow(2),
+            grDevices::n2mfrow(4), grDevices::n2mfrow(5), grDevices::n2mfrow(7),
+            grDevices::n2mfrow(10), grDevices::n2mfrow(13), grDevices::n2mfrow(17)
+          ),
+          aspect = c(
+            grDevices::n2mfrow(10, .25), grDevices::n2mfrow(10, .5),
+            grDevices::n2mfrow(10, 2), grDevices::n2mfrow(10, 4)
+          ),
+          types = c(typeof(grDevices::n2mfrow(12)), typeof(grDevices::n2mfrow(13))),
+          formals = names(formals(grDevices::n2mfrow))
+        )
+      `),
+    ).resolves.toEqual([
+      [0, 1, 1, 1, 2, 1, 2, 2, 3, 2, 3, 3, 4, 3, 4, 4, 5, 4],
+      [5, 2, 5, 2, 3, 4, 2, 5],
+      ["integer", "double"],
+      ["nr.plots", "asp"],
+    ]);
+    await runtime.dispose();
+  });
+
+  it("writes genuine browser-native PostScript with GNU-shaped device lifecycle", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        f <- formals(grDevices::postscript)
+        c(names(f), deparse(f$file), typeof(grDevices::postscript))
+      `),
+    ).resolves.toEqual([
+      "file",
+      "onefile",
+      "family",
+      "title",
+      "fonts",
+      "encoding",
+      "bg",
+      "fg",
+      "width",
+      "height",
+      "horizontal",
+      "pointsize",
+      "paper",
+      "pagecentre",
+      "print.it",
+      "command",
+      "colormodel",
+      "useKerning",
+      "fillOddEven",
+      'if (onefile) "Rplots.ps" else "Rplot%03d.ps"',
+      "closure",
+    ]);
+
+    await expect(runtime.eval("grDevices::postscript(NULL)")).rejects.toMatchObject({
+      code: "NRT3401",
+    });
+
+    const opened = await runtime.eval(`
+      path <- tempfile(fileext = ".ps")
+      visible <- withVisible(grDevices::postscript(
+        path, width = 3, height = 2, horizontal = FALSE, paper = "special",
+        title = "NativR PostScript", bg = "white", fg = "black"
+      ))
+      c(
+        is.null(visible$value), visible$visible, file.exists(path),
+        length(readBin(path, "raw", n = 8L)),
+        unname(grDevices::dev.cur()), names(grDevices::dev.list()),
+        grDevices::dev.size("in")
+      )
+    `);
+    expect(opened).toEqual(["TRUE", "FALSE", "TRUE", "0", "2", "postscript", "3", "2"]);
+    await runtime.eval(`
+      graphics::plot.new()
+      graphics::plot.window(c(0, 2), c(0, 2))
+      graphics::segments(0, 0, 2, 2, col = "red", lwd = 2)
+      graphics::text(1, 1, "page one")
+      graphics::polygon(c(0.2, 1, 1.8), c(0.2, 1.8, 0.2), col = "blue")
+      graphics::plot.new()
+      graphics::plot.window(c(0, 1), c(0, 1))
+      graphics::points(c(0.25, 0.75), c(0.75, 0.25), pch = 19)
+      closed <- withVisible(grDevices::dev.off())
+    `);
+    await expect(runtime.eval("c(unname(closed$value), closed$visible)")).resolves.toEqual([1, 1]);
+    const postscriptValue = await runtime.eval('readBin(path, "raw", n = 1000000L)');
+    if (!isRaw(postscriptValue))
+      throw new Error("Expected PostScript bytes as a public raw value.");
+    const postscript = new TextDecoder().decode(postscriptValue.bytes);
+    expect(postscript.startsWith("%!PS-Adobe-3.0\n")).toBe(true);
+    expect(postscript).toContain("%%LanguageLevel: 2");
+    expect(postscript).toContain("%%BoundingBox: 0 0 216 144");
+    expect(postscript).toContain("%%Title: NativR PostScript");
+    expect(postscript).toContain("%%Page: 1 1");
+    expect(postscript).toContain("%%Page: 2 2");
+    expect(postscript).toContain("(page one) show");
+    expect(postscript).toContain("showpage");
+    expect(postscript.endsWith("%%Trailer\n%%Pages: 2\n%%EOF\n")).toBe(true);
+
+    await expect(
+      runtime.eval(`
+        pages <- tempfile(fileext = "-%02d.ps")
+        grDevices::postscript(
+          pages, width = 2, height = 3, horizontal = TRUE,
+          paper = "special", onefile = FALSE
+        )
+        graphics::plot.new()
+        graphics::segments(0, 0, 1, 1)
+        graphics::plot.new()
+        graphics::segments(0, 1, 1, 0)
+        grDevices::dev.off()
+        first <- sub("%02d", "01", pages, fixed = TRUE)
+        second <- sub("%02d", "02", pages, fixed = TRUE)
+        c(
+          file.exists(first), file.exists(second),
+          as.integer(readBin(first, "raw", n = 4L)),
+          as.integer(readBin(second, "raw", n = 4L))
+        )
+      `),
+    ).resolves.toEqual([1, 1, 37, 33, 80, 83, 37, 33, 80, 83]);
+    await expect(
+      runtime.eval("grDevices::postscript(tempfile(), print.it = TRUE)"),
+    ).rejects.toMatchObject({ code: "NRU6211" });
+    await runtime.dispose();
+  });
+
+  it("exposes loess formals with an explicit fitting boundary", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        f <- formals(stats::loess)
+        c(
+          names(f), deparse(f$span), deparse(f$degree), deparse(f$family),
+          deparse(f$method), deparse(f$control), typeof(stats::loess)
+        )
+      `),
+    ).resolves.toEqual([
+      "formula",
+      "data",
+      "weights",
+      "subset",
+      "na.action",
+      "model",
+      "span",
+      "enp.target",
+      "degree",
+      "parametric",
+      "drop.square",
+      "normalize",
+      "family",
+      "method",
+      "control",
+      "...",
+      "0.75",
+      "2L",
+      'c("gaussian", "symmetric")',
+      'c("loess", "model.frame")',
+      "loess.control(...)",
+      "closure",
+    ]);
+    await expect(
+      runtime.eval("stats::loess(y ~ x, data.frame(x = 1, y = 1))"),
+    ).rejects.toMatchObject({ code: "NRU6131" });
+    await runtime.dispose();
+  });
+
+  it("constructs GNU-compatible loess control lists", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        list(
+          default = stats::loess.control(),
+          custom = stats::loess.control(
+            surface = "direct", statistics = "exact", trace.hat = "approximate",
+            cell = .3, iterations = 2L, iterTrace = TRUE
+          ),
+          formals = names(formals(stats::loess.control)),
+          invalid = inherits(try(stats::loess.control(iterations = 0), silent = TRUE), "try-error")
+        )
+      `),
+    ).resolves.toEqual([
+      ["interpolate", "approximate", "exact", 0.2, 4, false],
+      ["direct", "exact", "approximate", 0.3, 2, true],
+      ["surface", "statistics", "trace.hat", "cell", "iterations", "iterTrace", "..."],
+      true,
+    ]);
+    await runtime.dispose();
+  });
+
+  it("excludes missing rows with the stats na.exclude action class", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        na.exclude.probe <- function(object, ..., marker = "default") c(object, marker, list(...)$extra)
+        x <- c(a = 1, b = NA, c = NaN, d = 4)
+        vector <- stats::na.exclude(x)
+        frame <- stats::na.exclude(data.frame(x = c(1, NA, 3), y = c(4, 5, NA)))
+        list(
+          vector = vector,
+          vector.action = attr(vector, "na.action"),
+          frame = frame,
+          frame.action = attr(frame, "na.action"),
+          dispatched = stats::na.exclude(structure(7, class = "probe"), marker = "ok", extra = 9),
+          formals = names(formals(stats::na.exclude))
+        )
+      `),
+    ).resolves.toEqual([
+      [1, 4],
+      [2, 3],
+      [1, 4],
+      [2, 3],
+      ["7", "ok", "9"],
+      ["object", "..."],
+    ]);
+    await runtime.dispose();
+  });
+
+  it("evaluates central chi-square densities with GNU-compatible boundaries", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        as.character(c(
+          round(stats::dchisq(c(1, 2, 4), c(1, 2, 4)), 12),
+          stats::dchisq(c(-Inf, -1, 0, 0, 0, Inf), c(1, 2, 0, 2, 4, 2)),
+          round(stats::dchisq(c(0, 1, Inf), c(.5, 1, 4), log = TRUE), 12),
+          names(formals(stats::dchisq)),
+          inherits(try(stats::dchisq(1, 2, ncp = 1), silent = TRUE), "try-error")
+        ))
+      `),
+    ).resolves.toEqual([
+      "0.241970724519",
+      "0.183939720586",
+      "0.135335283237",
+      "0",
+      "0",
+      "Inf",
+      "0.5",
+      "0",
+      "0",
+      "Inf",
+      "-1.418938533205",
+      "-Inf",
+      "x",
+      "df",
+      "ncp",
+      "log",
+      "FALSE",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("evaluates gamma densities with rate-scale defaults and boundaries", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        as.character(c(
+          round(c(
+            stats::dgamma(1, .5), stats::dgamma(2, 2),
+            stats::dgamma(4, 4, scale = 2), stats::dgamma(1, 2, rate = 3)
+          ), 12),
+          stats::dgamma(c(-Inf, 0, 0, 0, 1, Inf), c(1, 0, 1, 2, 0, 2)),
+          stats::dgamma(c(0, 1, Inf), c(.5, 1, 4), log = TRUE),
+          names(formals(stats::dgamma)), deparse(formals(stats::dgamma)$scale)
+        ))
+      `),
+    ).resolves.toEqual([
+      "0.20755374871",
+      "0.270670566473",
+      "0.090223522158",
+      "0.448083615311",
+      "0",
+      "Inf",
+      "1",
+      "0",
+      "0",
+      "0",
+      "Inf",
+      "-1",
+      "-Inf",
+      "x",
+      "shape",
+      "rate",
+      "scale",
+      "log",
+      "1/rate",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("evaluates central and noncentral beta densities with vectorized metadata", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        as.character(c(
+          round(stats::dbeta(
+            c(.001, .1, .25, .5, .9, .999), c(.5, 1, 2), c(.5, 2)
+          ), 12),
+          round(stats::dbeta(c(-Inf, -1, 0, .25, .5, 1, 2, Inf, NA, NaN), .5, .5), 12),
+          round(stats::dbeta(
+            c(.1, .5, .9, 0, 1), c(.5, 2), c(3, .5), ncp = c(0, 2, 10)
+          ), 12),
+          round(stats::dbeta(
+            c(.01, .2, .5, .8, .99), 2, 3,
+            ncp = c(50, 500, 1000, 2000, 1e5), log = TRUE
+          ), 9),
+          names(formals(stats::dbeta)),
+          deparse(formals(stats::dbeta)$ncp),
+          deparse(formals(stats::dbeta)$log),
+          names(stats::dbeta(structure(c(.25, .5), names = c("a", "b")), c(2, 3), 4))
+        ))
+      `),
+    ).resolves.toEqual([
+      "10.070879119947",
+      "1.8",
+      "0.216506350946",
+      "0.53033008589",
+      "1.581138830084",
+      "0.005994",
+      "0",
+      "0",
+      "Inf",
+      "0.735105193896",
+      "0.636619772368",
+      "Inf",
+      "0",
+      "0",
+      NA,
+      "NaN",
+      "2.40135459819",
+      "0.360292344423",
+      "0.944624040043",
+      "0",
+      "0",
+      "-26.548974765",
+      "-190.785992759",
+      "-236.160771451",
+      "-184.066387298",
+      "-477.484111633",
+      "x",
+      "shape1",
+      "shape2",
+      "ncp",
+      "log",
+      "0",
+      "FALSE",
+      "a",
+      "b",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("evaluates central and noncentral beta probabilities across tails", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        bad <- suppressWarnings(
+          stats::pbeta(
+            .5, c(0, Inf, 2, 2, 2), c(2, 2, 0, Inf, 3),
+            ncp = c(2, 2, 2, 2, -1)
+          )
+        )
+        as.character(c(
+          round(stats::pbeta(
+            c(-Inf, -1, 0, .1, .5, .9, 1, 2, Inf, NA, NaN),
+            c(.5, 1, 2), c(.5, 2)
+          ), 12),
+          round(stats::pbeta(
+            c(0, .1, .5, .9, 1), c(.5, 1), c(.5, 2, 3), lower.tail = FALSE
+          ), 12),
+          round(stats::pbeta(
+            c(0, .1, .5, .9, 1), 2, 3, lower.tail = FALSE, log.p = TRUE
+          ), 12),
+          round(stats::pbeta(
+            c(0, .1, .5, .9, 1), c(.5, 2), c(3, .5), ncp = c(0, 2, 10)
+          ), 8),
+          bad, names(formals(stats::pbeta)),
+          deparse(formals(stats::pbeta)$ncp),
+          deparse(formals(stats::pbeta)$lower.tail),
+          deparse(formals(stats::pbeta)$log.p),
+          names(stats::pbeta(structure(c(.25, .5), names = c("a", "b")), c(2, 3), 4))
+        ))
+      `),
+    ).resolves.toEqual([
+      "0",
+      "0",
+      "0",
+      "0.458530260724",
+      "0.292893218813",
+      "0.972",
+      "1",
+      "1",
+      "1",
+      NA,
+      "NaN",
+      "1",
+      "0.81",
+      "0.049825262781",
+      "0.316227766017",
+      "0",
+      "0",
+      "-0.053717282506",
+      "-1.163150809806",
+      "-5.599422459332",
+      "-Inf",
+      "0",
+      "0.00155326",
+      "0.25030983",
+      "0.54146974",
+      "1",
+      "NaN",
+      "NaN",
+      "NaN",
+      "NaN",
+      "NaN",
+      "q",
+      "shape1",
+      "shape2",
+      "ncp",
+      "lower.tail",
+      "log.p",
+      "0",
+      "TRUE",
+      "FALSE",
+      "a",
+      "b",
+    ]);
+    const invalid = await runtime.evalDetailed(
+      "stats::pbeta(.5, c(0, Inf, 2), c(2, 2, 0), ncp = 2)",
+    );
+    expect(invalid.warnings).toEqual([{ code: "NRW1003", message: "NaNs produced" }]);
+    await runtime.dispose();
+  });
+
+  it("evaluates central and noncentral beta quantiles across tail encodings", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        as.character(c(
+          round(stats::qbeta(
+            c(0, .001, .1, .25, .5, .9, .999, 1, NA, NaN),
+            c(.5, 1, 2), c(.5, 2)
+          ), 12),
+          round(stats::qbeta(
+            c(0, .1, .5, .9, 1), c(.5, 1), c(.5, 2, 3), lower.tail = FALSE
+          ), 12),
+          round(stats::qbeta(
+            c(-Inf, log(.1), log(.5), log(.9), 0),
+            2, 3, lower.tail = FALSE, log.p = TRUE
+          ), 12),
+          round(stats::qbeta(
+            c(.25, .5, .75), c(0, 0, .5, 1, 2, Inf, Inf), c(0, .5, 0, 1, Inf, 2, Inf)
+          ), 12),
+          round(stats::qbeta(
+            c(0, .1, .5, .9, 1), c(.5, 2), c(3, .5), ncp = c(0, 2, 10)
+          ), 8),
+          names(formals(stats::qbeta)),
+          deparse(formals(stats::qbeta)$ncp),
+          deparse(formals(stats::qbeta)$lower.tail),
+          deparse(formals(stats::qbeta)$log.p),
+          names(stats::qbeta(structure(c(.25, .5), names = c("a", "b")), c(2, 3), 4))
+        ))
+      `),
+    ).resolves.toEqual([
+      "0",
+      "0.000500125063",
+      "0.468122566526",
+      "0.028309543719",
+      "0.75",
+      "0.804199894341",
+      "0.999997532601",
+      "1",
+      NA,
+      "NaN",
+      "1",
+      "0.683772233983",
+      "0.079032767076",
+      "0.19",
+      "0",
+      "1",
+      "0.679539416278",
+      "0.385727568132",
+      "0.14255931671",
+      "0",
+      "0",
+      "0",
+      "1",
+      "0.25",
+      "0",
+      "1",
+      "0.5",
+      "0",
+      "0.57993445",
+      "0.64764086",
+      "0.99554232",
+      "1",
+      "p",
+      "shape1",
+      "shape2",
+      "ncp",
+      "lower.tail",
+      "log.p",
+      "0",
+      "TRUE",
+      "FALSE",
+      "a",
+      "b",
+    ]);
+    const invalid = await runtime.evalDetailed(
+      "stats::qbeta(c(-.1, 1.1, .5), c(2, 2, 0), c(3, 3, 2), ncp = c(0, 0, 2))",
+    );
+    expect(invalid.warnings).toEqual([{ code: "NRW1003", message: "NaNs produced" }]);
+    await runtime.dispose();
+  });
+
+  it("draws logistic random values with vectorized parameters and zero-scale RNG stability", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        set.seed(1729)
+        draws <- stats::rlogis(8, location = c(-2, 0, 3), scale = c(.5, 1, 2, 0))
+        after <- runif(3)
+        set.seed(1729)
+        constant <- stats::rlogis(1, 5, 0)
+        constant.after <- runif(3)
+        as.character(c(
+          round(draws, 12), round(after, 12), constant, round(constant.after, 12),
+          names(formals(stats::rlogis)),
+          deparse(formals(stats::rlogis)$location),
+          deparse(formals(stats::rlogis)$scale),
+          length(stats::rlogis(numeric()))
+        ))
+      `),
+    ).resolves.toEqual([
+      "-1.827839866325",
+      "-0.251745221576",
+      "3.587339935281",
+      "-2",
+      "-0.30247087215",
+      "4.825890174858",
+      "-2.721288831976",
+      "0",
+      "0.511453253916",
+      "0.154285229743",
+      "0.85135305021",
+      "5",
+      "0.585239584325",
+      "0.437393987319",
+      "0.572894363431",
+      "n",
+      "location",
+      "scale",
+      "0",
+      "1",
+      "0",
+    ]);
+    const invalid = await runtime.evalDetailed(
+      "stats::rlogis(6, c(0, NA, NaN, Inf, -Inf, 1), c(-1, 1, 1, 1, 0, Inf))",
+    );
+    expect(invalid.value).toEqual([
+      Number.NaN,
+      Number.NaN,
+      Number.NaN,
+      Number.POSITIVE_INFINITY,
+      Number.NEGATIVE_INFINITY,
+      Number.NaN,
+    ]);
+    expect(invalid.warnings).toEqual([{ code: "NRW1003", message: "NAs produced" }]);
+    await runtime.dispose();
+  });
+
+  it("draws Weibull random values with vectorized parameters and zero-scale RNG stability", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        set.seed(1729)
+        draws <- stats::rweibull(8, c(.5, 1, 2, 3), c(.5, 1, 2))
+        after <- runif(3)
+        set.seed(1729)
+        constant <- stats::rweibull(1, 2, 0)
+        constant.after <- runif(3)
+        as.character(c(
+          round(draws, 12), round(after, 12), constant, round(constant.after, 12),
+          names(formals(stats::rweibull)), deparse(formals(stats::rweibull)$scale),
+          length(stats::rweibull(numeric(), 2))
+        ))
+      `),
+    ).resolves.toEqual([
+      "0.143505443165",
+      "0.826920917248",
+      "1.492720920034",
+      "0.50669031526",
+      "0.022304110548",
+      "1.779280172729",
+      "0.409420043464",
+      "1.231778828045",
+      "0.85135305021",
+      "0.996083338512",
+      "0.535167186987",
+      "0",
+      "0.585239584325",
+      "0.437393987319",
+      "0.572894363431",
+      "n",
+      "shape",
+      "scale",
+      "1",
+      "0",
+    ]);
+    const invalid = await runtime.evalDetailed(
+      "stats::rweibull(8, c(-1, 0, NA, NaN, Inf, 2, 2, 2), c(1, 1, 1, 1, 1, -1, Inf, 0))",
+    );
+    expect(invalid.value).toEqual([
+      Number.NaN,
+      Number.NaN,
+      Number.NaN,
+      Number.NaN,
+      Number.NaN,
+      Number.NaN,
+      Number.NaN,
+      0,
+    ]);
+    expect(invalid.warnings).toEqual([{ code: "NRW1003", message: "NAs produced" }]);
+    await runtime.dispose();
+  });
+
+  it("evaluates gamma quantiles through the central chi-square foundation", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        as.character(c(
+          round(c(
+            stats::qgamma(c(.1, .5, .9), c(.5, 1, 2)),
+            stats::qgamma(.5, 2, rate = 3), stats::qgamma(.5, 2, scale = 4),
+            stats::qgamma(log(.25), 3, lower.tail = FALSE, log.p = TRUE)
+          ), 12),
+          stats::qgamma(c(0, 1), 2), names(formals(stats::qgamma)),
+          deparse(formals(stats::qgamma)$scale)
+        ))
+      `),
+    ).resolves.toEqual([
+      "0.007895387047",
+      "0.69314718056",
+      "3.889720169867",
+      "0.559448996672",
+      "6.713387960067",
+      "3.920402060293",
+      "0",
+      "Inf",
+      "p",
+      "shape",
+      "rate",
+      "scale",
+      "lower.tail",
+      "log.p",
+      "1/rate",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("constructs left- and right-continuous step functions", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        left <- stats::stepfun(c(1, 3), c(10, 20, 30))
+        right <- stats::stepfun(c(1, 3), c(10, 20, 30), right = TRUE)
+        points <- c(-Inf, .999, 1, 2, 3, 3.001, Inf, NA, NaN)
+        list(
+          left = left(points), right = right(points),
+          left.environment = unlist(as.list(environment(left))[c("x", "y", "yleft", "yright", "f")]),
+          right.environment = unlist(as.list(environment(right))[c("x", "y", "yleft", "yright", "f")]),
+          class = class(left), formals = names(formals(stats::stepfun))
+        )
+      `),
+    ).resolves.toEqual([
+      [10, 10, 20, 20, 30, 30, 30, NA, Number.NaN],
+      [10, 10, 10, 20, 20, 30, 30, NA, Number.NaN],
+      [1, 3, 20, 30, 10, 30, 0],
+      [1, 3, 10, 20, 10, 30, 1],
+      ["stepfun", "function"],
+      ["x", "y", "f", "ties", "right"],
+    ]);
+    await runtime.dispose();
+  });
+
+  it("plots generic step functions with GNU geometry, formals, and invisible return", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        step <- stats::stepfun(c(1, 3), c(10, 20, 30))
+        result <- withVisible(stats::plot.stepfun(step))
+        list(
+          t = result$value$t,
+          y = result$value$y,
+          visible = result$visible,
+          formals = names(formals(stats::plot.stepfun))
+        )
+      `),
+    ).resolves.toEqual([
+      [-3, 1, 3, 7],
+      [10, 20, 30],
+      false,
+      [
+        "x",
+        "xval",
+        "xlim",
+        "ylim",
+        "xlab",
+        "ylab",
+        "main",
+        "add",
+        "verticals",
+        "do.points",
+        "pch",
+        "col",
+        "col.points",
+        "cex.points",
+        "col.hor",
+        "col.vert",
+        "lty",
+        "lwd",
+        "...",
+      ],
+    ]);
+    await runtime.dispose();
+  });
+
+  it("encodes symbolic numeric and logical matrices with GNU-shaped attributes", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- matrix(c(1,.5,-.2,.5,1,.8,-.2,.8,1),3,
+          dimnames=list(c("rowone","rowtwo","rowthree"),
+                        c("columnone","columntwo","columnthree")))
+        corr <- stats::symnum(x, diag.lower.tri=FALSE)
+        custom <- stats::symnum(setNames(c(0,1,2,NA),letters[1:4]),
+          cutpoints=c(0,1,2),symbols=c("a","b"),corr=FALSE,
+          show.min="MIN",show.max="MAX",legend=TRUE)
+        logical <- stats::symnum(c(FALSE,TRUE,NA))
+        f <- formals(stats::symnum)
+        as.character(c(
+          unclass(corr), dim(corr), dimnames(corr)[[1]], dimnames(corr)[[2]],
+          names(dimnames(corr)[[2]]), attr(corr,"legend"),
+          unclass(custom), names(custom), attr(custom,"legend"), unclass(logical),
+          class(corr), names(f), deparse(f$symbols), deparse(f$corr),
+          deparse(f$show.max), deparse(f$lower.triangular), deparse(f$diag.lower.tri)
+        ))
+      `),
+    ).resolves.toEqual([
+      "",
+      ".",
+      " ",
+      "",
+      "",
+      ",",
+      "",
+      "",
+      "",
+      "3",
+      "3",
+      "rowone",
+      "rowtwo",
+      "rowthree",
+      "clmnn",
+      "clmntw",
+      "clmnth",
+      "columnone",
+      "columntwo",
+      "columnthree",
+      "0 ' ' 0.3 '.' 0.6 ',' 0.8 '+' 0.9 '*' 0.95 'B' 1",
+      "MIN",
+      "a",
+      "MAX",
+      "?",
+      "a",
+      "b",
+      "c",
+      "d",
+      "0 'a' 1 'b' 2 \t    ## NA: '?'",
+      ".",
+      "|",
+      "?",
+      "noquote",
+      "x",
+      "cutpoints",
+      "symbols",
+      "legend",
+      "na",
+      "eps",
+      "numeric.x",
+      "corr",
+      "show.max",
+      "show.min",
+      "abbr.colnames",
+      "lower.triangular",
+      "diag.lower.tri",
+      'if (numeric.x) c(" ", ".", ",", "+", "*", "B") else c(".", "|")',
+      "missing(cutpoints) && numeric.x",
+      'if (corr) "1"',
+      "corr && is.numeric(x) && is.matrix(x)",
+      "corr && !is.null(show.max)",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("updates formula sides through recursive dot substitution", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        e <- new.env(parent = emptyenv())
+        old <- stats::as.formula("y ~ x + z", env = e)
+        changed <- stats::update.formula(old, log(.) ~ . - z + q, forceEnv = FALSE)
+        one <- stats::update.formula(~x + z, ~. + q)
+        generic <- stats::update(old, . ~ . + w)
+        as.character(c(
+          deparse(changed), deparse(one), deparse(generic),
+          identical(environment(changed), e), identical(environment(one), environment()),
+          identical(environment(generic), e), names(formals(stats::update.formula)),
+          typeof(stats::update.formula), is.primitive(stats::update.formula)
+        ))
+      `),
+    ).resolves.toEqual([
+      "log(y) ~ x + q",
+      "~x + z + q",
+      "y ~ x + z + w",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "old",
+      "new",
+      "...",
+      "closure",
+      "FALSE",
+    ]);
+    await runtime.dispose();
   });
 
   it("tracks exact per-string encoding marks and bytes across replacement and serialization", async () => {
@@ -18129,6 +34752,131 @@ NeedsCompilation: no
     await runtime.dispose();
   });
 
+  it("provides reusable evaluation, restart, source-reference, and expression-loop semantics", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        c(
+          sequence(c(2L, 3L)),
+          sequence(c(2L, 3L), from = c(4L, 10L), by = c(2L, -1L)),
+          typeof(sequence(c(2.9, 1.1)))
+        )
+      `),
+    ).resolves.toEqual(["1", "2", "1", "2", "3", "4", "6", "10", "9", "8", "integer"]);
+    await expect(
+      runtime.eval(`
+        seen <- character()
+        value <- withCallingHandlers(
+          { warning("w"); message("m"); 5L },
+          warning = function(w) {
+            seen <<- c(seen, paste0("w:", conditionMessage(w)))
+            invokeRestart("muffleWarning")
+          },
+          message = function(m) {
+            seen <<- c(seen, paste0("m:", conditionMessage(m)))
+            invokeRestart("muffleMessage")
+          }
+        )
+        jumped <- withRestarts(invokeRestart("done", 7L), done = function(x) x * 2L)
+        caught <- tryCatch(stop("boom"), error = function(e) {
+          c(conditionMessage(e), is.null(conditionCall(e)))
+        })
+        signalled <- character()
+        signal <- withVisible(withCallingHandlers(
+          signalCondition(simpleCondition("signal")),
+          condition = function(condition) signalled <<- conditionMessage(condition)
+        ))
+        finalized <- FALSE
+        exiting <- tryCatch({
+          signalCondition(simpleError("exit"))
+          "not reached"
+        }, error = function(condition) paste0("handled:", conditionMessage(condition)),
+        finally = finalized <<- TRUE)
+        custom_warning <- warningCondition("custom warning", class = "warning_probe")
+        warning_seen <- character()
+        warning_value <- withCallingHandlers(warning(custom_warning), warning = function(condition) {
+          warning_seen <<- c(class(condition), conditionMessage(condition))
+          invokeRestart("muffleWarning")
+        })
+        custom_message <- tryCatch(message("custom message"), message = function(condition) condition)
+        class(custom_message) <- c("message_probe", class(custom_message))
+        message_seen <- character()
+        message_value <- withCallingHandlers(message(custom_message), message = function(condition) {
+          message_seen <<- c(class(condition), conditionMessage(condition))
+          invokeRestart("muffleMessage")
+        })
+        c(value, jumped, seen, caught, signalled, signal$visible, is.null(signal$value),
+          exiting, finalized, warning_seen, warning_value, message_seen,
+          is.null(message_value))
+      `),
+    ).resolves.toEqual([
+      "5",
+      "14",
+      "w:w",
+      "m:m\n",
+      "boom",
+      "FALSE",
+      "signal",
+      "TRUE",
+      "TRUE",
+      "handled:exit",
+      "TRUE",
+      "warning_probe",
+      "warning",
+      "condition",
+      "custom warning",
+      "custom warning",
+      "message_probe",
+      "simpleMessage",
+      "message",
+      "condition",
+      "custom message\n",
+      "TRUE",
+    ]);
+    await expect(
+      runtime.eval(`
+        values <- list()
+        for (item in expression(1L, alpha, beta + 2L)) {
+          values[[length(values) + 1L]] <- item
+        }
+        vapply(values, typeof, character(1L))
+      `),
+    ).resolves.toEqual(["integer", "symbol", "language"]);
+    await expect(
+      runtime.eval(`
+        source_file <- srcfilecopy("probe.R", c("x <- 1L", "x + 2L"))
+        parsed <- parse(text = source_file$lines, srcfile = source_file)
+        cleaned <- removeSource(parsed)
+        c(
+          names(attributes(parsed)),
+          is.null(attributes(cleaned)),
+          length(cleaned),
+          identical(cleaned[[1L]], parsed[[1L]]),
+          identical(cleaned[[2L]], parsed[[2L]])
+        )
+      `),
+    ).resolves.toEqual(["srcref", "srcfile", "wholeSrcref", "TRUE", "2", "TRUE", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        hook_name <- packageEvent("evaluate-probe", "onLoad")
+        first <- function() 1L
+        second <- function() 2L
+        setHook(hook_name, list(first, second), "replace")
+        setHook(hook_name, function() 0L, "pre")
+        setHook(hook_name, NULL, "app")
+        c(length(getHook(hook_name)), vapply(getHook(hook_name), function(fun) fun(), integer(1L)))
+      `),
+    ).resolves.toEqual([3, 0, 1, 2]);
+    await expect(
+      runtime.eval(`
+        setHook("arbitrary-hook", "rexp", "replace")
+        setHook("arbitrary-hook", .GlobalEnv)
+        vapply(getHook("arbitrary-hook"), typeof, character(1L))
+      `),
+    ).resolves.toEqual(["character", "environment"]);
+    await runtime.dispose();
+  });
+
   it("queries and replaces zoo's usage-ranked comment attribute", async () => {
     const runtime = await session();
     await expect(
@@ -18228,7 +34976,27 @@ NeedsCompilation: no
     await expect(
       runtime.eval("lapply(1:3, function(x, offset) x + offset, offset = 10)"),
     ).resolves.toEqual([11, 12, 13]);
+    await expect(
+      runtime.eval(`
+        target <- function(x, by = NULL, digits = 3, ...) paste(x, by, digits)
+        unlist(lapply(c("wt", "cyl"), target, x = "data", digits = 4))
+      `),
+    ).resolves.toEqual(["data wt 4", "data cyl 4"]);
+    await expect(
+      runtime.eval(`
+        target <- function(x, by = NULL, ...) c(is.data.frame(x), by %in% names(x))
+        unlist(lapply(c("wt", "cyl"), target, x = data.frame(wt = 1, cyl = 2)))
+      `),
+    ).resolves.toEqual([true, true, true, true]);
     await expect(runtime.eval("lapply(c(-1, 2), abs)")).resolves.toEqual([1, 2]);
+    await expect(runtime.eval("as.list(list())")).resolves.toEqual([]);
+    await expect(
+      runtime.eval(`
+        as.list.iterable <- function(x, ...) list(first = "converted", second = "twice")
+        x <- structure(TRUE, class = "iterable")
+        unlist(lapply(x, paste0, "!"))
+      `),
+    ).resolves.toEqual(["converted!", "twice!"]);
     await expect(runtime.eval("sum(...)")).rejects.toMatchObject({ code: "NRE2011" });
     await runtime.dispose();
   });
@@ -18237,6 +35005,48 @@ NeedsCompilation: no
     const runtime = await session();
     await expect(runtime.eval('as.Date("1970-01-03") - as.Date("1970-01-01")')).resolves.toBe(2);
     await expect(runtime.eval('as.Date(2, origin = "1970-01-01")')).resolves.toBe(2);
+    await expect(
+      runtime.eval(`
+        daily <- seq(as.Date("2017-01-02"), as.Date("2017-01-10"), by = "day")
+        monthly <- seq.Date(as.Date("2024-01-31"), by = "month", length.out = 4L)
+        ending <- seq.Date(to = as.Date("2024-01-05"), by = "day", length.out = 3L)
+        c(as.character(daily), as.character(monthly), as.character(ending),
+          class(daily), names(formals(seq.Date)))
+      `),
+    ).resolves.toEqual([
+      "2017-01-02",
+      "2017-01-03",
+      "2017-01-04",
+      "2017-01-05",
+      "2017-01-06",
+      "2017-01-07",
+      "2017-01-08",
+      "2017-01-09",
+      "2017-01-10",
+      "2024-01-31",
+      "2024-03-02",
+      "2024-03-31",
+      "2024-05-01",
+      "2024-01-03",
+      "2024-01-04",
+      "2024-01-05",
+      "Date",
+      "from",
+      "to",
+      "by",
+      "length.out",
+      "along.with",
+      "...",
+    ]);
+    await expect(
+      runtime.eval(`
+        by <- as.difftime(48, units = "hours")
+        unclass(seq.Date(as.Date("2024-01-01"), by = by, length.out = 3L))
+      `),
+    ).resolves.toEqual([19723, 19725, 19727]);
+    await expect(
+      runtime.eval('seq.Date(as.Date("2024-01-01"), as.Date("2024-01-05"), by = "-1 day")'),
+    ).rejects.toMatchObject({ code: "NRE2162" });
     await expect(
       runtime.eval(
         'c(difftime(as.POSIXct("1970-01-02 00:00:00"), as.POSIXct("1970-01-01 12:00:00"), units = "secs"))',
@@ -18247,6 +35057,27 @@ NeedsCompilation: no
     ).resolves.toBe(2);
     await expect(runtime.eval("length(Sys.Date())")).resolves.toBe(1);
     await expect(runtime.eval("length(Sys.time())")).resolves.toBe(1);
+    await expect(
+      runtime.eval(`
+        value <- .POSIXct(c(a = 1, NA_real_, NaN), tz = "GMT")
+        c(class(value), attr(value, "tzone"), names(value), unclass(value)[1L],
+          names(formals(.POSIXct)), identical(formals(.POSIXct)$tz, NULL))
+      `),
+    ).resolves.toEqual(["POSIXct", "POSIXt", "GMT", "a", "", "", "1", "xx", "tz", "cl", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        stamped <- withVisible(utils::timestamp("alpha", quiet = TRUE))
+        c(stamped$value, stamped$visible, names(formals(utils::timestamp)), nchar(date()) == 24L)
+      `),
+    ).resolves.toEqual([
+      "##------ alpha ------##",
+      "FALSE",
+      "stamp",
+      "prefix",
+      "suffix",
+      "quiet",
+      "TRUE",
+    ]);
     await expect(runtime.eval('as.Date("2024-02-30")')).rejects.toMatchObject({
       code: "NRE2117",
     });
@@ -18299,6 +35130,18 @@ NeedsCompilation: no
     );
     await expect(runtime.eval("unclass(weeks)")).resolves.toBe(2);
     await expect(runtime.eval("attr(weeks, 'units')")).resolves.toBe("weeks");
+    await expect(
+      runtime.eval(`
+        setClass("clock_probe", contains = "numeric")
+        as.POSIXct.clock_probe <- function(x, ...) .POSIXct(methods::getDataPart(x), tz = "UTC")
+        delta <- difftime(
+          new("clock_probe", c(60, 120)),
+          new("clock_probe", c(0, 30)),
+          units = "secs"
+        )
+        c(unclass(delta), class(delta), attr(delta, "units"))
+      `),
+    ).resolves.toEqual(["60", "90", "difftime", "secs"]);
 
     const recycled = await runtime.evalDetailed(
       "difftime(as.Date(c('1970-01-03', '1970-01-04', '1970-01-05')), as.Date(c('1970-01-01', '1970-01-02')), units = 'days')",
@@ -18306,7 +35149,8 @@ NeedsCompilation: no
     expect(recycled.warnings).toEqual([
       {
         code: "NRW1001",
-        message: "Longer object length is not a multiple of shorter object length.",
+        message: "longer object length is not a multiple of shorter object length",
+        classes: ["simpleWarning", "warning", "condition"],
       },
     ]);
     await expect(runtime.eval("as.difftime(1)")).rejects.toMatchObject({ code: "NRE2252" });
@@ -18321,6 +35165,45 @@ NeedsCompilation: no
         "as.difftime('2020-01-01 01:00:00', format = '%Y-%m-%d %H:%M:%S', tz = 'America/New_York')",
       ),
     ).rejects.toMatchObject({ code: "NRU6195" });
+    await runtime.dispose();
+  });
+
+  it("gets and replaces difftime units through ordinary S3 replacement dispatch", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        c(
+          names(formals(units)), names(formals(units.difftime)),
+          names(formals(get("units<-"))), names(formals(get("units<-.difftime"))),
+          typeof(units), typeof(get("units<-"))
+        )
+      `),
+    ).resolves.toEqual(["x", "x", "x", "value", "x", "value", "closure", "closure"]);
+    await expect(
+      runtime.eval(`
+        x <- as.difftime(c(a = 60, b = 120, c = NA_real_), units = "secs")
+        units(x) <- "mins"
+        c(as.numeric(x), units(x), names(x), class(x))
+      `),
+    ).resolves.toEqual(["1", "2", NA, "mins", "a", "b", "c", "difftime"]);
+    await expect(
+      runtime.eval(`
+        units.probe <- function(x) paste0("get:", x[[1]])
+        assign("units<-.probe", function(x, value) structure(x * 2, class = "probe", marker = value))
+        x <- structure(3, class = "probe")
+        before <- units(x)
+        units(x) <- "token"
+        c(before, x[[1]], attr(x, "marker"), inherits(x, "probe"))
+      `),
+    ).resolves.toEqual(["get:3", "6", "token", "TRUE"]);
+    await expect(
+      runtime.eval('x <- as.difftime(1, units = "secs"); units(x) <- "sec"'),
+    ).rejects.toMatchObject({
+      code: "NRE2252",
+    });
+    await expect(runtime.eval('x <- 1:3; units(x) <- "secs"')).rejects.toMatchObject({
+      code: "NRE2216",
+    });
     await runtime.dispose();
   });
 
@@ -18342,7 +35225,160 @@ NeedsCompilation: no
     await expect(runtime.eval("sort(c(3, NA, 1, 2), decreasing = TRUE)")).resolves.toEqual([
       3, 2, 1,
     ]);
+    await expect(
+      runtime.eval(`
+        indexed <- sort(c(a = 3, b = 1, c = 2), index.return = TRUE)
+        c(indexed$x, indexed$ix, names(indexed$x), names(indexed),
+          names(formals(sort.default)),
+          identical(formals(sort.default)$na.last, NA))
+      `),
+    ).resolves.toEqual([
+      "1",
+      "2",
+      "3",
+      "2",
+      "3",
+      "1",
+      "b",
+      "c",
+      "a",
+      "x",
+      "ix",
+      "x",
+      "decreasing",
+      "na.last",
+      "...",
+      "TRUE",
+    ]);
+    await expect(
+      runtime.eval(`
+        counts <- table(factor(c("b", "a", "b", "c"), levels = c("a", "b", "c")))
+        ascending <- sort(counts)
+        ranked <- -sort(-table(c(1L, 1L, 1L, 2L, 2L, 2L)))
+        controlled <- sort(counts, index.return = TRUE, partial = 1L)
+        plain <- sort(structure(c(3L, 1L, 2L), dim = 3L,
+          dimnames = list(c("a", "b", "c"))))
+        single <- counts[1L]
+        empty <- counts[integer()]
+        as.character(c(
+          ascending, names(ascending), dim(ascending), inherits(ascending, "table"),
+          ranked, names(ranked), dim(ranked), identical(controlled, ascending),
+          plain, names(plain), dim(plain), is.null(attr(plain, "class")),
+          is.null(dim(single)), names(single), inherits(single, "table"),
+          is.null(dim(empty)), length(empty), length(names(empty))
+        ))
+      `),
+    ).resolves.toEqual([
+      "1",
+      "1",
+      "2",
+      "a",
+      "c",
+      "b",
+      "3",
+      "TRUE",
+      "3",
+      "3",
+      "1",
+      "2",
+      "2",
+      "TRUE",
+      "1",
+      "2",
+      "3",
+      "b",
+      "c",
+      "a",
+      "3",
+      "TRUE",
+      "TRUE",
+      "a",
+      "FALSE",
+      "TRUE",
+      "0",
+      "0",
+    ]);
+    await expect(
+      runtime.eval("sort(c(NA, 3, 1, NaN), na.last = TRUE, decreasing = TRUE, index.return = 1)"),
+    ).resolves.toEqual([
+      [3, 1, NA, Number.NaN],
+      [2, 3, 1, 4],
+    ]);
+    await expect(
+      runtime.eval("sort(5:1, partial = 2:3, index.return = TRUE)"),
+    ).rejects.toMatchObject({ message: "unsupported options for partial sorting" });
+    await expect(
+      runtime.eval(`
+        c(
+          sort.list(c(3, 1, 2)),
+          sort.list(c(3, 1, 2), decreasing = TRUE),
+          sort.list(c(3, NA, NaN, 1), na.last = TRUE),
+          sort.list(c(3, NA, NaN, 1), na.last = FALSE),
+          sort.list(c(3, NA, NaN, 1), na.last = NA),
+          sort.list(c("b", "a", "a")),
+          sort.list(c(1 + 2i, 1 + 1i, 0 + 3i)),
+          names(formals(sort.list))
+        )
+      `),
+    ).resolves.toEqual([
+      "2",
+      "3",
+      "1",
+      "1",
+      "3",
+      "2",
+      "4",
+      "1",
+      "2",
+      "3",
+      "2",
+      "3",
+      "4",
+      "1",
+      "2",
+      "1",
+      "2",
+      "3",
+      "1",
+      "3",
+      "2",
+      "1",
+      "x",
+      "partial",
+      "na.last",
+      "decreasing",
+      "method",
+    ]);
+    await expect(runtime.eval("sort.list(1:3, partial = 2)")).rejects.toMatchObject({
+      code: "NRE2265",
+    });
+    await expect(
+      runtime.eval("sort.list(c(3, NA, 1), method = 'quick', na.last = NA)"),
+    ).resolves.toEqual([2, 1]);
+    await expect(runtime.eval("sort.list(1:3, method = 'quick')")).rejects.toMatchObject({
+      code: "NRT3470",
+    });
     await expect(runtime.eval("order(c(3, NA, 1, 2))")).resolves.toEqual([3, 4, 1, 2]);
+    await expect(runtime.eval("order(c(2, 1, 2), c(1, 3, 0))")).resolves.toEqual([2, 3, 1]);
+    await expect(
+      runtime.eval(
+        "order(a = c(2, 1, 2), b = c(1, 3, 0), decreasing = c(FALSE, TRUE), method = 'radix')",
+      ),
+    ).resolves.toEqual([2, 1, 3]);
+    await expect(
+      runtime.eval(`
+        f <- formals(order)
+        c(names(f), identical(f$na.last, TRUE), identical(f$decreasing, FALSE), deparse(f$method))
+      `),
+    ).resolves.toEqual([
+      "...",
+      "na.last",
+      "decreasing",
+      "method",
+      "TRUE",
+      "TRUE",
+      'c("auto", "shell", "radix")',
+    ]);
     await expect(runtime.eval("unique(c(1, 1, NA, NA, NaN, NaN))")).resolves.toEqual([
       1,
       NA,
@@ -18360,12 +35396,190 @@ NeedsCompilation: no
     await expect(runtime.eval("duplicated(NULL)")).resolves.toEqual([]);
     await expect(runtime.eval("anyDuplicated(NULL)")).resolves.toBe(0);
     await expect(runtime.eval('match(c("b", "x", "a"), c("a", "b"))')).resolves.toEqual([2, NA, 1]);
+    await expect(runtime.eval("match(NULL, 1:3)")).resolves.toEqual([]);
+    await expect(runtime.eval("match(1:3, NULL)")).resolves.toEqual([NA, NA, NA]);
+    await expect(
+      runtime.eval('match(list(1L, "a", NULL, NA), list("a", 1L, NULL, NA))'),
+    ).resolves.toEqual([2, 1, 3, 4]);
+    await expect(
+      runtime.eval("match(list(list(a = 1), list(a = 2)), list(list(a = 2)), nomatch = 0L)"),
+    ).resolves.toEqual([0, 1]);
+    await expect(
+      runtime.eval(`
+        list(
+          match(c(1, 2, NA, NaN), c(1, 2, NA, NaN), incomparables = c(2, NA)),
+          match(c(1, "2", NA), c("1", "2", NA), incomparables = 2),
+          match(list(1, "a", NULL), list(1, "a", NULL), incomparables = list("a")),
+          match(c(FALSE, 0), c(FALSE, 0), incomparables = FALSE),
+          names(formals(match)),
+          deparse(formals(match)$nomatch),
+          is.null(formals(match)$incomparables)
+        )
+      `),
+    ).resolves.toEqual([
+      [1, NA, NA, 4],
+      [1, NA, 3],
+      [1, NA, 3],
+      [1, 1],
+      ["x", "table", "nomatch", "incomparables"],
+      "NA_integer_",
+      true,
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          charmatch(c("a", "ab", "z", "", NA_character_),
+            c("alpha", "abacus", "beta", NA_character_), nomatch = 99L),
+          charmatch(c("alpha", "al", "a"), c("alpha", "alpha", "alpine"),
+            nomatch = 99L),
+          charmatch(c("a", "ab"), c("a", "abc", "abd"), nomatch = 99L),
+          charmatch(1:3, c("1", "2"), nomatch = 99L),
+          charmatch(factor(c("b", "a")), c("a", "b"), nomatch = 99L),
+          charmatch(c("a", ""), NULL, nomatch = 7L),
+          names(formals(charmatch)),
+          is.null(attributes(charmatch(setNames(c("a", "b"), c("x", "y")),
+            c("alpha", "beta"))))
+        )
+      `),
+    ).resolves.toEqual([
+      "0",
+      "2",
+      "99",
+      "0",
+      "4",
+      "0",
+      "0",
+      "0",
+      "1",
+      "0",
+      "1",
+      "2",
+      "99",
+      "2",
+      "1",
+      "7",
+      "7",
+      "x",
+      "table",
+      "nomatch",
+      "TRUE",
+    ]);
+    await expect(runtime.evalDetailed('charmatch("a", "b", nomatch = "x")')).resolves.toMatchObject(
+      {
+        value: NA,
+        warnings: [{ code: "NRW1006", message: "NAs introduced by coercion" }],
+      },
+    );
+    await expect(runtime.eval("match(pairlist(1), list(1))")).rejects.toMatchObject({
+      code: "NRT3142",
+    });
+    await expect(
+      runtime.eval(`
+        list(
+          match("x", "a", nomatch = NA_integer_),
+          match("x", "a", nomatch = -1L),
+          match("x", "a", nomatch = 1.9),
+          match("x", "a", nomatch = "2"),
+          match("x", "a", nomatch = integer())
+        )
+      `),
+    ).resolves.toEqual([NA, -1, 1, 2, NA]);
+    await expect(runtime.evalDetailed('match("x", "a", nomatch = Inf)')).resolves.toMatchObject({
+      value: NA,
+      warnings: [{ code: "NRW1007", message: "NAs introduced by coercion to integer range" }],
+    });
     await expect(runtime.eval("c(1, NA, 3) %in% c(3, NA)")).resolves.toEqual([false, true, true]);
     await expect(runtime.eval("NULL %in% 1:3")).resolves.toEqual([]);
     await expect(runtime.eval("1:3 %in% NULL")).resolves.toEqual([false, false, false]);
     await expect(runtime.eval("which(c(FALSE, TRUE, NA, TRUE))")).resolves.toEqual([2, 4]);
+    await expect(
+      runtime.eval(`
+        x <- matrix(c(TRUE, FALSE, NA, TRUE, FALSE, TRUE), 2,
+                    dimnames = list(c("r1", "r2"), c("a", "b", "c")))
+        indexed <- which(x, arr.ind = TRUE)
+        unnamed <- which(x, arr.ind = TRUE, useNames = FALSE)
+        c(indexed, dim(indexed), rownames(indexed), colnames(indexed),
+          is.null(dimnames(unnamed)), names(formals(which)))
+      `),
+    ).resolves.toEqual([
+      "1",
+      "2",
+      "2",
+      "1",
+      "2",
+      "3",
+      "3",
+      "2",
+      "r1",
+      "r2",
+      "r2",
+      "row",
+      "col",
+      "TRUE",
+      "x",
+      "arr.ind",
+      "useNames",
+    ]);
+    await expect(
+      runtime.eval(`
+        indexed <- arrayInd(
+          c(1, 2, 6, 0, 7),
+          c(2, 3),
+          list(A = c("r1", "r2"), B = c("c1", "c2", "c3")),
+          useNames = TRUE
+        )
+        missing <- arrayInd(NA_integer_, c(2, 3))
+        empty <- arrayInd(integer(), c(2, 3))
+        c(
+          indexed, dim(indexed), rownames(indexed), colnames(indexed),
+          is.na(missing), dim(empty), is.null(dimnames(arrayInd(1:2, c(2, 3)))),
+          names(formals(arrayInd))
+        )
+      `),
+    ).resolves.toEqual([
+      "1",
+      "2",
+      "2",
+      "2",
+      "1",
+      "1",
+      "1",
+      "3",
+      "3",
+      "1",
+      "5",
+      "2",
+      "r1",
+      "r2",
+      "r2",
+      "r2",
+      "r1",
+      "A",
+      "B",
+      "TRUE",
+      "TRUE",
+      "0",
+      "2",
+      "TRUE",
+      "ind",
+      ".dim",
+      ".dimnames",
+      "useNames",
+    ]);
     await expect(runtime.eval("which.max(c(1, 5, 5, NA))")).resolves.toBe(2);
     await expect(runtime.eval("which.min(c(1, -2, -2, NA))")).resolves.toBe(2);
+    await expect(
+      runtime.eval(`
+        x <- setNames(c(3, -2, 5), c("a", "b", "c"))
+        c(names(which(x > 0)), names(which.min(x)), names(which.max(x)))
+      `),
+    ).resolves.toEqual(["a", "c", "b", "c"]);
+    await expect(
+      runtime.eval(`
+        decorated <- structure(identity, class = "callable_probe", marker = 42L)
+        c(inherits(decorated, "callable_probe"), attr(decorated, "marker"), decorated(7L))
+      `),
+    ).resolves.toEqual([1, 42, 7]);
     await runtime.dispose();
   });
 
@@ -18399,13 +35613,73 @@ NeedsCompilation: no
     await expect(
       runtime.eval("f <- function(method) match.arg(method)\nf('a')"),
     ).rejects.toMatchObject({ code: "NRE2219" });
+    await expect(
+      runtime.eval(`
+        f <- function(short = c(NA_character_, "data", "attr")) match.arg(short)
+        c(
+          is.na(f()),
+          is.na(f(NA_character_)),
+          is.na(f("NA")),
+          f("d"),
+          match.arg(NA_character_, c("NA", "data"))
+        )
+      `),
+    ).resolves.toEqual(["TRUE", "TRUE", "TRUE", "data", "NA"]);
+    await expect(
+      runtime.eval("match.arg(NA_character_, c('data', 'attr'), several.ok = TRUE)"),
+    ).rejects.toMatchObject({ code: "NRE2130" });
     await runtime.dispose();
   });
 
   it("normalizes a deliberate formula subset without exposing parser nodes", async () => {
     const runtime = await session();
+    await expect(
+      runtime.eval(`
+        list(
+          all.names(quote({ a <- f(b); if (c) d else e })),
+          all.names(expression(a + b, g(h)), functions = FALSE),
+          all.names(quote(f(a, a, b)), max.names = 3, unique = TRUE),
+          names(formals(all.names)),
+          c(
+            is.null(names(function(x) x)),
+            is.null(names(sum)),
+            is.null(names(as.name("x")))
+          )
+        )
+      `),
+    ).resolves.toEqual([
+      ["{", "<-", "a", "f", "b", "if", "c", "d", "e"],
+      ["a", "b", "h"],
+      ["f", "a", "b"],
+      ["expr", "functions", "max.names", "unique"],
+      [true, true, true],
+    ]);
     await expect(runtime.eval("all.vars(y ~ x + z)")).resolves.toEqual(["y", "x", "z"]);
+    await expect(runtime.eval("all.vars(quote(f(x, y + z)))")).resolves.toEqual(["x", "y", "z"]);
+    await expect(
+      runtime.eval("all.vars(quote(f(x, x)), functions = TRUE, unique = FALSE)"),
+    ).resolves.toEqual(["f", "x", "x"]);
+    await expect(runtime.eval("names(formals(all.vars))")).resolves.toEqual([
+      "expr",
+      "functions",
+      "max.names",
+      "unique",
+    ]);
     await expect(runtime.eval("all.vars(~ x + z - x)")).resolves.toEqual(["x", "z"]);
+    await expect(
+      runtime.eval("c(labels(stats::terms(mpg ~ wt * cyl)), names(formals(labels)))"),
+    ).resolves.toEqual(["wt", "cyl", "wt:cyl", "object", "..."]);
+    await expect(
+      runtime.eval(`
+        c(
+          attr(terms(y ~ f(x,)), "term.labels"),
+          attr(terms(y ~ f(, x)), "term.labels"),
+          attr(terms(y ~ x[, 1]), "term.labels"),
+          attr(terms(y ~ x[1,]), "term.labels"),
+          all.vars(y ~ f(x,))
+        )
+      `),
+    ).resolves.toEqual(["f(x, )", "f(, x)", "x[, 1]", "x[1, ]", "y", "x"]);
     await expect(runtime.evalRaw("y ~ x + z + 0")).resolves.toEqual({
       version: 1,
       type: "formula",
@@ -18419,6 +35693,28 @@ NeedsCompilation: no
       terms: ["x", "z", "x:z"],
       variables: ["y", "x", "z"],
     });
+    await expect(
+      runtime.eval(`
+        d <- data.frame(y = 1:4, a = 1:4, b = c(2, 1, 4, 3), c = c(0, 1, 0, 1))
+        f <- y ~ a * (b + c)
+        m <- model.matrix(f, d)
+        c(attr(terms(f), "term.labels"), colnames(m), dim(m))
+      `),
+    ).resolves.toEqual([
+      "a",
+      "b",
+      "c",
+      "a:b",
+      "a:c",
+      "(Intercept)",
+      "a",
+      "b",
+      "c",
+      "a:b",
+      "a:c",
+      "4",
+      "6",
+    ]);
     await expect(runtime.eval("all.vars(as.formula('y ~ log(x) + z:w'))")).resolves.toEqual([
       "y",
       "x",
@@ -18452,6 +35748,31 @@ NeedsCompilation: no
       ),
     ).resolves.toEqual([true, true]);
     await expect(runtime.eval("all.vars(stats::as.formula('y ~ x'))")).resolves.toEqual(["y", "x"]);
+    await expect(
+      runtime.eval(
+        "f <- function() { marker <- 1; a <- formula('y ~ marker'); b <- formula(quote(y ~ x), env = emptyenv()); c(all.vars(a), identical(environment(a), environment()), all.vars(b), identical(environment(b), emptyenv())) }; f()",
+      ),
+    ).resolves.toEqual(["y", "marker", "TRUE", "y", "x", "TRUE"]);
+
+    const deprecatedFormulaCharacter = await runtime.evalDetailed(
+      "all.vars(formula(c('y ~ x', '~ z')))",
+    );
+    expect(deprecatedFormulaCharacter.value).toEqual(["y", "x"]);
+    expect(deprecatedFormulaCharacter.warnings).toMatchObject([{ code: "NRW1016" }]);
+    await expect(
+      runtime.eval(`
+        d <- data.frame(treatments = gl(3, 2, labels = c("a", "b", "c")), y = 1:6)
+        fit <- aov(y ~ treatments, data = d)
+        tr <- terms(fit)
+        term <- colnames(attr(tr, "factors"))[1]
+        c(as.character(tr), term)
+      `),
+    ).resolves.toEqual(["~", "y", "treatments", "treatments"]);
+    await expect(
+      runtime.eval(
+        'rebuilt <- formula(paste(as.character(tr)[2], "~", term)); c(all.vars(rebuilt), class(formula(fit)), is.null(attr(formula(fit), "term.labels")))',
+      ),
+    ).resolves.toEqual(["y", "treatments", "formula", "TRUE"]);
 
     const deprecatedCharacter = await runtime.evalDetailed(
       "all.vars(as.formula(c('y ~ x', '~ z')))",
@@ -18475,6 +35796,264 @@ NeedsCompilation: no
     await expect(runtime.eval("as.formula(1)")).rejects.toMatchObject({ code: "NRT3249" });
     await expect(runtime.eval("as.formula('y ~ x', env = 1)")).rejects.toMatchObject({
       code: "NRT3249",
+    });
+    await runtime.dispose();
+  });
+
+  it("retrieves terms generically from model components and attributes", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        direct <- stats::terms.formula(
+          y ~ a * b + offset(z),
+          specials = "offset",
+          keep.order = TRUE
+        )
+        d <- data.frame(y = 1:2, a = 3:4, b = 5:6)
+        dotted <- terms.formula(y ~ ., data = d)
+        c(
+          class(direct),
+          attr(direct, "term.labels"),
+          attr(direct, "order"),
+          attr(direct, "response"),
+          attr(direct, "intercept"),
+          names(attr(direct, "specials")),
+          unlist(attr(direct, "specials")),
+          attr(dotted, "term.labels"),
+          names(formals(stats::terms.formula))
+        )
+      `),
+    ).resolves.toEqual([
+      "terms",
+      "formula",
+      "a",
+      "b",
+      "a:b",
+      "1",
+      "1",
+      "2",
+      "1",
+      "1",
+      "offset",
+      "4",
+      "a",
+      "b",
+      "x",
+      "specials",
+      "abb",
+      "data",
+      "neg.out",
+      "keep.order",
+      "simplify",
+      "...",
+      "allowDotAsName",
+    ]);
+    await expect(
+      runtime.eval(`
+        component <- structure(list(terms = terms(y ~ x + z)), class = "customModel")
+        attributed <- structure(list(), class = "customModel", terms = y ~ group)
+        updated <- update(y ~ x, paste("~ . +", "z"))
+        model.matrix.customModel <- function(object, ...) {
+          NextMethod("model.matrix", data = object$model)
+        }
+        custom <- structure(
+          list(
+            terms = terms(y ~ x),
+            model = data.frame(y = 1:3, x = 4:6)
+          ),
+          class = "customModel"
+        )
+        design <- model.matrix(custom)
+        c(
+          attr(terms(component), "term.labels"),
+          all.vars(terms(attributed)),
+          all.vars(updated),
+          dim(design), colnames(design),
+          names(formals(terms))
+        )
+      `),
+    ).resolves.toEqual([
+      "x",
+      "z",
+      "y",
+      "group",
+      "y",
+      "x",
+      "z",
+      "3",
+      "2",
+      "(Intercept)",
+      "x",
+      "x",
+      "...",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("preserves model-frame formula metadata, dot expansion, responses, and offsets", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        d <- data.frame(y = 10:15, x = 1:6, row.names = letters[1:6])
+        integer <- model.frame(y ~ x, d, subset = c(6, 2, 2))
+        mask <- model.frame(y ~ x, d, subset = x %% 2 == 0)
+        negative <- model.frame(y ~ x, d, subset = -c(1, 6))
+        chars <- model.frame(y ~ x, d, subset = c("f", "b"))
+        as.character(c(
+          integer$y, rownames(integer), mask$y, rownames(mask),
+          negative$y, rownames(negative), chars$y, rownames(chars)
+        ))
+      `),
+    ).resolves.toEqual([
+      "15",
+      "11",
+      "11",
+      "f",
+      "b",
+      "b.1",
+      "11",
+      "13",
+      "15",
+      "b",
+      "d",
+      "f",
+      "11",
+      "12",
+      "13",
+      "14",
+      "b",
+      "c",
+      "d",
+      "e",
+      "15",
+      "11",
+      "f",
+      "b",
+    ]);
+    await expect(
+      runtime.eval(`
+        d <- data.frame(y = 1:3, x = 4:6, z = 7:9)
+        mf <- model.frame(y ~ x + offset(z) + offset(log(x)), d)
+        c(
+          names(mf),
+          model.response(mf),
+          round(model.offset(mf), 12),
+          attr(attr(mf, "terms"), "term.labels"),
+          attr(attr(mf, "terms"), "offset"),
+          attr(delete.response(terms(y ~ x + z)), "term.labels"),
+          attr(delete.response(terms(y ~ x + z)), "response"),
+          (~ x + y) == (~ x + y),
+          (~ x + y) == (~ x + z),
+          attr(terms(y ~ ., data = d), "term.labels")
+        )
+      `),
+    ).resolves.toEqual([
+      "y",
+      "x",
+      "offset(z)",
+      "offset(log(x))",
+      "1",
+      "2",
+      "3",
+      "8.38629436112",
+      "9.609437912434",
+      "10.791759469228",
+      "x",
+      "3",
+      "4",
+      "x",
+      "z",
+      "0",
+      "TRUE",
+      "FALSE",
+      "x",
+      "z",
+    ]);
+    await expect(
+      runtime.eval("model.response(model.frame(~ x, data.frame(x = 1:2)))"),
+    ).resolves.toBeNull();
+    await expect(
+      runtime.eval(
+        "typeof(model.response(model.frame(y ~ x, data.frame(y = 1:2, x = 3:4)), type = 'numeric'))",
+      ),
+    ).resolves.toBe("double");
+    await expect(
+      runtime.eval(`
+        d <- data.frame(y = c("a", NA, "b"), x = c("u", "v", "u"))
+        mf <- model.frame(y ~ x, d)
+        c(
+          names(mf), mf$y, typeof(mf$y), class(mf$y),
+          typeof(mf$x), class(mf$x), rownames(mf), model.response(mf)
+        )
+      `),
+    ).resolves.toEqual([
+      "y",
+      "x",
+      "a",
+      "b",
+      "character",
+      "character",
+      "character",
+      "character",
+      "1",
+      "3",
+      "a",
+      "b",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("rebuilds terms generically after indexed term removal", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        term.object <- terms(y ~ a * b + c - 1)
+        one <- drop.terms(term.object, 1, keep.response = TRUE)
+        multiple <- drop.terms(term.object, c(1, 3), keep.response = TRUE)
+        unchanged <- drop.terms(term.object, integer(), keep.response = TRUE)
+        zero <- drop.terms(term.object, 0)
+        negative <- drop.terms(term.object, -1)
+        offset <- drop.terms(terms(y ~ a + offset(z) + b), 1, keep.response = TRUE)
+        as.character(c(
+          attr(one, "term.labels"), attr(one, "response"), attr(one, "intercept"),
+          as.character(formula(one)),
+          attr(multiple, "term.labels"), as.character(formula(multiple)),
+          identical(unchanged, term.object),
+          length(attr(zero, "term.labels")), attr(zero, "response"),
+          attr(negative, "term.labels"),
+          attr(offset, "term.labels"), attr(offset, "offset"), as.character(formula(offset)),
+          names(formals(stats::drop.terms))
+        ))
+      `),
+    ).resolves.toEqual([
+      "b",
+      "c",
+      "b:a",
+      "1",
+      "0",
+      "~",
+      "y",
+      "b + c + a:b - 1",
+      "b",
+      "b:a",
+      "~",
+      "y",
+      "b + a:b - 1",
+      "TRUE",
+      "0",
+      "0",
+      "a",
+      "b",
+      "3",
+      "~",
+      "y",
+      "b + offset(z)",
+      "termobj",
+      "dropx",
+      "keep.response",
+    ]);
+    await expect(runtime.eval("drop.terms(y ~ x, 1)")).rejects.toMatchObject({
+      code: "NRT3265",
     });
     await runtime.dispose();
   });
@@ -18625,6 +36204,41 @@ NeedsCompilation: no
     await expect(
       runtime.eval('unlockBinding("value", locked); locked$value <- 3L; locked$value'),
     ).resolves.toBe(3);
+    await expect(
+      runtime.eval(`
+        before <- bindingIsLocked("pi", baseenv())
+        mine <- withVisible(utils::assignInMyNamespace("pi", pi))
+        missing <- inherits(
+          try(utils::assignInMyNamespace(".__nativr_missing__", 1L), silent = TRUE),
+          "try-error"
+        )
+        outside <- inherits(
+          try(utils::assignInNamespace("pi", pi), silent = TRUE),
+          "try-error"
+        )
+        c(
+          before, mine$visible, is.null(mine$value), bindingIsLocked("pi", baseenv()),
+          identical(baseenv()$pi, pi), missing, outside,
+          names(formals(utils::assignInMyNamespace)),
+          names(formals(utils::assignInNamespace))
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "FALSE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+      "x",
+      "value",
+      "x",
+      "value",
+      "ns",
+      "pos",
+      "envir",
+    ]);
     await runtime.dispose();
   });
 
@@ -18788,9 +36402,9 @@ NeedsCompilation: no
     });
     await expect(
       runtime.eval(
-        "a <- alist(first = , second = 1 + 2)\nc(typeof(a), length(a), names(a), deparse(a[[1]]), deparse(a[[2]]))",
+        "a <- alist(first = , second = 1 + 2)\nc(typeof(a), length(a), names(a), is.symbol(a[[1]]), identical(a[[1]], quote(expr = )), typeof(quote(expr = )), deparse(a[[1]]), deparse(a[[2]]))",
       ),
-    ).resolves.toEqual(["list", "2", "first", "second", "", "(1 + 2)"]);
+    ).resolves.toEqual(["list", "2", "first", "second", "TRUE", "TRUE", "symbol", "", "1 + 2"]);
     await expect(runtime.eval("a <- alist(x = never_defined)\nis.symbol(a[[1]])")).resolves.toBe(
       true,
     );
@@ -18806,6 +36420,17 @@ NeedsCompilation: no
       'm <- structure(matrix(1:4, nrow = 2), dimnames = list(c("r1", "r2"), c("c1", "c2")), class = c("score_matrix", "matrix"))',
     );
     await expect(runtime.eval('attr(m, "class")')).resolves.toEqual(["score_matrix", "matrix"]);
+    await expect(
+      runtime.eval(`
+        x <- structure(1L, alpha = 2L)
+        c(attr(x, "alph"), is.null(attr(x, "alph", exact = TRUE)),
+          attr(x, "alph", exact = NA), attr(x, "alph", exact = NULL))
+      `),
+    ).resolves.toEqual([2, 1, 2, 2]);
+    await expect(runtime.evalDetailed('attr(x, "alph", exact = NA)')).resolves.toMatchObject({
+      value: 2,
+      warnings: [],
+    });
     await expect(runtime.eval("names(attributes(m))")).resolves.toEqual([
       "dim",
       "dimnames",
@@ -18837,7 +36462,7 @@ NeedsCompilation: no
     await runtime.dispose();
   });
 
-  it("binds atomic vectors and matrices and retains validated dimension names", async () => {
+  it("binds atomic and list vectors and matrices while retaining dimension names", async () => {
     const runtime = await session();
     await expect(runtime.eval("dim(rbind(1:3, 4:6))")).resolves.toEqual([2, 3]);
     await expect(runtime.eval("rbind(1:3, 4:6)")).resolves.toEqual([1, 4, 2, 5, 3, 6]);
@@ -18846,9 +36471,379 @@ NeedsCompilation: no
     await expect(
       runtime.eval("rbind(matrix(1:4, nrow = 2), matrix(5:8, nrow = 2))"),
     ).resolves.toEqual([1, 2, 5, 6, 3, 4, 7, 8]);
+    await expect(
+      runtime.eval(`
+        m <- matrix(1:4, nrow = 2,
+          dimnames = list(c("r1", "r2"), c("a", "b")))
+        row_bound <- rbind(NULL, m, NULL)
+        column_bound <- cbind(NULL, m, NULL)
+        c(identical(row_bound, m), identical(column_bound, m),
+          dim(rbind(NULL, 1:3)), dim(cbind(NULL, 1:3)),
+          is.null(rbind(NULL, NULL)), is.null(cbind(NULL, NULL)))
+      `),
+    ).resolves.toEqual([1, 1, 1, 3, 3, 1, 1, 1]);
+    await expect(
+      runtime.eval(`
+        row <- data.frame(token = "{", value = 1L)
+        rows <- rbind(NULL, row)
+        column.error <- tryCatch(cbind(NULL, row), error = conditionMessage)
+        empty <- cbind.data.frame(NULL)
+        c(
+          nrow(rows), rows$token, rows$value, column.error,
+          names(attributes(rows)), nrow(empty), ncol(empty)
+        )
+      `),
+    ).resolves.toEqual([
+      "1",
+      "{",
+      "1",
+      "arguments imply differing number of rows: 0, 1",
+      "names",
+      "row.names",
+      "class",
+      "0",
+      "0",
+    ]);
+    await expect(
+      runtime.eval(`
+        x <- cbind(list("a"), "b")
+        c(typeof(x), dim(x), typeof(x[[1L]]), x[[1L]], x[[2L]])
+      `),
+    ).resolves.toEqual(["list", "1", "2", "character", "a", "b"]);
+    await expect(
+      runtime.eval(`
+        column <- suppressWarnings(cbind(matrix(1:4, ncol = 1), 1:6))
+        row <- suppressWarnings(rbind(matrix(1:4, nrow = 1), 1:6))
+        ignored.column <- cbind(1:3, integer())
+        ignored.row <- rbind(1:3, integer())
+        empty.column <- cbind(integer(), logical())
+        empty.row <- rbind(integer(), logical())
+        zero.column <- suppressWarnings(cbind(matrix(integer(), 0, 2), 1:3))
+        zero.row <- suppressWarnings(rbind(matrix(integer(), 2, 0), 1:3))
+        as.character(c(
+          dim(column), column, dim(row), row,
+          dim(ignored.column), ignored.column, dim(ignored.row), ignored.row,
+          dim(empty.column), typeof(empty.column),
+          dim(empty.row), typeof(empty.row),
+          dim(zero.column), dim(zero.row)
+        ))
+      `),
+    ).resolves.toEqual([
+      "4",
+      "2",
+      "1",
+      "2",
+      "3",
+      "4",
+      "1",
+      "2",
+      "3",
+      "4",
+      "2",
+      "4",
+      "1",
+      "1",
+      "2",
+      "2",
+      "3",
+      "3",
+      "4",
+      "4",
+      "3",
+      "1",
+      "1",
+      "2",
+      "3",
+      "1",
+      "3",
+      "1",
+      "2",
+      "3",
+      "0",
+      "2",
+      "integer",
+      "2",
+      "0",
+      "integer",
+      "0",
+      "3",
+      "3",
+      "0",
+    ]);
     await runtime.eval('m <- matrix(1:4, nrow = 2, dimnames = list(c("r1", "r2"), c("c1", "c2")))');
     await expect(runtime.eval("rownames(m)")).resolves.toEqual(["r1", "r2"]);
     await expect(runtime.eval("colnames(m)")).resolves.toEqual(["c1", "c2"]);
+    await expect(
+      runtime.eval(`
+        one <- structure(1:3, dim = 3L, dimnames = list(c("a", "b", "c")), marker = "m")
+        columns <- cbind(v = 10:12, a = one)
+        rows <- rbind(v = 10:12, a = one)
+        only.column <- cbind(one)
+        only.row <- rbind(one)
+        c(
+          columns, dim(columns), rownames(columns), colnames(columns),
+          rows, dim(rows), rownames(rows), colnames(rows),
+          dim(only.column), rownames(only.column), colnames(only.column),
+          dim(only.row), rownames(only.row), colnames(only.row)
+        )
+      `),
+    ).resolves.toEqual([
+      "10",
+      "11",
+      "12",
+      "1",
+      "2",
+      "3",
+      "3",
+      "2",
+      "a",
+      "b",
+      "c",
+      "v",
+      "a",
+      "10",
+      "1",
+      "11",
+      "2",
+      "12",
+      "3",
+      "2",
+      "3",
+      "v",
+      "a",
+      "a",
+      "b",
+      "c",
+      "3",
+      "1",
+      "a",
+      "b",
+      "c",
+      "one",
+      "1",
+      "3",
+      "one",
+      "a",
+      "b",
+      "c",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("expands atomic and list matrices through cbind.data.frame", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        d <- data.frame(a = c(TRUE, FALSE), row.names = c("r1", "r2"))
+        one <- matrix(
+          list(1:2, 3:5), 2, 1,
+          dimnames = list(c("m1", "m2"), "v")
+        )
+        two <- matrix(
+          list(1, 2:3, letters[1:2], NULL), 2, 2,
+          dimnames = list(c("m1", "m2"), c("x", "y"))
+        )
+        explicit <- cbind(d, one)
+        automatic <- cbind(data.frame(a = 1:2), z = two)
+        atomic <- cbind(
+          data.frame(a = 1:2),
+          z = matrix(1:4, 2, 2, dimnames = list(NULL, c("x", "y")))
+        )
+        recycled <- cbind(data.frame(a = 1:2), matrix(list(9), 1, 1))
+        mismatch <- tryCatch(
+          cbind(d, matrix(list(1, 2, 3), 3, 1)),
+          error = conditionMessage
+        )
+        as.character(c(
+          dim(explicit), names(explicit), row.names(explicit),
+          typeof(explicit[["v"]]), names(explicit[["v"]]),
+          lengths(explicit[["v"]]), unlist(explicit[["v"]], use.names = FALSE),
+          dim(automatic), names(automatic), row.names(automatic),
+          typeof(automatic[["z.x"]]), names(automatic[["z.x"]]),
+          lengths(automatic[["z.x"]]), unlist(automatic[["z.x"]], use.names = FALSE),
+          typeof(automatic[["z.y"]]), names(automatic[["z.y"]]),
+          lengths(automatic[["z.y"]]), unlist(automatic[["z.y"]], use.names = FALSE),
+          names(atomic), unlist(atomic, use.names = FALSE),
+          names(recycled), lengths(recycled[[2]]),
+          unlist(recycled[[2]], use.names = FALSE), mismatch
+        ))
+      `),
+    ).resolves.toEqual([
+      "2",
+      "2",
+      "a",
+      "v",
+      "r1",
+      "r2",
+      "list",
+      "m1",
+      "m2",
+      "2",
+      "3",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "2",
+      "3",
+      "a",
+      "z.x",
+      "z.y",
+      "m1",
+      "m2",
+      "list",
+      "m1",
+      "m2",
+      "1",
+      "2",
+      "1",
+      "2",
+      "3",
+      "list",
+      "m1",
+      "m2",
+      "2",
+      "0",
+      "a",
+      "b",
+      "a",
+      "z.x",
+      "z.y",
+      "1",
+      "2",
+      "1",
+      "2",
+      "3",
+      "4",
+      "a",
+      "matrix(list(9), 1, 1)",
+      "1",
+      "1",
+      "9",
+      "9",
+      "arguments imply differing number of rows: 2, 3",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("formats language and recursive values through the GNU-shaped default contract", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        pair <- format(as.pairlist(list(a = 1, b = quote(x + y))))
+        c(
+          format(quote(foo(a = 1, b + 2))),
+          format(NULL),
+          format(expression(a + b, f(x))),
+          pair,
+          names(pair),
+          format(c(1.2, 12), trim = TRUE, nsmall = 3, drop0trailing = TRUE),
+          is.na(format(c(NA_character_, "x"), trim = TRUE, na.encode = FALSE)),
+          names(formals(format)),
+          names(formals(format.default))
+        )
+      `),
+    ).resolves.toEqual([
+      "foo(a = 1, b + 2)",
+      "NULL",
+      "expression(a + b, f(x))",
+      "1",
+      "x + y",
+      "a",
+      "b",
+      "1.2",
+      "12",
+      "TRUE",
+      "FALSE",
+      "x",
+      "...",
+      "x",
+      "trim",
+      "digits",
+      "nsmall",
+      "justify",
+      "width",
+      "na.encode",
+      "scientific",
+      "big.mark",
+      "big.interval",
+      "small.mark",
+      "small.interval",
+      "decimal.mark",
+      "zero.print",
+      "drop0trailing",
+      "...",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("applies GNU-shaped numeric scientific penalties and option defaults", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- c(1e5, 1000, 10, .1, .001, .123)
+        old <- options(scipen = 0)
+        on.exit(options(old))
+        negative <- format(x, trim = TRUE, scientific = -4)
+        positive <- format(x, trim = TRUE, scientific = 4)
+        fractional <- format(x, trim = TRUE, scientific = 2.9)
+        forced <- format(x, trim = TRUE, scientific = FALSE)
+        missing <- format(x, trim = TRUE, scientific = NA_integer_)
+        options(scipen = 4)
+        from.option <- format(x, trim = TRUE)
+        c(negative, positive, fractional, forced, missing, from.option)
+      `),
+    ).resolves.toEqual([
+      "1.00e+05",
+      "1.00e+03",
+      "1.00e+01",
+      "1.00e-01",
+      "1.00e-03",
+      "1.23e-01",
+      "100000.000",
+      "1000.000",
+      "10.000",
+      "0.100",
+      "0.001",
+      "0.123",
+      "100000.000",
+      "1000.000",
+      "10.000",
+      "0.100",
+      "0.001",
+      "0.123",
+      "100000.000",
+      "1000.000",
+      "10.000",
+      "0.100",
+      "0.001",
+      "0.123",
+      "1.00e+05",
+      "1.00e+03",
+      "1.00e+01",
+      "1.00e-01",
+      "1.00e-03",
+      "1.23e-01",
+      "100000.000",
+      "1000.000",
+      "10.000",
+      "0.100",
+      "0.001",
+      "0.123",
+    ]);
+    await expect(runtime.eval("format(1, scientific = 1:2)")).rejects.toMatchObject({
+      code: "NRT3392",
+    });
+    await expect(runtime.eval('format(1, scientific = "x")')).rejects.toMatchObject({
+      code: "NRT3392",
+    });
+    await expect(runtime.eval("format(1, scientific = NULL)")).rejects.toMatchObject({
+      code: "NRT3392",
+    });
+    await expect(runtime.eval('format("x", scientific = stop("forced"))')).rejects.toMatchObject({
+      message: "forced",
+    });
     await runtime.dispose();
   });
 
@@ -18856,9 +36851,89 @@ NeedsCompilation: no
     const runtime = await session();
     await expect(runtime.eval('sprintf("%s-%02d", "item", 3)')).resolves.toBe("item-03");
     await expect(runtime.eval('sprintf("%.2f", c(1.2, 3.456))')).resolves.toEqual(["1.20", "3.46"]);
+    await expect(
+      runtime.eval(
+        'c(gettext("a", c("b", "c")), gettextf(c("%s-%d", "%s:%d"), c("x", "y"), 1:2), .makeMessage("a", "b", appendLF = TRUE), is.element(c(NA_integer_, 2L, 3L), c(NA_integer_, 1L, 2L)))',
+      ),
+    ).resolves.toEqual(["a", "b", "c", "x-1", "y:2", "ab\n", "TRUE", "TRUE", "FALSE"]);
     await expect(runtime.eval("format(c(1.2, 12.34), trim = TRUE, nsmall = 2)")).resolves.toEqual([
       "1.20",
       "12.34",
+    ]);
+    await expect(
+      runtime.eval(`
+        formatted <- format(
+          data.frame(a = c(1, 100), b = c("x", "yy"), c = factor(c("z", "q"))),
+          justify = "right"
+        )
+        c(
+          class(formatted), vapply(formatted, typeof, ""),
+          vapply(formatted, function(column) class(column)[1], ""),
+          formatted$a, formatted$b, formatted$c,
+          names(formals(get("format.data.frame")))
+        )
+      `),
+    ).resolves.toEqual([
+      "data.frame",
+      "character",
+      "character",
+      "character",
+      "AsIs",
+      "AsIs",
+      "AsIs",
+      "  1",
+      "100",
+      " x",
+      "yy",
+      "z",
+      "q",
+      "x",
+      "...",
+      "justify",
+      "cut.names",
+    ]);
+    await expect(
+      runtime.eval(`
+        bound <- rbind(colnames(formatted), formatted)
+        c(class(bound), dim(bound), unname(bound[1, ]), unname(format(bound, justify = "right")[1, ]))
+      `),
+    ).resolves.toEqual(["data.frame", 3, 3, "a", "b", "c", "  a", " b", "c"]);
+    await expect(
+      runtime.eval(`
+        c(
+          prettyNum(c(1, 1000, -12345.67, NA, NaN, Inf), big.mark = ",", preserve.width = "none"),
+          prettyNum(c("1.20", "1000.00"), big.mark = ".", decimal.mark = ",", input.d.mark = "."),
+          prettyNum("1234.56789", big.mark = ",", small.mark = "_", small.interval = 2,
+                    preserve.width = "none"),
+          prettyNum("0.000", zero.print = "ZERO", replace.zero = TRUE,
+                    drop0trailing = TRUE, preserve.width = "none"),
+          names(formals(prettyNum))
+        )
+      `),
+    ).resolves.toEqual([
+      "1",
+      "1,000",
+      "-12,345.67",
+      "NA",
+      "NaN",
+      "Inf",
+      "    1,20",
+      "1.000,00",
+      "1,234.56_78_9",
+      "ZERO",
+      "x",
+      "big.mark",
+      "big.interval",
+      "small.mark",
+      "small.interval",
+      "decimal.mark",
+      "input.d.mark",
+      "preserve.width",
+      "zero.print",
+      "replace.zero",
+      "drop0trailing",
+      "is.cmplx",
+      "...",
     ]);
     await expect(runtime.eval('grep("^a", c("apple", "pear", "apricot"))')).resolves.toEqual([
       1, 3,
@@ -18866,16 +36941,68 @@ NeedsCompilation: no
     await expect(
       runtime.eval('grep("a", c("apple", "pear", "plum"), value = TRUE)'),
     ).resolves.toEqual(["apple", "pear"]);
+    await expect(
+      runtime.eval('c(length(grep("x", NULL)), grep("1", 1:3), grepl("T", TRUE))'),
+    ).resolves.toEqual([0, 1, 1]);
+    await expect(
+      runtime.eval(`
+        as.character.grep_probe <- function(x, ...) "needle"
+        c(
+          grep(100, c("100", "2100", "x")),
+          grepl(2, c("12", "x")),
+          grep(factor("a"), c("a", "1")),
+          grep(structure(1, class = "grep_probe"), c("needle", "1"))
+        )
+      `),
+    ).resolves.toEqual([1, 2, 1, 0, 1, 1]);
+    const multiplePatterns = await runtime.evalDetailed('grep(c("a", "b"), c("a", "b"))');
+    expect(multiplePatterns.value).toBe(1);
+    expect(multiplePatterns.warnings).toEqual([
+      {
+        code: "NRW1019",
+        message: "argument 'pattern' has length > 1 and only the first element will be used",
+      },
+    ]);
     await expect(runtime.eval('grepl("a", c("apple", NA, "plum"))')).resolves.toEqual([
       true,
-      NA,
+      false,
       false,
     ]);
+    await expect(runtime.eval('grepl("length.out =", NA, fixed = TRUE)')).resolves.toBe(false);
     await expect(runtime.eval('gsub("[0-9]", "X", "a1b2")')).resolves.toBe("aXbX");
     await expect(runtime.eval('sub("[0-9]", "X", "a1b2")')).resolves.toBe("aXb2");
+    await expect(
+      runtime.eval(
+        String.raw`c(sub("_(.)", "\\U\\1", c("expect_true", "expect_equal"), perl = TRUE), gsub("(.)", "\\U\\1\\E", "ab", perl = TRUE), sub("(A)(b)", "\\L\\1\\U\\2\\E", "Ab", perl = TRUE))`,
+      ),
+    ).resolves.toEqual(["expectTrue", "expectEqual", "AB", "aB"]);
+    await expect(
+      runtime.eval('c(grepl("a.*b", "a\\nb"), grepl("a.*b", "a\\nb", perl = TRUE))'),
+    ).resolves.toEqual([true, false]);
+    await expect(runtime.eval('gsub("a", list("x"), "a")')).resolves.toBe("x");
+    await expect(
+      runtime.eval(String.raw`gsub("log\\(([^,\\+)]*)(.*)\\)", "\\2", "log(Sepal.Length+2)")`),
+    ).resolves.toBe("+2");
+    await expect(
+      runtime.eval(
+        String.raw`eval(parse(text = gsub("log\\(([^,\\+)]*)(.*)\\)", "\\2", "log(Sepal.Length+2)")))`,
+      ),
+    ).resolves.toBe(2);
     await expect(runtime.eval('strsplit(c("a,b", "c,d"), ",")')).resolves.toEqual([
       ["a", "b"],
       ["c", "d"],
+    ]);
+    await expect(runtime.eval('strsplit("a/b\\\\c", "[/\\\\]")[[1L]]')).resolves.toEqual([
+      "a",
+      "b",
+      "c",
+    ]);
+    await expect(
+      runtime.eval(String.raw`gsub("[/\\\\]$", "", c("a/", "b\\", "c"))`),
+    ).resolves.toEqual(["a", "b", "c"]);
+    await expect(runtime.eval('strsplit(c(word = "Hello", empty = ""), NULL)')).resolves.toEqual([
+      ["H", "e", "l", "l", "o"],
+      [],
     ]);
     await expect(runtime.eval('substring("abcdef", 2, 4)')).resolves.toBe("bcd");
     await expect(runtime.eval('substr(c("abcdef", "uvwxyz"), 2, 3)')).resolves.toEqual([
@@ -18883,6 +37010,146 @@ NeedsCompilation: no
       "vw",
     ]);
     await expect(runtime.eval('chartr("a-c", "A-C", "cab")')).resolves.toBe("CAB");
+    await expect(
+      runtime.eval(`
+        x <- c("abcdef", "a b c", "New York", "internationalization", "A_B-C.D")
+        c(
+          unname(abbreviate(x, 3)),
+          unname(abbreviate(x, 3, strict = TRUE)),
+          names(abbreviate(x, 3)),
+          names(formals(abbreviate))
+        )
+      `),
+    ).resolves.toEqual([
+      "abcd",
+      "abc",
+      "NwYr",
+      "intr",
+      "A_B-",
+      "abc",
+      "abc",
+      "NwY",
+      "int",
+      "A_B",
+      "abcdef",
+      "a b c",
+      "New York",
+      "internationalization",
+      "A_B-C.D",
+      "names.arg",
+      "minlength",
+      "use.classes",
+      "dot",
+      "strict",
+      "method",
+      "named",
+    ]);
+    await expect(
+      runtime.eval(`
+        d <- data.frame(a = 1:2, b = 3:4)
+        dimnames(d) <- list(c("r1", "r2"), c("x", "y"))
+        c(dim(d), dimnames(d)[[1]], dimnames(d)[[2]], names(d), class(d), d$x, d$y)
+      `),
+    ).resolves.toEqual([
+      "2",
+      "2",
+      "r1",
+      "r2",
+      "x",
+      "y",
+      "x",
+      "y",
+      "data.frame",
+      "1",
+      "2",
+      "3",
+      "4",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("formats numeric and character vectors with formatC controls", async () => {
+    const runtime = await session();
+    await expect(runtime.eval("names(formals(formatC))")).resolves.toEqual([
+      "x",
+      "digits",
+      "width",
+      "format",
+      "flag",
+      "mode",
+      "big.mark",
+      "big.interval",
+      "small.mark",
+      "small.interval",
+      "decimal.mark",
+      "preserve.width",
+      "zero.print",
+      "replace.zero",
+      "drop0trailing",
+    ]);
+    await expect(
+      runtime.eval(
+        'formatC(c(-12.345, -0, 0, 1.2, 123.456, NA, NaN, Inf, -Inf), format = "f", digits = 2)',
+      ),
+    ).resolves.toEqual([
+      "-12.35",
+      "-0.00",
+      "0.00",
+      "1.20",
+      "123.46",
+      "  NA",
+      " NaN",
+      " Inf",
+      "-Inf",
+    ]);
+    await expect(
+      runtime.eval('formatC(c(-12L, 0L, 7L, NA_integer_), format = "d")'),
+    ).resolves.toEqual(["-12", "0", "7", "NA"]);
+    await expect(
+      runtime.eval('formatC(c(-12.345, 0, 12345), format = "e", digits = 3)'),
+    ).resolves.toEqual(["-1.235e+01", "0.000e+00", "1.234e+04"]);
+    await expect(
+      runtime.eval('formatC(c(1.234567, 12.34567, 123.4567), format = "g", digits = 4)'),
+    ).resolves.toEqual(["1.235", "12.35", "123.5"]);
+    await expect(
+      runtime.eval('formatC(c(-12, 0, 7), format = "d", width = 5, flag = "0")'),
+    ).resolves.toEqual(["-0012", "00000", "00007"]);
+    await expect(
+      runtime.eval(
+        'formatC(1234567.1234567, format = "f", digits = 7, big.mark = "_", big.interval = 2, small.mark = "\'", small.interval = 3)',
+      ),
+    ).resolves.toBe("1_23_45_67.123'456'7");
+    await expect(
+      runtime.eval(`
+        c(
+          formatC(c(-0, 0, 0.01, 1), format = "f", digits = 2, zero.print = "."),
+          formatC(c(1, 1.2, 1.23), format = "f", digits = 3, drop0trailing = TRUE),
+          formatC(c("a", "bb", NA_character_), format = "s")
+        )
+      `),
+    ).resolves.toEqual([".", ".", "0.01", "1.00", "1", "1.2", "1.23", " a", "bb", "NA"]);
+    await expect(
+      runtime.eval(`
+        x <- formatC(setNames(c(1.2, 3.4), c("a", "b")), format = "f", digits = 1)
+        c(x, names(x))
+      `),
+    ).resolves.toEqual(["1.2", "3.4", "a", "b"]);
+    await expect(runtime.eval("formatC(c(TRUE, FALSE, NA))")).rejects.toMatchObject({
+      code: "NRT3392",
+    });
+    await expect(runtime.eval("names(formals(format.pval))")).resolves.toEqual([
+      "pv",
+      "digits",
+      "eps",
+      "na.form",
+      "...",
+    ]);
+    await expect(
+      runtime.eval("format.pval(c(0, 1e-8, 0.01234, 0.1, NA, NaN, Inf), digits = 3)"),
+    ).resolves.toEqual(["<2e-16", "1e-08", "0.0123", "0.1000", "NA", "NA", "   Inf"]);
+    await expect(
+      runtime.eval("format.pval(c(0, 1e-8, 0.01234, 0.1), digits = 3, eps = 0.001)"),
+    ).resolves.toEqual(["<0.001", "<0.001", "0.0123", "0.1000"]);
     await runtime.dispose();
   });
 
@@ -19074,7 +37341,7 @@ NeedsCompilation: no
     const matrix = await runtime.evalDetailed("View(matrix(1:6, nrow = 2))");
     expect(matrix.dataViews).toEqual([
       {
-        title: "Data: matrix((1 : 6), nrow = 2)",
+        title: "Data: matrix(1:6, nrow = 2)",
         columns: [
           { name: "V1", values: ["1", "2"] },
           { name: "V2", values: ["3", "4"] },
@@ -19469,7 +37736,6 @@ NeedsCompilation: no
         result <- c(isOpen(opened), readLines(open.path)); close(opened); result
       `),
     ).resolves.toEqual(["TRUE", "open"]);
-
     const messageResult = await runtime.evalDetailed(`
       message.path <- tempfile(); messages <- file(message.path, open = "wt")
       before <- sink.number("message")
@@ -19516,6 +37782,23 @@ NeedsCompilation: no
     await expect(runtime.eval("for (i in 1:19) sink(tempfile()); sink.number()")).resolves.toBe(19);
     await expect(runtime.eval("sink(tempfile())")).rejects.toMatchObject({ code: "NRE2362" });
     await expect(runtime.eval("while (sink.number() > 0) sink(); sink.number()")).resolves.toBe(0);
+    await expect(
+      runtime.eval(`
+        capture.local <- function() {
+          bfr <- "seed"
+          con <- textConnection("bfr", "w", local = TRUE)
+          sink(con)
+          cat("one\n")
+          complete <- bfr
+          cat("tail")
+          incomplete <- bfr
+          sink()
+          close(con)
+          list(complete, incomplete, bfr)
+        }
+        capture.local()
+      `),
+    ).resolves.toEqual(["one", "one", ["one", "tail"]]);
     await runtime.dispose();
 
     const limited = await createR({
@@ -19529,7 +37812,7 @@ NeedsCompilation: no
     await limited.dispose();
   });
 
-  it("reports an empty browser demo catalog and rejects external package scripts", async () => {
+  it("discovers and executes browser-owned package demos", async () => {
     const runtime = await session();
     await expect(
       runtime.eval(`
@@ -19559,19 +37842,57 @@ NeedsCompilation: no
       "TRUE",
     ]);
     await expect(runtime.eval('demo("echo", package = "httpuv")')).rejects.toMatchObject({
-      code: "NRU6157",
+      code: "NRE2254",
     });
     await expect(runtime.eval('demo(package = "httpuv")')).rejects.toMatchObject({
-      code: "NRU6157",
+      code: "NRE2254",
     });
     await expect(runtime.eval('demo(lib.loc = "library")')).rejects.toMatchObject({
-      code: "NRU6157",
+      code: "NRE2254",
     });
     await expect(runtime.eval("demo(package = 1)")).rejects.toMatchObject({ code: "NRT3343" });
     await expect(runtime.eval("demo(package = character(), extra = 1)")).rejects.toMatchObject({
       code: "NRE2101",
     });
     await runtime.dispose();
+
+    const packaged = await createR({
+      execution: "inline",
+      assets,
+      packages: [
+        {
+          description:
+            "Package: nativrdemo\nVersion: 0.1.0\nTitle: Demo fixture\nNeedsCompilation: no",
+          namespace: "export(square)",
+          rSources: [{ path: "R/square.R", source: "square <- function(x) x ^ 2L" }],
+          resources: [
+            { path: "demo/basic.R", data: "ZGVtb192YWx1ZSA8LSBzcXVhcmUoNUwpCg==" },
+            { path: "demo/00Index", data: "YmFzaWMgIEJyb3dzZXIgZGVtbwo=" },
+          ],
+        },
+      ],
+    });
+    await expect(
+      packaged.eval(`
+        catalog <- demo(package = "nativrdemo")
+        c(dim(catalog$results), catalog$results[1, ], class(catalog))
+      `),
+    ).resolves.toEqual([
+      "1",
+      "4",
+      "nativrdemo",
+      "nativr://package/nativrdemo",
+      "basic",
+      "Browser demo",
+      "packageIQR",
+    ]);
+    await expect(
+      packaged.eval(`
+        visible <- withVisible(demo("basic", package = "nativrdemo", echo = FALSE))
+        c(demo_value, is.null(visible$value), visible$visible)
+      `),
+    ).resolves.toEqual([25, 1, 0]);
+    await packaged.dispose();
   });
 
   it("matches example formals and the GNU R missing-topic result boundary", async () => {
@@ -19594,6 +37915,47 @@ NeedsCompilation: no
     await expect(runtime.eval("utils::example(package = character())")).rejects.toMatchObject({
       code: "NRE2103",
     });
+    const arrows = await runtime.evalDetailed(`
+      shown <- withVisible(utils::example(arrows, package = "graphics", echo = FALSE))
+      c(
+        is.list(shown$value), shown$visible,
+        length(x), length(y), length(s),
+        typeof(x), typeof(y), typeof(s),
+        identical(s, 1:10)
+      )
+    `);
+    expect(arrows.value).toEqual([
+      "TRUE",
+      "FALSE",
+      "12",
+      "12",
+      "10",
+      "double",
+      "double",
+      "integer",
+      "TRUE",
+    ]);
+    expect(arrows.graphics.some((event) => event.kind === "segments")).toBe(true);
+    await expect(
+      runtime.eval(`
+        shown <- withVisible(utils::example(lm.influence, package = "stats", echo = FALSE))
+        c(
+          is.list(shown$value), shown$visible, exists("lm.SR", inherits = FALSE),
+          class(lm.SR), round(coef(lm.SR), 6), length(residuals(lm.SR))
+        )
+      `),
+    ).resolves.toEqual([
+      "TRUE",
+      "FALSE",
+      "TRUE",
+      "lm",
+      "28.566087",
+      "-0.461193",
+      "-1.691498",
+      "-0.000337",
+      "0.409695",
+      "50",
+    ]);
     await runtime.dispose();
   });
 
@@ -19755,6 +38117,26 @@ NeedsCompilation: no
         text: "No documentation for 'nativr-missing-topic' in specified packages and libraries:\nyou could try '??nativr-missing-topic'\n",
       },
     ]);
+    const pdf = await runtime.evalDetailed(`
+      old <- setwd(tempdir())
+      fixture <- withVisible(print(utils::help(
+        "square-alias", package = "nativrfixture", help_type = "pdf"
+      )))
+      core <- withVisible(print(utils::help(Normal, help_type = "pdf")))
+      fixture.path <- file.path(getwd(), "square-alias.pdf")
+      core.path <- file.path(getwd(), "Normal.pdf")
+      result <- as.character(c(
+        fixture$visible, core$visible,
+        file.exists(fixture.path), file.info(fixture.path)$size > 100,
+        file.exists(core.path), file.info(core.path)$size > 100,
+        rawToChar(readBin(fixture.path, "raw", n = 4L)),
+        rawToChar(readBin(core.path, "raw", n = 4L))
+      ))
+      setwd(old)
+      result
+    `);
+    expect(pdf.value).toEqual(["FALSE", "FALSE", "TRUE", "TRUE", "TRUE", "TRUE", "%PDF", "%PDF"]);
+    expect(pdf.browseRequests).toEqual([]);
     await runtime.dispose();
   });
 
@@ -19772,12 +38154,48 @@ NeedsCompilation: no
     ).resolves.toEqual(["2", "6", "3", "2", "2", "0", "0", "aaa", "aa"]);
     await expect(
       runtime.eval(
+        "x <- c('b', 'ab', 'a', '')\nm <- regexec('^(a)?(b*)$', x, perl = TRUE)\ny <- regmatches(x, m)\nas.character(c(m[[1]], attr(m[[1]], 'match.length'), lengths(y), unlist(y, use.names = FALSE)))",
+      ),
+    ).resolves.toEqual([
+      "1",
+      "0",
+      "1",
+      "1",
+      "0",
+      "1",
+      "3",
+      "3",
+      "3",
+      "3",
+      "b",
+      "",
+      "b",
+      "ab",
+      "a",
+      "b",
+      "a",
+      "a",
+      "",
+      "",
+      "",
+      "",
+    ]);
+    await expect(
+      runtime.eval(
         "x <- c(one = 'ba', two = '', three = NA)\nm <- gregexpr('a*', x)\ny <- regmatches(x, m, invert = TRUE)\nc(m[[1]], attr(m[[1]], 'match.length'), y[[1]], y[[2]], is.na(y[[3]]), names(y))",
       ),
     ).resolves.toEqual(["1", "2", "0", "1", "", "b", "", "", "TRUE", "one", "two", "three"]);
     await expect(
       runtime.eval("m <- gregexpr('.', 'é🙂')\nc(m[[1]], attr(m[[1]], 'match.length'))"),
     ).resolves.toEqual([1, 2, 1, 1]);
+    await expect(
+      runtime.eval(
+        'c(gsub("^\\\\s+|\\\\s+$", "", " \\talpha \\n", useBytes = TRUE), sub("\\\\s+$", "", "beta \\t", useBytes = TRUE))',
+      ),
+    ).resolves.toEqual(["alpha", "beta"]);
+    await expect(runtime.eval('gsub("\\\\S", "", "é", useBytes = TRUE)')).rejects.toMatchObject({
+      code: "NRU6142",
+    });
     await expect(runtime.evalDetailed("regexpr(c('a', 'b'), 'ab')")).resolves.toMatchObject({
       value: 1,
       warnings: [{ code: "NRW1019" }],
@@ -19788,6 +38206,11 @@ NeedsCompilation: no
     await expect(runtime.eval("regmatches('abc', 1L)")).rejects.toMatchObject({
       code: "NRT3256",
     });
+    await expect(
+      runtime.eval(
+        "x <- c('A one A', 'b'); m <- gregexpr('(?i)a', x); regmatches(x, m) <- list(c('x', 'y'), character()); x",
+      ),
+    ).resolves.toEqual(["x one y", "b"]);
     await runtime.dispose();
   });
 
@@ -19835,13 +38258,302 @@ NeedsCompilation: no
     ]);
     await expect(runtime.eval("cov(1:3, 2:4)")).resolves.toBe(1);
     await expect(runtime.eval("cor(1:3, c(2, 4, 6))")).resolves.toBe(1);
+    await expect(
+      runtime.eval(
+        "V <- matrix(c(4, 2, 2, 9), 2, dimnames = list(c('a', 'b'), c('a', 'b'))); round(stats::cov2cor(V), 6)",
+      ),
+    ).resolves.toEqual([1, 0.333333, 0.333333, 1]);
+    await expect(
+      runtime.eval(
+        "C <- cov2cor(V); c(dim(C), unlist(dimnames(C)), names(formals(stats::cov2cor)))",
+      ),
+    ).resolves.toEqual(["2", "2", "a", "b", "a", "b", "V"]);
+    await expect(
+      runtime.eval(`
+        d <- as.matrix(mtcars)
+        m <- matrix(NA, ncol(d), ncol(d))
+        colnames(m) <- rownames(m) <- colnames(d)
+        c(ncol(d), length(colnames(d)), dim(m), length(rownames(m)), length(colnames(m)))
+      `),
+    ).resolves.toEqual([11, 11, 11, 11, 11, 11]);
+    await expect(
+      runtime.eval(`
+        joined <- cbind(data.frame(a = 1:3, b = 4:6), c(7, 8, 9))
+        colnames(joined)[3] <- 'p'
+        c(dim(joined), length(names(joined)), names(joined))
+      `),
+    ).resolves.toEqual(["3", "3", "3", "a", "b", "p"]);
+    await expect(
+      runtime.eval(`
+        z <- cor.test(c(1, 2, 3, 4, 5, NA), c(2, 1, 4, 3, 5, 9), conf.level = .9)
+        round(c(z$statistic, z$parameter, z$p.value, z$estimate, z$conf.int), 12)
+      `),
+    ).resolves.toEqual([2.309401076759, 3, 0.104088038662, 0.8, -0.064385672467, 0.978528854583]);
+    await expect(
+      runtime.eval(`
+        z <- stats::cor.test(1:5, c(2, 1, 4, 3, 5), alternative = 'greater', conf.level = .9)
+        c(
+          names(z), class(z), names(z$statistic), names(z$parameter), names(z$estimate),
+          names(z$null.value), attr(z$conf.int, 'conf.level'), z$alternative, z$method,
+          z$data.name, round(z$p.value, 12), round(z$conf.int, 12)
+        )
+      `),
+    ).resolves.toEqual([
+      "statistic",
+      "parameter",
+      "p.value",
+      "estimate",
+      "null.value",
+      "alternative",
+      "method",
+      "data.name",
+      "conf.int",
+      "htest",
+      "t",
+      "df",
+      "cor",
+      "correlation",
+      "0.9",
+      "greater",
+      "Pearson's product-moment correlation",
+      "1:5 and c(2, 1, 4, 3, 5)",
+      "0.052044019331",
+      "0.190078380256",
+      "1",
+    ]);
     await expect(runtime.eval('cov(c(1, NA, 3), c(2, 4, 6), use = "complete.obs")')).resolves.toBe(
       4,
     );
+    await expect(
+      runtime.eval(`
+        d <- data.frame(a = c(1, 2, 4), b = c(2, 5, 8), c = c(8, 4, 1))
+        correlation <- cor(d)
+        covariance <- cov(d)
+        c(
+          round(correlation, 12), round(covariance, 12), dim(correlation),
+          unlist(dimnames(correlation)), names(formals(cor)),
+          identical(formals(cor)$y, NULL),
+          identical(formals(cor)$use, "everything"),
+          identical(eval(formals(cor)$method), c("pearson", "kendall", "spearman"))
+        )
+      `),
+    ).resolves.toEqual([
+      "1",
+      "0.981980506062",
+      "-0.963123137302",
+      "0.981980506062",
+      "1",
+      "-0.99661589554",
+      "-0.963123137302",
+      "-0.99661589554",
+      "1",
+      "2.333333333333",
+      "4.5",
+      "-5.166666666667",
+      "4.5",
+      "9",
+      "-10.5",
+      "-5.166666666667",
+      "-10.5",
+      "12.333333333333",
+      "3",
+      "3",
+      "a",
+      "b",
+      "c",
+      "a",
+      "b",
+      "c",
+      "x",
+      "y",
+      "use",
+      "method",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    await expect(
+      runtime.eval(`
+        d <- data.frame(a = c(1, 2, 4), b = c(2, 5, 8), c = c(8, 4, 1))
+        cross <- cor(d[1:2], d[3])
+        c(round(cross, 12), dim(cross), rownames(cross))
+      `),
+    ).resolves.toEqual(["-0.963123137302", "-0.99661589554", "2", "1", "a", "b"]);
     await expect(runtime.eval("summary(1:4)")).resolves.toEqual([1, 1.75, 2.5, 2.5, 3.25, 4]);
+    await expect(runtime.eval("summary(1:4, digits = 3)")).resolves.toEqual([
+      1, 1.75, 2.5, 2.5, 3.25, 4,
+    ]);
     await expect(runtime.eval('table(c("a", "b", "a"))')).resolves.toEqual([2, 1]);
+    await expect(
+      runtime.eval(`
+        converted <- as.table(matrix(1:4, 2, dimnames = list(c("r1", "r2"), NULL)))
+        named <- as.table(setNames(1:3, c("x", "y", "z")))
+        existing <- table(c("a", "b", "a"))
+        as.table.probe <- function(x, ...) c("dispatched", names(list(...)))
+        custom <- as.table(structure(1L, class = "probe"), marker = 2L)
+        c(
+          class(converted), dim(converted), unlist(dimnames(converted)),
+          dim(named), dimnames(named)[[1]], identical(as.table(existing), existing),
+          custom, names(formals(as.table)), names(formals(as.table.default))
+        )
+      `),
+    ).resolves.toEqual([
+      "table",
+      "2",
+      "2",
+      "r1",
+      "r2",
+      "A",
+      "B",
+      "3",
+      "x",
+      "y",
+      "z",
+      "TRUE",
+      "dispatched",
+      "marker",
+      "x",
+      "...",
+      "x",
+      "...",
+    ]);
+    await expect(
+      runtime.eval(`
+        listed <- table(list(c(1, 2, 2), c("A", "A", "B")))
+        factored <- table(factor(c("z", "a"), levels = c("z", "a", "unused")))
+        c(
+          unclass(listed), dim(listed), names(dimnames(listed)),
+          unlist(dimnames(listed), use.names = FALSE),
+          unclass(factored), dimnames(factored)[[1]]
+        )
+      `),
+    ).resolves.toEqual([
+      "1",
+      "1",
+      "0",
+      "1",
+      "2",
+      "2",
+      ".1",
+      ".2",
+      "1",
+      "2",
+      "A",
+      "B",
+      "1",
+      "1",
+      "0",
+      "z",
+      "a",
+      "unused",
+    ]);
     await expect(runtime.eval('dim(table(c("a", "b", "a"), c("x", "x", "y")))')).resolves.toEqual([
       2, 2,
+    ]);
+    await expect(
+      runtime.eval(`
+        ind <- list(c(1, 2, 2), c("A", "A", "B"))
+        tabulated <- tapply(1:3, ind, sum)
+        c(
+          typeof(tabulated), class(tabulated), dim(tabulated), names(dimnames(tabulated)),
+          unclass(tabulated), unlist(dimnames(tabulated), use.names = FALSE),
+          identical(tabulated, matrix(c(1L, 2L, NA, 3L), 2,
+            dimnames = list(c("1", "2"), c("A", "B"))))
+        )
+      `),
+    ).resolves.toEqual([
+      "integer",
+      "matrix",
+      "array",
+      "2",
+      "2",
+      "1",
+      "2",
+      NA,
+      "3",
+      "1",
+      "2",
+      "A",
+      "B",
+      "TRUE",
+    ]);
+    await expect(
+      runtime.eval(`
+        c(
+          typeof(sum()), typeof(sum(NULL)), typeof(sum(logical())), typeof(sum(integer())),
+          typeof(sum(numeric())), typeof(sum(TRUE, FALSE)), typeof(sum(1:3)),
+          typeof(sum(1:3, 2.5)), typeof(sum(1:3, NA_integer_)),
+          typeof(sum(.Machine$integer.max, 1L)), sum(x = 1:3), sum(1, na.r = TRUE)
+        )
+      `),
+    ).resolves.toEqual([
+      "integer",
+      "integer",
+      "integer",
+      "integer",
+      "double",
+      "integer",
+      "integer",
+      "double",
+      "integer",
+      "double",
+      "6",
+      "2",
+    ]);
+    await expect(
+      runtime.eval(`
+        n <- 17
+        fac <- factor(rep_len(1:3, n), levels = 1:5)
+        nq <- names(quantile(1:5))
+        pieces <- list(quantile(c(1, 4, 7, 10, 13, 16)), quantile(c(2, 5, 8, 11, 14, 17)),
+          quantile(c(3, 6, 9, 12, 15)))
+        actual <- array(vector("list", 5), dim = 5, dimnames = list(as.character(1:5)))
+        actual[c(TRUE, TRUE, TRUE, FALSE, FALSE)] <- pieces
+        actual <- actual[-1]
+        expected <- array(list(
+          structure(c(2, 5.75, 9.5, 13.25, 17), .Names = nq),
+          structure(c(3, 6, 9, 12, 15), .Names = nq), NULL, NULL
+        ), dim = 4, dimnames = list(as.character(2:5)))
+        identical(actual, expected)
+      `),
+    ).resolves.toBe(true);
+    await expect(
+      runtime.eval(`
+        c(
+          is.null(names(array(c(a = 1, b = 2), dim = 2))),
+          is.null(names(array(list(a = 1, b = 2), dim = 2))),
+          is.null(names(matrix(c(a = 1, b = 2), nrow = 1))),
+          typeof(array(factor(c("a", "b")), dim = 2)),
+          is.null(attr(array(structure(1:2, tag = "x"), dim = 2), "tag"))
+        )
+      `),
+    ).resolves.toEqual(["TRUE", "TRUE", "TRUE", "character", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        summarized <- summary(warpbreaks)
+        c(
+          typeof(summarized), class(summarized), dim(summarized),
+          trimws(dimnames(summarized)[[2]]),
+          trimws(summarized[1, ]), trimws(summarized[2, ]),
+          is.na(summarized[6, 2]), is.na(summarized[4, 3])
+        )
+      `),
+    ).resolves.toEqual([
+      "character",
+      "table",
+      "6",
+      "3",
+      "breaks",
+      "wool",
+      "tension",
+      "Min.   :10.00",
+      "A:27",
+      "L:18",
+      "1st Qu.:18.25",
+      "B:27",
+      "M:18",
+      "TRUE",
+      "TRUE",
     ]);
     await expect(runtime.eval('prop.table(table(c("a", "b", "a")))')).resolves.toEqual([
       2 / 3,
@@ -19850,6 +38562,145 @@ NeedsCompilation: no
     await expect(
       runtime.eval('prop.table(table(c("a", "a", "b", "b"), c("x", "y", "x", "x")), margin = 1)'),
     ).resolves.toEqual([0.5, 1, 0.5, 0]);
+    await runtime.dispose();
+  });
+
+  it("implements Pearson chi-squared goodness-of-fit and contingency tests", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        fit <- suppressWarnings(stats::chisq.test(
+          c(a = 4, b = 2, c = 3, d = 1, e = 6, f = 4),
+          p = c(.1, .15, .35, .05, .2, .15)
+        ))
+        c(
+          round(c(fit$statistic, fit$parameter, fit$p.value), 12),
+          round(fit$expected, 12), round(fit$residuals, 12), round(fit$stdres, 12),
+          names(fit), class(fit), names(fit$statistic), names(fit$parameter),
+          fit$method, fit$data.name, names(formals(stats::chisq.test))
+        )
+      `),
+    ).resolves.toEqual([
+      "5.952380952381",
+      "5",
+      "0.310880075189",
+      "2",
+      "3",
+      "7",
+      "1",
+      "4",
+      "3",
+      "1.414213562373",
+      "-0.57735026919",
+      "-1.511857892037",
+      "0",
+      "1",
+      "0.57735026919",
+      "1.490711985",
+      "-0.626224291085",
+      "-1.875228923754",
+      "0",
+      "1.11803398875",
+      "0.626224291085",
+      "statistic",
+      "parameter",
+      "p.value",
+      "method",
+      "data.name",
+      "observed",
+      "expected",
+      "residuals",
+      "stdres",
+      "htest",
+      "X-squared",
+      "df",
+      "Chi-squared test for given probabilities",
+      "c(a = 4, b = 2, c = 3, d = 1, e = 6, f = 4)",
+      "x",
+      "y",
+      "correct",
+      "p",
+      "rescale.p",
+      "simulate.p.value",
+      "B",
+    ]);
+    await expect(
+      runtime.eval(`
+        x <- matrix(c(4, 5, 1, 2, 4, 4), ncol = 2,
+          dimnames = list(c("a", "b", "c"), c("u", "v")))
+        fit <- suppressWarnings(stats::chisq.test(x))
+        corrected <- stats::chisq.test(matrix(c(12, 5, 3, 10), 2))
+        c(
+          round(c(fit$statistic, fit$parameter, fit$p.value), 12), fit$method,
+          dim(fit$expected), unlist(dimnames(fit$expected)), round(fit$expected, 12),
+          round(c(corrected$statistic, corrected$parameter, corrected$p.value), 12),
+          corrected$method
+        )
+      `),
+    ).resolves.toEqual([
+      "2.577777777778",
+      "2",
+      "0.275576809499",
+      "Pearson's Chi-squared test",
+      "3",
+      "2",
+      "a",
+      "b",
+      "c",
+      "u",
+      "v",
+      "3",
+      "4.5",
+      "2.5",
+      "3",
+      "4.5",
+      "2.5",
+      "4.886877828054",
+      "1",
+      "0.027061581912",
+      "Pearson's Chi-squared test with Yates' continuity correction",
+    ]);
+    const warned = await runtime.evalDetailed("stats::chisq.test(c(1, 1, 1))");
+    expect(warned.warnings).toEqual([
+      {
+        code: "NRW1014",
+        message: "Chi-squared approximation may be incorrect",
+        call: "stats::chisq.test(c(1, 1, 1))",
+      },
+    ]);
+    await expect(
+      runtime.eval(`
+        set.seed(123)
+        gof <- stats::chisq.test(c(10, 20, 30), simulate.p.value = TRUE, B = 20)
+        gof.seed <- .Random.seed[2]
+        set.seed(123)
+        tab2 <- stats::chisq.test(matrix(c(12, 5, 7, 9), 2),
+          simulate.p.value = TRUE, B = 20)
+        tab2.seed <- .Random.seed[2]
+        set.seed(123)
+        tab23 <- stats::chisq.test(matrix(c(10, 3, 8, 4, 7, 9), 2),
+          simulate.p.value = TRUE, B = 20)
+        tab23.seed <- .Random.seed[2]
+        c(
+          round(gof$p.value, 12), is.na(gof$parameter), gof$method, gof.seed,
+          round(tab2$p.value, 12), is.na(tab2$parameter), tab2$method, tab2.seed,
+          round(tab23$p.value, 12), is.na(tab23$parameter), tab23$method, tab23.seed
+        )
+      `),
+    ).resolves.toEqual([
+      "0.047619047619",
+      "TRUE",
+      "Chi-squared test for given probabilities with simulated p-value\n\t (based on 20 replicates)",
+      "576",
+      "0.238095238095",
+      "TRUE",
+      "Pearson's Chi-squared test with simulated p-value\n\t (based on 20 replicates)",
+      "20",
+      "0.333333333333",
+      "TRUE",
+      "Pearson's Chi-squared test with simulated p-value\n\t (based on 20 replicates)",
+      "40",
+    ]);
     await runtime.dispose();
   });
 
@@ -19872,11 +38723,130 @@ NeedsCompilation: no
       code: "NRT3170",
     });
     await expect(
+      runtime.eval(`
+        x <- stats::rmultinom(3, 5, c(left = 0, center = 2, right = 0))
+        c(dim(x), rownames(x), as.vector(x), names(formals(stats::rmultinom)))
+      `),
+    ).resolves.toEqual([
+      "3",
+      "3",
+      "left",
+      "center",
+      "right",
+      "0",
+      "5",
+      "0",
+      "0",
+      "5",
+      "0",
+      "0",
+      "5",
+      "0",
+      "n",
+      "size",
+      "prob",
+    ]);
+    await expect(runtime.eval("stats::rmultinom(1, 2, c(0, 0))")).rejects.toMatchObject({
+      code: "NRT3172",
+    });
+    await expect(runtime.eval("stats::rmultinom(1, 2, c(-1, 2))")).rejects.toMatchObject({
+      code: "NRT3174",
+    });
+    await expect(
+      runtime.eval("dim(stats::rmultinom(c(8, 9), 0, c(a = 1, b = 3)))"),
+    ).resolves.toEqual([2, 8]);
+    await expect(
+      runtime.eval(
+        "c(base::mean.default(c(a=1,b=3)), base::mean.default(1:10, trim=.2), names(formals(base::mean.default)))",
+      ),
+    ).resolves.toEqual(["2", "5.5", "x", "trim", "na.rm", "..."]);
+    await expect(runtime.eval("c(min(3, NULL, 2), max(3, NULL, 2))")).resolves.toEqual([2, 3]);
+    await expect(
+      runtime.eval('mean.probe <- function(x, ...) 41\nmean(structure(1:3, class="probe"))'),
+    ).resolves.toBe(41);
+    await expect(
       runtime.eval("set.seed(2)\nsample(1:3, 5, replace = TRUE, prob = c(0, 0, 1))"),
     ).resolves.toEqual([3, 3, 3, 3, 3]);
     await expect(
       runtime.eval("set.seed(2)\nsort(sample(1:3, 2, prob = c(1, 0, 1)))"),
     ).resolves.toEqual([1, 3]);
+    await runtime.dispose();
+  });
+
+  it("builds reusable symbolic derivative expressions, closures, gradients, and Hessians", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        f <- stats::deriv(quote(x^2 + 3*x + 1), "x", c("x"))
+        value <- f(c(1, 2))
+        gradient <- attr(value, "gradient")
+        c(value, as.vector(gradient), dim(gradient), dimnames(gradient)[[2]],
+          names(formals(getS3method("deriv", "default"))))
+      `),
+    ).resolves.toEqual([
+      "5",
+      "11",
+      "5",
+      "7",
+      "2",
+      "1",
+      "x",
+      "expr",
+      "namevec",
+      "function.arg",
+      "tag",
+      "hessian",
+      "...",
+    ]);
+    await expect(
+      runtime.eval(`
+        expression <- stats::deriv(quote(dnorm((x - 1) / 2)), "x")
+        value <- eval(expression, list(x = c(1, 3)))
+        c(round(value, 12), round(as.vector(attr(value, "gradient")), 12))
+      `),
+    ).resolves.toEqual([0.398942280401, 0.241970724519, -0, -0.12098536226]);
+    await expect(
+      runtime.eval(`
+        f <- stats::deriv(quote(x*y + sin(x)), c("x", "y"), c("x", "y"), hessian=TRUE)
+        value <- f(1, 3)
+        c(round(value, 12), round(as.vector(attr(value, "gradient")), 12),
+          round(as.vector(attr(value, "hessian")), 12), dim(attr(value, "hessian")))
+      `),
+    ).resolves.toEqual([3.841470984808, 3.540302305868, 1, -0.841470984808, 1, 1, 0, 1, 2, 2]);
+    await expect(
+      runtime.eval(`
+        deriv.probe <- function(expr, marker = 1, ...) marker + unclass(expr)
+        stats::deriv(structure(3, class="probe"), marker=4)
+      `),
+    ).resolves.toBe(7);
+    await runtime.dispose();
+  });
+
+  it("captures and validates warning conditions through tools::assertWarning", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        observed <- withVisible(tools::assertWarning(warning("hello")))
+        condition <- observed$value[[1]]
+        c(length(observed$value), class(condition), conditionMessage(condition), observed$visible)
+      `),
+    ).resolves.toEqual(["1", "simpleWarning", "warning", "condition", "hello", "FALSE"]);
+    await expect(
+      runtime.eval(
+        'capture.output(tools::assertWarning(warning("hello"), verbose=TRUE), type="message")',
+      ),
+    ).resolves.toBe("Asserted warning: hello");
+    await expect(
+      runtime.eval("conditionMessage(tools::assertWarning(log(-1))[[1]])"),
+    ).resolves.toBe("NaNs produced.");
+    await expect(runtime.eval("tools::assertWarning(42)")).rejects.toMatchObject({
+      code: "NRE2302",
+      message: "Failed to get warning in evaluating 42",
+    });
+    await expect(runtime.eval('tools::assertWarning(stop("bad"))')).rejects.toMatchObject({
+      code: "NRE2303",
+      message: 'Got simpleError in evaluating stop("bad"); wanted warning',
+    });
     await runtime.dispose();
   });
 
@@ -19939,6 +38909,26 @@ NeedsCompilation: no
     ).resolves.toEqual(["left", "right"]);
     await expect(
       runtime.eval(`
+        namespace <- new.env(parent = baseenv())
+        evalq({
+          local_generic <- function(x, ...) UseMethod("local_generic")
+          local_generic.probe <- function(x, ...) "namespace-local"
+          invoke <- function(x) local_generic(x)
+        }, namespace)
+        object <- structure(1L, class = "probe")
+        caller <- local({
+          local_generic.probe <- function(x, ...) "caller-local"
+          function(generic, object) generic(object)
+        })
+        c(
+          namespace$invoke(object),
+          caller(namespace$local_generic, object),
+          inherits(try(namespace$local_generic(object), silent = TRUE), "try-error")
+        )
+      `),
+    ).resolves.toEqual(["namespace-local", "caller-local", "TRUE"]);
+    await expect(
+      runtime.eval(`
         registerS3method(
           "print", "dynamic_probe", function(x, ...) "base-registered", envir = baseenv()
         )
@@ -19964,6 +38954,52 @@ NeedsCompilation: no
     await runtime.dispose();
   });
 
+  it("preserves method visibility through UseMethod and NextMethod dispatch", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        direct <- function(x, ...) UseMethod("direct")
+        direct.hidden <- function(x, ...) invisible(11L)
+        chained <- function(x, ...) UseMethod("chained")
+        chained.first <- function(x, ...) NextMethod()
+        chained.second <- function(x, ...) invisible(22L)
+        direct.result <- withVisible(direct(structure(1L, class = "hidden")))
+        chained.result <- withVisible(chained(structure(1L, class = c("first", "second"))))
+        overridden <- withVisible({ chained(structure(1L, class = c("first", "second"))); 99L })
+        list(
+          direct.result$value, direct.result$visible,
+          chained.result$value, chained.result$visible,
+          overridden$value, overridden$visible
+        )
+      `),
+    ).resolves.toEqual([11, false, 22, false, 99, true]);
+    await runtime.dispose();
+  });
+
+  it("uses explicit UseMethod objects only for selection while preserving original arguments", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        explicit_route <- function(mapping, data, ...) UseMethod("explicit_route", data)
+        explicit_route.probe <- function(mapping, data, ...) {
+          list(mapping = mapping, data = unclass(data), extra = list(...)$extra)
+        }
+        explicit_zero <- function(...) {
+          object <- structure(5L, class = "probe")
+          UseMethod("explicit_zero", object)
+        }
+        explicit_zero.probe <- function(x, ...) missing(x)
+        list(
+          routed = explicit_route(
+            "keep", structure(7L, class = "probe"), extra = 9L
+          ),
+          zero_missing = explicit_zero()
+        )
+      `),
+    ).resolves.toEqual([["keep", 7, 9], true]);
+    await runtime.dispose();
+  });
+
   it("dispatches S3 methods and constructs the measured S4, R6, and vctrs subsets", async () => {
     const runtime = await session();
     await runtime.eval(`
@@ -19981,6 +39017,35 @@ NeedsCompilation: no
       NULL
     `);
     await expect(runtime.eval("chained(x)")).resolves.toBe(6);
+    await expect(
+      runtime.eval(`
+        zero_arg <- function(...) UseMethod("zero_arg")
+        zero_arg.NULL <- function(x, ...) missing(x)
+        fallback_arg <- function(...) UseMethod("fallback_arg")
+        fallback_arg.default <- function(...) length(list(...))
+        c(zero_arg(), fallback_arg())
+      `),
+    ).resolves.toEqual([1, 0]);
+    await runtime.eval(`
+      forwarded <- function(x, ...) UseMethod("forwarded")
+      forwarded.child <- function(x, ...) NextMethod("forwarded", x, marker = 7L)
+      forwarded.parent <- function(x, marker = 0L, ...) c(class(x)[[1L]], marker)
+      forwarded_value <- structure(1L, class = c("child", "parent"))
+    `);
+    await expect(runtime.eval("forwarded(forwarded_value)")).resolves.toEqual(["child", "7"]);
+    await expect(
+      runtime.eval(`
+        \`[.slice_probe\` <- function(x, i) NextMethod()
+        value <- structure(list(a = 1L, b = 2L), class = c("slice_probe", "list"))
+        assigned <- new.env()
+        do.call("<-", list(quote(answer), 7L), envir = assigned)
+        c(
+          unclass(value[1L])[[1L]], assigned$answer, do.call("{", list(1L, 2L)),
+          typeof(get("{", baseenv())), typeof(get("<-", baseenv())),
+          typeof(get("[", baseenv()))
+        )
+      `),
+    ).resolves.toEqual(["1", "7", "2", "special", "special", "special"]);
 
     await runtime.eval(`
       setClass("Person")
@@ -20008,14 +39073,60 @@ NeedsCompilation: no
     await expect(runtime.eval("S4_missing(1)")).rejects.toMatchObject({ code: "NRE2125" });
 
     await runtime.eval(
-      'Box <- R6Class("Box", public = list(value = 1))\nbox <- Box$new(value = 3)',
+      'Box <- R6::R6Class("Box", public = list(value = 1))\nbox <- Box$new(value = 3)',
     );
     await expect(runtime.eval("box$value")).resolves.toBe(3);
     await expect(runtime.eval('inherits(box, "Box")')).resolves.toBe(true);
-    await expect(runtime.eval('inherits(new_class("score"), "vctrs_class")')).resolves.toBe(true);
+    await expect(runtime.eval('inherits(vctrs::new_class("score"), "vctrs_class")')).resolves.toBe(
+      true,
+    );
     await expect(
-      runtime.eval('inherits(new_vctr(1:3, class = "score_vctr"), "score_vctr")'),
+      runtime.eval('inherits(vctrs::new_vctr(1:3, class = "score_vctr"), "score_vctr")'),
     ).resolves.toBe(true);
+    await runtime.dispose();
+  });
+
+  it("dispatches primitive extraction, replacement, and shape generics for classed environments", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        \`[[.boxedenv\` <- function(x, i, ...) get(paste0("slot", i), envir = x, inherits = FALSE)
+        \`[[<-.boxedenv\` <- function(x, i, ..., value) {
+          assign(paste0("slot", i), value, envir = x)
+          x
+        }
+        length.boxedenv <- function(x) 2L
+        names.boxedenv <- function(x) c("alpha", "beta")
+        \`names<-.boxedenv\` <- function(x, value) x
+        dim.boxedenv <- function(x) c(1L, 2L)
+        \`dim<-.boxedenv\` <- function(x, value) x
+        dimnames.boxedenv <- function(x) list("row", c("alpha", "beta"))
+        \`dimnames<-.boxedenv\` <- function(x, value) x
+        t.boxedenv <- function(x) "transposed"
+        e <- new.env()
+        assign("slot1", 1L, envir = e)
+        assign("slot2", 2L, envir = e)
+        class(e) <- "boxedenv"
+        e[[1L]] <- e[[1L]] + 10L
+        names(e) <- c("left", "right")
+        dim(e) <- c(2L, 1L)
+        dimnames(e) <- list(c("r1", "r2"), "c1")
+        c(e[[1L]], length(e), names(e), seq_along(e), dim(e), unlist(dimnames(e)), t(e))
+      `),
+    ).resolves.toEqual([
+      "11",
+      "2",
+      "alpha",
+      "beta",
+      "1",
+      "2",
+      "1",
+      "2",
+      "row",
+      "alpha",
+      "beta",
+      "transposed",
+    ]);
     await runtime.dispose();
   });
 
@@ -20026,9 +39137,32 @@ NeedsCompilation: no
     await expect(runtime.eval("mapply(function(x, y) x + y, 1:3, 10:12)")).resolves.toEqual([
       11, 13, 15,
     ]);
+    await expect(runtime.eval("mapply(function(x) x + 1L, 1:3, MoreArgs = NULL)")).resolves.toEqual(
+      [2, 3, 4],
+    );
+    await expect(runtime.eval("unlist(.mapply(rep, list(1:3, 3:1), list()))")).resolves.toEqual([
+      1, 1, 1, 2, 2, 3,
+    ]);
     await expect(runtime.eval("Map(function(x, y) x + y, 1:3, 10:12)")).resolves.toEqual([
       11, 13, 15,
     ]);
+    await expect(
+      runtime.eval(`
+        capture_map <- function(...) {
+          arguments <- match.call()[-1]
+          mapped <- mapply(identity, arguments, SIMPLIFY = FALSE)
+          c(
+            typeof(arguments), length(mapped),
+            identical(names(mapped), c("", "q")),
+            as.character(arguments)[[1]], mapped[[2]]
+          )
+        }
+        capture_map(z + 1, q = 3)
+      `),
+    ).resolves.toEqual(["language", "2", "TRUE", "z + 1", "3"]);
+    await expect(
+      runtime.eval("as.character(mapply(function(x) deparse(x), expression(a + 1, b + 2)))"),
+    ).resolves.toEqual(["a + 1", "b + 2"]);
     await expect(
       runtime.eval(`
         implicit <- mapply(identity, c("a", "b"), SIMPLIFY = FALSE)
@@ -20062,11 +39196,317 @@ NeedsCompilation: no
       runtime.eval("Reduce(function(x, y) x + y, 1:4, accumulate = TRUE)"),
     ).resolves.toEqual([1, 3, 6, 10]);
     await expect(runtime.eval("Filter(function(x) x > 2, 1:4)")).resolves.toEqual([3, 4]);
+    await expect(
+      runtime.eval(`
+        positive <- function(x, threshold = 0) x > threshold
+        nonpositive <- Negate(positive)
+        list(
+          nonpositive(c(-1, 0, 1)),
+          nonpositive(1, threshold = 2),
+          Negate("is.na")(c(NA, 1)),
+          names(formals(Negate)),
+          names(formals(nonpositive)),
+          identical(parent.env(environment(nonpositive)), baseenv()),
+          typeof(nonpositive)
+        )
+      `),
+    ).resolves.toEqual([[true, true, false], true, [false, true], "f", "...", false, "closure"]);
+    await expect(runtime.eval('Negate(stop("forced"))')).rejects.toThrow("forced");
     await expect(runtime.eval("apply(matrix(1:6, nrow = 2), 1, sum)")).resolves.toEqual([9, 12]);
+    await expect(
+      runtime.eval(`
+        integer.empty <- apply(matrix(1:4, 2), 2, function(z) which(is.na(z)))
+        promoted.empty <- apply(
+          matrix(1:4, 2),
+          2,
+          function(z) if (z[1] == 1) integer() else numeric()
+        )
+        null.empty <- apply(matrix(1:4, 2), 2, function(z) NULL)
+        c(
+          typeof(integer.empty), length(integer.empty),
+          typeof(promoted.empty), length(promoted.empty),
+          is.null(null.empty)
+        )
+      `),
+    ).resolves.toEqual(["integer", "0", "double", "0", "TRUE"]);
     await expect(runtime.eval('by(1:4, c("a", "a", "b", "b"), mean)')).resolves.toEqual([1.5, 3.5]);
     await expect(
       runtime.eval('aggregate(1:4, list(c("a", "a", "b", "b")), mean)$x'),
     ).resolves.toEqual([1.5, 3.5]);
+    await expect(
+      runtime.eval(`
+        out <- aggregate(CO2[, 4:5], CO2[1], function(x) mean(range(x)))
+        as.character(c(
+          dim(out), names(out), class(out$Plant), levels(out$Plant),
+          as.character(out$Plant), out$conc, round(out$uptake, 10)
+        ))
+      `),
+    ).resolves.toEqual([
+      "12",
+      "3",
+      "Plant",
+      "conc",
+      "uptake",
+      "ordered",
+      "factor",
+      "Qn1",
+      "Qn2",
+      "Qn3",
+      "Qc1",
+      "Qc3",
+      "Qc2",
+      "Mn3",
+      "Mn2",
+      "Mn1",
+      "Mc2",
+      "Mc3",
+      "Mc1",
+      "Qn1",
+      "Qn2",
+      "Qn3",
+      "Qc1",
+      "Qc3",
+      "Qc2",
+      "Mn3",
+      "Mn2",
+      "Mn1",
+      "Mc2",
+      "Mc3",
+      "Mc1",
+      ...Array.from({ length: 12 }, () => "547.5"),
+      "27.85",
+      "28.95",
+      "30.85",
+      "26.45",
+      "28.25",
+      "25.85",
+      "19.9",
+      "22.2",
+      "23.05",
+      "11.05",
+      "15.25",
+      "16.35",
+    ]);
+    await expect(
+      runtime.eval(`
+        x <- data.frame(a = c(1, 2, 3, 4, NA), b = c(10, 20, 30, 40, 50))
+        by <- data.frame(
+          g = factor(c("b", "a", "b", "a", NA), levels = c("b", "a", "c")),
+          h = c(2, 1, 2, 1, 1)
+        )
+        out <- aggregate(x, by, mean, na.rm = TRUE)
+        as.character(c(dim(out), names(out), levels(out$g), as.character(out$g), out$h, out$a, out$b))
+      `),
+    ).resolves.toEqual([
+      "2",
+      "4",
+      "g",
+      "h",
+      "a",
+      "b",
+      "b",
+      "a",
+      "c",
+      "a",
+      "b",
+      "1",
+      "2",
+      "3",
+      "2",
+      "30",
+      "20",
+    ]);
+    await expect(
+      runtime.eval(`
+        ordered <- aggregate(
+          data.frame(value = 1:5),
+          list(group = c("z", "a", "z", "b", "a")), sum
+        )
+        ranged <- aggregate(
+          data.frame(a = 1:4, b = 11:14),
+          list(g = c("b", "a", "b", "a")), range
+        )
+        as.character(c(
+          ordered$group, ordered$value,
+          dim(ranged), names(ranged), dim(ranged$a), as.vector(ranged$a),
+          dim(ranged$b), as.vector(ranged$b)
+        ))
+      `),
+    ).resolves.toEqual([
+      "a",
+      "b",
+      "z",
+      "7",
+      "4",
+      "4",
+      "2",
+      "3",
+      "g",
+      "a",
+      "b",
+      "2",
+      "2",
+      "2",
+      "1",
+      "4",
+      "3",
+      "2",
+      "2",
+      "12",
+      "11",
+      "14",
+      "13",
+    ]);
+    await expect(
+      runtime.eval(`
+        aggregate.probe <- function(x, by, FUN, ...) c("method", class(x), FUN(by))
+        aggregate(structure(1:2, class = "probe"), 3:4, sum)
+      `),
+    ).resolves.toEqual(["method", "probe", "7"]);
+    await runtime.dispose();
+  });
+
+  it("retains compound formula language for package-authored formula-to-function adapters", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        f <- x + value ~ { y <- x + value; if (y > 0) y else -y }
+        c(typeof(f), class(f), length(f), all.vars(f), deparse(f[[2]]))
+      `),
+    ).resolves.toEqual(["language", "formula", "3", "x", "value", "y", "x + value"]);
+    await expect(
+      runtime.eval(`
+        as.function.formula <- function(x) {
+          vars <- all.vars(x[[2]])
+          f <- function() NULL
+          formals(f) <- rep(alist(value = ), length(vars))
+          names(formals(f)) <- vars
+          body(f) <- x[[length(x)]]
+          environment(f) <- environment(x)
+          f
+        }
+        converted <- as.function.formula(x + value ~ {
+          total <- x + value
+          if (total > 0) total else -total
+        })
+        c(converted(2, 3), converted(-5, 2), names(formals(converted)))
+      `),
+    ).resolves.toEqual(["5", "3", "x", "value"]);
+    await runtime.dispose();
+  });
+
+  it("splits arbitrary arrays over ordered numeric, negative, and named margins", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- array(
+          1:24,
+          c(2, 3, 4),
+          dimnames = list(
+            row = c("r1", "r2"),
+            col = c("c1", "c2", "c3"),
+            plane = paste0("z", 1:4)
+          )
+        )
+        by_col <- asplit(x, "col")
+        reordered <- asplit(x, c(3, 1))
+        negative <- asplit(x, -2)
+        dropped <- asplit(x, 2, drop = TRUE)
+        zero <- asplit(
+          array(integer(), c(0, 2), dimnames = list(character(), c("a", "b"))),
+          2
+        )
+        listed <- asplit(
+          array(list(1L, "a", NULL, TRUE), c(2, 2),
+                dimnames = list(r = c("r1", "r2"), c = c("c1", "c2"))),
+          2
+        )
+        list(
+          by_col[[2]], dim(by_col[[2]]), unlist(dimnames(by_col[[2]])),
+          dim(by_col), unlist(dimnames(by_col)), names(dimnames(by_col)),
+          reordered[[2]], dim(reordered), names(dimnames(reordered)),
+          negative[[1]], dim(negative),
+          is.null(dim(dropped[[1]])), is.null(attributes(dropped[[1]])),
+          dim(zero), dim(zero[[1]]), length(zero[[1]]),
+          listed[[1]][[1]], listed[[1]][[2]], dim(listed[[1]]),
+          names(formals(asplit))
+        )
+      `),
+    ).resolves.toEqual([
+      [3, 4, 9, 10, 15, 16, 21, 22],
+      [2, 4],
+      ["r1", "r2", "z1", "z2", "z3", "z4"],
+      3,
+      ["c1", "c2", "c3"],
+      "col",
+      [7, 9, 11],
+      [4, 2],
+      ["plane", "row"],
+      [1, 3, 5],
+      [2, 4],
+      true,
+      true,
+      2,
+      0,
+      0,
+      1,
+      "a",
+      2,
+      ["x", "MARGIN", "drop"],
+    ]);
+    await expect(runtime.eval("asplit(1:3, 1)")).rejects.toMatchObject({ code: "NRT3467" });
+    await expect(runtime.eval("asplit(array(1:4, c(2, 2)), c(1, 2))")).rejects.toMatchObject({
+      code: "NRT3467",
+    });
+    await expect(runtime.eval("asplit(array(1:4, c(2, 2)), 'row')")).rejects.toMatchObject({
+      code: "NRT3467",
+    });
+    await runtime.dispose();
+  });
+
+  it("coerces storage modes while preserving ordinary attributes", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        x <- structure(c("1", "2"), names = c("a", "b"), marker = "kept")
+        storage.mode(x) <- "integer"
+        y <- structure(list(1L, "2"), names = c("left", "right"), marker = "list")
+        storage.mode(y) <- "double"
+        z <- structure(c("a", "b"), names = c("first", "second"), marker = "cells")
+        storage.mode(z) <- "list"
+        list(
+          x, storage.mode(x), names(x), attr(x, "marker"),
+          y, storage.mode(y), names(y), attr(y, "marker"),
+          unlist(z), storage.mode(z), names(z), attr(z, "marker"),
+          storage.mode(NULL), storage.mode(function() NULL), storage.mode(quote(x + 1))
+        )
+      `),
+    ).resolves.toEqual([
+      [1, 2],
+      "integer",
+      ["a", "b"],
+      "kept",
+      [1, 2],
+      "double",
+      ["left", "right"],
+      "list",
+      ["a", "b"],
+      "list",
+      ["first", "second"],
+      "cells",
+      "NULL",
+      "function",
+      "language",
+    ]);
+    await expect(
+      runtime.evalDetailed('x <- c("1", "bad"); storage.mode(x) <- "integer"; x'),
+    ).resolves.toMatchObject({
+      value: [1, NA],
+      warnings: [{ code: "NRW1006", message: "NAs introduced by coercion" }],
+    });
+    await expect(runtime.eval('x <- 1; storage.mode(x) <- "single"')).rejects.toMatchObject({
+      code: "NRE2258",
+    });
     await runtime.dispose();
   });
 
@@ -20151,15 +39591,69 @@ NeedsCompilation: no
   it("parses explicit UTC date-time formats with strptime", async () => {
     const runtime = await session();
     await expect(
-      runtime.eval('strptime("1970/01/02 12:30:00", "%Y/%m/%d %H:%M:%S", tz = "UTC")'),
+      runtime.eval(
+        'as.numeric(as.POSIXct(strptime("1970/01/02 12:30:00", "%Y/%m/%d %H:%M:%S", tz = "UTC")))',
+      ),
     ).resolves.toBe(131_400);
-    await expect(runtime.eval('strptime(c("1970-01-01", "bad"), "%Y-%m-%d")')).resolves.toEqual([
-      0,
-      NA,
-    ]);
+    await expect(
+      runtime.eval('as.numeric(as.POSIXct(strptime(c("1970-01-01", "bad"), "%Y-%m-%d")))'),
+    ).resolves.toEqual([0, NA]);
+    await expect(
+      runtime.eval(`
+        format(
+          strptime(
+            c("02-Jan-2024", "03-september-2024", "04-SEP-2024", "bad"),
+            c("%d-%b-%Y", "%d-%B-%Y"),
+            tz = "UTC"
+          ),
+          tz = "UTC"
+        )
+      `),
+    ).resolves.toEqual(["2024-01-02", "2024-09-03", "2024-09-04", NA]);
+    await expect(
+      runtime.eval(`
+        format(
+          strptime(
+            c("2024-001", "2024-060", "2023-365", "2023-366", "2024-366", "2024-367"),
+            "%Y-%j", tz = "UTC"
+          ),
+          tz = "UTC"
+        )
+      `),
+    ).resolves.toEqual(["2024-01-01", "2024-02-29", "2023-12-31", NA, "2024-12-31", NA]);
     await expect(
       runtime.eval('strptime("2024-01-01", "%Y-%m-%d", tz = "America/New_York")'),
     ).rejects.toMatchObject({ code: "NRU6120" });
+    await runtime.dispose();
+  });
+
+  it("generates POSIXt sequences with fixed and calendar steps", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        origin <- as.POSIXct("2024-01-01 00:00:00", tz = "UTC")
+        c(
+          as.numeric(seq(origin, length.out = 3, by = "hour")),
+          format(seq(origin, length.out = 3, by = "month"), tz = "UTC"),
+          class(seq(origin, length.out = 2, by = "sec")),
+          attr(seq(origin, length.out = 2, by = "sec"), "tzone"),
+          typeof(seq(origin, length.out = 2, by = "sec")),
+          typeof(seq(as.POSIXct("2040-01-01", tz = "UTC"), length.out = 2, by = "sec"))
+        )
+      `),
+    ).resolves.toEqual([
+      "1704067200",
+      "1704070800",
+      "1704074400",
+      "2024-01-01",
+      "2024-02-01",
+      "2024-03-01",
+      "POSIXct",
+      "POSIXt",
+      "UTC",
+      "integer",
+      "double",
+    ]);
     await runtime.dispose();
   });
 
@@ -20237,6 +39731,13 @@ NeedsCompilation: no
     await expect(
       runtime.eval('strftime(c(-Inf, Inf, NaN, NA_real_), "%F", tz = "UTC")'),
     ).resolves.toEqual(["-Inf", "Inf", "NaN", NA]);
+    await expect(
+      runtime.eval(`
+        recycled <- as.POSIXlt(c("2001-01-15", "2001-02-20", "2001-03-25"), tz = "UTC")
+        recycled$mday <- 1L
+        format(recycled)
+      `),
+    ).resolves.toEqual(["2001-01-01", "2001-02-01", "2001-03-01"]);
     await runtime.eval(`
       as.POSIXlt.stamp <- function(x, tz, ...) as.POSIXlt(unclass(x), tz = tz)
       stamp <- structure(0, class = "stamp")
@@ -20263,13 +39764,68 @@ NeedsCompilation: no
 
   it("constructs strict tibble and formula-header tribble subsets", async () => {
     const runtime = await session();
-    await runtime.eval('tbl <- tibble(x = 1:2, label = c("a", "b"))');
+    await runtime.eval('tbl <- tibble::tibble(x = 1:2, label = c("a", "b"))');
     await expect(runtime.eval("class(tbl)")).resolves.toEqual(["tbl_df", "tbl", "data.frame"]);
     await expect(runtime.eval("tbl$x")).resolves.toEqual([1, 2]);
-    await runtime.eval('rows <- tribble(~x, ~label, 1, "a", 2, "b")');
+    await runtime.eval('rows <- tibble::tribble(~x, ~label, 1, "a", 2, "b")');
     await expect(runtime.eval("names(rows)")).resolves.toEqual(["x", "label"]);
     await expect(runtime.eval("rows$x")).resolves.toEqual([1, 2]);
     await expect(runtime.eval("rows$label")).resolves.toEqual(["a", "b"]);
+    await runtime.dispose();
+  });
+
+  it("converts reusable vector, matrix, list, and data-frame inputs through tibble as_tibble", async () => {
+    const runtime = await session();
+    await runtime.eval(`
+      source <- structure(
+        data.frame(a = 1:2, b = c("x", "y"), row.names = c("r1", "r2")),
+        tag = "kept"
+      )
+      converted <- tibble::as_tibble(source)
+      with_rows <- tibble::as_tibble(source, rownames = "id")
+      vector <- tibble::as_tibble(setNames(1:3, letters[1:3]))
+      matrix_value <- tibble::as_tibble(matrix(1:4, 2, dimnames = list(NULL, c("a", "b"))))
+      repaired <- tibble::as_tibble(
+        structure(list(1, 2, 3), names = c("", "x", "x")),
+        .name_repair = "unique"
+      )
+      as_tibble.custom_tibble_source <- function(x, ...) "dispatched"
+      custom <- tibble::as_tibble(structure(list(value = 1), class = "custom_tibble_source"))
+    `);
+    await expect(runtime.eval("class(converted)")).resolves.toEqual([
+      "tbl_df",
+      "tbl",
+      "data.frame",
+    ]);
+    await expect(
+      runtime.eval("c(names(converted), row.names(converted), attr(converted, 'tag'))"),
+    ).resolves.toEqual(["a", "b", "1", "2", "kept"]);
+    await expect(
+      runtime.eval("c(names(with_rows), with_rows$id, row.names(with_rows))"),
+    ).resolves.toEqual(["id", "a", "b", "r1", "r2", "1", "2"]);
+    await expect(runtime.eval("c(names(vector), vector$value)")).resolves.toEqual([
+      "value",
+      "1",
+      "2",
+      "3",
+    ]);
+    await expect(runtime.eval("c(names(matrix_value), unlist(matrix_value))")).resolves.toEqual([
+      "a",
+      "b",
+      "1",
+      "2",
+      "3",
+      "4",
+    ]);
+    await expect(runtime.eval("names(repaired)")).resolves.toEqual(["...1", "x...2", "x...3"]);
+    await expect(runtime.eval("custom")).resolves.toBe("dispatched");
+    await expect(runtime.eval("names(formals(tibble::as_tibble))")).resolves.toEqual([
+      "x",
+      "...",
+      ".rows",
+      ".name_repair",
+      "rownames",
+    ]);
     await runtime.dispose();
   });
 
@@ -20334,6 +39890,31 @@ NeedsCompilation: no
       ),
     ).resolves.toEqual([11, 11, 0, 1]);
     await expect(
+      runtime.eval(`
+        outer <- function() {
+          x <- 7L
+          maker <- function() eval.parent(substitute(function() x))
+          made <- maker()
+          c(typeof(made), made())
+        }
+        outer()
+      `),
+    ).resolves.toEqual(["closure", "7"]);
+    await expect(
+      runtime.eval(`
+        top <- function() {
+          x <- 9L
+          middle <- function() {
+            x <- 5L
+            inner <- function() eval.parent(quote(x), n = 2L)
+            inner()
+          }
+          middle()
+        }
+        top()
+      `),
+    ).resolves.toBe(9);
+    await expect(
       runtime.eval(
         "y <- 10\nenclos <- list2env(list(y = 3), parent = baseenv())\nc(evalq(x + y, list(x = 2)), evalq(x + y, pairlist(x = 2), enclos), evalq(x + y, data.frame(x = 1:2), enclos), eval(quote(x + y), list(x = 2), enclos))",
       ),
@@ -20357,7 +39938,7 @@ NeedsCompilation: no
       runtime.eval(
         "inner <- function(x) c(deparse1(sys.call()), deparse1(sys.call(-1)), deparse1(sys.call(1)), deparse1(sys.call(2)), is.null(sys.call(-2)))\nouter <- function() inner(1 + 2)\nouter()",
       ),
-    ).resolves.toEqual(["inner((1 + 2))", "outer()", "outer()", "inner((1 + 2))", "TRUE"]);
+    ).resolves.toEqual(["inner(1 + 2)", "outer()", "outer()", "inner(1 + 2)", "TRUE"]);
     await expect(runtime.eval("is.null(sys.call())")).resolves.toBe(true);
     await expect(
       runtime.eval(
@@ -20417,6 +39998,31 @@ NeedsCompilation: no
       __nativr__: "symbol",
       name: "alpha",
     });
+    await expect(
+      runtime.eval(`
+        c(
+          typeof(as.name(quote(alpha))),
+          identical(as.name(quote(alpha)), quote(alpha)),
+          as.character(as.name(c("first", "second"))),
+          as.character(as.name(42L)),
+          as.character(as.name(TRUE)),
+          as.character(as.name(NA_character_)),
+          as.character(as.name(1 + 2i)),
+          as.character(as.name(as.raw(10))),
+          as.character(as.name(factor("alpha"))),
+          identical(as.symbol(quote(beta)), quote(beta))
+        )
+      `),
+    ).resolves.toEqual(["symbol", "TRUE", "first", "42", "TRUE", "NA", "1+2i", "0a", "1", "TRUE"]);
+    await expect(runtime.eval("as.name(quote(f(x)))")).rejects.toMatchObject({
+      code: "NRT3207",
+    });
+    await expect(runtime.eval('as.name(list("alpha"))')).rejects.toMatchObject({
+      code: "NRT3207",
+    });
+    await expect(runtime.eval("as.name(character())")).rejects.toMatchObject({
+      code: "NRT3207",
+    });
     await expect(runtime.eval("as.expression(NULL)")).resolves.toEqual({
       __nativr__: "expression",
       sources: [],
@@ -20429,6 +40035,50 @@ NeedsCompilation: no
       __nativr__: "expression",
       sources: ["x"],
     });
+    await expect(
+      runtime.eval(`
+        e <- expression(a, b)
+        names(e) <- c("one", "two")
+        attr(e, "marker") <- "kept"
+        e[[1]] <- quote(x + y)
+        c(
+          typeof(e), deparse(e), names(e), attr(e, "marker"),
+          identical(\`[[<-\`(expression(a, b), 1L, quote(x + y)), expression(x + y, b))
+        )
+      `),
+    ).resolves.toEqual(["expression", "expression(x + y, b)", "one", "two", "kept", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        extended <- expression(a, b)
+        extended[[4]] <- quote(z)
+        removed <- expression(a, b, c)
+        removed[[2]] <- NULL
+        selected <- expression(a, b, c)
+        selected[c(1, 3)] <- expression(x, y)
+        nested <- expression(a, b)
+        nested[[1]] <- expression(x, y)
+        c(
+          deparse(extended), deparse(removed), deparse(selected), deparse(nested)
+        )
+      `),
+    ).resolves.toEqual([
+      "expression(a, b, NULL, z)",
+      "expression(a, c)",
+      "expression(x, b, y)",
+      "expression(expression(x, y), b)",
+    ]);
+    const expressionRecycling = await runtime.evalDetailed(`
+      e <- expression(a, b)
+      e[1] <- quote(x + y)
+      deparse(e)
+    `);
+    expect(expressionRecycling.value).toBe("expression(`+`, b)");
+    expect(expressionRecycling.warnings).toMatchObject([{ code: "NRW1001" }]);
+    await expect(
+      runtime.eval(
+        'combined <- c("0", expression(pi/2), expression(pi), expression(3*pi/2), expression(2*pi))\nc(typeof(combined), length(combined), identical(combined, expression("0", pi/2, pi, 3*pi/2, 2*pi)))',
+      ),
+    ).resolves.toEqual(["expression", "5", "TRUE"]);
     await expect(runtime.eval("as.expression(quote(x))")).resolves.toEqual({
       __nativr__: "expression",
       sources: ["x"],
@@ -20439,22 +40089,45 @@ NeedsCompilation: no
     await expect(runtime.eval("eval(call(quote(sum), 1:3))")).resolves.toBe(6);
     await expect(runtime.eval('eval(as.call(list(as.name("sum"), 1, 2)))')).resolves.toBe(3);
     await expect(runtime.eval("eval(as.call(expression(sum, 1, 2)))")).resolves.toBe(3);
-    await expect(runtime.eval('eval(as.call(expression("sum", 1, 2)))')).resolves.toBe(3);
+    await expect(runtime.eval('typeof(as.call(expression("sum", 1, 2))[[1]])')).resolves.toBe(
+      "character",
+    );
     await expect(runtime.eval('eval(call("+", 1, 2))')).resolves.toBe(3);
+    await expect(
+      runtime.eval(`f <- eval(call("function", as.pairlist(alist(x = )), quote(x))); f(7)`),
+    ).resolves.toBe(7);
+    await expect(
+      runtime.eval(
+        `f <- eval(call("function", as.pairlist(alist()), quote(1L))); c(is.function(f), f())`,
+      ),
+    ).resolves.toEqual([1, 1]);
     await expect(runtime.eval('eval(call("-", 4))')).resolves.toBe(-4);
     await expect(runtime.eval('eval(call(":", 1, 3))')).resolves.toEqual([1, 2, 3]);
     await expect(runtime.eval('eval(call("%in%", c(1, 3), 1:2))')).resolves.toEqual([true, false]);
+    await expect(runtime.eval("as.character(quote(f(g(x)))[[c(2, 1)]])")).resolves.toBe("g");
     await expect(runtime.eval('eval(as.call(list(as.name("+"), 1, 2)))')).resolves.toBe(3);
     await expect(runtime.eval("typeof(`+`)")).resolves.toBe("builtin");
     await expect(runtime.eval('deparse(call("f", 1, x = 2))')).resolves.toBe("f(1, x = 2)");
     await expect(runtime.eval("deparse(expression(x, 1 + y))")).resolves.toBe(
-      "expression(x, (1 + y))",
+      "expression(x, 1 + y)",
     );
     await expect(runtime.eval("deparse(quote(x))")).resolves.toBe("x");
+    await expect(
+      runtime.eval('deparse(as.call(list(as.name("%\\b%"), 1, "# inline")))'),
+    ).resolves.toBe('1 %\b% "# inline"');
     await expect(runtime.eval("deparse(1:2)")).resolves.toBe("c(1L, 2L)");
     await expect(runtime.eval("deparse(list(a = 1))")).resolves.toBe("list(a = 1)");
-    await expect(runtime.eval("deparse(1 + 2i)")).resolves.toBe("(1 + 2i)");
+    await expect(runtime.eval("deparse(1 + 2i)")).resolves.toBe("1 + 2i");
     await expect(runtime.eval("deparse(as.raw(1))")).resolves.toBe("as.raw(1L)");
+    await expect(
+      runtime.eval(`
+        vapply(
+          expression(E / F, E * F, E + F, E - F, E ^ F, E %% F, E %/% F, E:F),
+          deparse1,
+          character(1)
+        )
+      `),
+    ).resolves.toEqual(["E/F", "E * F", "E + F", "E - F", "E^F", "E%%F", "E%/%F", "E:F"]);
     await expect(runtime.eval('deparse(call("identity", list(a = 1)))')).resolves.toBe(
       "identity(list(a = 1))",
     );
@@ -20469,9 +40142,40 @@ NeedsCompilation: no
       __nativr__: "language",
       source: "1(2)",
     });
-    await expect(runtime.eval("deparse(function(x) x)")).rejects.toMatchObject({
-      code: "NRT3209",
-    });
+    await expect(runtime.eval("deparse(function(x) x)")).resolves.toEqual(["function (x) ", "x"]);
+    await expect(runtime.eval("deparse(quote(function(x) x))")).resolves.toBe("function(x) x");
+    await expect(runtime.eval("deparse(quote({ y <- x + 1; y * 2 }))")).resolves.toEqual([
+      "{",
+      "    y <- x + 1",
+      "    y * 2",
+      "}",
+    ]);
+    await expect(
+      runtime.eval(
+        "deparse(quote(c(aaaaa = 1, bbbbb = 2, ccccc = 3, ddddd = 4)), width.cutoff = 20)",
+      ),
+    ).resolves.toEqual(["c(aaaaa = 1, bbbbb = 2, ", "    ccccc = 3, ddddd = 4)"]);
+    await expect(
+      runtime.eval(
+        "deparse(quote(c(aaaaa = 1, bbbbb = 2, ccccc = 3, ddddd = 4)), width.cutoff = 40)",
+      ),
+    ).resolves.toBe("c(aaaaa = 1, bbbbb = 2, ccccc = 3, ddddd = 4)");
+    await expect(
+      runtime.eval("deparse(quote(y ~ x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8), width.cutoff = 20)"),
+    ).resolves.toEqual(["y ~ x1 + x2 + x3 + x4 + ", "    x5 + x6 + x7 + x8"]);
+    await expect(
+      runtime.eval(
+        "deparse(quote(model(y ~ x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, data = data.frame(y = 1, x1 = 2, x2 = 3))), width.cutoff = 20)",
+      ),
+    ).resolves.toEqual([
+      "model(y ~ x1 + x2 + x3 + ",
+      "    x4 + x5 + x6 + x7 + ",
+      "    x8, data = data.frame(y = 1, ",
+      "    x1 = 2, x2 = 3))",
+    ]);
+    await expect(
+      runtime.eval("deparse(quote(return(marker, a + b + c, end1, end2)))"),
+    ).resolves.toBe("return(marker, a + b + c, end1, end2)");
     await expect(runtime.eval('as.name("")')).rejects.toMatchObject({ code: "NRT3207" });
     await runtime.dispose();
   });
@@ -20486,6 +40190,10 @@ NeedsCompilation: no
     await expect(runtime.eval('parse(text = c("1 +", "2"))')).resolves.toEqual({
       __nativr__: "expression",
       sources: ["(1 + 2)"],
+    });
+    await expect(runtime.eval('parse(text = list("1", "2"))')).resolves.toEqual({
+      __nativr__: "expression",
+      sources: ["1", "2"],
     });
     await expect(runtime.eval('parse(text = "1; x +", n = 1)')).resolves.toEqual({
       __nativr__: "expression",
@@ -20504,12 +40212,97 @@ NeedsCompilation: no
       sources: ["1"],
     });
     await expect(runtime.eval('parse(text = "1 +")')).rejects.toMatchObject({ code: "NRP1002" });
-    await expect(runtime.eval('parse(file = "script.R")')).rejects.toMatchObject({
-      code: "NRU6133",
+    await expect(
+      runtime.eval(`
+        path <- tempfile(fileext = ".R")
+        writeLines(c("x <- 3L", "x + 4L"), path)
+        from.path <- eval(parse(file = path))
+        con <- file(path)
+        from.closed <- eval(parse(file = con))
+        c(from.path, from.closed, isOpen(con), unlink(path))
+      `),
+    ).resolves.toEqual([7, 7, 0, 0]);
+    await expect(
+      runtime.eval(`
+        con <- textConnection(c("1L + 2L", "3L + 4L"), open = "r")
+        parsed <- parse(file = con)
+        position <- seek(con)
+        repositioned <- inherits(try(seek(con, 1), silent = TRUE), "try-error")
+        close(con)
+        c(length(parsed), eval(parsed), position, repositioned)
+      `),
+    ).resolves.toEqual([2, 7, 0, 1]);
+    await expect(runtime.eval('parse(text = "1", keep.source = TRUE)')).resolves.toEqual({
+      __nativr__: "expression",
+      sources: ["1"],
     });
-    await expect(runtime.eval('parse(text = "1", keep.source = TRUE)')).rejects.toMatchObject({
-      code: "NRU6134",
-    });
+    await expect(
+      runtime.eval(`
+        options(keep.source = TRUE, keep.parse.data = TRUE)
+        parsed <- parse(text = "describe(fn, idx, raw=FALSE) %when% { raw } %:=% { class(fn) <- NULL; print(fn) }")
+        data <- utils::getParseData(parsed)
+        dots <- utils::getParseData(parse(text = "function(...) list(...)"))
+        c(
+          class(data),
+          ncol(data),
+          nrow(data) > 0,
+          nrow(data) == length(data$token),
+          identical(unique(data$token[!data$terminal]), "expr"),
+          dots$token[dots$text == "..."]
+        )
+      `),
+    ).resolves.toEqual(["data.frame", "9", "TRUE", "TRUE", "TRUE", "SYMBOL_FORMALS", "SYMBOL"]);
+    await expect(runtime.eval("apply(array(c(3, 5, 7)), 1, identity)")).resolves.toEqual([3, 5, 7]);
+    await expect(
+      runtime.eval("apply(array(c(3, 5, 7)), 1, function(z) c(length(z), z))"),
+    ).resolves.toEqual([1, 3, 1, 5, 1, 7]);
+    await expect(
+      runtime.eval("dim(apply(array(c(3, 5, 7)), 1, function(z) c(length(z), z)))"),
+    ).resolves.toEqual([2, 3]);
+    await expect(
+      runtime.eval("c(is.null(rownames(NULL)), is.null(colnames(NULL)), is.null(dimnames(NULL)))"),
+    ).resolves.toEqual([true, true, true]);
+    await expect(
+      runtime.eval(`
+        x <- list(1L, 2L, 3L)
+        names(x)[c(1L, 3L)] <- c("a", "c")
+        x[1L] <- list(4L)
+        named <- list(1L, 2L)
+        names(named) <- c("a", NA_character_)
+        e <- list2env(named)
+        c(is.na(names(x)[2L]), sort(ls(e, all.names = TRUE)), get("NA", envir = e))
+      `),
+    ).resolves.toEqual(["TRUE", "NA", "a", "2"]);
+    await expect(
+      runtime.eval(`
+        target <- new.env()
+        capture_eval_frames <- function() {
+          calls <- sys.calls()
+          frames <- sys.frames()
+          is_eval <- vapply(calls, function(call) identical(call[[1L]], quote(eval)), logical(1L))
+          selected <- frames[is_eval]
+          c(
+            sum(is_eval) >= 2L,
+            any(vapply(selected, function(frame) {
+              exists("envir", envir = frame, inherits = FALSE) &&
+                identical(get("envir", envir = frame), target)
+            }, logical(1L))),
+            identical(selected[[length(selected)]], target)
+          )
+        }
+        eval(quote(capture_eval_frames()), target)
+      `),
+    ).resolves.toEqual([true, true, true]);
+    await expect(
+      runtime.eval(`
+        complete <- data.frame(x = 1:3, y = 2:4)
+        incomplete <- data.frame(x = c(1, NA, 3), y = 2:4)
+        list(
+          signif(unname(coef(lm(y ~ x, data = complete, na.action = na.fail))), 12),
+          tryCatch(lm(y ~ x, data = incomplete, na.action = na.fail), error = conditionMessage)
+        )
+      `),
+    ).resolves.toEqual([[1, 1], "missing values in object"]);
     await runtime.dispose();
   });
 
@@ -20597,6 +40390,32 @@ NeedsCompilation: no
       "x",
     ]);
     await expect(
+      runtime.eval(`
+        e <- errorCondition("boom", code = 42L, class = c("testError", "secondary"), call = quote(f(1)))
+        caught <- tryCatch(stop(e), testError = function(condition) condition$code)
+        c(names(e), class(e), conditionMessage(e), deparse(e$call), caught,
+          names(formals(errorCondition)), identical(formals(errorCondition)$class, NULL),
+          identical(formals(errorCondition)$call, NULL))
+      `),
+    ).resolves.toEqual([
+      "message",
+      "call",
+      "code",
+      "testError",
+      "secondary",
+      "error",
+      "condition",
+      "boom",
+      "f(1)",
+      "42",
+      "message",
+      "...",
+      "class",
+      "call",
+      "TRUE",
+      "TRUE",
+    ]);
+    await expect(
       runtime.eval(
         'w <- suppressWarnings(warningCondition("warning", class = "testWarning"), "testWarning"); c(class(w), conditionMessage(w))',
       ),
@@ -20610,6 +40429,43 @@ NeedsCompilation: no
     ).rejects.toMatchObject({
       code: "NRU6151",
     });
+    await expect(
+      runtime.eval(
+        'tryCatch(warning("caught", call. = FALSE), warning = function(w) conditionMessage(w))',
+      ),
+    ).resolves.toBe("caught");
+    await expect(
+      runtime.eval(`
+        trace <- character()
+        value <- withCallingHandlers(
+          tryCatch(
+            warning("inner", call. = FALSE),
+            warning = function(w) paste0("caught:", conditionMessage(w))
+          ),
+          warning = function(w) {
+            trace <<- c(trace, "outer")
+            invokeRestart("muffleWarning")
+          }
+        )
+        c(value, length(trace))
+      `),
+    ).resolves.toEqual(["caught:inner", "0"]);
+    await expect(
+      runtime.eval(`
+        trace <- character()
+        value <- tryCatch(
+          withCallingHandlers(
+            warning("inner", call. = FALSE),
+            warning = function(w) {
+              trace <<- c(trace, "inner")
+              invokeRestart("muffleWarning")
+            }
+          ),
+          warning = function(w) paste0("caught:", conditionMessage(w))
+        )
+        c(value, length(trace), trace)
+      `),
+    ).resolves.toEqual(["inner", "1", "inner"]);
     await runtime.dispose();
   });
 
@@ -20637,7 +40493,7 @@ NeedsCompilation: no
 
   it("substitutes promises, list bindings, and ellipsis without forcing source expressions", async () => {
     const runtime = await session();
-    await expect(runtime.eval("x <- 100\nsubstitute(x)")).resolves.toBe(100);
+    await expect(runtime.eval("x <- 100\nis.symbol(substitute(x))")).resolves.toBe(true);
     await expect(runtime.eval("eval(substitute(x + y, list(x = 1, y = 2)))")).resolves.toBe(3);
     await expect(runtime.eval("x <- 10\neval(substitute(x + y, list(y = 1:2)))")).resolves.toEqual([
       11, 12,
@@ -20728,12 +40584,12 @@ NeedsCompilation: no
       runtime.eval(
         "f <- function(alpha, beta = 2, ...) deparse(match.call())\nf(al = 1 + 2, z = 4)",
       ),
-    ).resolves.toBe("f(alpha = (1 + 2), z = 4)");
+    ).resolves.toBe("f(alpha = 1 + 2, z = 4)");
     await expect(
       runtime.eval(
         "f <- function(alpha, beta = 2, ...) deparse(match.call(expand.dots = FALSE))\nf(al = 1 + 2, z = 4)",
       ),
-    ).resolves.toBe("f(alpha = (1 + 2), ... = pairlist(z = 4))");
+    ).resolves.toBe("f(alpha = 1 + 2, ... = pairlist(z = 4))");
     await expect(
       runtime.eval(
         "f <- function(alpha, beta = 2, ...) c(length(as.list(match.call())), names(as.list(match.call())))\nf(al = 1, z = 2)",
@@ -20747,6 +40603,11 @@ NeedsCompilation: no
     await expect(
       runtime.eval("f <- function(x, y = 3) names(as.list(match.call()))\nf(y = 2, x = 1)"),
     ).resolves.toEqual(["", "x", "y"]);
+    await expect(
+      runtime.eval(
+        "f <- function(alpha, beta = 2, ...) names(as.list(match.call()))\ndo.call(f, list(alpha = 1, z = 4))",
+      ),
+    ).resolves.toEqual(["", "alpha", "z"]);
     await expect(runtime.eval('names(as.list(call("f", 1, x = 2)))')).resolves.toEqual([
       "",
       "",
@@ -20760,7 +40621,73 @@ NeedsCompilation: no
     await expect(runtime.eval("match.call()")).rejects.toMatchObject({ code: "NRE2217" });
     await expect(
       runtime.eval("f <- function(x) match.call(definition = x)\nf(1)"),
-    ).rejects.toMatchObject({ code: "NRU6131" });
+    ).rejects.toMatchObject({ code: "NRT3214" });
+    await expect(
+      runtime.eval(`
+        definition <- function(alpha, beta = 2, ...) NULL
+        wrapper <- function(...) deparse(match.call(definition = definition))
+        wrapper(al = 1 + 2, z = 4)
+      `),
+    ).resolves.toBe("wrapper(alpha = 1 + 2, z = 4)");
+    await expect(
+      runtime.eval(`
+        definition <- function(alpha, beta = 2, ...) NULL
+        deparse(match.call(
+          definition = definition,
+          call = quote(g(z = 4, al = 1 + 2)),
+          expand.dots = FALSE,
+          envir = globalenv()
+        ))
+      `),
+    ).resolves.toBe("g(alpha = 1 + 2, ... = pairlist(z = 4))");
+    await runtime.dispose();
+  });
+
+  it("preserves reflective syntax, continuation, and zero-argument language contracts", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        probe <- function(a, b = 2, ..., z) {
+          entries <- as.list(formals())
+          vapply(seq_along(entries), function(i) {
+            entry <- entries[[i]]
+            missing(entry)
+          }, logical(1))
+        }
+        probe()
+      `),
+    ).resolves.toEqual([true, false, true, true]);
+    await expect(
+      runtime.eval(`
+        syntax <- get("if", baseenv())
+        c(typeof(syntax), is.primitive(syntax), is.null(formals(syntax)))
+      `),
+    ).resolves.toEqual(["special", "TRUE", "TRUE"]);
+    await expect(runtime.eval("callCC(function(exit) 1 + exit(42))")).resolves.toBe(42);
+    await expect(
+      runtime.eval(`
+        saved <- NULL
+        callCC(function(exit) { saved <<- exit; 1 })
+        saved(2)
+      `),
+    ).rejects.toMatchObject({ code: "NRE2218" });
+    await expect(
+      runtime.eval(`
+        c(
+          typeof(as.list(quote(break))[[1]]),
+          as.character(as.list(quote(break))[[1]]),
+          identical(as.call(as.list(quote(break))), quote(break)),
+          identical(as.call(as.list(quote(next))), quote(next)),
+          identical(quote("f<-"(x, value = 1)), quote(\`f<-\`(x, value = 1)))
+        )
+      `),
+    ).resolves.toEqual(["symbol", "break", "TRUE", "TRUE", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        matched <- match.call(base::bquote, quote(bquote(.(x) + y)))
+        c(deparse(matched), names(matched))
+      `),
+    ).resolves.toEqual(["bquote(expr = .(x) + y)", "", "expr"]);
     await runtime.dispose();
   });
 
@@ -20864,6 +40791,47 @@ NeedsCompilation: no
     await expect(runtime.eval('get0("definitely.absent", envir = e)')).resolves.toBeNull();
     await expect(runtime.eval('exists("mean", envir = e, mode = "function")')).resolves.toBe(true);
     await expect(runtime.eval('exists("mean", envir = e, mode = "numeric")')).resolves.toBe(false);
+    await expect(
+      runtime.eval(`
+        lookup <- list(a = 1L)
+        converted <- as.environment(lookup)
+        c(
+          exists("a", lookup),
+          exists("mean", lookup),
+          exists("mean", lookup, inherits = FALSE),
+          exists("a", lookup, mode = "function"),
+          exists("a", lookup, mode = "numeric"),
+          identical(parent.env(converted), emptyenv()),
+          exists("mean", converted, inherits = TRUE),
+          get("a", converted)
+        )
+      `),
+    ).resolves.toEqual([1, 0, 0, 0, 1, 1, 0, 1]);
+    await expect(
+      runtime.eval(`
+        mode_parent <- new.env(parent = baseenv())
+        mode_parent$x <- function() "parent"
+        mode_parent$y <- 42L
+        mode_child <- new.env(parent = mode_parent)
+        mode_child$x <- 1L
+        mode_child$y <- TRUE
+        selected <- mget(
+          c("x", "y"), mode_child, mode = "function",
+          ifnotfound = list("missing"), inherits = TRUE
+        )
+        c(
+          identical(get("x", envir = mode_child, mode = "function", inherits = TRUE), mode_parent$x),
+          inherits(try(get("x", envir = mode_child, mode = "function", inherits = FALSE), silent = TRUE), "try-error"),
+          exists("x", envir = mode_child, mode = "function", inherits = TRUE),
+          exists("x", envir = mode_child, mode = "function", inherits = FALSE),
+          identical(get0("x", envir = mode_child, mode = "function", inherits = TRUE), mode_parent$x),
+          identical(get0("x", envir = mode_child, mode = "function", inherits = FALSE, ifnotfound = "missing"), "missing"),
+          identical(selected[[1]], mode_parent$x), identical(selected[[2]], "missing"),
+          identical(get("y", envir = mode_child, mode = "numeric", inherits = TRUE), 42L),
+          exists("y", envir = mode_child, mode = "numeric", inherits = TRUE)
+        )
+      `),
+    ).resolves.toEqual([true, true, true, false, true, true, true, true, true, true]);
     await expect(runtime.eval('assign("local", 4, envir = e)\ne$local')).resolves.toBe(4);
     await expect(runtime.eval("list2env(list(extra = 5), envir = e)\ne$extra")).resolves.toBe(5);
     await expect(
@@ -20968,6 +40936,55 @@ NeedsCompilation: no
     await expect(runtime.eval("ls(pos = 0)")).rejects.toMatchObject({ code: "NRE2250" });
     await expect(runtime.eval("ls('not-on-search-list')")).rejects.toMatchObject({
       code: "NRE2251",
+    });
+    await runtime.dispose();
+  });
+
+  it("searches visible environments with utils::apropos modes, locations, and formals", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        zzNativrApropos_num <- 1
+        zzNativrApropos_fun <- function() 1
+        .zzNativrApropos_hidden <- 2
+        attach(
+          list(zzNativrApropos_list = list(1), zzNativrApropos_num = 9),
+          name = "nativr:apropos-probe"
+        )
+        hits <- utils::apropos("zzNativrApropos")
+        locations <- apropos("zzNativrApropos", where = TRUE)
+        c(
+          identical(
+            hits,
+            c(
+              ".zzNativrApropos_hidden", "zzNativrApropos_fun",
+              "zzNativrApropos_list", "zzNativrApropos_num", "zzNativrApropos_num"
+            )
+          ),
+          identical(names(locations), c("1", "1", "2", "1", "2")),
+          identical(apropos("zzNativrApropos", mode = "function"), "zzNativrApropos_fun"),
+          identical(
+            apropos("zzNativrApropos", mode = "numeric"),
+            c(".zzNativrApropos_hidden", "zzNativrApropos_num", "zzNativrApropos_num")
+          ),
+          identical(apropos("zzNativrApropos", mode = "list"), "zzNativrApropos_list"),
+          identical(apropos("zznativrapropos", ignore.case = FALSE), character()),
+          identical(apropos(NA_character_), character()),
+          identical(
+            names(formals(apropos)),
+            c("what", "where", "ignore.case", "dot_internals", "mode")
+          )
+        )
+      `),
+    ).resolves.toEqual([true, true, true, true, true, true, true, true]);
+    await expect(runtime.eval("apropos(character())")).rejects.toMatchObject({
+      message: "invalid 'pattern' argument",
+    });
+    await expect(runtime.eval('apropos("zz", mode = "nonsense")')).rejects.toMatchObject({
+      message: "invalid 'mode' argument 'nonsense'",
+    });
+    await expect(runtime.eval('apropos(factor("zz"))')).rejects.toMatchObject({
+      message: "is.character(what) is not TRUE",
     });
     await runtime.dispose();
   });
@@ -21077,10 +41094,583 @@ NeedsCompilation: no
       value: 1,
       visible: false,
     });
+    await expect(
+      runtime.eval(`
+        with.mask_probe <- function(data, expr, ...) {
+          expression <- substitute(expr)
+          eval(expression, data$payload, parent.frame())
+        }
+        with.lazy_probe <- function(data, expr, ...) 9L
+        masked <- structure(
+          list(payload = data.frame(wave = 1:3)),
+          class = "mask_probe"
+        )
+        lazy <- structure(list(), class = "lazy_probe")
+        c(with(masked, wave + 1L), with(lazy, stop("expression must remain lazy")))
+      `),
+    ).resolves.toEqual([2, 3, 4, 9]);
+    await expect(
+      runtime.eval(`
+        with.optional_probe <- function(data, expr, fun, ...) {
+          list(expr_missing = missing(expr), value = fun(data$payload), dots = length(list(...)))
+        }
+        optional <- structure(list(payload = 1:3), class = "optional_probe")
+        result <- with(optional, fun = length)
+        c(result$expr_missing, result$value, result$dots)
+      `),
+    ).resolves.toEqual([1, 3, 0]);
     await expect(runtime.evalDetailed("eval(quote(invisible(3)))")).resolves.toMatchObject({
       value: 3,
       visible: false,
     });
+    await runtime.dispose();
+  });
+
+  it("preserves formula class and environment through call-like subset selection", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        formula <- y ~ a + b
+        rhs <- formula[-2]
+        data <- data.frame(a = 1:3, b = 4:6)
+        frame <- model.frame(rhs, data)
+        c(
+          class(rhs), length(rhs), identical(environment(rhs), environment(formula)),
+          dim(frame), names(frame)
+        )
+      `),
+    ).resolves.toEqual(["formula", "2", "TRUE", "3", "2", "a", "b"]);
+    await runtime.dispose();
+  });
+
+  it("supports call metaprogramming, scoped cleanup, and stack introspection", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        call <- quote(f(alpha = 1, beta = 2))
+        exact <- call$alpha
+        partial <- call$al
+        absent <- call$gamma
+        call$alpha <- 3L
+        call$gamma <- 4L
+        call$beta <- NULL
+        attr(call, "marker") <- 7L
+        call$delta <- 5L
+        ambiguous <- quote(f(alpha = 1, alphabet = 2))
+        ambiguous.partial <- ambiguous$al
+        ambiguous$al <- 9L
+        c(
+          exact, partial, is.null(absent), deparse(call), names(call), attr(call, "marker"),
+          is.null(ambiguous.partial), deparse(ambiguous)
+        )
+      `),
+    ).resolves.toEqual([
+      "1",
+      "1",
+      "TRUE",
+      "f(alpha = 3L, gamma = 4L, delta = 5L)",
+      "",
+      "alpha",
+      "gamma",
+      "delta",
+      "7",
+      "TRUE",
+      "f(alpha = 1, alphabet = 2, al = 9L)",
+    ]);
+    await expect(
+      runtime.eval(`
+        call <- quote(f(a = 1, b = 2))
+        selected <- call[c(1, 3)]
+        call[2] <- list(quote(z))
+        call[[3]] <- 3L
+        v <- 10:13
+        constructed <- as.call(list(as.name("["), as.name("v"), 2:3))
+        as.character(c(
+          typeof(selected), length(selected), names(selected),
+          typeof(call[[2]]), as.character(call[[2]]), eval(constructed)
+        ))
+      `),
+    ).resolves.toEqual(["language", "2", "", "b", "symbol", "z", "11", "12"]);
+    await expect(
+      runtime.eval(`
+        capture <- function(...) {
+          entries <- as.list(substitute(list(...))[-1])
+          c(vapply(entries, typeof, ""), vapply(entries, deparse1, ""))
+        }
+        capture("gr", one_of("a", "e"), "y")
+      `),
+    ).resolves.toEqual(["character", "language", "character", '"gr"', 'one_of("a", "e")', '"y"']);
+    await expect(
+      runtime.eval(
+        "expressions <- expression(1 + 2, 4); c(eval(expressions[[1]]), length(expressions[2]))",
+      ),
+    ).resolves.toEqual([3, 1]);
+    await expect(
+      runtime.eval(
+        "p <- pairlist(a = 1L, b = 2L); c(sapply(p, function(x) x + 1L), mapply(sum, p, p), unlist(Map(function(x) x * 2L, p)))",
+      ),
+    ).resolves.toEqual([2, 3, 2, 4, 2, 4]);
+    await expect(
+      runtime.eval(`
+        thunk <- as.call(list(function() 42L))
+        c(typeof(thunk), eval(thunk), is.function(thunk[[1]]), identical(thunk[[1]], thunk[[1]]))
+      `),
+    ).resolves.toEqual(["language", "42", "TRUE", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        events <- character()
+        register <- function(target) {
+          thunk <- as.call(list(function() events <<- c(events, "exit")))
+          do.call(on.exit, list(thunk, add = TRUE), envir = target)
+        }
+        outer <- function() {
+          register(environment())
+          events <<- c(events, "body")
+        }
+        outer()
+        events
+      `),
+    ).resolves.toEqual(["body", "exit"]);
+    await expect(
+      runtime.eval(`
+        inspect.frames <- function() {
+          calls <- sys.calls()
+          frames <- sys.frames()
+          c(
+            typeof(calls), length(calls), typeof(frames), length(frames),
+            all(sapply(calls, is.call)), all(sapply(frames, is.environment)),
+            identical(frames[[length(frames)]], environment())
+          )
+        }
+        outer.frames <- function() inspect.frames()
+        outer.frames()
+      `),
+    ).resolves.toEqual(["pairlist", "2", "pairlist", "2", "TRUE", "TRUE", "TRUE"]);
+    await expect(
+      runtime.eval(`
+        local.events <- character()
+        local({
+          on.exit(local.events <<- c(local.events, "exit"), add = TRUE)
+          local.events <<- c(local.events, "body")
+        })
+        local.events
+      `),
+    ).resolves.toEqual(["body", "exit"]);
+    await expect(
+      runtime.eval(`
+        seen <- NULL
+        "capture<-" <- function(x, ..., value) {
+          seen <<- match.call(expand.dots = FALSE)$...
+          x
+        }
+        target <- 1
+        capture(target, 1, , ) <- 2
+        as.character(c(
+          length(seen),
+          sapply(seen, function(arg) is.symbol(arg) && as.character(arg) == "")
+        ))
+      `),
+    ).resolves.toEqual(["3", "0", "1", "1"]);
+    await expect(
+      runtime.eval(`
+        type <- "global"
+        capture.dots <- function(...) match.call(expand.dots = FALSE)$...
+        outer <- function(type) capture.dots(force.type = type)
+        captured <- outer("response")
+        evaler <- function(dots, n = 2) eval(dots[[1]], parent.frame(n))
+        deprefix <- function(...) {
+          dots <- match.call(expand.dots = FALSE)$...
+          evaler(dots, 2)
+        }
+        call.dots <- function(...) deprefix(...)
+        forwarded <- function(type) call.dots(force.type = type)
+        c(deparse(captured[[1]]), eval(captured[[1]], globalenv()), forwarded("response"))
+      `),
+    ).resolves.toEqual(["type", "global", "response"]);
+    await runtime.dispose();
+  });
+
+  it("closes standard constants, products, matrix-frame coercion, and default metadata", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(
+        "c(typeof(LETTERS), length(LETTERS), LETTERS[1], LETTERS[26], month.abb[1], month.abb[12], month.name[1], month.name[12])",
+      ),
+    ).resolves.toEqual(["character", "26", "A", "Z", "Jan", "Dec", "January", "December"]);
+    await expect(
+      runtime.eval(
+        "c(prod(), prod(1:4), prod(c(2, NA), na.rm = TRUE), prod(c(TRUE, FALSE)), Re(prod(c(1 + 2i, 3 - 1i))), Im(prod(c(1 + 2i, 3 - 1i))), is.na(prod(c(2, NA))), is.nan(prod(c(2, NaN))))",
+      ),
+    ).resolves.toEqual([1, 24, 2, 0, 5, 5, 1, 1]);
+    await expect(
+      runtime.eval(`
+        m <- matrix(1:6, 2, dimnames = list(c("r1", "r2"), c("a", "b", "c")))
+        d <- as.data.frame(m)
+        back <- as.matrix(d)
+        x <- 1:2
+        names(x) <- "a"
+        a <- array(1:3)
+        as.character(c(
+          length(d), nrow(d), ncol(d), names(d), dim(back), unlist(dimnames(back)),
+          dim(a), names(x), is.na(names(x)), is.null(dimnames(NULL)),
+          is.null(dimnames(new.env()))
+        ))
+      `),
+    ).resolves.toEqual([
+      "3",
+      "2",
+      "3",
+      "a",
+      "b",
+      "c",
+      "2",
+      "3",
+      "r1",
+      "r2",
+      "a",
+      "b",
+      "c",
+      "3",
+      "a",
+      NA,
+      "FALSE",
+      "TRUE",
+      "TRUE",
+      "TRUE",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("merges named configuration lists through utils modifyList semantics", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        nested <- utils::modifyList(
+          list(a = 1, b = list(x = 2, y = 3), c = 4),
+          list(b = list(y = 30, z = 40), d = 5)
+        )
+        deleted <- utils::modifyList(
+          list(a = 1, b = list(x = 2), c = 3),
+          list(a = NULL, b = list(x = NULL, y = 4))
+        )
+        retained <- utils::modifyList(
+          list(a = 1, b = list(x = 2), c = 3),
+          list(a = NULL, b = list(x = NULL, y = 4)),
+          keep.null = TRUE
+        )
+        unnamed <- utils::modifyList(list(1, 2), list(a = 3))
+        attributed <- utils::modifyList(
+          structure(list(a = 1), class = "cfg", custom = 2),
+          list(b = 3)
+        )
+        c(
+          identical(nested, list(a = 1, b = list(x = 2, y = 30, z = 40), c = 4, d = 5)),
+          identical(deleted, list(b = list(y = 4), c = 3)),
+          identical(retained, list(a = NULL, b = list(x = NULL, y = 4), c = 3)),
+          identical(names(unnamed), c("", "", "a")),
+          identical(unname(unnamed), list(1, 2, 3)),
+          identical(class(attributed), "cfg"),
+          identical(attr(attributed, "custom"), 2),
+          identical(names(formals(utils::modifyList)), c("x", "val", "keep.null"))
+        )
+      `),
+    ).resolves.toEqual([true, true, true, true, true, true, true, true]);
+    await expect(runtime.eval("utils::modifyList(1, list(a = 2))")).rejects.toMatchObject({
+      message: "is.list(x) is not TRUE",
+    });
+    await expect(runtime.eval("utils::modifyList(list(a = 1), 2)")).rejects.toMatchObject({
+      message: "is.list(val) is not TRUE",
+    });
+    await runtime.dispose();
+  });
+
+  it("preserves GNU combn callback simplification dimensions", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        scalar <- utils::combn(4, 2, sum)
+        named_scalar <- utils::combn(4, 2, function(x) c(total = sum(x)))
+        vector <- utils::combn(4, 2, function(x) c(sum(x), prod(x)))
+        matrix_result <- utils::combn(3, 2, function(x) matrix(c(x, sum(x), prod(x)), 2, 2))
+        list_result <- utils::combn(3, 2, function(x) list(x), simplify = TRUE)
+        c(
+          dim(scalar), is.null(names(scalar)), is.null(dimnames(scalar)),
+          dim(named_scalar), is.null(names(named_scalar)),
+          dim(vector), dim(matrix_result), dim(list_result),
+          unlist(scalar), unlist(vector), unlist(matrix_result), unlist(list_result)
+        )
+      `),
+    ).resolves.toEqual([
+      6, 1, 1, 6, 1, 2, 6, 2, 2, 3, 3, 3, 4, 5, 5, 6, 7, 3, 2, 4, 3, 5, 4, 5, 6, 6, 8, 7, 12, 1, 2,
+      3, 2, 1, 3, 4, 3, 2, 3, 5, 6, 1, 2, 1, 3, 2, 3,
+    ]);
+    await runtime.dispose();
+  });
+
+  it("dispatches graphics identify and preserves non-interactive empty selection", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        identify.probe <- function(x, ..., marker = "default") {
+          c(class(x), marker, list(...)$extra)
+        }
+        custom <- withVisible(graphics::identify(
+          structure(1:3, class = "probe"),
+          marker = "custom",
+          extra = 7
+        ))
+        before <- inherits(try(graphics::identify(1:3), silent = TRUE), "try-error")
+        graphics::plot.new()
+        empty <- withVisible(graphics::identify(1:3))
+        c(
+          names(formals(graphics::identify)),
+          custom$value,
+          custom$visible,
+          before,
+          length(empty$value),
+          typeof(empty$value),
+          empty$visible
+        )
+      `),
+    ).resolves.toEqual([
+      "x",
+      "...",
+      "probe",
+      "custom",
+      "7",
+      "TRUE",
+      "TRUE",
+      "0",
+      "integer",
+      "TRUE",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("expands lm coefficients over original factor levels through dummy.coef", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        d <- expand.grid(a = factor(c("A", "B")), b = factor(c("L", "M", "H")))
+        d$y <- c(1, 3, 5, 7, 9, 11)
+        main <- stats::dummy.coef(aov(y ~ a + b, d))
+        interaction <- stats::dummy.coef(lm(y ~ a * b, d))
+        singular <- data.frame(
+          y = 1:4,
+          a = factor(c("A", "A", "B", "B")),
+          b = factor(c("L", "L", "M", "M"))
+        )
+        zero_alias <- stats::dummy.coef(lm(y ~ a + b, singular))
+        na_alias <- stats::dummy.coef(lm(y ~ a + b, singular), use.na = TRUE)
+        c(
+          class(main), attr(main, "matrix"), names(main),
+          round(unname(unlist(main)), 12), names(interaction[["a:b"]]),
+          round(unname(interaction[["a:b"]]), 12),
+          unname(zero_alias$b), is.na(na_alias$b)
+        )
+      `),
+    ).resolves.toEqual([
+      "dummy_coef",
+      "FALSE",
+      "(Intercept)",
+      "a",
+      "b",
+      "9",
+      "0",
+      "2",
+      "0",
+      "-8",
+      "-4",
+      "A:H",
+      "B:H",
+      "A:L",
+      "B:L",
+      "A:M",
+      "B:M",
+      "0",
+      "0",
+      "0",
+      "0",
+      "0",
+      "0",
+      "0",
+      "0",
+      "FALSE",
+      "TRUE",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("reports shared atomic formatting widths through format.info", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        old <- options(digits = 7, scipen = 0)
+        values <- c(
+          format.info(c(TRUE, FALSE, NA)),
+          format.info(c(-12L, 3L, NA_integer_)),
+          format.info(c("a", "abcd", NA_character_)),
+          format.info(c(-12.34, 0, 5.6, NA, Inf, -Inf)),
+          format.info(123), format.info(pi), format.info(1e8), format.info(1e222),
+          format.info(c(1, 2.5), nsmall = 4),
+          format.info(c(pi, 1000), digits = 3),
+          format.info(double()), format.info(1 + 2i)
+        )
+        options(scipen = 100)
+        fixed <- format.info(1e8)
+        options(old)
+        list(values = values, fixed = fixed, formals = names(formals(format.info)))
+      `),
+    ).resolves.toEqual([
+      [
+        5, 3, 4, 6, 2, 0, 3, 0, 0, 8, 6, 0, 5, 0, 1, 6, 0, 2, 6, 4, 0, 7, 2, 0, 0, 0, 0, 1, 0, 0, 1,
+        0, 0,
+      ],
+      [9, 0, 0],
+      ["x", "digits", "nsmall"],
+    ]);
+    await runtime.dispose();
+  });
+
+  it("supports symbolic derivatives and direct Poisson glm.fit for unchanged optimizer packages", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        f <- expression(x1^2 - x2^2)
+        g1 <- stats::D(f, "x1")
+        g2 <- stats::D(f, "x2")
+        x1 <- 3
+        x2 <- 1
+        x <- cbind(one = 1, z = 0:4)
+        fit <- stats::glm.fit(x, c(1, 2, 2, 4, 7), family = stats::poisson())
+        c(
+          typeof(g1), typeof(g2), eval(g1), eval(g2),
+          round(fit$coefficients, 12), round(fit$deviance, 12),
+          fit$iter, fit$df.residual, fit$df.null,
+          names(formals(stats::D)), names(formals(stats::glm.fit))
+        )
+      `),
+    ).resolves.toEqual([
+      "language",
+      "language",
+      "6",
+      "-2",
+      "-0.015440160462",
+      "0.479562239463",
+      "0.25263352444",
+      "4",
+      "3",
+      "4",
+      "expr",
+      "name",
+      "x",
+      "y",
+      "weights",
+      "start",
+      "etastart",
+      "mustart",
+      "offset",
+      "family",
+      "control",
+      "intercept",
+      "singular.ok",
+    ]);
+    await expect(
+      runtime.eval(`
+        f <- expression(100 * (x2 - x1^2)^2 + (1 - x1)^2)
+        g1 <- stats::D(f, "x1")
+        g2 <- stats::D(f, "x2")
+        h11 <- stats::D(g1, "x1")
+        h12 <- stats::D(g1, "x2")
+        h22 <- stats::D(g2, "x2")
+        x1 <- 3
+        x2 <- 1
+        c(
+          typeof(h11), typeof(h12), typeof(h22),
+          eval(g1), eval(g2), eval(h11), eval(h12), eval(h22)
+        )
+      `),
+    ).resolves.toEqual([
+      "language",
+      "language",
+      "language",
+      "9604",
+      "-1600",
+      "10402",
+      "-1200",
+      "200",
+    ]);
+    await runtime.dispose();
+  });
+
+  it("runs bounded L-BFGS-B optimization through the browser Wasm backend", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        fit <- optim(
+          c(a = 4, b = -3),
+          function(x) sum((x - c(1, 2)) ^ 2),
+          gr = function(x) 2 * (x - c(1, 2)),
+          method = "L-BFGS-B",
+          lower = c(0, -1), upper = c(2, 4),
+          control = list(factr = 1e7, pgtol = 1e-8, lmm = 3)
+        )
+        list(
+          par = round(fit$par, 12), value = round(fit$value, 12),
+          counts = fit$counts, convergence = fit$convergence,
+          message = fit$message, names = names(fit),
+          formals = names(formals(optim))
+        )
+      `),
+    ).resolves.toEqual([
+      [1, 2],
+      0,
+      [3, 3],
+      0,
+      "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+      ["par", "value", "counts", "convergence", "message"],
+      ["par", "fn", "gr", "...", "method", "lower", "upper", "control", "hessian"],
+    ]);
+    await runtime.dispose();
+  });
+
+  it("preserves default-cluster exports and evaluation state in the browser adapter", async () => {
+    const runtime = await session();
+    await expect(
+      runtime.eval(`
+        cl <- parallel::makeCluster(2)
+        x <- 40L
+        exported <- withVisible(parallel::clusterExport(cl, "x"))
+        first <- parallel::clusterEvalQ(cl, { x <- x + 1L; x })
+        second <- parallel::clusterEvalQ(cl, x)
+        registered <- withVisible(parallel::setDefaultCluster(cl))
+        current <- parallel::getDefaultCluster()
+        mapped <- parallel::parLapply(NULL, expression(x + 1L, x + 2L), eval)
+        cleared <- withVisible(parallel::setDefaultCluster(NULL))
+        parallel::stopCluster(cl)
+        list(
+          export = list(value = exported$value, visible = exported$visible),
+          first = first, second = second,
+          default = list(visible = registered$visible, class = class(current), length = length(current)),
+          mapped = mapped,
+          clear = list(value = cleared$value, visible = cleared$visible),
+          formals = list(
+            names(formals(parallel::clusterEvalQ)),
+            names(formals(parallel::clusterExport)),
+            names(formals(parallel::getDefaultCluster)),
+            names(formals(parallel::setDefaultCluster))
+          )
+        )
+      `),
+    ).resolves.toEqual([
+      [null, false],
+      [41, 41],
+      [41, 41],
+      [false, ["SOCKcluster", "cluster"], 2],
+      [42, 43],
+      [null, false],
+      [["cl", "expr"], ["cl", "varlist", "envir"], null, "cl"],
+    ]);
     await runtime.dispose();
   });
 });

@@ -9,6 +9,7 @@ import {
   createPromise,
   complexVector,
   deparseAst,
+  deparseSourceLinesAst,
   doubleVector,
   estimateRObjectSize,
   forcePromise,
@@ -28,6 +29,43 @@ const span = {
 const expression: AstNode = { kind: "DoubleLiteral", value: 1, span };
 
 describe("runtime foundations", () => {
+  it("deparses a custom infix call with a braced operand using GNU-shaped block lines", () => {
+    const block: AstNode = {
+      kind: "Block",
+      body: [{ kind: "Identifier", name: "raw", span }],
+      span,
+    };
+    const infix: AstNode = {
+      kind: "CallExpression",
+      callee: { kind: "Identifier", name: "%when%", span },
+      arguments: [
+        {
+          value: {
+            kind: "CallExpression",
+            callee: { kind: "Identifier", name: "describe", span },
+            arguments: [
+              { value: { kind: "Identifier", name: "fn", span } },
+              { value: { kind: "Identifier", name: "idx", span } },
+              {
+                name: "raw",
+                value: { kind: "LogicalLiteral", value: false, span },
+              },
+            ],
+            span,
+          },
+        },
+        { value: block },
+      ],
+      span,
+    };
+
+    expect(deparseSourceLinesAst(infix)).toEqual([
+      "describe(fn, idx, raw = FALSE) %when% {",
+      "    raw",
+      "}",
+    ]);
+  });
+
   it("estimates GNU R-shaped 64-bit object storage without measuring the host heap", () => {
     const size = (value: Parameters<typeof estimateRObjectSize>[0]) =>
       estimateRObjectSize(value, () => undefined);
@@ -111,17 +149,46 @@ describe("runtime foundations", () => {
 
   it("enforces step and vector limits", () => {
     const context = new EvaluationContext(
-      { maxSteps: 1, maxCallDepth: 1, maxVectorLength: 2, maxOutputBytes: 100 },
+      {
+        maxSteps: 1,
+        maxCallDepth: 1,
+        maxVectorLength: 2,
+        maxAllocatedElements: 3,
+        maxOutputBytes: 100,
+        maxPackageResourceBytes: 100,
+      },
       { cancelled: false },
     );
     context.checkpoint();
     expect(() => context.checkpoint()).toThrow(RResourceLimitError);
     expect(() => context.allocate(3)).toThrow(RResourceLimitError);
+
+    const allocationContext = new EvaluationContext(
+      {
+        maxSteps: 10,
+        maxCallDepth: 1,
+        maxVectorLength: 2,
+        maxAllocatedElements: 3,
+        maxOutputBytes: 100,
+        maxPackageResourceBytes: 100,
+      },
+      { cancelled: false },
+    );
+    allocationContext.allocate(2);
+    allocationContext.allocate(1);
+    expect(() => allocationContext.allocate(1)).toThrow(RResourceLimitError);
   });
 
   it("captures selected output streams with nesting and independent size bounds", () => {
     const context = new EvaluationContext(
-      { maxSteps: 100, maxCallDepth: 10, maxVectorLength: 100, maxOutputBytes: 10 },
+      {
+        maxSteps: 100,
+        maxCallDepth: 10,
+        maxVectorLength: 100,
+        maxAllocatedElements: 1_000,
+        maxOutputBytes: 10,
+        maxPackageResourceBytes: 100,
+      },
       { cancelled: false },
     );
     context.beginOutputCapture(["stdout"]);
@@ -189,6 +256,16 @@ describe("runtime foundations", () => {
           span,
         },
         "(1 + x)",
+      ],
+      [
+        {
+          kind: "BinaryExpression",
+          operator: ":",
+          left: number(1),
+          right: identifier("x"),
+          span,
+        },
+        "1:x",
       ],
       [
         {

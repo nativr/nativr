@@ -8,12 +8,17 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./core-packages": {
+      "types": "./dist/core-packages.d.ts",
+      "import": "./dist/core-packages.js"
     }
   },
   "files": [
     "dist"
   ],
   "dependencies": {
+    "@digitaldefiance/bzip2-wasm": "1.1.1",
     "@nativr/ast": "workspace:*",
     "@nativr/runtime": "workspace:*"
   }

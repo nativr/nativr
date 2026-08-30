@@ -27,9 +27,75 @@ export function normalizeProgram(
   }
 
   return {
-    ast: { kind: "Program", body, span: mapper.span(root.startIndex, root.endIndex) },
+    ast: {
+      kind: "Program",
+      body,
+      span: mapper.span(root.startIndex, root.endIndex),
+      parseData: normalizeParseData(root, mapper, source),
+    },
     diagnostics,
   };
+}
+
+function normalizeParseData(root: Node, mapper: Utf8SourceMap, source: string) {
+  const output: {
+    id: number;
+    parent: number;
+    type: string;
+    parentType?: string;
+    terminal: boolean;
+    text: string;
+    span: SourceSpan;
+  }[] = [];
+  let nextId = 1;
+  const addTerminal = (text: string, start: number, parent: number, parentType: string): void => {
+    output.push({
+      id: nextId++,
+      parent,
+      type: text,
+      parentType,
+      terminal: true,
+      text,
+      span: mapper.span(start, start + text.length),
+    });
+  };
+  const addGapTerminals = (
+    start: number,
+    end: number,
+    parent: number,
+    parentType: string,
+  ): void => {
+    for (let offset = source.indexOf(";", start); offset >= 0 && offset < end;) {
+      addTerminal(";", offset, parent, parentType);
+      offset = source.indexOf(";", offset + 1);
+    }
+  };
+  const visit = (node: Node, parent: number, parentType?: string): void => {
+    const id = nextId++;
+    const terminal = node.childCount === 0 || node.type === "string";
+    output.push({
+      id,
+      parent,
+      type: node.type,
+      ...(parentType === undefined ? {} : { parentType }),
+      terminal,
+      text: source.slice(node.startIndex, node.endIndex),
+      span: mapper.span(node.startIndex, node.endIndex),
+    });
+    if (node.type === "string") return;
+    let cursor = node.startIndex;
+    for (const child of node.children) {
+      // tree-sitter-r treats explicit semicolons as separators rather than concrete children.
+      // Recover them from gaps between owned nodes so getParseData() can expose the terminal
+      // token, including the enclosing expression parent used by source-transforming packages.
+      addGapTerminals(cursor, child.startIndex, id, node.type);
+      visit(child, id, node.type);
+      cursor = child.endIndex;
+    }
+    addGapTerminals(cursor, node.endIndex, id, node.type);
+  };
+  for (const child of root.children) visit(child, 0, root.type);
+  return Object.freeze(output);
 }
 
 function normalizeNode(node: Node, mapper: Utf8SourceMap): AstNode {
@@ -67,8 +133,15 @@ function normalizeNode(node: Node, mapper: Utf8SourceMap): AstNode {
       return { kind: "Identifier", name: decodeRIdentifier(node.text), span };
     case "string":
       return { kind: "StringLiteral", value: decodeRString(node.text), span };
-    case "parenthesized_expression":
-      return normalizeNode(requiredField(node, "body"), mapper);
+    case "parenthesized_expression": {
+      const body = normalizeNode(requiredField(node, "body"), mapper);
+      return {
+        kind: "CallExpression",
+        callee: { kind: "Identifier", name: "(", span },
+        arguments: Object.freeze([{ value: body, span: body.span }]),
+        span,
+      };
+    }
     case "braced_expression":
       return {
         kind: "Block",
@@ -88,7 +161,7 @@ function normalizeNode(node: Node, mapper: Utf8SourceMap): AstNode {
     case "for_statement":
       return {
         kind: "ForExpression",
-        variable: normalizeIdentifier(requiredField(node, "variable"), mapper),
+        variable: normalizeNode(requiredField(node, "variable"), mapper),
         sequence: normalizeNode(requiredField(node, "sequence"), mapper),
         body: normalizeNode(requiredField(node, "body"), mapper),
         span,
@@ -236,9 +309,20 @@ function assignmentIdentifier(node: AstNode): IdentifierNode | undefined {
 }
 
 function normalizeCall(node: Node, mapper: Utf8SourceMap, span: SourceSpan): AstNode {
-  const callee = normalizeNode(requiredField(node, "function"), mapper);
+  const parsedCallee = normalizeNode(requiredField(node, "function"), mapper);
+  // GNU R canonicalizes a character-literal call head to a symbol in the language object.
+  // This keeps `"f"(x)` executable while making quote/as.list/identical observe the same call
+  // representation as `f(x)`.
+  const callee =
+    parsedCallee.kind === "StringLiteral"
+      ? ({ kind: "Identifier", name: parsedCallee.value, span: parsedCallee.span } as const)
+      : parsedCallee;
   const args = normalizeArguments(requiredField(node, "arguments"), mapper);
-  if (callee.kind === "Identifier" && callee.name === "return") {
+  if (
+    callee.kind === "Identifier" &&
+    callee.name === "return" &&
+    (args.length === 0 || (args.length === 1 && args[0]?.name === undefined))
+  ) {
     const first = args[0];
     return first === undefined
       ? { kind: "ReturnExpression", span }
@@ -316,6 +400,7 @@ function normalizeFunction(node: Node, mapper: Utf8SourceMap, span: SourceSpan):
     });
   return {
     kind: "FunctionExpression",
+    ...(requiredField(node, "name").text === "\\" ? { syntax: "lambda" as const } : {}),
     parameters,
     body: normalizeNode(requiredField(node, "body"), mapper),
     span,
@@ -331,14 +416,6 @@ function normalizeIf(node: Node, mapper: Utf8SourceMap, span: SourceSpan): AstNo
     span,
   };
   return alternative === null ? base : { ...base, alternative: normalizeNode(alternative, mapper) };
-}
-
-function normalizeIdentifier(node: Node, mapper: Utf8SourceMap): IdentifierNode {
-  const normalized = normalizeNode(node, mapper);
-  if (normalized.kind !== "Identifier") {
-    throw new Error(`Expected identifier, received ${normalized.kind}`);
-  }
-  return normalized;
 }
 
 function requiredField(node: Node, field: string): Node {
@@ -384,12 +461,28 @@ function decodeRString(text: string): string {
       result += simple[escaped];
       continue;
     }
+    if (/^[0-7]$/u.test(escaped)) {
+      let digits = escaped;
+      while (digits.length < 3 && /^[0-7]$/u.test(body[index + 1] ?? "")) {
+        index += 1;
+        digits += body[index] ?? "";
+      }
+      const codePoint = Number.parseInt(digits, 8);
+      if (codePoint === 0) {
+        throw new Error("nul character not allowed in an R string literal");
+      }
+      result += String.fromCodePoint(codePoint);
+      continue;
+    }
     if (escaped === "x" || escaped === "u" || escaped === "U") {
       const width = escaped === "x" ? 2 : escaped === "u" ? 4 : 8;
-      const digits = body.slice(index + 1, index + 1 + width);
-      if (/^[0-9a-f]+$/iu.test(digits) && digits.length === width) {
+      let digits = "";
+      while (digits.length < width && /^[0-9a-f]$/iu.test(body[index + 1] ?? "")) {
+        index += 1;
+        digits += body[index] ?? "";
+      }
+      if (/^[0-9a-f]+$/iu.test(digits) && (escaped === "x" || digits.length === width)) {
         result += String.fromCodePoint(Number.parseInt(digits, 16));
-        index += width;
         continue;
       }
     }

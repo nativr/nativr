@@ -19,7 +19,18 @@ await r.dispose();
 ```
 
 Sessions expose `eval`, `evalDetailed`, `evalRaw`, `assign`, `get`, `call`, `capabilities`, `reset`,
-`interrupt`, and `dispose`. Operations mutate one session in submission order.
+`interrupt`, and `dispose`. Operations mutate one session in submission order. `reset()` and
+`dispose()` await registered `onexit = TRUE` R environment finalizers before replacing state,
+closing Worker host sessions, or releasing parser resources.
+
+`createR({ packages, limits })` snapshots immutable package bundles before inline or Worker startup.
+`limits.maxPackageResourceBytes` controls their aggregate decoded resource budget independently from
+R source, returned output, and graphics. The default 192 MiB ceiling admits large header/data-only
+packages such as BH while remaining finite; package count remains bounded by `maxVectorLength`.
+`limits.maxAllocatedElements` independently bounds cumulative evaluator-owned element allocation
+within one evaluation. If callers override `maxVectorLength` without setting the cumulative limit,
+NativR derives `maxAllocatedElements` as ten times that override; an explicit cumulative value
+decouples total workload from the largest permitted single vector.
 
 Applications may explicitly seed session-owned environment variables without exposing the browser or
 Node host environment:
@@ -232,6 +243,10 @@ workspaces use the bounded GNU R XDR v2/v3 and gzip decoder. A packaged `R/sysda
 into its namespace before R source evaluation. Installed `.rdx`/`.rdb` lazy-load databases and
 unsupported serialized object types/compressors remain explicit boundaries.
 
+Packages declaring `LazyData: yes` additionally expose matching resource basenames through memoized
+package-data bindings. These bindings are visible after attachment and through `pkg::name`, but they
+are not namespace members and are not exposed through `pkg:::name`.
+
 `@nativr/package-tools` is the build-time installer for standard source directories, `.tar.gz`
 archives, and CRAN-like repositories. It resolves required dependencies and emits integrity-locked
 JSON whose `bundles` field can be passed directly to `createR()`. Repository access and archive
@@ -239,10 +254,24 @@ inspection never run inside the browser evaluator. See
 [`examples/pure-r-package.ts`](../examples/pure-r-package.ts) and
 [`pure-r-packages.md`](pure-r-packages.md).
 
-The tool rejects native compilation, JVM code, symbolic links, unsafe archive paths, installation
-hooks, `LinkingTo`, `useDynLib`, and unsupported NAMESPACE directives. Successful packaging remains
-distinct from execution compatibility: every dependency and R feature exercised by the package must
-still be in the documented NativR subset.
+Evidence workflows may call `packPackage(..., { includeTests: true })` to retain a bounded,
+versioned manifest plus immutable source-package test resources. The option defaults to false and
+does not change `createR()` or auto-execute tests. `createPackageCheckPlan()` and
+`runPackageChecks()` provide the build-time P7 orchestration surface over any executor implementing
+`reset()` and `evalDetailed()`. The runner evaluates top-level expressions in order, honors a
+script-installed `options(error=)` handler, and compares normalized `.Rout.save` output when
+present. This is the documented browser-admissible check profile, not a host `R CMD check` process.
+
+The tool rejects native compilation, symbolic links, unsafe archive paths, installation hooks,
+`LinkingTo`, `useDynLib`, and unsupported NAMESPACE directives. JVM sources and archives may be
+preserved only as inert immutable resources; the package tool and runtime never compile, load, or
+execute them. Successful packaging remains distinct from execution compatibility: every dependency
+and R feature exercised by the package must still be in the documented NativR subset.
+
+The normalized NAMESPACE surface includes ordinary/pattern/method/class exports, package and
+selected-binding imports, and S3 method declarations. `exportClasses()` entries resolve to verified
+`.__C__<Class>` metadata bindings created during source evaluation; malformed or missing class
+exports fail deterministically before attachment.
 
 `utils::demo(package = character())` exposes the empty GNU R catalog shape without host I/O.
 External package/topic selection is rejected until bundles can provide browser-safe demo resources;

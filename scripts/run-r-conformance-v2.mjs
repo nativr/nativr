@@ -17,13 +17,64 @@ const root = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const cases = JSON.parse(
   await readFile(path.join(root, "conformance", "cases", "oracle-v2.json"), "utf8"),
 );
+const capabilities = JSON.parse(
+  await readFile(path.join(root, "docs", "compatibility-manifest.json"), "utf8"),
+);
+const evidenceBindings = new Set(
+  capabilities.packages.flatMap((package_) =>
+    [...package_.functions, ...(package_.bindings ?? [])]
+      .filter(
+        (definition) =>
+          definition.compatibility === "behavioral" || definition.compatibility === "numeric",
+      )
+      .map((definition) => `${package_.name}::${definition.name}`),
+  ),
+);
 for (const testCase of cases) {
   if (!exactnessPolicies.has(testCase.policy)) {
     throw new Error(`Oracle-v2 case '${testCase.id}' has unknown policy '${testCase.policy}'.`);
   }
-  if (testCase.policy !== "exact") {
+  if (testCase.policy !== "exact" && testCase.policy !== "absolute-relative") {
     throw new Error(`Oracle-v2 policy '${testCase.policy}' is declared but not implemented yet.`);
   }
+  if (testCase.policy === "absolute-relative") {
+    const { absolute, relative } = testCase.tolerance ?? {};
+    if (!Number.isFinite(absolute) || absolute < 0 || !Number.isFinite(relative) || relative < 0) {
+      throw new Error(
+        `Oracle-v2 case '${testCase.id}' requires finite non-negative absolute and relative tolerances.`,
+      );
+    }
+  }
+  if (
+    !Array.isArray(testCase.bindings) ||
+    testCase.bindings.length === 0 ||
+    testCase.bindings.some((binding) => typeof binding !== "string")
+  ) {
+    throw new Error(`Oracle-v2 case '${testCase.id}' must declare behavioral registry bindings.`);
+  }
+  for (const binding of testCase.bindings) {
+    if (!evidenceBindings.has(binding)) {
+      throw new Error(
+        `Oracle-v2 case '${testCase.id}' references a non-evidenced or unknown binding '${binding}'.`,
+      );
+    }
+  }
+}
+
+const requestedCaseIds = new Set(
+  (process.env.NATIVR_ORACLE_CASE ?? "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean),
+);
+const selectedCases =
+  requestedCaseIds.size === 0
+    ? cases
+    : cases.filter((testCase) => requestedCaseIds.has(testCase.id));
+if (requestedCaseIds.size > 0 && selectedCases.length !== requestedCaseIds.size) {
+  const known = new Set(cases.map((testCase) => testCase.id));
+  const unknown = [...requestedCaseIds].filter((id) => !known.has(id));
+  throw new Error(`Unknown Oracle-v2 case id(s): ${unknown.join(", ")}.`);
 }
 
 const rscript = await findRscript();
@@ -58,11 +109,17 @@ const runtime = await createR({
 });
 
 let failures = 0;
-for (const testCase of cases) {
+for (const testCase of selectedCases) {
   await runtime.reset();
+  if (process.env.NATIVR_ORACLE_TRACE === "1") {
+    console.log(`RUN ${testCase.id}: evaluating NativR observation graph`);
+  }
   const wrapper = `${observerSource}\nlocal({\n  .result <- withVisible({\n${testCase.code}\n  })\n  .graph <- nativr_oracle_observe_graph(.result$value)\n  list(root = .graph$root, graph = .graph$graph, visible = .result$visible)\n})`;
   try {
     const result = await runtime.evalDetailed(wrapper);
+    if (process.env.NATIVR_ORACLE_TRACE === "1") {
+      console.log(`RUN ${testCase.id}: evaluating GNU R observation graph`);
+    }
     const payload = snapshotToPlain(result.raw);
     const actual = {
       schemaVersion: 2,
@@ -71,9 +128,9 @@ for (const testCase of cases) {
       graph: payload.graph,
       conditions: result.warnings.map((warning, index) => ({
         kind: "warning",
-        classes: [],
+        classes: warning.classes ?? ["simpleWarning", "warning", "condition"],
         message: warning.message,
-        call: null,
+        call: warning.call ?? null,
         order: index + 1,
       })),
       streams: {
@@ -90,10 +147,11 @@ for (const testCase of cases) {
       visible: payload.visible,
     };
     const oracle = await runOracle(rscript, observerPath, testCase.code);
-    if (JSON.stringify(actual) !== JSON.stringify(oracle)) {
+    const comparison = compareOraclePayload(actual, oracle, testCase);
+    if (!comparison.equal) {
       failures += 1;
       console.error(
-        `FAIL ${testCase.id}\n  R:      ${JSON.stringify(oracle)}\n  NativR: ${JSON.stringify(actual)}`,
+        `FAIL ${testCase.id}\n  Difference: ${comparison.difference}\n  R:      ${JSON.stringify(oracle)}\n  NativR: ${JSON.stringify(actual)}`,
       );
     } else {
       console.log(`PASS ${testCase.id} [${testCase.policy}]`);
@@ -106,7 +164,10 @@ for (const testCase of cases) {
 
 await runtime.dispose();
 if (failures > 0) process.exitCode = 1;
-else console.log(`Recursive live R oracle v2: ${cases.length}/${cases.length} passed.`);
+else
+  console.log(
+    `Recursive live R oracle v2: ${selectedCases.length}/${selectedCases.length} passed.`,
+  );
 
 function snapshotToPlain(snapshot) {
   if (snapshot.type === "null") return null;
@@ -140,6 +201,84 @@ function snapshotToPlain(snapshot) {
     return value;
   });
   return values.length === 1 ? values[0] : values;
+}
+
+function compareOraclePayload(actual, expected, testCase) {
+  if (testCase.policy === "exact") {
+    return JSON.stringify(actual) === JSON.stringify(expected)
+      ? { equal: true }
+      : { equal: false, difference: "exact observation graphs differ" };
+  }
+  return compareObservedValue(actual, expected, "$", testCase.tolerance, false);
+}
+
+function compareObservedValue(actual, expected, path, tolerance, numericPayload) {
+  if (typeof actual === "number" && typeof expected === "number") {
+    if (Object.is(actual, expected)) return { equal: true };
+    if (
+      numericPayload &&
+      Number.isFinite(actual) &&
+      Number.isFinite(expected) &&
+      Math.abs(actual - expected) <=
+        tolerance.absolute + tolerance.relative * Math.max(Math.abs(actual), Math.abs(expected))
+    ) {
+      return { equal: true };
+    }
+    return { equal: false, difference: `${path}: expected ${expected}, received ${actual}` };
+  }
+  if (
+    actual === null ||
+    expected === null ||
+    typeof actual !== "object" ||
+    typeof expected !== "object"
+  ) {
+    return Object.is(actual, expected)
+      ? { equal: true }
+      : {
+          equal: false,
+          difference: `${path}: expected ${JSON.stringify(expected)}, received ${JSON.stringify(actual)}`,
+        };
+  }
+  if (Array.isArray(actual) || Array.isArray(expected)) {
+    if (!Array.isArray(actual) || !Array.isArray(expected) || actual.length !== expected.length) {
+      return {
+        equal: false,
+        difference: `${path}: expected array length ${expected.length}, received ${actual.length}`,
+      };
+    }
+    for (let index = 0; index < actual.length; index += 1) {
+      const result = compareObservedValue(
+        actual[index],
+        expected[index],
+        `${path}[${index}]`,
+        tolerance,
+        numericPayload,
+      );
+      if (!result.equal) return result;
+    }
+    return { equal: true };
+  }
+  const actualKeys = Object.keys(actual);
+  const expectedKeys = Object.keys(expected);
+  if (JSON.stringify(actualKeys) !== JSON.stringify(expectedKeys)) {
+    return {
+      equal: false,
+      difference: `${path}: expected keys ${JSON.stringify(expectedKeys)}, received ${JSON.stringify(actualKeys)}`,
+    };
+  }
+  const observedNumeric =
+    actual.kind === expected.kind && (actual.kind === "double" || actual.kind === "complex");
+  for (const key of actualKeys) {
+    const result = compareObservedValue(
+      actual[key],
+      expected[key],
+      `${path}.${key}`,
+      tolerance,
+      observedNumeric && (key === "value" || key === "real" || key === "imaginary"),
+    );
+    if (!result.equal) return result;
+  }
+  return { equal: true };
 }
 
 function runOracle(rscript, observerPath, code) {

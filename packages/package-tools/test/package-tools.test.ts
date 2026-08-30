@@ -9,12 +9,16 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createR } from "@nativr/nativr";
 
 import {
+  DEFAULT_PACKAGE_PACK_LIMITS,
   PackageCompatibilityError,
   comparePackageVersions,
+  createPackageCheckPlan,
   inspectPackage,
   installPackagesFromRepository,
+  normalizePackageCheckOutput,
   packPackage,
   resolvePackageArtifacts,
+  runPackageChecks,
   verifyPackageArtifact,
 } from "../src/index.js";
 
@@ -25,8 +29,19 @@ afterEach(async () => {
 });
 
 describe("pure-R package packager", () => {
+  it("keeps normalized package files bounded beneath the aggregate resource ceiling", () => {
+    expect(DEFAULT_PACKAGE_PACK_LIMITS).toMatchObject({
+      maxFileBytes: 64 * 1024 * 1024,
+      maxTotalBytes: 192 * 1024 * 1024,
+    });
+    expect(DEFAULT_PACKAGE_PACK_LIMITS.maxFileBytes).toBeLessThan(
+      DEFAULT_PACKAGE_PACK_LIMITS.maxTotalBytes,
+    );
+  });
+
   it("builds deterministic JSON artifacts with metadata, source, resources, and integrity", async () => {
     const packageRoot = await fixturePackage();
+    await writeFile(path.join(packageRoot, "NEWS.md"), "# Changes\n\nPortable release notes.\n");
     const first = await inspectPackage(packageRoot);
     const second = await inspectPackage(packageRoot);
 
@@ -49,6 +64,7 @@ describe("pure-R package packager", () => {
       "data/example.R",
       "extdata/config.json",
       "LICENSE",
+      "NEWS.md",
     ]);
     expect(first.compatibility.issues).not.toContainEqual(
       expect.objectContaining({ path: "data/example.R" }),
@@ -79,6 +95,744 @@ describe("pure-R package packager", () => {
     } finally {
       await runtime.dispose();
     }
+  });
+
+  it("maps documented LazyData object names to differently-cased data resources", async () => {
+    const packageRoot = await fixturePackage();
+    const descriptionPath = path.join(packageRoot, "DESCRIPTION");
+    await writeFile(descriptionPath, `${await readFile(descriptionPath, "utf8")}LazyData: yes\n`);
+    await writeFile(path.join(packageRoot, "data", "lower.R"), "Lower <- 4:6\n");
+    await mkdir(path.join(packageRoot, "man"));
+    await writeFile(
+      path.join(packageRoot, "man", "Lower.Rd"),
+      [
+        "\\name{Lower}",
+        "\\docType{data}",
+        "\\alias{Lower}",
+        "\\title{Differently-cased public data}",
+        "\\usage{Lower}",
+        "\\examples{stopifnot(identical(Lower, 4:6))}",
+        "",
+      ].join("\n"),
+    );
+    const artifact = await packPackage(packageRoot);
+    const manifest = artifact.bundle.resources.find(
+      (resource) => resource.path === ".nativr/datasets-v1.json",
+    );
+    expect(JSON.parse(Buffer.from(manifest?.data ?? "", "base64").toString("utf8"))).toEqual({
+      format: "nativr-package-datasets",
+      formatVersion: 1,
+      datasets: [{ name: "Lower", resource: "lower" }],
+    });
+
+    const runtime = await createR({
+      execution: "inline",
+      assets: {
+        treeSitterRuntimeWasm: new URL("../../parser/assets/web-tree-sitter.wasm", import.meta.url),
+        rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+      },
+      packages: [artifact.bundle],
+    });
+    try {
+      await expect(
+        runtime.eval(`
+          library(demopkg)
+          c(
+            "Lower" %in% ls("package:demopkg"),
+            "lower" %in% ls("package:demopkg"),
+            identical(Lower, 4:6)
+          )
+        `),
+      ).resolves.toEqual([true, false, true]);
+    } finally {
+      await runtime.dispose();
+    }
+  });
+
+  it("preserves source-package tests as inert resources for explicit P6 execution", async () => {
+    const packageRoot = await fixturePackage();
+    await mkdir(path.join(packageRoot, "tests"));
+    await writeFile(path.join(packageRoot, "tests", "fixture.txt"), "portable fixture\n");
+    await writeFile(
+      path.join(packageRoot, "tests", "package.R"),
+      [
+        'fixture <- readLines("fixture.txt")',
+        'stopifnot(identical(square(4), 16), identical(fixture, "portable fixture"))',
+        "c(value = square(3), fixture = fixture)",
+        "",
+      ].join("\n"),
+    );
+    await writeFile(path.join(packageRoot, "tests", "package.Rout.save"), "reference output\n");
+
+    const defaultArtifact = await packPackage(packageRoot);
+    expect(defaultArtifact.bundle.resources.map((resource) => resource.path)).not.toContain(
+      ".nativr/tests-v1.json",
+    );
+    const artifact = await packPackage(packageRoot, { includeTests: true });
+    const manifestResource = artifact.bundle.resources.find(
+      (resource) => resource.path === ".nativr/tests-v1.json",
+    );
+    expect(manifestResource).toBeDefined();
+    expect(
+      JSON.parse(Buffer.from(manifestResource?.data ?? "", "base64").toString("utf8")),
+    ).toEqual({
+      format: "nativr-package-tests",
+      formatVersion: 1,
+      scripts: [{ path: "package.R", expectedOutput: "package.Rout.save" }],
+    });
+    expect(artifact.bundle.resources.map((resource) => resource.path)).toEqual(
+      expect.arrayContaining([
+        ".nativr/tests/fixture.txt",
+        ".nativr/tests/package.R",
+        ".nativr/tests/package.Rout.save",
+      ]),
+    );
+
+    const runtime = await createR({
+      execution: "inline",
+      assets: {
+        treeSitterRuntimeWasm: new URL("../../parser/assets/web-tree-sitter.wasm", import.meta.url),
+        rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+      },
+      packages: [artifact.bundle],
+    });
+    try {
+      await expect(
+        runtime.eval(`
+          library(demopkg)
+          tests <- system.file(".nativr", "tests", package = "demopkg")
+          source(file.path(tests, "package.R"), chdir = TRUE)$value
+        `),
+      ).resolves.toEqual(["9", "portable fixture"]);
+    } finally {
+      await runtime.dispose();
+    }
+  });
+
+  it("classifies GNU R session-bound saved output without skipping its retained test", async () => {
+    const packageRoot = await fixturePackage();
+    await mkdir(path.join(packageRoot, "man"));
+    await writeFile(
+      path.join(packageRoot, "man", "square.Rd"),
+      [
+        "\\name{square}",
+        "\\alias{square}",
+        "\\title{Square a value}",
+        "\\usage{square(x)}",
+        "",
+      ].join("\n"),
+    );
+    await mkdir(path.join(packageRoot, "tests"));
+    await writeFile(path.join(packageRoot, "tests", "package.R"), "stopifnot(square(4) == 16)\n");
+    await writeFile(
+      path.join(packageRoot, "tests", "package.Rout.save"),
+      [
+        'R version 4.5.0 (2025-04-11) -- "How About a Twenty-Six"',
+        "Copyright (C) 2025 The R Foundation for Statistical Computing",
+        "Platform: x86_64-pc-linux-gnu",
+        "",
+        "> stopifnot(square(4) == 16)",
+        "> proc.time()",
+        "   user  system elapsed",
+        "  0.318   0.035   0.343",
+        "",
+      ].join("\n"),
+    );
+    const artifact = await packPackage(packageRoot, { includeTests: true });
+    const plan = createPackageCheckPlan(artifact);
+    const savedOutput = plan.steps.find((step) => step.id === "saved-output:package.R");
+    expect(savedOutput).toEqual({
+      id: "saved-output:package.R",
+      kind: "saved-output",
+      label: "saved output package.Rout.save",
+      notApplicableReason:
+        "The saved output contains a GNU R version/platform session header and is host-bound; the corresponding retained test remains applicable.",
+    });
+
+    for (const historicalHeader of [
+      [
+        'R Under development (unstable) (2019-04-24 r76419) -- "Unsuffered Consequences"',
+        "Copyright (C) 2019 The R Foundation for Statistical Computing",
+        "Platform: x86_64-pc-linux-gnu (64-bit)",
+      ],
+      [
+        "R : Copyright 2004, The R Foundation for Statistical Computing",
+        "Version 2.0.0 beta (2004-09-27), ISBN 3-900051-07-0",
+      ],
+    ]) {
+      await writeFile(
+        path.join(packageRoot, "tests", "package.Rout.save"),
+        [...historicalHeader, "", "> stopifnot(square(4) == 16)", ""].join("\n"),
+      );
+      const historicalArtifact = await packPackage(packageRoot, { includeTests: true });
+      expect(
+        createPackageCheckPlan(historicalArtifact).steps.find(
+          (step) => step.id === "saved-output:package.R",
+        ),
+      ).toMatchObject({
+        kind: "saved-output",
+        notApplicableReason:
+          "The saved output contains a GNU R version/platform session header and is host-bound; the corresponding retained test remains applicable.",
+      });
+    }
+
+    const executed: string[] = [];
+    const result = await runPackageChecks(artifact, {
+      reset: () => Promise.resolve(),
+      evalDetailed: (code) => {
+        executed.push(code);
+        return Promise.resolve({ value: null, warnings: [], output: [] });
+      },
+    });
+    expect(result.steps.find((step) => step.id === "test:package.R")).toMatchObject({
+      status: "passed",
+    });
+    expect(result.steps.find((step) => step.id === "saved-output:package.R")).toEqual({
+      id: "saved-output:package.R",
+      kind: "saved-output",
+      status: "not-applicable",
+      message:
+        "The saved output contains a GNU R version/platform session header and is host-bound; the corresponding retained test remains applicable.",
+    });
+    expect(executed.some((code) => code.includes("expressions[[expression_index]]"))).toBe(true);
+    expect(executed.some((code) => code.includes("withVisible"))).toBe(false);
+  });
+
+  it("runs package tests from an isolated writable browser-memory copy", async () => {
+    const packageRoot = await fixturePackage();
+    await mkdir(path.join(packageRoot, "tests"));
+    await writeFile(path.join(packageRoot, "tests", "fixture.txt"), "portable fixture\n");
+    await writeFile(
+      path.join(packageRoot, "tests", "sandbox.R"),
+      [
+        'fixture <- readLines("fixture.txt")',
+        'writeLines(c(fixture, "generated"), "generated.txt")',
+        'stopifnot(identical(readLines("generated.txt"), c("portable fixture", "generated")))',
+        "",
+      ].join("\n"),
+    );
+    const artifact = await packPackage(packageRoot, { includeTests: true });
+    const runtime = await createR({
+      execution: "inline",
+      assets: {
+        treeSitterRuntimeWasm: new URL("../../parser/assets/web-tree-sitter.wasm", import.meta.url),
+        rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+      },
+      packages: [artifact.bundle],
+    });
+    try {
+      const result = await runPackageChecks(artifact, runtime);
+      expect(result.steps.find((step) => step.id === "test:sandbox.R")).toEqual({
+        id: "test:sandbox.R",
+        kind: "tests",
+        status: "passed",
+      });
+      await expect(
+        runtime.eval(`
+          tests <- system.file(".nativr", "tests", package = "demopkg")
+          c(
+            startsWith(getwd(), tempdir()),
+            file.exists("fixture.txt"),
+            file.exists("generated.txt"),
+            file.exists(file.path(tests, "generated.txt"))
+          )
+        `),
+      ).resolves.toEqual([true, true, true, false]);
+    } finally {
+      await runtime.dispose();
+    }
+  });
+
+  it("plans and runs isolated browser-admissible P7 package checks generically", async () => {
+    expect(normalizePackageCheckOutput("\r\n> value <- 1\r\n+ value\r\n[1] 1  \r\n")).toBe("[1] 1");
+    const packageRoot = await fixturePackage();
+    await mkdir(path.join(packageRoot, "man"));
+    await writeFile(
+      path.join(packageRoot, "man", "square.Rd"),
+      [
+        "\\name{square}",
+        "\\alias{square}",
+        "\\title{Square a value}",
+        "\\usage{square(x)}",
+        "\\examples{stopifnot(identical(square(3), 9))}",
+        "",
+      ].join("\n"),
+    );
+    await mkdir(path.join(packageRoot, "tests"));
+    await writeFile(path.join(packageRoot, "tests", "square.R"), "stopifnot(square(4) == 16)\n");
+    const artifact = await packPackage(packageRoot, { includeTests: true });
+    const plan = createPackageCheckPlan(artifact);
+
+    expect(plan).toMatchObject({
+      format: "nativr-package-check-plan",
+      formatVersion: 1,
+      package: { name: "demopkg", version: "1.2.3" },
+    });
+    expect(plan.steps.map((step) => step.id)).toEqual([
+      "metadata",
+      "namespace",
+      "attachment",
+      "documentation:exports",
+      "documentation:square",
+      "example:square",
+      "test:square.R",
+      "vignettes",
+    ]);
+    const executed: string[] = [];
+    let resets = 0;
+    const result = await runPackageChecks(artifact, {
+      reset() {
+        resets += 1;
+        return Promise.resolve();
+      },
+      evalDetailed(code) {
+        executed.push(code);
+        return Promise.resolve({
+          value: code.includes(".nativr_package_check_expressions <-") ? 1 : null,
+          warnings: [],
+          output: [],
+        });
+      },
+    });
+    expect(result.passed).toBe(true);
+    expect(result.firstBlocker).toBeUndefined();
+    expect(result.steps.map((step) => step.status)).toEqual([
+      "passed",
+      "passed",
+      "passed",
+      "passed",
+      "passed",
+      "passed",
+      "passed",
+      "not-applicable",
+    ]);
+    expect(resets).toBe(7);
+    expect(executed).toHaveLength(8);
+    expect(executed.at(-2)).toContain(".nativr_package_check_expressions <- parse");
+    expect(executed.at(-2)).toContain('tempfile("nativr-package-check-")');
+    expect(executed.at(-2)).toContain("file.copy(.nativr_package_check_entries");
+    expect(executed.at(-1)).toContain("[[1L]]");
+  });
+
+  it("maps standard S4 class and method Rd aliases to namespace exports", async () => {
+    const packageRoot = await fixturePackage();
+    await writeFile(
+      path.join(packageRoot, "NAMESPACE"),
+      [
+        "export(square)",
+        "exportClasses(DemoClass)",
+        'exportMethods(show, "[", "+", "-", Ops)',
+        "",
+      ].join("\n"),
+    );
+    await mkdir(path.join(packageRoot, "man"));
+    await writeFile(
+      path.join(packageRoot, "man", "DemoClass.Rd"),
+      [
+        "\\name{DemoClass-class}",
+        "\\alias{DemoClass-class}",
+        "\\alias{show,DemoClass-method}",
+        "\\alias{[,DemoClass,ANY-method}",
+        "\\alias{Ops,DemoClass,DemoClass-method}",
+        "\\alias{square}",
+        "\\title{A documented S4 class}",
+        "",
+      ].join("\n"),
+    );
+
+    const plan = createPackageCheckPlan(await packPackage(packageRoot));
+    const documentation = plan.steps.find((step) => step.id === "documentation:exports");
+    expect(documentation?.code).toContain('".__C__DemoClass"');
+    expect(documentation?.code).toContain('"show"');
+    expect(documentation?.code).toContain('"["');
+    expect(documentation?.code).toContain('"square"');
+    expect(documentation?.code).toContain('"+"');
+    expect(documentation?.code).toContain('"-"');
+    expect(documentation?.code).toContain('!startsWith(undocumented, ".__T__")');
+  });
+
+  it("classifies standard package lifecycle hooks outside ordinary export documentation", async () => {
+    const packageRoot = await fixturePackage();
+    await writeFile(
+      path.join(packageRoot, "NAMESPACE"),
+      ["export(square)", "export(.onAttach)", "export(.onUnload)", ""].join("\n"),
+    );
+    await mkdir(path.join(packageRoot, "man"));
+    await writeFile(
+      path.join(packageRoot, "man", "square.Rd"),
+      [
+        "\\name{square}",
+        "\\alias{square}",
+        "\\title{Square a value}",
+        "\\usage{square(x)}",
+        "",
+      ].join("\n"),
+    );
+
+    const plan = createPackageCheckPlan(await packPackage(packageRoot));
+    const documentation = plan.steps.find((step) => step.id === "documentation:exports");
+    expect(documentation?.code).toContain('".onAttach"');
+    expect(documentation?.code).toContain('".onUnload"');
+    expect(documentation?.code).toContain('"square"');
+  });
+
+  it("does not fail guarded examples for unavailable declared Suggests", async () => {
+    const packageRoot = await fixturePackage();
+    await mkdir(path.join(packageRoot, "man"));
+    await writeFile(
+      path.join(packageRoot, "man", "square.Rd"),
+      [
+        "\\name{square}",
+        "\\alias{square}",
+        "\\title{Square a value}",
+        "\\usage{square(x)}",
+        "\\examples{if (!require(helper)) return(); square(3)}",
+        "",
+      ].join("\n"),
+    );
+    const artifact = await packPackage(packageRoot);
+    const result = await runPackageChecks(artifact, {
+      reset: () => Promise.resolve(),
+      evalDetailed: (code) =>
+        Promise.resolve({
+          warnings: code.includes('utils::example("square"')
+            ? [{ code: "NRW1115", message: "there is no package called 'helper'" }]
+            : [],
+          output: [],
+        }),
+    });
+    expect(result.passed).toBe(true);
+
+    const actionable = await runPackageChecks(artifact, {
+      reset: () => Promise.resolve(),
+      evalDetailed: (code) =>
+        Promise.resolve({
+          warnings: code.includes('utils::example("square"')
+            ? [
+                { code: "NRW1115", message: "there is no package called 'helper'" },
+                { code: "NRW1999", message: "real semantic warning" },
+              ]
+            : [],
+          output: [],
+        }),
+    });
+    expect(actionable.firstBlocker).toBeUndefined();
+    expect(actionable.steps.find((step) => step.id === "example:square")).toMatchObject({
+      id: "example:square",
+      status: "passed",
+      warningCount: 1,
+    });
+  });
+
+  it("marks examples with a top-level unavailable optional require as not applicable", async () => {
+    const packageRoot = await fixturePackage();
+    await mkdir(path.join(packageRoot, "man"));
+    await writeFile(
+      path.join(packageRoot, "man", "square.Rd"),
+      [
+        "\\name{square}",
+        "\\alias{square}",
+        "\\title{Square a value}",
+        "\\usage{square(x)}",
+        "\\examples{square(2)",
+        'require("helper")',
+        "helper_fit(square(3))}",
+        "",
+      ].join("\n"),
+    );
+    const artifact = await packPackage(packageRoot);
+    const result = await runPackageChecks(artifact, {
+      reset: () => Promise.resolve(),
+      evalDetailed: () => Promise.resolve({ value: null, warnings: [], output: [] }),
+    });
+    expect(result.steps.find((step) => step.id === "example:square")).toEqual({
+      id: "example:square",
+      kind: "examples",
+      status: "not-applicable",
+      message: "Example requires unavailable suggested package 'helper'.",
+    });
+  });
+
+  it("marks retained tests as not applicable when their declared suggested framework is absent", async () => {
+    const packageRoot = await fixturePackage();
+    await mkdir(path.join(packageRoot, "man"));
+    await writeFile(
+      path.join(packageRoot, "man", "square.Rd"),
+      [
+        "\\name{square}",
+        "\\alias{square}",
+        "\\title{Square a value}",
+        "\\usage{square(x)}",
+        "",
+      ].join("\n"),
+    );
+    await mkdir(path.join(packageRoot, "tests"));
+    await writeFile(path.join(packageRoot, "tests", "helper.R"), 'library("helper")\n');
+    const artifact = await packPackage(packageRoot, { includeTests: true });
+    const result = await runPackageChecks(artifact, {
+      reset: () => Promise.resolve(),
+      evalDetailed: (code) => {
+        if (code.includes(".nativr_package_check_expressions <-")) {
+          return Promise.resolve({ value: 1, warnings: [], output: [] });
+        }
+        if (code.includes("[[1L]]")) {
+          return Promise.reject(
+            new Error("expression 1: There is no installed package called 'helper'."),
+          );
+        }
+        return Promise.resolve({ value: null, warnings: [], output: [] });
+      },
+    });
+    expect(result.passed).toBe(true);
+    expect(result.firstBlocker).toBeUndefined();
+    expect(result.steps.find((step) => step.id === "test:helper.R")).toEqual({
+      id: "test:helper.R",
+      kind: "tests",
+      status: "not-applicable",
+      message: "Test requires unavailable suggested package 'helper'.",
+    });
+  });
+
+  it("classifies saved-output execution consistently when its retained test needs Suggests", async () => {
+    const packageRoot = await fixturePackage();
+    await mkdir(path.join(packageRoot, "tests"));
+    await writeFile(path.join(packageRoot, "tests", "helper.R"), 'library("helper")\n');
+    await writeFile(path.join(packageRoot, "tests", "helper.Rout.save"), '> library("helper")\n');
+    const artifact = await packPackage(packageRoot, { includeTests: true });
+    const result = await runPackageChecks(artifact, {
+      reset: () => Promise.resolve(),
+      evalDetailed: (code) =>
+        code.includes("withVisible")
+          ? Promise.reject(
+              new Error("expression 1: There is no installed package called 'helper'."),
+            )
+          : Promise.resolve({ value: 1, warnings: [], output: [] }),
+    });
+    expect(result.steps.find((step) => step.id === "saved-output:helper.R")).toEqual({
+      id: "saved-output:helper.R",
+      kind: "saved-output",
+      status: "not-applicable",
+      message: "Saved-output test requires unavailable suggested package 'helper'.",
+    });
+  });
+
+  it("marks examples as not applicable only when errors name a declared unavailable Suggests", async () => {
+    const packageRoot = await fixturePackage();
+    await mkdir(path.join(packageRoot, "man"));
+    await writeFile(
+      path.join(packageRoot, "man", "square.Rd"),
+      [
+        "\\name{square}",
+        "\\alias{square}",
+        "\\title{Square a value}",
+        "\\usage{square(x)}",
+        "\\examples{stop(\"Package 'helper' missing -- install from CRAN.\")}",
+        "",
+      ].join("\n"),
+    );
+    const artifact = await packPackage(packageRoot);
+    const result = await runPackageChecks(artifact, {
+      reset: () => Promise.resolve(),
+      evalDetailed: (code) =>
+        code.includes('utils::example("square"')
+          ? Promise.reject(new Error("Package 'helper' missing -- install from CRAN."))
+          : Promise.resolve({ value: null, warnings: [], output: [] }),
+    });
+    expect(result.passed).toBe(true);
+    expect(result.firstBlocker).toBeUndefined();
+    expect(result.steps.find((step) => step.id === "example:square")).toEqual({
+      id: "example:square",
+      kind: "examples",
+      status: "not-applicable",
+      message: "Example requires unavailable suggested package 'helper'.",
+    });
+
+    const needed = await runPackageChecks(artifact, {
+      reset: () => Promise.resolve(),
+      evalDetailed: (code) =>
+        code.includes('utils::example("square"')
+          ? Promise.reject(new Error("helper needed for this function to work. Please install it."))
+          : Promise.resolve({ value: null, warnings: [], output: [] }),
+    });
+    expect(needed.passed).toBe(true);
+    expect(needed.steps.find((step) => step.id === "example:square")).toEqual({
+      id: "example:square",
+      kind: "examples",
+      status: "not-applicable",
+      message: "Example requires unavailable suggested package 'helper'.",
+    });
+
+    for (const message of [
+      "This function requires the package 'helper'. You can install it from CRAN.",
+      "This function requires the recommended package dQuote(helper).",
+      "Namespace 'helper' is not registered.",
+      "Please install the `helper` package.",
+    ]) {
+      const guarded = await runPackageChecks(artifact, {
+        reset: () => Promise.resolve(),
+        evalDetailed: (code) =>
+          code.includes('utils::example("square"')
+            ? Promise.reject(new Error(message))
+            : Promise.resolve({ value: null, warnings: [], output: [] }),
+      });
+      expect(guarded.passed).toBe(true);
+      expect(guarded.steps.find((step) => step.id === "example:square")).toEqual({
+        id: "example:square",
+        kind: "examples",
+        status: "not-applicable",
+        message: "Example requires unavailable suggested package 'helper'.",
+      });
+    }
+
+    const unavailableResource = await runPackageChecks(artifact, {
+      reset: () => Promise.resolve(),
+      evalDetailed: (code) =>
+        code.includes('utils::example("square"')
+          ? Promise.reject(
+              Object.assign(new Error("no file found"), {
+                code: "NRE2234",
+                details: {
+                  operation: "system.file",
+                  package: "helper",
+                  packageInstalled: false,
+                },
+              }),
+            )
+          : Promise.resolve({ value: null, warnings: [], output: [] }),
+    });
+    expect(unavailableResource.steps.find((step) => step.id === "example:square")).toEqual({
+      id: "example:square",
+      kind: "examples",
+      status: "not-applicable",
+      message: "Example requires unavailable suggested package 'helper'.",
+    });
+
+    for (const details of [
+      { operation: "system.file", package: "helper", packageInstalled: true },
+      { operation: "system.file", package: "undeclared", packageInstalled: false },
+    ]) {
+      const retainedFailure = await runPackageChecks(artifact, {
+        reset: () => Promise.resolve(),
+        evalDetailed: (code) =>
+          code.includes('utils::example("square"')
+            ? Promise.reject(
+                Object.assign(new Error("no file found"), {
+                  code: "NRE2234",
+                  details,
+                }),
+              )
+            : Promise.resolve({ value: null, warnings: [], output: [] }),
+      });
+      expect(retainedFailure.firstBlocker).toMatchObject({
+        id: "example:square",
+        status: "failed",
+        message: "no file found",
+      });
+    }
+
+    const unrelated = await runPackageChecks(artifact, {
+      reset: () => Promise.resolve(),
+      evalDetailed: (code) =>
+        code.includes('utils::example("square"')
+          ? Promise.reject(new Error("Package 'undeclared' missing -- install from CRAN."))
+          : Promise.resolve({ value: null, warnings: [], output: [] }),
+    });
+    expect(unrelated.firstBlocker).toMatchObject({
+      id: "example:square",
+      status: "failed",
+      message: "Package 'undeclared' missing -- install from CRAN.",
+    });
+    const unrelatedNeeded = await runPackageChecks(artifact, {
+      reset: () => Promise.resolve(),
+      evalDetailed: (code) =>
+        code.includes('utils::example("square"')
+          ? Promise.reject(
+              new Error("undeclared needed for this function to work. Please install it."),
+            )
+          : Promise.resolve({ value: null, warnings: [], output: [] }),
+    });
+    expect(unrelatedNeeded.firstBlocker).toMatchObject({
+      id: "example:square",
+      status: "failed",
+      message: "undeclared needed for this function to work. Please install it.",
+    });
+  });
+
+  it("classifies explicit system-command host requirements without granting ambient authority", async () => {
+    const packageRoot = await fixturePackage();
+    await mkdir(path.join(packageRoot, "man"));
+    await writeFile(
+      path.join(packageRoot, "man", "square.Rd"),
+      [
+        "\\name{square}",
+        "\\alias{square}",
+        "\\title{Square a value}",
+        "\\usage{square(x)}",
+        '\\examples{system("viewer output.ps")}',
+        "",
+      ].join("\n"),
+    );
+    const artifact = await packPackage(packageRoot);
+    const result = await runPackageChecks(artifact, {
+      reset: () => Promise.resolve(),
+      evalDetailed: (code) =>
+        code.includes('utils::example("square"')
+          ? Promise.reject(
+              new Error(
+                "system()/system2()/pipe() requires an explicit createR({ systemCommand }) host capability.",
+              ),
+            )
+          : Promise.resolve({ value: null, warnings: [], output: [] }),
+    });
+
+    expect(result.passed).toBe(true);
+    expect(result.firstBlocker).toBeUndefined();
+    expect(result.steps.find((step) => step.id === "example:square")).toEqual({
+      id: "example:square",
+      kind: "examples",
+      status: "not-applicable",
+      message:
+        "Example requires an explicit system-command host adapter outside the default browser-admissible runtime.",
+    });
+  });
+
+  it("marks examples as not applicable when they require an unavailable Enhances package", async () => {
+    const packageRoot = await fixturePackage();
+    const descriptionPath = path.join(packageRoot, "DESCRIPTION");
+    const description = await readFile(descriptionPath, "utf8");
+    await writeFile(
+      descriptionPath,
+      description.replace("NeedsCompilation: no", "Enhances: enhancer\nNeedsCompilation: no"),
+    );
+    await mkdir(path.join(packageRoot, "man"));
+    await writeFile(
+      path.join(packageRoot, "man", "square.Rd"),
+      [
+        "\\name{square}",
+        "\\alias{square}",
+        "\\title{Square a value}",
+        "\\usage{square(x)}",
+        "\\examples{enhancer::enabled(); square(3)}",
+        "",
+      ].join("\n"),
+    );
+    const artifact = await packPackage(packageRoot);
+    expect(artifact.dependencies).toContainEqual({ name: "enhancer", kind: "Enhances" });
+    const result = await runPackageChecks(artifact, {
+      reset: () => Promise.resolve(),
+      evalDetailed: (code) =>
+        code.includes('utils::example("square"')
+          ? Promise.reject(new Error("Namespace 'enhancer' is not registered."))
+          : Promise.resolve({ value: null, warnings: [], output: [] }),
+    });
+    expect(result.passed).toBe(true);
+    expect(result.firstBlocker).toBeUndefined();
+    expect(result.steps.find((step) => step.id === "example:square")).toEqual({
+      id: "example:square",
+      kind: "examples",
+      status: "not-applicable",
+      message: "Example requires unavailable optional package 'enhancer' declared in Enhances.",
+    });
   });
 
   it("evaluates retained tools resources in a hidden read-only source context", async () => {
@@ -135,8 +889,13 @@ describe("pure-R package packager", () => {
         "\\alias{square-alias}",
         "\\title{Square a value}",
         "\\description{An independently authored example fixture.}",
+        "%\\examples{",
+        "% commented <- stop('not executable')",
+        "%}",
         "\\examples{",
         "ordinary <- square(3)",
+        "% ignored <- stop('not executable')",
+        'percent <- "\\%"',
         "\\out{illustrative output, not R code}",
         "\\dontshow{hidden <- ordinary + 1}",
         "\\testonly{tested <- hidden + 1}",
@@ -185,6 +944,8 @@ describe("pure-R package packager", () => {
         { kind: "dontrun", source: "never <- 999" },
       ]),
     );
+    const runBlock = manifest.topics[0]?.blocks.find((block) => block.kind === "run");
+    expect(runBlock?.source).toContain('percent <- "%"');
     const helpResource = artifact.bundle.resources.find(
       (resource) => resource.path === ".nativr/help-v1.json",
     );
@@ -327,6 +1088,9 @@ describe("pure-R package packager", () => {
     await writeFile(path.join(docRoot, "browser-guide.R"), "square(4)\n");
 
     const artifact = await packPackage(packageRoot);
+    expect(
+      createPackageCheckPlan(artifact).steps.find((step) => step.kind === "vignettes")?.code,
+    ).toContain("$File");
     const manifestResource = artifact.bundle.resources.find(
       (resource) => resource.path === ".nativr/vignettes-v1.json",
     );
@@ -535,6 +1299,42 @@ describe("pure-R package packager", () => {
     }
   });
 
+  it("normalizes xz-compressed sysdata before it enters a browser bundle", async () => {
+    const packageRoot = await fixturePackage();
+    await writeFile(
+      path.join(packageRoot, "R", "sysdata.rda"),
+      Buffer.from(
+        "fd377a585a000004e6d6b4460200210116000000742fe5a3e000f2007b5d00291107545722e46e52ca9f92d92521b606e1fa1daec87daa872c1abc22c3010f8e4bba95c3f132fd6da68dcb6074c4aaeb1466816a3bc7e7631c45dcf4a1e3a9311e2c1705bcf95027064a66fabe8e81bf34d95fe1481dabe8a8d97fb6aa7a0252eb300f429c0e95dc0d25c5b850bfc01a08038dd97ee51f0060000000bba18fc79d2a2c6100019701f3010000e808476bb1c467fb020000000004595a",
+        "hex",
+      ),
+    );
+    await writeFile(
+      path.join(packageRoot, "R", "main.R"),
+      "sysdata_total <- function() sum(example$value)\n",
+    );
+    await writeFile(path.join(packageRoot, "NAMESPACE"), "export(sysdata_total)\n");
+
+    const artifact = await packPackage(packageRoot);
+    const sysdata = artifact.bundle.resources.find((resource) => resource.path === "R/sysdata.rda");
+    const normalized = Buffer.from(sysdata?.data ?? "", "base64");
+    expect(normalized.subarray(0, 6).toString("hex")).not.toBe("fd377a585a00");
+    expect(normalized.subarray(0, 4).toString("ascii")).toBe("RDX2");
+
+    const runtime = await createR({
+      execution: "inline",
+      assets: {
+        treeSitterRuntimeWasm: new URL("../../parser/assets/web-tree-sitter.wasm", import.meta.url),
+        rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+      },
+      packages: [artifact.bundle],
+    });
+    try {
+      await expect(runtime.eval("demopkg::sysdata_total()")).resolves.toBe(3);
+    } finally {
+      await runtime.dispose();
+    }
+  });
+
   it("reads the canonical one-directory source tarball shape without extracting links", async () => {
     const packageRoot = await fixturePackage();
     const parent = path.dirname(packageRoot);
@@ -583,6 +1383,119 @@ describe("pure-R package packager", () => {
     ]);
   });
 
+  it("discovers every standard R package source-file extension", async () => {
+    const packageRoot = await fixturePackage();
+    await writeFile(path.join(packageRoot, "R", "legacy.q"), "legacy_q <- 1\n");
+    await writeFile(path.join(packageRoot, "R", "upper.S"), "upper_s <- 2\n");
+    await writeFile(path.join(packageRoot, "R", "lower.r"), "lower_r <- 3\n");
+    await writeFile(path.join(packageRoot, "R", "lower.s"), "lower_s <- 4\n");
+    await writeFile(path.join(packageRoot, "R", "ignored.txt"), "ignored <- 5\n");
+    const originalDescription = await readFile(path.join(packageRoot, "DESCRIPTION"), "utf8");
+    await writeFile(
+      path.join(packageRoot, "DESCRIPTION"),
+      `${originalDescription.trimEnd()}\nCollate: 'legacy.q' 'upper.S' 'lower.r' 'lower.s' 'main.R'\n`,
+    );
+
+    const artifact = await packPackage(packageRoot);
+    expect(artifact.bundle.rSources.map((entry) => entry.path)).toEqual([
+      "R/legacy.q",
+      "R/upper.S",
+      "R/lower.r",
+      "R/lower.s",
+      "R/main.R",
+    ]);
+    expect(artifact.bundle.rSources.map((entry) => entry.source)).not.toContain("ignored <- 5\n");
+  });
+
+  it("selects safe platform-conditional NAMESPACE declarations at packaging time", async () => {
+    const packageRoot = await fixturePackage();
+    await writeFile(
+      path.join(packageRoot, "NAMESPACE"),
+      [
+        'if (Sys.getenv("R_OSTYPE") == "windows" || .Platform$OS.type == "windows") {',
+        "  importFrom(utils, winProgressBar)",
+        "} else {",
+        "  importFrom(utils, txtProgressBar)",
+        "}",
+        "export(square)",
+        "",
+      ].join("\n"),
+    );
+
+    const unix = await packPackage(packageRoot);
+    const windows = await packPackage(packageRoot, { sourcePlatform: "windows" });
+    expect(unix.bundle.namespace).toBe("importFrom(utils, txtProgressBar)\nexport(square)\n");
+    expect(windows.bundle.namespace).toBe("importFrom(utils, winProgressBar)\nexport(square)\n");
+  });
+
+  it("selects versioned core-namespace conditionals for the target R contract", async () => {
+    const packageRoot = await fixturePackage();
+    await writeFile(
+      path.join(packageRoot, "NAMESPACE"),
+      [
+        'if (getRversion() < "4.5.0") { importFrom(methods, getMethods) }',
+        'if (getRversion() >= "2.14.0") { importFrom(stats, getCall) }',
+        'if (getRversion() >= "3.3.0" && "getSource" %in% getNamespaceExports("utils")) {',
+        "  importFrom(utils, getSource)",
+        "}",
+        'if (getRversion() >= "3.3.0" && "packageDescription" %in% getNamespaceExports("utils")) {',
+        "  importFrom(utils, packageDescription)",
+        "}",
+        'if (getRversion() >= "5.0.0") { importFrom(utils, neverSelected) }',
+        "export(square)",
+        "",
+      ].join("\n"),
+    );
+
+    const artifact = await packPackage(packageRoot);
+    expect(artifact.bundle.namespace).toBe(
+      [
+        "importFrom(stats, getCall)",
+        "importFrom(utils, packageDescription)",
+        "export(square)",
+        "",
+      ].join("\n"),
+    );
+  });
+
+  it("selects safe unbraced and nested target-platform NAMESPACE conditionals", async () => {
+    const packageRoot = await fixturePackage();
+    await writeFile(
+      path.join(packageRoot, "NAMESPACE"),
+      [
+        'if (getRversion() < "4.0.0")',
+        "  importFrom(graphics, plot)",
+        'if (tools:::.OStype() == "unix") {',
+        "  export(unixOnly)",
+        '  if (identical(1L, grep("linux", R.version[["os"]]))) {',
+        "    export(linuxOnly)",
+        "  }",
+        "}",
+        "export(square)",
+        "",
+      ].join("\n"),
+    );
+
+    const unix = await packPackage(packageRoot);
+    const windows = await packPackage(packageRoot, { sourcePlatform: "windows" });
+    expect(unix.bundle.namespace).toBe("export(unixOnly)\nexport(square)\n");
+    expect(windows.bundle.namespace).toBe("export(square)\n");
+  });
+
+  it("rejects NAMESPACE conditionals outside the safe platform-expression subset", async () => {
+    const packageRoot = await fixturePackage();
+    await writeFile(
+      path.join(packageRoot, "NAMESPACE"),
+      'if (file.exists("host-secret")) { export(square) }\n',
+    );
+
+    const inspected = await inspectPackage(packageRoot);
+    expect(inspected.compatibility).toMatchObject({
+      packaging: "blocked",
+      issues: [{ code: "NRPKG1015", path: "NAMESPACE" }],
+    });
+  });
+
   it("decodes portable latin1 package metadata, namespace, and R sources", async () => {
     const packageRoot = await fixturePackage();
     await writeFile(
@@ -617,22 +1530,96 @@ describe("pure-R package packager", () => {
     await expect(packPackage(packageRoot)).rejects.toBeInstanceOf(PackageCompatibilityError);
   });
 
-  it("admits standard S4 method export directives for the runtime loader", async () => {
+  it("admits cleanup-only hooks without executing host shell code", async () => {
+    const packageRoot = await fixturePackage();
+    await writeFile(
+      path.join(packageRoot, "cleanup"),
+      "#!/bin/sh\nrm -f ./R/*~ ./tests/*.ps ./DEADJOE\n",
+    );
+
+    const artifact = await packPackage(packageRoot);
+    expect(artifact.compatibility).toMatchObject({
+      packaging: "ready",
+      execution: "unchecked",
+      issues: [
+        {
+          code: "NRPKG1015",
+          severity: "warning",
+          path: "cleanup",
+        },
+      ],
+    });
+    expect(artifact.bundle.resources.some((resource) => resource.path === "cleanup")).toBe(false);
+  });
+
+  it("admits inert JVM assets without claiming JVM execution", async () => {
+    const packageRoot = await fixturePackage();
+    await mkdir(path.join(packageRoot, "java"));
+    await mkdir(path.join(packageRoot, "inst", "java"));
+    await writeFile(
+      path.join(packageRoot, "java", "ExternalHelper.java"),
+      "final class ExternalHelper {}\n",
+    );
+    await writeFile(path.join(packageRoot, "inst", "java", "external-helper.jar"), "inert");
+
+    const inspected = await inspectPackage(packageRoot);
+    expect(inspected.compatibility).toMatchObject({
+      packaging: "ready",
+      issues: [
+        { code: "NRPKG1002", severity: "warning", path: "inst/java/external-helper.jar" },
+        { code: "NRPKG1002", severity: "warning", path: "java/ExternalHelper.java" },
+      ],
+    });
+    expect(inspected.bundle.resources).toContainEqual({
+      path: "java/external-helper.jar",
+      data: Buffer.from("inert").toString("base64"),
+    });
+    await expect(packPackage(packageRoot)).resolves.toMatchObject({
+      compatibility: { packaging: "ready" },
+    });
+  });
+
+  it("admits standard S4 class and method export directives for the runtime loader", async () => {
     const packageRoot = await fixturePackage();
     await writeFile(
       path.join(packageRoot, "NAMESPACE"),
-      "export(square)\nexportMethods(print, code)\n",
+      "export(square)\nexportClasses(DemoClass)\nexportMethods(print, code)\n",
     );
     const inspected = await inspectPackage(packageRoot);
     expect(inspected.compatibility.packaging).toBe("ready");
     await expect(packPackage(packageRoot)).resolves.toMatchObject({
-      bundle: { namespace: "export(square)\nexportMethods(print, code)\n" },
+      bundle: {
+        namespace: "export(square)\nexportClasses(DemoClass)\nexportMethods(print, code)\n",
+      },
+    });
+  });
+
+  it("admits standard S4 method import directives for the runtime loader", async () => {
+    const packageRoot = await fixturePackage();
+    await writeFile(
+      path.join(packageRoot, "NAMESPACE"),
+      'importMethodsFrom(methodprovider, show, "[")\nexport(square)\n',
+    );
+    const inspected = await inspectPackage(packageRoot);
+    expect(inspected.compatibility.packaging).toBe("ready");
+    await expect(packPackage(packageRoot)).resolves.toMatchObject({
+      bundle: {
+        namespace: 'importMethodsFrom(methodprovider, show, "[")\nexport(square)\n',
+      },
     });
   });
 
   it("enforces bounded input before constructing an artifact", async () => {
     const packageRoot = await fixturePackage();
     await expect(inspectPackage(packageRoot, { limits: { maxFiles: 2 } })).rejects.toThrow(
+      "configured file or byte limits",
+    );
+
+    const archive = path.join(path.dirname(packageRoot), "bounded-input.tar.gz");
+    await createTar({ gzip: true, file: archive, cwd: path.dirname(packageRoot) }, [
+      path.basename(packageRoot),
+    ]);
+    await expect(inspectPackage(archive, { limits: { maxFiles: 2 } })).rejects.toThrow(
       "configured file or byte limits",
     );
   });
@@ -663,8 +1650,9 @@ describe("pure-R package packager", () => {
     expect(resolved.bundles).toEqual([helper.bundle, consumer.bundle]);
     expect(resolved.lock).toMatchObject({
       format: "nativr-package-lock",
-      formatVersion: 1,
+      formatVersion: 2,
       roots: ["demopkg"],
+      suggests: { mode: "none", packages: [] },
       packages: [
         { name: "helper", version: "2.1.0", dependencies: [] },
         { name: "demopkg", version: "1.2.3", dependencies: ["helper"] },
@@ -677,10 +1665,46 @@ describe("pure-R package packager", () => {
 
   it("keeps Suggests optional, checks requested optional edges, and compares R package versions", async () => {
     const artifact = await packPackage(await fixturePackage());
+    const helper = await packPackage(await fixturePackage("helper", "2.1.0"));
     expect(resolvePackageArtifacts([artifact]).artifacts).toHaveLength(1);
     expect(() => resolvePackageArtifacts([artifact], { includeSuggests: true })).toThrow(
       "requires missing package 'helper'",
     );
+    const selected = resolvePackageArtifacts([artifact, helper], {
+      roots: ["demopkg"],
+      selectedSuggests: ["helper"],
+    });
+    expect(selected.artifacts.map((candidate) => candidate.package.name)).toEqual([
+      "helper",
+      "demopkg",
+    ]);
+    expect(selected.lock).toMatchObject({
+      formatVersion: 2,
+      suggests: { mode: "selected", packages: ["helper"] },
+      packages: [
+        { name: "helper", dependencies: [] },
+        { name: "demopkg", dependencies: ["helper"] },
+      ],
+    });
+    expect(() =>
+      resolvePackageArtifacts([artifact], {
+        roots: ["demopkg"],
+        selectedSuggests: ["helper"],
+      }),
+    ).toThrow("requires missing package 'helper'");
+    expect(() =>
+      resolvePackageArtifacts([artifact, helper], {
+        roots: ["demopkg"],
+        selectedSuggests: ["undeclared"],
+      }),
+    ).toThrow("not declared by the resolved package closure: undeclared");
+    expect(() =>
+      resolvePackageArtifacts([artifact, helper], {
+        roots: ["demopkg"],
+        includeSuggests: true,
+        selectedSuggests: ["helper"],
+      }),
+    ).toThrow("cannot be used together");
     expect(comparePackageVersions("1.2", "1.2.0")).toBe(0);
     expect(comparePackageVersions("1.10", "1.9.9")).toBe(1);
     expect(comparePackageVersions("1.0-2", "1.0.3")).toBe(-1);
@@ -690,7 +1714,7 @@ describe("pure-R package packager", () => {
     const consumerRoot = await fixturePackage();
     await writeFile(
       path.join(consumerRoot, "DESCRIPTION"),
-      "Package: demopkg\nVersion: 1.2.3\nImports: stats, helper (>= 2.1)\nNeedsCompilation: no\n",
+      "Package: demopkg\nVersion: 1.2.3\nImports: stats, grid, helper (>= 2.1)\nNeedsCompilation: no\n",
     );
     const helperRoot = await fixturePackage("helper", "2.1.0");
     const consumerArchive = await archivePackage(consumerRoot);
@@ -700,7 +1724,7 @@ describe("pure-R package packager", () => {
     const index = [
       "Package: demopkg",
       "Version: 1.2.3",
-      "Imports: stats, helper (>= 2.1)",
+      "Imports: stats, grid, helper (>= 2.1)",
       "NeedsCompilation: no",
       `MD5sum: ${consumerMd5}`,
       "",
@@ -733,6 +1757,67 @@ describe("pure-R package packager", () => {
       "demopkg",
     ]);
     expect(installed.lock.roots).toEqual(["demopkg"]);
+    expect(installed.lock.providedPackages).toMatchObject({
+      compiler: "4.6.1",
+      datasets: "4.6.1",
+      grid: "4.6.1",
+      parallel: "4.6.1",
+    });
+  });
+
+  it("installs only selected Suggests and records the optional closure in the lock", async () => {
+    const consumerRoot = await fixturePackage();
+    const helperRoot = await fixturePackage("helper", "2.1.0");
+    const consumerArchive = await archivePackage(consumerRoot);
+    const helperArchive = await archivePackage(helperRoot);
+    const index = [
+      "Package: demopkg",
+      "Version: 1.2.3",
+      "Imports: stats",
+      "Suggests: helper (>= 2.1)",
+      "NeedsCompilation: no",
+      `MD5sum: ${createHash("md5").update(consumerArchive).digest("hex")}`,
+      "",
+      "Package: helper",
+      "Version: 2.1.0",
+      "Imports: stats",
+      "NeedsCompilation: no",
+      `MD5sum: ${createHash("md5").update(helperArchive).digest("hex")}`,
+      "",
+    ].join("\n");
+    const requests: string[] = [];
+    const fetch_: typeof fetch = (input) => {
+      const url = new URL(input instanceof Request ? input.url : input);
+      requests.push(url.pathname);
+      if (url.pathname.endsWith("/PACKAGES.gz"))
+        return Promise.resolve(new Response(gzipSync(index)));
+      if (url.pathname.endsWith("/demopkg_1.2.3.tar.gz"))
+        return Promise.resolve(new Response(consumerArchive));
+      if (url.pathname.endsWith("/helper_2.1.0.tar.gz"))
+        return Promise.resolve(new Response(helperArchive));
+      return Promise.resolve(new Response("missing", { status: 404 }));
+    };
+
+    const defaultInstall = await installPackagesFromRepository(["demopkg"], {
+      repository: "https://packages.example.test/cran/",
+      fetch: fetch_,
+    });
+    expect(defaultInstall.artifacts.map((artifact) => artifact.package.name)).toEqual(["demopkg"]);
+    expect(requests.some((request) => request.endsWith("/helper_2.1.0.tar.gz"))).toBe(false);
+
+    requests.length = 0;
+    const selectedInstall = await installPackagesFromRepository(["demopkg"], {
+      repository: "https://packages.example.test/cran/",
+      fetch: fetch_,
+      selectedSuggests: ["helper"],
+    });
+    expect(selectedInstall.artifacts.map((artifact) => artifact.package.name)).toEqual([
+      "helper",
+      "demopkg",
+    ]);
+    expect(requests.some((request) => request.endsWith("/PACKAGES.gz"))).toBe(false);
+    expect(requests.some((request) => request.endsWith("/helper_2.1.0.tar.gz"))).toBe(true);
+    expect(selectedInstall.lock.suggests).toEqual({ mode: "selected", packages: ["helper"] });
   });
 
   it("rejects a repository archive that does not match its index digest", async () => {
@@ -776,7 +1861,7 @@ async function fixturePackage(name = "demopkg", version = "1.2.3"): Promise<stri
       "License: MIT + file LICENSE",
       "Depends: R (>= 4.0.0)",
       "Imports: stats",
-      "Suggests: helper (>= 2.1)",
+      ...(name === "demopkg" ? ["Suggests: helper (>= 2.1)"] : []),
       "NeedsCompilation: no",
       "",
     ].join("\n"),

@@ -10,6 +10,7 @@ import {
   isAtomic,
   isFactor,
   isMissing,
+  isVector,
   logicalVector,
   rawVector,
   vectorClasses,
@@ -33,6 +34,13 @@ import { bitwiseHexmodeValues, isHexmodeValue, notHexmodeValue } from "./hexmode
 
 type NumericVector = RLogicalVector | RIntegerVector | RDoubleVector | RComplexVector;
 type AtomicVector = NumericVector | RRawVector | RCharacterVector;
+type MembershipVector = AtomicVector | RList;
+
+const VECTOR_CHECKPOINT_INTERVAL = 4_096;
+
+function checkpointVectorIteration(context: OperatorContext, index: number): void {
+  if (index % VECTOR_CHECKPOINT_INTERVAL === 0) context.checkpoint();
+}
 
 /** Stable metadata for JavaScript reference operators used by capability reporting. */
 export const REFERENCE_OPERATOR_MANIFEST = Object.freeze([
@@ -50,6 +58,13 @@ export const jsReferenceOperators: RuntimeOperators = {
   unary(context, operator, value) {
     if (operator === "!" && isHexmodeValue(value)) {
       return notHexmodeValue(value, context);
+    }
+    if (
+      operator === "!" &&
+      ((isVector(value) && value.length === 0) ||
+        (value.type === "expression" && value.values.length === 0))
+    ) {
+      return logicalVector([]);
     }
     if (value.type === "raw") {
       if (operator !== "!") {
@@ -127,20 +142,20 @@ export const jsReferenceOperators: RuntimeOperators = {
     };
   },
 
-  binary(context, operator, left, right) {
+  binary(context, operator, left, right, warningCall) {
     if ((operator === "&" || operator === "|") && (isHexmodeValue(left) || isHexmodeValue(right))) {
       return bitwiseHexmodeValues(left, right, operator, context);
     }
     if (operator === ":") return createUnitSequence(context, left, right);
     if (["<", "<=", ">", ">=", "==", "!="].includes(operator)) {
       if (isNumericVersionValue(left) || isNumericVersionValue(right)) {
-        return compareNumericVersionVectors(context, operator, left, right);
+        return compareNumericVersionVectors(context, operator, left, right, warningCall);
       }
-      return compareVectors(context, operator, left, right);
+      return compareVectors(context, operator, left, right, warningCall);
     }
     if (operator === "&" || operator === "|") {
       if (left.type === "raw" && right.type === "raw") {
-        const length = recycledLength(context, left.length, right.length);
+        const length = recycledLength(context, left.length, right.length, warningCall);
         context.allocate(length);
         return rawVector(
           Array.from({ length }, (_, index) => {
@@ -151,7 +166,7 @@ export const jsReferenceOperators: RuntimeOperators = {
           }),
         );
       }
-      return logicalVectors(context, operator, left, right);
+      return logicalVectors(context, operator, left, right, warningCall);
     }
     if (operator === "%in%") return membershipVector(context, left, right);
     if (!["+", "-", "*", "/", "^", "%%", "%/%"].includes(operator)) {
@@ -160,9 +175,9 @@ export const jsReferenceOperators: RuntimeOperators = {
         `The current NativR subset does not support binary operator '${operator}'.`,
       );
     }
-    const lhs = requireNumeric(left, operator);
-    const rhs = requireNumeric(right, operator);
-    const length = recycledLength(context, lhs.length, rhs.length);
+    const lhs = requireBinaryNumeric(left, operator);
+    const rhs = requireBinaryNumeric(right, operator);
+    const length = recycledLength(context, lhs.length, rhs.length, warningCall);
     context.allocate(length);
     const missing = new Uint8Array(length);
     if (lhs.type === "complex" || rhs.type === "complex") {
@@ -175,7 +190,7 @@ export const jsReferenceOperators: RuntimeOperators = {
       const real = new Float64Array(length);
       const imaginary = new Float64Array(length);
       for (let index = 0; index < length; index += 1) {
-        context.checkpoint();
+        checkpointVectorIteration(context, index);
         const leftIndex = index % lhs.length;
         const rightIndex = index % rhs.length;
         if (isMissing(lhs, leftIndex) || isMissing(rhs, rightIndex)) {
@@ -192,7 +207,7 @@ export const jsReferenceOperators: RuntimeOperators = {
       }
       return {
         ...complexVector(real, imaginary, compactMask(missing)),
-        attributes: arithmeticAttributes(lhs, rhs, length),
+        attributes: arithmeticAttributes(context, lhs, rhs, length),
       };
     }
     const returnsDouble = lhs.type === "double" || rhs.type === "double" || "/^".includes(operator);
@@ -200,7 +215,7 @@ export const jsReferenceOperators: RuntimeOperators = {
     if (returnsDouble) {
       const values = new Float64Array(length);
       for (let index = 0; index < length; index += 1) {
-        context.checkpoint();
+        checkpointVectorIteration(context, index);
         const leftIndex = index % lhs.length;
         const rightIndex = index % rhs.length;
         if (isMissing(lhs, leftIndex) || isMissing(rhs, rightIndex)) {
@@ -215,13 +230,13 @@ export const jsReferenceOperators: RuntimeOperators = {
       }
       return {
         ...doubleVector(values, compactMask(missing)),
-        attributes: arithmeticAttributes(lhs, rhs, length),
+        attributes: arithmeticAttributes(context, lhs, rhs, length),
       };
     }
 
     const values = new Int32Array(length);
     for (let index = 0; index < length; index += 1) {
-      context.checkpoint();
+      checkpointVectorIteration(context, index);
       const leftIndex = index % lhs.length;
       const rightIndex = index % rhs.length;
       if (isMissing(lhs, leftIndex) || isMissing(rhs, rightIndex)) {
@@ -242,19 +257,46 @@ export const jsReferenceOperators: RuntimeOperators = {
     }
     return {
       ...integerVector(values, compactMask(missing)),
-      attributes: arithmeticAttributes(lhs, rhs, length),
+      attributes: arithmeticAttributes(context, lhs, rhs, length),
     };
   },
 };
 
 function arithmeticAttributes(
-  left: NumericVector,
-  right: NumericVector,
+  context: OperatorContext,
+  left: AtomicVector,
+  right: AtomicVector,
   resultLength: number,
 ): ReadonlyMap<string, RValue> {
   if (resultLength === 0) return new Map();
   const leftDimensions = vectorDimensions(left);
   const rightDimensions = vectorDimensions(right);
+  if (
+    resultLength > 1 &&
+    leftDimensions !== undefined &&
+    left.length === 1 &&
+    rightDimensions === undefined
+  ) {
+    context.warn({
+      code: "NRW1152",
+      message:
+        "Recycling array of length 1 in array-vector arithmetic is deprecated.\nUse c() or as.vector() instead.",
+    });
+    return new Map();
+  }
+  if (
+    resultLength > 1 &&
+    rightDimensions !== undefined &&
+    right.length === 1 &&
+    leftDimensions === undefined
+  ) {
+    context.warn({
+      code: "NRW1153",
+      message:
+        "Recycling array of length 1 in vector-array arithmetic is deprecated.\nUse c() or as.vector() instead.",
+    });
+    return new Map();
+  }
   if (
     leftDimensions !== undefined &&
     rightDimensions !== undefined &&
@@ -339,10 +381,11 @@ function compareNumericVersionVectors(
   operator: string,
   left: RValue,
   right: RValue,
+  warningCall?: string,
 ): RLogicalVector {
   const lhs = numericVersionParts(left, context);
   const rhs = numericVersionParts(right, context);
-  const length = recycledLength(context, lhs.length, rhs.length);
+  const length = recycledLength(context, lhs.length, rhs.length, warningCall);
   const values = new Uint8Array(length);
   const missing = new Uint8Array(length);
   for (let index = 0; index < length; index += 1) {
@@ -385,6 +428,7 @@ function compareVectors(
   operator: string,
   left: RValue,
   right: RValue,
+  warningCall?: string,
 ): RLogicalVector {
   const normalizedLeft = languageComparisonValue(left, operator);
   const normalizedRight = languageComparisonValue(right, operator);
@@ -392,6 +436,9 @@ function compareVectors(
     if (normalizedLeft.type !== "null") requireComparable(normalizedLeft, operator);
     if (normalizedRight.type !== "null") requireComparable(normalizedRight, operator);
     return logicalVector([]);
+  }
+  if (normalizedLeft.type === "list" || normalizedRight.type === "list") {
+    return compareListVectors(context, operator, normalizedLeft, normalizedRight, warningCall);
   }
   const lhs = requireComparable(normalizedLeft, operator);
   const rhs = requireComparable(normalizedRight, operator);
@@ -405,7 +452,7 @@ function compareVectors(
       throw new RTypeMismatchError("NRT3116", "level sets of factors are different");
     }
   }
-  const length = recycledLength(context, lhs.length, rhs.length);
+  const length = recycledLength(context, lhs.length, rhs.length, warningCall);
   context.allocate(length);
   const values = new Uint8Array(length);
   const missing = new Uint8Array(length);
@@ -440,18 +487,75 @@ function compareVectors(
       values[index] = applyComparison(operator, leftValue, rightValue) ? 1 : 0;
     }
   }
+  const output = logicalVector(values, compactMask(missing));
+  const attributes = new Map(
+    [...arithmeticAttributes(context, lhs, rhs, length)].filter(([name]) =>
+      ["names", "dim", "dimnames"].includes(name),
+    ),
+  );
+  return attributes.size === 0 ? output : { ...output, attributes };
+}
+
+function compareListVectors(
+  context: OperatorContext,
+  operator: string,
+  left: RValue,
+  right: RValue,
+  warningCall?: string,
+): RLogicalVector {
+  if (operator !== "==" && operator !== "!=") {
+    throw new RTypeMismatchError(
+      "NRT3114",
+      `Operator '${operator}' is not defined for list operands.`,
+    );
+  }
+  const lhs = requireMembershipVector(left);
+  const rhs = requireMembershipVector(right);
+  const length = recycledLength(context, lhs.length, rhs.length, warningCall);
+  if (length === 0) return logicalVector([]);
+  const characterMode = membershipHasCharacter(lhs) || membershipHasCharacter(rhs);
+  const values = new Uint8Array(length);
+  const missing = new Uint8Array(length);
+  for (let index = 0; index < length; index += 1) {
+    context.checkpoint();
+    const leftIndex = index % lhs.length;
+    const rightIndex = index % rhs.length;
+    if (membershipMissing(lhs, leftIndex) || membershipMissing(rhs, rightIndex)) {
+      missing[index] = 1;
+      continue;
+    }
+    const equal =
+      membershipKey(lhs, leftIndex, characterMode) ===
+      membershipKey(rhs, rightIndex, characterMode);
+    values[index] = operator === "==" ? (equal ? 1 : 0) : equal ? 0 : 1;
+  }
+  context.allocate(length);
   return logicalVector(values, compactMask(missing));
 }
 
+function membershipMissing(value: MembershipVector, index: number): boolean {
+  if (value.type !== "list") return isMissing(value, index);
+  const entry = value.values[index];
+  return entry !== undefined && isAtomic(entry) && entry.length === 1 && isMissing(entry, 0);
+}
+
 function languageComparisonValue(value: RValue, operator: string): RValue {
-  if (value.type !== "symbol" && value.type !== "language") return value;
+  if (value.type !== "symbol" && value.type !== "language" && value.type !== "formula") {
+    return value;
+  }
   if (operator !== "==" && operator !== "!=") {
     throw new RTypeMismatchError(
       "NRT3114",
       `comparison (${operator}) is not possible for language types`,
     );
   }
-  return characterVector([value.type === "symbol" ? value.name : deparseAst(value.expression)]);
+  if (value.type === "symbol") return characterVector([value.name]);
+  if (value.type === "language") return characterVector([deparseAst(value.expression)]);
+  return characterVector([
+    value.expression === undefined
+      ? `${value.response === undefined ? "" : `${value.response} `}~ ${value.terms.join(" + ")}`
+      : deparseAst(value.expression),
+  ]);
 }
 
 function logicalVectors(
@@ -459,10 +563,11 @@ function logicalVectors(
   operator: "&" | "|",
   left: RValue,
   right: RValue,
+  warningCall?: string,
 ): RLogicalVector {
-  const lhs = requireNumeric(left, operator);
-  const rhs = requireNumeric(right, operator);
-  const length = recycledLength(context, lhs.length, rhs.length);
+  const lhs = requireBinaryNumeric(left, operator);
+  const rhs = requireBinaryNumeric(right, operator);
+  const length = recycledLength(context, lhs.length, rhs.length, warningCall);
   context.allocate(length);
   const values = new Uint8Array(length);
   const missing = new Uint8Array(length);
@@ -486,35 +591,63 @@ function logicalVectors(
     if (result === undefined) missing[index] = 1;
     else values[index] = result ? 1 : 0;
   }
-  return logicalVector(values, compactMask(missing));
+  const output = logicalVector(values, compactMask(missing));
+  const attributes = arithmeticAttributes(context, lhs, rhs, length);
+  return attributes.size === 0 ? output : { ...output, attributes };
 }
 
 function membershipVector(context: OperatorContext, left: RValue, right: RValue): RLogicalVector {
   if (left.type === "null") {
-    if (right.type !== "null") requireComparable(right, "%in%");
+    if (right.type !== "null") requireMembershipVector(right);
     return logicalVector([]);
   }
   if (right.type === "null") {
-    const lhs = requireComparable(left, "%in%");
+    const lhs = requireMembershipVector(left);
     context.allocate(lhs.length);
     return logicalVector(new Uint8Array(lhs.length));
   }
-  const lhs = requireComparable(left, "%in%");
-  const rhs = requireComparable(right, "%in%");
-  const characterMode =
-    lhs.type === "character" || rhs.type === "character" || isFactor(lhs) || isFactor(rhs);
+  const lhs = requireMembershipVector(left);
+  const rhs = requireMembershipVector(right);
+  const characterMode = membershipHasCharacter(lhs) || membershipHasCharacter(rhs);
   context.allocate(lhs.length + rhs.length);
   const table = new Set<string>();
   for (let index = 0; index < rhs.length; index += 1) {
     context.checkpoint();
-    table.add(comparisonKey(rhs, index, characterMode));
+    table.add(membershipKey(rhs, index, characterMode));
   }
   const values = new Uint8Array(lhs.length);
   for (let index = 0; index < lhs.length; index += 1) {
     context.checkpoint();
-    values[index] = table.has(comparisonKey(lhs, index, characterMode)) ? 1 : 0;
+    values[index] = table.has(membershipKey(lhs, index, characterMode)) ? 1 : 0;
   }
   return logicalVector(values);
+}
+
+function requireMembershipVector(value: RValue): MembershipVector {
+  if (isAtomic(value) || value.type === "list") return value;
+  throw new RTypeMismatchError("NRT3114", "Operator '%in%' requires vector or list operands.", {
+    details: { type: value.type },
+  });
+}
+
+function membershipHasCharacter(value: MembershipVector): boolean {
+  if (value.type !== "list") return value.type === "character" || isFactor(value);
+  return value.values.some(
+    (entry) => isAtomic(entry) && (entry.type === "character" || isFactor(entry)),
+  );
+}
+
+function membershipKey(value: MembershipVector, index: number, characterMode: boolean): string {
+  if (value.type !== "list") return comparisonKey(value, index, characterMode);
+  const entry = value.values[index];
+  if (entry === undefined || entry.type === "null") return "NULL";
+  if (isAtomic(entry) && entry.length === 1) return comparisonKey(entry, 0, characterMode);
+  if (isAtomic(entry)) {
+    return `vector:${entry.type}:${Array.from({ length: entry.length }, (_, position) =>
+      comparisonKey(entry, position, characterMode),
+    ).join("|")}`;
+  }
+  return `object:${entry.type}`;
 }
 
 /** Construct the finite scalar numeric sequence used by R's colon operator. */
@@ -528,14 +661,18 @@ export function createUnitSequence(
   const step = to >= from ? 1 : -1;
   const length = Math.floor(Math.abs(to - from) + 1 + 1e-12);
   context.allocate(length);
-  const values = Array.from({ length }, (_, index) => {
-    context.checkpoint();
-    return from + step * index;
-  });
   const integer =
     Number.isInteger(from) &&
     Number.isInteger(to) &&
-    values.every((value) => value >= -2_147_483_648 && value <= 2_147_483_647);
+    from >= -2_147_483_648 &&
+    from <= 2_147_483_647 &&
+    to >= -2_147_483_648 &&
+    to <= 2_147_483_647;
+  const values = integer ? new Int32Array(length) : new Float64Array(length);
+  for (let index = 0; index < length; index += 1) {
+    checkpointVectorIteration(context, index);
+    values[index] = from + step * index;
+  }
   return integer ? integerVector(values) : doubleVector(values);
 }
 
@@ -544,6 +681,7 @@ export function recycledLength(
   context: OperatorContext,
   leftLength: number,
   rightLength: number,
+  warningCall?: string,
 ): number {
   if (leftLength === 0 || rightLength === 0) return 0;
   const longer = Math.max(leftLength, rightLength);
@@ -551,7 +689,9 @@ export function recycledLength(
   if (longer % shorter !== 0) {
     context.warn({
       code: "NRW1001",
-      message: "Longer object length is not a multiple of shorter object length.",
+      message: "longer object length is not a multiple of shorter object length",
+      ...(warningCall === undefined ? {} : { call: warningCall }),
+      classes: ["simpleWarning", "warning", "condition"],
     });
   }
   return longer;
@@ -564,6 +704,11 @@ function requireNumeric(value: RValue, operator: string): NumericVector {
     });
   }
   return value;
+}
+
+/** GNU R treats NULL as a zero-length logical vector for binary Ops coercion only. */
+function requireBinaryNumeric(value: RValue, operator: string): NumericVector {
+  return value.type === "null" ? logicalVector([]) : requireNumeric(value, operator);
 }
 
 function requireComparable(value: RValue, operator: string): AtomicVector {
@@ -756,6 +901,9 @@ function applyComplexArithmetic(
     }
     case "^": {
       if (right.real === 0 && right.imaginary === 0) return { real: 1, imaginary: 0 };
+      if (right.imaginary === 0 && Number.isSafeInteger(right.real)) {
+        return complexIntegerPower(left, right.real);
+      }
       const magnitude = Math.hypot(left.real, left.imaginary);
       const angle = Math.atan2(left.imaginary, left.real);
       const logReal = Math.log(magnitude);
@@ -770,6 +918,30 @@ function applyComplexArithmetic(
     default:
       throw new RUnsupportedFeatureError("NRU6003", `Unsupported operator '${operator}'.`);
   }
+}
+
+function complexIntegerPower(base: ComplexNumber, exponent: number): ComplexNumber {
+  let result: ComplexNumber = { real: 1, imaginary: 0 };
+  let factor = base;
+  let remaining = Math.abs(exponent);
+  while (remaining > 0) {
+    if (remaining % 2 === 1) result = multiplyComplex(result, factor);
+    remaining = Math.floor(remaining / 2);
+    if (remaining > 0) factor = multiplyComplex(factor, factor);
+  }
+  if (exponent >= 0) return result;
+  const denominator = result.real ** 2 + result.imaginary ** 2;
+  return {
+    real: result.real / denominator,
+    imaginary: -result.imaginary / denominator,
+  };
+}
+
+function multiplyComplex(left: ComplexNumber, right: ComplexNumber): ComplexNumber {
+  return {
+    real: left.real * right.real - left.imaginary * right.imaginary,
+    imaginary: left.real * right.imaginary + left.imaginary * right.real,
+  };
 }
 
 function compactMask(mask: Uint8Array): Uint8Array | undefined {

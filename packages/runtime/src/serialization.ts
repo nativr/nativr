@@ -14,11 +14,22 @@ import {
   rawVector,
   vectorNames,
 } from "./values.js";
+import { isCanonicalBase64 } from "./base64.js";
+import { createEnvironment, setBinding, setParentEnvironment } from "./environment.js";
+import {
+  languageEntries,
+  languageFromEntries,
+  languageValueAst,
+  quoteLanguageAst,
+} from "./language.js";
 import type {
   RAttributes,
   RCharacterEncoding,
   RCharacterVector,
   REnvironment,
+  RClosure,
+  RExternalPointer,
+  RLanguage,
   RList,
   OperatorContext,
   RPairlist,
@@ -46,7 +57,11 @@ const ALTREP_SXP = 238;
 
 const SYMSXP = 1;
 const LISTSXP = 2;
+const CLOSXP = 3;
+const ENVSXP = 4;
 const LANGSXP = 6;
+const SPECIALSXP = 7;
+const BUILTINSXP = 8;
 const CHARSXP = 9;
 const LGLSXP = 10;
 const INTSXP = 13;
@@ -55,17 +70,27 @@ const CPLXSXP = 15;
 const STRSXP = 16;
 const VECSXP = 19;
 const EXPRSXP = 20;
+const EXTPTRSXP = 22;
 const RAWSXP = 24;
+const S4SXP = 25;
 
 const OBJECT_BIT = 1 << 8;
 const ATTRIBUTE_BIT = 1 << 9;
 const TAG_BIT = 1 << 10;
+const S4_BIT = 1 << 16;
+
+const SERIALIZED_SPAN = {
+  start: { offset: 0, line: 1, column: 1 },
+  end: { offset: 0, line: 1, column: 1 },
+} as const;
 
 export interface RSerializationEnvironments {
   readonly global?: REnvironment;
   readonly base?: REnvironment;
   readonly baseNamespace?: REnvironment;
   readonly empty?: REnvironment;
+  readonly namespaceName?: (environment: REnvironment) => string | undefined;
+  readonly namespaceEnvironment?: (name: string) => REnvironment | undefined;
 }
 
 export interface RSerializationMetadata {
@@ -97,10 +122,11 @@ export function decodeRSerialization(
   bytes: Uint8Array,
   context: OperatorContext,
   environments: RSerializationEnvironments = {},
+  maxInputBytes = context.limits.maxOutputBytes,
 ): RDecodedSerialization {
-  if (bytes.byteLength > context.limits.maxOutputBytes) {
+  if (bytes.byteLength > maxInputBytes) {
     throw new RResourceLimitError("NRL4007", "Serialized input byte limit exceeded.", {
-      details: { maxOutputBytes: context.limits.maxOutputBytes, outputBytes: bytes.byteLength },
+      details: { maxInputBytes, inputBytes: bytes.byteLength },
     });
   }
   const reader = new XdrSerializationReader(bytes, context, environments);
@@ -138,8 +164,14 @@ export async function decodeRSerializationFile(
   bytes: Uint8Array,
   context: OperatorContext,
   environments: RSerializationEnvironments = {},
+  maxInputBytes = context.limits.maxOutputBytes,
 ): Promise<RDecodedSerialization> {
-  return decodeRSerialization(await unwrapRCompression(bytes, context), context, environments);
+  return decodeRSerialization(
+    await unwrapRCompression(bytes, context),
+    context,
+    environments,
+    maxInputBytes,
+  );
 }
 
 /** Decode a save()/data() workspace into its named object bindings. */
@@ -147,11 +179,12 @@ export async function decodeRWorkspaceFile(
   bytes: Uint8Array,
   context: OperatorContext,
   environments: RSerializationEnvironments = {},
+  maxInputBytes = context.limits.maxOutputBytes,
 ): Promise<{
   readonly entries: readonly RWorkspaceEntry[];
   readonly metadata: RSerializationMetadata;
 }> {
-  const decoded = await decodeRSerializationFile(bytes, context, environments);
+  const decoded = await decodeRSerializationFile(bytes, context, environments, maxInputBytes);
   if (!decoded.metadata.workspace) {
     throw new REvaluationError("NRE2248", "The input is not an R workspace serialization.");
   }
@@ -177,21 +210,21 @@ export async function decodeRWorkspaceFile(
 }
 
 /** Decode a bounded base64 package resource without using a Node API. */
-export function decodeRBase64Resource(source: string, context: OperatorContext): Uint8Array {
-  if (
-    source.length % 4 !== 0 ||
-    !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/u.test(source)
-  ) {
+export function decodeRBase64Resource(
+  source: string,
+  context: OperatorContext,
+  maxInputBytes = context.limits.maxOutputBytes,
+): Uint8Array {
+  if (!isCanonicalBase64(source)) {
     throw new REvaluationError("NRE2247", "Package serialization has invalid base64 data.");
   }
   const padding = source.endsWith("==") ? 2 : source.endsWith("=") ? 1 : 0;
   const length = (source.length / 4) * 3 - padding;
-  if (length > context.limits.maxOutputBytes) {
+  if (length > maxInputBytes) {
     throw new RResourceLimitError("NRL4007", "Serialized input byte limit exceeded.", {
-      details: { maxOutputBytes: context.limits.maxOutputBytes, outputBytes: length },
+      details: { maxInputBytes, inputBytes: length },
     });
   }
-  context.allocate(length);
   let binary: string;
   try {
     binary = (globalThis as unknown as { readonly atob: (input: string) => string }).atob(source);
@@ -394,6 +427,10 @@ class XdrSerializationWriter {
   readonly #version: 2 | 3;
   readonly #workspace: boolean;
   readonly #output: number[] = [];
+  readonly #environmentReferences = new Map<REnvironment, number>();
+  readonly #externalPointerReferences = new Map<RExternalPointer, number>();
+  readonly #symbolReferences = new Map<string, number>();
+  #referenceCount = 0;
 
   public constructor(
     context: OperatorContext,
@@ -438,20 +475,71 @@ class XdrSerializationWriter {
       else if (value === this.#environments.baseNamespace) this.#writeUint32(BASENAMESPACE_SXP);
       else if (value === this.#environments.base) this.#writeUint32(BASEENV_SXP);
       else {
-        throw new RUnsupportedFeatureError(
-          "NRU6192",
-          "Serialization of ordinary environments is not yet supported.",
-        );
+        const namespace = this.#environments.namespaceName?.(value);
+        if (namespace === undefined) this.#writeEnvironment(value, depth + 1);
+        else this.#writePersistentEnvironment(NAMESPACE_SXP, namespace);
       }
       return;
     }
+    if (value.type === "externalptr") {
+      this.#writeExternalPointer(value, depth + 1);
+      return;
+    }
     if (value.type === "symbol") {
+      if (value.name.length === 0) {
+        this.#writeUint32(MISSINGARG_SXP);
+        return;
+      }
+      const reference = this.#symbolReferences.get(value.name);
+      if (reference !== undefined) {
+        this.#writeReference(reference);
+        return;
+      }
+      this.#referenceCount += 1;
+      this.#symbolReferences.set(value.name, this.#referenceCount);
       this.#writeUint32(SYMSXP);
       this.#writeCharacterScalar(value.name, false);
       return;
     }
+    if (value.type === "builtin") {
+      const bytes = encodeUtf8(value.definition.name);
+      this.#writeUint32(value.definition.kind === "special" ? SPECIALSXP : BUILTINSXP);
+      this.#writeLength(bytes.byteLength);
+      this.#writeBytes(bytes);
+      return;
+    }
+    if (value.type === "closure") {
+      this.#writeClosure(value, depth + 1);
+      return;
+    }
+    if (value.type === "language") {
+      this.#writeLanguage(value, depth + 1);
+      return;
+    }
     if (value.type === "pairlist") {
       this.#writePairlist(value, depth + 1);
+      return;
+    }
+    if (value.type === "list" && value.s4 === true) {
+      const attributes = new Map<string, RValue>();
+      const names = vectorNames(value);
+      for (let index = 0; index < value.length; index += 1) {
+        const name = names?.[index] ?? "";
+        if (name.length === 0) {
+          throw new REvaluationError("NRE2247", "An S4 object contains an unnamed slot.");
+        }
+        attributes.set(name, value.values[index] ?? R_NULL);
+      }
+      for (const [name, attribute] of value.attributes) {
+        if (name !== "names") attributes.set(name, attribute);
+      }
+      this.#writeUint32(
+        S4SXP |
+          S4_BIT |
+          (attributes.has("class") ? OBJECT_BIT : 0) |
+          (attributes.size > 0 ? ATTRIBUTE_BIT : 0),
+      );
+      if (attributes.size > 0) this.#writeAttributePairlist(attributes, depth + 1);
       return;
     }
     if (value.type === "logical" || value.type === "integer") {
@@ -525,7 +613,125 @@ class XdrSerializationWriter {
   #writeVectorHeader(type: number, value: RVector): void {
     const attributes = this.#serializedAttributes(value);
     const object = attributes.has("class") ? OBJECT_BIT : 0;
-    this.#writeUint32(type | object | (attributes.size > 0 ? ATTRIBUTE_BIT : 0));
+    this.#writeUint32(
+      type | object | (attributes.size > 0 ? ATTRIBUTE_BIT : 0) | (value.s4 === true ? S4_BIT : 0),
+    );
+  }
+
+  #writeEnvironment(value: REnvironment, depth: number): void {
+    const reference = this.#environmentReferences.get(value);
+    if (reference !== undefined) {
+      this.#writeReference(reference);
+      return;
+    }
+    this.#referenceCount += 1;
+    this.#environmentReferences.set(value, this.#referenceCount);
+    this.#writeUint32(ENVSXP);
+    this.#writeInt32(value.locked ? 1 : 0);
+    this.#writeItem(value.parent ?? R_NULL, depth + 1);
+
+    const names: string[] = [];
+    const values: RValue[] = [];
+    for (const [name, binding] of value.bindings) {
+      if (binding.type === "dots") continue;
+      if (binding.type === "promise") {
+        if (binding.missing) continue;
+        if (binding.state !== "forced" || binding.value === undefined) {
+          throw new RUnsupportedFeatureError(
+            "NRU6192",
+            "Serialization of an unforced environment promise is not yet supported.",
+          );
+        }
+        names.push(name);
+        values.push(binding.value);
+        continue;
+      }
+      if (binding.type === "active-binding") {
+        throw new RUnsupportedFeatureError(
+          "NRU6192",
+          "Serialization of active environment bindings is not yet supported.",
+        );
+      }
+      names.push(name);
+      values.push(binding);
+    }
+    this.#writeItem(values.length === 0 ? R_NULL : pairlistValue(values, names), depth + 1);
+    this.#writeUint32(NILVALUE_SXP);
+    this.#writeItem(
+      value.attributes.size === 0
+        ? R_NULL
+        : pairlistValue([...value.attributes.values()], [...value.attributes.keys()]),
+      depth + 1,
+    );
+  }
+
+  #writeExternalPointer(value: RExternalPointer, depth: number): void {
+    const reference = this.#externalPointerReferences.get(value);
+    if (reference !== undefined) {
+      this.#writeReference(reference);
+      return;
+    }
+    this.#referenceCount += 1;
+    this.#externalPointerReferences.set(value, this.#referenceCount);
+    const attributes = value.attributes;
+    this.#writeUint32(
+      EXTPTRSXP |
+        (attributes.has("class") ? OBJECT_BIT : 0) |
+        (attributes.size > 0 ? ATTRIBUTE_BIT : 0),
+    );
+    this.#writeItem(value.protectedValue, depth);
+    this.#writeItem(value.tag, depth);
+    if (attributes.size > 0) this.#writeAttributePairlist(attributes, depth);
+  }
+
+  #writeClosure(value: RClosure, depth: number): void {
+    const attributes = value.attributes;
+    this.#writeUint32(
+      CLOSXP |
+        TAG_BIT |
+        (attributes.size > 0 ? ATTRIBUTE_BIT : 0) |
+        (attributes.has("class") ? OBJECT_BIT : 0),
+    );
+    if (attributes.size > 0) this.#writeAttributePairlist(attributes, depth + 1);
+    this.#writeItem(value.environment, depth + 1);
+    const names = value.parameters.map((parameter) => parameter.name);
+    const defaults = value.parameters.map((parameter) =>
+      parameter.defaultValue === undefined
+        ? ({ type: "symbol", name: "" } as const)
+        : quoteLanguageAst(parameter.defaultValue),
+    );
+    this.#writeItem(names.length === 0 ? R_NULL : pairlistValue(defaults, names), depth + 1);
+    this.#writeItem({ type: "language", expression: value.body }, depth + 1);
+  }
+
+  #writeLanguage(value: RLanguage, depth: number): void {
+    const entries = languageEntries(value);
+    const names = vectorNames(entries);
+    const attributes = value.attributes ?? new Map();
+    const firstName = names?.[0] ?? "";
+    this.#writeUint32(
+      LANGSXP | (attributes.size > 0 ? ATTRIBUTE_BIT : 0) | (firstName.length > 0 ? TAG_BIT : 0),
+    );
+    if (attributes.size > 0) this.#writeAttributePairlist(attributes, depth + 1);
+    if (firstName.length > 0) this.#writeItem({ type: "symbol", name: firstName }, depth + 1);
+    this.#writeItem(entries.values[0] ?? R_NULL, depth + 1);
+    this.#writePairlistNode(entries.values.slice(1), names?.slice(1), new Map(), 0, depth + 1);
+  }
+
+  #writeReference(index: number): void {
+    if (index <= 0x00ff_ffff) this.#writeUint32(REFSXP | (index << 8));
+    else {
+      this.#writeUint32(REFSXP);
+      this.#writeUint32(index);
+    }
+  }
+
+  #writePersistentEnvironment(type: number, name: string): void {
+    this.#writeUint32(type);
+    this.#writeUint32(0);
+    this.#writeLength(2);
+    this.#writeCharacterScalar(name, false);
+    this.#writeCharacterScalar("0.0.0", false);
   }
 
   #writeTrailingAttributes(value: RVector, depth: number): void {
@@ -759,22 +965,28 @@ class XdrSerializationReader {
       );
     }
     if (type === EMPTYENV_SXP) return this.#requiredEnvironment("empty", this.#environments.empty);
-    if (type === MISSINGARG_SXP || type === UNBOUNDVALUE_SXP) {
+    if (type === MISSINGARG_SXP) return { type: "symbol", name: "" };
+    if (type === UNBOUNDVALUE_SXP) {
       throw new RUnsupportedFeatureError(
         "NRU6192",
-        `${type === MISSINGARG_SXP ? "Missing-argument" : "Unbound"} serialization values are unavailable outside evaluator bindings.`,
+        "Unbound serialization values are unavailable outside evaluator bindings.",
       );
     }
-    if (type === NAMESPACE_SXP || type === PACKAGES_SXP) {
+    if (type === NAMESPACE_SXP) return this.#readPersistentNamespace();
+    if (type === PACKAGES_SXP) {
       throw new RUnsupportedFeatureError(
         "NRU6192",
-        "Serialized package and namespace environment references are not yet available.",
+        "Serialized attached-package environment references are not yet available.",
       );
     }
     if (type === REFSXP) return this.#readReference(flags);
     if (type === ALTREP_SXP) return this.#readAltrep(depth + 1);
     if (type === SYMSXP) return this.#readSymbol(depth + 1);
     if (type === LISTSXP) return this.#readPairlist(flags, depth + 1);
+    if (type === CLOSXP) return this.#readClosure(flags, depth + 1);
+    if (type === ENVSXP) return this.#readEnvironment(depth + 1);
+    if (type === LANGSXP) return this.#readLanguage(flags, depth + 1);
+    if (type === SPECIALSXP || type === BUILTINSXP) return this.#readBuiltin(type);
     if (type === LANGSXP) {
       throw new RUnsupportedFeatureError(
         "NRU6192",
@@ -793,7 +1005,9 @@ class XdrSerializationReader {
         "Serialized expression vectors are not yet available in the normalized AST runtime.",
       );
     }
+    if (type === EXTPTRSXP) return this.#readExternalPointer(flags, depth + 1);
     if (type === RAWSXP) return this.#readRawVector(flags, depth + 1);
+    if (type === S4SXP) return this.#readS4Object(flags, depth + 1);
     throw new RUnsupportedFeatureError(
       "NRU6192",
       `Serialized SEXPTYPE ${String(type)} is not yet supported.`,
@@ -819,6 +1033,164 @@ class XdrSerializationReader {
       throw new REvaluationError("NRE2247", "Serialized reference index is invalid.");
     }
     return referenced;
+  }
+
+  #readEnvironment(depth: number): REnvironment {
+    const locked = this.#readInt32() !== 0;
+    const environment = createEnvironment(null, false);
+    this.#references.push(environment);
+    const parent = this.#readItem(depth);
+    if (parent.type !== "environment") {
+      throw new REvaluationError("NRE2247", "A serialized environment has an invalid enclosure.");
+    }
+    setParentEnvironment(environment, parent);
+    const frame = this.#readItem(depth);
+    if (frame.type !== "null" && frame.type !== "pairlist") {
+      throw new REvaluationError("NRE2247", "A serialized environment has an invalid frame.");
+    }
+    if (frame.type === "pairlist") {
+      const names = vectorNames(frame);
+      if (names === undefined || names.some((name) => name.length === 0)) {
+        throw new REvaluationError("NRE2247", "A serialized environment frame is unnamed.");
+      }
+      for (let index = 0; index < frame.length; index += 1) {
+        setBinding(environment, names[index] ?? "", frame.values[index] ?? R_NULL);
+      }
+    }
+    const hashTable = this.#readItem(depth);
+    if (hashTable.type !== "null") {
+      throw new RUnsupportedFeatureError(
+        "NRU6192",
+        "Serialized hashed environment tables are not yet supported.",
+      );
+    }
+    const attributes = this.#readAttributesValue(this.#readItem(depth));
+    for (const [name, attribute] of attributes) environment.attributes.set(name, attribute);
+    environment.locked = locked;
+    return environment;
+  }
+
+  #readExternalPointer(flags: number, depth: number): RExternalPointer {
+    const pointer: RExternalPointer = {
+      type: "externalptr",
+      protectedValue: R_NULL,
+      tag: R_NULL,
+      attributes: new Map(),
+    };
+    this.#references.push(pointer);
+    pointer.protectedValue = this.#readItem(depth);
+    pointer.tag = this.#readItem(depth);
+    pointer.attributes = (flags & ATTRIBUTE_BIT) === 0 ? new Map() : this.#readAttributes(depth);
+    return pointer;
+  }
+
+  #readClosure(flags: number, depth: number): RClosure {
+    const attributes = (flags & ATTRIBUTE_BIT) === 0 ? new Map() : this.#readAttributes(depth);
+    const environment = (flags & TAG_BIT) === 0 ? undefined : this.#readItem(depth);
+    if (environment?.type !== "environment") {
+      throw new REvaluationError("NRE2247", "A serialized closure has an invalid environment.");
+    }
+    const formals = this.#readItem(depth);
+    if (formals.type !== "null" && formals.type !== "pairlist") {
+      throw new REvaluationError("NRE2247", "A serialized closure has invalid formals.");
+    }
+    const names = formals.type === "pairlist" ? vectorNames(formals) : [];
+    if (formals.type === "pairlist" && (names === undefined || names.some((name) => name === ""))) {
+      throw new REvaluationError("NRE2247", "A serialized closure has unnamed formals.");
+    }
+    const body = this.#readItem(depth);
+    const parameters =
+      formals.type === "pairlist"
+        ? formals.values.map((value, index) =>
+            value.type === "symbol" && value.name === ""
+              ? { name: names?.[index] ?? "", span: SERIALIZED_SPAN }
+              : {
+                  name: names?.[index] ?? "",
+                  defaultValue: languageValueAst(value),
+                  span: SERIALIZED_SPAN,
+                },
+          )
+        : [];
+    return {
+      type: "closure",
+      parameters: Object.freeze(parameters),
+      body: languageValueAst(body),
+      environment,
+      attributes,
+    };
+  }
+
+  #readLanguage(flags: number, depth: number): RLanguage {
+    const attributes = (flags & ATTRIBUTE_BIT) === 0 ? new Map() : this.#readAttributes(depth);
+    const tag = (flags & TAG_BIT) === 0 ? undefined : this.#readItem(depth);
+    if (tag !== undefined && tag.type !== "symbol") {
+      throw new REvaluationError("NRE2247", "A serialized language tag is invalid.");
+    }
+    const car = this.#readItem(depth);
+    const cdr = this.#readItem(depth);
+    if (cdr.type !== "null" && cdr.type !== "pairlist") {
+      throw new REvaluationError("NRE2247", "A serialized language tail is invalid.");
+    }
+    const tailNames = cdr.type === "pairlist" ? vectorNames(cdr) : undefined;
+    const anyNames = tag !== undefined || tailNames !== undefined;
+    const entries = listValue(
+      [car, ...(cdr.type === "pairlist" ? cdr.values : [])],
+      anyNames
+        ? [
+            tag?.name ?? "",
+            ...Array.from(
+              { length: cdr.type === "pairlist" ? cdr.length : 0 },
+              (_, index) => tailNames?.[index] ?? "",
+            ),
+          ]
+        : undefined,
+    );
+    const language = languageFromEntries(entries);
+    if (language.type === "null") {
+      throw new REvaluationError("NRE2247", "A serialized language object is empty.");
+    }
+    return attributes.size === 0 ? language : { ...language, attributes };
+  }
+
+  #readBuiltin(type: number): RValue {
+    const length = this.#readLength("builtin name");
+    const name = this.#decodeBytes(this.#readBytes(length), "native");
+    const binding = this.#environments.base?.bindings.get(name);
+    if (binding?.type !== "builtin") {
+      throw new RUnsupportedFeatureError(
+        "NRU6192",
+        `Serialized builtin '${name}' is unavailable in this runtime.`,
+      );
+    }
+    if ((type === SPECIALSXP) !== (binding.definition.kind === "special")) {
+      throw new REvaluationError("NRE2247", `Serialized builtin '${name}' has the wrong kind.`);
+    }
+    return binding;
+  }
+
+  #readPersistentNamespace(): REnvironment {
+    this.#readUint32();
+    const length = this.#readLength("namespace reference");
+    if (length < 1 || length > 2) {
+      throw new REvaluationError("NRE2247", "A serialized namespace reference is malformed.");
+    }
+    const values: string[] = [];
+    for (let index = 0; index < length; index += 1) {
+      const value = this.#readItem(0);
+      if (value.type !== "character" || value.length !== 1 || isMissing(value, 0)) {
+        throw new REvaluationError("NRE2247", "A serialized namespace name is invalid.");
+      }
+      values.push(value.values[0] ?? "");
+    }
+    const name = values[0] ?? "";
+    const environment = this.#environments.namespaceEnvironment?.(name);
+    if (environment === undefined) {
+      throw new RUnsupportedFeatureError(
+        "NRU6192",
+        `Serialized namespace '${name}' is unavailable in this runtime.`,
+      );
+    }
+    return environment;
   }
 
   #readPairlist(flags: number, depth: number): RPairlist {
@@ -980,6 +1352,20 @@ class XdrSerializationReader {
     return this.#readTrailingAttributes(rawVector(this.#readBytes(length)), flags, depth);
   }
 
+  #readS4Object(flags: number, depth: number): RList {
+    const serialized =
+      (flags & ATTRIBUTE_BIT) === 0 ? new Map<string, RValue>() : this.#readAttributes(depth);
+    const slots = [...serialized.entries()].filter(([name]) => name !== "class");
+    const output = listValue(
+      slots.map(([, value]) => value),
+      slots.map(([name]) => name),
+    );
+    const attributes = new Map(output.attributes);
+    const classes = serialized.get("class");
+    if (classes !== undefined) attributes.set("class", classes);
+    return { ...output, attributes, s4: true };
+  }
+
   #readAltrep(depth: number): RValue {
     const info = this.#readItem(depth);
     const state = this.#readItem(depth);
@@ -1031,9 +1417,11 @@ class XdrSerializationReader {
   }
 
   #readTrailingAttributes(value: RVector, flags: number, depth: number): RVector {
-    return (flags & ATTRIBUTE_BIT) === 0
-      ? value
-      : (this.#applyAttributes(value, this.#readAttributes(depth)) as RVector);
+    const attributed =
+      (flags & ATTRIBUTE_BIT) === 0
+        ? value
+        : (this.#applyAttributes(value, this.#readAttributes(depth)) as RVector);
+    return (flags & S4_BIT) === 0 ? attributed : { ...attributed, s4: true };
   }
 
   #readAttributes(depth: number): RAttributes {
@@ -1066,9 +1454,9 @@ class XdrSerializationReader {
       rowNames.length === 2 &&
       isMissing(rowNames, 0) &&
       !isMissing(rowNames, 1) &&
-      (rowNames.values[1] ?? 0) <= 0
+      (rowNames.values[1] ?? 0) !== 0
     ) {
-      const rowCount = -(rowNames.values[1] ?? 0);
+      const rowCount = Math.abs(rowNames.values[1] ?? 0);
       normalized.set(
         "row.names",
         characterVector(Array.from({ length: rowCount }, (_, index) => String(index + 1))),
@@ -1166,6 +1554,25 @@ class XdrSerializationReader {
 
   #decodeBytes(bytes: Uint8Array, encoding: "utf8" | "latin1" | "bytes" | "native"): string {
     const selected = encoding === "native" ? this.#nativeEncoding.toLowerCase() : encoding;
+    if (
+      selected === "ascii" ||
+      selected === "us-ascii" ||
+      selected === "ansi_x3.4-1968" ||
+      selected === "646" ||
+      selected === "iso646-us"
+    ) {
+      if (bytes.some((byte) => byte > 0x7f)) {
+        throw new REvaluationError(
+          "NRE2247",
+          `Serialized character data is not valid ${this.#nativeEncoding}.`,
+        );
+      }
+      let output = "";
+      for (let offset = 0; offset < bytes.length; offset += 8_192) {
+        output += String.fromCodePoint(...bytes.subarray(offset, offset + 8_192));
+      }
+      return output;
+    }
     if (selected === "latin1" || selected === "iso-8859-1" || selected === "bytes") {
       let output = "";
       for (let offset = 0; offset < bytes.length; offset += 8_192) {

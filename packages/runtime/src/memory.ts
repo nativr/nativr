@@ -1,10 +1,13 @@
 import type { AstNode, CallArgument, FunctionParameter } from "@nativr/ast";
+import { vectorStorageCapacity } from "./values.js";
 import type { RAttributes, RBinding, RCharacterVector, RPromise, RValue } from "./values.js";
 
 /** Browser-owned memory represented in GNU R's two reporting cell families. */
 export interface RuntimeMemoryCensus {
   readonly nodeCells: number;
   readonly vectorCells: number;
+  /** Environment identities reachable from the supplied roots during this exact traversal. */
+  readonly reachableEnvironmentIds: ReadonlySet<number>;
 }
 
 const SEXP_HEADER_BYTES = 48;
@@ -217,13 +220,21 @@ export function estimateRObjectSize(value: RValue, checkpoint: () => void): numb
       switch (item.type) {
         case "logical":
         case "integer":
-          return atomicVectorBytes(item.length, 4) + attributeBytes(item.attributes);
+          return (
+            atomicVectorBytes(vectorStorageCapacity(item), 4) + attributeBytes(item.attributes)
+          );
         case "double":
-          return atomicVectorBytes(item.length, 8) + attributeBytes(item.attributes);
+          return (
+            atomicVectorBytes(vectorStorageCapacity(item), 8) + attributeBytes(item.attributes)
+          );
         case "complex":
-          return atomicVectorBytes(item.length, 16) + attributeBytes(item.attributes);
+          return (
+            atomicVectorBytes(vectorStorageCapacity(item), 16) + attributeBytes(item.attributes)
+          );
         case "raw":
-          return atomicVectorBytes(item.length, 1) + attributeBytes(item.attributes);
+          return (
+            atomicVectorBytes(vectorStorageCapacity(item), 1) + attributeBytes(item.attributes)
+          );
         case "character":
           return characterBytes(item) + attributeBytes(item.attributes);
         case "list": {
@@ -252,6 +263,13 @@ export function estimateRObjectSize(value: RValue, checkpoint: () => void): numb
         case "symbol":
         case "dots":
           return NODE_BYTES;
+        case "externalptr":
+          return (
+            NODE_BYTES +
+            visitValue(item.protectedValue) +
+            visitValue(item.tag) +
+            attributeBytes(item.attributes)
+          );
         case "closure":
           return NODE_BYTES + parameterBytes(item.parameters) + visitAst(item.body);
         case "language":
@@ -315,6 +333,7 @@ const RUNTIME_OBJECT_TYPES = new Set([
   "dots",
   "double",
   "environment",
+  "externalptr",
   "expression",
   "formula",
   "integer",
@@ -338,6 +357,7 @@ export function censusRuntimeMemory(
   checkpoint: () => void,
 ): RuntimeMemoryCensus {
   const seen = new WeakSet<object>();
+  const reachableEnvironmentIds = new Set<number>();
   let nodeCells = 0;
   let vectorBytes = 0;
   let visits = 0;
@@ -393,7 +413,9 @@ export function censusRuntimeMemory(
       case "logical":
       case "integer":
       case "double":
-        vectorBytes += value.values.byteLength + (value.missing?.byteLength ?? 0);
+        vectorBytes +=
+          vectorStorageCapacity(value) * value.values.BYTES_PER_ELEMENT +
+          (value.missing === undefined ? 0 : vectorStorageCapacity(value));
         visitAttributes(value.attributes);
         return;
       case "raw":
@@ -402,7 +424,8 @@ export function censusRuntimeMemory(
         return;
       case "complex":
         vectorBytes +=
-          value.real.byteLength + value.imaginary.byteLength + (value.missing?.byteLength ?? 0);
+          vectorStorageCapacity(value) * Float64Array.BYTES_PER_ELEMENT * 2 +
+          (value.missing === undefined ? 0 : vectorStorageCapacity(value));
         visitAttributes(value.attributes);
         return;
       case "character":
@@ -419,6 +442,7 @@ export function censusRuntimeMemory(
         visitAttributes(value.attributes);
         return;
       case "environment":
+        reachableEnvironmentIds.add(value.id);
         visitAttributes(value.attributes);
         if (value.parent !== null) visitValue(value.parent);
         for (const [name, binding] of value.bindings) {
@@ -426,6 +450,11 @@ export function censusRuntimeMemory(
           vectorBytes += 8 + textBytes(name);
           visitBinding(binding);
         }
+        return;
+      case "externalptr":
+        visitAttributes(value.attributes);
+        visitValue(value.protectedValue);
+        visitValue(value.tag);
         return;
       case "closure":
         visitAttributes(value.attributes);
@@ -437,6 +466,7 @@ export function censusRuntimeMemory(
           value.terms.reduce((total, term) => total + 8 + textBytes(term), 0) +
           value.variables.reduce((total, variable) => total + 8 + textBytes(variable), 0);
         if (value.environment !== null) visitValue(value.environment);
+        visitAttributes(value.attributes ?? new Map());
         return;
       case "symbol":
         vectorBytes += textBytes(value.name);
@@ -473,5 +503,9 @@ export function censusRuntimeMemory(
   };
 
   for (const root of roots) visitUnknown(root);
-  return Object.freeze({ nodeCells, vectorCells: Math.ceil(vectorBytes / 8) });
+  return Object.freeze({
+    nodeCells,
+    vectorCells: Math.ceil(vectorBytes / 8),
+    reachableEnvironmentIds,
+  });
 }

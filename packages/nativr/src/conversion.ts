@@ -299,6 +299,7 @@ export function valueToSnapshot(value: RValue): RValueSnapshot {
     case "closure":
     case "dots":
     case "environment":
+    case "externalptr":
       throw new RTypeMismatchError(
         "NRT3201",
         `Values of type '${value.type}' cannot cross the public data boundary.`,

@@ -35,6 +35,7 @@ async function readPackageArchive(
   let fileCount = 0;
   const paths = new Set<string>();
   const portablePaths = new Set<string>();
+  let archiveError: Error | undefined;
   try {
     await extractTar({
       file: archivePath,
@@ -42,28 +43,35 @@ async function readPackageArchive(
       strict: true,
       preservePaths: false,
       filter: (entryPath, entry) => {
-        const normalized = validateArchivePath(entryPath, limits.maxPathDepth);
-        if (!("type" in entry)) throw new Error(`Archive entry '${normalized}' lacks a type.`);
-        if (entry.type === "Directory") return true;
-        if (entry.type !== "File" && entry.type !== "OldFile") {
-          throw new Error(`Archive entry '${normalized}' has unsupported type '${entry.type}'.`);
+        if (archiveError !== undefined) return false;
+        try {
+          const normalized = validateArchivePath(entryPath, limits.maxPathDepth);
+          if (!("type" in entry)) throw new Error(`Archive entry '${normalized}' lacks a type.`);
+          if (entry.type === "Directory") return true;
+          if (entry.type !== "File" && entry.type !== "OldFile") {
+            throw new Error(`Archive entry '${normalized}' has unsupported type '${entry.type}'.`);
+          }
+          if (paths.has(normalized) || portablePaths.has(normalized.toLowerCase())) {
+            throw new Error(`Archive repeats a case-insensitive path '${normalized}'.`);
+          }
+          if (entry.size > limits.maxFileBytes) {
+            throw new Error(`Archive entry '${normalized}' exceeds the per-file byte limit.`);
+          }
+          fileCount += 1;
+          totalBytes += entry.size;
+          if (fileCount > limits.maxFiles || totalBytes > limits.maxTotalBytes) {
+            throw new Error("Package archive exceeds configured file or byte limits.");
+          }
+          paths.add(normalized);
+          portablePaths.add(normalized.toLowerCase());
+          return true;
+        } catch (error) {
+          archiveError = error instanceof Error ? error : new Error(String(error));
+          return false;
         }
-        if (paths.has(normalized) || portablePaths.has(normalized.toLowerCase())) {
-          throw new Error(`Archive repeats a case-insensitive path '${normalized}'.`);
-        }
-        if (entry.size > limits.maxFileBytes) {
-          throw new Error(`Archive entry '${normalized}' exceeds the per-file byte limit.`);
-        }
-        fileCount += 1;
-        totalBytes += entry.size;
-        if (fileCount > limits.maxFiles || totalBytes > limits.maxTotalBytes) {
-          throw new Error("Package archive exceeds configured file or byte limits.");
-        }
-        paths.add(normalized);
-        portablePaths.add(normalized.toLowerCase());
-        return true;
       },
     });
+    if (archiveError !== undefined) throw archiveError;
     const root = await locateExtractedPackageRoot(temporaryRoot);
     return await readPackageDirectory(root, limits);
   } finally {

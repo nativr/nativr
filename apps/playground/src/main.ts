@@ -254,7 +254,38 @@ let browseObjectUrls: string[] = [];
 let graphicsWindow: {
   readonly xlim: readonly [number, number];
   readonly ylim: readonly [number, number];
+  readonly viewport?: readonly [number, number, number, number];
 } = { xlim: [0, 1], ylim: [0, 1] };
+
+function graphicsViewport(): readonly [number, number, number, number] {
+  return graphicsWindow.viewport ?? [0, 1, 0, 1];
+}
+
+function graphicsXScale(): number {
+  const viewport = graphicsViewport();
+  return (
+    (graphics.width * (viewport[1] - viewport[0])) /
+    (graphicsWindow.xlim[1] - graphicsWindow.xlim[0])
+  );
+}
+
+function graphicsYScale(): number {
+  const viewport = graphicsViewport();
+  return (
+    (graphics.height * (viewport[3] - viewport[2])) /
+    (graphicsWindow.ylim[1] - graphicsWindow.ylim[0])
+  );
+}
+
+function graphicsPixelX(value: number): number {
+  const viewport = graphicsViewport();
+  return viewport[0] * graphics.width + (value - graphicsWindow.xlim[0]) * graphicsXScale();
+}
+
+function graphicsPixelY(value: number): number {
+  const viewport = graphicsViewport();
+  return graphics.height * (1 - viewport[2]) - (value - graphicsWindow.ylim[0]) * graphicsYScale();
+}
 
 renderExamples();
 selectExample(selected);
@@ -654,10 +685,10 @@ function drawRaster(event: Extract<PublicGraphicsEvent, { readonly kind: "raster
   );
   bitmapContext.putImageData(pixels, 0, 0);
 
-  const xScale = graphics.width / (graphicsWindow.xlim[1] - graphicsWindow.xlim[0]);
-  const yScale = graphics.height / (graphicsWindow.ylim[1] - graphicsWindow.ylim[0]);
-  const anchorX = (event.xleft - graphicsWindow.xlim[0]) * xScale;
-  const anchorY = graphics.height - (event.ybottom - graphicsWindow.ylim[0]) * yScale;
+  const xScale = graphicsXScale();
+  const yScale = graphicsYScale();
+  const anchorX = graphicsPixelX(event.xleft);
+  const anchorY = graphicsPixelY(event.ybottom);
   const width = event.xright - event.xleft;
   const height = event.ytop - event.ybottom;
   const radians = (event.angle * Math.PI) / 180;
@@ -682,12 +713,11 @@ function drawRaster(event: Extract<PublicGraphicsEvent, { readonly kind: "raster
 
 function drawSegments(event: Extract<PublicGraphicsEvent, { readonly kind: "segments" }>): void {
   if (graphicsContext === null) return;
-  const xScale = graphics.width / (graphicsWindow.xlim[1] - graphicsWindow.xlim[0]);
-  const yScale = graphics.height / (graphicsWindow.ylim[1] - graphicsWindow.ylim[0]);
   graphicsContext.save();
   graphicsContext.lineCap = "round";
   graphicsContext.lineJoin = "round";
   for (const segment of event.segments) {
+    graphicsContext.lineCap = segment.lineCap ?? "round";
     const dashScale = Math.max(1, segment.lineWidth);
     const dashes =
       segment.lineType === "solid"
@@ -697,14 +727,8 @@ function drawSegments(event: Extract<PublicGraphicsEvent, { readonly kind: "segm
     graphicsContext.strokeStyle = segment.color;
     graphicsContext.lineWidth = segment.lineWidth;
     graphicsContext.setLineDash(dashes);
-    graphicsContext.moveTo(
-      (segment.x0 - graphicsWindow.xlim[0]) * xScale,
-      graphics.height - (segment.y0 - graphicsWindow.ylim[0]) * yScale,
-    );
-    graphicsContext.lineTo(
-      (segment.x1 - graphicsWindow.xlim[0]) * xScale,
-      graphics.height - (segment.y1 - graphicsWindow.ylim[0]) * yScale,
-    );
+    graphicsContext.moveTo(graphicsPixelX(segment.x0), graphicsPixelY(segment.y0));
+    graphicsContext.lineTo(graphicsPixelX(segment.x1), graphicsPixelY(segment.y1));
     graphicsContext.stroke();
   }
   graphicsContext.restore();
@@ -712,8 +736,6 @@ function drawSegments(event: Extract<PublicGraphicsEvent, { readonly kind: "segm
 
 function drawPoints(event: Extract<PublicGraphicsEvent, { readonly kind: "points" }>): void {
   if (graphicsContext === null) return;
-  const xScale = graphics.width / (graphicsWindow.xlim[1] - graphicsWindow.xlim[0]);
-  const yScale = graphics.height / (graphicsWindow.ylim[1] - graphicsWindow.ylim[0]);
   const context = graphicsContext;
   const polygon = (
     centerX: number,
@@ -776,8 +798,8 @@ function drawPoints(event: Extract<PublicGraphicsEvent, { readonly kind: "points
   context.lineCap = "round";
   context.lineJoin = "round";
   for (const point of event.points) {
-    const x = (point.x - graphicsWindow.xlim[0]) * xScale;
-    const y = graphics.height - (point.y - graphicsWindow.ylim[0]) * yScale;
+    const x = graphicsPixelX(point.x);
+    const y = graphicsPixelY(point.y);
     const radius = Math.max(1, 4 * point.size);
     context.strokeStyle = point.color;
     context.fillStyle = point.fill;
@@ -927,13 +949,11 @@ function drawPoints(event: Extract<PublicGraphicsEvent, { readonly kind: "points
 
 function drawText(event: Extract<PublicGraphicsEvent, { readonly kind: "text" }>): void {
   if (graphicsContext === null) return;
-  const xScale = graphics.width / (graphicsWindow.xlim[1] - graphicsWindow.xlim[0]);
-  const yScale = graphics.height / (graphicsWindow.ylim[1] - graphicsWindow.ylim[0]);
   const context = graphicsContext;
   context.save();
   for (const label of event.labels) {
-    const x = (label.x - graphicsWindow.xlim[0]) * xScale;
-    const y = graphics.height - (label.y - graphicsWindow.ylim[0]) * yScale;
+    const x = graphicsPixelX(label.x);
+    const y = graphicsPixelY(label.y);
     const pixels = Math.max(1, 12 * label.size);
     const style = label.font === 3 || label.font === 4 ? "italic " : "";
     const weight = label.font === 2 || label.font === 4 ? "bold " : "";
@@ -974,33 +994,56 @@ function drawText(event: Extract<PublicGraphicsEvent, { readonly kind: "text" }>
 
 function drawPolygons(event: Extract<PublicGraphicsEvent, { readonly kind: "polygon" }>): void {
   if (graphicsContext === null) return;
-  const xScale = graphics.width / (graphicsWindow.xlim[1] - graphicsWindow.xlim[0]);
-  const yScale = graphics.height / (graphicsWindow.ylim[1] - graphicsWindow.ylim[0]);
   graphicsContext.save();
   graphicsContext.lineCap = "round";
   graphicsContext.lineJoin = "round";
   for (const polygon of event.polygons) {
-    const firstX = polygon.x[0];
-    const firstY = polygon.y[0];
-    if (firstX === undefined || firstY === undefined) continue;
     graphicsContext.beginPath();
-    graphicsContext.moveTo(
-      (firstX - graphicsWindow.xlim[0]) * xScale,
-      graphics.height - (firstY - graphicsWindow.ylim[0]) * yScale,
-    );
-    for (let index = 1; index < polygon.x.length; index += 1) {
+    let open = false;
+    for (let index = 0; index < polygon.x.length; index += 1) {
       const x = polygon.x[index];
       const y = polygon.y[index];
       if (x === undefined || y === undefined) continue;
-      graphicsContext.lineTo(
-        (x - graphicsWindow.xlim[0]) * xScale,
-        graphics.height - (y - graphicsWindow.ylim[0]) * yScale,
-      );
+      if (!Number.isFinite(x) || !Number.isFinite(y)) {
+        if (open) graphicsContext.closePath();
+        open = false;
+        continue;
+      }
+      if (open) graphicsContext.lineTo(graphicsPixelX(x), graphicsPixelY(y));
+      else {
+        graphicsContext.moveTo(graphicsPixelX(x), graphicsPixelY(y));
+        open = true;
+      }
     }
-    graphicsContext.closePath();
+    if (open) graphicsContext.closePath();
     if (!polygon.fill.endsWith("00")) {
       graphicsContext.fillStyle = polygon.fill;
       graphicsContext.fill(polygon.fillRule);
+    }
+    if (polygon.hatch !== undefined && !polygon.hatch.color.endsWith("00")) {
+      graphicsContext.save();
+      graphicsContext.clip(polygon.fillRule);
+      graphicsContext.strokeStyle = polygon.hatch.color;
+      graphicsContext.lineWidth = polygon.lineWidth;
+      graphicsContext.setLineDash([]);
+      const points = polygon.x.flatMap((x, index) => {
+        const y = polygon.y[index];
+        return y === undefined || !Number.isFinite(x) || !Number.isFinite(y)
+          ? []
+          : [[graphicsPixelX(x), graphicsPixelY(y)] as const];
+      });
+      for (const [start, end] of polygonHatchSegments(
+        points,
+        polygon.hatch.density,
+        polygon.hatch.angle,
+        96,
+      )) {
+        graphicsContext.beginPath();
+        graphicsContext.moveTo(start[0], start[1]);
+        graphicsContext.lineTo(end[0], end[1]);
+        graphicsContext.stroke();
+      }
+      graphicsContext.restore();
     }
     if (!polygon.border.endsWith("00")) {
       const dashScale = Math.max(1, polygon.lineWidth);
@@ -1015,6 +1058,40 @@ function drawPolygons(event: Extract<PublicGraphicsEvent, { readonly kind: "poly
     }
   }
   graphicsContext.restore();
+}
+
+function polygonHatchSegments(
+  points: readonly (readonly [number, number])[],
+  density: number,
+  angle: number,
+  unitsPerInch: number,
+): readonly (readonly [readonly [number, number], readonly [number, number]])[] {
+  if (points.length < 3 || !(density > 0)) return [];
+  const radians = (-angle * Math.PI) / 180;
+  const tangent = [Math.cos(radians), Math.sin(radians)] as const;
+  const normal = [-tangent[1], tangent[0]] as const;
+  const tangentProjections = points.map(([x, y]) => x * tangent[0] + y * tangent[1]);
+  const normalProjections = points.map(([x, y]) => x * normal[0] + y * normal[1]);
+  const minimumTangent = Math.min(...tangentProjections) - 2;
+  const maximumTangent = Math.max(...tangentProjections) + 2;
+  const minimumNormal = Math.min(...normalProjections);
+  const maximumNormal = Math.max(...normalProjections);
+  const spacing = Math.max(0.25, unitsPerInch / density);
+  const first = Math.ceil(minimumNormal / spacing) * spacing;
+  const segments: (readonly [readonly [number, number], readonly [number, number]])[] = [];
+  for (let offset = first; offset <= maximumNormal + spacing * 1e-9; offset += spacing) {
+    segments.push([
+      [
+        tangent[0] * minimumTangent + normal[0] * offset,
+        tangent[1] * minimumTangent + normal[1] * offset,
+      ],
+      [
+        tangent[0] * maximumTangent + normal[0] * offset,
+        tangent[1] * maximumTangent + normal[1] * offset,
+      ],
+    ]);
+  }
+  return segments;
 }
 
 function drawBox(event: Extract<PublicGraphicsEvent, { readonly kind: "box" }>): void {
@@ -1054,11 +1131,8 @@ function drawBox(event: Extract<PublicGraphicsEvent, { readonly kind: "box" }>):
 
 function drawBoxplot(event: Extract<PublicGraphicsEvent, { readonly kind: "boxplot" }>): void {
   if (graphicsContext === null) return;
-  const xScale = graphics.width / (graphicsWindow.xlim[1] - graphicsWindow.xlim[0]);
-  const yScale = graphics.height / (graphicsWindow.ylim[1] - graphicsWindow.ylim[0]);
-  const xPixel = (value: number): number => (value - graphicsWindow.xlim[0]) * xScale;
-  const yPixel = (value: number): number =>
-    graphics.height - (value - graphicsWindow.ylim[0]) * yScale;
+  const xPixel = graphicsPixelX;
+  const yPixel = graphicsPixelY;
 
   graphicsContext.save();
   graphicsContext.lineCap = "butt";
@@ -1175,6 +1249,18 @@ function drawLegend(event: Extract<PublicGraphicsEvent, { readonly kind: "legend
     const row = index % rows;
     const x = left + padding + column * columnWidth;
     const y = top + padding + (titleRows + row + 0.5) * rowHeight;
+    if (entry.fill !== undefined) {
+      const swatchWidth = symbolWidth * 0.58;
+      const swatchHeight = rowHeight * 0.62;
+      graphicsContext.fillStyle = entry.fill;
+      graphicsContext.fillRect(x, y - swatchHeight / 2, swatchWidth, swatchHeight);
+      if (entry.border !== undefined) {
+        graphicsContext.strokeStyle = entry.border;
+        graphicsContext.lineWidth = 1;
+        graphicsContext.setLineDash([]);
+        graphicsContext.strokeRect(x, y - swatchHeight / 2, swatchWidth, swatchHeight);
+      }
+    }
     if (entry.lineType !== undefined && entry.lineWidth !== undefined) {
       graphicsContext.beginPath();
       graphicsContext.strokeStyle = entry.color;
@@ -1199,12 +1285,7 @@ function legendCanvasTopLeft(
   height: number,
 ): readonly [number, number] {
   if (event.position.kind === "coordinates") {
-    const xScale = graphics.width / (graphicsWindow.xlim[1] - graphicsWindow.xlim[0]);
-    const yScale = graphics.height / (graphicsWindow.ylim[1] - graphicsWindow.ylim[0]);
-    return [
-      (event.position.x - graphicsWindow.xlim[0]) * xScale,
-      graphics.height - (event.position.y - graphicsWindow.ylim[0]) * yScale,
-    ];
+    return [graphicsPixelX(event.position.x), graphicsPixelY(event.position.y)];
   }
   const insetX = event.position.inset[0] * graphics.width;
   const insetY = event.position.inset[1] * graphics.height;

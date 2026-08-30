@@ -1,4 +1,5 @@
 import { REvaluationError, RTypeMismatchError, RUnsupportedFeatureError } from "./errors.js";
+import { languageEntries, languageValueAst, quoteLanguageAst } from "./language.js";
 import {
   R_NULL,
   characterBytesAt,
@@ -20,9 +21,11 @@ import {
   logicalVector,
   missingValue,
   rawVector,
+  registerVectorStorageCapacity,
   vectorNames,
   vectorDimensions,
   vectorClasses,
+  vectorStorageCapacity,
   withAttribute,
   withClasses,
   withDimensions,
@@ -34,6 +37,7 @@ import type {
   RCharacterVector,
   RComplexVector,
   RDoubleVector,
+  RExpression,
   RIntegerVector,
   RList,
   RLogicalVector,
@@ -49,7 +53,7 @@ type ListLike = RList | RPairlist;
 type IndexableValue = RVector | RPairlist;
 type SelectedIndex = number | undefined;
 interface ArrayDimensionNames {
-  readonly axes: readonly (readonly string[] | undefined)[];
+  readonly axes: readonly (RCharacterVector | undefined)[];
   readonly labels?: readonly string[];
 }
 interface CoordinateSelection {
@@ -69,6 +73,13 @@ export function subsetVector(
   index: RValue | undefined,
   context: OperatorContext,
 ): RVector {
+  // A wholly missing linear subscript is an identity selection for an array. In
+  // particular, `x[]` and do.call("[", list(x, drop = FALSE)) retain the complete
+  // array shape and every non-dispatch attribute; routing this through ordinary
+  // linear subsetting would incorrectly discard dim and dimnames.
+  if (index === undefined && target.type !== "pairlist" && vectorDimensions(target) !== undefined) {
+    return target;
+  }
   const selected = resolveSubsetIndices(target, index);
   context.allocate(selected.length);
   const sourceNames = vectorNames(target);
@@ -95,10 +106,12 @@ function preserveSubsetAttributes<T extends RVector>(source: RVector, output: T)
     const value = source.attributes.get(name);
     if (value !== undefined) attributes.set(name, value);
   }
-  return attributes.size === output.attributes.size &&
+  const attributed =
+    attributes.size === output.attributes.size &&
     [...attributes].every(([name, value]) => output.attributes.get(name) === value)
-    ? output
-    : { ...output, attributes };
+      ? output
+      : { ...output, attributes };
+  return source.s4 === true ? { ...attributed, s4: true } : attributed;
 }
 
 /** Apply two-dimensional matrix or data-frame `[` semantics. */
@@ -124,7 +137,7 @@ export function subsetDimensions(
     if (indices.length !== 2) {
       throw new RTypeMismatchError("NRT3310", "A data frame requires two subscripts.");
     }
-    return subsetDataFrame(target, indices[0], indices[1], drop, context);
+    return subsetDataFrame(target, indices[0], indices[1], drop, context) as RVector;
   }
   const dimensions = vectorDimensions(target);
   if (dimensions === undefined || dimensions.length !== indices.length) {
@@ -149,13 +162,17 @@ export function subsetDimensions(
   if (listLike) {
     for (let index = 0; index < positions.length; index += 1) context.checkpoint();
   }
-  const retainedAxes = selectedAxes.flatMap((selected, axis) =>
-    !drop || selected.length !== 1 ? [axis] : [],
-  );
   if (dimensions.length === 1) {
-    const names = selectedNames[0];
-    if (retainedAxes.length === 0) {
-      return names === undefined ? output : withNames(output, names);
+    const names =
+      selectedNames[0] ??
+      ((selectedAxes[0]?.length ?? 0) === 0 && dimNames?.axes[0] !== undefined
+        ? characterVector([])
+        : undefined);
+    // GNU R drops the sole dimension for both scalar and empty selections unless
+    // drop = FALSE. Multi-dimensional arrays retain zero-length axes because the
+    // remaining axes still define a rectangular result.
+    if (drop && (selectedAxes[0]?.length ?? 0) <= 1) {
+      return names === undefined ? output : withAttribute(output, "names", names);
     }
     output = withDimensions(output, [selectedAxes[0]?.length ?? 0]);
     if (dimNames !== undefined) {
@@ -163,17 +180,20 @@ export function subsetDimensions(
         output,
         "dimnames",
         listValue(
-          [names === undefined ? R_NULL : characterVector(names)],
+          [names ?? R_NULL],
           dimNames.labels === undefined ? undefined : [dimNames.labels[0] ?? ""],
         ),
       );
     }
     return output;
   }
+  const retainedAxes = selectedAxes.flatMap((selected, axis) =>
+    !drop || selected.length !== 1 ? [axis] : [],
+  );
   if (retainedAxes.length === 0) return output;
   if (retainedAxes.length === 1) {
     const names = selectedNames[retainedAxes[0] ?? 0];
-    return names === undefined ? output : withNames(output, names);
+    return names === undefined ? output : withAttribute(output, "names", names);
   }
   output = withDimensions(
     output,
@@ -185,7 +205,7 @@ export function subsetDimensions(
       output,
       "dimnames",
       listValue(
-        retainedNames.map((names) => (names === undefined ? R_NULL : characterVector(names))),
+        retainedNames.map((names) => names ?? R_NULL),
         dimNames?.labels === undefined
           ? undefined
           : retainedAxes.map((axis) => dimNames.labels?.[axis] ?? ""),
@@ -235,12 +255,20 @@ export function replaceDimensions(
   indices: readonly (RValue | undefined)[],
   replacement: RValue,
   context: OperatorContext,
+  elementReplacement = false,
 ): RVector {
   if (isDataFrame(target)) {
     if (indices.length !== 2) {
       throw new RTypeMismatchError("NRT3311", "A data frame requires two replacement subscripts.");
     }
-    return replaceDataFrameSubset(target, indices[0], indices[1], replacement, context);
+    return replaceDataFrameSubset(
+      target,
+      indices[0],
+      indices[1],
+      replacement,
+      context,
+      elementReplacement,
+    );
   }
   const dimensions = vectorDimensions(target);
   if (dimensions === undefined || dimensions.length !== indices.length) {
@@ -299,13 +327,18 @@ export function extractVectorElement(
   ) {
     let current: RValue = target;
     for (let offset = 0; offset < index.length; offset += 1) {
-      if (current.type !== "list" && current.type !== "pairlist") {
+      const subscript = scalarSubscript(index, offset);
+      if (current.type === "language") {
+        current = extractVectorElement(languageEntries(current), subscript, context, exact);
+        continue;
+      }
+      if (!isVector(current) && current.type !== "pairlist") {
         throw new RTypeMismatchError(
           "NRT3312",
           "Recursive [[ extraction reached a non-vector value before the final subscript.",
         );
       }
-      current = extractVectorElement(current, scalarSubscript(index, offset), context, exact);
+      current = extractVectorElement(current, subscript, context, exact);
     }
     return current;
   }
@@ -366,6 +399,7 @@ export function replaceVectorSubset(
   index: RValue | undefined,
   replacement: RValue,
   context: OperatorContext,
+  mutateOwned = false,
 ): IndexableValue {
   const dataFrameTarget: RList | undefined =
     target.type === "list" && isDataFrame(target) ? target : undefined;
@@ -384,7 +418,23 @@ export function replaceVectorSubset(
     position === undefined ? [] : [position],
   );
   if (selected.length === 0) {
-    if (selection.resultLength === target.length) return target;
+    if (selection.resultLength === target.length) {
+      if (
+        isAtomic(target) &&
+        isAtomic(replacement) &&
+        !(target.type === "integer" && isFactor(target))
+      ) {
+        return replaceAtomic(
+          target,
+          [],
+          replacement,
+          selection.resultLength,
+          selection.names,
+          context,
+        );
+      }
+      return target;
+    }
     if (target.type === "list" || target.type === "pairlist") {
       const values = Array.from(
         { length: selection.resultLength },
@@ -458,7 +508,7 @@ export function replaceVectorSubset(
       context.checkpoint();
     }
     context.allocate(values.length);
-    return listValue(values, selection.names);
+    return cloneAsList(target, values, selection.names);
   }
   if (!isAtomic(replacement) || replacement.length === 0) {
     throw new RTypeMismatchError(
@@ -496,6 +546,7 @@ export function replaceVectorSubset(
     selection.resultLength,
     selection.names,
     context,
+    mutateOwned,
   );
 }
 
@@ -505,7 +556,29 @@ export function replaceVectorElement(
   index: RValue,
   replacement: RValue,
   context: OperatorContext,
+  mutateOwned = false,
 ): IndexableValue {
+  if (
+    (target.type === "list" || target.type === "pairlist") &&
+    (index.type === "integer" || index.type === "double" || index.type === "character") &&
+    index.length > 1
+  ) {
+    const head = scalarSubscript(index, 0);
+    const tail = subsetVector(
+      index,
+      integerVector(Array.from({ length: index.length - 1 }, (_, offset) => offset + 2)),
+      context,
+    );
+    const nested = extractVectorElement(target, head, context, true);
+    if (!isVector(nested) && nested.type !== "pairlist") {
+      throw new RTypeMismatchError(
+        "NRT3312",
+        "Recursive [[ replacement reached a non-vector value before the final subscript.",
+      );
+    }
+    const updated = replaceVectorElement(nested, tail, replacement, context);
+    return replaceVectorElement(target, head, updated, context);
+  }
   const dataFrameTarget: RList | undefined =
     target.type === "list" && isDataFrame(target) ? target : undefined;
   if (dataFrameTarget !== undefined) {
@@ -555,7 +628,65 @@ export function replaceVectorElement(
     selection.resultLength,
     selection.names,
     context,
+    mutateOwned,
   );
+}
+
+/** Replace one exact element of an expression vector while preserving its attributes. */
+export function replaceExpressionElement(
+  target: RExpression,
+  index: RValue,
+  replacement: RValue,
+  context: OperatorContext,
+): RExpression {
+  const replaced = replaceVectorElement(expressionList(target), index, replacement, context);
+  if (replaced.type !== "list") {
+    throw new TypeError("Expression element replacement must preserve list-like storage.");
+  }
+  return expressionFromList(replaced);
+}
+
+/** Replace a one-dimensional expression-vector subset using R's expression coercion rules. */
+export function replaceExpressionSubset(
+  target: RExpression,
+  index: RValue | undefined,
+  replacement: RValue,
+  context: OperatorContext,
+): RExpression {
+  const normalizedReplacement =
+    replacement.type === "expression"
+      ? expressionList(replacement)
+      : replacement.type === "language"
+        ? languageEntries(replacement)
+        : replacement;
+  const replaced = replaceVectorSubset(
+    expressionList(target),
+    index,
+    normalizedReplacement,
+    context,
+  );
+  if (replaced.type !== "list") {
+    throw new TypeError("Expression subset replacement must preserve list-like storage.");
+  }
+  return expressionFromList(replaced);
+}
+
+function expressionList(expression: RExpression): RList {
+  const values = Object.freeze(expression.values.map(quoteLanguageAst));
+  return {
+    type: "list",
+    values,
+    length: values.length,
+    attributes: new Map(expression.attributes ?? []),
+  };
+}
+
+function expressionFromList(entries: RList): RExpression {
+  const attributes = new Map(entries.attributes);
+  const values = Object.freeze(entries.values.map(languageValueAst));
+  return attributes.size === 0
+    ? { type: "expression", values }
+    : { type: "expression", values, attributes };
 }
 
 /** Replace or append one exact list member. */
@@ -596,6 +727,8 @@ export function replaceListMember(
 function resolveSubsetIndices(target: IndexableValue, index: RValue | undefined): SelectedIndex[] {
   if (index === undefined) return Array.from({ length: target.length }, (_, position) => position);
   switch (index.type) {
+    case "null":
+      return [];
     case "integer":
     case "double":
       return resolveNumericSubset(index, target.length);
@@ -625,6 +758,13 @@ function resolveReplacementSelection(
     };
   }
   const existingNames = vectorNames(target);
+  if (index.type === "null") {
+    return {
+      positions: [],
+      resultLength: target.length,
+      ...(existingNames === undefined ? {} : { names: existingNames }),
+    };
+  }
   if (index.type === "character") {
     const names = [...(existingNames ?? Array.from({ length: target.length }, () => ""))];
     const positions: number[] = [];
@@ -701,6 +841,7 @@ function resolveElementReplacement(target: IndexableValue, index: RValue): Repla
     throw new RTypeMismatchError(
       "NRT3303",
       "[[ requires a numeric, logical, or character subscript.",
+      { details: { targetType: target.type, indexType: index.type } },
     );
   }
   if (index.length !== 1 || isMissing(index, 0)) {
@@ -798,7 +939,7 @@ function resolveAxisIndices(
 function resolveArrayAxisIndices(
   length: number,
   index: RValue | undefined,
-  names: readonly string[] | undefined,
+  names: RCharacterVector | undefined,
   context: OperatorContext,
 ): SelectedIndex[] {
   if (index === undefined) {
@@ -808,7 +949,14 @@ function resolveArrayAxisIndices(
     throw new REvaluationError("NRE2218", "Logical array subscript is too long.");
   }
   if (index.type === "character") {
-    const selected = resolveCharacterSubset(index, names);
+    const selected = Array.from({ length: index.length }, (_, position) => {
+      if (isMissing(index, position) || names === undefined) return undefined;
+      const name = index.values[position] ?? "";
+      for (let candidate = 0; candidate < names.length; candidate += 1) {
+        if (!isMissing(names, candidate) && names.values[candidate] === name) return candidate;
+      }
+      return undefined;
+    });
     if (selected.some((position) => position === undefined)) {
       throw new REvaluationError("NRE2202", "Array subscript is out of bounds.");
     }
@@ -848,17 +996,41 @@ function resolveArrayAxisIndices(
     }
     const axis = integerVector(Array.from({ length }, (_, position) => position + 1));
     const coerced = integerVector(values, compactMask(missing));
-    return resolveSubsetIndices(names === undefined ? axis : withNames(axis, names), coerced);
+    return resolveSubsetIndices(
+      names === undefined ? axis : withAttribute(axis, "names", names),
+      coerced,
+    );
   }
-  return resolveAxisIndices(length, index, names);
+  return resolveAxisIndices(
+    length,
+    index,
+    names?.values.map((name, position) => (isMissing(names, position) ? "" : name)),
+  );
 }
 
 function selectedAxisNames(
   selected: readonly SelectedIndex[],
-  names: readonly string[] | undefined,
-): readonly string[] | undefined {
+  names: RCharacterVector | undefined,
+): RCharacterVector | undefined {
   if (names === undefined || selected.length === 0) return undefined;
-  return selected.map((position) => (position === undefined ? "" : (names[position] ?? "")));
+  const missing = new Uint8Array(selected.length);
+  const values = selected.map((position, output) => {
+    if (position === undefined || isMissing(names, position)) {
+      missing[output] = 1;
+      return "";
+    }
+    return names.values[position] ?? "";
+  });
+  return characterVector(
+    values,
+    compactMask(missing),
+    selected.map((position) =>
+      position === undefined ? "unknown" : characterEncodingAt(names, position),
+    ),
+    selected.map((position) =>
+      position === undefined ? new Uint8Array() : characterBytesAt(names, position),
+    ),
+  );
 }
 
 function arrayPositions(
@@ -911,11 +1083,12 @@ function coordinateMatrixSelection(
 
   const rows = indexDimensions[0] ?? 0;
   const rowNamesValue = dataFrame ? target.attributes.get("row.names") : undefined;
+  const dataFrameNames = dataFrame ? vectorNames(target) : undefined;
   const dimNames = dataFrame
     ? {
         axes: [
-          rowNamesValue?.type === "character" ? rowNamesValue.values : undefined,
-          vectorNames(target),
+          rowNamesValue?.type === "character" ? rowNamesValue : undefined,
+          dataFrameNames === undefined ? undefined : characterVector(dataFrameNames),
         ],
       }
     : arrayDimensionNames(target, dimensions);
@@ -939,7 +1112,15 @@ function coordinateMatrixSelection(
       if (index.type === "character") {
         const names = dimNames?.axes[axis];
         const name = index.values[source] ?? "";
-        const coordinate = names?.indexOf(name) ?? -1;
+        let coordinate = -1;
+        if (names !== undefined) {
+          for (let candidate = 0; candidate < names.length; candidate += 1) {
+            if (!isMissing(names, candidate) && names.values[candidate] === name) {
+              coordinate = candidate;
+              break;
+            }
+          }
+        }
         if (coordinate < 0) {
           throw new REvaluationError("NRE2202", "Coordinate-matrix subscript is out of bounds.");
         }
@@ -1124,7 +1305,7 @@ function replaceDataFrameCoordinates(
       context,
     );
   }
-  return cloneList(target, values, vectorNames(target));
+  return dataFrameReplacementResult(cloneList(target, values, vectorNames(target)));
 }
 
 function arrayDimensionNames(
@@ -1144,12 +1325,12 @@ function arrayDimensionNames(
 function dimensionNameAxis(
   value: RValue | undefined,
   length: number,
-): readonly string[] | undefined {
+): RCharacterVector | undefined {
   if (value === undefined || value.type === "null") return undefined;
-  if (value.type !== "character" || value.missing !== undefined || value.length !== length) {
+  if (value.type !== "character" || value.length !== length) {
     throw new RTypeMismatchError("NRT3312", "The array dimnames attribute is malformed.");
   }
-  return value.values;
+  return value;
 }
 
 function subsetDataFrame(
@@ -1158,7 +1339,7 @@ function subsetDataFrame(
   columnIndex: RValue | undefined,
   drop: boolean,
   context: OperatorContext,
-): RVector {
+): RValue {
   const rowNamesValue = target.attributes.get("row.names");
   const rowNames = rowNamesValue?.type === "character" ? rowNamesValue.values : undefined;
   const selectedRows = resolveAxisIndices(dataFrameRowCount(target), rowIndex, rowNames);
@@ -1168,17 +1349,27 @@ function subsetDataFrame(
   }
   const columns = selectedColumns.map((position) => {
     const column = target.values[position ?? 0];
+    if (column?.type === "expression") {
+      return subsetExpressionRows(column, selectedRows, context);
+    }
     if (column === undefined || !isVector(column)) {
       throw new RTypeMismatchError("NRT3313", "The data-frame column is malformed.");
     }
-    return subsetVector(
-      column,
-      integerVector(
-        selectedRows.map((row) => (row === undefined ? Number.NaN : row + 1)),
-        Uint8Array.from(selectedRows, (row) => (row === undefined ? 1 : 0)),
-      ),
-      context,
+    const rowSubscript = integerVector(
+      selectedRows.map((row) => (row === undefined ? Number.NaN : row + 1)),
+      Uint8Array.from(selectedRows, (row) => (row === undefined ? 1 : 0)),
     );
+    const dimensions = vectorDimensions(column);
+    if (dimensions !== undefined) {
+      const subset = subsetDimensions(
+        column,
+        [rowSubscript, ...Array.from({ length: dimensions.length - 1 }, () => undefined)],
+        false,
+        context,
+      );
+      return vectorClasses(column)?.includes("AsIs") ? withClasses(subset, ["AsIs"]) : subset;
+    }
+    return subsetVector(column, rowSubscript, context);
   });
   const classes = vectorClasses(target);
   if (drop && columns.length === 1 && !classes?.includes("tbl_df")) {
@@ -1191,6 +1382,36 @@ function subsetDataFrame(
   );
   const output = dataFrameValue(columns, columnNames, outputRowNames);
   return classes === undefined ? output : withClasses(output, classes);
+}
+
+function subsetExpressionRows(
+  expression: RExpression,
+  selectedRows: readonly SelectedIndex[],
+  context: OperatorContext,
+): RExpression {
+  if (selectedRows.some((row) => row === undefined || expression.values[row] === undefined)) {
+    throw new RUnsupportedFeatureError(
+      "NRU6184",
+      "Missing or out-of-range data-frame rows for expression columns are not implemented.",
+    );
+  }
+  const values = Object.freeze(selectedRows.map((row) => expression.values[row as number]!));
+  const attributes = new Map(expression.attributes ?? []);
+  const sourceReferences = attributes.get("srcref");
+  if (sourceReferences?.type === "list" && sourceReferences.length === expression.values.length) {
+    attributes.set(
+      "srcref",
+      subsetVector(
+        sourceReferences,
+        integerVector(selectedRows.map((row) => (row as number) + 1)),
+        context,
+      ),
+    );
+  }
+  context.allocate(values.length);
+  return attributes.size === 0
+    ? { type: "expression", values }
+    : { type: "expression", values, attributes };
 }
 
 function replaceDataFrameColumns(
@@ -1221,7 +1442,7 @@ function replaceDataFrameColumns(
     const sourceNames = vectorNames(target) ?? [];
     const names = sourceNames.filter((_, position) => !removed.has(position));
     context.allocate(values.length);
-    return cloneList(target, values, names);
+    return dataFrameReplacementResult(cloneList(target, values, names));
   }
   const replacementLength = valueReplacementLength(replacement);
   if (replacementLength === 0) {
@@ -1249,7 +1470,7 @@ function replaceDataFrameColumns(
     context.checkpoint();
   }
   context.allocate(values.length);
-  return cloneList(target, values, names);
+  return dataFrameReplacementResult(cloneList(target, values, names));
 }
 
 function dataFrameColumnReplacement(
@@ -1294,15 +1515,14 @@ function replaceDataFrameSubset(
   columnIndex: RValue | undefined,
   replacement: RValue,
   context: OperatorContext,
+  elementReplacement = false,
 ): RVector {
-  if (
-    (!isAtomic(replacement) && replacement.type !== "list" && replacement.type !== "pairlist") ||
-    valueReplacementLength(replacement) === 0
-  ) {
-    throw new RTypeMismatchError(
-      "NRT3314",
-      "Data-frame rectangular replacement requires a non-empty atomic or list value.",
-    );
+  // A missing row subscript selects whole data-frame columns. GNU R installs
+  // each replacement column as an object, preserving attributes such as a
+  // factor's levels/class. An explicit full-row index instead performs cell
+  // replacement and therefore follows coercion rules against the old column.
+  if (rowIndex === undefined && !elementReplacement) {
+    return replaceDataFrameColumns(target, columnIndex, replacement, context);
   }
   const rowNamesValue = target.attributes.get("row.names");
   const existingRowNames =
@@ -1319,6 +1539,27 @@ function replaceDataFrameSubset(
   }
   const selectedRows = rowSelection.positions as readonly number[];
   const selectedColumns = columnSelection.positions as readonly number[];
+  if (!elementReplacement && selectedRows.length === 0) return target;
+  if (
+    !isAtomic(replacement) &&
+    replacement.type !== "list" &&
+    replacement.type !== "pairlist" &&
+    replacement.type !== "null"
+  ) {
+    throw new RTypeMismatchError(
+      "NRT3314",
+      "Data-frame rectangular replacement requires an atomic or list value.",
+      { details: { replacementType: replacement.type } },
+    );
+  }
+  if (!elementReplacement && selectedColumns.length === 0) return target;
+  if (valueReplacementLength(replacement) === 0) {
+    throw new RTypeMismatchError(
+      "NRT3314",
+      "Data-frame rectangular replacement requires a non-empty atomic or list value.",
+      { details: { replacementType: replacement.type, replacementLength: 0 } },
+    );
+  }
   if (columnIndex?.type === "logical" && columnSelection.resultLength > target.length) {
     throw new REvaluationError("NRE2222", "Non-existent data-frame columns are not allowed.");
   }
@@ -1341,6 +1582,60 @@ function replaceDataFrameSubset(
   ];
   for (let position = target.length; position < columnNames.length; position += 1) {
     if (columnNames[position] === "") columnNames[position] = `V${position + 1}`;
+  }
+  if (elementReplacement) {
+    if (selectedRows.length !== 1 || selectedColumns.length !== 1) {
+      throw new REvaluationError(
+        "NRE2204",
+        "[[ replacement requires exactly one selected element.",
+      );
+    }
+    if (valueReplacementLength(replacement) === 0) {
+      throw new RTypeMismatchError("NRT3314", "replacement has length zero");
+    }
+    if (
+      (isAtomic(replacement) && replacement.length > 1) ||
+      ((replacement.type === "list" || replacement.type === "pairlist") && replacement.length > 1)
+    ) {
+      throw new RTypeMismatchError("NRT3314", "more elements supplied than there are to replace");
+    }
+    const rowPosition = selectedRows[0] ?? 0;
+    const columnPosition = selectedColumns[0] ?? 0;
+    const existing = target.values[columnPosition];
+    if (existing === undefined || columnPosition >= target.length) {
+      throw new RUnsupportedFeatureError(
+        "NRU6188",
+        "[[ replacement of a new data-frame column is not implemented.",
+      );
+    }
+    let column: RVector;
+    if (isAtomic(existing)) {
+      const extended = extendDataFrameColumn(existing, rowSelection.resultLength, context);
+      if (replacement.type === "list" || replacement.type === "pairlist") {
+        column = listValue(
+          Array.from({ length: extended.length }, (_, index) =>
+            extractVectorElement(extended, integerVector([index + 1]), context),
+          ),
+          vectorNames(extended),
+        );
+      } else {
+        column = extended;
+      }
+    } else if (existing.type === "list") {
+      column = existing;
+    } else {
+      throw new RTypeMismatchError("NRT3313", "The data-frame column is malformed.");
+    }
+    const updatedColumn =
+      column.type === "list"
+        ? replaceVectorElement(column, integerVector([rowPosition + 1]), replacement, context)
+        : replaceVectorSubset(column, integerVector([rowPosition + 1]), replacement, context);
+    const values = [...target.values];
+    values[columnPosition] = updatedColumn;
+    const output = cloneList(target, values, columnNames);
+    const attributes = new Map(output.attributes);
+    attributes.set("row.names", characterVector(rowSelection.names ?? existingRowNames));
+    return dataFrameReplacementResult({ ...output, attributes });
   }
   const values: RValue[] = [];
   for (let position = 0; position < columnSelection.resultLength; position += 1) {
@@ -1392,7 +1687,7 @@ function replaceDataFrameSubset(
   const output = cloneList(target, values, columnNames);
   const attributes = new Map(output.attributes);
   attributes.set("row.names", characterVector(rowSelection.names ?? existingRowNames));
-  return { ...output, attributes };
+  return dataFrameReplacementResult({ ...output, attributes });
 }
 
 function resolveDataFrameRows(
@@ -1680,6 +1975,181 @@ function subsetAtomic(
   return names === undefined ? value : withExactNames(value, names);
 }
 
+function exactNamesEqual(
+  first: readonly string[] | undefined,
+  second: readonly string[] | undefined,
+): boolean {
+  if (first === undefined || second === undefined) return first === second;
+  return first.length === second.length && first.every((name, index) => name === second[index]);
+}
+
+function ownedGrowthCapacity(
+  target: AtomicVector,
+  resultLength: number,
+  context: OperatorContext,
+): number {
+  const current = vectorStorageCapacity(target);
+  if (current >= resultLength) return current;
+  const doubled = Math.max(16, current * 2, resultLength);
+  const capacity = Math.min(context.limits.maxVectorLength, doubled);
+  context.allocate(capacity);
+  return capacity;
+}
+
+function growOwnedAtomic(
+  target: AtomicVector,
+  selected: readonly number[],
+  replacement: AtomicVector,
+  resultLength: number,
+  names: readonly string[] | undefined,
+  context: OperatorContext,
+): AtomicVector | undefined {
+  if (
+    resultLength <= target.length ||
+    target === replacement ||
+    target.type !== replacement.type ||
+    target.type === "character" ||
+    target.type === "raw" ||
+    target.s4 === true ||
+    target.attributes.size !== 0 ||
+    names !== undefined ||
+    selected.some((position) => position < 0 || position >= resultLength)
+  ) {
+    return undefined;
+  }
+
+  const oldCapacity = vectorStorageCapacity(target);
+  const capacity = ownedGrowthCapacity(target, resultLength, context);
+  const reusableMissing =
+    target.missing !== undefined &&
+    target.missing.byteOffset === 0 &&
+    target.missing.buffer.byteLength >= capacity;
+  const missingStorage = reusableMissing
+    ? new Uint8Array(target.missing.buffer, 0, capacity)
+    : new Uint8Array(capacity);
+  if (!reusableMissing && target.missing !== undefined) missingStorage.set(target.missing);
+  missingStorage.fill(1, target.length, resultLength);
+
+  let output: AtomicVector;
+  switch (target.type) {
+    case "logical": {
+      if (replacement.type !== "logical") return undefined;
+      const reusable =
+        oldCapacity >= capacity &&
+        target.values.byteOffset === 0 &&
+        target.values.buffer.byteLength >= capacity;
+      const storage = reusable
+        ? new Uint8Array(target.values.buffer, 0, capacity)
+        : new Uint8Array(capacity);
+      if (!reusable) storage.set(target.values);
+      for (let index = 0; index < selected.length; index += 1) {
+        const destination = selected[index] ?? 0;
+        const source = index % replacement.length;
+        storage[destination] = replacement.values[source] ?? 0;
+        missingStorage[destination] = isMissing(replacement, source) ? 1 : 0;
+        context.checkpoint();
+      }
+      output = {
+        type: "logical",
+        values: storage.subarray(0, resultLength),
+        missing: missingStorage.subarray(0, resultLength),
+        length: resultLength,
+        attributes: target.attributes,
+      };
+      break;
+    }
+    case "integer": {
+      if (replacement.type !== "integer") return undefined;
+      const reusable =
+        oldCapacity >= capacity &&
+        target.values.byteOffset === 0 &&
+        target.values.buffer.byteLength >= capacity * Int32Array.BYTES_PER_ELEMENT;
+      const storage = reusable
+        ? new Int32Array(target.values.buffer, 0, capacity)
+        : new Int32Array(capacity);
+      if (!reusable) storage.set(target.values);
+      for (let index = 0; index < selected.length; index += 1) {
+        const destination = selected[index] ?? 0;
+        const source = index % replacement.length;
+        storage[destination] = replacement.values[source] ?? 0;
+        missingStorage[destination] = isMissing(replacement, source) ? 1 : 0;
+        context.checkpoint();
+      }
+      output = {
+        type: "integer",
+        values: storage.subarray(0, resultLength),
+        missing: missingStorage.subarray(0, resultLength),
+        length: resultLength,
+        attributes: target.attributes,
+      };
+      break;
+    }
+    case "double": {
+      if (replacement.type !== "double") return undefined;
+      const reusable =
+        oldCapacity >= capacity &&
+        target.values.byteOffset === 0 &&
+        target.values.buffer.byteLength >= capacity * Float64Array.BYTES_PER_ELEMENT;
+      const storage = reusable
+        ? new Float64Array(target.values.buffer, 0, capacity)
+        : new Float64Array(capacity);
+      if (!reusable) storage.set(target.values);
+      for (let index = 0; index < selected.length; index += 1) {
+        const destination = selected[index] ?? 0;
+        const source = index % replacement.length;
+        storage[destination] = replacement.values[source] ?? 0;
+        missingStorage[destination] = isMissing(replacement, source) ? 1 : 0;
+        context.checkpoint();
+      }
+      output = {
+        type: "double",
+        values: storage.subarray(0, resultLength),
+        missing: missingStorage.subarray(0, resultLength),
+        length: resultLength,
+        attributes: target.attributes,
+      };
+      break;
+    }
+    case "complex": {
+      if (replacement.type !== "complex") return undefined;
+      const reusable =
+        oldCapacity >= capacity &&
+        target.real.byteOffset === 0 &&
+        target.imaginary.byteOffset === 0 &&
+        target.real.buffer.byteLength >= capacity * Float64Array.BYTES_PER_ELEMENT &&
+        target.imaginary.buffer.byteLength >= capacity * Float64Array.BYTES_PER_ELEMENT;
+      const real = reusable
+        ? new Float64Array(target.real.buffer, 0, capacity)
+        : new Float64Array(capacity);
+      const imaginary = reusable
+        ? new Float64Array(target.imaginary.buffer, 0, capacity)
+        : new Float64Array(capacity);
+      if (!reusable) {
+        real.set(target.real);
+        imaginary.set(target.imaginary);
+      }
+      for (let index = 0; index < selected.length; index += 1) {
+        const destination = selected[index] ?? 0;
+        const source = index % replacement.length;
+        real[destination] = replacement.real[source] ?? 0;
+        imaginary[destination] = replacement.imaginary[source] ?? 0;
+        missingStorage[destination] = isMissing(replacement, source) ? 1 : 0;
+        context.checkpoint();
+      }
+      output = {
+        type: "complex",
+        real: real.subarray(0, resultLength),
+        imaginary: imaginary.subarray(0, resultLength),
+        missing: missingStorage.subarray(0, resultLength),
+        length: resultLength,
+        attributes: target.attributes,
+      };
+      break;
+    }
+  }
+  return registerVectorStorageCapacity(output, capacity);
+}
+
 function replaceAtomic(
   target: AtomicVector,
   selected: readonly number[],
@@ -1687,8 +2157,65 @@ function replaceAtomic(
   resultLength: number,
   names: readonly string[] | undefined,
   context: OperatorContext,
+  mutateOwned = false,
 ): AtomicVector {
   const type = commonAtomicType(target, replacement);
+  if (mutateOwned && type === target.type) {
+    const grown = growOwnedAtomic(target, selected, replacement, resultLength, names, context);
+    if (grown !== undefined) return grown;
+  }
+  if (
+    mutateOwned &&
+    target !== replacement &&
+    resultLength === target.length &&
+    type === target.type &&
+    replacement.type === target.type &&
+    selected.every((position) => position >= 0 && position < target.length) &&
+    target.s4 !== true &&
+    target.attributes.size === 0 &&
+    names === undefined &&
+    exactNamesEqual(names, vectorNames(target)) &&
+    (replacement.missing === undefined || target.missing !== undefined) &&
+    target.type !== "character"
+  ) {
+    for (let index = 0; index < selected.length; index += 1) {
+      const destination = selected[index] ?? 0;
+      const source = index % replacement.length;
+      if (target.missing !== undefined) {
+        target.missing[destination] = isMissing(replacement, source) ? 1 : 0;
+      }
+      switch (target.type) {
+        case "logical":
+          if (replacement.type === "logical") {
+            target.values[destination] = replacement.values[source] ?? 0;
+          }
+          break;
+        case "integer":
+          if (replacement.type === "integer") {
+            target.values[destination] = replacement.values[source] ?? 0;
+          }
+          break;
+        case "double":
+          if (replacement.type === "double") {
+            target.values[destination] = replacement.values[source] ?? 0;
+          }
+          break;
+        case "raw":
+          if (replacement.type === "raw") {
+            target.values[destination] = replacement.values[source] ?? 0;
+          }
+          break;
+        case "complex":
+          if (replacement.type === "complex") {
+            target.real[destination] = replacement.real[source] ?? 0;
+            target.imaginary[destination] = replacement.imaginary[source] ?? 0;
+          }
+          break;
+      }
+      context.checkpoint();
+    }
+    return target;
+  }
   const missing = new Uint8Array(resultLength);
   for (let index = 0; index < target.length; index += 1) {
     if (isMissing(target, index)) missing[index] = 1;
@@ -1777,7 +2304,8 @@ function replaceAtomic(
     }
     output = logicalVector(values, compactMask(missing));
   }
-  return { ...output, attributes: replacementAttributes(target, resultLength, names) };
+  const attributed = { ...output, attributes: replacementAttributes(target, resultLength, names) };
+  return target.s4 === true ? { ...attributed, s4: true } : attributed;
 }
 
 function replaceFactor(
@@ -1830,7 +2358,8 @@ function replaceFactor(
   }
   context.allocate(resultLength);
   const output = integerVector(values, compactMask(missing));
-  return { ...output, attributes: replacementAttributes(target, resultLength, names) };
+  const attributed = { ...output, attributes: replacementAttributes(target, resultLength, names) };
+  return target.s4 === true ? { ...attributed, s4: true } : attributed;
 }
 
 function commonAtomicType(left: AtomicVector, right: AtomicVector): AtomicVector["type"] {
@@ -1921,7 +2450,17 @@ function replacementAttributes(
     attributes.delete("dimnames");
   }
   if (names === undefined) attributes.delete("names");
-  else attributes.set("names", characterVector(names));
+  else {
+    const existingNames = target.attributes.get("names");
+    const preservesExistingNames =
+      existingNames?.type === "character" &&
+      existingNames.length === resultLength &&
+      names.every(
+        (name, index) =>
+          name === (isMissing(existingNames, index) ? "" : (existingNames.values[index] ?? "")),
+      );
+    attributes.set("names", preservesExistingNames ? existingNames : characterVector(names));
+  }
   return attributes;
 }
 
@@ -1933,8 +2472,17 @@ function cloneList(
   return cloneListLike(target, values, names);
 }
 
+function dataFrameReplacementResult(value: RList): RList {
+  const classes = value.attributes.get("class");
+  if (classes === undefined) return value;
+  const attributes = new Map(value.attributes);
+  attributes.delete("class");
+  attributes.set("class", classes);
+  return { ...value, attributes };
+}
+
 function cloneAsList(
-  target: ListLike,
+  target: IndexableValue,
   values: readonly RValue[],
   names: readonly string[] | undefined,
 ): RList {
@@ -1987,17 +2535,26 @@ function normalizeDataFrameColumn(
     );
   }
   const rows = dataFrameRowCount(target);
-  if (replacement.length === rows) {
+  const dimensions = vectorDimensions(replacement);
+  const replacementRows = dimensions?.[0] ?? replacement.length;
+  if (replacementRows === rows) {
     return replacement.type === "pairlist"
       ? listValue(replacement.values, vectorNames(replacement))
       : replacement;
   }
-  if (replacement.length === 1 && rows > 1) {
+  if (replacementRows === 1 && rows > 1) {
     const indices = integerVector(Array.from({ length: rows }, () => 1));
-    return subsetVector(replacement, indices, context);
+    return dimensions === undefined
+      ? subsetVector(replacement, indices, context)
+      : subsetDimensions(
+          replacement,
+          [indices, ...Array.from({ length: dimensions.length - 1 }, () => undefined)],
+          false,
+          context,
+        );
   }
   throw new REvaluationError("NRE2116", "Data-frame columns have incompatible row counts.", {
-    details: { rows, columns: target.length, replacementLength: replacement.length },
+    details: { rows, columns: target.length, replacementLength: replacementRows },
   });
 }
 

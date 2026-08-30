@@ -1,5 +1,6 @@
 export const PACKAGE_EXAMPLES_RESOURCE_PATH = ".nativr/examples-v1.json";
 export const PACKAGE_HELP_RESOURCE_PATH = ".nativr/help-v1.json";
+export const PACKAGE_DATASETS_RESOURCE_PATH = ".nativr/datasets-v1.json";
 
 export type PackageExampleBlockKind = "run" | "dontrun" | "donttest";
 
@@ -41,6 +42,19 @@ export interface PackageHelpManifest {
   readonly topics: readonly PackageHelpTopic[];
 }
 
+export interface PackageDatasetEntry {
+  /** Public object name exposed by LazyData after package attachment. */
+  readonly name: string;
+  /** Basename passed to data() to load the source-package data resource. */
+  readonly resource: string;
+}
+
+export interface PackageDatasetsManifest {
+  readonly format: "nativr-package-datasets";
+  readonly formatVersion: 1;
+  readonly datasets: readonly PackageDatasetEntry[];
+}
+
 interface RdCommandBody {
   readonly body: string;
   readonly end: number;
@@ -75,6 +89,64 @@ export function extractPackageHelp(
     format: "nativr-package-help",
     formatVersion: 1,
     topics: Object.freeze(topics),
+  });
+}
+
+/**
+ * Record documented LazyData object names when they differ from their source-resource basename.
+ * R source packages commonly use a lower-case data filename containing a case-sensitive public
+ * object. The installed lazy-load database indexes the object, not merely the filename.
+ */
+export function extractPackageDatasets(
+  files: readonly { readonly path: string; readonly source: string }[],
+  resourcePaths: readonly string[],
+): PackageDatasetsManifest | undefined {
+  const resources = resourcePaths.flatMap((path) => {
+    const match = /^data\/([^/]+)\.(?:r|rdata|rda|tab|txt|csv)(?:\.gz)?$/iu.exec(path);
+    return match?.[1] === undefined ? [] : [{ basename: match[1], path }];
+  });
+  const datasets = new Map<string, PackageDatasetEntry>();
+  for (const file of files) {
+    const docType = decodeRdText(rdCommandBodies(file.source, "docType")[0]?.body ?? "")
+      .trim()
+      .toLowerCase();
+    if (docType !== "data") continue;
+    const metadata = rdTopicMetadata(file.source);
+    if (metadata === undefined) continue;
+    const rdBasename = file.path.slice(file.path.lastIndexOf("/") + 1).replace(/\.Rd$/iu, "");
+    const matchNames = uniqueText([metadata.name, ...metadata.aliases, rdBasename]);
+    const candidates = resources.filter(({ basename }) =>
+      matchNames.some((name) => name.toLowerCase() === basename.toLowerCase()),
+    );
+    if (candidates.length !== 1) continue;
+    const resource = candidates[0]?.basename;
+    if (resource === undefined) continue;
+    const usageNames = uniqueText(
+      rdCommandBodies(file.source, "usage").flatMap(
+        (entry) => decodeRdText(entry.body).match(/[A-Za-z.][A-Za-z0-9._]*/gu) ?? [],
+      ),
+    );
+    const publicNames = usageNames.length > 0 ? usageNames : metadata.aliases;
+    for (const name of publicNames) {
+      if (name === resource) continue;
+      const previous = datasets.get(name);
+      if (previous !== undefined && previous.resource !== resource) {
+        datasets.delete(name);
+        continue;
+      }
+      datasets.set(name, Object.freeze({ name, resource }));
+    }
+  }
+  if (datasets.size === 0) return undefined;
+  return Object.freeze({
+    format: "nativr-package-datasets",
+    formatVersion: 1,
+    datasets: Object.freeze(
+      [...datasets.values()].sort(
+        (left, right) =>
+          compareText(left.name, right.name) || compareText(left.resource, right.resource),
+      ),
+    ),
   });
 }
 
@@ -144,6 +216,7 @@ function normalizeHelpText(source: string, code: boolean): string {
 }
 
 function rdCommandBodies(source: string, command: string): readonly RdCommandBody[] {
+  source = stripRdComments(source);
   const results: RdCommandBody[] = [];
   for (let index = 0; index < source.length; index += 1) {
     if (source[index] !== "\\" || source[index + 1] === "\\") continue;
@@ -152,6 +225,26 @@ function rdCommandBodies(source: string, command: string): readonly RdCommandBod
     if (parsed?.body !== undefined) index = parsed.body.end - 1;
   }
   return results;
+}
+
+function stripRdComments(source: string): string {
+  let result = "";
+  let backslashes = 0;
+  for (let index = 0; index < source.length; index += 1) {
+    const character = source[index] ?? "";
+    if (character === "%" && backslashes % 2 === 0) {
+      while (index < source.length && source[index] !== "\n" && source[index] !== "\r") {
+        index += 1;
+      }
+      if (index >= source.length) break;
+      result += source[index];
+      backslashes = 0;
+      continue;
+    }
+    result += character;
+    backslashes = character === "\\" ? backslashes + 1 : 0;
+  }
+  return result;
 }
 
 function parseExampleBlocks(

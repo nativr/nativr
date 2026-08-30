@@ -36,7 +36,11 @@ const runtime = await createR({
   },
 });
 let failures = 0;
-const oracleCases = cases.filter((testCase) => testCase.rOracle !== false);
+const filter = process.env.NATIVR_CONFORMANCE_FILTER;
+const oracleCases = cases.filter(
+  (testCase) =>
+    testCase.rOracle !== false && (filter === undefined || testCase.id.includes(filter)),
+);
 
 for (const testCase of oracleCases) {
   await runtime.reset();
@@ -73,9 +77,13 @@ for (const testCase of oracleCases) {
 await runtime.dispose();
 if (failures > 0) process.exitCode = 1;
 else {
-  const skipped = cases.length - oracleCases.length;
+  const nativrOnly = cases.filter((testCase) => testCase.rOracle === false).length;
+  const selection =
+    filter === undefined
+      ? ""
+      : `; ${cases.length - nativrOnly - oracleCases.length} other live-R cases not selected`;
   console.log(
-    `Live R oracle: ${oracleCases.length}/${oracleCases.length} passed; ${skipped} NativR-only representation/random cases skipped`,
+    `Live R oracle: ${oracleCases.length}/${oracleCases.length} passed${selection}; ${nativrOnly} NativR-only representation/random cases skipped`,
   );
 }
 
