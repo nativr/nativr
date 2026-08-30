@@ -44,7 +44,7 @@
     "@nativr/parser": "workspace:*",
     "@nativr/protocol": "workspace:*",
     "@nativr/runtime": "workspace:*",
-    "web-tree-sitter": "0.26.11"
+    "web-tree-sitter": "0.26.13"
   },
   "scripts": {
     "bundle": "vite build"
