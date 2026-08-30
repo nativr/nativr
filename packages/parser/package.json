@@ -16,6 +16,6 @@
   ],
   "dependencies": {
     "@nativr/ast": "workspace:*",
-    "web-tree-sitter": "0.26.11"
+    "web-tree-sitter": "0.26.13"
   }
 }
