@@ -1,4 +1,4 @@
-import { baseBuiltins, REFERENCE_OPERATOR_MANIFEST } from "@nativr/base";
+import { baseBuiltinBindings, baseBuiltins, REFERENCE_OPERATOR_MANIFEST } from "@nativr/base";
 import { PROTOCOL_VERSION } from "@nativr/protocol";
 import type { CapabilityManifest } from "@nativr/protocol";
 
@@ -7,8 +7,8 @@ export const CAPABILITIES = Object.freeze({
   nativrVersion: "0.1.1",
   protocolVersion: PROTOCOL_VERSION,
   targetRVersion: "4.6.1",
-  semanticProfileVersion: "0.287.0",
-  languageSubsetVersion: "0.287.0",
+  semanticProfileVersion: "0.525.0",
+  languageSubsetVersion: "0.525.0",
   syntax: {
     literals: "supported",
     assignment: "supported",
@@ -64,17 +64,33 @@ export const CAPABILITIES = Object.freeze({
     textParsing: "supported",
     dynamicEvaluation: "supported",
   },
-  packages: ["base", "stats", "graphics", "grDevices", "utils", "datasets", "methods", "tools"].map(
-    (packageName) => ({
-      name: packageName,
-      referenceVersion: "GNU R 4.6.1 documented behavior",
-      functions: baseBuiltins
-        .filter((definition) => definition.package === packageName)
-        .map((definition) => ({
-          name: definition.name,
-          compatibility: definition.metadata.compatibilityLevel,
-        })),
-    }),
-  ),
+  packages: [
+    "base",
+    "stats",
+    "graphics",
+    "grDevices",
+    "utils",
+    "datasets",
+    "methods",
+    "tools",
+    "compiler",
+    "parallel",
+    "grid",
+  ].map((packageName) => ({
+    name: packageName,
+    referenceVersion: "GNU R 4.6.1 documented behavior",
+    functions: baseBuiltins
+      .filter((definition) => definition.package === packageName)
+      .map((definition) => ({
+        name: definition.name,
+        compatibility: definition.metadata.compatibilityLevel,
+      })),
+    bindings: baseBuiltinBindings
+      .filter((definition) => definition.package === packageName)
+      .map((definition) => ({
+        name: definition.name,
+        compatibility: definition.compatibility,
+      })),
+  })),
   backends: [...new Set(REFERENCE_OPERATOR_MANIFEST.map((operator) => operator.backend))],
 } satisfies CapabilityManifest);

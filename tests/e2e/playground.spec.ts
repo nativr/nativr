@@ -10,9 +10,34 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText('"worker"');
 
+  await page.locator("#source").fill(`
+    path <- tempfile(fileext = ".bz2")
+    output <- bzfile(path, open = "wb")
+    writeLines(c("alpha", "beta"), output)
+    close(output)
+    input <- bzfile(path, open = "rb")
+    value <- readLines(input)
+    close(input)
+    c(value, unlink(path))
+  `);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText('["alpha", "beta", "0"]');
+
   await page.locator("#source").fill("nativrdemo::find_tools(c('nativr-echo', 'missing'))");
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText('["nativr://host/bin/nativr-echo", ""]');
+
+  await page.locator("#source").fill(`
+    fit <- optim(
+      c(4, -3), function(x) sum((x - c(1, 2)) ^ 2),
+      gr = function(x) 2 * (x - c(1, 2)), method = "L-BFGS-B",
+      lower = c(0, -1), upper = c(2, 4),
+      control = list(factr = 1e7, pgtol = 1e-8, lmm = 3)
+    )
+    round(c(fit$par, fit$value, fit$convergence), 10)
+  `);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("[1, 2, 0, 0]");
 
   const evaluationRequests: string[] = [];
   page.on("request", (request) => {
@@ -40,6 +65,35 @@ test("runs the required Worker examples without evaluation network traffic", asy
   `);
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("[10, 5, 1]");
+
+  await page.locator("#source").fill(`
+    finalizer_events <- character()
+    register_finalizer <- function(label) {
+      target <- new.env()
+      target$label <- label
+      reg.finalizer(
+        target,
+        function(object) finalizer_events <<- c(finalizer_events, object$label)
+      )
+    }
+    register_finalizer("first")
+    register_finalizer("second")
+    gc()
+    finalizer_events
+  `);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText('["second", "first"]');
+
+  await page.locator("#source").fill(`
+    exit_target <- new.env()
+    reg.finalizer(exit_target, function(object) invisible(NULL), onexit = TRUE)
+  `);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await page.getByRole("button", { name: "Reset session" }).click();
+  await expect(page.locator("#result")).toHaveText("Session reset. User bindings were cleared.");
+  await page.locator("#source").fill("1 + 1");
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("2");
 
   await page
     .locator("#source")
@@ -405,6 +459,25 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("[37, 80, 68, 70, 45, 49, 46, 52, 1]");
 
+  await page.locator("#source").fill(`
+    svg.path <- tempfile(fileext = ".svg")
+    grDevices::svg(svg.path, width = 2, height = 2)
+    graphics::plot.new()
+    graphics::segments(0, 0, 1, 1)
+    grDevices::dev.off()
+    svg.bytes <- as.integer(readBin(svg.path, "raw", n = 1000000L))
+
+    tiff.path <- tempfile(fileext = ".tiff")
+    grDevices::tiff(tiff.path, width = 16, height = 12, units = "px", compression = "lzw")
+    graphics::plot.new()
+    graphics::segments(0, 0, 1, 1)
+    grDevices::dev.off()
+    tiff.bytes <- as.integer(readBin(tiff.path, "raw", n = 1000000L))
+    c(svg.bytes[1:5], length(svg.bytes) > 100L, tiff.bytes[1:4], length(tiff.bytes) > 100L)
+  `);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("[60, 63, 120, 109, 108, 1, 73, 73, 42, 0, 1]");
+
   await page.locator("#source").fill('x <- setNames(seq(10, 20, by = 10), c("a", "b"))\nx[["b"]]');
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("20");
@@ -603,7 +676,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page
     .locator("#source")
     .fill(
-      "tbl <- tibble(x = 1, x = 2, .name_repair = ~ make.names(., unique = TRUE))\nc(names(tbl), unlist(tbl))",
+      "tbl <- tibble::tibble(x = 1, x = 2, .name_repair = ~ make.names(., unique = TRUE))\nc(names(tbl), unlist(tbl))",
     );
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText('["x", "x.1", "1", "2"]');
@@ -935,6 +1008,73 @@ test("runs the required Worker examples without evaluation network traffic", asy
   expect(polygonPixels).toEqual([255, 165, 0, 255, 0, 0, 255, 255]);
 
   await page.locator("#source").fill(`
+    persp(
+      1:3, 1:3, matrix(1:9, 3, 3), theta = 135, phi = 30,
+      col = c("#FF0000", "#00FF00", "#0000FF", "#FFFF00"),
+      border = NA, box = FALSE, axes = FALSE
+    )
+  `);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#graphics-count")).toHaveText("3");
+  const perspectivePixels = await page
+    .locator("#graphics")
+    .evaluate((canvas: HTMLCanvasElement) => {
+      const context = canvas.getContext("2d");
+      if (context === null) return [];
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      const counts = [0, 0, 0, 0];
+      for (let index = 0; index < pixels.length; index += 4) {
+        const red = pixels[index] ?? 0;
+        const green = pixels[index + 1] ?? 0;
+        const blue = pixels[index + 2] ?? 0;
+        const alpha = pixels[index + 3] ?? 0;
+        if (alpha === 0) continue;
+        if (red > 180 && green < 80 && blue < 80) counts[0] += 1;
+        if (red < 80 && green > 180 && blue < 80) counts[1] += 1;
+        if (red < 80 && green < 80 && blue > 180) counts[2] += 1;
+        if (red > 180 && green > 180 && blue < 80) counts[3] += 1;
+      }
+      return counts;
+    });
+  for (const count of perspectivePixels) expect(count).toBeGreaterThan(20);
+
+  await page.locator("#source").fill(`
+    filled.contour(
+      matrix(c(0, 1, 1, 2), 2),
+      levels = c(0, .5, 1, 1.5, 2),
+      col = c("red", "green", "blue", "yellow"),
+      axes = FALSE, frame.plot = FALSE
+    )
+  `);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("null");
+  await expect(page.locator("#graphics-count")).toHaveText("7");
+  const filledContourPixels = await page
+    .locator("#graphics")
+    .evaluate((canvas: HTMLCanvasElement) => {
+      const context = canvas.getContext("2d");
+      if (context === null) return { main: 0, key: 0 };
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      let main = 0;
+      let key = 0;
+      for (let y = 0; y < canvas.height; y += 1) {
+        for (let x = 0; x < canvas.width; x += 1) {
+          const index = (y * canvas.width + x) * 4;
+          const red = pixels[index] ?? 0;
+          const green = pixels[index + 1] ?? 0;
+          const blue = pixels[index + 2] ?? 0;
+          const saturated = Math.max(red, green, blue) > 180 && Math.min(red, green, blue) < 80;
+          if (!saturated) continue;
+          if (x < canvas.width * 0.78) main += 1;
+          if (x > canvas.width * 0.8) key += 1;
+        }
+      }
+      return { main, key };
+    });
+  expect(filledContourPixels.main).toBeGreaterThan(1_000);
+  expect(filledContourPixels.key).toBeGreaterThan(1_000);
+
+  await page.locator("#source").fill(`
     plot.new()
     plot.window(c(0, 1), c(0, 1))
     box(bty = "c", col = "red", lwd = 6)
@@ -965,7 +1105,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await expect(page.locator("#result")).toHaveText(
     '[[1, 2, 3, 4, 5, 2, 4, 6, 8, 8], [5, 5], [1.5868050382201329, 4.413194961779867, 3.1736100764402657, 8.826389923559734], 100, 2, ["alpha", "beta"]]',
   );
-  await expect(page.locator("#graphics-count")).toHaveText("3");
+  await expect(page.locator("#graphics-count")).toHaveText("8");
   const boxplotPixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
     const context = canvas.getContext("2d");
     if (context === null) return { red: 0, blue: 0, lightgray: 0, lightblue: 0 };
@@ -1034,10 +1174,8 @@ test("runs the required Worker examples without evaluation network traffic", asy
     visible <- withVisible(legend(
       "topleft",
       c("alpha", "beta"),
-      lty = 1,
-      lwd = 4,
-      pch = 1:2,
-      col = c("red", "blue")
+      fill = c("red", "blue"),
+      border = c(NA, "black")
     ))
     c(names(visible$value), visible$visible)
   `);

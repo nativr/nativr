@@ -5,6 +5,7 @@ import {
   doubleVector,
   integerVector,
   logicalVector,
+  R_NULL,
 } from "@nativr/runtime";
 import { describe, expect, it } from "vitest";
 
@@ -29,7 +30,8 @@ describe("JavaScript reference vector operators", () => {
     expect(state.warnings).toEqual([
       {
         code: "NRW1001",
-        message: "Longer object length is not a multiple of shorter object length.",
+        message: "longer object length is not a multiple of shorter object length",
+        classes: ["simpleWarning", "warning", "condition"],
       },
     ]);
   });
@@ -41,6 +43,31 @@ describe("JavaScript reference vector operators", () => {
     const output = jsReferenceOperators.binary(context(), "+", left, right);
     expect(output).toMatchObject({ type: "double", values: new Float64Array([11, 12, 13]) });
     expect(left.values).toEqual(leftBefore);
+  });
+
+  it("coerces NULL to a zero-length vector for binary arithmetic and logic", () => {
+    expect(jsReferenceOperators.binary(context(), "+", R_NULL, integerVector([1]))).toMatchObject({
+      type: "integer",
+      length: 0,
+    });
+    expect(jsReferenceOperators.binary(context(), "/", R_NULL, integerVector([1]))).toMatchObject({
+      type: "double",
+      length: 0,
+    });
+    expect(
+      jsReferenceOperators.binary(context(), "+", R_NULL, complexVector([1], [2])),
+    ).toMatchObject({
+      type: "complex",
+      length: 0,
+    });
+    expect(jsReferenceOperators.binary(context(), "&", logicalVector([1]), R_NULL)).toMatchObject({
+      type: "logical",
+      length: 0,
+    });
+    expect(() => jsReferenceOperators.unary(context(), "+", R_NULL)).toThrow(/numeric operands/u);
+    expect(() =>
+      jsReferenceOperators.binary(context(), "+", R_NULL, characterVector(["x"])),
+    ).toThrow(/numeric operands/u);
   });
 
   it("propagates explicit missing masks independently from NaN", () => {
@@ -138,6 +165,35 @@ describe("JavaScript reference vector operators", () => {
         missing: new Uint8Array([0, 1]),
       },
     );
+  });
+
+  it("checks large colon kernels in bounded chunks without disabling the step guard", () => {
+    const limits = {
+      maxSteps: 3,
+      maxCallDepth: 10,
+      maxVectorLength: 10_000,
+      maxOutputBytes: 1_000,
+    };
+    const state = new EvaluationContext(limits, { cancelled: false });
+    const output = jsReferenceOperators.binary(
+      state,
+      ":",
+      integerVector([1]),
+      integerVector([10_000]),
+    );
+    expect(output).toMatchObject({
+      type: "integer",
+      length: 10_000,
+    });
+    expect(output.type === "integer" ? [output.values[0], output.values[9_999]] : []).toEqual([
+      1, 10_000,
+    ]);
+    expect(state.steps).toBe(3);
+
+    const constrained = new EvaluationContext({ ...limits, maxSteps: 2 }, { cancelled: false });
+    expect(() =>
+      jsReferenceOperators.binary(constrained, ":", integerVector([1]), integerVector([10_000])),
+    ).toThrow(/Evaluation step limit exceeded/u);
   });
 
   it("implements complex arithmetic, equality, logic, and invalid ordering", () => {

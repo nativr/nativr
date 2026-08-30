@@ -42,17 +42,23 @@ permissions and cannot create or merge commits.
 The `Commit authorship` workflow checks every commit introduced by a pull request and every commit
 pushed to `main`. Pull-request checks execute the trusted workflow and policy script from `main` and
 never execute code from the untrusted pull-request checkout. The policy rejects authors and
-co-authors that are not on the approved-human allowlist and also rejects known bot or AI-agent
+identity-attribution trailers (`Co-authored-by`, `Signed-off-by`, `Reviewed-by`, `Acked-by`, and
+`Tested-by`) that are not on the approved-human allowlist and also rejects known bot or AI-agent
 identity patterns. Repository branch protection requires the `Human-authored commits` check and a
 pull request for `main`, including for administrators. GitHub Actions has read-only default
 repository permissions and cannot approve pull requests; the trusted authorship workflow receives
 only the additional commit-status permission needed to report its result on the pull-request head.
 It has no content, review, or merge write permission. Repository auto-merge is disabled.
 
+Run `pnpm authors:check` locally to audit every commit reachable from the current branch before
+opening a pull request or publishing. The required trusted workflow remains the authoritative
+pull-request gate because it fetches and evaluates the complete proposed commit range.
+
 Codex may edit the working tree, but it must not create a commit unless the user explicitly requests
 one. When explicitly requested, the commit must use the configured approved human identity and must
-not contain an AI or bot `Co-authored-by` trailer.
+not contain an AI or bot identity-attribution trailer.
 
-One exact historical exception exists for Dependabot trailers in the human-authored commit
-`684c44ca1bae7b7588831a23eae232f6f90eaa76`. The exception preserves published Git history and does
-not permit the same identity on any future commit.
+A closed set of exact historical exceptions preserves Dependabot attribution trailers already
+present in seven published, human-authored commits. Each exception is bound to one full commit hash,
+trailer kind, and identity; none permits that identity on any future commit. This preserves the
+public Git history while preventing new bot attribution.

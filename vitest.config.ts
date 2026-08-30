@@ -15,6 +15,7 @@ export default defineConfig({
       "@nativr/ast": `${root}packages/ast/src/index.ts`,
       "@nativr/parser": `${root}packages/parser/src/index.ts`,
       "@nativr/runtime": `${root}packages/runtime/src/index.ts`,
+      "@nativr/base/core-packages": `${root}packages/base/src/core-packages.ts`,
       "@nativr/base": `${root}packages/base/src/index.ts`,
       "@nativr/protocol": `${root}packages/protocol/src/index.ts`,
       "@nativr/package-tools": `${root}packages/package-tools/src/index.ts`,

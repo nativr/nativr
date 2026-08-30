@@ -42,6 +42,37 @@ describe("Tree-sitter normalization", () => {
     expect(result.ast.body[1]?.span.start).toEqual({ offset: 4, line: 2, column: 1 });
   });
 
+  it("recovers explicit semicolon terminals with their enclosing parse-data parent", () => {
+    const result = parser.parse("{ class(fn) <- NULL; print(fn) }");
+    const records = result.ast.parseData ?? [];
+    const semicolon = records.find((record) => record.terminal && record.text === ";");
+
+    expect(semicolon).toMatchObject({
+      type: ";",
+      parentType: "braced_expression",
+      span: {
+        start: { offset: 19, line: 1, column: 20 },
+        end: { offset: 20, line: 1, column: 21 },
+      },
+    });
+    expect(records.find((record) => record.id === semicolon?.parent)).toMatchObject({
+      type: "braced_expression",
+      terminal: false,
+    });
+    expect(records.filter((record) => record.terminal && record.text === ";")).toHaveLength(1);
+  });
+
+  it("decodes R octal and short hexadecimal string escapes", () => {
+    expect(parser.parse('"\\111\\12\\377\\1234"').ast.body[0]).toMatchObject({
+      kind: "StringLiteral",
+      value: "I\nÿS4",
+    });
+    expect(parser.parse('"\\x4\\x41"').ast.body[0]).toMatchObject({
+      kind: "StringLiteral",
+      value: "\u0004A",
+    });
+  });
+
   it("maps byte-oriented parser offsets when a UTF-8 callback is used", () => {
     const mapper = new Utf8SourceMap('"é"\n');
     expect(mapper.positionAtByte(5)).toEqual({ offset: 4, line: 2, column: 1 });
@@ -63,6 +94,14 @@ describe("Tree-sitter normalization", () => {
     expect(parser.parse("missing(..2)").ast.body[0]).toMatchObject({
       kind: "CallExpression",
       arguments: [{ value: { kind: "Identifier", name: "..2" } }],
+    });
+  });
+
+  it("preserves parentheses as an owned call for visibility semantics", () => {
+    expect(parser.parse("(x <- 1)").ast.body[0]).toMatchObject({
+      kind: "CallExpression",
+      callee: { kind: "Identifier", name: "(" },
+      arguments: [{ value: { kind: "AssignmentExpression" } }],
     });
   });
 
@@ -158,6 +197,19 @@ describe("Tree-sitter normalization", () => {
     });
     expect(parser.parse("next").ast.body[0]?.kind).toBe("NextExpression");
     expect(parser.parse("return(1)").ast.body[0]?.kind).toBe("ReturnExpression");
+    expect(parser.parse("return(marker, value, end)").ast.body[0]).toMatchObject({
+      kind: "CallExpression",
+      callee: { kind: "Identifier", name: "return" },
+      arguments: [
+        { value: { name: "marker" } },
+        { value: { name: "value" } },
+        { value: { name: "end" } },
+      ],
+    });
+    expect(parser.parse("return(value = 1)").ast.body[0]).toMatchObject({
+      kind: "CallExpression",
+      arguments: [{ name: "value", value: { kind: "DoubleLiteral", value: 1 } }],
+    });
   });
 
   it("normalizes direct subset replacement separately from ordinary assignment", () => {
@@ -221,6 +273,17 @@ describe("Tree-sitter normalization", () => {
       kind: "AssignmentExpression",
       operator: "->",
       target: { kind: "Identifier", name: "right name" },
+    });
+  });
+
+  it("canonicalizes character-literal call heads as symbols", () => {
+    expect(parser.parse('"f<-"(x, value = 1)').ast.body[0]).toMatchObject({
+      kind: "CallExpression",
+      callee: { kind: "Identifier", name: "f<-" },
+      arguments: [
+        { value: { kind: "Identifier", name: "x" } },
+        { name: "value", value: { kind: "DoubleLiteral", value: 1 } },
+      ],
     });
   });
 

@@ -1,4 +1,5 @@
-import { defineConfig, minify } from "vite";
+import { minify } from "terser";
+import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
 
 export default defineConfig({
@@ -36,17 +37,42 @@ export default defineConfig({
 });
 
 function compactWorkerOutput() {
+  const nameCache = {};
   return {
     name: "nativr-compact-worker-output",
     enforce: "post" as const,
     async renderChunk(code: string, chunk: { readonly fileName: string }) {
-      return minify(chunk.fileName, code, {
+      const result = await minify(code, {
+        ecma: 2022,
         module: true,
-        compress: { target: "es2022" },
-        mangle: true,
-        codegen: { removeWhitespace: true, legalComments: "none" },
-        sourcemap: true,
+        // Worker entry and lazy Worker chunks share internal property contracts. A common cache
+        // keeps their reviewed property mappings identical regardless of chunk boundaries.
+        nameCache,
+        // R call signatures are represented by NativR value metadata, never JavaScript
+        // Function.length. Removing unused JavaScript parameters therefore reduces the Worker
+        // payload without changing observable R formals or callback argument matching.
+        compress: {
+          passes: 10,
+          keep_fargs: false,
+          unsafe_arrows: true,
+        },
+        // These methods belong exclusively to NativR's internal evaluator/context contracts. They
+        // never cross the Worker protocol or public API boundary, and no internal caller addresses
+        // them through a string key. Restrict property mangling to this reviewed closed set so the
+        // large number of resource-accounting and dispatch calls do not consume public payload.
+        mangle: {
+          toplevel: true,
+          properties: {
+            regex:
+              /^(?:absoluteTolerance|allocate|allowCategoricalResponse|alternative|assignBinding|attachSearchEnvironment|attributes|automaticRowNames|baseEnvironment|binaryFiles|bindings|boundary|callbacks|callee|callerFormalDefault|channelCoordinates|checkpoint|coefficientMissing|coefficients|collectGarbage|columnNames|compatibilityLevel|configureOnExit|connections|conjugateGradientType|consequence|context|contraction|contrastSpecifications|converged|currentArgumentCount|currentCall|currentEnvironment|dataEnvironment|defaultValue|definition|derivativeSteps|design|detachSearchEnvironment|deviance|devianceResiduals|directories|dispatchS3|dispatchS3IfPresent|dots|effects|emptyEnvironment|engine|environmentName|epsilon|evaluateDetailed|evaluateEval|evaluateScoped|evaluateSource|expansion|expression|factorLevels|fitted|fixedDispersion|force|forceDetailed|formals|frame|functionScale|globalEnvironment|hasMissing|hasSocketCapability|implementation|installedPackageDescription|installedPackageNames|installedPackageVersion|invoke|invokeDetailed|invokeLazy|isGlobalEnvironment|isInteractive|isNamespaceLoaded|iterationLimit|iterations|lbfgsbMemory|lbfgsbProjectedGradientTolerance|lbfgsbReductionFactor|left|libraryPaths|linkfun|linkinv|loadPackage|loadedNamespaces|lockedBindings|matchBuiltinCall|matchCall|matched|matrix|maxit|memoryStatistics|metadata|muEta|namespaceBinding|namespaceEnvironment|namespaceExports|namespaceName|nextConnectionId|nextMethod|normalKind|normalSpare|object|omittedIndices|operand|operator|originalRows|package|packageFile|packageName|packageResourcePath|packageResourcePaths|parameterScale|parameters|parentFrame|pivot|positions|primitive|primitiveKind|promise|qraux|rank|reflection|registerEnvironmentFinalizer|registerS3Method|relativeTolerance|requireResponse|residuals|responseName|resultLength|resultVisibility|right|sampleKind|scaledValue|searchEnvironment|searchPath|secondDerivatives|seedEnvironment|seedValue|selectedIndices|sequence|sessionProcessId|setLibraryPaths|setResultVisibility|signalCondition|skippedRows|solved|state|systemCall|systemCalls|systemFrames|systemFunction|systemParents|target|temperature|temperatureIterations|terms|tolerance|trace|uniformKind|validEta|validMu|variable|variables|variance|visibility|workingDirectory|workingResiduals|workingWeights|xlevels)$/,
+            keep_quoted: "strict",
+          },
+        },
+        format: { comments: false },
+        sourceMap: { filename: chunk.fileName, asObject: true },
       });
+      if (result.code === undefined) throw new Error(`Unable to minify ${chunk.fileName}.`);
+      return { code: result.code, map: result.map ?? null };
     },
   };
 }

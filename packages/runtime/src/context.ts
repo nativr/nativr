@@ -1,4 +1,4 @@
-import { RResourceLimitError } from "./errors.js";
+import { REvaluationError, RResourceLimitError } from "./errors.js";
 import type {
   CancellationToken,
   OperatorContext,
@@ -16,7 +16,9 @@ export const DEFAULT_RUNTIME_LIMITS: RuntimeLimits = Object.freeze({
   maxSteps: 100_000,
   maxCallDepth: 100,
   maxVectorLength: 1_000_000,
+  maxAllocatedElements: 10_000_000,
   maxOutputBytes: 1_000_000,
+  maxPackageResourceBytes: 192 * 1024 * 1024,
 });
 
 /** Named, reviewable resource budgets for common browser-runtime workloads. */
@@ -26,16 +28,20 @@ export const RUNTIME_LIMIT_PROFILES: Readonly<Record<RuntimeProfile, RuntimeLimi
   Object.freeze({
     "interactive-safe": DEFAULT_RUNTIME_LIMITS,
     "package-test": Object.freeze({
-      maxSteps: 5_000_000,
+      maxSteps: 100_000_000,
       maxCallDepth: 200,
-      maxVectorLength: 2_000_000,
+      maxVectorLength: 4_000_000,
+      maxAllocatedElements: 750_000_000,
       maxOutputBytes: 32_000_000,
+      maxPackageResourceBytes: 256 * 1024 * 1024,
     }),
     "large-browser": Object.freeze({
       maxSteps: 10_000_000,
       maxCallDepth: 250,
       maxVectorLength: 10_000_000,
+      maxAllocatedElements: 100_000_000,
       maxOutputBytes: 64_000_000,
+      maxPackageResourceBytes: 512 * 1024 * 1024,
     }),
   });
 
@@ -53,12 +59,17 @@ export class EvaluationContext implements OperatorContext {
   public callDepth = 0;
   public outputBytes = 0;
   #warningSuppressionDepth = 0;
+  #cpuDeadline = Number.POSITIVE_INFINITY;
+  #elapsedDeadline = Number.POSITIVE_INFINITY;
+  #transientTimeLimit = false;
+  readonly #interruptModes: ("suspend" | "allow")[] = [];
   readonly #outputSuppressionDepth = new Map<ROutput["stream"], number>();
   readonly #outputCaptures: {
     readonly streams: ReadonlySet<ROutput["stream"]>;
     readonly output: ROutput[];
     bytes: number;
   }[] = [];
+  readonly #warningCaptures: RWarning[][] = [];
   readonly #outputRouter: (() => RuntimeOutputRouter | undefined) | undefined;
 
   public constructor(
@@ -72,8 +83,17 @@ export class EvaluationContext implements OperatorContext {
   }
 
   public checkpoint(cost = 1): void {
-    if (this.cancellation.cancelled) {
+    if (this.cancellation.cancelled && this.#interruptModes.at(-1) !== "suspend") {
       throw new RResourceLimitError("NRL4005", "Evaluation was interrupted.");
+    }
+    const now = Date.now();
+    if (now >= this.#elapsedDeadline) {
+      if (this.#transientTimeLimit) this.#clearTimeLimit();
+      throw new REvaluationError("NRE2260", "reached elapsed time limit");
+    }
+    if (now >= this.#cpuDeadline) {
+      if (this.#transientTimeLimit) this.#clearTimeLimit();
+      throw new REvaluationError("NRE2260", "reached CPU time limit");
     }
     this.steps += cost;
     if (this.steps > this.limits.maxSteps) {
@@ -93,14 +113,36 @@ export class EvaluationContext implements OperatorContext {
       });
     }
     this.allocatedElements += elements;
-    if (this.allocatedElements > this.limits.maxVectorLength * 10) {
-      throw new RResourceLimitError("NRL4003", "Evaluation allocation budget exceeded.");
+    if (this.allocatedElements > this.limits.maxAllocatedElements) {
+      throw new RResourceLimitError("NRL4003", "Evaluation allocation budget exceeded.", {
+        details: {
+          maxAllocatedElements: this.limits.maxAllocatedElements,
+          allocatedElements: this.allocatedElements,
+        },
+      });
     }
   }
 
   public warn(warning: RWarning): void {
     if (this.#warningSuppressionDepth > 0) return;
+    const capture = this.#warningCaptures.at(-1);
+    if (capture !== undefined) {
+      capture.push(warning);
+      return;
+    }
     this.warnings.push(warning);
+  }
+
+  public beginWarningCapture(): void {
+    this.#warningCaptures.push([]);
+  }
+
+  public endWarningCapture(): readonly RWarning[] {
+    const capture = this.#warningCaptures.pop();
+    if (capture === undefined) {
+      throw new Error("No warning capture is active.");
+    }
+    return capture;
   }
 
   public writeOutput(output: ROutput): void {
@@ -214,6 +256,33 @@ export class EvaluationContext implements OperatorContext {
     return (this.#outputSuppressionDepth.get(stream) ?? 0) > 0;
   }
 
+  public pushInterruptMode(mode: "suspend" | "allow"): void {
+    this.#interruptModes.push(mode);
+  }
+
+  public popInterruptMode(): void {
+    this.#interruptModes.pop();
+  }
+
+  public configureTimeLimit(cpuSeconds: number, elapsedSeconds: number, transient: boolean): void {
+    const now = Date.now();
+    this.#cpuDeadline =
+      cpuSeconds > 0 && Number.isFinite(cpuSeconds)
+        ? now + cpuSeconds * 1_000
+        : Number.POSITIVE_INFINITY;
+    this.#elapsedDeadline =
+      elapsedSeconds > 0 && Number.isFinite(elapsedSeconds)
+        ? now + elapsedSeconds * 1_000
+        : Number.POSITIVE_INFINITY;
+    this.#transientTimeLimit = transient;
+  }
+
+  #clearTimeLimit(): void {
+    this.#cpuDeadline = Number.POSITIVE_INFINITY;
+    this.#elapsedDeadline = Number.POSITIVE_INFINITY;
+    this.#transientTimeLimit = false;
+  }
+
   public enterCall(): void {
     this.callDepth += 1;
     if (this.callDepth > this.limits.maxCallDepth) {
@@ -304,6 +373,8 @@ function graphicsEventByteLength(event: RGraphicsEvent): number {
         utf8ByteLength(entry.label) +
         utf8ByteLength(entry.textColor) +
         utf8ByteLength(entry.color) +
+        (entry.fill === undefined ? 0 : utf8ByteLength(entry.fill)) +
+        (entry.border === undefined ? 0 : utf8ByteLength(entry.border)) +
         (entry.lineType === undefined ? 0 : utf8ByteLength(entry.lineType)) +
         (entry.pointSymbol === undefined ? 0 : utf8ByteLength(entry.pointSymbol)),
       0,

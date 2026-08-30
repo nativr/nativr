@@ -117,8 +117,8 @@ const featureCases = [
     code: `
       a <- data.frame(1:2)
       b <- as.data.frame(list(x = 3:4))
-      c <- tibble(x = 5:6)
-      d <- tribble(~x, 7, 8)
+      c <- tibble::tibble(x = 5:6)
+      d <- tibble::tribble(~x, 7, 8)
       nrow(a) + nrow(b) + nrow(c) + nrow(d)
     `,
     expected: 8,
@@ -270,7 +270,7 @@ const featureCases = [
   {
     id: "namespaces",
     surfaces: ":: :::",
-    code: "stats::mean(1:3) + base:::sum(1:2)",
+    code: "base::mean(1:3) + base:::sum(1:2)",
     expected: 5,
   },
   {
@@ -311,10 +311,10 @@ const featureCases = [
       setMethod("label", "Person", function(x) "person")
       person <- new("Person", name = "Ada")
 
-      Box <- R6Class("Box", public = list(value = 1))
+      Box <- R6::R6Class("Box", public = list(value = 1))
       box <- Box$new(value = 3)
-      class_descriptor <- new_class("score")
-      vector <- new_vctr(1:3, class = "score_vctr")
+      class_descriptor <- vctrs::new_class("score")
+      vector <- vctrs::new_vctr(1:3, class = "score_vctr")
       list(
         s3,
         label(person),

@@ -12,7 +12,9 @@ import {
 } from "@nativr/runtime";
 import type {
   BuiltinCallArgument,
+  BuiltinDefinition,
   BuiltinInvocation,
+  RBuiltin,
   RDoubleVector,
   RIntegerVector,
   RLogicalVector,
@@ -20,13 +22,30 @@ import type {
 } from "@nativr/runtime";
 
 import { matchBuiltinArguments } from "./arguments.js";
+import {
+  evaluateCubicHermite,
+  evaluateCubicHermiteDerivative,
+  evaluateCubicSpline,
+  fmmSecondDerivatives,
+  fritschCarlsonTangents,
+  hymanFilterTangents,
+  naturalSecondDerivatives,
+  periodicSecondDerivatives,
+  splineTangentsFromSecondDerivatives,
+} from "./cubic-spline.js";
 
 export interface InterpolationBuiltinSpec {
-  readonly name: "approx";
+  readonly name: "approx" | "approxfun" | "spline" | "splinefun";
   readonly parameters: readonly string[];
   readonly compatibility: "numeric";
   readonly implementation: (invocation: BuiltinInvocation) => Promise<RValue>;
+  readonly formals?: NonNullable<BuiltinDefinition["formals"]>;
 }
+
+const SPAN = Object.freeze({
+  start: Object.freeze({ offset: 0, line: 1, column: 1 }),
+  end: Object.freeze({ offset: 0, line: 1, column: 1 }),
+});
 
 const APPROX_PARAMETERS = [
   "x",
@@ -42,12 +61,133 @@ const APPROX_PARAMETERS = [
   "na.rm",
 ] as const;
 
+const APPROXFUN_PARAMETERS = [
+  "x",
+  "y",
+  "method",
+  "yleft",
+  "yright",
+  "rule",
+  "f",
+  "ties",
+  "na.rm",
+] as const;
+
+const SPLINE_PARAMETERS = ["x", "y", "n", "method", "xmin", "xmax", "xout", "ties"] as const;
+const SPLINEFUN_PARAMETERS = ["x", "y", "method", "ties"] as const;
+
 export const INTERPOLATION_BUILTIN_SPECS: readonly InterpolationBuiltinSpec[] = [
   {
     name: "approx",
     parameters: APPROX_PARAMETERS,
     compatibility: "numeric",
     implementation: builtinApprox,
+  },
+  {
+    name: "approxfun",
+    parameters: APPROXFUN_PARAMETERS,
+    compatibility: "numeric",
+    implementation: builtinApproxFunction,
+    formals: [
+      { name: "x", span: SPAN },
+      { name: "y", defaultValue: { kind: "NullLiteral", span: SPAN }, span: SPAN },
+      {
+        name: "method",
+        defaultValue: { kind: "StringLiteral", value: "linear", span: SPAN },
+        span: SPAN,
+      },
+      { name: "yleft", defaultValue: { kind: "NullLiteral", span: SPAN }, span: SPAN },
+      { name: "yright", defaultValue: { kind: "NullLiteral", span: SPAN }, span: SPAN },
+      { name: "rule", defaultValue: { kind: "IntegerLiteral", value: 1, span: SPAN }, span: SPAN },
+      { name: "f", defaultValue: { kind: "DoubleLiteral", value: 0, span: SPAN }, span: SPAN },
+      { name: "ties", defaultValue: { kind: "Identifier", name: "mean", span: SPAN }, span: SPAN },
+      {
+        name: "na.rm",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SPAN },
+        span: SPAN,
+      },
+    ],
+  },
+  {
+    name: "spline",
+    parameters: SPLINE_PARAMETERS,
+    compatibility: "numeric",
+    implementation: builtinSpline,
+    formals: [
+      { name: "x", span: SPAN },
+      { name: "y", defaultValue: { kind: "NullLiteral", span: SPAN }, span: SPAN },
+      {
+        name: "n",
+        defaultValue: {
+          kind: "BinaryExpression",
+          operator: "*",
+          left: { kind: "IntegerLiteral", value: 3, span: SPAN },
+          right: {
+            kind: "CallExpression",
+            callee: { kind: "Identifier", name: "length", span: SPAN },
+            arguments: [{ value: { kind: "Identifier", name: "x", span: SPAN }, span: SPAN }],
+            span: SPAN,
+          },
+          span: SPAN,
+        },
+        span: SPAN,
+      },
+      {
+        name: "method",
+        defaultValue: { kind: "StringLiteral", value: "fmm", span: SPAN },
+        span: SPAN,
+      },
+      {
+        name: "xmin",
+        defaultValue: {
+          kind: "CallExpression",
+          callee: { kind: "Identifier", name: "min", span: SPAN },
+          arguments: [{ value: { kind: "Identifier", name: "x", span: SPAN }, span: SPAN }],
+          span: SPAN,
+        },
+        span: SPAN,
+      },
+      {
+        name: "xmax",
+        defaultValue: {
+          kind: "CallExpression",
+          callee: { kind: "Identifier", name: "max", span: SPAN },
+          arguments: [{ value: { kind: "Identifier", name: "x", span: SPAN }, span: SPAN }],
+          span: SPAN,
+        },
+        span: SPAN,
+      },
+      { name: "xout", span: SPAN },
+      {
+        name: "ties",
+        defaultValue: { kind: "Identifier", name: "mean", span: SPAN },
+        span: SPAN,
+      },
+    ],
+  },
+  {
+    name: "splinefun",
+    parameters: SPLINEFUN_PARAMETERS,
+    compatibility: "numeric",
+    implementation: builtinSplineFunction,
+    formals: [
+      { name: "x", span: SPAN },
+      { name: "y", defaultValue: { kind: "NullLiteral", span: SPAN }, span: SPAN },
+      {
+        name: "method",
+        defaultValue: {
+          kind: "CallExpression",
+          callee: { kind: "Identifier", name: "c", span: SPAN },
+          arguments: ["fmm", "periodic", "natural", "monoH.FC", "hyman"].map((value) => ({
+            value: { kind: "StringLiteral", value, span: SPAN },
+            span: SPAN,
+          })),
+          span: SPAN,
+        },
+        span: SPAN,
+      },
+      { name: "ties", defaultValue: { kind: "Identifier", name: "mean", span: SPAN }, span: SPAN },
+    ],
   },
 ];
 
@@ -134,6 +274,383 @@ async function builtinApprox(invocation: BuiltinInvocation): Promise<RValue> {
   );
 }
 
+async function builtinApproxFunction(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched } = matchBuiltinArguments(invocation, APPROXFUN_PARAMETERS);
+  const coordinates = await approxCoordinates(invocation, matched);
+  const method = await approxChoice(
+    invocation,
+    matched.get("method"),
+    ["linear", "constant"],
+    "linear",
+    "method",
+  );
+  const removeMissing = await approxFlag(invocation, matched.get("na.rm"), true, "na.rm");
+  const tieMethod = await approxTies(invocation, matched.get("ties"));
+  const samples = await regularizeSamples(
+    invocation,
+    coordinates,
+    removeMissing,
+    tieMethod,
+    matched.has("ties"),
+  );
+  const minimumSamples = method === "linear" ? 2 : 1;
+  if (samples.length < minimumSamples) {
+    throw new RTypeMismatchError(
+      "NRT3290",
+      `need at least ${minimumSamples === 2 ? "two" : "one"} non-NA values to interpolate`,
+    );
+  }
+  const rules = await approxRules(invocation, matched.get("rule"));
+  const left = await approxBoundary(invocation, matched.get("yleft"));
+  const right = await approxBoundary(invocation, matched.get("yright"));
+  const fraction = await approxFraction(invocation, matched.get("f"));
+  const interpolator: RBuiltin = {
+    type: "builtin",
+    definition: {
+      package: "stats",
+      name: "approxfun",
+      kind: "regular",
+      formals: [{ name: "v", span: SPAN }],
+      metadata: {
+        compatibilityLevel: "numeric",
+        supportedArguments: ["v"],
+      },
+      implementation: async (call) => {
+        const { matched: callArguments } = matchBuiltinArguments(call, ["v"]);
+        const argument = callArguments.get("v");
+        if (argument === undefined || argument.promise.missing) {
+          throw new REvaluationError("NRE2143", 'argument "v" is missing, with no default');
+        }
+        const points = approxNumericVector(await call.force(argument.promise), "v");
+        call.context.allocate(points.length);
+        const output = new Float64Array(points.length);
+        const missing = new Uint8Array(points.length);
+        for (let index = 0; index < points.length; index += 1) {
+          call.context.checkpoint();
+          if (isMissing(points, index)) {
+            missing[index] = 1;
+            continue;
+          }
+          const coordinate = points.values[index] ?? Number.NaN;
+          if (Number.isNaN(coordinate)) {
+            output[index] = Number.NaN;
+            continue;
+          }
+          const interpolated = interpolateAt(
+            coordinate,
+            samples,
+            method,
+            fraction,
+            left ?? boundaryFromRule(samples[0]!, rules[0]),
+            right ?? boundaryFromRule(samples[samples.length - 1]!, rules[1]),
+          );
+          output[index] = interpolated.y;
+          if (interpolated.status === "missing") missing[index] = 1;
+          else if (interpolated.status === "nan") output[index] = Number.NaN;
+        }
+        return doubleVector(output, missing.some((entry) => entry === 1) ? missing : undefined);
+      },
+    },
+  };
+  invocation.context.allocate(1);
+  return interpolator;
+}
+
+async function builtinSpline(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched } = matchBuiltinArguments(invocation, SPLINE_PARAMETERS);
+  const coordinates = await approxCoordinates(invocation, matched);
+  const tieMethod = await approxTies(invocation, matched.get("ties"));
+  let samples = await regularizeSamples(
+    invocation,
+    coordinates,
+    true,
+    tieMethod,
+    matched.has("ties"),
+  );
+  if (samples.length === 0) {
+    throw new RTypeMismatchError("NRT3290", "zero non-NA points");
+  }
+  const method = await approxChoice(
+    invocation,
+    matched.get("method"),
+    ["periodic", "natural", "fmm", "hyman"],
+    "fmm",
+    "method",
+  );
+  if (method === "periodic" && samples[0]!.y !== samples[samples.length - 1]!.y) {
+    invocation.context.warn({
+      code: "NRW1105",
+      message: "spline: first and last y values differ - using y[1] for both",
+    });
+    samples = samples.map((sample, index) =>
+      index === samples.length - 1 ? { ...sample, y: samples[0]!.y } : sample,
+    );
+  }
+  if (method === "hyman") {
+    const differences = samples.slice(1).map((sample, index) => sample.y - samples[index]!.y);
+    if (!differences.every((value) => value >= 0) && !differences.every((value) => value <= 0)) {
+      throw new RTypeMismatchError("NRT3290", "'y' must be increasing or decreasing");
+    }
+  }
+
+  const xout = await splineOutputCoordinates(invocation, matched, samples);
+  invocation.context.allocate(xout.length);
+  const positions = samples.map((sample) => sample.x);
+  const values = samples.map((sample) => sample.y);
+  const secondDerivatives =
+    method === "natural"
+      ? naturalSecondDerivatives(positions, values)
+      : method === "periodic"
+        ? periodicSecondDerivatives(positions, values)
+        : fmmSecondDerivatives(positions, values);
+  const tangents =
+    method === "hyman"
+      ? hymanFilterTangents(
+          positions,
+          values,
+          splineTangentsFromSecondDerivatives(positions, values, secondDerivatives),
+        )
+      : undefined;
+  const naturalTangents =
+    method === "natural"
+      ? splineTangentsFromSecondDerivatives(positions, values, secondDerivatives)
+      : undefined;
+  const output = new Float64Array(xout.length);
+  const missing = new Uint8Array(xout.length);
+  const period = (positions[positions.length - 1] ?? 0) - (positions[0] ?? 0);
+  for (let index = 0; index < xout.length; index += 1) {
+    invocation.context.checkpoint();
+    if (isMissing(xout, index)) {
+      missing[index] = 1;
+      continue;
+    }
+    let point = xout.values[index] ?? Number.NaN;
+    if (Number.isNaN(point)) {
+      output[index] = Number.NaN;
+      continue;
+    }
+    if (method === "periodic" && period > 0) {
+      point = (positions[0] ?? 0) + ((((point - (positions[0] ?? 0)) % period) + period) % period);
+    }
+    if (naturalTangents !== undefined && point < positions[0]!) {
+      output[index] = values[0]! + (point - positions[0]!) * naturalTangents[0]!;
+    } else if (naturalTangents !== undefined && point > positions[positions.length - 1]!) {
+      const last = positions.length - 1;
+      output[index] = values[last]! + (point - positions[last]!) * naturalTangents[last]!;
+    } else {
+      output[index] =
+        tangents === undefined
+          ? evaluateCubicSpline(point, positions, values, secondDerivatives)
+          : evaluateCubicHermite(point, positions, values, tangents);
+    }
+  }
+  return listValue(
+    [xout, doubleVector(output, missing.some((entry) => entry === 1) ? missing : undefined)],
+    ["x", "y"],
+  );
+}
+
+async function builtinSplineFunction(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched } = matchBuiltinArguments(invocation, SPLINEFUN_PARAMETERS);
+  const coordinates = await approxCoordinates(invocation, matched);
+  const tieMethod = await approxTies(invocation, matched.get("ties"));
+  let samples = await regularizeSamples(
+    invocation,
+    coordinates,
+    true,
+    tieMethod,
+    matched.has("ties"),
+  );
+  if (samples.length === 0) {
+    throw new RTypeMismatchError("NRT3290", "zero non-NA points");
+  }
+  const method = await approxChoice(
+    invocation,
+    matched.get("method"),
+    ["fmm", "periodic", "natural", "monoH.FC", "hyman"],
+    "fmm",
+    "method",
+  );
+  if (method === "periodic" && samples[0]!.y !== samples[samples.length - 1]!.y) {
+    invocation.context.warn({
+      code: "NRW1105",
+      message: "splinefun: first and last y values differ - using y[1] for both",
+    });
+    samples = samples.map((sample, index) =>
+      index === samples.length - 1 ? { ...sample, y: samples[0]!.y } : sample,
+    );
+  }
+  if (method === "hyman") {
+    const differences = samples.slice(1).map((sample, index) => sample.y - samples[index]!.y);
+    if (!differences.every((value) => value >= 0) && !differences.every((value) => value <= 0)) {
+      throw new RTypeMismatchError("NRT3290", "'y' must be increasing or decreasing");
+    }
+  }
+  const positions = samples.map((sample) => sample.x);
+  const values = samples.map((sample) => sample.y);
+  const secondDerivatives =
+    method === "natural"
+      ? naturalSecondDerivatives(positions, values)
+      : method === "periodic"
+        ? periodicSecondDerivatives(positions, values)
+        : fmmSecondDerivatives(positions, values);
+  const baseTangents = splineTangentsFromSecondDerivatives(positions, values, secondDerivatives);
+  const tangents =
+    method === "hyman"
+      ? hymanFilterTangents(positions, values, baseTangents)
+      : method === "monoH.FC"
+        ? fritschCarlsonTangents(positions, values)
+        : baseTangents;
+  const period = (positions[positions.length - 1] ?? 0) - (positions[0] ?? 0);
+  const interpolator: RBuiltin = {
+    type: "builtin",
+    definition: {
+      package: "stats",
+      name: "splinefun",
+      kind: "regular",
+      formals: [
+        { name: "x", span: SPAN },
+        {
+          name: "deriv",
+          defaultValue: { kind: "IntegerLiteral", value: 0, span: SPAN },
+          span: SPAN,
+        },
+      ],
+      metadata: {
+        compatibilityLevel: "numeric",
+        supportedArguments: ["x", "deriv"],
+      },
+      implementation: async (call) => {
+        const { matched: callArguments } = matchBuiltinArguments(call, ["x", "deriv"]);
+        const xArgument = callArguments.get("x");
+        if (xArgument === undefined || xArgument.promise.missing) {
+          throw new REvaluationError("NRE2143", 'argument "x" is missing, with no default');
+        }
+        const points = approxNumericVector(await call.force(xArgument.promise), "x");
+        const derivativeArgument = callArguments.get("deriv");
+        const derivativeValue =
+          derivativeArgument === undefined
+            ? 0
+            : approxScalarValue(await call.force(derivativeArgument.promise), "deriv").y;
+        const derivative = Math.trunc(derivativeValue);
+        if (
+          !Number.isFinite(derivativeValue) ||
+          derivative !== derivativeValue ||
+          derivative < 0 ||
+          derivative > 3
+        ) {
+          throw new RTypeMismatchError("NRT3290", "deriv must be between 0 and 3");
+        }
+        call.context.allocate(points.length);
+        const output = new Float64Array(points.length);
+        const missing = new Uint8Array(points.length);
+        for (let index = 0; index < points.length; index += 1) {
+          call.context.checkpoint();
+          if (isMissing(points, index)) {
+            missing[index] = 1;
+            continue;
+          }
+          let point = points.values[index] ?? Number.NaN;
+          if (Number.isNaN(point)) {
+            output[index] = Number.NaN;
+            continue;
+          }
+          if (method === "periodic" && period > 0) {
+            point =
+              (positions[0] ?? 0) + ((((point - (positions[0] ?? 0)) % period) + period) % period);
+          }
+          if (method === "natural" && point < positions[0]!) {
+            output[index] =
+              derivative === 0
+                ? values[0]! + (point - positions[0]!) * tangents[0]!
+                : derivative === 1
+                  ? tangents[0]!
+                  : 0;
+          } else if (method === "natural" && point > positions[positions.length - 1]!) {
+            const last = positions.length - 1;
+            output[index] =
+              derivative === 0
+                ? values[last]! + (point - positions[last]!) * tangents[last]!
+                : derivative === 1
+                  ? tangents[last]!
+                  : 0;
+          } else {
+            output[index] = evaluateCubicHermiteDerivative(
+              point,
+              positions,
+              values,
+              tangents,
+              derivative as 0 | 1 | 2 | 3,
+            );
+          }
+        }
+        return doubleVector(output, missing.some((entry) => entry === 1) ? missing : undefined);
+      },
+    },
+  };
+  invocation.context.allocate(1);
+  return interpolator;
+}
+
+async function splineOutputCoordinates(
+  invocation: BuiltinInvocation,
+  matched: ReadonlyMap<string, BuiltinCallArgument>,
+  samples: readonly Sample[],
+): Promise<RDoubleVector> {
+  const supplied = matched.get("xout");
+  if (supplied !== undefined && !supplied.promise.missing) {
+    const input = approxNumericVector(await invocation.force(supplied.promise), "xout");
+    if (input.length === 0) {
+      throw new RTypeMismatchError("NRT3290", "'spline' requires n >= 1");
+    }
+    const values = new Float64Array(input.length);
+    const missing = new Uint8Array(input.length);
+    for (let index = 0; index < input.length; index += 1) {
+      values[index] = input.values[index] ?? Number.NaN;
+      if (isMissing(input, index)) missing[index] = 1;
+    }
+    return doubleVector(values, missing.some((entry) => entry === 1) ? missing : undefined);
+  }
+  const countArgument = matched.get("n");
+  const count =
+    countArgument === undefined
+      ? 3 * samples.length
+      : Math.trunc(approxScalarValue(await invocation.force(countArgument.promise), "n").y);
+  if (!Number.isSafeInteger(count) || count < 1) {
+    throw new RTypeMismatchError("NRT3290", "'spline' requires n >= 1");
+  }
+  const minimum = await splineBoundary(invocation, matched.get("xmin"), samples[0]!.x, "from");
+  const maximum = await splineBoundary(
+    invocation,
+    matched.get("xmax"),
+    samples[samples.length - 1]!.x,
+    "to",
+  );
+  invocation.context.allocate(count);
+  const values = new Float64Array(count);
+  if (count === 1) values[0] = minimum;
+  else {
+    for (let index = 0; index < count; index += 1) {
+      values[index] = minimum + ((maximum - minimum) * index) / (count - 1);
+    }
+  }
+  return doubleVector(values);
+}
+
+async function splineBoundary(
+  invocation: BuiltinInvocation,
+  argument: BuiltinCallArgument | undefined,
+  fallback: number,
+  label: "from" | "to",
+): Promise<number> {
+  if (argument === undefined) return fallback;
+  const scalar = approxScalarValue(await invocation.force(argument.promise), label);
+  if (scalar.status !== "value" || !Number.isFinite(scalar.y)) {
+    throw new RTypeMismatchError("NRT3290", `'${label}' must be a finite number`);
+  }
+  return scalar.y;
+}
+
 async function approxCoordinates(
   invocation: BuiltinInvocation,
   matched: ReadonlyMap<string, BuiltinCallArgument>,
@@ -145,8 +662,13 @@ async function approxCoordinates(
   const xInput = await invocation.force(xArgument.promise);
   const yArgument = matched.get("y");
   if (yArgument !== undefined && !yArgument.promise.missing) {
+    const yInput = await invocation.force(yArgument.promise);
+    if (yInput.type === "null") {
+      const y = approxNumericVector(xInput, "x");
+      return { x: integerVector(Array.from({ length: y.length }, (_, index) => index + 1)), y };
+    }
     const x = approxNumericVector(xInput, "x");
-    const y = approxNumericVector(await invocation.force(yArgument.promise), "y");
+    const y = approxNumericVector(yInput, "y");
     assertCoordinateLengths(x, y);
     return { x, y };
   }

@@ -6,6 +6,9 @@ const root = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const cases = JSON.parse(
   await readFile(path.join(root, "conformance", "cases", "foundation.json"), "utf8"),
 );
+const filter = process.env.NATIVR_CONFORMANCE_FILTER;
+const selectedCases =
+  filter === undefined ? cases : cases.filter((testCase) => testCase.id.includes(filter));
 const modulePath = path.join(root, "packages", "nativr", "dist", "index.js");
 const { createR, isNA } = await import(pathToFileURL(modulePath).href);
 const assetRoot = path.join(root, "packages", "nativr", "dist", "assets");
@@ -25,7 +28,7 @@ const runtime = await createR({
 });
 let failures = 0;
 
-for (const testCase of cases) {
+for (const testCase of selectedCases) {
   await runtime.reset();
   try {
     const result = await runtime.evalDetailed(testCase.code);
@@ -55,7 +58,7 @@ for (const testCase of cases) {
 
 await runtime.dispose();
 if (failures > 0) process.exitCode = 1;
-else console.log(`Checked-in conformance: ${cases.length}/${cases.length} passed`);
+else console.log(`Checked-in conformance: ${selectedCases.length}/${selectedCases.length} passed`);
 
 function canonical(value, markerTest) {
   if (markerTest(value) || value?.__nativr__ === "NA") return "NA";

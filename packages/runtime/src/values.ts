@@ -15,6 +15,20 @@ export const NATIVR_PACKAGE_SOURCE_RESOURCE_ROOT = ".nativr/source";
 export const PACKAGE_SOURCE_EVALUATION_DIRECTORY_STATE_KEY =
   "runtime.packageSourceEvaluationDirectory";
 
+/** Evaluator-owned source file applied to closures created while source() keeps references. */
+export const SOURCE_REFERENCE_CONTEXT_STATE_KEY = "runtime.sourceReferenceContext";
+
+/** Session hook used by the runtime's @ replacement path without depending on methods/base. */
+export const S4_SLOT_REPLACEMENT_VALIDATOR_STATE_KEY = "runtime.s4SlotReplacementValidator";
+
+/** Package-layer validation for one formal S4 slot replacement. */
+export type S4SlotReplacementValidator = (
+  object: RValue,
+  name: string,
+  value: RValue,
+  operator: "@" | "slot",
+) => void;
+
 /** Attribute storage prepared for names, dimensions, class, and later extensions. */
 export type RAttributes = ReadonlyMap<string, RValue>;
 
@@ -23,6 +37,24 @@ export interface RVectorBase {
   readonly attributes: RAttributes;
   readonly length: number;
   readonly missing?: Uint8Array;
+  /** Internal formal-object bit corresponding to GNU R's S4 object marker. */
+  readonly s4?: boolean;
+}
+
+const vectorStorageCapacities = new WeakMap<RVectorBase, number>();
+
+/** Record hidden backing capacity for an evaluator-owned copy-on-modify vector. */
+export function registerVectorStorageCapacity<T extends RVectorBase>(
+  value: T,
+  capacity: number,
+): T {
+  vectorStorageCapacities.set(value, capacity);
+  return value;
+}
+
+/** Read hidden backing capacity without exposing it through R values or wire serialization. */
+export function vectorStorageCapacity(value: RVectorBase): number {
+  return vectorStorageCapacities.get(value) ?? value.length;
 }
 
 /** A logical vector with 0/1 values and an independent missing mask. */
@@ -129,29 +161,55 @@ export interface RClosure {
 /** A normalized, intentionally small formula value independent of parser internals. */
 export interface RFormula {
   readonly type: "formula";
+  /** Original normalized formula syntax for language-style indexing and replacement. */
+  readonly expression?: Extract<AstNode, { readonly kind: "FormulaExpression" }>;
   readonly response?: string;
   readonly terms: readonly string[];
   readonly variables: readonly string[];
   readonly intercept: boolean;
   readonly environment: REnvironment | null;
+  /** Ordinary formula attributes, including custom S3 subclasses used by source packages. */
+  readonly attributes?: RAttributes;
 }
 
 /** An interned-style R name represented independently from JavaScript identifiers. */
 export interface RSymbol {
   readonly type: "symbol";
   readonly name: string;
+  /** Internal promise provenance retained by match.call(expand.dots = FALSE). */
+  readonly capturedPromise?: RPromise;
 }
 
 /** A quoted normalized NativR expression. */
 export interface RLanguage {
   readonly type: "language";
   readonly expression: AstNode;
+  /** Internal promise provenance retained by match.call(expand.dots = FALSE). */
+  readonly capturedPromise?: RPromise;
+  /**
+   * Pairlist tags for call entries, including the callee entry. This is
+   * separate from ordinary R attributes because names(call) exposes tags
+   * while attributes(call) remains NULL in GNU R.
+   */
+  readonly entryNames?: readonly string[];
+  /** Optional attributes carried by calls and other language objects. */
+  readonly attributes?: RAttributes;
 }
 
 /** An R expression vector containing unevaluated normalized syntax. */
 export interface RExpression {
   readonly type: "expression";
   readonly values: readonly AstNode[];
+  /** Optional source-reference and user attributes retained on expression vectors. */
+  readonly attributes?: RAttributes;
+}
+
+/** A browser-safe external pointer with a permanently null native address. */
+export interface RExternalPointer {
+  readonly type: "externalptr";
+  protectedValue: RValue;
+  tag: RValue;
+  attributes: RAttributes;
 }
 
 /** A lazily evaluated, memoized argument. */
@@ -159,6 +217,13 @@ export interface RPromise {
   readonly type: "promise";
   readonly expression: AstNode | null;
   readonly environment: REnvironment;
+  /** Internal package-data target used by browser-native LazyData bindings. */
+  readonly packageData?: {
+    readonly package: string;
+    readonly dataset: string;
+    /** Source data-resource basename when it differs from the public object name. */
+    readonly resource?: string;
+  };
   /** Whether this promise originated from an omitted actual argument. */
   readonly missing: boolean;
   state: "unforced" | "forcing" | "forced";
@@ -185,12 +250,8 @@ export interface BuiltinCallArgument {
 
 /** Metadata used for capability reporting and compatibility review. */
 export interface BuiltinMetadata {
-  readonly package: string;
-  readonly name: string;
   readonly compatibilityLevel: "api" | "shape" | "numeric" | "behavioral";
-  readonly referenceVersion?: string;
   readonly supportedArguments: readonly string[];
-  readonly unsupportedBehavior?: readonly string[];
 }
 
 /** Data-only URL connection request delegated to an explicitly configured host. */
@@ -261,12 +322,21 @@ export interface BuiltinInvocation {
   /** Stable positive identity for this evaluator session; it is not a host operating-system PID. */
   readonly sessionProcessId: number;
   memoryStatistics(reset: boolean, full: boolean): RuntimeMemoryStatistics;
+  collectGarbage(reset: boolean, full: boolean): Promise<RuntimeMemoryStatistics>;
+  registerEnvironmentFinalizer(
+    environment: REnvironment,
+    finalizer: RClosure,
+    onExit: boolean,
+  ): void;
   setResultVisibility(visibility: "visible" | "invisible"): void;
+  /** Number of actual arguments supplied to the active closure, or undefined at top level. */
+  currentArgumentCount(): number | undefined;
   force(binding: RBinding): Promise<RValue>;
   forceDetailed(promise: RPromise): Promise<{ readonly value: RValue; readonly visible: boolean }>;
   invoke(
     callable: RValue,
     arguments_: readonly { readonly name?: string; readonly value: RValue }[],
+    callerEnvironment?: REnvironment,
   ): Promise<RValue>;
   invokeDetailed(
     callable: RValue,
@@ -279,8 +349,25 @@ export interface BuiltinInvocation {
     value: RValue,
     environment: REnvironment,
   ): Promise<{ readonly value: RValue; readonly visible: boolean }>;
+  evaluateScoped(
+    value: RValue,
+    environment: REnvironment,
+  ): Promise<{ readonly value: RValue; readonly visible: boolean }>;
+  evaluateEval(
+    value: RValue,
+    environment: REnvironment,
+  ): Promise<{ readonly value: RValue; readonly visible: boolean }>;
+  evaluateSource(
+    value: RValue,
+    environment: REnvironment,
+  ): Promise<{ readonly value: RValue; readonly visible: boolean }>;
   assignBinding(environment: REnvironment, name: string, value: RValue): Promise<void>;
-  signalCondition(classes: readonly string[], condition: RValue): Promise<void>;
+  signalCondition(
+    classes: readonly string[],
+    condition: RValue,
+    scope?: "all" | "dynamic" | "global",
+    afterFrameId?: number,
+  ): Promise<void>;
   configureOnExit(
     expression: AstNode | null,
     environment: REnvironment,
@@ -293,6 +380,9 @@ export interface BuiltinInvocation {
   currentCall(): RLanguage | RNull;
   systemCall(which: number): RLanguage | RNull;
   systemFunction(which: number): RClosure | RNull;
+  systemCalls(): RPairlist;
+  systemFrames(): RPairlist;
+  systemParents(): RIntegerVector;
   isInteractive(): boolean;
   hasSocketCapability(): boolean;
   readline(prompt: string): Promise<string>;
@@ -302,6 +392,8 @@ export interface BuiltinInvocation {
   nativeModules(): readonly RNativeModuleDefinition[];
   nativeCall(request: RNativeCallRequest): Promise<RValue>;
   searchPath(): readonly string[];
+  attachSearchEnvironment(environment: REnvironment, name: string, position: number): REnvironment;
+  detachSearchEnvironment(identifier: number | string): string;
   libraryPaths(): readonly string[];
   setLibraryPaths(paths: readonly string[]): void;
   searchEnvironment(identifier: number | string): REnvironment | undefined;
@@ -349,7 +441,8 @@ export interface BuiltinInvocation {
   globalEnvironment(): REnvironment;
   baseEnvironment(): REnvironment;
   emptyEnvironment(): REnvironment;
-  matchCall(expandDots: boolean): RLanguage;
+  matchCall(expandDots: boolean, definition?: RClosure | RBuiltin, call?: RLanguage): RLanguage;
+  matchBuiltinCall(parameters: readonly string[], expandDots: boolean): RLanguage;
   callerFormalDefault(name: string): Promise<RValue | undefined>;
   define(name: string, value: RValue): void;
   registerS3Method(
@@ -365,8 +458,14 @@ export interface BuiltinInvocation {
     arguments_: readonly BuiltinCallArgument[],
     includeDefault?: boolean,
     argumentIndex?: number,
+    dispatchGeneric?: string,
+    methodArguments?: readonly RValue[],
   ): Promise<RValue | undefined>;
-  nextMethod(generic?: string): Promise<RValue>;
+  nextMethod(
+    generic?: string,
+    object?: RValue,
+    extraArguments?: readonly BuiltinCallArgument[],
+  ): Promise<RValue>;
 }
 
 /** One row of browser-owned memory statistics exposed through base::gc(). */
@@ -392,7 +491,11 @@ export interface BuiltinDefinition {
   readonly kind: BuiltinKind;
   /** Optional R-level formals for builtins that model an ordinary closure. */
   readonly formals?: readonly FunctionParameter[];
+  /** Optional R-level body for a regular builtin that models an ordinary closure. */
+  readonly body?: AstNode;
   readonly resultVisibility?: "visible" | "invisible";
+  /** Optional attributes installed on the first-class builtin function value. */
+  readonly attributes?: RAttributes;
   readonly metadata: BuiltinMetadata;
   implementation(invocation: BuiltinInvocation): RValue | Promise<RValue>;
 }
@@ -401,6 +504,8 @@ export interface BuiltinDefinition {
 export interface RBuiltin {
   readonly type: "builtin";
   readonly definition: BuiltinDefinition;
+  /** Optional attributes on a first-class builtin function object. */
+  readonly attributes?: RAttributes;
 }
 
 /** A function object whose GNU R-style debugging bits belong to the evaluator session. */
@@ -412,10 +517,17 @@ export interface RFunctionDebugMetadata {
   readonly condition: RValue;
 }
 
+export interface RFunctionTraceMetadata {
+  readonly entry?: AstNode;
+  readonly exit?: AstNode;
+  readonly print: boolean;
+}
+
 /** Object-identity registries keep shared closure references in sync without mutating values. */
 export interface RFunctionDebugRegistry {
   readonly persistent: WeakMap<RDebuggableFunction, RFunctionDebugMetadata>;
   readonly once: WeakMap<RDebuggableFunction, RFunctionDebugMetadata>;
+  readonly traces: WeakMap<RDebuggableFunction, RFunctionTraceMetadata>;
 }
 
 /** A cancellation flag shared by evaluator and reference operators. */
@@ -428,7 +540,11 @@ export interface RuntimeLimits {
   readonly maxSteps: number;
   readonly maxCallDepth: number;
   readonly maxVectorLength: number;
+  /** Cumulative vector elements allocated during one evaluation. */
+  readonly maxAllocatedElements: number;
   readonly maxOutputBytes: number;
+  /** Aggregate decoded bytes admitted from immutable package resources. */
+  readonly maxPackageResourceBytes: number;
 }
 
 /** A structured warning collected in evaluation order. */
@@ -437,6 +553,9 @@ export interface RWarning {
   readonly message: string;
   readonly span?: SourceSpan;
   readonly call?: string;
+  readonly classes?: readonly string[];
+  /** Original condition when a warning was raised through warning(condition). */
+  readonly condition?: RValue;
 }
 
 /** Text emitted by an evaluation without depending on a host console. */
@@ -553,6 +672,8 @@ export interface RGraphicsSegment {
   /** A normalized R line-type pattern: solid or an even-length hexadecimal dash sequence. */
   readonly lineType: string;
   readonly lineWidth: number;
+  /** Resolved R `lend` style for the open segment endpoints. */
+  readonly lineCap?: "round" | "butt" | "square";
 }
 
 /** One resolved point symbol sent to a browser graphics host. */
@@ -603,6 +724,14 @@ export interface RGraphicsPolygon {
   readonly lineType: string;
   readonly lineWidth: number;
   readonly fillRule: "nonzero" | "evenodd";
+  /** Optional line-density shading, expressed in physical lines per inch. */
+  readonly hatch?: {
+    /** CSS-compatible #RRGGBBAA hatch-line color. */
+    readonly color: string;
+    readonly density: number;
+    /** Counter-clockwise line angle in degrees. */
+    readonly angle: number;
+  };
 }
 
 /** One resolved box-and-whisker group sent to a browser graphics host. */
@@ -624,6 +753,8 @@ export interface RGraphicsLegendEntry {
   readonly label: string;
   readonly textColor: string;
   readonly color: string;
+  readonly fill?: string;
+  readonly border?: string;
   readonly lineType?: string;
   readonly lineWidth?: number;
   readonly pointSymbol?: string;
@@ -645,7 +776,13 @@ export type RGraphicsLegendPosition =
         | "center";
       readonly inset: readonly [number, number];
     }
-  | { readonly kind: "coordinates"; readonly x: number; readonly y: number };
+  | {
+      readonly kind: "coordinates";
+      readonly x: number;
+      readonly y: number;
+      readonly xJust: number;
+      readonly yJust: number;
+    };
 
 /** Device-independent graphics commands collected for a browser host. */
 export type RGraphicsEvent =
@@ -654,6 +791,8 @@ export type RGraphicsEvent =
       readonly kind: "window";
       readonly xlim: readonly [number, number];
       readonly ylim: readonly [number, number];
+      /** Optional normalized device region: left, right, bottom, top. */
+      readonly viewport?: readonly [number, number, number, number];
     }
   | {
       readonly kind: "raster";
@@ -706,6 +845,7 @@ export type RGraphicsEvent =
       readonly background: string;
       readonly columns: number;
       readonly cex: number;
+      readonly textAdjustment: readonly [number, number];
       readonly title?: string;
     };
 
@@ -714,6 +854,8 @@ export interface OperatorContext {
   readonly limits: RuntimeLimits;
   readonly cancellation: CancellationToken;
   warn(warning: RWarning): void;
+  beginWarningCapture(): void;
+  endWarningCapture(): readonly RWarning[];
   writeOutput(output: ROutput): void;
   beginOutputCapture(streams: readonly ROutput["stream"][]): void;
   endOutputCapture(): readonly ROutput[];
@@ -726,6 +868,9 @@ export interface OperatorContext {
   pushOutputSuppression(stream: ROutput["stream"]): void;
   popOutputSuppression(stream: ROutput["stream"]): void;
   isOutputSuppressed(stream: ROutput["stream"]): boolean;
+  pushInterruptMode(mode: "suspend" | "allow"): void;
+  popInterruptMode(): void;
+  configureTimeLimit(cpuSeconds: number, elapsedSeconds: number, transient: boolean): void;
   checkpoint(cost?: number): void;
   allocate(elements: number): void;
 }
@@ -749,6 +894,56 @@ export function runtimeOutputRouter(
 /** Session-state slot shared by the evaluator and the base condition builtins. */
 export const GLOBAL_CALLING_HANDLERS_STATE_KEY = "runtime.globalCallingHandlers";
 
+/** Dynamically scoped calling-handler frames installed by base::withCallingHandlers(). */
+export const DYNAMIC_CALLING_HANDLERS_STATE_KEY = "runtime.dynamicCallingHandlers";
+
+/** Monotonic sequence shared by dynamically interleaved calling and exiting handlers. */
+export const CONDITION_HANDLER_SEQUENCE_STATE_KEY = "runtime.conditionHandlerSequence";
+
+/** Session-owned stack used by withRestarts(), warning(), and message(). */
+export const RESTART_STACK_STATE_KEY = "runtime.restartStack";
+
+/** Monotonic identity for restart frames. */
+export const RESTART_FRAME_COUNTER_STATE_KEY = "runtime.restartFrameCounter";
+
+/** Dynamically scoped exiting-handler frames installed by tryCatch(). */
+export const EXITING_HANDLER_STACK_STATE_KEY = "runtime.exitingConditionHandlers";
+
+/** One dynamically scoped restart frame shared across runtime and Base builtins. */
+export interface RestartFrame {
+  readonly id: number;
+  readonly names: ReadonlySet<string>;
+}
+
+/** Non-local transfer raised by invokeRestart(). */
+export class RestartJump extends Error {
+  public constructor(
+    public readonly frameId: number,
+    public readonly restartName: string,
+    public readonly arguments_: readonly { readonly name?: string; readonly value: RValue }[],
+  ) {
+    super(`invokeRestart(${JSON.stringify(restartName)})`);
+    this.name = "RestartJump";
+  }
+}
+
+/** One tryCatch() frame containing already evaluated condition handlers. */
+export interface ExitingConditionHandlerFrame {
+  readonly id: number;
+  readonly handlers: readonly BuiltinCallArgument[];
+}
+
+/** Non-local transfer from a signalled condition to its selected tryCatch() frame. */
+export class ExitingHandlerJump extends Error {
+  public constructor(
+    public readonly frameId: number,
+    public readonly value: RValue,
+  ) {
+    super("condition handled by tryCatch()");
+    this.name = "ExitingHandlerJump";
+  }
+}
+
 /** Session-state slot shared by the evaluator and the base debugging builtins. */
 export const FUNCTION_DEBUG_STATE_KEY = "runtime.functionDebug";
 
@@ -759,6 +954,7 @@ export function functionDebugRegistry(state: Map<string, unknown>): RFunctionDeb
   const created: RFunctionDebugRegistry = {
     persistent: new WeakMap(),
     once: new WeakMap(),
+    traces: new WeakMap(),
   };
   state.set(FUNCTION_DEBUG_STATE_KEY, created);
   return created;
@@ -767,13 +963,23 @@ export function functionDebugRegistry(state: Map<string, unknown>): RFunctionDeb
 function isFunctionDebugRegistry(value: unknown): value is RFunctionDebugRegistry {
   if (typeof value !== "object" || value === null) return false;
   const candidate = value as Partial<RFunctionDebugRegistry>;
-  return candidate.persistent instanceof WeakMap && candidate.once instanceof WeakMap;
+  return (
+    candidate.persistent instanceof WeakMap &&
+    candidate.once instanceof WeakMap &&
+    candidate.traces instanceof WeakMap
+  );
 }
 
 /** Replaceable arithmetic seam implemented by the JavaScript reference backend. */
 export interface RuntimeOperators {
   unary(context: OperatorContext, operator: string, value: RValue): RValue;
-  binary(context: OperatorContext, operator: string, left: RValue, right: RValue): RValue;
+  binary(
+    context: OperatorContext,
+    operator: string,
+    left: RValue,
+    right: RValue,
+    warningCall?: string,
+  ): RValue;
 }
 
 /** All ordinary runtime values. Promises appear only in bindings and call frames. */
@@ -791,6 +997,7 @@ export type RValue =
   | RSymbol
   | RLanguage
   | RExpression
+  | RExternalPointer
   | REnvironment
   | RClosure
   | RDots
@@ -810,9 +1017,14 @@ export function objectAttributes(value: RValue): RAttributes | undefined {
     isVector(value) ||
     value.type === "pairlist" ||
     value.type === "environment" ||
-    value.type === "closure"
+    value.type === "closure" ||
+    value.type === "builtin" ||
+    value.type === "expression" ||
+    value.type === "externalptr" ||
+    value.type === "language" ||
+    value.type === "formula"
   ) {
-    return value.attributes;
+    return value.attributes ?? EMPTY_ATTRIBUTES;
   }
   return undefined;
 }
@@ -998,6 +1210,34 @@ export function listValue(values: readonly RValue[], names?: readonly string[]):
   return names === undefined ? list : withNames(list, names);
 }
 
+/** Browser-owned R.version value for the runtime's pinned compatibility target. */
+export function rVersionValue(): RList {
+  const entries = [
+    ["platform", "wasm32-unknown-browser"],
+    ["arch", "nativr"],
+    ["os", "browser"],
+    ["crt", ""],
+    ["system", "wasm32, browser"],
+    ["status", ""],
+    ["major", "4"],
+    ["minor", "6.1"],
+    ["year", "2026"],
+    ["month", "06"],
+    ["day", "24"],
+    ["svn rev", ""],
+    ["language", "R"],
+    ["version.string", "R version 4.6.1 (NativR browser runtime)"],
+    ["nickname", "Happy Hop"],
+  ] as const;
+  return withClasses(
+    listValue(
+      entries.map(([, value]) => characterVector([value])),
+      entries.map(([name]) => name),
+    ),
+    ["simple.list"],
+  );
+}
+
 /** Construct an immutable pairlist with optional exact tag names. */
 export function pairlistValue(values: readonly RValue[], names?: readonly string[]): RPairlist {
   const pairlist: RPairlist = {
@@ -1011,7 +1251,7 @@ export function pairlistValue(values: readonly RValue[], names?: readonly string
 
 /** Construct the documented data-frame subset as a named list of equal-length columns. */
 export function dataFrameValue(
-  columns: readonly RVector[],
+  columns: readonly (RVector | RExpression)[],
   names: readonly string[],
   rowNames: readonly string[],
   automaticRowNames = false,
@@ -1026,13 +1266,20 @@ export function dataFrameValue(
 /** Construct an integer factor with exact levels and optional ordering. */
 export function factorValue(
   codes: ArrayLike<number>,
-  levels: readonly string[],
+  levels: readonly (string | undefined)[],
   missing?: ArrayLike<number>,
   ordered = false,
 ): RIntegerVector {
   const value = integerVector(codes, missing);
   const attributes = new Map(value.attributes);
-  attributes.set("levels", characterVector(levels));
+  const levelMissing = Uint8Array.from(levels, (level) => (level === undefined ? 1 : 0));
+  attributes.set(
+    "levels",
+    characterVector(
+      levels.map((level) => level ?? ""),
+      levelMissing.some((entry) => entry === 1) ? levelMissing : undefined,
+    ),
+  );
   attributes.set("class", characterVector(ordered ? ["ordered", "factor"] : ["factor"]));
   return { ...value, attributes };
 }
@@ -1062,16 +1309,11 @@ export function isVector(value: RValue): value is RVector {
   return isAtomic(value) || value.type === "list";
 }
 
-/** Return true for values created by the NativR data-frame constructor. */
+/** Return true for lists carrying R's data.frame class, including package-constructed frames. */
 export function isDataFrame(value: RValue): value is RList {
   if (value.type !== "list") return false;
   const classes = value.attributes.get("class");
-  const rowNames = value.attributes.get("row.names");
-  return (
-    classes?.type === "character" &&
-    classes.values.includes("data.frame") &&
-    rowNames?.type === "character"
-  );
+  return classes?.type === "character" && classes.values.includes("data.frame");
 }
 
 /** Return true for integer vectors carrying the factor class and levels. */
@@ -1102,19 +1344,29 @@ export function dataFrameRowCount(value: RList): number {
     throw new RTypeMismatchError("NRT3007", "The value is not a data frame.");
   }
   const rowNames = value.attributes.get("row.names");
-  return rowNames?.type === "character" ? rowNames.length : 0;
+  if (rowNames?.type === "character") return rowNames.length;
+  if (rowNames?.type !== "integer") return 0;
+  if (
+    rowNames.length === 2 &&
+    isMissing(rowNames, 0) &&
+    !isMissing(rowNames, 1) &&
+    (rowNames.values[1] ?? 0) !== 0
+  ) {
+    return Math.abs(rowNames.values[1] ?? 0);
+  }
+  return rowNames.length;
 }
 
 /** Read an exact, non-missing names attribute when present. */
 export function vectorNames(value: RVector | RPairlist): readonly string[] | undefined {
-  const names = value.attributes.get("names");
+  const names = value.attributes?.get("names");
   if (names === undefined) return undefined;
-  if (names.type !== "character" || names.length !== value.length || names.missing !== undefined) {
+  if (names.type !== "character" || names.length !== value.length) {
     throw new RTypeMismatchError("NRT3003", "The names attribute is malformed.", {
       details: { valueLength: value.length },
     });
   }
-  return names.values;
+  return names.values.map((name, index) => (isMissing(names, index) ? "" : name));
 }
 
 /** Read validated dimensions from a vector when present. */

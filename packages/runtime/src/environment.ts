@@ -115,11 +115,15 @@ export function createMissingPromise(environment: REnvironment): RPromise {
   };
 }
 
-/** Construct a promise that already contains a JavaScript-assigned runtime value. */
-export function createForcedPromise(value: RValue, environment: REnvironment): RPromise {
+/** Construct a promise that is already forced, optionally retaining its originating R syntax. */
+export function createForcedPromise(
+  value: RValue,
+  environment: REnvironment,
+  expression: AstNode | null = null,
+): RPromise {
   return {
     type: "promise",
-    expression: null,
+    expression,
     environment,
     missing: false,
     state: "forced",

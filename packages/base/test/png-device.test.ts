@@ -96,6 +96,8 @@ describe("browser-owned PNG renderer", () => {
             label: "line",
             textColor: "#000000FF",
             color: "#FF00FFFF",
+            fill: "#FF000080",
+            border: "#000000FF",
             lineType: "44",
             lineWidth: 1,
             pointSymbol: "1",
@@ -105,6 +107,7 @@ describe("browser-owned PNG renderer", () => {
         background: "#FFFFFFFF",
         columns: 1,
         cex: 0.6,
+        textAdjustment: [0.25, 0.75],
         title: "Key",
       },
       {
@@ -115,6 +118,7 @@ describe("browser-owned PNG renderer", () => {
         background: "#00000000",
         columns: 1,
         cex: 0.5,
+        textAdjustment: [0, 0.5],
       },
     ];
 
@@ -152,6 +156,80 @@ describe("browser-owned PNG renderer", () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+
+  it("renders physical-density hatch lines clipped to polygon interiors", async () => {
+    const png = await renderGraphicsPng({
+      width: 48,
+      height: 48,
+      background: "#FFFFFF00",
+      pointsize: 12,
+      events: [
+        { kind: "window", xlim: [0, 1], ylim: [0, 1] },
+        {
+          kind: "polygon",
+          polygons: [
+            {
+              x: [0.2, 0.8, 0.8, 0.2],
+              y: [0.2, 0.2, 0.8, 0.8],
+              fill: "#FFFFFF00",
+              border: "#FFFFFF00",
+              lineType: "solid",
+              lineWidth: 1,
+              fillRule: "nonzero",
+              hatch: { color: "#FF0000FF", density: 24, angle: 30 },
+            },
+          ],
+        },
+      ],
+      checkpoint: () => undefined,
+    });
+    const scanlines = await decodeScanlines(png);
+    const colored = Array.from({ length: 48 * 48 }, (_, index) => {
+      const row = Math.floor(index / 48);
+      const column = index % 48;
+      const offset = row * (48 * 4 + 1) + 1 + column * 4;
+      return (scanlines[offset + 3] ?? 0) > 0 ? [column, row] : undefined;
+    }).filter((point): point is [number, number] => point !== undefined);
+    expect(colored.length).toBeGreaterThan(20);
+    expect(colored.every(([x, y]) => x >= 8 && x <= 39 && y >= 8 && y <= 39)).toBe(true);
+  });
+
+  it("maps compound even-odd polygons into the active normalized viewport", async () => {
+    const width = 100;
+    const height = 100;
+    const png = await renderGraphicsPng({
+      width,
+      height,
+      background: "#FFFFFF00",
+      pointsize: 12,
+      events: [
+        { kind: "window", xlim: [0, 1], ylim: [0, 1], viewport: [0.2, 0.8, 0.2, 0.8] },
+        {
+          kind: "polygon",
+          polygons: [
+            {
+              x: [0, 1, 1, 0, Number.NaN, 0.3, 0.7, 0.7, 0.3],
+              y: [0, 0, 1, 1, Number.NaN, 0.3, 0.3, 0.7, 0.7],
+              fill: "#FF0000FF",
+              border: "#FFFFFF00",
+              lineType: "blank",
+              lineWidth: 1,
+              fillRule: "evenodd",
+            },
+          ],
+        },
+      ],
+      checkpoint: () => undefined,
+    });
+    const scanlines = await decodeScanlines(png);
+    const rgba = (x: number, y: number): readonly number[] => {
+      const offset = y * (width * 4 + 1) + 1 + x * 4;
+      return [...scanlines.slice(offset, offset + 4)];
+    };
+    expect(rgba(30, 50)).toEqual([255, 0, 0, 255]);
+    expect(rgba(50, 50)).toEqual([255, 255, 255, 0]);
+    expect(rgba(10, 50)).toEqual([255, 255, 255, 0]);
   });
 });
 

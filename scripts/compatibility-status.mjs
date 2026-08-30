@@ -27,6 +27,30 @@ const foundation = JSON.parse(
 const oracleV2 = JSON.parse(
   await readFile(path.join(root, "conformance", "cases", "oracle-v2.json"), "utf8"),
 );
+const evidenceBindings = new Set(
+  capabilities.packages.flatMap((package_) =>
+    [...package_.functions, ...(package_.bindings ?? [])]
+      .filter(
+        (definition) =>
+          definition.compatibility === "behavioral" || definition.compatibility === "numeric",
+      )
+      .map((definition) => `${package_.name}::${definition.name}`),
+  ),
+);
+const recursiveBindings = new Set();
+for (const testCase of oracleV2) {
+  if (!Array.isArray(testCase.bindings) || testCase.bindings.length === 0) {
+    throw new Error(`Oracle-v2 case '${testCase.id}' has no associated registry bindings.`);
+  }
+  for (const binding of testCase.bindings) {
+    if (!evidenceBindings.has(binding)) {
+      throw new Error(
+        `Oracle-v2 case '${testCase.id}' references a non-evidenced or unknown binding '${binding}'.`,
+      );
+    }
+    recursiveBindings.add(binding);
+  }
+}
 const manifestCanonical = JSON.stringify(capabilities);
 const tierNumber = (tier) => Number(tier.slice(1));
 const packageCounts = Object.fromEntries(
@@ -49,8 +73,8 @@ const status = {
     checkedInConformanceCases: foundation.length,
     liveREligibleCases: foundation.filter((entry) => entry.rOracle !== false).length,
     recursiveOracleV2Cases: oracleV2.length,
-    recursiveBehaviorallyProvenBindings: null,
-    note: "Recursive behavioral binding counts remain null until oracle-v2 cases are associated with registry bindings; name overlap is inventory only.",
+    recursiveEvidencedBindings: recursiveBindings.size,
+    note: "Recursive binding counts include only explicit oracle-v2 associations to behavioral or numeric registry entries; name overlap remains inventory only.",
   },
   nameInventory: {
     referenceVersion: names.referenceVersion,

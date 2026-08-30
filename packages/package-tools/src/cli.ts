@@ -52,6 +52,9 @@ try {
     const installed = await installPackagesFromRepository(parsed.packages, {
       ...(parsed.repository === undefined ? {} : { repository: parsed.repository }),
       includeSuggests: parsed.includeSuggests,
+      ...(parsed.selectedSuggests.length === 0
+        ? {}
+        : { selectedSuggests: parsed.selectedSuggests }),
       ...(parsed.sourcePlatform === undefined
         ? {}
         : { pack: { sourcePlatform: parsed.sourcePlatform } }),
@@ -115,7 +118,7 @@ function usage(): never {
     "Usage: nativr-package inspect <directory|package.tar.gz> [--source-platform unix|windows] [--output artifact.json]\n" +
       "       nativr-package pack <directory|package.tar.gz> [--source-platform unix|windows] [--output artifact.json]\n" +
       "       nativr-package resolve <artifact.json>... [--output package-set.json]\n" +
-      "       nativr-package install <package>... [--repository URL] [--source-platform unix|windows] [--include-suggests] [--output package-set.json]\n" +
+      "       nativr-package install <package>... [--repository URL] [--source-platform unix|windows] [--suggest PACKAGE]... [--include-suggests] [--output package-set.json]\n" +
       "       nativr-package verify <artifact.json>",
   );
 }
@@ -146,12 +149,14 @@ function parseInstallArguments(arguments_: readonly string[]): {
   readonly output?: string;
   readonly sourcePlatform?: "unix" | "windows";
   readonly includeSuggests: boolean;
+  readonly selectedSuggests: readonly string[];
 } {
   const packages: string[] = [];
   let repository: string | undefined;
   let output: string | undefined;
   let sourcePlatform: "unix" | "windows" | undefined;
   let includeSuggests = false;
+  const selectedSuggests: string[] = [];
   for (let index = 0; index < arguments_.length; index += 1) {
     const argument = arguments_[index] ?? "";
     if (argument === "--include-suggests") {
@@ -161,14 +166,16 @@ function parseInstallArguments(arguments_: readonly string[]): {
     if (
       argument === "--repository" ||
       argument === "--output" ||
-      argument === "--source-platform"
+      argument === "--source-platform" ||
+      argument === "--suggest"
     ) {
       const value = arguments_[index + 1];
       if (value === undefined || value.startsWith("--"))
         throw new Error(`${argument} requires one value.`);
       if (argument === "--repository") repository = value;
       else if (argument === "--output") output = value;
-      else sourcePlatform = parseSourcePlatform(value);
+      else if (argument === "--source-platform") sourcePlatform = parseSourcePlatform(value);
+      else selectedSuggests.push(value);
       index += 1;
       continue;
     }
@@ -181,6 +188,7 @@ function parseInstallArguments(arguments_: readonly string[]): {
     ...(output === undefined ? {} : { output }),
     ...(sourcePlatform === undefined ? {} : { sourcePlatform }),
     includeSuggests,
+    selectedSuggests,
   };
 }
 

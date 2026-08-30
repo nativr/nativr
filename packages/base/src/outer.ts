@@ -3,7 +3,9 @@ import {
   RTypeMismatchError,
   R_NULL,
   characterVector,
+  complexVector,
   createForcedPromise,
+  doubleVector,
   integerVector,
   isFactor,
   isMissing,
@@ -97,8 +99,10 @@ async function builtinOuter(
     invocation.context.checkpoint();
     return Math.floor(index / x.length) + 1;
   });
-  const xValues = subsetVector(x, integerVector(xIndices), invocation.context);
-  const yValues = subsetVector(y, integerVector(yIndices), invocation.context);
+  const selectedX = subsetVector(x, integerVector(xIndices), invocation.context);
+  const selectedY = subsetVector(y, integerVector(yIndices), invocation.context);
+  const xValues = multiplication ? outerNumericValues(selectedX) : selectedX;
+  const yValues = multiplication ? outerNumericValues(selectedY) : selectedY;
   const environment = invocation.currentEnvironment();
   const result = await invocation.invokeLazy(callable, [
     { promise: createForcedPromise(xValues, environment) },
@@ -135,6 +139,14 @@ async function builtinOuter(
     );
   }
   return shaped;
+}
+
+function outerNumericValues(value: RVector): RVector {
+  return value.type === "complex"
+    ? complexVector(value.real, value.imaginary, value.missing)
+    : value.type === "logical" || value.type === "integer" || value.type === "double"
+      ? doubleVector(value.values, value.missing)
+      : value;
 }
 
 function requiredOuterArgument(

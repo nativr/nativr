@@ -1,3 +1,4 @@
+import type { SourceSpan } from "@nativr/ast";
 import {
   REvaluationError,
   RTypeMismatchError,
@@ -8,6 +9,7 @@ import {
   isMissing,
   listValue,
   withAttribute,
+  withClasses,
   withDimensions,
 } from "@nativr/runtime";
 import type {
@@ -20,6 +22,17 @@ import type {
 
 import { matchBuiltinArguments } from "./arguments.js";
 import { parseRColour } from "./colours.js";
+import { evaluateCubicSpline, fmmSecondDerivatives } from "./cubic-spline.js";
+
+const COLOUR_SYNTHETIC_SPAN: SourceSpan = Object.freeze({
+  start: Object.freeze({ offset: 0, line: 1, column: 1 }),
+  end: Object.freeze({ offset: 0, line: 1, column: 1 }),
+});
+const COLOUR_CONVERTER_ARGUMENTS = ["color", "white"] as const;
+const COLOUR_CONVERTER_FORMALS = COLOUR_CONVERTER_ARGUMENTS.map((name) => ({
+  name,
+  span: COLOUR_SYNTHETIC_SPAN,
+}));
 
 export interface ColourRampBuiltinSpec {
   readonly name: "colorRamp" | "colorRampPalette";
@@ -59,6 +72,29 @@ export const CONVERT_COLOUR_BUILTIN_SPEC = {
   implementation: builtinConvertColor,
 } as const;
 
+export const COLOR_CONVERTER_BUILTIN_SPEC = {
+  name: "colorConverter",
+  parameters: ["toXYZ", "fromXYZ", "name", "white", "vectorized"],
+  compatibility: "behavioral",
+  implementation: builtinColorConverter,
+} as const;
+
+export const RGB_TO_HSV_BUILTIN_SPEC = {
+  name: "rgb2hsv",
+  parameters: ["r", "g", "b", "maxColorValue"],
+  compatibility: "behavioral",
+  implementation: builtinRgbToHsv,
+} as const;
+
+export const COLOUR_SPACE_BINDINGS = Object.freeze([
+  {
+    package: "grDevices",
+    name: "colorspaces",
+    value: colourSpacesValue(),
+    compatibility: "behavioral" as const,
+  },
+]);
+
 type Rgba = readonly [number, number, number, number];
 type Triple = readonly [number, number, number];
 
@@ -79,6 +115,253 @@ const XYZ_TO_SRGB: readonly Triple[] = [
 const D65 = SRGB_TO_XYZ.map((row) => row[0] + row[1] + row[2]) as unknown as Triple;
 
 type ConversionSpace = "sRGB" | "Lab" | "XYZ";
+type ConversionTarget =
+  | { readonly kind: "builtin"; readonly space: ConversionSpace }
+  | {
+      readonly kind: "custom";
+      readonly name: string;
+      readonly toXYZ: RValue;
+      readonly fromXYZ: RValue;
+      readonly referenceWhite: RValue;
+    };
+
+async function builtinColorConverter(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched } = matchBuiltinArguments(invocation, COLOR_CONVERTER_BUILTIN_SPEC.parameters);
+  const required = async (name: "toXYZ" | "fromXYZ" | "name") => {
+    const argument = matched.get(name);
+    if (argument === undefined || argument.promise.missing) {
+      throw new REvaluationError("NRE2144", `argument "${name}" is missing, with no default`);
+    }
+    return invocation.force(argument.promise);
+  };
+  const toXYZ = await required("toXYZ");
+  const fromXYZ = await required("fromXYZ");
+  const name = await required("name");
+  const whiteArgument = matched.get("white");
+  const white =
+    whiteArgument === undefined ? R_NULL : await invocation.force(whiteArgument.promise);
+  const vectorized = await rampFlag(invocation, matched.get("vectorized"), false, "vectorized");
+  return withClasses(
+    listValue(
+      [
+        converterFunction(toXYZ, vectorized, "toXYZ"),
+        converterFunction(fromXYZ, vectorized, "fromXYZ"),
+        name,
+        white,
+        white,
+      ],
+      ["toXYZ", "fromXYZ", "name", "white", "reference.white"],
+    ),
+    ["colorConverter"],
+  );
+}
+
+function converterFunction(
+  callable: RValue,
+  vectorized: boolean,
+  direction: "toXYZ" | "fromXYZ",
+): RBuiltin {
+  return colourConverterFunction(`colorConverter.${direction}`, "behavioral", async (call) => {
+    const { matched } = matchBuiltinArguments(call, COLOUR_CONVERTER_ARGUMENTS);
+    const colorArgument = matched.get("color");
+    const whiteArgument = matched.get("white");
+    if (colorArgument === undefined || colorArgument.promise.missing) {
+      throw new REvaluationError("NRE2144", 'argument "color" is missing, with no default');
+    }
+    if (whiteArgument === undefined || whiteArgument.promise.missing) {
+      throw new REvaluationError("NRE2144", 'argument "white" is missing, with no default');
+    }
+    const color = await call.force(colorArgument.promise);
+    const white = await call.force(whiteArgument.promise);
+    if (vectorized) return call.invoke(callable, [{ value: color }, { value: white }]);
+    return invokeConverterByRow(call, callable, color, white);
+  });
+}
+
+function colourConverterFunction(
+  name: string,
+  compatibilityLevel: "api" | "numeric" | "behavioral",
+  implementation: RBuiltin["definition"]["implementation"],
+): RBuiltin {
+  return {
+    type: "builtin",
+    definition: {
+      package: "grDevices",
+      name,
+      kind: "regular",
+      formals: COLOUR_CONVERTER_FORMALS,
+      metadata: {
+        compatibilityLevel,
+        supportedArguments: COLOUR_CONVERTER_ARGUMENTS,
+      },
+      implementation,
+    },
+  };
+}
+
+async function builtinRgbToHsv(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched } = matchBuiltinArguments(invocation, RGB_TO_HSV_BUILTIN_SPEC.parameters);
+  const rArgument = matched.get("r");
+  if (rArgument === undefined || rArgument.promise.missing) {
+    throw new REvaluationError("NRE2144", 'argument "r" is missing, with no default');
+  }
+  const r = await invocation.force(rArgument.promise);
+  const gArgument = matched.get("g");
+  const bArgument = matched.get("b");
+  const g = gArgument === undefined ? R_NULL : await invocation.force(gArgument.promise);
+  const b = bArgument === undefined ? R_NULL : await invocation.force(bArgument.promise);
+  const maximum = await rampNumber(invocation, matched.get("maxColorValue"), 255, "maxColorValue");
+  if (!(maximum > 0)) {
+    throw new RTypeMismatchError("NRT3292", "maxColorValue must be positive");
+  }
+
+  let red: number[];
+  let green: number[];
+  let blue: number[];
+  let columnNames: RValue = R_NULL;
+  if (g.type === "null" && b.type === "null") {
+    if (r.type !== "logical" && r.type !== "integer" && r.type !== "double") {
+      throw new RTypeMismatchError("NRT3292", "rgb matrix must have 3 rows");
+    }
+    const dimensions = r.attributes.get("dim");
+    if (dimensions?.type !== "integer" || dimensions.length !== 2 || dimensions.values[0] !== 3) {
+      throw new RTypeMismatchError("NRT3292", "rgb matrix must have 3 rows");
+    }
+    const columns = dimensions.values[1] ?? 0;
+    red = Array.from({ length: columns }, (_, column) => numericColourEntry(r, column * 3));
+    green = Array.from({ length: columns }, (_, column) => numericColourEntry(r, column * 3 + 1));
+    blue = Array.from({ length: columns }, (_, column) => numericColourEntry(r, column * 3 + 2));
+    const dimnames = r.attributes.get("dimnames");
+    if (dimnames?.type === "list") columnNames = dimnames.values[1] ?? R_NULL;
+  } else {
+    if (g.type === "null" || b.type === "null") {
+      throw new RTypeMismatchError("NRT3292", "arguments 'g' and 'b' must be supplied together");
+    }
+    if (!isNumericColourVector(r) || !isNumericColourVector(g) || !isNumericColourVector(b)) {
+      throw new RTypeMismatchError("NRT3292", "rgb values must be numeric");
+    }
+    const vectors = [r, g, b];
+    const length = Math.max(...vectors.map((value) => value.length));
+    red = Array.from({ length }, (_, index) => numericColourEntry(r, index % r.length));
+    green = Array.from({ length }, (_, index) => numericColourEntry(g, index % g.length));
+    blue = Array.from({ length }, (_, index) => numericColourEntry(b, index % b.length));
+  }
+  const columns = red.length;
+  const values = new Float64Array(columns * 3);
+  for (let column = 0; column < columns; column += 1) {
+    const channels = [red[column]!, green[column]!, blue[column]!];
+    if (channels.some((value) => !Number.isFinite(value) || value < 0 || value > maximum)) {
+      throw new RTypeMismatchError("NRT3292", "rgb values must be in [0, maxColorValue]");
+    }
+    const high = Math.max(...channels);
+    const low = Math.min(...channels);
+    const delta = high - low;
+    let hue = 0;
+    if (delta !== 0) {
+      if (high === channels[0]) hue = ((channels[1]! - channels[2]!) / delta) % 6;
+      else if (high === channels[1]) hue = (channels[2]! - channels[0]!) / delta + 2;
+      else hue = (channels[0]! - channels[1]!) / delta + 4;
+      hue = (((hue / 6) % 1) + 1) % 1;
+    }
+    values[column * 3] = hue;
+    values[column * 3 + 1] = high === 0 ? 0 : delta / high;
+    values[column * 3 + 2] = high / maximum;
+  }
+  let output = withDimensions(doubleVector(values), [3, columns]);
+  output = withAttribute(
+    output,
+    "dimnames",
+    listValue([characterVector(["h", "s", "v"]), columnNames]),
+  );
+  return output;
+}
+
+function isNumericColourVector(
+  value: RValue,
+): value is Extract<RValue, { type: "logical" | "integer" | "double" }> {
+  return value.type === "logical" || value.type === "integer" || value.type === "double";
+}
+
+function numericColourEntry(value: RValue, index: number): number {
+  if (
+    (value.type !== "logical" && value.type !== "integer" && value.type !== "double") ||
+    value.length === 0 ||
+    isMissing(value, index)
+  ) {
+    return Number.NaN;
+  }
+  return value.values[index] ?? Number.NaN;
+}
+
+async function invokeConverterByRow(
+  invocation: BuiltinInvocation,
+  callable: RValue,
+  color: RValue,
+  white: RValue,
+): Promise<RValue> {
+  if (color.type !== "logical" && color.type !== "integer" && color.type !== "double") {
+    throw new RTypeMismatchError("NRT3292", "color converter input must be a numeric matrix.");
+  }
+  const dimensions = color.attributes.get("dim");
+  if (dimensions?.type !== "integer" || dimensions.length < 1) {
+    throw new REvaluationError("NRE2144", "dim(X) must have a positive length");
+  }
+  const rows = dimensions.values[0] ?? 0;
+  const columns = dimensions.length === 1 ? 1 : (dimensions.values[1] ?? 0);
+  if (dimensions.length !== 2 || rows * columns !== color.length) {
+    throw new RTypeMismatchError("NRT3292", "color converter input must be a numeric matrix.");
+  }
+  if (rows === 0) return withDimensions(doubleVector([]), [0, 0]);
+
+  type ConverterNumeric = Extract<RValue, { type: "logical" | "integer" | "double" }>;
+  const rowResults: ConverterNumeric[] = [];
+  for (let row = 0; row < rows; row += 1) {
+    invocation.context.checkpoint();
+    const values = new Float64Array(columns);
+    const missing = new Uint8Array(columns);
+    for (let column = 0; column < columns; column += 1) {
+      const source = row + column * rows;
+      if (isMissing(color, source)) missing[column] = 1;
+      else values[column] = color.values[source] ?? Number.NaN;
+    }
+    const result = await invocation.invoke(callable, [
+      { value: doubleVector(values, missing.some((entry) => entry === 1) ? missing : undefined) },
+      { value: white },
+    ]);
+    if (result.type !== "logical" && result.type !== "integer" && result.type !== "double") {
+      throw new RTypeMismatchError("NRT3292", "color converter results must be numeric vectors.");
+    }
+    rowResults.push(result);
+  }
+  const resultColumns = rowResults[0]?.length ?? 0;
+  const values = new Float64Array(rows * resultColumns);
+  const missing = new Uint8Array(rows * resultColumns);
+  for (let row = 0; row < rows; row += 1) {
+    const result = rowResults[row]!;
+    if (result.length !== resultColumns) {
+      throw new RTypeMismatchError(
+        "NRT3292",
+        "color converter results must be equal-length numeric vectors.",
+      );
+    }
+    for (let column = 0; column < resultColumns; column += 1) {
+      const target = row + column * rows;
+      if (isMissing(result, column)) missing[target] = 1;
+      else values[target] = result.values[column] ?? Number.NaN;
+    }
+  }
+  let output = withDimensions(
+    doubleVector(values, missing.some((entry) => entry === 1) ? missing : undefined),
+    [rows, resultColumns],
+  );
+  const inputDimnames = color.attributes.get("dimnames");
+  const rowNames = inputDimnames?.type === "list" ? (inputDimnames.values[0] ?? R_NULL) : R_NULL;
+  const firstNames = rowResults[0]?.attributes.get("names") ?? R_NULL;
+  if (rowNames.type !== "null" || firstNames.type !== "null") {
+    output = withAttribute(output, "dimnames", listValue([rowNames, firstNames]));
+  }
+  return output;
+}
 
 async function builtinConvertColor(invocation: BuiltinInvocation): Promise<RValue> {
   const parameters = CONVERT_COLOUR_BUILTIN_SPEC.parameters;
@@ -91,8 +374,8 @@ async function builtinConvertColor(invocation: BuiltinInvocation): Promise<RValu
     return argument.promise;
   };
   const color = await invocation.force(requirePromise("color"));
-  const from = conversionSpace(await invocation.force(requirePromise("from")), "from");
-  const to = conversionSpace(await invocation.force(requirePromise("to")), "to");
+  const from = conversionTarget(await invocation.force(requirePromise("from")), "from");
+  const to = conversionTarget(await invocation.force(requirePromise("to")), "to");
   for (const name of ["from.ref.white", "to.ref.white"] as const) {
     const argument = matched.get(name);
     if (argument !== undefined && (await invocation.force(argument.promise)).type !== "null") {
@@ -117,30 +400,43 @@ async function builtinConvertColor(invocation: BuiltinInvocation): Promise<RValu
   if (rows < 0 || (matrix && dimensions.values[1] !== 3) || rows * 3 !== color.length) {
     throw new RTypeMismatchError("NRT3292", "'color' must have exactly three columns.");
   }
-  const values = new Float64Array(rows * 3);
-  const missing = new Uint8Array(rows * 3);
-  for (let row = 0; row < rows; row += 1) {
-    invocation.context.checkpoint();
-    const source = [0, 1, 2].map((column) => row + column * rows);
-    if (source.some((index) => isMissing(color, index))) {
-      for (const index of source) missing[index] = 1;
-      continue;
-    }
-    const input = source.map(
-      (index) => (color.values[index] ?? Number.NaN) / scaleIn,
-    ) as unknown as Triple;
-    const xyz = conversionToXyz(input, from);
-    const converted = conversionFromXyz(xyz, to, clip);
-    for (let column = 0; column < 3; column += 1) {
-      values[row + column * rows] = (converted[column] ?? Number.NaN) * scaleOut;
-    }
-  }
-  invocation.context.allocate(values.length);
-  let output = withDimensions(
-    doubleVector(values, missing.some((entry) => entry === 1) ? missing : undefined),
-    [rows, 3],
-  );
-  if (to === "Lab") {
+  let current = normalizedConversionMatrix(color, rows, scaleIn);
+  current =
+    from.kind === "builtin"
+      ? applyBuiltinConversion(
+          current,
+          rows,
+          (value) => conversionToXyz(value, from.space),
+          () => invocation.context.checkpoint(),
+        )
+      : await invokeCustomConversion(
+          invocation,
+          from.toXYZ,
+          current,
+          from.referenceWhite,
+          rows,
+          `${from.name}$toXYZ`,
+        );
+  current =
+    to.kind === "builtin"
+      ? applyBuiltinConversion(
+          current,
+          rows,
+          (value) => conversionFromXyz(value, to.space, clip),
+          () => invocation.context.checkpoint(),
+        )
+      : await invokeCustomConversion(
+          invocation,
+          to.fromXYZ,
+          current,
+          to.referenceWhite,
+          rows,
+          `${to.name}$fromXYZ`,
+        );
+  const scaled = Float64Array.from(current.values, (value) => value * scaleOut);
+  invocation.context.allocate(scaled.length);
+  let output = withDimensions(doubleVector(scaled, current.missing), [rows, 3]);
+  if (to.kind === "builtin" && to.space === "Lab") {
     output = withAttribute(
       output,
       "dimnames",
@@ -150,16 +446,123 @@ async function builtinConvertColor(invocation: BuiltinInvocation): Promise<RValu
   return output;
 }
 
-function conversionSpace(value: RValue, name: "from" | "to"): ConversionSpace {
+function conversionTarget(value: RValue, name: "from" | "to"): ConversionTarget {
+  if (value.type === "list" && hasClass(value, "colorConverter")) {
+    const toXYZ = converterMember(value, "toXYZ");
+    const fromXYZ = converterMember(value, "fromXYZ");
+    const converterName = converterMember(value, "name");
+    const referenceWhite = converterMember(value, "reference.white");
+    return {
+      kind: "custom",
+      name:
+        converterName.type === "character" &&
+        converterName.length > 0 &&
+        !isMissing(converterName, 0)
+          ? (converterName.values[0] ?? "custom")
+          : "custom",
+      toXYZ,
+      fromXYZ,
+      referenceWhite,
+    };
+  }
   if (value.type !== "character" || value.length !== 1 || isMissing(value, 0)) {
     throw new RTypeMismatchError("NRT3292", `'${name}' must name one colour space.`);
   }
   const input = value.values[0] ?? "";
-  if (input === "sRGB" || input === "Lab" || input === "XYZ") return input;
+  if (input === "sRGB" || input === "Lab" || input === "XYZ") {
+    return { kind: "builtin", space: input };
+  }
   throw new RUnsupportedFeatureError(
     "NRU6149",
     `convertColor() does not support colour space '${input}'.`,
   );
+}
+
+function hasClass(value: RValue, className: string): boolean {
+  if (!("attributes" in value)) return false;
+  const classes = value.attributes.get("class");
+  return (
+    classes?.type === "character" &&
+    classes.values.some((entry, index) => !isMissing(classes, index) && entry === className)
+  );
+}
+
+function converterMember(value: Extract<RValue, { type: "list" }>, name: string): RValue {
+  const names = value.attributes.get("names");
+  const index =
+    names?.type === "character"
+      ? names.values.findIndex((entry, position) => !isMissing(names, position) && entry === name)
+      : -1;
+  if (index < 0) {
+    throw new RTypeMismatchError("NRT3292", `invalid colorConverter object: missing '${name}'.`);
+  }
+  return value.values[index] ?? R_NULL;
+}
+
+function normalizedConversionMatrix(
+  color: Extract<RValue, { type: "logical" | "integer" | "double" }>,
+  rows: number,
+  scaleIn: number,
+): { readonly values: Float64Array; readonly missing?: Uint8Array } {
+  const values = new Float64Array(rows * 3);
+  const missing = new Uint8Array(rows * 3);
+  for (let index = 0; index < values.length; index += 1) {
+    if (isMissing(color, index)) missing[index] = 1;
+    else values[index] = (color.values[index] ?? Number.NaN) / scaleIn;
+  }
+  return { values, ...(missing.some((entry) => entry === 1) ? { missing } : {}) };
+}
+
+function applyBuiltinConversion(
+  input: { readonly values: Float64Array; readonly missing?: Uint8Array },
+  rows: number,
+  convert: (value: Triple) => Triple,
+  checkpoint?: () => void,
+): { readonly values: Float64Array; readonly missing?: Uint8Array } {
+  const values = new Float64Array(rows * 3);
+  const missing = input.missing === undefined ? undefined : new Uint8Array(input.missing);
+  for (let row = 0; row < rows; row += 1) {
+    checkpoint?.();
+    const indices = [row, row + rows, row + 2 * rows];
+    if (indices.some((index) => input.missing?.[index] === 1)) continue;
+    const converted = convert(
+      indices.map((index) => input.values[index] ?? Number.NaN) as unknown as Triple,
+    );
+    for (let column = 0; column < 3; column += 1) values[row + column * rows] = converted[column]!;
+  }
+  return { values, ...(missing === undefined ? {} : { missing }) };
+}
+
+async function invokeCustomConversion(
+  invocation: BuiltinInvocation,
+  callable: RValue,
+  input: { readonly values: Float64Array; readonly missing?: Uint8Array },
+  white: RValue,
+  rows: number,
+  label: string,
+): Promise<{ readonly values: Float64Array; readonly missing?: Uint8Array }> {
+  const matrix = withDimensions(doubleVector(input.values, input.missing), [rows, 3]);
+  const converted = await invocation.invoke(callable, [{ value: matrix }, { value: white }]);
+  if (converted.type !== "logical" && converted.type !== "integer" && converted.type !== "double") {
+    throw new RTypeMismatchError("NRT3292", `${label} must return a numeric three-column matrix.`);
+  }
+  const dimensions = converted.attributes.get("dim");
+  if (
+    dimensions?.type !== "integer" ||
+    dimensions.length !== 2 ||
+    dimensions.values[0] !== rows ||
+    dimensions.values[1] !== 3 ||
+    converted.length !== rows * 3
+  ) {
+    throw new RTypeMismatchError("NRT3292", `${label} must return a numeric three-column matrix.`);
+  }
+  const values = new Float64Array(converted.length);
+  const missing = new Uint8Array(converted.length);
+  for (let index = 0; index < converted.length; index += 1) {
+    if (isMissing(converted, index)) missing[index] = 1;
+    else values[index] = converted.values[index] ?? Number.NaN;
+  }
+  return { values, ...(missing.some((entry) => entry === 1) ? { missing } : {}) };
 }
 
 function conversionToXyz(value: Triple, space: ConversionSpace): Triple {
@@ -172,6 +575,140 @@ function conversionFromXyz(value: Triple, space: ConversionSpace, clip: boolean)
   return space === "sRGB" ? xyzToSrgb(value, clip) : xyzToLab(value);
 }
 
+function colourSpacesValue(): RValue {
+  const names = ["XYZ", "Apple RGB", "sRGB", "CIE RGB", "Lab", "Luv"] as const;
+  return listValue(
+    names.map((name) => {
+      if (name === "XYZ") return builtinColourConverter(name, "XYZ", R_NULL);
+      if (name === "sRGB") {
+        return builtinColourConverter(
+          name,
+          "sRGB",
+          characterVector(["D65"]),
+          ["RGBcolorConverter", "colorConverter"],
+          characterVector(["sRGB"]),
+        );
+      }
+      if (name === "Lab") return builtinColourConverter(name, "Lab", R_NULL);
+      const white = characterVector([name === "CIE RGB" ? "E" : "D65"]);
+      const gamma = doubleVector([name === "Apple RGB" ? 1.8 : 2.2]);
+      return unavailableColourConverter(name, white, name === "Luv" ? undefined : gamma);
+    }),
+    names,
+  );
+}
+
+function builtinColourConverter(
+  name: string,
+  space: ConversionSpace,
+  white: RValue,
+  classes: readonly string[] = ["colorConverter"],
+  gamma?: RValue,
+): RValue {
+  const values = [
+    builtinColourSpaceFunction(name, space, "toXYZ"),
+    builtinColourSpaceFunction(name, space, "fromXYZ"),
+    characterVector([name]),
+    white,
+    white,
+    ...(gamma === undefined ? [] : [gamma]),
+  ];
+  const names = [
+    "toXYZ",
+    "fromXYZ",
+    "name",
+    "white",
+    "reference.white",
+    ...(gamma === undefined ? [] : ["gamma"]),
+  ];
+  return withClasses(listValue(values, names), classes);
+}
+
+function unavailableColourConverter(name: string, white: RValue, gamma?: RValue): RValue {
+  const unavailable = (direction: "toXYZ" | "fromXYZ") =>
+    colourConverterFunction(`colorspaces.${name}.${direction}`, "api", () => {
+      throw new RUnsupportedFeatureError(
+        "NRU6149",
+        `The ${name} colour-space converter is outside the current numeric contract.`,
+      );
+    });
+  const values = [
+    unavailable("toXYZ"),
+    unavailable("fromXYZ"),
+    characterVector([name]),
+    white,
+    white,
+    ...(gamma === undefined ? [] : [gamma]),
+  ];
+  const names = [
+    "toXYZ",
+    "fromXYZ",
+    "name",
+    "white",
+    "reference.white",
+    ...(gamma === undefined ? [] : ["gamma"]),
+  ];
+  return withClasses(
+    listValue(values, names),
+    gamma === undefined ? ["colorConverter"] : ["RGBcolorConverter", "colorConverter"],
+  );
+}
+
+function builtinColourSpaceFunction(
+  name: string,
+  space: ConversionSpace,
+  direction: "toXYZ" | "fromXYZ",
+): RBuiltin {
+  return colourConverterFunction(
+    `colorspaces.${name}.${direction}`,
+    "numeric",
+    async (invocation) => {
+      const { matched } = matchBuiltinArguments(invocation, COLOUR_CONVERTER_ARGUMENTS);
+      const argument = matched.get("color");
+      if (argument === undefined || argument.promise.missing) {
+        throw new REvaluationError("NRE2144", 'argument "color" is missing, with no default');
+      }
+      const color = await invocation.force(argument.promise);
+      if (color.type !== "logical" && color.type !== "integer" && color.type !== "double") {
+        throw new RTypeMismatchError("NRT3292", "colour converter input must be numeric.");
+      }
+      const dimensions = color.attributes.get("dim");
+      const rows =
+        dimensions?.type === "integer" && dimensions.length === 2
+          ? (dimensions.values[0] ?? 0)
+          : color.length === 3
+            ? 1
+            : -1;
+      if (
+        rows < 0 ||
+        (dimensions?.type === "integer" && dimensions.values[1] !== 3) ||
+        rows * 3 !== color.length
+      ) {
+        throw new RTypeMismatchError("NRT3292", "colour converter input must have three columns.");
+      }
+      const normalized = normalizedConversionMatrix(color, rows, 1);
+      const converted = applyBuiltinConversion(
+        normalized,
+        rows,
+        direction === "toXYZ"
+          ? (value) => conversionToXyz(value, space)
+          : (value) => conversionFromXyz(value, space, false),
+      );
+      let output = withDimensions(doubleVector(converted.values, converted.missing), [rows, 3]);
+      const columnNames =
+        direction === "toXYZ"
+          ? ["X", "Y", "Z"]
+          : space === "Lab"
+            ? ["L", "a", "b"]
+            : space === "sRGB"
+              ? ["R", "G", "B"]
+              : ["X", "Y", "Z"];
+      output = withAttribute(output, "dimnames", listValue([R_NULL, characterVector(columnNames)]));
+      return output;
+    },
+  );
+}
+
 async function builtinColorRamp(invocation: BuiltinInvocation): Promise<RValue> {
   const settings = await rampSettings(invocation, "colorRamp");
   const ramp: RBuiltin = {
@@ -181,10 +718,7 @@ async function builtinColorRamp(invocation: BuiltinInvocation): Promise<RValue> 
       name: "colorRamp",
       kind: "regular",
       metadata: {
-        package: "grDevices",
-        name: "colorRamp",
         compatibilityLevel: "numeric",
-        referenceVersion: "R 4.6.x documented behavior",
         supportedArguments: ["x"],
       },
       implementation: async (call) => {
@@ -254,10 +788,7 @@ async function builtinColorRampPalette(invocation: BuiltinInvocation): Promise<R
       name: "colorRampPalette",
       kind: "regular",
       metadata: {
-        package: "grDevices",
-        name: "colorRampPalette",
         compatibilityLevel: "numeric",
-        referenceVersion: "R 4.6.x documented behavior",
         supportedArguments: ["n"],
       },
       implementation: async (call) => {
@@ -348,7 +879,7 @@ async function rampSettings(
   );
   const secondDerivatives =
     interpolate === "spline" && coordinates.length > 1
-      ? channelCoordinates.map((values) => splineSecondDerivatives(positions, values))
+      ? channelCoordinates.map((values) => fmmSecondDerivatives(positions, values))
       : undefined;
   return {
     alpha,
@@ -512,7 +1043,12 @@ function interpolateRamp(
   if (coordinates.length === 1) return coordinates[0]!.slice();
   if (method === "spline") {
     return (channelCoordinates ?? []).map((values, channel) =>
-      interpolateSpline(point, positions, values, secondDerivatives?.[channel]),
+      evaluateCubicSpline(
+        point,
+        positions,
+        values,
+        secondDerivatives?.[channel] ?? fmmSecondDerivatives(positions, values),
+      ),
     );
   }
   const left = rampInterval(point, positions);
@@ -528,39 +1064,6 @@ function interpolateRamp(
  * Evaluate the not-a-knot cubic used by GNU R's default FMM spline path.
  * The banded solve is linear in the number of colour anchors and keeps palette creation bounded.
  */
-function interpolateSpline(
-  point: number,
-  positions: readonly number[],
-  values: readonly number[],
-  preparedSecond?: Float64Array,
-): number {
-  if (values.length === 2) {
-    return interpolateRamp(
-      point,
-      positions,
-      values.map((value) => [value]),
-      "linear",
-      undefined,
-    )[0]!;
-  }
-  const second = preparedSecond ?? splineSecondDerivatives(positions, values);
-  const left = rampInterval(point, positions);
-  const start = positions[left] ?? 0;
-  const end = positions[left + 1] ?? 1;
-  const width = end - start;
-  if (width === 0) return values[left] ?? 0;
-  const before = (end - point) / width;
-  const after = (point - start) / width;
-  return (
-    before * (values[left] ?? 0) +
-    after * (values[left + 1] ?? 0) +
-    (((before ** 3 - before) * (second[left] ?? 0) +
-      (after ** 3 - after) * (second[left + 1] ?? 0)) *
-      width ** 2) /
-      6
-  );
-}
-
 function rampInterval(point: number, positions: readonly number[]): number {
   let low = 0;
   let high = positions.length - 1;
@@ -570,79 +1073,6 @@ function rampInterval(point: number, positions: readonly number[]): number {
     else high = middle;
   }
   return Math.min(low, positions.length - 2);
-}
-
-function splineSecondDerivatives(
-  positions: readonly number[],
-  values: readonly number[],
-): Float64Array {
-  const count = values.length;
-  const result = new Float64Array(count);
-  if (count <= 2) return result;
-  if (count === 3) {
-    const left = (positions[1] ?? 0) - (positions[0] ?? 0);
-    const right = (positions[2] ?? 0) - (positions[1] ?? 0);
-    const curvature =
-      (2 *
-        (((values[2] ?? 0) - (values[1] ?? 0)) / right -
-          ((values[1] ?? 0) - (values[0] ?? 0)) / left)) /
-      (left + right);
-    result.fill(curvature);
-    return result;
-  }
-
-  const lower2 = new Float64Array(count);
-  const lower1 = new Float64Array(count);
-  const diagonal = new Float64Array(count);
-  const upper1 = new Float64Array(count);
-  const upper2 = new Float64Array(count);
-  const right = new Float64Array(count);
-  const first = (positions[1] ?? 0) - (positions[0] ?? 0);
-  const second = (positions[2] ?? 0) - (positions[1] ?? 0);
-  diagonal[0] = -second;
-  upper1[0] = first + second;
-  upper2[0] = -first;
-  for (let index = 1; index < count - 1; index += 1) {
-    const before = (positions[index] ?? 0) - (positions[index - 1] ?? 0);
-    const after = (positions[index + 1] ?? 0) - (positions[index] ?? 0);
-    lower1[index] = before;
-    diagonal[index] = 2 * (before + after);
-    upper1[index] = after;
-    right[index] =
-      6 *
-      (((values[index + 1] ?? 0) - (values[index] ?? 0)) / after -
-        ((values[index] ?? 0) - (values[index - 1] ?? 0)) / before);
-  }
-  const penultimate = (positions[count - 2] ?? 0) - (positions[count - 3] ?? 0);
-  const last = (positions[count - 1] ?? 0) - (positions[count - 2] ?? 0);
-  lower2[count - 1] = -last;
-  lower1[count - 1] = penultimate + last;
-  diagonal[count - 1] = -penultimate;
-
-  for (let pivot = 0; pivot < count; pivot += 1) {
-    if (pivot + 1 < count) {
-      const factor = lower1[pivot + 1]! / diagonal[pivot]!;
-      lower1[pivot + 1] = 0;
-      diagonal[pivot + 1] = diagonal[pivot + 1]! - factor * upper1[pivot]!;
-      upper1[pivot + 1] = upper1[pivot + 1]! - factor * upper2[pivot]!;
-      right[pivot + 1] = right[pivot + 1]! - factor * right[pivot]!;
-    }
-    if (pivot + 2 < count) {
-      const factor = lower2[pivot + 2]! / diagonal[pivot]!;
-      lower2[pivot + 2] = 0;
-      lower1[pivot + 2] = lower1[pivot + 2]! - factor * upper1[pivot]!;
-      diagonal[pivot + 2] = diagonal[pivot + 2]! - factor * upper2[pivot]!;
-      right[pivot + 2] = right[pivot + 2]! - factor * right[pivot]!;
-    }
-  }
-  for (let index = count - 1; index >= 0; index -= 1) {
-    result[index] =
-      (right[index]! -
-        upper1[index]! * (result[index + 1] ?? 0) -
-        upper2[index]! * (result[index + 2] ?? 0)) /
-      diagonal[index]!;
-  }
-  return result;
 }
 
 function srgbToLab(rgb: Triple): Triple {

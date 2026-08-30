@@ -193,7 +193,7 @@ export async function createR(options: CreateROptions = {}): Promise<NativRSessi
     limits: effectiveLimits,
     ...(options.packages === undefined
       ? {}
-      : { packages: snapshotPackageBundles(options.packages) }),
+      : { packages: snapshotPackageBundles(options.packages, effectiveLimits) }),
     ...(options.environmentVariables === undefined
       ? {}
       : { environmentVariables: snapshotEnvironmentVariables(options.environmentVariables) }),
@@ -289,7 +289,12 @@ function resolveRuntimeLimits(
   if (selected === undefined) {
     throw new NativRError("NRS5009", `Unknown runtime profile '${String(profile)}'.`);
   }
-  return Object.freeze({ ...selected, ...overrides });
+  const maxAllocatedElements =
+    overrides?.maxAllocatedElements ??
+    (overrides?.maxVectorLength === undefined
+      ? selected.maxAllocatedElements
+      : overrides.maxVectorLength * 10);
+  return Object.freeze({ ...selected, ...overrides, maxAllocatedElements });
 }
 
 function snapshotEnvironmentVariables(
@@ -445,12 +450,15 @@ function invalidNativeRoutine(moduleIndex: number, routineIndex: number): NativR
 
 function snapshotPackageBundles(
   packages: readonly PureRPackageBundle[],
+  limits: RuntimeLimits,
 ): readonly PureRPackageBundle[] {
   const packageInputs = asUnknownArray(packages);
   if (packageInputs === undefined) {
     throw new NativRError("NRS5003", "createR(packages=) requires an array of package bundles.");
   }
-  return Object.freeze(
+  let resourceCount = 0;
+  let resourceBytes = 0;
+  const snapshot = Object.freeze(
     packageInputs.map((bundle, bundleIndex) => {
       if (!isUnknownRecord(bundle)) {
         throw new NativRError(
@@ -512,12 +520,33 @@ function snapshotPackageBundles(
                 `Package resource at index ${bundleIndex}:${resourceIndex} has an invalid shape.`,
               );
             }
+            resourceCount += 1;
+            resourceBytes += path.length + Math.ceil((data.length * 3) / 4);
+            if (
+              resourceCount > limits.maxVectorLength ||
+              !Number.isSafeInteger(resourceBytes) ||
+              resourceBytes > limits.maxPackageResourceBytes
+            ) {
+              throw new RResourceLimitError(
+                "NRL4002",
+                "Pure-R package resource limit exceeded before Worker transfer.",
+                {
+                  details: {
+                    maxResourceFiles: limits.maxVectorLength,
+                    maxResourceBytes: limits.maxPackageResourceBytes,
+                    resourceCount,
+                    resourceBytes,
+                  },
+                },
+              );
+            }
             return Object.freeze({ path, data });
           }),
         ),
       });
     }),
   );
+  return snapshot;
 }
 
 function asUnknownArray(value: unknown): readonly unknown[] | undefined {
@@ -920,11 +949,15 @@ class InlineSession implements NativRSession {
     return this.#enqueue(async () => {
       let cleanupError: Error | undefined;
       try {
-        await closeSocketSession(this.#options, this.#sessionProcessId);
+        await this.#host.reset();
       } catch (error) {
         cleanupError = error instanceof Error ? error : new NativRError("NRE2256", String(error));
       }
-      this.#host.reset();
+      try {
+        await closeSocketSession(this.#options, this.#sessionProcessId);
+      } catch (error) {
+        cleanupError ??= error instanceof Error ? error : new NativRError("NRE2256", String(error));
+      }
       if (cleanupError !== undefined) throw cleanupError;
     });
   }
@@ -940,9 +973,9 @@ class InlineSession implements NativRSession {
       this.#disposed = true;
       await this.#queue.catch(() => undefined);
       try {
-        await closeSocketSession(this.#options, this.#sessionProcessId);
+        await this.#host.dispose();
       } finally {
-        this.#host.dispose();
+        await closeSocketSession(this.#options, this.#sessionProcessId);
       }
     }
   }
@@ -1080,12 +1113,16 @@ class WorkerSession implements NativRSession {
     return this.#enqueue(async () => {
       let cleanupError: Error | undefined;
       try {
-        await closeSocketSession(this.#options, this.#sessionProcessId);
+        const payload = await this.#request({ kind: "reset" });
+        if (payload.kind !== "void") throw protocolPayloadError("void", payload.kind);
       } catch (error) {
         cleanupError = error instanceof Error ? error : new NativRError("NRE2256", String(error));
       }
-      const payload = await this.#request({ kind: "reset" });
-      if (payload.kind !== "void") throw protocolPayloadError("void", payload.kind);
+      try {
+        await closeSocketSession(this.#options, this.#sessionProcessId);
+      } catch (error) {
+        cleanupError ??= error instanceof Error ? error : new NativRError("NRE2256", String(error));
+      }
       if (cleanupError !== undefined) throw cleanupError;
     });
   }
@@ -1103,10 +1140,11 @@ class WorkerSession implements NativRSession {
     if (this.#disposed) return;
     this.#disposed = true;
     try {
-      await closeSocketSession(this.#options, this.#sessionProcessId);
       await this.#request({ kind: "dispose" });
     } catch {
       // Termination below remains authoritative when the Worker is already unhealthy.
+    } finally {
+      await closeSocketSession(this.#options, this.#sessionProcessId).catch(() => undefined);
     }
     this.#rejectPending(new RRuntimeDisposedError("NRS5001", "The session was disposed."));
     this.#worker.terminate();

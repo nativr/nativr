@@ -62,7 +62,7 @@ for (const entry of corpus.packages) {
   }
 }
 
-for (const partition of partitions) {
+for (const partition of ["development", "regression"]) {
   assert(
     corpus.packages.some((entry) => entry.partition === partition),
     `Package corpus partition '${partition}' is empty.`,

@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 428 KiB gzip;
+- Worker JavaScript: 734 KiB gzip;
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
@@ -441,6 +441,93 @@ existing line I/O, `cat()`, and `capture.output()` through it. The implementatio
 dependency, host filesystem adapter, network path, or execution backend. The measured Worker is
 317.7 KiB gzip, so the ceiling rises narrowly to 318 KiB. Client and parser-Wasm budgets remain
 unchanged.
+
+## Profile 0.519 bulk sequence and RNG state publication
+
+The prior RNG hot path rebuilt and assigned the full `.Random.seed` vector after every generated
+scalar. Bulk `runif` and `rnorm` now defer that publication until the vector is complete, preserving
+the exact stream and externally visible final seed. Resource polling is bounded to every 4,096
+elements for these bulk kernels and `:`, so cancellation and elapsed-time enforcement remain
+cooperative without millions of redundant clock reads. On the local Windows/Node 24 package-test
+run, the unchanged rbenchmark check including its deliberately heavy installed example completes in
+about one minute instead of failing the execution-step guard or running indefinitely.
+
+Profile 0.342 adds POSIXlt S3 extraction, balanced-state normalization, and C-locale month parsing.
+The production Worker measures 530,400 bytes gzip, 582 bytes above Profile 0.341 and 32 bytes below
+the existing 518 KiB ceiling. The budget therefore remains 518 KiB. The 150 KiB public-client and
+1.5 MiB combined-parser-Wasm ceilings are unchanged.
+
+Profile 0.343 adds memoized external LazyData bindings, linear canonical-base64 validation,
+transport-byte accounting, and dense factor contrasts. A clean production build measures the Worker
+at 532,132 bytes gzip, 1,732 bytes above Profile 0.342. This exceeds both the former 518 KiB ceiling
+and a 519 KiB ceiling, so the explicit budget rises by the minimum whole-KiB increment to 520 KiB,
+leaving 348 bytes of measured headroom. Build-time xz normalization is confined to package-tools and
+does not enter the Worker. The 150 KiB public-client and 1.5 MiB combined-parser-Wasm ceilings are
+unchanged.
+
+Profile 0.344 removes the character-to-symbol promotion branch from generic language reconstruction
+and adds no dependency or execution backend. A clean production build measures the Worker at 532,096
+bytes gzip, 36 bytes below Profile 0.343 and below the unchanged 520 KiB ceiling, leaving 384 bytes
+of measured headroom. The 150 KiB public-client and 1.5 MiB combined-parser-Wasm ceilings remain
+unchanged.
+
+Profile 0.345 adds only package-corpus/test evidence and updates the fixed-width compatibility
+profile string; it adds no runtime path or dependency. A clean production build measures the Worker
+at 532,097 bytes gzip, one byte above Profile 0.344 and below the unchanged 520 KiB ceiling, leaving
+383 bytes of measured headroom. The 150 KiB public-client and 1.5 MiB combined-parser-Wasm ceilings
+remain unchanged.
+
+Profile 0.346 adds browser device creation, arrow drawing, physical aspect-ratio window expansion,
+axis-style and polygon controls, and `NULL`-omitting matrix binding. A clean production build
+measures the Worker at 533,905 bytes gzip, 1,808 bytes above Profile 0.345. This exceeds both the
+former 520 KiB ceiling and a 521 KiB ceiling, so the explicit budget rises by the minimum whole-KiB
+increment to 522 KiB, leaving 623 bytes of headroom. The implementation adds no dependency, host
+capability, network path, or execution backend. The 150 KiB public-client and 1.5 MiB combined
+parser-Wasm ceilings remain unchanged.
+
+Profile 0.347 adds indexed `sort.default` output and corrects a build-time vignette check field; the
+package-tools correction does not enter the Worker. A clean production build measures the Worker at
+534,125 bytes gzip, 220 bytes above Profile 0.346 and below the unchanged 522 KiB ceiling, leaving
+403 bytes of headroom. The implementation adds no dependency, host capability, network path, or
+execution backend. The 150 KiB public-client and 1.5 MiB combined parser-Wasm ceilings remain
+unchanged.
+
+Profile 0.348 corrects exact-shadowed partial argument matching and adds reusable Pearson
+data-frame/matrix covariance and correlation. A clean production build measures the Worker at
+535,017 bytes gzip, 892 bytes above Profile 0.347 and 489 bytes above the former 522 KiB ceiling.
+The explicit budget therefore rises by the minimum whole-KiB increment to 523 KiB, leaving 535 bytes
+of headroom. The implementation adds no dependency, host capability, network path, or execution
+backend. The 150 KiB public-client and 1.5 MiB combined parser-Wasm ceilings remain unchanged.
+
+Profile 0.349 adds finite distance calculation, hierarchical linkage updates, recursive dendrogram
+conversion/order, and array-coordinate `which`. A clean production build measures the Worker at
+538,278 bytes gzip, 3,261 bytes above Profile 0.348 and 2,726 bytes above the former 523 KiB
+ceiling. The explicit budget therefore rises by the minimum whole-KiB increment to 526 KiB, leaving
+346 bytes of headroom. The implementation adds no dependency, host capability, network path, or
+execution backend. The 150 KiB public-client and 1.5 MiB combined parser-Wasm ceilings remain
+unchanged.
+
+Profile 0.350 adds user-coordinate symbol geometry and multi-key ordering. A clean production build
+measures the Worker at 539,850 bytes gzip, 1,572 bytes above Profile 0.349 and 1,226 bytes above the
+former 526 KiB ceiling. A 527 KiB ceiling would still be 202 bytes too small, so the explicit budget
+rises by the minimum sufficient whole-KiB increment to 528 KiB, leaving 822 bytes of headroom. The
+implementation adds no dependency, host capability, network path, or execution backend. The 150 KiB
+public-client and 1.5 MiB combined parser-Wasm ceilings remain unchanged.
+
+Profile 0.351 adds validated merge-tree cutting and stats namespace exposure. A clean production
+build measures the Worker at 540,871 bytes gzip, 1,021 bytes above Profile 0.350 and 199 bytes above
+the former 528 KiB ceiling. The explicit budget therefore rises by the minimum whole-KiB increment
+to 529 KiB, leaving 825 bytes of headroom. The implementation adds no dependency, host capability,
+network path, or execution backend. The 150 KiB public-client and 1.5 MiB combined parser-Wasm
+ceilings remain unchanged.
+
+Profile 0.352 adds the 150,821-byte (61,530-byte gzip) source-reproducible LAPACK 3.12.1 `DSYEVR`
+Wasm closure plus fractional-sequence semantics. A clean production build measures the Worker at
+623,926 bytes gzip, 83,055 bytes above Profile 0.351 and above the former 529 KiB ceiling. The
+explicit budget therefore rises by the minimum sufficient whole-KiB increment to 610 KiB, leaving
+714 bytes of headroom. The Wasm module has one memory-growth import and no filesystem, network,
+process, or package-native ABI. The 150 KiB public-client and 1.5 MiB combined parser-Wasm ceilings
+remain unchanged.
 
 Language subset 0.201 adds package-data enumeration/execution plus one bounded delimited-table
 scanner/writer shared by `data()`, the `read.table`/CSV/delimited family, and the matching writers.
@@ -977,3 +1064,867 @@ list/factor `%s` formatting, `strrep`, `length<-`, `anyNA`, and `make.unique`. T
 packages remain opt-in test inputs and contribute no source or resources to the shipped Worker. The
 measured Worker is 427.2 KiB gzip (437,474 bytes), 230 bytes above the previous 427 KiB ceiling, so
 the ceiling rises narrowly to 428 KiB; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.288 adds standard dynamic `exportPattern` resolution, prompt tar-limit error
+propagation, pre-Worker package-resource validation, and a dedicated package-resource field in the
+existing runtime-limit record. BH remains an opt-in test input; none of its 128 MiB of headers ships
+in the Worker. The measured Worker is 427.5 KiB gzip (437,733 bytes), within the existing 428 KiB
+ceiling, so client, Worker, and parser-Wasm budgets remain unchanged. Build-time normalization of BH
+is intentionally large and measured separately by the external regression rather than the browser
+bundle budget.
+
+Language subset 0.289 adds the complete ordered `par()` parameter inventory and read-only restore
+handling, shared `axis(xlab=)` forwarding behavior, and `barplot` `xaxt`/`yaxt` suppression. The
+unchanged labeling package remains an opt-in test input and contributes no source or resources to
+the shipped Worker. The measured Worker is 428.3 KiB gzip (438,551 bytes), 279 bytes above the
+previous 428 KiB ceiling, so the ceiling rises narrowly to 429 KiB; client and parser-Wasm budgets
+remain unchanged. The unusually graphics-heavy `extended.figures(2)` regression uses an explicit 128
+MB evaluation-output bound rather than weakening the interactive-safe default.
+
+Language subset 0.290 adds opt-in package-test manifests, empty `NULL` subscript semantics,
+matrix/data-frame diagonal replacement, browser-safe `Sys.info()`, exact complex integer powers, and
+inverse trigonometric vectors. Retained numDeriv tests remain opt-in and contribute no package
+source or resources to the shipped Worker. The measured Worker is 429.0 KiB gzip (439,345 bytes), 49
+bytes above the previous 429 KiB ceiling, so the ceiling rises narrowly to 430 KiB; client and
+parser-Wasm budgets remain unchanged. The large CSD regression uses explicit finite 500,000,000-step
+and 100,000,000-element limits in the test only; interactive-safe defaults and named profiles are
+unchanged.
+
+Language subset 0.291 adds owned language/expression entry operations, syntax-preserving replacement
+call frames, pairlist apply-family inputs, `prod` and standard character constants,
+matrix/data-frame coercion, array/default metadata, nested `NULL` replacement, and short-name
+padding. Retained abind examples and tests remain opt-in and contribute no package source or
+resources to the shipped Worker. The measured Worker is 431.2 KiB gzip (441,571 bytes), 1,251 bytes
+above the previous 430 KiB ceiling, so the ceiling rises narrowly to 432 KiB; client and parser-Wasm
+budgets remain unchanged. The 3,628,800-element abind array regression uses explicit finite
+100,000,000-step and 5,000,000-element limits in that test only.
+
+Language subset 0.292 adds closure-valued call heads, target-environment `do.call()` invocation,
+function-scoped `local()` cleanup, and bounded `sys.calls()`/`sys.frames()` stack inspection.
+Retained generics and withr examples remain opt-in and contribute no package source or resources to
+the shipped Worker. The measured Worker is 431.5 KiB gzip (441,837 bytes), within the existing 432
+KiB ceiling, so client, Worker, and parser-Wasm budgets remain unchanged.
+
+Language subset 0.293 adds evaluator-owned environment reachability and finalizers, asynchronous
+session-exit cleanup, circular graphics-device navigation, base timezone-cache state, browser-local
+message-domain state, POSIXct formatting, NULL-aware `mapply`, and list-path `unlink` coercion.
+Retained withr examples remain opt-in and contribute no package source or resources to the shipped
+Worker. The measured Worker is 432.9 KiB gzip (443,253 bytes), 885 bytes above the previous 432 KiB
+ceiling, so the ceiling rises narrowly to 433 KiB; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.294 ships the first provenance-audited core data resources (`mtcars` and corrected
+`iris`) and a reusable static-package namespace/resource loader. The CSV resources are immutable,
+network-free bundle inputs and are the only package data added to the default Worker. The measured
+Worker is 436.0 KiB gzip (446,444 bytes), 3,052 bytes above the previous 433 KiB ceiling, so the
+ceiling rises narrowly to 436 KiB; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.295 adds two compact historical uniform engines and version selection without
+shipping tables or external runtime code. The measured Worker is 436.4 KiB gzip (446,875 bytes), 431
+bytes above the previous 436 KiB ceiling, so the ceiling rises narrowly to 437 KiB; client and
+parser-Wasm budgets remain unchanged.
+
+Language subset 0.296 adds the historical Buggy Kinderman-Ramage normal transform as compact owned
+arithmetic without tables, host calls, or external runtime code. The measured Worker is 436.9 KiB
+gzip (447,339 bytes), 464 bytes above profile 0.295 and still below the existing 437 KiB ceiling;
+all budgets remain unchanged.
+
+Language subset 0.297 reuses that transform for corrected Kinderman-Ramage with one mode branch and
+no additional tables or dependencies. The measured Worker is 436.9 KiB gzip (447,428 bytes), 89
+bytes above profile 0.296 and still below the existing 437 KiB ceiling; all budgets remain
+unchanged.
+
+Language subset 0.298 normalizes ASCII spaces at the existing named-color catalog lookup and routes
+`plot.default(bty=)` through the existing box-edge selector. Unchanged package examples remain
+opt-in and contribute no package source or resources to the shipped Worker. The measured Worker is
+437.0 KiB gzip (447,472 bytes), 44 bytes above profile 0.297 and still within the existing 437 KiB
+ceiling; all budgets remain unchanged.
+
+Language subset 0.299 adds bounded DCF record parsing over the existing owned virtual file and
+connection layer. The implementation adds no host parser, runtime package source, or dependency
+payload. The measured Worker is 437.9 KiB gzip (448,385 bytes), 913 bytes above profile 0.298 and
+897 bytes above the previous 437 KiB ceiling, so the ceiling rises narrowly to 438 KiB; client and
+parser-Wasm budgets remain unchanged.
+
+Language subset 0.300 adds compact primitive finiteness, owned closure-frame counting, top-level
+environment traversal, and the session-current `.GlobalEnv` binding. Unchanged otel examples remain
+opt-in and add no package source or telemetry dependency to the shipped Worker. The measured Worker
+is 438.2 KiB gzip (448,695 bytes), 310 bytes above profile 0.299 and 183 bytes above the previous
+438 KiB ceiling, so the ceiling rises narrowly to 439 KiB; client and parser-Wasm budgets remain
+unchanged.
+
+Language subset 0.301 adds full-signature `nchar` Unicode/encoding controls, bind-dimname labeling,
+selected-name propagation, and attributes on first-class callable builtins. Unchanged pkgconfig and
+crayon examples remain opt-in and add no package source or palette resource to the shipped Worker.
+The measured Worker is 439.5 KiB gzip (450,039 bytes), 1,344 bytes above profile 0.300 and 503 bytes
+above the previous 439 KiB ceiling, so the ceiling rises narrowly to 440 KiB; client and parser-Wasm
+budgets remain unchanged.
+
+Language subset 0.302 adds explicit call matching, class-preserving condition errors, primitive
+reflection, and virtual permission checks. Unchanged assertthat and praise examples remain opt-in
+and add no package source or resources to the shipped Worker. The measured Worker is 440.4 KiB gzip
+(450,919 bytes), 880 bytes above profile 0.301 and 359 bytes above the previous 440 KiB ceiling, so
+the ceiling rises narrowly to 441 KiB; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.303 adds reusable difftime-unit access and replacement, primitive infinity
+classification, and browser-owned C-style formatting. Unchanged prettyunits examples remain opt-in
+and add no package source or data to the shipped Worker. The measured Worker is 442.5 KiB gzip
+(453,113 bytes), 2,194 bytes above profile 0.302 and 1,529 bytes above the previous 441 KiB ceiling,
+so the ceiling rises narrowly to 443 KiB; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.304 adds reusable condition/restart and interrupt control, source references,
+expression-container/data-frame behavior, hook and sequence semantics, and recorded-plot metadata.
+Unchanged evaluate examples remain opt-in and add no package source or runtime adapter to the
+shipped Worker. The measured Worker is 445.4 KiB gzip (456,041 bytes), 2,928 bytes above profile
+0.303 and 2,359 bytes above the previous 443 KiB ceiling, so the ceiling rises narrowly to 446 KiB;
+client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.305 adds provenance-audited `InsectSprays` and `faithful` bytes plus their generic
+static `datasets` loaders. The six newly deep-audited external packages remain opt-in and add no
+package source or host integration to the shipped Worker. The measured Worker is 448.3 KiB gzip
+(459,027 bytes), 2,986 bytes above profile 0.304 and 2,323 bytes above the previous 446 KiB ceiling,
+so the ceiling rises narrowly to 449 KiB; client and parser-Wasm budgets remain unchanged.
+
+Language subset 0.306 reuses the existing normalized-AST quotation conversion for exact closure body
+storage types and returns the existing singleton `NULL` for empty formal lists. Oracle-v2 binding
+associations are development evidence only and do not enter the browser bundle. The measured Worker
+is 448.3 KiB gzip (459,036 bytes), nine bytes above profile 0.305 and within the existing 449 KiB
+ceiling; all budgets remain unchanged.
+
+Language subset 0.307 adds normalized function-body/formal replacement and ordinary `.Environment`
+attribute support. The recursive evidence remains development-only. The measured Worker is 448.8 KiB
+gzip (459,556 bytes), 520 bytes above profile 0.306 and within the existing 449 KiB ceiling; all
+budgets remain unchanged.
+
+Language subset 0.308 adds S3 dispatch and shared list-to-closure construction for `as.function()`.
+The measured Worker is 449.1 KiB gzip (459,878 bytes), 322 bytes above profile 0.307 and 102 bytes
+above the previous 449 KiB ceiling, so the ceiling rises narrowly to 450 KiB; client and parser-Wasm
+budgets remain unchanged.
+
+Language subset 0.309 adds generic bounded Reference Class support and the Base semantic seams
+required by the source-blind `docopt` holdout. A complete clean rebuild measures the Worker at 451.3
+KiB gzip (462,098 bytes), 1,298 bytes above the previous 450 KiB ceiling, so the ceiling rises
+narrowly to 452 KiB. The statically loaded public client is 15.6 KiB gzip and combined parser Wasm
+is 671.9 KiB raw; their budgets remain unchanged.
+
+Language subset 0.310 adds generic `match(..., nomatch=)` coercion, `Negate()`, `storage.mode()` and
+`storage.mode<-`, plus the deterministic browser `commandArgs()` contract required by the
+source-blind `getopt` holdout. A complete clean rebuild measures the Worker at 452.1 KiB gzip
+(462,941 bytes), 843 bytes above profile 0.309 and 93 bytes above the previous 452 KiB ceiling, so
+the ceiling rises narrowly to 453 KiB. The statically loaded public client remains 15.6 KiB gzip and
+combined parser Wasm remains 671.9 KiB raw; their budgets are unchanged.
+
+Language subset 0.311 adds parser-independent S4 class exports, exact owned slot access and
+replacement, registered validity execution, package-local replacement generics, and bounded
+`cat(fill=)` wrapping. External package source and examples remain opt-in and add no payload to the
+Worker. A complete clean rebuild measures the Worker at 453.2 KiB gzip (464,044 bytes), 1,103 bytes
+above profile 0.310 and 172 bytes above the previous 453 KiB ceiling, so the ceiling rises narrowly
+to 454 KiB. The statically loaded public client remains 15.6 KiB gzip and combined parser Wasm
+remains 671.9 KiB raw; their budgets are unchanged.
+
+Language subset 0.312 adds scalar list/pairlist logical coercion and target-aware S4 `coerce` method
+selection. Package archives, examples, and Oracle evidence remain build/test inputs and add no
+runtime payload. A complete rebuild measures the Worker at 453.3 KiB gzip (464,172 bytes), 128 bytes
+above profile 0.311 and within the existing 454 KiB ceiling. The statically loaded public client
+remains 15.6 KiB gzip and combined parser Wasm remains 671.9 KiB raw; all budgets remain unchanged.
+
+Language subset 0.313 adds caller-environment S3 lookup, `levels()`/`nlevels()`, and one concise
+immutable runtime-root legal notice. External package archives and Oracle evidence remain test-only.
+A complete rebuild measures the Worker at 453.6 KiB gzip (464,502 bytes), 330 bytes above profile
+0.312 and within the existing 454 KiB ceiling. The statically loaded public client remains 15.6 KiB
+gzip and combined parser Wasm remains 671.9 KiB raw; all budgets remain unchanged.
+
+Language subset 0.314 adds named call-entry retention, the browser semantic compiler seam, and
+numeric/complex matrix multiplication. External package archives and Oracle observations remain
+test-only. A complete rebuild measures the Worker at 454.0 KiB gzip (464,889 bytes), seven bytes
+below the unchanged 454 KiB ceiling. The statically loaded public client remains 15.6 KiB gzip and
+combined parser Wasm remains 671.9 KiB raw.
+
+Language subset 0.315 adds core-package dependency attachment and a deterministic single-lane
+`parallel` adapter. A complete rebuild measures the Worker at 455.3 KiB gzip (466,193 bytes), 1,304
+bytes above profile 0.314. The explicit Worker ceiling is therefore 456 KiB, leaving 751 bytes of
+headroom. The statically loaded public client remains 15.6 KiB gzip and combined parser Wasm remains
+671.9 KiB raw.
+
+Language subset 0.319 adds package-construction namespace lookup, system-frame reflection, qualified
+replacement, and generated-code substitution semantics. A complete rebuild measures the Worker at
+458.7 KiB gzip (469,729 bytes), 1,652 bytes above profile 0.318. The explicit Worker ceiling is 459
+KiB, leaving 287 bytes of headroom. The statically loaded public client remains 15.8 KiB gzip and
+combined parser Wasm remains 671.9 KiB raw.
+
+Language subset 0.316 adds platform NAMESPACE selection, progress state, two parallel aliases, and
+the package-driven Base/model primitives. A complete rebuild measures the Worker at 456.2 KiB gzip
+(467,196 bytes), 1,003 bytes above profile 0.315. The explicit Worker ceiling is 457 KiB, leaving
+772 bytes of headroom. The statically loaded public client remains 15.6 KiB gzip and combined parser
+Wasm remains 671.9 KiB raw.
+
+Language subset 0.317 adds runtime-owned version metadata and the generic reflection/data-frame
+seams required by `globals`. A complete rebuild measures the Worker at 456.5 KiB gzip (467,507
+bytes), 311 bytes above profile 0.316 and within the existing 457 KiB ceiling, leaving 461 bytes of
+headroom. The statically loaded public client is 15.8 KiB gzip and combined parser Wasm remains
+671.9 KiB raw.
+
+Language subset 0.318 adds primitive S3 dispatch for classed environments and the package-driven
+Base message/membership seams. A complete rebuild measures the Worker at 457.1 KiB gzip (468,077
+bytes), 570 bytes above profile 0.317. The explicit Worker ceiling is 458 KiB, leaving 915 bytes of
+headroom. The statically loaded public client remains 15.8 KiB gzip and combined parser Wasm remains
+671.9 KiB raw.
+
+Language subset 0.320 adds the reusable namespace, S3, caller-frame, NULL Ops, metadata, string,
+attribute, delayed-binding, and serialization semantics required by the R.oo checkpoint. A complete
+rebuild measures the Worker at 464.7 KiB gzip (475,868 bytes), 6,139 bytes above profile 0.319. The
+explicit Worker ceiling is 465 KiB, leaving 292 bytes of headroom. The statically loaded public
+client remains 15.8 KiB gzip and combined parser Wasm remains 671.9 KiB raw.
+
+Language subset 0.321 adds the reusable parser, virtual compressed/binary I/O, environment,
+source-reference, condition/time-limit, digest, dimension-name, and graphics-layout semantics
+required by the R.utils checkpoint. The bzip2 implementation is loaded only on first `bzfile()` use
+as a separate 95.5 KiB gzip chunk; it is not part of startup Worker JavaScript. A complete rebuild
+measures the startup Worker at 477.1 KiB gzip, 12.4 KiB above profile 0.320, so the explicit ceiling
+is 478 KiB. The statically loaded public client is 16.5 KiB gzip and combined parser Wasm remains
+671.9 KiB raw.
+
+Language subset 0.325 adds C-locale POSIX regex-class normalization and the reusable real-matrix
+semantics required by the source-blind matrixcalc checkpoint: vector-promoting matrix products,
+triangular and coordinate matrices, Kronecker products, choose/lchoose, determinant/solve, QR, and
+SVD. The unchanged external package remains test-only and contributes no source or resources to the
+Worker. A complete rebuild measures the Worker at 483.2 KiB gzip (494,748 bytes), 5.4 KiB above the
+profile 0.324 measurement. The explicit ceiling rises narrowly to 484 KiB, leaving 868 bytes of
+headroom; the 150 KiB client and 1.5 MiB parser-Wasm budgets remain unchanged.
+
+Language subset 0.326 adds the generic formula-language and model-frame substrate required by the
+source-blind Formula checkpoint: formula attributes and call mutation, terms metadata and dot
+expansion, model-frame expression-column reuse, formula equality, response deletion/extraction, and
+additive offsets. The unchanged external package remains test-only. A complete rebuild measures the
+Worker at 484.8 KiB gzip (496,440 bytes). The explicit ceiling rises by the minimum whole KiB to 485
+KiB, leaving 200 bytes of headroom; the 150 KiB client and 1.5 MiB parser-Wasm budgets are
+unchanged.
+
+Language subset 0.327 adds the generic methods, S3/S4, Date/class, namespace-export, and compact
+row-name semantics required by the source-blind DBI checkpoint. The unchanged external package
+remains test-only. A complete rebuild measures the Worker at 486.9 KiB gzip (498,571 bytes), 2,131
+bytes above profile 0.326. The explicit ceiling rises by the minimum whole-KiB increment to 487 KiB,
+leaving 117 bytes of headroom; the 150 KiB client and 1.5 MiB parser-Wasm budgets are unchanged.
+
+Language subset 0.328 adds reusable semantics exposed by the source-blind xtable checkpoint:
+`zapsmall()` and numeric S3 dispatch, matrix-aware `data.frame()` construction, zero-selection
+data-frame replacement, gzip package-data loading, and `anova.lm`/`summary.aov` model tables. A
+complete rebuild measures the Worker at 490.6 KiB gzip (502,386 bytes), 3,815 bytes above profile
+0.327. The explicit ceiling rises by the minimum whole-KiB increment to 491 KiB, leaving 398 bytes
+of headroom; the 150 KiB client and 1.5 MiB parser-Wasm budgets are unchanged.
+
+Language subset 0.329 adds recursive chained formula expansion and reusable stratified-analysis
+semantics for one formula-special `Error()` term, `aovlist` construction, and `summary.aovlist`
+tables. External package archives and Oracle observations remain test-only. A complete rebuild
+measures the Worker at 492.1 KiB gzip (503,882 bytes), 1,496 bytes above profile 0.328. The explicit
+ceiling rises by the minimum whole-KiB increment to 493 KiB, leaving 950 bytes of headroom; the 150
+KiB client and 1.5 MiB parser-Wasm budgets are unchanged.
+
+Language subset 0.330 adds generic `summary.lm`, gaussian/binomial/Poisson family objects and IRLS
+GLM inference, numeric `prcomp`, the provenance-audited `USArrests` dataset, `ftable` formatting,
+data-frame row-bind attribute preservation, missing positional argument matching, and matrix extent
+handling. The unchanged external archive remains test-only. A clean rebuild measures the Worker at
+504.8 KiB gzip (516,891 bytes), 13,009 bytes above profile 0.329. The explicit ceiling rises by the
+minimum whole-KiB increment to 505 KiB, leaving 229 bytes of headroom; the statically loaded public
+client is 16.5 KiB gzip and combined parser Wasm remains 671.9 KiB raw.
+
+Language subset 0.331 adds core-package namespace isolation, Base namespace identity, top-level
+`substitute()` behavior, first-class special operators, and primitive `NextMethod()` fallback
+required by the source-blind `globals` checkpoint. Package archives and GNU R observations remain
+test-only. A clean rebuild measures the Worker at 504.9 KiB gzip (516,978 bytes), 87 bytes above
+profile 0.330 and below the unchanged 505 KiB ceiling, leaving 142 bytes of headroom. The statically
+loaded public client remains 16.5 KiB gzip and combined parser Wasm remains 671.9 KiB raw.
+
+Language subset 0.332 adds the reusable apply-family, caller-frame, numeric-summary, table/array,
+replacement, trace, data-frame-summary, and core-data semantics required to complete unchanged
+`pbapply 1.7-4` installed examples. The external package remains test-only; only the compact audited
+`warpbreaks` and `presidents` data are new runtime resources. A clean rebuild measures the Worker at
+508.3 KiB gzip (520,542 bytes), 3,564 bytes above profile 0.331. The explicit ceiling rises by the
+minimum whole-KiB increment to 509 KiB, leaving 674 bytes of headroom; the statically loaded public
+client remains 16.5 KiB gzip and combined parser Wasm remains 671.9 KiB raw.
+
+Language subset 0.333 adds parenthesized visibility, reusable S3/replacement condition-call shapes,
+owned table/array/matrix presentation, and generic saved-output error-stack formatting. A clean
+rebuild measures the Worker at 509.3 KiB gzip (521,507 bytes), 965 bytes above profile 0.332. The
+explicit ceiling rises by the minimum whole-KiB increment to 510 KiB, leaving 733 bytes of headroom;
+the statically loaded public client is 16.9 KiB gzip and combined parser Wasm remains 671.9 KiB raw.
+
+Language subset 0.334 adds exact unmatched-capture extraction, ASCII regex index metadata, and
+generic declared-Suggests warning classification in the build-time package-check runner. A clean
+rebuild measures the Worker at 509.4 KiB gzip (521,643 bytes), 136 bytes above profile 0.333 and
+below the unchanged 510 KiB ceiling, leaving 597 bytes of headroom. The statically loaded public
+client remains 16.9 KiB gzip and combined parser Wasm remains 671.9 KiB raw.
+
+Profile 0.335 adds bounded S4 dispatch-stack frames, S4 XDR encoding/decoding, and numeric scale
+selection. Each S4 redispatch frame is released with stack unwinding; XDR readers allocate only the
+declared slot/vector graph; `pretty.default()` remains subject to the evaluation vector budget. A
+shared S3-generic path removes duplicate dispatch code. After that reduction, a clean build measures
+the Worker at 523,758 bytes gzip. The explicit ceiling rises by the minimum whole-KiB increment that
+admits the reusable semantic closure, from 510 KiB to 512 KiB, leaving 530 bytes of headroom. The
+client and parser-Wasm ceilings are unchanged.
+
+Profile 0.336 adds generic S4 primitive operator/subset dispatch and the package-driven coercion,
+sorting, and differencing seams. A clean build measures the Worker at 524,297 bytes gzip, 9 bytes
+above the former 512 KiB ceiling. The explicit budget therefore rises by the minimum whole-KiB
+increment to 513 KiB, leaving 1,015 bytes of headroom. The browser bundle audit remains
+authoritative; this is not permission for unbounded callable growth.
+
+Profile 0.337 adds UTC/GMT POSIX rounding, S3 range forwarding, S4 marker continuity, and prototype
+slot completion. A clean build measures the Worker at 525,150 bytes gzip, 853 bytes above Profile
+0.336 and below the unchanged 513 KiB ceiling, leaving 162 bytes of headroom. The browser bundle
+audit passes; any further growth must reduce code or explicitly re-evaluate the whole-KiB budget.
+
+Profile 0.338 adds reusable argument/generic dispatch, partial matching, POSIXlt parsing and
+replacement, and `julian.POSIXt`. A clean build measures the Worker at 526,703 bytes gzip, 1,553
+bytes above Profile 0.337. This exceeds both the former 513 KiB ceiling and a 514 KiB ceiling, so
+the explicit budget rises by the minimum whole-KiB increment to 515 KiB, leaving 657 bytes of
+headroom. The client and parser-Wasm ceilings are unchanged.
+
+Profile 0.339 adds reusable length dispatch, POSIXlt component recycling and missingness, the Base
+`.leap.seconds` object, and ellipsis introspection. A clean build measures the Worker at 527,413
+bytes gzip, 710 bytes above Profile 0.338 and 53 bytes above the former 515 KiB ceiling. The
+explicit budget therefore rises by the minimum whole-KiB increment to 516 KiB, leaving 971 bytes of
+headroom. The client and parser-Wasm ceilings are unchanged.
+
+Profile 0.340 adds generic array splitting, empty-result apply typing, graphics S4 dispatch, plot
+axis-style handling, and recursive language-name enumeration. A clean build measures the Worker at
+529,122 bytes gzip, 1,709 bytes above Profile 0.339 and 738 bytes above the former 516 KiB ceiling.
+The explicit budget therefore rises by the minimum whole-KiB increment to 517 KiB, leaving 286 bytes
+of headroom. The client and parser-Wasm ceilings are unchanged.
+
+Profile 0.341 adds S4 constructor/next-method dispatch, registered names replacement, extended
+primitive sequence controls, and generic missing-value replacement. The production Worker measures
+529,818 bytes gzip, 696 bytes above Profile 0.340 and 410 bytes above the former 517 KiB ceiling.
+The explicit budget therefore rises by the minimum whole-KiB increment to 518 KiB, leaving 614 bytes
+of measured headroom. The 150 KiB public-client and 1.5 MiB combined-parser-Wasm ceilings remain
+unchanged.
+
+Profile 0.353 adds the reusable Pearson-test, data-frame binding, and graphics corrections that
+complete corrplot's installed examples. A clean production build measures the Worker at 625,180
+bytes gzip, 1,254 bytes above Profile 0.352 and 540 bytes above the former 610 KiB ceiling. The
+explicit budget therefore rises by the minimum whole-KiB increment to 611 KiB, leaving 484 bytes of
+headroom. The public-client and combined-parser-Wasm ceilings are unchanged.
+
+Profile 0.354 adds model/RNG/grouped-binomial and dataset seams that complete insight's installed
+examples. A clean production build measures the Worker at 631,580 bytes gzip, 6,400 bytes above
+Profile 0.353 and 5,916 bytes above the former 611 KiB ceiling. The explicit budget therefore rises
+by the minimum whole-KiB increment to 617 KiB, leaving 228 bytes of headroom. The public-client and
+combined-parser-Wasm ceilings are unchanged.
+
+Profile 0.355 adds generic grid, root-finding, covariance normalization, and transposed-product
+semantics. A clean production build measures the Worker at 633,837 bytes gzip, 2,257 bytes above
+Profile 0.354. The explicit ceiling rises by the minimum whole-KiB increment from 617 KiB to 620
+KiB, leaving 1,043 bytes of headroom. Public-client and combined-parser-Wasm ceilings are unchanged.
+
+Profile 0.356 adds reusable naming, array sweep, maximum-likelihood factor-analysis, loadings, and
+programmatic callback-call semantics. A clean production build measures the Worker at 639,381 bytes
+gzip, 5,544 bytes above Profile 0.355 and 4,501 bytes above the former 620 KiB ceiling. The explicit
+budget therefore rises by the minimum whole-KiB increment to 625 KiB, leaving 619 bytes of headroom.
+Public-client and combined-parser-Wasm ceilings are unchanged.
+
+Profile 0.357 adds independent allocation accounting, package-scale numeric checkpoint batching,
+expression/`atan2`/stored-call semantics, and reusable graphics closure. A clean production build
+measures the Worker at 640,583 bytes gzip, 1,202 bytes above Profile 0.356 and 583 bytes above the
+former 625 KiB ceiling. The explicit budget therefore rises by the minimum whole-KiB increment to
+626 KiB, leaving 441 bytes of headroom. Public-client and combined-parser-Wasm ceilings are
+unchanged.
+
+Profile 0.358 adds the provenance-audited `ability.cov` resource plus generic scaled limited-memory
+factor fitting and Kaiser-normalized varimax. A clean production build measures the Worker at
+641,133 bytes gzip, 550 bytes above Profile 0.357 and 109 bytes above the former 626 KiB ceiling.
+The explicit budget therefore rises by the minimum whole-KiB increment to 627 KiB, leaving 915 bytes
+of headroom. Public-client and combined-parser-Wasm ceilings are unchanged.
+
+Profile 0.359 embeds the reproducible 40,728-byte L-BFGS-B 2.1 Wasm module and its typed
+reverse-communication adapter, alongside generic varimax, legend swatches, and package-check
+closure. A clean production build measures the Worker at 666,809 bytes gzip, 25,676 bytes above
+Profile 0.358 and 24,761 bytes above the former 627 KiB ceiling. The explicit budget therefore rises
+by the minimum whole-KiB increment to 652 KiB, leaving 839 bytes of headroom. The statically loaded
+public client remains 17.5 KiB gzip and the combined parser Wasm remains 671.9 KiB raw, so their
+ceilings are unchanged.
+
+Profile 0.360 adds generic `tibble::as_tibble` conversion/name repair and Base `as.character.Date`
+civil-date semantics. A clean production build measures the Worker at 667,911 bytes gzip, 1,102
+bytes above Profile 0.359 and 263 bytes above the former 652 KiB ceiling. The explicit budget
+therefore rises by the minimum whole-KiB increment to 653 KiB, leaving 761 bytes of headroom. The
+statically loaded public client remains 17.5 KiB gzip and the combined parser Wasm remains 671.9 KiB
+raw, so their ceilings are unchanged.
+
+Profile 0.361 adds generic S3 group registration/context and `NextMethod()` forwarding, callable
+operator and Summary dispatch, list distinctness, single-variable `stats::poly`, and the
+browser-owned general real eigensolver. A clean production build measures the Worker at 671,284
+bytes gzip, 3,373 bytes above Profile 0.360 and 2,812 bytes above the former 653 KiB ceiling. The
+explicit budget therefore rises by the minimum whole-KiB increment to 656 KiB, leaving 460 bytes of
+headroom. The statically loaded public client remains 17.5 KiB gzip and the combined parser Wasm
+remains 671.9 KiB raw, so their ceilings are unchanged.
+
+## Profile 0.362 model-semantics size delta
+
+Profile 0.362 adds contrast-matrix encoding, stored-call formula rewriting, visible-QR
+reconstruction, and rank-deficient prediction checks. A clean production build measures the Worker
+at 673,198 bytes (657.4 KiB) gzip, 1,914 bytes above the Profile 0.361 measurement and 1,454 bytes
+above the former 656 KiB ceiling. The explicit budget therefore rises by the minimum whole-KiB
+increment to 658 KiB, leaving 594 bytes of headroom. No package source or package-identity dispatch
+is embedded in production output.
+
+## Profile 0.363 language and package-semantics size delta
+
+Profile 0.363 adds normalized parse-data ownership, structural width-sensitive deparsing, general
+language reconstruction, and reusable condition and regular-expression semantics needed by the
+source-blind `formatR` package check. L-BFGS-B is now loaded only when its optimization backend is
+first invoked, so its independently cached 25.7 KiB gzip chunk is excluded from Worker startup. A
+clean production build measures the initial Worker at 651,004 bytes (635.7 KiB) gzip, 22,194 bytes
+below Profile 0.362 and 22,788 bytes below the unchanged 658 KiB ceiling.
+
+## Profile 0.364 deparse and condition-semantics size delta
+
+Profile 0.364 closes structural nested deparse layout, interleaved calling/exiting handler order,
+and suppression visibility without adding a dependency or package-specific branch. A clean
+production build measures the initial Worker at 651,587 bytes (636.3 KiB) gzip, within the unchanged
+658 KiB ceiling. The statically loaded public client is 19.1 KiB gzip and the combined parser Wasm
+remains 671.9 KiB raw.
+
+## Profiles 0.376–0.377 reusable statistics size delta
+
+Profiles 0.376 and 0.377 add the independent smoothing-spline solver and predictor, Q-Q coordinate
+and plotting helpers, GLM control construction, explicit missing-package data admission, and the
+vectorized normal-density primitive. A clean production build measures the initial Worker at 675,077
+bytes (659.3 KiB) gzip, 1,285 bytes above the former 658 KiB ceiling. A 659 KiB ceiling is still 261
+bytes too small, so the explicit budget rises by the minimum sufficient whole-KiB increment to 660
+KiB, leaving 763 bytes of measured headroom. No package source, package identity, network path, host
+process, generated JavaScript, or new runtime dependency is added. The statically loaded public
+client remains 19.4 KiB gzip and the combined parser Wasm remains 671.9 KiB raw.
+
+## Profiles 0.378–0.380 data and time-series statistics size delta
+
+Profiles 0.378 through 0.380 add the independently sourced 114-value `datasets::lynx` resource,
+univariate Yule-Walker `stats::ar`, vectorized `stats::rgeom`, and stationary univariate
+`stats::arima.sim`. A clean production build measures the initial Worker at 678,660 bytes (662.754
+KiB) gzip, 3,583 bytes above Profile 0.377 and 2,820 bytes above the former 660 KiB ceiling. The
+explicit budget therefore rises by the minimum sufficient whole-KiB increment to 663 KiB, leaving
+252 bytes of measured headroom. No package source, package identity, host adapter, network path,
+generated JavaScript, or new runtime dependency is added; the public client and parser Wasm ceilings
+remain unchanged.
+
+## Profile 0.381 reflection and vectorized-uniform size delta
+
+Profile 0.381 adds package-neutral `methods::formalArgs` reflection and vectorized `stats::runif`
+bound, domain, and RNG-consumption semantics. A clean production build measures the initial Worker
+at 678,743 bytes (662.835 KiB) gzip, 83 bytes above Profile 0.380 and within the unchanged 663 KiB
+ceiling, leaving 169 bytes of measured headroom. No dependency, package source, package identity,
+host adapter, network path, generated JavaScript, or default-limit change is added; the
+public-client and parser-Wasm ceilings remain unchanged.
+
+## Post-0.381 multcompView semantic-closure size delta
+
+The source-blind `multcompView 0.1-12` progression adds reusable array/dimname handling,
+`datasets::USJudgeRatings`, `as.matrix.dist`, `interaction`, character-to-formula coercion,
+fitted-model terms metadata, and `plot.default(cex.axis=)` validation. A clean production build
+measures the initial Worker at 686,289 bytes (670.204 KiB) gzip, 7,546 bytes above Profile 0.381 and
+7,377 bytes above the former 663 KiB ceiling. The explicit budget therefore rises by the minimum
+sufficient whole-KiB increment to 671 KiB, leaving 815 bytes of measured headroom. The public-client
+and parser-Wasm ceilings remain unchanged. The additional package-test computation budget is opt-in;
+the interactive-safe profile and all per-vector, output, call-depth, and package-resource ceilings
+remain bounded.
+
+## Profile 0.408 wide-SVD allocation bound
+
+The real rectangular SVD no longer always materializes an `ncol(X)`-squared crossproduct. It forms
+an `ncol(X)`-squared Gram matrix for tall or square inputs and an `nrow(X)`-squared Gram matrix for
+wide inputs, then reconstructs the opposite singular vectors. The dominant symmetric intermediate
+therefore scales with `min(nrow(X), ncol(X))^2`. The unchanged corpcor 50-by-5,000 documented
+example now stays within the existing two-million-element package-test vector limit; no default
+resource ceiling, dependency, native backend, or package-specific fast path is added.
+
+## Profile 0.409 grouped-replacement and ASCII-decoding bounds
+
+`split<-` reuses existing selector and replacement allocation paths; it does not materialize a
+package-specific copy or unbounded group index. ASCII native decoding scans each byte once, rejects
+non-seven-bit input before publication, and constructs output in bounded 8,192-byte chunks. The
+`las` validation and stats namespace correction add constant work. No default resource ceiling,
+dependency, native backend, host codec, package identity branch, or network path is added. Final
+bundle measurements are recorded by the repository size gate.
+
+## Profile 0.410 selection and matching bounds
+
+One-dimensional sorting retains the existing `O(n log n)` ordering path and reuses the shared array
+selector for one additional linear metadata pass. `charmatch()` performs bounded
+`O(length(x) * length(table))` exact/partial scans with cooperative checkpoints and allocations
+proportional to the two input lengths. Table-label and formal-reflection corrections add constant
+work. No package-specific cache, host service, dependency, native backend, or network path is added.
+
+The post-build size gate records 19.4 KiB gzip for statically loaded public client JavaScript
+against a 150.0 KiB ceiling, 624.9 KiB gzip for Worker JavaScript against a 671.0 KiB ceiling, and
+671.9 KiB raw for combined parser Wasm against a 1,536.0 KiB ceiling.
+
+## Profile 0.432 bounded package-test arrays
+
+The opt-in package-test profile raises only its per-vector ceiling from two million to four million
+elements so a retained unchanged pure-R test can construct a finite 12-by-12-by-12-by-12-by-12-by-12
+array. The interactive profile remains capped at one million elements, and existing total
+allocation, output, call-depth, timeout, package-resource, and browser bundle gates remain in force.
+The array missing-subscript identity path returns the existing immutable runtime value instead of
+allocating and flattening a second copy.
+
+## Profile 0.458 nonlinear least-squares size delta
+
+The reusable `stats::nls`, nonlinear profile, and profile-plot vertical slice adds a bounded
+finite-difference Jacobian, damped Gauss-Newton solver, profile refits, public fitted-model
+structure, and S3 dispatch without a dependency, package identity branch, host adapter, generated
+JavaScript, or network path. A clean production build measures Worker JavaScript at 690,666 bytes
+(674.5 KiB) gzip, 3,562 bytes above the former 671 KiB ceiling. The explicit budget therefore rises
+by the minimum sufficient whole-KiB increment to 675 KiB, leaving 534 bytes of measured headroom.
+The statically loaded public-client and combined parser-Wasm ceilings remain unchanged.
+
+## Profile 0.459 core-example resource size delta
+
+The independently authored `stats::lm.influence` example is stored in the existing validated core
+example manifest and executes through the generic package-resource path. A clean production build
+measures Worker JavaScript at 690,774 bytes (674.6 KiB) gzip, 108 bytes above Profile 0.458 and 426
+bytes below the existing 675 KiB ceiling. No budget changes, dependencies, package identity
+branches, host adapters, generated JavaScript, or network paths are introduced.
+
+## Profile 0.460 state-family resource size delta
+
+The complete seven-object state family is retained as one declarative multi-object data resource and
+uses the existing parser, factor, list, matrix, namespace, and data-loading machinery. A clean
+production build measures Worker JavaScript at 693,407 bytes (677.2 KiB) gzip, 2,633 bytes above
+Profile 0.459 and 2,205 bytes above the former 675 KiB ceiling. The Worker ceiling therefore rises
+by the minimum sufficient whole-KiB increment to 678 KiB, leaving 867 bytes of measured headroom.
+The public-client and combined parser-Wasm ceilings remain unchanged.
+
+## Profile 0.461 sunspots and time-series size delta
+
+The complete fixed `sunspots` series is retained as a compact declarative resource and reuses the
+existing parser, vector, time-series, namespace, and data-loading machinery. The production build
+measures Worker JavaScript at 701,154 bytes (684.7 KiB) gzip, 7,747 bytes above Profile 0.460 and
+286 bytes below a 685 KiB ceiling. The Worker ceiling therefore rises by the minimum sufficient
+whole-KiB increment from 678 KiB to 685 KiB. The public-client and combined parser-Wasm ceilings
+remain unchanged.
+
+## Profile 0.462 EuStockMarkets size delta
+
+The complete 7,440-value multivariate series is retained as a compact NativR-generated `.rda`
+resource and uses the generic package-data and time-series machinery. A production build measures
+Worker JavaScript at 723,480 bytes (706.5 KiB) gzip, 22,326 bytes above Profile 0.461 and 488 bytes
+below a 707 KiB ceiling. The Worker ceiling therefore rises by the minimum sufficient whole-KiB
+increment from 685 KiB to 707 KiB. The public-client and combined parser-Wasm ceilings remain
+unchanged.
+
+## Profile 0.463 numeric POSIX and missing-format size delta
+
+Optional-origin numeric POSIX conversion and recursive optional-format recognition reuse the
+existing vector, promise, condition, date-time, and graphics machinery and add no package resource
+or dependency. A production build measures Worker JavaScript at 723,956 bytes (707.0 KiB) gzip, 476
+bytes above Profile 0.462 and 12 bytes below the existing 707 KiB ceiling. No budget changes are
+required; the public-client and combined parser-Wasm ceilings remain unchanged.
+
+## Profile 0.464 metadata, apply naming, and Theoph size delta
+
+Deterministic installed-package metadata and apply-family naming reuse existing description,
+attribute, and simplification machinery. The complete `Theoph` table is retained as a compact base64
+CSV and constructed through the generic package-data path. A clean production build measures Worker
+JavaScript at 725,844 bytes (708.8 KiB) gzip, 1,888 bytes above Profile 0.463 and 1,876 bytes above
+the former 707 KiB ceiling. The Worker ceiling therefore rises by the minimum sufficient whole-KiB
+increment to 709 KiB, leaving 172 bytes of measured headroom. The statically loaded public client
+measures 19.5 KiB gzip and the parser Wasm remains 671.9 KiB raw; their ceilings do not change.
+
+## Profile 0.465 self-start nonlinear-model size delta
+
+Callable attributes, generic self-start initialization, `SSfol`, and value-only `predict.nls` reuse
+the existing evaluator, formula, model-environment, vector, and bounded nonlinear-optimization paths
+and add no dependency or package resource. A clean production build measures Worker JavaScript at
+727,812 bytes (710.8 KiB) gzip, 1,968 bytes above Profile 0.464 and 1,796 bytes above the former 709
+KiB ceiling. The Worker ceiling therefore rises by the minimum sufficient whole-KiB increment to 711
+KiB, leaving 252 bytes of measured headroom. The public client remains 19.5 KiB gzip and the
+combined parser Wasm remains 671.9 KiB raw; their ceilings do not change.
+
+## Profile 0.466 storage-preserving ftable size delta
+
+Atomic flat-table permutation reuses existing vector constructors, missing masks, attributes, and
+dimension-index helpers and adds no dependency or package resource. A clean production build
+measures Worker JavaScript at 727,961 bytes (710.9 KiB) gzip, 149 bytes above Profile 0.465 and 103
+bytes below the existing 711 KiB ceiling. No budget changes are required; the public client remains
+19.5 KiB gzip and the combined parser Wasm remains 671.9 KiB raw.
+
+## Profile 0.467 interaction-plot size delta
+
+Grouped interaction summaries and rendering reuse the existing factor, subset, callback, plot,
+lines, axis, box, annotation, legend, and device machinery and add no dependency or package
+resource. A clean production build measures Worker JavaScript at 729,554 bytes (712.5 KiB) gzip,
+1,593 bytes above Profile 0.466 and 1,490 bytes above the former 711 KiB ceiling. The Worker ceiling
+therefore rises by the minimum sufficient whole-KiB increment to 713 KiB, leaving 558 bytes of
+measured headroom. The public client remains 19.5 KiB gzip and combined parser Wasm remains 671.9
+KiB raw.
+
+## Profile 0.489 matrix/grid annotation size and package-test budget
+
+Matrix-aware data-frame binding, graphics-annotation normalization, and source-preserving
+`stopifnot` diagnostics add no dependency or host capability. A clean production build measures
+Worker JavaScript at 742,329 bytes (724.9 KiB) gzip, 502 bytes above Profile 0.488 and 71 bytes
+below the existing 725 KiB ceiling. The public client remains 19.5 KiB gzip and combined parser Wasm
+remains 671.9 KiB raw.
+
+The opt-in package-test cumulative work budget rises from 500,000,000 to 750,000,000 elements while
+the four-million-element per-vector bound and the interactive-safe profile remain unchanged. The
+increase is backed by an unchanged Rd example that serially renders multiple 3000-by-3000 TIFFs; it
+bounds cumulative evaluator work and does not claim 750 million simultaneously live elements.
+
+## Profile 0.468 language-subset size delta
+
+Call and expression extraction reuse existing language/list conversion, vector index resolution, AST
+quoting, and call reconstruction machinery and add no dependency or package resource. A clean
+production build measures Worker JavaScript at 729,964 bytes (712.9 KiB) gzip, 410 bytes above
+Profile 0.467 and 148 bytes below the existing 713 KiB ceiling. No budget changes are required; the
+public client remains 19.5 KiB gzip and combined parser Wasm remains 671.9 KiB raw.
+
+## Profile 0.469 vector-annotation size delta
+
+`matplot()` now reuses the already bundled title annotation normalizer without its former redundant
+scalar-label guard. A clean production build measures Worker JavaScript at 729,900 bytes (712.8 KiB)
+gzip, 64 bytes below Profile 0.468 and 212 bytes below the existing 713 KiB ceiling. No budget
+change or dependency is required; the public client remains 19.5 KiB gzip and combined parser Wasm
+remains 671.9 KiB raw.
+
+## Profile 0.470 formatted-array size delta
+
+Atomic formatting now reuses existing dimension and attribute constructors to retain `dim` and
+`dimnames`, adding no dependency or package resource. A clean production build measures Worker
+JavaScript at 729,952 bytes (712.8 KiB) gzip, 52 bytes above Profile 0.469 and 160 bytes below the
+existing 713 KiB ceiling. No budget change is required; the public client remains 19.5 KiB gzip and
+combined parser Wasm remains 671.9 KiB raw.
+
+## Profile 0.471 formals-reflection size delta
+
+Caller-default reflection and character/envir lookup reuse existing dynamic-frame and environment
+binding machinery and add no dependency. A clean production build measures Worker JavaScript at
+730,095 bytes (713.0 KiB) gzip, 143 bytes above Profile 0.470 and 17 bytes below the existing 713
+KiB ceiling. No budget change is required; the public client remains 19.5 KiB gzip and combined
+parser Wasm remains 671.9 KiB raw.
+
+## Profile 0.472 PostScript-device size delta
+
+The owned PostScript renderer adds DSC document assembly and path, text, hatch, raster, boxplot, and
+legend serialization while reusing the existing graphics journal and device registry. It adds no
+runtime dependency, host capability, network path, or package resource. A clean production build
+measures Worker JavaScript at 732,545 bytes (715.4 KiB) gzip, 2,450 bytes above Profile 0.471 and
+2,433 bytes above the former 713 KiB ceiling. The Worker ceiling therefore rises by the minimum
+sufficient whole-KiB increment to 716 KiB, leaving 639 bytes of measured headroom. The public client
+remains 19.5 KiB gzip and combined parser Wasm remains 671.9 KiB raw.
+
+## Profile 0.473 native line-encoding size delta
+
+Native line-encoding aliases and returned-mark selection reuse the existing UTF-8/Latin-1 decoder
+and character storage. A clean production build measures Worker JavaScript at 732,625 bytes (715.5
+KiB) gzip, 80 bytes above Profile 0.472 and 559 bytes below the existing 716 KiB ceiling. No budget
+change is required; the public client remains 19.5 KiB gzip and combined parser Wasm remains 671.9
+KiB raw.
+
+## Profile 0.474 assertion-block size delta
+
+Expression-block assertions reuse the normalized AST evaluator and owned environment constructors,
+adding no dependency or generated-code path. A clean production build measures Worker JavaScript at
+732,797 bytes (715.6 KiB) gzip, 172 bytes above Profile 0.473 and 387 bytes below the existing 716
+KiB ceiling. No budget change is required; the public client remains 19.5 KiB gzip and combined
+parser Wasm remains 671.9 KiB raw.
+
+## Profile 0.475 tools error-assertion size delta
+
+The exported tools helper reuses lazy promises and the existing condition representation. A clean
+production build measures Worker JavaScript at 733,110 bytes (715.9 KiB) gzip, 313 bytes above
+Profile 0.474 and 74 bytes below the existing 716 KiB ceiling. No budget change is required; the
+public client remains 19.5 KiB gzip and combined parser Wasm remains 671.9 KiB raw.
+
+## Profile 0.476 version-metadata size delta
+
+The narrow metadata-list path reuses the existing version parser, R list storage, numeric formatter,
+and dput serializer and adds no dependency or host resource. A clean production build measures
+Worker JavaScript at 733,290 bytes (716.1 KiB) gzip, 180 bytes above Profile 0.475 and 106 bytes
+above the former 716 KiB ceiling. The Worker ceiling therefore rises by the minimum sufficient
+whole-KiB increment to 717 KiB, leaving 918 bytes of measured headroom. The public client remains
+19.5 KiB gzip and combined parser Wasm remains 671.9 KiB raw.
+
+## Profile 0.477 compiler-report size delta
+
+The fixed metadata closure adds no dependency or host capability. A clean production build measures
+Worker JavaScript at 733,393 bytes (716.2 KiB) gzip, 103 bytes above Profile 0.476 and 815 bytes
+below the existing 717 KiB ceiling. No budget change is required; the public client remains 19.5 KiB
+gzip and combined parser Wasm remains 671.9 KiB raw.
+
+## Profiles 0.478–0.480 runtime-metadata size delta
+
+The fixed metadata closures add no dependency or host capability beyond the already bundled bzip2
+and LAPACK assets. A clean production build measures Worker JavaScript at 733,590 bytes (716.4 KiB)
+gzip, 197 bytes above Profile 0.477 and 618 bytes below the existing 717 KiB ceiling. No budget
+change is required; the public client remains 19.5 KiB gzip and combined parser Wasm remains 671.9
+KiB raw.
+
+## Profiles 0.481–0.484 semantic-closure size delta
+
+The graphics, array-binding, data-matrix, browser-owned `iris3`, expression-comparison, primitive S3
+coercion, and Epanechnikov-density increments reuse existing runtime storage and package-resource
+machinery and add no dependency or host capability. A clean production build measures Worker
+JavaScript at 735,102 bytes (717.9 KiB) gzip, 1,512 bytes above Profile 0.480 and 894 bytes above
+the former 717 KiB ceiling. The Worker ceiling therefore rises by the minimum sufficient whole-KiB
+increment to 718 KiB, leaving 130 bytes of measured headroom. The public client remains 19.5 KiB
+gzip and combined parser Wasm remains 671.9 KiB raw.
+
+## Profile 0.485 namespace-reflection size delta
+
+`getExportedValue()` reuses the existing namespace loader, export registry, namespace-environment
+identity, and binding-forcing paths and adds no dependency, host capability, or package resource. A
+clean production build measures Worker JavaScript at 735,418 bytes (718.2 KiB) gzip, 316 bytes above
+Profile 0.484 and 186 bytes above the former 718 KiB ceiling. The Worker ceiling therefore rises by
+the minimum sufficient whole-KiB increment to 719 KiB, leaving 838 bytes of measured headroom. The
+public client remains 19.5 KiB gzip and combined parser Wasm remains 671.9 KiB raw.
+
+## Profile 0.486 rank-one transpose size delta
+
+Rank-one transpose and dimname-axis ordering reuse the existing vector attribute and matrix-shape
+machinery and add no dependency, host capability, or package resource. A clean production build
+measures Worker JavaScript at 735,617 bytes (718.4 KiB) gzip, 199 bytes above Profile 0.485 and 639
+bytes below the existing 719 KiB ceiling. No budget change is required; the public client remains
+19.5 KiB gzip and combined parser Wasm remains 671.9 KiB raw.
+
+## Profile 0.487 non-central probability size delta
+
+The centered Poisson mixtures and adaptive Student-t integrator reuse the existing special-function
+kernel, while formula-point dispatch reuses the model-frame and graphics paths. A clean production
+build measures Worker JavaScript at 736,968 bytes (719.7 KiB) gzip, 1,351 bytes above Profile 0.486
+and 312 bytes below a minimally raised 720 KiB ceiling. The public client remains 19.5 KiB gzip and
+combined parser Wasm remains 671.9 KiB raw.
+
+## Profile 0.488 device, hypergeometric, and grid size delta
+
+The browser-owned SVG serializer, TIFF container and LZW encoder, bounded hypergeometric tail
+kernel, and generic grid collection/drawing paths add no dependency, host capability, or package
+resource. A clean production build measures Worker JavaScript at 741,827 bytes (724.4 KiB) gzip,
+4,859 bytes above Profile 0.487 and 4,547 bytes above the former 720 KiB ceiling. The Worker ceiling
+therefore rises by the minimum sufficient whole-KiB increment to 725 KiB, leaving 573 bytes of
+measured headroom. The public client remains 19.5 KiB gzip and combined parser Wasm remains 671.9
+KiB raw.
+
+## Profile 0.490 converter and static-device size delta
+
+The converter, HSV, namespace-binding, and structural-attribute increment initially pushed the
+Worker above the unchanged 725 KiB ceiling. PDF and PostScript now share their vector-device
+geometry, while PDF, PostScript, and PNG share byte, colour, hatch, point, and string helpers. The
+production-only Worker compaction uses the pinned Terser implementation, and runtime-only builtin
+values omit review metadata already owned by the compatibility ledger, capability sources, and
+documentation. Device serializers remain statically bundled: evaluating R code never imports or
+fetches a renderer module. A clean production build measures the Worker at 741,429 bytes (724.1 KiB)
+gzip, leaving 971 bytes below the unchanged ceiling. Device behavior remains distributed and tested;
+the optimization does not remove functionality or raise a budget. The public client remains 19.5 KiB
+gzip and combined parser Wasm remains 671.9 KiB raw.
+
+## Profile 0.494 custom-family size delta
+
+The custom numeric-response GLM-family protocol and method-correct `vcov.lm()` behavior reuse the
+existing evaluator, promise, model, residual, summary, and prediction machinery and add no
+dependency, host capability, or package resource. The family descriptor is shared by fitting and
+stored-model consumers so those paths do not carry duplicate parsers or drift independently. A clean
+production build measures Worker JavaScript at 742,972 bytes (725.6 KiB) gzip, 572 bytes above the
+former 725 KiB ceiling. The Worker ceiling therefore rises by the minimum sufficient whole-KiB
+increment to 726 KiB, leaving 452 bytes of measured headroom. The public client remains 19.6 KiB
+gzip and combined parser Wasm remains 671.9 KiB raw.
+
+## Profile 0.501 local replacement allocation behavior
+
+Repeated replacement of an exactly owned local numeric vector now reuses same-length backing storage
+and grows capacity geometrically up to `maxVectorLength`. Capacity is hidden from R length, wire
+values, and serialization, but is charged when allocated and included in runtime memory census
+estimates. Alias assignment, promise forcing, active/nonlocal bindings, names, attributes, S4 state,
+and coercion disable reuse. A 1,000-element grow-and-update regression completes inside a 700,000
+cumulative-element budget while direct and promised aliases retain GNU R values. The unchanged DFBA
+package's four 10,000-sample contrast examples complete under the existing package-test limits; no
+evaluation-resource ceiling was raised. A clean production build measures Worker JavaScript at
+745,534 bytes (728.1 KiB) gzip, 2,562 bytes above Profile 0.494 and 2,558 bytes above the former 726
+KiB ceiling. The explicit Worker budget therefore rises by the minimum sufficient whole-KiB
+increment to 729 KiB, leaving 962 bytes of measured headroom. The public client remains 19.6 KiB
+gzip and combined parser Wasm remains 671.9 KiB raw.
+
+## Profile 0.513 package-data and diagram size delta
+
+Generic documented LazyData mapping is build-time metadata and adds no runtime package identity or
+network path. The Worker increment contains reusable `format.pval()`, line-end normalization and
+multi-device propagation, plot-title controls, recursive graphics labels, and zero-row data-frame
+semantics. A clean production build measures Worker JavaScript at 747,870 bytes (730.3 KiB) gzip,
+2,336 bytes above Profile 0.501 and 1,374 bytes above the former 729 KiB ceiling. The explicit
+Worker budget therefore rises by the minimum sufficient whole-KiB increment to 731 KiB, leaving 674
+bytes of measured headroom. The public client remains 19.6 KiB gzip and combined parser Wasm remains
+671.9 KiB raw.
+
+## Profile 0.516 promise forwarding and step-function plotting
+
+Active-frame promise provenance for captured/re-forwarded dots and the reusable GNU-shaped
+`stats::plot.stepfun` graphics contract add no dependency or network path. A clean production build
+measures Worker JavaScript at 750,054 bytes (732.475 KiB) gzip. This exceeds the prior 731 KiB
+ceiling by 1,510 bytes, so the Worker budget increases by the minimum sufficient whole-KiB step to
+733 KiB, leaving 538 bytes of headroom. The statically loaded client and parser-Wasm budgets are
+unchanged.
+
+## Profile 0.517 abbreviation-coercion size delta
+
+Routing `abbreviate()` through the existing `as.character` generic adds no dependency, package
+identity, network path, or host capability. A clean production build measures Worker JavaScript at
+750,060 bytes (732.480 KiB) gzip, six bytes above Profile 0.516 and 532 bytes below the unchanged
+733 KiB ceiling. The public client and combined parser-Wasm budgets remain unchanged.
+
+## Profile 0.518 conditional-plot size delta
+
+The numeric single-condition `graphics::coplot` slice reuses the shared graphics journal and moves
+its pure interval/panel construction into a lazy Worker support chunk. A clean production build
+measures the statically loaded Worker JavaScript at 750,774 bytes (733.178 KiB) gzip, 714 bytes
+above Profile 0.517 and 182 bytes above the former 733 KiB ceiling. After extracting the reusable
+numeric layout from the entry chunk, the explicit Worker budget rises by the minimum whole-KiB
+increment to 734 KiB, leaving 842 bytes of headroom. The public client and parser-Wasm budgets are
+unchanged.
+
+## Profile 0.520 gamma-family bulk RNG
+
+`rgamma`, `rchisq`, and `rexp` now defer `.Random.seed` publication until a complete vector has been
+generated. Their outer loops use one cooperative checkpoint per 4,096 outputs, while rejection loops
+retain an internal periodic checkpoint so adversarial parameters remain interruptible. The unchanged
+invgamma examples fall from minutes to tens of seconds locally without increasing default limits.
+Its deliberate ten-million-element draw uses the finite opt-in `large-browser` profile and an
+explicit 100,000,000-step ceiling.
+
+The bounded non-central Student-t quadrature is preloaded with the other Worker support assets but
+is emitted as a lazy chunk, so later evaluation remains offline without charging this low-frequency
+kernel to the initial Worker entry. A clean production build measures initial Worker JavaScript at
+751,389 bytes (733.778 KiB) gzip, 227 bytes below the unchanged 734 KiB ceiling. The statically
+loaded public client remains 19.6 KiB gzip and combined parser Wasm remains 671.9 KiB raw.
+
+## Profile 0.521 Pearson and digest support chunks
+
+The initial Pearson implementation raised Worker JavaScript to 736.0 KiB gzip, above the unchanged
+734 KiB gate. The budget was not increased. An initial attempt to emit the whole `chisq.test`
+wrapper as a support block was rejected by real-browser evidence: the generated block imported the
+Worker entry, which would either leave an unresolved URL or instantiate a second runtime module.
+`chisq.test` therefore remains statically linked to the one Worker semantic host.
+
+The browser-owned core-package definitions and data resources contain no evaluator behavior or
+runtime imports, so they now form a one-way startup module loaded in parallel with the parser and
+other support assets. The independent MD5 kernel remains a self-contained startup-preloaded module.
+Worker readiness awaits these imports; later R evaluation remains network-free and cannot observe a
+partially initialized package registry. The Playground asset copier follows relative support-module
+imports transitively and rejects any back-edge to `worker-entry-*`, making the one-runtime invariant
+an executable build rule instead of a packaging assumption.
+
+A clean production build measures initial Worker JavaScript at 693,458 bytes (677.205 KiB) gzip,
+58,158 bytes below the unchanged 734 KiB ceiling. The statically loaded public client is 19.6 KiB
+gzip and combined parser Wasm is 671.9 KiB raw. The browser bundle audit covers 40 JavaScript files,
+and the production Playground passes all six Worker scenarios across Chromium, Firefox, and WebKit,
+including the no-evaluation-network-traffic assertion.
+
+## Profile 0.522 conditional-table simulation
+
+The independently implemented AS 159 sampler remains in the existing statically linked Pearson path
+and adds no Worker support chunk, network fetch, generated JavaScript, or host dependency. Its
+log-factorial workspace and simulated tables are charged to the runtime allocation budget; setup and
+replicate loops retain cooperative checkpoints, while deferred seed publication prevents a global
+binding rewrite for every random draw.
+
+A clean production build measures initial Worker JavaScript at 694,510 bytes (678.232 KiB) gzip,
+57,106 bytes below the unchanged 734 KiB ceiling. The statically loaded public client remains 19.6
+KiB gzip, combined parser Wasm remains 671.9 KiB raw, and the browser audit still covers 40
+JavaScript files.

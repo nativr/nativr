@@ -11,6 +11,7 @@ export interface PackageDependency {
 
 export interface PackagedPureRBundle {
   readonly description: string;
+  /** Audited NAMESPACE declarations after deterministic source-platform selection. */
   readonly namespace: string;
   readonly rSources: readonly {
     readonly path: string;
@@ -65,6 +66,8 @@ export interface PackagePackOptions {
   readonly limits?: Partial<PackagePackLimits>;
   /** Selects R/<platform> sources and Collate.<platform>. Default: unix. */
   readonly sourcePlatform?: "unix" | "windows";
+  /** Preserve source-package tests as inert resources for explicit P6 execution. Default: false. */
+  readonly includeTests?: boolean;
 }
 
 export interface ResolvePackageOptions {
@@ -74,6 +77,8 @@ export interface ResolvePackageOptions {
   readonly providedPackages?: Readonly<Record<string, string>>;
   /** Resolve Suggests as required edges. Default: false. */
   readonly includeSuggests?: boolean;
+  /** Resolve only these package names when encountered through Suggests edges. */
+  readonly selectedSuggests?: readonly string[];
 }
 
 export interface ResolvedPackageSet {
@@ -83,8 +88,12 @@ export interface ResolvedPackageSet {
   readonly bundles: readonly PackagedPureRBundle[];
   readonly lock: {
     readonly format: "nativr-package-lock";
-    readonly formatVersion: 1;
+    readonly formatVersion: 2;
     readonly roots: readonly string[];
+    readonly suggests: {
+      readonly mode: "none" | "all" | "selected";
+      readonly packages: readonly string[];
+    };
     readonly packages: readonly {
       readonly name: string;
       readonly version: string;

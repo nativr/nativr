@@ -12,6 +12,8 @@ import {
   isFactor,
   isMissing,
   listValue,
+  logicalVector,
+  objectClasses,
   vectorDimensions,
   vectorNames,
   withAttribute,
@@ -21,7 +23,10 @@ import {
 } from "@nativr/runtime";
 import type {
   BuiltinCallArgument,
+  BuiltinDefinition,
   BuiltinInvocation,
+  RDoubleVector,
+  RIntegerVector,
   RList,
   RValue,
   RVector,
@@ -34,9 +39,111 @@ export interface ClusteringBuiltinSpec {
   readonly parameters: readonly string[];
   readonly compatibility: "numeric" | "behavioral";
   readonly implementation: (invocation: BuiltinInvocation) => Promise<RValue>;
+  readonly formals?: BuiltinDefinition["formals"];
 }
 
+const CLUSTERING_SPAN = Object.freeze({
+  start: Object.freeze({ offset: 0, line: 1, column: 1 }),
+  end: Object.freeze({ offset: 0, line: 1, column: 1 }),
+});
+
+const missingFormal = (name: string) => ({ name, span: CLUSTERING_SPAN });
+const stringFormal = (name: string, value: string) => ({
+  name,
+  defaultValue: { kind: "StringLiteral" as const, value, span: CLUSTERING_SPAN },
+  span: CLUSTERING_SPAN,
+});
+const logicalFormal = (name: string, value: boolean) => ({
+  name,
+  defaultValue: { kind: "LogicalLiteral" as const, value, span: CLUSTERING_SPAN },
+  span: CLUSTERING_SPAN,
+});
+const numericFormal = (name: string, value: number) => ({
+  name,
+  defaultValue: { kind: "NumericLiteral" as const, value, span: CLUSTERING_SPAN },
+  span: CLUSTERING_SPAN,
+});
+const nullFormal = (name: string) => ({
+  name,
+  defaultValue: { kind: "NullLiteral" as const, span: CLUSTERING_SPAN },
+  span: CLUSTERING_SPAN,
+});
+
 export const CLUSTERING_BUILTIN_SPECS: readonly ClusteringBuiltinSpec[] = [
+  {
+    name: "dist",
+    parameters: ["x", "method", "diag", "upper", "p"],
+    compatibility: "behavioral",
+    implementation: builtinDist,
+    formals: [
+      missingFormal("x"),
+      stringFormal("method", "euclidean"),
+      logicalFormal("diag", false),
+      logicalFormal("upper", false),
+      numericFormal("p", 2),
+    ],
+  },
+  {
+    name: "as.dist",
+    parameters: ["m", "diag", "upper"],
+    compatibility: "behavioral",
+    implementation: builtinAsDist,
+    formals: [missingFormal("m"), logicalFormal("diag", false), logicalFormal("upper", false)],
+  },
+  {
+    name: "as.dist.default",
+    parameters: ["m", "diag", "upper"],
+    compatibility: "behavioral",
+    implementation: builtinAsDist,
+    formals: [missingFormal("m"), logicalFormal("diag", false), logicalFormal("upper", false)],
+  },
+  {
+    name: "as.matrix.dist",
+    parameters: ["x", "..."],
+    compatibility: "behavioral",
+    implementation: builtinAsMatrixDist,
+    formals: [missingFormal("x"), missingFormal("...")],
+  },
+  {
+    name: "hclust",
+    parameters: ["d", "method", "members"],
+    compatibility: "behavioral",
+    implementation: builtinHclust,
+    formals: [missingFormal("d"), stringFormal("method", "complete"), nullFormal("members")],
+  },
+  {
+    name: "cutree",
+    parameters: ["tree", "k", "h"],
+    compatibility: "behavioral",
+    implementation: builtinCutree,
+    formals: [missingFormal("tree"), nullFormal("k"), nullFormal("h")],
+  },
+  {
+    name: "as.dendrogram",
+    parameters: ["object", "..."],
+    compatibility: "behavioral",
+    implementation: builtinAsDendrogram,
+    formals: [missingFormal("object"), missingFormal("...")],
+  },
+  {
+    name: "as.dendrogram.hclust",
+    parameters: ["object", "hang", "check", "..."],
+    compatibility: "behavioral",
+    implementation: builtinAsDendrogram,
+    formals: [
+      missingFormal("object"),
+      numericFormal("hang", -1),
+      logicalFormal("check", true),
+      missingFormal("..."),
+    ],
+  },
+  {
+    name: "order.dendrogram",
+    parameters: ["x"],
+    compatibility: "behavioral",
+    implementation: builtinOrderDendrogram,
+    formals: [missingFormal("x")],
+  },
   {
     name: "kmeans",
     parameters: ["x", "centers", "iter.max", "nstart", "algorithm", "trace"],
@@ -44,6 +151,874 @@ export const CLUSTERING_BUILTIN_SPECS: readonly ClusteringBuiltinSpec[] = [
     implementation: builtinKmeans,
   },
 ];
+
+type DistanceMethod = "euclidean" | "maximum" | "manhattan" | "canberra" | "binary" | "minkowski";
+type HclustMethod =
+  "ward.D" | "ward.D2" | "single" | "complete" | "average" | "mcquitty" | "median" | "centroid";
+
+interface HierarchicalCluster {
+  readonly reference: number;
+  readonly size: number;
+  readonly height: number;
+  readonly minimumLeaf: number;
+}
+
+async function builtinDist(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched } = matchBuiltinArguments(invocation, ["x", "method", "diag", "upper", "p"]);
+  const xArgument = matched.get("x");
+  if (xArgument === undefined || xArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in dist().");
+  }
+  const x = numericMatrix(await invocation.force(xArgument.promise), "x", invocation);
+  validateFiniteMatrix(x, "x");
+  const method = await clusteringChoice<DistanceMethod>(
+    invocation,
+    matched.get("method"),
+    ["euclidean", "maximum", "manhattan", "canberra", "binary", "minkowski"],
+    "euclidean",
+    "method",
+  );
+  const diagonal = await clusteringFlag(invocation, matched.get("diag"), false, "diag");
+  const upper = await clusteringFlag(invocation, matched.get("upper"), false, "upper");
+  const p = await clusteringPositiveNumber(invocation, matched.get("p"), 2, "p");
+  const length = (x.rows * Math.max(0, x.rows - 1)) / 2;
+  invocation.context.allocate(length);
+  const distances = new Float64Array(length);
+  let outputIndex = 0;
+  for (let left = 0; left < x.rows - 1; left += 1) {
+    for (let right = left + 1; right < x.rows; right += 1) {
+      invocation.context.checkpoint();
+      distances[outputIndex++] = matrixRowDistance(x, left, right, method, p);
+    }
+  }
+  let output: RVector = doubleVector(distances);
+  output = withAttribute(output, "Size", integerVector([x.rows]));
+  if (x.rowNames !== undefined)
+    output = withAttribute(output, "Labels", characterVector(x.rowNames));
+  output = withAttribute(output, "Diag", logicalVector([diagonal ? 1 : 0]));
+  output = withAttribute(output, "Upper", logicalVector([upper ? 1 : 0]));
+  output = withAttribute(output, "method", characterVector([method]));
+  const call = invocation.currentCall();
+  if (call.type !== "null") output = withAttribute(output, "call", call);
+  return withClasses(output, ["dist"]);
+}
+
+async function builtinAsDist(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched } = matchBuiltinArguments(invocation, ["m", "diag", "upper"]);
+  const matrixArgument = matched.get("m");
+  if (matrixArgument === undefined || matrixArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'm' is missing in as.dist().");
+  }
+  const input = await invocation.force(matrixArgument.promise);
+  const diagonal = await clusteringFlag(invocation, matched.get("diag"), false, "diag");
+  const upper = await clusteringFlag(invocation, matched.get("upper"), false, "upper");
+  if (objectClasses(input)?.includes("dist") === true && isAtomic(input)) {
+    let output: RVector = input;
+    output = withAttribute(output, "Diag", logicalVector([diagonal ? 1 : 0]));
+    output = withAttribute(output, "Upper", logicalVector([upper ? 1 : 0]));
+    return output;
+  }
+  if (!isAtomic(input) || input.type === "complex" || input.type === "raw") {
+    throw new RTypeMismatchError("NRT3269", "as.dist() requires a real square matrix.");
+  }
+  const dimensions = vectorDimensions(input);
+  if (dimensions?.length !== 2 || dimensions[0] !== dimensions[1]) {
+    throw new RTypeMismatchError("NRT3269", "as.dist() requires a real square matrix.");
+  }
+  const size = dimensions[0] ?? 0;
+  const length = (size * Math.max(0, size - 1)) / 2;
+  invocation.context.allocate(length);
+  const values = new Float64Array(length);
+  const missing = new Uint8Array(length);
+  let outputIndex = 0;
+  for (let column = 0; column < size - 1; column += 1) {
+    for (let row = column + 1; row < size; row += 1) {
+      const inputIndex = row + column * size;
+      if (isMissing(input, inputIndex) || Number.isNaN(Number(input.values[inputIndex]))) {
+        missing[outputIndex] = 1;
+      } else {
+        values[outputIndex] = Number(input.values[inputIndex] ?? 0);
+      }
+      outputIndex += 1;
+    }
+  }
+  let output: RVector = doubleVector(values, compactMissing(missing));
+  const dimensionNames = matrixDimensionNames(input);
+  if (dimensionNames.row !== undefined) {
+    output = withAttribute(output, "Labels", characterVector(dimensionNames.row));
+  }
+  output = withAttribute(output, "Size", integerVector([size]));
+  const call = invocation.currentCall();
+  if (call.type !== "null") output = withAttribute(output, "call", call);
+  output = withClasses(output, ["dist"]);
+  output = withAttribute(output, "Diag", logicalVector([diagonal ? 1 : 0]));
+  return withAttribute(output, "Upper", logicalVector([upper ? 1 : 0]));
+}
+
+async function builtinAsMatrixDist(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched } = matchBuiltinArguments(invocation, ["x", "..."]);
+  const argument = matched.get("x");
+  if (argument === undefined || argument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in as.matrix.dist().");
+  }
+  const distance = await invocation.force(argument.promise);
+  if (
+    (distance.type !== "logical" && distance.type !== "integer" && distance.type !== "double") ||
+    objectClasses(distance)?.includes("dist") !== true
+  ) {
+    throw new RTypeMismatchError("NRT3270", "as.matrix.dist() requires a dist object.");
+  }
+  const size = distanceObjectSize(distance);
+  const expectedLength = (size * Math.max(0, size - 1)) / 2;
+  if (size < 0 || distance.length !== expectedLength) {
+    throw new RTypeMismatchError("NRT3270", "invalid 'dist' object");
+  }
+  invocation.context.allocate(size * size);
+  const values = new Float64Array(size * size);
+  const missing = new Uint8Array(size * size);
+  let source = 0;
+  for (let column = 0; column < size - 1; column += 1) {
+    for (let row = column + 1; row < size; row += 1) {
+      invocation.context.checkpoint();
+      const lower = row + column * size;
+      const upper = column + row * size;
+      if (isMissing(distance, source)) {
+        missing[lower] = 1;
+        missing[upper] = 1;
+      } else {
+        const value = Number(distance.values[source] ?? 0);
+        values[lower] = value;
+        values[upper] = value;
+      }
+      source += 1;
+    }
+  }
+  const suppliedLabels = distance.attributes.get("Labels");
+  const labels =
+    suppliedLabels?.type === "character" && suppliedLabels.length === size
+      ? suppliedLabels
+      : characterVector(Array.from({ length: size }, (_, index) => String(index + 1)));
+  let output: RVector = withDimensions(doubleVector(values, compactMissing(missing)), [size, size]);
+  output = withAttribute(output, "dimnames", listValue([labels, labels]));
+  return output;
+}
+
+async function builtinHclust(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched } = matchBuiltinArguments(invocation, ["d", "method", "members"]);
+  const distanceArgument = matched.get("d");
+  if (distanceArgument === undefined || distanceArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'd' is missing in hclust().");
+  }
+  const distance = await invocation.force(distanceArgument.promise);
+  if (
+    (distance.type !== "logical" && distance.type !== "integer" && distance.type !== "double") ||
+    objectClasses(distance)?.includes("dist") !== true
+  ) {
+    throw new RTypeMismatchError("NRT3270", "dissimilarities of improper length");
+  }
+  const size = distanceObjectSize(distance);
+  if (size < 2 || distance.length !== (size * (size - 1)) / 2) {
+    throw new RTypeMismatchError("NRT3270", "dissimilarities of improper length");
+  }
+  const selected = await clusteringChoice<string>(
+    invocation,
+    matched.get("method"),
+    [
+      "complete",
+      "ward",
+      "ward.D",
+      "ward.D2",
+      "single",
+      "average",
+      "mcquitty",
+      "median",
+      "centroid",
+    ],
+    "complete",
+    "method",
+  );
+  const method: HclustMethod = selected === "ward" ? "ward.D" : (selected as HclustMethod);
+  if (selected === "ward") {
+    invocation.context.warn({
+      code: "NRW1103",
+      message: 'The "ward" method has been renamed to "ward.D"; note new "ward.D2"',
+    });
+  }
+  const memberSizes = await hclustMemberSizes(invocation, matched.get("members"), size);
+  const distances = new Map<string, number>();
+  let inputIndex = 0;
+  for (let left = 0; left < size - 1; left += 1) {
+    for (let right = left + 1; right < size; right += 1) {
+      if (isMissing(distance, inputIndex)) {
+        throw new RTypeMismatchError("NRT3270", "NA/NaN/Inf in foreign function call");
+      }
+      const value = Number(distance.values[inputIndex] ?? Number.NaN);
+      if (!Number.isFinite(value)) {
+        throw new RTypeMismatchError("NRT3270", "NA/NaN/Inf in foreign function call");
+      }
+      distances.set(clusterPairKey(-(left + 1), -(right + 1)), value);
+      inputIndex += 1;
+    }
+  }
+  const active: HierarchicalCluster[] = Array.from({ length: size }, (_, index) => ({
+    reference: -(index + 1),
+    size: memberSizes[index] ?? 1,
+    height: 0,
+    minimumLeaf: index + 1,
+  }));
+  const first = new Int32Array(size - 1);
+  const second = new Int32Array(size - 1);
+  const heights = new Float64Array(size - 1);
+  invocation.context.allocate((size - 1) * 5 + distance.length);
+
+  for (let mergeIndex = 0; mergeIndex < size - 1; mergeIndex += 1) {
+    let selectedLeft = 0;
+    let selectedRight = 1;
+    let selectedDistance = Number.POSITIVE_INFINITY;
+    for (let left = 0; left < active.length - 1; left += 1) {
+      for (let right = left + 1; right < active.length; right += 1) {
+        const candidate = distances.get(
+          clusterPairKey(active[left]?.reference ?? 0, active[right]?.reference ?? 0),
+        );
+        if (candidate !== undefined && candidate < selectedDistance) {
+          selectedDistance = candidate;
+          selectedLeft = left;
+          selectedRight = right;
+        }
+      }
+    }
+    const leftCluster = active[selectedLeft];
+    const rightCluster = active[selectedRight];
+    if (
+      leftCluster === undefined ||
+      rightCluster === undefined ||
+      !Number.isFinite(selectedDistance)
+    ) {
+      throw new RTypeMismatchError("NRT3270", "invalid dissimilarities");
+    }
+    const [orderedLeft, orderedRight] = orderHclustChildren(leftCluster, rightCluster);
+    first[mergeIndex] = orderedLeft.reference;
+    second[mergeIndex] = orderedRight.reference;
+    heights[mergeIndex] = selectedDistance;
+    const merged: HierarchicalCluster = {
+      reference: mergeIndex + 1,
+      size: leftCluster.size + rightCluster.size,
+      height: selectedDistance,
+      minimumLeaf: Math.min(leftCluster.minimumLeaf, rightCluster.minimumLeaf),
+    };
+    for (const other of active) {
+      if (other === leftCluster || other === rightCluster) continue;
+      const leftDistance = distances.get(clusterPairKey(leftCluster.reference, other.reference));
+      const rightDistance = distances.get(clusterPairKey(rightCluster.reference, other.reference));
+      if (leftDistance === undefined || rightDistance === undefined) continue;
+      distances.set(
+        clusterPairKey(merged.reference, other.reference),
+        updateHclustDistance(
+          method,
+          leftDistance,
+          rightDistance,
+          selectedDistance,
+          leftCluster.size,
+          rightCluster.size,
+          other.size,
+        ),
+      );
+    }
+    for (const key of [...distances.keys()]) {
+      if (
+        clusterPairContains(key, leftCluster.reference) ||
+        clusterPairContains(key, rightCluster.reference)
+      ) {
+        distances.delete(key);
+      }
+    }
+    active.splice(selectedRight, 1);
+    active.splice(selectedLeft, 1);
+    active.push(merged);
+  }
+
+  const merge = withDimensions(integerVector([...first, ...second]), [size - 1, 2]);
+  const order = integerVector(hclustLeafOrder(first, second));
+  const labels = distance.attributes.get("Labels");
+  const methodAttribute = distance.attributes.get("method");
+  const call = invocation.currentCall();
+  return withClasses(
+    listValue(
+      [
+        merge,
+        doubleVector(heights),
+        order,
+        labels?.type === "character" ? labels : R_NULL,
+        characterVector([method]),
+        call,
+        methodAttribute?.type === "character" ? methodAttribute : R_NULL,
+      ],
+      ["merge", "height", "order", "labels", "method", "call", "dist.method"],
+    ),
+    ["hclust"],
+  );
+}
+
+async function builtinAsDendrogram(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched } = matchBuiltinArguments(invocation, ["object", "hang", "check", "..."]);
+  const objectArgument = matched.get("object");
+  if (objectArgument === undefined || objectArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'object' is missing in as.dendrogram().");
+  }
+  const object = await invocation.force(objectArgument.promise);
+  if (objectClasses(object)?.includes("dendrogram") === true) return object;
+  if (object.type !== "list" || objectClasses(object)?.includes("hclust") !== true) {
+    throw new RTypeMismatchError("NRT3271", "invalid object for as.dendrogram");
+  }
+  const merge = namedListField(object, "merge");
+  const heights = namedListField(object, "height");
+  const labels = namedListField(object, "labels");
+  if (merge?.type !== "integer" || heights?.type !== "double") {
+    throw new RTypeMismatchError("NRT3271", "invalid hclust object");
+  }
+  const dimensions = vectorDimensions(merge);
+  const rows = dimensions?.[0] ?? 0;
+  if (dimensions?.length !== 2 || dimensions[1] !== 2 || heights.length !== rows) {
+    throw new RTypeMismatchError("NRT3271", "invalid hclust object");
+  }
+  const build = (reference: number): RValue => {
+    if (reference < 0) {
+      const observation = -reference;
+      let leaf: RVector = integerVector([observation]);
+      leaf = withAttribute(leaf, "members", integerVector([1]));
+      leaf = withAttribute(leaf, "height", doubleVector([0]));
+      leaf = withAttribute(
+        leaf,
+        "label",
+        labels?.type === "character"
+          ? characterVector([labels.values[observation - 1] ?? String(observation)])
+          : integerVector([observation]),
+      );
+      leaf = withAttribute(leaf, "leaf", logicalVector([1]));
+      return withClasses(leaf, ["dendrogram"]);
+    }
+    const row = reference - 1;
+    const left = build(merge.values[row] ?? 0);
+    const right = build(merge.values[row + rows] ?? 0);
+    const leftMembers = dendrogramMembers(left);
+    const rightMembers = dendrogramMembers(right);
+    const midpoint = (dendrogramMidpoint(left) + leftMembers + dendrogramMidpoint(right)) / 2;
+    let branch: RVector = listValue([left, right]);
+    branch = withAttribute(branch, "members", integerVector([leftMembers + rightMembers]));
+    branch = withAttribute(branch, "midpoint", doubleVector([midpoint]));
+    branch = withAttribute(branch, "height", doubleVector([heights.values[row] ?? 0]));
+    return withClasses(branch, ["dendrogram"]);
+  };
+  return build(rows);
+}
+
+interface CutreeInput {
+  readonly merge: RIntegerVector;
+  readonly heights: RDoubleVector | RIntegerVector;
+  readonly rows: number;
+  readonly labels?: readonly string[];
+}
+
+async function builtinCutree(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched } = matchBuiltinArguments(invocation, ["tree", "k", "h"]);
+  const treeArgument = matched.get("tree");
+  if (treeArgument === undefined || treeArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'tree' is missing in cutree().");
+  }
+  const tree = cutreeInput(await invocation.force(treeArgument.promise));
+  const kArgument = matched.get("k");
+  const kValue =
+    kArgument === undefined || kArgument.promise.missing
+      ? R_NULL
+      : await invocation.force(kArgument.promise);
+  if (kValue.type !== "null") {
+    const counts = cutreeClusterCounts(kValue, tree.rows + 1, invocation);
+    return cutreeOutput(
+      tree,
+      counts.map((count) => tree.rows + 1 - count),
+      counts.map(String),
+    );
+  }
+
+  const hArgument = matched.get("h");
+  const hValue =
+    hArgument === undefined || hArgument.promise.missing
+      ? R_NULL
+      : await invocation.force(hArgument.promise);
+  if (hValue.type === "null") {
+    throw new REvaluationError("NRE2258", "either 'k' or 'h' must be specified");
+  }
+  for (let index = 1; index < tree.heights.length; index += 1) {
+    const previous = Number(tree.heights.values[index - 1] ?? Number.NaN);
+    const current = Number(tree.heights.values[index] ?? Number.NaN);
+    if (isMissing(tree.heights, index - 1) || isMissing(tree.heights, index)) {
+      throw new RTypeMismatchError("NRT3273", "invalid 'height' component of 'tree'");
+    }
+    if (current < previous) {
+      throw new REvaluationError(
+        "NRE2258",
+        "the 'height' component of 'tree' is not sorted (increasingly)",
+      );
+    }
+  }
+  const thresholds = cutreeHeights(hValue);
+  return cutreeOutput(
+    tree,
+    thresholds.map((threshold) => {
+      if (!Number.isFinite(threshold)) return 0;
+      let merges = 0;
+      while (
+        merges < tree.rows &&
+        Number(tree.heights.values[merges] ?? Number.POSITIVE_INFINITY) <= threshold
+      ) {
+        merges += 1;
+      }
+      return merges;
+    }),
+    thresholds.map(cutreeHeightLabel),
+  );
+}
+
+function cutreeInput(value: RValue): CutreeInput {
+  if (value.type !== "list" || objectClasses(value)?.includes("hclust") !== true) {
+    throw new RTypeMismatchError("NRT3273", "invalid 'tree' ('merge' component)");
+  }
+  const merge = namedListField(value, "merge");
+  const heights = namedListField(value, "height");
+  const labels = namedListField(value, "labels");
+  const dimensions = merge?.type === "integer" ? vectorDimensions(merge) : undefined;
+  const rows = dimensions?.[0] ?? 0;
+  if (
+    merge?.type !== "integer" ||
+    dimensions?.length !== 2 ||
+    dimensions[1] !== 2 ||
+    rows < 1 ||
+    (heights?.type !== "double" && heights?.type !== "integer") ||
+    heights.length !== rows
+  ) {
+    throw new RTypeMismatchError("NRT3273", "invalid 'tree' ('merge' component)");
+  }
+  const size = rows + 1;
+  for (let row = 0; row < rows; row += 1) {
+    for (const reference of [merge.values[row] ?? 0, merge.values[row + rows] ?? 0]) {
+      if (
+        reference === 0 ||
+        (reference < 0 && -reference > size) ||
+        (reference > 0 && reference > row)
+      ) {
+        throw new RTypeMismatchError("NRT3273", "invalid 'tree' ('merge' component)");
+      }
+    }
+  }
+  if (labels !== undefined && labels.type !== "null") {
+    if (labels.type !== "character" || labels.length !== size) {
+      throw new RTypeMismatchError("NRT3273", "invalid 'tree' ('labels' component)");
+    }
+    return { merge, heights, rows, labels: [...labels.values] };
+  }
+  return { merge, heights, rows };
+}
+
+function cutreeClusterCounts(
+  value: RValue,
+  size: number,
+  invocation: BuiltinInvocation,
+): readonly number[] {
+  if (
+    value.type !== "logical" &&
+    value.type !== "integer" &&
+    value.type !== "double" &&
+    value.type !== "raw"
+  ) {
+    throw new RTypeMismatchError("NRT3273", "invalid 'k' argument");
+  }
+  if (value.length === 0) {
+    invocation.context.warn({
+      code: "NRW1104",
+      message: "no non-missing arguments to min; returning Inf",
+    });
+    invocation.context.warn({
+      code: "NRW1104",
+      message: "no non-missing arguments to max; returning -Inf",
+    });
+    return [];
+  }
+  return Array.from({ length: value.length }, (_, index) => {
+    if (isMissing(value, index)) {
+      throw new RTypeMismatchError("NRT3273", "missing value where TRUE/FALSE needed");
+    }
+    const count = Math.trunc(Number(value.values[index] ?? Number.NaN));
+    if (!Number.isFinite(count) || count < 1 || count > size) {
+      throw new RTypeMismatchError("NRT3273", `elements of 'k' must be between 1 and ${size}`);
+    }
+    return count;
+  });
+}
+
+function cutreeHeights(value: RValue): readonly number[] {
+  if (
+    value.type !== "logical" &&
+    value.type !== "integer" &&
+    value.type !== "double" &&
+    value.type !== "raw"
+  ) {
+    throw new RTypeMismatchError("NRT3273", "invalid 'h' argument");
+  }
+  return Array.from({ length: value.length }, (_, index) => {
+    if (isMissing(value, index)) {
+      throw new RTypeMismatchError("NRT3273", "invalid 'h' argument");
+    }
+    const threshold = Number(value.values[index] ?? Number.NaN);
+    if (Number.isNaN(threshold)) {
+      throw new RTypeMismatchError("NRT3273", "invalid 'h' argument");
+    }
+    return threshold;
+  });
+}
+
+function cutreeHeightLabel(value: number): string {
+  if (value === Number.POSITIVE_INFINITY) return "Inf";
+  if (value === Number.NEGATIVE_INFINITY) return "-Inf";
+  return Object.is(value, -0) ? "0" : String(value);
+}
+
+function cutreeOutput(
+  tree: CutreeInput,
+  appliedMerges: readonly number[],
+  columnLabels: readonly string[],
+): RVector {
+  const partitions = appliedMerges.map((count) => cutreePartition(tree, count));
+  if (partitions.length === 1) {
+    const partition = partitions[0] ?? new Int32Array();
+    return tree.labels === undefined
+      ? integerVector(partition)
+      : withNames(integerVector(partition), tree.labels);
+  }
+  const size = tree.rows + 1;
+  const values = new Int32Array(size * partitions.length);
+  for (let column = 0; column < partitions.length; column += 1) {
+    values.set(partitions[column] ?? new Int32Array(), column * size);
+  }
+  let output: RVector = withDimensions(integerVector(values), [size, partitions.length]);
+  output = withAttribute(
+    output,
+    "dimnames",
+    listValue([
+      tree.labels === undefined ? R_NULL : characterVector(tree.labels),
+      columnLabels.length === 0 ? R_NULL : characterVector(columnLabels),
+    ]),
+  );
+  return output;
+}
+
+function cutreePartition(tree: CutreeInput, appliedMerges: number): Int32Array {
+  const size = tree.rows + 1;
+  const parent = Int32Array.from({ length: size }, (_, index) => index);
+  const representative = new Int32Array(tree.rows);
+  const find = (leaf: number): number => {
+    let root = leaf;
+    while ((parent[root] ?? root) !== root) root = parent[root] ?? root;
+    let current = leaf;
+    while ((parent[current] ?? current) !== root) {
+      const next = parent[current] ?? current;
+      parent[current] = root;
+      current = next;
+    }
+    return root;
+  };
+  const resolve = (reference: number): number =>
+    reference < 0 ? -reference - 1 : (representative[reference - 1] ?? 0);
+  for (let row = 0; row < appliedMerges; row += 1) {
+    const left = find(resolve(tree.merge.values[row] ?? 0));
+    const right = find(resolve(tree.merge.values[row + tree.rows] ?? 0));
+    const root = Math.min(left, right);
+    parent[left] = root;
+    parent[right] = root;
+    representative[row] = root;
+  }
+  const groups = new Map<number, number>();
+  const output = new Int32Array(size);
+  for (let leaf = 0; leaf < size; leaf += 1) {
+    const root = find(leaf);
+    let group = groups.get(root);
+    if (group === undefined) {
+      group = groups.size + 1;
+      groups.set(root, group);
+    }
+    output[leaf] = group;
+  }
+  return output;
+}
+
+async function builtinOrderDendrogram(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched } = matchBuiltinArguments(invocation, ["x"]);
+  const xArgument = matched.get("x");
+  if (xArgument === undefined || xArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in order.dendrogram().");
+  }
+  const input = await invocation.force(xArgument.promise);
+  if (objectClasses(input)?.includes("dendrogram") !== true) {
+    throw new RTypeMismatchError("NRT3271", "'order.dendrogram' requires a dendrogram");
+  }
+  const leaves: number[] = [];
+  collectDendrogramLeaves(input, leaves);
+  return integerVector(leaves);
+}
+
+async function clusteringChoice<T extends string>(
+  invocation: BuiltinInvocation,
+  argument: BuiltinCallArgument | undefined,
+  choices: readonly T[],
+  fallback: T,
+  name: string,
+): Promise<T> {
+  if (argument === undefined) return fallback;
+  const value = await invocation.force(argument.promise);
+  if (value.type !== "character" || value.length !== 1 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3272", `'${name}' must be one non-missing character value.`);
+  }
+  const supplied = value.values[0] ?? "";
+  const exact = choices.find((choice) => choice === supplied);
+  if (exact !== undefined) return exact;
+  const matches = choices.filter((choice) => choice.startsWith(supplied));
+  if (matches.length !== 1) {
+    throw new REvaluationError("NRE2130", `'arg' should be one of ${choices.join(", ")}`);
+  }
+  return matches[0] as T;
+}
+
+async function clusteringFlag(
+  invocation: BuiltinInvocation,
+  argument: BuiltinCallArgument | undefined,
+  fallback: boolean,
+  name: string,
+): Promise<boolean> {
+  if (argument === undefined) return fallback;
+  const value = await invocation.force(argument.promise);
+  if (
+    (value.type !== "logical" && value.type !== "integer" && value.type !== "double") ||
+    value.length !== 1 ||
+    isMissing(value, 0)
+  ) {
+    throw new RTypeMismatchError("NRT3272", `'${name}' must be one non-missing logical value.`);
+  }
+  return Number(value.values[0] ?? 0) !== 0;
+}
+
+async function clusteringPositiveNumber(
+  invocation: BuiltinInvocation,
+  argument: BuiltinCallArgument | undefined,
+  fallback: number,
+  name: string,
+): Promise<number> {
+  if (argument === undefined) return fallback;
+  const value = await invocation.force(argument.promise);
+  if (
+    (value.type !== "logical" && value.type !== "integer" && value.type !== "double") ||
+    value.length !== 1 ||
+    isMissing(value, 0)
+  ) {
+    throw new RTypeMismatchError("NRT3272", `'${name}' must be one positive number.`);
+  }
+  const result = Number(value.values[0] ?? Number.NaN);
+  if (!(result > 0) || !Number.isFinite(result)) {
+    throw new RTypeMismatchError("NRT3272", `'${name}' must be one positive number.`);
+  }
+  return result;
+}
+
+function matrixRowDistance(
+  matrix: NumericMatrix,
+  left: number,
+  right: number,
+  method: DistanceMethod,
+  p: number,
+): number {
+  let total = 0;
+  let maximum = 0;
+  let binaryUnion = 0;
+  let binaryDifference = 0;
+  for (let column = 0; column < matrix.columns; column += 1) {
+    const leftValue = matrix.values[left + column * matrix.rows] ?? 0;
+    const rightValue = matrix.values[right + column * matrix.rows] ?? 0;
+    const difference = Math.abs(leftValue - rightValue);
+    if (method === "maximum") {
+      maximum = Math.max(maximum, difference);
+    } else if (method === "manhattan") {
+      total += difference;
+    } else if (method === "canberra") {
+      const denominator = Math.abs(leftValue) + Math.abs(rightValue);
+      if (denominator > 0) total += difference / denominator;
+    } else if (method === "binary") {
+      const leftPresent = leftValue !== 0;
+      const rightPresent = rightValue !== 0;
+      if (leftPresent || rightPresent) {
+        binaryUnion += 1;
+        if (leftPresent !== rightPresent) binaryDifference += 1;
+      }
+    } else if (method === "minkowski") {
+      total += difference ** p;
+    } else {
+      total += difference * difference;
+    }
+  }
+  if (method === "maximum") return maximum;
+  if (method === "binary") return binaryUnion === 0 ? 0 : binaryDifference / binaryUnion;
+  if (method === "minkowski") return total ** (1 / p);
+  return method === "euclidean" ? Math.sqrt(total) : total;
+}
+
+function compactMissing(mask: Uint8Array): Uint8Array | undefined {
+  return mask.some((value) => value === 1) ? mask : undefined;
+}
+
+function distanceObjectSize(value: RVector): number {
+  const size = value.attributes.get("Size");
+  if (
+    (size?.type === "integer" || size?.type === "double") &&
+    size.length === 1 &&
+    !isMissing(size, 0)
+  ) {
+    return Math.trunc(Number(size.values[0] ?? 0));
+  }
+  return Math.trunc((1 + Math.sqrt(1 + 8 * value.length)) / 2);
+}
+
+async function hclustMemberSizes(
+  invocation: BuiltinInvocation,
+  argument: BuiltinCallArgument | undefined,
+  size: number,
+): Promise<readonly number[]> {
+  if (argument === undefined) return Array.from({ length: size }, () => 1);
+  const value = await invocation.force(argument.promise);
+  if (value.type === "null") return Array.from({ length: size }, () => 1);
+  if (
+    (value.type !== "logical" && value.type !== "integer" && value.type !== "double") ||
+    value.length !== size
+  ) {
+    throw new RTypeMismatchError("NRT3270", "invalid length of members");
+  }
+  return Array.from({ length: size }, (_, index) => {
+    if (isMissing(value, index)) throw new RTypeMismatchError("NRT3270", "invalid members");
+    const member = Number(value.values[index] ?? Number.NaN);
+    if (!(member > 0) || !Number.isFinite(member)) {
+      throw new RTypeMismatchError("NRT3270", "invalid members");
+    }
+    return member;
+  });
+}
+
+function clusterPairKey(left: number, right: number): string {
+  return left < right ? `${left},${right}` : `${right},${left}`;
+}
+
+function clusterPairContains(key: string, reference: number): boolean {
+  const [left, right] = key.split(",").map(Number);
+  return left === reference || right === reference;
+}
+
+function orderHclustChildren(
+  left: HierarchicalCluster,
+  right: HierarchicalCluster,
+): readonly [HierarchicalCluster, HierarchicalCluster] {
+  if (left.height !== right.height)
+    return left.height < right.height ? [left, right] : [right, left];
+  return left.minimumLeaf < right.minimumLeaf ? [left, right] : [right, left];
+}
+
+function updateHclustDistance(
+  method: HclustMethod,
+  leftDistance: number,
+  rightDistance: number,
+  mergeDistance: number,
+  leftSize: number,
+  rightSize: number,
+  otherSize: number,
+): number {
+  if (method === "single") return Math.min(leftDistance, rightDistance);
+  if (method === "complete") return Math.max(leftDistance, rightDistance);
+  if (method === "average") {
+    return (leftSize * leftDistance + rightSize * rightDistance) / (leftSize + rightSize);
+  }
+  if (method === "mcquitty") return (leftDistance + rightDistance) / 2;
+  if (method === "median") {
+    return (leftDistance + rightDistance) / 2 - mergeDistance / 4;
+  }
+  if (method === "centroid") {
+    const total = leftSize + rightSize;
+    return (
+      (leftSize * leftDistance + rightSize * rightDistance) / total -
+      (leftSize * rightSize * mergeDistance) / (total * total)
+    );
+  }
+  const total = leftSize + rightSize + otherSize;
+  if (method === "ward.D2") {
+    return Math.sqrt(
+      Math.max(
+        0,
+        ((leftSize + otherSize) * leftDistance ** 2 +
+          (rightSize + otherSize) * rightDistance ** 2 -
+          otherSize * mergeDistance ** 2) /
+          total,
+      ),
+    );
+  }
+  return (
+    ((leftSize + otherSize) * leftDistance +
+      (rightSize + otherSize) * rightDistance -
+      otherSize * mergeDistance) /
+    total
+  );
+}
+
+function hclustLeafOrder(first: Int32Array, second: Int32Array): readonly number[] {
+  const rows = first.length;
+  const leaves: number[] = [];
+  const visit = (reference: number): void => {
+    if (reference < 0) {
+      leaves.push(-reference);
+      return;
+    }
+    const row = reference - 1;
+    visit(first[row] ?? 0);
+    visit(second[row] ?? 0);
+  };
+  if (rows > 0) visit(rows);
+  return leaves;
+}
+
+function namedListField(value: RList, name: string): RValue | undefined {
+  const names = vectorNames(value);
+  const index = names?.indexOf(name) ?? -1;
+  return index < 0 ? undefined : value.values[index];
+}
+
+function dendrogramMembers(value: RValue): number {
+  if (!isAtomic(value) && value.type !== "list") return 1;
+  const members = value.attributes.get("members");
+  return members?.type === "integer" || members?.type === "double"
+    ? Number(members.values[0] ?? 1)
+    : 1;
+}
+
+function dendrogramMidpoint(value: RValue): number {
+  if (!isAtomic(value) && value.type !== "list") return 0;
+  const midpoint = value.attributes.get("midpoint");
+  return midpoint?.type === "integer" || midpoint?.type === "double"
+    ? Number(midpoint.values[0] ?? 0)
+    : 0;
+}
+
+function collectDendrogramLeaves(value: RValue, output: number[]): void {
+  if (value.type === "integer" && value.length === 1) {
+    output.push(value.values[0] ?? 0);
+    return;
+  }
+  if (value.type !== "list") {
+    throw new RTypeMismatchError("NRT3271", "invalid dendrogram");
+  }
+  for (const child of value.values) collectDendrogramLeaves(child, output);
+}
 
 type KmeansAlgorithm = "Hartigan-Wong" | "Lloyd" | "Forgy" | "MacQueen";
 
@@ -162,7 +1137,7 @@ async function builtinKmeans(invocation: BuiltinInvocation): Promise<RValue> {
             : fitLloyd(x, initial, clusterCount, iterationLimit, invocation);
     if (best === undefined || fit.totalWithinss < best.totalWithinss) best = fit;
   }
-  if (best === undefined) throw new Error("Internal kmeans start invariant failed.");
+  if (best === undefined) throw new Error();
   if (best.ifault === 2) {
     invocation.context.warn({
       code: "NRW1102",
@@ -272,7 +1247,8 @@ function numericText(value: string): number {
 
 function dataFrameRowNames(value: RList): readonly string[] | undefined {
   const rowNames = value.attributes.get("row.names");
-  return rowNames?.type === "character" && rowNames.missing === undefined
+  return rowNames?.type === "character" &&
+    rowNames.missing?.some((missing) => missing === 1) !== true
     ? rowNames.values
     : undefined;
 }

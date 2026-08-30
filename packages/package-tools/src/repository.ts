@@ -5,7 +5,13 @@ import path from "node:path";
 import { gunzipSync } from "node:zlib";
 
 import { parseDcfRecords, requiredDcfField } from "./dcf.js";
-import { comparePackageVersions, resolvePackageArtifacts } from "./resolve.js";
+import {
+  assertSelectedSuggestsEncountered,
+  comparePackageVersions,
+  normalizeSuggestsPolicy,
+  resolvePackageArtifacts,
+  selectedDependencies,
+} from "./resolve.js";
 import type {
   NativRPackageArtifact,
   RepositoryInstallOptions,
@@ -14,6 +20,10 @@ import type {
 
 const DEFAULT_MAX_PACKAGES = 256;
 const DEFAULT_MAX_DOWNLOAD_BYTES = 64 * 1024 * 1024;
+const repositoryIndexCache = new WeakMap<
+  typeof globalThis.fetch,
+  Map<string, Promise<Uint8Array>>
+>();
 
 /** Download, audit, and resolve packages from a CRAN-like source repository at build time. */
 export async function installPackagesFromRepository(
@@ -30,7 +40,9 @@ export async function installPackagesFromRepository(
     options.maxDownloadBytes ?? DEFAULT_MAX_DOWNLOAD_BYTES,
     "maxDownloadBytes",
   );
-  const indexBytes = await fetchRepositoryIndex(repository, fetch_, maxDownloadBytes);
+  const suggestsPolicy = normalizeSuggestsPolicy(options);
+  const encounteredSuggests = new Set<string>();
+  const indexBytes = await cachedRepositoryIndex(repository, fetch_, maxDownloadBytes);
   const indexText = decodeRepositoryIndex(indexBytes, maxDownloadBytes);
   const index = new Map<string, ReadonlyMap<string, string>>();
   for (const record of parseDcfRecords(indexText)) {
@@ -42,20 +54,29 @@ export async function installPackagesFromRepository(
     R: "4.6.1",
     base: "4.6.1",
     stats: "4.6.1",
+    stats4: "4.6.1",
     graphics: "4.6.1",
     grDevices: "4.6.1",
+    grid: "4.6.1",
     methods: "4.6.1",
     utils: "4.6.1",
     tools: "4.6.1",
+    datasets: "4.6.1",
+    compiler: "4.6.1",
+    parallel: "4.6.1",
     ...options.providedPackages,
   };
   const artifacts = new Map<string, NativRPackageArtifact>();
   const active = new Set<string>();
   for (const packageName of packageNames) await install(packageName, undefined);
+  assertSelectedSuggestsEncountered(suggestsPolicy, encounteredSuggests);
   const resolved = resolvePackageArtifacts([...artifacts.values()], {
     roots: packageNames,
     providedPackages: provided,
     ...(options.includeSuggests === undefined ? {} : { includeSuggests: options.includeSuggests }),
+    ...(options.selectedSuggests === undefined
+      ? {}
+      : { selectedSuggests: options.selectedSuggests }),
   });
   return Object.freeze({
     ...resolved,
@@ -101,17 +122,32 @@ export async function installPackagesFromRepository(
         );
       }
       artifacts.set(name, artifact);
-      const dependencies = artifact.dependencies.filter(
-        (dependency) =>
-          dependency.kind === "Depends" ||
-          dependency.kind === "Imports" ||
-          (options.includeSuggests === true && dependency.kind === "Suggests"),
-      );
+      const dependencies = selectedDependencies(artifact, suggestsPolicy, encounteredSuggests);
       for (const dependency of dependencies) await install(dependency.name, name);
     } finally {
       active.delete(name);
     }
   }
+}
+
+async function cachedRepositoryIndex(
+  repository: URL,
+  fetch_: typeof globalThis.fetch,
+  maxBytes: number,
+): Promise<Uint8Array> {
+  let cache = repositoryIndexCache.get(fetch_);
+  if (cache === undefined) {
+    cache = new Map();
+    repositoryIndexCache.set(fetch_, cache);
+  }
+  const key = `${repository.href}\u0000${maxBytes}`;
+  let pending = cache.get(key);
+  if (pending === undefined) {
+    pending = fetchRepositoryIndex(repository, fetch_, maxBytes);
+    cache.set(key, pending);
+    pending.catch(() => cache?.delete(key));
+  }
+  return pending;
 }
 
 function verifyRepositoryDigest(

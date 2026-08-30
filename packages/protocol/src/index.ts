@@ -73,7 +73,9 @@ export interface ProtocolRuntimeLimits {
   readonly maxSteps: number;
   readonly maxCallDepth: number;
   readonly maxVectorLength: number;
+  readonly maxAllocatedElements: number;
   readonly maxOutputBytes: number;
+  readonly maxPackageResourceBytes: number;
 }
 
 /** One immutable file installed with a browser-supplied pure-R package. */
@@ -88,7 +90,7 @@ export interface PureRPackageResource {
 export interface PureRPackageBundle {
   /** Original package DESCRIPTION in DCF syntax. */
   readonly description: string;
-  /** Original package NAMESPACE declarations. */
+  /** Audited NAMESPACE declarations after deterministic source-platform selection. */
   readonly namespace: string;
   /** Audited R source files in deterministic package-relative order. */
   readonly rSources: readonly {
@@ -133,6 +135,8 @@ export interface PublicRWarning {
   readonly message: string;
   readonly span?: PublicSourceSpan;
   readonly call?: string;
+  /** GNU R condition classes in dispatch order. */
+  readonly classes?: readonly string[];
 }
 
 /** Text emitted by an evaluation across inline and Worker hosts. */
@@ -279,6 +283,8 @@ export type PublicGraphicsEvent =
       readonly kind: "window";
       readonly xlim: readonly [number, number];
       readonly ylim: readonly [number, number];
+      /** Optional normalized device region: left, right, bottom, top. */
+      readonly viewport?: readonly [number, number, number, number];
     }
   | {
       readonly kind: "raster";
@@ -304,6 +310,8 @@ export type PublicGraphicsEvent =
         /** `solid` or an even-length hexadecimal dash sequence. */
         readonly lineType: string;
         readonly lineWidth: number;
+        /** Resolved R `lend` style for the open segment endpoints. */
+        readonly lineCap?: "round" | "butt" | "square";
       }[];
     }
   | {
@@ -357,6 +365,14 @@ export type PublicGraphicsEvent =
         readonly lineType: string;
         readonly lineWidth: number;
         readonly fillRule: "nonzero" | "evenodd";
+        /** Optional line-density shading, expressed in physical lines per inch. */
+        readonly hatch?: {
+          /** CSS-compatible #RRGGBBAA hatch-line color. */
+          readonly color: string;
+          readonly density: number;
+          /** Counter-clockwise line angle in degrees. */
+          readonly angle: number;
+        };
       }[];
     }
   | {
@@ -402,11 +418,19 @@ export type PublicGraphicsEvent =
               | "center";
             readonly inset: readonly [number, number];
           }
-        | { readonly kind: "coordinates"; readonly x: number; readonly y: number };
+        | {
+            readonly kind: "coordinates";
+            readonly x: number;
+            readonly y: number;
+            readonly xJust: number;
+            readonly yJust: number;
+          };
       readonly entries: readonly {
         readonly label: string;
         readonly textColor: string;
         readonly color: string;
+        readonly fill?: string;
+        readonly border?: string;
         readonly lineType?: string;
         readonly lineWidth?: number;
         readonly pointSymbol?: string;
@@ -457,6 +481,10 @@ export interface CapabilityManifest {
     readonly name: string;
     readonly referenceVersion?: string;
     readonly functions: readonly {
+      readonly name: string;
+      readonly compatibility: "api" | "shape" | "numeric" | "behavioral";
+    }[];
+    readonly bindings?: readonly {
       readonly name: string;
       readonly compatibility: "api" | "shape" | "numeric" | "behavioral";
     }[];
