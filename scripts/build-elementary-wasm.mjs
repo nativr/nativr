@@ -1,15 +1,21 @@
 // Builds elementary.wasm from the pinned, unmodified CORE-MATH binary64 sources (RFC-0007 step 1).
 //
 //   node scripts/build-elementary-wasm.mjs           build twice from clean copies, verify the digest
-//   node scripts/build-elementary-wasm.mjs --fetch   first download missing pinned sources
+//   node scripts/build-elementary-wasm.mjs --fetch   first download missing pinned sources and,
+//                                                    unless NATIVR_WASI_SDK is set, the pinned
+//                                                    wasi-sdk release archive (CI uses this)
+//   node scripts/build-elementary-wasm.mjs --reuse   skip compiling when .tmp/elementary already
+//                                                    holds the pinned module (`pnpm build`)
 //   node scripts/build-elementary-wasm.mjs --record  write the reproduced digest into core-math.json
 //
-// Build-time tooling only: nothing here is shipped. Sources are cached outside the repository in
-// NATIVR_CORE_MATH_DIR (default: <local app data>/NativR/core-math/<commit>) and every file is
-// checked against its pinned SHA-256 before use. The compiler is the pinned wasi-sdk at
-// NATIVR_WASI_SDK (default: the copy tree-sitter-cli installs for `pnpm grammar:build`).
+// scripts/copy-elementary-assets.mjs ships the output in .tmp/elementary/. Sources are cached
+// outside the repository in NATIVR_CORE_MATH_DIR (default: <local app data>/NativR/core-math/
+// <commit>) and every file is checked against its pinned SHA-256 before use. The compiler is the
+// wasi-sdk at NATIVR_WASI_SDK; otherwise the digest-verified release archive extracted by --fetch
+// into <local app data>/NativR/wasi-sdk/<version>-<platform>; otherwise the copy tree-sitter-cli
+// installs for `pnpm grammar:build`. Each is checked against the pinned VERSION fields.
 import { createHash } from "node:crypto";
-import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -27,7 +33,16 @@ const lock = JSON.parse(await readFile(lockFile, "utf8"));
 const flags = new Set(process.argv.slice(2));
 
 const sourceRoot = process.env.NATIVR_CORE_MATH_DIR ?? defaultSourceRoot(lock.source.commit);
-const wasiSdk = process.env.NATIVR_WASI_SDK ?? defaultWasiSdk();
+
+if (flags.has("--reuse") && !flags.has("--record") && (await reusableOutput())) {
+  console.log(
+    `Reused ${path.relative(root, path.join(outputRoot, lock.output.file))} ` +
+      `(sha256 ${lock.output.sha256} matches the pin).`,
+  );
+  process.exit(0);
+}
+
+const wasiSdk = await selectWasiSdk();
 const executable = process.platform === "win32" ? ".exe" : "";
 const clang = path.join(wasiSdk, "bin", `clang${executable}`);
 const llvmAr = path.join(wasiSdk, "bin", `llvm-ar${executable}`);
@@ -59,6 +74,11 @@ await cp(
   path.join(sourceRoot, lock.source.licenseFile),
   path.join(outputRoot, "licenses", "core-math.LICENSE"),
 );
+for (const [file, digest] of Object.entries(lock.bundledLicenses)) {
+  const bytes = await readFile(path.join(pinRoot, "licenses", file));
+  if (sha256(bytes) !== digest) throw new Error(`scripts/elementary/licenses/${file} was modified`);
+  await writeFile(path.join(outputRoot, "licenses", file), bytes);
+}
 const manifest = {
   schemaVersion: 1,
   source: { repository: lock.source.repository, commit: lock.source.commit, license: "MIT" },
@@ -200,6 +220,91 @@ async function fetchSources() {
   }
 }
 
+// True when an earlier build left the pinned module, its manifest and every license in place.
+async function reusableOutput() {
+  try {
+    const bytes = await readFile(path.join(outputRoot, lock.output.file));
+    const manifest = JSON.parse(await readFile(path.join(outputRoot, "manifest.json"), "utf8"));
+    for (const file of ["core-math.LICENSE", ...Object.keys(lock.bundledLicenses)]) {
+      await stat(path.join(outputRoot, "licenses", file));
+    }
+    return (
+      sha256(bytes) === lock.output.sha256 &&
+      manifest.files?.[lock.output.file] === lock.output.sha256 &&
+      manifest.source?.commit === lock.source.commit
+    );
+  } catch {
+    return false;
+  }
+}
+
+async function selectWasiSdk() {
+  if (process.env.NATIVR_WASI_SDK !== undefined) return process.env.NATIVR_WASI_SDK;
+  const platform = wasiSdkPlatform();
+  const pinned = path.join(
+    localCacheRoot(),
+    "NativR",
+    "wasi-sdk",
+    `${lock.toolchain.version}-${platform}`,
+  );
+  if (await exists(path.join(pinned, "VERSION"))) return pinned;
+  if (flags.has("--fetch")) {
+    await fetchWasiSdk(platform, pinned);
+    return pinned;
+  }
+  return defaultWasiSdk();
+}
+
+// Downloads the release archive pinned in core-math.json, rejects any digest mismatch, and only
+// then extracts it with the system tar into a scratch directory that is renamed into place.
+async function fetchWasiSdk(platform, target) {
+  const download = lock.toolchainDownloads[platform];
+  if (download === undefined) {
+    throw new Error(`No pinned wasi-sdk ${lock.toolchain.version} archive for ${platform}`);
+  }
+  console.log(`Fetching ${download.url}`);
+  const response = await fetch(download.url);
+  if (!response.ok) throw new Error(`Fetching wasi-sdk failed with HTTP ${response.status}`);
+  const bytes = Buffer.from(await response.arrayBuffer());
+  const actual = sha256(bytes);
+  if (actual !== download.sha256) {
+    throw new Error(`wasi-sdk archive sha256 ${actual} does not match the pin ${download.sha256}`);
+  }
+  await mkdir(path.dirname(target), { recursive: true });
+  const work = await mkdtemp(`${target}.partial-`);
+  try {
+    const archive = path.join(work, "wasi-sdk.tar.gz");
+    const extracted = path.join(work, "sdk");
+    await writeFile(archive, bytes);
+    await mkdir(extracted);
+    await run("tar", ["-xzf", archive, "-C", extracted, "--strip-components=1"], {
+      cwd: work,
+      capture: true,
+    });
+    await rename(extracted, target);
+  } finally {
+    await rm(work, { recursive: true, force: true });
+  }
+}
+
+function wasiSdkPlatform() {
+  const arch = { x64: "x86_64", arm64: "arm64" }[process.arch];
+  const system = { linux: "linux", darwin: "macos", win32: "windows" }[process.platform];
+  if (arch === undefined || system === undefined) {
+    throw new Error(`wasi-sdk is not published for ${process.platform}-${process.arch}`);
+  }
+  return `${arch}-${system}`;
+}
+
+async function exists(file) {
+  try {
+    await stat(file);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function verifyToolchain() {
   let version;
   try {
@@ -230,25 +335,17 @@ async function verifyToolchain() {
 }
 
 function defaultSourceRoot(commit) {
-  const base =
-    process.platform === "win32"
-      ? (process.env.LOCALAPPDATA ?? path.join(os.homedir(), "AppData", "Local"))
-      : (process.env.XDG_CACHE_HOME ?? path.join(os.homedir(), ".cache"));
-  return path.join(base, "NativR", "core-math", commit);
+  return path.join(localCacheRoot(), "NativR", "core-math", commit);
 }
 
 function defaultWasiSdk() {
+  return path.join(localCacheRoot(), "tree-sitter", "wasi-sdk");
+}
+
+function localCacheRoot() {
   return process.platform === "win32"
-    ? path.join(
-        process.env.LOCALAPPDATA ?? path.join(os.homedir(), "AppData", "Local"),
-        "tree-sitter",
-        "wasi-sdk",
-      )
-    : path.join(
-        process.env.XDG_CACHE_HOME ?? path.join(os.homedir(), ".cache"),
-        "tree-sitter",
-        "wasi-sdk",
-      );
+    ? (process.env.LOCALAPPDATA ?? path.join(os.homedir(), "AppData", "Local"))
+    : (process.env.XDG_CACHE_HOME ?? path.join(os.homedir(), ".cache"));
 }
 
 async function writeJson(file, value) {

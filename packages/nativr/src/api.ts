@@ -75,6 +75,12 @@ export interface CreateRAssets {
   readonly worker?: string | URL;
   readonly treeSitterRuntimeWasm?: string | URL;
   readonly rGrammarWasm?: string | URL;
+  /**
+   * Correctly rounded elementary-function module (RFC-0007), verified against its pinned SHA-256.
+   * Defaults to the packaged `elementary.wasm` only when neither parser asset is overridden; a
+   * session that overrides a parser asset loads it only when this field is also given.
+   */
+  readonly elementaryWasm?: string | URL;
 }
 
 /** Options used to create one independent NativR session. */
@@ -181,6 +187,7 @@ interface ResolvedAssets {
   readonly worker?: URL;
   readonly treeSitterRuntimeWasm: URL;
   readonly rGrammarWasm: URL;
+  readonly elementaryWasm?: URL;
 }
 
 const STANDARD_SYSTEM_PACKAGE_RESOURCES = Object.freeze([
@@ -233,6 +240,7 @@ export async function createR(options: CreateROptions = {}): Promise<NativRSessi
       {
         treeSitterRuntimeWasm: assets.treeSitterRuntimeWasm,
         rGrammarWasm: assets.rGrammarWasm,
+        ...(assets.elementaryWasm === undefined ? {} : { elementaryWasm: assets.elementaryWasm }),
       },
       sessionProcessId,
       sessionOptions.limits,
@@ -1176,6 +1184,9 @@ class WorkerSession implements NativRSession {
         assets: {
           treeSitterRuntimeWasm: String(this.#assets.treeSitterRuntimeWasm),
           rGrammarWasm: String(this.#assets.rGrammarWasm),
+          ...(this.#assets.elementaryWasm === undefined
+            ? {}
+            : { elementaryWasm: String(this.#assets.elementaryWasm) }),
         },
         ...(this.#options.limits === undefined ? {} : { limits: this.#options.limits }),
         ...(this.#options.packages === undefined ? {} : { packages: this.#options.packages }),
@@ -1530,6 +1541,11 @@ function resolveAssets(overrides: CreateRAssets | undefined): ResolvedAssets {
       moduleRelativeUrl("./web-tree-sitter.wasm"),
     ),
     rGrammarWasm: toUrl(overrides?.rGrammarWasm, moduleRelativeUrl("./tree-sitter-r.wasm")),
+    ...(overrides?.elementaryWasm !== undefined
+      ? { elementaryWasm: toUrl(overrides.elementaryWasm, moduleRelativeUrl(".")) }
+      : overrides?.treeSitterRuntimeWasm === undefined && overrides?.rGrammarWasm === undefined
+        ? { elementaryWasm: moduleRelativeUrl("./elementary.wasm") }
+        : {}),
   };
 }
 

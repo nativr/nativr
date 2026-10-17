@@ -17,12 +17,15 @@ const wasmFiles = [
   path.join(dist, "assets", "tree-sitter-r.wasm"),
 ];
 const wasmRaw = await rawTotal(wasmFiles);
+const elementaryRaw = await rawTotal([path.join(dist, "assets", "elementary.wasm")]);
 const budgets = [
   ["statically loaded public client", clientGzip, 150 * 1024, "gzip"],
   // Fixed developer-preview budget (docs/performance.md, "Worker budget policy"). It is not raised
   // per increment; a change needs a recorded release-readiness decision.
   ["Worker JavaScript", workerGzip, 512 * 1024, "gzip"],
   ["combined parser Wasm", wasmRaw, 1.5 * 1024 * 1024, "raw"],
+  // RFC-0007 correctly rounded elementary functions; its own ceiling, never shared with the parser.
+  ["elementary-function Wasm", elementaryRaw, 384 * 1024, "raw"],
 ];
 let failed = false;
 

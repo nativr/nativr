@@ -25,6 +25,8 @@ import type { ProgramNode } from "@nativr/ast";
 
 import { CAPABILITIES } from "./capabilities.js";
 import { snapshotToValue, valueToSnapshot } from "./conversion.js";
+import { loadElementaryModule } from "./elementary.js";
+import type { ElementaryModule } from "./elementary.js";
 import { compilePureRPackages } from "./pure-r-package.js";
 import type {
   CapabilityManifest,
@@ -34,19 +36,34 @@ import type {
   RValueSnapshot,
 } from "@nativr/protocol";
 
+/** Parser assets plus the optional correctly rounded elementary-function module (RFC-0007). */
+export interface RuntimeHostAssets extends ParserAssets {
+  readonly elementaryWasm?: string | URL;
+}
+
 /** Shared semantic host used unchanged by inline and Worker execution modes. */
 export class RuntimeHost {
   readonly #parser: NativRParser;
   readonly #evaluator: Evaluator;
+  /**
+   * This session's verified elementary-function instance, when its asset was configured. It is
+   * held for RFC-0007 adoption and does not yet affect any evaluation.
+   */
+  public readonly elementary: ElementaryModule | undefined;
 
-  private constructor(parser: NativRParser, evaluator: Evaluator) {
+  private constructor(
+    parser: NativRParser,
+    evaluator: Evaluator,
+    elementary: ElementaryModule | undefined,
+  ) {
     this.#parser = parser;
     this.#evaluator = evaluator;
+    this.elementary = elementary;
   }
 
-  /** Initialize the parser assets and one independent evaluator. */
+  /** Initialize the parser assets, the elementary module, and one independent evaluator. */
   public static async create(
-    assets: ParserAssets,
+    assets: RuntimeHostAssets,
     sessionProcessId: number | undefined,
     limits?: Partial<RuntimeLimits>,
     packages: readonly PureRPackageBundle[] = [],
@@ -64,7 +81,15 @@ export class RuntimeHost {
     socketRequest?: (request: RSocketRequest) => Promise<RSocketResult> | RSocketResult,
     systemPackageResources: readonly RuntimeSystemPackageTextResource[] = [],
   ): Promise<RuntimeHost> {
-    const parser = await createParser(assets);
+    // One instance per session, verified against its pinned digest before the parser starts.
+    const elementary =
+      assets.elementaryWasm === undefined
+        ? undefined
+        : await loadElementaryModule(assets.elementaryWasm);
+    const parser = await createParser({
+      treeSitterRuntimeWasm: assets.treeSitterRuntimeWasm,
+      rGrammarWasm: assets.rGrammarWasm,
+    });
     try {
       const effectiveLimits = { ...DEFAULT_RUNTIME_LIMITS, ...limits };
       const packageDefinitions = compilePureRPackages(
@@ -100,7 +125,7 @@ export class RuntimeHost {
           state.set(EXECUTABLE_PATHS_STATE_KEY, new Map(Object.entries(executablePaths)));
         },
       });
-      return new RuntimeHost(parser, evaluator);
+      return new RuntimeHost(parser, evaluator, elementary);
     } catch (error) {
       parser.dispose();
       throw error;

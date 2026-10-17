@@ -21,6 +21,31 @@ await r.dispose();
 Sessions expose `eval`, `evalDetailed`, `evalRaw`, `assign`, `get`, `call`, `capabilities`, `reset`,
 `interrupt`, and `dispose`. Operations mutate one session in submission order.
 
+## Assets
+
+`createR({ assets })` accepts URL overrides for CDNs, unusual bundlers and tests. Every asset ships
+in `dist/` and `dist/assets/` of `@nativr/nativr`, and defaults resolve relative to the module:
+
+| Field                   | File                   | Required | Purpose                                                  |
+| ----------------------- | ---------------------- | -------- | -------------------------------------------------------- |
+| `worker`                | bundled Worker entry   | no       | Worker script override                                   |
+| `treeSitterRuntimeWasm` | `web-tree-sitter.wasm` | yes      | Tree-sitter runtime                                      |
+| `rGrammarWasm`          | `tree-sitter-r.wasm`   | yes      | R grammar                                                |
+| `elementaryWasm`        | `elementary.wasm`      | no       | correctly rounded elementary functions (RFC-0007), 22 fn |
+
+`elementary.wasm` is the pinned CORE-MATH build described in
+[RFC-0007](rfcs/0007-correctly-rounded-elementary-functions.md). Each session fetches it once,
+checks its byte length and SHA-256 against the digest compiled into the runtime, refuses any module
+that has imports or a different export set, and instantiates it with an empty import object. A
+mismatch fails session creation: `NRS5012` when the asset cannot be fetched, `NRS5013` when the
+digest or size differs, and `NRS5014` when the interface differs. `elementary.manifest.json` and the
+upstream license texts under `licenses/` ship beside it.
+
+The default `elementaryWasm` applies only when neither parser asset is overridden. A session that
+overrides `treeSitterRuntimeWasm` or `rGrammarWasm` loads the module only when `elementaryWasm` is
+given as well, so existing asset overrides keep working without the new file. The module does not
+change any result yet; the adoption step of RFC-0007 will route elementary functions through it.
+
 `createR({ packages, limits })` snapshots immutable package bundles before inline or Worker startup.
 `limits.maxPackageResourceBytes` controls their aggregate decoded resource budget independently from
 R source, returned output, and graphics. The default 192 MiB ceiling admits large header/data-only

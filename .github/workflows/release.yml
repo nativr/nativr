@@ -32,6 +32,8 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Digest-pinned CORE-MATH sources and wasi-sdk 29.0 for elementary.wasm (RFC-0007).
+      - run: node scripts/build-elementary-wasm.mjs --fetch
       - run: pnpm check
       - name: Configure release commit identity
         run: |
@@ -63,5 +65,7 @@ jobs:
           registry-url: https://registry.npmjs.org
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Digest-pinned CORE-MATH sources and wasi-sdk 29.0 for elementary.wasm (RFC-0007).
+      - run: node scripts/build-elementary-wasm.mjs --fetch
       - run: pnpm check
       - run: pnpm release

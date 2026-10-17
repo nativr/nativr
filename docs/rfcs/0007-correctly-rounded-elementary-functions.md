@@ -127,8 +127,9 @@ Each step lands with its own tests and does not change semantics until step 4.
 
 ## Implementation record
 
-Steps 1-3 were completed on 2026-10-17 on Windows 11 x86_64 with Node 24.14.0. The module is not yet
-loaded by any package, and no runtime semantics changed.
+Steps 1-3 and step 4a (delivery) were completed on 2026-10-17 on Windows 11 x86_64 with Node
+24.14.0. Each session now loads and verifies the module, but nothing computes through it yet, so no
+runtime semantics changed.
 
 ### Step 1: pins and build
 
@@ -197,14 +198,55 @@ values (unary, and all 256 pairs for binary functions) and 4,000 random bit patt
 It checks Node 24.14.0, Chromium 151.0.7922.34, Firefox 153.0 and WebKit (Playwright 1.62.0 builds).
 All four returned identical bits, comparing NaN as NaN without its payload.
 
-### Carried into step 4
+### Step 4a: delivery
 
-- Ship the module as a digest-verified asset. Add an asset budget, and copy the license texts for
-  the linked musl-derived wasi-libc members, besides the CORE-MATH license.
+Step 4 is split. Step 4a ships the module as a runtime asset without routing any computation through
+it, so no result changes and the semantic profile is unchanged. Step 4b (adoption) remains as
+described in the implementation plan.
+
+- **Build.** `pnpm build` runs `scripts/build-elementary-wasm.mjs --reuse`, which skips compiling
+  only when `.tmp/elementary/` already holds the pinned module, manifest and licenses. It then runs
+  `scripts/copy-elementary-assets.mjs`. The copy refuses a module whose SHA-256 differs from
+  `core-math.json`, or from the digest and length pinned in `packages/nativr/src/elementary.ts`. It
+  writes `elementary.wasm`, `elementary.manifest.json` and `licenses/` into
+  `packages/nativr/src/assets`, `apps/playground/public/assets`, `packages/nativr/dist` and
+  `packages/nativr/dist/assets`, the same targets as the parser assets.
+- **Toolchain pin.** `core-math.json` `toolchainDownloads` records the six wasi-sdk 29.0 release
+  archives with their SHA-256 values (GitHub release asset digests). `--fetch` downloads the archive
+  for the host, rejects a digest mismatch before extracting it, and installs it under
+  `<cache>/NativR/wasi-sdk/29.0-<platform>`. That copy is then preferred over tree-sitter-cli's
+  cache. The CI, conformance, browser and release workflows run
+  `node scripts/build-elementary-wasm.mjs --fetch` after `pnpm install`. Local builds still accept
+  tree-sitter-cli's copy after the same `VERSION` check. The archive download path has not yet run
+  in CI.
+- **Licenses.** The wasi-libc `LICENSE` and `LICENSE-MIT` and musl `COPYRIGHT` files, from wasi-libc
+  `ac020b86fd44`, are kept verbatim under `scripts/elementary/licenses/`. Their digests are pinned
+  in `bundledLicenses`. They ship beside the module with the CORE-MATH license, and `NOTICE`
+  reproduces the CORE-MATH and musl license texts.
+- **API.** `CreateRAssets.elementaryWasm` and the Worker `init` request's `assets.elementaryWasm`
+  are optional. The default URL applies only when neither parser asset is overridden. This keeps
+  callers that pass explicit parser URLs working, including Node test and conformance runners, where
+  `fetch` cannot read `file:` URLs. Those sessions load no module.
+- **Host.** `RuntimeHost.create` loads the module once per session, before the parser. The loader
+  hashes it with an in-tree FIPS 180-4 SHA-256, so verification does not depend on `crypto.subtle`
+  or a secure context. It checks length and digest, requires zero imports and exactly `memory`,
+  `reserve` and the 44 function exports, and instantiates with `{}`. The instance is exposed as
+  `RuntimeHost.elementary` and is not yet used. Failures are `NRS5012` (fetch), `NRS5013` (digest)
+  and `NRS5014` (interface).
+- **Budget.** `scripts/check-bundle-size.mjs` gives `elementary.wasm` its own 384 KiB raw ceiling,
+  separate from the 1.5 MiB parser-Wasm budget.
+- **Evidence.** `packages/nativr/test/elementary-asset.test.ts` checks the pins against
+  `core-math.json`, the digest against `node:crypto`, rejection of tampered and import-bearing
+  modules, inline instantiation of the built module, and the Worker `init` payload. The Playwright
+  suite loads the default asset through the playground Worker in Chromium, Firefox and WebKit.
+
+### Carried into step 4b
+
 - Adapt `NA`: NaN payloads are not preserved through the module, so the adapter must restore
   NativR's `NA` itself.
-- The build reads wasi-sdk from tree-sitter-cli's cache by default (`NATIVR_WASI_SDK` overrides it).
-  CI needs an explicit, digest-pinned wasi-sdk 29.0 download.
+- Decide the behavior of sessions without the module (explicit parser overrides, Node runners):
+  either require `elementaryWasm` or keep a recorded JavaScript fallback.
+- Measure the start-up cost of the extra fetch, hash and instantiation (open question below).
 
 ## Open questions
 

@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { expect, test } from "@playwright/test";
 
 test("runs the required Worker examples without evaluation network traffic", async ({ page }) => {
@@ -1219,4 +1221,22 @@ test("surfaces recycling warnings and reset clears assigned state", async ({ pag
   await page.locator("#source").fill("mean(x)");
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#errors")).toContainText("NRE2001");
+});
+
+test("loads the pinned elementary-function asset once per Worker session", async ({ page }) => {
+  const responses: { readonly status: number; readonly sha256: string }[] = [];
+  page.on("response", async (response) => {
+    if (!new URL(response.url()).pathname.endsWith("/elementary.wasm")) return;
+    const body = await response.body();
+    responses.push({
+      status: response.status(),
+      sha256: createHash("sha256").update(body).digest("hex"),
+    });
+  });
+  await page.goto("/");
+  await expect(page.getByText("Runtime ready")).toBeVisible();
+  await expect.poll(() => responses.length).toBe(1);
+  expect(responses).toEqual([
+    { status: 200, sha256: "0467e7c1a694e4b0eb86343457cfe733d9220132385dfe73f7845d1261837a0a" },
+  ]);
 });

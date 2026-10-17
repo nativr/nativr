@@ -71,6 +71,37 @@
     "llvmCommit": "222fc11f2b8f",
     "wasiLibc": "ac020b86fd44"
   },
+  "toolchainDownloads": {
+    "x86_64-linux": {
+      "url": "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz",
+      "sha256": "87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171"
+    },
+    "arm64-linux": {
+      "url": "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-arm64-linux.tar.gz",
+      "sha256": "052ad773397dc9e5aa99fb4cfef694175e6b1e81bb2ad1d3c8e7b3fc81441b7c"
+    },
+    "x86_64-macos": {
+      "url": "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-macos.tar.gz",
+      "sha256": "d0de2fd3ea5c57060efa87e4356c164bec3689972f2386f0c9a89c58e10cec8d"
+    },
+    "arm64-macos": {
+      "url": "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-arm64-macos.tar.gz",
+      "sha256": "e11552913e3f99e834d7fe7da1bd081abaf764759ed76b6097a34c63fc83665e"
+    },
+    "x86_64-windows": {
+      "url": "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-windows.tar.gz",
+      "sha256": "6c19b820577486f00332ad8d04ac506da67b0892316b8d485371a58cbf216dee"
+    },
+    "arm64-windows": {
+      "url": "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-arm64-windows.tar.gz",
+      "sha256": "694198d0ec9e949ec2e85e6e99fc13339ea82f699ad9fe5590d97955899f8904"
+    }
+  },
+  "bundledLicenses": {
+    "wasi-libc.LICENSE": "2711a8b5a5cdfef0e639f96c1aca12ae23d7d64a02d0507f1bdf14d2b27bbc3a",
+    "wasi-libc.LICENSE-MIT": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+    "musl.COPYRIGHT": "f9bc4423732350eb0b3f7ed7e91d530298476f8fec0c6c427a1c04ade22655af"
+  },
   "compileFlags": [
     "--target=wasm32-wasip1",
     "-mcpu=lime1",

@@ -263,6 +263,32 @@ describe("Worker protocol guards", () => {
         protocolVersion: 1,
         id: "x",
         kind: "init",
+        assets: {
+          treeSitterRuntimeWasm: "runtime.wasm",
+          rGrammarWasm: "r.wasm",
+          elementaryWasm: 1,
+        },
+        debug: false,
+      }),
+    ).toBe(false);
+    expect(
+      isWorkerRequest({
+        protocolVersion: 1,
+        id: "x",
+        kind: "init",
+        assets: {
+          treeSitterRuntimeWasm: "runtime.wasm",
+          rGrammarWasm: "r.wasm",
+          elementaryWasm: "elementary.wasm",
+        },
+        debug: false,
+      }),
+    ).toBe(true);
+    expect(
+      isWorkerRequest({
+        protocolVersion: 1,
+        id: "x",
+        kind: "init",
         assets: { treeSitterRuntimeWasm: "runtime.wasm", rGrammarWasm: "r.wasm" },
         systemPackageResources: [{ package: "datasets", path: "data/example.txt", text: 1 }],
         debug: false,

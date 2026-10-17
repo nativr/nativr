@@ -8,7 +8,9 @@ Budgets:
 
 - statically loaded public client: 150 KiB gzip;
 - Worker JavaScript: 461 KiB gzip;
-- parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling).
+- parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling);
+- correctly rounded elementary-function Wasm (`elementary.wasm`, RFC-0007): 384 KiB raw, a separate
+  ceiling that the parser budget does not absorb. The pinned module is 318,690 bytes.
 
 The inline semantic host is a lazy chunk and is excluded from the default client budget. Parser Wasm
 remains a physical asset; it is not base64-embedded. Future Wasm/WebGPU/table engines must be

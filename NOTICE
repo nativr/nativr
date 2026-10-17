@@ -14,7 +14,9 @@ https://gitlab.inria.fr/core-math/core-math at commit dae5dd8c0d5bd2691b45de28c9
 Copyright the CORE-MATH authors (Inria and contributors), MIT License. It also links soft-float
 math and floating-point environment members of wasi-libc (wasi-sdk 29.0), derived from musl libc,
 Copyright Rich Felker et al., MIT License, and LLVM compiler-rt builtins, Apache License 2.0 with
-LLVM Exceptions. The build copies the CORE-MATH license to .tmp/elementary/licenses.
+LLVM Exceptions. The module ships in the @nativr/nativr package as elementary.wasm; the upstream
+license files are shipped beside it under licenses/ (core-math.LICENSE, wasi-libc.LICENSE,
+wasi-libc.LICENSE-MIT, musl.COPYRIGHT). The CORE-MATH and musl license texts follow.
 
 This product includes Iris measurements from the UCI Machine Learning Repository,
 credited to R. A. Fisher, with measurements originating from Edgar Anderson.
@@ -24,3 +26,71 @@ https://archive.ics.uci.edu/dataset/53/iris (bezdekIris.data). The bundled text
 adds column headers, uses tab separators, and removes the "Iris-" label prefix.
 
 NativR is not affiliated with or endorsed by the R Foundation, Posit, OpenAI, or R package authors.
+
+--------------------------------------------------------------------------------
+CORE-MATH (https://gitlab.inria.fr/core-math/core-math), linked into elementary.wasm
+
+The CORE-MATH code is distributed under the following license
+(MIT license, https://spdx.org/licenses/MIT).
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------------------------------------------
+wasi-libc (https://github.com/WebAssembly/wasi-libc, commit ac020b86fd44, as shipped in wasi-sdk
+29.0). The members linked into elementary.wasm (fma, fmin/fmax, round, scalbn and the
+floating-point environment functions) come from its libc-top-half/musl/ tree.
+
+wasi-libc as a whole is multi-licensed under the
+Apache License v2.0 with LLVM Exceptions, the Apache License v2.0, and
+the MIT License. See the LICENSE-APACHE-LLVM, LICENSE-APACHE and LICENSE-MIT
+files, respectively, for details.
+
+Portions of this software are derived from third-party works covered by
+their own licenses:
+
+libc-top-half/musl/           - MIT; see the COPYRIGHT file for details
+
+musl as a whole is licensed under the following standard MIT license:
+
+Copyright © 2005-2020 Rich Felker, et al.
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Much of the musl math library code (src/math/*) is Copyright © 1993,2004 Sun Microsystems,
+© 2003-2011 David Schultz, © 2003-2009 Steven G. Kargl, © 2003-2009 Bruce D. Evans,
+© 2008 Stephen L. Moshier or © 2017-2018 Arm Limited, as labelled in the individual source files,
+all licensed under extremely permissive terms. The full musl COPYRIGHT file, including its list of
+authors and contributors, ships as licenses/musl.COPYRIGHT.

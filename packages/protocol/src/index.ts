@@ -479,6 +479,8 @@ export interface InitRequest extends ProtocolEnvelope {
   readonly assets: {
     readonly treeSitterRuntimeWasm: string;
     readonly rGrammarWasm: string;
+    /** Correctly rounded elementary-function module (RFC-0007); omitted sessions load none. */
+    readonly elementaryWasm?: string;
   };
   readonly limits?: Partial<ProtocolRuntimeLimits>;
   readonly packages?: readonly PureRPackageBundle[];
@@ -721,6 +723,8 @@ export function isWorkerRequest(value: unknown): value is WorkerRequest {
         isRecord(value.assets) &&
         typeof value.assets.treeSitterRuntimeWasm === "string" &&
         typeof value.assets.rGrammarWasm === "string" &&
+        (value.assets.elementaryWasm === undefined ||
+          typeof value.assets.elementaryWasm === "string") &&
         (value.packages === undefined ||
           (Array.isArray(value.packages) && value.packages.every(isPureRPackageBundle))) &&
         (value.systemPackageResources === undefined ||
