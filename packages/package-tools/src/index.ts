@@ -19,7 +19,11 @@ export { inspectPackageLicense } from "./license-check.js";
 export type { PackageLicenseAssessment } from "./license-check.js";
 export { inspectPackageDescription } from "./description-check.js";
 export type { PackageDescriptionAssessment, PackageDescriptionCheck } from "./description-check.js";
-export { inspectPackageSourceDependencies } from "./source-dependency-check.js";
+export {
+  BASE_PRIORITY_PACKAGES,
+  DEFAULT_INSTALLED_PACKAGES,
+  inspectPackageSourceDependencies,
+} from "./source-dependency-check.js";
 export { collectPackageSourceDependencyInputs } from "./source-dependency-inputs.js";
 export type { PackageSourceDependencyInputs } from "./source-dependency-inputs.js";
 export type {
@@ -33,6 +37,7 @@ export type {
   PackageSourceDependencyReference,
   PackageSourceDependencyUnresolved,
   PackageSourceDependencyAssessment,
+  PackageSourceDependencyOptions,
 } from "./source-dependency-check.js";
 export {
   comparePackageCheckObservation,

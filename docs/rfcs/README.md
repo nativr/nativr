@@ -13,3 +13,4 @@ intended contract; it does not itself prove runtime compatibility.
 | 0005                                                   | proposed    | Object ownership and byte-accounted memory model                         |
 | 0006                                                   | proposed    | NativR Native ABI v1                                                     |
 | [0007](0007-correctly-rounded-elementary-functions.md) | accepted    | Correctly rounded elementary functions and the normative oracle platform |
+| [0008](0008-package-check-stage-specifications.md)     | accepted    | Package-check stage specifications                                       |

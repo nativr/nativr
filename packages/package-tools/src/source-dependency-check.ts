@@ -37,6 +37,8 @@ export type PackageSourceDependencyReason =
   | "shadowed-binding"
   | "computed-callee"
   | "dynamic-evaluation"
+  | "outside-static-scope"
+  | "uninstalled-test-reference"
   | "unsupported-ast"
   | "parse-diagnostics"
   | "parse-failed"
@@ -58,9 +60,9 @@ export interface PackageSourceDependencyUnresolved extends PackageSourceDependen
 }
 export interface PackageSourceDependencyAssessment {
   readonly schemaVersion: 1;
-  readonly policy: "literal-source-references-v1";
-  /** A bounded inventory can find failures but never establishes dependency closure. */
-  readonly status: "failed" | "unexecuted";
+  readonly policy: "literal-source-references-v2";
+  /** Passed only when every finding was classified; closure is checked separately. */
+  readonly status: "passed" | "failed" | "unexecuted";
   readonly descriptionSha256: string;
   readonly files: readonly {
     readonly path: string;
@@ -78,12 +80,20 @@ export interface PackageSourceDependencyAssessment {
   readonly limitations: readonly string[];
 }
 
+export interface PackageSourceDependencyOptions {
+  /**
+   * Packages treated as installed for test-role references. The default is the base and
+   * recommended packages of GNU R 4.6.1; callers add the bundle's packed closure (RFC-0008).
+   */
+  readonly installed?: ReadonlySet<string>;
+}
+
 type Node = Record<string, unknown> & { kind: string };
 type Loader = "library" | "require" | "requireNamespace";
 type Argument = { name?: string; value: unknown };
 const packageName = /^[A-Za-z](?:[A-Za-z0-9.]*[A-Za-z0-9])?$/u;
 // Independently observed Priority=base metadata in the pinned GNU R 4.6.1 oracle.
-const basePackages = new Set([
+const basePackages: ReadonlySet<string> = new Set([
   "base",
   "compiler",
   "datasets",
@@ -99,8 +109,34 @@ const basePackages = new Set([
   "tools",
   "utils",
 ]);
+// Priority=recommended packages of GNU R 4.6.1 (R Installation and Administration).
+const recommendedPackages = new Set([
+  "boot",
+  "class",
+  "cluster",
+  "codetools",
+  "foreign",
+  "KernSmooth",
+  "lattice",
+  "MASS",
+  "Matrix",
+  "mgcv",
+  "nlme",
+  "nnet",
+  "rpart",
+  "spatial",
+  "survival",
+]);
+/** Priority=base packages of GNU R 4.6.1; they depend only on each other. */
+export const BASE_PRIORITY_PACKAGES: ReadonlySet<string> = basePackages;
+/** Base and recommended packages: the default installed set for test-role references. */
+export const DEFAULT_INSTALLED_PACKAGES: ReadonlySet<string> = new Set([
+  ...basePackages,
+  ...recommendedPackages,
+]);
+// Inert placeholders that cannot contain package references (x[, 1] and ...).
+const inertFeatures = new Set(["missing argument", "dots"]);
 const loaders = new Set<string>(["library", "require", "requireNamespace"]);
-const quotedCalls = new Set(["quote", "expression", "substitute", "bquote", "alist"]);
 const dynamicCalls = new Set([
   "eval",
   "evalq",
@@ -120,15 +156,19 @@ const maxNodesPerFile = 100_000;
 /**
  * Independent literal-reference assessment using caller-owned normalized syntax only.
  * Scope: https://cran.r-project.org/doc/manuals/r-release/R-exts.html#Checking-packages
- * The manual explicitly describes dependency scanning as non-exhaustive. Declaration
- * roles were separately checked with independently authored GNU R 4.6.1 packages.
+ * Policy v2 (RFC-0008) follows native GNU R 4.6.1 `R CMD check` outcomes on independently
+ * authored fixture packages: quoted syntax is scanned; dynamic and computed forms are outside the
+ * static check; examples report undeclared packages; tests report only installed ones.
  * No source expression, parser diagnostic text, or implementation body is returned.
  */
 export function inspectPackageSourceDependencies(
   description: string,
   sources: readonly PackageDependencySource[],
   parse: PackageDependencySourceParser,
+  options: PackageSourceDependencyOptions = {},
 ): PackageSourceDependencyAssessment {
+  const installed = options.installed ?? DEFAULT_INSTALLED_PACKAGES;
+  const outsideScope: PackageSourceDependencyUnresolved[] = [];
   const references: PackageSourceDependencyReference[] = [];
   const unresolved: PackageSourceDependencyUnresolved[] = [];
   const files: PackageSourceDependencyAssessment["files"][number][] = [];
@@ -227,9 +267,13 @@ export function inspectPackageSourceDependencies(
         reason = "invalid-package-literal";
       if (reason === undefined && validTarget === undefined) reason = "computed-package";
       if (reason === undefined && !validDescription) reason = "invalid-description";
-      if (reason === undefined && role !== "package") reason = "unverified-source-role";
-      if (reason === undefined && validTarget === ownPackage) reason = "self-reference";
+      if (reason === undefined && validTarget === ownPackage) {
+        reason = "self-reference";
+        status = "passed";
+      }
       if (reason === undefined && validTarget !== undefined) {
+        // In package code, attaching an Imports-only package is reported as undeclared.
+        const attachRestricted = role === "package" && (kind === "library" || kind === "require");
         if (basePackages.has(validTarget)) {
           reason = "base-package";
           status = "passed";
@@ -239,10 +283,13 @@ export function inspectPackageSourceDependencies(
               field === "Depends" ||
               field === "Suggests" ||
               field === "Enhances" ||
-              (field === "Imports" && kind !== "library" && kind !== "require"),
+              (field === "Imports" && !attachRestricted),
           )
         ) {
           reason = "declared-package";
+          status = "passed";
+        } else if (role === "test" && !installed.has(validTarget)) {
+          reason = "uninstalled-test-reference";
           status = "passed";
         } else {
           reason = "undeclared-package";
@@ -263,8 +310,7 @@ export function inspectPackageSourceDependencies(
     if (parsed.reason !== undefined) addUnresolved(parsed.reason);
     if (bindingLimit) addUnresolved("ast-limit");
     if (!validDescription) addUnresolved("invalid-description");
-    type Work = { value: unknown; quoted: boolean };
-    const work: Work[] = ast === undefined ? [] : [{ value: ast, quoted: false }];
+    const work: unknown[] = ast === undefined ? [] : [ast];
     const seen = new Set<unknown>();
     while (work.length > 0) {
       if (seen.size >= maxNodesPerFile) {
@@ -272,26 +318,19 @@ export function inspectPackageSourceDependencies(
         break;
       }
       const entry = work.pop();
-      if (entry === undefined) break;
-      if (seen.has(entry.value)) {
+      if (seen.has(entry)) {
         addUnresolved("unsupported-ast");
         continue;
       }
-      seen.add(entry.value);
-      const node = asNode(entry.value);
+      seen.add(entry);
+      const node = asNode(entry);
       if (node === undefined) {
         addUnresolved("unsupported-ast");
         continue;
       }
+      // Native checks scan quoted syntax like other code, so quoting adds no uncertainty.
       const uncertain =
-        parsed.reason !== undefined
-          ? parsed.reason
-          : bindingLimit
-            ? "ast-limit"
-            : entry.quoted
-              ? "quoted-syntax"
-              : undefined;
-      let quotedChildren = entry.quoted;
+        parsed.reason !== undefined ? parsed.reason : bindingLimit ? "ast-limit" : undefined;
       if (node.kind === "NamespaceExpression") {
         if (node.operator === "::" || node.operator === ":::")
           addReference(
@@ -309,7 +348,6 @@ export function inspectPackageSourceDependencies(
             ? literalName(callee.member)
             : undefined;
         const name = directName ?? qualifiedName;
-        if (name !== undefined && quotedCalls.has(name)) quotedChildren = true;
         if (name !== undefined && loaders.has(name)) {
           const loader = name as Loader;
           const matched = loaderArguments(loader, node.arguments);
@@ -343,14 +381,22 @@ export function inspectPackageSourceDependencies(
               (matched.ambiguous ? "ambiguous-arguments" : undefined) ??
               (computedControl ? "computed-character-only" : undefined),
           );
-        } else if (name !== undefined && dynamicCalls.has(name)) {
-          addUnresolved(uncertain ?? "dynamic-evaluation", node);
         } else if (
+          (name !== undefined && dynamicCalls.has(name)) ||
           callee === undefined ||
           (callee.kind !== "Identifier" && callee.kind !== "NamespaceExpression")
         ) {
-          addUnresolved(uncertain ?? "computed-callee", node);
+          // Dynamic evaluation and computed callees are outside the native static check.
+          if (uncertain === undefined)
+            outsideScope.push({ ...location(node), reason: "outside-static-scope" });
+          else addUnresolved(uncertain, node);
         }
+      } else if (
+        node.kind === "UnsupportedExpression" &&
+        typeof node.feature === "string" &&
+        inertFeatures.has(node.feature)
+      ) {
+        // Inert placeholder syntax.
       } else if (
         node.kind === "UnsupportedExpression" ||
         node.kind === "ConstantExpression" ||
@@ -365,8 +411,7 @@ export function inspectPackageSourceDependencies(
         }
         childNodes.push(child);
       }
-      for (let index = childNodes.length - 1; index >= 0; index -= 1)
-        work.push({ value: childNodes[index], quoted: quotedChildren });
+      for (let index = childNodes.length - 1; index >= 0; index -= 1) work.push(childNodes[index]);
     }
     files.push({
       path: source.path,
@@ -388,21 +433,31 @@ export function inspectPackageSourceDependencies(
       status: "unexecuted",
       reason: item.reason,
     });
+  for (const [index, item] of outsideScope.entries())
+    checks.push({
+      id: `source-dependency:outside-scope:${index + 1}:${item.role}:${item.path}:${item.span?.start.offset ?? 0}`,
+      status: "passed",
+      reason: item.reason,
+    });
   return {
     schemaVersion: 1,
-    policy: "literal-source-references-v1",
-    status: references.some((reference) => reference.status === "failed") ? "failed" : "unexecuted",
+    policy: "literal-source-references-v2",
+    status: references.some((reference) => reference.status === "failed")
+      ? "failed"
+      : files.length > 0 && checks.every((check) => check.status === "passed")
+        ? "passed"
+        : "unexecuted",
     descriptionSha256: sha256(description),
     files,
     references,
     unresolved,
     checks,
     limitations: [
-      "Literal syntax inventory does not establish execution, reachability, availability, exported members, conditional use, or transitive dependency closure.",
-      "Only supplied files are inventoried; tests, examples, vignettes and generated code require separate coverage.",
-      "Package-code declaration rules are independently observed; test/example roles and self references remain unexecuted.",
-      "Quoted syntax, computed targets/controls, known local loader bindings and dynamic evaluation remain unexecuted; aliases and runtime search-path changes are not resolved.",
-      "File passed status describes syntax inventory only; this assessment never passes the complete metadata stage or P7.",
+      "Literal syntax inventory does not establish execution, reachability, availability, exported members, or conditional use; transitive closure is checked separately.",
+      "Only supplied files are inventoried; vignettes, demos and generated code require separate coverage.",
+      "Dynamic evaluation and computed callees are outside the native static check and are recorded, not resolved.",
+      "Computed targets/controls and known local loader bindings remain unexecuted; aliases and runtime search-path changes are not resolved.",
+      "Test-role findings depend on the declared installed set, by default the GNU R 4.6.1 base and recommended packages.",
     ],
   };
 }

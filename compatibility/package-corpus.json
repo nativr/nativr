@@ -200,8 +200,8 @@
       "firstBlocker": {
         "tier": "P7",
         "path": "R CMD check",
-        "code": "full-package-check-unverified",
-        "message": "Profile 0.305 executes all five unchanged direct scripts and five applicable example topics in fresh sessions. All ten stdout/stderr comparisons match native GNU R 4.6.1 after independently probed Windows text transport decoding, without display-whitespace normalization. The direct scripts retain three expected handled errors. Ordered condition classes, calls and messages also match across all ten full comparisons, including the three handled errors. Shared embedded-value conversion preserves attributes of the replacement value reflected by tests/afill.R. GNU cross-stream order is unobserved. Full metadata, installation/loading, namespace, documentation, and manual checks remain unexecuted; P7 is unproven."
+        "code": "package-check-stage-unexecuted",
+        "message": "Under RFC-0008 the metadata-dependencies stage passes: all 55 DESCRIPTION, license, author, declaration, literal-source-reference (policy v2, native fixture parity) and base dependency-closure checks execute and pass. All ten stdout/stderr, ordered-output and condition comparisons match native GNU R 4.6.1, and every oracle run is repeatable. The first unexecuted stage is installation-loading (startup without default packages and installation validation); namespace-source, documentation and manual follow. P7 is unproven."
       }
     },
     {

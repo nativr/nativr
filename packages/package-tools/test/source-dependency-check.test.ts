@@ -42,7 +42,7 @@ describe("owned AST source dependency inventory", () => {
     for (const [dependencies, expected] of cases) {
       const assessment = inspect(source, dependencies);
       expect(assessment.references.map((reference) => reference.status)).toEqual(expected);
-      expect(assessment.status).toBe(expected.includes("failed") ? "failed" : "unexecuted");
+      expect(assessment.status).toBe(expected.includes("failed") ? "failed" : "passed");
       expect(assessment.references.map((reference) => reference.package)).toEqual(
         Array(5).fill("boot"),
       );
@@ -67,7 +67,8 @@ describe("owned AST source dependency inventory", () => {
       },
     ]);
     expect(result.descriptionSha256).toBe(createHash("sha256").update(description).digest("hex"));
-    expect(result.status).toBe("unexecuted");
+    expect(result.status).toBe("passed");
+    expect(result.policy).toBe("literal-source-references-v2");
     expect(result.checks.every((check) => check.id.startsWith("source-dependency:"))).toBe(true);
   });
 
@@ -120,7 +121,7 @@ describe("owned AST source dependency inventory", () => {
     );
   });
 
-  it("leaves quoted, shadowed and cross-file bindings unresolved", () => {
+  it("scans quoted syntax but leaves shadowed and cross-file bindings unresolved", () => {
     const result = inspectPackageSourceDependencies(
       description,
       [
@@ -146,11 +147,15 @@ describe("owned AST source dependency inventory", () => {
         .filter((reference) => reference.package === "unknown")
         .map((reference) => reference.status),
     ).toEqual(["unexecuted", "failed"]);
+    // Native R CMD check reports undeclared packages referenced inside quote() (RFC-0008).
     expect(
       result.references
         .filter((reference) => reference.package?.startsWith("quoted"))
-        .every((reference) => reference.reason === "quoted-syntax"),
-    ).toBe(true);
+        .map((reference) => [reference.status, reference.reason]),
+    ).toEqual([
+      ["failed", "undeclared-package"],
+      ["failed", "undeclared-package"],
+    ]);
     expect(result.references.find((reference) => reference.kind === "require")?.reason).toBe(
       "shadowed-binding",
     );
@@ -160,25 +165,53 @@ describe("owned AST source dependency inventory", () => {
     );
   });
 
-  it("keeps dynamic code, unsupported syntax, self references and unverified roles unexecuted", () => {
+  it("records dynamic code as outside the static check and keeps invalid literals unresolved", () => {
     const result = inspect(
       'eval(parse(text="HIDDEN_BODY")); do.call("library", list("unknown")); get("library")("unknown"); ownedfixture::f; library("bad/package")',
     );
-    expect(result.unresolved.map((entry) => entry.reason)).toEqual(
-      expect.arrayContaining([
-        "dynamic-evaluation",
-        "computed-callee",
-        "self-reference",
-        "invalid-package-literal",
-      ]),
-    );
+    expect(result.unresolved.map((entry) => entry.reason)).toEqual(["invalid-package-literal"]);
+    expect(
+      result.checks.filter((check) => check.reason === "outside-static-scope").length,
+    ).toBeGreaterThanOrEqual(3);
+    expect(
+      result.references.find((reference) => reference.package === "ownedfixture"),
+    ).toMatchObject({ status: "passed", reason: "self-reference" });
     expect(result.status).toBe("unexecuted");
     expect(JSON.stringify(result)).not.toContain("HIDDEN_BODY");
     expect(JSON.stringify(result)).not.toContain("bad/package");
-    for (const role of ["test", "example"] as const)
-      expect(inspect("missingpkg::f", "", role).references[0]?.reason).toBe(
-        "unverified-source-role",
-      );
+  });
+
+  it("applies the natively observed example and test roles", () => {
+    // Examples report any undeclared non-base package; tests only installed ones (RFC-0008).
+    expect(inspect("missingpkg::f", "", "example").references[0]).toMatchObject({
+      status: "failed",
+      reason: "undeclared-package",
+    });
+    expect(inspect("missingpkg::f", "", "test").references[0]).toMatchObject({
+      status: "passed",
+      reason: "uninstalled-test-reference",
+    });
+    expect(inspect("library(MASS)", "", "test").references[0]).toMatchObject({
+      status: "failed",
+      reason: "undeclared-package",
+    });
+    expect(inspect("library(boot)", "Imports: boot\n", "example").references[0]?.status).toBe(
+      "passed",
+    );
+    expect(inspect("library(boot)", "Imports: boot\n").references[0]?.status).toBe("failed");
+    const custom = inspectPackageSourceDependencies(
+      description,
+      [{ path: "tests/t.R", source: "library(closurepkg)", role: "test" }],
+      (text) => parser.parse(text),
+      { installed: new Set(["closurepkg"]) },
+    );
+    expect(custom.references[0]?.status).toBe("failed");
+  });
+
+  it("treats empty index and dots placeholders as inert syntax", () => {
+    const result = inspect("f <- function(x, ...) g(x[, 1], ...)");
+    expect(result.unresolved).toEqual([]);
+    expect(result.status).toBe("passed");
   });
 
   it("never leaks source bodies, parser diagnostics, arbitrary AST values or exception text", () => {
@@ -294,6 +327,81 @@ it.runIf(process.env.NATIVR_PACKAGE_ORACLE_FIXTURE === "1")(
     expect(result.stdout).toBe(
       "none|1|1|1;Depends|0|0|0;Imports|0|1|0;Suggests|0|0|0;Enhances|0|0|0;LinkingTo|1|1|1;",
     );
+  },
+  330_000,
+);
+
+// RFC-0008 policy v2: each fixture source is classified by NativR and by native R CMD check.
+const scopeFixtures = {
+  code: [
+    "f <- function() {",
+    "  eval(quote(library(zzquotedattach)))",
+    '  do.call("library", list("zzdynamicattach"))',
+    '  g <- get("library"); g(zzaliasattach)',
+    "  zzliteralns::thing",
+    "}",
+  ].join("\n"),
+  example: "if (FALSE) library(zzexampleattach)\nif (FALSE) library(MASS)",
+  test: "if (FALSE) library(zztestattach)\nif (FALSE) library(MASS)\nif (FALSE) lattice::xyplot",
+} as const;
+
+it.runIf(process.env.NATIVR_PACKAGE_ORACLE_FIXTURE === "1")(
+  "matches GNU R scope rules for quoted, dynamic, example and test references",
+  async () => {
+    const nativr = inspectPackageSourceDependencies(
+      "Package: ownedscope\nVersion: 1.0.0\n",
+      [
+        { path: "R/scope.R", source: scopeFixtures.code, role: "package" },
+        { path: "man/scope.Rd", source: scopeFixtures.example, role: "example" },
+        { path: "tests/scope.R", source: scopeFixtures.test, role: "test" },
+      ],
+      (text) => parser.parse(text),
+    );
+    const failed = new Set(
+      nativr.references
+        .filter((reference) => reference.status === "failed")
+        .map((reference) => `${reference.role}:${reference.package}`),
+    );
+    const result = await capturePackageOracleScript({
+      rscript: process.env.NATIVR_RSCRIPT ?? "Rscript",
+      timeoutMs: 300_000,
+      source: `local({
+        Sys.setenv(LC_ALL="C", LANG="C", \`_R_CHECK_FORCE_SUGGESTS_\`="false")
+        root <- tempfile("owned-scope-"); dir.create(root)
+        old <- setwd(root); on.exit({setwd(old); unlink(root, recursive=TRUE)})
+        name <- "ownedscope"; dir.create(file.path(name, "R"), recursive=TRUE)
+        dir.create(file.path(name, "man")); dir.create(file.path(name, "tests"))
+        writeLines(c("Package: ownedscope","Version: 1.0.0","Title: Independent Scope Fixture",
+          "Description: Independently authored dependency scope fixture.","License: GPL-2",
+          "Author: Fixture Author","Maintainer: Fixture Author <fixture@example.invalid>"),
+          file.path(name,"DESCRIPTION"))
+        writeLines("export(f)", file.path(name,"NAMESPACE"))
+        writeLines(${JSON.stringify(scopeFixtures.code)}, file.path(name,"R","scope.R"))
+        writeLines(c("\\\\name{f}","\\\\alias{f}","\\\\title{F}","\\\\usage{f()}","\\\\value{None.}",
+          "\\\\description{Fixture.}","\\\\examples{",${JSON.stringify(scopeFixtures.example)},"}"),
+          file.path(name,"man","f.Rd"))
+        writeLines(${JSON.stringify(scopeFixtures.test)}, file.path(name,"tests","scope.R"))
+        out <- "scope.log"
+        executable <- file.path(R.home("bin"),if (.Platform$OS.type == "windows") "R.exe" else "R")
+        suppressWarnings(system2(executable,c("CMD","check","--no-manual","--no-tests","--no-vignettes","--no-build-vignettes",name),stdout=out,stderr=out))
+        lines <- readLines(out,warn=FALSE)
+        section <- function(start) {
+          i <- grep(start, lines, fixed=TRUE)[1]; if (is.na(i)) stop("check item did not run: ", start)
+          j <- i + 1L; while (j <= length(lines) && !startsWith(lines[j], "* ")) j <- j + 1L
+          lines[i:(j - 1L)]
+        }
+        flagged <- function(lines, pkg) any(grepl(paste0("'", pkg, "'"), lines, fixed=TRUE))
+        code <- section("checking dependencies in R code")
+        ex <- section("checking for unstated dependencies in examples")
+        te <- section("checking for unstated dependencies in 'tests'")
+        for (p in c("zzquotedattach","zzdynamicattach","zzaliasattach","zzliteralns")) if (flagged(code, p)) cat("package:", p, ";", sep="")
+        for (p in c("zzexampleattach","MASS")) if (flagged(ex, p)) cat("example:", p, ";", sep="")
+        for (p in c("zztestattach","MASS","lattice")) if (flagged(te, p)) cat("test:", p, ";", sep="")
+      })`,
+    });
+    expect(result.status, result.stderr).toBe("completed");
+    const native = new Set(result.stdout.split(";").filter((item) => item.length > 0));
+    expect([...failed].sort()).toEqual([...native].sort());
   },
   330_000,
 );

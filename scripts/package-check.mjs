@@ -34,6 +34,8 @@ const {
   inspectPackageDependencyDeclarations,
   inspectPackageSourceDependencies,
   collectPackageSourceDependencyInputs,
+  BASE_PRIORITY_PACKAGES,
+  DEFAULT_INSTALLED_PACKAGES,
   inspectPackageLicense,
   comparePackageVersions,
   DEFAULT_PACKAGE_PACK_LIMITS,
@@ -119,10 +121,12 @@ try {
   });
   let sourceDependencyAssessment;
   try {
+    // RFC-0008: test references count only when installed (base, recommended, this bundle).
     sourceDependencyAssessment = inspectPackageSourceDependencies(
       artifact.bundle.description,
       dependencyInputs.sources,
       (source) => dependencyParser.parse(source),
+      { installed: new Set([...DEFAULT_INSTALLED_PACKAGES, entry.package]) },
     );
   } finally {
     dependencyParser.dispose();
@@ -380,6 +384,39 @@ try {
   const dependencyObserved =
     dependencyObservation.actual.status === "completed" &&
     dependencyObservation.expected.status === "completed";
+  // RFC-0008 closure: Depends/Imports must be base-priority packages (whose dependencies are base)
+  // satisfied on NativR. Non-base dependencies need a packed closure, which this harness lacks.
+  const closureChecks = artifact.dependencies
+    .map((dependency, index) => ({ dependency, index }))
+    .filter(
+      ({ dependency }) =>
+        (dependency.kind === "Depends" || dependency.kind === "Imports") && dependency.name !== "R",
+    )
+    .map(({ dependency, index }) => {
+      const observed = dependencyObservation.dependencies[index];
+      const status = !BASE_PRIORITY_PACKAGES.has(dependency.name)
+        ? "unexecuted"
+        : observed?.actual === "satisfied"
+          ? "passed"
+          : "failed";
+      return { id: `dependencies:closure:${dependency.kind}:${dependency.name}`, status };
+    });
+  const closureFailed = closureChecks.some((check) => check.status === "failed");
+  const metadataChecks = [
+    ...descriptionAssessment.checks,
+    ...declarationAssessment.checks,
+    ...sourceDependencyAssessment.checks,
+    ...licenseAssessment.checks,
+    ...authorMetadataAssessment.checks,
+    ...closureChecks,
+  ];
+  const metadataComplete =
+    dependencyObserved &&
+    sourceDependencyInputFailures.length === 0 &&
+    (authorsObservation === null ||
+      (authorsObservation.outcome === "match" && authorsObservation.valid)) &&
+    (authorFieldsObservation === null || authorFieldsObservation.outcome === "match") &&
+    metadataChecks.every((check) => check.status === "passed");
   const tests = await runPackageTests(archive, (script) => compareScript("test", script), {
     ...audit,
     ...(args.tests.length === 0 ? {} : { paths: args.tests }),
@@ -465,29 +502,35 @@ try {
           descriptionFailed ||
           authorsFailed ||
           authorMetadataFailed ||
-          authorFieldsObservation?.outcome === "mismatch"
+          authorFieldsObservation?.outcome === "mismatch" ||
+          closureFailed
           ? "failed"
-          : "unexecuted",
-        declarationFailed
-          ? "Namespace dependency declarations failed; see declarationAssessment. Dynamic references and transitive closure remain unexecuted."
-          : sourceDependencyFailed
-            ? "Literal source dependency references failed declaration checks; see sourceDependencyAssessment. Computed references and transitive closure remain unexecuted."
-            : licenseFailed
-              ? "License structural checks failed; see licenseAssessment. Full license and metadata validation remain unexecuted."
-              : descriptionFailed
-                ? "DESCRIPTION structural checks failed; see descriptionAssessment. Full metadata and undeclared dependency checks remain unexecuted."
-                : authorsFailed ||
-                    authorMetadataFailed ||
-                    authorFieldsObservation?.outcome === "mismatch"
-                  ? "Author/maintainer checks failed or differ from the native oracle; see authorMetadataAssessment, authorsObservation and authorFieldsObservation. Full metadata checks remain unexecuted."
-                  : dependencyFailed
-                    ? "A required declared dependency version is unavailable or violates its constraint on at least one runtime. Broader metadata and undeclared dependency checks remain unexecuted."
-                    : "DESCRIPTION structure, declared version lookups and literal source dependency references are recorded; full metadata, computed references and transitive closure remain unexecuted.",
+          : metadataComplete
+            ? "passed"
+            : "unexecuted",
+        metadataComplete
+          ? "Every DESCRIPTION, license, author, declaration, source-reference (literal-source-references-v2) and dependency-closure check executed and passed under RFC-0008."
+          : closureFailed
+            ? "A base dependency in the Depends/Imports closure is unavailable on NativR; see closure checks."
+            : declarationFailed
+              ? "Namespace dependency declarations failed; see declarationAssessment. Dynamic references and transitive closure remain unexecuted."
+              : sourceDependencyFailed
+                ? "Literal source dependency references failed declaration checks; see sourceDependencyAssessment. Computed references and transitive closure remain unexecuted."
+                : licenseFailed
+                  ? "License structural checks failed; see licenseAssessment. Full license and metadata validation remain unexecuted."
+                  : descriptionFailed
+                    ? "DESCRIPTION structural checks failed; see descriptionAssessment. Full metadata and undeclared dependency checks remain unexecuted."
+                    : authorsFailed ||
+                        authorMetadataFailed ||
+                        authorFieldsObservation?.outcome === "mismatch"
+                      ? "Author/maintainer checks failed or differ from the native oracle; see authorMetadataAssessment, authorsObservation and authorFieldsObservation. Full metadata checks remain unexecuted."
+                      : dependencyFailed
+                        ? "A required declared dependency version is unavailable or violates its constraint on at least one runtime. Broader metadata and undeclared dependency checks remain unexecuted."
+                        : "Some metadata checks remain unexecuted; see the stage inventory and the assessments.",
         [
-          "DESCRIPTION:full-validation",
           ...(authorsObservation === null ? [] : ["DESCRIPTION:Authors@R:person-roles"]),
           ...(authorFieldsObservation === null ? [] : ["DESCRIPTION:Authors@R:derived-fields"]),
-          "dependencies:undeclared-and-transitive",
+          ...closureChecks.map((check) => check.id),
           ...descriptionAssessment.checks.map((check) => check.id),
           ...declarationAssessment.checks.map((check) => check.id),
           ...sourceDependencyAssessment.checks.map((check) => check.id),
@@ -521,6 +564,9 @@ try {
             .filter((check) => check.status !== "unexecuted")
             .map((check) => check.id),
           ...(dependencyObserved ? dependencyKeys : []),
+          ...closureChecks
+            .filter((check) => check.status !== "unexecuted")
+            .map((check) => check.id),
         ],
       ),
       stage(
