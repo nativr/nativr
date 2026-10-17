@@ -7,7 +7,7 @@ not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, 
 Budgets:
 
 - statically loaded public client: 150 KiB gzip;
-- Worker JavaScript: 461 KiB gzip;
+- Worker JavaScript: 512 KiB gzip (fixed; see "Worker budget policy");
 - parser Wasm assets combined: 1.5 MiB raw (stricter than the requested gzip ceiling);
 - correctly rounded elementary-function Wasm (`elementary.wasm`, RFC-0007): 384 KiB raw, a separate
   ceiling that the parser budget does not absorb. The pinned module is 318,690 bytes.

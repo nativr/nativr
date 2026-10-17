@@ -67,13 +67,13 @@ release).
 The repository's completion criteria are defined in
 [gnu-r-compatibility.md](gnu-r-compatibility.md#completion-evidence). They are not reduced here.
 
-| Criterion                                                          | Current evidence                                                                                                                                                                                                         | Status         |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------- |
-| 1. Executable differential suite for every required domain         | All twelve ledger domains have partial suites; every domain is still marked incomplete                                                                                                                                   | Not met        |
-| 2. Every inventoried callable has evidence or a verified exclusion | 742 of 2,522 names registered; 77 bindings have recursive Oracle v2 case links; the other 1,780 names have no registered binding                                                                                         | Not met        |
-| 3. Broad clean-room corpus including R CMD check scenarios         | 1,225 foundation and 127 recursive cases; 25 pinned packages; no P7 package; abind passes the test-output, output-order and conditions stages, while metadata, namespace, documentation and manual stages are unexecuted | Not met        |
-| 4. Browsers, operating systems and tolerances verified             | Three engines on Windows here and Ubuntu in CI; macOS unverified; numeric policy decided (RFC-0007), library built, verified across engines and shipped as a digest-checked asset, not yet adopted                       | Not met        |
-| 5. Ledger, capabilities, public API and reports agree              | `capabilities:check`, `status:check` and `compatibility:check` pass; stale narrative counts fixed in this pass                                                                                                           | Met for checks |
+| Criterion                                                          | Current evidence                                                                                                                                                                                   | Status         |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| 1. Executable differential suite for every required domain         | All twelve ledger domains have partial suites; every domain is still marked incomplete                                                                                                             | Not met        |
+| 2. Every inventoried callable has evidence or a verified exclusion | 742 of 2,522 names registered; 77 bindings have recursive Oracle v2 case links; the other 1,780 names have no registered binding                                                                   | Not met        |
+| 3. Broad clean-room corpus including R CMD check scenarios         | 1,225 foundation and 127 recursive cases; 25 pinned packages; abind 1.4-8 reaches P7 under the RFC-0008 stage specifications; numDeriv and the other 23 packages do not                            | Not met        |
+| 4. Browsers, operating systems and tolerances verified             | Three engines on Windows here and Ubuntu in CI; macOS unverified; numeric policy decided (RFC-0007), library built, verified across engines and shipped as a digest-checked asset, not yet adopted | Not met        |
+| 5. Ledger, capabilities, public API and reports agree              | `capabilities:check`, `status:check` and `compatibility:check` pass; stale narrative counts fixed in this pass                                                                                     | Met for checks |
 
 **Readiness:** B is far from complete. As a rough, low-confidence estimate, closing criteria 1-3 is
 a multi-year effort at the current increment rate: about 1,800 callables lack registration or
@@ -85,17 +85,17 @@ callables can be excluded as browser-inapplicable, which has not been assessed.
 Toolchain: Node 24.14.0 (official zip, SHA-256 verified), pnpm 11.17.0 (corepack), and GNU R 4.6.1
 for Windows (CRAN installer, MD5 verified) as the black-box oracle, on Windows 11 x64.
 
-| Command                                         | Baseline (profile 0.350)        | Combined tree (profile 0.353)                                     |
-| ----------------------------------------------- | ------------------------------- | ----------------------------------------------------------------- |
-| `pnpm check`                                    | Passed; 1,241 tests, 76 skipped | Passed; 1,269 tests, 82 skipped (note 1)                          |
-| `pnpm conformance`                              | 1,200/1,200                     | 1,225/1,225                                                       |
-| `pnpm conformance:r` (live GNU R 4.6.1)         | 1,129/1,130; one case failed    | 1,155/1,155                                                       |
-| `pnpm conformance:r:v2`                         | 125/125, 69 linked bindings     | 127/127, 77 linked bindings                                       |
-| `pnpm pack:smoke`                               | Passed                          | Passed                                                            |
-| `pnpm test:e2e`                                 | Not run at baseline             | 6/6 (Chromium, Firefox, WebKit)                                   |
-| `pnpm package:check --package abind`            | 10/10 comparisons match         | 10/10 match; test-output, output-order and conditions stages pass |
-| `pnpm package:check --package numDeriv`         | 2 match, 9 differ (unseeded)    | 3 match, 8 differ (seeded)                                        |
-| External corpus suite (`NATIVR_EXTERNAL_...=1`) | Not run in this pass            | Not run in this pass                                              |
+| Command                                         | Baseline (profile 0.350)        | Combined tree (profile 0.353)                                                      |
+| ----------------------------------------------- | ------------------------------- | ---------------------------------------------------------------------------------- |
+| `pnpm check`                                    | Passed; 1,241 tests, 76 skipped | Passed; 1,269 tests, 82 skipped (note 1)                                           |
+| `pnpm conformance`                              | 1,200/1,200                     | 1,225/1,225                                                                        |
+| `pnpm conformance:r` (live GNU R 4.6.1)         | 1,129/1,130; one case failed    | 1,155/1,155                                                                        |
+| `pnpm conformance:r:v2`                         | 125/125, 69 linked bindings     | 127/127, 77 linked bindings                                                        |
+| `pnpm pack:smoke`                               | Passed                          | Passed                                                                             |
+| `pnpm test:e2e`                                 | Not run at baseline             | 6/6 (Chromium, Firefox, WebKit)                                                    |
+| `pnpm package:check --package abind`            | 10/10 comparisons match         | P7: every stage passes or is inapplicable; 10/10 comparisons match (profile 0.353) |
+| `pnpm package:check --package numDeriv`         | 2 match, 9 differ (unseeded)    | 3 match, 8 differ (seeded)                                                         |
+| External corpus suite (`NATIVR_EXTERNAL_...=1`) | Not run in this pass            | Not run in this pass                                                               |
 
 1. The Worker budget is now a fixed 512 KiB gzip; see "Worker budget policy" in
    [performance.md](performance.md). The baseline live-oracle failure was a deterministic
@@ -106,17 +106,17 @@ suite does not run them. The holdout package (Formula 1.2-6) was not evaluated.
 
 ## Package tiers and first blockers
 
-| Package             | Tier | First blocker                                                          |
-| ------------------- | ---- | ---------------------------------------------------------------------- |
-| abind 1.4-8         | P6   | P7 `metadata-dependencies` unexecuted; all 10 output comparisons match |
-| numDeriv 2016.8-1.1 | P6   | P7 `metadata-dependencies` unexecuted; output comparisons below        |
-| R6 2.6.1            | P5   | P6 `tests/testthat.R` needs testthat                                   |
-| rprojroot 2.1.1     | P5   | P6 `tests/testthat.R` needs testthat                                   |
-| labeling 0.4.3      | P5   | Recorded as passing at P5; no recorded blocker                         |
-| assertthat 0.2.1    | P4   | P5 `man/not_empty.Rd` example error                                    |
-| BH 1.90.0-1         | P3   | Recorded as passing at P3 (header-only package)                        |
-| 17 further packages | P4   | Recorded as passing at P4 (see `compatibility/package-corpus.json`)    |
-| Formula 1.2-6       | P0   | Holdout; deliberately unevaluated                                      |
+| Package             | Tier | First blocker                                                       |
+| ------------------- | ---- | ------------------------------------------------------------------- |
+| abind 1.4-8         | P7   | None. First P7 package (RFC-0008, profile 0.353)                    |
+| numDeriv 2016.8-1.1 | P6   | P7 `metadata-dependencies` unexecuted; output comparisons below     |
+| R6 2.6.1            | P5   | P6 `tests/testthat.R` needs testthat                                |
+| rprojroot 2.1.1     | P5   | P6 `tests/testthat.R` needs testthat                                |
+| labeling 0.4.3      | P5   | Recorded as passing at P5; no recorded blocker                      |
+| assertthat 0.2.1    | P4   | P5 `man/not_empty.Rd` example error                                 |
+| BH 1.90.0-1         | P3   | Recorded as passing at P3 (header-only package)                     |
+| 17 further packages | P4   | Recorded as passing at P4 (see `compatibility/package-corpus.json`) |
+| Formula 1.2-6       | P0   | Holdout; deliberately unevaluated                                   |
 
 Only the abind and numDeriv blockers were re-verified in this pass. The others are the recorded
 values; re-verifying them needs the opt-in external corpus suite, which downloads every pinned
@@ -177,9 +177,9 @@ loading of rarely used builtins. That part moves to milestone B: the Worker ship
 asset, and chunks it imported at runtime would not be copied by a consuming application's bundler.
 It needs a packaging design that `pnpm pack:smoke` can verify for bundled consumers.
 
-**R4 (P0, abind P7): `metadata-dependencies` stage.** Full DESCRIPTION validation, plus undeclared
-and transitive dependency closure with explicit treatment of computed references. _Acceptance:_ the
-stage reports `passed` for abind with a complete inventory, and fixture packages cover failures.
+**R4 (P0, abind P7): `metadata-dependencies` stage. Done (RFC-0008).** Source-reference policy v2
+follows native R CMD check scope on independently authored fixtures, with an opt-in parity test. A
+base dependency-closure check is added. The stage passes for abind with 55 of 55 checks executed.
 
 **R5 (P0, P7): output-order capture. Done (harness, profile 0.352).** Each oracle script also runs
 in a second fresh session whose stdout and stderr share one file handle. The merged bytes are
@@ -191,10 +191,16 @@ output, ambiguity, failed runs and the CRLF transport reversal.
 scripts executed. See
 [the evidence README](../compatibility/package-check-evidence/README.md#cross-stream-output-order).
 
-**R6 (P1): `namespace-source`, `documentation`, `installed-documentation`, `manual` and `vignettes`
-stages.** _Acceptance:_ each stage has an independently written specification, a NativR
-implementation in package-tools, fixture packages, and `passed`/`failed`/`inapplicable` outcomes
-with reasons.
+**R6 (P1): remaining package-check stages. Done for abind (RFC-0008).** installation-loading,
+namespace-source, documentation and the manual adaptation each have an independent specification, a
+package-tools implementation, native fixture parity tests and reasoned outcomes. abind reaches P7.
+Still open: non-ASCII code without a declared encoding, INDEX files, `\Sexpr`, links into non-core
+packages, and vignettes (inapplicable for abind).
+
+**R14 (P2): slow WebKit e2e run.** On this Windows machine, WebKit takes 1.3-2.1 min for the
+"required Worker examples" test and can exceed its 120 s timeout; Chromium and Firefox take under 30
+s. _Acceptance:_ profile the WebKit run and fix the cause, or document an engine-specific budget
+with evidence. Do not raise the timeout without that analysis.
 
 **R7 (P1): `withCallingHandlers`, restarts, `options(warn)`. Done (profile 0.353).** Covered by
 foundation and recursive cases. An independent black-box probe of muffle restarts, handler
@@ -230,8 +236,9 @@ the full gates.
 
 1. With the maintainer's authorization: push to `origin`, let CI pass on Ubuntu, and carry out the
    publication bootstrap in [releasing.md](releasing.md) (A7).
-2. Milestone B, in order: RFC-0007 steps 4-5 (adopt the correctly rounded library, pin
-   `ubuntu-24.04`, rerun the evidence on Linux); then R4, the first blocker for abind's P7; then R6.
+2. Milestone B, in order: RFC-0007 adoption (the module now ships as a verified asset), then the
+   Linux oracle switch (pin `ubuntu-24.04`, rerun the evidence); then numDeriv toward P7 using the
+   RFC-0008 stages; then callable closure (Phase 3 of the plan).
 
 Estimates are uncertain. Each package-check stage has needed several increments in the past, and
 RFC-0007 step 5 reruns all oracle evidence on a new platform.
