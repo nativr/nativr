@@ -77,6 +77,10 @@
       {
         "surface": "startup with default packages disabled",
         "behavior": "Core namespaces are resident in every NativR session. Package checks that GNU R runs with R_DEFAULT_PACKAGES=NULL detach the default packages from the search path instead (RFC-0008); symbol visibility matches, but the core namespaces stay listed by loadedNamespaces()."
+      },
+      {
+        "surface": "package manual (R CMD check PDF version of manual)",
+        "behavior": "PDF typesetting needs a host LaTeX toolchain. The package-check manual stage renders every Rd file to text using only documented or package-defined Rd macros (RFC-0008) and does not claim PDF equivalence."
       }
     ]
   },

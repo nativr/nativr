@@ -39,6 +39,8 @@ const {
   DEFAULT_INSTALLED_PACKAGES,
   inspectPackageLicense,
   inspectPackageNamespaceSource,
+  inspectPackageDocumentation,
+  inspectPackageManual,
   comparePackageVersions,
   DEFAULT_PACKAGE_PACK_LIMITS,
   packPackage,
@@ -387,6 +389,8 @@ try {
     rGrammarWasm: path.join(root, "packages/nativr/dist/assets/tree-sitter-r.wasm"),
   });
   let namespaceSourceAssessment;
+  let documentationAssessment;
+  let manualAssessment;
   try {
     namespaceSourceAssessment = inspectPackageNamespaceSource(
       {
@@ -403,6 +407,60 @@ try {
           .map((file) => ({ path: file.path, bytes: file.data })),
         hasIndex: files.some((file) => file.path === "INDEX" || file.path === "demo/00Index"),
         coreExports,
+      },
+      (source) => namespaceParser.parse(source),
+    );
+    // RFC-0008 documentation inputs: function formals, exported names and Rd files.
+    const functions = new Map();
+    for (const file of files.filter((item) => /^R\/[^/]+\.[RrSsq]$/u.test(item.path))) {
+      const ast = namespaceParser.parse(new TextDecoder().decode(file.data)).ast;
+      for (const statement of ast?.body ?? []) {
+        if (
+          statement.kind !== "AssignmentExpression" ||
+          statement.value?.kind !== "FunctionExpression"
+        )
+          continue;
+        functions.set(
+          statement.target.name,
+          statement.value.parameters.map((parameter) => ({
+            name: parameter.name,
+            ...(parameter.defaultValue === undefined
+              ? {}
+              : { defaultValue: parameter.defaultValue }),
+          })),
+        );
+      }
+    }
+    const exported = new Set();
+    const namespaceAst = namespaceParser.parse(artifact.bundle.namespace ?? "").ast;
+    for (const statement of namespaceAst?.body ?? []) {
+      if (statement.kind !== "CallExpression" || statement.callee?.kind !== "Identifier") continue;
+      const values = statement.arguments
+        .map((argument) => argument.value)
+        .map((value) => (value?.kind === "StringLiteral" ? value.value : value?.name))
+        .filter((value) => typeof value === "string");
+      if (statement.callee.name === "export") for (const value of values) exported.add(value);
+      if (statement.callee.name === "exportPattern")
+        for (const pattern of values)
+          for (const name of functions.keys())
+            if (new RegExp(pattern, "u").test(name)) exported.add(name);
+    }
+    const aliasCatalog = JSON.parse(
+      await readFile(path.join(root, "compatibility/gnu-r/rd-aliases.json"), "utf8"),
+    );
+    const rdFiles = files
+      .filter((item) => /^man\/[^/]+\.[Rr]d$/u.test(item.path))
+      .map((item) => ({ path: item.path, text: new TextDecoder().decode(item.data) }));
+    manualAssessment = inspectPackageManual(rdFiles);
+    documentationAssessment = inspectPackageDocumentation(
+      {
+        packageName: entry.package,
+        rdFiles,
+        exports: [...exported].sort(),
+        functions,
+        installedAliases: new Map(
+          Object.entries(aliasCatalog.packages).map(([name, aliases]) => [name, new Set(aliases)]),
+        ),
       },
       (source) => namespaceParser.parse(source),
     );
@@ -670,9 +728,16 @@ try {
       ),
       stage(
         "documentation",
-        "unexecuted",
-        "Rd extraction is not documentation consistency checking.",
-        rd,
+        documentationAssessment.status,
+        documentationAssessment.status === "passed"
+          ? "Every RFC-0008 Rd, metadata, cross-reference, documentation-entry, codoc, usage and contents check executed and passed (documentation-v1)."
+          : documentationAssessment.status === "failed"
+            ? "A documentation check failed; see documentationAssessment."
+            : "Some documentation checks remain unexecuted; see documentationAssessment.",
+        documentationAssessment.checks.map((check) => check.id),
+        documentationAssessment.checks
+          .filter((check) => check.status !== "unexecuted")
+          .map((check) => check.id),
       ),
       absent(
         "data",
@@ -743,7 +808,19 @@ try {
           ? "The audited archive has no src or configure/cleanup files."
           : "Native checks have not executed.",
       ),
-      stage("manual", "unexecuted", "Manual generation and validation have not executed.", rd),
+      stage(
+        "manual",
+        manualAssessment.status,
+        manualAssessment.status === "passed"
+          ? "Every Rd file renders to text with documented or package-defined macros (manual-text-rendering-v1). PDF typesetting needs a host LaTeX toolchain and is a documented browser adaptation."
+          : manualAssessment.status === "failed"
+            ? "An Rd file uses undocumented, undefined macros; see manualAssessment."
+            : "Some Rd files were not rendered; see manualAssessment.",
+        manualAssessment.checks.map((check) => check.id),
+        manualAssessment.checks
+          .filter((check) => check.status !== "unexecuted")
+          .map((check) => check.id),
+      ),
     ],
   });
   const payload = {
@@ -761,6 +838,8 @@ try {
     cleanBaseObservation,
     libraryPathObservation,
     namespaceSourceAssessment,
+    documentationAssessment,
+    manualAssessment,
     installation,
     runners: {
       tests: { outcome: tests.outcome, firstBlocker: tests.firstBlocker },

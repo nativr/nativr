@@ -239,10 +239,46 @@ difference; library loading and symbol visibility cannot. This is recorded in
 /`@` members, `::` members and `if (FALSE)` branches. `<<-` to an undefined name is reported.
 Imports from non-core packages leave the item unexecuted.
 
-## Other stages (outline)
+## documentation (normative, policy documentation-v1)
 
-- **documentation.** A complete Rd parser; required sections; aliases; cross-references to
-  documented topics; documented exports; `\usage` consistent with formals.
-- **manual.** PDF typesetting needs a host LaTeX toolchain and is browser-inapplicable. The stage is
-  redefined as rendering every Rd file to text without errors, recorded as a documented adaptation
-  in `compatibility/profiles.json`. This item does not claim PDF equivalence.
+Rd files are parsed following _Writing R Extensions_ chapter 2 and the published Rd parsing notes:
+`%` comments, the `\\` `\{` `\}` `\%` escapes, macros with brace and `[option]` arguments, and
+quoted strings in R-like contexts (`\usage`, `\examples`, `\code`). Observed on native fixtures
+(opt-in parity test `rd-check.test.ts`):
+
+- **Rd files** (ERROR otherwise): `\name` and `\title` exist and are unique. A duplicated `\alias`
+  within one file is accepted.
+- **Rd cross-references** (WARNING): every `\link` target is a package alias or an alias of the base
+  and recommended packages, from `compatibility/gnu-r/rd-aliases.json` (black-box help-index catalog
+  of GNU R 4.6.1). Links into other packages remain unexecuted.
+- **missing documentation entries** (WARNING): every exported object, including `exportPattern()`
+  matches, has an alias.
+- **code/documentation mismatches** (WARNING): each `\usage` function matches the code's argument
+  names, order and default-value syntax. `\method{g}{c}` usage is compared with `g.c`.
+- **Rd \usage sections** (WARNING): every usage argument, including `...`, has an `\item` in
+  `\arguments`, and every item is in usage. Usage functions other than documented S3 methods have an
+  alias.
+- **Rd contents**: every file has a non-empty `\description`.
+
+## manual (normative adaptation, policy manual-text-rendering-v1)
+
+GNU R typesets a PDF manual, which needs a host LaTeX toolchain and is browser-inapplicable. NativR
+instead renders every Rd file to text and requires that it uses only the Rd macros documented in
+_Writing R Extensions_ chapter 2 (including the system macros and equation commands) or macros the
+file defines with `\newcommand`. Files with `\Sexpr` remain unexecuted. The adaptation is recorded
+in `compatibility/profiles.json` and does not claim PDF equivalence. Native `R CMD check` reported
+the PDF manual for abind 1.4-8 as OK.
+
+## First P7 package
+
+With these specifications, `pnpm package:check --package abind --oracle-repeat` reports
+`p7Eligible: true` for abind 1.4-8 at profile 0.353.0. Every stage passes or is justifiably
+inapplicable, every inventory is fully executed, and all ten output, order and condition comparisons
+match native GNU R 4.6.1. The redacted summary is
+`compatibility/package-check-evidence/abind-1.4-8-p7-0.353.0.json`. This is evidence for this
+package and these specifications, not general package-check equivalence.
+
+## Remaining outlines
+
+- Non-ASCII code without a declared encoding, INDEX files, `\Sexpr`, and links into non-core
+  packages remain unexecuted until their native outcomes are observed.

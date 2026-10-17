@@ -271,7 +271,7 @@
   "packageCorpus": {
     "total": 25,
     "partitions": { "development": 2, "regression": 22, "holdout": 1 },
-    "statuses": { "passing": 19, "blocked": 5, "unevaluated": 1 },
+    "statuses": { "passing": 20, "blocked": 4, "unevaluated": 1 },
     "completedAtLeast": {
       "P0": 25,
       "P1": 24,
@@ -280,7 +280,7 @@
       "P4": 23,
       "P5": 5,
       "P6": 2,
-      "P7": 0
+      "P7": 1
     }
   }
 }

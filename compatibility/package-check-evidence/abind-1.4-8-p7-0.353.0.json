@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-package-check-summary",
+  "rawReportSha256": "93558177df5a73804237397ff20b63dd249616867684dfcbab068ae44621ee1c",
+  "redaction": {
+    "policy": "sha256-no-output-v1",
+    "rawOutputIncluded": false,
+    "rawConditionsIncluded": false,
+    "sourceIncluded": false
+  },
+  "package": { "name": "abind", "version": "1.4-8", "license": "MIT + file LICENSE" },
+  "provenance": {
+    "sourceSha256": "264a051b523ceae1795a0879e7768949ea55c586ac8db0adf1f5ebeddd2623e1",
+    "artifactSha256": "e9862a710e03ef978409dbd3c4138dd4cdf96b0584c6f228ffe2b42d1e0e9dee",
+    "oracle": { "implementation": "GNU R", "version": "4.6.1" },
+    "semanticProfile": "0.353.0",
+    "capabilitySha256": "7f14d3ea8199ad9e5d619ee6f349cdbab9fac40b485bcf8228682e5ddcfde014",
+    "runtimeLimits": {
+      "maxSteps": 300000000,
+      "maxCallDepth": 200,
+      "maxVectorLength": 50000000,
+      "maxOutputBytes": 32000000,
+      "maxPackageResourceBytes": 268435456
+    }
+  },
+  "executionProfile": {
+    "rng": {
+      "policy": "explicit-seed-v1",
+      "seed": 20261016,
+      "kinds": ["Mersenne-Twister", "Inversion", "Rejection"]
+    },
+    "oracleRepeat": true,
+    "runtimeProfile": "package-test",
+    "capture": "native-rscript-top-level-v1"
+  },
+  "p7Eligible": true,
+  "firstBlocker": null,
+  "stages": [
+    {
+      "id": "archive-artifact",
+      "status": "passed",
+      "reason": "Archive and normalized artifact digests match the pinned corpus.",
+      "discovered": 2,
+      "executed": 2
+    },
+    {
+      "id": "metadata-dependencies",
+      "status": "passed",
+      "reason": "Every DESCRIPTION, license, author, declaration, source-reference (literal-source-references-v2) and dependency-closure check executed and passed under RFC-0008.",
+      "discovered": 55,
+      "executed": 55
+    },
+    {
+      "id": "installation-loading",
+      "status": "passed",
+      "reason": "RFC-0008: oracle installation succeeded; lifecycle match; stated-dependency loading match; explicit lib.loc loading match; installed size 60659 bytes. Stated-dependency loading detaches default packages; NativR core namespaces stay resident (documented adaptation).",
+      "discovered": 9,
+      "executed": 9
+    },
+    {
+      "id": "namespace-source",
+      "status": "passed",
+      "reason": "Every RFC-0008 namespace and R source check executed and passed (namespace-source-v1); 0 undefined globals reported as a NOTE.",
+      "discovered": 22,
+      "executed": 22
+    },
+    {
+      "id": "documentation",
+      "status": "passed",
+      "reason": "Every RFC-0008 Rd, metadata, cross-reference, documentation-entry, codoc, usage and contents check executed and passed (documentation-v1).",
+      "discovered": 23,
+      "executed": 23
+    },
+    {
+      "id": "installed-documentation",
+      "status": "inapplicable",
+      "reason": "The audited archive has no inst/doc or vignette entries.",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "native-build-portability",
+      "status": "inapplicable",
+      "reason": "The audited archive has no src or configure/cleanup files.",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "data",
+      "status": "inapplicable",
+      "reason": "The audited archive has no data directory entries.",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "examples",
+      "status": "passed",
+      "reason": "Default-applicable extracted Rd blocks executed unchanged, with explicit library setup, in fresh sessions. The inventory records excluded blocks.",
+      "discovered": 5,
+      "executed": 5
+    },
+    {
+      "id": "package-tests",
+      "status": "passed",
+      "reason": "Top-level R scripts execute unchanged in fresh sessions with copied tests fixtures. Unsupported .Rin and absent entrypoints do not prove the package-test stage.",
+      "discovered": 5,
+      "executed": 5
+    },
+    {
+      "id": "test-output",
+      "status": "passed",
+      "reason": "Compare exact decoded stdout/stderr and separately observed conditions under policy 1. Only independently probed native text transport may be reversed.",
+      "discovered": 10,
+      "executed": 10
+    },
+    {
+      "id": "output-order",
+      "status": "passed",
+      "reason": "Compare complete stdout/stderr event sequences. The oracle order comes from a second fresh GNU R session whose streams share one file handle, accepted only when exactly one stream assignment reproduces the separate exact streams.",
+      "discovered": 10,
+      "executed": 10
+    },
+    {
+      "id": "conditions",
+      "status": "passed",
+      "reason": "Compare condition classes, calls, messages, and ordering only when both observers captured them completely.",
+      "discovered": 10,
+      "executed": 10
+    },
+    {
+      "id": "vignettes",
+      "status": "inapplicable",
+      "reason": "The audited archive has no vignettes or installed vignette files.",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "manual",
+      "status": "passed",
+      "reason": "Every Rd file renders to text with documented or package-defined macros (manual-text-rendering-v1). PDF typesetting needs a host LaTeX toolchain and is a documented browser adaptation.",
+      "discovered": 5,
+      "executed": 5
+    }
+  ],
+  "comparisons": { "total": 10, "outcomes": { "match": 10 }, "repeatable": true }
+}

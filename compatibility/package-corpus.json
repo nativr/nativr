@@ -194,15 +194,10 @@
       "sourceUrl": "https://cloud.r-project.org/src/contrib/abind_1.4-8.tar.gz",
       "sourceSha256": "264a051b523ceae1795a0879e7768949ea55c586ac8db0adf1f5ebeddd2623e1",
       "artifactSha256": "e9862a710e03ef978409dbd3c4138dd4cdf96b0584c6f228ffe2b42d1e0e9dee",
-      "tier": "P6",
-      "status": "blocked",
-      "evidence": "packages/package-tools/test/external-package.test.ts; packages/package-tools/test/abind-p5.test.ts; packages/package-tools/test/abind-p6.test.ts; compatibility/package-check-evidence/abind-1.4-8-0.305.0.json; compatibility/package-check-evidence/dependency-observations-0.306.0.json; compatibility/package-check-evidence/lifecycle-observations-0.307.0.json; compatibility/package-check-evidence/lifecycle-observations-0.312.0.json; compatibility/package-check-evidence/lifecycle-observations-0.314.0.json; compatibility/package-check-evidence/lifecycle-observations-0.315.0.json; compatibility/package-check-evidence/description-structure-v1-0.315.0.json",
-      "firstBlocker": {
-        "tier": "P7",
-        "path": "R CMD check",
-        "code": "package-check-stage-unexecuted",
-        "message": "Under RFC-0008 the metadata-dependencies stage passes: all 55 DESCRIPTION, license, author, declaration, literal-source-reference (policy v2, native fixture parity) and base dependency-closure checks execute and pass. All ten stdout/stderr, ordered-output and condition comparisons match native GNU R 4.6.1, and every oracle run is repeatable. The installation-loading stage also passes: native installation, installed size, load/attach/detach/unload, stated-dependency loading (default packages detached; documented adaptation) and explicit lib.loc loading all match. The namespace-source stage passes as well (namespace-source-v1, with no undefined globals, matching native R). The first unexecuted stage is documentation; manual follows. P7 is unproven."
-      }
+      "tier": "P7",
+      "status": "passing",
+      "evidence": "packages/package-tools/test/external-package.test.ts; packages/package-tools/test/abind-p5.test.ts; packages/package-tools/test/abind-p6.test.ts; compatibility/package-check-evidence/abind-1.4-8-0.305.0.json; compatibility/package-check-evidence/dependency-observations-0.306.0.json; compatibility/package-check-evidence/lifecycle-observations-0.307.0.json; compatibility/package-check-evidence/lifecycle-observations-0.312.0.json; compatibility/package-check-evidence/lifecycle-observations-0.314.0.json; compatibility/package-check-evidence/lifecycle-observations-0.315.0.json; compatibility/package-check-evidence/description-structure-v1-0.315.0.json; compatibility/package-check-evidence/abind-1.4-8-p7-0.353.0.json",
+      "firstBlocker": null
     },
     {
       "package": "rprojroot",

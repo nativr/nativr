@@ -1,5 +1,9 @@
 # Exploratory package-check evidence
 
+**abind 1.4-8 reaches P7 at profile 0.353.0** under RFC-0008: see the redacted summary
+`abind-1.4-8-p7-0.353.0.json` (written by `scripts/redact-package-check.mjs` from a full local
+report). The historical summaries below predate the RFC-0008 stages.
+
 These summaries preserve the observed package-check diagnostics for semantic profiles **0.302.0**,
 **0.303.0**, **0.304.0**, and **0.305.0**, with the latest results shown below, against separately
 installed **GNU R 4.6.1**. They do not establish P7. Both reports retain the first unexecuted check
