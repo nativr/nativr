@@ -45,21 +45,22 @@ browser Worker. It makes no claim of general GNU R or package compatibility.
 
 **Acceptance criteria and status**
 
-| ID  | Criterion                                                                 | Status                                                                                                   |
-| --- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| A1  | `pnpm check` passes on the pinned toolchain                               | Passed at 0.353: 1,269 tests, 82 opt-in skipped                                                          |
-| A2  | Checked-in, live GNU R 4.6.1 and recursive Oracle v2 conformance all pass | Passed: 1,225/1,225, 1,155/1,155 and 127/127                                                             |
-| A3  | Worker/playground e2e passes in Chromium, Firefox and WebKit              | Passed at 0.353 on Windows 11 (6/6). CI targets Ubuntu and has not run (no remote exists)                |
-| A4  | Packed consumer, exports, declarations and parser/Wasm assets verified    | `pnpm pack:smoke` passed                                                                                 |
-| A5  | Supported scope and limitations published                                 | This page plus the contract                                                                              |
-| A6  | Bundle budgets are real limits                                            | Passed: the Worker budget is a fixed 512 KiB gzip (464.2 KiB used) and is no longer raised per increment |
-| A7  | Publication bootstrap (npm organization, trusted publisher)               | **Blocked on the maintainer**: needs a GitHub remote and npm account actions                             |
-| A8  | Release notes and a changeset for 0.1.x                                   | Passed: `.changeset/steady-owls-preview.md`                                                              |
+| ID  | Criterion                                                                 | Status                                                                                                                                     |
+| --- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| A1  | `pnpm check` passes on the pinned toolchain                               | Passed at 0.353: 1,269 tests, 82 opt-in skipped                                                                                            |
+| A2  | Checked-in, live GNU R 4.6.1 and recursive Oracle v2 conformance all pass | Passed: 1,225/1,225, 1,155/1,155 and 127/127                                                                                               |
+| A3  | Worker/playground e2e passes in Chromium, Firefox and WebKit              | Passed at 0.353 on Windows 11 (6/6). CI targets Ubuntu and has not run on this work, which is committed locally but not pushed to `origin` |
+| A4  | Packed consumer, exports, declarations and parser/Wasm assets verified    | `pnpm pack:smoke` passed                                                                                                                   |
+| A5  | Supported scope and limitations published                                 | This page plus the contract                                                                                                                |
+| A6  | Bundle budgets are real limits                                            | Passed: the Worker budget is a fixed 512 KiB gzip (464.2 KiB used) and is no longer raised per increment                                   |
+| A7  | Publication bootstrap (npm organization, trusted publisher)               | **Blocked on the maintainer**: needs a push to `origin` (github.com/nativr/nativr) and npm account actions                                 |
+| A8  | Release notes and a changeset for 0.1.x                                   | Passed: `.changeset/steady-owls-preview.md`                                                                                                |
 
-**Readiness:** every code-level criterion (A1 to A6, A8) is met on the combined uncommitted tree.
-Two steps remain, and both need the maintainer's explicit authorization: committing the work, and
-the publication bootstrap (A7: a GitHub remote, the npm organization and the trusted publisher, then
-the first release). CI on Ubuntu then needs to pass once before the release is cut.
+**Readiness:** every code-level criterion (A1 to A6, A8) is met, and the work is committed locally
+(`eebc350`). Two steps remain, and both need the maintainer's explicit authorization: pushing to the
+existing `origin` remote (github.com/nativr/nativr), so that CI on Ubuntu runs and passes once, and
+the publication bootstrap (A7: the npm organization and the trusted publisher, then the first
+release).
 
 ### B. Full browser-admissible GNU R 4.6.1 compatibility
 
@@ -227,8 +228,8 @@ the full gates.
 
 ## Next steps
 
-1. With the maintainer's authorization: commit the work, create the GitHub remote, let CI pass on
-   Ubuntu, and carry out the publication bootstrap in [releasing.md](releasing.md) (A7).
+1. With the maintainer's authorization: push to `origin`, let CI pass on Ubuntu, and carry out the
+   publication bootstrap in [releasing.md](releasing.md) (A7).
 2. Milestone B, in order: RFC-0007 steps 4-5 (adopt the correctly rounded library, pin
    `ubuntu-24.04`, rerun the evidence on Linux); then R4, the first blocker for abind's P7; then R6.
 
