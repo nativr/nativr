@@ -1,4 +1,4 @@
-import type { ProgramNode } from "@nativr/ast";
+import type { AstNode, ProgramNode } from "@nativr/ast";
 import type { PureRPackageBundle } from "@nativr/protocol";
 import { REvaluationError, RResourceLimitError, RUnsupportedFeatureError } from "@nativr/runtime";
 import type {
@@ -12,8 +12,6 @@ import type {
 const PACKAGE_NAME = /^[A-Za-z](?:[A-Za-z0-9.]*[A-Za-z0-9])?$/u;
 const CANONICAL_BASE64 = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/u;
 const BASE64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-const NAMESPACE_DIRECTIVE = /([A-Za-z][A-Za-z0-9.]*)\s*\(([^()]*)\)/gu;
-const MAX_PACKAGE_RESOURCE_BYTES = 64 * 1024 * 1024;
 
 export function compilePureRPackages(
   bundles: readonly PureRPackageBundle[],
@@ -46,7 +44,7 @@ export function compilePureRPackages(
         `Package '${name}' declares LinkingTo and is not a source-only pure-R bundle.`,
       );
     }
-    const namespace = parseNamespace(bundle.namespace, name);
+    const namespace = parseNamespace(bundle.namespace, name, parse);
     const dependencyRequirements = [
       ...parseDependencies(description.get("Depends")),
       ...parseDependencies(description.get("Imports")),
@@ -114,6 +112,7 @@ export function compilePureRPackages(
       dependencies,
       imports: namespace.imports,
       exports: namespace.exports,
+      exportPatterns: namespace.exportPatterns,
       methodExports: namespace.methodExports,
       s3Methods: namespace.s3Methods,
       programs: Object.freeze(programs),
@@ -183,12 +182,12 @@ function validateBundleBudget(bundles: readonly PureRPackageBundle[], limits: Ru
     if (
       resourceCount > limits.maxVectorLength ||
       !Number.isSafeInteger(resourceBytes) ||
-      resourceBytes > MAX_PACKAGE_RESOURCE_BYTES
+      resourceBytes > limits.maxPackageResourceBytes
     ) {
       throw new RResourceLimitError("NRL4002", "Pure-R package resource limit exceeded.", {
         details: {
           maxResourceFiles: limits.maxVectorLength,
-          maxResourceBytes: MAX_PACKAGE_RESOURCE_BYTES,
+          maxResourceBytes: limits.maxPackageResourceBytes,
           resourceCount,
           resourceBytes,
         },
@@ -212,19 +211,36 @@ function isPackageResourcePath(value: string): boolean {
 function parseDescription(source: string): ReadonlyMap<string, string> {
   const fields = new Map<string, string>();
   let current: string | undefined;
+  let ended = false;
   for (const rawLine of source.replaceAll("\r\n", "\n").split("\n")) {
-    if (/^[ \t]/u.test(rawLine)) {
-      if (current !== undefined) {
-        fields.set(current, `${fields.get(current) ?? ""}\n${rawLine}`.trim());
-      }
+    if (rawLine.trim().length === 0) {
+      if (fields.size > 0) ended = true;
       continue;
     }
-    if (rawLine.trim().length === 0) continue;
+    if (ended)
+      throw new REvaluationError(
+        "NRE2229",
+        "Package DESCRIPTION must contain exactly one DCF record.",
+      );
+    if (/^[ \t]/u.test(rawLine)) {
+      if (current === undefined)
+        throw new REvaluationError(
+          "NRE2229",
+          "Package DESCRIPTION begins with a continuation line.",
+        );
+      fields.set(current, `${fields.get(current) ?? ""}\n${rawLine}`.trim());
+      continue;
+    }
     const separator = rawLine.indexOf(":");
     if (separator <= 0) {
       throw new REvaluationError("NRE2229", "Malformed package DESCRIPTION field.");
     }
     current = rawLine.slice(0, separator).trim();
+    if (fields.has(current))
+      throw new REvaluationError(
+        "NRE2229",
+        `Package DESCRIPTION field '${current}' occurs more than once.`,
+      );
     fields.set(current, rawLine.slice(separator + 1).trim());
   }
   return fields;
@@ -262,48 +278,77 @@ function parseDependencies(value: string | undefined): readonly RuntimePackageDe
 function parseNamespace(
   source: string,
   packageName: string,
+  parse: (source: string) => ProgramNode,
 ): {
   readonly imports: readonly RuntimePackageImport[];
   readonly exports: readonly string[];
+  readonly exportPatterns: readonly string[];
   readonly methodExports: readonly string[];
   readonly s3Methods: readonly RuntimeS3Method[];
 } {
   const normalized = stripNamespaceComments(source);
-  const imports = new Map<string, Set<string> | undefined>();
+  const imports: RuntimePackageImport[] = [];
   const exports: string[] = [];
+  const exportPatterns: string[] = [];
   const methodExports: string[] = [];
   const s3Methods: RuntimeS3Method[] = [];
-  let consumed = "";
-  let lastIndex = 0;
-  for (const directive of normalized.matchAll(NAMESPACE_DIRECTIVE)) {
-    const index = directive.index;
-    consumed += normalized.slice(lastIndex, index).replace(/\s+/gu, "");
-    lastIndex = index + directive[0].length;
-    const name = directive[1] ?? "";
-    const arguments_ = parseNamespaceArguments(directive[2] ?? "", packageName);
+  for (const directive of scanNamespaceDirectives(normalized, packageName)) {
+    const name = directive.name;
+    if (name === "import") {
+      const call = parse(`import(${directive.argumentsSource})`).body[0];
+      if (call?.kind !== "CallExpression")
+        throw namespaceError(packageName, "has invalid import syntax");
+      const except = new Set<string>();
+      const dependencies: string[] = [];
+      let hasExcept = false;
+      for (const argument of call.arguments) {
+        if (argument.name === "except" && !hasExcept) {
+          hasExcept = true;
+          for (const value of namespaceImportExclusions(argument.value, packageName))
+            except.add(value);
+        } else dependencies.push(namespaceImportName(argument.value, packageName));
+      }
+      for (const dependency of dependencies)
+        imports.push({ package: dependency, except: Object.freeze([...except]) });
+      continue;
+    }
+    if (name === "importFrom") {
+      const call = parse(`importFrom(${directive.argumentsSource})`).body[0];
+      if (call?.kind !== "CallExpression" || call.arguments.length < 2)
+        throw namespaceError(packageName, "importFrom requires a package and bindings");
+      const dependency = namespaceImportName(call.arguments[0]!.value, packageName);
+      const names = call.arguments
+        .slice(1)
+        .map((argument) => namespaceImportName(argument.value, packageName));
+      const localNames = call.arguments
+        .slice(1)
+        .map((argument, index) => argument.name ?? names[index]!);
+      if (new Set(localNames).size !== localNames.length)
+        throw namespaceError(packageName, "importFrom contains duplicate local binding names");
+      imports.push({
+        package: dependency,
+        names: Object.freeze(names),
+        localNames: Object.freeze(localNames),
+      });
+      continue;
+    }
+    const arguments_ =
+      name === "exportPattern"
+        ? [parseNamespacePattern(directive.argumentsSource, packageName)]
+        : parseNamespaceArguments(directive.argumentsSource, packageName);
     switch (name) {
       case "export":
         exports.push(...arguments_);
         break;
+      case "exportPattern":
+        if (arguments_.length !== 1) {
+          throw namespaceError(packageName, "exportPattern requires exactly one pattern");
+        }
+        exportPatterns.push(arguments_[0] ?? "");
+        break;
       case "exportMethods":
         methodExports.push(...arguments_);
         break;
-      case "import":
-        for (const dependency of arguments_) imports.set(dependency, undefined);
-        break;
-      case "importFrom": {
-        const dependency = arguments_[0];
-        if (dependency === undefined || arguments_.length < 2) {
-          throw namespaceError(packageName, "importFrom requires a package and bindings");
-        }
-        const existing = imports.get(dependency);
-        if (existing !== undefined || !imports.has(dependency)) {
-          const selected = existing ?? new Set<string>();
-          for (const imported of arguments_.slice(1)) selected.add(imported);
-          imports.set(dependency, selected);
-        }
-        break;
-      }
       case "S3method": {
         const qualifiedGeneric = arguments_[0];
         const className = arguments_[1];
@@ -341,21 +386,131 @@ function parseNamespace(
         );
     }
   }
-  consumed += normalized.slice(lastIndex).replace(/\s+/gu, "");
-  if (consumed.length > 0) {
-    throw namespaceError(packageName, "contains malformed or conditional declarations");
-  }
   return {
-    imports: Object.freeze(
-      [...imports].map(([package_, names]) => ({
-        package: package_,
-        ...(names === undefined ? {} : { names: Object.freeze([...names]) }),
-      })),
-    ),
+    imports: Object.freeze(imports),
     exports: Object.freeze([...new Set(exports)]),
+    exportPatterns: Object.freeze([...new Set(exportPatterns)]),
     methodExports: Object.freeze([...new Set(methodExports)]),
     s3Methods: Object.freeze(s3Methods),
   };
+}
+
+function namespaceImportName(node: AstNode, packageName: string): string {
+  if (node.kind === "Identifier") return node.name;
+  if (node.kind === "StringLiteral") return node.value;
+  throw namespaceError(packageName, "requires literal import arguments");
+}
+
+function namespaceImportExclusions(node: AstNode, packageName: string): readonly string[] {
+  if (node.kind === "NullLiteral") return [];
+  if (
+    node.kind === "CallExpression" &&
+    node.callee.kind === "Identifier" &&
+    node.callee.name === "c"
+  ) {
+    return node.arguments.map((argument) => namespaceImportName(argument.value, packageName));
+  }
+  return [namespaceImportName(node, packageName)];
+}
+
+function scanNamespaceDirectives(
+  source: string,
+  packageName: string,
+): readonly { readonly name: string; readonly argumentsSource: string }[] {
+  const directives: { name: string; argumentsSource: string }[] = [];
+  let index = 0;
+  while (index < source.length) {
+    while (/\s/u.test(source[index] ?? "")) index += 1;
+    if (index >= source.length) break;
+    const nameMatch = /^[A-Za-z][A-Za-z0-9.]*/u.exec(source.slice(index));
+    const name = nameMatch?.[0];
+    if (name === undefined) {
+      throw namespaceError(packageName, "contains malformed or conditional declarations");
+    }
+    index += name.length;
+    while (/\s/u.test(source[index] ?? "")) index += 1;
+    if (source[index] !== "(") {
+      throw namespaceError(packageName, `declaration '${name}' is malformed`);
+    }
+    const openingIndex = index;
+    let depth = 0;
+    let quote: string | undefined;
+    let escaped = false;
+    let closingIndex: number | undefined;
+    for (; index < source.length; index += 1) {
+      const character = source[index] ?? "";
+      if (quote !== undefined) {
+        if (escaped) escaped = false;
+        else if (character === "\\") escaped = true;
+        else if (character === quote) quote = undefined;
+        continue;
+      }
+      if (character === '"' || character === "'" || character === "`") {
+        quote = character;
+      } else if (character === "(") {
+        depth += 1;
+      } else if (character === ")") {
+        depth -= 1;
+        if (depth === 0) {
+          closingIndex = index;
+          index += 1;
+          break;
+        }
+      }
+    }
+    if (closingIndex === undefined || quote !== undefined || depth !== 0) {
+      throw namespaceError(packageName, `declaration '${name}' is malformed`);
+    }
+    directives.push({
+      name,
+      argumentsSource: source.slice(openingIndex + 1, closingIndex),
+    });
+  }
+  return directives;
+}
+
+function parseNamespacePattern(source: string, packageName: string): string {
+  const literal = source.trim();
+  const quote = literal[0];
+  if (
+    literal.length < 2 ||
+    (quote !== '"' && quote !== "'") ||
+    literal[literal.length - 1] !== quote
+  ) {
+    throw namespaceError(packageName, "exportPattern requires one quoted regular expression");
+  }
+  let output = "";
+  for (let index = 1; index < literal.length - 1; index += 1) {
+    const character = literal[index] ?? "";
+    if (character !== "\\") {
+      if (character === quote) {
+        throw namespaceError(packageName, "exportPattern contains an unescaped quote");
+      }
+      output += character;
+      continue;
+    }
+    index += 1;
+    const escaped = literal[index];
+    if (escaped === undefined || index >= literal.length - 1) {
+      throw namespaceError(packageName, "exportPattern ends with an incomplete escape");
+    }
+    const decoded = new Map([
+      ["a", "\u0007"],
+      ["b", "\b"],
+      ["f", "\f"],
+      ["n", "\n"],
+      ["r", "\r"],
+      ["t", "\t"],
+      ["v", "\u000b"],
+      ["\\", "\\"],
+      [quote, quote],
+    ]).get(escaped);
+    if (decoded === undefined) {
+      throw namespaceError(packageName, `exportPattern contains unsupported escape '\\${escaped}'`);
+    }
+    output += decoded;
+  }
+  return output;
 }
 
 function parseNamespaceArguments(source: string, packageName: string): readonly string[] {

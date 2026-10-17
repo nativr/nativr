@@ -1,9 +1,217 @@
+import { createHash } from "node:crypto";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+
 import { createR, NA } from "@nativr/nativr";
 import { expect, it } from "vitest";
 
-import { installPackagesFromRepository } from "../src/index.js";
+import {
+  installPackagesFromRepository,
+  packPackage,
+  runPackageExamples,
+  runPackageTests,
+} from "../src/index.js";
 
 const runExternal = process.env.NATIVR_EXTERNAL_PACKAGE_SMOKE === "1";
+
+it.runIf(runExternal)(
+  "confirms the pinned labeling source archive has no package-test entrypoint",
+  async () => {
+    const temporaryRoot = await mkdtemp(path.join(os.tmpdir(), "nativr-package-tests-"));
+    try {
+      const response = await fetch("https://cran.r-project.org/src/contrib/labeling_0.4.3.tar.gz");
+      expect(response.ok).toBe(true);
+      const bytes = Buffer.from(await response.arrayBuffer());
+      expect(bytes.byteLength).toBeLessThan(2 * 1024 * 1024);
+      const sourceSha256 = "c62f4fc2cc74377d7055903c5f1913b7295f7587456fe468592738a483e264f2";
+      expect(createHash("sha256").update(bytes).digest("hex")).toBe(sourceSha256);
+      const archive = path.join(temporaryRoot, "labeling_0.4.3.tar.gz");
+      await writeFile(archive, bytes);
+      const report = await runPackageTests(
+        archive,
+        () => Promise.reject(new Error("No labeling test should execute.")),
+        {
+          expectedPackage: { name: "labeling", version: "0.4.3" },
+          expectedSourceSha256: sourceSha256,
+        },
+      );
+      expect(report).toMatchObject({
+        outcome: "no-tests",
+        entrypoints: [],
+        nestedRFiles: [],
+        executed: [],
+        firstBlocker: null,
+      });
+    } finally {
+      await rm(temporaryRoot, { recursive: true, force: true });
+    }
+  },
+  30_000,
+);
+
+it.runIf(runExternal)(
+  "reports the first blocker in all pinned numDeriv source-package examples",
+  async () => {
+    const temporaryRoot = await mkdtemp(path.join(os.tmpdir(), "nativr-package-examples-"));
+    let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    try {
+      const response = await fetch(
+        "https://cran.r-project.org/src/contrib/numDeriv_2016.8-1.1.tar.gz",
+      );
+      expect(response.ok).toBe(true);
+      const bytes = Buffer.from(await response.arrayBuffer());
+      expect(bytes.byteLength).toBeLessThan(2 * 1024 * 1024);
+      expect(createHash("sha256").update(bytes).digest("hex")).toBe(
+        "d8c4d19ff9aeb31b0c628bd4a16378e51c1c9a3813b525469a31fe89af00b345",
+      );
+      const archive = path.join(temporaryRoot, "numDeriv_2016.8-1.1.tar.gz");
+      await writeFile(archive, bytes);
+      const artifact = await packPackage(archive);
+      expect(artifact.integrity.value).toBe(
+        "0a5bac977e0b258bc22dedf41adc2c48a0eaa8e197f48dfefede7ad0f3981e45",
+      );
+      runtime = await createR({
+        execution: "inline",
+        runtimeProfile: "package-test",
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+        packages: [artifact.bundle],
+      });
+      await runtime.eval('library("numDeriv")');
+      const examples = await runPackageExamples(
+        archive,
+        async (script) => {
+          await runtime?.evalDetailed(`${script.source}\ninvisible(NULL)`);
+        },
+        {
+          expectedPackage: { name: "numDeriv", version: "2016.8-1.1" },
+          expectedSourceSha256: "d8c4d19ff9aeb31b0c628bd4a16378e51c1c9a3813b525469a31fe89af00b345",
+        },
+      );
+      expect(examples).toMatchObject({
+        entrypoints: [
+          { path: "man/genD.Rd", topic: "genD", applicableBlocks: 1 },
+          { path: "man/grad.Rd", topic: "grad", applicableBlocks: 1 },
+          { path: "man/hessian.Rd", topic: "hessian", applicableBlocks: 1 },
+          { path: "man/jacobian.Rd", topic: "jacobian", applicableBlocks: 1 },
+        ],
+        executed: [
+          { path: "man/genD.Rd", topic: "genD", status: "completed" },
+          { path: "man/grad.Rd", topic: "grad", status: "completed" },
+          { path: "man/hessian.Rd", topic: "hessian", status: "completed" },
+          { path: "man/jacobian.Rd", topic: "jacobian", status: "completed" },
+        ],
+        outcome: "completed",
+        firstBlocker: null,
+      });
+    } finally {
+      await runtime?.dispose();
+      await rm(temporaryRoot, { recursive: true, force: true });
+    }
+  },
+  120_000,
+);
+
+it.runIf(runExternal)(
+  "executes all pinned numDeriv source-package tests under a finite measured profile",
+  async () => {
+    const temporaryRoot = await mkdtemp(path.join(os.tmpdir(), "nativr-package-tests-"));
+    let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    try {
+      const response = await fetch(
+        "https://cran.r-project.org/src/contrib/numDeriv_2016.8-1.1.tar.gz",
+      );
+      expect(response.ok).toBe(true);
+      const bytes = Buffer.from(await response.arrayBuffer());
+      expect(bytes.byteLength).toBeLessThan(2 * 1024 * 1024);
+      expect(createHash("sha256").update(bytes).digest("hex")).toBe(
+        "d8c4d19ff9aeb31b0c628bd4a16378e51c1c9a3813b525469a31fe89af00b345",
+      );
+      const archive = path.join(temporaryRoot, "numDeriv_2016.8-1.1.tar.gz");
+      await writeFile(archive, bytes);
+      const artifact = await packPackage(archive);
+      expect(artifact.integrity.value).toBe(
+        "0a5bac977e0b258bc22dedf41adc2c48a0eaa8e197f48dfefede7ad0f3981e45",
+      );
+      runtime = await createR({
+        execution: "inline",
+        runtimeProfile: "package-test",
+        limits: { maxSteps: 300_000_000, maxVectorLength: 50_000_000 },
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+        packages: [artifact.bundle],
+      });
+      const report = await runPackageTests(
+        archive,
+        async (script) => {
+          await runtime?.reset();
+          const result = await runtime?.evalDetailed(script.source);
+          expect(result?.warnings).toEqual([]);
+        },
+        {
+          expectedPackage: { name: "numDeriv", version: "2016.8-1.1" },
+          expectedSourceSha256: "d8c4d19ff9aeb31b0c628bd4a16378e51c1c9a3813b525469a31fe89af00b345",
+        },
+      );
+      expect(report.entrypoints).toEqual([
+        "tests/BWeg.R",
+        "tests/CSD.R",
+        "tests/grad01.R",
+        "tests/hessian01.R",
+        "tests/jacobian01.R",
+        "tests/oneSided.R",
+        "tests/trig01.R",
+      ]);
+      expect(report).toMatchObject({
+        outcome: "completed",
+        nestedRFiles: [],
+        outputExpectations: [],
+        executed: [
+          { path: "tests/BWeg.R", status: "completed" },
+          { path: "tests/CSD.R", status: "completed" },
+          { path: "tests/grad01.R", status: "completed" },
+          { path: "tests/hessian01.R", status: "completed" },
+          { path: "tests/jacobian01.R", status: "completed" },
+          { path: "tests/oneSided.R", status: "completed" },
+          { path: "tests/trig01.R", status: "completed" },
+        ],
+        firstBlocker: null,
+      });
+      const gradReport = await runPackageTests(
+        archive,
+        async (script) => {
+          await runtime?.reset();
+          await runtime?.evalDetailed(script.source);
+        },
+        {
+          expectedPackage: { name: "numDeriv", version: "2016.8-1.1" },
+          expectedSourceSha256: "d8c4d19ff9aeb31b0c628bd4a16378e51c1c9a3813b525469a31fe89af00b345",
+          paths: ["tests/grad01.R"],
+        },
+      );
+      expect(gradReport).toMatchObject({
+        outcome: "partial",
+        executed: [{ path: "tests/grad01.R", status: "completed" }],
+        firstBlocker: null,
+      });
+    } finally {
+      await runtime?.dispose();
+      await rm(temporaryRoot, { recursive: true, force: true });
+    }
+  },
+  180_000,
+);
 
 it.runIf(runExternal)(
   "packs, loads, and exercises the unchanged public R6 2.6.1 pure-R source package",
@@ -324,6 +532,7 @@ it.runIf(runExternal)(
   "packs, loads, and exercises the unchanged public labeling 0.4.3 pure-R source package",
   async () => {
     let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    const temporaryRoot = await mkdtemp(path.join(os.tmpdir(), "nativr-package-examples-"));
     try {
       const installed = await installPackagesFromRepository(["labeling"]);
       expect(installed.artifacts[0]).toMatchObject({
@@ -334,9 +543,19 @@ it.runIf(runExternal)(
           value: "2d4f9e5a9b1b0e109821a3cd705ca81dbbc46c6ee53acc0d216db907e857a89f",
         },
       });
+      const labelingExamples = installed.bundles[0]?.resources?.find(
+        (resource) => resource.path === ".nativr/examples-v1.json",
+      );
+      const labelingExampleTopics = JSON.parse(
+        Buffer.from(labelingExamples?.data ?? "", "base64").toString("utf8"),
+      ) as { topics: { name: string; blocks: { kind: string; source: string }[] }[] };
+      expect(
+        labelingExampleTopics.topics.map((topic) => [topic.name, topic.blocks.length]),
+      ).toEqual([["labeling-package", 1]]);
       runtime = await createR({
         execution: "inline",
         runtimeProfile: "package-test",
+        limits: { maxOutputBytes: 64 * 1024 * 1024 },
         assets: {
           treeSitterRuntimeWasm: new URL(
             "../../parser/assets/web-tree-sitter.wasm",
@@ -369,14 +588,55 @@ it.runIf(runExternal)(
       ]);
       await expect(runtime.eval("labeling::sparks(8.1, 14.1, 4)")).resolves.toEqual([6, 9]);
       await expect(runtime.eval("labeling::thayer(8.1, 14.1, 4)")).resolves.toEqual([6, 9, 12, 15]);
-      await expect(
-        runtime.evalDetailed("set.seed(1); labeling::extended.figures(2)"),
-      ).rejects.toMatchObject({
-        code: "NRU6197",
-        message: "axis() graphical control 'xlab' is outside the measured browser subset.",
+      const figures = await runtime.evalDetailed(`
+        set.seed(1)
+        oldpar <- labeling::extended.figures(2)
+        c(length(oldpar), oldpar$xaxt, oldpar$yaxt)
+      `);
+      expect(figures.value).toEqual(["47", "s", "s"]);
+      expect(figures.graphics.some((event) => event.kind === "new-page")).toBe(true);
+      expect(figures.graphics.some((event) => event.kind === "polygon")).toBe(true);
+      expect(figures.graphics.some((event) => event.kind === "segments")).toBe(true);
+
+      const response = await fetch("https://cran.r-project.org/src/contrib/labeling_0.4.3.tar.gz");
+      expect(response.ok).toBe(true);
+      const source = Buffer.from(await response.arrayBuffer());
+      expect(source.byteLength).toBeLessThan(2 * 1024 * 1024);
+      const archive = path.join(temporaryRoot, "labeling_0.4.3.tar.gz");
+      await writeFile(archive, source);
+      await runtime.eval('library("labeling")');
+      const exampleReport = await runPackageExamples(
+        archive,
+        async (script) => {
+          await runtime?.evalDetailed(`${script.source}\ninvisible(NULL)`);
+        },
+        {
+          expectedPackage: { name: "labeling", version: "0.4.3" },
+          expectedSourceSha256: "c62f4fc2cc74377d7055903c5f1913b7295f7587456fe468592738a483e264f2",
+        },
+      );
+      expect(exampleReport).toMatchObject({
+        entrypoints: [
+          { path: "man/labeling-package.Rd", topic: "labeling-package", applicableBlocks: 1 },
+        ],
+        executed: [
+          { path: "man/labeling-package.Rd", topic: "labeling-package", status: "completed" },
+        ],
+        outcome: "completed",
+        firstBlocker: null,
       });
+
+      const example = await runtime.evalDetailed(
+        'example("labeling-package", package = "labeling", echo = FALSE)',
+      );
+      expect(example.value).toEqual([[4, 5, 6, 7, 8], false]);
+      expect(example.warnings).toEqual([]);
+      expect(example.graphics.some((event) => event.kind === "new-page")).toBe(true);
+      expect(example.graphics.some((event) => event.kind === "points")).toBe(true);
+      expect(example.graphics.some((event) => event.kind === "segments")).toBe(true);
     } finally {
       await runtime?.dispose();
+      await rm(temporaryRoot, { recursive: true, force: true });
     }
   },
   120_000,
@@ -1043,6 +1303,13 @@ it.runIf(runExternal)(
         "5",
         "6",
       ]);
+      await expect(
+        runtime.eval(`
+          selected <- abind::asub(matrix(1:6, 2, 3), list(1:2, 2:3))
+          corner <- abind::acorn(matrix(1:6, 2, 3), n = 2, m = 2, addrownums = FALSE)
+          c(dim(selected), c(selected), dim(corner), c(corner))
+        `),
+      ).resolves.toEqual([2, 2, 3, 4, 5, 6, 2, 2, 1, 2, 3, 4]);
     } finally {
       await runtime?.dispose();
     }
@@ -1858,4 +2125,59 @@ it.runIf(runExternal)(
     }
   },
   30_000,
+);
+
+it.runIf(runExternal)(
+  "packs and loads the unchanged public BH 1.90.0-1 header package",
+  async () => {
+    let runtime: Awaited<ReturnType<typeof createR>> | undefined;
+    try {
+      const installed = await installPackagesFromRepository(["BH"]);
+      const artifact = installed.artifacts[0];
+      expect(artifact?.package).toEqual({
+        name: "BH",
+        version: "1.90.0-1",
+        license: "BSL-1.0",
+      });
+      expect(artifact).toMatchObject({
+        compatibility: { packaging: "ready", execution: "unchecked" },
+        integrity: {
+          algorithm: "sha256",
+          value: "3f70ea3572c3e20f712697d6d9fa2544dc72216d97a06d5f11c0af844d893fb8",
+        },
+      });
+      expect(artifact?.bundle.resources).toHaveLength(12_557);
+      runtime = await createR({
+        execution: "inline",
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+        packages: installed.bundles,
+      });
+      await expect(runtime.eval('requireNamespace("BH", quietly = TRUE)')).resolves.toBe(true);
+      await expect(runtime.eval('as.character(packageVersion("BH"))')).resolves.toBe("1.90.0.1");
+      await expect(runtime.eval('length(getNamespaceExports("BH"))')).resolves.toBe(0);
+      await expect(
+        runtime.eval(`
+          include <- system.file("include", package = "BH")
+          files <- list.files(include, recursive = TRUE, full.names = TRUE)
+          info <- file.info(files)
+          c(
+            dir.exists(include),
+            file.exists(file.path(include, "boost", "version.hpp")),
+            length(files),
+            sum(info$size)
+          )
+        `),
+      ).resolves.toEqual([1, 1, 12_554, 128_040_580]);
+      await expect(runtime.eval('library(BH); "package:BH" %in% search()')).resolves.toBe(true);
+    } finally {
+      await runtime?.dispose();
+    }
+  },
+  240_000,
 );

@@ -17,6 +17,7 @@ export const DEFAULT_RUNTIME_LIMITS: RuntimeLimits = Object.freeze({
   maxCallDepth: 100,
   maxVectorLength: 1_000_000,
   maxOutputBytes: 1_000_000,
+  maxPackageResourceBytes: 192 * 1024 * 1024,
 });
 
 /** Named, reviewable resource budgets for common browser-runtime workloads. */
@@ -30,12 +31,14 @@ export const RUNTIME_LIMIT_PROFILES: Readonly<Record<RuntimeProfile, RuntimeLimi
       maxCallDepth: 200,
       maxVectorLength: 2_000_000,
       maxOutputBytes: 32_000_000,
+      maxPackageResourceBytes: 256 * 1024 * 1024,
     }),
     "large-browser": Object.freeze({
       maxSteps: 10_000_000,
       maxCallDepth: 250,
       maxVectorLength: 10_000_000,
       maxOutputBytes: 64_000_000,
+      maxPackageResourceBytes: 512 * 1024 * 1024,
     }),
   });
 
@@ -52,8 +55,8 @@ export class EvaluationContext implements OperatorContext {
   public allocatedElements = 0;
   public callDepth = 0;
   public outputBytes = 0;
-  #warningSuppressionDepth = 0;
-  readonly #outputSuppressionDepth = new Map<ROutput["stream"], number>();
+  // Warnings already delivered to the condition handler stack, such as those from warning().
+  readonly #signalledWarnings = new WeakSet<RWarning>();
   readonly #outputCaptures: {
     readonly streams: ReadonlySet<ROutput["stream"]>;
     readonly output: ROutput[];
@@ -98,13 +101,24 @@ export class EvaluationContext implements OperatorContext {
     }
   }
 
-  public warn(warning: RWarning): void {
-    if (this.#warningSuppressionDepth > 0) return;
+  /**
+   * Record a deferred warning. Unsignalled warnings are signalled through the evaluator's
+   * condition handlers when the producing call returns; handled ones are removed again.
+   */
+  public warn(warning: RWarning, signalled = false): void {
+    if (signalled) this.#signalledWarnings.add(warning);
     this.warnings.push(warning);
   }
 
+  public isWarningSignalled(warning: RWarning): boolean {
+    return this.#signalledWarnings.has(warning);
+  }
+
+  public markWarningSignalled(warning: RWarning): void {
+    this.#signalledWarnings.add(warning);
+  }
+
   public writeOutput(output: ROutput): void {
-    if ((this.#outputSuppressionDepth.get(output.stream) ?? 0) > 0) return;
     const bytes = utf8ByteLength(output.text);
     for (let index = this.#outputCaptures.length - 1; index >= 0; index -= 1) {
       const capture = this.#outputCaptures[index];
@@ -186,32 +200,6 @@ export class EvaluationContext implements OperatorContext {
     }
     this.outputBytes = outputBytes;
     this.graphics.push(event);
-  }
-
-  public pushWarningSuppression(): void {
-    this.#warningSuppressionDepth += 1;
-  }
-
-  public popWarningSuppression(): void {
-    this.#warningSuppressionDepth = Math.max(0, this.#warningSuppressionDepth - 1);
-  }
-
-  public isWarningSuppressed(): boolean {
-    return this.#warningSuppressionDepth > 0;
-  }
-
-  public pushOutputSuppression(stream: ROutput["stream"]): void {
-    this.#outputSuppressionDepth.set(stream, (this.#outputSuppressionDepth.get(stream) ?? 0) + 1);
-  }
-
-  public popOutputSuppression(stream: ROutput["stream"]): void {
-    const depth = Math.max(0, (this.#outputSuppressionDepth.get(stream) ?? 0) - 1);
-    if (depth === 0) this.#outputSuppressionDepth.delete(stream);
-    else this.#outputSuppressionDepth.set(stream, depth);
-  }
-
-  public isOutputSuppressed(stream: ROutput["stream"]): boolean {
-    return (this.#outputSuppressionDepth.get(stream) ?? 0) > 0;
   }
 
   public enterCall(): void {

@@ -1,14 +1,27 @@
+import { ExtendedSum } from "./extended-sum.js";
+import { BUILTIN_PACKAGE_OWNERS } from "./builtin-package-owners.js";
+import {
+  PERSON_ARGUMENTS,
+  createPerson,
+  formatPerson,
+  isPerson,
+  personField,
+  subsetPerson,
+} from "./person.js";
 import {
   NativRError,
   REvaluationError,
+  RSignalledConditionError,
   RResourceLimitError,
   RTypeMismatchError,
   RUnsupportedFeatureError,
   R_NULL,
+  translatePosixCharacterClasses,
   characterBytesAt,
   characterEncodingAt,
   characterValueFromBytes,
   characterVector,
+  characterLiteralValue,
   compressGzipBytes,
   complexVector,
   createEnvironment,
@@ -23,6 +36,9 @@ import {
   decodeRWorkspaceFile,
   decompressGzipBytes,
   deparseAst,
+  deparseAstLines,
+  deparseClosureLines,
+  languageAstEntries,
   doubleVector,
   encodeRSerialization,
   encodeRSerializationFile,
@@ -30,6 +46,8 @@ import {
   factorLevels,
   factorValue,
   extractVectorElement,
+  extractListMember,
+  embeddedValueAst,
   functionDebugRegistry,
   integerVector,
   isAtomic,
@@ -47,9 +65,11 @@ import {
   NATIVR_PACKAGE_SOURCE_RESOURCE_ROOT,
   NATIVR_SYSTEM_LIBRARY_PATH,
   PACKAGE_SOURCE_EVALUATION_DIRECTORY_STATE_KEY,
+  BASE_OPTIONS_STATE_KEY,
   pairlistValue,
   rawVector,
   removeBinding,
+  replaceCoordinateMatrix,
   replaceVectorSubset,
   setActiveBinding,
   setBinding,
@@ -66,6 +86,7 @@ import {
   withoutAttribute,
   withoutClasses,
   GLOBAL_CALLING_HANDLERS_STATE_KEY,
+  USER_HOOKS_STATE_KEY,
   OUTPUT_ROUTER_STATE_KEY,
 } from "@nativr/runtime";
 import type {
@@ -103,6 +124,7 @@ import type {
   RSymbol,
   RUrlRequest,
   RValue,
+  RWarning,
   RVector,
   RuntimeLimits,
   RuntimeOutputRouter,
@@ -164,6 +186,8 @@ import {
   studentTProbability,
   studentTQuantile,
 } from "./student-t.js";
+import { as241Quantile } from "./normal.js";
+import { doubleToCharacter, formatFloatingMagnitude } from "./printf.js";
 import { WEIGHTED_MEAN_BUILTIN_SPECS } from "./weighted-mean.js";
 import { renderGraphicsPng } from "./png-device.js";
 import { renderGraphicsPdf } from "./pdf-device.js";
@@ -176,6 +200,223 @@ const SYNTHETIC_SPAN: SourceSpan = Object.freeze({
 
 type AtomicVector =
   RLogicalVector | RIntegerVector | RDoubleVector | RComplexVector | RRawVector | RCharacterVector;
+
+// Observable primitive-valued base bindings in GNU R 4.6.1, collected through
+// is.primitive() on baseenv() as black-box conformance data. Runtime evaluation
+// kind is separate: a browser implementation can evaluate a primitive eagerly
+// without making a similarly named R-level closure primitive-valued.
+const R_BASE_PRIMITIVE_NAMES = new Set([
+  "!",
+  "!=",
+  "$",
+  "$<-",
+  "%%",
+  "%*%",
+  "%/%",
+  "&",
+  "&&",
+  "(",
+  "*",
+  "+",
+  "-",
+  "...elt",
+  "...length",
+  "...names",
+  ".C",
+  ".Call",
+  ".Call.graphics",
+  ".External",
+  ".External.graphics",
+  ".External2",
+  ".Fortran",
+  ".Internal",
+  ".Primitive",
+  ".cache_class",
+  ".class2",
+  ".isMethodsDispatchOn",
+  ".primTrace",
+  ".primUntrace",
+  ".subset",
+  ".subset2",
+  "/",
+  ":",
+  "::",
+  ":::",
+  "<",
+  "<-",
+  "<<-",
+  "<=",
+  "=",
+  "==",
+  ">",
+  ">=",
+  "@",
+  "@<-",
+  "Arg",
+  "Conj",
+  "Exec",
+  "Im",
+  "Mod",
+  "Re",
+  "Tailcall",
+  "UseMethod",
+  "[",
+  "[<-",
+  "[[",
+  "[[<-",
+  "^",
+  "abs",
+  "acos",
+  "acosh",
+  "all",
+  "any",
+  "anyNA",
+  "as.call",
+  "as.character",
+  "as.complex",
+  "as.double",
+  "as.environment",
+  "as.integer",
+  "as.logical",
+  "as.numeric",
+  "as.raw",
+  "asin",
+  "asinh",
+  "atan",
+  "atanh",
+  "attr",
+  "attr<-",
+  "attributes",
+  "attributes<-",
+  "baseenv",
+  "break",
+  "browser",
+  "c",
+  "call",
+  "ceiling",
+  "class",
+  "class<-",
+  "cos",
+  "cosh",
+  "cospi",
+  "crossprod",
+  "cummax",
+  "cummin",
+  "cumprod",
+  "cumsum",
+  "declare",
+  "digamma",
+  "dim",
+  "dim<-",
+  "dimnames",
+  "dimnames<-",
+  "emptyenv",
+  "enc2native",
+  "enc2utf8",
+  "environment<-",
+  "exp",
+  "expm1",
+  "expression",
+  "floor",
+  "for",
+  "forceAndCall",
+  "function",
+  "gamma",
+  "gc.time",
+  "globalenv",
+  "if",
+  "interactive",
+  "invisible",
+  "is.array",
+  "is.atomic",
+  "is.call",
+  "is.character",
+  "is.complex",
+  "is.double",
+  "is.environment",
+  "is.expression",
+  "is.finite",
+  "is.function",
+  "is.infinite",
+  "is.integer",
+  "is.language",
+  "is.list",
+  "is.logical",
+  "is.matrix",
+  "is.na",
+  "is.name",
+  "is.nan",
+  "is.null",
+  "is.numeric",
+  "is.object",
+  "is.pairlist",
+  "is.raw",
+  "is.recursive",
+  "is.single",
+  "is.symbol",
+  "isS4",
+  "lazyLoadDBfetch",
+  "length",
+  "length<-",
+  "levels<-",
+  "lgamma",
+  "list",
+  "log",
+  "log10",
+  "log1p",
+  "log2",
+  "max",
+  "min",
+  "missing",
+  "names",
+  "names<-",
+  "nargs",
+  "next",
+  "nzchar",
+  "oldClass",
+  "oldClass<-",
+  "on.exit",
+  "pos.to.env",
+  "proc.time",
+  "prod",
+  "quote",
+  "range",
+  "rep",
+  "repeat",
+  "retracemem",
+  "return",
+  "round",
+  "seq.int",
+  "seq_along",
+  "seq_len",
+  "sign",
+  "signif",
+  "sin",
+  "sinh",
+  "sinpi",
+  "sqrt",
+  "standardGeneric",
+  "storage.mode<-",
+  "substitute",
+  "sum",
+  "switch",
+  "tan",
+  "tanh",
+  "tanpi",
+  "tcrossprod",
+  "tracemem",
+  "trigamma",
+  "trunc",
+  "unCfillPOSIXlt",
+  "unclass",
+  "untracemem",
+  "while",
+  "xtfrm",
+  "{",
+  "|",
+  "||",
+  "~",
+]);
 type NumericVector = RLogicalVector | RIntegerVector | RDoubleVector | RComplexVector;
 type AttributedSequence = RVector | RPairlist;
 type AttributedRuntimeObject = AttributedSequence | REnvironment | RClosure;
@@ -242,6 +483,13 @@ const FIRST_CLASS_OPERATOR_BUILTINS: readonly BuiltinDefinition[] = [
       ),
   ),
   defineBuiltin(
+    "[",
+    ["x", "...", "drop"],
+    "behavioral",
+    (invocation) => builtinInternalSubset(invocation, false, "["),
+    "special",
+  ),
+  defineBuiltin(
     "[[",
     ["x", "...", "exact"],
     "behavioral",
@@ -253,7 +501,11 @@ const FIRST_CLASS_OPERATOR_BUILTINS: readonly BuiltinDefinition[] = [
 /** Base builtins for the current documented language subset. */
 export const baseBuiltins: readonly BuiltinDefinition[] = [
   ...FIRST_CLASS_OPERATOR_BUILTINS,
-  defineBuiltin("c", ["..."], "behavioral", builtinC),
+  defineBuiltin("(", ["..."], "behavioral", builtinParentheses, "primitive"),
+  {
+    ...defineBuiltin("c", ["..."], "behavioral", builtinC),
+    s3DefaultImplementation: builtinCDefault,
+  },
   defineBuiltin("switch", ["EXPR", "..."], "behavioral", builtinSwitch),
   defineBuiltin("missing", ["x"], "behavioral", builtinMissing, "special"),
   defineBuiltin("quote", ["expr"], "behavioral", builtinQuote, "special"),
@@ -265,7 +517,18 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "behavioral",
     builtinMatchCall,
   ),
-  defineBuiltin("do.call", ["what", "args", "quote", "envir"], "behavioral", builtinDoCall),
+  withBuiltinFormals(
+    defineBuiltin("do.call", ["what", "args", "quote", "envir"], "behavioral", builtinDoCall),
+    [
+      { name: "what" },
+      { name: "args" },
+      {
+        name: "quote",
+        defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+      },
+      { name: "envir", defaultValue: callAst("parent.frame", []) },
+    ],
+  ),
   defineBuiltin("force", ["x"], "behavioral", builtinForce),
   defineBuiltin(
     "forceAndCall",
@@ -310,6 +573,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ]),
   defineBuiltin("capabilities", ["what", "Xchk"], "behavioral", builtinCapabilities),
   defineBuiltin("Sys.getpid", [], "behavioral", builtinSystemGetPid),
+  defineBuiltin("Sys.info", [], "shape", builtinSystemInfo),
   defineBuiltin("packageEvent", ["pkgname", "event"], "behavioral", builtinPackageEvent),
   defineBuiltin("getHook", ["hookName"], "behavioral", builtinGetHook),
   defineBuiltin(
@@ -582,6 +846,32 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     ],
   ),
   defineBuiltin("proc.time", [], "behavioral", builtinProcessTime),
+  {
+    ...withBuiltinFormals(
+      defineBuiltin(
+        "summary.proc_time",
+        ["object", "..."],
+        "behavioral",
+        builtinSummaryProcessTime,
+      ),
+      [{ name: "object" }, { name: "..." }],
+    ),
+    s3Method: { generic: "summary", className: "proc_time" },
+  },
+  {
+    ...withBuiltinFormals(
+      defineBuiltin(
+        "print.proc_time",
+        ["x", "..."],
+        "behavioral",
+        builtinPrintProcessTime,
+        "regular",
+        "invisible",
+      ),
+      [{ name: "x" }, { name: "..." }],
+    ),
+    s3Method: { generic: "print", className: "proc_time" },
+  },
   withBuiltinFormals(
     defineBuiltin("system.time", ["expr", "gcFirst"], "behavioral", builtinSystemTiming),
     [
@@ -883,7 +1173,16 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     ],
   ),
   defineBuiltin("seek", ["con", "where", "origin", "rw"], "behavioral", builtinSeek),
-  defineBuiltin("file.exists", ["..."], "shape", builtinFileExists),
+  withBuiltinFormals(defineBuiltin("file.exists", ["..."], "shape", builtinFileExists), [
+    { name: "..." },
+  ]),
+  withBuiltinFormals(
+    defineBuiltin("file.access", ["names", "mode"], "behavioral", builtinFileAccess),
+    [
+      { name: "names" },
+      { name: "mode", defaultValue: { kind: "IntegerLiteral", value: 0, span: SYNTHETIC_SPAN } },
+    ],
+  ),
   withBuiltinFormals(
     defineBuiltin("file.create", ["...", "showWarnings"], "behavioral", builtinFileCreate),
     [
@@ -1142,6 +1441,38 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("is.numeric_version", ["x"], "behavioral", builtinIsNumericVersion),
   defineBuiltin("is.package_version", ["x"], "behavioral", builtinIsPackageVersion),
   definePackageBuiltin("utils", "packageName", ["env"], "behavioral", builtinPackageName),
+  withBuiltinFormals(
+    withUnsupportedBehavior(
+      definePackageBuiltin("utils", "person", PERSON_ARGUMENTS, "behavioral", builtinPerson),
+      [
+        "Class-specific atomic coercion, nested list fields, ROR validation, and derived Authors@R validation are not implemented.",
+      ],
+    ),
+    PERSON_ARGUMENTS.map((name) => ({ name, defaultValue: nullAst() })),
+  ),
+  ...["c", "$", "[", "[[", "format", "as.character", "print"].map((generic) => ({
+    ...withUnsupportedBehavior(
+      definePackageBuiltin(
+        "utils",
+        `${generic}.person`,
+        generic === "c"
+          ? ["...", "recursive"]
+          : generic === "$"
+            ? ["x", "name"]
+            : generic === "[" || generic === "[["
+              ? ["x", "i", "j"]
+              : ["x", "..."],
+        "behavioral",
+        (invocation) => builtinPersonMethod(generic, invocation),
+        generic === "print" ? "invisible" : "visible",
+      ),
+      [
+        "R/Markdown styles, ROR formatting, exhaustive formatting options, and exact private-method formals are not implemented.",
+      ],
+    ),
+    exported: false,
+    s3Method: { generic, className: "person" },
+  })),
   withBuiltinFormals(
     definePackageBuiltin(
       "utils",
@@ -1665,6 +1996,40 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("try", ["expr", "silent", "outFile"], "behavioral", builtinTry),
   defineBuiltin("tryCatch", ["expr", "...", "finally"], "behavioral", builtinTryCatch),
   defineBuiltin("globalCallingHandlers", ["..."], "behavioral", builtinGlobalCallingHandlers),
+  defineBuiltin("withCallingHandlers", ["expr", "..."], "behavioral", builtinWithCallingHandlers),
+  withBuiltinFormals(
+    defineBuiltin(
+      "signalCondition",
+      ["cond", "message", "call"],
+      "behavioral",
+      builtinSignalCondition,
+    ),
+    [{ name: "cond" }, { name: "message" }, { name: "call" }],
+  ),
+  defineBuiltin("withRestarts", ["expr", "..."], "behavioral", builtinWithRestarts),
+  defineBuiltin("computeRestarts", ["cond"], "behavioral", builtinComputeRestarts),
+  defineBuiltin("findRestart", ["name", "cond"], "behavioral", builtinFindRestart),
+  defineBuiltin("invokeRestart", ["r", "..."], "behavioral", (invocation) =>
+    builtinInvokeRestart(invocation, false),
+  ),
+  defineBuiltin("tryInvokeRestart", ["r", "..."], "behavioral", (invocation) =>
+    builtinInvokeRestart(invocation, true),
+  ),
+  defineBuiltin("isRestart", ["x"], "behavioral", builtinIsRestart),
+  {
+    ...withBuiltinFormals(
+      defineBuiltin(
+        "print.restart",
+        ["x", "..."],
+        "behavioral",
+        builtinPrintRestart,
+        "regular",
+        "invisible",
+      ),
+      [{ name: "x" }, { name: "..." }],
+    ),
+    s3Method: { generic: "print", className: "restart" },
+  },
   defineBuiltin(
     "message",
     ["...", "domain", "appendLF"],
@@ -1704,12 +2069,34 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
       [{ name: "message" }, { name: "call", defaultValue: nullAst() }],
     ),
   ),
-  defineBuiltin("conditionMessage", ["c"], "behavioral", builtinConditionMessage),
+  withBuiltinFormals(
+    defineBuiltin("conditionMessage", ["c"], "behavioral", builtinConditionMessage),
+    [{ name: "c" }],
+  ),
+  withBuiltinFormals(
+    defineBuiltin("conditionCall", ["c"], "behavioral", (invocation) =>
+      builtinConditionAccessor(invocation, "conditionCall", "call"),
+    ),
+    [{ name: "c" }],
+  ),
   defineBuiltin("suppressWarnings", ["expr", "classes"], "behavioral", (invocation) =>
-    builtinSuppressCondition(invocation, "warning"),
+    builtinSuppressCondition(invocation, "warning", "suppressWarnings"),
   ),
   defineBuiltin("suppressMessages", ["expr", "classes"], "behavioral", (invocation) =>
-    builtinSuppressCondition(invocation, "message"),
+    builtinSuppressCondition(invocation, "message", "suppressMessages"),
+  ),
+  defineBuiltin("suppressPackageStartupMessages", ["expr"], "behavioral", (invocation) =>
+    builtinSuppressCondition(invocation, "message", "suppressPackageStartupMessages", [
+      "packageStartupMessage",
+    ]),
+  ),
+  defineBuiltin(
+    "packageStartupMessage",
+    ["...", "domain", "appendLF"],
+    "behavioral",
+    builtinPackageStartupMessage,
+    "regular",
+    "invisible",
   ),
   defineBuiltin(
     "identical",
@@ -1727,7 +2114,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "behavioral",
     builtinIdentical,
   ),
-  defineBuiltin("all.equal", ["target", "current", "..."], "numeric", builtinAllEqual),
+  defineBuiltin("all.equal", ["target", "current", "..."], "behavioral", builtinAllEqual),
   defineBuiltin(
     "parse",
     ["file", "n", "text", "prompt", "keep.source", "srcfile", "encoding"],
@@ -1834,6 +2221,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("within", ["data", "expr", "..."], "behavioral", builtinWithin),
   defineBuiltin("local", ["expr", "envir"], "behavioral", builtinLocal),
   defineBuiltin("subset", ["x", "subset", "select", "drop", "..."], "behavioral", builtinSubset),
+  defineBuiltin("$", ["x", "name"], "behavioral", builtinDollar, "special"),
   defineBuiltin(".subset", ["x", "..."], "behavioral", (invocation) =>
     builtinInternalSubset(invocation, false),
   ),
@@ -1847,8 +2235,8 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("as.symbol", ["x"], "behavioral", builtinAsName),
   defineBuiltin("call", ["name", "..."], "behavioral", builtinCall),
   defineBuiltin("as.call", ["x"], "behavioral", builtinAsCall),
-  defineBuiltin("deparse", ["expr"], "shape", builtinDeparse),
-  defineBuiltin("deparse1", ["expr"], "shape", builtinDeparse),
+  defineBuiltin("deparse", ["expr", "width.cutoff"], "behavioral", builtinDeparse),
+  defineBuiltin("deparse1", ["expr", "collapse", "width.cutoff"], "behavioral", builtinDeparse1),
   defineBuiltin("body", ["fun"], "behavioral", builtinBody),
   withBuiltinFormals(
     defineBuiltin(
@@ -1929,13 +2317,17 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("is.double", ["x"], "behavioral", (invocation) =>
     builtinTypePredicate(invocation, "is.double", (value) => value.type === "double"),
   ),
-  defineBuiltin("is.numeric", ["x"], "behavioral", (invocation) =>
-    builtinTypePredicate(
-      invocation,
-      "is.numeric",
-      (value) => (value.type === "integer" || value.type === "double") && !isFactor(value),
+  {
+    ...defineBuiltin("is.numeric", ["x"], "behavioral", builtinIsNumeric),
+    s3DefaultImplementation: builtinIsNumericDefault,
+  },
+  ...(["Date", "POSIXt", "difftime"] as const).map((className) => ({
+    ...withBuiltinFormals(
+      defineBuiltin(`is.numeric.${className}`, ["x"], "behavioral", () => logicalVector([false])),
+      [{ name: "x" }],
     ),
-  ),
+    s3Method: { generic: "is.numeric", className },
+  })),
   defineBuiltin("is.character", ["x"], "behavioral", (invocation) =>
     builtinTypePredicate(invocation, "is.character", (value) => value.type === "character"),
   ),
@@ -1955,6 +2347,19 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
       "is.function",
       (value) => value.type === "closure" || value.type === "builtin",
     ),
+  ),
+  withBuiltinFormals(
+    defineBuiltin("is.primitive", ["x"], "behavioral", (invocation) =>
+      builtinTypePredicate(
+        invocation,
+        "is.primitive",
+        (value) =>
+          value.type === "builtin" &&
+          value.definition.package === "base" &&
+          R_BASE_PRIMITIVE_NAMES.has(value.definition.name),
+      ),
+    ),
+    [{ name: "x" }],
   ),
   defineBuiltin("is.environment", ["x"], "behavioral", (invocation) =>
     builtinTypePredicate(invocation, "is.environment", (value) => value.type === "environment"),
@@ -2060,6 +2465,40 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "invisible",
   ),
   defineBuiltin("isNamespaceLoaded", ["name"], "behavioral", builtinIsNamespaceLoaded),
+  withUnsupportedBehavior(
+    withBuiltinFormals(
+      defineBuiltin(
+        "detach",
+        ["name", "pos", "unload", "character.only", "force"],
+        "behavioral",
+        builtinDetach,
+        "regular",
+        "invisible",
+      ),
+      [
+        { name: "name" },
+        { name: "pos", defaultValue: { kind: "IntegerLiteral", value: 2, span: SYNTHETIC_SPAN } },
+        ...["unload", "character.only", "force"].map((name) => ({
+          name,
+          defaultValue: { kind: "LogicalLiteral" as const, value: false, span: SYNTHETIC_SPAN },
+        })),
+      ],
+    ),
+    [
+      "static core package detachment, arbitrary attached objects, exact hook-error call formatting",
+    ],
+  ),
+  withUnsupportedBehavior(
+    defineBuiltin(
+      "unloadNamespace",
+      ["ns"],
+      "behavioral",
+      builtinUnloadNamespace,
+      "regular",
+      "invisible",
+    ),
+    ["static core namespaces, DLL unloading, exact hook-error call formatting"],
+  ),
   defineBuiltin("loadedNamespaces", [], "behavioral", builtinLoadedNamespaces),
   defineBuiltin("asNamespace", ["ns", "base.OK"], "behavioral", builtinAsNamespace),
   defineBuiltin("getLoadedDLLs", [], "shape", builtinGetLoadedDLLs),
@@ -2275,11 +2714,70 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("cummin", ["x"], "numeric", (invocation) =>
     builtinCumulative(invocation, "minimum"),
   ),
-  defineBuiltin("sum", ["...", "na.rm"], "numeric", builtinSum),
-  withBuiltinFormals(defineBuiltin("mean", ["x", "na.rm"], "behavioral", builtinMean), [
+  withUnsupportedBehavior(defineBuiltin("sum", ["...", "na.rm"], "numeric", builtinSum), [
+    "Componentwise complex NA payloads and platform-specific extended-precision floating accumulation remain incomplete.",
+  ]),
+  defineBuiltin("prod", ["...", "na.rm"], "numeric", builtinProduct, "primitive"),
+  withBuiltinFormals(defineBuiltin("mean", ["x", "..."], "behavioral", builtinMean), [
     { name: "x" },
     { name: "..." },
   ]),
+  {
+    ...withBuiltinFormals(
+      defineBuiltin(
+        "mean.default",
+        ["x", "trim", "na.rm", "..."],
+        "behavioral",
+        builtinMeanDefault,
+      ),
+      [
+        { name: "x" },
+        { name: "trim", defaultValue: { kind: "DoubleLiteral", value: 0, span: SYNTHETIC_SPAN } },
+        {
+          name: "na.rm",
+          defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+        },
+        { name: "..." },
+      ],
+    ),
+    s3Method: { generic: "mean", className: "default" },
+  },
+  ...(["Date", "POSIXct", "difftime"] as const).flatMap((className) =>
+    (className === "difftime" ? ["["] : ["[", "[["]).map((generic) => ({
+      ...withBuiltinFormals(
+        defineBuiltin(`${generic}.${className}`, ["x", "...", "drop"], "behavioral", (invocation) =>
+          builtinTimeSubset(invocation, className, generic === "[["),
+        ),
+        [
+          { name: "x" },
+          { name: "..." },
+          {
+            name: "drop",
+            defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+          },
+        ],
+      ),
+      s3Method: { generic, className },
+    })),
+  ),
+  ...(["Date", "POSIXct", "difftime"] as const).map((className) => ({
+    ...withBuiltinFormals(
+      defineBuiltin(`as.list.${className}`, ["x", "..."], "behavioral", (invocation) =>
+        builtinAsListTime(invocation, className),
+      ),
+      [{ name: "x" }, { name: "..." }],
+    ),
+    s3Method: { generic: "as.list", className },
+  })),
+  ...(["Date", "POSIXct", "difftime"] as const).map((className) => ({
+    ...withBuiltinFormals(
+      defineBuiltin(`mean.${className}`, ["x", "..."], "behavioral", (invocation) =>
+        builtinMeanTime(invocation, className),
+      ),
+      [{ name: "x" }, { name: "..." }],
+    ),
+    s3Method: { generic: "mean", className },
+  })),
   defineBuiltin("sqrt", ["x"], "numeric", (invocation) => builtinMath(invocation, "sqrt")),
   defineBuiltin("abs", ["x"], "numeric", (invocation) => builtinMath(invocation, "abs")),
   defineBuiltin("sign", ["x"], "behavioral", builtinSign),
@@ -2291,6 +2789,15 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("sin", ["x"], "numeric", builtinSin),
   defineBuiltin("cos", ["x"], "numeric", builtinCos),
   defineBuiltin("tan", ["x"], "numeric", builtinTan),
+  defineBuiltin("asin", ["x"], "numeric", (invocation) =>
+    builtinInverseTrigonometric(invocation, "asin"),
+  ),
+  defineBuiltin("acos", ["x"], "numeric", (invocation) =>
+    builtinInverseTrigonometric(invocation, "acos"),
+  ),
+  defineBuiltin("atan", ["x"], "numeric", (invocation) =>
+    builtinInverseTrigonometric(invocation, "atan"),
+  ),
   defineBuiltin("factorial", ["x"], "numeric", builtinFactorial),
   defineBuiltin("exp", ["x"], "numeric", (invocation) => builtinExp(invocation, false)),
   defineBuiltin("expm1", ["x"], "numeric", (invocation) => builtinExp(invocation, true)),
@@ -2343,13 +2850,33 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("list", ["..."], "behavioral", builtinList),
   defineBuiltin("alist", ["..."], "behavioral", builtinAlist, "special"),
   defineBuiltin("as.list", ["x", "..."], "behavioral", builtinAsList),
+  {
+    ...withBuiltinFormals(
+      defineBuiltin("as.list.factor", ["x", "..."], "behavioral", builtinAsListFactor),
+      [{ name: "x" }, { name: "..." }],
+    ),
+    s3Method: { generic: "as.list", className: "factor" },
+  },
   defineBuiltin(
     "as.list.environment",
     ["x", "all.names", "sorted", "..."],
     "behavioral",
     builtinAsListEnvironment,
   ),
-  defineBuiltin("unlist", ["x", "recursive", "use.names"], "behavioral", builtinUnlist),
+  withBuiltinFormals(
+    defineBuiltin("unlist", ["x", "recursive", "use.names"], "behavioral", builtinUnlist),
+    [
+      { name: "x" },
+      {
+        name: "recursive",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "use.names",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
   defineBuiltin("pairlist", ["..."], "behavioral", builtinPairlist),
   defineBuiltin("as.pairlist", ["x"], "behavioral", builtinAsPairlist),
   defineBuiltin("names", ["x"], "behavioral", builtinNames),
@@ -2405,7 +2932,17 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("rep", ["x", "times", "length.out", "each"], "behavioral", builtinRep),
   defineBuiltin("rep.int", ["x", "times"], "behavioral", builtinRepInt),
   defineBuiltin("rep_len", ["x", "length.out"], "behavioral", builtinRepLen),
-  defineBuiltin("replicate", ["n", "expr", "simplify"], "behavioral", builtinReplicate),
+  withBuiltinFormals(
+    defineBuiltin("replicate", ["n", "expr", "simplify"], "behavioral", builtinReplicate),
+    [
+      { name: "n" },
+      { name: "expr" },
+      {
+        name: "simplify",
+        defaultValue: { kind: "StringLiteral", value: "array", span: SYNTHETIC_SPAN },
+      },
+    ],
+  ),
   defineBuiltin("append", ["x", "values", "after"], "behavioral", builtinAppend),
   defineBuiltin("replace", ["x", "list", "values"], "behavioral", builtinReplace),
   defineBuiltin("rev", ["x"], "behavioral", builtinRev),
@@ -2481,14 +3018,24 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("sprintf", ["fmt", "..."], "behavioral", builtinSprintf),
   defineBuiltin(
     "format",
-    ["x", "trim", "digits", "nsmall", "scientific", "width", "justify"],
-    "shape",
+    [
+      "x",
+      "trim",
+      "digits",
+      "nsmall",
+      "scientific",
+      "width",
+      "justify",
+      "decimal.mark",
+      "na.encode",
+    ],
+    "behavioral",
     builtinFormat,
   ),
   defineBuiltin(
     "print",
-    ["x", "digits", "quote", "na.print", "print.gap", "right", "max", "useSource"],
-    "shape",
+    ["x", "digits", "quote", "na.print", "print.gap", "right", "max", "width", "useSource"],
+    "behavioral",
     builtinPrint,
     "regular",
     "invisible",
@@ -2496,7 +3043,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin(
     "cat",
     ["...", "file", "sep", "fill", "labels", "append"],
-    "shape",
+    "behavioral",
     builtinCat,
     "regular",
     "invisible",
@@ -3445,9 +3992,17 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "behavioral",
     builtinArrayPermutationDefault,
   ),
-  defineBuiltin("rbind", ["..."], "behavioral", (invocation) => builtinBind(invocation, "row")),
-  defineBuiltin("cbind", ["..."], "behavioral", (invocation) => builtinBind(invocation, "column")),
+  defineBuiltin("rbind", ["...", "deparse.level"], "behavioral", (invocation) =>
+    builtinBind(invocation, "row"),
+  ),
+  defineBuiltin("cbind", ["...", "deparse.level"], "behavioral", (invocation) =>
+    builtinBind(invocation, "column"),
+  ),
   defineBuiltin("diag", ["x", "nrow", "ncol", "names"], "behavioral", builtinDiag),
+  withBuiltinFormals(
+    defineBuiltin("diag<-", ["x", "value"], "behavioral", builtinDiagReplacement),
+    [{ name: "x" }, { name: "value" }],
+  ),
   defineBuiltin("chol", ["x", "..."], "behavioral", builtinCholesky),
   defineBuiltin(
     "chol.default",
@@ -3559,7 +4114,12 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   defineBuiltin("na.omit", ["object", "..."], "behavioral", builtinNaOmit),
   defineBuiltin("diff", ["x", "lag", "differences", "..."], "behavioral", builtinDifference),
-  defineBuiltin("range", ["...", "na.rm"], "numeric", builtinRange),
+  withUnsupportedBehavior(
+    defineBuiltin("range", ["...", "na.rm", "finite"], "numeric", builtinRange),
+    [
+      "Recursive list inputs, malformed range controls, locale collation and byte-encoding identity remain incomplete.",
+    ],
+  ),
   defineBuiltin("median", ["x", "na.rm"], "numeric", builtinMedian),
   definePackageBuiltin(
     "stats",
@@ -3662,7 +4222,12 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("cor", ["x", "y", "use"], "numeric", (invocation) =>
     builtinCovariance(invocation, true),
   ),
-  defineBuiltin("summary", ["object"], "behavioral", builtinSummary),
+  withUnsupportedBehavior(
+    defineBuiltin("summary", ["object", "..."], "behavioral", builtinSummary),
+    [
+      "Class methods receive lazy dots; default summary options and the full native summary method catalog remain incomplete.",
+    ],
+  ),
   ...MODEL_BUILTIN_SPECS.map((definition) =>
     defineBuiltin(
       definition.name,
@@ -3863,6 +4428,22 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("ordered", ["x", "levels"], "behavioral", (invocation) =>
     builtinFactor(invocation, true),
   ),
+  ...(["factor", "ordered"] as const).map((className) => ({
+    ...withBuiltinFormals(
+      defineBuiltin(`Summary.${className}`, ["...", "na.rm"], "behavioral", (invocation) =>
+        builtinFactorSummary(invocation, className === "ordered"),
+      ),
+      [{ name: "..." }, { name: "na.rm" }],
+    ),
+    s3Method: { generic: "Summary", className },
+  })),
+  {
+    ...withBuiltinFormals(
+      defineBuiltin("Summary.data.frame", ["...", "na.rm"], "behavioral", builtinDataFrameSummary),
+      [{ name: "..." }, { name: "na.rm" }],
+    ),
+    s3Method: { generic: "Summary", className: "data.frame" },
+  },
   defineBuiltin("gl", ["n", "k", "length", "labels", "ordered"], "behavioral", builtinGl),
   defineBuiltin("levels", ["x"], "behavioral", builtinLevels),
   defineBuiltin("droplevels", ["x"], "behavioral", builtinDropLevels),
@@ -3880,14 +4461,32 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "behavioral",
     builtinVapply,
   ),
-  defineBuiltin(
-    "mapply",
-    ["FUN", "...", "MoreArgs", "SIMPLIFY", "USE.NAMES"],
-    "behavioral",
-    (invocation) => builtinMapply(invocation, true),
+  withBuiltinFormals(
+    defineBuiltin(
+      "mapply",
+      ["FUN", "...", "MoreArgs", "SIMPLIFY", "USE.NAMES"],
+      "behavioral",
+      (invocation) => builtinMapply(invocation, true),
+    ),
+    [
+      { name: "FUN" },
+      { name: "..." },
+      { name: "MoreArgs", defaultValue: { kind: "NullLiteral", span: SYNTHETIC_SPAN } },
+      {
+        name: "SIMPLIFY",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "USE.NAMES",
+        defaultValue: { kind: "LogicalLiteral", value: true, span: SYNTHETIC_SPAN },
+      },
+    ],
   ),
-  defineBuiltin("Map", ["f", "..."], "behavioral", (invocation) =>
-    builtinMapply(invocation, false),
+  withBuiltinFormals(
+    defineBuiltin("Map", ["f", "..."], "behavioral", (invocation) =>
+      builtinMapply(invocation, false),
+    ),
+    [{ name: "f" }, { name: "..." }],
   ),
   defineBuiltin("Reduce", ["f", "x", "init", "right", "accumulate"], "behavioral", builtinReduce),
   defineBuiltin("Filter", ["f", "x"], "behavioral", builtinFilter),
@@ -4159,7 +4758,6 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("structure", [".Data", "..."], "behavioral", builtinStructure),
 ];
 
-const OPTIONS_STATE_KEY = "base.options";
 const LOCALE_STATE_KEY = "base.locale";
 export const ENVIRONMENT_VARIABLES_STATE_KEY = "base.environmentVariables";
 export const EXECUTABLE_PATHS_STATE_KEY = "base.executablePaths";
@@ -4173,7 +4771,6 @@ const GRAPHICS_PARAMETERS_STATE_KEY = "graphics.parameters";
 const GC_TORTURE_STATE_KEY = "base.gctorture2";
 const GC_INFO_STATE_KEY = "base.gcinfo";
 const PROCESS_TIME_STATE_KEY = "base.processTime";
-const HOOKS_STATE_KEY = "base.hooks";
 const VIRTUAL_TEXT_FILES_STATE_KEY = "base.virtualTextFiles";
 const PACKAGE_DATA_DIRECTORY_STATE_KEY = "utils.packageDataDirectory";
 const AVAILABLE_PACKAGES_CACHE_STATE_KEY = "utils.availablePackages.cache";
@@ -4407,8 +5004,8 @@ function defineBuiltin(
   kind: BuiltinDefinition["kind"] = "regular",
   resultVisibility: BuiltinDefinition["resultVisibility"] = "visible",
 ): BuiltinDefinition {
-  return definePackageBuiltin(
-    "base",
+  const definition = definePackageBuiltin(
+    BUILTIN_PACKAGE_OWNERS[name] ?? "base",
     name,
     supportedArguments,
     compatibilityLevel,
@@ -4416,6 +5013,40 @@ function defineBuiltin(
     resultVisibility,
     kind,
   );
+  return ["sum", "prod", "min", "max", "any", "all", "range"].includes(name)
+    ? withSummaryDispatch(definition)
+    : definition;
+}
+
+function withSummaryDispatch(definition: BuiltinDefinition): BuiltinDefinition {
+  return {
+    ...definition,
+    s3DefaultImplementation: (invocation) => definition.implementation(invocation),
+    implementation: async (invocation) => {
+      for (const argument of invocation.arguments) await invocation.force(argument.promise);
+      const { matched, dots } = matchLeadingDotsArguments(invocation, ["na.rm"]);
+      const firstArgument = dots[0];
+      if (firstArgument !== undefined) {
+        const first = await invocation.force(firstArgument.promise);
+        if (objectClasses(first) !== undefined) {
+          const removeMissing = matched.get("na.rm") ?? {
+            name: "na.rm",
+            promise: createForcedPromise(logicalVector([false]), invocation.currentEnvironment()),
+          };
+          const dispatched = await invocation.dispatchS3IfPresent(
+            definition.name,
+            first,
+            [...dots, removeMissing],
+            false,
+            0,
+            "Summary",
+          );
+          if (dispatched !== undefined) return dispatched;
+        }
+      }
+      return definition.implementation(invocation);
+    },
+  };
 }
 
 function definePackageBuiltin(
@@ -4438,8 +5069,21 @@ function definePackageBuiltin(
       compatibilityLevel,
       referenceVersion: "R 4.6.x documented behavior",
       supportedArguments,
-      unsupportedBehavior:
-        packageName === "graphics"
+      unsupportedBehavior: [
+        "grep",
+        "grepl",
+        "sub",
+        "gsub",
+        "strsplit",
+        "regexpr",
+        "gregexpr",
+        "regexec",
+        "trimws",
+      ].includes(name)
+        ? [
+            "POSIX classes use deterministic C-locale ranges; collating/equivalence elements, locale-specific classes, and complete TRE/PCRE identity remain unsupported.",
+          ]
+        : packageName === "graphics"
           ? ["non-browser devices and graphical parameters outside the command subset"]
           : packageName === "grDevices"
             ? ["color conversion, spline palettes, and devices beyond the documented subset"]
@@ -5180,12 +5824,87 @@ async function dispatchOperatorS3(
   return undefined;
 }
 
+async function builtinPerson(invocation: BuiltinInvocation): Promise<RValue> {
+  return createPerson(await matchExact(invocation, PERSON_ARGUMENTS), invocation, (value) =>
+    coerceAtomicToCharacter(value, invocation),
+  );
+}
+
+async function builtinPersonMethod(
+  generic: string,
+  invocation: BuiltinInvocation,
+): Promise<RValue> {
+  if (generic === "c") {
+    const entries = await forceCombineArguments(invocation);
+    const values = entries.filter((entry) => entry.name !== "recursive");
+    if (values.some((entry) => entry.value.type !== "null" && !isPerson(entry.value)))
+      invocation.context.warn({
+        code: "NRW1060",
+        message: "method is only applicable to 'person' objects",
+      });
+    return withClasses(combineListEntries(values, invocation), ["person"]);
+  }
+  if (generic === "$") {
+    const values = await matchExact(invocation, ["x", "name"]);
+    return personField(required(values, "x", "$.person"), required(values, "name", "$.person"));
+  }
+  if (generic === "[" || generic === "[[") {
+    const matched = matchLazyArguments(invocation, ["x", "i", "j"]);
+    const x = matched.get("x");
+    if (x === undefined) throw new REvaluationError("NRE2103", "Missing person object.");
+    const i = matched.get("i"),
+      j = matched.get("j");
+    return subsetPerson(
+      await invocation.force(x.promise),
+      i === undefined || i.promise.missing ? undefined : await invocation.force(i.promise),
+      j === undefined || j.promise.missing ? undefined : await invocation.force(j.promise),
+      generic === "[[",
+      invocation,
+    );
+  }
+  const values = await matchExact(invocation, ["x", "include", "braces", "collapse", "style"]);
+  const x = required(values, "x", `${generic}.person`);
+  const formatted = formatPerson(x, values, invocation);
+  if (generic !== "print") return formatted;
+  const text =
+    isPerson(x) && x.length === 0
+      ? "person()"
+      : formatPrintedValue(formatted, {
+          ...DEFAULT_PRINT_OPTIONS,
+          width: optionInteger(invocation, "width", 80),
+        });
+  invocation.context.writeOutput({ stream: "stdout", text: text + "\n" });
+  return x;
+}
 async function builtinC(invocation: BuiltinInvocation): Promise<RValue> {
+  const entries = await forceCombineArguments(invocation);
+  const first = entries[0]?.value;
+  if (first !== undefined && objectClasses(first) !== undefined) {
+    const dispatched = await invocation.dispatchS3IfPresent("c", first, invocation.arguments);
+    if (dispatched !== undefined) return dispatched;
+  }
+  return combineEntries(entries, invocation);
+}
+
+async function builtinCDefault(invocation: BuiltinInvocation): Promise<RValue> {
+  return combineEntries(await forceCombineArguments(invocation), invocation);
+}
+
+async function forceCombineArguments(
+  invocation: BuiltinInvocation,
+): Promise<{ readonly name?: string; readonly value: RValue }[]> {
   const entries: { readonly name?: string; readonly value: RValue }[] = [];
   for (const argument of invocation.arguments) {
     const value = await invocation.force(argument.promise);
     entries.push(argument.name === undefined ? { value } : { name: argument.name, value });
   }
+  return entries;
+}
+
+function combineEntries(
+  entries: readonly { readonly name?: string; readonly value: RValue }[],
+  invocation: BuiltinInvocation,
+): RValue {
   if (entries.some((entry) => isNumericVersionValue(entry.value))) {
     return combineNumericVersionValues(entries, invocation);
   }
@@ -5530,7 +6249,7 @@ async function bquoteAst(
       { type: "language", expression: argument.value },
       environment,
     );
-    return embeddedCallArgumentAst(value);
+    return embeddedCallArgumentAst(value, () => invocation.context.checkpoint());
   }
   switch (node.kind) {
     case "Program":
@@ -5862,6 +6581,7 @@ function substituteIdentifier(
 }
 
 function promiseAst(promise: RBinding & { readonly type: "promise" }): AstNode {
+  if (promise.sourceExpression !== undefined) return promise.sourceExpression;
   if (promise.expression !== null) return promise.expression;
   if (promise.value !== undefined) return embeddedCallArgumentAst(promise.value);
   return {
@@ -5880,7 +6600,7 @@ function isDotsAst(node: AstNode): boolean {
 
 async function builtinMatchCall(invocation: BuiltinInvocation): Promise<RLanguage> {
   const matched = matchLazyArguments(invocation, ["definition", "call", "expand.dots", "envir"]);
-  for (const unsupportedArgument of ["definition", "call", "envir"]) {
+  for (const unsupportedArgument of ["envir"]) {
     if (matched.has(unsupportedArgument)) {
       throw new RUnsupportedFeatureError(
         "NRU6131",
@@ -5893,51 +6613,109 @@ async function builtinMatchCall(invocation: BuiltinInvocation): Promise<RLanguag
     expandArgument === undefined
       ? true
       : logicalFlag(await invocation.force(expandArgument.promise), true, "expand.dots");
-  return invocation.matchCall(expandDots);
+  const definitionArgument = matched.get("definition");
+  const definition =
+    definitionArgument === undefined
+      ? undefined
+      : await invocation.force(definitionArgument.promise);
+  const callArgument = matched.get("call");
+  const call =
+    callArgument === undefined ? undefined : await invocation.force(callArgument.promise);
+  return invocation.matchCall(expandDots, definition, call);
 }
 
 async function builtinDoCall(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = await matchExact(invocation, ["what", "args", "quote", "envir"]);
-  const what = required(matched, "what", "do.call");
-  const args = required(matched, "args", "do.call");
-  if (args.type !== "list") {
-    throw new RTypeMismatchError("NRT3214", "do.call(args=) requires an ordinary list.");
-  }
-  if (logicalFlag(matched.get("quote"), false, "quote")) {
-    throw new RUnsupportedFeatureError(
-      "NRU6135",
-      "do.call(quote = TRUE) is outside the current quoted-call subset.",
-    );
-  }
-  const environment = matched.get("envir") ?? invocation.currentEnvironment();
-  if (environment.type !== "environment") {
-    throw new RTypeMismatchError("NRT3214", "do.call(envir=) requires an environment.");
-  }
-
-  let callable = what;
-  if (what.type === "character") {
-    const name = characterScalar(what, "what");
-    const binding = lookupBinding(environment, name);
-    if (binding === undefined) {
-      throw new REvaluationError("NRE2001", `Could not find function '${name}'.`);
+  const matched = matchLazyArguments(invocation, ["what", "args", "quote", "envir"]);
+  const forceRequired = async (name: string): Promise<RValue> => {
+    const argument = matched.get(name);
+    if (argument === undefined || argument.promise.missing)
+      throw new REvaluationError("NRE2103", `argument "${name}" is missing, with no default`);
+    return invocation.force(argument.promise);
+  };
+  let args = await forceRequired("args");
+  if (args.type !== "list" && args.type !== "pairlist")
+    throw new RTypeMismatchError("NRT3214", "second argument must be a list");
+  const quoteArgument = matched.get("quote");
+  const quoted =
+    quoteArgument === undefined || quoteArgument.promise.missing
+      ? false
+      : logicalCondition(await invocation.force(quoteArgument.promise));
+  if (quoted) {
+    const input = await prepareApplyInput(args, invocation);
+    invocation.context.allocate(input.length);
+    const values: RValue[] = [];
+    for (let index = 0; index < input.length; index += 1) {
+      invocation.context.checkpoint();
+      values.push(await applyVectorItem(input, index, invocation));
     }
-    callable = await invocation.force(binding);
+    const names = applyNames(input);
+    args =
+      names === undefined ? listValue(values) : withAttribute(listValue(values), "names", names);
   }
-  if (callable.type !== "closure" && callable.type !== "builtin") {
-    throw new RTypeMismatchError(
-      "NRT3214",
-      "do.call(what=) requires a function or one function name.",
-    );
-  }
-
+  const what = await forceRequired("what");
+  const environmentArgument = matched.get("envir");
+  const environment =
+    environmentArgument === undefined || environmentArgument.promise.missing
+      ? invocation.currentEnvironment()
+      : await invocation.force(environmentArgument.promise);
+  if (
+    (what.type !== "character" && what.type !== "closure" && what.type !== "builtin") ||
+    (what.type === "character" && what.length !== 1)
+  )
+    throw new RTypeMismatchError("NRT3214", "'what' must be a function or character string");
+  if (!quoted && args.type === "pairlist")
+    throw new RTypeMismatchError("NRT3214", "'args' must be a list");
+  if (environment.type !== "environment")
+    throw new RTypeMismatchError("NRT3214", "'envir' must be an environment");
+  const functionName =
+    what.type === "character" ? (isMissing(what, 0) ? "NA" : what.values[0]) : undefined;
+  if (functionName === "")
+    throw new RTypeMismatchError("NRT3214", "attempt to use zero-length variable name");
+  const callee: AstNode =
+    what.type === "character"
+      ? { kind: "Identifier", name: functionName!, span: SYNTHETIC_SPAN }
+      : {
+          kind: "ConstantExpression",
+          value: what,
+          display: embeddedValueAst(what),
+          span: SYNTHETIC_SPAN,
+        };
   const names = vectorNames(args);
-  return invocation.invoke(
-    callable,
-    args.values.map((value, index) => {
-      const name = names?.[index];
-      return name === undefined || name === "" ? { value } : { name, value };
+  const nameAttribute = args.attributes.get("names");
+  const expression: AstNode = {
+    kind: "CallExpression",
+    callee,
+    span: SYNTHETIC_SPAN,
+    arguments: args.values.map((value, index) => {
+      const name =
+        nameAttribute?.type === "character" && isMissing(nameAttribute, index)
+          ? "NA"
+          : names?.[index];
+      const argument = embeddedValueAst(value, () => invocation.context.checkpoint());
+      const wrapped: AstNode = quoted
+        ? {
+            kind: "CallExpression",
+            span: SYNTHETIC_SPAN,
+            callee: {
+              kind: "NamespaceExpression",
+              operator: "::",
+              namespace: { kind: "Identifier", name: "base", span: SYNTHETIC_SPAN },
+              member: { kind: "Identifier", name: "quote", span: SYNTHETIC_SPAN },
+              span: SYNTHETIC_SPAN,
+            },
+            arguments: [{ value: argument, span: SYNTHETIC_SPAN }],
+          }
+        : argument;
+      return {
+        ...(name === undefined || name === "" ? {} : { name }),
+        value: wrapped,
+        span: SYNTHETIC_SPAN,
+      };
     }),
-  );
+  };
+  const result = await invocation.evaluateDetailed({ type: "language", expression }, environment);
+  invocation.setResultVisibility(result.visible ? "visible" : "invisible");
+  return result.value;
 }
 
 async function builtinForce(invocation: BuiltinInvocation): Promise<RValue> {
@@ -5954,6 +6732,17 @@ async function builtinIdentity(invocation: BuiltinInvocation): Promise<RValue> {
   const argument = matched.get("x");
   if (argument === undefined) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in identity().");
+  }
+  return invocation.force(argument.promise);
+}
+
+async function builtinParentheses(invocation: BuiltinInvocation): Promise<RValue> {
+  const argument = invocation.arguments[0];
+  if (invocation.arguments.length !== 1 || argument === undefined) {
+    throw new REvaluationError(
+      "NRE2103",
+      `${invocation.arguments.length} arguments passed to '(' which requires 1`,
+    );
   }
   return invocation.force(argument.promise);
 }
@@ -6121,6 +6910,31 @@ function builtinSystemGetPid(invocation: BuiltinInvocation): RIntegerVector {
   return integerVector([invocation.sessionProcessId]);
 }
 
+const BROWSER_SYSTEM_INFO_NAMES = Object.freeze([
+  "sysname",
+  "release",
+  "version",
+  "nodename",
+  "machine",
+  "login",
+  "user",
+  "effective_user",
+  "udomain",
+]);
+
+/** Describe the virtual browser runtime without disclosing host identity. */
+function builtinSystemInfo(invocation: BuiltinInvocation): RCharacterVector {
+  matchLazyArguments(invocation, []);
+  invocation.context.allocate(BROWSER_SYSTEM_INFO_NAMES.length);
+  return withNames(
+    characterVector(
+      ["NativR", "", "", "", "wasm32", "", "", "", ""],
+      Uint8Array.from([0, 1, 1, 1, 0, 1, 1, 1, 1]),
+    ),
+    BROWSER_SYSTEM_INFO_NAMES,
+  );
+}
+
 const BROWSER_CAPABILITY_NAMES = Object.freeze([
   "jpeg",
   "png",
@@ -6187,7 +7001,7 @@ async function builtinPackageEvent(invocation: BuiltinInvocation): Promise<RValu
 }
 
 function hooksState(invocation: BuiltinInvocation): Map<string, RValue[]> {
-  return stateMap<string, RValue[]>(invocation, HOOKS_STATE_KEY);
+  return stateMap<string, RValue[]>(invocation, USER_HOOKS_STATE_KEY);
 }
 
 async function builtinGetHook(invocation: BuiltinInvocation): Promise<RValue> {
@@ -6202,9 +7016,7 @@ async function builtinSetHook(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["hookName", "value", "action"]);
   const name = characterScalar(required(matched, "hookName", "setHook"), "hookName");
   const value = required(matched, "value", "setHook");
-  if (!isCallable(value)) {
-    throw new RTypeMismatchError("NRT3396", "hook value must be a function");
-  }
+  const values = value.type === "null" ? [] : value.type === "list" ? value.values : [value];
   const suppliedAction = matched.get("action");
   const action =
     suppliedAction === undefined
@@ -6225,10 +7037,10 @@ async function builtinSetHook(invocation: BuiltinInvocation): Promise<RValue> {
   hooks.set(
     name,
     action === "replace"
-      ? [value]
+      ? [...values]
       : action === "prepend"
-        ? [value, ...existing]
-        : [...existing, value],
+        ? [...values, ...existing]
+        : [...existing, ...values],
   );
   return R_NULL;
 }
@@ -7420,7 +8232,7 @@ async function builtinSystemTiming(invocation: BuiltinInvocation): Promise<RValu
     throw new REvaluationError("NRE2103", "Argument 'expr' is missing in system.time().");
   }
   const gcFirst = matched.get("gcFirst");
-  if (gcFirst === undefined || systemTimeGcFirst(await invocation.force(gcFirst.promise))) {
+  if (gcFirst === undefined || logicalCondition(await invocation.force(gcFirst.promise))) {
     invocation.memoryStatistics(false, true);
   }
 
@@ -7699,18 +8511,33 @@ function writeGarbageCollectionMessage(
   });
 }
 
-function systemTimeGcFirst(value: RValue): boolean {
-  if (value.type === "null" || (isAtomic(value) && value.length === 0)) {
+function logicalCondition(value: RValue): boolean {
+  const length =
+    value.type === "null"
+      ? 0
+      : "length" in value
+        ? value.length
+        : value.type === "expression"
+          ? value.values.length
+          : value.type === "language"
+            ? (languageAstEntries(value.expression)?.nodes.length ?? 1)
+            : 1;
+  if (length === 0) {
     throw new RTypeMismatchError("NRT3399", "argument is of length zero");
+  }
+  if (length > 1) {
+    throw new RTypeMismatchError("NRT3399", "the condition has length > 1");
   }
   if (!isAtomic(value)) {
     throw new RTypeMismatchError("NRT3399", "argument is not interpretable as logical");
   }
-  if (value.length > 1) {
-    throw new RTypeMismatchError("NRT3399", "the condition has length > 1");
-  }
   if (isMissing(value, 0)) {
-    throw new RTypeMismatchError("NRT3399", "missing value where TRUE/FALSE needed");
+    throw new RTypeMismatchError(
+      "NRT3399",
+      value.type === "logical"
+        ? "missing value where TRUE/FALSE needed"
+        : "argument is not interpretable as logical",
+    );
   }
   if (value.type === "character") {
     const parsed = parseRLogical(value.values[0] ?? "");
@@ -7720,6 +8547,8 @@ function systemTimeGcFirst(value: RValue): boolean {
     return parsed;
   }
   if (value.type === "complex") {
+    if (Number.isNaN(value.real[0]) || Number.isNaN(value.imaginary[0]))
+      throw new RTypeMismatchError("NRT3399", "argument is not interpretable as logical");
     return (value.real[0] ?? 0) !== 0 || (value.imaginary[0] ?? 0) !== 0;
   }
   const scalar = value.values[0] ?? 0;
@@ -7741,6 +8570,73 @@ function processTimeValue(elapsed: number, invocation: BuiltinInvocation): RDoub
     ]),
     ["proc_time"],
   );
+}
+
+function summarizeProcessTime(value: RValue, invocation: BuiltinInvocation): RValue {
+  const input = requireNumeric(value, "summary.proc_time");
+  const real = new Float64Array(3);
+  const imaginary = new Float64Array(3);
+  const missing = new Uint8Array(3);
+  const integral = input.type === "integer" || input.type === "logical";
+  let addedChild = false;
+  invocation.context.allocate(3);
+  for (let index = 0; index < 3; index += 1) {
+    if (index >= input.length || isMissing(input, index)) {
+      missing[index] = 1;
+    } else {
+      real[index] = input.type === "complex" ? input.real[index]! : input.values[index]!;
+      imaginary[index] = input.type === "complex" ? input.imaginary[index]! : 0;
+    }
+    const child = index + 3;
+    if (index === 2 || child >= input.length || isMissing(input, child)) continue;
+    const childReal = input.type === "complex" ? input.real[child]! : input.values[child]!;
+    const childImaginary = input.type === "complex" ? input.imaginary[child]! : 0;
+    if (Number.isNaN(childReal) || Number.isNaN(childImaginary)) continue;
+    addedChild = true;
+    if (missing[index]) continue;
+    real[index] = real[index]! + childReal;
+    imaginary[index] = imaginary[index]! + childImaginary;
+    if (integral && (real[index]! > 2_147_483_647 || real[index]! < -2_147_483_647)) {
+      missing[index] = 1;
+      invocation.context.warn({ code: "NRW1002", message: "NAs produced by integer overflow" });
+    }
+  }
+  const result =
+    input.type === "complex"
+      ? complexVector(real, imaginary, missing)
+      : input.type === "logical" && !addedChild
+        ? logicalVector(real, missing)
+        : integral
+          ? integerVector(real, missing)
+          : doubleVector(real, missing);
+  return withNames(result, ["user", "system", "elapsed"]);
+}
+
+async function builtinSummaryProcessTime(invocation: BuiltinInvocation): Promise<RValue> {
+  const lazy = matchLazyArgumentsWithDots(invocation, ["object"]);
+  const argument = lazy.matched.get("object");
+  if (argument === undefined || argument.promise.missing)
+    throw new REvaluationError("NRE2103", "Argument 'object' is missing in summary.proc_time().");
+  return summarizeProcessTime(await invocation.force(argument.promise), invocation);
+}
+
+async function builtinPrintProcessTime(invocation: BuiltinInvocation): Promise<RValue> {
+  const lazy = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const argument = lazy.matched.get("x");
+  if (argument === undefined || argument.promise.missing)
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in print.proc_time().");
+  const input = await invocation.force(argument.promise);
+  const summary = summarizeProcessTime(input, invocation);
+  await builtinPrint({
+    ...invocation,
+    arguments: [
+      {
+        name: "x",
+        promise: createForcedPromise(summary, invocation.currentEnvironment()),
+      },
+    ],
+  });
+  return input;
 }
 
 function monotonicMilliseconds(): number {
@@ -10731,6 +11627,51 @@ async function builtinFileExists(invocation: BuiltinInvocation): Promise<RLogica
   return logicalVector(values);
 }
 
+async function builtinFileAccess(invocation: BuiltinInvocation): Promise<RIntegerVector> {
+  const matched = await matchExact(invocation, ["names", "mode"]);
+  const names = required(matched, "names", "file.access");
+  if (names.type !== "character") {
+    throw new RTypeMismatchError("NRT3356", "invalid 'names' argument");
+  }
+  const suppliedMode = matched.get("mode");
+  const coercedMode =
+    suppliedMode === undefined || !isAtomic(suppliedMode)
+      ? undefined
+      : coerceAtomicToInteger(suppliedMode, invocation);
+  const mode = suppliedMode === undefined ? 0 : coercedMode?.values[0];
+  if (
+    mode === undefined ||
+    (coercedMode !== undefined && (coercedMode.length === 0 || isMissing(coercedMode, 0))) ||
+    mode < 0 ||
+    mode > 7
+  ) {
+    throw new RTypeMismatchError("NRT3356", "invalid 'mode' argument");
+  }
+
+  const result: number[] = [];
+  const pathNames: string[] = [];
+  const missingNames = new Uint8Array(names.length);
+  for (let index = 0; index < names.length; index += 1) {
+    invocation.context.checkpoint();
+    const suppliedPath = names.values[index] ?? "";
+    pathNames.push(suppliedPath);
+    if (isMissing(names, index)) {
+      missingNames[index] = 1;
+      result.push(-1);
+      continue;
+    }
+    const info = ownedVirtualFileInfo(invocation, suppliedPath);
+    const permissions = info?.mode ?? 0;
+    result.push(info !== undefined && (mode === 0 || (permissions & mode) === mode) ? 0 : -1);
+  }
+  invocation.context.allocate(result.length);
+  return withAttribute(
+    integerVector(result),
+    "names",
+    characterVector(pathNames, compactMask(missingNames)),
+  );
+}
+
 interface FileCreatePath {
   readonly supplied: string;
   readonly missing: boolean;
@@ -12732,7 +13673,7 @@ function serializationEnvironments(invocation: BuiltinInvocation) {
   return {
     global: invocation.globalEnvironment(),
     base: invocation.baseEnvironment(),
-    baseNamespace: invocation.baseEnvironment(),
+    baseNamespace: invocation.namespaceEnvironment("base") ?? invocation.baseEnvironment(),
     empty: invocation.emptyEnvironment(),
   } as const;
 }
@@ -13634,7 +14575,7 @@ function serializeDputBaseValue(
   if (value.type === "language") return `quote(${deparseAst(value.expression)})`;
   if (value.type === "expression") {
     invocation.context.allocate(value.values.length);
-    return `expression(${value.values.map(deparseAst).join(", ")})`;
+    return `expression(${value.values.map((node) => deparseAst(node)).join(", ")})`;
   }
   throw new RUnsupportedFeatureError(
     "NRU6172",
@@ -14224,7 +15165,7 @@ function monetaryLocaleProfile(
 }
 
 function optionsState(invocation: BuiltinInvocation): Map<string, RValue> {
-  const existing = invocation.state.get(OPTIONS_STATE_KEY);
+  const existing = invocation.state.get(BASE_OPTIONS_STATE_KEY);
   if (existing instanceof Map) return existing as Map<string, RValue>;
   const created = new Map<string, RValue>([
     ["OutDec", characterVector(["."])],
@@ -14249,7 +15190,7 @@ function optionsState(invocation: BuiltinInvocation): Map<string, RValue> {
     ["warn", integerVector([0])],
     ["width", integerVector([80])],
   ]);
-  invocation.state.set(OPTIONS_STATE_KEY, created);
+  invocation.state.set(BASE_OPTIONS_STATE_KEY, created);
   return created;
 }
 
@@ -14274,7 +15215,20 @@ function validateOptionName(name: string): void {
 }
 
 function normalizeOptionValue(name: string, value: RValue): RValue {
-  if (["digits", "width", "warn", "max.print", "expressions", "timeout", "scipen"].includes(name)) {
+  if (name === "warn") {
+    // GNU R truncates a logical or numeric scalar toward zero.
+    const level =
+      (value.type === "logical" || value.type === "integer" || value.type === "double") &&
+      value.length === 1 &&
+      !isMissing(value, 0)
+        ? Math.trunc(Number(value.values[0]))
+        : Number.NaN;
+    if (!Number.isFinite(level) || Math.abs(level) > 2_147_483_647) {
+      throw new RTypeMismatchError("NRT3223", "invalid value for 'warn'");
+    }
+    return integerVector([level]);
+  }
+  if (["digits", "width", "max.print", "expressions", "timeout", "scipen"].includes(name)) {
     if (
       (value.type !== "integer" && value.type !== "double") ||
       value.length !== 1 ||
@@ -14323,7 +15277,7 @@ async function builtinTry(invocation: BuiltinInvocation): Promise<RValue> {
     );
   }
   try {
-    return await invocation.force(expression.promise);
+    return await invocation.errorBarrier(async () => invocation.force(expression.promise));
   } catch (error) {
     if (!isCatchableCondition(error)) throw error;
     const condition = conditionValue(error);
@@ -14365,21 +15319,213 @@ async function builtinTryCatch(invocation: BuiltinInvocation): Promise<RValue> {
     throw new REvaluationError("NRE2103", "Argument 'expr' is missing in tryCatch().");
   }
 
+  let resourceFailure: RResourceLimitError | undefined;
   try {
-    try {
-      return await invocation.force(expression.promise);
-    } catch (error) {
-      if (!isCatchableCondition(error)) throw error;
-      const handlerArgument =
-        handlers.find((argument) => argument.name === "error") ??
-        handlers.find((argument) => argument.name === "condition");
-      if (handlerArgument === undefined) throw error;
-      const handler = await invocation.force(handlerArgument.promise);
-      return invocation.invoke(handler, [{ value: conditionValue(error) }]);
+    const installed: { readonly name: string; readonly handler: RValue }[] = [];
+    for (const argument of handlers) {
+      installed.push({
+        name: argument.name ?? "",
+        handler: await invocation.force(argument.promise),
+      });
     }
+    let remaining = installed;
+    const expressionPromise = expression.promise;
+    let evaluate = () => invocation.forceDetailed(expressionPromise);
+    for (;;) {
+      let condition: RValue;
+      let handlerIndex: number;
+      try {
+        const result = await invocation.captureCondition(
+          remaining.map(({ name }) => name),
+          evaluate,
+        );
+        if (result.kind === "value") {
+          invocation.setResultVisibility(result.value.visible ? "visible" : "invisible");
+          return result.value.value;
+        }
+        condition = result.condition;
+        handlerIndex = result.handlerIndex;
+      } catch (error) {
+        if (!isCatchableCondition(error)) throw error;
+        condition = conditionValue(error);
+        const classes = objectClasses(condition) ?? [];
+        handlerIndex = remaining.findIndex(({ name }) => classes.includes(name));
+        if (handlerIndex < 0) throw error;
+      }
+      const selected = remaining[handlerIndex];
+      if (selected === undefined)
+        throw new REvaluationError("NRE2301", "Invalid condition handler.");
+      remaining = remaining.slice(handlerIndex + 1);
+      evaluate = async () => {
+        if (selected.handler.type !== "builtin" && selected.handler.type !== "closure") {
+          throw new RTypeMismatchError("NRT3250", "attempt to apply non-function");
+        }
+        return invocation.invokeDetailed(selected.handler, [{ value: condition }]);
+      };
+    }
+  } catch (error) {
+    if (error instanceof RResourceLimitError) resourceFailure = error;
+    throw error;
   } finally {
-    if (finallyArgument !== undefined) await invocation.force(finallyArgument.promise);
+    if (finallyArgument !== undefined) {
+      await invocation.force(finallyArgument.promise).catch((error: unknown) => {
+        // Cleanup may replace ordinary exits, but cannot hide an evaluation limit.
+        throw resourceFailure ?? error;
+      });
+    }
   }
+}
+
+/** Split withCallingHandlers()/withRestarts() arguments into expr and named entries. */
+function splitHandlerArguments(
+  invocation: BuiltinInvocation,
+  name: string,
+): { readonly expression: BuiltinCallArgument; readonly entries: readonly BuiltinCallArgument[] } {
+  let expression: BuiltinCallArgument | undefined;
+  const entries: BuiltinCallArgument[] = [];
+  for (const argument of invocation.arguments) {
+    if (argument.name === "expr" || (argument.name === undefined && expression === undefined)) {
+      if (expression !== undefined) {
+        throw new REvaluationError("NRE2102", "Argument 'expr' matched more than once.");
+      }
+      expression = argument;
+    } else if (argument.name === undefined || argument.name.length === 0) {
+      throw new REvaluationError(
+        "NRE2101",
+        name === "withCallingHandlers"
+          ? "condition handlers must be specified with a condition class"
+          : "not a valid restart specification",
+      );
+    } else {
+      entries.push(argument);
+    }
+  }
+  if (expression === undefined) {
+    throw new REvaluationError("NRE2103", `Argument 'expr' is missing in ${name}().`);
+  }
+  return { expression, entries };
+}
+
+async function builtinWithCallingHandlers(invocation: BuiltinInvocation): Promise<RValue> {
+  const { expression, entries } = splitHandlerArguments(invocation, "withCallingHandlers");
+  const handlers: { className: string; handler: RValue }[] = [];
+  for (const argument of entries) {
+    handlers.push({
+      className: argument.name ?? "",
+      handler: await invocation.force(argument.promise),
+    });
+  }
+  const result = await invocation.withCallingHandlers(handlers, async () =>
+    invocation.forceDetailed(expression.promise),
+  );
+  invocation.setResultVisibility(result.visible ? "visible" : "invisible");
+  return result.value;
+}
+
+async function builtinSignalCondition(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["cond", "message", "call"]);
+  const condition = required(matched, "cond", "signalCondition");
+  await invocation.signalCondition(objectClasses(condition) ?? [], condition);
+  return R_NULL;
+}
+
+async function builtinWithRestarts(invocation: BuiltinInvocation): Promise<RValue> {
+  const { expression, entries } = splitHandlerArguments(invocation, "withRestarts");
+  const restarts: { name: string; handler: RValue; description: string }[] = [];
+  for (const argument of entries) {
+    const specification = await invocation.force(argument.promise);
+    let handler = specification;
+    let description = "";
+    if (specification.type === "list") {
+      const names = vectorNames(specification) ?? [];
+      handler = specification.values[names.indexOf("handler")] ?? R_NULL;
+      const text = specification.values[names.indexOf("description")];
+      if (text?.type === "character" && text.length > 0) description = text.values[0] ?? "";
+    }
+    if (handler.type !== "closure" && handler.type !== "builtin") {
+      throw new REvaluationError("NRE2101", "not a valid restart specification");
+    }
+    restarts.push({ name: argument.name ?? "", handler, description });
+  }
+  const result = await invocation.withRestarts(restarts, async () =>
+    invocation.forceDetailed(expression.promise),
+  );
+  const detailed =
+    result.kind === "value"
+      ? result.value
+      : await invocation.invokeDetailed(
+          restarts[result.index]?.handler ?? R_NULL,
+          result.arguments.map((value) => ({ value })),
+        );
+  invocation.setResultVisibility(detailed.visible ? "visible" : "invisible");
+  return detailed.value;
+}
+
+function restartName(restart: RValue): string {
+  return restart.type === "list" && restart.values[0]?.type === "character"
+    ? (restart.values[0].values[0] ?? "")
+    : "";
+}
+
+async function builtinComputeRestarts(invocation: BuiltinInvocation): Promise<RValue> {
+  await matchExact(invocation, ["cond"]);
+  return listValue(invocation.computeRestarts());
+}
+
+async function builtinFindRestart(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["name", "cond"]);
+  const name = characterScalar(required(matched, "name", "findRestart"), "name");
+  return invocation.computeRestarts().find((restart) => restartName(restart) === name) ?? R_NULL;
+}
+
+async function builtinInvokeRestart(
+  invocation: BuiltinInvocation,
+  tolerant: boolean,
+): Promise<RValue> {
+  const values: RValue[] = [];
+  let restart: RValue | undefined;
+  for (const argument of invocation.arguments) {
+    const value = await invocation.force(argument.promise);
+    if (restart === undefined && (argument.name === undefined || argument.name === "r")) {
+      restart = value;
+    } else {
+      values.push(value);
+    }
+  }
+  if (restart === undefined) {
+    throw new REvaluationError("NRE2103", 'argument "r" is missing, with no default');
+  }
+  if (
+    tolerant &&
+    restart.type === "character" &&
+    !invocation.computeRestarts().some((candidate) => restartName(candidate) === restart.values[0])
+  ) {
+    invocation.setResultVisibility("invisible");
+    return R_NULL;
+  }
+  return invocation.invokeRestart(restart, values);
+}
+
+async function builtinIsRestart(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["x"]);
+  return logicalVector([
+    objectClasses(required(matched, "x", "isRestart"))?.includes("restart") ?? false,
+  ]);
+}
+
+async function builtinPrintRestart(invocation: BuiltinInvocation): Promise<RValue> {
+  const lazy = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const argument = lazy.matched.get("x");
+  if (argument === undefined || argument.promise.missing) {
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in print.restart().");
+  }
+  const restart = await invocation.force(argument.promise);
+  invocation.context.writeOutput({
+    stream: "stdout",
+    text: `<restart: ${restartName(restart)} >\n`,
+  });
+  invocation.setResultVisibility("invisible");
+  return restart;
 }
 
 async function builtinGlobalCallingHandlers(invocation: BuiltinInvocation): Promise<RValue> {
@@ -14454,17 +15600,44 @@ async function builtinMessage(invocation: BuiltinInvocation): Promise<RValue> {
   validateConditionDomain(controls.get("domain"));
   const appendLineFeed = logicalFlag(controls.get("appendLF"), true, "appendLF");
   const text = conditionText(values, invocation);
-  if (!invocation.context.isOutputSuppressed("message")) {
-    await invocation.signalCondition(
-      ["simpleMessage", "message", "condition"],
-      simpleConditionValue(text, "message"),
-    );
-  }
-  invocation.context.writeOutput({
-    stream: "message",
-    text: appendLineFeed ? `${text}\n` : text,
-  });
+  const supplied = values.length === 1 ? values[0] : undefined;
+  const condition =
+    supplied?.type === "list" && objectClasses(supplied)?.includes("condition")
+      ? supplied
+      : simpleConditionValue(
+          appendLineFeed ? `${text}\n` : text,
+          "message",
+          invocation.currentCall(),
+        );
+  await signalMessage(
+    invocation,
+    condition,
+    condition === supplied || !appendLineFeed ? text : `${text}\n`,
+  );
   return R_NULL;
+}
+
+/** Signal a message condition; write its text to the message stream unless a frame muffled it. */
+async function signalMessage(
+  invocation: BuiltinInvocation,
+  condition: RValue,
+  text: string,
+): Promise<void> {
+  if (
+    await invocation.signalCondition(objectClasses(condition) ?? [], condition, "muffleMessage")
+  ) {
+    return;
+  }
+  invocation.context.writeOutput({ stream: "message", text });
+}
+
+/** Signal a warning condition, then apply options(warn) unless it was muffled. */
+async function signalWarning(
+  invocation: BuiltinInvocation,
+  condition: RValue,
+  warning: RWarning,
+): Promise<void> {
+  await invocation.signalWarning(condition, warning);
 }
 
 async function builtinWarning(invocation: BuiltinInvocation): Promise<RValue> {
@@ -14474,26 +15647,36 @@ async function builtinWarning(invocation: BuiltinInvocation): Promise<RValue> {
     "noBreaks.",
     "domain",
   ]);
-  logicalFlag(controls.get("call."), true, "call.");
+  const includeCall = logicalFlag(controls.get("call."), true, "call.");
   logicalFlag(controls.get("immediate."), false, "immediate.");
   logicalFlag(controls.get("noBreaks."), false, "noBreaks.");
   validateConditionDomain(controls.get("domain"));
   const text = conditionText(values, invocation);
-  if (!invocation.context.isWarningSuppressed()) {
-    await invocation.signalCondition(
-      ["simpleWarning", "warning", "condition"],
-      simpleConditionValue(text, "warning"),
-    );
-  }
-  invocation.context.warn({ code: "NRW1100", message: text });
+  const supplied = values.length === 1 ? values[0] : undefined;
+  const condition =
+    supplied?.type === "list" && objectClasses(supplied)?.includes("condition")
+      ? supplied
+      : simpleConditionValue(text, "warning", includeCall ? invocation.systemCall(0) : R_NULL);
+  await signalWarning(invocation, condition, { code: "NRW1100", message: text });
   return characterVector([text]);
 }
 
 async function builtinStop(invocation: BuiltinInvocation): Promise<RValue> {
   const { controls, values } = await conditionArguments(invocation, ["call.", "domain"]);
-  logicalFlag(controls.get("call."), true, "call.");
+  const includeCall = logicalFlag(controls.get("call."), true, "call.");
   validateConditionDomain(controls.get("domain"));
-  throw new REvaluationError("NRE2300", conditionText(values, invocation));
+  const message = conditionText(values, invocation);
+  const suppliedCondition = values.length === 1 ? values[0] : undefined;
+  if (
+    suppliedCondition?.type === "list" &&
+    objectClasses(suppliedCondition)?.includes("condition")
+  ) {
+    return invocation.raiseCondition(suppliedCondition, message);
+  }
+  return invocation.raiseCondition(
+    simpleConditionValue(message, "error", includeCall ? invocation.systemCall(0) : R_NULL),
+    message,
+  );
 }
 
 async function builtinStopIfNot(invocation: BuiltinInvocation): Promise<RValue> {
@@ -14531,22 +15714,23 @@ async function builtinStopIfNot(invocation: BuiltinInvocation): Promise<RValue> 
 }
 
 async function builtinConditionMessage(invocation: BuiltinInvocation): Promise<RValue> {
+  return builtinConditionAccessor(invocation, "conditionMessage", "message");
+}
+
+async function builtinConditionAccessor(
+  invocation: BuiltinInvocation,
+  generic: "conditionCall" | "conditionMessage",
+  member: "call" | "message",
+): Promise<RValue> {
   const matched = await matchExact(invocation, ["c"]);
-  const condition = required(matched, "c", "conditionMessage");
-  if (condition.type === "character") {
-    return condition;
-  }
-  if (condition.type === "list") {
-    const names = vectorNames(condition);
-    const messageIndex = names?.indexOf("message") ?? -1;
-    const message = messageIndex < 0 ? undefined : condition.values[messageIndex];
-    if (message?.type === "character") {
-      return message;
-    }
-  }
+  const condition = required(matched, "c", generic);
+  const dispatched = await invocation.dispatchS3IfPresent(generic, condition, invocation.arguments);
+  if (dispatched !== undefined) return dispatched;
+  if (implicitClasses(condition).includes("condition"))
+    return extractListMember(condition, member, invocation.context);
   throw new RTypeMismatchError(
     "NRT3220",
-    "conditionMessage() requires a condition with one character message.",
+    `no applicable method for '${generic}' applied to an object of class "${implicitClasses(condition).join('", "')}"`,
   );
 }
 
@@ -14674,36 +15858,56 @@ function conditionConstructorClasses(
 async function builtinSuppressCondition(
   invocation: BuiltinInvocation,
   kind: "warning" | "message",
+  name: string,
+  fixedClasses?: readonly string[],
 ): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["expr", "classes"]);
+  const matched = matchLazyArguments(
+    invocation,
+    fixedClasses === undefined ? ["expr", "classes"] : ["expr"],
+  );
   const expression = matched.get("expr");
   if (expression === undefined) {
-    throw new REvaluationError(
-      "NRE2103",
-      `Argument 'expr' is missing in suppress${kind === "warning" ? "Warnings" : "Messages"}().`,
-    );
+    throw new REvaluationError("NRE2103", `Argument 'expr' is missing in ${name}().`);
   }
   const classesArgument = matched.get("classes");
-  let suppress = true;
+  let classes: readonly string[] = fixedClasses ?? [kind];
   if (classesArgument !== undefined) {
-    const classes = await invocation.force(classesArgument.promise);
-    if (classes.type !== "character" || classes.missing !== undefined) {
+    const supplied = await invocation.force(classesArgument.promise);
+    if (supplied.type !== "character" || supplied.missing !== undefined) {
       throw new RTypeMismatchError("NRT3222", "'classes' must be a non-missing character vector.");
     }
-    suppress = classes.values.includes(kind);
+    classes = supplied.values;
   }
-  if (suppress) {
-    if (kind === "warning") invocation.context.pushWarningSuppression();
-    else invocation.context.pushOutputSuppression("message");
-  }
-  try {
-    return await invocation.force(expression.promise);
-  } finally {
-    if (suppress) {
-      if (kind === "warning") invocation.context.popWarningSuppression();
-      else invocation.context.popOutputSuppression("message");
-    }
-  }
+  // A calling-handler frame: handlers established inside expr see conditions first, and the
+  // value keeps the visibility of expr.
+  const result = await invocation.muffleConditions(kind, classes, async () =>
+    invocation.forceDetailed(expression.promise),
+  );
+  invocation.setResultVisibility(result.visible ? "visible" : "invisible");
+  return result.value;
+}
+
+/** Package startup messages are ordinary message conditions with one additional class. */
+function packageStartupMessageCondition(text: string, call: RValue): RList {
+  return withClasses(listValue([characterVector([text]), call], ["message", "call"]), [
+    "packageStartupMessage",
+    "simpleMessage",
+    "message",
+    "condition",
+  ]);
+}
+
+async function builtinPackageStartupMessage(invocation: BuiltinInvocation): Promise<RValue> {
+  const { controls, values } = await conditionArguments(invocation, ["domain", "appendLF"]);
+  validateConditionDomain(controls.get("domain"));
+  const appendLineFeed = logicalFlag(controls.get("appendLF"), true, "appendLF");
+  const text = conditionText(values, invocation) + (appendLineFeed ? "\n" : "");
+  await signalMessage(
+    invocation,
+    packageStartupMessageCondition(text, invocation.currentCall()),
+    text,
+  );
+  return R_NULL;
 }
 
 async function conditionArguments(
@@ -14766,6 +15970,7 @@ function validateConditionDomain(value: RValue | undefined): void {
 }
 
 function conditionValue(error: NativRError): RList {
+  if (error instanceof RSignalledConditionError) return error.condition;
   return withClasses(listValue([characterVector([error.message]), R_NULL], ["message", "call"]), [
     "simpleError",
     "error",
@@ -14773,9 +15978,13 @@ function conditionValue(error: NativRError): RList {
   ]);
 }
 
-function simpleConditionValue(text: string, kind: "message" | "warning"): RList {
-  const simpleClass = kind === "message" ? "simpleMessage" : "simpleWarning";
-  return withClasses(listValue([characterVector([text]), R_NULL], ["message", "call"]), [
+function simpleConditionValue(
+  text: string,
+  kind: "message" | "warning" | "error",
+  call: RValue = R_NULL,
+): RList {
+  const simpleClass = `simple${kind[0]?.toUpperCase()}${kind.slice(1)}`;
+  return withClasses(listValue([characterVector([text]), call], ["message", "call"]), [
     simpleClass,
     kind,
     "condition",
@@ -14823,14 +16032,40 @@ async function builtinIdentical(invocation: BuiltinInvocation): Promise<RValue> 
 }
 
 interface AllEqualOptions {
+  readonly context: BuiltinInvocation["context"];
   readonly tolerance: number;
-  readonly scale?: number;
+  readonly scale?: readonly number[];
   readonly countEqual: boolean;
   readonly checkAttributes: boolean;
+  readonly report: (error: number, what: string, location: string) => Promise<string[]>;
+  readonly warnRecycle: () => void;
+}
+
+const ALL_EQUAL_METHOD_LEADING_FORMALS = [
+  "target",
+  "current",
+  "tolerance",
+  "scale",
+  "countEQ",
+  "formatFUN",
+] as const;
+
+function allEqualMethodArgumentName(name: string | undefined): string | undefined {
+  if (name === undefined || ALL_EQUAL_METHOD_LEADING_FORMALS.some((formal) => formal === name)) {
+    return name;
+  }
+  const matches = ALL_EQUAL_METHOD_LEADING_FORMALS.filter((formal) => formal.startsWith(name));
+  if (matches.length > 1) {
+    throw new REvaluationError("NRE2104", `Argument '${name}' matches multiple formal arguments.`);
+  }
+  return matches[0] ?? name;
 }
 
 async function builtinAllEqual(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched, dots } = matchLazyArgumentsWithDots(invocation, ["target", "current"]);
+  const { matched, dots } = matchLazyArgumentsWithDots(
+    invocation,
+    ALL_EQUAL_METHOD_LEADING_FORMALS,
+  );
   const targetArgument = matched.get("target");
   const currentArgument = matched.get("current");
   if (targetArgument === undefined || targetArgument.promise.missing) {
@@ -14842,12 +16077,42 @@ async function builtinAllEqual(invocation: BuiltinInvocation): Promise<RValue> {
   const target = await invocation.force(targetArgument.promise);
   const current = await invocation.force(currentArgument.promise);
   let tolerance = Math.sqrt(Number.EPSILON);
-  let scale: number | undefined;
+  let scale: readonly number[] | undefined;
   let countEqual = false;
   let checkAttributes = true;
-  for (const argument of dots) {
+  let giveError = false;
+  let formatter: BuiltinCallArgument | undefined;
+  for (const argument of [...matched.entries()]
+    .filter(([name]) => name !== "target" && name !== "current")
+    .map(([, argument]) => argument)
+    .concat(dots)) {
+    const name = allEqualMethodArgumentName(argument.name);
+    // Method controls can have been matched positionally at this point.
+    const control =
+      [...matched.entries()].find(([, candidate]) => candidate === argument)?.[0] ?? name;
+    if (control === "formatFUN") {
+      formatter = argument;
+      continue;
+    }
+    if (
+      control === undefined ||
+      ![
+        "tolerance",
+        "scale",
+        "countEQ",
+        "check.attributes",
+        "check.class",
+        "giveErr",
+        "use.names",
+        "check.environment",
+        "check.tzone",
+        "all.names",
+        "evaluate",
+      ].includes(control)
+    )
+      continue;
     const value = await invocation.force(argument.promise);
-    switch (argument.name) {
+    switch (control) {
       case "tolerance":
         tolerance = numericScalar(value, "tolerance");
         if (tolerance < 0) {
@@ -14856,8 +16121,12 @@ async function builtinAllEqual(invocation: BuiltinInvocation): Promise<RValue> {
         break;
       case "scale":
         if (value.type !== "null") {
-          scale = numericScalar(value, "scale");
-          if (scale <= 0) {
+          const numeric = requireNumeric(value, "scale");
+          invocation.context.allocate(numeric.length);
+          scale = Array.from({ length: numeric.length }, (_, index) =>
+            isMissing(numeric, index) ? Number.NaN : numberAt(numeric, index),
+          );
+          if (scale.length === 0 || scale.some((entry) => !(entry > 0))) {
             throw new RTypeMismatchError("NRT3142", "'scale' must be positive.");
           }
         }
@@ -14868,14 +16137,16 @@ async function builtinAllEqual(invocation: BuiltinInvocation): Promise<RValue> {
       case "check.attributes":
         checkAttributes = logicalFlag(value, true, "check.attributes");
         break;
-      case "check.class":
       case "giveErr":
+        giveError = logicalFlag(value, false, "giveErr");
+        break;
+      case "check.class":
       case "use.names":
       case "check.environment":
       case "check.tzone":
       case "all.names":
       case "evaluate":
-        logicalFlag(value, true, argument.name);
+        logicalFlag(value, true, control);
         break;
       case "formatFUN":
       case undefined:
@@ -14885,35 +16156,80 @@ async function builtinAllEqual(invocation: BuiltinInvocation): Promise<RValue> {
     }
   }
 
-  const messages = allEqualValue(
+  let numericError: { error: number; what: string } | undefined;
+  const messages = await allEqualValue(
     target,
     current,
-    { tolerance, ...(scale === undefined ? {} : { scale }), countEqual, checkAttributes },
+    {
+      context: invocation.context,
+      tolerance,
+      ...(scale === undefined ? {} : { scale }),
+      countEqual,
+      checkAttributes,
+      warnRecycle: () =>
+        invocation.context.warn({
+          code: "NRW1001",
+          message: "longer object length is not a multiple of shorter object length",
+          call: "abs(target - current)/(N * scale)",
+        }),
+      report: async (error, what, location) => {
+        if (location === "") numericError = { error, what };
+        if (error <= tolerance) return [];
+        const formatted =
+          formatter === undefined
+            ? characterVector(formatNumericValues(doubleVector([error]), invocation))
+            : await invocation.invoke(await invocation.force(formatter.promise), [
+                { value: doubleVector([error]) },
+                { value: characterVector([what]) },
+              ]);
+        const result = await builtinPaste(
+          {
+            ...invocation,
+            arguments: [
+              {
+                promise: createForcedPromise(
+                  characterVector([`${location}Mean ${what} difference:`]),
+                  invocation.currentEnvironment(),
+                ),
+              },
+              { promise: createForcedPromise(formatted, invocation.currentEnvironment()) },
+            ],
+          },
+          false,
+        );
+        return [...result.values];
+      },
+    },
     () => invocation.context.checkpoint(),
     "",
   );
   invocation.context.allocate(Math.max(1, messages.length));
-  return messages.length === 0 ? logicalVector([true]) : characterVector(messages);
+  let result: RValue = messages.length === 0 ? logicalVector([true]) : characterVector(messages);
+  if (giveError && numericError !== undefined) {
+    result = withAttribute(result, "err", doubleVector([numericError.error]));
+    result = withAttribute(result, "what", characterVector([numericError.what]));
+  }
+  return result;
 }
 
-function allEqualValue(
+async function allEqualValue(
   target: RValue,
   current: RValue,
   options: AllEqualOptions,
   checkpoint: () => void,
   path: string,
-): string[] {
+): Promise<string[]> {
   checkpoint();
   if (target === current) return [];
   const location = path.length === 0 ? "" : `${path}: `;
   if (isRealNumericVector(target) && isRealNumericVector(current)) {
-    const attributeMessages = allEqualAttributes(target, current, options, checkpoint, path);
+    const attributeMessages = await allEqualAttributes(target, current, options, checkpoint, path);
     if (target.length !== current.length) {
       return [...attributeMessages, `${location}Numeric lengths differ.`];
     }
     return [
       ...attributeMessages,
-      ...allEqualNumericStorage(target, current, options, checkpoint, location),
+      ...(await allEqualNumericStorage(target, current, options, checkpoint, location)),
     ];
   }
   if (target.type !== current.type) {
@@ -14921,14 +16237,20 @@ function allEqualValue(
   }
 
   if (isAttributedSequence(target) && isAttributedSequence(current)) {
-    const attributeMessages = allEqualAttributes(target, current, options, checkpoint, path);
+    const attributeMessages = await allEqualAttributes(target, current, options, checkpoint, path);
     if (target.length !== current.length) {
       return [...attributeMessages, `${location}Lengths differ.`];
     }
     if (target.type === "complex") {
       return [
         ...attributeMessages,
-        ...allEqualComplexStorage(target, current as RComplexVector, options, checkpoint, location),
+        ...(await allEqualComplexStorage(
+          target,
+          current as RComplexVector,
+          options,
+          checkpoint,
+          location,
+        )),
       ];
     }
     if (target.type === "logical" || target.type === "raw" || target.type === "character") {
@@ -14951,13 +16273,13 @@ function allEqualValue(
         const currentValue = (current as RList | RPairlist).values[index];
         if (targetValue !== undefined && currentValue !== undefined) {
           messages.push(
-            ...allEqualValue(
+            ...(await allEqualValue(
               targetValue,
               currentValue,
               options,
               checkpoint,
               path.length === 0 ? `Component ${index + 1}` : `${path}, component ${index + 1}`,
-            ),
+            )),
           );
         }
       }
@@ -14982,16 +16304,20 @@ function isRealNumericVector(value: RValue): value is RIntegerVector | RDoubleVe
   return value.type === "integer" || value.type === "double";
 }
 
-function allEqualNumericStorage(
+async function allEqualNumericStorage(
   target: RIntegerVector | RDoubleVector,
   current: RIntegerVector | RDoubleVector,
   options: AllEqualOptions,
   checkpoint: () => void,
   location: string,
-): string[] {
+): Promise<string[]> {
+  options.context.allocate(target.length);
+  options.context.allocate(target.length);
+  options.context.allocate(target.length);
   const differences: number[] = [];
   const targetMagnitudes: number[] = [];
-  let comparableCount = 0;
+  const equalMagnitudes: number[] = [];
+  const selectedScale: number[] = [];
   for (let index = 0; index < target.length; index += 1) {
     checkpoint();
     const targetMissing =
@@ -15001,37 +16327,43 @@ function allEqualNumericStorage(
       (current.type === "double" && Number.isNaN(current.values[index]));
     if (targetMissing || currentMissing) {
       if (targetMissing !== currentMissing) return [`${location}Missingness differs.`];
+      equalMagnitudes.push(Number.NaN);
       continue;
     }
     const targetValue = target.values[index] ?? 0;
     const currentValue = current.values[index] ?? 0;
-    comparableCount += 1;
-    if (targetValue === currentValue) continue;
-    if (!Number.isFinite(targetValue) || !Number.isFinite(currentValue)) {
-      return [`${location}Non-finite values differ.`];
+    if (targetValue === currentValue) {
+      equalMagnitudes.push(Math.abs(targetValue));
+      continue;
     }
     differences.push(Math.abs(targetValue - currentValue));
     targetMagnitudes.push(Math.abs(targetValue));
+    if (options.scale?.length === target.length) selectedScale.push(options.scale[index] ?? 1);
   }
   return numericDifferenceMessage(
     differences,
     targetMagnitudes,
-    comparableCount,
+    equalMagnitudes,
     options,
     location,
+    selectedScale.length > 0 ? selectedScale : options.scale,
   );
 }
 
-function allEqualComplexStorage(
+async function allEqualComplexStorage(
   target: RComplexVector,
   current: RComplexVector,
   options: AllEqualOptions,
   checkpoint: () => void,
   location: string,
-): string[] {
+): Promise<string[]> {
+  options.context.allocate(target.length);
+  options.context.allocate(target.length);
+  options.context.allocate(target.length);
   const differences: number[] = [];
   const targetMagnitudes: number[] = [];
-  let comparableCount = 0;
+  const equalMagnitudes: number[] = [];
+  const selectedScale: number[] = [];
   for (let index = 0; index < target.length; index += 1) {
     checkpoint();
     const targetValue = complexAt(target, index);
@@ -15046,22 +16378,15 @@ function allEqualComplexStorage(
       Number.isNaN(currentValue.imaginary);
     if (targetMissing || currentMissing) {
       if (targetMissing !== currentMissing) return [`${location}Missingness differs.`];
+      equalMagnitudes.push(Number.NaN);
       continue;
     }
-    comparableCount += 1;
     if (
       targetValue.real === currentValue.real &&
       targetValue.imaginary === currentValue.imaginary
     ) {
+      equalMagnitudes.push(Math.hypot(targetValue.real, targetValue.imaginary));
       continue;
-    }
-    if (
-      !Number.isFinite(targetValue.real) ||
-      !Number.isFinite(targetValue.imaginary) ||
-      !Number.isFinite(currentValue.real) ||
-      !Number.isFinite(currentValue.imaginary)
-    ) {
-      return [`${location}Non-finite values differ.`];
     }
     differences.push(
       Math.hypot(
@@ -15070,46 +16395,97 @@ function allEqualComplexStorage(
       ),
     );
     targetMagnitudes.push(Math.hypot(targetValue.real, targetValue.imaginary));
+    if (options.scale?.length === target.length) selectedScale.push(options.scale[index] ?? 1);
   }
   return numericDifferenceMessage(
     differences,
     targetMagnitudes,
-    comparableCount,
+    equalMagnitudes,
     options,
     location,
+    selectedScale.length > 0 ? selectedScale : options.scale,
+    true,
   );
 }
 
-function numericDifferenceMessage(
+async function numericDifferenceMessage(
   differences: readonly number[],
   targetMagnitudes: readonly number[],
-  comparableCount: number,
+  equalMagnitudes: readonly number[],
   options: AllEqualOptions,
   location: string,
-): string[] {
+  explicitScale: readonly number[] | undefined,
+  complex = false,
+): Promise<string[]> {
   if (differences.length === 0) return [];
-  const divisor = options.countEqual ? Math.max(1, comparableCount) : differences.length;
-  const meanDifference = differences.reduce((total, value) => total + value, 0) / divisor;
   const automaticScale =
-    targetMagnitudes.reduce((total, value) => total + value, 0) / targetMagnitudes.length;
-  const scale = options.scale ?? (automaticScale > options.tolerance ? automaticScale : 1);
-  const measured = meanDifference / scale;
-  return measured <= options.tolerance
-    ? []
-    : [
-        `${location}Mean ${scale === 1 ? "absolute" : "relative"} difference: ${formatRNumber(
-          measured,
-        )}`,
-      ];
+    accuratePositiveMean(targetMagnitudes, options.context) +
+    (options.countEqual && equalMagnitudes.length > 0
+      ? accuratePositiveMean(equalMagnitudes, options.context)
+      : 0);
+  const relative =
+    explicitScale === undefined &&
+    Number.isFinite(automaticScale) &&
+    automaticScale > options.tolerance;
+  const scales = explicitScale ?? [relative ? automaticScale : 1];
+  const length = Math.max(differences.length, scales.length);
+  if (length % Math.min(differences.length, scales.length) !== 0) options.warnRecycle();
+  const measured = accuratePositiveSum(
+    length,
+    (index) =>
+      (differences[index % differences.length] ?? 0) /
+      (differences.length * (scales[index % scales.length] ?? 1)),
+    options.context,
+  );
+  const what =
+    explicitScale === undefined
+      ? relative
+        ? "relative"
+        : "absolute"
+      : explicitScale.every((value) => Math.abs(value - 1) < 1e-7)
+        ? "absolute"
+        : "scaled";
+  return options.report(measured, `${what}${complex ? " Mod" : ""}`, location);
 }
 
-function allEqualAttributes(
+/** Compensated positive reduction; scaling before summation also avoids avoidable overflow. */
+function accuratePositiveSum(
+  length: number,
+  at: (index: number) => number,
+  context: BuiltinInvocation["context"],
+): number {
+  let sum = 0;
+  let correction = 0;
+  for (let index = 0; index < length; index += 1) {
+    context.checkpoint();
+    const value = at(index);
+    if (!Number.isFinite(value)) return value;
+    const next = sum + value;
+    if (!Number.isFinite(next)) return next;
+    correction += sum >= value ? sum - next + value : value - next + sum;
+    sum = next;
+  }
+  return sum + correction;
+}
+
+function accuratePositiveMean(
+  values: readonly number[],
+  context: BuiltinInvocation["context"],
+): number {
+  return accuratePositiveSum(
+    values.length,
+    (index) => (values[index] ?? 0) / values.length,
+    context,
+  );
+}
+
+async function allEqualAttributes(
   target: AttributedSequence,
   current: AttributedSequence,
   options: AllEqualOptions,
   checkpoint: () => void,
   path: string,
-): string[] {
+): Promise<string[]> {
   if (!options.checkAttributes) return [];
   const targetNames = [...target.attributes.keys()].filter((name) => name !== "srcref").sort();
   const currentNames = [...current.attributes.keys()].filter((name) => name !== "srcref").sort();
@@ -15122,13 +16498,13 @@ function allEqualAttributes(
     const currentValue = current.attributes.get(name);
     if (targetValue !== undefined && currentValue !== undefined) {
       messages.push(
-        ...allEqualValue(
+        ...(await allEqualValue(
           targetValue,
           currentValue,
           options,
           checkpoint,
           path.length === 0 ? `Attribute "${name}"` : `${path}, attribute "${name}"`,
-        ),
+        )),
       );
     }
   }
@@ -16245,10 +17621,6 @@ function globListElementText(value: RValue): string {
 }
 
 function sprintfListElementText(value: RValue): string {
-  if (value.type === "language" && value.expression.kind === "BinaryExpression") {
-    const rendered = deparseAst(value.expression);
-    return rendered.slice(1, -1);
-  }
   return globListElementText(value);
 }
 
@@ -16706,6 +18078,50 @@ async function builtinLocal(invocation: BuiltinInvocation): Promise<RValue> {
   return evaluateArgument(invocation, expressionArgument, environment);
 }
 
+async function builtinDollar(invocation: BuiltinInvocation): Promise<RValue> {
+  if (invocation.arguments.length !== 2)
+    throw new REvaluationError("NRE2102", "$ requires two arguments");
+  const targetArgument = invocation.arguments[0];
+  const nameArgument = invocation.arguments[1];
+  if (targetArgument === undefined || nameArgument === undefined)
+    throw new REvaluationError("NRE2103", "$ requires x and name");
+  const expression = nameArgument.promise.expression;
+  let name: string;
+  if (expression?.kind === "Identifier") name = expression.name;
+  else if (expression?.kind === "StringLiteral") name = expression.value;
+  else if (expression === null || expression.kind === "ConstantExpression") {
+    const value = await invocation.force(nameArgument.promise);
+    if (value.type === "symbol") name = value.name;
+    else if (value.type === "character" && value.length === 1)
+      name = isMissing(value, 0) ? "NA" : (value.values[0] ?? "");
+    else throw new RTypeMismatchError("NRT3305", "invalid subscript type");
+  } else throw new RTypeMismatchError("NRT3305", "invalid subscript type");
+  const target = await invocation.force(targetArgument.promise);
+  return invocation.evaluate(
+    {
+      type: "language",
+      expression: {
+        kind: "SubsetExpression",
+        operator: "$",
+        span: SYNTHETIC_SPAN,
+        target: {
+          kind: "ConstantExpression",
+          value: target,
+          display: embeddedValueAst(target),
+          span: SYNTHETIC_SPAN,
+        },
+        arguments: [
+          {
+            value: { kind: "StringLiteral", value: name, span: SYNTHETIC_SPAN },
+            span: SYNTHETIC_SPAN,
+          },
+        ],
+      },
+    },
+    invocation.currentEnvironment(),
+  );
+}
+
 async function builtinInternalSubset(
   invocation: BuiltinInvocation,
   single: boolean,
@@ -16714,12 +18130,15 @@ async function builtinInternalSubset(
   const call = callName ?? (single ? ".subset2" : ".subset");
   let targetArgument: BuiltinCallArgument | undefined;
   let exact = true;
+  let drop = true;
   const indexArguments: BuiltinCallArgument[] = [];
   for (const argument of invocation.arguments) {
     if (targetArgument === undefined) {
       targetArgument = argument;
     } else if (single && argument.name === "exact") {
       exact = logicalFlag(await invocation.force(argument.promise), true, "exact");
+    } else if (!single && callName === "[" && argument.name === "drop") {
+      drop = logicalFlag(await invocation.force(argument.promise), true, "drop");
     } else {
       indexArguments.push(argument);
     }
@@ -16764,7 +18183,7 @@ async function builtinInternalSubset(
   const dimensions = vectorDimensions(target);
   const dimensional = indices.length >= 2 || (dimensions?.length === 1 && indices.length === 1);
   if (dimensional) {
-    const selected = subsetDimensions(target, indices, true, invocation.context);
+    const selected = subsetDimensions(target, indices, drop, invocation.context);
     if (!single) return selected;
     if (selected.length !== 1) {
       throw new REvaluationError("NRE2204", `${call}() must select exactly one element.`);
@@ -17098,7 +18517,7 @@ async function builtinAsExpression(invocation: BuiltinInvocation): Promise<RExpr
     input.type === "null"
       ? []
       : input.type === "list"
-        ? input.values.map(valueToAst)
+        ? input.values.map((entry) => valueToAst(entry))
         : isAtomic(input)
           ? Array.from({ length: input.length }, (_, index) => atomicElementAst(input, index))
           : [valueToAst(input)];
@@ -17126,7 +18545,9 @@ async function builtinCall(invocation: BuiltinInvocation): Promise<RLanguage> {
   const arguments_: CallArgument[] = [];
   for (const [index, argument] of invocation.arguments.entries()) {
     if (index === nameIndex) continue;
-    const value = embeddedCallArgumentAst(await invocation.force(argument.promise));
+    const value = embeddedCallArgumentAst(await invocation.force(argument.promise), () =>
+      invocation.context.checkpoint(),
+    );
     arguments_.push({
       ...(argument.name === undefined ? {} : { name: argument.name }),
       value,
@@ -17151,7 +18572,9 @@ async function builtinAsCall(invocation: BuiltinInvocation): Promise<RLanguage> 
   const entries =
     input.type === "list"
       ? input.values.map((value, index) =>
-          index === 0 ? valueToAst(value) : embeddedCallArgumentAst(value),
+          index === 0
+            ? valueToAst(value)
+            : embeddedCallArgumentAst(value, () => invocation.context.checkpoint()),
         )
       : input.type === "expression"
         ? [...input.values]
@@ -17188,20 +18611,102 @@ async function builtinAsCall(invocation: BuiltinInvocation): Promise<RLanguage> 
 }
 
 async function builtinDeparse(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = await matchExact(invocation, ["expr"]);
+  const matched = await matchExact(invocation, ["expr", "width.cutoff"]);
   const input = required(matched, "expr", "deparse");
+  const lines = builtinDeparseLines(
+    input,
+    invocation,
+    deparseWidth(invocation, matched.get("width.cutoff"), 60),
+  );
+  invocation.context.allocate(lines.length);
+  return characterVector(lines);
+}
+
+function deparseWidth(
+  invocation: BuiltinInvocation,
+  width: RValue | undefined,
+  fallback: number,
+): number {
+  let widthCutoff = fallback;
+  if (width !== undefined) {
+    const valid =
+      (width.type === "integer" || width.type === "double") &&
+      width.length === 1 &&
+      !isMissing(width, 0) &&
+      Number.isInteger(numberAt(width, 0)) &&
+      numberAt(width, 0) >= 20 &&
+      numberAt(width, 0) <= 500;
+    if (!valid) {
+      invocation.context.warn({
+        code: "NRW1143",
+        message: "invalid 'cutoff' value for 'deparse', using default",
+      });
+      widthCutoff = 60;
+    } else {
+      widthCutoff = numberAt(width, 0);
+    }
+  }
+  return widthCutoff;
+}
+
+function builtinDeparseLines(
+  input: RValue,
+  invocation: BuiltinInvocation,
+  widthCutoff: number,
+): readonly string[] {
+  const checkWork = () => invocation.context.checkpoint();
+  if (input.type === "closure") {
+    return deparseClosureLines(input, {
+      widthCutoff,
+      checkWork,
+      isPrimitive: (name) => R_BASE_PRIMITIVE_NAMES.has(name),
+      attributes: [...input.attributes].map(([name, value]) => ({
+        name,
+        value: valueToAst(value, checkWork),
+        span: SYNTHETIC_SPAN,
+      })),
+    });
+  }
   let source: string;
   if (input.type === "expression") {
-    source = `expression(${input.values.map(deparseAst).join(", ")})`;
+    source = `expression(${input.values.map((node) => deparseAst(node, checkWork)).join(", ")})`;
   } else if (input.type === "language") {
-    source = deparseAst(input.expression);
+    return deparseAstLines(input.expression, {
+      widthCutoff,
+      checkWork,
+      isPrimitive: (name) => R_BASE_PRIMITIVE_NAMES.has(name),
+    });
   } else if (input.type === "symbol") {
     source = input.name;
+  } else if (input.type === "complex" && input.length === 1) {
+    const real = input.real[0] ?? 0;
+    const imaginary = input.imaginary[0] ?? 0;
+    source = isMissing(input, 0)
+      ? "NA_complex_"
+      : Number.isNaN(real) || !Number.isFinite(imaginary)
+        ? `complex(real=${formatRNumber(real)}, imaginary=${formatRNumber(imaginary)})`
+        : stringAt(input, 0);
   } else {
-    source = deparseAst(valueToAst(input));
+    source = deparseAst(valueToAst(input, checkWork), checkWork);
   }
-  invocation.context.allocate(1);
-  return characterVector([source]);
+  return [source];
+}
+
+async function builtinDeparse1(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["expr", "collapse", "width.cutoff"]);
+  const input = required(matched, "expr", "deparse1");
+  const collapse = matched.get("collapse");
+  const lines = builtinDeparseLines(
+    input,
+    invocation,
+    deparseWidth(invocation, matched.get("width.cutoff"), 500),
+  );
+  const result =
+    collapse?.type === "null"
+      ? lines
+      : [lines.join(collapse === undefined ? " " : characterScalar(collapse, "collapse"))];
+  invocation.context.allocate(result.length);
+  return characterVector(result);
 }
 
 function quoteAst(node: AstNode): RValue {
@@ -17217,7 +18722,7 @@ function quoteAst(node: AstNode): RValue {
     case "ComplexLiteral":
       return complexVector([0], [node.imaginary]);
     case "StringLiteral":
-      return characterVector([node.value]);
+      return characterLiteralValue(node);
     case "LogicalLiteral":
       return logicalVector([node.value]);
     case "NullLiteral":
@@ -17307,7 +18812,11 @@ function callableAstNode(value: AstNode, call: string): AstNode {
   );
 }
 
-function valueToAst(value: RValue): AstNode {
+function valueToAst(value: RValue, checkWork?: () => void, depth = 0): AstNode {
+  if (depth > 512) {
+    throw new RResourceLimitError("NRL4004", "Maximum value deparse depth exceeded.");
+  }
+  checkWork?.();
   if (value.type === "symbol") {
     return { kind: "Identifier", name: value.name, span: SYNTHETIC_SPAN };
   }
@@ -17326,6 +18835,7 @@ function valueToAst(value: RValue): AstNode {
     return callAst(
       "c",
       Array.from({ length: value.length }, (_, index) => {
+        checkWork?.();
         const element = atomicElementAst(value, index);
         return { value: element, span: element.span };
       }),
@@ -17336,7 +18846,7 @@ function valueToAst(value: RValue): AstNode {
     return callAst(
       "list",
       value.values.map((entry, index) => {
-        const element = valueToAst(entry);
+        const element = valueToAst(entry, checkWork, depth + 1);
         const name = names?.[index];
         return {
           ...(name === undefined || name.length === 0 ? {} : { name }),
@@ -17351,7 +18861,7 @@ function valueToAst(value: RValue): AstNode {
     return callAst(
       "pairlist",
       value.values.map((entry, index) => {
-        const element = valueToAst(entry);
+        const element = valueToAst(entry, checkWork, depth + 1);
         const name = names?.[index];
         return {
           ...(name === undefined || name.length === 0 ? {} : { name }),
@@ -17367,9 +18877,17 @@ function valueToAst(value: RValue): AstNode {
   );
 }
 
-function embeddedCallArgumentAst(value: RValue): AstNode {
+function embeddedCallArgumentAst(value: RValue, checkWork?: () => void): AstNode {
+  if (
+    isAtomic(value) ||
+    value.type === "list" ||
+    value.type === "pairlist" ||
+    value.type === "null" ||
+    value.type === "symbol" ||
+    value.type === "language"
+  )
+    return embeddedValueAst(value, checkWork);
   const display = valueToAst(value);
-  if (value.type === "symbol" || value.type === "language") return display;
   return {
     kind: "ConstantExpression",
     value,
@@ -17413,7 +18931,13 @@ function atomicElementAst(value: AtomicVector, index: number): AstNode {
         },
       ]);
     case "character":
-      return { kind: "StringLiteral", value: value.values[index] ?? "", span: SYNTHETIC_SPAN };
+      return {
+        kind: "StringLiteral",
+        value: value.values[index] ?? "",
+        bytes: Array.from(characterBytesAt(value, index)),
+        encoding: characterEncodingAt(value, index),
+        span: SYNTHETIC_SPAN,
+      };
   }
 }
 
@@ -17787,6 +19311,10 @@ async function builtinFormalsReplacement(invocation: BuiltinInvocation): Promise
 async function builtinLength(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["x"]);
   const value = required(matched, "x", "length");
+  if (objectClasses(value) !== undefined) {
+    const dispatched = await invocation.dispatchS3IfPresent("length", value, invocation.arguments);
+    if (dispatched !== undefined) return dispatched;
+  }
   const length = isPosixLt(value) ? posixLtLength(value) : valueLength(value);
   invocation.context.allocate(1);
   return integerVector([length]);
@@ -17855,6 +19383,10 @@ async function builtinLengths(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["x", "use.names"]);
   const value = required(matched, "x", "lengths");
   const useNames = logicalFlag(matched.get("use.names"), true, "use.names");
+  if (objectClasses(value) !== undefined) {
+    const dispatched = await invocation.dispatchS3IfPresent("lengths", value, invocation.arguments);
+    if (dispatched !== undefined) return dispatched;
+  }
   if (value.type === "null") return integerVector([]);
   if (value.type === "expression") {
     const lengths = value.values.map(languageLength);
@@ -17862,19 +19394,30 @@ async function builtinLengths(invocation: BuiltinInvocation): Promise<RValue> {
     return integerVector(lengths);
   }
   if (!isVector(value)) {
-    throw new RTypeMismatchError(
-      "NRT3204",
-      "lengths() requires an atomic vector, list, or expression.",
-    );
+    throw new RTypeMismatchError("NRT3204", "'x' must be a list or atomic vector");
   }
-  const lengths =
-    value.type === "list"
-      ? value.values.map((item) => valueLength(item))
-      : Array.from({ length: value.length }, () => 1);
+  const lengths: number[] = [];
+  for (let index = 0; index < value.length; index += 1) {
+    invocation.context.checkpoint();
+    if (value.type !== "list") {
+      lengths.push(1);
+      continue;
+    }
+    const item = value.values[index] ?? R_NULL;
+    const length = await builtinLength({
+      ...invocation,
+      arguments: [{ promise: createForcedPromise(item, invocation.currentEnvironment()) }],
+    });
+    lengths.push(factorListLength(length, invocation));
+  }
   invocation.context.allocate(lengths.length);
-  const output = integerVector(lengths);
-  const names = useNames ? vectorNames(value) : undefined;
-  return names === undefined ? output : withNames(output, names);
+  let output = integerVector(lengths);
+  for (const name of ["dim", "dimnames", "names"]) {
+    const attribute = value.attributes.get(name);
+    if (attribute !== undefined && (useNames || name === "dim"))
+      output = withAttribute(output, name, attribute);
+  }
+  return output;
 }
 
 function valueLength(value: RValue): number {
@@ -18002,6 +19545,11 @@ async function builtinVector(invocation: BuiltinInvocation): Promise<RValue> {
 async function builtinTypeof(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["x"]);
   const value = required(matched, "x", "typeof");
+  invocation.context.allocate(1);
+  return characterVector([valueTypeName(value)]);
+}
+
+function valueTypeName(value: RValue): string {
   let type: string;
   switch (value.type) {
     case "null":
@@ -18025,8 +19573,7 @@ async function builtinTypeof(invocation: BuiltinInvocation): Promise<RValue> {
       type = value.type;
       break;
   }
-  invocation.context.allocate(1);
-  return characterVector([type]);
+  return type;
 }
 
 async function builtinMode(invocation: BuiltinInvocation): Promise<RValue> {
@@ -18065,6 +19612,37 @@ async function builtinMode(invocation: BuiltinInvocation): Promise<RValue> {
   return characterVector([mode]);
 }
 
+async function builtinIsNumeric(
+  invocation: BuiltinInvocation,
+  lookupEnvironment?: REnvironment,
+): Promise<RValue> {
+  const matched = await matchExact(invocation, ["x"]);
+  const input = required(matched, "x", "is.numeric");
+  if (objectClasses(input) !== undefined) {
+    const result = await invocation.dispatchS3IfPresent(
+      "is.numeric",
+      input,
+      invocation.arguments,
+      true,
+      0,
+      undefined,
+      lookupEnvironment,
+    );
+    if (result !== undefined) return result;
+  }
+  return numericPredicateDefault(input, invocation);
+}
+
+async function builtinIsNumericDefault(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["x"]);
+  return numericPredicateDefault(required(matched, "x", "is.numeric"), invocation);
+}
+
+function numericPredicateDefault(input: RValue, invocation: BuiltinInvocation): RValue {
+  invocation.context.allocate(1);
+  return logicalVector([(input.type === "integer" || input.type === "double") && !isFactor(input)]);
+}
+
 async function builtinTypePredicate(
   invocation: BuiltinInvocation,
   call: string,
@@ -18098,7 +19676,9 @@ async function builtinEnvironment(invocation: BuiltinInvocation): Promise<RValue
   if (callable.type === "closure") return callable.environment;
   if (callable.type === "formula") return callable.environment ?? R_NULL;
   if (callable.type === "builtin" && callable.definition.kind === "regular") {
-    return invocation.baseEnvironment();
+    return (
+      invocation.namespaceEnvironment(callable.definition.package) ?? invocation.baseEnvironment()
+    );
   }
   return R_NULL;
 }
@@ -18324,6 +19904,62 @@ function builtinSearch(invocation: BuiltinInvocation): RValue {
   return characterVector(path);
 }
 
+async function builtinDetach(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = matchLazyArguments(invocation, [
+    "name",
+    "pos",
+    "unload",
+    "character.only",
+    "force",
+  ]);
+  const unload = await lazyLogicalFlag(invocation, matched.get("unload"), false, "unload");
+  const force = await lazyLogicalFlag(invocation, matched.get("force"), false, "force");
+  const characterOnly = await lazyLogicalFlag(
+    invocation,
+    matched.get("character.only"),
+    false,
+    "character.only",
+  );
+  const name = matched.get("name");
+  const position = matched.get("pos");
+  let target: RValue = doubleVector([2]);
+  if (name !== undefined && !name.promise.missing) {
+    const expression = name.promise.expression;
+    if (
+      !characterOnly &&
+      expression !== null &&
+      expression !== undefined &&
+      (expression.kind === "Identifier" || expression.kind === "BinaryExpression")
+    ) {
+      target = characterVector([deparseAst(expression, () => invocation.context.checkpoint())]);
+    } else target = await invocation.force(name.promise);
+  } else if (position !== undefined) target = await invocation.force(position.promise);
+  const path = invocation.searchPath();
+  let index: number;
+  if (target.type === "character") index = path.indexOf(characterScalar(target, "name"));
+  else if (
+    (target.type === "double" || target.type === "integer") &&
+    target.length === 1 &&
+    !isMissing(target, 0)
+  )
+    index = Math.trunc(target.values[0] ?? NaN) - 1;
+  else index = -1;
+  if (!Number.isFinite(index) || index < 1 || index >= path.length) {
+    const message = name === undefined ? "invalid 'pos' argument" : "invalid 'name' argument";
+    throw new RSignalledConditionError(
+      message,
+      simpleConditionValue(message, "error", invocation.currentCall()),
+    );
+  }
+  const entry = path[index];
+  if (entry === undefined) throw new REvaluationError("NRE2280", "invalid 'pos' argument");
+  if (entry === "package:base")
+    throw new REvaluationError("NRE2280", 'detaching "package:base" is not allowed');
+  await invocation.detachPackage(entry, force);
+  if (unload) await invocation.unloadNamespace(entry.slice("package:".length), true);
+  return R_NULL;
+}
+
 async function builtinLibrary(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = matchLazyArguments(invocation, [
     "package",
@@ -18361,6 +19997,15 @@ async function builtinRequire(invocation: BuiltinInvocation): Promise<RLogicalVe
   const packageName = await packageArgumentName(invocation, matched, "require");
   const quietly = await lazyLogicalFlag(invocation, matched.get("quietly"), false, "quietly");
   const libraryPaths = await validatePackageAttachControls(invocation, matched, "require");
+  if (!quietly && !invocation.searchPath().includes(`package:${packageName}`)) {
+    // Signalled before loading, so a handler that unwinds here leaves the package unattached.
+    const text = `Loading required package: ${packageName}\n`;
+    await signalMessage(
+      invocation,
+      packageStartupMessageCondition(text, invocation.currentCall()),
+      text,
+    );
+  }
   try {
     await invocation.loadPackage(packageName, true, libraryPaths);
     invocation.context.allocate(1);
@@ -18445,6 +20090,16 @@ async function builtinRequireNamespace(invocation: BuiltinInvocation): Promise<R
     invocation.context.allocate(1);
     return logicalVector([false]);
   }
+}
+
+async function builtinUnloadNamespace(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["ns"]);
+  const ns = required(matched, "ns", "unloadNamespace");
+  const name = ns.type === "environment" ? invocation.namespaceName(ns) : characterScalar(ns, "ns");
+  if (name === undefined)
+    throw new RTypeMismatchError("NRT3267", "The supplied environment is not a namespace.");
+  await invocation.unloadNamespace(name, false);
+  return R_NULL;
 }
 
 async function builtinIsNamespaceLoaded(invocation: BuiltinInvocation): Promise<RLogicalVector> {
@@ -19886,9 +21541,46 @@ function cumulativeComplex(
 async function builtinAsInteger(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["x"]);
   const input = required(matched, "x", "as.integer");
+  if (objectClasses(input) !== undefined) {
+    const dispatched = await invocation.dispatchS3IfPresent(
+      "as.integer",
+      input,
+      invocation.arguments,
+    );
+    if (dispatched !== undefined) return dispatched;
+  }
   if (input.type === "null") return integerVector([]);
+  if (input.type === "expression") {
+    throw new RTypeMismatchError("NRT3195", "'list' object cannot be coerced to type 'integer'");
+  }
+  if (input.type === "list" || input.type === "pairlist") {
+    const values = input.values;
+    invocation.context.allocate(values.length);
+    const result = new Int32Array(values.length);
+    const missing = new Uint8Array(values.length);
+    for (const [index, item] of values.entries()) {
+      invocation.context.checkpoint();
+      if ((!isVector(item) && item.type !== "expression") || valueLength(item) > 1) {
+        throw new RTypeMismatchError(
+          "NRT3195",
+          "'list' object cannot be coerced to type 'integer'",
+        );
+      }
+      if (!isAtomic(item) || item.length === 0) {
+        missing[index] = 1;
+        continue;
+      }
+      const integer = coerceAtomicToInteger(item, invocation);
+      result[index] = integer.values[0] ?? 0;
+      if (isMissing(integer, 0)) missing[index] = 1;
+    }
+    return integerVector(result, compactMask(missing));
+  }
   if (!isAtomic(input)) {
-    throw new RTypeMismatchError("NRT3195", "as.integer() requires NULL or an atomic vector.");
+    throw new RTypeMismatchError(
+      "NRT3195",
+      `cannot coerce type '${valueTypeName(input)}' to vector of type 'integer'`,
+    );
   }
   return coerceAtomicToInteger(input, invocation);
 }
@@ -20391,6 +22083,14 @@ async function builtinAsCharacter(invocation: BuiltinInvocation): Promise<RValue
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in as.character().");
   }
   const input = await invocation.force(argument.promise);
+  if (objectClasses(input) !== undefined) {
+    const dispatched = await invocation.dispatchS3IfPresent(
+      "as.character",
+      input,
+      invocation.arguments,
+    );
+    if (dispatched !== undefined) return dispatched;
+  }
   if (isHexmodeValue(input)) return asCharacterHexmode(invocation);
   if (isRomanValue(input)) return asCharacterRoman(invocation);
   if (input.type === "list") {
@@ -20643,7 +22343,7 @@ function asVectorExpression(input: RValue, invocation: BuiltinInvocation): RExpr
   if (input.type === "null" || input.type === "symbol" || input.type === "language") {
     values = [valueToAst(input)];
   } else if (input.type === "list") {
-    values = input.values.map(valueToAst);
+    values = input.values.map((entry) => valueToAst(entry));
   } else if (input.type === "pairlist") {
     values = [valueToAst(input)];
   } else if (isAtomic(input)) {
@@ -20703,91 +22403,12 @@ function asVectorLanguageEntries(input: RLanguage): {
   readonly values: readonly RValue[];
   readonly names?: readonly string[];
 } {
-  const entries = asVectorLanguageAstEntries(input.expression);
+  const entries = languageAstEntries(input.expression);
   if (entries === undefined) return { values: [input] };
   return {
     values: entries.nodes.map(quoteAst),
     ...(entries.names === undefined ? {} : { names: entries.names }),
   };
-}
-
-function asVectorLanguageAstEntries(
-  expression: AstNode,
-): { readonly nodes: readonly AstNode[]; readonly names?: readonly string[] } | undefined {
-  const operator = (name: string): AstNode => ({
-    kind: "Identifier",
-    name,
-    span: SYNTHETIC_SPAN,
-  });
-  switch (expression.kind) {
-    case "CallExpression": {
-      const names = expression.arguments.some((argument) => argument.name !== undefined)
-        ? ["", ...expression.arguments.map((argument) => argument.name ?? "")]
-        : undefined;
-      return {
-        nodes: [expression.callee, ...expression.arguments.map((argument) => argument.value)],
-        ...(names === undefined ? {} : { names }),
-      };
-    }
-    case "UnaryExpression":
-      return { nodes: [operator(expression.operator), expression.operand] };
-    case "BinaryExpression":
-    case "PipeExpression":
-      return { nodes: [operator(expression.operator), expression.left, expression.right] };
-    case "AssignmentExpression":
-    case "ReplacementExpression":
-      return { nodes: [operator(expression.operator), expression.target, expression.value] };
-    case "SubsetExpression": {
-      const names = expression.arguments.some((argument) => argument.name !== undefined)
-        ? ["", "", ...expression.arguments.map((argument) => argument.name ?? "")]
-        : undefined;
-      return {
-        nodes: [
-          operator(expression.operator),
-          expression.target,
-          ...expression.arguments.map((argument) => argument.value),
-        ],
-        ...(names === undefined ? {} : { names }),
-      };
-    }
-    case "NamespaceExpression":
-      return {
-        nodes: [operator(expression.operator), expression.namespace, expression.member],
-      };
-    case "FormulaExpression":
-      return {
-        nodes:
-          expression.left === undefined
-            ? [operator("~"), expression.right]
-            : [operator("~"), expression.left, expression.right],
-      };
-    case "IfExpression":
-      return {
-        nodes: [
-          operator("if"),
-          expression.condition,
-          expression.consequence,
-          ...(expression.alternative === undefined ? [] : [expression.alternative]),
-        ],
-      };
-    case "ForExpression":
-      return {
-        nodes: [operator("for"), expression.variable, expression.sequence, expression.body],
-      };
-    case "WhileExpression":
-      return { nodes: [operator("while"), expression.condition, expression.body] };
-    case "RepeatExpression":
-      return { nodes: [operator("repeat"), expression.body] };
-    case "ReturnExpression":
-      return {
-        nodes: [operator("return"), ...(expression.value === undefined ? [] : [expression.value])],
-      };
-    case "Block":
-    case "Program":
-      return { nodes: [operator("{"), ...expression.body] };
-    default:
-      return undefined;
-  }
 }
 
 function asVectorLanguageCharacter(
@@ -20797,7 +22418,7 @@ function asVectorLanguageCharacter(
   const values =
     input.type === "symbol"
       ? [input.name]
-      : (asVectorLanguageAstEntries(input.expression)?.nodes ?? [input.expression]).map(
+      : (languageAstEntries(input.expression)?.nodes ?? [input.expression]).map(
           asVectorLanguageCharacterNode,
         );
   invocation.context.allocate(values.length);
@@ -20806,6 +22427,8 @@ function asVectorLanguageCharacter(
 
 function asVectorLanguageCharacterNode(node: AstNode): string {
   switch (node.kind) {
+    case "Identifier":
+      return node.name;
     case "StringLiteral":
       return node.value;
     case "IntegerLiteral":
@@ -20816,11 +22439,170 @@ function asVectorLanguageCharacterNode(node: AstNode): string {
 }
 
 async function builtinMean(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = await matchExact(invocation, ["x", "na.rm"]);
-  const value = requireNumeric(required(matched, "x", "mean"), "mean");
-  const removeMissing = logicalFlag(matched.get("na.rm"), false, "na.rm");
-  let total = 0;
-  let imaginaryTotal = 0;
+  const { matched } = matchBuiltinArguments(invocation, ["x", "..."]);
+  const argument = matched.get("x");
+  if (argument === undefined)
+    throw new REvaluationError("NRE2103", "argument 'x' is missing, with no default");
+  const value = await invocation.force(argument.promise);
+  const dispatched = await invocation.dispatchS3IfPresent(
+    "mean",
+    value,
+    invocation.arguments,
+    true,
+  );
+  return dispatched ?? builtinMeanDefault(invocation);
+}
+
+async function builtinTimeSubset(
+  invocation: BuiltinInvocation,
+  className: "Date" | "POSIXct" | "difftime",
+  single: boolean,
+): Promise<RValue> {
+  const { matched, dots } = matchBuiltinArguments(invocation, ["x", "...", "drop"]);
+  const argument = matched.get("x");
+  if (argument === undefined)
+    throw new REvaluationError("NRE2103", "argument 'x' is missing, with no default");
+  const input = await invocation.force(argument.promise);
+  const classes = isVector(input) ? vectorClasses(input) : undefined;
+  if (invocation.s3Generic === undefined) {
+    if (classes === undefined) throw new REvaluationError("NRE2204", "object not specified");
+    if (!classes.includes(className))
+      throw new REvaluationError("NRE2204", "wrong value for .Method");
+  }
+  const drop = matched.get("drop");
+  if (single && drop !== undefined) await invocation.force(drop.promise);
+  const result = await builtinInternalSubset(
+    {
+      ...invocation,
+      arguments: [
+        {
+          promise: createForcedPromise(
+            isVector(input) ? withoutClasses(input) : input,
+            invocation.currentEnvironment(),
+          ),
+        },
+        ...dots,
+        ...(drop === undefined || single ? [] : [{ ...drop, name: "drop" }]),
+      ],
+    },
+    single,
+    single ? "[[" : "[",
+  );
+  if (!isVector(result) || !isVector(input)) return result;
+  if (!single && (dots.length === 0 || (dots.length === 1 && dots[0]?.promise.missing)))
+    return withClasses(withoutClasses(input), classes ?? [className]);
+  let output = withClasses(result, classes ?? [className]);
+  const attributeName =
+    className === "POSIXct" ? "tzone" : className === "difftime" ? "units" : undefined;
+  const attribute = attributeName === undefined ? undefined : input.attributes.get(attributeName);
+  if (attributeName !== undefined && attribute !== undefined && attribute.type !== "null")
+    output = withAttribute(output, attributeName, attribute);
+  return output;
+}
+
+async function builtinMeanTime(
+  invocation: BuiltinInvocation,
+  className: "Date" | "POSIXct" | "difftime",
+): Promise<RValue> {
+  const { matched, dots } = matchBuiltinArguments(invocation, ["x", "..."]);
+  const argument = matched.get("x");
+  if (argument === undefined)
+    throw new REvaluationError("NRE2103", "argument 'x' is missing, with no default");
+  const input = await invocation.force(argument.promise);
+  const result = await builtinMeanDefault({
+    ...invocation,
+    arguments: [
+      {
+        name: "x",
+        promise: createForcedPromise(
+          isVector(input) ? withoutClasses(input) : input,
+          invocation.currentEnvironment(),
+        ),
+      },
+      ...dots,
+    ],
+  });
+  if (!isVector(result)) return result;
+  let output = withClasses(result, className === "POSIXct" ? ["POSIXct", "POSIXt"] : [className]);
+  const attributeName =
+    className === "POSIXct" ? "tzone" : className === "difftime" ? "units" : undefined;
+  const attribute =
+    attributeName === undefined || !isVector(input)
+      ? undefined
+      : input.attributes.get(attributeName);
+  if (attributeName !== undefined && attribute !== undefined && attribute.type !== "null")
+    output = withAttribute(output, attributeName, attribute);
+  return output;
+}
+
+async function builtinMeanDefault(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched } = matchBuiltinArguments(invocation, ["x", "trim", "na.rm", "..."]);
+  const argument = matched.get("x");
+  if (argument === undefined)
+    throw new REvaluationError("NRE2103", "argument 'x' is missing, with no default");
+  const input = await invocation.force(argument.promise);
+  if (
+    (input.type !== "double" &&
+      input.type !== "integer" &&
+      input.type !== "logical" &&
+      input.type !== "complex") ||
+    isFactor(input)
+  ) {
+    await builtinWarning({
+      ...invocation,
+      arguments: [
+        {
+          promise: createForcedPromise(
+            characterVector(["argument is not numeric or logical: returning NA"]),
+            invocation.currentEnvironment(),
+          ),
+        },
+      ],
+    });
+    return doubleVector([0], [1]);
+  }
+  let value: NumericVector = input;
+  const naArgument = matched.get("na.rm");
+  const naValue = naArgument === undefined ? undefined : await invocation.force(naArgument.promise);
+  const removeMissing =
+    naValue?.type === "logical" &&
+    naValue.length === 1 &&
+    !isMissing(naValue, 0) &&
+    naValue.values[0] === 1;
+  const trimArgument = matched.get("trim");
+  const trimValue =
+    trimArgument === undefined ? doubleVector([0]) : await invocation.force(trimArgument.promise);
+  if ((trimValue.type !== "integer" && trimValue.type !== "double") || trimValue.length !== 1)
+    throw new RTypeMismatchError("NRT3103", "'trim' must be numeric of length one");
+  const trim = trimValue.values[0]!;
+  if (isMissing(trimValue, 0) || Number.isNaN(trim))
+    throw new REvaluationError("NRE2104", "missing value where TRUE/FALSE needed");
+  if (trim > 0) {
+    if (value.type === "complex")
+      throw new RTypeMismatchError("NRT3103", "trimmed means are not defined for complex data");
+    invocation.context.allocate(value.length * 3);
+    const indices: number[] = [];
+    for (let index = 0; index < value.length; index += 1) {
+      invocation.context.checkpoint();
+      if (isMissing(value, index) || Number.isNaN(value.values[index])) {
+        if (!removeMissing) return doubleVector([0], [1]);
+      } else indices.push(index);
+    }
+    indices.sort((left, right) =>
+      value.type === "complex" ? 0 : value.values[left]! - value.values[right]!,
+    );
+    const cut =
+      trim >= 0.5
+        ? Math.max(0, Math.floor((indices.length - 1) / 2))
+        : Math.floor(indices.length * trim);
+    const selected = indices.slice(cut, indices.length - cut).map((index) => index + 1);
+    value = requireNumeric(
+      subsetVector(value, integerVector(selected), invocation.context),
+      "mean",
+    );
+  }
+  const total = new ExtendedSum();
+  const imaginaryTotal = new ExtendedSum();
   let count = 0;
   for (let index = 0; index < value.length; index += 1) {
     invocation.context.checkpoint();
@@ -20829,69 +22611,202 @@ async function builtinMean(invocation: BuiltinInvocation): Promise<RValue> {
     const nan = Number.isNaN(item.real) || Number.isNaN(item.imaginary);
     if (missing) {
       if (!removeMissing) return missingValueForNumeric(value);
-    } else if (nan) {
-      if (!removeMissing) {
-        return value.type === "complex"
-          ? complexVector([Number.NaN], [Number.NaN])
-          : doubleVector([Number.NaN]);
-      }
-    } else {
-      total += item.real;
-      imaginaryTotal += item.imaginary;
+    } else if (!removeMissing || !nan) {
+      total.add(item.real);
+      imaginaryTotal.add(item.imaginary);
       count += 1;
     }
   }
+  const realMean = total.divided(count);
+  const imaginaryMean = imaginaryTotal.divided(count);
+  if (value.type === "double" || value.type === "complex") {
+    const realFinite = Number.isFinite(realMean.value());
+    const imaginaryFinite = value.type === "complex" && Number.isFinite(imaginaryMean.value());
+    const realCorrection = new ExtendedSum();
+    const imaginaryCorrection = new ExtendedSum();
+    if (realFinite || imaginaryFinite)
+      for (let index = 0; index < value.length; index += 1) {
+        invocation.context.checkpoint();
+        const item = complexAt(value, index);
+        if (
+          isMissing(value, index) ||
+          (removeMissing && (Number.isNaN(item.real) || Number.isNaN(item.imaginary)))
+        )
+          continue;
+        if (realFinite) {
+          const residual = new ExtendedSum();
+          residual.add(item.real);
+          residual.addExtended(realMean, -1);
+          realCorrection.addExtended(residual);
+        }
+        if (imaginaryFinite) {
+          const residual = new ExtendedSum();
+          residual.add(item.imaginary);
+          residual.addExtended(imaginaryMean, -1);
+          imaginaryCorrection.addExtended(residual);
+        }
+      }
+    if (realFinite) realMean.addExtended(realCorrection.divided(count));
+    if (imaginaryFinite) imaginaryMean.addExtended(imaginaryCorrection.divided(count));
+  }
   invocation.context.allocate(1);
   return value.type === "complex"
-    ? complexVector(
-        [count === 0 ? Number.NaN : total / count],
-        [count === 0 ? Number.NaN : imaginaryTotal / count],
-      )
-    : doubleVector([count === 0 ? Number.NaN : total / count]);
+    ? complexVector([realMean.value()], [imaginaryMean.value()])
+    : doubleVector([realMean.value()]);
 }
 
 async function builtinSum(invocation: BuiltinInvocation): Promise<RValue> {
-  const named = invocation.arguments.filter((argument) => argument.name !== undefined);
-  for (const argument of named) {
-    if (argument.name !== "na.rm") {
-      throw new REvaluationError("NRE2101", `Unused argument '${argument.name ?? ""}' in sum().`);
-    }
-  }
-  if (named.length > 1) {
-    throw new REvaluationError("NRE2102", "Argument 'na.rm' matched more than once in sum().");
-  }
-  const firstNamed = named[0];
-  const removeMissing =
-    firstNamed === undefined
-      ? false
-      : logicalFlag(await invocation.force(firstNamed.promise), false, "na.rm");
+  const { matched, dots } = matchLeadingDotsArguments(invocation, ["na.rm"]);
+  // Primitive arguments are forced in source order before validation or reduction.
+  for (const argument of invocation.arguments) await invocation.force(argument.promise);
+  const removeMissingArgument = matched.get("na.rm");
+  const removeMissing = productRemoveMissing(
+    removeMissingArgument === undefined
+      ? undefined
+      : await invocation.force(removeMissingArgument.promise),
+    invocation,
+  );
   const inputs: NumericVector[] = [];
-  for (const argument of invocation.arguments.filter((item) => item.name === undefined)) {
-    inputs.push(requireNumeric(await invocation.force(argument.promise), "sum"));
+  for (const argument of dots) {
+    const value = await invocation.force(argument.promise);
+    if (value.type === "null") continue;
+    if (isFactor(value))
+      throw new RTypeMismatchError("NRT3102", "'sum' not meaningful for factors");
+    inputs.push(requireNumeric(value, "sum"));
   }
   let total = 0;
   let imaginaryTotal = 0;
   const complex = inputs.some((input) => input.type === "complex");
+  let integerResult = inputs.every((input) => input.type === "integer" || input.type === "logical");
+  let integerTotal = 0n;
+  invocation.context.allocate(1);
   for (const input of inputs) {
+    let partialInteger = 0;
+    let wideInteger: bigint | undefined;
+    const realSum = new ExtendedSum();
+    const imaginarySum = complex ? new ExtendedSum() : undefined;
     for (let index = 0; index < input.length; index += 1) {
       invocation.context.checkpoint();
       const item = complexAt(input, index);
       if (isMissing(input, index)) {
         if (!removeMissing) {
-          return complex ? complexVector([0], [0], [1]) : doubleVector([0], [1]);
+          return complex
+            ? complexVector([0], [0], [1])
+            : integerResult
+              ? integerVector([0], [1])
+              : doubleVector([0], [1]);
         }
       } else if (Number.isNaN(item.real) || Number.isNaN(item.imaginary)) {
         if (!removeMissing) {
           return complex ? complexVector([Number.NaN], [Number.NaN]) : doubleVector([Number.NaN]);
         }
       } else {
-        total += item.real;
-        imaginaryTotal += item.imaginary;
+        if (integerResult) {
+          if (wideInteger !== undefined) wideInteger += BigInt(item.real);
+          else if (Number.isSafeInteger(partialInteger + item.real)) partialInteger += item.real;
+          else wideInteger = BigInt(partialInteger) + BigInt(item.real);
+        } else {
+          realSum.add(item.real);
+          imaginarySum?.add(item.imaginary);
+        }
+      }
+    }
+    if (integerResult) {
+      integerTotal += wideInteger ?? BigInt(partialInteger);
+      total = Number(integerTotal);
+      if (integerTotal > 2_147_483_647n || integerTotal < -2_147_483_647n) integerResult = false;
+    } else {
+      total += realSum.value();
+      imaginaryTotal += imaginarySum?.value() ?? 0;
+    }
+  }
+  return complex
+    ? complexVector([total], [imaginaryTotal])
+    : integerResult
+      ? integerVector([total])
+      : doubleVector([total]);
+}
+
+async function builtinProduct(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched, dots } = matchLeadingDotsArguments(invocation, ["na.rm"]);
+  const removeMissingArgument = matched.get("na.rm");
+  const removeMissing = productRemoveMissing(
+    removeMissingArgument === undefined
+      ? undefined
+      : await invocation.force(removeMissingArgument.promise),
+    invocation,
+  );
+  const inputs: NumericVector[] = [];
+  for (const argument of dots) {
+    const value = await invocation.force(argument.promise);
+    if (value.type === "null") continue;
+    const values = [value];
+    for (const item of values) {
+      if (item.type === "integer") {
+        if (isFactor(item)) {
+          throw new RTypeMismatchError("NRT3102", "'prod' not meaningful for factors");
+        }
+        inputs.push(item);
+        continue;
+      }
+      if (item.type !== "logical" && item.type !== "double" && item.type !== "complex") {
+        throw new RTypeMismatchError("NRT3102", `invalid 'type' (${item.type}) of argument`);
+      }
+      inputs.push(item);
+    }
+  }
+
+  const complex = inputs.some((input) => input.type === "complex");
+  let real = 1;
+  let imaginary = 0;
+  for (const input of inputs) {
+    for (let index = 0; index < input.length; index += 1) {
+      invocation.context.checkpoint();
+      const item = complexAt(input, index);
+      const missing = isMissing(input, index);
+      const nan = Number.isNaN(item.real) || Number.isNaN(item.imaginary);
+      if (missing || nan) {
+        if (removeMissing) continue;
+        return missing
+          ? complex
+            ? complexVector([0], [0], [1])
+            : doubleVector([0], [1])
+          : complex
+            ? complexVector([Number.NaN], [Number.NaN])
+            : doubleVector([Number.NaN]);
+      }
+      if (complex) {
+        const nextReal = real * item.real - imaginary * item.imaginary;
+        imaginary = real * item.imaginary + imaginary * item.real;
+        real = nextReal;
+      } else {
+        real *= item.real;
       }
     }
   }
   invocation.context.allocate(1);
-  return complex ? complexVector([total], [imaginaryTotal]) : doubleVector([total]);
+  return complex ? complexVector([real], [imaginary]) : doubleVector([real]);
+}
+
+function productRemoveMissing(value: RValue | undefined, invocation: BuiltinInvocation): boolean {
+  if (value === undefined) return false;
+  if (!isAtomic(value)) {
+    throw new RTypeMismatchError("NRT3103", "NA in coercion to boolean");
+  }
+  if (value.length > 1) {
+    throw new RTypeMismatchError(
+      "NRT3103",
+      `'length = ${value.length}' in coercion to 'logical(1)'`,
+    );
+  }
+  if (value.length === 0) {
+    throw new RTypeMismatchError("NRT3103", "NA in coercion to boolean");
+  }
+  const coerced = coerceAtomicToLogical(value, invocation);
+  if (isMissing(coerced, 0)) {
+    throw new RTypeMismatchError("NRT3103", "NA in coercion to boolean");
+  }
+  return coerced.values[0] === 1;
 }
 
 async function builtinMath(
@@ -20938,7 +22853,7 @@ async function builtinMath(
     output[index] = result;
   }
   if (producedNaN) {
-    invocation.context.warn({ code: "NRW1003", message: "NaNs produced." });
+    invocation.context.warn({ code: "NRW1003", message: "NaNs produced" });
   }
   return {
     ...doubleVector(output, input.missing),
@@ -21309,11 +23224,155 @@ async function builtinTrigonometric(
     output[index] = result;
   }
   if (producedNaN) {
-    invocation.context.warn({ code: "NRW1003", message: "NaNs produced." });
+    invocation.context.warn({ code: "NRW1003", message: "NaNs produced" });
   }
   return {
     ...doubleVector(output, input.missing),
     attributes: new Map(input.attributes),
+  };
+}
+
+async function builtinInverseTrigonometric(
+  invocation: BuiltinInvocation,
+  operation: "asin" | "acos" | "atan",
+): Promise<RValue> {
+  const matched = await matchExact(invocation, ["x"]);
+  const value = required(matched, "x", operation);
+  if (isFactor(value)) {
+    throw new RTypeMismatchError("NRT3430", `'${operation}' not meaningful for factors`);
+  }
+  const input = requireNumeric(value, operation);
+  invocation.context.allocate(input.length);
+  if (input.type === "complex") {
+    const real = new Float64Array(input.length);
+    const imaginary = new Float64Array(input.length);
+    let producedNaN = false;
+    for (let index = 0; index < input.length; index += 1) {
+      invocation.context.checkpoint();
+      if (isMissing(input, index)) continue;
+      const source = complexAt(input, index);
+      const result =
+        operation === "asin"
+          ? complexInverseSine(source)
+          : operation === "acos"
+            ? complexInverseCosine(source)
+            : complexInverseTangent(source);
+      real[index] = result.real;
+      imaginary[index] = result.imaginary;
+      if (
+        !Number.isNaN(source.real) &&
+        !Number.isNaN(source.imaginary) &&
+        (Number.isNaN(result.real) || Number.isNaN(result.imaginary))
+      ) {
+        producedNaN = true;
+      }
+    }
+    if (producedNaN) {
+      invocation.context.warn({
+        code: "NRW1003",
+        message: `NaNs produced in function "${operation}"`,
+      });
+    }
+    return {
+      ...complexVector(real, imaginary, input.missing),
+      attributes: new Map(input.attributes),
+    };
+  }
+
+  const output = new Float64Array(input.length);
+  let producedNaN = false;
+  for (let index = 0; index < input.length; index += 1) {
+    invocation.context.checkpoint();
+    if (isMissing(input, index)) continue;
+    const source = numberAt(input, index);
+    const result =
+      operation === "asin"
+        ? Math.asin(source)
+        : operation === "acos"
+          ? Math.acos(source)
+          : Math.atan(source);
+    output[index] = result;
+    if (!Number.isNaN(source) && Number.isNaN(result)) producedNaN = true;
+  }
+  if (producedNaN) {
+    invocation.context.warn({ code: "NRW1003", message: "NaNs produced" });
+  }
+  return {
+    ...doubleVector(output, input.missing),
+    attributes: new Map(input.attributes),
+  };
+}
+
+function complexInverseSine(value: ComplexNumber): ComplexNumber {
+  const x = value.real;
+  const y = value.imaginary;
+  if (Number.isNaN(x)) return { real: Number.NaN, imaginary: Number.NaN };
+  if (Number.isNaN(y)) return { real: x === 0 ? x : Number.NaN, imaginary: Number.NaN };
+  if (!Number.isFinite(x) || !Number.isFinite(y)) {
+    if (!Number.isFinite(x) && y === 0) {
+      return { real: Number.NaN, imaginary: -Math.sign(x) * Number.POSITIVE_INFINITY };
+    }
+    return {
+      real:
+        !Number.isFinite(x) && !Number.isFinite(y)
+          ? Math.sign(x) * (Math.PI / 4)
+          : !Number.isFinite(x)
+            ? Math.sign(x) * (Math.PI / 2)
+            : 0,
+      imaginary: Math.sign(y) * Number.POSITIVE_INFINITY,
+    };
+  }
+  if (y === 0) {
+    if (x > 1) return { real: Math.PI / 2, imaginary: -Math.acosh(x) };
+    if (x < -1) return { real: -Math.PI / 2, imaginary: Math.acosh(-x) };
+    return { real: Math.asin(x), imaginary: y };
+  }
+  if (x === 0) return { real: x, imaginary: Math.asinh(y) };
+  const plus = Math.hypot(x + 1, y);
+  const minus = Math.hypot(x - 1, y);
+  const halfSum = plus / 2 + minus / 2;
+  const scaledReal = Math.max(-1, Math.min(1, x / halfSum));
+  const imaginaryMagnitude =
+    halfSum === 1
+      ? Math.abs(x) === 1
+        ? Math.sqrt(Math.abs(y))
+        : Math.abs(y) / Math.sqrt(1 - x * x)
+      : Math.acosh(halfSum);
+  return {
+    real: Math.asin(scaledReal),
+    imaginary: Math.sign(y) * imaginaryMagnitude,
+  };
+}
+
+function complexInverseCosine(value: ComplexNumber): ComplexNumber {
+  const sine = complexInverseSine(value);
+  return { real: Math.PI / 2 - sine.real, imaginary: -sine.imaginary };
+}
+
+function complexInverseTangent(value: ComplexNumber): ComplexNumber {
+  const x = value.real;
+  const y = value.imaginary;
+  if (Number.isNaN(x)) {
+    return { real: Number.NaN, imaginary: y === 0 ? y : Number.NaN };
+  }
+  if (Number.isNaN(y)) return { real: Number.NaN, imaginary: Number.NaN };
+  if (!Number.isFinite(x)) return { real: Math.sign(x) * (Math.PI / 2), imaginary: 0 };
+  if (!Number.isFinite(y)) {
+    return x === 0
+      ? { real: Number.NaN, imaginary: Number.NaN }
+      : { real: Math.sign(x) * (Math.PI / 2), imaginary: 0 };
+  }
+  if (x === 0 && Math.abs(y) > 1) {
+    return {
+      real: Math.sign(y) * (Math.PI / 2),
+      imaginary: (Math.log(Math.abs(y + 1)) - Math.log(Math.abs(y - 1))) / 2,
+    };
+  }
+  const upper = Math.hypot(x, y + 1);
+  const lower = Math.hypot(x, y - 1);
+  return {
+    real: (Math.atan2(x, 1 - y) - Math.atan2(-x, 1 + y)) / 2,
+    imaginary: (Math.log(upper) - Math.log(lower)) / 2,
   };
 }
 
@@ -21509,7 +23568,7 @@ async function builtinLog(invocation: BuiltinInvocation, operation: LogOperation
     real[index] = result;
   }
   if (producedNaN) {
-    invocation.context.warn({ code: "NRW1003", message: "NaNs produced." });
+    invocation.context.warn({ code: "NRW1003", message: "NaNs produced" });
   }
 
   const result =
@@ -21820,7 +23879,7 @@ function coerceAtomicToRaw(input: AtomicVector, invocation: BuiltinInvocation): 
   if (warned) {
     invocation.context.warn({
       code: "NRW1004",
-      message: "Out-of-range values treated as 0 in coercion to raw.",
+      message: "out-of-range values treated as 0 in coercion to raw",
     });
   }
   invocation.context.allocate(input.length);
@@ -22259,28 +24318,230 @@ async function builtinAsList(invocation: BuiltinInvocation): Promise<RValue> {
   const dispatched = await invocation.dispatchS3IfPresent("as.list", value, dispatchArguments);
   if (dispatched !== undefined) return dispatched;
 
+  return asListDefault(value, invocation);
+}
+
+async function builtinAsListTime(
+  invocation: BuiltinInvocation,
+  className: "Date" | "POSIXct" | "difftime",
+): Promise<RValue> {
+  const { matched } = matchBuiltinArguments(invocation, ["x", "..."]);
+  const argument = matched.get("x");
+  if (argument === undefined || argument.promise.missing)
+    throw new REvaluationError("NRE2103", "argument 'x' is missing, with no default");
+  const input = await invocation.force(argument.promise);
+  const attributes = objectAttributes(input);
+  const classes = attributes?.get("class") ?? R_NULL;
+  const attributeName =
+    className === "POSIXct" ? "tzone" : className === "difftime" ? "units" : undefined;
+  let metadata: RValue | undefined;
+  let names: RValue | undefined;
+  if (className === "POSIXct") {
+    const environment = invocation.globalEnvironment();
+    const arguments_ = [{ promise: createForcedPromise(input, environment) }];
+    names =
+      (objectClasses(input) === undefined
+        ? undefined
+        : await invocation.dispatchS3IfPresent(
+            "names",
+            input,
+            arguments_,
+            false,
+            0,
+            undefined,
+            environment,
+          )) ?? (await builtinNames({ ...invocation, arguments: arguments_ }));
+  }
+  if (input.type === "environment" && classes.type !== "null") {
+    throw new RTypeMismatchError("NRT3150", "cannot unclass an environment");
+  }
+  const converted = await asListDefault(
+    isAttributedSequence(input) ? withoutClasses(input) : input,
+    invocation,
+  );
+  if (converted.type !== "list") {
+    throw new RTypeMismatchError("NRT3150", "as.list() conversion must produce a list");
+  }
+  invocation.context.allocate(converted.length);
+  const values: RValue[] = [];
+  for (const item of converted.values) {
+    invocation.context.checkpoint();
+    let value = replaceListElementAttribute(item, "class", classes);
+    if (attributeName !== undefined) {
+      metadata ??= await matchedObjectAttribute(input, attributeName, false, invocation);
+      value = replaceListElementAttribute(value, attributeName, metadata);
+    }
+    values.push(value);
+  }
+  const output = listValue(values);
+  const rawNames = sequenceNamesAttribute(converted);
+  const result =
+    names !== undefined
+      ? await replaceNamesAttribute(output, names, invocation, true, invocation.globalEnvironment())
+      : rawNames === undefined
+        ? output
+        : withAttribute(output, "names", rawNames);
+  invocation.setResultVisibility("visible");
+  return result;
+}
+
+function replaceListElementAttribute(value: RValue, name: string, replacement: RValue): RValue {
+  if (isAttributedRuntimeObject(value)) return replaceRuntimeAttribute(value, name, replacement);
+  if (replacement.type === "null") return value;
+  throw new RTypeMismatchError(
+    "NRT3200",
+    value.type === "null"
+      ? "attempt to set an attribute on NULL"
+      : `cannot set an attribute on a '${valueTypeName(value)}'`,
+  );
+}
+
+async function builtinAsListFactor(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched } = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const argument = matched.get("x");
+  if (argument === undefined || argument.promise.missing) {
+    throw new REvaluationError("NRE2103", 'argument "x" is missing, with no default');
+  }
+  return asListFactor(await invocation.force(argument.promise), invocation);
+}
+
+async function asListFactor(value: RValue, invocation: BuiltinInvocation): Promise<RValue> {
+  const environment = invocation.globalEnvironment();
+  const arguments_ = [{ promise: createForcedPromise(value, environment) }];
+  const observe = async (generic: "length" | "names"): Promise<RValue> => {
+    const dispatched =
+      objectClasses(value) === undefined
+        ? undefined
+        : await invocation.dispatchS3IfPresent(
+            generic,
+            value,
+            arguments_,
+            false,
+            0,
+            undefined,
+            environment,
+          );
+    if (dispatched !== undefined) return dispatched;
+    if (generic === "length")
+      return integerVector([isPosixLt(value) ? posixLtLength(value) : valueLength(value)]);
+    return builtinNames({ ...invocation, arguments: arguments_ });
+  };
+  const initialLength = factorListLength(await observe("length"), invocation);
+  invocation.context.allocate(initialLength);
+  const values: RValue[] = Array.from({ length: initialLength }, () => R_NULL);
+  const count = factorListIterationLength(await observe("length"), invocation);
+  if (count > initialLength) invocation.context.allocate(count - initialLength);
+  const input: ApplyInput = {
+    value,
+    length: valueLength(value),
+    ...(value.type === "language" ? { languageEntries: asVectorLanguageEntries(value) } : {}),
+  };
+  for (let index = 0; index < count; index += 1) {
+    invocation.context.checkpoint();
+    const item = await applyVectorItem(input, index, invocation);
+    if (item.type === "null") {
+      if (index < values.length) values.splice(index, 1);
+    } else {
+      while (values.length <= index) values.push(R_NULL);
+      values[index] = item;
+    }
+  }
+  const result = listValue(values);
+  const named =
+    (await observe("names")).type === "null"
+      ? result
+      : await replaceNamesAttribute(result, await observe("names"), invocation, true, environment);
+  invocation.setResultVisibility("visible");
+  return named;
+}
+
+function factorListIterationLength(value: RValue, invocation: BuiltinInvocation): number {
+  const scalar =
+    isAtomic(value) && value.length > 0
+      ? extractVectorElement(value, integerVector([1]), invocation.context)
+      : undefined;
+  const numeric =
+    scalar !== undefined && isAtomic(scalar)
+      ? coerceAtomicToInteger(scalar, invocation)
+      : undefined;
+  if (numeric === undefined || isMissing(numeric, 0)) {
+    throw new REvaluationError(
+      "NRE2202",
+      "attempt to select less than one element in OneIndex <real>",
+    );
+  }
+  const count = numeric.values[0] ?? -1;
+  if (count < 0)
+    throw new REvaluationError(
+      "NRE2202",
+      "attempt to select less than one element in integerOneIndex",
+    );
+  return count;
+}
+
+function factorListLength(value: RValue, invocation: BuiltinInvocation): number {
+  if (
+    (value.type !== "integer" && value.type !== "double" && value.type !== "character") ||
+    value.length !== 1
+  ) {
+    throw new RTypeMismatchError("NRT3150", "invalid 'length' argument");
+  }
+  const numeric = value.type === "character" ? coerceAtomicToDouble(value, invocation) : value;
+  if (isMissing(numeric, 0) || Number.isNaN(numeric.values[0])) {
+    throw new RTypeMismatchError(
+      "NRT3150",
+      value.type === "double" ? "vector size cannot be NA/NaN" : "invalid 'length' argument",
+    );
+  }
+  const length = numeric.values[0] ?? -1;
+  if (!Number.isFinite(length))
+    throw new RTypeMismatchError("NRT3150", "vector size cannot be infinite");
+  if (length < 0) throw new RTypeMismatchError("NRT3150", "invalid 'length' argument");
+  return Math.trunc(length);
+}
+
+async function asListDefault(value: RValue, invocation: BuiltinInvocation): Promise<RValue> {
   if (value.type === "null") return listValue([]);
-  if (value.type === "list") return withoutClasses(value);
+  if (value.type === "symbol") {
+    invocation.context.allocate(1);
+    return listValue([value]);
+  }
+  if (value.type === "list")
+    return isDataFrame(value) ? withoutAttribute(withoutClasses(value), "row.names") : value;
   if (value.type === "pairlist") {
     invocation.context.allocate(value.length);
-    return listValue(value.values, vectorNames(value));
+    const names = applyNames(value);
+    return names === undefined
+      ? listValue(value.values)
+      : withAttribute(listValue(value.values), "names", names);
   }
   if (value.type === "language") {
     const entries = asVectorLanguageEntries(value);
     invocation.context.allocate(entries.values.length);
     return listValue(entries.values, entries.names);
   }
+  if (value.type === "expression") {
+    invocation.context.allocate(value.values.length);
+    return listValue(value.values.map(quoteAst));
+  }
+  if (value.type === "environment")
+    return builtinAsListEnvironment({
+      ...invocation,
+      arguments: [{ promise: createForcedPromise(value, invocation.globalEnvironment()) }],
+    });
   if (!isAtomic(value)) {
     throw new RTypeMismatchError(
       "NRT3150",
       "as.list() requires NULL, an atomic vector, a list, or a call.",
     );
   }
+  if (isFactor(value)) return asListFactor(value, invocation);
   const items = Array.from({ length: value.length }, (_, index) =>
     extractVectorElement(value, integerVector([index + 1]), invocation.context),
   );
   invocation.context.allocate(items.length);
-  return listValue(items, vectorNames(value));
+  const names = sequenceNamesAttribute(value);
+  return names === undefined ? listValue(items) : withAttribute(listValue(items), "names", names);
 }
 
 async function builtinAsListEnvironment(invocation: BuiltinInvocation): Promise<RList> {
@@ -22337,26 +24598,75 @@ async function environmentListFlag(
 }
 
 async function builtinUnlist(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = await matchExact(invocation, ["x", "recursive", "use.names"]);
-  const input = required(matched, "x", "unlist");
-  const recursive = logicalFlag(matched.get("recursive"), true, "recursive");
-  const useNames = logicalFlag(matched.get("use.names"), true, "use.names");
-  if (input.type === "null") return R_NULL;
-  if (isAtomic(input)) {
-    return useNames ? input : withoutAttribute(input, "names");
+  const matched = matchLazyArguments(invocation, ["x", "recursive", "use.names"]);
+  const recursiveArgument = matched.get("recursive");
+  const recursiveValue =
+    recursiveArgument === undefined || recursiveArgument.promise.missing
+      ? logicalVector([true])
+      : await invocation.force(recursiveArgument.promise);
+  const recursiveInvocation = simplifyGlobalInvocation(invocation, [recursiveValue]);
+  const length = await builtinLength(recursiveInvocation);
+  if (
+    logicalCondition(
+      jsReferenceOperators.binary(invocation.context, "!=", length, integerVector([1])),
+    )
+  ) {
+    throw new RTypeMismatchError("NRT3231", "'recursive' must be a length-1 vector");
   }
-  if (input.type !== "list" && input.type !== "pairlist") {
-    throw new RTypeMismatchError(
-      "NRT3231",
-      "unlist() requires NULL, an atomic vector, a list, or a pairlist.",
-    );
+  let missing = await simplifyDispatch("is.na", recursiveValue, [recursiveValue], invocation);
+  if (missing === undefined) {
+    if (
+      isAtomic(recursiveValue) ||
+      recursiveValue.type === "list" ||
+      recursiveValue.type === "pairlist"
+    ) {
+      missing = await builtinIsNa(recursiveInvocation);
+    } else {
+      invocation.context.warn({
+        code: "NRW1013",
+        message: `is.na() applied to non-(list or vector) of type '${valueTypeName(recursiveValue)}'`,
+      });
+      missing = logicalVector([false]);
+    }
   }
+  if (logicalCondition(missing)) throw new RTypeMismatchError("NRT3231", "'recursive' is NA");
+  const inputArgument = matched.get("x");
+  if (inputArgument === undefined || inputArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", 'argument "x" is missing, with no default');
+  }
+  const input = await invocation.force(inputArgument.promise);
+  const useNamesArgument = matched.get("use.names");
+  const useNamesValue =
+    useNamesArgument === undefined || useNamesArgument.promise.missing
+      ? logicalVector([true])
+      : await invocation.force(useNamesArgument.promise);
+  const recursive = productRemoveMissing(recursiveValue, invocation);
+  const dispatched = await simplifyDispatch(
+    "unlist",
+    input,
+    [input, recursiveValue, useNamesValue],
+    invocation,
+  );
+  const result =
+    dispatched ??
+    unlistValue(input, recursive, productRemoveMissing(useNamesValue, invocation), invocation);
+  invocation.setResultVisibility("visible");
+  return result;
+}
+
+function unlistValue(
+  input: RValue,
+  recursive: boolean,
+  useNames: boolean,
+  invocation: BuiltinInvocation,
+): RValue {
+  if (input.type !== "list" && input.type !== "pairlist") return input;
   if (!recursive) return shallowUnlist(input, useNames, invocation);
 
   const entries: { name?: string; value: AtomicVector }[] = [];
-  collectUnlistEntries(input, undefined, useNames, entries, invocation);
+  const factorsOnly = collectUnlistEntries(input, undefined, useNames, entries, invocation);
   return (
-    combineUnlistedFactors(entries, invocation) ??
+    (factorsOnly ? combineUnlistedFactors(entries, invocation) : undefined) ??
     combineAtomicEntries(entries, invocation, "unlist")
   );
 }
@@ -22367,15 +24677,15 @@ function collectUnlistEntries(
   useNames: boolean,
   entries: { name?: string; value: AtomicVector }[],
   invocation: BuiltinInvocation,
-): void {
+): boolean {
   invocation.context.checkpoint();
-  if (value.type === "null") return;
+  if (value.type === "null") return false;
   if (isAtomic(value)) {
     const atomic = useNames ? value : withoutAttribute(value, "names");
     entries.push(
       prefix === undefined || !useNames ? { value: atomic } : { name: prefix, value: atomic },
     );
-    return;
+    return isFactor(value);
   }
   if (value.type !== "list" && value.type !== "pairlist") {
     throw new RTypeMismatchError(
@@ -22384,16 +24694,19 @@ function collectUnlistEntries(
     );
   }
   const names = useNames ? vectorNames(value) : undefined;
+  let factorsOnly = true;
   for (let index = 0; index < value.length; index += 1) {
     const ownName = names?.[index];
-    collectUnlistEntries(
+    const childFactor = collectUnlistEntries(
       value.values[index] ?? R_NULL,
       joinedUnlistName(prefix, ownName),
       useNames,
       entries,
       invocation,
     );
+    factorsOnly = childFactor && factorsOnly;
   }
+  return factorsOnly;
 }
 
 function shallowUnlist(
@@ -22401,49 +24714,138 @@ function shallowUnlist(
   useNames: boolean,
   invocation: BuiltinInvocation,
 ): RValue {
-  const values: RValue[] = [];
   const names: string[] = [];
+  const missingNames: number[] = [];
+  const nameEncodings: RCharacterEncoding[] = [];
+  const nameBytes: Uint8Array[] = [];
   let hasNames = false;
-  const inputNames = useNames ? vectorNames(input) : undefined;
-  const append = (value: RValue, name: string | undefined): void => {
-    values.push(value);
-    names.push(name ?? "");
-    if (name !== undefined) hasNames = true;
-  };
-
+  let length = 0;
+  for (const value of input.values) {
+    invocation.context.checkpoint();
+    length +=
+      value.type === "null"
+        ? 0
+        : isAtomic(value) || value.type === "list" || value.type === "pairlist"
+          ? value.length
+          : value.type === "expression"
+            ? value.values.length
+            : 1;
+  }
+  invocation.context.allocate(length);
+  let listResult = false;
+  let expressionResult = false;
+  const inputNames = useNames ? sequenceNamesAttribute(input) : undefined;
   for (let index = 0; index < input.length; index += 1) {
     invocation.context.checkpoint();
     const value = input.values[index] ?? R_NULL;
     if (value.type === "null") continue;
-    const prefix = inputNames?.[index] || undefined;
-    if (isAtomic(value)) {
-      const sourceNames = useNames ? vectorNames(value) : undefined;
-      for (let item = 0; item < value.length; item += 1) {
-        const sourceName = sourceNames?.[item];
-        const name =
-          sourceName !== undefined && sourceName !== ""
-            ? joinedUnlistName(prefix, sourceName)
-            : prefix === undefined
-              ? undefined
-              : value.length === 1
-                ? prefix
-                : `${prefix}${item + 1}`;
-        append(vectorItem(value, item, invocation), name);
+    const sequence = isAtomic(value) || value.type === "list" || value.type === "pairlist";
+    const count = sequence ? value.length : value.type === "expression" ? value.values.length : 1;
+    if (value.type === "expression") expressionResult = true;
+    else if (!isAtomic(value)) listResult = true;
+    if (!useNames || count === 0) continue;
+    const sourceNames = sequence ? sequenceNamesAttribute(value) : undefined;
+    if (inputNames !== undefined || sourceNames !== undefined) hasNames = true;
+    const prefix = unlistNameAt(inputNames, index);
+    for (let item = 0; item < count; item += 1) {
+      invocation.context.checkpoint();
+      const sourceName = unlistNameAt(sourceNames, item);
+      const name =
+        prefix === undefined
+          ? sourceName
+          : sourceName !== undefined
+            ? `${prefix ?? "NA"}.${sourceName ?? "NA"}`
+            : count === 1
+              ? prefix
+              : `${prefix ?? "NA"}${item + 1}`;
+      names.push(name ?? "");
+      missingNames.push(name === null ? 1 : 0);
+      const inherited =
+        prefix === undefined
+          ? sourceNames
+          : sourceName === undefined && count === 1
+            ? inputNames
+            : undefined;
+      const inheritedIndex = prefix === undefined ? item : index;
+      if (inherited !== undefined) {
+        nameEncodings.push(characterEncodingAt(inherited, inheritedIndex));
+        nameBytes.push(characterBytesAt(inherited, inheritedIndex));
+      } else {
+        if (
+          (prefix !== undefined &&
+            inputNames !== undefined &&
+            characterEncodingAt(inputNames, index) === "bytes") ||
+          (sourceName !== undefined &&
+            sourceNames !== undefined &&
+            characterEncodingAt(sourceNames, item) === "bytes")
+        ) {
+          throw new RTypeMismatchError(
+            "NRT3231",
+            'translating strings with "bytes" encoding is not allowed',
+          );
+        }
+        nameEncodings.push("UTF-8");
+        nameBytes.push(encodeUtf8(name ?? ""));
       }
-      continue;
     }
-    if (value.type === "list" || value.type === "pairlist") {
-      const childNames = useNames ? vectorNames(value) : undefined;
-      for (let child = 0; child < value.length; child += 1) {
-        append(value.values[child] ?? R_NULL, joinedUnlistName(prefix, childNames?.[child]));
-      }
-      continue;
-    }
-    append(value, prefix);
   }
-  invocation.context.allocate(values.length);
-  if (values.length === 0) return R_NULL;
-  return listValue(values, hasNames ? names : undefined);
+  const namesAttribute = hasNames
+    ? characterVector(names, compactMask(Uint8Array.from(missingNames)), nameEncodings, nameBytes)
+    : undefined;
+  if (!listResult && !expressionResult) {
+    const entries = input.values
+      .filter((value): value is AtomicVector => isAtomic(value))
+      .map((value) => ({ value: withoutAttribute(value, "names") }));
+    const factor =
+      input.length > 0 && input.values.every(isFactor)
+        ? combineUnlistedFactors(entries, invocation, namesAttribute)
+        : undefined;
+    if (factor !== undefined) return factor;
+    const result = combineAtomicEntries(entries, invocation, "unlist");
+    if (!isAtomic(result)) return result;
+    const unnamed = withoutAttribute(result, "names");
+    return namesAttribute === undefined ? unnamed : withAttribute(unnamed, "names", namesAttribute);
+  }
+  const values: RValue[] = [];
+  for (const value of input.values) {
+    invocation.context.checkpoint();
+    if (value.type === "null") continue;
+    if (value.type === "list" || value.type === "pairlist") {
+      for (const item of value.values) {
+        invocation.context.checkpoint();
+        values.push(item);
+      }
+    } else if (value.type === "expression") {
+      for (const item of value.values) {
+        invocation.context.checkpoint();
+        values.push(quoteAst(item));
+      }
+    } else if (isAtomic(value)) {
+      for (let index = 0; index < value.length; index += 1) {
+        invocation.context.checkpoint();
+        values.push(vectorItem(value, index, invocation));
+      }
+    } else values.push(value);
+  }
+  if (expressionResult) {
+    return {
+      type: "expression",
+      values: Object.freeze(
+        values.map((value) => valueToAst(value, () => invocation.context.checkpoint())),
+      ),
+    };
+  }
+  const result = listValue(values);
+  return namesAttribute === undefined ? result : withAttribute(result, "names", namesAttribute);
+}
+
+function unlistNameAt(
+  names: RCharacterVector | undefined,
+  index: number,
+): string | null | undefined {
+  if (names === undefined) return undefined;
+  if (isMissing(names, index)) return null;
+  return names.values[index] || undefined;
 }
 
 function joinedUnlistName(
@@ -22458,20 +24860,40 @@ function joinedUnlistName(
 function combineUnlistedFactors(
   entries: readonly { readonly name?: string; readonly value: AtomicVector }[],
   invocation: BuiltinInvocation,
+  namesAttribute?: RCharacterVector,
 ): RIntegerVector | undefined {
-  if (
-    entries.length === 0 ||
-    !entries.every((entry) => entry.value.type === "integer" && isFactor(entry.value))
-  ) {
-    return undefined;
+  if (entries.length === 0) return undefined;
+  let length = 0;
+  for (const entry of entries) {
+    invocation.context.checkpoint();
+    if (entry.value.type !== "integer" || !isFactor(entry.value)) return undefined;
+    length += entry.value.length;
   }
-  const factors = entries.map((entry) => entry.value as RIntegerVector);
-  const levels = [...new Set(factors.flatMap((factor) => factorLevels(factor)))];
-  const length = factors.reduce((total, factor) => total + factor.length, 0);
+  invocation.context.allocate(length);
+  const levels: string[] = [];
+  const levelCodes = new Map<string, number>();
+  for (const entry of entries) {
+    invocation.context.checkpoint();
+    for (const level of factorLevels(entry.value as RIntegerVector)) {
+      invocation.context.checkpoint();
+      if (levelCodes.has(level)) continue;
+      const requested = levels.length + 1;
+      if (requested > invocation.context.limits.maxVectorLength) {
+        throw new RResourceLimitError("NRL4002", "Vector length limit exceeded.", {
+          details: { maxVectorLength: invocation.context.limits.maxVectorLength, requested },
+        });
+      }
+      invocation.context.allocate(1);
+      levelCodes.set(level, requested);
+      levels.push(level);
+    }
+  }
   const values = new Int32Array(length);
   const missing = new Uint8Array(length);
   let offset = 0;
-  for (const factor of factors) {
+  for (const entry of entries) {
+    invocation.context.checkpoint();
+    const factor = entry.value as RIntegerVector;
     const sourceLevels = factorLevels(factor);
     for (let index = 0; index < factor.length; index += 1) {
       invocation.context.checkpoint();
@@ -22479,19 +24901,20 @@ function combineUnlistedFactors(
         missing[offset] = 1;
       } else {
         const label = sourceLevels[(factor.values[index] ?? 0) - 1] ?? "";
-        values[offset] = levels.indexOf(label) + 1;
+        values[offset] = levelCodes.get(label) ?? 0;
       }
       offset += 1;
     }
   }
-  invocation.context.allocate(length + levels.length);
   const names = length === 0 ? undefined : combinedNames(entries);
-  const combined = attachNames(integerVector(values, compactMask(missing)), names);
-  const ordered = factors.every((factor) => vectorClasses(factor)?.includes("ordered") === true);
-  return withClasses(
-    withAttribute(combined, "levels", characterVector(levels)),
-    ordered ? ["ordered", "factor"] : ["factor"],
+  let combined = withAttribute(
+    integerVector(values, compactMask(missing)),
+    "levels",
+    characterVector(levels),
   );
+  if (namesAttribute !== undefined) combined = withAttribute(combined, "names", namesAttribute);
+  else if (names !== undefined) combined = withNames(combined, names);
+  return withClasses(combined, ["factor"]);
 }
 
 async function builtinPairlist(invocation: BuiltinInvocation): Promise<RPairlist | typeof R_NULL> {
@@ -22539,32 +24962,27 @@ async function builtinNames(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["x"]);
   const value = required(matched, "x", "names");
   if (value.type === "null") return R_NULL;
+  if (value.type === "environment") {
+    const names = [...value.bindings.keys()];
+    if (!value.hashed) names.reverse();
+    invocation.context.allocate(names.length);
+    return characterVector(names);
+  }
   if (value.type === "language") {
     const names = asVectorLanguageEntries(value).names;
     if (names === undefined) return R_NULL;
     invocation.context.allocate(names.length);
     return characterVector(names);
   }
-  if (!isVector(value) && value.type !== "pairlist") {
-    throw new RTypeMismatchError(
-      "NRT3106",
-      "names() requires an atomic vector, list, or pairlist.",
-    );
-  }
+  if (!isVector(value) && value.type !== "pairlist") return R_NULL;
   const seconds = isPosixLt(value) ? value.values[0] : undefined;
   const namedValue = seconds !== undefined && isVector(seconds) ? seconds : value;
-  const namesAttribute = namedValue.attributes.get("names");
-  if (namesAttribute?.type === "character") {
+  const namesAttribute = sequenceNamesAttribute(namedValue);
+  if (namesAttribute !== undefined) {
     invocation.context.allocate(namesAttribute.length);
     return namesAttribute;
   }
-  const names =
-    seconds !== undefined && isVector(seconds)
-      ? effectiveSequenceNames(seconds)
-      : effectiveSequenceNames(value);
-  if (names === undefined) return R_NULL;
-  invocation.context.allocate(names.length);
-  return characterVector(names);
+  return R_NULL;
 }
 
 const R_RESERVED_NAMES = new Set([
@@ -22795,45 +25213,170 @@ async function builtinNamesReplacement(invocation: BuiltinInvocation): Promise<R
 }
 
 function replaceNamesAttribute(
+  value: AttributedSequence,
+  replacement: RValue,
+  invocation: BuiltinInvocation,
+  dispatch?: boolean,
+  lookupEnvironment?: REnvironment,
+): Promise<AttributedSequence>;
+function replaceNamesAttribute(
   value: RValue,
   replacement: RValue,
   invocation: BuiltinInvocation,
-): RValue {
-  if (!isAttributedSequence(value)) {
-    throw new RTypeMismatchError(
-      "NRT3198",
-      "names<- requires an atomic vector, list, or pairlist.",
-    );
+  dispatch?: boolean,
+  lookupEnvironment?: REnvironment,
+): Promise<RValue>;
+async function replaceNamesAttribute(
+  value: RValue,
+  replacement: RValue,
+  invocation: BuiltinInvocation,
+  dispatch = true,
+  lookupEnvironment = invocation.currentEnvironment(),
+): Promise<RValue> {
+  if (dispatch && replacement.type !== "null") {
+    if (replacement.type === "symbol" || replacement.type === "language") {
+      replacement = await invocation.evaluate(replacement, lookupEnvironment);
+    }
+    const argument = {
+      promise: createForcedPromise(replacement, lookupEnvironment),
+    };
+    const dispatched =
+      objectClasses(replacement) === undefined
+        ? undefined
+        : await invocation.dispatchS3IfPresent(
+            "as.character",
+            replacement,
+            [argument],
+            true,
+            0,
+            undefined,
+            lookupEnvironment,
+          );
+    replacement =
+      dispatched ??
+      (replacement.type === "list" || replacement.type === "pairlist"
+        ? namesReplacementCharacters(replacement, invocation, false)
+        : await builtinAsCharacter({
+            ...invocation,
+            arguments: [argument],
+            dispatchS3IfPresent: () => Promise.resolve(undefined),
+          }));
   }
-  if (replacement.type === "null") return withoutAttribute(value, "names");
-  if (
-    replacement.type !== "character" ||
-    replacement.missing !== undefined ||
-    replacement.length !== value.length
-  ) {
+  invocation.setResultVisibility("visible");
+  if (value.type === "null") {
+    if (replacement.type === "null") return R_NULL;
+    throw new RTypeMismatchError("NRT3198", "attempt to set an attribute on NULL");
+  }
+  if (!isAttributedSequence(value)) {
+    throw new RTypeMismatchError("NRT3198", "names() applied to a non-vector");
+  }
+  const oneDimensional = vectorDimensions(value)?.length === 1;
+  if (replacement.type === "null") {
+    return withoutAttribute(value, oneDimensional ? "dimnames" : "names");
+  }
+  const pairlistReplacement = replacement.type === "pairlist";
+  const characters = namesReplacementCharacters(replacement, invocation, true);
+  if (characters.length > value.length) {
     throw new RTypeMismatchError(
       "NRT3199",
-      "names<- currently requires non-missing character names matching the value length.",
+      `'names' attribute [${characters.length}] must be the same length as the vector [${value.length}]`,
     );
   }
-  invocation.context.allocate(replacement.length);
-  return withNames(value, replacement.values);
+  invocation.context.allocate(value.length);
+  const names = Array.from({ length: value.length }, (_, index) => characters.values[index] ?? "");
+  const missing = Uint8Array.from({ length: value.length }, (_, index) =>
+    characters.missing?.[index] === 1 || (index >= characters.length && !pairlistReplacement)
+      ? 1
+      : 0,
+  );
+  if (value.type === "pairlist") {
+    for (let index = 0; index < names.length; index += 1) {
+      if (missing[index] === 1) names[index] = "";
+    }
+    missing.fill(0);
+    if (names.every((name) => name === "")) return withoutAttribute(value, "names");
+  }
+  let attribute = characterVector(
+    names,
+    compactMask(missing),
+    names.map((_, index) => characters.encodings?.[index] ?? "unknown"),
+    names.map((_, index) => characters.byteValues?.[index] ?? new Uint8Array()),
+  );
+  if (value.type !== "pairlist") {
+    if (characters.length === value.length) {
+      attribute = { ...attribute, attributes: new Map(characters.attributes) };
+    } else {
+      const nested = characters.attributes.get("names");
+      if (nested?.type === "character") {
+        invocation.context.allocate(value.length);
+        attribute = withAttribute(
+          attribute,
+          "names",
+          characterVector(
+            names.map((_, index) => nested.values[index] ?? ""),
+            Uint8Array.from({ length: value.length }, (_, index) => nested.missing?.[index] ?? 0),
+            names.map((_, index) => nested.encodings?.[index] ?? "unknown"),
+            names.map((_, index) => nested.byteValues?.[index] ?? new Uint8Array()),
+          ),
+        );
+      }
+    }
+  }
+  return oneDimensional
+    ? withAttribute(value, "dimnames", listValue([attribute]))
+    : withAttribute(value, "names", attribute);
+}
+
+function namesReplacementCharacters(
+  input: RValue,
+  invocation: BuiltinInvocation,
+  internal: boolean,
+): RCharacterVector {
+  if (input.type !== "list" && input.type !== "pairlist") {
+    const characters = strrepCharacterSource(
+      internal && isAttributedSequence(input) ? withoutClasses(input) : input,
+      invocation,
+    );
+    return internal && isAtomic(input)
+      ? { ...characters, attributes: new Map(input.attributes) }
+      : characters;
+  }
+  const missing = new Uint8Array(input.length);
+  const encodings: RCharacterEncoding[] = [];
+  const bytes: Uint8Array[] = [];
+  const values = input.values.map((element, index) => {
+    invocation.context.checkpoint();
+    if (internal && input.type === "pairlist" && (!isAtomic(element) || element.length !== 1)) {
+      throw new RTypeMismatchError("NRT3199", "incompatible 'names' argument");
+    }
+    const scalarCharacter = element.type === "character" && element.length === 1;
+    if (
+      (scalarCharacter || (internal && input.type === "pairlist" && isAtomic(element))) &&
+      isMissing(element, 0)
+    ) {
+      missing[index] = 1;
+    }
+    const text =
+      missing[index] === 1
+        ? ""
+        : globListElementText(isAttributedSequence(element) ? withoutClasses(element) : element);
+    encodings.push(scalarCharacter ? characterEncodingAt(element, 0) : "unknown");
+    bytes.push(scalarCharacter ? characterBytesAt(element, 0) : encodeUtf8(text));
+    return text;
+  });
+  invocation.context.allocate(input.length);
+  const characters = characterVector(values, compactMask(missing), encodings, bytes);
+  const names = input.attributes.get("names");
+  return internal && input.type === "list" && names?.type === "character"
+    ? withAttribute(characters, "names", names)
+    : characters;
 }
 
 async function builtinSetNames(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["object", "nm"]);
   const value = required(matched, "object", "setNames");
   const names = required(matched, "nm", "setNames");
-  if (!isAttributedSequence(value) || names.type !== "character") {
-    throw new RTypeMismatchError(
-      "NRT3107",
-      "setNames() requires a vector, list, or pairlist and a character vector of names.",
-    );
-  }
-  if (names.missing !== undefined) {
-    throw new RUnsupportedFeatureError("NRU6106", "setNames() does not yet support missing names.");
-  }
-  return withNames(value, names.values);
+  return replaceNamesAttribute(value, names, invocation, true, invocation.globalEnvironment());
 }
 
 async function builtinUnname(invocation: BuiltinInvocation): Promise<RValue> {
@@ -22850,15 +25393,44 @@ async function builtinAttr(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["x", "which", "exact"]);
   const value = required(matched, "x", "attr");
   const name = characterScalar(required(matched, "which", "attr"), "which");
-  logicalFlag(matched.get("exact"), false, "exact");
+  const exact = logicalFlag(matched.get("exact"), false, "exact");
+  return matchedObjectAttribute(value, name, exact, invocation);
+}
+
+async function matchedObjectAttribute(
+  value: RValue,
+  name: string,
+  exact: boolean,
+  invocation: BuiltinInvocation,
+): Promise<RValue> {
   if (value.type === "formula" && name === "class") return characterVector(["formula"]);
-  const attributes = objectAttributes(value);
+  let attributes = objectAttributes(value);
   if (attributes === undefined) return R_NULL;
-  if (isAttributedSequence(value) && name === "names") {
-    const names = effectiveSequenceNames(value);
-    return names === undefined ? R_NULL : characterVector(names);
+  if (isAttributedSequence(value) && !attributes.has("names")) {
+    const names = sequenceNamesAttribute(value);
+    if (names !== undefined) attributes = new Map([...attributes, ["names", names]]);
   }
-  return attributes.get(name) ?? R_NULL;
+  const direct = attributes.get(name);
+  if (direct !== undefined) return direct;
+  if (exact || name.length === 0) return R_NULL;
+  const candidates = [...attributes.keys()].filter((key) => key.startsWith(name));
+  if (candidates.length !== 1) return R_NULL;
+  const key = candidates[0]!;
+  const warn = optionsState(invocation).get("warnPartialMatchAttr");
+  if (warn?.type === "logical" && !isMissing(warn, 0) && warn.values[0] === 1) {
+    await builtinWarning({
+      ...invocation,
+      arguments: [
+        {
+          promise: createForcedPromise(
+            characterVector([`partial argument match of '${name}' to '${key}'`]),
+            invocation.currentEnvironment(),
+          ),
+        },
+      ],
+    });
+  }
+  return attributes.get(key) ?? R_NULL;
 }
 
 async function builtinAttrReplacement(invocation: BuiltinInvocation): Promise<RValue> {
@@ -22866,7 +25438,7 @@ async function builtinAttrReplacement(invocation: BuiltinInvocation): Promise<RV
   const value = required(matched, "x", "attr<-");
   const name = characterScalar(required(matched, "which", "attr<-"), "which");
   const replacement = required(matched, "value", "attr<-");
-  if (name === "names") return replaceNamesAttribute(value, replacement, invocation);
+  if (name === "names") return replaceNamesAttribute(value, replacement, invocation, false);
   if (name === "class") return replaceClassAttribute(value, replacement, invocation);
   if (name === "dim") return replaceDimensionAttribute(value, replacement, invocation);
   if (name === "dimnames") return replaceDimensionNamesAttribute(value, replacement);
@@ -23026,6 +25598,7 @@ function axisNamesReplacement(
 async function builtinDimNames(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["x"]);
   const value = required(matched, "x", "dimnames");
+  if (value.type === "null") return R_NULL;
   if (!isAttributedSequence(value)) {
     throw new RTypeMismatchError(
       "NRT3153",
@@ -23083,6 +25656,14 @@ function effectiveSequenceNames(value: AttributedSequence): readonly string[] | 
   if (vectorDimensions(value)?.length !== 1) return undefined;
   const axis = validatedDimensionNames(value)?.values[0];
   return axis?.type === "character" ? axis.values : undefined;
+}
+
+function sequenceNamesAttribute(value: AttributedSequence): RCharacterVector | undefined {
+  const names = value.attributes.get("names");
+  if (names?.type === "character") return names;
+  if (vectorDimensions(value)?.length !== 1) return undefined;
+  const axis = validatedDimensionNames(value)?.values[0];
+  return axis?.type === "character" ? axis : undefined;
 }
 
 async function builtinSeq(invocation: BuiltinInvocation): Promise<RValue> {
@@ -23691,80 +26272,99 @@ async function builtinReplicate(invocation: BuiltinInvocation): Promise<RValue> 
   const matched = matchLazyArguments(invocation, ["n", "expr", "simplify"]);
   const countArgument = matched.get("n");
   const expressionArgument = matched.get("expr");
-  if (
-    countArgument === undefined ||
-    countArgument.promise.missing ||
-    expressionArgument === undefined ||
-    expressionArgument.promise.missing
-  ) {
-    throw new REvaluationError("NRE2103", "replicate() requires 'n' and 'expr'.");
+  if (countArgument === undefined || countArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", 'argument "n" is missing, with no default');
   }
-  const count = replicateCount(await invocation.force(countArgument.promise));
-  const simplifyArgument = matched.get("simplify");
-  let simplify = true;
-  let arraySimplify = true;
-  if (simplifyArgument !== undefined) {
-    const value = await invocation.force(simplifyArgument.promise);
-    if (value.type === "logical") {
-      simplify = logicalFlag(value, true, "simplify");
-      arraySimplify = false;
-    } else if (value.type === "character" && value.length === 1 && !isMissing(value, 0)) {
-      simplify = true;
-      arraySimplify = value.values[0] === "array";
-    } else {
-      throw new RTypeMismatchError(
-        "NRT3199",
-        "replicate(simplify=) requires one logical or character value.",
-      );
-    }
-  }
-
+  const count = await replicateCount(await invocation.force(countArgument.promise), invocation);
   invocation.context.allocate(count);
   const results: RValue[] = [];
-  if (count > 0 && expressionArgument.promise.expression === null) {
-    const value = await invocation.force(expressionArgument.promise);
-    results.push(...Array.from({ length: count }, () => value));
-  } else {
-    const expression = expressionArgument.promise.expression;
-    if (expression !== null) {
-      const language = { type: "language", expression } satisfies RLanguage;
-      for (let index = 0; index < count; index += 1) {
-        invocation.context.checkpoint();
-        results.push(
-          (await invocation.evaluateDetailed(language, expressionArgument.promise.environment))
-            .value,
-        );
-      }
+  if (count > 0) {
+    if (expressionArgument === undefined || expressionArgument.promise.missing) {
+      throw new REvaluationError("NRE2103", "argument is missing, with no default");
+    }
+    let expression = expressionArgument.promise.expression;
+    if (expression === null) {
+      const value = await invocation.force(expressionArgument.promise);
+      expression = {
+        kind: "ConstantExpression",
+        value,
+        display: embeddedValueAst(value, () => invocation.context.checkpoint()),
+        span: SYNTHETIC_SPAN,
+      };
+    }
+    const callable: RClosure = {
+      type: "closure",
+      parameters: [{ name: "...", span: SYNTHETIC_SPAN }],
+      body: expression,
+      environment: expressionArgument.promise.environment,
+      attributes: new Map(),
+    };
+    const item = integerVector([0]);
+    for (let index = 0; index < count; index += 1) {
+      invocation.context.checkpoint();
+      results.push(await invocation.invoke(callable, [{ value: item }]));
     }
   }
-  if (!simplify) return listValue(results);
-  const output = simplifyResults(results, undefined, invocation);
-  if (!arraySimplify || results.length === 0 || !isVector(output)) return output;
-  const first = results[0];
-  if (first === undefined || !isVector(first)) return output;
-  const dimensions = vectorDimensions(first);
-  if (
-    dimensions === undefined ||
-    !results.every(
-      (result) =>
-        isVector(result) && JSON.stringify(vectorDimensions(result)) === JSON.stringify(dimensions),
-    )
-  ) {
-    return output;
-  }
-  return withDimensions(output, [...dimensions, count]);
+  const simplifyArgument = matched.get("simplify");
+  const simplify =
+    simplifyArgument === undefined || simplifyArgument.promise.missing
+      ? characterVector(["array"])
+      : await invocation.force(simplifyArgument.promise);
+  return simplifyMappedResult(listValue(results), simplify, invocation);
 }
 
-function replicateCount(value: RValue): number {
-  const numeric = requireNumeric(value, "n");
-  if (numeric.length !== 1 || isMissing(numeric, 0)) {
-    throw new RTypeMismatchError("NRT3110", "'n' must be one non-missing numeric value.");
+async function replicateCount(value: RValue, invocation: BuiltinInvocation): Promise<number> {
+  if (
+    (value.type !== "integer" && value.type !== "double" && value.type !== "character") ||
+    value.length !== 1
+  ) {
+    throw new RTypeMismatchError("NRT3110", "invalid 'length' argument");
   }
-  const source = numberAt(numeric, 0);
-  if (!Number.isFinite(source) || source < 0) {
-    throw new RTypeMismatchError("NRT3199", "replicate(n=) must be finite and non-negative.");
+  let source: number;
+  if (value.type === "character") {
+    const text = value.values[0] ?? "";
+    let parsed = parseTypeConvertReal(text, ".");
+    if (parsed === undefined) {
+      const hexadecimal = /^([+-]?)0x([0-9a-f]*)(?:\.([0-9a-f]*))?(?:p([+-]?\d+))?$/iu.exec(
+        text.trim(),
+      );
+      if (
+        hexadecimal !== null &&
+        (hexadecimal[2]?.length ?? 0) + (hexadecimal[3]?.length ?? 0) > 0
+      ) {
+        const whole = Number.parseInt(hexadecimal[2] || "0", 16);
+        const fraction = hexadecimal[3] ?? "";
+        const significand =
+          whole +
+          (fraction.length === 0 ? 0 : Number.parseInt(fraction, 16) / 16 ** fraction.length);
+        parsed =
+          (hexadecimal[1] === "-" ? -1 : 1) *
+          (significand === 0 ? 0 : significand * 2 ** Number(hexadecimal[4] ?? 0));
+      }
+    }
+    source = isMissing(value, 0) || parsed === undefined ? Number.NaN : parsed;
+    if (!isMissing(value, 0) && parsed === undefined && text.trim() !== "") {
+      const message = "NAs introduced by coercion";
+      await signalWarning(
+        invocation,
+        simpleConditionValue(message, "warning", invocation.systemCall(0)),
+        { code: "NRW1006", message },
+      );
+    }
+  } else {
+    source = value.values[0] ?? Number.NaN;
   }
-  return Math.trunc(source);
+  if (isMissing(value, 0) || Number.isNaN(source)) {
+    throw new RTypeMismatchError(
+      "NRT3110",
+      value.type === "integer" ? "vector size cannot be NA" : "vector size cannot be NA/NaN",
+    );
+  }
+  if (!Number.isFinite(source))
+    throw new RTypeMismatchError("NRT3199", "vector size cannot be infinite");
+  const count = Math.trunc(source);
+  if (count < 0) throw new RTypeMismatchError("NRT3199", "invalid 'length' argument");
+  return count;
 }
 
 async function builtinAppend(invocation: BuiltinInvocation): Promise<RValue> {
@@ -24282,7 +26882,7 @@ async function builtinJitter(invocation: BuiltinInvocation): Promise<RValue> {
   ) {
     invocation.context.warn({
       code: "NRW1001",
-      message: "Longer object length is not a multiple of shorter object length.",
+      message: "longer object length is not a multiple of shorter object length",
     });
   }
   invocation.context.allocate(outputLength);
@@ -25640,7 +28240,7 @@ async function builtinSprintf(invocation: BuiltinInvocation): Promise<RValue> {
     }
     let argumentIndex = 0;
     return (formats.values[formatIndex] ?? "").replace(
-      /%([-+ 0]*)(\d+)?(?:\.(\d+))?([%sdifg])/gu,
+      /%([-+ 0#]*)(\d+)?(?:\.(\d*))?([%sdifFeEgGxXo])/gu,
       (
         token,
         flags: string,
@@ -25655,7 +28255,10 @@ async function builtinSprintf(invocation: BuiltinInvocation): Promise<RValue> {
           throw new REvaluationError("NRE2125", "Too few arguments for sprintf() format.");
         }
         const position = index % value.length;
+        // C allows "%.f"; an empty precision means zero.
+        const precision = precisionText === undefined ? undefined : Number(precisionText || "0");
         let formatted: string;
+        let zeroPaddable = true;
         if (value.type === "list" || value.type === "pairlist") {
           if (kind !== "s") {
             throw new RTypeMismatchError(
@@ -25666,28 +28269,52 @@ async function builtinSprintf(invocation: BuiltinInvocation): Promise<RValue> {
           formatted = sprintfListElementText(value.values[position] ?? R_NULL);
         } else if (isMissing(value, position)) {
           formatted = "NA";
+          zeroPaddable = false;
         } else if (kind === "s") {
           formatted = isFactor(value)
             ? (factorLevels(value)[(value.values[position] ?? 0) - 1] ?? "")
             : stringAt(value, position);
+          if (precision !== undefined) formatted = [...formatted].slice(0, precision).join("");
         } else {
           const numeric = numberAt(value, position);
-          const precision = precisionText === undefined ? 6 : Number(precisionText);
-          if (kind === "d" || kind === "i") formatted = String(Math.trunc(numeric));
-          else if (kind === "f") formatted = numeric.toFixed(precision);
-          else
-            formatted = numeric.toPrecision(precision).replace(/(?:\.0+|(\.\d+?)0+)(e|$)/u, "$1$2");
-          if (numeric >= 0 && flags.includes("+")) formatted = `+${formatted}`;
-          else if (numeric >= 0 && flags.includes(" ")) formatted = ` ${formatted}`;
+          const negative = numeric < 0 || Object.is(numeric, -0);
+          if (!Number.isFinite(numeric)) {
+            formatted = Number.isNaN(numeric) ? "NaN" : "Inf";
+            zeroPaddable = false;
+          } else if (kind === "x" || kind === "X" || kind === "o") {
+            // Two's-complement 32-bit digits, as for C unsigned conversions of an R integer.
+            const unsigned = Math.trunc(numeric) >>> 0;
+            formatted = unsigned.toString(kind === "o" ? 8 : 16);
+            if (kind === "X") formatted = formatted.toUpperCase();
+          } else if (kind === "d" || kind === "i") {
+            formatted = String(Math.abs(Math.trunc(numeric)));
+            if (precision !== undefined) formatted = formatted.padStart(precision, "0");
+          } else {
+            formatted = formatFloatingMagnitude(
+              numeric,
+              kind as "f" | "F" | "e" | "E" | "g" | "G",
+              precision,
+              flags.includes("#"),
+            );
+          }
+          if (kind !== "x" && kind !== "X" && kind !== "o") {
+            if (
+              negative &&
+              !(
+                Number.isNaN(numeric) ||
+                ((kind === "d" || kind === "i") && Math.trunc(numeric) === 0)
+              )
+            ) {
+              formatted = `-${formatted}`;
+            } else if (flags.includes("+") && !Number.isNaN(numeric)) formatted = `+${formatted}`;
+            else if (flags.includes(" ") && !Number.isNaN(numeric)) formatted = ` ${formatted}`;
+          }
         }
         const width = widthText === undefined ? 0 : Number(widthText);
         if (formatted.length < width) {
-          const padding = (flags.includes("0") ? "0" : " ").repeat(width - formatted.length);
-          if (
-            flags.includes("0") &&
-            !flags.includes("-") &&
-            ["+", "-", " "].includes(formatted[0] ?? "")
-          ) {
+          const zeroPad = flags.includes("0") && !flags.includes("-") && zeroPaddable;
+          const padding = (zeroPad ? "0" : " ").repeat(width - formatted.length);
+          if (zeroPad && ["+", "-", " "].includes(formatted[0] ?? "")) {
             formatted = `${formatted[0]}${padding}${formatted.slice(1)}`;
           } else {
             formatted = flags.includes("-") ? `${formatted}${padding}` : `${padding}${formatted}`;
@@ -25723,6 +28350,8 @@ async function builtinFormat(invocation: BuiltinInvocation): Promise<RValue> {
     "scientific",
     "width",
     "justify",
+    "decimal.mark",
+    "na.encode",
   ]);
   const input = required(matched, "x", "format");
   if (!isAtomic(input)) {
@@ -25730,37 +28359,66 @@ async function builtinFormat(invocation: BuiltinInvocation): Promise<RValue> {
   }
   const trim = logicalFlag(matched.get("trim"), false, "trim");
   const digits =
-    matched.get("digits") === undefined ? 7 : nonNegativeInteger(matched.get("digits"), "digits");
+    matched.get("digits") === undefined || matched.get("digits")?.type === "null"
+      ? optionInteger(invocation, "digits", 7)
+      : nonNegativeInteger(matched.get("digits"), "digits");
+  if (digits < 1 || digits > 22)
+    throw new RTypeMismatchError("NRT3166", "'digits' must be an integer from 1 through 22.");
   const nsmall =
     matched.get("nsmall") === undefined ? 0 : nonNegativeInteger(matched.get("nsmall"), "nsmall");
-  const scientific = logicalFlag(matched.get("scientific"), false, "scientific");
+  if (nsmall > 20) throw new RTypeMismatchError("NRT3166", "'nsmall' must be between 0 and 20.");
+  const scientificValue = matched.get("scientific");
+  const scientific =
+    scientificValue?.type === "logical"
+      ? logicalFlag(scientificValue, false, "scientific")
+      : undefined;
+  const scipen =
+    scientificValue !== undefined && scientificValue.type !== "null" && scientific === undefined
+      ? numericScalar(scientificValue, "scientific")
+      : optionInteger(invocation, "scipen", 0);
+  const decimalMark =
+    matched.get("decimal.mark") === undefined
+      ? undefined
+      : characterScalar(matched.get("decimal.mark") as RValue, "decimal.mark");
+  const encodeNA = logicalFlag(matched.get("na.encode"), true, "na.encode");
   const requestedWidth =
     matched.get("width") === undefined ? 0 : nonNegativeInteger(matched.get("width"), "width");
-  const justify =
+  const requestedJustify =
     matched.get("justify") === undefined
       ? "right"
       : characterScalar(matched.get("justify") as RValue, "justify");
-  if (!["left", "right", "centre", "none"].includes(justify)) {
-    throw new REvaluationError("NRE2126", `Unsupported justify value '${justify}'.`);
+  if (!["left", "right", "centre", "none"].includes(requestedJustify)) {
+    throw new REvaluationError("NRE2126", `Unsupported justify value '${requestedJustify}'.`);
   }
+  const justify = input.type === "character" ? requestedJustify : "right";
   const missing = new Uint8Array(input.length);
+  const numericText =
+    input.type === "double"
+      ? formatNumericValues(input, invocation, {
+          digits,
+          nsmall,
+          scipen,
+          ...(scientific === undefined ? {} : { scientific }),
+          ...(decimalMark === undefined ? {} : { decimalMark }),
+        })
+      : undefined;
   const raw = Array.from({ length: input.length }, (_, index) => {
     invocation.context.checkpoint();
     if (isMissing(input, index)) {
-      missing[index] = 1;
-      return "";
+      if (!encodeNA && input.type === "character") {
+        missing[index] = 1;
+        return "";
+      }
+      return "NA";
     }
     if (input.type === "character") return input.values[index] ?? "";
     if (input.type === "logical") return input.values[index] === 1 ? "TRUE" : "FALSE";
-    const numeric = numberAt(input, index);
-    if (!Number.isFinite(numeric)) return String(numeric);
-    if (scientific) return numeric.toExponential(Math.max(0, digits - 1));
-    if (nsmall > 0) return numeric.toFixed(nsmall);
-    return Number(numeric.toPrecision(Math.max(1, digits))).toString();
+    if (numericText !== undefined) return numericText[index] ?? "";
+    return stringAt(input, index);
   });
   const width = trim
     ? requestedWidth
-    : Math.max(requestedWidth, ...raw.map((value) => value.length));
+    : raw.reduce((maximum, value) => Math.max(maximum, value.length), requestedWidth);
   const output = raw.map((value) => {
     if (value.length >= width || justify === "none") return value;
     const gap = width - value.length;
@@ -25772,9 +28430,40 @@ async function builtinFormat(invocation: BuiltinInvocation): Promise<RValue> {
     return `${" ".repeat(gap)}${value}`;
   });
   invocation.context.allocate(output.length);
-  const result = characterVector(output, compactMask(missing));
+  let result: RValue = characterVector(output, compactMask(missing));
+  for (const name of ["dim", "dimnames"]) {
+    const attribute = input.attributes.get(name);
+    if (attribute !== undefined) result = withAttribute(result, name, attribute);
+  }
   const names = vectorNames(input);
   return names === undefined ? result : withNames(result, names);
+}
+
+function formatNumericValues(
+  input: RDoubleVector,
+  invocation: BuiltinInvocation,
+  controls: {
+    digits?: number;
+    nsmall?: number;
+    scipen?: number;
+    scientific?: boolean;
+    decimalMark?: string;
+  } = {},
+): string[] {
+  const decimalOption = optionsState(invocation).get("OutDec");
+  const decimalMark =
+    controls.decimalMark ??
+    (decimalOption?.type === "character" ? decimalOption.values[0] : undefined) ??
+    ".";
+  const result = printedNumericColumn(input, 0, input.length, {
+    ...DEFAULT_PRINT_OPTIONS,
+    digits: controls.digits ?? optionInteger(invocation, "digits", 7),
+    scipen: controls.scipen ?? optionInteger(invocation, "scipen", 0),
+    minimumFractionDigits: controls.nsmall ?? 0,
+    ...(controls.scientific === undefined ? {} : { scientific: controls.scientific }),
+    context: invocation.context,
+  });
+  return decimalMark === "." ? result : result.map((text) => text.replace(".", decimalMark));
 }
 
 async function builtinPrint(invocation: BuiltinInvocation): Promise<RValue> {
@@ -25803,6 +28492,7 @@ async function builtinPrint(invocation: BuiltinInvocation): Promise<RValue> {
     "print.gap",
     "right",
     "max",
+    "width",
     "useSource",
   ]);
   const input = required(matched, "x", "print");
@@ -25822,13 +28512,34 @@ async function builtinPrint(invocation: BuiltinInvocation): Promise<RValue> {
     matched.get("print.gap") === undefined
       ? 1
       : nonNegativeInteger(matched.get("print.gap"), "print.gap");
-  logicalFlag(matched.get("right"), false, "right");
+  const right = logicalFlag(matched.get("right"), false, "right");
   logicalFlag(matched.get("useSource"), true, "useSource");
   const maxItems =
     matched.get("max") === undefined
       ? optionInteger(invocation, "max.print", 99_999)
       : nonNegativeInteger(matched.get("max"), "max");
-  const text = formatPrintedValue(input, { digits, gap, maxItems, naPrint, quote });
+  const widthValue = matched.get("width");
+  const width =
+    widthValue === undefined || widthValue.type === "null"
+      ? optionInteger(invocation, "width", 80)
+      : nonNegativeInteger(widthValue, "width");
+  if (width < 10 || width > 10_000) {
+    throw new RTypeMismatchError("NRT3166", "'width' must be between 10 and 10000.");
+  }
+  const text = formatPrintedValue(input, {
+    digits,
+    gap,
+    maxItems,
+    naPrint,
+    quote,
+    right,
+    width,
+    scipen: optionInteger(invocation, "scipen", 0),
+    deparseCutoff: Math.max(20, Math.min(500, optionInteger(invocation, "deparse.cutoff", 60))),
+    environmentLabel: (environment) => printedEnvironmentLabel(invocation, environment),
+    explicitNaPrint: matched.has("na.print"),
+    context: invocation.context,
+  });
   invocation.context.writeOutput({ stream: "stdout", text: `${text}\n` });
   return input;
 }
@@ -25927,6 +28638,14 @@ async function builtinCaptureOutput(invocation: BuiltinInvocation): Promise<RVal
           maxItems: optionInteger(invocation, "max.print", 99_999),
           naPrint: "NA",
           quote: true,
+          width: optionInteger(invocation, "width", 80),
+          scipen: optionInteger(invocation, "scipen", 0),
+          deparseCutoff: Math.max(
+            20,
+            Math.min(500, optionInteger(invocation, "deparse.cutoff", 60)),
+          ),
+          environmentLabel: (environment) => printedEnvironmentLabel(invocation, environment),
+          context: invocation.context,
         });
         invocation.context.writeOutput({ stream: "stdout", text: `${text}\n` });
       }
@@ -26384,7 +29103,14 @@ async function loadPackageDataset(
   }
   const source = readVirtualTextFile(invocation, located.virtualPath, "package");
   const variant = lower.endsWith(".csv") ? "data-csv" : "data-table";
-  const frame = readTableSource(invocation, source, tableDefaults(variant), new Map());
+  // data() reads package text datasets with as.is=FALSE, so remaining text
+  // columns become factors regardless of the session's stringsAsFactors default.
+  const frame = readTableSource(
+    invocation,
+    source,
+    tableDefaults(variant),
+    new Map([["as.is", logicalVector([0])]]),
+  );
   const previous = target.bindings.get(dataset);
   if (previous !== undefined && !overwrite) {
     invocation.context.warn({
@@ -27362,7 +30088,6 @@ async function builtinHelp(invocation: BuiltinInvocation): Promise<RValue> {
           await invocation.force(libraryArgument.promise),
           "help",
         );
-  await helpLogicalControl(invocation, matched.get("verbose"), "verbose", false);
   const helpType = await helpTypeArgument(invocation, matched.get("help_type"));
   const explicitPackages = await helpPackageArgument(
     invocation,
@@ -28674,7 +31399,19 @@ async function builtinCat(invocation: BuiltinInvocation): Promise<RValue> {
     }
     for (let index = 0; index < input.length; index += 1) {
       invocation.context.checkpoint();
-      pieces.push(isMissing(input, index) ? "NA" : stringAt(input, index));
+      if (isMissing(input, index)) pieces.push("NA");
+      else if (input.type === "double") {
+        pieces.push(
+          formatNumericValues(doubleVector([input.values[index] ?? 0]), invocation)[0] ?? "",
+        );
+      } else if (input.type === "complex") {
+        const real = input.real[index] ?? 0;
+        const imaginary = input.imaginary[index] ?? 0;
+        const realText = formatNumericValues(doubleVector([real]), invocation)[0] ?? "";
+        const imaginaryText =
+          formatNumericValues(doubleVector([Math.abs(imaginary)]), invocation)[0] ?? "";
+        pieces.push(`${realText}${imaginary < 0 ? "-" : "+"}${imaginaryText}i`);
+      } else pieces.push(stringAt(input, index));
     }
   }
   const text = catSeparatedText(pieces, separators);
@@ -28974,6 +31711,17 @@ interface PrintOptions {
   readonly maxItems: number;
   readonly naPrint: string;
   readonly quote: boolean;
+  readonly right?: boolean;
+  readonly width?: number;
+  readonly scipen?: number;
+  readonly scientific?: boolean;
+  readonly minimumFractionDigits?: number;
+  readonly explicitNaPrint?: boolean;
+  readonly deparseCutoff?: number;
+  readonly environmentLabel?: (environment: REnvironment) => string | undefined;
+  readonly listPath?: string;
+  readonly depth?: number;
+  readonly context?: BuiltinInvocation["context"];
 }
 
 const DEFAULT_PRINT_OPTIONS: PrintOptions = {
@@ -28985,14 +31733,23 @@ const DEFAULT_PRINT_OPTIONS: PrintOptions = {
 };
 
 function formatPrintedValue(value: RValue, options: PrintOptions): string {
+  const depth = options.depth ?? 0;
+  if (depth > 512) {
+    throw new RResourceLimitError("NRL4004", "Maximum value printing depth exceeded.");
+  }
+  options = { ...options, depth: depth + 1 };
   if (value.type === "null") return "NULL";
   if (value.type === "list") {
     if (isDataFrame(value)) return formatPrintedDataFrame(value, options);
     return formatPrintedList(value, options);
   }
   if (value.type === "pairlist") return formatPrintedList(value, options);
-  if (isAtomic(value) && vectorDimensions(value)?.length === 2) {
-    return formatPrintedMatrix(value, options);
+  if (isAtomic(value) && value.length === 0 && objectClasses(value)?.includes("table")) {
+    const dimensions = vectorDimensions(value);
+    if (dimensions !== undefined) return `< table of extent ${dimensions.join(" x ")} >`;
+  }
+  if (isAtomic(value) && (vectorDimensions(value)?.length ?? 0) >= 2) {
+    return formatPrintedArray(value, options);
   }
   if (isAtomic(value)) return formatPrintedAtomic(value, options);
   if (value.type === "symbol") return value.name;
@@ -29006,79 +31763,473 @@ function formatPrintedValue(value: RValue, options: PrintOptions): string {
     return `${left}~ ${value.intercept ? right : `0 + ${right}`}`;
   }
   if (value.type === "environment") return `<environment:${value.id}>`;
-  if (value.type === "closure" || value.type === "builtin") return `<${value.type}>`;
+  if (value.type === "closure") return formatPrintedClosure(value, options);
+  if (value.type === "builtin") return "<builtin>";
   return "<dots>";
+}
+
+function printedEnvironmentLabel(
+  invocation: BuiltinInvocation,
+  environment: REnvironment,
+): string | undefined {
+  if (environment === invocation.globalEnvironment()) return undefined;
+  if (environment === invocation.baseEnvironment()) return "base";
+  const namespace = invocation.namespaceName(environment);
+  if (namespace !== undefined) return `namespace:${namespace}`;
+  return invocation.environmentName(environment) ?? `nativr:${environment.id}`;
+}
+
+function formatPrintedClosure(value: RClosure, options: PrintOptions): string {
+  const lines: string[] = [];
+  const append = printedLineAppender(lines, options);
+  for (const line of deparseClosureLines(value, {
+    widthCutoff: options.deparseCutoff ?? 60,
+    checkWork: () => options.context?.checkpoint(),
+    isPrimitive: (name) => R_BASE_PRIMITIVE_NAMES.has(name),
+  }))
+    append(line);
+  const environment = options.environmentLabel?.(value.environment);
+  if (environment !== undefined) append(`<environment: ${environment}>`);
+  for (const [name, attribute] of value.attributes) {
+    options.context?.checkpoint();
+    append(`attr(,${JSON.stringify(name)})`);
+    append(formatPrintedValue(attribute, { ...options, listPath: "" }));
+  }
+  return lines.join("\n");
 }
 
 function formatPrintedList(value: RList | RPairlist, options: PrintOptions): string {
   const names = vectorNames(value);
   const lines: string[] = [];
+  const append = printedLineAppender(lines, options);
+  if (value.length === 0) append(value.type === "pairlist" ? "pairlist()" : "list()");
   const limit = Math.min(value.length, options.maxItems);
   for (let index = 0; index < limit; index += 1) {
-    lines.push(names?.[index] ? `$${names[index] ?? ""}` : `[[${index + 1}]]`);
-    lines.push(formatPrintedValue(value.values[index] ?? R_NULL, options), "");
+    options.context?.checkpoint();
+    const name = names?.[index];
+    const path = `${options.listPath ?? ""}${name ? `$${deparseAst({ kind: "Identifier", name, span: SYNTHETIC_SPAN })}` : `[[${index + 1}]]`}`;
+    const child = value.values[index] ?? R_NULL;
+    append(path);
+    const listPath = (objectClasses(child)?.length ?? 0) === 0 ? path : "";
+    append(formatPrintedValue(child, { ...options, listPath }));
+    append("");
   }
-  if (limit < value.length)
-    lines.push(`[ reached 'max' / omitted ${value.length - limit} entries ]`);
+  if (limit < value.length) append(`[ reached 'max' / omitted ${value.length - limit} entries ]`);
+  for (const [name, attribute] of value.attributes) {
+    if (name === "names") continue;
+    options.context?.checkpoint();
+    append(`attr(,${JSON.stringify(name)})`);
+    append(formatPrintedValue(attribute, { ...options, listPath: "" }));
+  }
   return lines.join("\n");
 }
 
-function formatPrintedAtomic(value: AtomicVector, options: PrintOptions): string {
-  if (value.length === 0) {
-    const type = value.type === "double" ? "numeric" : value.type;
-    return `${type}(0)`;
-  }
-  const limit = Math.min(value.length, options.maxItems);
-  const tokens = Array.from({ length: limit }, (_, index) =>
-    printedAtom(value, index, options, true),
-  );
-  const names = vectorNames(value);
-  const separator = " ".repeat(options.gap);
-  let line: string;
-  if (names !== undefined) {
-    const widths = tokens.map((token, index) => Math.max(token.length, names[index]?.length ?? 0));
-    const nameLine = widths
-      .map((width, index) => (names[index] ?? "").padStart(width))
-      .join(separator);
-    const valueLine = tokens
-      .map((token, index) => token.padStart(widths[index] ?? 0))
-      .join(separator);
-    line = `${nameLine}\n${valueLine}`;
-  } else {
-    const width =
-      value.type === "character" || value.type === "raw"
-        ? 0
-        : tokens.reduce((maximum, token) => Math.max(maximum, token.length), 0);
-    const formatted = tokens.map((token) => (width === 0 ? token : token.padStart(width)));
-    line = `[1] ${formatted.join(separator)}`;
-  }
-  if (limit < value.length)
-    line += `\n [ reached 'max' / omitted ${value.length - limit} entries ]`;
-  return line;
+function printedLineAppender(lines: string[], options: PrintOptions): (line: string) => void {
+  let outputBytes = 0;
+  return (line) => {
+    outputBytes += virtualTextByteLength(line) + 1;
+    if (options.context !== undefined && outputBytes > options.context.limits.maxOutputBytes) {
+      throw new RResourceLimitError("NRL4007", "Evaluation output size limit exceeded.", {
+        details: { maxOutputBytes: options.context.limits.maxOutputBytes, outputBytes },
+      });
+    }
+    lines.push(line);
+  };
 }
 
-function formatPrintedMatrix(value: AtomicVector, options: PrintOptions): string {
+function formatPrintedAtomic(value: AtomicVector, options: PrintOptions): string {
+  const storedNames = effectiveSequenceNames(value);
+  if (value.length === 0) {
+    const type = value.type === "double" ? "numeric" : value.type;
+    return `${vectorNames(value) === undefined ? "" : "named "}${type}(0)`;
+  }
+  const limit = value.length <= options.maxItems + 1 ? value.length : options.maxItems;
+  options.context?.checkpoint(limit);
+  const tokens =
+    value.type === "double"
+      ? printedNumericColumn(value, 0, limit, options)
+      : Array.from({ length: limit }, (_, index) =>
+          value.type === "character" &&
+          isMissing(value, index) &&
+          !options.quote &&
+          !options.explicitNaPrint
+            ? "<NA>"
+            : printedAtom(value, index, options, true),
+        );
+  const namesAttribute = value.attributes.get("names") ?? validatedDimensionNames(value)?.values[0];
+  const names = storedNames
+    ?.slice(0, limit)
+    .map((name, index) =>
+      namesAttribute?.type === "character" && isMissing(namesAttribute, index) ? "<NA>" : name,
+    );
+  const separator = " ".repeat(options.gap);
+  const fieldWidth = tokens.reduce((width, token) => Math.max(width, token.length), 0);
+  const lines: string[] = [];
+  let outputBytes = 0;
+  const append = (line: string): void => {
+    outputBytes += virtualTextByteLength(line) + 1;
+    if (options.context !== undefined && outputBytes > options.context.limits.maxOutputBytes) {
+      throw new RResourceLimitError("NRL4007", "Evaluation output size limit exceeded.", {
+        details: { maxOutputBytes: options.context.limits.maxOutputBytes, outputBytes },
+      });
+    }
+    lines.push(line);
+  };
+  if (names !== undefined) {
+    const dimnames = validatedDimensionNames(value);
+    const axisName = value.attributes.has("names") ? undefined : printedAxisNames(dimnames)?.[0];
+    if (axisName !== undefined) append(axisName);
+    const width = names.reduce((maximum, name) => Math.max(maximum, name.length), fieldWidth);
+    const count = Math.max(
+      1,
+      Math.min(limit, Math.floor((options.width ?? 80) / (width + options.gap))),
+    );
+    if (limit === 0) append("");
+    for (let start = 0; start < limit; start += count) {
+      append(
+        names
+          .slice(start, start + count)
+          .map((name) => `${name.padStart(width)}${separator}`)
+          .join(""),
+      );
+      append(
+        tokens
+          .slice(start, start + count)
+          .map((token) => `${token.padStart(width)}${separator}`)
+          .join(""),
+      );
+    }
+  } else {
+    const prefixWidth = String(limit).length + 2;
+    const count = Math.max(
+      1,
+      Math.min(
+        limit,
+        Math.floor(((options.width ?? 80) - prefixWidth) / (fieldWidth + options.gap)),
+      ),
+    );
+    if (limit === 0) append(" [1]");
+    for (let start = 0; start < limit; start += count) {
+      const prefix = `[${start + 1}]`.padStart(prefixWidth);
+      const fields = tokens
+        .slice(start, start + count)
+        .map((token) =>
+          value.type === "character" && !options.right
+            ? token.padEnd(fieldWidth)
+            : token.padStart(fieldWidth),
+        );
+      append(`${prefix}${separator}${fields.join(separator)}`);
+    }
+  }
+  if (limit < value.length) append(` ${printedMaxNotice(`${value.length - limit} entries`)}`);
+  return lines.join("\n");
+}
+
+function formatPrintedArray(value: AtomicVector, options: PrintOptions): string {
   const dimensions = vectorDimensions(value) ?? [];
   const rows = dimensions[0] ?? 0;
   const columns = dimensions[1] ?? 0;
+  if (dimensions.length === 2) {
+    const shape = printedMatrixShape(rows, columns, options.maxItems);
+    const text = formatPrintedMatrix(value, options, 0, shape.rows, shape.columns);
+    const omitted = printedMatrixOmission(rows - shape.rows, columns - shape.columns, " and ");
+    return omitted === "" ? text : `${text}\n ${printedMaxNotice(omitted)}`;
+  }
+  const sliceLength = rows * columns;
+  const sliceCount = dimensions.slice(2).reduce((product, length) => product * length, 1);
+  if (sliceCount === 0) {
+    return `<${dimensions.join(" x ")} array of ${value.type}>\n${formatPrintedMatrix(
+      value,
+      options,
+      0,
+      rows,
+      columns,
+      true,
+    )}\n`;
+  }
+  const dimnames = validatedDimensionNames(value);
+  const axisNames = printedAxisNames(dimnames);
+  const printedSlices =
+    sliceLength === 0
+      ? sliceCount
+      : Math.min(sliceCount, Math.ceil(options.maxItems / sliceLength));
+  const chunks: string[] = [];
+  let outputBytes = 0;
+  for (let slice = 0; slice < printedSlices; slice += 1) {
+    options.context?.checkpoint();
+    let coordinate = slice;
+    const labels = dimensions.slice(2).map((length, index) => {
+      const position = coordinate % length;
+      coordinate = Math.floor(coordinate / length);
+      const labels = dimnames?.values[index + 2];
+      if (labels?.type !== "character") return String(position + 1);
+      const label = isMissing(labels, position) ? "NA" : (labels.values[position] ?? "");
+      const axis = axisNames?.[index + 2];
+      return axis === undefined || axis === "" ? label : `${axis} = ${label}`;
+    });
+    const shape = printedMatrixShape(rows, columns, options.maxItems - slice * sliceLength);
+    const chunk = `, , ${labels.join(", ")}\n\n${formatPrintedMatrix(
+      value,
+      options,
+      slice * sliceLength,
+      shape.rows,
+      shape.columns,
+    )}\n\n`;
+    outputBytes += virtualTextByteLength(chunk);
+    if (options.context !== undefined && outputBytes > options.context.limits.maxOutputBytes) {
+      throw new RResourceLimitError("NRL4007", "Evaluation output size limit exceeded.", {
+        details: { maxOutputBytes: options.context.limits.maxOutputBytes, outputBytes },
+      });
+    }
+    chunks.push(chunk);
+  }
+  if (printedSlices < sliceCount) {
+    const omitted = sliceCount - printedSlices;
+    chunks.push(` ${printedMaxNotice(`${omitted} ${omitted === 1 ? "slice" : "slices"}`)} \n`);
+  } else if (sliceLength > 0 && options.maxItems < value.length) {
+    const shape = printedMatrixShape(
+      rows,
+      columns,
+      options.maxItems - (printedSlices - 1) * sliceLength,
+    );
+    chunks.push(
+      ` ${printedMaxNotice(printedMatrixOmission(rows - shape.rows, columns - shape.columns, " "))} \n`,
+    );
+  }
+  return chunks.join("").slice(0, -1);
+}
+
+function printedMatrixShape(
+  rows: number,
+  columns: number,
+  maxItems: number,
+): { readonly rows: number; readonly columns: number } {
+  if (rows * columns <= maxItems) return { rows, columns };
+  return maxItems < columns
+    ? { rows: 1, columns: maxItems }
+    : { rows: Math.floor(maxItems / columns), columns };
+}
+
+function printedMaxNotice(omitted: string): string {
+  return `[ reached 'max' / getOption("max.print") -- omitted ${omitted} ]`;
+}
+
+function printedMatrixOmission(rows: number, columns: number, separator: string): string {
+  return [
+    ...(rows === 0 ? [] : [`${rows} ${rows === 1 ? "row" : "rows"}`]),
+    ...(columns === 0 ? [] : [`${columns} ${columns === 1 ? "column" : "columns"}`]),
+  ].join(separator);
+}
+
+function printedAxisNames(dimnames: RList | undefined): readonly string[] | undefined {
+  if (dimnames === undefined) return undefined;
+  const names = vectorNames(dimnames);
+  const attribute = dimnames.attributes.get("names");
+  return names?.map((name, index) =>
+    attribute?.type === "character" && isMissing(attribute, index) ? "NA" : name,
+  );
+}
+
+function formatPrintedMatrix(
+  value: AtomicVector,
+  options: PrintOptions,
+  offset: number,
+  printedRows: number,
+  columns: number,
+  empty = false,
+): string {
+  const totalRows = vectorDimensions(value)?.[0] ?? 0;
+  // An empty matrix still displays every row label, even when max=0 hides all columns.
+  const rows = columns === 0 ? totalRows : printedRows;
+  options.context?.checkpoint(totalRows + columns + (empty ? 0 : totalRows * columns));
+  const dimnames = validatedDimensionNames(value);
+  const rowNames = dimnames?.values[0];
+  const columnNames = dimnames?.values[1];
+  const rowLabels = Array.from({ length: totalRows }, (_, row) =>
+    rowNames?.type === "character"
+      ? isMissing(rowNames, row)
+        ? "<NA>"
+        : (rowNames.values[row] ?? "")
+      : `[${row + 1},]`,
+  );
+  const columnLabels = Array.from({ length: columns }, (_, column) =>
+    columnNames?.type === "character"
+      ? isMissing(columnNames, column)
+        ? "<NA>"
+        : (columnNames.values[column] ?? "")
+      : `[,${column + 1}]`,
+  );
+  const axisNames = printedAxisNames(dimnames);
+  const rowAxisName = axisNames === undefined ? "" : (axisNames[0] ?? "NA");
+  const columnAxisName = axisNames === undefined ? "" : (axisNames[1] ?? "NA");
+  const namedAxes = axisNames !== undefined;
+  const labelWidth = rowLabels.reduce(
+    (width, label) => Math.max(width, label.length),
+    rowNames?.type === "character" ? 0 : 4,
+  );
+  const leftWidth = Math.max(rowAxisName.length, labelWidth + (namedAxes ? 2 : 0));
+  const separator = " ".repeat(options.gap);
+  const leftAligned = value.type === "character" && !options.right;
+  const align = (text: string, width: number): string =>
+    leftAligned ? text.padEnd(width) : text.padStart(width);
   const cells = Array.from({ length: columns }, (_, column) =>
-    Array.from({ length: rows }, (_, row) =>
-      printedAtom(value, row + column * rows, options, false),
-    ),
+    value.type === "double" && !empty
+      ? printedNumericColumn(value, offset + column * totalRows, totalRows, options)
+      : Array.from({ length: empty ? 0 : totalRows }, (_, row) => {
+          const index = offset + row + column * totalRows;
+          return value.type === "character" &&
+            isMissing(value, index) &&
+            !options.quote &&
+            !options.explicitNaPrint
+            ? "<NA>"
+            : printedAtom(value, index, options, true);
+        }),
   );
   const widths = cells.map((column, index) =>
-    Math.max(`[${index + 1}]`.length + 1, ...column.map((cell) => cell.length)),
+    column.reduce((width, cell) => Math.max(width, cell.length), columnLabels[index]?.length ?? 0),
   );
-  const header = `     ${widths
-    .map((width, index) => `[,${index + 1}]`.padStart(width))
-    .join(" ")}`;
-  const lines = Array.from({ length: rows }, (_, row) => {
-    const label = `[${row + 1},]`;
-    return `${label.padEnd(5)}${cells
-      .map((column, columnIndex) => (column[row] ?? "").padStart(widths[columnIndex] ?? 0))
-      .join(" ")}`;
+  const panels: string[] = [];
+  let start = 0;
+  let outputBytes = 0;
+  do {
+    let end = start;
+    let panelWidth = leftWidth;
+    while (end < columns) {
+      const nextWidth = panelWidth + options.gap + (widths[end] ?? 0);
+      if (end > start && nextWidth >= (options.width ?? 80)) break;
+      panelWidth = nextWidth;
+      end += 1;
+    }
+    const header = `${rowAxisName.padEnd(leftWidth)}${columns === 0 ? "" : separator}${widths
+      .slice(start, end)
+      .map((width, index) => align(columnLabels[start + index] ?? "", width))
+      .join(separator)}`;
+    const lines = Array.from({ length: rows }, (_, row) => {
+      const label = rowLabels[row] ?? "";
+      const left = `${" ".repeat(leftWidth - labelWidth)}${rowNames?.type === "character" ? label.padEnd(labelWidth) : label.padStart(labelWidth)}`;
+      return columns === 0 || empty
+        ? left.trimEnd()
+        : `${left}${separator}${cells
+            .slice(start, end)
+            .map((column, columnIndex) =>
+              align(column[row] ?? "", widths[start + columnIndex] ?? 0),
+            )
+            .join(separator)}`;
+    });
+    const panel = [
+      ...(namedAxes ? [`${" ".repeat(leftWidth)}${columnAxisName}`] : []),
+      header,
+      ...lines,
+    ].join("\n");
+    outputBytes += virtualTextByteLength(panel) + 1;
+    if (options.context !== undefined && outputBytes > options.context.limits.maxOutputBytes) {
+      throw new RResourceLimitError("NRL4007", "Evaluation output size limit exceeded.", {
+        details: { maxOutputBytes: options.context.limits.maxOutputBytes, outputBytes },
+      });
+    }
+    panels.push(panel);
+    start = end;
+  } while (start < columns);
+  return panels.join("\n");
+}
+
+function printedNumericColumn(
+  value: RDoubleVector,
+  offset: number,
+  length: number,
+  options: PrintOptions,
+): string[] {
+  options.context?.checkpoint(length * 2);
+  let decimalPlaces = 0;
+  let significantDigits = 1;
+  let exponentWidth = 2;
+  let roundedIntegerWidth = 0;
+  for (let row = 0; row < length; row += 1) {
+    const index = offset + row;
+    const numeric = value.values[index] ?? 0;
+    if (isMissing(value, index) || !Number.isFinite(numeric) || numeric === 0) continue;
+    let exponent = Number(Math.abs(numeric).toExponential().split("e")[1]);
+    let coefficient = printedDecimalCoefficient(numeric, options.digits - 1 - exponent).toString();
+    if (coefficient.length > options.digits) {
+      exponent += 1;
+      coefficient = coefficient.slice(0, options.digits);
+    }
+    const digits = coefficient.replace(/0+$/u, "").length;
+    significantDigits = Math.max(significantDigits, digits);
+    decimalPlaces = Math.max(decimalPlaces, digits - 1 - exponent);
+    exponentWidth = Math.max(exponentWidth, Math.abs(exponent).toString().length);
+    roundedIntegerWidth = Math.max(
+      roundedIntegerWidth,
+      Math.max(1, exponent + 1) + (numeric < 0 ? 1 : 0),
+    );
+  }
+  let fixedWidth = roundedIntegerWidth + decimalPlaces + (decimalPlaces > 0 ? 1 : 0);
+  let scientificWidth = 0;
+  for (let row = 0; row < length; row += 1) {
+    const index = offset + row;
+    const numeric = value.values[index] ?? 0;
+    if (isMissing(value, index) || !Number.isFinite(numeric)) continue;
+    const coefficient = printedDecimalCoefficient(numeric, decimalPlaces);
+    const sign = numeric < 0 && coefficient !== 0n ? 1 : 0;
+    fixedWidth = Math.max(
+      fixedWidth,
+      sign +
+        Math.max(coefficient.toString().length, decimalPlaces + 1) +
+        (decimalPlaces > 0 ? 1 : 0),
+    );
+    scientificWidth = Math.max(
+      scientificWidth,
+      (numeric < 0 ? 1 : 0) +
+        significantDigits +
+        (significantDigits > 1 ? 1 : 0) +
+        2 +
+        exponentWidth,
+    );
+  }
+  const scientific = options.scientific ?? fixedWidth > scientificWidth + (options.scipen ?? 0);
+  if (!scientific) decimalPlaces = Math.max(decimalPlaces, options.minimumFractionDigits ?? 0);
+  return Array.from({ length }, (_, row) => {
+    const index = offset + row;
+    const numeric = value.values[index] ?? 0;
+    if (isMissing(value, index)) return options.naPrint;
+    if (!Number.isFinite(numeric)) return formatRNumber(numeric);
+    let exponent = numeric === 0 ? 0 : Number(Math.abs(numeric).toExponential().split("e")[1]);
+    const places = scientific ? significantDigits - 1 - exponent : decimalPlaces;
+    let coefficient = printedDecimalCoefficient(numeric, places).toString();
+    const sign = numeric < 0 && coefficient !== "0" ? "-" : "";
+    if (scientific) {
+      if (coefficient.length > significantDigits) {
+        exponent += 1;
+        coefficient = coefficient.slice(0, significantDigits);
+      }
+      coefficient = coefficient.padStart(significantDigits, "0");
+      const fraction = significantDigits > 1 ? `.${coefficient.slice(1)}` : "";
+      return `${sign}${coefficient[0]}${fraction}e${exponent < 0 ? "-" : "+"}${Math.abs(exponent).toString().padStart(2, "0")}`;
+    }
+    coefficient = coefficient.padStart(decimalPlaces + 1, "0");
+    return `${sign}${decimalPlaces === 0 ? coefficient : `${coefficient.slice(0, -decimalPlaces)}.${coefficient.slice(-decimalPlaces)}`}`;
   });
-  return [header, ...lines].join("\n");
+}
+
+/** Round an IEEE-754 value to a decimal coefficient using ties to even. */
+function printedDecimalCoefficient(value: number, places: number): bigint {
+  if (value === 0) return 0n;
+  ROUNDING_BITS.setFloat64(0, Math.abs(value), false);
+  const bits = ROUNDING_BITS.getBigUint64(0, false);
+  const exponentBits = Number((bits >> 52n) & 0x7ffn);
+  const fraction = bits & ROUNDING_FRACTION_MASK;
+  let numerator = exponentBits === 0 ? fraction : ROUNDING_HIDDEN_BIT | fraction;
+  let denominator = 1n;
+  const binaryExponent = (exponentBits === 0 ? -1074 : exponentBits - 1023 - 52) + places;
+  if (places >= 0) numerator *= 5n ** BigInt(places);
+  else denominator *= 5n ** BigInt(-places);
+  if (binaryExponent >= 0) numerator <<= BigInt(binaryExponent);
+  else denominator <<= BigInt(-binaryExponent);
+  const quotient = numerator / denominator;
+  const difference = (numerator % denominator) * 2n - denominator;
+  return difference > 0n || (difference === 0n && (quotient & 1n) === 1n)
+    ? quotient + 1n
+    : quotient;
 }
 
 function formatPrintedDataFrame(value: RList, options: PrintOptions): string {
@@ -29219,6 +32370,7 @@ async function builtinRegexLocations(
   let ignoreCase = logicalFlag(matched.get("ignore.case"), false, "ignore.case");
   const perl = logicalFlag(matched.get("perl"), false, "perl");
   const captureNames = perl && !fixed ? regexCaptureNames(pattern) : [];
+  const indexMode = regexIndexMode(pattern, input);
   if (logicalFlag(matched.get("useBytes"), false, "useBytes")) {
     throw new RUnsupportedFeatureError(
       "NRU6142",
@@ -29243,7 +32395,7 @@ async function builtinRegexLocations(
     const output = input.values.map((text, index) => {
       invocation.context.checkpoint();
       if (isMissing(input, index)) {
-        return regexLocationVector([0], [0], [1]);
+        return regexLocationVector("none", [0], [0], [1]);
       }
       const spans = browserMatchSpans(
         invocation,
@@ -29257,6 +32409,7 @@ async function builtinRegexLocations(
       );
       if (spans.length === 0) {
         return regexLocationVector(
+          indexMode,
           [-1],
           [-1],
           undefined,
@@ -29265,6 +32418,7 @@ async function builtinRegexLocations(
         );
       }
       return regexLocationVector(
+        indexMode,
         spans.map((span) => span.start),
         spans.map((span) => span.length),
         undefined,
@@ -29318,6 +32472,7 @@ async function builtinRegexLocations(
     input.values.map((__, row) => captures[row * captureNames.length + capture]!),
   );
   return regexLocationVector(
+    indexMode,
     positions,
     lengths,
     compactMask(missing),
@@ -29371,9 +32526,11 @@ async function builtinRegexExec(invocation: BuiltinInvocation): Promise<RValue> 
     });
   }
   const captureCount = fixed ? 0 : regexCaptureNames(pattern).length;
+  const indexMode = regexIndexMode(pattern, input, perl && !fixed);
   const output = input.values.map((text, index) => {
     invocation.context.checkpoint();
     if (isMissing(input, index)) {
+      if (perl && !fixed) return regexLocationVector(indexMode, [0], [0], [1]);
       let missing = integerVector([0], [1]);
       missing = withAttribute(missing, "match.length", integerVector([0], [1]));
       return missing;
@@ -29388,12 +32545,13 @@ async function builtinRegexExec(invocation: BuiltinInvocation): Promise<RValue> 
       captureCount > 0,
       perl,
     )[0];
-    if (span === undefined) return regexLocationVector([-1], [-1]);
+    if (span === undefined) return regexLocationVector(indexMode, [-1], [-1]);
     const captures = Array.from(
       { length: captureCount },
       (_, capture) => span.captures?.[capture] ?? { start: 0, length: 0 },
     );
     return regexLocationVector(
+      indexMode,
       [span.start, ...captures.map((capture) => capture.start)],
       [span.length, ...captures.map((capture) => capture.length)],
     );
@@ -29593,7 +32751,23 @@ function hasUnescapedLazyQuantifier(pattern: string): boolean {
   return false;
 }
 
+type RegexIndexMode = "none" | "ascii" | "ascii-perl-exec";
+function regexIndexMode(
+  pattern: string,
+  input: RCharacterVector,
+  bytesFirst = false,
+): RegexIndexMode {
+  const ascii = (text: string) => !/[\u0080-\u{10ffff}]/u.test(text);
+  return ascii(pattern) &&
+    input.values.every((text, index) => isMissing(input, index) || ascii(text))
+    ? bytesFirst
+      ? "ascii-perl-exec"
+      : "ascii"
+    : "none";
+}
+
 function regexLocationVector(
+  indexMode: RegexIndexMode,
   positions: readonly number[],
   lengths: readonly number[],
   missing?: Uint8Array | readonly number[],
@@ -29603,8 +32777,11 @@ function regexLocationVector(
 ): RIntegerVector {
   let output = integerVector(positions, missing);
   output = withAttribute(output, "match.length", integerVector(lengths, missing));
-  output = withAttribute(output, "index.type", characterVector(["chars"]));
-  output = withAttribute(output, "useBytes", logicalVector([0]));
+  if (indexMode === "ascii-perl-exec")
+    output = withAttribute(output, "useBytes", logicalVector([1]));
+  if (indexMode !== "none")
+    output = withAttribute(output, "index.type", characterVector(["chars"]));
+  if (indexMode === "ascii") output = withAttribute(output, "useBytes", logicalVector([1]));
   if (captureNames.length === 0) return output;
   const dimensions = [positions.length, captureNames.length];
   const dimnames = listValue([R_NULL, characterVector(captureNames)]);
@@ -30335,21 +33512,23 @@ function compileBrowserPattern(
   if (pattern.length > 4096) {
     throw new RResourceLimitError("NRL4008", "Regular-expression pattern length limit exceeded.");
   }
-  const source = fixed
-    ? pattern.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")
-    : normalizeBrowserRegexSource(
-        pattern.replace(/\\x\{([0-9A-Fa-f]{1,6})\}/gu, (_match, digits: string) => {
-          const codePoint = Number.parseInt(digits, 16);
-          if (codePoint > 0x10ffff) {
-            throw new REvaluationError(
-              "NRE2129",
-              "Invalid Unicode code point in regular expression.",
-            );
-          }
-          return `\\u{${digits}}`;
-        }),
-      );
   try {
+    const source = fixed
+      ? pattern.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")
+      : normalizeBrowserRegexSource(
+          translatePosixCharacterClasses(
+            pattern.replace(/\\x\{([0-9A-Fa-f]{1,6})\}/gu, (_match, digits: string) => {
+              const codePoint = Number.parseInt(digits, 16);
+              if (codePoint > 0x10ffff) {
+                throw new REvaluationError(
+                  "NRE2129",
+                  "Invalid Unicode code point in regular expression.",
+                );
+              }
+              return `\\u{${digits}}`;
+            }),
+          ),
+        );
     return new RegExp(
       source,
       `${global ? "g" : ""}${ignoreCase ? "i" : ""}${captureIndices ? "d" : ""}u`,
@@ -30535,7 +33714,9 @@ async function builtinArray(invocation: BuiltinInvocation): Promise<RValue> {
   if (!isVector(data)) {
     throw new RTypeMismatchError("NRT3124", "array() data must be a vector or list.");
   }
-  const dimensions = dimensionsValue(required(matched, "dim", "array"));
+  const dimensionArgument = matched.get("dim");
+  const dimensions =
+    dimensionArgument === undefined ? [data.length] : dimensionsValue(dimensionArgument);
   return attachDimensionNames(
     reshapeVector(invocation, data, dimensions, false),
     matched.get("dimnames"),
@@ -31132,6 +34313,50 @@ async function builtinDiag(invocation: BuiltinInvocation): Promise<RValue> {
   return constructDiagonal(data, rows, columns, invocation);
 }
 
+async function builtinDiagReplacement(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = await matchExact(invocation, ["x", "value"]);
+  const target = required(matched, "x", "diag<-");
+  const replacement = required(matched, "value", "diag<-");
+  if (!isVector(target)) {
+    throw new RTypeMismatchError("NRT3248", "only matrix diagonals can be replaced");
+  }
+  const dimensions = isDataFrame(target)
+    ? [dataFrameRowCount(target), target.length]
+    : vectorDimensions(target);
+  if (dimensions?.length !== 2) {
+    throw new RTypeMismatchError("NRT3248", "only matrix diagonals can be replaced");
+  }
+  const rows = dimensions[0] ?? 0;
+  const diagonalLength = Math.min(rows, dimensions[1] ?? 0);
+  if (diagonalLength === 0) return target;
+
+  const replacementLength =
+    isVector(replacement) || replacement.type === "pairlist"
+      ? replacement.length
+      : replacement.type === "null"
+        ? 0
+        : 1;
+  if (replacementLength !== 1 && replacementLength !== diagonalLength) {
+    throw new REvaluationError("NRE2213", "replacement diagonal has wrong length");
+  }
+
+  invocation.context.allocate(diagonalLength);
+  if (isDataFrame(target)) {
+    const coordinates = withDimensions(
+      integerVector([
+        ...Array.from({ length: diagonalLength }, (_, index) => index + 1),
+        ...Array.from({ length: diagonalLength }, (_, index) => index + 1),
+      ]),
+      [diagonalLength, 2],
+    );
+    return replaceCoordinateMatrix(target, coordinates, replacement, invocation.context);
+  }
+  const positions = integerVector(
+    Array.from({ length: diagonalLength }, (_, index) => index * (rows + 1) + 1),
+  );
+  return replaceVectorSubset(target, positions, replacement, invocation.context);
+}
+
 function diagConstructionSource(input: RValue, invocation: BuiltinInvocation): AtomicVector {
   if (isAtomic(input)) {
     const plain = atomicWithoutAttributes(input);
@@ -31371,6 +34596,7 @@ function defaultGraphicsParameters(): GraphicsParametersState {
   return new Map<string, RValue>([
     ["adj", doubleVector([0.5])],
     ["ann", logicalVector([true])],
+    ["ask", logicalVector([false])],
     ["bg", characterVector(["transparent"])],
     ["bty", characterVector(["o"])],
     ["cex", doubleVector([1])],
@@ -31400,13 +34626,16 @@ function defaultGraphicsParameters(): GraphicsParametersState {
     ["mex", doubleVector([1])],
     ["mfrow", integerVector([1, 1])],
     ["mgp", doubleVector([3, 1, 0])],
+    ["new", logicalVector([false])],
     ["oma", doubleVector([0, 0, 0, 0])],
+    ["page", logicalVector([true])],
     ["pch", integerVector([1])],
     ["ps", integerVector([12])],
     ["pty", characterVector(["m"])],
     ["srt", doubleVector([0])],
     ["tck", doubleVector([0], [1])],
     ["tcl", doubleVector([-0.5])],
+    ["usr", doubleVector([0, 1, 0, 1])],
     ["xaxs", characterVector(["r"])],
     ["xaxt", characterVector(["s"])],
     ["xpd", logicalVector([false])],
@@ -31424,6 +34653,7 @@ function graphicsParametersState(invocation: BuiltinInvocation): GraphicsParamet
   const existing = invocation.state.get(GRAPHICS_PARAMETERS_STATE_KEY);
   if (existing instanceof Map) return existing as GraphicsParametersState;
   const created = defaultGraphicsParameters();
+  created.set("ask", logicalVector([deviceAskDefault(invocation)]));
   invocation.state.set(GRAPHICS_PARAMETERS_STATE_KEY, created);
   return created;
 }
@@ -31432,12 +34662,13 @@ async function builtinGraphicsPar(invocation: BuiltinInvocation): Promise<RValue
   const state = graphicsParametersState(invocation);
   const queries: string[] = [];
   const settings: Array<readonly [string, RValue]> = [];
+  let noReadonly = false;
 
   for (const argument of invocation.arguments) {
     if (argument.promise.missing) continue;
     const value = await invocation.force(argument.promise);
     if (argument.name === "no.readonly") {
-      logicalFlag(value, false, "no.readonly");
+      noReadonly = logicalFlag(value, false, "no.readonly");
       continue;
     }
     if (argument.name !== undefined) {
@@ -31483,8 +34714,15 @@ async function builtinGraphicsPar(invocation: BuiltinInvocation): Promise<RValue
     });
   };
   const selected = (name: string): RValue => {
+    const active = activeGraphicsState(invocation);
+    if (name === "ask" && active !== undefined) return logicalVector([active.askNewPage]);
+    if (name === "page") {
+      const nextPlotOverlays = state.get("new");
+      return logicalVector([
+        nextPlotOverlays?.type !== "logical" || nextPlotOverlays.values[0] !== 1,
+      ]);
+    }
     if (name === "usr") {
-      const active = activeGraphicsState(invocation);
       if (active !== undefined) {
         return doubleVector([active.xlim[0], active.xlim[1], active.ylim[0], active.ylim[1]]);
       }
@@ -31506,21 +34744,79 @@ async function builtinGraphicsPar(invocation: BuiltinInvocation): Promise<RValue
         previous.push(R_NULL);
         continue;
       }
-      validateGraphicsParameter(name, value, old);
-      previous.push(old);
-      state.set(name, value);
+      previous.push(selected(name));
+      if (name === "din" || name === "page") {
+        invocation.context.warn({
+          code: "NRW1144",
+          message: `graphical parameter "${name}" cannot be set`,
+        });
+        continue;
+      }
+      if (name !== "ask" && name !== "new") validateGraphicsParameter(name, value, old);
+      const active = activeGraphicsState(invocation);
+      if (name === "ask") {
+        if (!isAtomic(value) || value.length !== 1) {
+          throw new RTypeMismatchError("NRT3393", 'graphical parameter "ask" has the wrong length');
+        }
+        const ask = isMissing(value, 0) ? false : coercibleLogicalFlag(value, false, "ask");
+        if (active !== undefined) active.askNewPage = ask;
+        state.set(name, logicalVector([ask]));
+      } else if (name === "new") {
+        if (!isAtomic(value) || value.length !== 1) {
+          throw new RTypeMismatchError("NRT3393", 'graphical parameter "new" has the wrong length');
+        }
+        const next = isMissing(value, 0) || coercibleLogicalFlag(value, false, "new");
+        if (next && !active?.displayList.some((event) => event.kind === "new-page")) {
+          invocation.context.warn({
+            code: "NRW1145",
+            message: "calling par(new=TRUE) with no plot",
+          });
+        } else {
+          state.set(name, logicalVector([next]));
+        }
+      } else if (name === "usr") {
+        const numeric = requireNumeric(value, "par(usr=)");
+        const limits = Array.from({ length: 4 }, (_, index) => numberAt(numeric, index));
+        if (limits[0] === limits[1] || limits[2] === limits[3]) {
+          throw new RTypeMismatchError(
+            "NRT3394",
+            'invalid value specified for graphical parameter "usr"',
+          );
+        }
+        state.set(name, doubleVector(limits));
+        if (active !== undefined) {
+          active.xlim = [limits[0] ?? 0, limits[1] ?? 1];
+          active.ylim = [limits[2] ?? 0, limits[3] ?? 1];
+          if (active.displayList.some((event) => event.kind === "new-page")) {
+            writeGraphics(invocation, active, {
+              kind: "window",
+              xlim: active.xlim,
+              ylim: active.ylim,
+            });
+          }
+        }
+      } else {
+        state.set(name, value);
+      }
     }
     invocation.setResultVisibility("invisible");
     return listValue(previous, names);
   }
 
   if (queries.length === 1) return selected(queries[0] ?? "");
-  const names = queries.length === 0 ? [...state.keys()] : queries;
+  const names =
+    queries.length === 0
+      ? [...state.keys()].filter((name) => !noReadonly || (name !== "din" && name !== "page"))
+      : queries;
   return listValue(names.map(selected), names);
 }
 
 function validateGraphicsParameter(name: string, value: RValue, template: RValue): void {
   if (template.type === "character") {
+    if (name === "xaxt" || name === "yaxt") {
+      graphicsAxisStyle(value, name);
+      return;
+    }
     characterScalar(value, `par(${name}=)`);
     return;
   }
@@ -32318,6 +35614,8 @@ async function builtinBarplotDefault(invocation: BuiltinInvocation): Promise<RVa
     "font.axis",
     "family",
     "cex",
+    "xaxt",
+    "yaxt",
   ]);
   for (const argument of lazy.dots) {
     if (argument.promise.missing) continue;
@@ -32341,6 +35639,9 @@ async function builtinBarplotDefault(invocation: BuiltinInvocation): Promise<RVa
   const result = barplotMidpointResult(geometry);
   const plot = logicalFlag(values.get("plot"), true, "plot");
   if (!plot) return result;
+
+  graphicsAxisStyle(controls.get("xaxt"), "xaxt");
+  graphicsAxisStyle(controls.get("yaxt"), "yaxt");
 
   const log = values.get("log");
   if (log !== undefined && log.type !== "null" && characterScalar(log, "log") !== "") {
@@ -32449,7 +35750,7 @@ async function builtinBarplotDefault(invocation: BuiltinInvocation): Promise<RVa
         new Map([
           ["cex.axis", values.get("cex.axis") ?? doubleVector([1])],
           ...[...controls].filter(([name]) =>
-            ["las", "col.axis", "font.axis", "family"].includes(name),
+            ["las", "col.axis", "font.axis", "family", "xaxt", "yaxt"].includes(name),
           ),
         ]),
       );
@@ -32480,7 +35781,7 @@ async function builtinBarplotDefault(invocation: BuiltinInvocation): Promise<RVa
             ["lty", values.get("axis.lty") ?? doubleVector([0])],
             ["cex.axis", values.get("cex.names") ?? doubleVector([1])],
             ...[...controls].filter(([name]) =>
-              ["las", "col.axis", "font.axis", "family"].includes(name),
+              ["las", "col.axis", "font.axis", "family", "xaxt", "yaxt"].includes(name),
             ),
           ]),
         );
@@ -32986,7 +36287,10 @@ async function builtinCurve(invocation: BuiltinInvocation): Promise<RValue> {
   const graphics = invocation.searchEnvironment("package:graphics");
   const binding = add
     ? graphics?.bindings.get("lines")
-    : lookupBinding(invocation.baseEnvironment(), "plot");
+    : lookupBinding(
+        invocation.namespaceEnvironment("graphics") ?? invocation.baseEnvironment(),
+        "plot",
+      );
   const callable = binding === undefined ? undefined : await invocation.force(binding);
   if (callable === undefined || !isCallable(callable)) {
     throw new REvaluationError("NRE2001", `Could not find function '${add ? "lines" : "plot"}'.`);
@@ -33571,7 +36875,7 @@ function graphicsTitleLabels(
   if (value.type === "null") return [];
   if (value.type === "symbol") return [value.name];
   if (value.type === "language") return [deparseAst(value.expression)];
-  if (value.type === "expression") return value.values.map(deparseAst);
+  if (value.type === "expression") return value.values.map((node) => deparseAst(node));
   if (!isAtomic(value)) {
     throw new RTypeMismatchError("NRT3411", `${call} must be a graphics annotation value.`);
   }
@@ -33705,12 +37009,20 @@ async function beginGraphicsPage(invocation: BuiltinInvocation): Promise<Graphic
   const existing = activeGraphicsState(invocation);
   const state = existing ?? createBrowserGraphicsState(invocation);
   const replacingPage = state.displayList.some((event) => event.kind === "new-page");
-  if (replacingPage && state.kind === "browser" && state.askNewPage && invocation.isInteractive()) {
+  const newParameter = state.parameters.get("new");
+  const overlay = replacingPage && newParameter?.type === "logical" && newParameter.values[0] === 1;
+  if (
+    !overlay &&
+    replacingPage &&
+    state.kind === "browser" &&
+    state.askNewPage &&
+    invocation.isInteractive()
+  ) {
     const prompt = "Hit <Return> to see next plot: ";
     invocation.context.writeOutput({ stream: "stdout", text: prompt });
     await invocation.readline(prompt);
   }
-  if (state.kind === "png" && replacingPage) {
+  if (state.kind === "png" && replacingPage && !overlay) {
     await renderPngPage(invocation, state);
     const png = state.png;
     if (png === undefined) throw new Error("Internal PNG device invariant failed.");
@@ -33720,14 +37032,18 @@ async function beginGraphicsPage(invocation: BuiltinInvocation): Promise<Graphic
       pngPageFilename(png.filenamePattern, png.page),
       new Uint8Array(),
     );
-  } else if (state.kind === "pdf" && replacingPage) {
+  } else if (state.kind === "pdf" && replacingPage && !overlay) {
     await finalizePdfPage(invocation, state, false);
   }
   state.xlim = [0, 1];
   state.ylim = [0, 1];
   state.xlog = false;
   state.ylog = false;
-  writeGraphics(invocation, state, { kind: "new-page" });
+  writeGraphics(
+    invocation,
+    state,
+    overlay ? { kind: "window", xlim: state.xlim, ylim: state.ylim } : { kind: "new-page" },
+  );
   return state;
 }
 
@@ -34858,6 +38174,10 @@ async function builtinGraphicsAxis(invocation: BuiltinInvocation): Promise<RValu
     if (argument.promise.missing) continue;
     const supplied = await invocation.force(argument.promise);
     const name = argument.name;
+    if (name === "xlab" || name === "ylab" || name === "main" || name === "sub") {
+      // axis() forces these standard annotation controls but does not draw them.
+      continue;
+    }
     if (
       name === "tcl" ||
       name === "tck" ||
@@ -34867,7 +38187,9 @@ async function builtinGraphicsAxis(invocation: BuiltinInvocation): Promise<RValu
       name === "las" ||
       name === "family" ||
       name === "fg" ||
-      name === "xpd"
+      name === "xpd" ||
+      name === "xaxt" ||
+      name === "yaxt"
     ) {
       controls.set(name, supplied);
       continue;
@@ -34877,7 +38199,15 @@ async function builtinGraphicsAxis(invocation: BuiltinInvocation): Promise<RValu
       `axis() graphical control '${name ?? "<unnamed>"}' is outside the measured browser subset.`,
     );
   }
+  graphicsAxisStyle(controls.get("xaxt"), "xaxt");
+  graphicsAxisStyle(controls.get("yaxt"), "yaxt");
   drawGraphicsAxis(invocation, state, side, entries, labels, tick, controls);
+  const styleName = side === 1 || side === 3 ? "xaxt" : "yaxt";
+  if (
+    graphicsAxisStyle(controls.get(styleName) ?? state.parameters.get(styleName), styleName) === "n"
+  ) {
+    return R_NULL;
+  }
   const missing = new Uint8Array(entries.length);
   const result = new Float64Array(entries.length);
   for (let index = 0; index < entries.length; index += 1) {
@@ -34905,6 +38235,27 @@ function graphicsAxisFlag(value: RValue | undefined, fallback: boolean): boolean
     return (value.real[0] ?? 0) !== 0 || (value.imaginary[0] ?? 0) !== 0;
   }
   return (value.values[0] ?? 0) !== 0;
+}
+
+function graphicsAxisStyle(
+  value: RValue | undefined,
+  name: "xaxt" | "yaxt",
+): "s" | "n" | "l" | "t" {
+  if (value === undefined) return "s";
+  if (value.type !== "character" || value.length === 0 || isMissing(value, 0)) {
+    throw new RTypeMismatchError(
+      "NRT3390",
+      `invalid value specified for graphical parameter "${name}"`,
+    );
+  }
+  const style = value.values[0];
+  if (style !== "s" && style !== "n" && style !== "l" && style !== "t") {
+    throw new RTypeMismatchError(
+      "NRT3390",
+      `invalid value specified for graphical parameter "${name}"`,
+    );
+  }
+  return style;
 }
 
 function graphicsAxisLabels(
@@ -34958,6 +38309,12 @@ function drawGraphicsAxis(
   controls: ReadonlyMap<string, RValue>,
 ): void {
   const horizontal = side === 1 || side === 3;
+  const styleName = horizontal ? "xaxt" : "yaxt";
+  const style = graphicsAxisStyle(
+    controls.get(styleName) ?? state.parameters.get(styleName),
+    styleName,
+  );
+  if (style === "n") return;
   const limits = horizontal ? state.xlim : state.ylim;
   const lower = Math.min(limits[0], limits[1]);
   const upper = Math.max(limits[0], limits[1]);
@@ -38572,6 +41929,9 @@ async function builtinPdf(invocation: BuiltinInvocation): Promise<RValue> {
   const registry = graphicsRegistry(invocation);
   const number = nextGraphicsDeviceNumber(registry);
   const parameters = defaultGraphicsParameters();
+  const askNewPage = deviceAskDefault(invocation);
+  parameters.set("ask", logicalVector([askNewPage]));
+  parameters.set("din", doubleVector([geometry.regionWidth, geometry.regionHeight]));
   parameters.set("ps", integerVector([Math.round(pointsize)]));
   parameters.set("family", characterVector([pdfGraphicsFamily(family)]));
   parameters.set("bg", characterVector([backgroundSource]));
@@ -38607,7 +41967,7 @@ async function builtinPdf(invocation: BuiltinInvocation): Promise<RValue> {
       page: 1,
     },
     active: true,
-    askNewPage: deviceAskDefault(invocation),
+    askNewPage,
     xlim: [0, 1],
     ylim: [0, 1],
     xlog: false,
@@ -38795,7 +42155,7 @@ async function builtinPng(invocation: BuiltinInvocation): Promise<RValue> {
   if (matched.get("restoreConsole") !== undefined) {
     logicalFlag(matched.get("restoreConsole"), true, "restoreConsole");
   }
-  pngChoice(matched.get("type"), "windows", ["windows", "cairo", "cairo-png"], "type");
+  const type = pngChoice(matched.get("type"), "windows", ["windows", "cairo", "cairo-png"], "type");
   pngChoice(
     matched.get("antialias"),
     "default",
@@ -38807,6 +42167,18 @@ async function builtinPng(invocation: BuiltinInvocation): Promise<RValue> {
   const registry = graphicsRegistry(invocation);
   const number = nextGraphicsDeviceNumber(registry);
   const parameters = defaultGraphicsParameters();
+  const askNewPage = deviceAskDefault(invocation);
+  const dotsPerInch = resolution ?? 72;
+  // The GNU R 4.6.1 Windows bitmap device reports a 0.0001-pixel inset; Cairo uses the full extent.
+  const windowsExtent = type === "windows" ? 0.0001 : 0;
+  parameters.set("ask", logicalVector([askNewPage]));
+  parameters.set(
+    "din",
+    doubleVector([
+      (pixelWidth - windowsExtent) / dotsPerInch,
+      (pixelHeight - windowsExtent) / dotsPerInch,
+    ]),
+  );
   parameters.set("ps", integerVector([Math.round(pointsize)]));
   const state: GraphicsState = {
     number,
@@ -38822,7 +42194,7 @@ async function builtinPng(invocation: BuiltinInvocation): Promise<RValue> {
       page: 1,
     },
     active: true,
-    askNewPage: deviceAskDefault(invocation),
+    askNewPage,
     xlim: [0, 1],
     ylim: [0, 1],
     xlog: false,
@@ -39247,6 +42619,7 @@ async function builtinDeviceAskNewPage(invocation: BuiltinInvocation): Promise<R
   if (ask === undefined || ask.type === "null") return logicalVector([previous]);
 
   state.askNewPage = coercibleLogicalFlag(ask, false, "ask");
+  state.parameters.set("ask", logicalVector([state.askNewPage]));
   invocation.setResultVisibility("invisible");
   return logicalVector([previous]);
 }
@@ -40372,15 +43745,29 @@ function createBrowserGraphicsState(invocation: BuiltinInvocation): GraphicsStat
     existingParameters instanceof Map
       ? (existingParameters as GraphicsParametersState)
       : defaultGraphicsParameters();
+  const askNewPage =
+    existingParameters instanceof Map
+      ? logicalFlag(parameters.get("ask"), false, "ask")
+      : deviceAskDefault(invocation);
+  parameters.set("ask", logicalVector([askNewPage]));
+  const userCoordinates = parameters.get("usr");
+  const xlim: readonly [number, number] =
+    userCoordinates?.type === "double" && userCoordinates.length === 4
+      ? [userCoordinates.values[0] ?? 0, userCoordinates.values[1] ?? 1]
+      : [0, 1];
+  const ylim: readonly [number, number] =
+    userCoordinates?.type === "double" && userCoordinates.length === 4
+      ? [userCoordinates.values[2] ?? 0, userCoordinates.values[3] ?? 1]
+      : [0, 1];
   const state: GraphicsState = {
     number,
     name: "NativR",
     kind: "browser",
     parameters,
     active: true,
-    askNewPage: deviceAskDefault(invocation),
-    xlim: [0, 1],
-    ylim: [0, 1],
+    askNewPage,
+    xlim,
+    ylim,
     xlog: false,
     ylog: false,
     holdLevel: 0,
@@ -41397,6 +44784,34 @@ async function builtinAsMatrix(invocation: BuiltinInvocation): Promise<RValue> {
   if (!isVector(value)) {
     throw new RTypeMismatchError("NRT3125", "as.matrix() requires a vector or list.");
   }
+  if (isDataFrame(value)) {
+    const rows = dataFrameRowCount(value);
+    const cells: { readonly vector: AtomicVector; readonly index: number }[] = [];
+    for (const column of value.values) {
+      if (!isAtomic(column) || column.length !== rows) {
+        throw new RTypeMismatchError(
+          "NRT3125",
+          "as.matrix() currently requires equal-length atomic data-frame columns.",
+        );
+      }
+      const normalized = isFactor(column) ? coerceAtomicToCharacter(column, invocation) : column;
+      for (let row = 0; row < rows; row += 1) {
+        cells.push({ vector: normalized, index: row });
+      }
+    }
+    invocation.context.allocate(cells.length);
+    const matrix = withDimensions(atomicCells(cells, invocation), [rows, value.length]);
+    const rowNames = value.attributes.get("row.names");
+    const columnNames = vectorNames(value);
+    return withAttribute(
+      matrix,
+      "dimnames",
+      listValue([
+        value.automaticRowNames || rowNames?.type !== "character" ? R_NULL : rowNames,
+        columnNames === undefined ? R_NULL : characterVector(columnNames),
+      ]),
+    );
+  }
   const dimensions = vectorDimensions(value);
   if (dimensions?.length === 2) return value;
   return withDimensions(value, [value.length, 1]);
@@ -41890,7 +45305,22 @@ function transposeDataFrame(input: RList, invocation: BuiltinInvocation): RVecto
 }
 
 async function builtinBind(invocation: BuiltinInvocation, axis: "row" | "column"): Promise<RValue> {
-  const values = await forceAll(invocation);
+  const { matched, dots } = matchBuiltinArguments(invocation, ["...", "deparse.level"]);
+  const levelArgument = matched.get("deparse.level");
+  let deparseLevel = 1;
+  if (levelArgument !== undefined) {
+    const level = await invocation.force(levelArgument.promise);
+    if (level.type === "null") deparseLevel = 0;
+    else if (isAtomic(level)) {
+      const integers = coerceAtomicToInteger(level, invocation);
+      deparseLevel =
+        integers.length === 0 || isMissing(integers, 0) ? 0 : (integers.values[0] ?? 0);
+    } else {
+      throw new RTypeMismatchError("NRT3160", "Invalid 'deparse.level' argument.");
+    }
+  }
+  const values: RValue[] = [];
+  for (const argument of dots) values.push(await invocation.force(argument.promise));
   if (values.length === 0) return R_NULL;
   if (axis === "row" && values.every(isDataFrame)) {
     return bindDataFrameRows(values, invocation);
@@ -41908,7 +45338,7 @@ async function builtinBind(invocation: BuiltinInvocation, axis: "row" | "column"
       },
     });
   }
-  const blocks = (values as AtomicVector[]).map((value) => {
+  const blocks = (values as AtomicVector[]).map((value, index) => {
     const dimensions = vectorDimensions(value);
     if (dimensions !== undefined && dimensions.length !== 2) {
       throw new RTypeMismatchError(
@@ -41918,6 +45348,7 @@ async function builtinBind(invocation: BuiltinInvocation, axis: "row" | "column"
     }
     return {
       value,
+      argument: dots[index],
       vectorInput: dimensions === undefined,
       rows: dimensions?.[0] ?? (axis === "row" ? 1 : value.length),
       columns: dimensions?.[1] ?? (axis === "row" ? value.length : 1),
@@ -41974,7 +45405,60 @@ async function builtinBind(invocation: BuiltinInvocation, axis: "row" | "column"
     }
   }
   invocation.context.allocate(cells.length);
-  return withDimensions(atomicCells(cells, invocation), [rows, columns]);
+  const result = withDimensions(atomicCells(cells, invocation), [rows, columns]);
+  const boundAxis = axis === "row" ? 0 : 1;
+  const commonAxis = 1 - boundAxis;
+  let commonNames: RCharacterVector | undefined;
+  const boundNames: string[] = [];
+  const boundMissing: number[] = [];
+  let hasBoundNames = false;
+  for (const block of blocks) {
+    const dimnames = validatedDimensionNames(block.value);
+    const extent = axis === "row" ? block.rows : block.columns;
+    invocation.context.checkpoint(extent);
+    const labels = dimnames?.values[boundAxis];
+    if (!block.vectorInput && labels?.type === "character") {
+      hasBoundNames = true;
+      for (let index = 0; index < extent; index += 1) {
+        boundNames.push(labels.values[index] ?? "");
+        boundMissing.push(isMissing(labels, index) ? 1 : 0);
+      }
+    } else {
+      const expression = block.argument?.promise.expression;
+      const label = !block.vectorInput
+        ? ""
+        : block.argument?.name ||
+          (deparseLevel === 1 && expression?.kind === "Identifier"
+            ? expression.name
+            : deparseLevel === 2 && expression !== null && expression !== undefined
+              ? deparseAst(expression)
+              : "");
+      if (label !== "") hasBoundNames = true;
+      for (let index = 0; index < extent; index += 1) {
+        boundNames.push(label);
+        boundMissing.push(0);
+      }
+    }
+    if (commonNames === undefined) {
+      const candidate = block.vectorInput
+        ? block.value.length === target
+          ? block.value.attributes.get("names")
+          : undefined
+        : dimnames?.values[commonAxis];
+      if (candidate?.type === "character") commonNames = candidate;
+    }
+  }
+  if (!hasBoundNames && commonNames === undefined) return result;
+  invocation.context.allocate(hasBoundNames ? boundNames.length : 0);
+  const bound = hasBoundNames
+    ? characterVector(boundNames, compactMask(Uint8Array.from(boundMissing)))
+    : R_NULL;
+  const common = commonNames ?? R_NULL;
+  return withAttribute(
+    result,
+    "dimnames",
+    listValue(axis === "row" ? [bound, common] : [common, bound]),
+  );
 }
 
 function bindDataFrameRows(frames: readonly RList[], invocation: BuiltinInvocation): RList {
@@ -42161,29 +45645,240 @@ function dimensionsValue(value: RValue): readonly number[] {
   return dimensions;
 }
 
+async function builtinDataFrameSummary(invocation: BuiltinInvocation): Promise<RValue> {
+  const generic = invocation.s3Generic;
+  if (generic === undefined) throw new REvaluationError("NRE2001", "object '.Generic' not found");
+  const { matched, dots } = matchLeadingDotsArguments(invocation, ["na.rm"]);
+  const args: BuiltinInvocation["arguments"][number][] = [];
+  const append = (value: RValue, name?: string): void => {
+    args.push({
+      ...(name === undefined ? {} : { name }),
+      promise: createForcedPromise(value, invocation.currentEnvironment()),
+    });
+  };
+  for (const argument of dots) {
+    const input = await invocation.force(argument.promise);
+    if (input.type === "null")
+      throw new RTypeMismatchError("NRT3452", "'data' must be of a vector type, was 'NULL'");
+    const columns = isDataFrame(input) ? input.values : [input];
+    for (const column of columns) {
+      invocation.context.checkpoint();
+      const numeric = await builtinIsNumeric(
+        {
+          ...invocation,
+          arguments: [{ promise: createForcedPromise(column, invocation.currentEnvironment()) }],
+        },
+        invocation.namespaceEnvironment("base") ?? invocation.baseEnvironment(),
+      );
+      if (
+        !isAtomic(column) ||
+        (!productRemoveMissing(numeric, invocation) &&
+          column.type !== "logical" &&
+          column.type !== "complex")
+      )
+        throw new RTypeMismatchError(
+          "NRT3452",
+          "only defined on a data frame with all numeric-alike variables",
+        );
+    }
+    const value =
+      columns.length === 0
+        ? logicalVector([])
+        : combineAtomicEntries(
+            columns.map((value) => ({ value })),
+            invocation,
+            "Summary.data.frame",
+          );
+    append(value, argument.name);
+  }
+  const control = matched.get("na.rm");
+  if (control !== undefined) {
+    const value = await invocation.force(control.promise);
+    if (isAtomic(value)) {
+      if (value.length === 1) append(value, "na.rm");
+      else
+        for (let index = 0; index < value.length; index += 1) {
+          append(
+            subsetVector(value, integerVector([index + 1]), invocation.context),
+            `na.rm${index + 1}`,
+          );
+        }
+    } else if (value.type !== "null")
+      throw new RTypeMismatchError("NRT3452", "unsupported non-atomic 'na.rm' control");
+  }
+  const forwarded = { ...invocation, arguments: args };
+  switch (generic) {
+    case "sum":
+      return builtinSum(forwarded);
+    case "prod":
+      return builtinProduct(forwarded);
+    case "min":
+    case "max":
+    case "range":
+      return aggregateExtrema(forwarded, generic);
+    case "any":
+    case "all":
+      return builtinLogicalSummary(forwarded, generic);
+    default:
+      throw new RUnsupportedFeatureError("NRU6101", `Unsupported Summary member '${generic}'.`);
+  }
+}
+
+async function builtinFactorSummary(
+  invocation: BuiltinInvocation,
+  ordered: boolean,
+): Promise<RValue> {
+  const generic = invocation.s3Generic;
+  if (generic === undefined) throw new REvaluationError("NRE2001", "object '.Generic' not found");
+  if (!ordered || !["min", "max", "range"].includes(generic))
+    throw new RTypeMismatchError(
+      "NRT3451",
+      `'${generic}' ${ordered ? "not defined for ordered" : "not meaningful for"} factors`,
+    );
+  const { matched, dots } = matchLeadingDotsArguments(invocation, ["na.rm"]);
+  const inputs: RIntegerVector[] = [];
+  let levels: readonly string[] | undefined;
+  for (const argument of dots) {
+    const input = await invocation.force(argument.promise);
+    if (
+      !isFactor(input) ||
+      !vectorClasses(input)?.includes("ordered") ||
+      (levels !== undefined &&
+        !stringArrayEqual(levels, factorLevels(input), () => invocation.context.checkpoint()))
+    )
+      throw new RTypeMismatchError(
+        "NRT3451",
+        `'${generic}' is only meaningful for ordered factors if all arguments have the same level sets`,
+      );
+    levels ??= factorLevels(input);
+    inputs.push(input);
+  }
+  const control = matched.get("na.rm");
+  const value = control === undefined ? R_NULL : await invocation.force(control.promise);
+  const removeMissing =
+    isAtomic(value) && value.length === 1 ? productRemoveMissing(value, invocation) : false;
+  let minimum = Infinity;
+  let maximum = -Infinity;
+  let missing = false;
+  for (const input of inputs)
+    for (let index = 0; index < input.length; index += 1) {
+      invocation.context.checkpoint();
+      if (isMissing(input, index)) {
+        if (!removeMissing) missing = true;
+        continue;
+      }
+      minimum = Math.min(minimum, input.values[index]!);
+      maximum = Math.max(maximum, input.values[index]!);
+    }
+  const extremes =
+    generic === "range" ? [minimum, maximum] : [generic === "min" ? minimum : maximum];
+  const mask = new Uint8Array(extremes.length);
+  for (let index = 0; index < extremes.length; index += 1) {
+    if (missing) mask[index] = 1;
+    else if (!Number.isFinite(extremes[index])) {
+      mask[index] = 1;
+      const operation = generic === "range" ? (index === 0 ? "min" : "max") : generic;
+      invocation.context.warn({
+        code: "NRW1061",
+        message: `no non-missing arguments to ${operation}; returning ${operation === "min" ? "Inf" : "-Inf"}`,
+      });
+    }
+  }
+  invocation.context.allocate(extremes.length);
+  return factorValue(
+    extremes.map((code, index) => (mask[index] ? 0 : code)),
+    levels ?? [],
+    mask,
+    true,
+  );
+}
+
 async function builtinExtremum(
   invocation: BuiltinInvocation,
   operation: "min" | "max",
 ): Promise<RValue> {
-  const { inputs, removeMissing } = await variadicNumeric(invocation, operation);
-  let result = operation === "min" ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
+  return aggregateExtrema(invocation, operation);
+}
+
+async function aggregateExtrema(
+  invocation: BuiltinInvocation,
+  operation: "min" | "max" | "range",
+): Promise<RValue> {
+  const { matched, dots } = matchLeadingDotsArguments(
+    invocation,
+    operation === "range" ? ["na.rm", "finite"] : ["na.rm"],
+  );
+  for (const argument of invocation.arguments) await invocation.force(argument.promise);
+  const control = async (name: string): Promise<boolean> => {
+    const argument = matched.get(name);
+    return productRemoveMissing(
+      argument === undefined ? undefined : await invocation.force(argument.promise),
+      invocation,
+    );
+  };
+  const finite = operation === "range" && (await control("finite"));
+  const removeMissing = finite || (await control("na.rm"));
+  const inputs: AtomicVector[] = [];
+  for (const argument of dots) {
+    const value = await invocation.force(argument.promise);
+    if (value.type === "null") continue;
+    if (
+      value.type !== "logical" &&
+      value.type !== "integer" &&
+      value.type !== "double" &&
+      value.type !== "character"
+    )
+      throw new RTypeMismatchError("NRT3102", `invalid 'type' (${value.type}) of argument`);
+    inputs.push(value);
+  }
+  const character = inputs.some((input) => input.type === "character");
+  const integer = !character && inputs.every((input) => input.type !== "double");
+  let minimum: number | string = Infinity;
+  let maximum: number | string = -Infinity;
+  let count = 0;
+  let missing = false;
+  let nan = false;
   for (const input of inputs) {
-    for (let index = 0; index < input.length; index += 1) {
+    const vector = character ? coerceAtomicToCharacter(input, invocation) : input;
+    for (let index = 0; index < vector.length; index += 1) {
       invocation.context.checkpoint();
-      if (isMissing(input, index)) {
-        if (!removeMissing) return doubleVector([0], [1]);
+      if (isMissing(vector, index)) {
+        if (!removeMissing) missing = true;
         continue;
       }
-      const item = numberAt(input, index);
-      if (Number.isNaN(item)) {
-        if (!removeMissing) return doubleVector([Number.NaN]);
+      const item = vector.type === "character" ? vector.values[index]! : numberAt(vector, index);
+      if (typeof item === "number" && Number.isNaN(item)) {
+        if (!removeMissing) nan = true;
         continue;
       }
-      result = operation === "min" ? Math.min(result, item) : Math.max(result, item);
+      if (finite && typeof item === "number" && !Number.isFinite(item)) continue;
+      if (count === 0 || item < minimum) minimum = item;
+      if (count === 0 || item > maximum) maximum = item;
+      count += 1;
     }
   }
-  invocation.context.allocate(1);
-  return doubleVector([result]);
+  const operations = operation === "range" ? ["min", "max"] : [operation];
+  const values = operations.map((item) => (item === "min" ? minimum : maximum));
+  invocation.context.allocate(values.length);
+  if (!missing && !nan && count === 0) {
+    for (const item of operations)
+      invocation.context.warn({
+        code: "NRW1061",
+        message: character
+          ? "no non-missing arguments, returning NA"
+          : `no non-missing arguments to ${item}; returning ${item === "min" ? "Inf" : "-Inf"}`,
+      });
+  }
+  const mask = missing || (character && count === 0) ? values.map(() => 1) : undefined;
+  if (character)
+    return characterVector(
+      values.map((value) => (typeof value === "string" ? value : "")),
+      mask,
+    );
+  const numbers = values.map((value) => (missing ? 0 : nan ? Number.NaN : (value as number)));
+  return integer && (count > 0 || missing)
+    ? integerVector(numbers, mask)
+    : doubleVector(numbers, mask);
 }
 
 type ParallelExtremumOperation = "min" | "max";
@@ -43858,7 +47553,7 @@ async function builtinDifference(invocation: BuiltinInvocation): Promise<RValue>
     if (rows !== undefined) rows = Math.max(0, rows - lag);
   }
   if (overflow) {
-    invocation.context.warn({ code: "NRW1002", message: "NAs produced by integer overflow." });
+    invocation.context.warn({ code: "NRW1002", message: "NAs produced by integer overflow" });
   }
   return differenceAttributes(current, input, lag * differences, matrix, rows);
 }
@@ -44075,27 +47770,7 @@ function differencePosixUnits(value: NumericVector): {
 }
 
 async function builtinRange(invocation: BuiltinInvocation): Promise<RValue> {
-  const { inputs, removeMissing } = await variadicNumeric(invocation, "range");
-  let minimum = Number.POSITIVE_INFINITY;
-  let maximum = Number.NEGATIVE_INFINITY;
-  for (const input of inputs) {
-    for (let index = 0; index < input.length; index += 1) {
-      invocation.context.checkpoint();
-      if (isMissing(input, index)) {
-        if (!removeMissing) return doubleVector([0, 0], [1, 1]);
-        continue;
-      }
-      const item = numberAt(input, index);
-      if (Number.isNaN(item)) {
-        if (!removeMissing) return doubleVector([Number.NaN, Number.NaN]);
-        continue;
-      }
-      minimum = Math.min(minimum, item);
-      maximum = Math.max(maximum, item);
-    }
-  }
-  invocation.context.allocate(2);
-  return doubleVector([minimum, maximum]);
+  return aggregateExtrema(invocation, "range");
 }
 
 async function builtinMedian(invocation: BuiltinInvocation): Promise<RValue> {
@@ -44342,7 +48017,7 @@ function iqrNumericInput(value: RValue, invocation: BuiltinInvocation): RDoubleV
       output[index] = value.values[index] ?? 0;
     }
   }
-  if (warned) invocation.context.warn({ code: "NRW1003", message: "NAs introduced by coercion." });
+  if (warned) invocation.context.warn({ code: "NRW1003", message: "NAs introduced by coercion" });
   return doubleVector(output, compactMask(missing));
 }
 
@@ -45142,7 +48817,7 @@ async function builtinLogisticQuantile(invocation: BuiltinInvocation): Promise<R
     output[index] = quantile;
   }
   if (producedNaN) {
-    invocation.context.warn({ code: "NRW1003", message: "NaNs produced." });
+    invocation.context.warn({ code: "NRW1003", message: "NaNs produced" });
   }
   return {
     ...doubleVector(output, compactMask(missing)),
@@ -45550,7 +49225,7 @@ function vectorizedQuantile(
     output[index] = result;
   }
   if (producedNaN) {
-    invocation.context.warn({ code: "NRW1003", message: "NaNs produced." });
+    invocation.context.warn({ code: "NRW1003", message: "NaNs produced" });
   }
   return {
     ...doubleVector(output, compactMask(missing)),
@@ -45565,7 +49240,8 @@ function standardNormalQuantile(
 ): number {
   if (logProbability ? input > 0 : input < 0 || input > 1) return Number.NaN;
   if (!logProbability) {
-    const quantile = stableNormalQuantile(input);
+    // AS 241 handles both halves directly; the upper tail is the exact reflection.
+    const quantile = normalQuantile(input);
     return lowerTail ? quantile : -quantile;
   }
   if (input === Number.NEGATIVE_INFINITY) {
@@ -45574,22 +49250,19 @@ function standardNormalQuantile(
   if (input === 0) {
     return lowerTail ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
   }
-  const probability = input <= Math.log(0.5) ? Math.exp(input) : -Math.expm1(input);
-  if (probability === 0) {
+  // Quantile of the requested tail, reflected for the upper tail. The smaller tail's logarithm
+  // feeds AS 241's tail branch directly instead of being rounded through a probability.
+  const probability = Math.exp(input);
+  const logSmallTail = probability < 0.5 ? input : Math.log(-Math.expm1(input));
+  if (logSmallTail < -729) {
+    // sqrt(-log p) > 27: GNU R documents a separate extreme-tail treatment, unverified here.
     throw new RUnsupportedFeatureError(
       "NRU6153",
-      "qnorm() finite log probabilities below the browser number range are not implemented yet.",
+      "qnorm() log probabilities with sqrt(-log p) > 27 are not implemented yet.",
     );
   }
-  const quantile =
-    input <= Math.log(0.5) ? stableNormalQuantile(probability) : -stableNormalQuantile(probability);
+  const quantile = as241Quantile(probability, logSmallTail);
   return lowerTail ? quantile : -quantile;
-}
-
-function stableNormalQuantile(probability: number): number {
-  if (probability === 0) return Number.NEGATIVE_INFINITY;
-  if (probability === 1) return Number.POSITIVE_INFINITY;
-  return probability <= 0.5 ? normalQuantile(probability) : -normalQuantile(1 - probability);
 }
 
 function ordinaryLowerTailProbability(
@@ -45705,7 +49378,7 @@ async function builtinStudentTDistribution(
     output[index] = result;
   }
   if (producedNaN) {
-    invocation.context.warn({ code: "NRW1003", message: "NaNs produced." });
+    invocation.context.warn({ code: "NRW1003", message: "NaNs produced" });
   }
   return {
     ...doubleVector(output, compactMask(missing)),
@@ -45814,6 +49487,16 @@ function virtualConnectionSummaryFields(
 }
 
 async function builtinSummary(invocation: BuiltinInvocation): Promise<RValue> {
+  const lazy = matchLazyArgumentsWithDots(invocation, ["object"]);
+  const argument = lazy.matched.get("object");
+  if (argument !== undefined && !argument.promise.missing) {
+    const candidate = await invocation.force(argument.promise);
+    const dispatched = await invocation.dispatchS3IfPresent("summary", candidate, [
+      argument,
+      ...invocation.arguments.filter((item) => item !== argument),
+    ]);
+    if (dispatched !== undefined) return dispatched;
+  }
   const matched = await matchExact(invocation, ["object"]);
   const object = required(matched, "object", "summary");
   if (isVirtualTextConnectionHandle(object)) {
@@ -45878,7 +49561,11 @@ async function builtinTable(invocation: BuiltinInvocation): Promise<RValue> {
     if (!isAtomic(value)) {
       throw new RTypeMismatchError("NRT3168", "table() inputs must be atomic vectors.");
     }
-    inputs.push({ name: argument.name ?? `Var${inputs.length + 1}`, value });
+    const expression = argument.promise.expression;
+    inputs.push({
+      name: argument.name ?? (expression?.kind === "Identifier" ? expression.name : ""),
+      value,
+    });
   }
   if (inputs.length === 0) {
     throw new REvaluationError("NRE2103", "table() requires at least one input.");
@@ -45923,7 +49610,7 @@ async function builtinTable(invocation: BuiltinInvocation): Promise<RValue> {
     output,
     "dimnames",
     listValue(
-      levels.map((items) => characterVector(items)),
+      levels.map((items) => (items.length === 0 ? R_NULL : characterVector(items))),
       inputs.map((input) => input.name),
     ),
   );
@@ -45984,32 +49671,6 @@ async function builtinPropTable(invocation: BuiltinInvocation): Promise<RValue> 
   }
   invocation.context.allocate(output.length);
   return { ...doubleVector(output), attributes: new Map(input.attributes) };
-}
-
-async function variadicNumeric(
-  invocation: BuiltinInvocation,
-  call: string,
-): Promise<{ readonly inputs: readonly NumericVector[]; readonly removeMissing: boolean }> {
-  const controls = invocation.arguments.filter((argument) => argument.name === "na.rm");
-  if (controls.length > 1) {
-    throw new REvaluationError("NRE2102", "Argument 'na.rm' matched more than once.");
-  }
-  const unknown = invocation.arguments.find(
-    (argument) => argument.name !== undefined && argument.name !== "na.rm",
-  );
-  if (unknown !== undefined) {
-    throw new REvaluationError("NRE2101", `Unused argument '${unknown.name ?? ""}' in ${call}().`);
-  }
-  const control = controls[0];
-  const removeMissing =
-    control === undefined
-      ? false
-      : logicalFlag(await invocation.force(control.promise), false, "na.rm");
-  const inputs: NumericVector[] = [];
-  for (const argument of invocation.arguments.filter((item) => item.name === undefined)) {
-    inputs.push(requireNumeric(await invocation.force(argument.promise), call));
-  }
-  return { inputs, removeMissing };
 }
 
 function collectNumeric(
@@ -46946,6 +50607,35 @@ async function builtinAsDataFrame(invocation: BuiltinInvocation): Promise<RValue
   }
   if (!isAtomic(value)) {
     throw new RTypeMismatchError("NRT3128", "as.data.frame() requires an atomic vector or list.");
+  }
+  const dimensions = vectorDimensions(value);
+  if (dimensions?.length === 2) {
+    const [rows, columnsCount] = dimensions as readonly [number, number];
+    const dimensionNames = value.attributes.get("dimnames");
+    const rowAxis = dimensionNames?.type === "list" ? dimensionNames.values[0] : undefined;
+    const columnAxis = dimensionNames?.type === "list" ? dimensionNames.values[1] : undefined;
+    const rowNames =
+      rowAxis?.type === "character" && rowAxis.length === rows
+        ? [...rowAxis.values]
+        : Array.from({ length: rows }, (_, index) => String(index + 1));
+    const columnNames =
+      columnAxis?.type === "character" && columnAxis.length === columnsCount
+        ? [...columnAxis.values]
+        : Array.from({ length: columnsCount }, (_, index) => `V${index + 1}`);
+    const columns: AtomicVector[] = [];
+    for (let column = 0; column < columnsCount; column += 1) {
+      const selected = subsetDimensions(
+        value,
+        [undefined, integerVector([column + 1])],
+        true,
+        invocation.context,
+      );
+      if (!isAtomic(selected)) {
+        throw new RTypeMismatchError("NRT3128", "Matrix columns must be atomic.");
+      }
+      columns.push(atomicWithoutAttributes(selected));
+    }
+    return dataFrameValue(columns, columnNames, rowNames, rowAxis === undefined);
   }
   invocation.context.allocate(value.length + 1);
   return dataFrameValue(
@@ -48224,35 +51914,123 @@ async function builtinLapply(invocation: BuiltinInvocation): Promise<RValue> {
   if (inputArgument === undefined || functionArgument === undefined) {
     throw new REvaluationError("NRE2103", "lapply() requires both 'X' and 'FUN'.");
   }
-  const input = await invocation.force(inputArgument.promise);
-  const callable = await invocation.force(functionArgument.promise);
-  if (input.type === "null") return listValue([]);
-  if (!isVector(input)) {
-    throw new RTypeMismatchError("NRT3135", "lapply() requires a vector or list.");
-  }
-  const forwarded = await forceForwarded(invocation, extras);
-  invocation.context.allocate(input.length);
-  const results: RValue[] = [];
-  for (let index = 0; index < input.length; index += 1) {
-    invocation.context.checkpoint();
-    const item =
-      input.type === "list"
-        ? (input.values[index] ?? R_NULL)
-        : extractVectorElement(input, integerVector([index + 1]), invocation.context);
-    results.push(await invocation.invoke(callable, [{ value: item }, ...forwarded]));
-  }
-  return listValue(results, vectorNames(input));
+  const callable = await applyFunction(functionArgument, invocation);
+  const input = await prepareApplyInput(await invocation.force(inputArgument.promise), invocation);
+  const results = await mapVector(invocation, input, callable, extras);
+  const names = applyNames(input);
+  return names === undefined
+    ? listValue(results)
+    : withAttribute(listValue(results), "names", names);
 }
 
 async function builtinSapply(invocation: BuiltinInvocation): Promise<RValue> {
   const parsed = await parseVectorApply(invocation, ["simplify", "USE.NAMES"], "sapply");
-  const simplify = logicalFlag(parsed.controls.get("simplify"), true, "simplify");
-  const useNames = logicalFlag(parsed.controls.get("USE.NAMES"), true, "USE.NAMES");
   const results = await mapVector(invocation, parsed.input, parsed.callable, parsed.forwarded);
-  if (!simplify) {
-    return listValue(results, useNames ? vectorNames(parsed.input) : undefined);
+  const namesArgument = parsed.controls.get("USE.NAMES");
+  const useNames =
+    namesArgument === undefined || namesArgument.promise.missing
+      ? true
+      : sapplyNamesControl(await invocation.force(namesArgument.promise));
+  let names = applyNames(parsed.input);
+  if (names === undefined && useNames !== false && parsed.original.type === "character") {
+    if (useNames === undefined) {
+      throw new RTypeMismatchError("NRT3176", "missing value where TRUE/FALSE needed");
+    }
+    const suppliedNames = applyCharacterNames(parsed.original);
+    if (suppliedNames.length > results.length) {
+      throw new RTypeMismatchError(
+        "NRT3199",
+        `'names' attribute [${suppliedNames.length}] must be the same length as the vector [${results.length}]`,
+      );
+    }
+    names =
+      suppliedNames.length === results.length
+        ? suppliedNames
+        : (subsetVector(
+            suppliedNames,
+            integerVector(Array.from({ length: results.length }, (_, index) => index + 1)),
+            invocation.context,
+          ) as RCharacterVector);
   }
-  return simplifyResults(results, useNames ? vectorNames(parsed.input) : undefined, invocation);
+  const simplifyArgument = parsed.controls.get("simplify");
+  const simplify =
+    simplifyArgument === undefined || simplifyArgument.promise.missing
+      ? logicalVector([1])
+      : await invocation.force(simplifyArgument.promise);
+  const output =
+    names === undefined ? listValue(results) : withAttribute(listValue(results), "names", names);
+  return simplifyMappedResult(output, simplify, invocation);
+}
+
+async function simplifyMappedResult(
+  output: RList,
+  simplify: RValue,
+  invocation: BuiltinInvocation,
+): Promise<RValue> {
+  if (
+    simplify.type === "logical" &&
+    simplify.length === 1 &&
+    !isMissing(simplify, 0) &&
+    simplify.values[0] === 0
+  ) {
+    invocation.setResultVisibility("visible");
+    return output;
+  }
+  return simplifyApplyResult(output, invocation, () => sapplyHigherControl(simplify, invocation));
+}
+
+function sapplyNamesControl(value: RValue, errorCode = "NRT3176"): boolean | undefined {
+  if (!isAtomic(value) || value.type === "raw" || value.type === "character") {
+    throw new RTypeMismatchError(errorCode, "invalid 'x' type in 'x && y'");
+  }
+  if (value.length > 1) {
+    throw new RTypeMismatchError(
+      errorCode,
+      `'length = ${value.length}' in coercion to 'logical(1)'`,
+    );
+  }
+  if (value.length === 0 || isMissing(value, 0)) return undefined;
+  if (value.type === "complex") {
+    const real = value.real[0] ?? 0;
+    const imaginary = value.imaginary[0] ?? 0;
+    return Number.isNaN(real) || Number.isNaN(imaginary)
+      ? undefined
+      : real !== 0 || imaginary !== 0;
+  }
+  const scalar = value.values[0] ?? 0;
+  return Number.isNaN(scalar) ? undefined : scalar !== 0;
+}
+
+async function sapplyHigherControl(value: RValue, invocation: BuiltinInvocation): Promise<RValue> {
+  const array = characterVector(["array"]);
+  if (objectClasses(value) !== undefined) {
+    const environment = invocation.globalEnvironment();
+    const arguments_ = [value, array].map((operand) => ({
+      promise: createForcedPromise(operand, environment),
+    }));
+    const dispatched = await invocation.dispatchS3IfPresent(
+      "==",
+      value,
+      arguments_,
+      false,
+      0,
+      "Ops",
+      environment,
+    );
+    if (dispatched !== undefined) return dispatched;
+  }
+  let comparable = value;
+  if (comparable.type === "expression") comparable = listValue(comparable.values.map(quoteAst));
+  if (comparable.type === "list") {
+    comparable = namesReplacementCharacters(comparable, invocation, false);
+  }
+  if (!isAtomic(comparable) && !["null", "symbol", "language"].includes(comparable.type)) {
+    throw new RTypeMismatchError(
+      "NRT3176",
+      "comparison (==) is possible only for atomic and list types",
+    );
+  }
+  return jsReferenceOperators.binary(invocation.context, "==", comparable, array);
 }
 
 async function builtinVapply(invocation: BuiltinInvocation): Promise<RValue> {
@@ -48266,13 +52044,6 @@ async function builtinVapply(invocation: BuiltinInvocation): Promise<RValue> {
   const inputArgument = matched.get("X");
   const functionArgument = matched.get("FUN");
   const templateArgument = matched.get("FUN.VALUE");
-  const useNames = logicalFlag(
-    matched.has("USE.NAMES")
-      ? await invocation.force(matched.get("USE.NAMES")!.promise)
-      : undefined,
-    true,
-    "USE.NAMES",
-  );
   if (
     inputArgument === undefined ||
     functionArgument === undefined ||
@@ -48280,39 +52051,143 @@ async function builtinVapply(invocation: BuiltinInvocation): Promise<RValue> {
   ) {
     throw new REvaluationError("NRE2103", "vapply() requires X, FUN, and FUN.VALUE.");
   }
-  const input = await invocation.force(inputArgument.promise);
-  const callable = await invocation.force(functionArgument.promise);
+  const callable = await applyFunction(functionArgument, invocation);
+  const input = await prepareApplyInput(await invocation.force(inputArgument.promise), invocation);
   const template = await invocation.force(templateArgument.promise);
-  if ((input.type !== "null" && !isVector(input)) || !isAtomic(template)) {
-    throw new RTypeMismatchError("NRT3176", "vapply() requires a vector X and atomic FUN.VALUE.");
+  if (!isVector(template) && template.type !== "expression") {
+    throw new RTypeMismatchError("NRT3176", "'FUN.VALUE' must be a vector");
   }
-  const forwarded = await forceForwarded(invocation, dots);
-  const results =
-    input.type === "null" ? [] : await mapVector(invocation, input, callable, forwarded);
-  const inputNames = input.type === "null" ? undefined : vectorNames(input);
-  if (results.length === 0) {
-    let empty = emptyAtomicForVectorMode(template.type);
-    const names = useNames ? inputNames : undefined;
-    if (template.length === 1) return names === undefined ? empty : withNames(empty, names);
-    const dimensions = vectorDimensions(template);
-    empty = withDimensions(empty, [...(dimensions ?? [template.length]), 0]);
-    return empty;
+  const namesArgument = matched.get("USE.NAMES");
+  const useNames =
+    namesArgument === undefined || namesArgument.promise.missing
+      ? true
+      : vapplyNamesFlag(await invocation.force(namesArgument.promise));
+  if (template.type === "expression") {
+    throw new RTypeMismatchError("NRT3176", "type 'expression' is not supported");
   }
-  const coerced: AtomicVector[] = [];
-  for (const result of results) {
+  invocation.context.allocate(input.length * template.length);
+  invocation.context.allocate(input.length);
+  const results: RVector[] = [];
+  for (let index = 0; index < input.length; index += 1) {
+    invocation.context.checkpoint();
+    const result = await invocation.invokeLazy(callable, [
+      {
+        promise: createForcedPromise(
+          await applyVectorItem(input, index, invocation),
+          invocation.globalEnvironment(),
+        ),
+      },
+      ...dots,
+    ]);
+    const length = valueLength(result);
+    if (length !== template.length) {
+      throw new RTypeMismatchError(
+        "NRT3177",
+        `values must be length ${template.length},\n but FUN(X[[${index + 1}]]) result is length ${length}`,
+      );
+    }
     if (
-      !isAtomic(result) ||
-      !vapplyTypeCompatible(result.type, template.type) ||
-      result.length !== template.length
+      !isVector(result) ||
+      (result.type !== template.type &&
+        (!isAtomic(result) ||
+          !isAtomic(template) ||
+          !vapplyTypeCompatible(result.type, template.type)))
     ) {
       throw new RTypeMismatchError(
         "NRT3177",
-        "vapply() result type and length must be compatible with FUN.VALUE.",
+        `values must be type '${template.type}',\n but FUN(X[[${index + 1}]]) result is type '${valueTypeName(result)}'`,
       );
     }
-    coerced.push(coerceVapplyResult(result, template.type));
+    results.push(result);
   }
-  return simplifyResults(coerced, useNames ? inputNames : undefined, invocation);
+  const inputNames = useNames
+    ? (applyNames(input) ??
+      (input.value.type === "character" ? applyCharacterNames(input.value) : undefined))
+    : undefined;
+  const output = flattenVapplyResults(results, template, invocation);
+  if (template.length === 1) {
+    return inputNames === undefined ? output : withAttribute(output, "names", inputNames);
+  }
+  const templateDimensions = vectorDimensions(template);
+  const dimensions = [...(templateDimensions ?? [template.length]), input.length];
+  const shaped = withDimensions(output, dimensions);
+  if (!useNames) return shaped;
+  const namesKey = templateDimensions === undefined ? "names" : "dimnames";
+  const resultNames = template.attributes.get(namesKey) ?? results[0]?.attributes.get(namesKey);
+  if (resultNames === undefined && inputNames === undefined) return shaped;
+  let dimensionNames: RValue[];
+  if (templateDimensions === undefined) {
+    dimensionNames = [resultNames ?? R_NULL];
+  } else {
+    if (
+      resultNames !== undefined &&
+      (resultNames.type !== "list" || resultNames.length !== templateDimensions.length)
+    ) {
+      throw new RTypeMismatchError(
+        "NRT3177",
+        `dimnames(<value>) is neither NULL nor list of length ${templateDimensions.length}`,
+      );
+    }
+    dimensionNames =
+      resultNames?.type === "list" ? [...resultNames.values] : templateDimensions.map(() => R_NULL);
+  }
+  dimensionNames.push(inputNames ?? R_NULL);
+  for (const [axis, names] of dimensionNames.entries()) {
+    if (names.type !== "null" && valueLength(names) !== dimensions[axis]) {
+      throw new RTypeMismatchError(
+        "NRT3177",
+        `length of 'dimnames' [${axis + 1}] not equal to array extent`,
+      );
+    }
+  }
+  return withAttribute(
+    shaped,
+    "dimnames",
+    listValue(dimensionNames.map((names) => (valueLength(names) === 0 ? R_NULL : names))),
+  );
+}
+
+function vapplyNamesFlag(value: RValue): boolean {
+  let result: boolean | undefined;
+  if (isAtomic(value) && value.length > 0 && !isMissing(value, 0)) {
+    if (value.type === "character") {
+      result = parseRLogical(value.values[0] ?? "");
+    } else if (value.type === "complex") {
+      const real = value.real[0] ?? 0;
+      const imaginary = value.imaginary[0] ?? 0;
+      if (!Number.isNaN(real) && !Number.isNaN(imaginary)) result = real !== 0 || imaginary !== 0;
+    } else {
+      const number = value.values[0] ?? 0;
+      if (!Number.isNaN(number)) result = number !== 0;
+    }
+  }
+  if (result === undefined) {
+    throw new RTypeMismatchError("NRT3176", "invalid 'USE.NAMES' value");
+  }
+  return result;
+}
+
+function flattenVapplyResults(
+  results: readonly RVector[],
+  template: RVector,
+  invocation: BuiltinInvocation,
+): RVector {
+  if (template.type === "list") {
+    return listValue(results.flatMap((value) => (value as RList).values));
+  }
+  const atomic = results.map((value) => coerceVapplyResult(value as AtomicVector, template.type));
+  const cells = atomic.flatMap((vector) =>
+    Array.from({ length: vector.length }, (_, index) => ({ vector, index })),
+  );
+  if (cells.length === 0) return emptyAtomicForVectorMode(template.type);
+  const output = atomicCells(cells, invocation);
+  if (output.type !== "character") return output;
+  return characterVector(
+    output.values,
+    output.missing,
+    cells.map(({ vector, index }) => characterEncodingAt(vector as RCharacterVector, index)),
+    cells.map(({ vector, index }) => characterBytesAt(vector as RCharacterVector, index)),
+  );
 }
 
 function vapplyTypeCompatible(
@@ -48361,128 +52236,196 @@ function coerceVapplyResult(value: AtomicVector, target: AtomicVector["type"]): 
 }
 
 async function builtinMapply(invocation: BuiltinInvocation, simplify: boolean): Promise<RValue> {
-  const { matched, dots: inputArguments } = matchBuiltinArguments(
-    invocation,
-    simplify ? ["FUN", "...", "MoreArgs", "SIMPLIFY", "USE.NAMES"] : ["f", "..."],
-  );
-  const functionArgument = matched.get(simplify ? "FUN" : "f");
-  let moreArguments: RList | undefined;
-  let shouldSimplify = simplify;
-  let useNames = true;
-  if (simplify) {
-    const moreArgumentsArgument = matched.get("MoreArgs");
-    if (moreArgumentsArgument !== undefined) {
-      const value = await invocation.force(moreArgumentsArgument.promise);
-      if (value.type !== "list") {
-        throw new RTypeMismatchError("NRT3178", "mapply(MoreArgs=) requires a list.");
+  if (!simplify) {
+    const { matched, dots } = matchBuiltinArguments(invocation, ["f", "..."]);
+    const argument = matched.get("f");
+    if (argument === undefined || argument.promise.missing) {
+      throw new REvaluationError("NRE2103", 'argument "f" is missing, with no default');
+    }
+    const callable = await applyFunction(argument, invocation);
+    for (const name of ["FUN", "SIMPLIFY"]) {
+      if (dots.some((entry) => entry.name === name)) {
+        throw new REvaluationError(
+          "NRE2102",
+          `formal argument "${name}" matched by multiple actual arguments`,
+        );
       }
-      moreArguments = value;
     }
-    const simplifyArgument = matched.get("SIMPLIFY");
-    if (simplifyArgument !== undefined) {
-      shouldSimplify = logicalFlag(
-        await invocation.force(simplifyArgument.promise),
-        true,
-        "SIMPLIFY",
-      );
-    }
-    const useNamesArgument = matched.get("USE.NAMES");
-    if (useNamesArgument !== undefined) {
-      useNames = logicalFlag(await invocation.force(useNamesArgument.promise), true, "USE.NAMES");
-    }
-  }
-  if (functionArgument === undefined || inputArguments.length === 0) {
-    throw new REvaluationError(
-      "NRE2103",
-      `${simplify ? "mapply" : "Map"}() requires a function and at least one input.`,
+    const environment = invocation.currentEnvironment();
+    return builtinMapply(
+      {
+        ...invocation,
+        currentCall: () => ({
+          type: "language",
+          expression: {
+            kind: "CallExpression",
+            callee: { kind: "Identifier", name: "mapply", span: SYNTHETIC_SPAN },
+            arguments: [
+              {
+                name: "FUN",
+                value: { kind: "Identifier", name: "f", span: SYNTHETIC_SPAN },
+                span: SYNTHETIC_SPAN,
+              },
+              {
+                value: { kind: "Identifier", name: "...", span: SYNTHETIC_SPAN },
+                span: SYNTHETIC_SPAN,
+              },
+              {
+                name: "SIMPLIFY",
+                value: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+                span: SYNTHETIC_SPAN,
+              },
+            ],
+            span: SYNTHETIC_SPAN,
+          },
+        }),
+        arguments: [
+          { name: "FUN", promise: createForcedPromise(callable, environment) },
+          ...dots,
+          { name: "SIMPLIFY", promise: createForcedPromise(logicalVector([false]), environment) },
+        ],
+      },
+      true,
     );
   }
-  const callable = await invocation.force(functionArgument.promise);
-  const inputs: { readonly name?: string; readonly value: RVector }[] = [];
+  const { matched, dots: inputArguments } = matchBuiltinArguments(invocation, [
+    "FUN",
+    "...",
+    "MoreArgs",
+    "SIMPLIFY",
+    "USE.NAMES",
+  ]);
+  const functionArgument = matched.get("FUN");
+  if (functionArgument === undefined || functionArgument.promise.missing) {
+    throw new REvaluationError("NRE2103", 'argument "FUN" is missing, with no default');
+  }
+  const callable = await applyFunction(functionArgument, invocation);
+  const values: { readonly name?: string; readonly value: RValue }[] = [];
   for (const argument of inputArguments) {
     const value = await invocation.force(argument.promise);
-    if (!isVector(value)) {
-      throw new RTypeMismatchError("NRT3179", "mapply()/Map() inputs must be vectors or lists.");
-    }
-    inputs.push(argument.name === undefined ? { value } : { name: argument.name, value });
+    values.push(argument.name === undefined ? { value } : { name: argument.name, value });
   }
-  if (inputs.some((input) => input.value.length === 0)) {
-    return mapplyEmptyResult(inputs[0]?.value, useNames);
+  const moreArgument = matched.get("MoreArgs");
+  const moreArguments =
+    moreArgument === undefined || moreArgument.promise.missing
+      ? R_NULL
+      : await invocation.force(moreArgument.promise);
+  if (
+    moreArguments.type !== "null" &&
+    moreArguments.type !== "list" &&
+    moreArguments.type !== "pairlist"
+  ) {
+    throw new RTypeMismatchError(
+      "NRT3178",
+      "argument 'MoreArgs' of 'mapply' is not a list or pairlist",
+    );
   }
-  const length = Math.max(...inputs.map((input) => input.value.length));
-  const names =
-    useNames && inputs[0] !== undefined ? mapplyResultNames(inputs[0].value, length) : undefined;
-  for (const input of inputs) {
-    if (length % input.value.length !== 0) {
-      invocation.context.warn({
-        code: "NRW1001",
-        message: "Longer argument is not a multiple of shorter argument length.",
-      });
-    }
+  const inputs: { readonly name?: string; readonly input: ApplyInput }[] = [];
+  let length = 0;
+  let empty = false;
+  for (const entry of values) {
+    invocation.context.checkpoint();
+    const count = factorListLength(
+      await builtinLength(simplifyGlobalInvocation(invocation, [entry.value])),
+      invocation,
+    );
+    const input: ApplyInput = {
+      value: entry.value,
+      length: count,
+      ...(entry.value.type === "language"
+        ? { languageEntries: asVectorLanguageEntries(entry.value) }
+        : {}),
+    };
+    inputs.push(entry.name === undefined ? { input } : { name: entry.name, input });
+    length = Math.max(length, count);
+    if (count === 0) empty = true;
   }
-  const fixed = moreArguments === undefined ? [] : listArguments(moreArguments);
+  if (empty) length = 0;
+  const fixed = moreArguments.type === "list" ? listArguments(moreArguments) : [];
   const results: RValue[] = [];
   invocation.context.allocate(length);
   for (let index = 0; index < length; index += 1) {
     invocation.context.checkpoint();
-    const arguments_ = inputs.map((input) => ({
-      ...(input.name === undefined ? {} : { name: input.name }),
-      value: vectorItem(input.value, index % input.value.length, invocation),
-    }));
+    const arguments_: { readonly name?: string; readonly value: RValue }[] = [];
+    for (const entry of inputs) {
+      const value = await applyVectorItem(entry.input, index % entry.input.length, invocation);
+      arguments_.push(entry.name === undefined ? { value } : { name: entry.name, value });
+    }
     results.push(await invocation.invoke(callable, [...arguments_, ...fixed]));
   }
-  if (!shouldSimplify) {
-    const output = listValue(results);
-    return names === undefined ? output : withAttribute(output, "names", names);
+  for (const entry of inputs) {
+    if (length > 0 && length % entry.input.length !== 0) {
+      const message = "longer argument not a multiple of length of shorter";
+      await signalWarning(
+        invocation,
+        simpleConditionValue(message, "warning", invocation.currentCall()),
+        { code: "NRW1001", message },
+      );
+    }
   }
-  return simplifyResults(results, names, invocation);
+  const namesArgument = matched.get("USE.NAMES");
+  const useNames =
+    namesArgument === undefined || namesArgument.promise.missing
+      ? true
+      : sapplyNamesControl(await invocation.force(namesArgument.promise));
+  let output = listValue(results);
+  const first = values[0]?.value;
+  if (useNames !== false && first !== undefined) {
+    if (useNames === undefined) {
+      throw new RTypeMismatchError("NRT3176", "missing value where TRUE/FALSE needed");
+    }
+    const names =
+      (await simplifyDispatch("names", first, [first], invocation)) ??
+      (await builtinNames(simplifyGlobalInvocation(invocation, [first])));
+    if (names.type !== "null") {
+      try {
+        output = (await replaceNamesAttribute(
+          output,
+          names,
+          invocation,
+          true,
+          invocation.globalEnvironment(),
+        )) as RList;
+      } catch (error) {
+        if (error instanceof RTypeMismatchError && error.code === "NRT3199") {
+          throw new RTypeMismatchError("NRT3004", error.message);
+        }
+        throw error;
+      }
+    } else if (first.type === "character") {
+      output = withAttribute(output, "names", mapplyResultNames(first, length, invocation));
+    }
+  }
+  const simplifyArgument = matched.get("SIMPLIFY");
+  const simplifyValue =
+    simplifyArgument === undefined || simplifyArgument.promise.missing
+      ? logicalVector([true])
+      : await invocation.force(simplifyArgument.promise);
+  return simplifyMappedResult(output, simplifyValue, invocation);
 }
 
-function mapplyEmptyResult(input: RVector | undefined, useNames: boolean): RList {
-  const output = listValue([]);
-  if (!useNames || input === undefined) return output;
-  const explicitNames = input.attributes.get("names");
-  if (explicitNames !== undefined) {
-    if (explicitNames.type !== "character" || explicitNames.length !== input.length) {
-      throw new RTypeMismatchError("NRT3003", "The names attribute is malformed.", {
-        details: { valueLength: input.length },
-      });
-    }
-    if (explicitNames.length !== 0) {
-      throw new RTypeMismatchError("NRT3004", "Names must match vector length.", {
-        details: { valueLength: 0, namesLength: explicitNames.length },
-      });
-    }
-    return withAttribute(output, "names", explicitNames);
-  }
-  return input.type === "character" ? withAttribute(output, "names", characterVector([])) : output;
-}
-
-function mapplyResultNames(input: RVector, outputLength: number): RCharacterVector | undefined {
-  const explicitNames = input.attributes.get("names");
-  const source = explicitNames ?? (input.type === "character" ? input : undefined);
-  if (source === undefined) return undefined;
-  if (source.type !== "character" || source.length !== input.length) {
-    throw new RTypeMismatchError("NRT3003", "The names attribute is malformed.", {
-      details: { valueLength: input.length },
-    });
-  }
-
+function mapplyResultNames(
+  input: RCharacterVector,
+  outputLength: number,
+  invocation: BuiltinInvocation,
+): RCharacterVector {
+  invocation.context.allocate(outputLength);
   const values: string[] = [];
   const missing = new Uint8Array(outputLength);
   const encodings: RCharacterEncoding[] = [];
   const byteValues: Uint8Array[] = [];
   for (let index = 0; index < outputLength; index += 1) {
-    if (index >= source.length || isMissing(source, index)) {
+    invocation.context.checkpoint();
+    if (index >= input.length || isMissing(input, index)) {
       values.push("");
       missing[index] = 1;
       encodings.push("unknown");
       byteValues.push(new Uint8Array());
       continue;
     }
-    values.push(source.values[index] ?? "");
-    encodings.push(characterEncodingAt(source, index));
-    byteValues.push(characterBytesAt(source, index));
+    values.push(input.values[index] ?? "");
+    encodings.push(characterEncodingAt(input, index));
+    byteValues.push(characterBytesAt(input, index));
   }
   return characterVector(
     values,
@@ -48920,10 +52863,11 @@ async function parseVectorApply(
   controlNames: readonly string[],
   call: string,
 ): Promise<{
-  readonly input: RVector;
+  readonly input: ApplyInput;
+  readonly original: RValue;
   readonly callable: RValue;
-  readonly forwarded: readonly { readonly name?: string; readonly value: RValue }[];
-  readonly controls: ReadonlyMap<string, RValue>;
+  readonly forwarded: readonly BuiltinCallArgument[];
+  readonly controls: ReadonlyMap<string, BuiltinCallArgument>;
 }> {
   const { matched, dots: extras } = matchBuiltinArguments(invocation, [
     "X",
@@ -48933,22 +52877,22 @@ async function parseVectorApply(
   ]);
   const inputArgument = matched.get("X");
   const functionArgument = matched.get("FUN");
-  const controls = new Map<string, RValue>();
+  const controls = new Map<string, BuiltinCallArgument>();
   for (const name of controlNames) {
     const argument = matched.get(name);
-    if (argument !== undefined) controls.set(name, await invocation.force(argument.promise));
+    if (argument !== undefined) controls.set(name, argument);
   }
   if (inputArgument === undefined || functionArgument === undefined) {
     throw new REvaluationError("NRE2103", `${call}() requires X and FUN.`);
   }
-  const input = await invocation.force(inputArgument.promise);
-  if (!isVector(input)) {
-    throw new RTypeMismatchError("NRT3189", `${call}() requires a vector or list X.`);
-  }
+  const callable = await applyFunction(functionArgument, invocation);
+  const original = await invocation.force(inputArgument.promise);
+  const input = await prepareApplyInput(original, invocation);
   return {
     input,
-    callable: await invocation.force(functionArgument.promise),
-    forwarded: await forceForwarded(invocation, extras),
+    original,
+    callable,
+    forwarded: extras,
     controls,
   };
 }
@@ -49001,17 +52945,22 @@ async function forceForwarded(
 
 async function mapVector(
   invocation: BuiltinInvocation,
-  input: RVector,
+  input: ApplyInput,
   callable: RValue,
-  forwarded: readonly { readonly name?: string; readonly value: RValue }[],
+  forwarded: readonly BuiltinCallArgument[],
 ): Promise<readonly RValue[]> {
   invocation.context.allocate(input.length);
   const results: RValue[] = [];
   for (let index = 0; index < input.length; index += 1) {
     invocation.context.checkpoint();
     results.push(
-      await invocation.invoke(callable, [
-        { value: vectorItem(input, index, invocation) },
+      await invocation.invokeLazy(callable, [
+        {
+          promise: createForcedPromise(
+            await applyVectorItem(input, index, invocation),
+            invocation.globalEnvironment(),
+          ),
+        },
         ...forwarded,
       ]),
     );
@@ -49019,8 +52968,113 @@ async function mapVector(
   return results;
 }
 
-function vectorItem(input: RVector, index: number, invocation: BuiltinInvocation): RValue {
-  return input.type === "list"
+async function applyFunction(
+  argument: BuiltinCallArgument,
+  invocation: BuiltinInvocation,
+): Promise<RValue> {
+  return builtinMatchFunction({
+    ...invocation,
+    arguments: [{ name: "FUN", promise: argument.promise }],
+    parentFrame: () => invocation.currentEnvironment(),
+  });
+}
+
+interface ApplyInput {
+  readonly value: RValue;
+  readonly length: number;
+  readonly languageEntries?: ReturnType<typeof asVectorLanguageEntries>;
+}
+
+async function prepareApplyInput(
+  input: RValue,
+  invocation: BuiltinInvocation,
+): Promise<ApplyInput> {
+  let value = input;
+  if (!isVector(value) || objectClasses(value) !== undefined) {
+    const arguments_ = [{ promise: createForcedPromise(value, invocation.globalEnvironment()) }];
+    value =
+      (await invocation.dispatchS3IfPresent(
+        "as.list",
+        value,
+        arguments_,
+        true,
+        0,
+        undefined,
+        invocation.globalEnvironment(),
+      )) ?? (await asListDefault(value, invocation));
+  }
+  return {
+    value,
+    length: valueLength(value),
+    ...(value.type === "language" ? { languageEntries: asVectorLanguageEntries(value) } : {}),
+  };
+}
+
+function applyNames(input: ApplyInput | RVector | RPairlist): RCharacterVector | undefined {
+  const value = "value" in input ? input.value : input;
+  if (value.type === "language") {
+    const names = "value" in input ? input.languageEntries?.names : undefined;
+    return names === undefined ? undefined : characterVector(names);
+  }
+  const names = objectAttributes(value)?.get("names");
+  return names?.type === "character" ? names : undefined;
+}
+
+function applyCharacterNames(value: RCharacterVector): RCharacterVector {
+  return characterVector(value.values, value.missing, value.encodings, value.byteValues);
+}
+
+async function applyVectorItem(
+  input: ApplyInput,
+  index: number,
+  invocation: BuiltinInvocation,
+): Promise<RValue> {
+  const value = input.value;
+  if (objectClasses(value) !== undefined) {
+    const environment = invocation.globalEnvironment();
+    const arguments_ = [
+      { promise: createForcedPromise(value, environment) },
+      { promise: createForcedPromise(integerVector([index + 1]), environment) },
+    ];
+    const dispatched = await invocation.dispatchS3IfPresent(
+      "[[",
+      value,
+      arguments_,
+      false,
+      0,
+      undefined,
+      environment,
+    );
+    if (dispatched !== undefined) return dispatched;
+  }
+  if (isApplySequence(value)) {
+    let item = vectorItem(value, index, invocation);
+    if (isFactor(value) && isAtomic(item)) {
+      const levels = value.attributes.get("levels");
+      const classes = value.attributes.get("class");
+      if (levels !== undefined) item = withAttribute(item, "levels", levels);
+      if (classes !== undefined) item = withAttribute(item, "class", classes);
+    }
+    return item;
+  }
+  if (value.type === "expression") return quoteAst(value.values[index]!);
+  if (value.type === "language") return input.languageEntries?.values[index] ?? R_NULL;
+  if (value.type === "environment") {
+    throw new RTypeMismatchError("NRT3306", "wrong arguments for subsetting an environment");
+  }
+  throw new RTypeMismatchError("NRT3306", `object of type '${value.type}' is not subsettable`);
+}
+
+function isApplySequence(value: RValue): value is RVector | RPairlist {
+  return isVector(value) || value.type === "pairlist";
+}
+
+function vectorItem(
+  input: RVector | RPairlist,
+  index: number,
+  invocation: BuiltinInvocation,
+): RValue {
+  return input.type === "list" || input.type === "pairlist"
     ? (input.values[index] ?? R_NULL)
     : extractVectorElement(input, integerVector([index + 1]), invocation.context);
 }
@@ -49067,146 +53121,344 @@ async function builtinSimplify2Array(invocation: BuiltinInvocation): Promise<RVa
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in simplify2array().");
   }
   const input = await invocation.force(argument.promise);
-  if (input.type !== "list" || input.length === 0) return input;
-  const lengths = input.values.map(simplify2ArrayLength);
-  const width = lengths[0] ?? -1;
-  if (width < 0 || lengths.some((length) => length !== width)) return input;
-
-  const exceptArgument = matched.get("except");
-  const except =
-    exceptArgument === undefined
-      ? new Set([0, 1])
-      : simplify2ArrayExceptions(await invocation.force(exceptArgument.promise));
-  if (except.has(width)) {
-    if (width === 0) return input;
-    return simplify2ArrayFlat(input.values, vectorNames(input), invocation);
-  }
-
-  const higherArgument = matched.get("higher");
-  const higher =
-    higherArgument === undefined
-      ? true
-      : simplify2ArrayFlag(await invocation.force(higherArgument.promise));
-  const flat = simplify2ArrayFlat(input.values, undefined, invocation);
-  if (!isVector(flat)) return input;
-  const first = input.values[0];
-  const dimensions =
-    first !== undefined && (isVector(first) || first.type === "pairlist")
-      ? vectorDimensions(first)
-      : undefined;
-  const commonDimensions =
-    higher &&
-    dimensions !== undefined &&
-    input.values.every(
-      (value) =>
-        (isVector(value) || value.type === "pairlist") &&
-        JSON.stringify(vectorDimensions(value)) === JSON.stringify(dimensions),
-    );
-  const outputDimensions = commonDimensions ? [...dimensions, input.length] : [width, input.length];
-  let output = withDimensions(flat, outputDimensions);
-  const dimensionNames = simplify2ArrayDimensionNames(
+  const higher = matched.get("higher");
+  const except = matched.get("except");
+  return simplifyApplyResult(
     input,
-    commonDimensions ? dimensions.length : 1,
-    commonDimensions,
-  );
-  if (dimensionNames !== undefined) {
-    output = withAttribute(output, "dimnames", dimensionNames);
-  }
-  return output;
-}
-
-function simplify2ArrayLength(value: RValue): number {
-  if (value.type === "null") return 0;
-  if (isVector(value) || value.type === "pairlist") return value.length;
-  return -1;
-}
-
-function simplify2ArrayExceptions(value: RValue): Set<number> {
-  if (value.type === "null") return new Set();
-  if (value.type !== "logical" && value.type !== "integer" && value.type !== "double") {
-    throw new RTypeMismatchError("NRT3299", "simplify2array() 'except' must be numeric or NULL.");
-  }
-  return new Set(
-    Array.from({ length: value.length }, (_, index) =>
-      isMissing(value, index) ? Number.NaN : Math.trunc(value.values[index] ?? Number.NaN),
-    ).filter(Number.isFinite),
+    invocation,
+    () =>
+      higher === undefined || higher.promise.missing
+        ? Promise.resolve(logicalVector([1]))
+        : invocation.force(higher.promise),
+    except === undefined || except.promise.missing
+      ? undefined
+      : () => invocation.force(except.promise),
   );
 }
 
-function simplify2ArrayFlag(value: RValue): boolean {
-  if (
-    (value.type !== "logical" && value.type !== "integer" && value.type !== "double") ||
-    value.length !== 1 ||
-    isMissing(value, 0)
-  ) {
-    throw new RTypeMismatchError(
-      "NRT3299",
-      "simplify2array() 'higher' must be one non-missing logical value.",
-    );
-  }
-  return (value.values[0] ?? 0) !== 0;
-}
-
-function simplify2ArrayFlat(
-  values: readonly RValue[],
-  names: readonly string[] | undefined,
+/** Evaluate the shared base simplification contract with lazily observed controls. */
+async function simplifyApplyResult(
+  input: RValue,
   invocation: BuiltinInvocation,
-): RVector {
-  if (values.every(isAtomic)) {
-    const cells = (values as readonly AtomicVector[]).flatMap((value) =>
-      Array.from({ length: value.length }, (_, index) => ({ vector: value, index })),
-    );
-    const output = atomicCells(cells, invocation);
-    return names === undefined ? output : withNames(output, names);
+  higher: () => Promise<RValue>,
+  except?: () => Promise<RValue>,
+): Promise<RValue> {
+  const visible = (value: RValue): RValue => {
+    invocation.setResultVisibility("visible");
+    return value;
+  };
+  if ((await simplifyObservedLength(input, invocation)) === 0) return visible(input);
+  const lengths = await builtinLengths(simplifyGlobalInvocation(invocation, [input]));
+  if (!isAtomic(lengths) || lengths.type === "complex" || lengths.length === 0)
+    return visible(input);
+  const width = numberAt(lengths, 0);
+  if (!Number.isFinite(width) || width < 0 || !Number.isInteger(width)) {
+    return visible(input);
   }
-  const flattened: RValue[] = [];
-  for (const value of values) {
-    if (value.type === "list" || value.type === "pairlist") {
-      flattened.push(...value.values);
-    } else if (isAtomic(value)) {
-      flattened.push(
-        ...Array.from({ length: value.length }, (_, index) =>
-          extractVectorElement(value, integerVector([index + 1]), invocation.context),
-        ),
+  for (let index = 0; index < lengths.length; index += 1) {
+    invocation.context.checkpoint();
+    if (isMissing(lengths, index) || numberAt(lengths, index) !== width) return visible(input);
+  }
+  const exceptions =
+    except === undefined ? new Set([0, 1]) : await simplifyExceptions(await except(), invocation);
+  if (width === 0 && exceptions.has(0)) return visible(input);
+  const count = await simplifyObservedLength(input, invocation);
+  const scalar = width === 1 && exceptions.has(1);
+  const unlistArguments = [input, logicalVector([0]), logicalVector([scalar ? 1 : 0])];
+  const flat =
+    (await simplifyDispatch("unlist", input, unlistArguments, invocation)) ??
+    unlistValue(input, false, scalar, invocation);
+  if (scalar) {
+    return visible((await simplifyObservedLength(flat, invocation)) === count ? flat : input);
+  }
+  if (flat.type === "null") return visible(input);
+
+  const higherFlag = sapplyNamesControl(await higher(), "NRT3299");
+  let commonDimensions: readonly number[] | undefined;
+  let combinedDimensions: RValue | undefined;
+  let dimensionsUnknown = false;
+  if (higherFlag !== false) {
+    const items = await prepareApplyInput(input, invocation);
+    const dimensions: RValue[] = [];
+    invocation.context.allocate(items.length);
+    for (let index = 0; index < items.length; index += 1) {
+      invocation.context.checkpoint();
+      const item = await applyVectorItem(items, index, invocation);
+      dimensions.push(
+        (await simplifyDispatch("dim", item, [item], invocation)) ??
+          (await builtinDim(simplifyGlobalInvocation(invocation, [item]))),
       );
-    } else {
-      return listValue(values, names);
+    }
+    const first = dimensions[0];
+    if (
+      first !== undefined &&
+      dimensions.every((value) =>
+        identicalValue(value, first, ALL_EQUAL_IDENTICAL_OPTIONS, () =>
+          invocation.context.checkpoint(),
+        ),
+      )
+    ) {
+      const numeric = sapplyNamesControl(
+        await builtinIsNumeric(simplifyGlobalInvocation(invocation, [first])),
+      );
+      if (numeric !== false) {
+        dimensionsUnknown = higherFlag === undefined || numeric === undefined;
+        combinedDimensions = await builtinC(
+          simplifyGlobalInvocation(invocation, [first, integerVector([count])]),
+        );
+      }
     }
   }
-  invocation.context.allocate(flattened.length);
-  const output = listValue(flattened);
-  return names === undefined ? output : withNames(output, names);
+
+  let outputDimensions: readonly number[] | undefined;
+  if (combinedDimensions !== undefined) {
+    const productInvocation = simplifyGlobalInvocation(invocation, [combinedDimensions]);
+    const dispatched =
+      objectClasses(combinedDimensions) === undefined
+        ? undefined
+        : await productInvocation.dispatchS3IfPresent(
+            "prod",
+            combinedDimensions,
+            [
+              ...productInvocation.arguments,
+              {
+                name: "na.rm",
+                promise: createForcedPromise(
+                  logicalVector([false]),
+                  invocation.globalEnvironment(),
+                ),
+              },
+            ],
+            false,
+            0,
+            "Summary",
+          );
+    const size = dispatched ?? (await builtinProduct(productInvocation));
+    const flatLength = await simplifyObservedLength(flat, invocation);
+    if (
+      logicalCondition(
+        jsReferenceOperators.binary(invocation.context, "==", size, integerVector([flatLength])),
+      )
+    ) {
+      if (dimensionsUnknown)
+        throw new RTypeMismatchError("NRT3299", "missing value where TRUE/FALSE needed");
+      const dimensions = requireNumeric(combinedDimensions, "array");
+      invocation.context.allocate(dimensions.length);
+      outputDimensions = Array.from({ length: dimensions.length }, (_, index) => {
+        invocation.context.checkpoint();
+        return isMissing(dimensions, index) ? Number.NaN : numberAt(dimensions, index);
+      });
+      invocation.context.allocate(Math.max(0, dimensions.length - 1));
+      commonDimensions = outputDimensions.slice(0, -1);
+    }
+  }
+  if (outputDimensions === undefined) {
+    commonDimensions = undefined;
+    if (width * count !== (await simplifyObservedLength(flat, invocation))) return visible(input);
+    outputDimensions = [width, count];
+  }
+
+  const converted =
+    (await simplifyDispatch("as.vector", flat, [flat, characterVector(["any"])], invocation)) ??
+    asVectorAny(flat, invocation);
+  if (!isVector(converted)) {
+    throw new RUnsupportedFeatureError(
+      "NRU6140",
+      "Simplified arrays require representable atomic or list storage.",
+    );
+  }
+  const dimensionVector = coerceAtomicToInteger(doubleVector(outputDimensions), invocation);
+  if (dimensionVector.missing !== undefined)
+    throw new RTypeMismatchError("NRT3126", "the dims contain missing values");
+  if (dimensionVector.values.some((value) => value < 0))
+    throw new RTypeMismatchError("NRT3126", "the dims contain negative values");
+  outputDimensions = [...dimensionVector.values];
+  const first = await applyVectorItem(
+    {
+      value: input,
+      length: valueLength(input),
+      ...(input.type === "language" ? { languageEntries: asVectorLanguageEntries(input) } : {}),
+    },
+    0,
+    invocation,
+  );
+  const innerNames =
+    commonDimensions === undefined
+      ? ((await simplifyDispatch("names", first, [first], invocation)) ??
+        (await builtinNames(simplifyGlobalInvocation(invocation, [first]))))
+      : ((await simplifyDispatch("dimnames", first, [first], invocation)) ??
+        (await builtinDimNames(simplifyGlobalInvocation(invocation, [first]))));
+  const outerNames =
+    (await simplifyDispatch("names", input, [input], invocation)) ??
+    (await builtinNames(simplifyGlobalInvocation(invocation, [input])));
+  const dimensionNames = simplifyDimensionNames(
+    innerNames,
+    outerNames,
+    commonDimensions,
+    outputDimensions,
+    invocation,
+  );
+  const length = outputDimensions.reduce((product, extent) => product * extent, 1);
+  invocation.context.allocate(length);
+  let data: RVector;
+  if (length === converted.length) {
+    data = converted;
+  } else {
+    const positions = integerVector(
+      Array.from({ length }, (_, index) =>
+        converted.length === 0 ? 1 : (index % converted.length) + 1,
+      ),
+    );
+    data = subsetVector(converted, positions, invocation.context);
+  }
+  const clean = { ...data, attributes: new Map<string, RValue>() };
+  let result = withDimensions(clean, outputDimensions);
+  if (dimensionNames !== undefined) result = withAttribute(result, "dimnames", dimensionNames);
+  return visible(result);
 }
 
-function simplify2ArrayDimensionNames(
-  input: RList,
-  retainedAxes: number,
-  higher: boolean,
-): RList | undefined {
-  const outerNames = vectorNames(input);
-  const first = input.values[0];
-  const axes: RValue[] = [];
-  if (higher && first !== undefined && (isVector(first) || first.type === "pairlist")) {
-    const dimensionNames = first.attributes.get("dimnames");
-    if (dimensionNames?.type === "list") {
-      axes.push(
-        ...Array.from(
-          { length: retainedAxes },
-          (_, index) => dimensionNames.values[index] ?? R_NULL,
-        ),
-      );
-    } else {
-      axes.push(...Array.from({ length: retainedAxes }, () => R_NULL));
-    }
-  } else {
-    const innerNames =
-      first !== undefined && (isVector(first) || first.type === "pairlist")
-        ? vectorNames(first)
-        : undefined;
-    axes.push(innerNames === undefined ? R_NULL : characterVector(innerNames));
+function simplifyGlobalInvocation(
+  invocation: BuiltinInvocation,
+  values: readonly RValue[],
+): BuiltinInvocation {
+  const environment = invocation.globalEnvironment();
+  return {
+    ...invocation,
+    arguments: values.map((value) => ({ promise: createForcedPromise(value, environment) })),
+    currentEnvironment: () => environment,
+    dispatchS3IfPresent: (
+      generic,
+      value,
+      arguments_,
+      useImplicit,
+      classIndex,
+      group,
+      lookupEnvironment,
+    ) =>
+      invocation.dispatchS3IfPresent(
+        generic,
+        value,
+        arguments_,
+        useImplicit,
+        classIndex,
+        group,
+        lookupEnvironment ?? environment,
+      ),
+  };
+}
+
+async function simplifyDispatch(
+  generic: string,
+  value: RValue,
+  values: readonly RValue[],
+  invocation: BuiltinInvocation,
+): Promise<RValue | undefined> {
+  if (objectClasses(value) === undefined) return undefined;
+  const environment = invocation.globalEnvironment();
+  return invocation.dispatchS3IfPresent(
+    generic,
+    value,
+    values.map((value) => ({ promise: createForcedPromise(value, environment) })),
+    false,
+    0,
+    undefined,
+    environment,
+  );
+}
+
+async function simplifyObservedLength(
+  value: RValue,
+  invocation: BuiltinInvocation,
+): Promise<number> {
+  return factorListLength(
+    await builtinLength(simplifyGlobalInvocation(invocation, [value])),
+    invocation,
+  );
+}
+
+async function simplifyExceptions(
+  value: RValue,
+  invocation: BuiltinInvocation,
+): Promise<Set<number>> {
+  const integer = await builtinAsInteger(simplifyGlobalInvocation(invocation, [value]));
+  if (!isAtomic(integer)) return new Set();
+  const result = new Set<number>();
+  for (let index = 0; index < integer.length; index += 1) {
+    invocation.context.checkpoint();
+    if (isMissing(integer, index)) continue;
+    const item =
+      integer.type === "character" ? Number(integer.values[index]) : numberAt(integer, index);
+    if (item === 0 || item === 1) result.add(item);
   }
-  axes.push(outerNames === undefined ? R_NULL : characterVector(outerNames));
-  return axes.every((axis) => axis.type === "null") ? undefined : listValue(axes);
+  return result;
+}
+
+function simplifyDimensionNames(
+  inner: RValue,
+  outer: RValue,
+  commonDimensions: readonly number[] | undefined,
+  dimensions: readonly number[],
+  invocation: BuiltinInvocation,
+): RList | undefined {
+  const retainedAxes = dimensions.length - 1;
+  let axes: RValue[];
+  let labels: RCharacterVector | undefined;
+  if (commonDimensions === undefined) {
+    axes = [inner, outer];
+  } else {
+    if (inner.type === "null") axes = Array.from({ length: retainedAxes }, () => R_NULL);
+    else if (inner.type === "list" || inner.type === "pairlist") axes = [...inner.values];
+    else if (isAtomic(inner))
+      axes = Array.from({ length: inner.length }, (_, index) =>
+        extractVectorElement(inner, integerVector([index + 1]), invocation.context),
+      );
+    else throw new RTypeMismatchError("NRT3159", "'dimnames' must be a list");
+    labels = isAttributedSequence(inner) ? sequenceNamesAttribute(inner) : undefined;
+    axes.push(outer);
+  }
+  if (axes.length > dimensions.length)
+    throw new RTypeMismatchError(
+      "NRT3159",
+      `length of 'dimnames' [${axes.length}] must match that of 'dims' [${dimensions.length}]`,
+    );
+  while (axes.length < dimensions.length) axes.push(R_NULL);
+  const normalized = axes.map((names, axis) => {
+    if (names.type === "null" || valueLength(names) === 0) return R_NULL;
+    if (names.type === "pairlist")
+      throw new RTypeMismatchError(
+        "NRT3159",
+        "invalid type (pairlist) for 'dimnames' (must be a vector)",
+      );
+    const characters =
+      names.type === "character" ? names : namesReplacementCharacters(names, invocation, false);
+    if (characters === undefined || characters.length !== dimensions[axis]) {
+      throw new RTypeMismatchError(
+        "NRT3159",
+        `length of 'dimnames' [${axis + 1}] not equal to array extent`,
+      );
+    }
+    return characters;
+  });
+  if (
+    normalized.every((value) => value.type === "null") &&
+    inner.type === "null" &&
+    outer.type === "null"
+  )
+    return undefined;
+  let result = listValue(normalized);
+  if (labels !== undefined) {
+    const padding = dimensions.length - labels.length;
+    const names = characterVector(
+      [...labels.values, ...Array<string>(padding).fill("")],
+      labels.missing === undefined
+        ? undefined
+        : [...labels.missing, ...Array<number>(padding).fill(0)],
+      [...labels.encodings, ...Array<RCharacterEncoding>(padding).fill("unknown")],
+      [...labels.byteValues, ...Array.from({ length: padding }, () => new Uint8Array())],
+    );
+    result = withAttribute(result, "names", names);
+  }
+  return result;
 }
 
 function scalarPredicate(value: RValue, call: string): boolean {
@@ -51617,6 +55869,10 @@ async function builtinMatchFunction(invocation: BuiltinInvocation): Promise<RVal
   if (value.type === "closure" || value.type === "builtin") return value;
 
   const descend = await lazyLogicalFlag(invocation, matched.get("descend"), true, "descend");
+  const reference =
+    value.type === "symbol" || (value.type === "character" && value.length === 1)
+      ? undefined
+      : matchFunctionArgumentReference(invocation, argument);
   const name =
     value.type === "symbol"
       ? value.name
@@ -51624,12 +55880,14 @@ async function builtinMatchFunction(invocation: BuiltinInvocation): Promise<RVal
         ? isMissing(value, 0)
           ? "NA"
           : (value.values[0] ?? "")
-        : matchFunctionArgumentName(invocation, argument);
+        : reference?.name;
   if (name === undefined) {
-    throw new RTypeMismatchError(
-      "NRT3442",
-      "match.fun(FUN=) requires a function, one character string, or a symbol.",
+    const checkWork = () => invocation.context.checkpoint();
+    const source = deparseAst(
+      reference?.expression ?? argument.promise.expression ?? embeddedValueAst(value, checkWork),
+      checkWork,
     );
+    throw new RTypeMismatchError("NRT3442", `'${source}' is not a function, character or symbol`);
   }
 
   let environment: REnvironment | null = invocation.parentFrame(1);
@@ -51648,23 +55906,24 @@ async function builtinMatchFunction(invocation: BuiltinInvocation): Promise<RVal
   throw new REvaluationError("NRE2001", `Object '${name}' of mode 'function' was not found.`);
 }
 
-function matchFunctionArgumentName(
+function matchFunctionArgumentReference(
   invocation: BuiltinInvocation,
   argument: BuiltinCallArgument,
-): string | undefined {
+): { readonly name?: string; readonly expression: AstNode | null } {
   let expression = argument.promise.expression;
   let environment = argument.promise.environment;
   const visited = new Set<RBinding>();
   while (expression?.kind === "Identifier") {
     const name = expression.name;
     const binding = environment.bindings.get(name);
-    if (binding === undefined || invocation.isGlobalEnvironment(environment)) return name;
-    if (binding.type !== "promise" || visited.has(binding)) return undefined;
+    if (binding === undefined || invocation.isGlobalEnvironment(environment))
+      return { name, expression };
+    if (binding.type !== "promise" || visited.has(binding)) return { expression };
     visited.add(binding);
     expression = binding.expression;
     environment = binding.environment;
   }
-  return undefined;
+  return { expression };
 }
 
 async function matchArgumentSeveralOk(
@@ -52350,6 +56609,11 @@ async function builtinShow(invocation: BuiltinInvocation): Promise<RValue> {
     maxItems: optionInteger(invocation, "max.print", 99_999),
     naPrint: "NA",
     quote: true,
+    width: optionInteger(invocation, "width", 80),
+    scipen: optionInteger(invocation, "scipen", 0),
+    deparseCutoff: Math.max(20, Math.min(500, optionInteger(invocation, "deparse.cutoff", 60))),
+    environmentLabel: (environment) => printedEnvironmentLabel(invocation, environment),
+    context: invocation.context,
   });
   invocation.context.writeOutput({ stream: "stdout", text: `${text}\n` });
   invocation.setResultVisibility("invisible");
@@ -52760,10 +57024,7 @@ async function builtinStructure(invocation: BuiltinInvocation): Promise<RValue> 
   for (const [name, attribute] of matched) {
     switch (name) {
       case "names":
-        if (attribute.type !== "character" || attribute.missing !== undefined) {
-          throw new RTypeMismatchError("NRT3138", "structure(names=) requires character names.");
-        }
-        output = withNames(output, attribute.values);
+        output = await replaceNamesAttribute(output, attribute, invocation, false);
         break;
       case "dim": {
         const numeric = requireNumeric(attribute, "structure");
@@ -52784,7 +57045,7 @@ async function builtinStructure(invocation: BuiltinInvocation): Promise<RValue> 
             "structure(levels=) requires unique non-missing character levels.",
           );
         }
-        output = withAttribute(output, "levels", characterVector(attribute.values));
+        output = withAttribute(output, "levels", attribute);
         break;
       case "row.names":
         if (attribute.type !== "character" || attribute.missing !== undefined) {
@@ -52805,7 +57066,7 @@ async function builtinStructure(invocation: BuiltinInvocation): Promise<RValue> 
         if (attribute.type !== "character" || attribute.missing !== undefined) {
           throw new RTypeMismatchError("NRT3140", "structure(class=) requires character classes.");
         }
-        output = withClasses(output, attribute.values);
+        output = withAttribute(withClasses(output, attribute.values), "class", attribute);
         break;
       default:
         output =
@@ -53297,11 +57558,17 @@ function stringAt(vector: AtomicVector, index: number): string {
   if (vector.type === "raw") return (vector.values[index] ?? 0).toString(16).padStart(2, "0");
   if (vector.type === "complex") {
     const value = complexAt(vector, index);
-    return `${formatRNumber(value.real)}${value.imaginary < 0 ? "" : "+"}${formatRNumber(
+    return `${characterDouble(value.real)}${value.imaginary < 0 ? "" : "+"}${characterDouble(
       value.imaginary,
     )}i`;
   }
+  if (vector.type === "double") return characterDouble(vector.values[index] ?? 0);
   return formatRNumber(vector.values[index] ?? 0);
+}
+
+/** Double-to-character coercion with GNU R's documented 15-significant-digit form. */
+function characterDouble(value: number): string {
+  return Number.isFinite(value) ? doubleToCharacter(value) : formatRNumber(value);
 }
 
 function formatRNumber(value: number): string {

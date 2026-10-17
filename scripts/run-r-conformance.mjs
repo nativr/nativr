@@ -71,13 +71,11 @@ for (const testCase of oracleCases) {
 }
 
 await runtime.dispose();
+const skipped = cases.length - oracleCases.length;
+console.log(
+  `Live R oracle: ${oracleCases.length - failures}/${oracleCases.length} passed; ${skipped} NativR-only cases skipped`,
+);
 if (failures > 0) process.exitCode = 1;
-else {
-  const skipped = cases.length - oracleCases.length;
-  console.log(
-    `Live R oracle: ${oracleCases.length}/${oracleCases.length} passed; ${skipped} NativR-only representation/random cases skipped`,
-  );
-}
 
 function runOracle(
   code,
@@ -128,9 +126,15 @@ function runOracle(
       stderr += chunk;
     });
     child.on("error", reject);
-    child.on("exit", (status) => {
+    // Wait for "close" so both pipes have drained before the observation is parsed.
+    child.on("close", (status, signal) => {
       if (status !== 0) {
-        reject(new Error(`R oracle failed: ${stderr}`));
+        // Keep process-level failures diagnosable when Rscript exits without writing stderr.
+        reject(
+          new Error(
+            `R oracle failed (status ${String(status)}, signal ${String(signal)}, ${stdout.length} stdout chars): ${stderr}`,
+          ),
+        );
         return;
       }
       const [type, length, visible, valueHexes, warned, outputHex = ""] = stdout.trim().split("\t");

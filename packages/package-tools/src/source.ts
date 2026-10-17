@@ -1,3 +1,4 @@
+import { createReadStream } from "node:fs";
 import { lstat, mkdtemp, readdir, readFile, rm, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -35,39 +36,76 @@ async function readPackageArchive(
   let fileCount = 0;
   const paths = new Set<string>();
   const portablePaths = new Set<string>();
+  let archiveError: Error | undefined;
   try {
-    await extractTar({
-      file: archivePath,
+    const unpack = extractTar({
       cwd: temporaryRoot,
       strict: true,
       preservePaths: false,
       filter: (entryPath, entry) => {
-        const normalized = validateArchivePath(entryPath, limits.maxPathDepth);
-        if (!("type" in entry)) throw new Error(`Archive entry '${normalized}' lacks a type.`);
-        if (entry.type === "Directory") return true;
-        if (entry.type !== "File" && entry.type !== "OldFile") {
-          throw new Error(`Archive entry '${normalized}' has unsupported type '${entry.type}'.`);
+        if (archiveError !== undefined) return false;
+        try {
+          const normalized = validateArchivePath(entryPath, limits.maxPathDepth);
+          if (!("type" in entry)) throw new Error(`Archive entry '${normalized}' lacks a type.`);
+          if (entry.type === "Directory") return true;
+          if (entry.type !== "File" && entry.type !== "OldFile") {
+            throw new Error(`Archive entry '${normalized}' has unsupported type '${entry.type}'.`);
+          }
+          if (paths.has(normalized) || portablePaths.has(normalized.toLowerCase())) {
+            throw new Error(`Archive repeats a case-insensitive path '${normalized}'.`);
+          }
+          if (entry.size > limits.maxFileBytes) {
+            throw new Error(`Archive entry '${normalized}' exceeds the per-file byte limit.`);
+          }
+          fileCount += 1;
+          totalBytes += entry.size;
+          if (fileCount > limits.maxFiles || totalBytes > limits.maxTotalBytes) {
+            throw new Error("Package archive exceeds configured file or byte limits.");
+          }
+          paths.add(normalized);
+          portablePaths.add(normalized.toLowerCase());
+          return true;
+        } catch (error) {
+          archiveError = error instanceof Error ? error : new Error(String(error));
+          // A false filter result only skips an entry; tar still drains the archive.
+          // Abort the parser so later compressed bytes and entries are not consumed.
+          unpack.abort(archiveError);
+          return false;
         }
-        if (paths.has(normalized) || portablePaths.has(normalized.toLowerCase())) {
-          throw new Error(`Archive repeats a case-insensitive path '${normalized}'.`);
-        }
-        if (entry.size > limits.maxFileBytes) {
-          throw new Error(`Archive entry '${normalized}' exceeds the per-file byte limit.`);
-        }
-        fileCount += 1;
-        totalBytes += entry.size;
-        if (fileCount > limits.maxFiles || totalBytes > limits.maxTotalBytes) {
-          throw new Error("Package archive exceeds configured file or byte limits.");
-        }
-        paths.add(normalized);
-        portablePaths.add(normalized.toLowerCase());
-        return true;
       },
     });
+    const input = createReadStream(archivePath);
+    await new Promise<void>((resolve, reject) => {
+      let settled = false;
+      const fail = (error: Error) => {
+        if (settled) return;
+        settled = true;
+        input.destroy();
+        reject(archiveError ?? error);
+      };
+      unpack.on("error", fail);
+      input.on("error", (error: Error) => {
+        unpack.abort(error);
+        fail(error);
+      });
+      unpack.on("close", () => {
+        if (settled) return;
+        settled = true;
+        resolve();
+      });
+      input.pipe(unpack);
+    });
+    if (archiveError !== undefined) throw archiveError;
     const root = await locateExtractedPackageRoot(temporaryRoot);
     return await readPackageDirectory(root, limits);
   } finally {
-    await rm(temporaryRoot, { recursive: true, force: true });
+    // Aborted extraction can still have an already accepted file write closing.
+    await rm(temporaryRoot, {
+      recursive: true,
+      force: true,
+      maxRetries: 20,
+      retryDelay: 50,
+    });
   }
 }
 

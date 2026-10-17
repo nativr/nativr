@@ -2,17 +2,73 @@
   {
     "id": "recursive-nested-attributes",
     "policy": "exact",
+    "bindingEvidence": ["base::matrix", "base::structure"],
     "code": "structure(list(alpha = 1:2, beta = structure(c(\"x\", NA_character_), class = c(\"probe\", \"character\"), levels = c(\"x\", \"y\"))), class = \"outer\", marker = matrix(1:4, 2, dimnames = list(c(\"r1\", \"r2\"), c(\"a\", \"b\"))))"
   },
   {
     "id": "recursive-data-frame-object",
     "policy": "exact",
+    "bindingEvidence": ["base::data.frame", "base::factor"],
     "code": "data.frame(group = factor(c(\"b\", \"a\"), levels = c(\"a\", \"b\", \"unused\")), score = c(one = 1.5, two = NA_real_), row.names = c(\"r1\", \"r2\"), check.names = FALSE)"
+  },
+  {
+    "id": "recursive-scalar-token-boundaries",
+    "policy": "exact",
+    "bindingEvidence": ["base::list", "base::structure"],
+    "code": "structure(list(numbers = c(NA_real_, NaN, Inf, -Inf, -0), truth = c(TRUE, NA, FALSE), bytes = as.raw(c(0, 255))), note = c(\"delta\", NA_character_))"
+  },
+  {
+    "id": "recursive-stdout-and-invisible-result",
+    "policy": "exact",
+    "bindingEvidence": ["base::invisible", "base::local"],
+    "code": "local({ cat(\"before-value\\n\"); invisible(list(answer = 7L)) })",
+    "observationAssertions": {
+      "visible": false,
+      "stdout": "before-value\n"
+    }
   },
   {
     "id": "shared-environment-identity",
     "policy": "exact",
-    "code": "local({ shared <- new.env(parent = emptyenv()); list(first = shared, second = shared) })"
+    "bindingEvidence": ["base::new.env"],
+    "code": "shared <- new.env(parent = emptyenv()); list(first = shared, second = shared)",
+    "graphAssertions": {
+      "sameNode": [[["first"], ["second"]]]
+    }
+  },
+  {
+    "id": "self-referential-environment-binding",
+    "policy": "exact",
+    "code": "local({ cycle <- new.env(parent = emptyenv()); cycle$self <- cycle; cycle })",
+    "graphAssertions": {
+      "sameNode": [[[], ["self"]]]
+    }
+  },
+  {
+    "id": "mutually-referential-environment-bindings",
+    "policy": "exact",
+    "code": "local({ first <- new.env(parent = emptyenv()); second <- new.env(parent = emptyenv()); first$peer <- second; second$peer <- first; list(first = first, second = second) })",
+    "graphAssertions": {
+      "sameNode": [
+        [["first"], ["second", "peer"]],
+        [["second"], ["first", "peer"]]
+      ],
+      "differentNode": [[["first"], ["second"]]]
+    }
+  },
+  {
+    "id": "active-binding-is-not-forced-by-observer",
+    "policy": "exact",
+    "bindingEvidence": ["base::makeActiveBinding"],
+    "code": "local({ holder <- new.env(parent = emptyenv()); makeActiveBinding(\"side_effect\", function() stop(\"observer forced active binding\"), holder); holder })",
+    "graphAssertions": {
+      "activeBindings": [
+        {
+          "path": [],
+          "name": "side_effect"
+        }
+      ]
+    }
   },
   {
     "id": "nested-language-call-structure",
@@ -20,8 +76,1107 @@
     "code": "quote(alpha(beta = 1L, gamma = x + 2))"
   },
   {
+    "id": "pairlist-tags-language-and-missingness",
+    "policy": "exact",
+    "bindingEvidence": ["base::pairlist", "base::quote"],
+    "code": "pairlist(alpha = quote(a + 1L), beta = NA_integer_)",
+    "graphAssertions": {
+      "paths": [["alpha"], ["beta"]]
+    }
+  },
+  {
+    "id": "matched-call-language-and-unexpanded-dots",
+    "policy": "exact",
+    "bindingEvidence": ["base::match.call"],
+    "code": "f <- function(alpha, beta = 2, ...) NULL; match.call(definition = f, call = quote(f(al = 1 + 2, z = 4)), expand.dots = FALSE)",
+    "graphAssertions": {
+      "paths": [["alpha"], ["..."], ["...", "z"]]
+    }
+  },
+  {
     "id": "closure-formals-body-and-environment",
     "policy": "exact",
-    "code": "local({ captured <- 7L; function(x = captured) x + 1L })"
+    "bindingEvidence": ["base::local"],
+    "code": "local({ captured <- 7L; function(x = captured) x + 1L })",
+    "graphAssertions": {
+      "paths": [["@environment", "captured"]]
+    }
+  },
+  {
+    "id": "returned-error-condition-is-a-value",
+    "policy": "exact",
+    "bindingEvidence": ["base::simpleError"],
+    "code": "simpleError(\"returned, not signalled\")",
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "visible": true
+    }
+  },
+  {
+    "id": "signalled-error-after-stdout",
+    "policy": "exact",
+    "bindingEvidence": ["base::stop"],
+    "code": "cat(\"before-error\\n\"); stop(\"oracle sentinel\", call. = FALSE)",
+    "observationAssertions": {
+      "outcome": "error",
+      "conditions": [
+        {
+          "kind": "error",
+          "classes": ["simpleError", "error", "condition"],
+          "message": "oracle sentinel",
+          "call": null,
+          "order": 1
+        }
+      ],
+      "stdout": "before-error\n",
+      "visible": false
+    }
+  },
+  {
+    "id": "message-stream-and-invisible-result",
+    "policy": "exact",
+    "bindingEvidence": ["base::message"],
+    "code": "message(\"oracle message\", appendLF = FALSE); invisible(3L)",
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "messages": "oracle message",
+      "visible": false
+    }
+  },
+  {
+    "id": "ordered-warnings-with-separate-streams",
+    "policy": "exact",
+    "bindingEvidence": ["base::warning"],
+    "code": "cat(\"warning-start\\n\"); warning(\"first\", call. = FALSE); message(\"between\", appendLF = FALSE); warning(\"second\", call. = FALSE); invisible(9L)",
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [
+        {
+          "kind": "warning",
+          "classes": ["simpleWarning", "warning", "condition"],
+          "message": "first",
+          "call": null,
+          "order": 1
+        },
+        {
+          "kind": "warning",
+          "classes": ["simpleWarning", "warning", "condition"],
+          "message": "second",
+          "call": null,
+          "order": 2
+        }
+      ],
+      "stdout": "warning-start\n",
+      "messages": "between",
+      "visible": false
+    }
+  },
+  {
+    "id": "warning-precedes-signalled-error",
+    "policy": "exact",
+    "bindingEvidence": ["base::warning", "base::stop"],
+    "code": "warning(\"before failure\", call. = FALSE); stop(\"after warning\", call. = FALSE)",
+    "observationAssertions": {
+      "outcome": "error",
+      "conditions": [
+        {
+          "kind": "warning",
+          "classes": ["simpleWarning", "warning", "condition"],
+          "message": "before failure",
+          "call": null,
+          "order": 1
+        },
+        {
+          "kind": "error",
+          "classes": ["simpleError", "error", "condition"],
+          "message": "after warning",
+          "call": null,
+          "order": 2
+        }
+      ],
+      "visible": false
+    }
+  },
+  {
+    "id": "returned-custom-warning-condition-with-language-call",
+    "policy": "exact",
+    "bindingEvidence": ["base::warningCondition"],
+    "code": "warningCondition(\"returned warning\", class = \"probe_warning\", call = quote(probe(2L)), detail = 2L)",
+    "graphAssertions": {
+      "paths": [["message"], ["call"], ["detail"]]
+    },
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "signalled-custom-error-preserves-condition-and-call",
+    "policy": "exact",
+    "bindingEvidence": ["base::structure", "base::stop"],
+    "code": "stop(structure(list(message = \"custom failure\", call = quote(probe(7L)), detail = 7L), class = c(\"probe_error\", \"error\", \"condition\")))",
+    "observationAssertions": {
+      "outcome": "error",
+      "conditions": [
+        {
+          "kind": "error",
+          "classes": ["probe_error", "error", "condition"],
+          "message": "custom failure",
+          "call": "probe(7L)",
+          "order": 1
+        }
+      ],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": false
+    }
+  },
+  {
+    "id": "signalled-custom-warning-preserves-condition-and-call",
+    "policy": "exact",
+    "bindingEvidence": ["base::warningCondition", "base::warning"],
+    "code": "warning(warningCondition(\"custom warning\", class = \"probe_warning\", call = quote(probe(2L)), detail = 2L)); invisible(5L)",
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [
+        {
+          "kind": "warning",
+          "classes": ["probe_warning", "warning", "condition"],
+          "message": "custom warning",
+          "call": "probe(2L)",
+          "order": 1
+        }
+      ],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": false
+    }
+  },
+  {
+    "id": "signalled-simple-error-preserves-explicit-call",
+    "policy": "exact",
+    "bindingEvidence": ["base::simpleError", "base::stop"],
+    "code": "stop(simpleError(\"simple failure\", call = quote(probe(3L))))",
+    "observationAssertions": {
+      "outcome": "error",
+      "conditions": [
+        {
+          "kind": "error",
+          "classes": ["simpleError", "error", "condition"],
+          "message": "simple failure",
+          "call": "probe(3L)",
+          "order": 1
+        }
+      ],
+      "visible": false
+    }
+  },
+  {
+    "id": "signalled-simple-warning-preserves-explicit-call",
+    "policy": "exact",
+    "bindingEvidence": ["base::simpleWarning", "base::warning"],
+    "code": "warning(simpleWarning(\"simple warning\", call = quote(probe(4L)))); invisible(4L)",
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [
+        {
+          "kind": "warning",
+          "classes": ["simpleWarning", "warning", "condition"],
+          "message": "simple warning",
+          "call": "probe(4L)",
+          "order": 1
+        }
+      ],
+      "visible": false
+    }
+  },
+  {
+    "id": "nested-caller-error-call",
+    "policy": "exact",
+    "bindingEvidence": ["base::stop"],
+    "code": "local({ f <- function() stop(\"nested failure\"); f() })",
+    "observationAssertions": {
+      "outcome": "error",
+      "conditions": [
+        {
+          "kind": "error",
+          "classes": ["simpleError", "error", "condition"],
+          "message": "nested failure",
+          "call": "f()",
+          "order": 1
+        }
+      ],
+      "visible": false
+    }
+  },
+  {
+    "id": "nested-caller-warning-call",
+    "policy": "exact",
+    "bindingEvidence": ["base::warning"],
+    "code": "local({ f <- function() warning(\"nested warning\"); f(); invisible(1L) })",
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [
+        {
+          "kind": "warning",
+          "classes": ["simpleWarning", "warning", "condition"],
+          "message": "nested warning",
+          "call": "f()",
+          "order": 1
+        }
+      ],
+      "visible": false
+    }
+  },
+  {
+    "id": "nested-caller-calls-suppressed-explicitly",
+    "policy": "exact",
+    "bindingEvidence": ["base::warning", "base::stop"],
+    "code": "local({ f <- function() { warning(\"nested silent warning\", call. = FALSE); stop(\"nested silent failure\", call. = FALSE) }; f() })",
+    "observationAssertions": {
+      "outcome": "error",
+      "conditions": [
+        {
+          "kind": "warning",
+          "classes": ["simpleWarning", "warning", "condition"],
+          "message": "nested silent warning",
+          "call": null,
+          "order": 1
+        },
+        {
+          "kind": "error",
+          "classes": ["simpleError", "error", "condition"],
+          "message": "nested silent failure",
+          "call": null,
+          "order": 2
+        }
+      ],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": false
+    }
+  },
+  {
+    "id": "replacement-rhs-source-and-stored-call-values",
+    "policy": "exact",
+    "bindingEvidence": ["base::substitute", "base::sys.call", "base::match.call"],
+    "code": "local({ count <- 0L; bump <- function(a, b) { count <<- count + 1L; a + b }; assign(\"probe<-\", function(x, value) list(source = substitute(value), observed = list(callValue = eval(sys.call()$value), matchedValue = eval(match.call()$value)), value = value)); x <- 1L; probe(x) <- bump(1L, 2L); list(original = quote(bump(1L, 2L)), reflected = x, evaluations = count) })",
+    "graphAssertions": {
+      "paths": [
+        ["original"],
+        ["reflected", "source"],
+        ["reflected", "observed", "callValue"],
+        ["reflected", "observed", "matchedValue"],
+        ["reflected", "value"],
+        ["evaluations"]
+      ]
+    },
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "s3-replacement-rhs-source-and-stored-call-values",
+    "policy": "exact",
+    "bindingEvidence": ["base::substitute", "base::sys.call", "base::match.call"],
+    "code": "local({ count <- 0L; bump <- function(a, b) { count <<- count + 1L; a + b }; assign(\"probe<-\", function(x, value) UseMethod(\"probe<-\")); assign(\"probe<-.tag\", function(x, value) list(source = substitute(value), observed = list(callValue = eval(sys.call()$value), matchedValue = eval(match.call()$value)), value = value)); container <- list(item = structure(1L, class = \"tag\")); probe(container$item) <- bump(4L, 5L); list(original = quote(bump(4L, 5L)), reflected = container$item, evaluations = count) })",
+    "graphAssertions": {
+      "paths": [
+        ["original"],
+        ["reflected", "source"],
+        ["reflected", "observed", "callValue"],
+        ["reflected", "observed", "matchedValue"],
+        ["reflected", "value"],
+        ["evaluations"]
+      ]
+    },
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "escaped-replacement-frame-source-and-value",
+    "policy": "exact",
+    "bindingEvidence": ["base::substitute"],
+    "code": "local({ count <- 0L; bump <- function(a, b) { count <<- count + 1L; a + b }; assign(\"probe<-\", function(x, value) { frame <- environment(); force(value); function() list(source = substitute(value, frame), value = value) }); x <- 1L; probe(x) <- bump(6L, 7L); list(original = quote(bump(6L, 7L)), reflected = x(), evaluations = count) })",
+    "graphAssertions": {
+      "paths": [["original"], ["reflected", "source"], ["reflected", "value"], ["evaluations"]]
+    },
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "nested-replacement-original-and-reconstructed-rhs",
+    "policy": "exact",
+    "bindingEvidence": ["base::substitute"],
+    "code": "local({ count <- 0L; bump <- function(a, b) { count <<- count + 1L; a + b }; seen <- list(); outer <- function(x) x; assign(\"outer<-\", function(x, value) { seen$outer <<- list(source = substitute(value), value = value); value }); assign(\"inner<-\", function(x, value) { seen$inner <<- list(source = substitute(value), value = value); value }); x <- 1L; inner(outer(x)) <- bump(1L, 2L); first <- list(original = quote(bump(1L, 2L)), reflected = seen, value = x, evaluations = count); outer(x)[1] <- bump(5L, 6L); list(first = first, second = list(original = quote(bump(5L, 6L)), reflected = seen$outer, value = x, evaluations = count)) })",
+    "graphAssertions": {
+      "paths": [
+        ["first", "original"],
+        ["first", "reflected", "inner", "source"],
+        ["first", "reflected", "inner", "value"],
+        ["first", "reflected", "outer", "source"],
+        ["first", "reflected", "outer", "value"],
+        ["first", "value"],
+        ["first", "evaluations"],
+        ["second", "original"],
+        ["second", "reflected", "source"],
+        ["second", "reflected", "value"],
+        ["second", "value"],
+        ["second", "evaluations"]
+      ]
+    },
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "closure-rendering-preserves-recursive-language",
+    "policy": "exact",
+    "bindingEvidence": ["base::deparse", "base::print"],
+    "code": "local({ f <- function(x, y = 1, ...) { a <- x + y; if (a > 3) { a <- a * 2; a } else 0 }; environment(f) <- globalenv(); list(signature = list(formals = formals(f), body = body(f)), rendering = list(deparsed = deparse(f), printed = capture.output(print(f)))) })",
+    "graphAssertions": {
+      "paths": [
+        ["signature", "formals"],
+        ["signature", "body"],
+        ["rendering", "deparsed"],
+        ["rendering", "printed"]
+      ]
+    },
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "closure-print-environment-attributes-and-visibility",
+    "policy": "exact",
+    "bindingEvidence": ["base::print"],
+    "code": "local({ f <- function(x) x + 1; environment(f) <- baseenv(); attr(f, \"note\") <- \"tag\"; rendered <- withVisible(print(f)); list(visibility = rendered$visible, signature = list(formals = formals(f), body = body(f)), attributes = attributes(f)) })",
+    "graphAssertions": {
+      "paths": [
+        ["visibility"],
+        ["signature", "formals"],
+        ["signature", "body"],
+        ["attributes", "note"]
+      ]
+    },
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "function (x) \nx + 1\n<environment: base>\nattr(,\"note\")\n[1] \"tag\"\n",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "table-default-axis-names-print-and-visibility",
+    "policy": "exact",
+    "bindingEvidence": ["base::table", "base::print"],
+    "code": "local({ x <- c(FALSE, TRUE, TRUE); symbolic <- table(x); compound <- table(!x); named <- table(flag = x); a <- withVisible(print(symbolic)); b <- withVisible(print(compound)); c <- withVisible(print(named)); list(tables = list(symbolic = a$value, compound = b$value, named = c$value), attributes = list(symbolic = attributes(symbolic), compound = attributes(compound), named = attributes(named)), visibility = c(a$visible, b$visible, c$visible)) })",
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "x\nFALSE  TRUE \n    1     2 \n\nFALSE  TRUE \n    2     1 \nflag\nFALSE  TRUE \n    1     2 \n",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    },
+    "graphAssertions": {
+      "paths": [
+        ["tables", "symbolic"],
+        ["attributes", "symbolic", "dim"],
+        ["attributes", "symbolic", "dimnames"],
+        ["attributes", "symbolic", "class"],
+        ["tables", "compound"],
+        ["attributes", "compound", "dim"],
+        ["attributes", "compound", "dimnames"],
+        ["attributes", "compound", "class"],
+        ["tables", "named"],
+        ["attributes", "named", "dim"],
+        ["attributes", "named", "dimnames"],
+        ["attributes", "named", "class"],
+        ["visibility"]
+      ]
+    }
+  },
+  {
+    "id": "table-zero-extent-dimnames-print-and-visibility",
+    "policy": "exact",
+    "bindingEvidence": ["base::table", "base::print"],
+    "code": "local({ empty <- table(character()); shaped <- structure(integer(), dim = c(2L, 0L), dimnames = list(a = c(\"x\", \"y\"), b = NULL), class = \"table\"); a <- withVisible(print(empty)); b <- withVisible(print(shaped)); list(tables = list(empty = a$value, shaped = b$value), attributes = list(empty = attributes(empty), shaped = attributes(shaped)), visibility = c(a$visible, b$visible)) })",
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "< table of extent 0 >\n< table of extent 2 x 0 >\n",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    },
+    "graphAssertions": {
+      "paths": [
+        ["tables", "empty"],
+        ["attributes", "empty", "dim"],
+        ["attributes", "empty", "dimnames"],
+        ["attributes", "empty", "class"],
+        ["tables", "shaped"],
+        ["attributes", "shaped", "dim"],
+        ["attributes", "shaped", "dimnames"],
+        ["attributes", "shaped", "class"],
+        ["visibility"]
+      ]
+    }
+  },
+  {
+    "id": "all-equal-numeric-callback-and-error-attributes",
+    "policy": "exact",
+    "bindingEvidence": ["base::all.equal"],
+    "code": "local({ calls <- list(); a <- withVisible(all.equal(3,4,tolerance=0,giveErr=TRUE,formatFUN=function(err,what) { calls[[length(calls)+1L]] <<- list(err=err,what=what); invisible(\"reported\") })); b <- all.equal(3,4,tolerance=1,giveErr=TRUE,formatFUN=stop(\"must stay lazy\")); same <- all.equal(3,3,giveErr=TRUE); list(different=a,within=b,same=same,calls=calls) })",
+    "graphAssertions": {
+      "paths": [["different", "value"], ["different", "visible"], ["within"], ["same"], ["calls"]]
+    },
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "all-equal-numeric-scaling-and-count-equal",
+    "policy": "exact",
+    "bindingEvidence": ["base::all.equal"],
+    "code": "local({ list(unit=all.equal(1,1.125,tolerance=0,giveErr=TRUE),scaled=all.equal(c(1,2,3),c(1,4,9),scale=c(10,2,3),tolerance=0,giveErr=TRUE),counted=all.equal(c(2,2,4),c(2,3,6),countEQ=TRUE,tolerance=0,giveErr=TRUE),missing=all.equal(c(NA,2,4),c(NA,3,6),countEQ=TRUE,tolerance=0,giveErr=TRUE),modulus=all.equal(3+0i,4+1i,tolerance=0,giveErr=TRUE),large=all.equal(c(1e16,1,1),c(0,0,0),scale=1,tolerance=0,giveErr=TRUE)) })",
+    "graphAssertions": {
+      "paths": [["unit"], ["scaled"], ["counted"], ["missing"], ["modulus"], ["large"]]
+    },
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "numeric-format-options-and-array-attributes",
+    "policy": "exact",
+    "bindingEvidence": ["base::format"],
+    "code": "local({ old <- options(); on.exit(options(old)); options(digits=3,scipen=999,OutDec=\",\"); a <- format(c(1/3,1e-12)); b <- format(1/3,digits=15,scientific=TRUE,decimal.mark=\".\"); x <- matrix(c(1,1.2,12,12.34),2,dimnames=list(c(\"a\",\"b\"),c(\"x\",\"y\"))); list(aligned=format(c(1.2,NA),scientific=TRUE,width=8,justify=\"left\"),logical=format(c(TRUE,FALSE),justify=\"centre\",width=7),values=a,scientific=b,matrix=format(x,nsmall=2),missing=format(c(NA,NaN,Inf,-Inf))) })",
+    "graphAssertions": {
+      "paths": [["values"], ["scientific"], ["matrix"], ["missing"], ["aligned"], ["logical"]]
+    },
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "cat-numeric-stream-file-and-visibility",
+    "policy": "exact",
+    "bindingEvidence": ["base::cat"],
+    "code": "local({ old <- options(digits=3, OutDec=\",\"); on.exit(options(old)); path <- tempfile(); on.exit(unlink(path),add=TRUE); a <- withVisible(cat(c(1/3,1e-12,1.2),sep=\"|\")); b <- withVisible(cat(c(6.618483539000408e-12,1/3),file=path,sep=\"|\")); list(console=a,file=b,text=readLines(path,warn=FALSE)) })",
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "0,333|1e-12|1,2",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    },
+    "graphAssertions": {
+      "paths": [["console"], ["file"], ["text"]]
+    }
+  },
+  {
+    "id": "condition-accessor-values-methods-and-visibility",
+    "policy": "exact",
+    "bindingEvidence": ["base::conditionCall", "base::conditionMessage"],
+    "code": "local({ conditionCall.fixture <- function(c) invisible(quote(overridden(2))); conditionMessage.fixture <- function(c) paste0(\"custom:\",c$message); e <- simpleError(\"text\",quote(origin(1))); custom <- structure(list(message=\"text\",call=NULL),class=c(\"fixture\",\"condition\")); list(call=conditionCall(e),message=conditionMessage(e),customCall=withVisible(conditionCall(custom)),customMessage=conditionMessage(custom),missing=conditionCall(structure(list(),class=\"condition\")),uncoerced=conditionMessage(structure(list(message=1),class=\"condition\"))) })",
+    "graphAssertions": {
+      "paths": [
+        ["call"],
+        ["message"],
+        ["customCall"],
+        ["customMessage"],
+        ["missing"],
+        ["uncoerced"]
+      ]
+    },
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "embedded-attributed-call-values",
+    "code": "local({ x<-structure(matrix(1:6,2,dimnames=list(c(\"a\",\"b\"),c(\"x\",\"y\",\"z\"))),note=list(label=\"x\")); a<-call(\"identity\",x); b<-as.call(list(as.name(\"identity\"),x)); c<-substitute(identity(v),list(v=x)); d<-quote(identity(NULL)); d[[2]]<-x; list(calls=list(a,b,c,d),values=list(eval(a),eval(b),eval(c),eval(d)),rendered=c(deparse(a,width.cutoff=500),deparse(b,width.cutoff=500),deparse(c,width.cutoff=500),deparse(d,width.cutoff=500))) })",
+    "policy": "exact",
+    "bindingEvidence": ["base::call", "base::as.call", "base::substitute", "base::deparse"],
+    "graphAssertions": {
+      "paths": [["calls"], ["values"], ["rendered"]]
+    },
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "attributed-replacement-condition",
+    "code": "local({ \"put<-\"<-function(x,value)stop(\"fixture\"); x<-1; e<-tryCatch({put(x)<-matrix(-1:-6,3,dimnames=list(c(\"a\",\"b\",\"c\"),c(\"x\",\"y\")))},error=identity); list(value=eval(conditionCall(e)[[3]]),text=deparse(conditionCall(e),width.cutoff=500)) })",
+    "policy": "exact",
+    "bindingEvidence": ["base::conditionCall", "base::deparse"],
+    "graphAssertions": {
+      "paths": [["value"], ["text"]]
+    },
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "global-environment-binding-shared-value",
+    "policy": "exact",
+    "code": "local({ holder <- new.env(parent=emptyenv()); holder$value <- list(answer=42L); assign(\"global_binding_fixture\", holder, .GlobalEnv); result <- list(first=get(\"global_binding_fixture\",globalenv(),inherits=FALSE),second=holder,identity=identical(base::.GlobalEnv,globalenv())); rm(\"global_binding_fixture\",envir=.GlobalEnv); result })",
+    "graphAssertions": {
+      "sameNode": [[["first"], ["second"]]]
+    }
+  },
+  {
+    "id": "detach-invalid-name",
+    "policy": "exact",
+    "bindingEvidence": ["base::detach"],
+    "code": "detach(\"package:nativr.missing\")"
+  },
+  {
+    "id": "detach-formal-defaults",
+    "policy": "exact",
+    "code": "formals(detach)"
+  },
+  {
+    "id": "length-class-and-default-dispatch",
+    "policy": "exact",
+    "bindingEvidence": ["base::length"],
+    "code": "local({ length.fixture <- function(x) 7L; length.default <- function(x) 9L; c(length(structure(1:2,class=\"fixture\")),length(structure(1:2,class=\"other\")),length(1:2)) })"
+  },
+  {
+    "id": "unload-absent-namespace",
+    "policy": "exact",
+    "bindingEvidence": ["base::unloadNamespace"],
+    "code": "unloadNamespace(\"nativr.nonexistent\")"
+  },
+  {
+    "id": "hook-list-registration-and-clearing",
+    "policy": "exact",
+    "bindingEvidence": ["base::getHook", "base::setHook"],
+    "code": "local({ key <- \"fixture.hooks\"; setHook(key,list(function() 1L,function() 2L),\"replace\"); before <- vapply(getHook(key),function(f) f(),1L); setHook(key,NULL,\"replace\"); list(before=before,after=getHook(key)) })"
+  },
+  {
+    "id": "core-namespace-ownership",
+    "code": "c(!identical(baseenv(),asNamespace(\"base\")),identical(parent.env(asNamespace(\"base\")),globalenv()),!exists(\"median\",baseenv(),inherits=FALSE),exists(\"median\",asNamespace(\"stats\"),inherits=FALSE),!exists(\"mean\",asNamespace(\"stats\"),inherits=FALSE),identical(environment(mean),asNamespace(\"base\")),identical(environment(median),asNamespace(\"stats\")),identical(graphics::plot,base::plot))",
+    "policy": "exact"
+  },
+  {
+    "id": "core-detach-and-reattach",
+    "code": "local({ saved<-as.environment(\"package:stats\"); ns<-asNamespace(\"stats\"); detach(\"package:stats\"); before<-c(\"stats\" %in% loadedNamespaces(),!exists(\"median\",globalenv()),identical(parent.env(saved),baseenv()),identical(ns,asNamespace(\"stats\"))); library(stats); c(before,!identical(saved,as.environment(\"package:stats\")),median(1:3)==2) })",
+    "policy": "exact"
+  },
+  {
+    "id": "combine-first-argument-s3-dispatch",
+    "code": "local({ c.fixture<-function(...) 17L; c.default<-function(...) 19L; c(c(structure(1,class=\"fixture\"),2),c(structure(1,class=\"other\"),2),c(1,structure(2,class=\"fixture\")),c(NULL,structure(3,class=\"fixture\")),c(4,5)) })",
+    "policy": "exact",
+    "bindingEvidence": ["base::c"]
+  },
+  {
+    "id": "combine-next-method-primitive-fallback",
+    "code": "local({ c.first<-function(...) NextMethod(); c.second<-function(...) NextMethod(); c(structure(1:2,class=c(\"first\",\"second\")),z=3L) })",
+    "policy": "exact",
+    "bindingEvidence": ["base::c", "base::NextMethod"]
+  },
+  {
+    "id": "next-method-default-reentry",
+    "code": "local({ n<-0L; c.default<-function(...) {n<<-n+1L;if(n>2L)return(n);NextMethod()}; a<-c(structure(1,class=\"fixture\")); n<-0L; f<-function(x)UseMethod(\"f\"); f.default<-function(x) {n<<-n+1L;if(n>1L)return(n);NextMethod()}; c(a,f(structure(1,class=\"fixture\"))) })",
+    "policy": "exact",
+    "bindingEvidence": ["base::NextMethod"]
+  },
+  {
+    "id": "person-basic-text",
+    "code": "format(person(\"Ada\",\"Lovelace\",email=\"ada@example.invalid\",role=c(\"aut\",\"cre\")))",
+    "policy": "exact"
+  },
+  {
+    "id": "person-collection-fields",
+    "code": "local({x<-c(person(\"Ada\"),person(\"Grace\"));c(x[[2]]$given,x[1]$giv,unlist(x[,\"given\"]))})",
+    "policy": "exact"
+  },
+  {
+    "id": "person-empty-print",
+    "code": "capture.output(print(person()))",
+    "policy": "exact"
+  },
+  {
+    "id": "as-character-class-dispatch",
+    "code": "local({as.character.fixture<-function(x,...) \"custom\";as.character(structure(1,class=\"fixture\"))})",
+    "policy": "exact"
+  },
+  {
+    "id": "person-recursive-records",
+    "code": "list(empty=person(),one=person(c(\"Ada\",\"Augusta\"),\"Lovelace\",email=\"ada@example.invalid\",role=c(\"aut\",\"cre\"),comment=c(ORCID=\"0000-0002-1825-0097\")),many=person(given=list(\"Ada\",\"Grace\"),family=list(\"Lovelace\",\"Hopper\"),role=\"aut\"),formals=formals(person))",
+    "policy": "exact",
+    "bindingEvidence": ["utils::person"]
+  },
+  {
+    "id": "observer-bypasses-list-methods",
+    "code": "`[[.observerfixture` <- function(...) stop(\"must not subset through methods\"); length.observerfixture <- function(...) stop(\"must not measure through methods\"); structure(list(1L,2L),class=\"observerfixture\")",
+    "policy": "exact"
+  },
+  {
+    "id": "person-invalid-role-filtering",
+    "code": "suppressWarnings(format(person(\"Ada\",role=c(\"aut\",\"invalid\"))))",
+    "policy": "exact"
+  },
+  {
+    "id": "class-subscript-dispatch-missing-index",
+    "code": "local({`[.fixture`<-function(x,i,j)paste(missing(i),j);structure(1,class=\"fixture\")[,\"chosen\"]})",
+    "policy": "exact"
+  },
+  {
+    "id": "person-field-whitespace",
+    "code": "person(c(\"  Ada  \",\" Augusta\\t\"),\" Love\\nlace \",role=\" aut \",email=\" a@x \",comment=c(note=\" one  two\\tthree \"))",
+    "policy": "exact"
+  },
+  {
+    "id": "posix-character-classes-all-ascii",
+    "code": "lapply(c(FALSE,TRUE),function(p)lapply(c(\"alnum\",\"alpha\",\"blank\",\"cntrl\",\"digit\",\"graph\",\"lower\",\"print\",\"punct\",\"space\",\"upper\",\"xdigit\"),function(n)grepl(paste0(\"^[[:\",n,\":]]$\"),intToUtf8(1:127,multiple=TRUE),perl=p)))",
+    "policy": "exact"
+  },
+  {
+    "id": "posix-class-replacement-and-locations",
+    "code": "list(replaced=gsub(\"[[:space:]]+\",\"-\",\"one \\ttwo\\nthree\"),split=strsplit(\"a,b;c\",\"[[:punct:]]\"),match=regexec(\"([[:alpha:]]+)([[:digit:]]+)\",\"ab12\"),all=gregexpr(\"[[:digit:]]+\",\"ab12 cd3\"),bracket=grepl(\"^[^][:digit:]]+$\",c(\"ab\",\"]\",\"1\")))",
+    "policy": "exact"
+  },
+  {
+    "id": "regex-index-metadata-ascii-unicode-missing",
+    "code": "list(a=regexpr(\"a\",c(\"ab\",NA)),u=regexpr(\"a\",c(\"ab\",\"\\u00e9\")),g=gregexpr(\"a\",c(NA,\"ab\")),e=regexec(\"(a)\",c(NA,\"ab\"),perl=TRUE),eu=regexec(\"a\",c(\"ab\",\"\\u00e9\"),perl=TRUE),empty=regexpr(\"a\",character()))",
+    "policy": "exact"
+  },
+  {
+    "id": "octal-string-all-nonzero-bytes",
+    "code": "charToRaw(\"\\001\\002\\003\\004\\005\\006\\007\\010\\011\\012\\013\\014\\015\\016\\017\\020\\021\\022\\023\\024\\025\\026\\027\\030\\031\\032\\033\\034\\035\\036\\037\\040\\041\\042\\043\\044\\045\\046\\047\\050\\051\\052\\053\\054\\055\\056\\057\\060\\061\\062\\063\\064\\065\\066\\067\\070\\071\\072\\073\\074\\075\\076\\077\\100\\101\\102\\103\\104\\105\\106\\107\\110\\111\\112\\113\\114\\115\\116\\117\\120\\121\\122\\123\\124\\125\\126\\127\\130\\131\\132\\133\\134\\135\\136\\137\\140\\141\\142\\143\\144\\145\\146\\147\\150\\151\\152\\153\\154\\155\\156\\157\\160\\161\\162\\163\\164\\165\\166\\167\\170\\171\\172\\173\\174\\175\\176\\177\\200\\201\\202\\203\\204\\205\\206\\207\\210\\211\\212\\213\\214\\215\\216\\217\\220\\221\\222\\223\\224\\225\\226\\227\\230\\231\\232\\233\\234\\235\\236\\237\\240\\241\\242\\243\\244\\245\\246\\247\\250\\251\\252\\253\\254\\255\\256\\257\\260\\261\\262\\263\\264\\265\\266\\267\\270\\271\\272\\273\\274\\275\\276\\277\\300\\301\\302\\303\\304\\305\\306\\307\\310\\311\\312\\313\\314\\315\\316\\317\\320\\321\\322\\323\\324\\325\\326\\327\\330\\331\\332\\333\\334\\335\\336\\337\\340\\341\\342\\343\\344\\345\\346\\347\\350\\351\\352\\353\\354\\355\\356\\357\\360\\361\\362\\363\\364\\365\\366\\367\\370\\371\\372\\373\\374\\375\\376\\377\")",
+    "policy": "exact"
+  },
+  {
+    "id": "string-escape-byte-unicode-raw",
+    "code": "list(bytes=charToRaw(\"\\xff\\xfe\"),quoted=charToRaw(quote(\"\\xff\")),utf8=charToRaw(\"\\xc3\\xa9\"),encoding=Encoding(\"\\xc3\\xa9\"),unicode=c(\"\\u41\",\"\\u{42}\",\"\\U{1f642}\"),raw=r\"--(a\\q\\n)--\")",
+    "policy": "exact"
+  },
+  {
+    "id": "process-time-method-graphs",
+    "code": "list(values=lapply(list(1:5,integer(),1L,logical(),TRUE,c(TRUE,FALSE,TRUE),c(NA,TRUE,TRUE,FALSE,NA),c(1,2,3,NA,5),c(NA,2,NaN,4,NaN),c(1,2,3,4,5,6),c(TRUE,FALSE,TRUE,FALSE,TRUE),c(1+2i,3+4i,5+6i,7+8i,9+10i)),function(v)summary.proc_time(structure(v,class=\"proc_time\",note=\"fixture\"))),printed=withVisible(print.proc_time(structure(1:5,class=\"proc_time\",note=\"fixture\"),digits=stop(\"unused\"))),formals=list(formals(summary.proc_time),formals(print.proc_time)))",
+    "policy": "exact",
+    "bindingEvidence": ["base::summary.proc_time", "base::print.proc_time"]
+  },
+  {
+    "id": "summary-user-method-lazy-dots",
+    "code": "local({calls<-0L;summary.fixture<-function(object,...)c(custom=object[1]+1);value<-summary({calls<-calls+1L;structure(2,class=\"fixture\")},unused=stop(\"unused\"));list(value=value,calls=calls)})",
+    "policy": "exact"
+  },
+  {
+    "id": "sum-integer-types-and-boundaries",
+    "code": "list(empty=sum(),null=sum(NULL),logical=sum(TRUE,FALSE),named=sum(x=1L,y=2L),partial=sum(1L,na.r=2L),double=sum(numeric()),vector=sum(c(2147483647L,1L,-1L)),arguments=sum(2147483647L,1L,-1L),offset=sum(-1L,c(2147483647L,1L)),negative=sum(-2147483647L,-1L),missing=sum(NA_integer_),mixed=sum(NA_integer_,numeric()),before=sum(NA_integer_,2147483647L,1L),after=sum(2147483647L,1L,NA_integer_),removed=sum(NA_integer_,na.rm=TRUE),nan=sum(NaN,NA_real_),na=sum(NA_real_,NaN))",
+    "policy": "exact"
+  },
+  {
+    "id": "sum-argument-evaluation-order",
+    "code": "local({trace<-character();value<-sum({trace<-c(trace,\"first\");1L},na.rm={trace<-c(trace,\"control\");TRUE},last={trace<-c(trace,\"last\");2L});list(value=value,trace=trace)})",
+    "policy": "exact"
+  },
+  {
+    "id": "summary-group-members-and-metadata",
+    "code": "local({Summary.fixture<-function(...,na.rm)list(generic=.Generic,group=.Group,method=.Method,class=.Class,remove=na.rm,missing=missing(na.rm),args=list(...));x<-structure(1:2,class=\"fixture\");list(sum(x),prod(x),min(x),max(x),any(x),all(x),range(x))})",
+    "policy": "exact"
+  },
+  {
+    "id": "summary-group-inheritance-and-primitive",
+    "code": "local({trace<-list();Summary.first<-function(...,na.rm=FALSE){trace[[length(trace)+1L]]<<-list(.Generic,.Group,.Method,.Class);NextMethod()};Summary.second<-function(...,na.rm=FALSE){trace[[length(trace)+1L]]<<-list(.Generic,.Group,.Method,.Class);NextMethod()};value<-sum(structure(1:2,class=c(\"first\",\"second\")),3L);list(value=value,trace=trace)})",
+    "policy": "exact"
+  },
+  {
+    "id": "summary-group-mixed-next-method-bounded",
+    "code": "local({trace<-list();n<-0L;Summary.first<-function(...,na.rm=FALSE)NextMethod();sum.second<-function(...,na.rm=FALSE){n<<-n+1L;trace[[n]]<<-list(.Generic,.Group,.Method,.Class);if(n<3L)NextMethod()else n};value<-sum(structure(1:2,class=c(\"first\",\"second\")));list(value=value,trace=trace)})",
+    "policy": "exact"
+  },
+  {
+    "id": "summary-specific-selection-and-eager-control",
+    "code": "local({trace<-character();sum.fixture<-function(...,na.rm)list(.Generic,.Group,.Method,.Class,trace,na.rm);Summary.fixture<-function(...)stop(\"wrong\");sum({trace<-c(trace,\"first\");structure(1,class=\"fixture\")},na.rm={trace<-c(trace,\"control\");NA},last={trace<-c(trace,\"last\");2})})",
+    "policy": "exact"
+  },
+  {
+    "id": "summary-group-default-and-specific-continuation",
+    "code": "local({sum.first<-function(...)NextMethod();Summary.second<-function(...)99;sum.default<-function(...)77;list(continued=sum(structure(1:2,class=c(\"first\",\"second\"))),initial=sum(structure(1:2,class=\"absent\")),bare=sum(1,structure(2,class=\"first\")))})",
+    "policy": "exact"
+  },
+  {
+    "id": "ordered-summary-recursive-values",
+    "code": "local({x<-ordered(c(\"middle\",\"low\",NA),levels=c(\"low\",\"middle\",\"high\"));names(x)<-c(\"a\",\"b\",\"c\");attr(x,\"note\")<-\"fixture\";list(min=min(x),max=max(x,na.rm=TRUE),range=range(x,na.rm=TRUE),missing=range(x),combined=max(x,ordered(\"high\",levels=levels(x)),na.rm=TRUE),empty=suppressWarnings(range(ordered(character(),levels=levels(x)))),formals=list(formals(Summary.factor),formals(Summary.ordered)))})",
+    "policy": "exact",
+    "bindingEvidence": ["base::Summary.ordered"]
+  },
+  {
+    "id": "factor-summary-failure-messages",
+    "code": "local({x<-ordered(\"a\",levels=c(\"a\",\"b\"));list(factor=lapply(c(\"sum\",\"prod\",\"min\",\"max\",\"any\",\"all\",\"range\"),function(g)tryCatch(do.call(g,list(factor(\"a\"))),error=conditionMessage)),ordered=lapply(c(\"sum\",\"prod\",\"any\",\"all\"),function(g)tryCatch(do.call(g,list(x)),error=conditionMessage)),levels=tryCatch(min(x,ordered(\"b\",levels=c(\"b\",\"a\"))),error=conditionMessage),mixed=tryCatch(min(x,factor(\"a\")),error=conditionMessage))})",
+    "policy": "exact"
+  },
+  {
+    "id": "ordered-summary-controls-and-inheritance",
+    "code": "local({x<-ordered(c(\"a\",NA),levels=c(\"a\",\"b\"));Summary.special<-function(...,na.rm=FALSE)NextMethod();list(controls=lapply(list(NULL,logical(),c(TRUE,FALSE),c(FALSE,TRUE),\"TRUE\",1),function(v)min(x,na.rm=v)),inherited=max(structure(x,class=c(\"special\",\"ordered\",\"factor\")),na.rm=TRUE))})",
+    "policy": "exact"
+  },
+  {
+    "id": "extrema-typed-recursive-values",
+    "code": "list(integer=min(1L,2L),logical=max(TRUE,FALSE),range=range(3L,1L),missing=min(NA_integer_),promoted=min(NA_integer_,numeric()),nanNA=min(NaN,NA_real_),naNan=max(NA_real_,NaN),nan=min(NaN,1),named=min(x=2L,NULL,y=1L),empty=suppressWarnings(range(integer())),allRemoved=suppressWarnings(min(NA_integer_,na.rm=TRUE)),finite=range(1L,Inf,NA,finite=TRUE),text=min(\"b\",\"a\"),mixed=min(\"b\",1L),textMissing=max(\"a\",NA_integer_),emptyText=suppressWarnings(range(character())))",
+    "policy": "exact"
+  },
+  {
+    "id": "extrema-controls-and-errors",
+    "code": "list(errors=lapply(list(quote(min(1+2i)),quote(max(as.raw(1))),quote(min(1L,na.rm=NA)),quote(min(1L,na.rm=NULL)),quote(max(1L,na.rm=c(TRUE,FALSE)))),function(e)tryCatch(eval(e),error=function(e)conditionMessage(e))),controls=list(min(NA,2L,na.rm=\"TRUE\"),min(1L,na.r=2L),range(1L,finite=TRUE,na.rm=NA)))",
+    "policy": "exact"
+  },
+  {
+    "id": "data-frame-summary-recursive-values",
+    "code": "local({x<-data.frame(a=1:2,b=3:4);list(values=list(sum(x),prod(x),min(x),max(x),range(x),any(x),all(x)),combined=sum(x,3L,x),boundary=sum(data.frame(a=2147483647L,b=1L,c=-1L)),logical=sum(data.frame(a=c(TRUE,FALSE))),missing=min(data.frame(a=NA_integer_)),removed=sum(data.frame(a=c(1L,NA_integer_)),na.rm=TRUE),empty=sum(data.frame()),emptyColumn=sum(data.frame(a=integer())),matrix=sum(data.frame(a=I(matrix(1:4,2)))),formals=formals(Summary.data.frame))})",
+    "policy": "exact",
+    "bindingEvidence": ["base::Summary.data.frame"]
+  },
+  {
+    "id": "data-frame-summary-controls-and-errors",
+    "code": "local({x<-data.frame(a=1L);list(controls=list(sum(x,na.rm=NULL),sum(x,na.rm=logical()),sum(x,na.rm=c(TRUE,FALSE)),sum(x,na.rm=\"TRUE\"),range(data.frame(a=c(1,Inf)),finite=TRUE)),errors=lapply(list(quote(sum(data.frame(a=\"x\"))),quote(min(data.frame(a=factor(\"x\")))),quote(sum(data.frame(a=as.Date(\"2000-01-01\")))),quote(sum(x,NULL)),quote(sum(x,list(1L))),quote(prod(1,x))),function(e)tryCatch(eval(e),error=function(e)conditionMessage(e))))})",
+    "policy": "exact"
+  },
+  {
+    "id": "numeric-predicate-dispatch-and-time-methods",
+    "code": "local({is.numeric.fixture<-function(x)list(generic=.Generic,method=.Method,class=.Class,value=NextMethod());list(types=lapply(list(1L,1,1i,TRUE,as.raw(1),NULL,factor(\"a\"),as.Date(\"2000-01-01\"),as.POSIXct(\"2000-01-01\",tz=\"UTC\"),as.difftime(1,units=\"secs\")),is.numeric),custom=is.numeric(structure(1L,class=\"fixture\")),methods=list(is.numeric.Date(stop(\"unused\")),is.numeric.POSIXt(stop(\"unused\")),is.numeric.difftime(stop(\"unused\"))),formals=list(formals(is.numeric.Date),formals(is.numeric.POSIXt),formals(is.numeric.difftime)))})",
+    "policy": "exact",
+    "bindingEvidence": [
+      "base::is.numeric.Date",
+      "base::is.numeric.POSIXt",
+      "base::is.numeric.difftime"
+    ]
+  },
+  {
+    "id": "numeric-predicate-default-and-frame-validation",
+    "code": "local({is.numeric.default<-function(x)FALSE;is.numeric.AsIs<-function(x)FALSE;bad<-tryCatch(sum(data.frame(a=I(1:2))),error=function(e)conditionMessage(e));is.numeric.AsIs<-function(x)NextMethod();list(default=is.numeric(structure(1,class=\"unknown\")),plain=is.numeric(1L),bad=bad,continued=is.numeric(I(1:2)))})",
+    "policy": "exact"
+  },
+  {
+    "id": "extended-vector-sum-rounding",
+    "code": "local({x<-list(c(1e16,1,-1e16),c(1e20,1,-1e20),c(1e19,1,-1e19),c(1,2^-64,-1),c(1,2^-63,-1),c(1,2^-64,2^-64,-1),c(1,3*2^-64,-1),c(-1,-3*2^-64,1),c(1e308,1e308,-1e308),c(5e-324,5e-324),c(Inf,-Inf,1),c(1e16+1i,1+1i,-1e16-1i));list(vectors=lapply(x,sum),arguments=lapply(x,function(v)do.call(sum,as.list(v))),missing=sum(c(1e16,NA_real_,1,-1e16),na.rm=TRUE))})",
+    "policy": "exact"
+  },
+  {
+    "id": "extended-matrix-reductions",
+    "code": "local({xs<-list(c(1e16,1,-1e16),c(1e19,1,-1e19),c(1e308,1e308),c(1e308,1e308,-1e308),c(5e-324,5e-324),c(5e-324,0),c(-5e-324,0),c(1,2^-64,-1),c(1e16+1i,1+1i,-1e16-1i),c(Inf,-Inf),numeric());list(values=lapply(xs,function(x)list(s=colSums(matrix(x,ncol=1)),c=colMeans(matrix(x,ncol=1)),r=rowMeans(matrix(x,nrow=1)))),missing=colMeans(matrix(c(1e16,NA,1,-1e16),ncol=1),na.rm=TRUE))})",
+    "policy": "exact"
+  },
+  {
+    "id": "extended-mean-correction",
+    "code": "local({xs<-list(c(1e16,1,-1e16),c(1e19,1,-1e19),c(1e308,1e308),c(1e308,1e308,-1e308),c(5e-324,0),c(-5e-324,0),c(1e16+1i,1+2i,-1e16+3i),c(1e19+1i,1+2i,-1e19+3i),c(Inf,1),c(Inf,-Inf),integer(),complex(),c(2147483647L,1L,-2147483647L),c(TRUE,FALSE,TRUE));list(values=lapply(xs,mean),removed=mean(c(1e19,NA,1,-1e19),na.rm=TRUE),ordinary=mean(c(0.1,0.2,0.3,0.4)),nonfiniteComplex=local({z<-mean(c(Inf+1i,1+3i));list(real=Re(z),imaginary=Im(z))}))})",
+    "policy": "exact"
+  },
+  {
+    "id": "complex-infinity-observation",
+    "code": "list(values=complex(real=c(Inf,-Inf,0,1),imaginary=c(1,2,-Inf,Inf)),mean=mean(c(Inf+1i,1+3i)),finite=1+2i,missing=NA_complex_)",
+    "policy": "exact"
+  },
+  {
+    "id": "complex-nan-component-observation",
+    "code": "list(values=complex(real=c(NaN,1,NaN),imaginary=c(1,NaN,NaN)),missing=NA_complex_,nanFlags=is.nan(complex(real=c(NaN,1,NaN),imaginary=c(1,NaN,NaN))))",
+    "policy": "exact"
+  },
+  {
+    "id": "mean-default-dispatch-and-trim",
+    "code": "local({\n mean.fixture<-function(x,...)NextMethod()\n list(\n values=c(mean(structure(c(1,2,100),class=\"fixture\"),trim=.4),mean.default(1:4),mean(1:3,unused=stop(\"unused\")),mean(1:5,.2),mean(1:4,trim=2),mean(1:3,trim=-1),mean(c(1,NA,2,100),tr=.34,na.r=TRUE)),\n lazy=local({mean.fixture<-function(x,...)42;mean(structure(1,class=\"fixture\"),trim=stop(\"unused\"))}),\n formals=formals(mean.default),\n errors=lapply(list(quote(mean(1+1i,trim=.1)),quote(mean(1:3,trim=NA_real_)),quote(mean(1:3,trim=TRUE)),quote(mean(1:3,trim=c(.1,.2)))),function(e)tryCatch(eval(e),error=function(e)conditionMessage(e)))\n )\n})",
+    "policy": "exact",
+    "bindingEvidence": ["base::mean.default"]
+  },
+  {
+    "id": "mean-missing-controls-and-nan-components",
+    "code": "local({controls<-list(TRUE,FALSE,NA,NA_real_,NULL,logical(),c(TRUE,FALSE),c(FALSE,TRUE),1,0,2,\"TRUE\",\"FALSE\",\"yes\",list(TRUE));list(controls=lapply(controls,function(control)mean(c(1,NA_real_),na.rm=control)),missing=lapply(list(NA_integer_,NA,NA_real_,NA_complex_,c(NaN,NA_real_),c(NA_real_,NaN)),mean),complex=list(mean(complex(real=c(NaN,1),imaginary=c(1,3))),mean(complex(real=c(1,3),imaginary=c(NaN,1))),mean(complex(real=c(NaN,1),imaginary=c(1,3)),na.rm=TRUE)),forcing=tryCatch(mean(1:3,trim=stop(\"trim\"),na.rm=stop(\"control\")),error=function(e)conditionMessage(e)))})",
+    "policy": "exact"
+  },
+  {
+    "id": "numeric-time-mean-methods",
+    "code": "local({xs<-list(structure(c(1,2,100),class=\"Date\",names=c(\"a\",\"b\",\"c\"),tag=\"x\"),structure(c(0,3600,7200),class=c(\"custom\",\"POSIXct\",\"POSIXt\"),tzone=\"UTC\",tag=\"x\"),structure(c(1,2,100),class=c(\"custom\",\"difftime\"),units=\"hours\",tag=\"x\"));list(values=lapply(xs,mean),trim=lapply(xs,function(x)mean(x,trim=.4,unused=stop(\"unused\"))),empty=list(mean(structure(numeric(),class=\"Date\")),mean(structure(numeric(),class=c(\"POSIXct\",\"POSIXt\"),tzone=\"UTC\")),mean(structure(numeric(),class=\"difftime\",units=\"hours\"))),direct=list(mean.Date(1:3),mean.POSIXct(1:3),mean.difftime(1:3)),formals=list(formals(mean.Date),formals(mean.POSIXct),formals(mean.difftime)),missing=mean(structure(c(1,NA,3),class=\"Date\"),na.rm=TRUE))})",
+    "policy": "exact",
+    "bindingEvidence": ["base::mean.Date", "base::mean.POSIXct", "base::mean.difftime"]
+  },
+  {
+    "id": "numeric-time-subset-methods",
+    "code": "local({xs<-list(structure(c(a=1,b=2),class=c(\"custom\",\"Date\"),tag=\"x\"),structure(c(a=1,b=2),class=c(\"custom\",\"POSIXct\",\"POSIXt\"),tzone=c(\"UTC\",\"UTC\",\"UTC\"),tag=\"x\"),structure(c(a=1,b=2),class=c(\"custom\",\"difftime\"),units=\"hours\",tag=\"x\"));list(empty=lapply(xs,function(x)x[FALSE]),reordered=lapply(xs,function(x)x[c(2,1)]),whole=lapply(xs,function(x)x[]),single=lapply(xs,function(x)x[[1]]),means=lapply(xs,function(x)mean(x[FALSE])),matrix=local({x<-structure(1:4,dim=c(2L,2L),class=c(\"custom\",\"POSIXct\",\"POSIXt\"),tzone=\"UTC\",tag=\"x\");list(x[,1],x[,1,drop=FALSE],x[],x[,])}),formals=lapply(list(`[.Date`,`[.POSIXct`,`[.difftime`,`[[.Date`,`[[.POSIXct`),formals),dispatch=local({`[.custom`<-function(x,...)NextMethod();xs[[2]][2]}))})",
+    "policy": "exact"
+  },
+  {
+    "id": "subset-name-missingness",
+    "code": "local({xs<-list(setNames(1:3,c(\"a\",NA,\"\")),setNames(list(1,2,3),c(\"a\",NA,\"\")),setNames(as.raw(1:3),c(\"a\",NA,\"\")),pairlist(a=1,b=2),structure(c(1,2,3),names=c(\"a\",NA,\"\"),class=\"Date\"));indices<-list(c(3,NA,1,5),c(\"a\",NA,\"\",\"missing\"),c(TRUE,NA,FALSE,TRUE),integer(),c(2,1,2));list(assigned=list(setNames(1:3,\"a\"),setNames(1:3,character()),setNames(setNames(1:3,c(\"a\",\"b\",\"c\")),NULL)),selected=lapply(xs,function(x)lapply(indices,function(i)x[i])),literal=structure(1:3,names=c(\"NA\",NA,\"\"))[c(\"NA\",NA,\"\")],unnamed=(1:3)[c(\"missing\",NA,\"\")])})",
+    "policy": "exact"
+  },
+  {
+    "id": "array-dimname-missingness",
+    "code": "local({x<-array(1:6,c(3,2),dimnames=list(c(\"a\",NA,\"\"),c(NA,\"b\")));names(dimnames(x))<-c(NA,\"col\");y<-array(1:3,3,dimnames=list(c(\"a\",NA,\"\")));names(dimnames(y))<-NA_character_;z<-array(1:8,c(2,2,2),dimnames=list(c(NA,\"a\"),c(\"b\",NA),c(NA,\"c\")));names(dimnames(z))<-c(\"one\",NA,\"three\");list(matrix=list(x[c(2,NA,1),,drop=FALSE],x[,1],x[FALSE,,drop=FALSE],x[c(2,1),2],x[1,,drop=FALSE]),one=list(y[c(2,NA)],y[2],y[2,drop=FALSE],y[FALSE]),three=list(z[1,,],z[,1,,drop=FALSE],z[c(2,NA),,]),errors=lapply(list(quote(x[\"\",]),quote(x[NA_character_,])),function(e)tryCatch({eval(e);FALSE},error=function(e)TRUE)))})",
+    "policy": "exact"
+  },
+  {
+    "id": "replacement-name-missingness",
+    "code": "local({xs<-list(structure(1:3,names=c(\"a\",NA,\"\")),structure(list(1,2,3),names=c(\"a\",NA,\"\")));list(assigned=lapply(xs,function(x){a<-x;a[1]<-9;b<-x;b[5]<-9;c<-x;c[c(\"z\",\"\")]<-9;d<-x;d[[2]]<-9;list(a,b,c,d)}),deleted=local({x<-xs[[2]];a<-x;a[1]<-NULL;b<-x;b[[1]]<-NULL;c<-x;c$a<-NULL;d<-x;d[5]<-NULL;e<-x;e[c(1,3)]<-NULL;list(a,b,c,d,e)}),promoted=local({x<-xs[[1]];x[1]<-list(9);x}),factor=local({x<-factor(c(\"a\",\"b\",\"a\"));names(x)<-c(\"a\",NA,\"\");x[2]<-\"a\";x}),missingIndex=local({x<-xs[[1]];x[c(1,NA)]<-9;x}))})",
+    "policy": "exact"
+  },
+  {
+    "id": "missing-character-replacement-indices",
+    "code": "local({xs<-list(1:2,list(1,2),structure(1:2,names=c(NA,\"NA\")),structure(list(1,2),names=c(NA,\"NA\")));list(assigned=lapply(xs,function(x){a<-x;a[NA_character_]<-9;b<-x;b[c(NA_character_,\"z\")]<-8:9;c<-x;c[c(NA_character_,NA_character_)]<-8:9;d<-x;d[[NA_character_]]<-9;e<-x;e[[\"\"]]<-9;f<-x;f[c(\"NA\",NA_character_)]<-8:9;list(a,b,c,d,e,f)}),deleted=lapply(list(list(1,2),list(a=1,b=2)),function(x){a<-x;a[NA_character_]<-NULL;b<-x;b[[NA_character_]]<-NULL;c<-x;c[c(\"a\",NA_character_)]<-NULL;list(a,b,c)}),frames=lapply(list(quote({x<-data.frame(a=1);x[NA_character_]<-9}),quote({x<-data.frame(a=1);x[[NA_character_]]<-9})),function(e)tryCatch({eval(e);FALSE},error=function(e)TRUE)))})",
+    "policy": "exact"
+  },
+  {
+    "id": "missing-name-extraction",
+    "code": "local({ns<-list(c(NA,\"NA\",\"\"),c(\"NA\",NA,\"\"),c(NA,\"NAx\",\"\"),c(\"\",NA,\"a\"));list(extracted=lapply(ns,function(n){x<-structure(list(1,2,3),names=n);list(exact=lapply(list(NA_character_,\"NA\",\"N\",\"\"),function(i)x[[i]]),partial=lapply(list(NA_character_,\"NA\",\"N\",\"\"),function(i)x[[i,exact=FALSE]]),dollar=list(x$NAx,x$N,x$`NA`,do.call(\"$\",list(x,\"\"))))}),numeric=lapply(list(NA_integer_,NA_real_,NA,NaN,Inf),function(i)list(1,2)[[i]]),atomic=lapply(list(NA_character_,\"\",NA_integer_,NA_real_,NA,NaN,Inf),function(i)tryCatch({structure(1:3,names=c(NA,\"NA\",\"\"))[[i]];FALSE},error=function(e)TRUE)),bounds=tryCatch({list(1,2)[[3]];FALSE},error=function(e)TRUE))})",
+    "policy": "exact"
+  },
+  {
+    "id": "callable-dollar-local-dispatch",
+    "code": "local({x<-list(a=1);e<-new.env();e$a<-2;`$.fixture`<-function(x,name)paste0(\"method:\",name);list(do.call(\"$\",list(x,\"a\")),do.call(\"$\",list(e,\"a\")),get(\"$\")(quote(f(a=3)),a),do.call(\"$\",list(structure(x,class=\"fixture\"),\"a\")),get(\"$\")(x,a),typeof(get(\"$\")),formals(get(\"$\")))})",
+    "policy": "exact"
+  },
+  {
+    "id": "do-call-language-arguments",
+    "code": "local({e<-new.env();e$a<-7;e$f<-function(x)x;list(executed=list(do.call(identity,list(quote(a)),envir=e),do.call(identity,list(quote(1+2)),envir=e),do.call(\"f\",list(quote(a)),envir=e)),quoted=list(do.call(identity,list(quote(a)),quote=TRUE,envir=e),do.call(identity,list(quote(1+2)),quote=TRUE,envir=e),do.call(function(x)substitute(x),list(quote(a)),quote=TRUE)),substituted=list(do.call(substitute,list(quote(a)),envir=e),do.call(substitute,list(quote(a)),quote=TRUE,envir=e)),lazy=do.call(function(x)42,list(quote(stop(\"unused\")))),visibility=withVisible(do.call(invisible,list(1))),names=do.call(function(...)list(...),setNames(list(1,2),c(NA,\"\"))),attributes=do.call(identity,list(structure(1:2,tag=list(a=1))),quote=TRUE),local=local({a<-9;do.call(identity,list(quote(a)))}))})",
+    "policy": "exact",
+    "bindingEvidence": ["base::do.call"]
+  },
+  {
+    "id": "do-call-controls-and-forcing",
+    "code": "local({a<-9;list(formals=formals(do.call),quoted=lapply(list(TRUE,1,1L,1i,as.raw(1),\"TRUE\",\"T\"),function(q)do.call(identity,list(quote(a)),quote=q)),evaluated=lapply(list(FALSE,0,0L,0i,as.raw(0),\"FALSE\",\"F\"),function(q)do.call(identity,list(quote(a)),quote=q)),pairlist=do.call(function(...)list(...),pairlist(x=quote(a),y=quote(1+2)),quote=TRUE),order=local({seen<-character();f<-function(n,v){seen<<-c(seen,n);v};do.call(f(\"what\",identity),f(\"args\",list(1)),quote=f(\"quote\",FALSE),envir=f(\"envir\",globalenv()));seen}),missingName=local({`NA`<-function(x)x+1;do.call(NA_character_,list(3))}),partial=do.call(wh=identity,ar=list(42),qu=FALSE),omitted=do.call(identity,list(1),quote=),controls=lapply(list(NA,NA_integer_,NA_real_,NA_complex_,NA_character_,NaN,complex(real=NaN,imaginary=1),NULL,logical(),list(),c(TRUE,FALSE),list(TRUE,FALSE),list(TRUE),\"bad\",expression(),expression(TRUE),expression(TRUE,FALSE),quote(a),quote(1+2),pairlist(TRUE),pairlist(TRUE,FALSE)),function(q)list(call=tryCatch(do.call(identity,list(1),quote=q),error=function(e)conditionMessage(e)),timer=tryCatch({system.time(NULL,gcFirst=q);NULL},error=function(e)conditionMessage(e)))),errors=lapply(list(quote(do.call(stop(\"what\"),stop(\"args\"),quote=stop(\"quote\"),envir=stop(\"envir\"))),quote(do.call(stop(\"what\"),list(1),quote=stop(\"quote\"))),quote(do.call(stop(\"what\"),1,quote=stop(\"quote\"))),quote(do.call(1,list(1),envir=stop(\"envir\"))),quote(do.call(identity,pairlist(1))),quote(do.call(identity,NULL)),quote(do.call(1,list())),quote(do.call(character(),list())),quote(do.call(c(\"identity\",\"sum\"),list(1))),quote(do.call(identity,list(1),envir=NULL)),quote(do.call(\"\",list())),quote(do.call(identity)),quote(do.call(args=list()))),function(e)tryCatch(eval(e),error=function(e)conditionMessage(e))))})",
+    "policy": "exact",
+    "bindingEvidence": ["base::do.call"]
+  },
+  {
+    "id": "apply-class-conversion-and-extraction",
+    "code": "{seen<-character();as.list.fixture<<-function(x,...){seen<<-c(seen,\"as.list\");x};length.fixture<<-function(x)stop(\"unused length method\");`[[.fixture`<<-function(x,i,...){seen<<-c(seen,paste0(\"[[\",i));unclass(x)[[i]]+10L};x<-structure(list(a=1L,b=2L),class=\"fixture\",tag=\"kept\");values<-list(as.list(x),lapply(x,identity),sapply(x,identity),vapply(x,identity,integer(1)),do.call(list,x,quote=TRUE),do.call(list,x));events<-seen;as.list.fixture<<-function(x,...)structure(list(z=3L),class=\"other\");`[[.other`<<-function(x,i,...)99L;converted<-list(lapply(x,identity),do.call(list,x,quote=TRUE));as.list.fixture<<-function(x,...)stop(\"conversion first\");failed<-tryCatch(do.call(stop(\"what\"),x,quote=TRUE,envir=stop(\"envir\")),error=function(e)conditionMessage(e));list(values=values,events=events,converted=converted,failed=failed,local=local({as.list.localfixture<-function(x,...)stop(\"local conversion\");`[[.localfixture`<-function(x,...)stop(\"local extraction\");lapply(structure(list(1,2),class=\"localfixture\"),identity)}),defaults=list(as.list(structure(list(a=1),class=\"unregistered\",tag=2)),as.list(data.frame(a=1)),as.list(expression(a,1+2)),lapply(quote(a+b),typeof),lapply(list2env(list(a=1),parent=emptyenv()),identity)))}",
+    "policy": "exact",
+    "bindingEvidence": [
+      "base::as.list",
+      "base::lapply",
+      "base::sapply",
+      "base::vapply",
+      "base::do.call"
+    ]
+  },
+  {
+    "id": "apply-lazy-dots-control-order-and-names",
+    "code": "{localResults<-local({n<-0;f<-function(x,unused)x;list(lapply(1:2,f,unused=stop(\"unused\")),sapply(1:2,f,unused=stop(\"unused\")),vapply(1:2,f,integer(1),unused=stop(\"unused\")),lapply(1:2,function(x,y)y,y={n<-n+1;n}),n,lapply(1:2,\"identity\"),lapply(numeric(),f,unused=stop(\"unused\")),sapply(NULL,identity),vapply(NULL,identity,integer(1)))});order<-lapply(c(\"lapply\",\"sapply\",\"vapply\"),function(kind){seen<-character();f<-function(n,v){seen<<-c(seen,n);v};if(kind==\"lapply\")lapply(f(\"X\",1:2),f(\"FUN\",identity)) else if(kind==\"sapply\")sapply(f(\"X\",1:2),f(\"FUN\",identity),simplify=f(\"simplify\",TRUE),USE.NAMES=f(\"NAMES\",TRUE)) else vapply(f(\"X\",1:2),f(\"FUN\",identity),f(\"VALUE\",integer(1)),USE.NAMES=f(\"NAMES\",TRUE));seen});named<-structure(c(\"a\",NA),names=c(NA,\"x\"));namesResults<-list(lapply(named,identity),sapply(named,identity,USE.NAMES=FALSE),vapply(named,identity,character(1)),sapply(c(\"a\",NA),identity),as.list(named));as.list.fixture<<-function(x,...)c(\"a\",\"b\");x<-structure(list(1,2),class=\"fixture\");convertedCharacter<-list(sapply(x,identity),vapply(x,identity,character(1)));as.list.fixture<<-function(x,...)list(10L,20L);x<-structure(c(\"a\",\"b\"),class=\"fixture\");originalCharacter<-list(sapply(x,identity),vapply(x,identity,integer(1)));list(localResults,order,namesResults,convertedCharacter,originalCharacter)}",
+    "policy": "exact",
+    "bindingEvidence": ["base::lapply", "base::sapply", "base::vapply"]
+  },
+  {
+    "id": "vapply-template-shape-and-types",
+    "code": "local({\n  templates<-list(logical(1),integer(1),numeric(1),complex(1),character(1),raw(1),list(NULL),list(NULL,NULL),numeric(),raw(),list())\n  constants<-list(TRUE,1L,1,1i,\"a\",as.raw(1),list(1),list(1,NULL),numeric(),raw(),list())\n  values<-lapply(seq_along(templates),function(i)vapply(list(a=1,b=2),function(x)constants[[i]],templates[[i]]))\n  template<-array(0L,c(2L,2L),list(row=c(\"r1\",\"r2\"),col=c(\"c1\",\"c2\")))\n  list(values=values,arrays=list(vapply(list(a=1,b=2),function(x)1:4,template),vapply(list(a=1,b=2),function(x)1:4,template,USE.NAMES=FALSE),vapply(NULL,identity,template),vapply(1,function(x)matrix(1:4,2,dimnames=list(c(\"a\",\"b\"),c(\"c\",\"d\"))),matrix(0L,2,2)),vapply(1,function(x)matrix(1:4,2,dimnames=list(c(\"a\",\"b\"),c(\"c\",\"d\"))),integer(4)),vapply(list(a=1,b=2),identity,array(0,c(1L,1L),list(\"r\",\"c\")))),names=list(vapply(1:2,function(x)c(z=x,w=x+1),c(q=0,r=0)),vapply(setNames(1:2,c(NA,\"\")),function(x)setNames(c(x,x),c(NA,\"\")),integer(2)),vapply(1:2,function(x)if(x==1)c(1,2) else c(a=3,b=4),numeric(2)),vapply(NULL,identity,c(a=0,b=0)),vapply(NULL,identity,setNames(numeric(),character()))),promotion=list(vapply(1:2,identity,numeric(1)),vapply(1:2,function(x)TRUE,integer(1)),vapply(1:2,function(x)TRUE,complex(1)),vapply(1:2,function(x)NA_integer_,numeric(1)),vapply(1:2,function(x)NaN,complex(1))),controls=lapply(list(TRUE,FALSE,1,0,1i,as.raw(1),\"TRUE\",c(TRUE,FALSE)),function(n)vapply(c(\"a\",\"b\"),identity,character(1),USE.NAMES=n)))\n})",
+    "policy": "exact",
+    "bindingEvidence": ["base::vapply"]
+  },
+  {
+    "id": "vapply-result-validation-order",
+    "code": "local({\n  seen<-integer();message<-tryCatch(vapply(1:3,function(i){seen<<-c(seen,i);if(i==2)\"bad\" else 1L},integer(1)),error=function(e)conditionMessage(e))\n  errors<-lapply(list(quote(vapply(1,function(x)c(\"a\",\"b\"),integer(1))),quote(vapply(1,function(x)NULL,numeric())),quote(vapply(1,function(x)pairlist(a=1),list(NULL))),quote(vapply(1,function(x)quote(a),integer(1))),quote(vapply(1,function(x)quote(a+b),integer(1))),quote(vapply(1,identity,NULL,USE.NAMES=stop(\"unused\"))),quote(vapply(1,identity,expression(),USE.NAMES=NA)),quote(vapply(NULL,identity,expression())),quote(vapply(1,function(x)1,integer(1))),quote(vapply(1,function(x)list(1),numeric(1))),quote(vapply(1,function(x)raw(1),integer(1)))),function(e)tryCatch(eval(e),error=function(e)conditionMessage(e)))\n  controls<-lapply(list(NA,NA_real_,NA_complex_,NA_character_,NaN,logical(),NULL,list(TRUE),\"bad\",complex(real=NaN,imaginary=1)),function(n)tryCatch(vapply(1,identity,integer(1),USE.NAMES=n),error=function(e)conditionMessage(e)))\n  shapeError<-local({seen<-integer();message<-tryCatch(vapply(1:2,function(i){seen<<-c(seen,i);matrix(1:4,1,dimnames=list(\"a\",letters[1:4]))},matrix(0L,2,2)),error=function(e)conditionMessage(e));list(seen,message)})\n  list(seen=seen,message=message,errors=errors,controls=controls,shapeError=shapeError)\n})",
+    "policy": "exact"
+  },
+  {
+    "id": "apply-single-conversion-and-name-length",
+    "code": "{\n e<-new.env();e$a<-1;as.list.fixture<<-function(x,...)e;x<-structure(list(9),class=\"fixture\")\n environments<-list(tryCatch(lapply(x,identity),error=function(e)conditionMessage(e)),tryCatch(sapply(x,identity),error=function(e)conditionMessage(e)),tryCatch(vapply(x,identity,numeric(1)),error=function(e)conditionMessage(e)),tryCatch(do.call(list,x,quote=TRUE),error=function(e)conditionMessage(e)))\n value<-NULL;as.list.fixture<<-function(x,...)value\n empty<-list(lapply(x,identity),sapply(x,identity),vapply(x,identity,numeric(1)),do.call(list,x,quote=TRUE))\n value<-expression(a,1+2);expressions<-list(lapply(x,typeof),do.call(list,x,quote=TRUE))\n value<-quote(f(a=1,b=2));calls<-lapply(x,typeof)\n value<-pairlist(a=1L,b=2L);pairs<-lapply(x,identity)\n as.list.fixture<<-function(x,...)list(1L,2L,3L);x<-structure(c(\"a\",\"b\"),class=\"fixture\")\n padded<-list(sapply(x,identity),sapply(x,identity,simplify=FALSE))\n as.list.fixture<<-function(x,...)list(1L)\n error<-tryCatch(sapply(x,identity,simplify=stop(\"simplify forced\")),error=function(e)conditionMessage(e))\n list(environments,empty,expressions,calls,pairs,padded,error)\n}",
+    "policy": "exact",
+    "bindingEvidence": ["base::lapply", "base::sapply", "base::vapply", "base::do.call"]
+  },
+  {
+    "id": "time-class-list-conversion",
+    "code": "{\n  item <- structure(1, first = 'a', tzone = 'inner', class = 'inside', units = 'seconds', last = 'z')\n  outer <- structure(list(item, list(z = 2)), names = c(NA_character_, ''), class = c('timeListProbe', 'POSIXct'), tzone = 'UTC', units = 'hours', custom = 'discard')\n  conversions <- list(\n    posix = as.list(outer),\n    date = as.list.Date(outer),\n    duration = as.list.difftime(outer),\n    remove = as.list.POSIXct(list(item)),\n    raw = as.list.Date(structure(as.raw(c(1, 2)), class = c('extra', 'Date'))),\n    complex = as.list.difftime(structure(c(1+2i, NA_complex_), class = 'difftime', units = 'hours')),\n    character = as.list.POSIXct(structure(c('a', NA_character_), class = 'POSIXct', tzone = 'UTC')),\n    factor = as.list.Date(factor(c('a', 'b'))),\n    partial = as.list.POSIXct(structure(1:2, class.extra = 'ignored', tzone.extra = 'UTC')),\n    ambiguous = as.list.difftime(structure(1:2, class = 'difftime', units.first = 'hours', units.second = 'days'))\n  )\n  localOnly <- local({ names.timeListProbe <- function(x) c('local1', 'local2'); names(as.list(outer)) })\n  names.timeListProbe <<- function(x) c('global1', 'global2')\n  globalNames <- names(as.list(outer))\n  localShadow <- local({ names.timeListProbe <- function(x) c('local1', 'local2'); names(as.list.POSIXct(outer)) })\n  names.timeListProbe <<- function(x) 'one'\n  paddedNames <- names(as.list.POSIXct(outer))\n  names.timeListProbe <<- function(x) stop('names failed')\n  errorFirst <- tryCatch(as.list.POSIXct(structure(list(NULL), class = c('timeListProbe', 'POSIXct'))), error = function(e) conditionMessage(e))\n  emptyError <- tryCatch(as.list.POSIXct(structure(numeric(), class = c('timeListProbe', 'POSIXct'))), error = function(e) conditionMessage(e))\n  names.timeListProbe <<- function(x) c('a', 'b')\n  nullFirst <- tryCatch(as.list.POSIXct(structure(list(NULL), class = c('timeListProbe', 'POSIXct'))), error = function(e) conditionMessage(e))\n  rm(names.timeListProbe,envir=globalenv())\n  assign('as.list.default',function(x, ...) stop('default override called'),envir=globalenv())\n  as.list.integer <<- function(x, ...) stop('integer override called')\n  overrides <- list(as.list.Date(1:2), as.list.POSIXct(1:2), as.list.difftime(1:2))\n  rm(as.list.default, as.list.integer,envir=globalenv())\n  list(conversions = conversions, methodNames = list(localOnly, globalNames, localShadow, paddedNames), errors = c(errorFirst, emptyError, nullFirst), overrides = overrides)\n}",
+    "policy": "exact",
+    "bindingEvidence": ["base::as.list.Date", "base::as.list.POSIXct", "base::as.list.difftime"]
+  },
+  {
+    "id": "time-list-shape-names-and-formals",
+    "code": "local({xs<-list(structure(c(1,NA_real_),class=c(\"custom\",\"Date\"),names=c(NA,\"\"),tag=\"drop\"),structure(c(1,NA_real_),class=c(\"custom\",\"POSIXct\",\"POSIXt\"),tzone=\"UTC\",names=c(NA,\"\"),tag=\"drop\"),structure(c(1,NA_real_),class=c(\"custom\",\"difftime\"),units=\"hours\",names=c(NA,\"\"),tag=\"drop\"));one<-array(1:2,2,list(c(NA,\"\")));list(values=lapply(xs,as.list),applied=lapply(xs,function(x)lapply(x,identity)),empty=as.list.POSIXct(structure(numeric(),names=character(),class=\"POSIXct\",tzone=\"UTC\")),oneDim=list(as.list(one),as.list.Date(one),as.list.POSIXct(one),as.list.difftime(one),names(one),attr(one,\"names\")),symbols=list(as.list(quote(a)),as.list.Date(quote(f(a,b)))),formals=list(formals(as.list.Date),formals(as.list.POSIXct),formals(as.list.difftime)))})",
+    "policy": "exact"
+  },
+  {
+    "id": "partial-attribute-lookup-and-time-forcing",
+    "code": "{\n options(warnPartialMatchAttr=TRUE)\n events<-character();names.attrProbe<<-function(x){events<<-c(events,\"names\");NULL}\n catch<-function(expr)tryCatch(expr,warning=function(w){events<<-c(events,conditionMessage(w));\"warned\"},error=function(e)conditionMessage(e))\n value<-catch(as.list.POSIXct(structure(1:2,class=c(\"attrProbe\",\"POSIXct\"),tzone.extra=\"UTC\")));first<-events;events<-character()\n empty<-catch(as.list.POSIXct(structure(numeric(),class=c(\"attrProbe\",\"POSIXct\"),tzone.extra=\"UTC\")));second<-events;events<-character()\n failure<-catch(as.list.POSIXct(structure(list(NULL),class=c(\"attrProbe\",\"POSIXct\"),tzone.extra=\"UTC\")));third<-events\n attrWarnings<-list(catch(attr(structure(1,tzone.extra=\"UTC\"),\"tz\")),catch(as.list.difftime(structure(list(NULL),units.extra=\"hours\"))))\n options(warnPartialMatchAttr=FALSE)\n x<-structure(1,tzone.extra=\"UTC\",units.one=\"hours\",units.two=\"days\");named<-setNames(1:2,c(NA,\"\"))\n list(value,first,empty,second,failure,third,attrWarnings,list(attr(x,\"tzone\"),attr(x,\"tzone\",exact=TRUE),attr(x,\"units\"),attr(x,\"\"),attr(named,\"names\"),attr(named,\"nam\")))\n}",
+    "policy": "exact",
+    "bindingEvidence": ["base::attr"]
+  },
+  {
+    "id": "factor-list-conversion-and-dispatch",
+    "code": "{x<-structure(c(1L,NA_integer_,2L),class=structure(c(\"factorFixture\",\"ordered\",\"factor\"),tag=\"class\"),levels=structure(c(\"low\",\"high\"),names=c(\"L\",\"H\"),tag=\"levels\"),names=c(\"a\",NA,\"\"),tag=\"discard\")\nstandard<-as.list(x)\nseen<-character()\nlength.factorFixture<<-function(x){seen<<-c(seen,\"length\");2L}\n`[[.factorFixture`<<-function(x,i,...){seen<<-c(seen,paste0(\"extract\",i));structure(i+10L,tag=\"item\")}\nnames.factorFixture<<-function(x){seen<<-c(seen,\"names\");c(\"u\",\"v\")}\ndispatched<-as.list.factor(x)\ntrace<-seen\nn<-0\nlength.factorFixture<<-function(x){n<<-n+1;if(n==1)3L else 1L}\nnames.factorFixture<<-function(x)NULL\nchangingLength<-as.list.factor(x)\nrm(list=c(\"length.factorFixture\",\"[[.factorFixture\",\"names.factorFixture\"),envir=globalenv())\nlist(standard=standard,dispatched=dispatched,trace=trace,changingLength=changingLength,empty=as.list(structure(integer(),class=\"factor\",levels=character(),names=character())),nested=as.list(list(inner=x)),directCall=as.list.factor(quote(f(a=1,b=2))),directExpression=as.list.factor(expression(a,1+2)),deletedNull=as.list.factor(list(1,NULL)),formals=formals(as.list.factor))\n}",
+    "policy": "exact",
+    "bindingEvidence": ["base::as.list.factor"]
+  },
+  {
+    "id": "names-replacement-coercion-and-metadata",
+    "code": "{\n  msg <- function(expr) tryCatch(expr,error=conditionMessage)\n  seen <- 0L\n  as.character.namesfixture <<- function(x,...) { seen <<- seen+1L; list(\"renamed\",NA_character_) }\n  generic <- setNames(1:3,structure(1L,class=\"namesfixture\"))\n  direct <- 1:3; attr(direct,\"names\") <- structure(c(\"old\",\"text\"),class=\"namesfixture\")\n  marked <- structure(c(\"a\",\"b\"),tag=2,names=c(\"p\",\"q\"))\n  exact <- 1:2; attr(exact,\"names\") <- marked\n  padded <- 1:3; attr(padded,\"names\") <- marked\n  listnames <- setNames(1:4,list(1:2,NA_character_,factor(\"f\")))\n  pairnames <- 1:3; attr(pairnames,\"names\") <- pairlist(1L,NA_integer_)\n  tags <- pairlist(1,2,3); names(tags) <- c(NA,\"a\")\n  emptytags <- pairlist(1,2); names(emptytags) <- c(NA,NA)\n  bytes <- rawToChar(as.raw(233)); Encoding(bytes) <- \"latin1\"\n  encoded <- setNames(1:2,bytes)\n  a <- array(1:2,2,dimnames=list(axis=c(\"a\",\"b\"))); names(a) <- \"z\"\n  b <- a; names(b) <- NULL\n  localresult <- local({\n    as.character.localnames <- function(x,...) \"local\"\n    value <- structure(1L,class=\"localnames\")\n    x <- 1:2; names(x) <- value\n    list(x,setNames(1:2,value))\n  })\n  as.character.namesfixture <<- function(x,...) factor(c(\"b\",\"a\"))\n  factorresult <- setNames(1:2,structure(1L,class=\"namesfixture\"))\n  list(generic=generic,calls=seen,direct=direct,exact=exact,padded=padded,\n       listnames=listnames,pairnames=pairnames,tags=tags,emptytags=emptytags,\n       encoded=encoded,array=a,unnamedarray=b,locals=localresult,factorresult=factorresult,\n       errors=list(msg(setNames(1:2,1:3)),msg(setNames(NULL,character())),\n                   msg(setNames(new.env(),\"x\")),msg({x<-1:2;attr(x,\"names\")<-pairlist(1:2)})))\n}\n",
+    "policy": "exact",
+    "bindingEvidence": ["stats::setNames"]
+  },
+  {
+    "id": "classed-list-visibility-and-environment-names",
+    "code": "{\n names.numeric<<-function(x)stop(\"implicit dispatch\")\n plain<-as.list.POSIXct(1:2)\n x<-structure(1:2,class=c(\"visibleFixture\",\"POSIXct\"),tzone=\"UTC\")\n names.visibleFixture<<-function(x)invisible(c(\"a\",\"b\"))\n as.character.visibleFixture<<-function(x,...)invisible(c(\"a\",\"b\"))\n posix<-withVisible(as.list.POSIXct(x));named<-withVisible(setNames(1:2,x));assigned<-withVisible(get(\"names<-\")(1:2,x))\n f<-structure(1:2,class=c(\"visibleFixture\",\"factor\"),levels=c(\"a\",\"b\"))\n length.visibleFixture<<-function(x)invisible(2L)\n assign(\"[[.visibleFixture\",function(x,i,...)invisible(i),envir=globalenv())\n factor<-withVisible(as.list.factor(f))\n e<-new.env(hash=FALSE,parent=emptyenv());e$a<-1;e$b<-2\n environment<-list(names(e),as.list.POSIXct(e));e$.hidden<-3\n hidden<-tryCatch(as.list.POSIXct(e),error=function(e)conditionMessage(e))\n class(e)<-\"fixture\"\n classed<-lapply(list(as.list.Date,as.list.POSIXct,as.list.difftime),function(m)tryCatch(m(e),error=function(e)conditionMessage(e)))\n list(plain,posix,named,assigned,factor,environment,hidden,classed,list(names(quote(a)),names(function(x)x),names(expression(a))))\n}",
+    "policy": "exact"
+  },
+  {
+    "id": "exiting-condition-handlers-and-unwind",
+    "code": "{\n  seen <- character()\n  first <- tryCatch({seen<-c(seen,\"expr\");warning(\"warn\",call.=FALSE);stop(\"after\")},\n    warning={seen<-c(seen,\"force warning\");function(w){seen<<-c(seen,\"handler\");conditionMessage(w)}},\n    error={seen<-c(seen,\"force error\");function(e)\"error\"},\n    finally={seen<-c(seen,\"finally\")})\n  custom <- warningCondition(\"custom\",detail=3L,class=\"fixture\")\n  customMessage <- structure(list(message=\"custom\",call=NULL,detail=4L),class=c(\"fixture\",\"message\",\"condition\"))\n  conditions <- list(\n    tryCatch(message(\"message\"),message=identity),\n    tryCatch(message(\"bare\",appendLF=FALSE),message=identity),\n    tryCatch(message(customMessage),fixture=identity),\n    tryCatch(warning(custom),fixture=identity,warning=function(w)NULL))\n  order <- c(\n    tryCatch(warning(\"a\",call.=FALSE),condition=function(c)\"condition\",warning=function(w)\"warning\"),\n    tryCatch(warning(\"a\",call.=FALSE),warning=function(w)\"warning\",condition=function(c)\"condition\"))\n  nestedSeen <- character()\n  nested <- tryCatch(tryCatch(warning(\"first\",call.=FALSE),\n    warning=function(w){nestedSeen<<-c(nestedSeen,\"inner\");warning(\"second\",call.=FALSE);2},\n    finally={nestedSeen<-c(nestedSeen,\"finally\")}),\n    warning=function(w){nestedSeen<<-c(nestedSeen,conditionMessage(w));3})\n  forcing <- tryCatch(tryCatch(1,warning={warning(\"force\",call.=FALSE);function(w)2},\n    finally={nestedSeen<-c(nestedSeen,\"force finally\")}),warning=conditionMessage)\n  siblings <- c(\n    tryCatch(warning(\"a\",call.=FALSE),warning=function(w)stop(\"raised\",call.=FALSE),error=conditionMessage),\n    tryCatch(tryCatch(warning(\"a\",call.=FALSE),error=function(e)\"bad\",warning=function(w)stop(\"raised\",call.=FALSE)),error=conditionMessage),\n    tryCatch(warning(\"a\",call.=FALSE),warning=function(w)warning(\"b\",call.=FALSE),warning=conditionMessage),\n    tryCatch(tryCatch(warning(\"a\",call.=FALSE),warning=NULL),error=conditionMessage))\n  pending <- tryCatch(tryCatch(warning(\"first\",call.=FALSE),finally=warning(\"second\",call.=FALSE)),\n    warning=function(w)paste0(\"warning:\",conditionMessage(w)),condition=function(c)\"wrong handler\")\n  f <- function(){on.exit(message(\"cleanup\"));warning(\"first\",call.=FALSE)}\n  cleanupMessage <- tryCatch(tryCatch(f(),message=function(m)paste0(\"inner:\",conditionMessage(m))),warning=function(w)\"wrong handler\")\n  g <- function(){on.exit(stop(\"cleanup\",call.=FALSE));warning(\"first\",call.=FALSE)}\n  cleanupError <- tryCatch(tryCatch(g(),error=function(e)paste0(\"inner:\",conditionMessage(e))),warning=function(w)\"wrong handler\")\n  visibility <- list(\n    withVisible(tryCatch(invisible(1),warning=function(w)2)),\n    withVisible(tryCatch(warning(\"a\",call.=FALSE),warning=function(w)invisible(2))),\n    withVisible(tryCatch(invisible(3),finally=4)))\n  h <- function()tryCatch(return(7L),warning=function(w)\"stale\",finally=NULL)\n  list(first=first,seen=seen,conditions=conditions,order=order,nested=nested,\n       nestedSeen=nestedSeen,forcing=forcing,siblings=siblings,pending=pending,\n       cleanupMessage=cleanupMessage,cleanupError=cleanupError,visibility=visibility,\n       returned=h(),fresh=tryCatch(warning(\"fresh\",call.=FALSE),warning=conditionMessage))\n}\n",
+    "policy": "exact",
+    "bindingEvidence": ["base::tryCatch", "base::message", "base::warning"]
+  },
+  {
+    "id": "apply-simplification-shapes",
+    "code": "{\n  a <- array(1:4, c(2,2), dimnames=structure(list(c(NA,'r2'),c('c1','')),names=c('rows',NA)))\n  b <- array(5:8, c(2,2), dimnames=list(c('q1','q2'),c('w1','w2')))\n  x <- structure(list(a,b),names=c(NA,''))\n  scalars <- structure(list(setNames(1,NA_character_),c(inner=2)),names=c(NA,''))\n  cells <- structure(list(list(first=structure(1,tag='a'),second=quote(z)),list(first=2,second=NULL)),names=c(NA,''))\n  list(\n    ordinary=sapply(x,identity), higher=sapply(x,identity,simplify='array'), direct=simplify2array(x),\n    scalarNames=simplify2array(scalars), matrixNames=simplify2array(structure(list(setNames(1:2,c(NA,'')),c(z=3L,t=4L)),names=c('',NA))),\n    listCells=simplify2array(cells), listScalar=simplify2array(list(a=list(k=1),b=list(k=2))),\n    recursiveScalar=simplify2array(list(a=list(list(k=1)),b=list(list(k=2)))), mixed=simplify2array(list(a=list(x=1,y=2),b=3:4)),\n    factorScalar=simplify2array(list(a=factor('x',levels=c('x','y')),b=factor('y',levels=c('x','y')))),\n    factorMatrix=simplify2array(list(a=factor(c('x','y')),b=factor(c('y','x')))),\n    zeroDefault=sapply(1:2,function(i)integer()), zeroInteger=simplify2array(list(a=integer(),b=integer()),except=NULL),\n    zeroMixed=simplify2array(list(a=integer(),b=double()),except=NULL), zeroList=simplify2array(list(a=list(),b=list()),except=NULL),\n    nullOuter=simplify2array(list(a=NULL,b=NULL),except=NULL), nullCells=simplify2array(list(a=list(NULL),b=list(NULL)))\n  )\n}\n",
+    "policy": "exact",
+    "bindingEvidence": ["base::simplify2array", "base::sapply"]
+  },
+  {
+    "id": "apply-simplification-controls",
+    "code": "{\n  capture <- function(expr) tryCatch(expr,error=function(e)conditionMessage(e))\n  controls <- list(FALSE,TRUE,'array','matrix',0L,NA,NULL,logical(),c(TRUE,FALSE),list('array'),structure(FALSE,names='x'))\n  values <- lapply(controls,function(s)list(scalar=capture(sapply(1:2,identity,simplify=s)), vector=capture(sapply(1:2,function(i)c(a=i,b=i+10L),simplify=s)), array=capture(sapply(1:2,function(i)matrix(1:4+i,2),simplify=s))))\n  exceptions <- lapply(list(NULL,0,1,2,'1',list(1),as.raw(1),c(0.2,1.5)),function(ex)lapply(0:2,function(width)simplify2array(list(first=seq_len(width),second=seq_len(width)),except=ex)))\n  namesControl <- lapply(list(NA,logical(),1,0,1+0i,NA_complex_,NULL,'TRUE',c(TRUE,FALSE)),function(u)list(numeric=capture(sapply(1:2,identity,USE.NAMES=u)),character=capture(sapply(c('x','y'),identity,USE.NAMES=u)),named=capture(sapply(c(a='x',b='y'),identity,USE.NAMES=u))))\n  laziness <- list(simplify2array(list(),higher=stop('higher'),except=stop('except')),simplify2array(list(1,1:2),higher=stop('higher'),except=stop('except')),simplify2array(list(1,2),higher=stop('higher')),capture(simplify2array(list(integer(),integer()),higher=stop('higher'),except=NULL)),capture(sapply(integer(),identity,simplify=stop('simplify'))),capture(sapply(1:2,identity,USE.NAMES=stop('names'),simplify=stop('simplify'))))\n  list(values=values,exceptions=exceptions,namesControl=namesControl,laziness=laziness)\n}\n",
+    "policy": "exact"
+  },
+  {
+    "id": "apply-simplification-methods-and-gates",
+    "code": "{\n  events<-character(); record<-function(s)events<<-c(events,s)\n  capture<-function(thunk){events<<-character();value<-tryCatch(thunk(),error=function(e)conditionMessage(e));list(events=events,value=value)}\n  length.simpOuter<<-function(x){record('length.outer');length(unclass(x))}\n  lengths.simpOuter<<-function(x,use.names=TRUE){record('lengths.outer');lengths(unclass(x),use.names=use.names)}\n  length.simpInner<<-function(x){record('length.inner');length(unclass(x))}\n  as.list.simpOuter<<-function(x,...){record('as.list.outer');unclass(x)}\n  `[[.simpOuter`<<-function(x,i,...){record(paste0('[[.outer:',i));unclass(x)[[i]]}\n  names.simpOuter<<-function(x){record('names.outer');attr(x,'names',exact=TRUE)}\n  dim.simpInner<<-function(x){record('dim.inner');attr(x,'dim',exact=TRUE)}\n  dimnames.simpInner<<-function(x){record('dimnames.inner');attr(x,'dimnames',exact=TRUE)}\n  names.simpInner<<-function(x){record('names.inner');attr(x,'names',exact=TRUE)}\n  override<-FALSE;flat<-NULL\n  unlist.simpOuter<<-function(x,recursive=TRUE,use.names=TRUE){record(paste0('unlist:',use.names));if(override)flat else unlist(unclass(x),recursive=recursive,use.names=use.names)}\n  x<-structure(list(a=structure(1:2,class='simpInner'),b=structure(3:4,class='simpInner')),class='simpOuter')\n  normal<-capture(function()simplify2array(x,except={record('except');c(0,1)},higher={record('higher');TRUE}))\n  noHigher<-capture(function()simplify2array(x,higher={record('higher');FALSE}))\n  missingHigher<-capture(function()simplify2array(x,higher={record('higher');NA}))\n  localShadow<-capture(function()local({length.simpOuter<-function(x)stop('local length');dim.simpInner<-function(x)stop('local dim');unlist.simpOuter<-function(x,...)stop('local unlist');simplify2array(x)}))\n  override<-TRUE\n  gates<-lapply(list(NULL,integer(),1:3,1:4,1:5),function(r){flat<<-r;capture(function()simplify2array(x,higher={record('higher');TRUE}))})\n  x<-structure(list(a=structure(1L,class='simpInner'),b=structure(2L,class='simpInner')),class='simpOuter')\n  scalarGates<-lapply(list(NULL,1:2,1:3),function(r){flat<<-r;capture(function()simplify2array(x,higher=stop('higher should remain lazy')))})\n  allNull<-capture(function()simplify2array(list(NULL,NULL),except=NULL,higher=stop('higher should remain lazy')))\n  rm(length.simpOuter,lengths.simpOuter,length.simpInner,as.list.simpOuter,`[[.simpOuter`,names.simpOuter,dim.simpInner,dimnames.simpInner,names.simpInner,unlist.simpOuter,envir=globalenv())\n  list(normal=normal,noHigher=noHigher,missingHigher=missingHigher,localShadow=localShadow,gates=gates,scalarGates=scalarGates,allNull=allNull)\n}\n",
+    "policy": "exact"
+  },
+  {
+    "id": "sapply-controls-dispatch-and-names",
+    "code": "{\n  events <- character()\n  `==.arraymode` <<- function(e1,e2) {events<<-c(events,paste0(.Generic,':',.Group));TRUE}\n  Ops.opsmode <<- function(e1,e2) {events<<-c(events,paste0(.Generic,':',.Group));TRUE}\n  as.list.shortinput <<- function(x,...)list(1L)\n  as.list.longinput <<- function(x,...)list(1L,2L,3L)\n  f <- function(i) matrix(1:4+i,2)\n  mode <- structure('matrix',class='arraymode')\n  higher <- sapply(1:2,f,simplify=mode)\n  scalar <- sapply(1:2,identity,simplify=mode)\n  disabled <- sapply(1:2,f,simplify=structure(FALSE,class='arraymode'))\n  grouped <- sapply(1:2,f,simplify=structure('matrix',class='opsmode'))\n  localResult <- local({`==.localmode`<-function(e1,e2)stop('unused local method');sapply(1:2,f,simplify=structure('matrix',class='localmode'))})\n  capture <- function(expr) tryCatch(expr,error=conditionMessage)\n  short <- structure(c('a','b'),class='shortinput')\n  long <- structure(c('a','b'),class='longinput')\n  lengths <- list(capture(sapply(short,identity)),sapply(short,identity,USE.NAMES=FALSE),sapply(long,identity))\n  bytes <- rawToChar(as.raw(233));Encoding(bytes)<-'latin1'\n  encoded <- sapply(c(bytes,NA_character_),identity)\n  list(higher=higher,scalar=scalar,disabled=disabled,grouped=grouped,events=events,\n       localResult=localResult,lengths=lengths,encoded=encoded,\n       expression=sapply(1:2,f,simplify=expression('array')),\n       symbol=sapply(1:2,f,simplify=quote(array)),\n       missing=sapply(c('x','y'),identity,simplify=,USE.NAMES=))\n}\n",
+    "policy": "exact"
+  },
+  {
+    "id": "unlist-shallow-values-types-and-names",
+    "code": "{\n  a<-ordered(c('y',NA),levels=c('x','y'))\n  b<-ordered('z',levels=c('z','x'))\n  list(\n    atomic=unlist(list(a=1:2,b=3:4),recursive=FALSE),\n    listCells=unlist(list(a=list(k=structure(1,tag='cell')),b=2),recursive=FALSE),\n    nullCells=unlist(list(a=list(NULL),b=list(NULL)),recursive=FALSE),\n    emptyAtomic=unlist(list(integer(),double()),recursive=FALSE),\n    emptyList=unlist(list(list(),NULL),recursive=FALSE),\n    expressions=unlist(list(expression(a,1+2),3),recursive=FALSE,use.names=FALSE),\n    emptyExpression=unlist(list(expression(),integer()),recursive=FALSE),\n    missingNames=unlist(structure(list(1,1:2),names=c(NA,NA)),recursive=FALSE),\n    composedMissing=unlist(structure(list(setNames(1,NA_character_),c(inner=2)),names=c(NA,'')),recursive=FALSE),\n    blankNames=unlist(structure(list(1,2),names=c('','')),recursive=FALSE),\n    nestedNames=unlist(list(a=list(k=1,2),b=list(3,4)),recursive=FALSE),\n    noNames=unlist(list(a=list(k=1),b=c(inner=2)),recursive=FALSE,use.names=FALSE),\n    factor=unlist(list(a=a,b=b),recursive=FALSE),\n    factorNull=unlist(list(a=factor('y',levels=c('x','y')),b=NULL),recursive=FALSE),\n    factorEmpty=unlist(list(a=factor('y',levels=c('x','y')),b=integer()),recursive=FALSE),\n    emptyFactors=unlist(list(factor(character(),levels=c('a','b')),factor(character(),levels=c('b','c'))),recursive=FALSE),\n    recursiveFactors=unlist(list(a=list(a),b=list(b))),\n    recursiveFactorNull=unlist(list(a=factor('y',levels=c('x','y')),b=NULL)),\n    directAtomic=unlist(c(a=1),use.names=FALSE),\n    directCall=unlist(quote(f(a=1)),use.names=FALSE)\n  )\n}\n",
+    "policy": "exact",
+    "bindingEvidence": ["base::unlist"]
+  },
+  {
+    "id": "unlist-name-encoding",
+    "code": "{\n  latin<-rawToChar(as.raw(233));Encoding(latin)<-'latin1'\n  bytes<-rawToChar(as.raw(233));Encoding(bytes)<-'bytes'\n  values<-list(\n    outer=unlist(setNames(list(1,2),c(latin,NA_character_)),recursive=FALSE),\n    inner=unlist(list(setNames(1,latin)),recursive=FALSE),\n    composed=unlist(setNames(list(c(x=1)),latin),recursive=FALSE),\n    indexed=unlist(setNames(list(1:2),latin),recursive=FALSE),\n    byteName=unlist(list(setNames(1,bytes)),recursive=FALSE),\n    byteError=tryCatch(unlist(setNames(list(1:2),bytes),recursive=FALSE),error=conditionMessage)\n  )\n  list(values=values,\n       encoding=lapply(values[1:5],function(x)Encoding(names(x))),\n       bytes=lapply(values[1:5],function(x)lapply(names(x),function(name)if(is.na(name))NULL else charToRaw(name))))\n}\n",
+    "policy": "exact"
+  },
+  {
+    "id": "simplification-lengths-and-integer-coercion",
+    "code": "{\n length.lengthfixture<<-function(x)2L\n lengths.outerfixture<<-function(x,use.names=TRUE)lengths(unclass(x),use.names=use.names)\n as.integer.integerfixture<<-function(x)0L\n m<-matrix(1:4,2,dimnames=list(c(NA,\"\"),c(\"a\",\"b\")))\n x<-structure(list(a=structure(1:2,class=\"lengthfixture\"),b=structure(3:4,class=\"lengthfixture\")),class=\"outerfixture\")\n errors<-lapply(list(expression(),expression(1),list(NULL),list(1:2),list(quote(a)),list(pairlist(1)),quote(a)),function(x)tryCatch(as.integer(x),error=conditionMessage))\n list(lengths=list(lengths(m),lengths(m,use.names=FALSE),lengths(x),lengths(expression(a,1+2)),lengths(NULL)),\n      integers=list(as.integer(list(1,TRUE,\"2\")),as.integer(pairlist(1,\"2\")),as.integer(list(list(1),list(),numeric(),expression())),as.integer(structure(1,class=\"integerfixture\"))),\n      simplified=simplify2array(x,except=structure(1,class=\"integerfixture\")),errors=errors)\n}",
+    "policy": "exact",
+    "bindingEvidence": ["base::lengths", "base::as.integer"]
+  },
+  {
+    "id": "unlist-controls-global-dispatch-and-formals",
+    "code": "{\n  seen<-character()\n  x<-structure(list(a=1,b=2),class='fixture')\n  unlist.fixture<<-function(x,recursive=TRUE,use.names=TRUE){seen<<-c(seen,'method');list(generic=.Generic,method=.Method,recursive=recursive,use.names=use.names)}\n  explicit<-unlist({seen<<-c(seen,'x');x},recursive={seen<<-c(seen,'recursive');'FALSE'},use.names={seen<<-c(seen,'names');0L})\n  forcing<-seen\n  defaults<-unlist(x)\n  localMethod<-local({unlist.fixture<-function(...)stop('local method');unlist(x)})\n  nullNames<-unlist(x,use.names=NULL)\n  vectorNames<-unlist(x,use.names=c(TRUE,FALSE))\n  unlist.fixture<<-function(x,recursive=TRUE,use.names=TRUE)invisible(c(missing(recursive),missing(use.names)))\n  visibility<-withVisible(unlist(x,recursive=,use.names=))\n  seen<-character()\n  length.control<<-function(x){seen<<-c(seen,'length');1L}\n  is.na.control<<-function(x){seen<<-c(seen,'is.na');FALSE}\n  as.logical.control<<-function(x,...)stop('coercion method')\n  unlist.fixture<<-function(x,recursive=TRUE,use.names=TRUE){seen<<-c(seen,'unlist');list(recursive=recursive,use.names=use.names)}\n  control<-structure(FALSE,class='control')\n  controlled<-unlist({seen<<-c(seen,'x');x},recursive=control,use.names={seen<<-c(seen,'names');control})\n  controlTrace<-seen\n  localControl<-local({length.control<-function(x)stop('local length');is.na.control<-function(x)stop('local is.na');unlist(x,recursive=control)})\n  rm(list=c('unlist.fixture','length.control','is.na.control','as.logical.control'),envir=globalenv())\n  capture<-function(expr)tryCatch(expr,error=conditionMessage)\n  list(explicit=explicit,forcing=forcing,defaults=defaults,localMethod=localMethod,nullNames=nullNames,vectorNames=vectorNames,\n       visibility=visibility,controlled=controlled,controlTrace=controlTrace,localControl=localControl,\n       defaultLocal=local({unlist.fixture<-function(...)stop('local method');unlist(x)}),\n       implicit=local({unlist.list<-function(...)stop('implicit method');unlist(list(1,2))}),\n       errors=list(recursiveLength=capture(unlist(stop('x'),recursive=NULL)),recursiveNA=capture(unlist(x,recursive=NA_character_)),\n                   recursiveBoolean=capture(unlist(x,recursive='yes')),namesEmpty=capture(unlist(x,use.names=NULL)),\n                   namesLength=capture(unlist(x,use.names=c(TRUE,FALSE))),missingXOrder=capture(unlist(recursive=stop('recursive')))),\n       formals=formals(unlist))\n}\n",
+    "policy": "exact"
+  },
+  {
+    "id": "simplification-dimension-gates-and-axis-packing",
+    "code": "local({\n  methods <- c('dim.nrv2shape', 'dimnames.nrv2shape', 'names.nrv2axis',\n               'as.character.nrv2label', 'as.list.nrv2visible', 'unlist.nrv2visible',\n               'is.numeric.nrv2dim', 'c.nrv2dim', 'Summary.nrv2dim', 'Summary.nrv2size')\n  on.exit(rm(list = methods, envir = globalenv()))\n  capture <- function(expr) tryCatch(expr, error = conditionMessage)\n  shape <- list(structure(1:4, class = 'nrv2shape'), structure(5:8, class = 'nrv2shape'))\n  named_shape <- setNames(shape, c('A', 'B'))\n  scalar_shape <- list(A = structure(1L, class = 'nrv2shape'),\n                       B = structure(2L, class = 'nrv2shape'))\n  d <- c(2L, 2L)\n  dn <- NULL\n  dim.nrv2shape <<- function(x) d\n  dimnames.nrv2shape <<- function(x) dn\n  dimensions <- lapply(list(integer = c(2L, 2L), double = c(2, 2),\n                           character = c('2', '2'), logical = c(TRUE, TRUE),\n                           list = list(2L, 2L), complex = c(2 + 0i, 2 + 0i),\n                           fraction = c(2.5, 1.6), missing = c(NA_real_, 2),\n                           attributed = structure(c(2L, 2L), tag = 9L)),\n                       function(value) { d <<- value; capture(simplify2array(shape)) })\n  scalar_dimensions <- lapply(list(empty_integer = integer(), empty_double = numeric(),\n                                  empty_logical = logical(), null = NULL, zero = 0L,\n                                  negative = c(-1L, -1L), fraction = c(1.5, 2 / 3)),\n                              function(value) {\n                                d <<- value\n                                capture(simplify2array(scalar_shape, except = NULL))\n                              })\n  dimension_classes <- lapply(list(factor = factor(c('b', 'b'), levels = c('a', 'b')),\n                                  Date = structure(c(2L, 2L), class = 'Date'),\n                                  POSIXt = structure(c(2L, 2L), class = 'POSIXt'),\n                                  difftime = structure(c(2L, 2L), class = 'difftime')),\n                              function(value) {d <<- value; capture(simplify2array(shape))})\n  numeric_events <- character()\n  d <- structure(c(2L, 2L), class = 'nrv2dim')\n  is.numeric.nrv2dim <<- function(x) {numeric_events <<- c(numeric_events, 'numeric'); FALSE}\n  numeric_declined <- simplify2array(shape, higher = NA)\n  declined_events <- numeric_events\n  numeric_events <- character()\n  is.numeric.nrv2dim <<- function(x) {numeric_events <<- c(numeric_events, 'numeric'); TRUE}\n  Summary.nrv2dim <<- function(..., na.rm = FALSE) stop('dimension class must be dropped')\n  numeric_ordinary <- simplify2array(shape)\n  ordinary_events <- numeric_events\n  numeric_events <- character()\n  c.nrv2dim <<- function(..., recursive = FALSE) {\n    numeric_events <<- c(numeric_events, 'combine')\n    structure(c(2L, 2L, 2L), class = 'nrv2size')\n  }\n  Summary.nrv2size <<- function(..., na.rm = FALSE) {\n    numeric_events <<- c(numeric_events, paste(.Generic, .Group, na.rm, sep = ':'))\n    7\n  }\n  numeric_rejected <- simplify2array(shape)\n  product_events <- numeric_events\n  unknown_higher_false <- simplify2array(shape, higher = NA)\n  Summary.nrv2size <<- function(..., na.rm = FALSE) stop('product rejected')\n  product_error <- capture(simplify2array(shape))\n  unknown_higher_error <- capture(simplify2array(shape, higher = NA))\n  numeric_events <- character()\n  is.numeric.nrv2dim <<- function(x) {numeric_events <<- c(numeric_events, 'numeric'); NA}\n  numeric_unknown <- capture(simplify2array(shape))\n  numeric_gates <- list(classes = dimension_classes, declined = numeric_declined,\n                        declined_events = declined_events, ordinary = numeric_ordinary,\n                        ordinary_events = ordinary_events, rejected = numeric_rejected,\n                        product_events = product_events, product_error = product_error,\n                        unknown = numeric_unknown, unknown_events = numeric_events,\n                        unknown_higher_false = unknown_higher_false, unknown_higher_error = unknown_higher_error)\n  events <- character()\n  as.character.nrv2label <<- function(x, ...) {\n    events <<- c(events, 'as.character.nrv2label')\n    stop('axis method must remain unused')\n  }\n  axis <- NULL\n  names.nrv2axis <<- function(x) axis\n  axis_input <- list(A = structure(1:4, class = 'nrv2axis'),\n                     B = structure(5:8, class = 'nrv2axis'))\n  axes <- lapply(list(character = structure(c('a', 'b', 'c', 'd'),\n                                           class = 'nrv2label', tag = 3L,\n                                           names = c('first', 'second', 'third', 'fourth')),\n                     atomic = structure(1:4, class = 'nrv2label', tag = 3L),\n                     list = structure(list('a', 'b', 'c', 'd'), class = 'nrv2label', tag = 3L),\n                     factor = factor(c('b', 'a', 'd', 'c')),\n                     expression = expression(a, b, c, d),\n                     pairlist = pairlist('a', 'b', 'c', 'd'),\n                     wrong_length = c('a', 'b')),\n                 function(value) {\n                   axis <<- value\n                   capture(simplify2array(axis_input, higher = FALSE))\n                 })\n  d <- c(2L, 2L)\n  packing <- lapply(list(empty = list(), one = list(c('r1', 'r2')),\n                        one_named = list(rows = c('r1', 'r2')),\n                        full = list(rows = c('r1', 'r2'), cols = c('c1', 'c2')),\n                        missing_label = setNames(list(c('r1', 'r2')), NA_character_),\n                        pairlist = pairlist(rows = c('r1', 'r2')),\n                        empty_character = character(), empty_integer = integer(),\n                        classed = structure(list(c('r1', 'r2'), c('c1', 'c2')),\n                                            class = 'container', tag = 5L,\n                                            names = c('rows', 'cols')),\n                        expression = expression(c('r1', 'r2'), c('c1', 'c2')),\n                        too_long = list(c('r1', 'r2'), c('c1', 'c2'), 1:2)),\n                    function(value) {\n                      dn <<- value\n                      capture(simplify2array(named_shape))\n                    })\n  d <- c(1L, 1L)\n  atomic_packing <- lapply(list(character = c('row', 'column'),\n                               named_character = c(rows = 'row', cols = 'column'),\n                               numeric = 1:2, named_numeric = c(rows = 1L, cols = 2L),\n                               pairlist = pairlist(rows = 'row', cols = 'column')),\n                           function(value) {\n                             dn <<- value\n                             capture(simplify2array(scalar_shape, except = NULL))\n                           })\n  as.list.nrv2visible <<- function(x, ...) invisible(list(1L, 2L))\n  unlist.nrv2visible <<- function(x, recursive = TRUE, use.names = TRUE) invisible(1:2)\n  visibility <- list(sapply_false = withVisible(sapply(structure(1:2, class = 'nrv2visible'),\n                                                       identity, simplify = FALSE)),\n                     empty = withVisible(simplify2array(invisible(list()), higher = stop('unused'))),\n                     scalar = withVisible(simplify2array(structure(list(1L, 2L), class = 'nrv2visible'))))\n  list(dimensions = dimensions, scalar_dimensions = scalar_dimensions, numeric_gates = numeric_gates,\n       axes = axes, packing = packing, atomic_packing = atomic_packing,\n       visibility = visibility, axis_method_events = events)\n})\n\n\n",
+    "policy": "exact"
+  },
+  {
+    "id": "mapply-values-forcing-and-methods",
+    "code": "{\n  f<-function(i)matrix(1:4+i,2)\n  shapes<-list(ordinary=mapply(f,1:2),higher=mapply(f,1:2,SIMPLIFY='array'),\n    listScalar=mapply(function(i)list(k=i),1:2),nestedScalar=mapply(function(i)list(list(k=i)),1:2),\n    listMatrix=mapply(function(i)list(first=structure(i,tag='cell'),second=quote(z)),1:2),\n    factorScalar=mapply(function(z)ordered(z,levels=c('x','y')),c('x','y')),\n    factorMatrix=mapply(function(i)factor(c('x','y')),1:2),zero=mapply(function(i)integer(),1:2))\n  seen<-character();mark<-function(name,value){seen<<-c(seen,name);value}\n  fun<-function(x,y,z=0){seen<<-c(seen,paste0('call',x));x+y+z}\n  forcingValue<-mapply(mark('FUN',fun),mark('X',1:2),mark('Y',3:4),MoreArgs=mark('MORE',list(z=10)),USE.NAMES=mark('NAMES',TRUE),SIMPLIFY=mark('SIMPLIFY',TRUE))\n  forcingTrace<-seen\n  seen<-character()\n  emptyValue<-mapply(mark('FUN',fun),mark('X',integer()),mark('Y',3:4),MoreArgs=mark('MORE',NULL),USE.NAMES=mark('NAMES',TRUE),SIMPLIFY=mark('SIMPLIFY',FALSE))\n  emptyTrace<-seen\n  seen<-character()\n  noInputs<-mapply(mark('FUN',identity),MoreArgs=mark('MORE',NULL),USE.NAMES=mark('NAMES',TRUE),SIMPLIFY=mark('SIMPLIFY',TRUE))\n  noInputTrace<-seen\n  seen<-character()\n  recycled<-mapply(function(x,y){seen<<-c(seen,paste0('call',x));x+y},1:3,1:2,USE.NAMES=mark('NAMES',TRUE),SIMPLIFY=mark('SIMPLIFY',TRUE))\n  recycleTrace<-seen\n  seen<-character()\n  caught<-tryCatch(mapply(function(x,y){seen<<-c(seen,paste0('call',x));x+y},1:3,1:2,USE.NAMES=mark('NAMES',TRUE),SIMPLIFY=mark('SIMPLIFY',TRUE)),warning=function(w){seen<<-c(seen,'warning');conditionMessage(w)})\n  caughtTrace<-seen\n  seen<-character()\n  failed<-tryCatch(mapply(function(x,y){seen<<-c(seen,paste0('call',x));if(x==2)stop('callback');x+y},1:3,1:2,USE.NAMES=mark('NAMES',TRUE),SIMPLIFY=mark('SIMPLIFY',TRUE)),error=conditionMessage)\n  failedTrace<-seen\n  seen<-character()\n  as.list.mapplyFixture<<-function(...)stop('unused conversion')\n  length.mapplyFixture<<-function(x){seen<<-c(seen,'length');2L}\n  `[[.mapplyFixture`<<-function(x,i,...){seen<<-c(seen,paste0('extract',i));i+10L}\n  names.mapplyFixture<<-function(x){seen<<-c(seen,'names');c('u','v')}\n  x<-structure(1:2,class='mapplyFixture')\n  classed<-mapply(identity,x);classTrace<-seen\n  seen<-character();unused<-mapply(function(z)42,x);unusedTrace<-seen\n  localMethods<-local({length.mapplyFixture<-function(x)stop('local length');`[[.mapplyFixture`<-function(x,i,...)stop('local extraction');names.mapplyFixture<-function(x)stop('local names');mapply(identity,x)})\n  mapped<-Map(identity,x)\n  rm(list=c('as.list.mapplyFixture','length.mapplyFixture','[[.mapplyFixture','names.mapplyFixture'),envir=globalenv())\n  list(shapes=shapes,forcing=list(value=forcingValue,trace=forcingTrace),empty=list(value=emptyValue,trace=emptyTrace),\n    noInputs=list(value=noInputs,trace=noInputTrace),recycled=list(value=recycled,trace=recycleTrace),\n    caught=list(value=caught,trace=caughtTrace),failed=list(value=failed,trace=failedTrace),\n    classed=list(value=classed,trace=classTrace,unused=unused,unusedTrace=unusedTrace,local=localMethods,mapped=mapped),\n    admitted=list(null=mapply(identity,NULL),expression=mapply(typeof,expression(a,1+2)),call=mapply(typeof,quote(f(a=1,b=2))),\n      emptyEnvironment=mapply(typeof,new.env()),symbolError=tryCatch(mapply(identity,quote(z)),error=conditionMessage)),\n    fixed=list(list=Map(function(x,y=8)list(x,y),1:2,MoreArgs=list(y=4)),pairlist=Map(function(x,y=8)list(x,y),1:2,MoreArgs=pairlist(y=4)),null=mapply('+',1:2,3:4,MoreArgs=NULL)),\n    formals=list(mapply=formals(mapply),Map=formals(Map)))\n}\n",
+    "policy": "exact",
+    "bindingEvidence": ["base::mapply", "base::Map"]
+  },
+  {
+    "id": "mapply-controls-and-names",
+    "code": "{\n  capture<-function(expr)tryCatch(expr,error=conditionMessage)\n  controls<-list(FALSE,TRUE,'array',0L,NA,NULL,logical(),c(TRUE,FALSE),list(TRUE),list('array'),as.raw(1))\n  simplify<-lapply(controls,function(z)list(scalar=capture(mapply(identity,1:2,SIMPLIFY=z)),matrix=capture(mapply(function(i)matrix(1:4+i,2),1:2,SIMPLIFY=z))))\n  namesControls<-lapply(controls,function(z)list(numeric=capture(mapply(identity,1:2,USE.NAMES=z)),named=capture(mapply(identity,c(a=1,b=2),USE.NAMES=z)),character=capture(mapply(identity,c('x','y'),USE.NAMES=z))))\n  latin<-rawToChar(as.raw(233));Encoding(latin)<-'latin1'\n  firstNames<-list(encoded=mapply(identity,c(latin,NA_character_)),explicit=mapply(identity,setNames(1:2,c(latin,NA_character_))),\n    padded=suppressWarnings(mapply(function(x,y)y,c('a',NA_character_),1:3)),\n    emptyFirst=Map(identity,character()),emptyAuto=mapply(function(...)1,c('x','y'),integer(),SIMPLIFY=FALSE),\n    emptyExplicit=capture(mapply('+',c(a=1,b=2),integer(),SIMPLIFY=stop('unused simplify'))),\n    noNames=mapply(identity,c(a=1,b=2),USE.NAMES=FALSE),noInputNA=mapply(identity,USE.NAMES=NA),\n    noInputInvalid=capture(mapply(identity,USE.NAMES=NULL)))\n  list(simplify=simplify,namesControls=namesControls,firstNames=firstNames,\n    map=list(noInputs=Map(identity),noNames=Map(identity,c(a='x',b='y'),USE.NAMES=FALSE),duplicate=capture(Map(identity,1:2,SIMPLIFY=TRUE))),\n    defaults=mapply(identity,1:2,MoreArgs=,SIMPLIFY=,USE.NAMES=),\n    errors=list(missingFUN=capture(mapply()),missingMap=capture(Map()),badFUN=capture(mapply(42,integer())),badMore=capture(mapply(identity,1:2,MoreArgs=1))))\n}\n",
+    "policy": "exact"
+  },
+  {
+    "id": "replicate-counts-frames-and-simplification",
+    "code": "local({\n  methods <- c('length.replicate_item', 'dim.replicate_item', 'dimnames.replicate_item',\n               '==.replicate_control', 'as.integer.replicate_count', 'length.replicate_count')\n  on.exit(rm(list = methods, envir = globalenv()))\n  capture <- function(expr) tryCatch(expr, error = conditionMessage,\n                                    warning = function(w) paste('warning:', conditionMessage(w)))\n  counts <- lapply(list(zero = 0L, fraction = 2.9, negative_fraction = -0.9,\n                       character = '2', hexadecimal = '0x2', hex_float = '0x1p1',\n                       hex_fraction = '0x1.8p1', hex_leading_dot = '0x.8p1',\n                       hex_trailing_dot = '0x1.p1', hex_no_exponent = '0x1.8',\n                       hex_negative_fraction = '-0x1p-1', zero_hex_overflow = '0x0p1024',\n                       zero_hex_huge = '0x0p999999', negative_zero_hex = '-0x0p1024',\n                       zero_hex_underflow = '0x0p-999999', zero_hex_fraction = '0x0.000p999999',\n                       lower_inf = 'inf',\n                       lower_infinity = 'infinity', lower_nan = 'nan', integer_na = NA_integer_,\n                       double_na = NA_real_, character_na = NA_character_, nan = NaN,\n                       infinity = Inf, negative = -1L, logical = TRUE, raw = as.raw(2),\n                       complex = 2 + 1i, list = list(2L), vector = c(2L, 3L),\n                       empty = integer(), null = NULL, invalid_text = 'bad',\n                       factor = factor('b', levels = c('a', 'b'))),\n                   function(n) capture(replicate(n, 11L)))\n  missing <- list(n = capture(replicate(, 11L)), omitted_n = capture(replicate(expr = 11L)),\n                  zero_expr = replicate(0,), omitted_zero_expr = replicate(0),\n                  positive_expr = capture(replicate(1,)), omitted_positive_expr = capture(replicate(1)),\n                  simplify = replicate(2, 11L, simplify = ))\n  events <- character()\n  ordered <- replicate({events <- c(events, 'n'); 2L},\n                       {events <<- c(events, 'expr'); 1L},\n                       simplify = {events <- c(events, 'simplify'); TRUE})\n  order_events <- events\n  events <- character()\n  failed <- capture(replicate(2, {events <<- c(events, 'expr'); stop('expr')},\n                              simplify = {events <- c(events, 'simplify'); stop('control')}))\n  failed_events <- events\n  events <- character()\n  zero <- capture(replicate(0, stop('expr'), simplify = {events <- c(events, 'simplify'); stop('control')}))\n  forcing <- list(value = ordered, events = order_events, failed = failed,\n                  failed_events = failed_events, zero = zero, zero_events = events)\n  x <- 0L\n  ordinary <- replicate(3, {x <- x + 1L; x})\n  ordinary_x <- x\n  changed <- replicate(3, {x <<- x + 1L; x})\n  fresh <- replicate(3, {present <- exists('scratch', inherits = FALSE); scratch <- 1L; present})\n  caller <- environment()\n  parents <- replicate(2, c(same = identical(environment(), caller),\n                            parent = identical(parent.env(environment()), caller)))\n  returned <- local({out <- replicate(2, {return(7L); stop('after')}); list(out, 'outer')})\n  events <- character()\n  exited <- replicate(2, {on.exit(events <<- c(events, 'exit')); events <<- c(events, 'expr'); 1L})\n  exit_events <- events\n  events <- character()\n  exit_error <- capture(replicate(2, {on.exit(events <<- c(events, 'exit')); stop('expr')}))\n  counter <- 0L\n  closures <- replicate(3, {i <- counter; counter <<- counter + 1L; function() i}, FALSE)\n  i <- 0L\n  forward <- function(expr) replicate(3, expr)\n  forwarded <- forward({i <- i + 1L; i})\n  frames <- list(ordinary = ordinary, ordinary_caller = ordinary_x, changed = changed,\n                 changed_caller = x, fresh = fresh, parents = parents, returned = returned,\n                 exited = exited, exit_events = exit_events, exit_error = exit_error,\n                 error_events = events, closures = lapply(closures, function(f) f()),\n                 shared_frame = identical(environment(closures[[1]]), environment(closures[[2]])),\n                 forwarded = forwarded, forwarded_caller = i,\n                 dots = replicate(3, list(...)), dotdot = replicate(3, ..1))\n  a <- matrix(1:4, 2, dimnames = list(rows = c('r1', 'r2'), cols = c('c1', 'c2')))\n  controls <- lapply(list(false = FALSE, attributed_false = structure(FALSE, tag = 1L),\n                         zero = 0, null = NULL, empty = logical(), missing = NA,\n                         missing_text = NA_character_, list = list('array'),\n                         symbol = quote(array), expression = expression(array),\n                         multiple = c('array', 'array')),\n                     function(control) list(scalar = capture(replicate(2, 1L, control)),\n                                             array = capture(replicate(2, a, control))))\n  shapes <- list(array = replicate(2, a), matrix = replicate(2, a, TRUE),\n                 factor = replicate(2, factor('b', levels = c('a', 'b'))),\n                 factor_vector = replicate(2, factor(c('a', 'b'))),\n                 named = replicate(2, c(value = 1L)),\n                 list = replicate(2, list(a = 1L, b = quote(z))),\n                 null = replicate(2, NULL), empty = replicate(2, integer()))\n  events <- character()\n  length.replicate_item <<- function(x) {events <<- c(events, 'length'); 4L}\n  dim.replicate_item <<- function(x) {events <<- c(events, 'dim'); c(2L, 2L)}\n  dimnames.replicate_item <<- function(x) {events <<- c(events, 'dimnames'); list(c('r1', 'r2'), c('c1', 'c2'))}\n  observed <- replicate(2, structure(1:4, class = 'replicate_item'))\n  observed_events <- events\n  `==.replicate_control` <<- function(e1, e2) {events <<- c(events, paste(.Generic, .Group, sep = ':')); TRUE}\n  events <- character()\n  controlled <- replicate(2, a, simplify = structure('other', class = 'replicate_control'))\n  control_events <- events\n  events <- character()\n  scalar <- replicate(2, 1L, simplify = structure('other', class = 'replicate_control'))\n  as.integer.replicate_count <<- function(x, ...) stop('count coercion method must remain unused')\n  length.replicate_count <<- function(x) stop('count length method must remain unused')\n  classed_count <- replicate(structure(2L, class = 'replicate_count'), 11L)\n  method_results <- list(observed = observed, observed_events = observed_events,\n                         controlled = controlled, control_events = control_events,\n                         scalar = scalar, scalar_events = events, classed_count = classed_count)\n  forced_values <- local({\n    x <- 17L\n    list(symbol = mapply(replicate, 2L, list(quote(x)), SIMPLIFY = FALSE),\n         unbound = mapply(replicate, 2L, list(quote(no_such_object)), SIMPLIFY = FALSE),\n         call = mapply(replicate, 2L, list(quote(1L + 2L)), SIMPLIFY = FALSE),\n         syntax_symbol = do.call(replicate, list(2L, quote(x))),\n         syntax_call = do.call(replicate, list(2L, quote(1L + 2L))))\n  })\n  visibility <- list(scalar = withVisible(replicate(2, invisible(1L))),\n                     list = withVisible(replicate(2, invisible(1L), FALSE)),\n                     zero = withVisible(replicate(0, 1L)))\n  list(formals = formals(replicate), counts = counts, missing = missing,\n       forcing = forcing, frames = frames, controls = controls, shapes = shapes,\n       methods = method_results, forced_values = forced_values, visibility = visibility)\n})",
+    "policy": "exact",
+    "bindingEvidence": ["base::replicate"]
+  },
+  {
+    "id": "apply-function-rejection-and-warning-calls",
+    "code": "local({\n  owned<-function(x)x\n  resolved<-identical(match.fun(owned),owned)\n  capture<-function(expr)tryCatch(expr,error=conditionMessage)\n  forwarded<-function(x)match.fun(x)\n  list(resolved=resolved,messages=list(number=capture(match.fun(42)),integer=capture(match.fun(42L)),\n    null=capture(match.fun(NULL)),vector=capture(match.fun(c(1,2))),\n    list=capture(match.fun(list(1))),call=capture(match.fun(quote(1+2))),\n    arithmetic=capture(match.fun(42+0)),forwarded=capture(forwarded(42+0)),\n    forced=capture(do.call('match.fun',list(42)))),\n    direct=tryCatch(mapply('+',1:3,1:2),warning=conditionCall),\n    mapped=tryCatch(Map('+',1:3,1:2),warning=conditionCall))\n})",
+    "policy": "exact",
+    "bindingEvidence": ["base::match.fun"]
+  },
+  {
+    "id": "condition-muffling-frames-and-startup-messages",
+    "code": "{\n  inner <- list(\n    suppressWarnings(tryCatch(warning(\"w\", call. = FALSE), warning = identity)),\n    suppressMessages(tryCatch(message(\"m\"), message = identity)),\n    suppressWarnings(tryCatch(log(-1), warning = identity)),\n    tryCatch(sqrt(-1), warning = identity))\n  cw <- warningCondition(\"custom\", class = \"fixture\")\n  filtered <- list(\n    tryCatch(suppressWarnings(warning(cw), classes = \"fixture\"), warning = function(w) \"escaped\"),\n    tryCatch(suppressWarnings(warning(\"plain\", call. = FALSE), classes = \"fixture\"), warning = conditionMessage))\n  startup <- list(\n    tryCatch(packageStartupMessage(\"a\", 1L), message = identity),\n    tryCatch(packageStartupMessage(\"b\", appendLF = FALSE), packageStartupMessage = identity),\n    tryCatch(suppressPackageStartupMessages(packageStartupMessage(\"p\")), message = function(m) \"outer\"),\n    withVisible(suppressPackageStartupMessages(invisible(1))),\n    withVisible(suppressMessages(invisible(2))),\n    withVisible(suppressWarnings(3)))\n  list(inner = inner, filtered = filtered, startup = startup)\n}\n",
+    "policy": "exact",
+    "bindingEvidence": [
+      "base::suppressWarnings",
+      "base::suppressMessages",
+      "base::packageStartupMessage",
+      "base::suppressPackageStartupMessages"
+    ]
+  },
+  {
+    "id": "calling-handlers-and-restarts",
+    "policy": "exact",
+    "bindingEvidence": [
+      "base::withCallingHandlers",
+      "base::invokeRestart",
+      "base::computeRestarts",
+      "base::withRestarts"
+    ],
+    "code": "{\n  trace <- character()\n  resumed <- withCallingHandlers(\n    withCallingHandlers({ warning(\"w1\", call. = FALSE); trace <- c(trace, \"after\"); 10L },\n      warning = function(w) trace <<- c(trace, paste(\"inner\", conditionMessage(w)))),\n    warning = function(w) { trace <<- c(trace, \"outer\"); invokeRestart(\"muffleWarning\") })\n  messageOrder <- character()\n  muffled <- withCallingHandlers(message(\"m\"),\n    message = function(m) messageOrder <<- c(messageOrder, \"message\"),\n    condition = function(c) { messageOrder <<- c(messageOrder, \"condition\"); invokeRestart(\"muffleMessage\") })\n  restartNames <- NULL\n  warned <- withCallingHandlers(warning(\"w2\", call. = FALSE), warning = function(w) {\n    restartNames <<- vapply(computeRestarts(w), function(r) unclass(r)[[1L]], \"\")\n    invokeRestart(computeRestarts(w)[[1L]]) })\n  recovered <- withRestarts(\n    withCallingHandlers(stop(\"boom\", call. = FALSE),\n      error = function(e) invokeRestart(\"recover\", conditionMessage(e), 2L)),\n    recover = function(msg, code) list(message = msg, code = code))\n  nested <- withRestarts(\n    withRestarts(vapply(computeRestarts(), function(r) unclass(r)[[1L]], \"\"), inner = function() 1),\n    outer = function() 2)\n  unwound <- character()\n  transferred <- withRestarts({\n    f <- function() { on.exit(unwound <<- c(unwound, \"on.exit\")); invokeRestart(\"leave\", 5L); \"unreached\" }\n    f()\n  }, leave = function(v) { unwound <<- c(unwound, \"restart\"); v * 2L })\n  list(resumed = resumed, trace = trace, muffled = muffled, messageOrder = messageOrder,\n    warned = warned, restartNames = restartNames, recovered = recovered, nested = nested,\n    transferred = transferred, unwound = unwound)\n}"
   }
 ]

@@ -36,8 +36,10 @@ describe("measured feature boundary coverage", () => {
     ]);
     await expect(runtime.eval("rep_len(NULL, 0)")).resolves.toBeNull();
 
-    await expect(runtime.eval("names(function(x) x)")).rejects.toMatchObject({ code: "NRT3106" });
-    await expect(runtime.eval('setNames(1:2, "a")')).rejects.toMatchObject({ code: "NRT3004" });
+    await expect(runtime.eval("names(function(x) x)")).resolves.toBeNull();
+    await expect(
+      runtime.eval('identical(names(setNames(1:2, "a")), c("a", NA_character_))'),
+    ).resolves.toBe(true);
     await expect(runtime.eval("dimnames(function(x) x)")).rejects.toMatchObject({
       code: "NRT3153",
     });
@@ -69,10 +71,10 @@ describe("measured feature boundary coverage", () => {
     await expect(runtime.eval('sprintf("%s", NA)')).resolves.toBe("NA");
     await expect(
       runtime.eval('format(c(1.2, NA), scientific = TRUE, width = 8, justify = "left")'),
-    ).resolves.toEqual(["1.200000e+0", NA]);
+    ).resolves.toEqual([" 1.2e+00", "      NA"]);
     await expect(
       runtime.eval('format(c(TRUE, FALSE), justify = "centre", width = 7)'),
-    ).resolves.toEqual([" TRUE  ", " FALSE "]);
+    ).resolves.toEqual(["   TRUE", "  FALSE"]);
     await expect(
       runtime.eval('grep("A", c("a", NA, "b"), ignore.case = TRUE, invert = TRUE)'),
     ).resolves.toEqual([2, 3]);

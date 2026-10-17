@@ -1,0 +1,3961 @@
+{
+  "schemaVersion": 1,
+  "policy": "literal-source-references-v1",
+  "semanticProfile": "0.350.0",
+  "nativeDeclarationEvidence": "packages/package-tools/test/source-dependency-check.test.ts",
+  "limitations": [
+    "Only metadata is retained; raw package reports and source bodies are not copied.",
+    "Literal inventories do not establish reachability, conditional use, exported members, computed references, test/example declaration policy or transitive closure.",
+    "P7 remains false and corpus partitions/tiers are unchanged."
+  ],
+  "observations": [
+    {
+      "package": {
+        "name": "abind",
+        "version": "1.4-8",
+        "license": "MIT + file LICENSE"
+      },
+      "provenance": {
+        "sourceSha256": "264a051b523ceae1795a0879e7768949ea55c586ac8db0adf1f5ebeddd2623e1",
+        "artifactSha256": "e9862a710e03ef978409dbd3c4138dd4cdf96b0584c6f228ffe2b42d1e0e9dee",
+        "oracle": {
+          "implementation": "GNU R",
+          "version": "4.6.1"
+        },
+        "semanticProfile": "0.350.0",
+        "capabilitySha256": "f42697a60197be53d36ebcafb1224266f27b8f288ddc242da6e1a3b289cc7910",
+        "runtimeLimits": {
+          "maxSteps": 300000000,
+          "maxCallDepth": 200,
+          "maxVectorLength": 50000000,
+          "maxOutputBytes": 32000000,
+          "maxPackageResourceBytes": 268435456
+        }
+      },
+      "rawReportSha256": "d39fe3ac00081cd80cbe42e51d32f9a39a993c00898cf497fe9e198d68df5229",
+      "p7Eligible": false,
+      "firstBlocker": "metadata-dependencies",
+      "outcomes": {
+        "match": 10
+      },
+      "metadataStage": {
+        "id": "metadata-dependencies",
+        "status": "unexecuted",
+        "reason": "DESCRIPTION structure, declared version lookups and literal source dependency references are recorded; full metadata, computed references and transitive closure remain unexecuted.",
+        "sourceDiscovered": [
+          "source-dependency:reference:1:test:tests/abind.R:0",
+          "source-dependency:reference:2:test:tests/adrop.R:0",
+          "source-dependency:reference:3:test:tests/afill.R:0",
+          "source-dependency:reference:4:test:tests/asub.R:0",
+          "source-dependency:reference:5:test:tests/dnns.R:0",
+          "source-dependency:unresolved:1:package:R/abind.R:432",
+          "source-dependency:unresolved:2:package:R/abind.R:817",
+          "source-dependency:unresolved:3:package:R/abind.R:1826",
+          "source-dependency:unresolved:4:package:R/abind.R:1889",
+          "source-dependency:unresolved:5:package:R/abind.R:1964",
+          "source-dependency:unresolved:6:package:R/abind.R:2043",
+          "source-dependency:unresolved:7:package:R/abind.R:7953",
+          "source-dependency:unresolved:8:package:R/abind.R:8065",
+          "source-dependency:unresolved:9:package:R/abind.R:8136",
+          "source-dependency:unresolved:10:package:R/abind.R:8833",
+          "source-dependency:unresolved:11:package:R/abind.R:9427",
+          "source-dependency:unresolved:12:package:R/abind.R:9518",
+          "source-dependency:unresolved:13:package:R/abind.R:9609",
+          "source-dependency:unresolved:14:package:R/abind.R:11521",
+          "source-dependency:unresolved:15:package:R/abind.R:12388",
+          "source-dependency:unresolved:16:package:R/acorn.R:871",
+          "source-dependency:unresolved:17:package:R/adrop.R:285",
+          "source-dependency:unresolved:18:package:R/adrop.R:323",
+          "source-dependency:unresolved:19:package:R/adrop.R:421",
+          "source-dependency:unresolved:20:package:R/afill.R:2780",
+          "source-dependency:unresolved:21:package:R/afill.R:5030",
+          "source-dependency:unresolved:22:package:R/afill.R:5035",
+          "source-dependency:unresolved:23:package:R/afill.R:5938",
+          "source-dependency:unresolved:24:package:R/afill.R:6317",
+          "source-dependency:unresolved:25:package:R/afill.R:6507",
+          "source-dependency:unresolved:26:package:R/afill.R:6659",
+          "source-dependency:unresolved:27:package:R/afill.R:6834",
+          "source-dependency:unresolved:28:package:R/afill.R:6883",
+          "source-dependency:unresolved:29:package:R/asub.R:369",
+          "source-dependency:unresolved:30:package:R/asub.R:406",
+          "source-dependency:unresolved:31:package:R/asub.R:502",
+          "source-dependency:unresolved:32:package:R/asub.R:813",
+          "source-dependency:unresolved:33:package:R/asub.R:1312",
+          "source-dependency:unresolved:34:example:man/adrop.Rd#examples:1:1:run:99",
+          "source-dependency:unresolved:35:example:man/adrop.Rd#examples:1:1:run:100",
+          "source-dependency:unresolved:36:example:man/adrop.Rd#examples:1:1:run:130",
+          "source-dependency:unresolved:37:example:man/adrop.Rd#examples:1:1:run:133",
+          "source-dependency:unresolved:38:example:man/adrop.Rd#examples:1:1:run:163",
+          "source-dependency:unresolved:39:example:man/adrop.Rd#examples:1:1:run:164",
+          "source-dependency:unresolved:40:example:man/afill.Rd#examples:1:1:run:496",
+          "source-dependency:unresolved:41:example:man/afill.Rd#examples:1:1:run:498",
+          "source-dependency:unresolved:42:example:man/afill.Rd#examples:1:1:run:511",
+          "source-dependency:unresolved:43:example:man/afill.Rd#examples:1:1:run:512",
+          "source-dependency:unresolved:44:example:man/afill.Rd#examples:1:1:run:519",
+          "source-dependency:unresolved:45:example:man/afill.Rd#examples:1:1:run:520",
+          "source-dependency:unresolved:46:example:man/afill.Rd#examples:1:1:run:776",
+          "source-dependency:unresolved:47:example:man/afill.Rd#examples:1:1:run:778",
+          "source-dependency:unresolved:48:example:man/afill.Rd#examples:1:1:run:791",
+          "source-dependency:unresolved:49:example:man/afill.Rd#examples:1:1:run:792",
+          "source-dependency:unresolved:50:example:man/afill.Rd#examples:1:1:run:799",
+          "source-dependency:unresolved:51:example:man/afill.Rd#examples:1:1:run:800",
+          "source-dependency:unresolved:52:test:tests/abind.R:0",
+          "source-dependency:unresolved:53:test:tests/abind.R:3311",
+          "source-dependency:unresolved:54:test:tests/abind.R:3378",
+          "source-dependency:unresolved:55:test:tests/adrop.R:0",
+          "source-dependency:unresolved:56:test:tests/adrop.R:113",
+          "source-dependency:unresolved:57:test:tests/adrop.R:114",
+          "source-dependency:unresolved:58:test:tests/adrop.R:144",
+          "source-dependency:unresolved:59:test:tests/adrop.R:147",
+          "source-dependency:unresolved:60:test:tests/adrop.R:177",
+          "source-dependency:unresolved:61:test:tests/adrop.R:178",
+          "source-dependency:unresolved:62:test:tests/afill.R:0",
+          "source-dependency:unresolved:63:test:tests/afill.R:698",
+          "source-dependency:unresolved:64:test:tests/afill.R:907",
+          "source-dependency:unresolved:65:test:tests/afill.R:1118",
+          "source-dependency:unresolved:66:test:tests/afill.R:1120",
+          "source-dependency:unresolved:67:test:tests/afill.R:1364",
+          "source-dependency:unresolved:68:test:tests/afill.R:1366",
+          "source-dependency:unresolved:69:test:tests/afill.R:1437",
+          "source-dependency:unresolved:70:test:tests/afill.R:1994",
+          "source-dependency:unresolved:71:test:tests/afill.R:1999",
+          "source-dependency:unresolved:72:test:tests/asub.R:0",
+          "source-dependency:unresolved:73:test:tests/asub.R:2124",
+          "source-dependency:unresolved:74:test:tests/asub.R:2170",
+          "source-dependency:unresolved:75:test:tests/asub.R:2216",
+          "source-dependency:unresolved:76:test:tests/asub.R:2255",
+          "source-dependency:unresolved:77:test:tests/asub.R:2276",
+          "source-dependency:unresolved:78:test:tests/dnns.R:0"
+        ],
+        "sourceExecuted": []
+      },
+      "sourceDependencyAssessment": {
+        "schemaVersion": 1,
+        "policy": "literal-source-references-v1",
+        "status": "unexecuted",
+        "descriptionSha256": "93e78b78c1d0fa85b65350d6d9899a455b3b2480f55e92fb8f550607a21b69c8",
+        "files": [
+          {
+            "path": "R/abind.R",
+            "role": "package",
+            "sha256": "1ba3604b6b911142f2c66ee2825e8af9638cec5a021dd6b63d45a856c6e01ed0",
+            "status": "unexecuted"
+          },
+          {
+            "path": "R/acorn.R",
+            "role": "package",
+            "sha256": "5edc35eecbc52b3398f0d623b045b3395b98fbae95d52d7fa46505841dee4b14",
+            "status": "unexecuted"
+          },
+          {
+            "path": "R/adrop.R",
+            "role": "package",
+            "sha256": "84c5c9933eea74880bc30e5516d36fdb9d8bad189dd4a09da39073c492dba31b",
+            "status": "unexecuted"
+          },
+          {
+            "path": "R/afill.R",
+            "role": "package",
+            "sha256": "5e3b76eaec58f0cc010a728b7faf5705ca15550b2e27afd270e84ffc5469ae6f",
+            "status": "unexecuted"
+          },
+          {
+            "path": "R/asub.R",
+            "role": "package",
+            "sha256": "6f4d30d626dbb2528a65f89e54c80209f941099d6063f3455783dadc04767bda",
+            "status": "unexecuted"
+          },
+          {
+            "path": "man/abind.Rd#examples:1:1:run",
+            "role": "example",
+            "sha256": "b183988ee2ca1a1746c3d147a7b917c54b20f01391a476fd0c6c9637808fde6f",
+            "status": "passed"
+          },
+          {
+            "path": "man/acorn.Rd#examples:1:1:run",
+            "role": "example",
+            "sha256": "0638204cd65de531a4c1730bab7fe470546b4a97280cc42ee2699cc92b303df0",
+            "status": "passed"
+          },
+          {
+            "path": "man/adrop.Rd#examples:1:1:run",
+            "role": "example",
+            "sha256": "654f4973456c5836a7bda7b5d4a4168347c56f2af1d1134aa7f4314607127359",
+            "status": "unexecuted"
+          },
+          {
+            "path": "man/afill.Rd#examples:1:1:run",
+            "role": "example",
+            "sha256": "4385517adf04e0e957b6c258068b60b0d35549f8a8e0bf1eccc93b42179fd647",
+            "status": "unexecuted"
+          },
+          {
+            "path": "man/asub.Rd#examples:1:1:run",
+            "role": "example",
+            "sha256": "cec678b9ae6318c1f300e1c0e727d34f930c8a7835fa9c4ad86ede0ce603b2b3",
+            "status": "passed"
+          },
+          {
+            "path": "tests/abind.R",
+            "role": "test",
+            "sha256": "50959bed02bddb97e96f288074b7a0dbc56bbb0de0551c880c60177c83fb01e8",
+            "status": "unexecuted"
+          },
+          {
+            "path": "tests/adrop.R",
+            "role": "test",
+            "sha256": "db1ab024340affdcb2fea59baaf671a599c03093e4adeb948346f63b78102397",
+            "status": "unexecuted"
+          },
+          {
+            "path": "tests/afill.R",
+            "role": "test",
+            "sha256": "658f169be6a458024d4af33c4dde3d23909b613de6d67a1b2687fb99cdd6f59b",
+            "status": "unexecuted"
+          },
+          {
+            "path": "tests/asub.R",
+            "role": "test",
+            "sha256": "a15dd2474ec3ad7bbfbdd42a959940a66c1195cb7611024643e78ff977bba49c",
+            "status": "unexecuted"
+          },
+          {
+            "path": "tests/dnns.R",
+            "role": "test",
+            "sha256": "895656352888784acd05b864b0cadf25f8e2760d19a0cca7d8caafe5552889ab",
+            "status": "unexecuted"
+          }
+        ],
+        "references": [
+          {
+            "path": "tests/abind.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 0,
+                "line": 1,
+                "column": 1
+              },
+              "end": {
+                "offset": 14,
+                "line": 1,
+                "column": 15
+              }
+            },
+            "kind": "library",
+            "package": "abind",
+            "declaredIn": [],
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "path": "tests/adrop.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 0,
+                "line": 1,
+                "column": 1
+              },
+              "end": {
+                "offset": 14,
+                "line": 1,
+                "column": 15
+              }
+            },
+            "kind": "library",
+            "package": "abind",
+            "declaredIn": [],
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "path": "tests/afill.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 0,
+                "line": 1,
+                "column": 1
+              },
+              "end": {
+                "offset": 14,
+                "line": 1,
+                "column": 15
+              }
+            },
+            "kind": "library",
+            "package": "abind",
+            "declaredIn": [],
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "path": "tests/asub.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 0,
+                "line": 1,
+                "column": 1
+              },
+              "end": {
+                "offset": 14,
+                "line": 1,
+                "column": 15
+              }
+            },
+            "kind": "library",
+            "package": "abind",
+            "declaredIn": [],
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "path": "tests/dnns.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 0,
+                "line": 1,
+                "column": 1
+              },
+              "end": {
+                "offset": 14,
+                "line": 1,
+                "column": 15
+              }
+            },
+            "kind": "library",
+            "package": "abind",
+            "declaredIn": [],
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          }
+        ],
+        "unresolved": [
+          {
+            "path": "R/abind.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 432,
+                "line": 9,
+                "column": 22
+              },
+              "end": {
+                "offset": 435,
+                "line": 9,
+                "column": 25
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/abind.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 817,
+                "line": 18,
+                "column": 33
+              },
+              "end": {
+                "offset": 820,
+                "line": 18,
+                "column": 36
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/abind.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 1826,
+                "line": 45,
+                "column": 30
+              },
+              "end": {
+                "offset": 1829,
+                "line": 45,
+                "column": 33
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/abind.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 1889,
+                "line": 47,
+                "column": 30
+              },
+              "end": {
+                "offset": 1892,
+                "line": 47,
+                "column": 33
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/abind.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 1964,
+                "line": 50,
+                "column": 24
+              },
+              "end": {
+                "offset": 1990,
+                "line": 50,
+                "column": 50
+              }
+            },
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "path": "R/abind.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 2043,
+                "line": 52,
+                "column": 24
+              },
+              "end": {
+                "offset": 2069,
+                "line": 52,
+                "column": 50
+              }
+            },
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "path": "R/abind.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 7953,
+                "line": 178,
+                "column": 30
+              },
+              "end": {
+                "offset": 7953,
+                "line": 178,
+                "column": 30
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/abind.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 8065,
+                "line": 180,
+                "column": 30
+              },
+              "end": {
+                "offset": 8065,
+                "line": 180,
+                "column": 30
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/abind.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 8136,
+                "line": 182,
+                "column": 21
+              },
+              "end": {
+                "offset": 8136,
+                "line": 182,
+                "column": 21
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/abind.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 8833,
+                "line": 194,
+                "column": 21
+              },
+              "end": {
+                "offset": 8833,
+                "line": 194,
+                "column": 21
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/abind.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 9427,
+                "line": 211,
+                "column": 28
+              },
+              "end": {
+                "offset": 9427,
+                "line": 211,
+                "column": 28
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/abind.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 9518,
+                "line": 213,
+                "column": 39
+              },
+              "end": {
+                "offset": 9518,
+                "line": 213,
+                "column": 39
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/abind.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 9609,
+                "line": 214,
+                "column": 74
+              },
+              "end": {
+                "offset": 9609,
+                "line": 214,
+                "column": 74
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/abind.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 11521,
+                "line": 255,
+                "column": 42
+              },
+              "end": {
+                "offset": 11521,
+                "line": 255,
+                "column": 42
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/abind.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 12388,
+                "line": 274,
+                "column": 62
+              },
+              "end": {
+                "offset": 12388,
+                "line": 274,
+                "column": 62
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/acorn.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 871,
+                "line": 23,
+                "column": 22
+              },
+              "end": {
+                "offset": 874,
+                "line": 23,
+                "column": 25
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/adrop.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 285,
+                "line": 6,
+                "column": 21
+              },
+              "end": {
+                "offset": 288,
+                "line": 6,
+                "column": 24
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/adrop.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 323,
+                "line": 7,
+                "column": 31
+              },
+              "end": {
+                "offset": 326,
+                "line": 7,
+                "column": 34
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/adrop.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 421,
+                "line": 8,
+                "column": 90
+              },
+              "end": {
+                "offset": 424,
+                "line": 8,
+                "column": 93
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/afill.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 2780,
+                "line": 47,
+                "column": 88
+              },
+              "end": {
+                "offset": 2800,
+                "line": 47,
+                "column": 108
+              }
+            },
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "path": "R/afill.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 5030,
+                "line": 88,
+                "column": 18
+              },
+              "end": {
+                "offset": 5141,
+                "line": 88,
+                "column": 129
+              }
+            },
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "path": "R/afill.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 5035,
+                "line": 88,
+                "column": 23
+              },
+              "end": {
+                "offset": 5140,
+                "line": 88,
+                "column": 128
+              }
+            },
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "path": "R/afill.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 5938,
+                "line": 109,
+                "column": 24
+              },
+              "end": {
+                "offset": 5938,
+                "line": 109,
+                "column": 24
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/afill.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 6317,
+                "line": 116,
+                "column": 35
+              },
+              "end": {
+                "offset": 6367,
+                "line": 116,
+                "column": 85
+              }
+            },
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "path": "R/afill.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 6507,
+                "line": 119,
+                "column": 13
+              },
+              "end": {
+                "offset": 6520,
+                "line": 119,
+                "column": 26
+              }
+            },
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "path": "R/afill.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 6659,
+                "line": 123,
+                "column": 35
+              },
+              "end": {
+                "offset": 6705,
+                "line": 123,
+                "column": 81
+              }
+            },
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "path": "R/afill.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 6834,
+                "line": 126,
+                "column": 13
+              },
+              "end": {
+                "offset": 6862,
+                "line": 126,
+                "column": 41
+              }
+            },
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "path": "R/afill.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 6883,
+                "line": 127,
+                "column": 20
+              },
+              "end": {
+                "offset": 6912,
+                "line": 127,
+                "column": 49
+              }
+            },
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "path": "R/asub.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 369,
+                "line": 6,
+                "column": 21
+              },
+              "end": {
+                "offset": 372,
+                "line": 6,
+                "column": 24
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/asub.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 406,
+                "line": 7,
+                "column": 31
+              },
+              "end": {
+                "offset": 409,
+                "line": 7,
+                "column": 34
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/asub.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 502,
+                "line": 8,
+                "column": 89
+              },
+              "end": {
+                "offset": 505,
+                "line": 8,
+                "column": 92
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/asub.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 813,
+                "line": 16,
+                "column": 20
+              },
+              "end": {
+                "offset": 813,
+                "line": 16,
+                "column": 20
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/asub.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 1312,
+                "line": 32,
+                "column": 12
+              },
+              "end": {
+                "offset": 1321,
+                "line": 32,
+                "column": 21
+              }
+            },
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "path": "man/adrop.Rd#examples:1:1:run",
+            "role": "example",
+            "span": {
+              "start": {
+                "offset": 99,
+                "line": 3,
+                "column": 11
+              },
+              "end": {
+                "offset": 99,
+                "line": 3,
+                "column": 11
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "man/adrop.Rd#examples:1:1:run",
+            "role": "example",
+            "span": {
+              "start": {
+                "offset": 100,
+                "line": 3,
+                "column": 12
+              },
+              "end": {
+                "offset": 100,
+                "line": 3,
+                "column": 12
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "man/adrop.Rd#examples:1:1:run",
+            "role": "example",
+            "span": {
+              "start": {
+                "offset": 130,
+                "line": 4,
+                "column": 9
+              },
+              "end": {
+                "offset": 130,
+                "line": 4,
+                "column": 9
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "man/adrop.Rd#examples:1:1:run",
+            "role": "example",
+            "span": {
+              "start": {
+                "offset": 133,
+                "line": 4,
+                "column": 12
+              },
+              "end": {
+                "offset": 133,
+                "line": 4,
+                "column": 12
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "man/adrop.Rd#examples:1:1:run",
+            "role": "example",
+            "span": {
+              "start": {
+                "offset": 163,
+                "line": 5,
+                "column": 9
+              },
+              "end": {
+                "offset": 163,
+                "line": 5,
+                "column": 9
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "man/adrop.Rd#examples:1:1:run",
+            "role": "example",
+            "span": {
+              "start": {
+                "offset": 164,
+                "line": 5,
+                "column": 10
+              },
+              "end": {
+                "offset": 164,
+                "line": 5,
+                "column": 10
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "man/afill.Rd#examples:1:1:run",
+            "role": "example",
+            "span": {
+              "start": {
+                "offset": 496,
+                "line": 11,
+                "column": 12
+              },
+              "end": {
+                "offset": 496,
+                "line": 11,
+                "column": 12
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "man/afill.Rd#examples:1:1:run",
+            "role": "example",
+            "span": {
+              "start": {
+                "offset": 498,
+                "line": 11,
+                "column": 14
+              },
+              "end": {
+                "offset": 498,
+                "line": 11,
+                "column": 14
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "man/afill.Rd#examples:1:1:run",
+            "role": "example",
+            "span": {
+              "start": {
+                "offset": 511,
+                "line": 12,
+                "column": 5
+              },
+              "end": {
+                "offset": 511,
+                "line": 12,
+                "column": 5
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "man/afill.Rd#examples:1:1:run",
+            "role": "example",
+            "span": {
+              "start": {
+                "offset": 512,
+                "line": 12,
+                "column": 6
+              },
+              "end": {
+                "offset": 512,
+                "line": 12,
+                "column": 6
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "man/afill.Rd#examples:1:1:run",
+            "role": "example",
+            "span": {
+              "start": {
+                "offset": 519,
+                "line": 13,
+                "column": 5
+              },
+              "end": {
+                "offset": 519,
+                "line": 13,
+                "column": 5
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "man/afill.Rd#examples:1:1:run",
+            "role": "example",
+            "span": {
+              "start": {
+                "offset": 520,
+                "line": 13,
+                "column": 6
+              },
+              "end": {
+                "offset": 520,
+                "line": 13,
+                "column": 6
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "man/afill.Rd#examples:1:1:run",
+            "role": "example",
+            "span": {
+              "start": {
+                "offset": 776,
+                "line": 18,
+                "column": 15
+              },
+              "end": {
+                "offset": 776,
+                "line": 18,
+                "column": 15
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "man/afill.Rd#examples:1:1:run",
+            "role": "example",
+            "span": {
+              "start": {
+                "offset": 778,
+                "line": 18,
+                "column": 17
+              },
+              "end": {
+                "offset": 778,
+                "line": 18,
+                "column": 17
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "man/afill.Rd#examples:1:1:run",
+            "role": "example",
+            "span": {
+              "start": {
+                "offset": 791,
+                "line": 19,
+                "column": 5
+              },
+              "end": {
+                "offset": 791,
+                "line": 19,
+                "column": 5
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "man/afill.Rd#examples:1:1:run",
+            "role": "example",
+            "span": {
+              "start": {
+                "offset": 792,
+                "line": 19,
+                "column": 6
+              },
+              "end": {
+                "offset": 792,
+                "line": 19,
+                "column": 6
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "man/afill.Rd#examples:1:1:run",
+            "role": "example",
+            "span": {
+              "start": {
+                "offset": 799,
+                "line": 20,
+                "column": 5
+              },
+              "end": {
+                "offset": 799,
+                "line": 20,
+                "column": 5
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "man/afill.Rd#examples:1:1:run",
+            "role": "example",
+            "span": {
+              "start": {
+                "offset": 800,
+                "line": 20,
+                "column": 6
+              },
+              "end": {
+                "offset": 800,
+                "line": 20,
+                "column": 6
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "tests/abind.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 0,
+                "line": 1,
+                "column": 1
+              },
+              "end": {
+                "offset": 14,
+                "line": 1,
+                "column": 15
+              }
+            },
+            "reason": "unverified-source-role"
+          },
+          {
+            "path": "tests/abind.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 3311,
+                "line": 79,
+                "column": 1
+              },
+              "end": {
+                "offset": 3330,
+                "line": 79,
+                "column": 20
+              }
+            },
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "path": "tests/abind.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 3378,
+                "line": 82,
+                "column": 1
+              },
+              "end": {
+                "offset": 3397,
+                "line": 82,
+                "column": 20
+              }
+            },
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "path": "tests/adrop.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 0,
+                "line": 1,
+                "column": 1
+              },
+              "end": {
+                "offset": 14,
+                "line": 1,
+                "column": 15
+              }
+            },
+            "reason": "unverified-source-role"
+          },
+          {
+            "path": "tests/adrop.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 113,
+                "line": 3,
+                "column": 11
+              },
+              "end": {
+                "offset": 113,
+                "line": 3,
+                "column": 11
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "tests/adrop.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 114,
+                "line": 3,
+                "column": 12
+              },
+              "end": {
+                "offset": 114,
+                "line": 3,
+                "column": 12
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "tests/adrop.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 144,
+                "line": 4,
+                "column": 9
+              },
+              "end": {
+                "offset": 144,
+                "line": 4,
+                "column": 9
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "tests/adrop.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 147,
+                "line": 4,
+                "column": 12
+              },
+              "end": {
+                "offset": 147,
+                "line": 4,
+                "column": 12
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "tests/adrop.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 177,
+                "line": 5,
+                "column": 9
+              },
+              "end": {
+                "offset": 177,
+                "line": 5,
+                "column": 9
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "tests/adrop.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 178,
+                "line": 5,
+                "column": 10
+              },
+              "end": {
+                "offset": 178,
+                "line": 5,
+                "column": 10
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "tests/afill.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 0,
+                "line": 1,
+                "column": 1
+              },
+              "end": {
+                "offset": 14,
+                "line": 1,
+                "column": 15
+              }
+            },
+            "reason": "unverified-source-role"
+          },
+          {
+            "path": "tests/afill.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 698,
+                "line": 12,
+                "column": 3
+              },
+              "end": {
+                "offset": 698,
+                "line": 12,
+                "column": 3
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "tests/afill.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 907,
+                "line": 17,
+                "column": 3
+              },
+              "end": {
+                "offset": 907,
+                "line": 17,
+                "column": 3
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "tests/afill.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 1118,
+                "line": 25,
+                "column": 15
+              },
+              "end": {
+                "offset": 1118,
+                "line": 25,
+                "column": 15
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "tests/afill.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 1120,
+                "line": 25,
+                "column": 17
+              },
+              "end": {
+                "offset": 1120,
+                "line": 25,
+                "column": 17
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "tests/afill.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 1364,
+                "line": 30,
+                "column": 12
+              },
+              "end": {
+                "offset": 1364,
+                "line": 30,
+                "column": 12
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "tests/afill.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 1366,
+                "line": 30,
+                "column": 14
+              },
+              "end": {
+                "offset": 1366,
+                "line": 30,
+                "column": 14
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "tests/afill.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 1437,
+                "line": 30,
+                "column": 85
+              },
+              "end": {
+                "offset": 1437,
+                "line": 30,
+                "column": 85
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "tests/afill.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 1994,
+                "line": 46,
+                "column": 12
+              },
+              "end": {
+                "offset": 1994,
+                "line": 46,
+                "column": 12
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "tests/afill.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 1999,
+                "line": 46,
+                "column": 17
+              },
+              "end": {
+                "offset": 1999,
+                "line": 46,
+                "column": 17
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "tests/asub.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 0,
+                "line": 1,
+                "column": 1
+              },
+              "end": {
+                "offset": 14,
+                "line": 1,
+                "column": 15
+              }
+            },
+            "reason": "unverified-source-role"
+          },
+          {
+            "path": "tests/asub.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 2124,
+                "line": 57,
+                "column": 1
+              },
+              "end": {
+                "offset": 2162,
+                "line": 57,
+                "column": 39
+              }
+            },
+            "reason": "computed-callee"
+          },
+          {
+            "path": "tests/asub.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 2170,
+                "line": 59,
+                "column": 1
+              },
+              "end": {
+                "offset": 2208,
+                "line": 59,
+                "column": 39
+              }
+            },
+            "reason": "computed-callee"
+          },
+          {
+            "path": "tests/asub.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 2216,
+                "line": 61,
+                "column": 1
+              },
+              "end": {
+                "offset": 2254,
+                "line": 61,
+                "column": 39
+              }
+            },
+            "reason": "computed-callee"
+          },
+          {
+            "path": "tests/asub.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 2255,
+                "line": 62,
+                "column": 1
+              },
+              "end": {
+                "offset": 2308,
+                "line": 62,
+                "column": 54
+              }
+            },
+            "reason": "computed-callee"
+          },
+          {
+            "path": "tests/asub.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 2276,
+                "line": 62,
+                "column": 22
+              },
+              "end": {
+                "offset": 2304,
+                "line": 62,
+                "column": 50
+              }
+            },
+            "reason": "computed-callee"
+          },
+          {
+            "path": "tests/dnns.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 0,
+                "line": 1,
+                "column": 1
+              },
+              "end": {
+                "offset": 14,
+                "line": 1,
+                "column": 15
+              }
+            },
+            "reason": "unverified-source-role"
+          }
+        ],
+        "checks": [
+          {
+            "id": "source-dependency:reference:1:test:tests/abind.R:0",
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "id": "source-dependency:reference:2:test:tests/adrop.R:0",
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "id": "source-dependency:reference:3:test:tests/afill.R:0",
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "id": "source-dependency:reference:4:test:tests/asub.R:0",
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "id": "source-dependency:reference:5:test:tests/dnns.R:0",
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "id": "source-dependency:unresolved:1:package:R/abind.R:432",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:2:package:R/abind.R:817",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:3:package:R/abind.R:1826",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:4:package:R/abind.R:1889",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:5:package:R/abind.R:1964",
+            "status": "unexecuted",
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "id": "source-dependency:unresolved:6:package:R/abind.R:2043",
+            "status": "unexecuted",
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "id": "source-dependency:unresolved:7:package:R/abind.R:7953",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:8:package:R/abind.R:8065",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:9:package:R/abind.R:8136",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:10:package:R/abind.R:8833",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:11:package:R/abind.R:9427",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:12:package:R/abind.R:9518",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:13:package:R/abind.R:9609",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:14:package:R/abind.R:11521",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:15:package:R/abind.R:12388",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:16:package:R/acorn.R:871",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:17:package:R/adrop.R:285",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:18:package:R/adrop.R:323",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:19:package:R/adrop.R:421",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:20:package:R/afill.R:2780",
+            "status": "unexecuted",
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "id": "source-dependency:unresolved:21:package:R/afill.R:5030",
+            "status": "unexecuted",
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "id": "source-dependency:unresolved:22:package:R/afill.R:5035",
+            "status": "unexecuted",
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "id": "source-dependency:unresolved:23:package:R/afill.R:5938",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:24:package:R/afill.R:6317",
+            "status": "unexecuted",
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "id": "source-dependency:unresolved:25:package:R/afill.R:6507",
+            "status": "unexecuted",
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "id": "source-dependency:unresolved:26:package:R/afill.R:6659",
+            "status": "unexecuted",
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "id": "source-dependency:unresolved:27:package:R/afill.R:6834",
+            "status": "unexecuted",
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "id": "source-dependency:unresolved:28:package:R/afill.R:6883",
+            "status": "unexecuted",
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "id": "source-dependency:unresolved:29:package:R/asub.R:369",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:30:package:R/asub.R:406",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:31:package:R/asub.R:502",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:32:package:R/asub.R:813",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:33:package:R/asub.R:1312",
+            "status": "unexecuted",
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "id": "source-dependency:unresolved:34:example:man/adrop.Rd#examples:1:1:run:99",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:35:example:man/adrop.Rd#examples:1:1:run:100",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:36:example:man/adrop.Rd#examples:1:1:run:130",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:37:example:man/adrop.Rd#examples:1:1:run:133",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:38:example:man/adrop.Rd#examples:1:1:run:163",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:39:example:man/adrop.Rd#examples:1:1:run:164",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:40:example:man/afill.Rd#examples:1:1:run:496",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:41:example:man/afill.Rd#examples:1:1:run:498",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:42:example:man/afill.Rd#examples:1:1:run:511",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:43:example:man/afill.Rd#examples:1:1:run:512",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:44:example:man/afill.Rd#examples:1:1:run:519",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:45:example:man/afill.Rd#examples:1:1:run:520",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:46:example:man/afill.Rd#examples:1:1:run:776",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:47:example:man/afill.Rd#examples:1:1:run:778",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:48:example:man/afill.Rd#examples:1:1:run:791",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:49:example:man/afill.Rd#examples:1:1:run:792",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:50:example:man/afill.Rd#examples:1:1:run:799",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:51:example:man/afill.Rd#examples:1:1:run:800",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:52:test:tests/abind.R:0",
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "id": "source-dependency:unresolved:53:test:tests/abind.R:3311",
+            "status": "unexecuted",
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "id": "source-dependency:unresolved:54:test:tests/abind.R:3378",
+            "status": "unexecuted",
+            "reason": "dynamic-evaluation"
+          },
+          {
+            "id": "source-dependency:unresolved:55:test:tests/adrop.R:0",
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "id": "source-dependency:unresolved:56:test:tests/adrop.R:113",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:57:test:tests/adrop.R:114",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:58:test:tests/adrop.R:144",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:59:test:tests/adrop.R:147",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:60:test:tests/adrop.R:177",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:61:test:tests/adrop.R:178",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:62:test:tests/afill.R:0",
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "id": "source-dependency:unresolved:63:test:tests/afill.R:698",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:64:test:tests/afill.R:907",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:65:test:tests/afill.R:1118",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:66:test:tests/afill.R:1120",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:67:test:tests/afill.R:1364",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:68:test:tests/afill.R:1366",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:69:test:tests/afill.R:1437",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:70:test:tests/afill.R:1994",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:71:test:tests/afill.R:1999",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:72:test:tests/asub.R:0",
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "id": "source-dependency:unresolved:73:test:tests/asub.R:2124",
+            "status": "unexecuted",
+            "reason": "computed-callee"
+          },
+          {
+            "id": "source-dependency:unresolved:74:test:tests/asub.R:2170",
+            "status": "unexecuted",
+            "reason": "computed-callee"
+          },
+          {
+            "id": "source-dependency:unresolved:75:test:tests/asub.R:2216",
+            "status": "unexecuted",
+            "reason": "computed-callee"
+          },
+          {
+            "id": "source-dependency:unresolved:76:test:tests/asub.R:2255",
+            "status": "unexecuted",
+            "reason": "computed-callee"
+          },
+          {
+            "id": "source-dependency:unresolved:77:test:tests/asub.R:2276",
+            "status": "unexecuted",
+            "reason": "computed-callee"
+          },
+          {
+            "id": "source-dependency:unresolved:78:test:tests/dnns.R:0",
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          }
+        ],
+        "limitations": [
+          "Literal syntax inventory does not establish execution, reachability, availability, exported members, conditional use, or transitive dependency closure.",
+          "Only supplied files are inventoried; tests, examples, vignettes and generated code require separate coverage.",
+          "Package-code declaration rules are independently observed; test/example roles and self references remain unexecuted.",
+          "Quoted syntax, computed targets/controls, known local loader bindings and dynamic evaluation remain unexecuted; aliases and runtime search-path changes are not resolved.",
+          "File passed status describes syntax inventory only; this assessment never passes the complete metadata stage or P7."
+        ]
+      },
+      "sourceDependencyInputFailures": []
+    },
+    {
+      "package": {
+        "name": "numDeriv",
+        "version": "2016.8-1.1",
+        "license": "GPL-2"
+      },
+      "provenance": {
+        "sourceSha256": "d8c4d19ff9aeb31b0c628bd4a16378e51c1c9a3813b525469a31fe89af00b345",
+        "artifactSha256": "0a5bac977e0b258bc22dedf41adc2c48a0eaa8e197f48dfefede7ad0f3981e45",
+        "oracle": {
+          "implementation": "GNU R",
+          "version": "4.6.1"
+        },
+        "semanticProfile": "0.350.0",
+        "capabilitySha256": "f42697a60197be53d36ebcafb1224266f27b8f288ddc242da6e1a3b289cc7910",
+        "runtimeLimits": {
+          "maxSteps": 300000000,
+          "maxCallDepth": 200,
+          "maxVectorLength": 50000000,
+          "maxOutputBytes": 32000000,
+          "maxPackageResourceBytes": 268435456
+        }
+      },
+      "rawReportSha256": "fa10360f0c06410091a1f5f287784800b66bc25fa792a4092212dfb9095ba8f9",
+      "p7Eligible": false,
+      "firstBlocker": "metadata-dependencies",
+      "outcomes": {
+        "mismatch": 9,
+        "match": 2
+      },
+      "metadataStage": {
+        "id": "metadata-dependencies",
+        "status": "unexecuted",
+        "reason": "DESCRIPTION structure, declared version lookups and literal source dependency references are recorded; full metadata, computed references and transitive closure remain unexecuted.",
+        "sourceDiscovered": [
+          "source-dependency:reference:1:test:tests/BWeg.R:4",
+          "source-dependency:reference:2:test:tests/CSD.R:0",
+          "source-dependency:reference:3:test:tests/grad01.R:4",
+          "source-dependency:reference:4:test:tests/hessian01.R:21",
+          "source-dependency:reference:5:test:tests/jacobian01.R:23",
+          "source-dependency:reference:6:test:tests/oneSided.R:31",
+          "source-dependency:reference:7:test:tests/trig01.R:4",
+          "source-dependency:unresolved:1:package:R/num2Deriv.R:244",
+          "source-dependency:unresolved:2:package:R/num2Deriv.R:759",
+          "source-dependency:unresolved:3:package:R/num2Deriv.R:874",
+          "source-dependency:unresolved:4:package:R/num2Deriv.R:1182",
+          "source-dependency:unresolved:5:package:R/num2Deriv.R:1374",
+          "source-dependency:unresolved:6:package:R/num2Deriv.R:2658",
+          "source-dependency:unresolved:7:package:R/num2Deriv.R:3308",
+          "source-dependency:unresolved:8:package:R/num2Deriv.R:3353",
+          "source-dependency:unresolved:9:package:R/num2Deriv.R:3531",
+          "source-dependency:unresolved:10:package:R/num2Deriv.R:3592",
+          "source-dependency:unresolved:11:package:R/num2Deriv.R:3798",
+          "source-dependency:unresolved:12:package:R/num2Deriv.R:3811",
+          "source-dependency:unresolved:13:package:R/num2Deriv.R:3830",
+          "source-dependency:unresolved:14:package:R/num2Deriv.R:3859",
+          "source-dependency:unresolved:15:package:R/num2Deriv.R:3872",
+          "source-dependency:unresolved:16:package:R/num2Deriv.R:3891",
+          "source-dependency:unresolved:17:package:R/num2Deriv.R:3934",
+          "source-dependency:unresolved:18:package:R/num2Deriv.R:3948",
+          "source-dependency:unresolved:19:package:R/num2Deriv.R:3968",
+          "source-dependency:unresolved:20:package:R/num2Deriv.R:3982",
+          "source-dependency:unresolved:21:package:R/num2Deriv.R:4153",
+          "source-dependency:unresolved:22:package:R/num2Deriv.R:4166",
+          "source-dependency:unresolved:23:package:R/num2Deriv.R:4321",
+          "source-dependency:unresolved:24:package:R/num2Deriv.R:4379",
+          "source-dependency:unresolved:25:package:R/num2Deriv.R:4402",
+          "source-dependency:unresolved:26:package:R/num2Deriv.R:4446",
+          "source-dependency:unresolved:27:package:R/num2Deriv.R:4480",
+          "source-dependency:unresolved:28:package:R/num2Deriv.R:4664",
+          "source-dependency:unresolved:29:package:R/num2Deriv.R:4677",
+          "source-dependency:unresolved:30:package:R/num2Deriv.R:4696",
+          "source-dependency:unresolved:31:package:R/num2Deriv.R:4726",
+          "source-dependency:unresolved:32:package:R/num2Deriv.R:4740",
+          "source-dependency:unresolved:33:package:R/numDeriv.R:1115",
+          "source-dependency:unresolved:34:package:R/numDeriv.R:1826",
+          "source-dependency:unresolved:35:package:R/numDeriv.R:1969",
+          "source-dependency:unresolved:36:package:R/numDeriv.R:2227",
+          "source-dependency:unresolved:37:package:R/numDeriv.R:2639",
+          "source-dependency:unresolved:38:package:R/numDeriv.R:3676",
+          "source-dependency:unresolved:39:package:R/numDeriv.R:3695",
+          "source-dependency:unresolved:40:package:R/numDeriv.R:3716",
+          "source-dependency:unresolved:41:package:R/numDeriv.R:3899",
+          "source-dependency:unresolved:42:package:R/numDeriv.R:3941",
+          "source-dependency:unresolved:43:package:R/numDeriv.R:3989",
+          "source-dependency:unresolved:44:package:R/numDeriv.R:5217",
+          "source-dependency:unresolved:45:package:R/numDeriv.R:5246",
+          "source-dependency:unresolved:46:package:R/numDeriv.R:5391",
+          "source-dependency:unresolved:47:package:R/numDeriv.R:5761",
+          "source-dependency:unresolved:48:package:R/numDeriv.R:6416",
+          "source-dependency:unresolved:49:package:R/numDeriv.R:6433",
+          "source-dependency:unresolved:50:package:R/numDeriv.R:6755",
+          "source-dependency:unresolved:51:package:R/numDeriv.R:7059",
+          "source-dependency:unresolved:52:package:R/numDeriv.R:7160",
+          "source-dependency:unresolved:53:package:R/numDeriv.R:7182",
+          "source-dependency:unresolved:54:package:R/numDeriv.R:7966",
+          "source-dependency:unresolved:55:package:R/numDeriv.R:8001",
+          "source-dependency:unresolved:56:package:R/numDeriv.R:8047",
+          "source-dependency:unresolved:57:package:R/numDeriv.R:8258",
+          "source-dependency:unresolved:58:package:R/numDeriv.R:8269",
+          "source-dependency:unresolved:59:package:R/numDeriv.R:8290",
+          "source-dependency:unresolved:60:package:R/numDeriv.R:8299",
+          "source-dependency:unresolved:61:test:tests/BWeg.R:4",
+          "source-dependency:unresolved:62:test:tests/CSD.R:0",
+          "source-dependency:unresolved:63:test:tests/grad01.R:4",
+          "source-dependency:unresolved:64:test:tests/hessian01.R:21",
+          "source-dependency:unresolved:65:test:tests/jacobian01.R:23",
+          "source-dependency:unresolved:66:test:tests/oneSided.R:31",
+          "source-dependency:unresolved:67:test:tests/trig01.R:4"
+        ],
+        "sourceExecuted": []
+      },
+      "sourceDependencyAssessment": {
+        "schemaVersion": 1,
+        "policy": "literal-source-references-v1",
+        "status": "unexecuted",
+        "descriptionSha256": "966ed1c55a437d089426f8e5a5bc71ca9d8b95002292a6ea23f3e0a110932ba4",
+        "files": [
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "sha256": "047abd4fe52c2d383501e704ec984c6f2858be846c929838faf68dcdd0b57526",
+            "status": "unexecuted"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "sha256": "00855693a6055cfe541ec26456dd03fde424e49aa4f9ae6ec0e43c9d929dac62",
+            "status": "unexecuted"
+          },
+          {
+            "path": "man/genD.Rd#examples:1:1:run",
+            "role": "example",
+            "sha256": "fab99518b750b51cce46fe827cf8f76a1203b10528751374c5d9f5083c86ec2e",
+            "status": "passed"
+          },
+          {
+            "path": "man/grad.Rd#examples:1:1:run",
+            "role": "example",
+            "sha256": "6a19635bd22713979185fa11a5831e5d29e196c4506613867542b86a1221dbcc",
+            "status": "passed"
+          },
+          {
+            "path": "man/hessian.Rd#examples:1:1:run",
+            "role": "example",
+            "sha256": "075c95c3c46188372fa695cd5972a85578cc63760d2ebd67b91e0b608f35bd97",
+            "status": "passed"
+          },
+          {
+            "path": "man/jacobian.Rd#examples:1:1:run",
+            "role": "example",
+            "sha256": "9ec0492c7b5f7531fae4f732ccb50f0247d4d68fb28287e6fa38b732467d878e",
+            "status": "passed"
+          },
+          {
+            "path": "tests/BWeg.R",
+            "role": "test",
+            "sha256": "7f3f16c26debb5b8a0b5845de86e6ddab4c81e745490b73de4bc3760b692fdc1",
+            "status": "unexecuted"
+          },
+          {
+            "path": "tests/CSD.R",
+            "role": "test",
+            "sha256": "1ddd9902185b72d78c1cd4fd2acf65d32ccc2fdcd5dd6c2b7ff0b00fa7e52ca7",
+            "status": "unexecuted"
+          },
+          {
+            "path": "tests/grad01.R",
+            "role": "test",
+            "sha256": "de6ad8b2457dbd51aa6e23a88fbf712720b0503e41e59fbb994b961668ca96df",
+            "status": "unexecuted"
+          },
+          {
+            "path": "tests/hessian01.R",
+            "role": "test",
+            "sha256": "9384a84325a7f48a033c52ec9d9bb8b8f4067bad0e9bc1b2759e7e714a50e4d1",
+            "status": "unexecuted"
+          },
+          {
+            "path": "tests/jacobian01.R",
+            "role": "test",
+            "sha256": "7846e96b1400968e3f3d4760c20e2522d23a2a49624e36cf6caaf19b0c58a42a",
+            "status": "unexecuted"
+          },
+          {
+            "path": "tests/oneSided.R",
+            "role": "test",
+            "sha256": "0a7c160bcea93204c4dd33181b5d68eacdf5263e0ac92a81b2b42c5ca64aab33",
+            "status": "unexecuted"
+          },
+          {
+            "path": "tests/trig01.R",
+            "role": "test",
+            "sha256": "a198861da48c14b5ba92e4b681a7109983c9feef2eccc148161fc19b215f6065",
+            "status": "unexecuted"
+          }
+        ],
+        "references": [
+          {
+            "path": "tests/BWeg.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 4,
+                "line": 1,
+                "column": 5
+              },
+              "end": {
+                "offset": 23,
+                "line": 1,
+                "column": 24
+              }
+            },
+            "kind": "require",
+            "package": "numDeriv",
+            "declaredIn": [],
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "path": "tests/CSD.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 0,
+                "line": 1,
+                "column": 1
+              },
+              "end": {
+                "offset": 19,
+                "line": 1,
+                "column": 20
+              }
+            },
+            "kind": "require",
+            "package": "numDeriv",
+            "declaredIn": [],
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "path": "tests/grad01.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 4,
+                "line": 1,
+                "column": 5
+              },
+              "end": {
+                "offset": 23,
+                "line": 1,
+                "column": 24
+              }
+            },
+            "kind": "require",
+            "package": "numDeriv",
+            "declaredIn": [],
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "path": "tests/hessian01.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 21,
+                "line": 2,
+                "column": 5
+              },
+              "end": {
+                "offset": 40,
+                "line": 2,
+                "column": 24
+              }
+            },
+            "kind": "require",
+            "package": "numDeriv",
+            "declaredIn": [],
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "path": "tests/jacobian01.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 23,
+                "line": 3,
+                "column": 5
+              },
+              "end": {
+                "offset": 42,
+                "line": 3,
+                "column": 24
+              }
+            },
+            "kind": "require",
+            "package": "numDeriv",
+            "declaredIn": [],
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "path": "tests/oneSided.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 31,
+                "line": 3,
+                "column": 2
+              },
+              "end": {
+                "offset": 48,
+                "line": 3,
+                "column": 19
+              }
+            },
+            "kind": "library",
+            "package": "numDeriv",
+            "declaredIn": [],
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "path": "tests/trig01.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 4,
+                "line": 1,
+                "column": 5
+              },
+              "end": {
+                "offset": 23,
+                "line": 1,
+                "column": 24
+              }
+            },
+            "kind": "require",
+            "package": "numDeriv",
+            "declaredIn": [],
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          }
+        ],
+        "unresolved": [
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 244,
+                "line": 8,
+                "column": 23
+              },
+              "end": {
+                "offset": 247,
+                "line": 8,
+                "column": 26
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 759,
+                "line": 19,
+                "column": 48
+              },
+              "end": {
+                "offset": 762,
+                "line": 19,
+                "column": 51
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 874,
+                "line": 23,
+                "column": 39
+              },
+              "end": {
+                "offset": 877,
+                "line": 23,
+                "column": 42
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 1182,
+                "line": 30,
+                "column": 56
+              },
+              "end": {
+                "offset": 1185,
+                "line": 30,
+                "column": 59
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 1374,
+                "line": 37,
+                "column": 22
+              },
+              "end": {
+                "offset": 1374,
+                "line": 37,
+                "column": 22
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 2658,
+                "line": 76,
+                "column": 19
+              },
+              "end": {
+                "offset": 2661,
+                "line": 76,
+                "column": 22
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 3308,
+                "line": 91,
+                "column": 41
+              },
+              "end": {
+                "offset": 3311,
+                "line": 91,
+                "column": 44
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 3353,
+                "line": 92,
+                "column": 41
+              },
+              "end": {
+                "offset": 3356,
+                "line": 92,
+                "column": 44
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 3531,
+                "line": 95,
+                "column": 21
+              },
+              "end": {
+                "offset": 3531,
+                "line": 95,
+                "column": 21
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 3592,
+                "line": 96,
+                "column": 21
+              },
+              "end": {
+                "offset": 3592,
+                "line": 96,
+                "column": 21
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 3798,
+                "line": 101,
+                "column": 24
+              },
+              "end": {
+                "offset": 3798,
+                "line": 101,
+                "column": 24
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 3811,
+                "line": 101,
+                "column": 37
+              },
+              "end": {
+                "offset": 3811,
+                "line": 101,
+                "column": 37
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 3830,
+                "line": 101,
+                "column": 56
+              },
+              "end": {
+                "offset": 3830,
+                "line": 101,
+                "column": 56
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 3859,
+                "line": 102,
+                "column": 17
+              },
+              "end": {
+                "offset": 3859,
+                "line": 102,
+                "column": 17
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 3872,
+                "line": 102,
+                "column": 30
+              },
+              "end": {
+                "offset": 3872,
+                "line": 102,
+                "column": 30
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 3891,
+                "line": 102,
+                "column": 49
+              },
+              "end": {
+                "offset": 3891,
+                "line": 102,
+                "column": 49
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 3934,
+                "line": 104,
+                "column": 13
+              },
+              "end": {
+                "offset": 3934,
+                "line": 104,
+                "column": 13
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 3948,
+                "line": 104,
+                "column": 27
+              },
+              "end": {
+                "offset": 3948,
+                "line": 104,
+                "column": 27
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 3968,
+                "line": 105,
+                "column": 17
+              },
+              "end": {
+                "offset": 3968,
+                "line": 105,
+                "column": 17
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 3982,
+                "line": 105,
+                "column": 31
+              },
+              "end": {
+                "offset": 3982,
+                "line": 105,
+                "column": 31
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 4153,
+                "line": 112,
+                "column": 26
+              },
+              "end": {
+                "offset": 4153,
+                "line": 112,
+                "column": 26
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 4166,
+                "line": 112,
+                "column": 39
+              },
+              "end": {
+                "offset": 4166,
+                "line": 112,
+                "column": 39
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 4321,
+                "line": 116,
+                "column": 54
+              },
+              "end": {
+                "offset": 4324,
+                "line": 116,
+                "column": 57
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 4379,
+                "line": 117,
+                "column": 54
+              },
+              "end": {
+                "offset": 4382,
+                "line": 117,
+                "column": 57
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 4402,
+                "line": 118,
+                "column": 19
+              },
+              "end": {
+                "offset": 4402,
+                "line": 118,
+                "column": 19
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 4446,
+                "line": 119,
+                "column": 21
+              },
+              "end": {
+                "offset": 4446,
+                "line": 119,
+                "column": 21
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 4480,
+                "line": 120,
+                "column": 21
+              },
+              "end": {
+                "offset": 4480,
+                "line": 120,
+                "column": 21
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 4664,
+                "line": 125,
+                "column": 22
+              },
+              "end": {
+                "offset": 4664,
+                "line": 125,
+                "column": 22
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 4677,
+                "line": 125,
+                "column": 35
+              },
+              "end": {
+                "offset": 4677,
+                "line": 125,
+                "column": 35
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 4696,
+                "line": 125,
+                "column": 54
+              },
+              "end": {
+                "offset": 4696,
+                "line": 125,
+                "column": 54
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 4726,
+                "line": 126,
+                "column": 18
+              },
+              "end": {
+                "offset": 4726,
+                "line": 126,
+                "column": 18
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/num2Deriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 4740,
+                "line": 126,
+                "column": 32
+              },
+              "end": {
+                "offset": 4740,
+                "line": 126,
+                "column": 32
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 1115,
+                "line": 23,
+                "column": 16
+              },
+              "end": {
+                "offset": 1118,
+                "line": 23,
+                "column": 19
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 1826,
+                "line": 47,
+                "column": 38
+              },
+              "end": {
+                "offset": 1829,
+                "line": 47,
+                "column": 41
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 1969,
+                "line": 54,
+                "column": 26
+              },
+              "end": {
+                "offset": 1972,
+                "line": 54,
+                "column": 29
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 2227,
+                "line": 61,
+                "column": 33
+              },
+              "end": {
+                "offset": 2230,
+                "line": 61,
+                "column": 36
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 2639,
+                "line": 73,
+                "column": 29
+              },
+              "end": {
+                "offset": 2642,
+                "line": 73,
+                "column": 32
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 3676,
+                "line": 104,
+                "column": 26
+              },
+              "end": {
+                "offset": 3676,
+                "line": 104,
+                "column": 26
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 3695,
+                "line": 104,
+                "column": 45
+              },
+              "end": {
+                "offset": 3698,
+                "line": 104,
+                "column": 48
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 3716,
+                "line": 104,
+                "column": 66
+              },
+              "end": {
+                "offset": 3719,
+                "line": 104,
+                "column": 69
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 3899,
+                "line": 107,
+                "column": 49
+              },
+              "end": {
+                "offset": 3902,
+                "line": 107,
+                "column": 52
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 3941,
+                "line": 108,
+                "column": 35
+              },
+              "end": {
+                "offset": 3944,
+                "line": 108,
+                "column": 38
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 3989,
+                "line": 110,
+                "column": 26
+              },
+              "end": {
+                "offset": 3989,
+                "line": 110,
+                "column": 26
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 5217,
+                "line": 142,
+                "column": 26
+              },
+              "end": {
+                "offset": 5217,
+                "line": 142,
+                "column": 26
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 5246,
+                "line": 142,
+                "column": 55
+              },
+              "end": {
+                "offset": 5246,
+                "line": 142,
+                "column": 55
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 5391,
+                "line": 145,
+                "column": 22
+              },
+              "end": {
+                "offset": 5391,
+                "line": 145,
+                "column": 22
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 5761,
+                "line": 158,
+                "column": 16
+              },
+              "end": {
+                "offset": 5764,
+                "line": 158,
+                "column": 19
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 6416,
+                "line": 181,
+                "column": 10
+              },
+              "end": {
+                "offset": 6416,
+                "line": 181,
+                "column": 10
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 6433,
+                "line": 181,
+                "column": 27
+              },
+              "end": {
+                "offset": 6436,
+                "line": 181,
+                "column": 30
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 6755,
+                "line": 191,
+                "column": 25
+              },
+              "end": {
+                "offset": 6758,
+                "line": 191,
+                "column": 28
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 7059,
+                "line": 199,
+                "column": 9
+              },
+              "end": {
+                "offset": 7059,
+                "line": 199,
+                "column": 9
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 7160,
+                "line": 203,
+                "column": 11
+              },
+              "end": {
+                "offset": 7160,
+                "line": 203,
+                "column": 11
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 7182,
+                "line": 203,
+                "column": 33
+              },
+              "end": {
+                "offset": 7185,
+                "line": 203,
+                "column": 36
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 7966,
+                "line": 229,
+                "column": 9
+              },
+              "end": {
+                "offset": 7966,
+                "line": 229,
+                "column": 9
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 8001,
+                "line": 229,
+                "column": 44
+              },
+              "end": {
+                "offset": 8004,
+                "line": 229,
+                "column": 47
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 8047,
+                "line": 230,
+                "column": 38
+              },
+              "end": {
+                "offset": 8050,
+                "line": 230,
+                "column": 41
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 8258,
+                "line": 237,
+                "column": 16
+              },
+              "end": {
+                "offset": 8258,
+                "line": 237,
+                "column": 16
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 8269,
+                "line": 237,
+                "column": 27
+              },
+              "end": {
+                "offset": 8269,
+                "line": 237,
+                "column": 27
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 8290,
+                "line": 237,
+                "column": 48
+              },
+              "end": {
+                "offset": 8290,
+                "line": 237,
+                "column": 48
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "R/numDeriv.R",
+            "role": "package",
+            "span": {
+              "start": {
+                "offset": 8299,
+                "line": 237,
+                "column": 57
+              },
+              "end": {
+                "offset": 8299,
+                "line": 237,
+                "column": 57
+              }
+            },
+            "reason": "unsupported-ast"
+          },
+          {
+            "path": "tests/BWeg.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 4,
+                "line": 1,
+                "column": 5
+              },
+              "end": {
+                "offset": 23,
+                "line": 1,
+                "column": 24
+              }
+            },
+            "reason": "unverified-source-role"
+          },
+          {
+            "path": "tests/CSD.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 0,
+                "line": 1,
+                "column": 1
+              },
+              "end": {
+                "offset": 19,
+                "line": 1,
+                "column": 20
+              }
+            },
+            "reason": "unverified-source-role"
+          },
+          {
+            "path": "tests/grad01.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 4,
+                "line": 1,
+                "column": 5
+              },
+              "end": {
+                "offset": 23,
+                "line": 1,
+                "column": 24
+              }
+            },
+            "reason": "unverified-source-role"
+          },
+          {
+            "path": "tests/hessian01.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 21,
+                "line": 2,
+                "column": 5
+              },
+              "end": {
+                "offset": 40,
+                "line": 2,
+                "column": 24
+              }
+            },
+            "reason": "unverified-source-role"
+          },
+          {
+            "path": "tests/jacobian01.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 23,
+                "line": 3,
+                "column": 5
+              },
+              "end": {
+                "offset": 42,
+                "line": 3,
+                "column": 24
+              }
+            },
+            "reason": "unverified-source-role"
+          },
+          {
+            "path": "tests/oneSided.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 31,
+                "line": 3,
+                "column": 2
+              },
+              "end": {
+                "offset": 48,
+                "line": 3,
+                "column": 19
+              }
+            },
+            "reason": "unverified-source-role"
+          },
+          {
+            "path": "tests/trig01.R",
+            "role": "test",
+            "span": {
+              "start": {
+                "offset": 4,
+                "line": 1,
+                "column": 5
+              },
+              "end": {
+                "offset": 23,
+                "line": 1,
+                "column": 24
+              }
+            },
+            "reason": "unverified-source-role"
+          }
+        ],
+        "checks": [
+          {
+            "id": "source-dependency:reference:1:test:tests/BWeg.R:4",
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "id": "source-dependency:reference:2:test:tests/CSD.R:0",
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "id": "source-dependency:reference:3:test:tests/grad01.R:4",
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "id": "source-dependency:reference:4:test:tests/hessian01.R:21",
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "id": "source-dependency:reference:5:test:tests/jacobian01.R:23",
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "id": "source-dependency:reference:6:test:tests/oneSided.R:31",
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "id": "source-dependency:reference:7:test:tests/trig01.R:4",
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "id": "source-dependency:unresolved:1:package:R/num2Deriv.R:244",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:2:package:R/num2Deriv.R:759",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:3:package:R/num2Deriv.R:874",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:4:package:R/num2Deriv.R:1182",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:5:package:R/num2Deriv.R:1374",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:6:package:R/num2Deriv.R:2658",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:7:package:R/num2Deriv.R:3308",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:8:package:R/num2Deriv.R:3353",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:9:package:R/num2Deriv.R:3531",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:10:package:R/num2Deriv.R:3592",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:11:package:R/num2Deriv.R:3798",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:12:package:R/num2Deriv.R:3811",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:13:package:R/num2Deriv.R:3830",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:14:package:R/num2Deriv.R:3859",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:15:package:R/num2Deriv.R:3872",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:16:package:R/num2Deriv.R:3891",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:17:package:R/num2Deriv.R:3934",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:18:package:R/num2Deriv.R:3948",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:19:package:R/num2Deriv.R:3968",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:20:package:R/num2Deriv.R:3982",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:21:package:R/num2Deriv.R:4153",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:22:package:R/num2Deriv.R:4166",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:23:package:R/num2Deriv.R:4321",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:24:package:R/num2Deriv.R:4379",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:25:package:R/num2Deriv.R:4402",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:26:package:R/num2Deriv.R:4446",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:27:package:R/num2Deriv.R:4480",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:28:package:R/num2Deriv.R:4664",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:29:package:R/num2Deriv.R:4677",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:30:package:R/num2Deriv.R:4696",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:31:package:R/num2Deriv.R:4726",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:32:package:R/num2Deriv.R:4740",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:33:package:R/numDeriv.R:1115",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:34:package:R/numDeriv.R:1826",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:35:package:R/numDeriv.R:1969",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:36:package:R/numDeriv.R:2227",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:37:package:R/numDeriv.R:2639",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:38:package:R/numDeriv.R:3676",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:39:package:R/numDeriv.R:3695",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:40:package:R/numDeriv.R:3716",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:41:package:R/numDeriv.R:3899",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:42:package:R/numDeriv.R:3941",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:43:package:R/numDeriv.R:3989",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:44:package:R/numDeriv.R:5217",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:45:package:R/numDeriv.R:5246",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:46:package:R/numDeriv.R:5391",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:47:package:R/numDeriv.R:5761",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:48:package:R/numDeriv.R:6416",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:49:package:R/numDeriv.R:6433",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:50:package:R/numDeriv.R:6755",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:51:package:R/numDeriv.R:7059",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:52:package:R/numDeriv.R:7160",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:53:package:R/numDeriv.R:7182",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:54:package:R/numDeriv.R:7966",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:55:package:R/numDeriv.R:8001",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:56:package:R/numDeriv.R:8047",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:57:package:R/numDeriv.R:8258",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:58:package:R/numDeriv.R:8269",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:59:package:R/numDeriv.R:8290",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:60:package:R/numDeriv.R:8299",
+            "status": "unexecuted",
+            "reason": "unsupported-ast"
+          },
+          {
+            "id": "source-dependency:unresolved:61:test:tests/BWeg.R:4",
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "id": "source-dependency:unresolved:62:test:tests/CSD.R:0",
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "id": "source-dependency:unresolved:63:test:tests/grad01.R:4",
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "id": "source-dependency:unresolved:64:test:tests/hessian01.R:21",
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "id": "source-dependency:unresolved:65:test:tests/jacobian01.R:23",
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "id": "source-dependency:unresolved:66:test:tests/oneSided.R:31",
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          },
+          {
+            "id": "source-dependency:unresolved:67:test:tests/trig01.R:4",
+            "status": "unexecuted",
+            "reason": "unverified-source-role"
+          }
+        ],
+        "limitations": [
+          "Literal syntax inventory does not establish execution, reachability, availability, exported members, conditional use, or transitive dependency closure.",
+          "Only supplied files are inventoried; tests, examples, vignettes and generated code require separate coverage.",
+          "Package-code declaration rules are independently observed; test/example roles and self references remain unexecuted.",
+          "Quoted syntax, computed targets/controls, known local loader bindings and dynamic evaluation remain unexecuted; aliases and runtime search-path changes are not resolved.",
+          "File passed status describes syntax inventory only; this assessment never passes the complete metadata stage or P7."
+        ]
+      },
+      "sourceDependencyInputFailures": []
+    }
+  ]
+}

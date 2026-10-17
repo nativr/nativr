@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "kind": "package-lifecycle-observations",
+  "classification": "exploratory",
+  "observations": [
+    {
+      "package": {
+        "name": "abind",
+        "version": "1.4-8",
+        "license": "MIT + file LICENSE"
+      },
+      "provenance": {
+        "sourceSha256": "264a051b523ceae1795a0879e7768949ea55c586ac8db0adf1f5ebeddd2623e1",
+        "artifactSha256": "e9862a710e03ef978409dbd3c4138dd4cdf96b0584c6f228ffe2b42d1e0e9dee",
+        "oracle": {
+          "implementation": "GNU R",
+          "version": "4.6.1"
+        },
+        "semanticProfile": "0.315.0",
+        "capabilitySha256": "a27a311c5c996de1aee6a4b0b7d832ae8e2d15810dd3d906dee16e447d4ab335",
+        "runtimeLimits": {
+          "maxSteps": 300000000,
+          "maxCallDepth": 200,
+          "maxVectorLength": 50000000,
+          "maxOutputBytes": 32000000,
+          "maxPackageResourceBytes": 268435456
+        }
+      },
+      "rawReportSha256": "561b23a1449336e697bef0a617731f3db05d50cf5d1119f0ebeeafed229f3c85",
+      "lifecycleObservation": {
+        "schemaVersion": 2,
+        "policy": "namespace-load-attach-detach-unload-v2",
+        "sourceSha256": "2b47287ce12b4ea7864b8e2d462940b932e01e99b5071c2c9d3e9ef1c19b9a76",
+        "actual": {
+          "status": "completed",
+          "state": "0|0|1|0|1|1|1|1|0|0|0"
+        },
+        "expected": {
+          "status": "completed",
+          "state": "0|0|1|0|1|1|1|1|0|0|0"
+        },
+        "outcome": "match",
+        "limitations": ["Clean-base loading and installation validation remain unexecuted."]
+      },
+      "cleanBaseObservation": {
+        "schemaVersion": 1,
+        "policy": "base-search-path-load-attach-v1",
+        "sourceSha256": "d827cd5cfea4d1cb9db66e90c28c721b1ce552a59407e8f0a9644ca2f96d24fd",
+        "actual": {
+          "status": "completed",
+          "state": "1|1|0|1|0|1|1"
+        },
+        "expected": {
+          "status": "completed",
+          "state": "1|1|0|1|0|1|1"
+        },
+        "outcome": "match",
+        "limitations": [
+          "Core namespaces remain loaded; this observes a clean search path, not startup with default packages disabled. Full installation validation remains unexecuted."
+        ]
+      },
+      "lifecycleStage": {
+        "id": "installation-loading",
+        "status": "unexecuted",
+        "reason": "Namespace lifecycle: match; base-only search-path loading: match. Startup without default namespaces and full installation validation remain unexecuted.",
+        "discovered": [
+          "install",
+          "load",
+          "attach",
+          "detach",
+          "unload",
+          "clean-base-load",
+          "base-search-path-load",
+          "installation-validation"
+        ],
+        "executed": ["install", "load", "attach", "detach", "unload", "base-search-path-load"]
+      },
+      "p7Eligible": false
+    },
+    {
+      "package": {
+        "name": "numDeriv",
+        "version": "2016.8-1.1",
+        "license": "GPL-2"
+      },
+      "provenance": {
+        "sourceSha256": "d8c4d19ff9aeb31b0c628bd4a16378e51c1c9a3813b525469a31fe89af00b345",
+        "artifactSha256": "0a5bac977e0b258bc22dedf41adc2c48a0eaa8e197f48dfefede7ad0f3981e45",
+        "oracle": {
+          "implementation": "GNU R",
+          "version": "4.6.1"
+        },
+        "semanticProfile": "0.315.0",
+        "capabilitySha256": "a27a311c5c996de1aee6a4b0b7d832ae8e2d15810dd3d906dee16e447d4ab335",
+        "runtimeLimits": {
+          "maxSteps": 300000000,
+          "maxCallDepth": 200,
+          "maxVectorLength": 50000000,
+          "maxOutputBytes": 32000000,
+          "maxPackageResourceBytes": 268435456
+        }
+      },
+      "rawReportSha256": "6009e5c892d791e38771747ea5d20c3a51687556d75972db206bd1195bd3fcd7",
+      "lifecycleObservation": {
+        "schemaVersion": 2,
+        "policy": "namespace-load-attach-detach-unload-v2",
+        "sourceSha256": "2590be534b8fbe31e489aab804c9c54938e2888bc7563a63ce97f224af9ac14f",
+        "actual": {
+          "status": "completed",
+          "state": "0|0|1|0|1|1|1|1|0|0|0"
+        },
+        "expected": {
+          "status": "completed",
+          "state": "0|0|1|0|1|1|1|1|0|0|0"
+        },
+        "outcome": "match",
+        "limitations": ["Clean-base loading and installation validation remain unexecuted."]
+      },
+      "cleanBaseObservation": {
+        "schemaVersion": 1,
+        "policy": "base-search-path-load-attach-v1",
+        "sourceSha256": "baf8045d94728ecd3e1da7fd48299933a19676096c5dfdcb67795b7c248d81ed",
+        "actual": {
+          "status": "completed",
+          "state": "1|1|0|1|0|1|1"
+        },
+        "expected": {
+          "status": "completed",
+          "state": "1|1|0|1|0|1|1"
+        },
+        "outcome": "match",
+        "limitations": [
+          "Core namespaces remain loaded; this observes a clean search path, not startup with default packages disabled. Full installation validation remains unexecuted."
+        ]
+      },
+      "lifecycleStage": {
+        "id": "installation-loading",
+        "status": "unexecuted",
+        "reason": "Namespace lifecycle: match; base-only search-path loading: match. Startup without default namespaces and full installation validation remain unexecuted.",
+        "discovered": [
+          "install",
+          "load",
+          "attach",
+          "detach",
+          "unload",
+          "clean-base-load",
+          "base-search-path-load",
+          "installation-validation"
+        ],
+        "executed": ["install", "load", "attach", "detach", "unload", "base-search-path-load"]
+      },
+      "p7Eligible": false
+    }
+  ]
+}

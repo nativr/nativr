@@ -10,6 +10,7 @@ import type {
 import type { Node } from "web-tree-sitter";
 
 import { Utf8SourceMap } from "./source-map.js";
+import { decodeStringLiteral, StringLiteralError } from "./string-literal.js";
 
 /** Normalize a Tree-sitter R concrete tree without leaking its node model. */
 export function normalizeProgram(
@@ -17,12 +18,22 @@ export function normalizeProgram(
   source: string,
 ): { readonly ast: ProgramNode; readonly diagnostics: readonly Diagnostic[] } {
   const mapper = new Utf8SourceMap(source);
-  const diagnostics = collectSyntaxDiagnostics(root, mapper, source.length);
+  const diagnostics = [...collectSyntaxDiagnostics(root, mapper, source.length)];
   const body: AstNode[] = [];
 
   for (const child of root.namedChildren) {
     if (child.type !== "comment" && !child.hasError && !child.isError && !child.isMissing) {
-      body.push(normalizeNode(child, mapper));
+      try {
+        body.push(normalizeNode(child, mapper));
+      } catch (error) {
+        if (!(error instanceof StringLiteralError)) throw error;
+        diagnostics.push({
+          code: "NRP1003",
+          severity: "error",
+          message: error.message,
+          span: mapper.span(child.startIndex, child.endIndex),
+        });
+      }
     }
   }
 
@@ -66,9 +77,14 @@ function normalizeNode(node: Node, mapper: Utf8SourceMap): AstNode {
     case "identifier":
       return { kind: "Identifier", name: decodeRIdentifier(node.text), span };
     case "string":
-      return { kind: "StringLiteral", value: decodeRString(node.text), span };
+      return { kind: "StringLiteral", ...decodeStringLiteral(node.text), span };
     case "parenthesized_expression":
-      return normalizeNode(requiredField(node, "body"), mapper);
+      return {
+        kind: "CallExpression",
+        callee: { kind: "Identifier", name: "(", span },
+        arguments: [{ value: normalizeNode(requiredField(node, "body"), mapper), span }],
+        span,
+      };
     case "braced_expression":
       return {
         kind: "Block",
@@ -119,22 +135,28 @@ function normalizeNode(node: Node, mapper: Utf8SourceMap): AstNode {
         arguments: normalizeArguments(requiredField(node, "arguments"), mapper),
         span,
       };
-    case "extract_operator":
+    case "extract_operator": {
+      const member = requiredField(node, "rhs");
       return {
         kind: "SubsetExpression",
         operator: requiredField(node, "operator").text as "$" | "@",
         target: normalizeNode(requiredField(node, "lhs"), mapper),
         arguments: [
           {
-            value: normalizeNode(requiredField(node, "rhs"), mapper),
-            span: mapper.span(
-              requiredField(node, "rhs").startIndex,
-              requiredField(node, "rhs").endIndex,
-            ),
+            value:
+              member.type === "dots"
+                ? {
+                    kind: "Identifier",
+                    name: "...",
+                    span: mapper.span(member.startIndex, member.endIndex),
+                  }
+                : normalizeNode(member, mapper),
+            span: mapper.span(member.startIndex, member.endIndex),
           },
         ],
         span,
       };
+    }
     case "namespace_operator":
       return {
         kind: "NamespaceExpression",
@@ -357,56 +379,15 @@ function missingType(text: string): "logical" | "integer" | "double" | "characte
   return "logical";
 }
 
-function decodeRString(text: string): string {
-  const body = text.slice(1, -1);
-  let result = "";
-  for (let index = 0; index < body.length; index += 1) {
-    const character = body[index] ?? "";
-    if (character !== "\\") {
-      result += character;
-      continue;
-    }
-    index += 1;
-    const escaped = body[index] ?? "";
-    const simple: Readonly<Record<string, string>> = {
-      a: "\u0007",
-      b: "\b",
-      f: "\f",
-      n: "\n",
-      r: "\r",
-      t: "\t",
-      v: "\u000b",
-      "\\": "\\",
-      "'": "'",
-      '"': '"',
-    };
-    if (escaped in simple) {
-      result += simple[escaped];
-      continue;
-    }
-    if (escaped === "x" || escaped === "u" || escaped === "U") {
-      const width = escaped === "x" ? 2 : escaped === "u" ? 4 : 8;
-      const digits = body.slice(index + 1, index + 1 + width);
-      if (/^[0-9a-f]+$/iu.test(digits) && digits.length === width) {
-        result += String.fromCodePoint(Number.parseInt(digits, 16));
-        index += width;
-        continue;
-      }
-    }
-    result += escaped;
-  }
-  return result;
-}
-
 function decodeRIdentifier(text: string): string {
   if (text.startsWith("`") && text.endsWith("`")) {
-    return text.slice(1, -1).replace(/\\([\\`])/gu, "$1");
+    return decodeStringLiteral(text, true).value;
   }
   if (
     (text.startsWith('"') && text.endsWith('"')) ||
     (text.startsWith("'") && text.endsWith("'"))
   ) {
-    return decodeRString(text);
+    return decodeStringLiteral(text).value;
   }
   return text;
 }

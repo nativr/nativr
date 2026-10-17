@@ -15,6 +15,12 @@ provide an ambient host process, unrestricted filesystem, host pointers, or dyna
 surfaces must either use a documented browser adaptation or fail explicitly at a capability
 boundary. They are not silently ignored.
 
+Closure display uses real environment names or an explicit `nativr:<id>` label for anonymous owned
+environments. The AST interpreter has no GNU bytecode pointer to display. Host identity from
+`Sys.info()` follows the documented browser fields. Package-output diagnostics must identify these
+differences explicitly; omitting them from a diagnostic does not establish P7 or waive function
+syntax, retained-source, attribute, or reference-identity requirements.
+
 ## Pure-R completion gate
 
 A pure-R package is compatible only when its pinned, unmodified source release and complete pinned

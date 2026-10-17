@@ -21,6 +21,11 @@ await r.dispose();
 Sessions expose `eval`, `evalDetailed`, `evalRaw`, `assign`, `get`, `call`, `capabilities`, `reset`,
 `interrupt`, and `dispose`. Operations mutate one session in submission order.
 
+`createR({ packages, limits })` snapshots immutable package bundles before inline or Worker startup.
+`limits.maxPackageResourceBytes` controls their aggregate decoded resource budget independently from
+R source, returned output, and graphics. The default 192 MiB ceiling admits large header/data-only
+packages such as BH while remaining finite; package count remains bounded by `maxVectorLength`.
+
 Applications may explicitly seed session-owned environment variables without exposing the browser or
 Node host environment:
 
@@ -169,11 +174,19 @@ call emits its entry trace and continues without granting any new host capabilit
 `{ stream: "stdout" | "stderr" | "message", text }` events. `createR({ onOutput })` receives the
 same events in both inline and Worker execution, while the detailed result retains them for
 deterministic inspection. `print()` returns its input invisibly and `cat()` returns invisible
-`NULL`, exposed through the result's `visible` flag. Text counts toward `maxOutputBytes`.
-`utils::capture.output()` diverts selected events into an in-memory character result, so captured
-events are absent from `evalDetailed().output` and `onOutput`; `split = TRUE` duplicates stdout back
-to both destinations. Captured bytes remain bounded by `maxOutputBytes`. A supported session path or
-file connection stores captured text inside the evaluator; host paths remain unavailable.
+`NULL`, exposed through the result's `visible` flag. Text counts toward `maxOutputBytes`. For
+batch-style package scripts, `evalDetailed(code, { topLevelErrorHandling: "option" })` continues
+after a top-level error only when R code has installed a callable `options(error=)` handler. The
+result records each handled error as `{ expressionIndex, code, message }` in `topLevelErrors`. Its
+stderr event includes a stored condition call and closure trace when available; `call. = FALSE`
+suppresses caller capture for ordinary `stop()` text. Unhandled errors still reject the evaluation.
+`printVisibleTopLevel: true` sends each visible top-level result through ordinary R `print()`
+dispatch and the same bounded output journal. Both options behave identically in inline and Worker
+sessions; ordinary `eval()` retains its default first-error behavior. `utils::capture.output()`
+diverts selected events into an in-memory character result, so captured events are absent from
+`evalDetailed().output` and `onOutput`; `split = TRUE` duplicates stdout back to both destinations.
+Captured bytes remain bounded by `maxOutputBytes`. A supported session path or file connection
+stores captured text inside the evaluator; host paths remain unavailable.
 
 R code can use `tempdir()`/`tempfile()` with `file()`, `file.exists()`,
 `readLines()`/`writeLines()`, connection-aware `cat()`/`capture.output()`,

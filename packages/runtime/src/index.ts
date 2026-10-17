@@ -1,5 +1,7 @@
 export { EvaluationContext, DEFAULT_RUNTIME_LIMITS, RUNTIME_LIMIT_PROFILES } from "./context.js";
 export type { RuntimeProfile } from "./context.js";
+export { embeddedValueAst } from "./language-subset.js";
+export { translatePosixCharacterClasses } from "./regex.js";
 export {
   createEnvironment,
   createForcedPromise,
@@ -15,6 +17,7 @@ export {
 export {
   NativRError,
   REvaluationError,
+  RSignalledConditionError,
   RParseError,
   RResourceLimitError,
   RRuntimeDisposedError,
@@ -25,16 +28,21 @@ export type { NativRErrorOptions } from "./errors.js";
 export { Evaluator } from "./evaluator.js";
 export type {
   DetailedEvaluationResult,
+  EvaluationOptions,
   EvaluationResult,
   EvaluatorOptions,
+  TopLevelEvaluationError,
   RuntimePackageDefinition,
   RuntimePackageDependency,
   RuntimePackageImport,
   RuntimePackageResource,
   RuntimePackageTextResource,
+  RuntimeSystemPackageTextResource,
   RuntimeS3Method,
 } from "./evaluator.js";
-export { deparseAst } from "./language.js";
+export { deparseAst, languageAstEntries } from "./language.js";
+export { deparseAstLines, deparseClosureLines } from "./language-deparse.js";
+export type { DeparseLinesOptions } from "./language-deparse.js";
 export { censusRuntimeMemory, estimateRObjectSize } from "./memory.js";
 export {
   compressGzipBytes,
@@ -60,6 +68,7 @@ export {
   characterEncodingAt,
   characterValueFromBytes,
   characterVector,
+  characterLiteralValue,
   complexVector,
   dataFrameRowCount,
   dataFrameValue,
@@ -79,6 +88,7 @@ export {
   NATIVR_PACKAGE_SOURCE_RESOURCE_ROOT,
   NATIVR_SYSTEM_LIBRARY_PATH,
   PACKAGE_SOURCE_EVALUATION_DIRECTORY_STATE_KEY,
+  BASE_OPTIONS_STATE_KEY,
   objectAttributes,
   objectClasses,
   pairlistValue,
@@ -96,6 +106,7 @@ export {
   functionDebugRegistry,
   FUNCTION_DEBUG_STATE_KEY,
   GLOBAL_CALLING_HANDLERS_STATE_KEY,
+  USER_HOOKS_STATE_KEY,
   OUTPUT_ROUTER_STATE_KEY,
   runtimeOutputRouter,
 } from "./values.js";

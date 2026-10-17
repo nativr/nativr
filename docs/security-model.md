@@ -114,9 +114,17 @@ inspection. Applications should retain the generated package set as a reviewed b
 browser runtime neither downloads nor unpacks source packages.
 
 Runtime bundle validation independently bounds executable R source and immutable resources. Resource
-count is capped by the session vector limit and decoded resource bytes by 64 MiB, while DESCRIPTION,
-NAMESPACE, and `R/*.R` remain under the parser-facing source-unit limit. Large inert headers cannot
-disable the code budget, and large R programs cannot borrow the resource allowance.
+count is capped by the session vector limit and decoded resource bytes by the selected
+`maxPackageResourceBytes` limit (192 MiB in the default profile), while DESCRIPTION, NAMESPACE, and
+`R/*.R` remain under the parser-facing source-unit limit. Validation occurs before Worker transfer
+and again inside the runtime host. Large inert headers cannot disable the code budget, and large R
+programs cannot borrow the resource allowance.
+
+Static core-package text resources use the same immutable virtual paths. The facade supplies them at
+initialization; the evaluator validates package names, paths, duplicate entries, counts, and
+aggregate bytes before any R code can read them. The standard Iris resource is sourced from UCI,
+transformed offline with pinned hashes, and ships with separate CC BY 4.0 attribution. It grants no
+filesystem or evaluation-time network access.
 
 Retained source-package `tools/**` files are immutable bundle bytes under a reserved hidden path.
 Only the owning package's source-evaluation scope resolves relative paths there; public

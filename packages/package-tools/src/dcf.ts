@@ -6,13 +6,19 @@ const VERSION = /^[0-9]+(?:[.-][0-9]+)*$/u;
 export function parseDcf(source: string): ReadonlyMap<string, string> {
   const fields = new Map<string, string>();
   let current: string | undefined;
+  let ended = false;
   for (const rawLine of source.replaceAll("\r\n", "\n").split("\n")) {
+    // Whitespace-only lines separate records, rather than continuing the last field.
+    if (rawLine.trim().length === 0) {
+      if (fields.size > 0) ended = true;
+      continue;
+    }
+    if (ended) throw new Error("DESCRIPTION must contain exactly one DCF record.");
     if (/^[ \t]/u.test(rawLine)) {
       if (current === undefined) throw new Error("DESCRIPTION begins with a continuation line.");
       fields.set(current, `${fields.get(current) ?? ""} ${rawLine.trim()}`.trim());
       continue;
     }
-    if (rawLine.trim().length === 0) continue;
     const separator = rawLine.indexOf(":");
     if (separator <= 0) throw new Error(`Malformed DESCRIPTION line '${rawLine}'.`);
     current = rawLine.slice(0, separator).trim();

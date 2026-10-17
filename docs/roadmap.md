@@ -913,11 +913,43 @@ Language subset 0.120 implements an executable surface for all 25 groups in the
      assignment, promise-origin caller frames, embedded runtime constants, and recursive character
      coercion. The eighth rotation moves unchanged `cpp11 0.5.5` and `otel 0.2.0` to P4 through
      separately bounded package resources, list-aware formatting, string repetition, length
-     replacement, missingness inspection, and stable unique-name repair. `BH 1.90.0-1` is the next
-     uninspected P0 holdout. RStudio host operations and inline's native compilation surface remain
-     explicit platform/Wasm-ABI work. Language-object subsetting still blocks deeper
-     `abind::acorn()`/`abind::asub()` breadth and remains foundational work rather than a
-     package-specific patch.
+     replacement, missingness inspection, and stable unique-name repair. The ninth rotation moves
+     unchanged `BH 1.90.0-1` to P3 through bounded large-resource admission, prompt archive-limit
+     failure, standard `exportPattern`, exact header-resource discovery, namespace loading, and
+     attachment. P4 is not applicable because BH exports no R functions. This exhausts the committed
+     top-100 snapshot's candidates whose runtime closure is already available and declares no native
+     compilation; metadata-only dependency preflight now reports ordered closures and explicit
+     native blockers without source-archive admission. RStudio host operations and inline's native
+     compilation surface remain explicit platform/Wasm-ABI work. A later general language-call
+     subset/replacement increment runs unchanged `abind::acorn()` and `abind::asub()` array paths;
+     NULL subscripts also unblock numDeriv's direct `tests/grad01.R` script. A subsequent reusable
+     matrix/frame, matched-call dots, and base-constant increment completes unchanged
+     `abind/tests/abind.R`; at that stage its full P6 inventory stopped in `adrop.R`. Package tiers
+     remain evidence-gated. The next source-blind P0 holdout, `Formula 1.2-6`, is declared outside
+     the exhausted committed top-100 standalone snapshot and has not been opened or executed.
+
+The development package `labeling 0.4.3` now reaches P5: its only applicable Rd example executes
+unchanged after shared `barplot` axis-style and standard `data(iris)` semantics were added. Its
+source archive has no `tests/` directory, so P6 is not claimed from an empty inventory. A generic Rd
+runner now completes all four applicable `numDeriv 2016.8-1.1` topics, establishing P5. Its
+direct-test runner completes all seven unchanged top-level scripts under a measured finite
+300-million-step/50-million-vector opt-in profile, establishing P6. Corrected complex power clears
+`CSD.R`'s former complex-gradient assertion, and reusable inverse-trigonometric primitives clear
+`trig01.R`'s final blocker. The archive has no saved `.Rout.save` output; exact GNU R 4.6.1 also
+completes all scripts. Profile 0.301 matches all 170 `BWeg.R` output lines after its host-specific
+header when GNU R's bytecode-address label is omitted, including closure bodies, nested lists, and
+attributes. Explicit display adaptation and full package-check evidence remain P7 work. All five
+applicable `abind 1.4-8` Rd topics, both applicable `rprojroot 2.1.1` topics, and both applicable
+`R6 2.6.1` topics also execute unchanged, establishing P5 for each. Abind now executes all five
+direct-test scripts under opt-in top-level error continuation, and all five saved outputs match
+after generic prompt and whitespace normalization, establishing P6. Its P7 blocker is full
+package-check behavior. The 0.303 strict native-oracle runner matches all ten abind test/example
+streams after verified Windows text transport decoding; numDeriv matches two of eleven and retains
+nine host-display or numerical differences. Complete condition/order evidence and the other
+applicable package-check stages remain explicit work. Rprojroot and R6 require unavailable
+`testthat`. P7 remains unclaimed for numDeriv and abind, and P6/P7 remain unclaimed for the other
+packages; `extended.figures(2)` still exposes incomplete full `par()` state despite executing
+successfully.
 
 The exact catalog and executable evidence live in
 [`feature-priority.test.ts`](../packages/nativr/test/feature-priority.test.ts). "Completed" means
@@ -932,17 +964,54 @@ the measured surface is runnable, not that NativR implements all R semantics or 
 2. Complete indexing, arrays, frames, conditions, dates/times, object systems, I/O, serialization,
    numeric algorithms, statistics, and graphics behind browser-safe host interfaces.
 3. Implement the full inventoried core namespace surface with per-callable differential evidence.
-4. Expand the executable package installer from the pinned
-   `pkgconfig`/`generics`/`withr`/`R6`/`viridisLite`/`RColorBrewer`/`assertthat`/`crayon`/`praise`/
-   `prettyunits` proofs to the measured pure-R package corpus, binary/text data adapters, broader
-   namespace/object-system declarations, package test orchestration, and R CMD check scenarios
-   without embedding GNU R or webR. In parallel, turn the typed `.Call` seam into a reusable audited
-   Wasm package toolchain, including routine-registration extraction and the portable value/API
-   subset needed by measured compiled packages.
+4. Deepen the pinned package corpus beyond its current P3-P6 evidence, including package test
+   orchestration, R CMD check scenarios, broader namespace/object-system declarations, and new
+   dependency closures with explicit first blockers. Keep binary/text data adapters and package
+   resources on the browser-owned path without embedding GNU R or webR. In parallel, turn the typed
+   `.Call` seam into a reusable audited Wasm package toolchain, including routine-registration
+   extraction and the portable value/API subset needed by measured compiled packages.
 5. Verify platform, browser, locale, time-zone, graphics, numeric, and performance behavior against
    the completion criteria in the GNU R compatibility ledger.
 6. Continue refreshing package-usage snapshots so high-reach gaps determine implementation order
    within the full compatibility objective.
+
+The generic check report now records source/artifact digests, oracle version, runtime limits, full
+execution inventories, strict output comparisons, transport adaptation, and first differences for
+pinned abind and numDeriv. Profile 0.305 closes the attributed replacement-call difference exposed
+by ordered condition capture in profile 0.304: all ten abind stream and condition comparisons match.
+The next package-depth work is cross-stream order evidence, followed by currently unexecuted check
+stages and independent isolation of the remaining numerical differences. Establish repeatable inputs
+and RNG state first: the native `man/hessian.Rd` numeric output varies between fresh captures. Every
+declared check stage must report passed, failed, unexecuted, or inapplicable with a reason; omitted
+stages cannot establish P7. Profile 0.306 extends shared depth validation to compact
+language/expression deparsing and diagnostics, with work checkpoints for public deparsing. Broader
+compact-output allocation limits remain to be established. Oracle stdout/stderr pipe arrival order
+must not be treated as native program order; that evidence needs a reliable capture mechanism before
+the package-check stage can pass.
+
+Declared dependency version lookup evidence now exists for abind and numDeriv; broader DESCRIPTION
+validation, undeclared source dependencies and transitive closure remain explicit metadata-stage
+work.
+
+Profile 0.308 closes `.onAttach` search-path/export visibility and failure rollback. Detach/unload
+remain the next lifecycle implementation gaps. Profile 0.309 closes `.GlobalEnv` base and package
+namespace visibility, locked binding behavior, and fresh-session reset identity. Profile 0.310
+unifies lookup and reflected attached environments, removing the flattened-export prerequisite
+blocker for detach. Native probes establish that `.onDetach` runs before removal and ordinary hook
+errors warn while detachment proceeds. Profile 0.311 implements source-package detachment and
+reattachment. Profile 0.312 adds source namespace unloading, retained references and S3 methods,
+dependency guards, and fresh reloads. Profile 0.313 adds user lifecycle callbacks. Profile 0.314
+separates core namespaces and package ownership, with explicit-import evidence under a base-only
+search path. Profile 0.315 adds core detachment/reattachment and a checked base-only search-path
+loading observation. Static namespace unloading, startup without default namespaces, full core
+import graphs, installation validation and full S4 unregistration remain next.
+
+DESCRIPTION structural checks now record literal-field and grammar evidence separately from full
+metadata validation. Derived Authors@R fields require person construction, collection methods and
+validated author/maintainer roles. Profile 0.316 closes the shared `c` S3 dispatch and primitive
+`NextMethod` fallback prerequisite. Profile 0.317 adds bounded person construction, collection
+methods and text formatting. Derived author/maintainer evaluation and validation remain the next
+metadata-domain work.
 
 GNU R/webR embedding, JavaScript code generation, and unreviewed external source remain prohibited
 by the clean-room and security policies.

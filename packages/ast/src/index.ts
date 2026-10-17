@@ -75,6 +75,9 @@ export interface IntegerLiteralNode extends AstNodeBase {
 export interface StringLiteralNode extends AstNodeBase {
   readonly kind: "StringLiteral";
   readonly value: string;
+  /** Exact payload for byte-escaped source literals, independent of host string encoding. */
+  readonly bytes?: readonly number[];
+  readonly encoding?: "unknown" | "UTF-8" | "latin1" | "bytes";
 }
 
 /** A TRUE or FALSE literal. */

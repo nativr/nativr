@@ -18,6 +18,34 @@ describe("Worker protocol guards", () => {
       }),
     ).toBe(true);
     expect(isWorkerRequest({ protocolVersion: 99, id: "1", kind: "eval", code: "1" })).toBe(false);
+    expect(
+      isWorkerRequest({
+        protocolVersion: PROTOCOL_VERSION,
+        id: "2",
+        kind: "eval",
+        code: "stop('probe')",
+        topLevelErrorHandling: "option",
+        printVisibleTopLevel: true,
+      }),
+    ).toBe(true);
+    expect(
+      isWorkerRequest({
+        protocolVersion: PROTOCOL_VERSION,
+        id: "3",
+        kind: "eval",
+        code: "stop('probe')",
+        topLevelErrorHandling: "always",
+      }),
+    ).toBe(false);
+    expect(
+      isWorkerRequest({
+        protocolVersion: PROTOCOL_VERSION,
+        id: "4",
+        kind: "eval",
+        code: "1",
+        printVisibleTopLevel: "yes",
+      }),
+    ).toBe(false);
   });
 
   it("validates snapshot mask lengths", () => {
@@ -115,6 +143,9 @@ describe("Worker protocol guards", () => {
           namespace: "export(square)",
           rSources: [{ path: "R/square.R", source: "square <- function(x) x ^ 2" }],
         },
+      ],
+      systemPackageResources: [
+        { package: "datasets", path: "data/example.txt", text: "value\n1\n" },
       ],
       environmentVariables: { SEEDED: "value", EMPTY: "" },
       nativeModules: [
@@ -227,6 +258,16 @@ describe("Worker protocol guards", () => {
     expect(isWorkerRequest({ protocolVersion: 1, id: "", kind: "reset" })).toBe(false);
     expect(isWorkerRequest({ protocolVersion: 1, id: "x", kind: "unknown" })).toBe(false);
     expect(isWorkerRequest({ protocolVersion: 1, id: "x", kind: "init", assets: {} })).toBe(false);
+    expect(
+      isWorkerRequest({
+        protocolVersion: 1,
+        id: "x",
+        kind: "init",
+        assets: { treeSitterRuntimeWasm: "runtime.wasm", rGrammarWasm: "r.wasm" },
+        systemPackageResources: [{ package: "datasets", path: "data/example.txt", text: 1 }],
+        debug: false,
+      }),
+    ).toBe(false);
     expect(
       isWorkerRequest({
         protocolVersion: 1,

@@ -9,6 +9,7 @@ import type { NativRParser, ParserAssets } from "@nativr/parser";
 import { DEFAULT_RUNTIME_LIMITS, Evaluator, RParseError } from "@nativr/runtime";
 import type {
   DetailedEvaluationResult,
+  EvaluationOptions,
   RSystemCommandRequest,
   RSystemCommandResult,
   RNativeModuleDefinition,
@@ -17,6 +18,7 @@ import type {
   RUrlRequest,
   RUrlResult,
   RuntimeLimits,
+  RuntimeSystemPackageTextResource,
   RValue,
 } from "@nativr/runtime";
 import type { ProgramNode } from "@nativr/ast";
@@ -60,6 +62,7 @@ export class RuntimeHost {
     readline?: (prompt: string) => Promise<string> | string,
     urlRequest?: (request: RUrlRequest) => Promise<RUrlResult> | RUrlResult,
     socketRequest?: (request: RSocketRequest) => Promise<RSocketResult> | RSocketResult,
+    systemPackageResources: readonly RuntimeSystemPackageTextResource[] = [],
   ): Promise<RuntimeHost> {
     const parser = await createParser(assets);
     try {
@@ -74,6 +77,7 @@ export class RuntimeHost {
         ...(sessionProcessId === undefined ? {} : { sessionProcessId }),
         parseSource: (source, maxExpressions) => parseProgram(parser, source, maxExpressions),
         packages: packageDefinitions,
+        systemPackageResources,
         nativeModules,
         ...(systemCommand === undefined ? {} : { systemCommand }),
         ...(nativeCall === undefined
@@ -103,8 +107,11 @@ export class RuntimeHost {
     }
   }
 
-  public async eval(code: string): Promise<DetailedEvaluationResult> {
-    return this.#evaluator.evaluate(parseProgram(this.#parser, code));
+  public async eval(
+    code: string,
+    options: EvaluationOptions = {},
+  ): Promise<DetailedEvaluationResult> {
+    return this.#evaluator.evaluate(parseProgram(this.#parser, code), options);
   }
 
   public assign(name: string, snapshot: RValueSnapshot): Promise<void> {

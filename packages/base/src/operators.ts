@@ -235,7 +235,7 @@ export const jsReferenceOperators: RuntimeOperators = {
       );
       if (!Number.isInteger(result) || result > 2_147_483_647 || result < -2_147_483_648) {
         missing[index] = 1;
-        context.warn({ code: "NRW1002", message: "NAs produced by integer overflow." });
+        context.warn({ code: "NRW1002", message: "NAs produced by integer overflow" });
       } else {
         values[index] = result;
       }
@@ -551,7 +551,7 @@ export function recycledLength(
   if (longer % shorter !== 0) {
     context.warn({
       code: "NRW1001",
-      message: "Longer object length is not a multiple of shorter object length.",
+      message: "longer object length is not a multiple of shorter object length",
     });
   }
   return longer;
@@ -698,6 +698,8 @@ function applyArithmetic(operator: string, left: number, right: number): number 
     case "/":
       return left / right;
     case "^":
+      if (right === 3) return left * left * left;
+      if (right === 4) return left * left * left * left;
       return left ** right;
     case "%%":
       return left - right * Math.floor(left / right);
@@ -756,6 +758,23 @@ function applyComplexArithmetic(
     }
     case "^": {
       if (right.real === 0 && right.imaginary === 0) return { real: 1, imaginary: 0 };
+      if (
+        right.imaginary === 0 &&
+        Number.isSafeInteger(right.real) &&
+        right.real > 0 &&
+        Number.isFinite(left.real) &&
+        Number.isFinite(left.imaginary)
+      ) {
+        let exponent = right.real;
+        let factor = left;
+        let result: ComplexNumber = { real: 1, imaginary: 0 };
+        while (exponent > 0) {
+          if (exponent % 2 === 1) result = applyComplexArithmetic("*", result, factor);
+          exponent = Math.floor(exponent / 2);
+          if (exponent > 0) factor = applyComplexArithmetic("*", factor, factor);
+        }
+        return result;
+      }
       const magnitude = Math.hypot(left.real, left.imaginary);
       const angle = Math.atan2(left.imaginary, left.real);
       const logReal = Math.log(magnitude);

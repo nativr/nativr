@@ -1,0 +1,1429 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-package-check-diagnostic",
+  "classification": "exploratory",
+  "rawReportSha256": "b024b088762f5b5943d97252468ea3e1edc1f3d8cdcb9151b476814b43b83357",
+  "redaction": {
+    "policy": "sha256-no-output-v1",
+    "rawOutputIncluded": false,
+    "rawConditionsIncluded": false,
+    "sourceIncluded": false,
+    "differenceUnit": "UTF-16 code unit",
+    "numericTokens": "Exact observed numeric tokens only; no rounding or tolerance."
+  },
+  "package": {
+    "name": "abind",
+    "version": "1.4-8"
+  },
+  "provenance": {
+    "sourceSha256": "264a051b523ceae1795a0879e7768949ea55c586ac8db0adf1f5ebeddd2623e1",
+    "artifactSha256": "e9862a710e03ef978409dbd3c4138dd4cdf96b0584c6f228ffe2b42d1e0e9dee",
+    "oracle": {
+      "implementation": "GNU R",
+      "version": "4.6.1"
+    },
+    "semanticProfile": "0.302.0",
+    "capabilitySha256": "dbd39e74004bceb0d7b4d9bfb67977db523ad4039e169f484e48789431d14172",
+    "runtimeLimits": {
+      "maxSteps": 300000000,
+      "maxCallDepth": 200,
+      "maxVectorLength": 50000000,
+      "maxOutputBytes": 32000000,
+      "maxPackageResourceBytes": 268435456
+    }
+  },
+  "executionProfile": {
+    "execution": "inline",
+    "runtimeProfile": "package-test",
+    "sourcePlatform": "unix",
+    "capture": "native-rscript-top-level-v1",
+    "oracle": {
+      "version": "4.6.1",
+      "packageVersion": "1.4.8",
+      "newlineTransport": {
+        "kind": "lf-to-crlf",
+        "probeLiteralHex": "610a620d0a630d640d0d0a65",
+        "stdoutHex": "610d0a620d0d0a630d640d0d0d0a65",
+        "stderrHex": "610d0a620d0d0a630d640d0d0d0a65"
+      },
+      "installationExitCode": 0,
+      "installationSignal": null
+    },
+    "limitations": [
+      "NativR public warnings/handled errors do not expose complete condition classes or their relative order.",
+      "NativR failed evaluations do not expose partial output through the public inline API.",
+      "Fixture preparation currently admits only UTF-8 files whose bytes round-trip exactly through virtual writeLines/readBin."
+    ]
+  },
+  "p7Eligible": false,
+  "firstBlocker": {
+    "stage": "metadata-dependencies",
+    "code": "stage-unexecuted",
+    "message": "DESCRIPTION parsed for packing; full check-time dependency analysis is not implemented."
+  },
+  "runners": {
+    "tests": {
+      "outcome": "completed",
+      "firstBlocker": null
+    },
+    "examples": {
+      "outcome": "completed",
+      "firstBlocker": null
+    }
+  },
+  "stages": [
+    {
+      "id": "archive-artifact",
+      "status": "passed",
+      "reason": "Archive and normalized artifact digests match the pinned corpus.",
+      "discovered": [
+        "264a051b523ceae1795a0879e7768949ea55c586ac8db0adf1f5ebeddd2623e1",
+        "e9862a710e03ef978409dbd3c4138dd4cdf96b0584c6f228ffe2b42d1e0e9dee"
+      ],
+      "executed": [
+        "264a051b523ceae1795a0879e7768949ea55c586ac8db0adf1f5ebeddd2623e1",
+        "e9862a710e03ef978409dbd3c4138dd4cdf96b0584c6f228ffe2b42d1e0e9dee"
+      ]
+    },
+    {
+      "id": "metadata-dependencies",
+      "status": "unexecuted",
+      "reason": "DESCRIPTION parsed for packing; full check-time dependency analysis is not implemented.",
+      "discovered": ["DESCRIPTION"],
+      "executed": []
+    },
+    {
+      "id": "installation-loading",
+      "status": "unexecuted",
+      "reason": "Oracle package installed and NativR bundle available; detach/unload and clean-base loading checks remain unexecuted.",
+      "discovered": ["install", "load", "attach", "detach", "unload"],
+      "executed": ["install"]
+    },
+    {
+      "id": "namespace-source",
+      "status": "unexecuted",
+      "reason": "Packing does not prove the full source and namespace check surface.",
+      "discovered": ["NAMESPACE", "R/abind.R", "R/acorn.R", "R/adrop.R", "R/afill.R", "R/asub.R"],
+      "executed": []
+    },
+    {
+      "id": "documentation",
+      "status": "unexecuted",
+      "reason": "Rd extraction is not documentation consistency checking.",
+      "discovered": ["man/abind.Rd", "man/acorn.Rd", "man/adrop.Rd", "man/afill.Rd", "man/asub.Rd"],
+      "executed": []
+    },
+    {
+      "id": "installed-documentation",
+      "status": "inapplicable",
+      "reason": "The audited archive has no inst/doc or vignette entries.",
+      "discovered": [],
+      "executed": []
+    },
+    {
+      "id": "native-build-portability",
+      "status": "inapplicable",
+      "reason": "The audited archive has no src or configure/cleanup files.",
+      "discovered": [],
+      "executed": []
+    },
+    {
+      "id": "data",
+      "status": "inapplicable",
+      "reason": "The audited archive has no data directory entries.",
+      "discovered": [],
+      "executed": []
+    },
+    {
+      "id": "examples",
+      "status": "passed",
+      "reason": "Default-applicable extracted Rd blocks executed unchanged, with explicit library setup, in fresh sessions. The inventory records excluded blocks.",
+      "discovered": ["man/abind.Rd", "man/acorn.Rd", "man/adrop.Rd", "man/afill.Rd", "man/asub.Rd"],
+      "executed": ["man/abind.Rd", "man/acorn.Rd", "man/adrop.Rd", "man/afill.Rd", "man/asub.Rd"]
+    },
+    {
+      "id": "package-tests",
+      "status": "passed",
+      "reason": "Top-level R scripts execute unchanged in fresh sessions with copied tests fixtures. Unsupported .Rin and absent entrypoints do not prove the package-test stage.",
+      "discovered": [
+        "tests/abind.R",
+        "tests/adrop.R",
+        "tests/afill.R",
+        "tests/asub.R",
+        "tests/dnns.R"
+      ],
+      "executed": [
+        "tests/abind.R",
+        "tests/adrop.R",
+        "tests/afill.R",
+        "tests/asub.R",
+        "tests/dnns.R"
+      ]
+    },
+    {
+      "id": "test-output",
+      "status": "passed",
+      "reason": "Compare exact decoded stdout/stderr and separately observed conditions under policy 1. Only independently probed native text transport may be reversed.",
+      "discovered": [
+        "test:tests/abind.R",
+        "test:tests/adrop.R",
+        "test:tests/afill.R",
+        "test:tests/asub.R",
+        "test:tests/dnns.R",
+        "example:man/abind.Rd",
+        "example:man/acorn.Rd",
+        "example:man/adrop.Rd",
+        "example:man/afill.Rd",
+        "example:man/asub.Rd"
+      ],
+      "executed": [
+        "test:tests/abind.R",
+        "test:tests/adrop.R",
+        "test:tests/afill.R",
+        "test:tests/asub.R",
+        "test:tests/dnns.R",
+        "example:man/abind.Rd",
+        "example:man/acorn.Rd",
+        "example:man/adrop.Rd",
+        "example:man/afill.Rd",
+        "example:man/asub.Rd"
+      ]
+    },
+    {
+      "id": "output-order",
+      "status": "unexecuted",
+      "reason": "Independent output streams do not establish cross-stream ordering. Output inventories must contain exactly every captured example and test, using kind:path keys.",
+      "discovered": [
+        "test:tests/abind.R",
+        "test:tests/adrop.R",
+        "test:tests/afill.R",
+        "test:tests/asub.R",
+        "test:tests/dnns.R",
+        "example:man/abind.Rd",
+        "example:man/acorn.Rd",
+        "example:man/adrop.Rd",
+        "example:man/afill.Rd",
+        "example:man/asub.Rd"
+      ],
+      "executed": []
+    },
+    {
+      "id": "conditions",
+      "status": "unexecuted",
+      "reason": "Complete classes, calls, and condition ordering were not observed on both sides.",
+      "discovered": [
+        "test:tests/abind.R",
+        "test:tests/adrop.R",
+        "test:tests/afill.R",
+        "test:tests/asub.R",
+        "test:tests/dnns.R",
+        "example:man/abind.Rd",
+        "example:man/acorn.Rd",
+        "example:man/adrop.Rd",
+        "example:man/afill.Rd",
+        "example:man/asub.Rd"
+      ],
+      "executed": [
+        "test:tests/abind.R",
+        "test:tests/adrop.R",
+        "test:tests/afill.R",
+        "test:tests/asub.R",
+        "test:tests/dnns.R",
+        "example:man/abind.Rd",
+        "example:man/acorn.Rd",
+        "example:man/adrop.Rd",
+        "example:man/afill.Rd",
+        "example:man/asub.Rd"
+      ]
+    },
+    {
+      "id": "vignettes",
+      "status": "inapplicable",
+      "reason": "The audited archive has no vignettes or installed vignette files.",
+      "discovered": [],
+      "executed": []
+    },
+    {
+      "id": "manual",
+      "status": "unexecuted",
+      "reason": "Manual generation and validation have not executed.",
+      "discovered": ["man/abind.Rd", "man/acorn.Rd", "man/adrop.Rd", "man/afill.Rd", "man/asub.Rd"],
+      "executed": []
+    }
+  ],
+  "inventory": {
+    "paths": [
+      "ChangeLog",
+      "DESCRIPTION",
+      "LICENSE",
+      "man/abind.Rd",
+      "man/acorn.Rd",
+      "man/adrop.Rd",
+      "man/afill.Rd",
+      "man/asub.Rd",
+      "MD5",
+      "NAMESPACE",
+      "R/abind.R",
+      "R/acorn.R",
+      "R/adrop.R",
+      "R/afill.R",
+      "R/asub.R",
+      "tests/abind.R",
+      "tests/abind.Rout.save",
+      "tests/adrop.R",
+      "tests/adrop.Rout.save",
+      "tests/afill.R",
+      "tests/afill.Rout.save",
+      "tests/asub.R",
+      "tests/asub.Rout.save",
+      "tests/dnns.R",
+      "tests/dnns.Rout.save",
+      "tests/tmp.txt"
+    ],
+    "nestedRFiles": [],
+    "testFixtures": [
+      {
+        "path": "abind.R",
+        "sha256": "50959bed02bddb97e96f288074b7a0dbc56bbb0de0551c880c60177c83fb01e8"
+      },
+      {
+        "path": "adrop.R",
+        "sha256": "db1ab024340affdcb2fea59baaf671a599c03093e4adeb948346f63b78102397"
+      },
+      {
+        "path": "afill.R",
+        "sha256": "658f169be6a458024d4af33c4dde3d23909b613de6d67a1b2687fb99cdd6f59b"
+      },
+      {
+        "path": "asub.R",
+        "sha256": "a15dd2474ec3ad7bbfbdd42a959940a66c1195cb7611024643e78ff977bba49c"
+      },
+      {
+        "path": "dnns.R",
+        "sha256": "895656352888784acd05b864b0cadf25f8e2760d19a0cca7d8caafe5552889ab"
+      },
+      {
+        "path": "tmp.txt",
+        "sha256": "6aa92d9fb941f73a422c2c3c872f645e08a6e834739ac3520212ebe6d447dacc"
+      }
+    ],
+    "examples": [
+      {
+        "path": "man/abind.Rd",
+        "topic": "abind",
+        "applicableBlocks": 1,
+        "excludedDontrunBlocks": 0,
+        "excludedDonttestBlocks": 0
+      },
+      {
+        "path": "man/acorn.Rd",
+        "topic": "acorn",
+        "applicableBlocks": 1,
+        "excludedDontrunBlocks": 0,
+        "excludedDonttestBlocks": 0
+      },
+      {
+        "path": "man/adrop.Rd",
+        "topic": "adrop",
+        "applicableBlocks": 1,
+        "excludedDontrunBlocks": 0,
+        "excludedDonttestBlocks": 0
+      },
+      {
+        "path": "man/afill.Rd",
+        "topic": "afill",
+        "applicableBlocks": 1,
+        "excludedDontrunBlocks": 0,
+        "excludedDonttestBlocks": 0
+      },
+      {
+        "path": "man/asub.Rd",
+        "topic": "asub",
+        "applicableBlocks": 1,
+        "excludedDontrunBlocks": 0,
+        "excludedDonttestBlocks": 0
+      }
+    ]
+  },
+  "summary": {
+    "observed": 10,
+    "actualCompleted": 10,
+    "oracleCompleted": 10,
+    "matches": 10,
+    "mismatches": 0,
+    "conditionIncomplete": 2,
+    "outputIncomplete": 0
+  },
+  "observations": [
+    {
+      "kind": "test",
+      "path": "tests/abind.R",
+      "inputSha256": "50959bed02bddb97e96f288074b7a0dbc56bbb0de0551c880c60177c83fb01e8",
+      "setupSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "completionSha256": "f6d670031444a4c4f5cff5909bf60cd920b0a9ca4f753ff99d7f5890740ec578",
+      "fixturePaths": ["abind.R", "adrop.R", "afill.R", "asub.R", "dnns.R", "tmp.txt"],
+      "oracleExitCode": 0,
+      "oracleSignal": null,
+      "oracleRuntimeSettings": {
+        "keepSource": false,
+        "keepSourcePackages": false,
+        "jitEnvironment": "",
+        "osType": "windows",
+        "newlineTransport": "lf-to-crlf"
+      },
+      "oracleLimitations": {
+        "sourcePrefixLines": 35,
+        "conditionObservation": "globalCallingHandlers-after-source-handlers",
+        "crossStreamOrder": "unobserved",
+        "incompleteHandlerReturn": false,
+        "nativeLineEndings": "preserved",
+        "conditionObserversPresentAtCompletion": true
+      },
+      "actual": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "cdb3ef2cb3cce9b801e427baca2b2d7b31adbbc238551712d5cc3e86c462af10",
+          "utf8Bytes": 6469,
+          "utf16Length": 6469
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": true
+      },
+      "expected": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "90092691f1010ed17ae60ee54b534a617b7884b6d6b4dc3654a8ab6f0efc6723",
+          "utf8Bytes": 6974,
+          "utf16Length": 6974
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": false
+      },
+      "comparison": {
+        "policyVersion": 1,
+        "outcome": "match",
+        "rawDifference": {
+          "field": "stdout",
+          "index": 24,
+          "expected": {
+            "sha256": "8290bb6df46ebcc4ba6273f4314dce460a7c5d1cf68e97e14a3295e9e23b19f4",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 13
+          },
+          "actual": {
+            "sha256": "fcbe231a0d03fa7eb15f64157edb8c6c809585bf982934fa0f17211004749371",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 10
+          }
+        },
+        "adaptedDifference": null,
+        "adaptations": [
+          {
+            "id": "oracle-text-crlf-v1",
+            "probeLiteralHex": "610a620d0a630d640d0d0a65",
+            "stdoutHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "stderrHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "transformedPairs": {
+              "stdout": 505,
+              "stderr": 0
+            }
+          }
+        ],
+        "crossStreamOrder": "unobserved",
+        "conditionEvidence": "complete",
+        "outputEvidence": "complete"
+      }
+    },
+    {
+      "kind": "test",
+      "path": "tests/adrop.R",
+      "inputSha256": "db1ab024340affdcb2fea59baaf671a599c03093e4adeb948346f63b78102397",
+      "setupSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "completionSha256": "f6d670031444a4c4f5cff5909bf60cd920b0a9ca4f753ff99d7f5890740ec578",
+      "fixturePaths": ["abind.R", "adrop.R", "afill.R", "asub.R", "dnns.R", "tmp.txt"],
+      "oracleExitCode": 0,
+      "oracleSignal": null,
+      "oracleRuntimeSettings": {
+        "keepSource": false,
+        "keepSourcePackages": false,
+        "jitEnvironment": "",
+        "osType": "windows",
+        "newlineTransport": "lf-to-crlf"
+      },
+      "oracleLimitations": {
+        "sourcePrefixLines": 35,
+        "conditionObservation": "globalCallingHandlers-after-source-handlers",
+        "crossStreamOrder": "unobserved",
+        "incompleteHandlerReturn": false,
+        "nativeLineEndings": "preserved",
+        "conditionObserversPresentAtCompletion": true
+      },
+      "actual": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": false,
+        "stdout": {
+          "sha256": "230787df0db2b1fdd679da25b4b2f1a3aabf88c95f31d948dbbd3b0ed2194542",
+          "utf8Bytes": 234,
+          "utf16Length": 234
+        },
+        "stderr": {
+          "sha256": "28403d4b1b7cd27b3042b01fddf87e021d41691a9ea99f89df5602e8ddb3efde",
+          "utf8Bytes": 204,
+          "utf16Length": 204
+        },
+        "conditions": {
+          "sha256": "ec7b222123de8ba24d7f2ea84df5239933bbf341d8ac8b4ada91bd6a7938c8a2",
+          "count": 2,
+          "warnings": 0,
+          "errors": 2
+        },
+        "outputOrderObserved": true
+      },
+      "expected": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "748be05d41ffa6ed956c848f731e14f72f7f92d553d1c4e6dfaaedafc0d293e4",
+          "utf8Bytes": 268,
+          "utf16Length": 268
+        },
+        "stderr": {
+          "sha256": "f2aa39e951e1d723b36b394864daec33ee34b015cd47da41dfde5483a9adcf9f",
+          "utf8Bytes": 208,
+          "utf16Length": 208
+        },
+        "conditions": {
+          "sha256": "813e141fe3f203c14f21e9e10c1489f6c3b14eb869c2a45b6b3f92d2f52de2d3",
+          "count": 2,
+          "warnings": 0,
+          "errors": 2
+        },
+        "outputOrderObserved": false
+      },
+      "comparison": {
+        "policyVersion": 1,
+        "outcome": "match",
+        "rawDifference": {
+          "field": "stdout",
+          "index": 12,
+          "expected": {
+            "sha256": "365025565d807cb8914bdea3e07fb8c01dfb9149c9da5119f4e4f6275a8ca772",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 13
+          },
+          "actual": {
+            "sha256": "4324d682d637b3ad67140bb03b22e532344b7267eff133c6e16823b97ed1bdef",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 10
+          }
+        },
+        "adaptedDifference": null,
+        "adaptations": [
+          {
+            "id": "oracle-text-crlf-v1",
+            "probeLiteralHex": "610a620d0a630d640d0d0a65",
+            "stdoutHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "stderrHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "transformedPairs": {
+              "stdout": 34,
+              "stderr": 4
+            }
+          }
+        ],
+        "crossStreamOrder": "unobserved",
+        "conditionEvidence": "incomplete",
+        "outputEvidence": "complete"
+      }
+    },
+    {
+      "kind": "test",
+      "path": "tests/afill.R",
+      "inputSha256": "658f169be6a458024d4af33c4dde3d23909b613de6d67a1b2687fb99cdd6f59b",
+      "setupSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "completionSha256": "f6d670031444a4c4f5cff5909bf60cd920b0a9ca4f753ff99d7f5890740ec578",
+      "fixturePaths": ["abind.R", "adrop.R", "afill.R", "asub.R", "dnns.R", "tmp.txt"],
+      "oracleExitCode": 0,
+      "oracleSignal": null,
+      "oracleRuntimeSettings": {
+        "keepSource": false,
+        "keepSourcePackages": false,
+        "jitEnvironment": "",
+        "osType": "windows",
+        "newlineTransport": "lf-to-crlf"
+      },
+      "oracleLimitations": {
+        "sourcePrefixLines": 35,
+        "conditionObservation": "globalCallingHandlers-after-source-handlers",
+        "crossStreamOrder": "unobserved",
+        "incompleteHandlerReturn": false,
+        "nativeLineEndings": "preserved",
+        "conditionObserversPresentAtCompletion": true
+      },
+      "actual": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": false,
+        "stdout": {
+          "sha256": "d31d6e61efae513c91eef104d1c2923ec689fd1af4addd563f92e3ca0cbee543",
+          "utf8Bytes": 1042,
+          "utf16Length": 1042
+        },
+        "stderr": {
+          "sha256": "0991497d1dee1bd953d0c6d9203b250a0dc9e4078df0553a1b64e3d261acf0a3",
+          "utf8Bytes": 144,
+          "utf16Length": 144
+        },
+        "conditions": {
+          "sha256": "8cf9e1dd83ae64c421a4d2c6181ad15858fc92a0d11dbce62b5f57a4264dbb01",
+          "count": 1,
+          "warnings": 0,
+          "errors": 1
+        },
+        "outputOrderObserved": true
+      },
+      "expected": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "51405c146cce59809de2e076d7aa731826bd4554328eabc3febda7db92ca2ed6",
+          "utf8Bytes": 1133,
+          "utf16Length": 1133
+        },
+        "stderr": {
+          "sha256": "ed816f574e95600ae8bcf38dd10f6cc8e35d46c6455e08f22365f32bc1ed45f9",
+          "utf8Bytes": 147,
+          "utf16Length": 147
+        },
+        "conditions": {
+          "sha256": "e21b35fe8c350f32b0cc590f24a44c00314cd9f3269a662c1150434e060115ba",
+          "count": 1,
+          "warnings": 0,
+          "errors": 1
+        },
+        "outputOrderObserved": false
+      },
+      "comparison": {
+        "policyVersion": 1,
+        "outcome": "match",
+        "rawDifference": {
+          "field": "stdout",
+          "index": 7,
+          "expected": {
+            "sha256": "a9e5a5240785ca217771159795751c068e52608484a14365185c88d60e2d3c8d",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 13
+          },
+          "actual": {
+            "sha256": "5a487b17626cad44fbad926bd8e299da388422215847800ad2df42944b0d2f83",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 10
+          }
+        },
+        "adaptedDifference": null,
+        "adaptations": [
+          {
+            "id": "oracle-text-crlf-v1",
+            "probeLiteralHex": "610a620d0a630d640d0d0a65",
+            "stdoutHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "stderrHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "transformedPairs": {
+              "stdout": 91,
+              "stderr": 3
+            }
+          }
+        ],
+        "crossStreamOrder": "unobserved",
+        "conditionEvidence": "incomplete",
+        "outputEvidence": "complete"
+      }
+    },
+    {
+      "kind": "test",
+      "path": "tests/asub.R",
+      "inputSha256": "a15dd2474ec3ad7bbfbdd42a959940a66c1195cb7611024643e78ff977bba49c",
+      "setupSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "completionSha256": "f6d670031444a4c4f5cff5909bf60cd920b0a9ca4f753ff99d7f5890740ec578",
+      "fixturePaths": ["abind.R", "adrop.R", "afill.R", "asub.R", "dnns.R", "tmp.txt"],
+      "oracleExitCode": 0,
+      "oracleSignal": null,
+      "oracleRuntimeSettings": {
+        "keepSource": false,
+        "keepSourcePackages": false,
+        "jitEnvironment": "",
+        "osType": "windows",
+        "newlineTransport": "lf-to-crlf"
+      },
+      "oracleLimitations": {
+        "sourcePrefixLines": 35,
+        "conditionObservation": "globalCallingHandlers-after-source-handlers",
+        "crossStreamOrder": "unobserved",
+        "incompleteHandlerReturn": false,
+        "nativeLineEndings": "preserved",
+        "conditionObserversPresentAtCompletion": true
+      },
+      "actual": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "75647a797dfcb270c8657bb81ada2d50b6a7cc5962e92a2440004db3789ab3be",
+          "utf8Bytes": 2645,
+          "utf16Length": 2645
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": true
+      },
+      "expected": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "7bfb10f0ce13a0974cb246f57a64d4bb18101e702e844ee92d29efc3e5f8d31f",
+          "utf8Bytes": 2987,
+          "utf16Length": 2987
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": false
+      },
+      "comparison": {
+        "policyVersion": 1,
+        "outcome": "match",
+        "rawDifference": {
+          "field": "stdout",
+          "index": 5,
+          "expected": {
+            "sha256": "251140de6490121685c8f208d81624529bf75180a74d5b8d9a0a44f83e404902",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 13
+          },
+          "actual": {
+            "sha256": "384bd85df130420d3534efcc87c90de13c930a407cdcc8cd6c7f8d46f2912ae0",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 10
+          }
+        },
+        "adaptedDifference": null,
+        "adaptations": [
+          {
+            "id": "oracle-text-crlf-v1",
+            "probeLiteralHex": "610a620d0a630d640d0d0a65",
+            "stdoutHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "stderrHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "transformedPairs": {
+              "stdout": 342,
+              "stderr": 0
+            }
+          }
+        ],
+        "crossStreamOrder": "unobserved",
+        "conditionEvidence": "complete",
+        "outputEvidence": "complete"
+      }
+    },
+    {
+      "kind": "test",
+      "path": "tests/dnns.R",
+      "inputSha256": "895656352888784acd05b864b0cadf25f8e2760d19a0cca7d8caafe5552889ab",
+      "setupSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "completionSha256": "f6d670031444a4c4f5cff5909bf60cd920b0a9ca4f753ff99d7f5890740ec578",
+      "fixturePaths": ["abind.R", "adrop.R", "afill.R", "asub.R", "dnns.R", "tmp.txt"],
+      "oracleExitCode": 0,
+      "oracleSignal": null,
+      "oracleRuntimeSettings": {
+        "keepSource": false,
+        "keepSourcePackages": false,
+        "jitEnvironment": "",
+        "osType": "windows",
+        "newlineTransport": "lf-to-crlf"
+      },
+      "oracleLimitations": {
+        "sourcePrefixLines": 35,
+        "conditionObservation": "globalCallingHandlers-after-source-handlers",
+        "crossStreamOrder": "unobserved",
+        "incompleteHandlerReturn": false,
+        "nativeLineEndings": "preserved",
+        "conditionObserversPresentAtCompletion": true
+      },
+      "actual": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "fe97fa09f00e5624234bb788f95f355cc983fdf6630334cc67f9a3661e809957",
+          "utf8Bytes": 404,
+          "utf16Length": 404
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": true
+      },
+      "expected": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "2b0926a117cb2fb148f7e24f7549f3042b4d125358cf6885bc5e6866b3809ed1",
+          "utf8Bytes": 452,
+          "utf16Length": 452
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": false
+      },
+      "comparison": {
+        "policyVersion": 1,
+        "outcome": "match",
+        "rawDifference": {
+          "field": "stdout",
+          "index": 9,
+          "expected": {
+            "sha256": "a9e2b9e3de27c98594be2000f2a3b57e0579e3c23eb4b32cfe61587624d81824",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 13
+          },
+          "actual": {
+            "sha256": "f57d17471ef97c350b99579a727285deeb51b5871a5cd1b4dd86bfd308ea0aa5",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 10
+          }
+        },
+        "adaptedDifference": null,
+        "adaptations": [
+          {
+            "id": "oracle-text-crlf-v1",
+            "probeLiteralHex": "610a620d0a630d640d0d0a65",
+            "stdoutHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "stderrHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "transformedPairs": {
+              "stdout": 48,
+              "stderr": 0
+            }
+          }
+        ],
+        "crossStreamOrder": "unobserved",
+        "conditionEvidence": "complete",
+        "outputEvidence": "complete"
+      }
+    },
+    {
+      "kind": "example",
+      "path": "man/abind.Rd",
+      "inputSha256": "b183988ee2ca1a1746c3d147a7b917c54b20f01391a476fd0c6c9637808fde6f",
+      "setupSha256": "7706e640a314ff65f83ca49fedc734f700adabbcdacaa97407eb15731406b915",
+      "completionSha256": "f6d670031444a4c4f5cff5909bf60cd920b0a9ca4f753ff99d7f5890740ec578",
+      "fixturePaths": [],
+      "oracleExitCode": 0,
+      "oracleSignal": null,
+      "oracleRuntimeSettings": {
+        "keepSource": false,
+        "keepSourcePackages": false,
+        "jitEnvironment": "",
+        "osType": "windows",
+        "newlineTransport": "lf-to-crlf"
+      },
+      "oracleLimitations": {
+        "sourcePrefixLines": 35,
+        "conditionObservation": "globalCallingHandlers-after-source-handlers",
+        "crossStreamOrder": "unobserved",
+        "incompleteHandlerReturn": false,
+        "nativeLineEndings": "preserved",
+        "conditionObserversPresentAtCompletion": true
+      },
+      "actual": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "833d6b29b944376118c480e62c03127c1ddcb0424f2c00aca1585b49fc428698",
+          "utf8Bytes": 1463,
+          "utf16Length": 1463
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": true
+      },
+      "expected": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "0a8295a869a9b35ac58095b52aa4f4b020ea6924e226be466fd251a79b18e04b",
+          "utf8Bytes": 1547,
+          "utf16Length": 1547
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": false
+      },
+      "comparison": {
+        "policyVersion": 1,
+        "outcome": "match",
+        "rawDifference": {
+          "field": "stdout",
+          "index": 9,
+          "expected": {
+            "sha256": "a0ef1e08effc9b342a126bb0dd0ca5543a7f24ab3c73f907cdfb7ee1bb04b78e",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 13
+          },
+          "actual": {
+            "sha256": "5a4a0a1d067d06082c7ad2d1b4746a8bb6e834a6aff31859d4d153a3a0743a13",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 10
+          }
+        },
+        "adaptedDifference": null,
+        "adaptations": [
+          {
+            "id": "oracle-text-crlf-v1",
+            "probeLiteralHex": "610a620d0a630d640d0d0a65",
+            "stdoutHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "stderrHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "transformedPairs": {
+              "stdout": 84,
+              "stderr": 0
+            }
+          }
+        ],
+        "crossStreamOrder": "unobserved",
+        "conditionEvidence": "complete",
+        "outputEvidence": "complete"
+      }
+    },
+    {
+      "kind": "example",
+      "path": "man/acorn.Rd",
+      "inputSha256": "0638204cd65de531a4c1730bab7fe470546b4a97280cc42ee2699cc92b303df0",
+      "setupSha256": "7706e640a314ff65f83ca49fedc734f700adabbcdacaa97407eb15731406b915",
+      "completionSha256": "f6d670031444a4c4f5cff5909bf60cd920b0a9ca4f753ff99d7f5890740ec578",
+      "fixturePaths": [],
+      "oracleExitCode": 0,
+      "oracleSignal": null,
+      "oracleRuntimeSettings": {
+        "keepSource": false,
+        "keepSourcePackages": false,
+        "jitEnvironment": "",
+        "osType": "windows",
+        "newlineTransport": "lf-to-crlf"
+      },
+      "oracleLimitations": {
+        "sourcePrefixLines": 35,
+        "conditionObservation": "globalCallingHandlers-after-source-handlers",
+        "crossStreamOrder": "unobserved",
+        "incompleteHandlerReturn": false,
+        "nativeLineEndings": "preserved",
+        "conditionObserversPresentAtCompletion": true
+      },
+      "actual": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "cd7c5bedec4a0338a94549f5829bf725de3ee3cc4eb28b10f3d3a0c9f288f5eb",
+          "utf8Bytes": 177,
+          "utf16Length": 177
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": true
+      },
+      "expected": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "2113f43808ee41e8b8eff0fe82abc131c36bcf2529b7e3dc5183edefce3c49bf",
+          "utf8Bytes": 206,
+          "utf16Length": 206
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": false
+      },
+      "comparison": {
+        "policyVersion": 1,
+        "outcome": "match",
+        "rawDifference": {
+          "field": "stdout",
+          "index": 5,
+          "expected": {
+            "sha256": "848971449521cededc5c38eab2a489bb3aca46896193269b18ccb40312c056f7",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 13
+          },
+          "actual": {
+            "sha256": "333082050cc2d3182d7edc035c83a0a3b79ab75cf089b4d96dca2dd36488a577",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 10
+          }
+        },
+        "adaptedDifference": null,
+        "adaptations": [
+          {
+            "id": "oracle-text-crlf-v1",
+            "probeLiteralHex": "610a620d0a630d640d0d0a65",
+            "stdoutHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "stderrHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "transformedPairs": {
+              "stdout": 29,
+              "stderr": 0
+            }
+          }
+        ],
+        "crossStreamOrder": "unobserved",
+        "conditionEvidence": "complete",
+        "outputEvidence": "complete"
+      }
+    },
+    {
+      "kind": "example",
+      "path": "man/adrop.Rd",
+      "inputSha256": "654f4973456c5836a7bda7b5d4a4168347c56f2af1d1134aa7f4314607127359",
+      "setupSha256": "7706e640a314ff65f83ca49fedc734f700adabbcdacaa97407eb15731406b915",
+      "completionSha256": "f6d670031444a4c4f5cff5909bf60cd920b0a9ca4f753ff99d7f5890740ec578",
+      "fixturePaths": [],
+      "oracleExitCode": 0,
+      "oracleSignal": null,
+      "oracleRuntimeSettings": {
+        "keepSource": false,
+        "keepSourcePackages": false,
+        "jitEnvironment": "",
+        "osType": "windows",
+        "newlineTransport": "lf-to-crlf"
+      },
+      "oracleLimitations": {
+        "sourcePrefixLines": 35,
+        "conditionObservation": "globalCallingHandlers-after-source-handlers",
+        "crossStreamOrder": "unobserved",
+        "incompleteHandlerReturn": false,
+        "nativeLineEndings": "preserved",
+        "conditionObserversPresentAtCompletion": true
+      },
+      "actual": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "f8fbb79827d85ebc9f22122a7b9cdeb2876adbbace7320709b44f3a77edcdd7c",
+          "utf8Bytes": 201,
+          "utf16Length": 201
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": true
+      },
+      "expected": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "5bfb0cfd1db89d104a33093634136b569c1e01e4050b04792164ff1b85e18151",
+          "utf8Bytes": 230,
+          "utf16Length": 230
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": false
+      },
+      "comparison": {
+        "policyVersion": 1,
+        "outcome": "match",
+        "rawDifference": {
+          "field": "stdout",
+          "index": 12,
+          "expected": {
+            "sha256": "365025565d807cb8914bdea3e07fb8c01dfb9149c9da5119f4e4f6275a8ca772",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 13
+          },
+          "actual": {
+            "sha256": "4324d682d637b3ad67140bb03b22e532344b7267eff133c6e16823b97ed1bdef",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 10
+          }
+        },
+        "adaptedDifference": null,
+        "adaptations": [
+          {
+            "id": "oracle-text-crlf-v1",
+            "probeLiteralHex": "610a620d0a630d640d0d0a65",
+            "stdoutHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "stderrHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "transformedPairs": {
+              "stdout": 29,
+              "stderr": 0
+            }
+          }
+        ],
+        "crossStreamOrder": "unobserved",
+        "conditionEvidence": "complete",
+        "outputEvidence": "complete"
+      }
+    },
+    {
+      "kind": "example",
+      "path": "man/afill.Rd",
+      "inputSha256": "4385517adf04e0e957b6c258068b60b0d35549f8a8e0bf1eccc93b42179fd647",
+      "setupSha256": "7706e640a314ff65f83ca49fedc734f700adabbcdacaa97407eb15731406b915",
+      "completionSha256": "f6d670031444a4c4f5cff5909bf60cd920b0a9ca4f753ff99d7f5890740ec578",
+      "fixturePaths": [],
+      "oracleExitCode": 0,
+      "oracleSignal": null,
+      "oracleRuntimeSettings": {
+        "keepSource": false,
+        "keepSourcePackages": false,
+        "jitEnvironment": "",
+        "osType": "windows",
+        "newlineTransport": "lf-to-crlf"
+      },
+      "oracleLimitations": {
+        "sourcePrefixLines": 35,
+        "conditionObservation": "globalCallingHandlers-after-source-handlers",
+        "crossStreamOrder": "unobserved",
+        "incompleteHandlerReturn": false,
+        "nativeLineEndings": "preserved",
+        "conditionObserversPresentAtCompletion": true
+      },
+      "actual": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "032e760f44ad8b5f22d83a15abaf919808c3bb9e7cdf866221a1969c901b3139",
+          "utf8Bytes": 294,
+          "utf16Length": 294
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": true
+      },
+      "expected": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "df0e0acdb4e7c1b80f0851353ced5d945dca30d86fa5b5495367e306748c3e30",
+          "utf8Bytes": 331,
+          "utf16Length": 331
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": false
+      },
+      "comparison": {
+        "policyVersion": 1,
+        "outcome": "match",
+        "rawDifference": {
+          "field": "stdout",
+          "index": 7,
+          "expected": {
+            "sha256": "7fae52e0b3e50a616f79fd1adf182206ff86596646a26a3616f0f0240cb30def",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 13
+          },
+          "actual": {
+            "sha256": "a6a829ee72a14538e4862af7aa5df9e0f9001fc32a7a931c3dcb672d157dcb31",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 10
+          }
+        },
+        "adaptedDifference": null,
+        "adaptations": [
+          {
+            "id": "oracle-text-crlf-v1",
+            "probeLiteralHex": "610a620d0a630d640d0d0a65",
+            "stdoutHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "stderrHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "transformedPairs": {
+              "stdout": 37,
+              "stderr": 0
+            }
+          }
+        ],
+        "crossStreamOrder": "unobserved",
+        "conditionEvidence": "complete",
+        "outputEvidence": "complete"
+      }
+    },
+    {
+      "kind": "example",
+      "path": "man/asub.Rd",
+      "inputSha256": "cec678b9ae6318c1f300e1c0e727d34f930c8a7835fa9c4ad86ede0ce603b2b3",
+      "setupSha256": "7706e640a314ff65f83ca49fedc734f700adabbcdacaa97407eb15731406b915",
+      "completionSha256": "f6d670031444a4c4f5cff5909bf60cd920b0a9ca4f753ff99d7f5890740ec578",
+      "fixturePaths": [],
+      "oracleExitCode": 0,
+      "oracleSignal": null,
+      "oracleRuntimeSettings": {
+        "keepSource": false,
+        "keepSourcePackages": false,
+        "jitEnvironment": "",
+        "osType": "windows",
+        "newlineTransport": "lf-to-crlf"
+      },
+      "oracleLimitations": {
+        "sourcePrefixLines": 35,
+        "conditionObservation": "globalCallingHandlers-after-source-handlers",
+        "crossStreamOrder": "unobserved",
+        "incompleteHandlerReturn": false,
+        "nativeLineEndings": "preserved",
+        "conditionObserversPresentAtCompletion": true
+      },
+      "actual": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "ec113a6f79718e60c1872453ed3d16930a4c59af9856d58b43be584d2215438f",
+          "utf8Bytes": 192,
+          "utf16Length": 192
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": true
+      },
+      "expected": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "b76910374f2d3d8020a34114a1355b95965531636d65fe9fc329fdfa67d885c3",
+          "utf8Bytes": 224,
+          "utf16Length": 224
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": false
+      },
+      "comparison": {
+        "policyVersion": 1,
+        "outcome": "match",
+        "rawDifference": {
+          "field": "stdout",
+          "index": 5,
+          "expected": {
+            "sha256": "f0fa4bd8e8fadd991d902407c4f24549142c5358607f95b522cc4a4b80e58afe",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 13
+          },
+          "actual": {
+            "sha256": "358446b98dbe1775cc34eb0373e47a204898e68e8f3053d4bd204927a1f60b94",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 10
+          }
+        },
+        "adaptedDifference": null,
+        "adaptations": [
+          {
+            "id": "oracle-text-crlf-v1",
+            "probeLiteralHex": "610a620d0a630d640d0d0a65",
+            "stdoutHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "stderrHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "transformedPairs": {
+              "stdout": 32,
+              "stderr": 0
+            }
+          }
+        ],
+        "crossStreamOrder": "unobserved",
+        "conditionEvidence": "complete",
+        "outputEvidence": "complete"
+      }
+    }
+  ]
+}

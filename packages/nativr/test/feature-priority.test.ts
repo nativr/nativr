@@ -270,7 +270,7 @@ const featureCases = [
   {
     id: "namespaces",
     surfaces: ":: :::",
-    code: "stats::mean(1:3) + base:::sum(1:2)",
+    code: "stats::median(1:3) + base:::sum(1:2)",
     expected: 5,
   },
   {

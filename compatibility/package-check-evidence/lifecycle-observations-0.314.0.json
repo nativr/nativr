@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "kind": "package-lifecycle-observations",
+  "classification": "exploratory",
+  "observations": [
+    {
+      "package": {
+        "name": "abind",
+        "version": "1.4-8",
+        "license": "MIT + file LICENSE"
+      },
+      "provenance": {
+        "sourceSha256": "264a051b523ceae1795a0879e7768949ea55c586ac8db0adf1f5ebeddd2623e1",
+        "artifactSha256": "e9862a710e03ef978409dbd3c4138dd4cdf96b0584c6f228ffe2b42d1e0e9dee",
+        "oracle": {
+          "implementation": "GNU R",
+          "version": "4.6.1"
+        },
+        "semanticProfile": "0.314.0",
+        "capabilitySha256": "a756af2eed692d69becfa5e907293c4bd3e38580008b0a5ff86197b3b8cfcc34",
+        "runtimeLimits": {
+          "maxSteps": 300000000,
+          "maxCallDepth": 200,
+          "maxVectorLength": 50000000,
+          "maxOutputBytes": 32000000,
+          "maxPackageResourceBytes": 268435456
+        }
+      },
+      "rawReportSha256": "597b747cd93cc88158e9537253a98deb4d88461173dd6584a1e72530be562227",
+      "lifecycleObservation": {
+        "schemaVersion": 2,
+        "policy": "namespace-load-attach-detach-unload-v2",
+        "sourceSha256": "2b47287ce12b4ea7864b8e2d462940b932e01e99b5071c2c9d3e9ef1c19b9a76",
+        "actual": {
+          "status": "completed",
+          "state": "0|0|1|0|1|1|1|1|0|0|0"
+        },
+        "expected": {
+          "status": "completed",
+          "state": "0|0|1|0|1|1|1|1|0|0|0"
+        },
+        "outcome": "match",
+        "limitations": ["Clean-base loading and installation validation remain unexecuted."]
+      },
+      "lifecycleStage": {
+        "id": "installation-loading",
+        "status": "unexecuted",
+        "reason": "Namespace load/attach/detach/unload observation: match. Clean-base loading and full installation validation remain unexecuted.",
+        "discovered": [
+          "install",
+          "load",
+          "attach",
+          "detach",
+          "unload",
+          "clean-base-load",
+          "installation-validation"
+        ],
+        "executed": ["install", "load", "attach", "detach", "unload"]
+      },
+      "p7Eligible": false
+    },
+    {
+      "package": {
+        "name": "numDeriv",
+        "version": "2016.8-1.1",
+        "license": "GPL-2"
+      },
+      "provenance": {
+        "sourceSha256": "d8c4d19ff9aeb31b0c628bd4a16378e51c1c9a3813b525469a31fe89af00b345",
+        "artifactSha256": "0a5bac977e0b258bc22dedf41adc2c48a0eaa8e197f48dfefede7ad0f3981e45",
+        "oracle": {
+          "implementation": "GNU R",
+          "version": "4.6.1"
+        },
+        "semanticProfile": "0.314.0",
+        "capabilitySha256": "a756af2eed692d69becfa5e907293c4bd3e38580008b0a5ff86197b3b8cfcc34",
+        "runtimeLimits": {
+          "maxSteps": 300000000,
+          "maxCallDepth": 200,
+          "maxVectorLength": 50000000,
+          "maxOutputBytes": 32000000,
+          "maxPackageResourceBytes": 268435456
+        }
+      },
+      "rawReportSha256": "f3a49f9c4372fe0123f54192d8224c3762313e4549cd37e7989fd4ad004a2e10",
+      "lifecycleObservation": {
+        "schemaVersion": 2,
+        "policy": "namespace-load-attach-detach-unload-v2",
+        "sourceSha256": "2590be534b8fbe31e489aab804c9c54938e2888bc7563a63ce97f224af9ac14f",
+        "actual": {
+          "status": "completed",
+          "state": "0|0|1|0|1|1|1|1|0|0|0"
+        },
+        "expected": {
+          "status": "completed",
+          "state": "0|0|1|0|1|1|1|1|0|0|0"
+        },
+        "outcome": "match",
+        "limitations": ["Clean-base loading and installation validation remain unexecuted."]
+      },
+      "lifecycleStage": {
+        "id": "installation-loading",
+        "status": "unexecuted",
+        "reason": "Namespace load/attach/detach/unload observation: match. Clean-base loading and full installation validation remain unexecuted.",
+        "discovered": [
+          "install",
+          "load",
+          "attach",
+          "detach",
+          "unload",
+          "clean-base-load",
+          "installation-validation"
+        ],
+        "executed": ["install", "load", "attach", "detach", "unload"]
+      },
+      "p7Eligible": false
+    }
+  ]
+}

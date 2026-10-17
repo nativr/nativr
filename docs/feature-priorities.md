@@ -1831,6 +1831,16 @@ ties:
      every export, P5-P7, and arbitrary packages remain unclaimed. Rank-50 BH 1.90.0-1 is the only
      remaining top-100 package with no non-core runtime dependency and `NeedsCompilation: no`, so it
      becomes the next untouched P0 holdout.
+178. Source-blind package generalization: unchanged BH 1.90.0-1 now reaches P3 after its official
+     metadata and GNU R resource shape were frozen. The reusable increment raises still-bounded
+     package admission to 16,384 files and 192 MiB, makes archive-limit errors reject promptly,
+     validates resources before Worker transfer, and resolves standard `exportPattern()`
+     declarations from loaded local namespace bindings. BH exposes 12,554 headers totaling
+     128,040,580 bytes and exports no R functions, so P4 is not applicable rather than claimed. This
+     exhausts eligible standalone candidates in the committed top-100 snapshot; the next
+     package-priority step is dependency-closure expansion, including explicit native/Wasm blockers,
+     rather than inventing a replacement holdout. Metadata-only preflight now exposes these closures
+     and their first declared blockers without claiming source-archive evidence.
 
 Future prioritization should use semantic depth within these groups, host adapters, and new
 longitudinal snapshots. High namespace reach is not an instruction to add a general CRAN loader.

@@ -10,6 +10,7 @@ import type {
   PublicOutputEvent,
   PublicReadlineRequest,
   PublicRWarning,
+  PublicTopLevelError,
   PublicSocketRequest,
   PublicSocketResult,
   PublicSystemCommandRequest,
@@ -46,6 +47,7 @@ import {
 } from "./conversion.js";
 import type { JsInputValue, JsValue } from "./conversion.js";
 import type { RuntimeHost } from "./runtime-host.js";
+import irisData from "./datasets/iris.txt?raw";
 
 export type {
   PublicBrowseEvent,
@@ -57,6 +59,7 @@ export type {
   PublicNativeRoutineDefinition,
   PublicOutputEvent,
   PublicReadlineRequest,
+  PublicTopLevelError,
   PublicSocketRequest,
   PublicSocketResult,
   PublicSystemCommandRequest,
@@ -134,6 +137,10 @@ export type SocketHandler = (
 /** Options for one evaluation. */
 export interface EvalOptions {
   readonly timeoutMs?: number;
+  /** Continue after a top-level error only when options(error=) holds a callable handler. */
+  readonly topLevelErrorHandling?: "option";
+  /** Print each visible top-level expression through R's print() dispatch. */
+  readonly printVisibleTopLevel?: boolean;
 }
 
 /** Options for one JavaScript assignment. */
@@ -146,6 +153,7 @@ export interface PublicEvaluationResult {
   readonly value: JsValue;
   readonly raw: RValueSnapshot;
   readonly visible: boolean;
+  readonly topLevelErrors: readonly PublicTopLevelError[];
   readonly warnings: readonly PublicRWarning[];
   readonly output: readonly PublicOutputEvent[];
   readonly dataViews: readonly PublicDataViewEvent[];
@@ -175,6 +183,10 @@ interface ResolvedAssets {
   readonly rGrammarWasm: URL;
 }
 
+const STANDARD_SYSTEM_PACKAGE_RESOURCES = Object.freeze([
+  Object.freeze({ package: "datasets", path: "data/iris.txt", text: irisData }),
+]);
+
 let nextSessionProcessId = 1;
 
 function allocateSessionProcessId(): number {
@@ -193,7 +205,7 @@ export async function createR(options: CreateROptions = {}): Promise<NativRSessi
     limits: effectiveLimits,
     ...(options.packages === undefined
       ? {}
-      : { packages: snapshotPackageBundles(options.packages) }),
+      : { packages: snapshotPackageBundles(options.packages, effectiveLimits) }),
     ...(options.environmentVariables === undefined
       ? {}
       : { environmentVariables: snapshotEnvironmentVariables(options.environmentVariables) }),
@@ -269,6 +281,7 @@ export async function createR(options: CreateROptions = {}): Promise<NativRSessi
               request,
               sessionOptions.limits?.maxOutputBytes ?? DEFAULT_RUNTIME_LIMITS.maxOutputBytes,
             ),
+      STANDARD_SYSTEM_PACKAGE_RESOURCES,
     );
     return new InlineSession(host, sessionOptions, sessionProcessId);
   }
@@ -445,12 +458,15 @@ function invalidNativeRoutine(moduleIndex: number, routineIndex: number): NativR
 
 function snapshotPackageBundles(
   packages: readonly PureRPackageBundle[],
+  limits: RuntimeLimits,
 ): readonly PureRPackageBundle[] {
   const packageInputs = asUnknownArray(packages);
   if (packageInputs === undefined) {
     throw new NativRError("NRS5003", "createR(packages=) requires an array of package bundles.");
   }
-  return Object.freeze(
+  let resourceCount = 0;
+  let resourceBytes = 0;
+  const snapshot = Object.freeze(
     packageInputs.map((bundle, bundleIndex) => {
       if (!isUnknownRecord(bundle)) {
         throw new NativRError(
@@ -512,12 +528,33 @@ function snapshotPackageBundles(
                 `Package resource at index ${bundleIndex}:${resourceIndex} has an invalid shape.`,
               );
             }
+            resourceCount += 1;
+            resourceBytes += path.length + Math.ceil((data.length * 3) / 4);
+            if (
+              resourceCount > limits.maxVectorLength ||
+              !Number.isSafeInteger(resourceBytes) ||
+              resourceBytes > limits.maxPackageResourceBytes
+            ) {
+              throw new RResourceLimitError(
+                "NRL4002",
+                "Pure-R package resource limit exceeded before Worker transfer.",
+                {
+                  details: {
+                    maxResourceFiles: limits.maxVectorLength,
+                    maxResourceBytes: limits.maxPackageResourceBytes,
+                    resourceCount,
+                    resourceBytes,
+                  },
+                },
+              );
+            }
             return Object.freeze({ path, data });
           }),
         ),
       });
     }),
   );
+  return snapshot;
 }
 
 function asUnknownArray(value: unknown): readonly unknown[] | undefined {
@@ -861,9 +898,17 @@ class InlineSession implements NativRSession {
     return (await this.evalDetailed(code, options)).value;
   }
 
-  public async evalDetailed(code: string, _options?: EvalOptions): Promise<PublicEvaluationResult> {
+  public async evalDetailed(code: string, options?: EvalOptions): Promise<PublicEvaluationResult> {
     return this.#enqueue(async () => {
-      const result = await this.#host.eval(code);
+      validateEvalOptions(options);
+      const result = await this.#host.eval(code, {
+        ...(options?.topLevelErrorHandling === undefined
+          ? {}
+          : { topLevelErrorHandling: options.topLevelErrorHandling }),
+        ...(options?.printVisibleTopLevel === undefined
+          ? {}
+          : { printVisibleTopLevel: options.printVisibleTopLevel }),
+      });
       const raw = valueToSnapshot(result.value);
       for (const warning of result.warnings) this.#options.onWarning?.(warning);
       for (const output of result.output) this.#options.onOutput?.(output);
@@ -874,6 +919,7 @@ class InlineSession implements NativRSession {
         value: snapshotToJs(raw),
         raw,
         visible: result.visible,
+        topLevelErrors: result.topLevelErrors,
         warnings: result.warnings,
         output: result.output,
         dataViews: result.dataViews,
@@ -1016,8 +1062,18 @@ class WorkerSession implements NativRSession {
 
   public evalDetailed(code: string, options?: EvalOptions): Promise<PublicEvaluationResult> {
     return this.#enqueue(async () => {
+      validateEvalOptions(options);
       const payload = await this.#request(
-        { kind: "eval", code },
+        {
+          kind: "eval",
+          code,
+          ...(options?.topLevelErrorHandling === undefined
+            ? {}
+            : { topLevelErrorHandling: options.topLevelErrorHandling }),
+          ...(options?.printVisibleTopLevel === undefined
+            ? {}
+            : { printVisibleTopLevel: options.printVisibleTopLevel }),
+        },
         [],
         options?.timeoutMs ?? this.#options.timeoutMs,
       );
@@ -1123,6 +1179,7 @@ class WorkerSession implements NativRSession {
         },
         ...(this.#options.limits === undefined ? {} : { limits: this.#options.limits }),
         ...(this.#options.packages === undefined ? {} : { packages: this.#options.packages }),
+        systemPackageResources: STANDARD_SYSTEM_PACKAGE_RESOURCES,
         ...(this.#options.environmentVariables === undefined
           ? {}
           : { environmentVariables: this.#options.environmentVariables }),
@@ -1493,11 +1550,24 @@ function moduleRelativeUrl(relativePath: string): URL {
   return new URL(relativePath, import.meta.url);
 }
 
+function validateEvalOptions(options?: EvalOptions): void {
+  if (options?.topLevelErrorHandling !== undefined && options.topLevelErrorHandling !== "option") {
+    throw new TypeError('topLevelErrorHandling must be "option" when provided.');
+  }
+  if (
+    options?.printVisibleTopLevel !== undefined &&
+    typeof options.printVisibleTopLevel !== "boolean"
+  ) {
+    throw new TypeError("printVisibleTopLevel must be a boolean when provided.");
+  }
+}
+
 function publicResult(result: WireEvaluationResult): PublicEvaluationResult {
   return {
     value: snapshotToJs(result.raw),
     raw: result.raw,
     visible: result.visible,
+    topLevelErrors: result.topLevelErrors ?? [],
     warnings: result.warnings,
     output: result.output ?? [],
     dataViews: result.dataViews ?? [],

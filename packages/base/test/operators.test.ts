@@ -23,13 +23,60 @@ function context(): EvaluationContext {
 }
 
 describe("JavaScript reference vector operators", () => {
+  it("matches observed real cubic and quartic rounding without changing other powers", () => {
+    const x = doubleVector([0.1741, 0.3, 0.0641, -0.1741, 1.123456789]);
+    const expectations = [
+      [3, [0.005277112021, 0.027, 0.00026337472100000008, -0.005277112021, 1.4179767796223608]],
+      [
+        4,
+        [
+          0.00091874520285609997, 0.0080999999999999996, 1.6882319616100007e-5,
+          0.00091874520285609997, 1.5930356397110981,
+        ],
+      ],
+      [
+        5,
+        [
+          0.00015995353981724703, 0.0024299999999999994, 1.0821566873920103e-6,
+          -0.00015995353981724703, 1.7897067045523911,
+        ],
+      ],
+      [
+        -3,
+        [
+          189.49758807858362, 37.037037037037038, 3796.8716063680226, -189.49758807858362,
+          0.70523016622763213,
+        ],
+      ],
+    ] as const;
+    for (const [exponent, expected] of expectations) {
+      expect(
+        jsReferenceOperators.binary(context(), "^", x, doubleVector([exponent])),
+      ).toMatchObject({
+        type: "double",
+        values: new Float64Array(expected),
+      });
+    }
+    expect(
+      jsReferenceOperators.binary(
+        context(),
+        "^",
+        doubleVector([-0, Infinity, -Infinity, Number.NaN]),
+        integerVector([3]),
+      ),
+    ).toMatchObject({
+      type: "double",
+      values: new Float64Array([-0, Infinity, -Infinity, Number.NaN]),
+    });
+  });
+
   it("centralizes non-multiple recycling and emits exactly one warning", () => {
     const state = context();
     expect(recycledLength(state, 3, 2)).toBe(3);
     expect(state.warnings).toEqual([
       {
         code: "NRW1001",
-        message: "Longer object length is not a multiple of shorter object length.",
+        message: "longer object length is not a multiple of shorter object length",
       },
     ]);
   });
@@ -186,5 +233,53 @@ describe("JavaScript reference vector operators", () => {
     expect(() =>
       jsReferenceOperators.binary(context(), "%%", complexVector([1], [1]), integerVector([2])),
     ).toThrow(/Complex operation/u);
+  });
+
+  it("keeps complex integer powers exact at a negative real branch cut", () => {
+    const epsilon = Number.EPSILON;
+    const squared = jsReferenceOperators.binary(
+      context(),
+      "^",
+      complexVector([-1, -1, 0.5], [0, epsilon, epsilon]),
+      integerVector([2]),
+    );
+    expect(squared.type).toBe("complex");
+    if (squared.type !== "complex") return;
+    expect(squared.imaginary[0]).toBe(0);
+    expect((squared.imaginary[1] ?? 0) / epsilon).toBe(-2);
+    expect((squared.imaginary[2] ?? 0) / epsilon).toBe(1);
+
+    const squaredWithDoubleExponent = jsReferenceOperators.binary(
+      context(),
+      "^",
+      complexVector([-1, 0], [epsilon, 0]),
+      doubleVector([2.0]),
+    );
+    expect(squaredWithDoubleExponent.type).toBe("complex");
+    if (squaredWithDoubleExponent.type !== "complex") return;
+    expect((squaredWithDoubleExponent.imaginary[0] ?? 0) / epsilon).toBe(-2);
+    expect(squaredWithDoubleExponent.real[1]).toBe(0);
+    expect(squaredWithDoubleExponent.imaginary[1]).toBe(0);
+
+    const fractional = jsReferenceOperators.binary(
+      context(),
+      "^",
+      complexVector([-1], [0]),
+      doubleVector([0.5]),
+    );
+    expect(fractional).toMatchObject({ type: "complex" });
+    if (fractional.type !== "complex") return;
+    expect(fractional.imaginary[0]).toBeCloseTo(1);
+
+    const complexExponent = jsReferenceOperators.binary(
+      context(),
+      "^",
+      complexVector([1], [1]),
+      complexVector([1], [1]),
+    );
+    expect(complexExponent).toMatchObject({ type: "complex" });
+    if (complexExponent.type !== "complex") return;
+    expect(complexExponent.real[0]).toBeCloseTo(0.273957253830121);
+    expect(complexExponent.imaginary[0]).toBeCloseTo(0.583700758758615);
   });
 });

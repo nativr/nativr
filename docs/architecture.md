@@ -1,5 +1,16 @@
 # Architecture
 
+Builtin definitions can provide an explicit `s3DefaultImplementation` for `NextMethod` exhaustion.
+The evaluator invokes this implementation through the ordinary builtin call path without reentering
+class dispatch. Initially `c` opts in; ordinary `UseMethod` failures and other primitives retain
+their existing behavior.
+
+Core namespace environments are distinct from attached package environments. The base namespace
+shares the base binding table but parents the session global environment; core imports environments
+parent that namespace. `scripts/builtin-package-owners.mjs` generates and checks builtin owners from
+the clean-room public export inventory and supported-name manifest. No implementation bodies are
+inputs. Qualified exports retain an explicit graphics-to-base `plot` re-export.
+
 NativR executes a small R-compatible subset without GNU R:
 
 ```text
@@ -273,10 +284,17 @@ network access; and base `readLines()` performs bounded text decoding. Session w
 evaluator-owned namespace, so package resources cannot be mutated and no host path crosses the
 `base -> runtime` boundary.
 
+Small standard-package data resources follow the same virtual-file route. The `nativr` facade
+supplies independently sourced text at session initialization, including the UCI Iris resource for
+the static `datasets` namespace. Inline and Worker sessions receive the same bounded immutable
+resource table; generic `utils::data()` discovers it without a dataset-specific runtime branch.
+
 Executable package text and immutable resources have separate admission budgets. DESCRIPTION,
 NAMESPACE, and `R/*.R` consume the parser-facing source-unit limit; resource count remains bounded
-and decoded resource bytes have a fixed 64 MiB aggregate ceiling. Header/data payload size therefore
-cannot silently raise the executable-code parsing budget.
+and decoded resource bytes use a separate profile-selected aggregate ceiling (192 MiB by default).
+The facade checks that ceiling before a bundle crosses the Worker boundary, and the runtime host
+checks it again. Header/data payload size therefore cannot silently raise the executable-code
+parsing budget.
 
 The build tool additionally maps standard source-package `tools/**` files into a reserved hidden
 resource root. The evaluator exposes that root through scoped builtin state only while it evaluates
@@ -441,3 +459,23 @@ pages with no examples. `utils::help()` resolves that immutable index or a regis
 then `print.help_files_with_topic()` writes text to the bounded output journal or creates escaped,
 script-free HTML through the existing session-file and `browseURL()` path. No Rd parser, GNU help
 database, package-specific adapter, network client, or DOM object enters the Worker runtime.
+
+The global environment points to the live search-path environment chain. Each source package
+attachment owns an export environment distinct from its namespace, shared by lexical lookup and
+`as.environment()` reflection. Failed attachment splices that environment out of the chain while
+retaining other attachments and escaped references. Reset constructs a fresh chain. There is no
+second flattened attached-export table.
+
+Static builtin definitions may mark bindings private and register S3 methods against base generics.
+Private bindings remain available internally without becoming namespace exports or attached
+search-path bindings. Reset reinstalls these registrations. Subscript dispatch passes lazy original
+arguments, including missing indices, to registered or ordinary S3 methods.
+
+StringLiteral AST nodes may carry optional exact bytes and an encoding mark for source byte escapes.
+The parser owns decoding and diagnostics; runtime literal conversion preserves payloads without
+importing parser internals. Language reconstruction carries the same optional metadata.
+
+Summary builtins share a base-owned wrapper that forces their inputs and requests grouped S3
+dispatch. The runtime owns class-by-class method lookup, group identity, method-frame metadata and
+continuation. Primitive fallback invokes a definition's default implementation without redispatch.
+Metadata is installed only in the selected closure's frame, not in unrelated nested calls.

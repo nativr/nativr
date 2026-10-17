@@ -4,11 +4,16 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const source = path.join(root, "packages", "parser", "assets");
+const prebuild = process.argv.includes("--prebuild");
 const targets = [
   path.join(root, "packages", "nativr", "src", "assets"),
-  path.join(root, "packages", "nativr", "dist"),
-  path.join(root, "packages", "nativr", "dist", "assets"),
   path.join(root, "apps", "playground", "public", "assets"),
+  ...(prebuild
+    ? []
+    : [
+        path.join(root, "packages", "nativr", "dist"),
+        path.join(root, "packages", "nativr", "dist", "assets"),
+      ]),
 ];
 
 for (const target of targets) {

@@ -38,6 +38,7 @@
     "conformance:r:v2": "node scripts/run-r-conformance-v2.mjs",
     "size": "node scripts/check-bundle-size.mjs",
     "pack:smoke": "node scripts/smoke-pack.mjs",
+    "package:check": "node scripts/package-check.mjs",
     "benchmark": "node scripts/benchmark.mjs",
     "research:usage": "node scripts/package-usage.mjs",
     "research:usage:check": "node scripts/package-usage.mjs --check",

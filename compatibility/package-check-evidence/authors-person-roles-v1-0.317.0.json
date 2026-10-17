@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "observations": [
+    {
+      "package": {
+        "name": "abind",
+        "version": "1.4-8",
+        "license": "MIT + file LICENSE"
+      },
+      "provenance": {
+        "sourceSha256": "264a051b523ceae1795a0879e7768949ea55c586ac8db0adf1f5ebeddd2623e1",
+        "artifactSha256": "e9862a710e03ef978409dbd3c4138dd4cdf96b0584c6f228ffe2b42d1e0e9dee",
+        "oracle": {
+          "implementation": "GNU R",
+          "version": "4.6.1"
+        },
+        "semanticProfile": "0.317.0",
+        "capabilitySha256": "79b7bb51c1efd623fad9955419c7a8244945556c4a539ecc82755972e6c2848d",
+        "runtimeLimits": {
+          "maxSteps": 300000000,
+          "maxCallDepth": 200,
+          "maxVectorLength": 50000000,
+          "maxOutputBytes": 32000000,
+          "maxPackageResourceBytes": 268435456
+        }
+      },
+      "rawReportSha256": "7e3f9f32a3058b0b0662d053b7c231d133d28b627353a65b55113d6664773f12",
+      "authorsObservation": {
+        "schemaVersion": 1,
+        "policy": "authors-person-roles-v1",
+        "sourceSha256": "b63c91b45004d1e46e4af6221eded0c110c023f87ddc38993f15399b4a2e040e",
+        "actual": {
+          "status": "completed",
+          "state": "1|1|1"
+        },
+        "expected": {
+          "status": "completed",
+          "state": "1|1|1"
+        },
+        "outcome": "match",
+        "valid": true,
+        "limitations": [
+          "Checks person shape, a named role-bearing author, and exactly one named cre with a syntactically bounded first email; this does not validate all person fields, RFC email syntax, deliverability, or full DESCRIPTION metadata.",
+          "Formatting of derived Author/Maintainer text, warning equivalence, and conflicts with explicit fields remain unexecuted. Failed evaluation is incomplete evidence, not proof of invalid metadata."
+        ]
+      },
+      "metadataStage": {
+        "id": "metadata-dependencies",
+        "status": "unexecuted",
+        "reason": "DESCRIPTION structural results and declared dependency version lookups are recorded; full metadata and undeclared dependency checks remain unexecuted.",
+        "discovered": [
+          "DESCRIPTION:full-validation",
+          "DESCRIPTION:Authors@R:person-roles",
+          "dependencies:undeclared-and-transitive",
+          "DESCRIPTION:dcf-record",
+          "DESCRIPTION:required:Package",
+          "DESCRIPTION:required:Version",
+          "DESCRIPTION:required:Title",
+          "DESCRIPTION:required:Description",
+          "DESCRIPTION:required:License",
+          "DESCRIPTION:required:Author",
+          "DESCRIPTION:required:Maintainer",
+          "DESCRIPTION:package-name",
+          "DESCRIPTION:version",
+          "DESCRIPTION:dependency-syntax:Depends",
+          "DESCRIPTION:dependency-syntax:Imports",
+          "DESCRIPTION:Depends:R:0",
+          "DESCRIPTION:Imports:methods:1",
+          "DESCRIPTION:Imports:utils:2"
+        ],
+        "executed": [
+          "DESCRIPTION:Authors@R:person-roles",
+          "DESCRIPTION:dcf-record",
+          "DESCRIPTION:required:Package",
+          "DESCRIPTION:required:Version",
+          "DESCRIPTION:required:Title",
+          "DESCRIPTION:required:Description",
+          "DESCRIPTION:required:License",
+          "DESCRIPTION:required:Author",
+          "DESCRIPTION:required:Maintainer",
+          "DESCRIPTION:package-name",
+          "DESCRIPTION:version",
+          "DESCRIPTION:dependency-syntax:Depends",
+          "DESCRIPTION:dependency-syntax:Imports",
+          "DESCRIPTION:Depends:R:0",
+          "DESCRIPTION:Imports:methods:1",
+          "DESCRIPTION:Imports:utils:2"
+        ]
+      },
+      "p7Eligible": false
+    },
+    {
+      "package": {
+        "name": "numDeriv",
+        "version": "2016.8-1.1",
+        "license": "GPL-2"
+      },
+      "provenance": {
+        "sourceSha256": "d8c4d19ff9aeb31b0c628bd4a16378e51c1c9a3813b525469a31fe89af00b345",
+        "artifactSha256": "0a5bac977e0b258bc22dedf41adc2c48a0eaa8e197f48dfefede7ad0f3981e45",
+        "oracle": {
+          "implementation": "GNU R",
+          "version": "4.6.1"
+        },
+        "semanticProfile": "0.317.0",
+        "capabilitySha256": "79b7bb51c1efd623fad9955419c7a8244945556c4a539ecc82755972e6c2848d",
+        "runtimeLimits": {
+          "maxSteps": 300000000,
+          "maxCallDepth": 200,
+          "maxVectorLength": 50000000,
+          "maxOutputBytes": 32000000,
+          "maxPackageResourceBytes": 268435456
+        }
+      },
+      "rawReportSha256": "7ad0d2ba2e190b9017927650fac19b36364439cc2cb047059096cd171e844056",
+      "authorsObservation": null,
+      "metadataStage": {
+        "id": "metadata-dependencies",
+        "status": "unexecuted",
+        "reason": "DESCRIPTION structural results and declared dependency version lookups are recorded; full metadata and undeclared dependency checks remain unexecuted.",
+        "discovered": [
+          "DESCRIPTION:full-validation",
+          "dependencies:undeclared-and-transitive",
+          "DESCRIPTION:dcf-record",
+          "DESCRIPTION:required:Package",
+          "DESCRIPTION:required:Version",
+          "DESCRIPTION:required:Title",
+          "DESCRIPTION:required:Description",
+          "DESCRIPTION:required:License",
+          "DESCRIPTION:required:Author",
+          "DESCRIPTION:required:Maintainer",
+          "DESCRIPTION:package-name",
+          "DESCRIPTION:version",
+          "DESCRIPTION:dependency-syntax:Depends",
+          "DESCRIPTION:Depends:R:0"
+        ],
+        "executed": [
+          "DESCRIPTION:dcf-record",
+          "DESCRIPTION:required:Package",
+          "DESCRIPTION:required:Version",
+          "DESCRIPTION:required:Title",
+          "DESCRIPTION:required:Description",
+          "DESCRIPTION:required:License",
+          "DESCRIPTION:required:Author",
+          "DESCRIPTION:required:Maintainer",
+          "DESCRIPTION:package-name",
+          "DESCRIPTION:version",
+          "DESCRIPTION:dependency-syntax:Depends",
+          "DESCRIPTION:Depends:R:0"
+        ]
+      },
+      "p7Eligible": false
+    }
+  ]
+}

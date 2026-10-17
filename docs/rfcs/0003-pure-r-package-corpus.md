@@ -78,6 +78,77 @@ immutable-resource budgets, list/factor `%s` formatting, `strrep()`, `length<-`,
 usage snapshot leaves `BH 1.90.0-1` as the sole dependency-free, `NeedsCompilation: no` untouched
 candidate; only its metadata and source-archive digest are admitted as the next P0 holdout.
 
+The ninth holdout rotation evaluates `BH 1.90.0-1` only after freezing official metadata and GNU R
+black-box resource counts and sizes. It reaches P3 unchanged through generic large-resource
+admission, prompt archive-limit rejection, standard `exportPattern`, namespace loading, attachment,
+and exact immutable header discovery. P4 is not applicable because BH exports no R functions, and
+downstream C++ compilation is not claimed. No untouched candidate remains in the committed top-100
+snapshot whose complete runtime closure is already available and declares no native compilation; the
+holdout partition may therefore be empty until a dependency-closure snapshot admits the next
+candidate.
+
+The tenth holdout admission extends beyond the exhausted committed top-100 download snapshot.
+`Formula 1.2-6` is selected for its documented multipart-formula and model-frame surface and broad
+reverse-import reach. Its [CRAN release metadata](https://cran.r-project.org/package=Formula)
+declares only `R (>= 2.0.0)` and `stats` as required dependencies and `NeedsCompilation: no`; the
+official `PACKAGES` index reports MD5 `230a93c95eaabdfc7a2e958efbbe25db`. A transient download of
+the canonical source archive matched that MD5 and pinned SHA-256
+`7e611ac371c045e100a6205d92fe5104001942673798f970290fea12e33bfd37`. The archive was not opened, and
+neither its source nor runtime behavior guided this admission. `Formula` remains an unevaluated P0
+holdout with no first blocker until its scheduled evaluation.
+
+A build-time metadata preflight now resolves a source-repository dependency closure without
+downloading archives. It records dependency-first order, the repository-index SHA-256, and explicit
+metadata blockers, while marking source archives unverified. The `lifecycle` candidate's closure
+encounters `cli` and `rlang` native-compilation declarations in a pinned offline fixture. This
+planning result does not admit a new P0 package, change partitions, or replace archive and artifact
+digests.
+
+The development package `labeling 0.4.3` now reaches P5: its one applicable Rd example executes
+unchanged through the generic data loader and browser graphics, using independently sourced standard
+Iris data. Its pinned source archive has no `tests/` directory; an empty test inventory alone does
+not establish P6. Package-check behavior remains unevaluated. The separate `extended.figures(2)`
+probe executes but still exposes an incomplete full `par()` return. The generic build-time test
+runner inventories unchanged top-level `tests/*.R` scripts and records their first execution
+failure. A generic digest-checked Rd runner completes all four applicable `numDeriv 2016.8-1.1`
+examples, establishing P5. A separate finite 300-million-step/50-million-vector opt-in profile
+executes all seven unchanged direct-test scripts with zero warnings, establishing P6. Exact GNU R
+4.6.1 also exits successfully for all seven. The archive has no `.Rout.save` files; the first
+`BWeg.R` output matches all 170 lines after the host-specific `Sys.info` header and GNU R bytecode
+address are omitted under profile 0.301. Closure rendering, nested list paths, and attributes close
+the former display gaps. These diagnostic omissions do not establish raw output fidelity. Explicit
+browser display adaptations, complete output fidelity, and `R CMD check` behavior remain a P7
+blocker. The separate pinned abind probe now executes all five unchanged direct-test scripts in
+fresh sessions. Opt-in top-level continuation records the three expected errors from `adrop.R` and
+`afill.R`; all five saved outputs match after generic prompt and whitespace normalization. Generic
+deparsing, array slices, bind names, condition call traces, and visible parenthesized assignments
+close the comparisons, establishing P6. Byte-level output identity and remaining `R CMD check`
+stages are unverified at P7.
+
+Profile 0.302 adds strict fresh-session native-oracle comparisons with explicit stage inventories.
+All ten abind test/example streams match after independently probed Windows text transport decoding;
+two of eleven numDeriv streams match, and nine retain host-display or numerical differences. No
+whitespace or numeric tolerance is applied. Compact evidence is stored under
+`compatibility/package-check-evidence/`. Missing condition/order observations and applicable
+unexecuted check stages keep both packages at P6.
+
+Profile 0.303 reruns both packages after numeric report and output formatting improvements. Complete
+stream counts remain ten of ten for abind and two of eleven for numDeriv; several numDeriv first
+differences occur later after earlier formatting differences close. Both historical and new compact
+reports retain exact numeric tokens. Full condition/order evidence and unexecuted stages remain
+required before either package can reach P7.
+
+Profile 0.304 captures ordered condition classes, messages, calls and returning error-handler
+evidence through global calling handlers. Abind retains ten matching output streams, but only nine
+full comparisons match: `afill.R` has a newly observable attributed replacement-call difference.
+Observer completeness is distinct from condition equality. Cross-stream ordering and unexecuted
+check stages still prevent P7.
+
+Profile 0.305 preserves embedded-value attributes in reflected calls and closes the observed abind
+condition-call gap. All ten full comparisons now match, including ordered condition records.
+NumDeriv completes eleven inputs with two matches and nine differences. Cross-stream order and
+unexecuted stages still prevent P7; the development/regression/holdout partitions are unchanged.
+
 ## Validation tiers
 
 | Tier | Required evidence                              |

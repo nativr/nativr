@@ -20,11 +20,22 @@ Name overlap is not behavioral evidence. A matching name remains incomplete unti
 differential tests cover its argument matching, types, values, attributes, warnings, errors,
 visibility, side effects, reference identity, and relevant platform behavior.
 
+The recursive Oracle v2 ledger links registered base bindings to exact cases; the current counts are
+generated into `compatibility/status.json` (profile 0.352: 73 bindings across 126 cases). Each link
+is validated against the capability manifest and the GNU R callable surface, and a live R 4.6.1 run
+checks that each linked call is reached and that substituting another return value changes the
+observation on both sides. The generated status lists the case IDs for every linked binding. This is
+evidence for those particular observations; the linked bindings remain incomplete against the full
+behavior above.
+
 The committed black-box snapshot is
 [`compatibility/gnu-r/surface.json`](../compatibility/gnu-r/surface.json), and the derived report is
 [`name-coverage.json`](../compatibility/gnu-r/name-coverage.json). `pnpm compatibility:check`
 prevents the report from drifting from NativR's capability manifest. The name inventory records the
 exact GNU R version under which it was collected; it does not redefine the normative 4.6.1 target.
+The current snapshot was collected from the official GNU R 4.6.1 Windows release: 2,735 exports
+across seven core namespaces and 2,522 callable names. NativR's current overlap is generated into
+`compatibility/status.json` (733 names at profile 0.352); the overlap is inventory evidence only.
 
 ## Required compatibility domains
 
@@ -41,7 +52,7 @@ exact GNU R version under which it was collected; it does not redefine the norma
 | Numeric runtime    | Complex arithmetic, special functions, linear algebra, FFT, distributions, optimizers, integration, and deterministic tolerances                                                                       | Decimal and upward-integer rounding, numeric interpolation, bounded `nlm` and general-purpose `optim` BFGS minimization with analytic/numerical derivatives and scaling, real/complex trigonometry through `sin`/`cos`/`tan`, real factorials through direct products and Lanczos gamma approximation, logarithms/exponentials, Cartesian outer products, logistic, normal, and central Student-t probabilities/quantiles, gamma and central/bounded non-central beta generation, vectorized binomial densities, all nine sample-quantile algorithms, posterior-grid probability points, direct-grid Gaussian density estimation, pivoted/unpivoted real Cholesky factors, real symmetric and bounded small asymmetric eigendecomposition, matrix standardization, formula-driven and direct `lsfit` least-squares fitting plus covariance, finite-data clustering, direct/radix-2/Bluestein convolution, planar convex hulls, session RNG-kind selection, and fixed-seed `sample.int` replacement/no-replacement, hash, weighted, and large-population paths have missingness, non-finite, warning, distribution, optimization, geometry, signal, clustering, rank-deficiency, inference, tail, and metadata evidence; the broader numeric domain remains incomplete |
 | Data and time      | Factors, frames, arrays, time zones, locales, encodings, connections, serialization, and native data formats                                                                                           | Column-major arrays, coordinate-matrix frames, frame extension, model-frame construction with treatment-coded factors, numeric data-frame/matrix standardization, grouped factor scoring/reordering, bounded delimited-table parsing/writing with type conversion, `lag`, `start`, `end`, and `time` regular-series coordinates, atomic/matrix/frame/regular-series `na.omit`, UTC/GMT POSIXlt calendar decomposition, inherited Date/POSIXt `weekdays` extraction with deterministic C-locale names, numeric `cut` factor construction, and deterministic C/Italian/US monetary locale-convention profiles have differential evidence; domain incomplete                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | I/O and platform   | Files, URLs, compression, processes, environment variables, capabilities, and browser-safe host adapters                                                                                               | Deterministic non-interactive browser/Worker mode, GNU R-shaped host-capability selection, evaluator-owned locale query/mutation, truthful classed session information, transferable graphics commands, bounded session-local text/raw-binary reads, lazy explicit-host URL input, a PNG file device, and GNU R XDR v2/v3 serialization have evidence through `serialize`/`unserialize`, `saveRDS`/`readRDS`/`infoRDS`, `save`/`load`, gzip, virtual files/connections, raw `readBin`, and Worker rendering; native host devices, profiling, ambient/native networking, arbitrary host locales, host files, other compression/connection classes, typed binary I/O, processes, environment access, broader serialized graphs, persistence, and broader host-adapter behavior remain incomplete                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| Package execution  | Namespace loading, lazy data, S3/S4 registration, bytecode-equivalent semantics, package resources, and R CMD check behavior                                                                           | Standard pure-R source directories and tarballs have build-time repository resolution, bounded archive inspection, deterministic artifacts, dependency/version checks, Collate and portable encoding handling, immutable resources, installed example/vignette indexes, isolated namespaces, imports/exports, `::`/`:::`, qualified S3 registration, lifecycle hooks, attachment, package source/text data plus XDR/gzip `.rda` and `R/sysdata.rda`, Worker transport, and reset/reload. The pinned package corpus records twenty-one unchanged P4 execution paths and one separate unevaluated holdout; source-archive and normalized-artifact digests are distinct evidence. `labeling 0.4.3` records `axis(xlab=)` as its first P5 blocker. Installed `.rdx`/`.rdb` lazy databases, complete `tools`, install-time package resource transformations, raw development-vignette building, broader namespace directives, native code, complete S4 namespace behavior, bytecode-equivalent behavior, R CMD check, universal package execution, and the broader domain remain incomplete                                                                                                                                                                                |
+| Package execution  | Namespace loading, lazy data, S3/S4 registration, bytecode-equivalent semantics, package resources, and R CMD check behavior                                                                           | Standard pure-R source directories and tarballs have build-time repository resolution, bounded archive inspection, deterministic artifacts, dependency/version checks, Collate and portable encoding handling, immutable resources, installed example/vignette indexes, isolated namespaces, imports/exports, `::`/`:::`, qualified S3 registration, lifecycle hooks, attachment, package source/text data plus XDR/gzip `.rda` and `R/sysdata.rda`, Worker transport, and reset/reload. The pinned package corpus records 18 packages at P4, labeling, rprojroot, and R6 at P5, numDeriv and abind at P6, BH at P3, and Formula as an unevaluated P0 holdout; source-archive and normalized-artifact digests are distinct evidence. `labeling 0.4.3` now reaches P5 through its sole Rd example with a separately sourced standard `iris` dataset; its full `par()` return shape remains incomplete. Installed `.rdx`/`.rdb` lazy databases, complete `tools`, install-time package resource transformations, raw development-vignette building, broader namespace directives, native code, complete S4 namespace behavior, bytecode-equivalent behavior, R CMD check, universal package execution, and the broader domain remain incomplete                         |
 | Graphics           | Devices, graphics state, base graphics, colors, fonts, and browser rendering equivalence                                                                                                               | Evidence covers common session-local `graphics::par` query/update/restore semantics, a numbered browser/PNG `dev.cur`/`dev.list`/`dev.off`/`graphics.off` lifecycle, standards-compliant RGBA PNG output, the `graphics::pairs` package-method extension point, complete ordered GNU R 4.6.0 named-color catalog and distinct subset, bounded linear RGB/Lab `colorRampPalette`, polar CIE-LUV `hcl`, deterministic palettes, owned page/window state, bounded linear `axis` ticks/labels, raster/segment/plot primitives, command buffering, display-list replay, Worker transfer, and Canvas rendering; remaining parameters, non-PNG devices, complete device switching, logarithmic/date axes, font metrics, external/cross-device formats, layout identity, and rendering equivalence remain incomplete                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 
 The package-I/O increment adds `readLines`, `writeLines`, and `Sys.sleep`, raising name overlap to
@@ -324,6 +335,13 @@ annotations, and legends through the existing bounded Worker graphics journal. L
 positive density hatching, exact device typography/margins, and the full graphical-parameter surface
 remain declared gaps.
 
+Language subset 0.291 adds GNU R 4.6.1 differential cases for inherited and per-call `xaxt`/`yaxt`
+on `barplot` and `axis`, plus browser graphics checks for vertical and horizontal category/value
+axes. The four accepted styles are `s`, `n`, `l`, and `t`; `n` suppresses drawing, while the other
+three produced identical GNU R SVGs on the measured paths. This lets unchanged
+`labeling::extended.figures(2)` complete. Its 43-entry NativR `par()` return still differs from GNU
+R's 72-entry full graphics-state snapshot and is tracked separately.
+
 The rank-344 increment adds GNU R 4.6 black-box and browser-host evidence for RColorBrewer's ten
 measured `devAskNewPage(ask = TRUE)` calls. Exact formals, visible queries, invisible updates that
 return the previous flag, first-element logical coercion, invalid-value errors, per-device state,
@@ -509,9 +527,9 @@ non-dispatching subset primitives. The unchanged R6 proof now also exercises pri
 active read/write field; viridisLite exercises generic arithmetic attribute propagation and a
 256-anchor Lab spline through `grDevices::colorRamp`; RColorBrewer exercises exact trailing
 `data.frame()` controls, explicit row names, metadata subsetting, palette recursion, and warnings.
-Labeling reaches P4 through nine unchanged algorithms and records `axis(xlab=)` as the first blocker
-on its deeper figures path. These tiered package/version proofs are not universal package
-compatibility.
+Labeling reaches P4 through nine unchanged algorithms; its deeper figures path now passes
+`axis(xlab=)` and records `barplot(xaxt=)` as the first blocker under a finite 64 MiB output limit.
+These tiered package/version proofs are not universal package compatibility.
 
 This metaprogramming/package increment adds eight overlapping GNU R names and raises current name
 overlap to 531 of 2,522. Each added behavior has checked-in differential evidence; the unchanged
@@ -1199,5 +1217,150 @@ and adds GNU R-observed list/factor `%s` formatting, `strrep()`, `length<-`, `an
 `make.unique()`. The four new GNU R names raise current overlap to 695 of 2,522; this remains name
 inventory, not behavioral completion. Digest-pinned unchanged cpp11 0.5.5 and otel 0.2.0 reach P4
 through public header-vendoring and default no-op telemetry APIs. cpp11 compilation, real telemetry
-exporters, every export, P5-P7, and arbitrary-package compatibility remain unclaimed. Usage-ranked
-BH 1.90.0-1 is the sole untouched P0 holdout.
+exporters, every export, P5-P7, and arbitrary-package compatibility remain unclaimed. At that
+rotation boundary, BH 1.90.0-1 was the sole untouched P0 holdout.
+
+## Ninth source-blind package rotation
+
+Language subset 0.288 adds prompt archive-limit rejection, default bounded admission of 16,384 files
+and 192 MiB of decoded package resources, pre-Worker resource validation, and standard
+`exportPattern()` resolution over loaded local namespace bindings. Digest-pinned unchanged BH
+1.90.0-1 loads and attaches at P3 with zero exports and the GNU R-observed 12,554 headers totaling
+128,040,580 bytes. P4 is not applicable because BH has no R functions; downstream Boost C++
+compilation remains outside this evidence. The committed top-100 snapshot has no remaining untouched
+candidate whose complete runtime closure is already available and declares no native compilation.
+
+## NAMESPACE export-pattern depth
+
+Language subset 0.289 adds deterministic C-locale POSIX character classes to package
+`exportPattern()` matching. An unchanged namespace pattern can now export matching local bindings
+through `pkg::name`, namespace queries, and attachment; malformed patterns and unsupported collating
+or equivalence constructs fail explicitly. The package integration fixture is executable evidence
+for this loader behavior. Local GNU R 4.6.0 is an advisory black-box oracle for POSIX class
+matching; GNU R 4.6.1 remains the normative release gate. This does not claim full
+regular-expression or arbitrary NAMESPACE equivalence.
+
+## Axis annotation depth
+
+Language subset 0.290 adds GNU R-observed forcing and silent non-rendering of `xlab`, `ylab`,
+`main`, and `sub` when passed through `graphics::axis(...)`. The checked-in differential case and
+unchanged labeling source advance `extended.figures(2)` past its former `axis(xlab=)` blocker.
+
+## Barplot axis styles
+
+Language subset 0.291 closes the next `extended.figures(2)` exception with bounded `xaxt`/`yaxt`
+semantics in `barplot`, `axis`, and session `par()` state. The unchanged function now completes
+under a finite 64 MiB package-test output limit, though its returned full `par()` list remains 47
+entries on the browser event device (48 on an explicit PDF/PNG device) versus GNU R 4.6.1's 72.
+
+## Device-backed graphics parameters
+
+Language subset 0.294 adds measured `par()` device state: `ask` and `devAskNewPage()` share a
+per-device value, `usr` updates the active coordinate window, and `new = TRUE` retains the current
+page for an overlay `plot.new()`. Read-only `page` reports that overlay state, while `din` derives
+physical inches for explicit PDF and PNG devices from their owned geometry and resolution. The
+browser event device has no fixed inch dimensions; the remaining graphical-parameter surface and
+multi-figure layout are still incomplete.
+
+## Standard data and package example depth
+
+Language subset 0.292 supplies an independently sourced Iris text resource through the generic
+static core-package resource path and applies GNU R's factor conversion for package text data. The
+sole applicable `labeling 0.4.3` Rd example now executes through `data(iris)` and browser graphics,
+so the package reaches P5. Package tests and check behavior remain unevaluated. A metadata-only
+repository preflight reports dependency-first closures and declared native, version,
+missing-package, and OS blockers without fetching archives or claiming P0 evidence.
+
+## Package P5 and direct-test depth
+
+Language subset 0.295 adds browser-owned `Sys.info()` shape, measured `diag<-` and `prod()` paths,
+literal `$...` matched-call access with true pairlist dots, matrix/data-frame round-tripping,
+`array(data)` default dimensions, `dimnames(NULL)`, base `LETTERS`, and positional short-call
+`deparse(expr, width.cutoff)` acceptance. A digest-checked generic Rd runner completes all four
+applicable `numDeriv 2016.8-1.1` examples, raising it to P5. Cartesian positive-integer complex
+power clears `tests/CSD.R`'s previously failing complex-gradient assertion. A measured finite
+300-million-step/50-million-vector opt-in profile completes all seven unchanged numDeriv test
+scripts, including the 273,659,236-step `CSD.R`; generic `asin()`, `acos()`, and `atan()` support
+clears the final `trig01.R` test blocker. This establishes P6. Exact GNU R 4.6.1 also runs the seven
+scripts successfully. Profile 0.301 matches all 170 `BWeg.R` output lines from `analytic D:` onward
+after omitting the host-specific `Sys.info` header and GNU R bytecode-address label. Closure bodies,
+nested list paths, and class attributes now match. These diagnostic omissions do not establish raw
+output fidelity; explicit browser adaptations and `R CMD check` remain P7 work. Abind reaches P6
+after all five unchanged direct-test scripts and normalized saved-output comparisons pass. NumDeriv
+has no P7 evidence. `Formula 1.2-6` is the current source-blind P0 holdout.
+
+Language subset 0.296 adds R-observed `is.primitive()` classification, pairlist inputs across the
+apply family, preserved replacement-call syntax through S3 dispatch, constructed subset replacement
+calls, and bounded explicit `match.call(definition=, call=)` reconstruction.
+
+Language subset 0.297 quotes missing arguments as empty symbols, including inside replacement-S3
+matched-call dots, with GNU R 4.6.1 conformance evidence. The digest-checked P5 runner completes all
+five applicable `abind` topics; at that stage its direct-test run stopped before top-level error
+continuation in `tests/adrop.R`. Pinned `assertthat` inventories 11 topics and 12 runnable blocks;
+seven topics complete after generic partial control matching, classed-condition dispatch, builtin
+`match.call`, and virtual `file.access` semantics. `man/not_empty.Rd` is the first P5 blocker
+because the standard `mtcars` dataset is unavailable. Broader argument-matching and dataset
+compatibility remain unclaimed.
+
+Language subset 0.298 added opt-in top-level continuation under a callable `options(error=)`
+handler, structured handled errors, visible-expression printing, nested NULL/name replacement,
+first-class constructed `[` calls, one-/two-dimensional array dimname display, and GNU R-observed
+inverse trigonometric numeric and complex behavior. The digest-checked abind probe now executes all
+five direct-test scripts in fresh sessions, including three expected handled errors. At that stage
+two of five normalized saved outputs matched. Language subset 0.299 closes the remaining comparisons
+through operator deparsing, retained parenthesis calls and visibility, atomic array slices, bind
+dimension names, preserved warning/error calls, and continued-error call traces. All five saved
+outputs now match after generic prompt and whitespace normalization, establishing P6 for abind.
+Byte-level output identity and the remaining `R CMD check` stages are still unverified at P7.
+
+Profile 0.300 adds caller-local S3 lookup, separately retained replacement RHS syntax, real
+cubic/quartic rounding, and width-aware atomic/matrix printing. Recursive replacement cases compare
+the original syntax and values observed inside active call frames; raw escaped GNU R promises are
+explicitly rejected by the observer. A versioned saved-output comparator reports bounded differences
+without treating whitespace normalization as byte-level package-check evidence. Nightly conformance
+CI selects all six existing opt-in corpus test files, preserving the source-blind Formula holdout.
+
+Profile 0.302 adds array/table axis headings and zero-extent table display with exact GNU R
+evidence. Its stricter package-check runner compares fresh sessions, preserves raw streams and stage
+inventories, and applies only independently verified native text transport decoding. All ten abind
+test/example streams match; numDeriv completes eleven entries but only two streams match exactly.
+Numerical and host-display differences, incomplete condition/order evidence, and unexecuted
+package-check stages remain explicit blockers. Both packages remain P6.
+
+Profile 0.303 adds numeric `all.equal` reporting and shared `format`/`cat` decimal controls through
+independently authored GNU R 4.6.1 observations. Four new recursive cases preserve unrounded error
+attributes, lazy callback effects, scale/count controls, array metadata, and stdout/file visibility.
+Fresh package comparisons keep all ten abind outputs matching. NumDeriv's earlier raw-precision
+display differences close, exposing later numerical differences, but its complete matching-output
+count remains two of eleven. Historical and current compact diagnostics retain exact numeric tokens;
+neither package advances beyond P6.
+
+Profile 0.304 adds `conditionCall` and generic condition accessor dispatch, with exact recursive
+value/visibility evidence. Ordered package-condition observation now captures all three abind
+handled errors. All ten output streams match, while nine full comparisons match: `afill.R` exposes
+attributes omitted from an embedded replacement value in its condition call. This is new evidence of
+an existing gap, not P7 closure; cross-stream order and remaining check stages remain unverified.
+
+Profile 0.305 closes that attributed-call gap through reusable embedded-value conversion. Names,
+ordered nested attributes and array metadata have independent exact conformance cases; diagnostic
+error display remains distinct from the full reflected condition call. All ten abind output and
+ordered condition comparisons match. NumDeriv retains two matches and nine differences across eleven
+completed inputs. Both packages remain P6 pending cross-stream order and further checks.
+
+Profile 0.301 adds structural closure `deparse`/`deparse1` and printing, cutoff-aware control-flow
+layout, ordered closure attributes and environment labels, and nested list paths and attributes. S3
+registry dispatch now uses the generic definition's top environment; registration still writes to
+the immediate definition environment. Exact GNU R cases cover ordinary and package top environments,
+caller precedence, and `NextMethod`. Recursive Oracle v2 cases compare full closure formals/body
+graphs and print visibility. Source retention, advanced deparse controls, and distinct static
+core-namespace identities remain explicit gaps.
+
+A digest-checked `rprojroot 2.1.1` P5 probe inventories five Rd topics and executes both
+default-applicable blocks unchanged; the remaining topics contain only excluded `\\dontrun` blocks.
+Its `tests/testthat.R` entrypoint stops at the unavailable `testthat` dependency before any nested
+test can run. The package reaches P5, with P6/P7 unclaimed.
+
+The pinned `R6 2.6.1` archive also reaches P5: both default-applicable Rd topics execute unchanged
+through the installed package source. Its direct-test entrypoint likewise requires `testthat`,
+leaving fifteen nested test files unexecuted. This is executable package-depth evidence, not a claim
+about arbitrary R6 programs or P6/P7 package checks.

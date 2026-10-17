@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { format } from "prettier";
 
 import prettierOptions from "../prettier.config.mjs";
+import { collectOracleV2BindingEvidence } from "./lib/oracle-v2-binding-evidence.mjs";
 
 const root = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const statusPath = path.join(root, "compatibility", "status.json");
@@ -18,15 +19,22 @@ const profiles = JSON.parse(
 const names = JSON.parse(
   await readFile(path.join(root, "compatibility", "gnu-r", "name-coverage.json"), "utf8"),
 );
+const surface = JSON.parse(
+  await readFile(path.join(root, "compatibility", "gnu-r", "surface.json"), "utf8"),
+);
 const corpus = JSON.parse(
   await readFile(path.join(root, "compatibility", "package-corpus.json"), "utf8"),
 );
 const foundation = JSON.parse(
   await readFile(path.join(root, "conformance", "cases", "foundation.json"), "utf8"),
 );
+const packageLoader = JSON.parse(
+  await readFile(path.join(root, "conformance", "cases", "package-loader.json"), "utf8"),
+);
 const oracleV2 = JSON.parse(
   await readFile(path.join(root, "conformance", "cases", "oracle-v2.json"), "utf8"),
 );
+const recursiveBindingEvidence = collectOracleV2BindingEvidence(oracleV2, capabilities, surface);
 const manifestCanonical = JSON.stringify(capabilities);
 const tierNumber = (tier) => Number(tier.slice(1));
 const packageCounts = Object.fromEntries(
@@ -46,11 +54,13 @@ const status = {
   semanticProfileVersion: capabilities.semanticProfileVersion,
   capabilityManifestHash: createHash("sha256").update(manifestCanonical).digest("hex"),
   evidence: {
-    checkedInConformanceCases: foundation.length,
+    checkedInConformanceCases: foundation.length + packageLoader.length,
     liveREligibleCases: foundation.filter((entry) => entry.rOracle !== false).length,
+    packageLoaderCases: packageLoader.length,
     recursiveOracleV2Cases: oracleV2.length,
-    recursiveBehaviorallyProvenBindings: null,
-    note: "Recursive behavioral binding counts remain null until oracle-v2 cases are associated with registry bindings; name overlap is inventory only.",
+    recursiveBehaviorallyProvenBindings: recursiveBindingEvidence.length,
+    recursiveBindingEvidence,
+    note: "This binding count covers listed exact Oracle v2 cases, conditional on a passing live GNU R 4.6.1 graph comparison and causal shadow controls. It is not general binding compatibility; name overlap is inventory only.",
   },
   nameInventory: {
     referenceVersion: names.referenceVersion,

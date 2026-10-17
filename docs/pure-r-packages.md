@@ -82,6 +82,21 @@ pnpm exec nativr-package pack ./mypackage --output mypackage.nativr.json
 pnpm exec nativr-package pack ./mypackage_1.0.0.tar.gz --output mypackage.nativr.json
 ```
 
+Before downloading a new dependency closure, the build-time API can inspect repository metadata:
+
+```ts
+import { preflightPackagesFromRepository } from "@nativr/package-tools";
+
+const plan = await preflightPackagesFromRepository(["lifecycle"]);
+console.log(plan.packages.map(({ name }) => name)); // dependency-first order
+console.log(plan.firstBlocker); // first metadata blocker, when present
+```
+
+Preflight fetches only the bounded `PACKAGES` index and reports declared native compilation,
+`LinkingTo`, OS restrictions, missing dependencies, and version mismatches. It returns the index
+SHA-256 for pinning, but marks source archives unverified. Corpus admission still requires archive
+integrity, source inspection, an artifact digest, and executable tier evidence.
+
 For separately built artifacts, `resolve` checks the complete local dependency graph and writes one
 dependency-first package set:
 
@@ -318,10 +333,10 @@ prevents a safe archive scan from being mislabeled as full package compatibility
 
 ## External proof
 
-The opt-in test `packages/package-tools/test/external-package.test.ts` evaluates twenty-one
+The opt-in test `packages/package-tools/test/external-package.test.ts` evaluates twenty-four
 unchanged public source packages from the repository resolver. It verifies the pinned source-archive
-digest separately from each normalized NativR artifact digest. All twenty-one reach at least P4
-evidence:
+digest separately from each normalized NativR artifact digest. Eighteen reach P4, five reach P5; BH
+reaches P3 because it declares no R functions to execute:
 
 - [`pkgconfig 2.0.3`](https://cran.r-project.org/package=pkgconfig) proves namespace exports,
   package resources, classed DESCRIPTION metadata with a virtual installation path, and an ordinary
@@ -331,14 +346,16 @@ evidence:
 - [`withr 3.0.3`](https://cran.r-project.org/package=withr) proves deeper unchanged-source loading,
   deterministic installed-vignette discovery, and generated wrapper execution through
   `with_options()`, including restoration after the supplied expression finishes;
-- [`R6 2.6.1`](https://cran.r-project.org/package=R6) proves that a real installed package takes
-  precedence over a non-core compatibility shim, that namespace-qualified S3 registration loads, and
-  that unchanged package code can construct a generator, instantiate a reference object, invoke
-  public/private-state methods, mutate reference state, expose an active read/write field, preserve
-  shared nested references through a shallow clone, and recursively copy a nested R6 object through
-  a deep clone. The same unchanged source constructs a three-level `Person`/`Employee`/`Manager`
-  hierarchy, invokes recursive `super$initialize()`/`super$greet()` paths, and observes inherited
-  fields, methods, and class membership;
+- [`R6 2.6.1`](https://cran.r-project.org/package=R6) reaches P5. It proves that a real installed
+  package takes precedence over a non-core compatibility shim, that namespace-qualified S3
+  registration loads, and that unchanged package code can construct a generator, instantiate a
+  reference object, invoke public/private-state methods, mutate reference state, expose an active
+  read/write field, preserve shared nested references through a shallow clone, and recursively copy
+  a nested R6 object through a deep clone. The same unchanged source constructs a three-level
+  `Person`/`Employee`/`Manager` hierarchy, invokes recursive `super$initialize()`/`super$greet()`
+  paths, and observes inherited fields, methods, and class membership. Both default-applicable Rd
+  example topics execute from the unchanged pinned source; the direct-test entrypoint needs
+  unavailable `testthat`;
 - [`viridisLite 0.4.3`](https://cran.r-project.org/package=viridisLite), package rank 30 in the
   committed usage snapshot, proves dependency-free unchanged source loading plus package-owned
   256-anchor CIE Lab spline interpolation. `viridis()`, `magma()`, and an alpha/range/reverse call
@@ -349,12 +366,20 @@ evidence:
   palettes, and minimum-size warning match GNU R through generic `data.frame`, subsetting, `switch`,
   recursion, warning, and `rgb` semantics.
 - [`labeling 0.4.3`](https://cran.r-project.org/package=labeling), package rank 37 with 1,376,303
-  downloads in the committed snapshot, reaches P4 with all nine exported labeling algorithms
-  executing unchanged. Its deeper `extended.figures()` path exercises shared `pmax`, histogram, and
-  graphics behavior before stopping explicitly at the recorded `axis(xlab=)` P5 blocker.
+  downloads in the committed snapshot, reaches P5: all nine exported labeling algorithms execute
+  unchanged, and its sole applicable Rd example (`labeling-package`) completes through generic
+  `data(iris)` and browser graphics. The build-time source-audited example runner independently
+  inventories that single topic and executes its default-applicable code. Its deeper
+  `extended.figures(2)` path also completes with a finite 64 MiB output limit, though its returned
+  `par()` state has 47 browser entries (48 on an explicit PDF/PNG device) versus GNU R 4.6.1's 72.
+  Its pinned source archive has no `tests/` directory, so no P6 test execution is claimed.
+  Package-check behavior remains unevaluated.
 - [`assertthat 0.2.1`](https://cran.r-project.org/package=assertthat) reaches P4 through the
   standard `tools` namespace dependency and executes representative `assert_that()`,
-  `validate_that()`, and `noNA()` calls unchanged;
+  `validate_that()`, and `noNA()` calls unchanged. Its pinned Rd inventory has 11 applicable topics
+  and 12 runnable blocks. Seven topics now complete through `man/noNA.Rd`, including file assertions
+  against the browser-owned virtual filesystem. The first blocker is `man/not_empty.Rd`, which
+  references the unavailable standard `datasets::mtcars` binding. P5 remains blocked.
 - [`crayon 1.5.3`](https://cran.r-project.org/package=crayon) reaches P4 after reading its standard
   `tools/ansi-palettes.txt` build resource through the generic hidden source-evaluation context. It
   attaches normally and executes nested foreground/background styling plus `strip_style()` without a
@@ -365,12 +390,18 @@ evidence:
   byte, duration, and compact-number formatting after bounded bzip2 data normalization;
 - [`evaluate 1.0.5`](https://cran.r-project.org/package=evaluate) reaches P4 through its public
   output-handler constructor and condition/source/recorded-plot predicates;
-- [`numDeriv 2016.8-1.1`](https://cran.r-project.org/package=numDeriv) reaches P4 through public
-  finite-difference gradient and Jacobian calls whose rounded values match GNU R.
-- [`abind 1.4-8`](https://cran.r-project.org/package=abind) reaches P4 through public array binding
-  and singleton-dimension removal calls;
-- [`rprojroot 2.1.1`](https://cran.r-project.org/package=rprojroot) reaches P4 through public S3
-  criterion construction/composition and browser-owned project-root/file discovery.
+- [`numDeriv 2016.8-1.1`](https://cran.r-project.org/package=numDeriv) reaches P6 through public
+  finite-difference gradient and Jacobian calls, all four default-applicable Rd example topics, and
+  all seven top-level package-test scripts executing from its unchanged, digest-pinned source. The
+  complete test run uses a measured finite opt-in resource profile.
+- [`abind 1.4-8`](https://cran.r-project.org/package=abind) reaches P6 after public array binding
+  and singleton-dimension removal calls, followed by all five default-applicable Rd topics from its
+  unchanged, digest-pinned source, and all five direct tests with normalized saved-output matches;
+- [`rprojroot 2.1.1`](https://cran.r-project.org/package=rprojroot) reaches P5 through public S3
+  criterion construction/composition, browser-owned project-root/file discovery, and both
+  default-applicable Rd example topics in the unchanged pinned source. Its three other indexed
+  topics contain only excluded `\\dontrun` blocks. The direct-test entrypoint requires unavailable
+  `testthat`.
 - [`rstudioapi 0.19.0`](https://cran.r-project.org/package=rstudioapi) reaches P4 through public
   document-position/range constructors and the outside-RStudio availability/error path;
 - [`inline 0.3.21`](https://cran.r-project.org/package=inline) reaches P4 through its public plugin
@@ -392,6 +423,10 @@ evidence:
 - [`otel 0.2.0`](https://cran.r-project.org/package=otel), package rank 29, reaches P4 through its
   default no-op tracing, metrics, logging, span-context, HTTP-context, attribute, and constant APIs.
   No network exporter or host telemetry capability is granted.
+- [`BH 1.90.0-1`](https://cran.r-project.org/package=BH), package rank 50, reaches P3 through
+  unchanged namespace loading, attachment, zero exports, and exact discovery of 12,554 Boost header
+  resources totaling 128,040,580 bytes. P4 is not applicable because BH exposes no R functions;
+  downstream C++ compilation remains outside this evidence.
 
 No package source is checked into this repository. Together these tests exercise repository
 installation, runtime package files, namespace loading, qualified S3 registration, metaprogramming,
@@ -404,6 +439,73 @@ replacement promotion used by package-owned super environments; there is no R6 a
 package-source rewrite. Finalization, arbitrary/multiple inheritance breadth, portable-locking
 variants, and complete R6 remain outside the evidence.
 
+A build-time, source-independent `runPackageExamples()` path inventories all indexed `man/*.Rd`
+example topics from a digest-pinned source archive, reports excluded `\\dontrun{}` and
+`\\donttest{}` blocks, and executes default-applicable code through a caller-owned R session. The
+pinned `numDeriv 2016.8-1.1` archive has four applicable topics: `genD`, `grad`, `hessian`, and
+`jacobian` all complete after generic `diag<-` semantics were added. This is executable P5 evidence,
+separate from its P6 package tests. A selected subset, absent topics, or no applicable blocks does
+not establish P5.
+
+A build-time, source-independent `runPackageTests()` path now inventories top-level `tests/*.R`
+entrypoints from a source archive, verifies a caller-supplied SHA-256 and package identity, and
+passes each unchanged script to a caller-owned R session. It reports nested test files and saved
+output expectations without treating them as executed. A pinned `numDeriv 2016.8-1.1` probe now
+completes its unchanged `tests/grad01.R` script after generic `NULL` subscript semantics were added.
+All seven unchanged top-level scripts (`BWeg.R`, `CSD.R`, `grad01.R`, `hessian01.R`, `jacobian01.R`,
+`oneSided.R`, and `trig01.R`) complete with zero NativR warnings under an explicit finite
+300-million-step/50-million-vector opt-in profile. The unchanged `CSD.R` requires 273,659,236
+evaluation steps and 382,508,540 cumulatively allocated elements; its 1,000-element Richardson
+gradient alone requires 144,489,526 steps. Cartesian positive-integer complex power cleared its
+former complex-gradient assertion, and reusable inverse-trigonometric primitives cleared the final
+`asin()` blocker in `trig01.R`. The pinned archive supplies no `.Rout.save` files. Exact GNU R 4.6.1
+also exits successfully for every script. Profile 0.301 matches all 170 lines of `BWeg.R` output
+from `analytic D:` through the end after omitting its host-specific `Sys.info` header and GNU R's
+process-specific bytecode label. This includes the derivative matrices, closure body, nested list
+paths, and class attributes. Those diagnostic omissions are explicit browser adaptations, not a
+raw-output or P7 pass. The stricter package-check comparison now runs every script in a fresh native
+GNU R and NativR session. The `oneSided.R` streams match after independently probed Windows text
+transport decoding; `genD.Rd` also matches. The other scripts and examples retain host-display or
+numerical text differences. Profile 0.303 closes several earlier formatting differences through
+shared `all.equal`/`format`/`cat` semantics, leaving two of eleven complete outputs matching. These
+tests establish P6, while generic `R CMD check` and complete output fidelity remain P7 work. The
+runner does not turn an empty `labeling` test inventory into a P6 claim and does not implement
+testthat. Saved `.Rout.save` files are exposed to the caller for comparison.
+
+`comparePackageSavedOutput()` compares caller-captured text under explicit policy version 1. The
+caller selects saved-source-echo or display-only input and exact-text or display-whitespace
+comparison. Source echo is removed only when it matches the next source line; unrelated prompt-like
+output survives. The report distinguishes missing expectations from matches and gives a bounded
+first-difference location. Combined inputs are capped at 64 MiB and each text at 250,000 lines. Echo
+inference is ambiguous when program output exactly matches the next echoed source line, so this
+diagnostic alone does not prove byte-level `R CMD check` fidelity.
+
+`pnpm package:check --package NAME --output REPORT.json --rscript PATH` provides a stricter
+build-time comparison for pinned, previously evaluated corpus archives. It executes unchanged script
+bodies with explicit package setup for examples and a final `invisible(NULL)` harness expression on
+both runtimes; the latter prevents an unsupported final closure from crossing the JavaScript result
+boundary while preserving each script expression's auto-printing. Tests receive fresh working
+directories and byte-verified UTF-8 fixtures. Reports preserve raw streams, source and artifact
+digests, runtime limits, capability/profile identity, native transport probes, and
+discovered/executed stage inventories. Non-UTF-8 fixtures, condition classes/calls/order, and GNU
+cross-stream order remain explicit capture gaps. Only the proven Windows text transport transform
+may be inverted; numerical differences, whitespace, and platform/bytecode labels remain visible. The
+command exits nonzero until all applicable P7 stages are evidenced. Compact, source-free diagnostic
+summaries live under `compatibility/package-check-evidence/`; they do not promote corpus tiers. Full
+GNU `R CMD check` execution is not implemented by this harness.
+
+The report's `sourceDependencyAssessment` inventories normalized package R sources, direct test R
+files and extracted Rd example blocks under `literal-source-references-v1`. It stores hashes, paths,
+roles, positions and fixed findings without implementation bodies. Example positions are relative to
+the extracted block identified by its path, not to the original Rd file. Only literal package-code
+declaration findings can pass or fail; test/example declaration rules, computed references,
+vignettes, generated sources and transitive closure remain unexecuted. Passing the bounded inventory
+cannot promote the metadata stage or P7. See the
+[package-tools contract](../packages/package-tools/README.md#literal-source-dependency-inventory).
+Unreadable test/example inputs appear separately in `sourceDependencyInputFailures`, with their
+paths, original byte hashes and a fixed decode-failure reason. They remain discovered and unexecuted
+instead of aborting the inventory or disappearing from its report.
+
 The viridisLite, RColorBrewer, labeling, and crayon paths contain no palette table or package source
 copied into NativR. Their sources are downloaded only by the opt-in test, digest-pinned, installed
 through the public package pipeline, and discarded with the test process. The browser bundle
@@ -411,20 +513,62 @@ contains only reusable color interpolation, frame, warning, and arithmetic seman
 
 The machine-readable [package corpus](../compatibility/package-corpus.json) is authoritative for
 development/regression/holdout membership, source and artifact digests, completed tier, and first
-blocker. The current uninspected P0 holdout is `BH 1.90.0-1`; only release metadata and the
-source-archive digest have been admitted. It is the only remaining package in the committed top-100
-download snapshot whose current source release has no non-core runtime dependency and declares no
-native compilation. These proofs must not be summarized as a single unqualified “supported packages”
-count.
+blocker. BH was the final candidate whose complete runtime closure was already available in the
+committed top-100 download snapshot and now reaches P3 regression. A source-blind `Formula 1.2-6` P0
+holdout has since been admitted from outside that snapshot; its source archive remains unopened and
+unevaluated. BH's source release had no non-core runtime dependency and declared no native
+compilation. These proofs must not be summarized as a single unqualified “supported packages” count.
 
 The fourth source-blind rotation used only release metadata, public documentation, public API calls,
 and GNU R as a black-box oracle before the packages were executed. The reusable runtime work adds
 specific and `Ops`-group S3 dispatch for syntax and first-class operators, incremental S3 method
 registration while a namespace is initialized, numbered ellipsis identifiers, missing-endpoint
 `seq()`, `sign()`, `dimnames<-`, `methods::Quote`, trailing `as.data.frame()` controls, and
-list/data-frame `is.na()` shapes. `abind::acorn()` and `abind::asub()` still encounter the generic
-language-object subsetting gap, so this is P4 evidence rather than a claim of complete package
-behavior.
+list/data-frame `is.na()` shapes. A subsequent general language-call subset/replacement increment
+now runs unchanged `abind::asub()` and `abind::acorn()` array selections. Its P5 inventory has five
+default-applicable Rd topics, one block each; all five complete unchanged after missing dotted
+arguments in a replacement S3 `match.call(expand.dots = FALSE)` pairlist became empty symbols as
+observed in GNU R. These examples establish P5; the direct-test evidence below raises it to P6.
+
+The pinned `abind 1.4-8` direct-test inventory contains five top-level scripts with saved-output
+files. All five unchanged scripts now execute in fresh sessions under a finite 40-million-step /
+10-million-element opt-in package-test profile. The public evaluation option honors a callable
+`options(error=)` handler and continues through the two expected `adrop.R` errors and one expected
+`afill.R` error, recording them separately. Reusable nested NULL/name replacement, first-class
+constructed `[` calls, and one-/two-dimensional array dimname printing close the execution gaps.
+Caller-owned comparison against all five source archive saved files now matches after generic prompt
+and whitespace normalization. The closing primitives are operator deparsing, atomic array slice
+printing, bind dimension names, condition call traces, and visible parenthesized assignments. Abind
+reaches P6. Profile 0.302 closes the remaining one-dimensional table heading difference. All five
+fresh direct-test and five example stream comparisons now match native GNU R 4.6.1 after the
+independently probed Windows text transport decoding, with no display-whitespace normalization. The
+three handled errors still lack complete public condition classes/calls/order evidence, and the GNU
+cross-stream order and remaining package-check stages are unexecuted. A fresh profile 0.303 run
+retains all ten stream matches. P7 remains blocked.
+
+Profile 0.304 adds ordered condition capture through public global calling handlers. The three
+handled abind errors now have classes, messages and calls available for comparison. Nine full
+comparisons match; `afill.R` differs in a call containing an attributed replacement value whose
+attributes are omitted by NativR. All ten stdout/stderr streams still match. Cross-stream ordering
+and the remaining package-check stages stay open.
+
+Profile 0.305 closes the attributed replacement-call gap with shared embedded-value display. All ten
+abind stream and ordered condition comparisons now match, including its three handled errors. The
+package remains P6: cross-stream order and the other unexecuted check stages still need evidence. A
+fresh numDeriv run completes all eleven inputs with two matches and nine differences.
+
+The digest-checked `rprojroot 2.1.1` example probe inventories five indexed Rd topics. Both
+default-applicable blocks (`root_criterion` and `rprojroot-package`) execute unchanged; the other
+three topics have only excluded `\\dontrun` blocks. This establishes P5 without counting excluded
+examples as execution. Its direct-test inventory has one top-level `tests/testthat.R` entrypoint and
+twelve nested R files; the entrypoint stops because `testthat` is not installed in NativR. No nested
+tests or package-check output have passed, so P6/P7 remain unclaimed.
+
+The digest-checked `R6 2.6.1` example probe inventories `R6Class` and `is.R6`; both
+default-applicable blocks execute unchanged, and one `\\dontrun` block is excluded. The package
+therefore reaches P5 through its real installed source rather than the compatibility shim. Its sole
+top-level direct-test entrypoint is `tests/testthat.R`, which stops at the unavailable `testthat`
+dependency. Fifteen nested R files are inventoried but unexecuted; P6/P7 remain open.
 
 The fifth source-blind rotation likewise used release metadata, public documentation, public API
 calls, and black-box GNU R observations before execution. It adds generic `exportMethods()`
@@ -455,6 +599,13 @@ executable R-source budgets from bounded immutable resources and adds list-aware
 `strrep()`, `length<-`, `anyNA()`, and `make.unique()`. Both unchanged packages reach P4. cpp11's
 native compiler path, real telemetry exporters, every export, P5-P7, and arbitrary-package
 compatibility remain unclaimed.
+
+The ninth source-blind rotation evaluates BH only after official metadata and GNU R black-box
+resource counts and sizes were frozen. Generic work raises bounded defaults to 16,384 package files
+and 192 MiB, makes tar admission failures reject promptly, validates resources before Worker
+transfer and in the runtime host, and computes standard `exportPattern()` exports after local
+namespace bindings load. Unchanged BH reaches P3 with exact header-resource parity. Its lack of R
+functions makes P4 inapplicable; no downstream Boost C++ package execution is claimed.
 
 The checked-in source-only fixture also exports a function that calls `grDevices::rainbow`,
 `terrain.colors`, `topo.colors`, and `cm.colors` through its namespace. This is a small executable
@@ -735,11 +886,12 @@ loader.
   a package containing native code a pure-R package. Pipe execution is currently one-shot and
   one-way rather than interactive or duplex.
 - `configure`, `configure.win`, `cleanup`, and `cleanup.win` are not executed.
-- The current NAMESPACE parser supports `export`, `import`, `importFrom`, and `S3method`, while
-  package code can call `registerS3method()` once its generic is available. Delayed registration
-  against an unloaded suggested package, S4 registration directives, `exportPattern`, conditional
-  declarations, and other directives remain blockers. Imported S4 construction/introspection
-  functions can run from ordinary package R source, but this is not complete S4 package support.
+- The current NAMESPACE parser supports `export`, `exportMethods`, standard `exportPattern` over
+  loaded local bindings, `import`, `importFrom`, and `S3method`, while package code can call
+  `registerS3method()` once its generic is available. Delayed registration against an unloaded
+  suggested package, S4 registration directives, conditional declarations, and other directives
+  remain blockers. Imported S4 construction/introspection functions can run from ordinary package R
+  source, but this is not complete S4 package support.
 - `file()` connections currently cover bounded text/binary-mode handles over immutable package files
   and same-session browser-memory paths, including implicit open/close, explicit `open()`/`close()`,
   `isOpen()`, `flush()`, bounded `seek()`, and `summary()`. `gzcon()` adds gzip wrapping for those
@@ -820,11 +972,13 @@ loader.
   as direct calls. Plotmath glyph layout and the unimplemented remainder of base graphics are still
   capability-manifest boundaries.
 - Package `data/*.R` scripts execute through the same parser and normalized AST as package source;
-  `.csv`, `.tab`, and `.txt` datasets load into owned data frames. XDR v2/v3 `.rda`/`.RData` and
-  gzip wrappers use the independent bounded serialization decoder, and `R/sysdata.rda` enters the
-  namespace before source evaluation. bzip2/xz/zstd wrappers, serialized closures/language objects,
-  data indexes/aliases, installed-package `.rdx`/`.rdb` lazy-load databases, and full lazy-data
-  behavior remain explicit boundaries.
+  `.csv`, `.tab`, and `.txt` datasets load into owned data frames with GNU R's `as.is = FALSE`
+  factor conversion. The standard `datasets` namespace now supplies an independently sourced UCI
+  Iris text resource through this same `data()` path, without evaluation-time network access. XDR
+  v2/v3 `.rda`/`.RData` and gzip wrappers use the independent bounded serialization decoder, and
+  `R/sysdata.rda` enters the namespace before source evaluation. bzip2/xz/zstd wrappers, serialized
+  closures/language objects, data indexes/aliases, installed-package `.rdx`/`.rdb` lazy-load
+  databases, and full lazy-data behavior remain explicit boundaries.
 - Bytecode is not loaded. Original R source is parsed into the owned AST.
 - Character encoding marks and exact bytes survive the owned vector and XDR paths. Browser-native
   text is deterministically UTF-8; general `iconv`, host locale encodings, malformed-byte display,

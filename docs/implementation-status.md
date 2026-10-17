@@ -1,8 +1,90 @@
 # Implementation status
 
-Date: 2026-08-03
+Date: 2026-10-13
 
 ## Implemented
+
+- Profile 0.350 extends shared simplification to mapply, Map and replicate. Mapping observes global
+  length/extraction/names methods and evaluates controls after callbacks; replicate evaluates each
+  expression in a fresh closure frame. Native fixtures cover forcing, shapes, factor/list results,
+  names, visibility and cleanup. See the
+  [compatibility contract](compatibility-contract.md#mapped-and-replicated-results-profile-0350).
+
+- Package checks now inventory literal source dependency references with a caller-owned normalized
+  parser. Findings retain hashes and locations without source bodies. Package-code declaration rules
+  have independent native fixtures; computed references, test/example rules and transitive closure
+  remain open. The metadata stage and P7 remain incomplete.
+  [Compact pinned-package evidence](../compatibility/package-check-evidence/source-dependencies-v1-0.350.0.json)
+  records 15 abind inputs and 13 numDeriv inputs. Strict package comparisons retain ten abind
+  matches and two numDeriv matches with nine differences; neither package changes tier.
+
+- Profile 0.349 shares sapply/simplify2array result construction, lazy controls, and globally
+  resolved method observations. Shallow unlist now preserves storage types, factor merging, nested
+  cells, names, and encoded bytes. Shared lengths and integer coercion close required simplification
+  primitives. Expression metadata and broader recursive unlist behavior remain open; the pinned
+  package metadata/dependency blocker is unchanged. See the
+  [compatibility contract](compatibility-contract.md#shared-apply-simplification-profile-0349).
+
+- Profile 0.348 extends classed list conversion, factor metadata preservation, name replacement,
+  partial attribute lookup, and exiting warning/message handlers. Recursive native fixtures compare
+  actual values, nested attributes, dispatch order, cleanup, and visibility. Resource failures stay
+  outside R-level capture. Nested suppression ordering, general apply simplification, and the pinned
+  packages' metadata/dependency blockers remain open; see the
+  [compatibility contract](compatibility-contract.md#classed-list-conversion-and-names-profile-0348)
+  and generated [evidence status](../compatibility/status.json).
+
+- Profile 0.317 adds bounded `utils::person()` construction, vectorized records, collection and
+  field access, text formatting and printing. Private registered methods survive utils detachment
+  and runtime reset. Derived Authors@R validation remains open, as do R/Markdown formatting, ROR
+  handling, class-specific field coercion and exhaustive method formals/options.
+
+- Profile 0.316 gives `c()` first-argument S3 class/default dispatch and `NextMethod()` a primitive
+  fallback after the method chain. This removes a shared collection-dispatch prerequisite for
+  Authors@R person metadata; derived author validation remains open.
+
+- Package checking now reports DESCRIPTION structural validation under `description-structure-v1`:
+  DCF admission, required literal fields, package/version syntax and dependency syntax. Independent
+  tests include GNU R identity diagnostics. Derived author fields and full metadata validation
+  remain explicit gaps. Pinned abind/numDeriv structural evidence is recorded in
+  `compatibility/package-check-evidence/description-structure-v1-0.315.0.json`. This tooling change
+  leaves runtime profile 0.315 unchanged.
+
+- Profile 0.315 supports core export detachment/reattachment, retained namespaces, user callbacks,
+  and resource-failure recovery. The package checker records a separate base-only search-path
+  loading observation. Both pinned development packages match this observation; compact evidence
+  lives in `compatibility/package-check-evidence/lifecycle-observations-0.315.0.json`. Startup
+  without default namespaces and full installation checks remain open; neither package is P7.
+
+- Profile 0.314 separates core namespace identity and builtin ownership from attached exports.
+  Independent fixtures cover explicit imports with a base-only search path; reset and serialization
+  tests preserve distinct base identities. Full core imports and clean-base installation checks
+  remain incomplete. Fresh abind and numDeriv lifecycle comparisons match GNU R; compact evidence is
+  in `compatibility/package-check-evidence/lifecycle-observations-0.314.0.json`. Neither is P7.
+
+- Profile 0.313 executes user package lifecycle callbacks in native-observed order, including
+  registration lists, NULL clearing, changes during dispatch, non-callable failure continuation, and
+  recoverable resource failures. Independent package fixtures match GNU R callback states and
+  arguments. Exact arbitrary callback diagnostics and caller frames remain incomplete.
+
+- Profile 0.312 implements source namespace unloading and detach-with-unload, with import guards,
+  retained closures/environments/S3 methods, hook warnings, resource-failure retry, and fresh
+  reloads. The fixture exposed and closed `length` S3 class/default dispatch. Independent native
+  fixtures and pinned abind/numDeriv runs match lifecycle observer v2; compact provenance is
+  recorded in `compatibility/package-check-evidence/lifecycle-observations-0.312.0.json`. Neither
+  package is P7.
+
+- Profile 0.311 adds source-package `detach`: selection by name/position, dependency guards and
+  forced-warning behavior, hook timing, namespace retention, masking restoration, escaped exports,
+  and reattachment. Native fixtures verify normal and failed hooks. Namespace unloading, static core
+  detachment, user lifecycle hooks and exact hook-error call formatting remain incomplete.
+
+- Profile 0.310 uses one live search-path environment chain for global lookup and reflection,
+  including source-package export mutation, masking, attachment rollback, and reset. Native fixtures
+  confirm attached exports remain separate from namespace bindings.
+
+- Profile 0.309 supplies the locked `.GlobalEnv` base binding, qualified and package namespace
+  access, lexical shadowing, and fresh-session reset identity. Native package-hook evidence and
+  recursive shared-environment observations cover the change.
 
 - Node 24/pnpm 11 monorepo, strict TypeScript, ESM browser packages, and cross-platform scripts.
 - Reproducible Tree-sitter R Wasm build, normalized NativR AST, Unicode spans, and diagnostics.
@@ -72,13 +154,14 @@ Date: 2026-08-03
   DESCRIPTION/NAMESPACE/R-source/resource paths are exposed by `system.file()`, enumerable through
   `list.files()`/`list.dirs()`, selectable as a read-only working directory, and readable through
   bounded `readLines()` or read-only file connections. `utils::data()` discovers and executes
-  package `data/*.R` scripts, imports `.csv`/`.tab`/`.txt`, or decodes XDR v2/v3 gzip
-  `.rda`/`.RData` workspaces into a selected environment. Packaged `R/sysdata.rda` is decoded into
-  the namespace before source evaluation. Build-time `man/*.Rd` extraction plus `utils::example()`
-  runs package topics/aliases through the same normalized-AST runtime, with `give.lines` and
-  explicit skipped-section controls. Native code, installed `.rdx`/`.rdb` lazy-load databases,
-  unsupported serialized object types/compressors, broader NAMESPACE directives, and universal
-  package execution remain explicit boundaries.
+  package `data/*.R` scripts, imports `.csv`/`.tab`/`.txt` with standard factor conversion, or
+  decodes XDR v2/v3 gzip `.rda`/`.RData` workspaces into a selected environment. A separately
+  sourced UCI Iris resource uses that same path for the static `datasets` namespace. Packaged
+  `R/sysdata.rda` is decoded into the namespace before source evaluation. Build-time `man/*.Rd`
+  extraction plus `utils::example()` runs package topics/aliases through the same normalized-AST
+  runtime, with `give.lines` and explicit skipped-section controls. Native code, installed
+  `.rdx`/`.rdb` lazy-load databases, unsupported serialized object types/compressors, broader
+  NAMESPACE directives, and universal package execution remain explicit boundaries.
 - Installed non-core packages take precedence over same-name compatibility shims; core namespaces
   remain reserved. Qualified `S3method(package::generic, class)` declarations resolve the generic's
   namespace independently from the package-local method binding. General attributes now cover
@@ -144,27 +227,33 @@ Date: 2026-08-03
   reversed translucent palettes through generic Lab spline and matrix arithmetic. Unchanged
   RColorBrewer constructs its exported 35-row palette metadata with explicit row names, then
   executes exact Set1/Blues palettes and the recursive minimum-size warning path. Unchanged labeling
-  reaches P4 across all nine labeling algorithms; `extended.figures()` records `axis(xlab=)` as its
-  first P5 blocker after exercising shared parallel extrema and histogram paths. The third blind
-  rotation carries unchanged evaluate through its public handler/predicate APIs and unchanged
-  numDeriv through public gradient/Jacobian calculations. The fourth blind rotation carries
-  unchanged abind through array binding/drop operations and unchanged rprojroot through S3 criterion
-  composition plus virtual-filesystem root discovery. The fifth blind rotation carries unchanged
-  rstudioapi through document-position/range construction and outside-RStudio availability checks,
-  and unchanged inline through plugin registration/query. The sixth blind rotation carries unchanged
-  rematch through public match/extract shapes and unchanged whisker through scalar, section,
-  inverted, escaped, and triple-brace rendering. Its reusable increment covers row/column dimensions
-  and names, regex/replacement/splitting boundaries, apply-family argument matching, factor-label
-  comparisons, and list-valued atomic replacement promotion. Native compilation remains outside P4
-  evidence. The seventh blind rotation carries unchanged zeallot through
+  reaches P5: all nine labeling algorithms and the sole runnable Rd example execute unchanged,
+  including `data(iris)` through the standard dataset resource. `extended.figures(2)` also completes
+  under a finite 64 MiB output limit, but its full `par()` return has 47 browser entries (48 on
+  explicit PDF/PNG devices) rather than GNU R's 72. The third blind rotation carries unchanged
+  evaluate through its public handler/predicate APIs and unchanged numDeriv through public
+  gradient/Jacobian calculations. The fourth blind rotation carries unchanged abind through array
+  binding/drop operations and unchanged rprojroot through S3 criterion composition plus
+  virtual-filesystem root discovery. The fifth blind rotation carries unchanged rstudioapi through
+  document-position/range construction and outside-RStudio availability checks, and unchanged inline
+  through plugin registration/query. The sixth blind rotation carries unchanged rematch through
+  public match/extract shapes and unchanged whisker through scalar, section, inverted, escaped, and
+  triple-brace rendering. Its reusable increment covers row/column dimensions and names,
+  regex/replacement/splitting boundaries, apply-family argument matching, factor-label comparisons,
+  and list-valued atomic replacement promotion. Native compilation remains outside P4 evidence. The
+  seventh blind rotation carries unchanged zeallot through
   nested/collector/default/named/rightward/data-frame/S3 destructuring and unchanged ini through
   browser-owned parsing and serialization. Its reusable increment covers constructed assignment,
   promise-origin caller frames, embedded runtime constants, recursive character coercion, string
   affixes, capture locations, and language equality. The eighth blind rotation carries unchanged
   cpp11 through immutable header vendoring and unchanged otel through no-op tracing, metrics,
   logging, and HTTP-context paths. Its reusable increment separates source/resource budgets and adds
-  list-aware `sprintf`, `strrep`, `length<-`, `anyNA`, and `make.unique`. The next untouched P0
-  holdout is BH 1.90.0-1. cpp11 native compilation remains future Wasm-ABI work.
+  list-aware `sprintf`, `strrep`, `length<-`, `anyNA`, and `make.unique`. The ninth blind rotation
+  carries unchanged BH to P3 with 12,554 exact header resources, zero namespace exports, package
+  loading, and attachment. Generic work adds standard `exportPattern`, a configurable 192 MiB
+  default package-resource budget, facade/host double validation, and prompt archive-limit failure.
+  BH has no R functions, so P4 is not applicable. No untouched eligible candidate remains in the
+  committed top-100 snapshot; cpp11/BH downstream native compilation remains future Wasm-ABI work.
 - Session environment variables are explicit, isolated runtime state. `createR()` snapshots an
   optional string map for inline or Worker execution; GNU R-shaped `Sys.getenv()`, `Sys.setenv()`,
   and `Sys.unsetenv()` query and mutate it, while reset restores the original map and host process
@@ -431,8 +520,10 @@ Date: 2026-08-03
   including S3 forwarding, vector and matrix inputs, stacked/beside geometry, GNU R-shaped midpoint
   return matrices, widths/spaces/offsets, horizontal layout, names, annotations, legends, additive
   drawing, source-only package reuse, and bounded Worker/Canvas/display-list output over existing
-  polygon/axis/text events. Log axes, positive density hatching, device-exact layout, and the full
-  graphical-parameter surface remain explicit boundaries.
+  polygon/axis/text events. `xaxt`/`yaxt` inherit from `par()` or override per call; `n` suppresses
+  the matching axis while `s`/`l`/`t` match the measured GNU R 4.6.1 SVG paths. Log axes, positive
+  density hatching, device-exact layout, and the full graphical-parameter surface remain explicit
+  boundaries.
 - Usage-ranked `graphics::hist`/`hist.default` for 19 measured testthat, openssl, shiny, and
   posterior calls, including S3 forwarding, finite numeric/matrix inputs, Sturges/Scott/FD or
   numeric/callable breaks, endpoint controls, counts/densities/midpoints, standard histogram
@@ -917,22 +1008,304 @@ Date: 2026-08-03
 
 ## Current executable evidence
 
+Current counts come from the generated [`compatibility/status.json`](../compatibility/status.json)
+and the verification record in [release readiness](release-readiness.md). Profile notes below this
+paragraph are historical: their test, conformance, and oracle counts describe the profile they name,
+not the current tree.
+
+Profile 0.308 fixes `.onAttach` timing: hooks now observe their package on the search path and its
+exports through global lookup, matching independent GNU R probes. Failed hooks remove the attachment
+while retaining the namespace for retry. Tests cover masked export restoration, nested attachments,
+cached search environments and resource-limit recovery. Detachment and unloading remain incomplete.
+
+The package-check harness records namespace load and attachment transitions separately from the
+unexecuted remainder of lifecycle checking. Independent GNU R fixtures verify retry behavior after
+`.onLoad` and `.onAttach` failures, namespace retention, hook counts and repeated attachment. The
+0.307 runtime already matched these outside-the-hook observations; the expanded 0.308 fixture
+exposed and closes the timing gap inside the hook. These observations do not establish P7.
+
+Profile 0.307 aligns build-time and browser bundle admission: DESCRIPTION fields cannot be split
+across records, duplicated, or begin with an orphan continuation. Whitespace-only separators are
+recognized; repository indexes retain multiple-record support. Independent native `read.dcf`
+evidence confirms the record boundary, and public pack/inspect plus direct-bundle regressions
+prevent mixed identity admission. This is a strict admission policy, not general DCF equivalence.
+
+The development package-check harness now observes declared dependency versions through public APIs
+on both runtimes. Pinned abind (three declarations) and numDeriv (one declaration) satisfy their
+declared constraints. The saved dependency evidence retains separate completed lookups and
+unexecuted metadata/undeclared/transitive checks. Version availability does not establish dependency
+API compatibility or advance P7. The native parity fixture is included in nightly conformance CI.
+
+Semantic profile 0.306 shares the iterative depth guard across compact syntax deparsing, diagnostic
+rendering and closure layout. Public deparsing checks traversal work, and constructed-call failures
+leave the session usable. These NativR resource limits do not assert GNU R limit equivalence.
+
+Profile 0.305 preserves attributes of embedded values in reflected calls while retaining GNU R's
+shorter error display. Independently authored cases cover nested attributes, names, arrays,
+replacement calls and evaluation identity. Its abind captures match all ten scripts, including
+ordered condition records; cross-stream order and unexecuted package-check stages still prevent P7.
+
 - The feature-priority acceptance matrix covers exactly 25 measured groups and every detector
   operator/function surface.
-- Vitest currently passes 14 files and 490 tests; one opt-in file with 23 external-package tests is
-  skipped in the default run and passes when enabled.
+- Vitest passes 56 files and 909 tests. The default run skips 32 external-package tests across six
+  files and twenty native-oracle fixture tests. All 69 observer/oracle tests pass when enabled. The
+  most recent full external-package run passed all 32 tests at profile 0.301; the recorded 0.305
+  abind and numDeriv comparisons below provide the current package-check observations.
 - `pnpm research:usage:check` validates the committed snapshot, CSV tables, and three SVG figures.
 - `pnpm capabilities:check` validates the generated capability manifest against runtime source.
-- Checked-in conformance passes 895/895 cases. The local GNU R 4.6.0 advisory oracle matches 843 of
-  847 eligible cases and skips 48 NativR-owned representation/random/platform/graphics/unsupported-
-  boundary cases; the four differences assert the pinned 4.6.1 target version itself. The recursive
-  oracle-v2 suite passes 5/5. Release gating still requires GNU R 4.6.1 rather than this advisory
-  installation.
-- Chromium, Firefox, and WebKit Worker/playground coverage passes 6/6 tests, including the
-  source-only package bundle, expanded matrix, weighted sampling, S3, and R6 paths with no
-  evaluation-time network requests.
+- Checked-in conformance passes 1150/1150 cases, including fourteen isolated package-loader cases
+  and three explicit constructed-syntax resource errors. The last full live GNU R 4.6.1 run at
+  profile 0.305 matched all 1079 eligible foundation cases. The two 0.309 `.GlobalEnv` foundation
+  cases and the 0.310 search-chain identity case also match independent native probes. The current
+  suite excludes 52 NativR-owned
+  representation/random/platform/graphics/resource/unsupported-boundary cases from that oracle. The
+  recursive Oracle v2 suite passes 46/46 against the same release. Thirty-three registered base
+  bindings have explicit case links and passing causal shadow controls in that suite. These results
+  cover the checked-in cases, not untested GNU R behavior or package compatibility.
+- A digest-checked package-example runner completes all four applicable pinned `numDeriv` topics.
+  Under a measured finite 300-million-step/50-million-vector opt-in profile, all seven unchanged
+  package-test scripts complete with zero warnings, establishing P6. The 0.298 `tests/CSD.R` probe
+  measured 273,659,236 steps and 382,508,540 cumulatively allocated elements; the final `trig01.R`
+  blocker was generic `asin()` behavior. The source has no `.Rout.save` expectations. GNU R 4.6.1
+  also completes all seven scripts. All 170 `BWeg.R` output lines after its host-specific header
+  match when GNU R's bytecode-address label is omitted, including closure bodies, nested list paths,
+  and class attributes. Those diagnostic omissions do not establish raw output fidelity. Explicit
+  browser display adaptations and full `R CMD check` remain unverified. The strict 0.305 comparison
+  completes all seven scripts and four example topics: `oneSided.R` and `genD.Rd` match after
+  independently probed Windows text transport decoding, while the other nine retain host-display or
+  numerical stdout differences. Pinned `abind` executes all five unchanged direct-test scripts in
+  fresh sessions under opt-in top-level continuation, with three expected handled errors. All five
+  saved outputs match after generic prompt/whitespace normalization, establishing P6. Generic
+  operator deparsing, parentheses and visibility, atomic array slices, bind dimension names, and
+  condition call traces close those gaps. Byte-level output fidelity and remaining `R CMD check`
+  stages are the first P7 blocker. Its stricter 0.305 capture matches all five direct-script and
+  five example streams after probed text transport decoding, without whitespace normalization.
+  Ordered condition records also match: all ten full comparisons pass, including the attributed
+  replacement value embedded in the `afill.R` error call. Cross-stream order, metadata, lifecycle,
+  namespace, documentation, and manual checks remain open; P7 is unproven.
+- Digest-checked P5 probes complete all five applicable `abind` topics, both applicable `rprojroot`
+  topics, and both applicable `R6` topics. The latter two packages' `tests/testthat.R` entrypoints
+  need unavailable `testthat`, so P6 remains blocked. Pinned `assertthat` inventories 11 topics and
+  12 runnable blocks; seven topics complete, then `man/not_empty.Rd` references unavailable standard
+  `mtcars`. It remains P4 with an explicit P5 first blocker. `pkgconfig` has no indexed Rd examples
+  and remains P4.
+- Chromium, Firefox, and WebKit Worker/playground coverage passes 6/6 tests, including constructed
+  syntax depth rejection and recovery, the source-only package bundle, standard `data(iris)`,
+  condition accessors, embedded call attributes, numeric reports/formatting, closure/table printing,
+  replacement RHS reflection, vector wrapping, expanded matrix, weighted sampling, S3, and R6 paths
+  with no evaluation-time network requests.
 - Package and playground production builds, browser audit, bundle budgets, and the packed clean
   consumer build pass.
 
 The supported toolchain is Node 24 and pnpm 11. Local R, when installed, is used only as an optional
 black-box conformance oracle.
+
+Authors@R role-presence and bounded first-email checks now have fresh-session native comparison and
+independent native DESCRIPTION diagnostic fixtures. Derived field text, explicit-field conflicts and
+comprehensive metadata validation remain next.
+
+Pinned evidence is saved in
+`compatibility/package-check-evidence/authors-person-roles-v1-0.317.0.json`: abind matches all three
+flags; numDeriv has no Authors@R expression. Both remain below P7 with metadata-dependencies as the
+first blocker. No external implementation source is included in this evidence.
+
+Profile 0.318 normalizes person field boundaries with recursive native evidence. Package checking
+now compares derived Author/Maintainer strings directly with native metadata expansion, including
+explicit-field precedence, multiple people, first-email selection and comment whitespace. Full
+metadata validity and unsupported person formatting remain open.
+
+Pinned derived-field evidence is saved in
+`compatibility/package-check-evidence/authors-derived-fields-v1-0.318.0.json`. Abind matches native
+role and effective-field observations; numDeriv has no Authors@R field. Neither result promotes full
+metadata validation or P7.
+
+Effective author metadata now combines explicit fields with completed matching derived-field
+observations. It validates field presence and native-observed Maintainer address syntax, including
+quoted local parts, while rejecting missing or contradictory evidence. The separate structural
+checker continues to avoid executing Authors@R. Full DESCRIPTION validation remains open.
+
+Pinned effective-field evidence is saved in
+`compatibility/package-check-evidence/effective-author-fields-v1-0.318.0.json`. Both abind and
+numDeriv pass the three effective-field checks; full metadata-dependencies remains their first
+blocker and P7 remains false.
+
+Profile 0.319 shares C-locale POSIX bracket-class translation across namespace exports and ordinary
+string regex consumers. It closes the `[[:space:]]` metadata-pattern gap and covers all 12 standard
+classes, negation and leading literal brackets. Locale-specific Unicode classification and full
+TRE/PCRE identity remain open. Testing also exposed an unrelated parser octal-string-escape gap;
+that is not covered by this regex increment.
+
+Profile 0.320 closes the octal/variable-width source-escape gap, adds raw-string decoding and strict
+escape diagnostics, and preserves byte literals through AST evaluation and quotation. Unpaired
+Unicode surrogate warnings/nonstandard payloads remain outside the browser contract.
+
+Package-tools now emits `description-structure-v2`, adding strict native Title/Description terminal
+punctuation checks. Independently authored fixtures compare 66 descriptions with GNU R 4.6.1 strict
+diagnostics. This tooling increment does not change runtime profile 0.320 or establish full metadata
+validation; malformed prose punctuation now fails the metadata stage through its existing check
+gate.
+
+Profile 0.321 adds the base `proc_time` summary and print methods and ordinary `summary` S3
+dispatch. Fixed timing graphs establish child-time aggregation, missing-value handling, three-column
+printing and invisible original returns. This closes a display gap seen in numDeriv comparisons; its
+numeric and platform-dependent output differences remain open.
+
+Profile 0.322 closes sum's logical/integer return-type gap, named/NULL input admission, exact
+control matching and argument-boundary promotion behavior. Executable native graphs retain result
+types and missing-value ordering. Floating accumulation and Summary group dispatch remain open.
+
+Profile 0.323 adds Summary-group dispatch across all seven members, first-argument method selection,
+eager argument evaluation, dispatch metadata, namespace registration and NextMethod continuation to
+primitive implementations. Independently authored native graphs cover class history and bounded
+mixed-method re-entry. Full class-method catalogs and floating accumulation remain open.
+
+Profile 0.324 closes factor Summary rejection and ordered-factor extrema. Results preserve levels
+and ordered identity, incompatible level sets fail, and empty reductions retain warning order. These
+methods reuse group dispatch and receive the selected generic through runtime invocation metadata.
+Data-frame/time-class Summary methods and floating accumulation remain open.
+
+Profile 0.325 repairs shared atomic extrema before adding data-frame Summary methods. Integer types,
+NA/NaN precedence, named and NULL arguments, empty warnings, ordinary ASCII character comparisons
+and finite numeric ranges now have independently authored native evidence. Recursive range lists,
+locale collation and full class-method catalogs remain open.
+
+Profile 0.326 adds the registered data-frame Summary method and replaces product's unconditional
+frame flattening. Native evidence covers per-frame type coercion, integer boundaries, matrix
+columns, missing values, empty frames and column validation. Custom coercion/predicate methods and
+full complex/floating numerical identity remain open.
+
+Profile 0.327 adds numeric-predicate S3 dispatch, primitive continuation and lazy date/time
+predicate methods. Data-frame Summary validation now respects custom numeric predicates. Native
+fixtures cover the registered methods and class/default behavior; namespace-context lookup inside
+Summary and custom coercion remain open.
+
+DESCRIPTION structural policy v3 closes reserved-Priority validation and native diagnostic gaps in
+four dependency fields. A 134-input native fixture matrix covers revision constraints, numeric
+version components, spacing and empty entries. The runtime remains at profile 0.327; full metadata,
+license validation and undeclared-dependency analysis still block P7.
+
+License structural policy v1 adds catalog-backed expression diagnostics and license-file inventory
+checks to package reports. Native fixtures pin all 32 public catalog rows and compare structural
+flags with files present and absent. License text/template contents, full metadata and P7 remain
+unexecuted; runtime capabilities are unchanged.
+
+License structural policy v2 validates template DCF records and required fields from optional file
+text. Native evidence covers 136 combinations, including alternative ordering and empty records.
+Package reports credit these checks when applicable; full metadata validation and P7 remain open.
+
+Namespace declaration policy v1 checks supported import/importFrom directives against
+Imports/Depends, with native base-package exemptions and 12 live oracle fixtures. The runner records
+the audit without crediting dynamic or transitive dependency coverage. P7 remains incomplete.
+
+Namespace declaration policy v2 handles literal exclusion lists and named package arguments, with
+stable missing-name ordering. Native coverage expands to 23 cases. Computed controls and dynamic or
+transitive dependency analysis remain open; runtime capabilities are unchanged.
+
+Profile 0.328 adds AST-normalized literal namespace import exclusions, repeated-import merging and
+explicit re-import handling. Ten own native package installations verify binding availability.
+Declaration policy v3 shares the native first-except argument rule. Computed namespace expressions
+and full importFrom renaming remain open.
+
+Profile 0.329 enforces the exported binding boundary for importFrom. Private, inherited base and
+absent bindings are covered by runtime tests and independent native installation fixtures. Renamed
+imports remain open.
+
+### Namespace import renaming (profile 0.330)
+
+Literal importFrom arguments retain local alias names separately from dependency export names. Named
+package arguments and quoted binding names are normalized from the AST. Import directives retain
+their order, so full imports and exclusions preserve explicit aliases. Seven native installation
+fixtures verify alias presence and values alongside the ten existing import cases. Duplicate local
+names within one directive are rejected. Computed directives and exact conflicting import
+diagnostics remain incomplete.
+
+### Namespace import conflict warnings (profile 0.331)
+
+Ordinary imports compare an existing local binding with the incoming value using identical.
+Different values emit a replacement warning naming the previous and current packages; equal values
+are replaced silently. Four independent native installation fixtures cover selected and full
+imports, equal values across packages, and repeated imports from one package. The latest binding
+remains visible. Renamed incoming binding conflicts, repeated alias errors and their native
+diagnostic envelopes remain incomplete; this capability is partial.
+
+### DESCRIPTION structural policy v4
+
+The build-time DESCRIPTION assessment checks VignetteBuilder syntax against 30 independently written
+native GNU R 4.6.1 fixtures. It accepts ASCII alphanumeric/dot tokens with comma separators,
+including the native empty-entry behavior, and rejects embedded whitespace, constraints and other
+punctuation. These tokens are not validated as package names by this native diagnostic. Builder
+availability, vignette execution and full metadata validation remain separate, incomplete checks.
+This changes build-time evidence only; the runtime profile remains unchanged.
+
+### Provided dependency lookup boundary
+
+Local artifact resolution, repository preflight and repository installation consult only explicit
+provided-package entries. Valid package names such as constructor, toString and hasOwnProperty must
+resolve to an artifact, repository entry or explicitly supplied version; inherited JavaScript
+properties never establish availability. Regression fixtures cover missing roots and dependencies,
+explicit versions and artifact load order. Runtime semantics and the capability profile are
+unchanged.
+
+### Repository installation index pin
+
+Repository installation accepts expectedIndexIntegrity from a preflight result. The CLI exposes
+`--expected-index-integrity sha256-DIGEST`. Invalid pins fail before network access; changed index
+bytes fail before any archive download. A matching pin continues through ordinary dependency
+installation and archive digest checks. Index identity does not establish source archive identity,
+package behavioral compatibility or transitive API coverage. Runtime capabilities are unchanged.
+
+### Bounded repository dependency traversal
+
+Repository installation keeps active packages separate from completed artifacts. The package limit
+counts each package once, and a cycle fails when traversal returns to an active package. Required
+version constraints are checked against available artifact, provided or index versions before
+fetching the dependency archive. Source DESCRIPTION remains authoritative for dependency edges.
+Tests cover a two-package closure at its exact limit and early cycle, version and limit failures
+without unrelated archive downloads. Runtime semantics and compatibility tiers are unchanged.
+
+### Extended vector summation (profile 0.332)
+
+Double and complex sum inputs use an independently implemented binary accumulator with a 64-bit
+significand and ties-to-even rounding after each addition. Each vector result rounds to binary64
+before combination with other arguments, matching the observed GNU R 4.6.1 profile. Native fixtures
+cover cancellation, halfway cases, finite overflow recovery, infinities, subnormals, complex values
+and argument boundaries. Integer promotion and missing-value behavior are retained. Other numerical
+reducers and math-library differences remain separate gaps; this does not establish package-wide
+numerical equivalence or compatibility with every platform's long-double format.
+
+### Extended matrix reductions (profile 0.333)
+
+colSums, colMeans and rowMeans reuse the owned 64-bit-significand accumulator. Means divide in
+extended precision before rounding to binary64, preserving finite means when the unscaled sum
+exceeds binary64 range. Gradual underflow and ties-to-even conversion cover subnormal results.
+Recursive native fixtures cover real and complex cancellation, overflow, subnormals, infinities,
+empty groups and missing-value removal. Existing dimension and naming behavior is retained. The
+separate correction pass of mean() and other numerical reducers remain incomplete.
+
+### Extended mean correction (profile 0.334)
+
+Numeric mean accumulation and division use the owned extended arithmetic. Double and complex inputs
+additionally accumulate residuals around the extended mean and apply a correction before binary64
+conversion; integer and logical means retain direct division. Native evidence includes cancellation
+with large magnitudes, finite overflow recovery, subnormals, complex components, infinities, empty
+vectors and missing-value removal. Argument matching, trimming and class-method coverage remain
+separate contracts; this change does not claim complete mean generic compatibility.
+
+### Mean default dispatch and trimming (profile 0.335)
+
+mean dispatches S3 methods while preserving lazy dots and has a registered, directly callable
+mean.default(x, trim = 0, na.rm = FALSE, ...). Numeric trimming removes the specified fraction from
+each sorted end; trim at least one half selects the central value or pair. Negative trim retains all
+values. Named and partial controls, unused lazy dots and NextMethod have native recursive fixtures.
+Non-numeric inputs warn and return NA before forcing trim; positive complex trimming is rejected.
+Dedicated Date/time methods, all control-coercion details and rounding-sensitive partial selection
+order remain incomplete. The default method reuses the extended mean reducer.
+
+### Mean missing controls (profile 0.336)
+
+mean.default removes missing entries only for a length-one, non-missing logical TRUE na.rm value.
+Other control values retain missing entries rather than coercing or rejecting the control. The
+control is forced before trim. NA takes precedence over NaN in real means regardless of encounter
+order, and complex means preserve a NaN in one component while averaging the other. Native recursive
+fixtures cover 15 controls, typed missing inputs, ordering and both NaN component positions.
+Component-specific complex NA storage remains incomplete and is not claimed by this profile.

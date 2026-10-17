@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -14,7 +14,10 @@ import {
   inspectPackage,
   installPackagesFromRepository,
   packPackage,
+  preflightPackagesFromRepository,
   resolvePackageArtifacts,
+  runPackageExamples,
+  runPackageTests,
   verifyPackageArtifact,
 } from "../src/index.js";
 
@@ -25,6 +28,208 @@ afterEach(async () => {
 });
 
 describe("pure-R package packager", () => {
+  it("rejects DESCRIPTION identity assembled from separate records", async () => {
+    const packageRoot = await fixturePackage();
+    await writeFile(
+      path.join(packageRoot, "DESCRIPTION"),
+      "Package: demopkg\n \t\nVersion: 1.2.3\n",
+    );
+    await expect(packPackage(packageRoot)).rejects.toThrow("exactly one DCF record");
+    await expect(inspectPackage(packageRoot)).rejects.toThrow("exactly one DCF record");
+  });
+
+  it("runs every default-applicable Rd example topic and reports explicit exclusions and first failure", async () => {
+    const packageRoot = await fixturePackage();
+    const man = path.join(packageRoot, "man");
+    await mkdir(man);
+    await writeFile(
+      path.join(man, "a.Rd"),
+      [
+        "\\name{a}",
+        "\\title{First}",
+        "\\examples{",
+        "x <- 1",
+        "\\dontrun{stop('excluded dontrun')}",
+        "y <- x + 1",
+        "\\donttest{stop('excluded donttest')}",
+        "stopifnot(y == 2)",
+        "}",
+      ].join("\n"),
+    );
+    await writeFile(
+      path.join(man, "b.Rd"),
+      "\\name{b}\n\\title{Second}\n\\examples{\\dontrun{stop('not applicable')}}\n",
+    );
+    await writeFile(
+      path.join(man, "c.Rd"),
+      "\\name{c}\n\\title{Third}\n\\examples{stop('first blocker')}\n",
+    );
+    const archive = path.join(path.dirname(packageRoot), "demopkg-examples.tar.gz");
+    await createTar({ gzip: true, file: archive, cwd: path.dirname(packageRoot) }, [
+      path.basename(packageRoot),
+    ]);
+    const digest = createHash("sha256")
+      .update(await readFile(archive))
+      .digest("hex");
+    const seen: string[] = [];
+    const report = await runPackageExamples(
+      archive,
+      (script) => {
+        seen.push(script.path);
+        expect(script.source).not.toContain("excluded dontrun");
+        expect(script.source).not.toContain("excluded donttest");
+        if (script.path === "man/c.Rd") throw new Error("first blocker");
+        return Promise.resolve();
+      },
+      {
+        expectedSourceSha256: digest,
+        expectedPackage: { name: "demopkg", version: "1.2.3" },
+      },
+    );
+    expect(seen).toEqual(["man/a.Rd", "man/c.Rd"]);
+    expect(report).toMatchObject({
+      package: { name: "demopkg", version: "1.2.3" },
+      sourceSha256: digest,
+      entrypoints: [
+        {
+          path: "man/a.Rd",
+          topic: "a",
+          applicableBlocks: 3,
+          excludedDontrunBlocks: 1,
+          excludedDonttestBlocks: 1,
+        },
+        { path: "man/b.Rd", topic: "b", applicableBlocks: 0, excludedDontrunBlocks: 1 },
+        { path: "man/c.Rd", topic: "c", applicableBlocks: 1 },
+      ],
+      executed: [
+        { path: "man/a.Rd", topic: "a", status: "completed" },
+        { path: "man/c.Rd", topic: "c", status: "failed" },
+      ],
+      outcome: "failed",
+      firstBlocker: {
+        code: "example-error",
+        path: "man/c.Rd",
+        topic: "c",
+        message: "first blocker",
+      },
+    });
+    const selected = await runPackageExamples(archive, () => Promise.resolve(), {
+      expectedSourceSha256: digest,
+      paths: ["man/a.Rd"],
+    });
+    expect(selected).toMatchObject({ outcome: "partial", executed: [{ path: "man/a.Rd" }] });
+    const complete = await runPackageExamples(archive, () => Promise.resolve(), {
+      expectedSourceSha256: digest,
+    });
+    expect(complete).toMatchObject({
+      outcome: "completed",
+      executed: [{ path: "man/a.Rd" }, { path: "man/c.Rd" }],
+      firstBlocker: null,
+    });
+    await expect(
+      runPackageExamples(archive, () => Promise.resolve(), {
+        expectedSourceSha256: "0".repeat(64),
+      }),
+    ).rejects.toThrow("Package source SHA-256 mismatch");
+  });
+
+  it("distinguishes absent examples from Rd topics with no default-applicable blocks", async () => {
+    const packageRoot = await fixturePackage();
+    const none = await runPackageExamples(packageRoot, () =>
+      Promise.reject(new Error("No example should run.")),
+    );
+    expect(none).toMatchObject({ outcome: "no-examples", entrypoints: [], executed: [] });
+    await mkdir(path.join(packageRoot, "man"));
+    await writeFile(
+      path.join(packageRoot, "man", "only.Rd"),
+      "\\name{only}\n\\title{Only}\n\\examples{\\donttest{stop('excluded')}}\n",
+    );
+    const excluded = await runPackageExamples(packageRoot, () =>
+      Promise.reject(new Error("No example should run.")),
+    );
+    expect(excluded).toMatchObject({
+      outcome: "no-applicable",
+      entrypoints: [{ path: "man/only.Rd", topic: "only", excludedDonttestBlocks: 1 }],
+      executed: [],
+    });
+  });
+
+  it("runs unchanged top-level source-package test scripts in order and reports the first failure", async () => {
+    const packageRoot = await fixturePackage();
+    const testsRoot = path.join(packageRoot, "tests");
+    await mkdir(path.join(testsRoot, "testthat"), { recursive: true });
+    await writeFile(path.join(testsRoot, "a.R"), "stopifnot(1 + 1 == 2)\n");
+    await writeFile(path.join(testsRoot, "b.r"), "stop('package assertion failed')\n");
+    await writeFile(path.join(testsRoot, "c.R"), "stop('must not run')\n");
+    await writeFile(path.join(testsRoot, "a.Rout.save"), "saved output\n");
+    await writeFile(path.join(testsRoot, "testthat", "test-internal.R"), "TRUE\n");
+    const archive = path.join(path.dirname(packageRoot), "demopkg-tests.tar.gz");
+    await createTar({ gzip: true, file: archive, cwd: path.dirname(packageRoot) }, [
+      path.basename(packageRoot),
+    ]);
+    const digest = createHash("sha256")
+      .update(await readFile(archive))
+      .digest("hex");
+    const seen: string[] = [];
+    const report = await runPackageTests(
+      archive,
+      (script) => {
+        seen.push(script.path);
+        if (script.path === "tests/b.r") throw new Error("package assertion failed");
+        expect(script.source).toBe("stopifnot(1 + 1 == 2)\n");
+        expect(script.expectedOutput).toEqual({
+          path: "tests/a.Rout.save",
+          source: "saved output\n",
+        });
+        return Promise.resolve();
+      },
+      {
+        expectedSourceSha256: digest,
+        expectedPackage: { name: "demopkg", version: "1.2.3" },
+      },
+    );
+    expect(seen).toEqual(["tests/a.R", "tests/b.r"]);
+    expect(report).toMatchObject({
+      package: { name: "demopkg", version: "1.2.3" },
+      sourceSha256: digest,
+      entrypoints: ["tests/a.R", "tests/b.r", "tests/c.R"],
+      nestedRFiles: ["tests/testthat/test-internal.R"],
+      outputExpectations: ["tests/a.Rout.save"],
+      executed: [
+        { path: "tests/a.R", status: "completed" },
+        { path: "tests/b.r", status: "failed" },
+      ],
+      outcome: "failed",
+      firstBlocker: {
+        code: "test-error",
+        path: "tests/b.r",
+        message: "package assertion failed",
+      },
+    });
+    await expect(
+      runPackageTests(archive, () => Promise.resolve(), {
+        expectedSourceSha256: "0".repeat(64),
+      }),
+    ).rejects.toThrow("Package source SHA-256 mismatch");
+  });
+
+  it("distinguishes absent package tests from nested files without a runnable entrypoint", async () => {
+    const packageRoot = await fixturePackage();
+    const noTests = await runPackageTests(packageRoot, () =>
+      Promise.reject(new Error("no tests should run")),
+    );
+    expect(noTests).toMatchObject({ outcome: "no-tests", firstBlocker: null, entrypoints: [] });
+    await mkdir(path.join(packageRoot, "tests", "testthat"), { recursive: true });
+    await writeFile(path.join(packageRoot, "tests", "testthat", "test-one.R"), "TRUE\n");
+    const nestedOnly = await runPackageTests(packageRoot, () =>
+      Promise.reject(new Error("nested files must not run independently")),
+    );
+    expect(nestedOnly).toMatchObject({
+      outcome: "no-entrypoint",
+      firstBlocker: { code: "no-entrypoint" },
+      nestedRFiles: ["tests/testthat/test-one.R"],
+    });
+  });
   it("builds deterministic JSON artifacts with metadata, source, resources, and integrity", async () => {
     const packageRoot = await fixturePackage();
     const first = await inspectPackage(packageRoot);
@@ -635,6 +840,33 @@ describe("pure-R package packager", () => {
     await expect(inspectPackage(packageRoot, { limits: { maxFiles: 2 } })).rejects.toThrow(
       "configured file or byte limits",
     );
+
+    const archive = path.join(path.dirname(packageRoot), "bounded-input.tar.gz");
+    await createTar({ gzip: true, file: archive, cwd: path.dirname(packageRoot) }, [
+      path.basename(packageRoot),
+    ]);
+    await expect(inspectPackage(archive, { limits: { maxFiles: 2 } })).rejects.toThrow(
+      "configured file or byte limits",
+    );
+  });
+
+  it("aborts archive decompression at the first limit error", async () => {
+    const packageRoot = await fixturePackage();
+    await writeFile(path.join(packageRoot, "a-too-big.bin"), Buffer.alloc(8192));
+    await writeFile(path.join(packageRoot, "z-late.bin"), randomBytes(256 * 1024));
+    const archive = path.join(path.dirname(packageRoot), "abort-limit.tar.gz");
+    await createTar({ gzip: true, file: archive, cwd: packageRoot }, [
+      "a-too-big.bin",
+      "z-late.bin",
+    ]);
+    const corrupted = await readFile(archive);
+    // A reader that drains to the later entry reaches the corrupt gzip trailer.
+    corrupted[corrupted.length - 8] ^= 0xff;
+    await writeFile(archive, corrupted);
+
+    await expect(inspectPackage(archive, { limits: { maxFileBytes: 8 } })).rejects.toThrow(
+      "Archive entry 'a-too-big.bin' exceeds the per-file byte limit.",
+    );
   });
 
   it("resolves required dependencies in deterministic load order and emits a lock", async () => {
@@ -674,6 +906,356 @@ describe("pure-R package packager", () => {
       "requires missing package 'helper'",
     );
   });
+
+  it.each(["Imports", "Suggests"] as const)(
+    "does not satisfy %s: R with the runtime version",
+    async (kind) => {
+      const root = await fixturePackage();
+      const description = `Package: demopkg\nVersion: 1.0\nDepends: R (>= 4.6)\n${kind}: R (>= 4.0)\nNeedsCompilation: no\n`;
+      await writeFile(path.join(root, "DESCRIPTION"), description);
+      const artifact = await packPackage(root);
+      const resolveOptions = { includeSuggests: true, providedPackages: { R: "4.6.1" } };
+      expect(() => resolvePackageArtifacts([artifact], resolveOptions)).toThrow(
+        "requires missing package 'R'",
+      );
+      expect(() => resolvePackageArtifacts([], { roots: ["R"] })).toThrow(
+        "Root package 'R' was not supplied",
+      );
+      if (kind === "Suggests")
+        expect(resolvePackageArtifacts([artifact]).artifacts).toEqual([artifact]);
+      const archive = await archivePackage(root);
+      const requested: string[] = [];
+      const fetch_: typeof fetch = (input) => {
+        const file = new URL(input instanceof Request ? input.url : input).pathname
+          .split("/")
+          .at(-1)!;
+        requested.push(file);
+        if (file === "PACKAGES.gz") return Promise.resolve(new Response(gzipSync(description)));
+        if (file === "demopkg_1.0.tar.gz") return Promise.resolve(new Response(archive));
+        throw new Error(`Unexpected download: ${file}`);
+      };
+      const options = {
+        ...resolveOptions,
+        repository: "https://packages.example.test/cran/",
+        fetch: fetch_,
+      };
+      const plan = await preflightPackagesFromRepository(["demopkg"], options);
+      expect(plan.blockers).toMatchObject([
+        { code: "missing-package", package: "R", requiredBy: "demopkg" },
+      ]);
+      const rootPlan = await preflightPackagesFromRepository(["R"], options);
+      expect(rootPlan.firstBlocker).toMatchObject({ code: "missing-package", package: "R" });
+      await expect(installPackagesFromRepository(["R"], options)).rejects.toThrow(
+        "Package 'R' is not present",
+      );
+      requested.length = 0;
+      await expect(installPackagesFromRepository(["demopkg"], options)).rejects.toThrow(
+        "requires 'R', which is absent",
+      );
+      expect(requested).toEqual(["PACKAGES.gz", "demopkg_1.0.tar.gz"]);
+    },
+  );
+
+  it("keeps a package named R separate from runtime requirements and lock edges", async () => {
+    const root = await fixturePackage();
+    const description =
+      "Package: demopkg\nVersion: 1.0\nDepends: R (>= 4.6)\nImports: R (>= 1.0)\nNeedsCompilation: no\n";
+    await writeFile(path.join(root, "DESCRIPTION"), description);
+    const namedRRoot = await fixturePackage("R", "1.0");
+    const artifact = await packPackage(root);
+    const namedR = await packPackage(namedRRoot);
+    const resolved = resolvePackageArtifacts([artifact, namedR], { roots: ["demopkg"] });
+    expect(
+      resolved.lock.packages.map(({ name, dependencies }) => ({ name, dependencies })),
+    ).toEqual([
+      { name: "R", dependencies: [] },
+      { name: "demopkg", dependencies: ["R"] },
+    ]);
+    const index = gzipSync(
+      `${description}\n${await readFile(path.join(namedRRoot, "DESCRIPTION"), "utf8")}`,
+    );
+    const archives = new Map([
+      ["demopkg_1.0.tar.gz", await archivePackage(root)],
+      ["R_1.0.tar.gz", await archivePackage(namedRRoot)],
+    ]);
+    const requested: string[] = [];
+    const fetch_: typeof fetch = (input) => {
+      const file = new URL(input instanceof Request ? input.url : input).pathname
+        .split("/")
+        .at(-1)!;
+      requested.push(file);
+      if (file === "PACKAGES.gz") return Promise.resolve(new Response(index));
+      const bytes = archives.get(file);
+      if (bytes === undefined) throw new Error(`Unexpected download: ${file}`);
+      return Promise.resolve(new Response(bytes));
+    };
+    const options = {
+      repository: "https://packages.example.test/cran/",
+      fetch: fetch_,
+      maxPackages: 2,
+    };
+    const plan = await preflightPackagesFromRepository(["demopkg"], options);
+    expect(plan.blockers).toEqual([]);
+    expect(plan.packages.map(({ name }) => name)).toEqual(["R", "demopkg"]);
+    requested.length = 0;
+    const installed = await installPackagesFromRepository(["demopkg"], options);
+    expect(installed.lock).toEqual(resolved.lock);
+    expect(requested).toEqual(["PACKAGES.gz", "demopkg_1.0.tar.gz", "R_1.0.tar.gz"]);
+
+    // A package version constraint must also remain independent of the runtime version.
+    await writeFile(
+      path.join(root, "DESCRIPTION"),
+      description.replace("Imports: R (>= 1.0)", "Imports: R (>= 4.0)"),
+    );
+    const incompatible = await packPackage(root);
+    expect(() => resolvePackageArtifacts([incompatible, namedR], { roots: ["demopkg"] })).toThrow(
+      "requires 'R' >= 4.0, but 1.0 is available",
+    );
+    archives.set("demopkg_1.0.tar.gz", await archivePackage(root));
+    requested.length = 0;
+    await expect(installPackagesFromRepository(["demopkg"], options)).rejects.toThrow(
+      "requires 'R' >= 4.0, but 1.0 is available",
+    );
+    expect(requested).toEqual(["PACKAGES.gz", "demopkg_1.0.tar.gz"]);
+  });
+
+  it.each(["4.5", "4.6.1"])(
+    "checks Depends: R against runtime %s even when a newer package named R exists",
+    async (version) => {
+      const root = await fixturePackage();
+      const description =
+        "Package: demopkg\nVersion: 1.0\nDepends: R (>= 4.6)\nNeedsCompilation: no\n";
+      await writeFile(path.join(root, "DESCRIPTION"), description);
+      const artifact = await packPackage(root);
+      const namedR = await packPackage(await fixturePackage("R", "100.0"));
+      const resolveOptions = { roots: ["demopkg"], providedPackages: { R: version } };
+      if (version === "4.5")
+        expect(() => resolvePackageArtifacts([artifact, namedR], resolveOptions)).toThrow(
+          "requires 'R' >= 4.6, but 4.5 is available",
+        );
+      else {
+        const resolved = resolvePackageArtifacts([artifact, namedR], resolveOptions);
+        expect(resolved.artifacts).toEqual([artifact]);
+        expect(resolved.lock.packages[0]?.dependencies).toEqual([]);
+      }
+      const archive = await archivePackage(root);
+      const requested: string[] = [];
+      const fetch_: typeof fetch = (input) => {
+        const file = new URL(input instanceof Request ? input.url : input).pathname
+          .split("/")
+          .at(-1)!;
+        requested.push(file);
+        if (file === "PACKAGES.gz")
+          return Promise.resolve(
+            new Response(gzipSync(`${description}\nPackage: R\nVersion: 100.0\n`)),
+          );
+        if (file === "demopkg_1.0.tar.gz") return Promise.resolve(new Response(archive));
+        throw new Error(`Unexpected download: ${file}`);
+      };
+      const options = {
+        ...resolveOptions,
+        repository: "https://packages.example.test/cran/",
+        fetch: fetch_,
+        maxPackages: 1,
+      };
+      const plan = await preflightPackagesFromRepository(["demopkg"], options);
+      expect(plan.packages.map(({ name }) => name)).toEqual(["demopkg"]);
+      expect(plan.blockers.map(({ code }) => code)).toEqual(
+        version === "4.5" ? ["version-mismatch"] : [],
+      );
+      requested.length = 0;
+      const install = installPackagesFromRepository(["demopkg"], options);
+      if (version === "4.5")
+        await expect(install).rejects.toThrow("requires 'R' >= 4.6, but 4.5 is available");
+      else
+        expect((await install).artifacts.map(({ package: identity }) => identity.name)).toEqual([
+          "demopkg",
+        ]);
+      expect(requested).toEqual(["PACKAGES.gz", "demopkg_1.0.tar.gz"]);
+    },
+  );
+
+  it.each(["constructor", "toString", "hasOwnProperty"])(
+    "requires explicit availability for prototype-named package %s",
+    async (name) => {
+      expect(() => resolvePackageArtifacts([], { roots: [name] })).toThrow(
+        `Root package '${name}' was not supplied.`,
+      );
+      expect(
+        resolvePackageArtifacts([], { roots: [name], providedPackages: { [name]: "1.0" } })
+          .artifacts,
+      ).toEqual([]);
+      const root = await fixturePackage();
+      await writeFile(
+        path.join(root, "DESCRIPTION"),
+        `Package: demopkg\nVersion: 1.0\nImports: ${name} (>= 1.0)\nNeedsCompilation: no\n`,
+      );
+      const consumer = await packPackage(root);
+      expect(() => resolvePackageArtifacts([consumer])).toThrow(
+        `requires missing package '${name}'`,
+      );
+      const dependency = await packPackage(await fixturePackage(name, "1.0"));
+      expect(
+        resolvePackageArtifacts([consumer, dependency], { roots: ["demopkg"] }).artifacts.map(
+          (artifact) => artifact.package.name,
+        ),
+      ).toEqual([name, "demopkg"]);
+      const index = gzipSync(
+        `Package: demopkg\nVersion: 1.0\nImports: ${name} (>= 1.0)\nNeedsCompilation: no\n`,
+      );
+      const fetch_: typeof fetch = () => Promise.resolve(new Response(index));
+      const options = { repository: "https://packages.example.test/cran/", fetch: fetch_ };
+      const plan = await preflightPackagesFromRepository(["demopkg"], options);
+      expect(plan.firstBlocker).toMatchObject({
+        code: "missing-package",
+        package: name,
+        requiredBy: "demopkg",
+      });
+      const supplied = await preflightPackagesFromRepository(["demopkg"], {
+        ...options,
+        providedPackages: { [name]: "1.0" },
+      });
+      expect(supplied.blockers).toEqual([]);
+      await expect(installPackagesFromRepository([name], options)).rejects.toThrow(name);
+    },
+  );
+
+  it("rejects changed or malformed installation index pins before archive requests", async () => {
+    const requested: string[] = [];
+    const fetch_: typeof fetch = (input) => {
+      const url = new URL(input instanceof Request ? input.url : input);
+      requested.push(url.href);
+      if (!url.pathname.endsWith("PACKAGES.gz")) throw new Error("Unexpected archive request");
+      return Promise.resolve(
+        new Response(gzipSync("Package: fixture\nVersion: 1.0\nNeedsCompilation: no\n")),
+      );
+    };
+    const options = { repository: "https://packages.example.test/cran/", fetch: fetch_ };
+    await expect(
+      installPackagesFromRepository(["fixture"], {
+        ...options,
+        expectedIndexIntegrity: `sha256-${"0".repeat(64)}`,
+      }),
+    ).rejects.toThrow("Repository index integrity mismatch");
+    expect(requested).toEqual(["https://packages.example.test/cran/src/contrib/PACKAGES.gz"]);
+    requested.length = 0;
+    await expect(
+      installPackagesFromRepository(["fixture"], { ...options, expectedIndexIntegrity: "bad-pin" }),
+    ).rejects.toThrow("Expected repository index integrity");
+    expect(requested).toEqual([]);
+  });
+
+  it.each(["cycle", "version", "limit"] as const)(
+    "stops repository traversal at the first %s blocker",
+    async (mode) => {
+      const root = await fixturePackage();
+      await writeFile(
+        path.join(root, "DESCRIPTION"),
+        `Package: demopkg\nVersion: 1.0\nImports: helper${mode === "version" ? " (>= 2.0)" : ""}, unused\nNeedsCompilation: no\n`,
+      );
+      const helperRoot = await fixturePackage("helper", "1.0");
+      await writeFile(
+        path.join(helperRoot, "DESCRIPTION"),
+        "Package: helper\nVersion: 1.0\nImports: demopkg\nNeedsCompilation: no\n",
+      );
+      const archives = new Map([
+        ["demopkg_1.0.tar.gz", await archivePackage(root)],
+        ["helper_1.0.tar.gz", await archivePackage(helperRoot)],
+      ]);
+      const requested: string[] = [];
+      const index = gzipSync(
+        "Package: demopkg\nVersion: 1.0\n\nPackage: helper\nVersion: 1.0\n\nPackage: unused\nVersion: 1.0\n",
+      );
+      const fetch_: typeof fetch = (input) => {
+        const url = new URL(input instanceof Request ? input.url : input);
+        const file = url.pathname.split("/").at(-1)!;
+        requested.push(file);
+        if (file === "PACKAGES.gz") return Promise.resolve(new Response(index));
+        const bytes = archives.get(file);
+        if (bytes === undefined) throw new Error(`Unexpected download: ${file}`);
+        return Promise.resolve(new Response(bytes));
+      };
+      await expect(
+        installPackagesFromRepository(["demopkg"], {
+          repository: "https://packages.example.test/cran/",
+          fetch: fetch_,
+          maxPackages: mode === "limit" ? 1 : 3,
+        }),
+      ).rejects.toThrow(
+        mode === "cycle"
+          ? "Package dependency cycle includes 'demopkg'"
+          : mode === "version"
+            ? "requires 'helper' >= 2.0, but 1.0 is available"
+            : "exceeds the 1-package limit",
+      );
+      expect(requested).toEqual([
+        "PACKAGES.gz",
+        "demopkg_1.0.tar.gz",
+        ...(mode === "cycle" ? ["helper_1.0.tar.gz"] : []),
+      ]);
+    },
+  );
+
+  it.each(["hidden", "stale", "constraint"] as const)(
+    "uses archive dependency declarations when repository metadata is %s",
+    async (mode) => {
+      const root = await fixturePackage();
+      const sourceImports =
+        mode === "stale" ? "stats" : `helper${mode === "constraint" ? " (>= 2.0)" : ""}`;
+      await writeFile(
+        path.join(root, "DESCRIPTION"),
+        `Package: demopkg\nVersion: 1.0\nImports: ${sourceImports}\nNeedsCompilation: no\n`,
+      );
+      const helperRoot = await fixturePackage("helper", "1.0");
+      await writeFile(
+        path.join(helperRoot, "DESCRIPTION"),
+        "Package: helper\nVersion: 1.0\nImports: stats\nNeedsCompilation: no\n",
+      );
+      const archives = new Map([
+        ["demopkg_1.0.tar.gz", await archivePackage(root)],
+        ["helper_1.0.tar.gz", await archivePackage(helperRoot)],
+      ]);
+      const index = gzipSync(
+        `Package: demopkg\nVersion: 1.0\nImports: ${mode === "stale" ? "absent" : "stats"}\nNeedsCompilation: no\n\nPackage: helper\nVersion: 1.0\nNeedsCompilation: no\n`,
+      );
+      const requested: string[] = [];
+      const fetch_: typeof fetch = (input) => {
+        const url = new URL(input instanceof Request ? input.url : input);
+        const file = url.pathname.split("/").at(-1)!;
+        requested.push(file);
+        if (file === "PACKAGES.gz") return Promise.resolve(new Response(index));
+        const bytes = archives.get(file);
+        if (bytes === undefined) throw new Error(`Unexpected download: ${file}`);
+        return Promise.resolve(new Response(bytes));
+      };
+      const options = { repository: "https://packages.example.test/cran/", fetch: fetch_ };
+      const plan = await preflightPackagesFromRepository(["demopkg"], options);
+      expect(plan.blockers.map((blocker) => blocker.code)).toEqual(
+        mode === "stale" ? ["missing-package"] : [],
+      );
+      requested.length = 0;
+      const install = installPackagesFromRepository(["demopkg"], {
+        ...options,
+        expectedIndexIntegrity: plan.indexIntegrity,
+      });
+      if (mode === "constraint")
+        await expect(install).rejects.toThrow("requires 'helper' >= 2.0, but 1.0 is available");
+      else {
+        const result = await install;
+        expect(result.artifacts.map((artifact) => artifact.package.name)).toEqual(
+          mode === "hidden" ? ["helper", "demopkg"] : ["demopkg"],
+        );
+        expect(result.lock.packages.at(-1)?.dependencies).toEqual(
+          mode === "hidden" ? ["helper"] : [],
+        );
+      }
+      expect(requested).toEqual([
+        "PACKAGES.gz",
+        "demopkg_1.0.tar.gz",
+        ...(mode === "hidden" ? ["helper_1.0.tar.gz"] : []),
+      ]);
+    },
+  );
 
   it("keeps Suggests optional, checks requested optional edges, and compares R package versions", async () => {
     const artifact = await packPackage(await fixturePackage());
@@ -722,9 +1304,15 @@ describe("pure-R package packager", () => {
       return Promise.resolve(new Response("missing", { status: 404 }));
     };
 
+    const plan = await preflightPackagesFromRepository(["demopkg"], {
+      repository: "https://packages.example.test/cran/",
+      fetch: fetch_,
+    });
     const installed = await installPackagesFromRepository(["demopkg"], {
       repository: "https://packages.example.test/cran/",
       fetch: fetch_,
+      expectedIndexIntegrity: plan.indexIntegrity,
+      maxPackages: 2,
     });
     expect(installed.repository).toBe("https://packages.example.test/cran/");
     expect(installed.indexIntegrity).toMatch(/^sha256-[a-f0-9]{64}$/u);
@@ -733,6 +1321,148 @@ describe("pure-R package packager", () => {
       "demopkg",
     ]);
     expect(installed.lock.roots).toEqual(["demopkg"]);
+  });
+
+  it("preflights a dependency closure from index metadata without fetching archives", async () => {
+    const index = [
+      "Package: lifecycle",
+      "Version: 1.0.5",
+      "Depends: R (>= 3.6)",
+      "Imports: cli (>= 3.4.0), rlang (>= 1.1.0)",
+      "Suggests: optionalpkg",
+      "NeedsCompilation: no",
+      "",
+      "Package: cli",
+      "Version: 3.6.6",
+      "Imports: utils",
+      "NeedsCompilation: yes",
+      "",
+      "Package: rlang",
+      "Version: 1.3.0",
+      "Imports: utils",
+      "NeedsCompilation: yes",
+      "",
+    ].join("\n");
+    const compressed = gzipSync(index);
+    const requested: string[] = [];
+    const fetch_: typeof fetch = (input) => {
+      const url = new URL(input instanceof Request ? input.url : input);
+      requested.push(url.href);
+      if (url.pathname.endsWith("/PACKAGES.gz")) {
+        return Promise.resolve(new Response(compressed));
+      }
+      throw new Error(`Preflight requested a package archive: ${url.href}`);
+    };
+
+    const plan = await preflightPackagesFromRepository(["lifecycle"], {
+      repository: "https://packages.example.test/cran/",
+      fetch: fetch_,
+    });
+    expect(requested).toEqual(["https://packages.example.test/cran/src/contrib/PACKAGES.gz"]);
+    expect(plan.indexIntegrity).toBe(
+      `sha256-${createHash("sha256").update(compressed).digest("hex")}`,
+    );
+    expect(plan.sourceArchiveIntegrity).toBe("unverified");
+    expect(plan.roots).toEqual(["lifecycle"]);
+    expect(plan.packages.map((entry) => entry.name)).toEqual(["cli", "rlang", "lifecycle"]);
+    expect(plan.packages[2]).toMatchObject({
+      version: "1.0.5",
+      sourceUrl: "https://packages.example.test/cran/src/contrib/lifecycle_1.0.5.tar.gz",
+    });
+    expect(plan.blockers.map((blocker) => blocker.code)).toEqual([
+      "needs-compilation",
+      "needs-compilation",
+    ]);
+    expect(plan.firstBlocker).toMatchObject({
+      code: "needs-compilation",
+      package: "cli",
+      requiredBy: "lifecycle",
+    });
+    expect(plan.packages[2]?.requirements.map((dependency) => dependency.name)).toEqual([
+      "R",
+      "cli",
+      "rlang",
+    ]);
+
+    const withSuggests = await preflightPackagesFromRepository(["lifecycle"], {
+      repository: "https://packages.example.test/cran/",
+      fetch: fetch_,
+      includeSuggests: true,
+      expectedIndexIntegrity: plan.indexIntegrity,
+    });
+    expect(withSuggests.blockers.at(-1)).toMatchObject({
+      code: "missing-package",
+      package: "optionalpkg",
+      requiredBy: "lifecycle",
+    });
+  });
+
+  it("rejects a changed index pin and reports metadata version blockers", async () => {
+    const index = [
+      "Package: consumer",
+      "Version: 1.0.0",
+      "Imports: helper (>= 2.1), absent",
+      "NeedsCompilation: no",
+      "",
+      "Package: helper",
+      "Version: 2.0.0",
+      "NeedsCompilation: no",
+      "",
+    ].join("\n");
+    const fetch_: typeof fetch = (input) => {
+      const url = new URL(input instanceof Request ? input.url : input);
+      if (url.pathname.endsWith("/PACKAGES.gz")) return Promise.resolve(new Response(index));
+      throw new Error(`Preflight requested a package archive: ${url.href}`);
+    };
+    const plan = await preflightPackagesFromRepository(["consumer"], {
+      repository: "https://packages.example.test/cran/",
+      fetch: fetch_,
+    });
+    expect(plan.packages.map((entry) => entry.name)).toEqual(["helper", "consumer"]);
+    expect(plan.firstBlocker).toMatchObject({
+      code: "version-mismatch",
+      package: "helper",
+      requiredBy: "consumer",
+    });
+    expect(plan.blockers[1]).toMatchObject({
+      code: "missing-package",
+      package: "absent",
+      requiredBy: "consumer",
+    });
+    await expect(
+      preflightPackagesFromRepository(["consumer"], {
+        repository: "https://packages.example.test/cran/",
+        fetch: fetch_,
+        expectedIndexIntegrity: `sha256-${"0".repeat(64)}`,
+      }),
+    ).rejects.toThrow("Repository index integrity mismatch");
+  });
+
+  it("stops reading an unbounded repository index stream at the configured byte limit", async () => {
+    let cancelled = false;
+    const fetch_: typeof fetch = (input) => {
+      const url = new URL(input instanceof Request ? input.url : input);
+      if (!url.pathname.endsWith("/PACKAGES.gz")) {
+        throw new Error(`Preflight requested a package archive: ${url.href}`);
+      }
+      const body = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode("x".repeat(20)));
+        },
+        cancel() {
+          cancelled = true;
+        },
+      });
+      return Promise.resolve(new Response(body));
+    };
+    await expect(
+      preflightPackagesFromRepository(["consumer"], {
+        repository: "https://packages.example.test/cran/",
+        fetch: fetch_,
+        maxDownloadBytes: 10,
+      }),
+    ).rejects.toThrow("exceeds the 10-byte limit");
+    expect(cancelled).toBe(true);
   });
 
   it("rejects a repository archive that does not match its index digest", async () => {

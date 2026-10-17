@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "kind": "declared-dependency-observations",
+  "classification": "exploratory",
+  "observations": [
+    {
+      "package": {
+        "name": "abind",
+        "version": "1.4-8",
+        "license": "MIT + file LICENSE"
+      },
+      "provenance": {
+        "sourceSha256": "264a051b523ceae1795a0879e7768949ea55c586ac8db0adf1f5ebeddd2623e1",
+        "artifactSha256": "e9862a710e03ef978409dbd3c4138dd4cdf96b0584c6f228ffe2b42d1e0e9dee",
+        "oracle": {
+          "implementation": "GNU R",
+          "version": "4.6.1"
+        },
+        "semanticProfile": "0.306.0",
+        "capabilitySha256": "4a9fb40a1acecf97c31abd0d47e3ffc8e8e39a44b97c93459f6066c9259e0aa3",
+        "runtimeLimits": {
+          "maxSteps": 300000000,
+          "maxCallDepth": 200,
+          "maxVectorLength": 50000000,
+          "maxOutputBytes": 32000000,
+          "maxPackageResourceBytes": 268435456
+        }
+      },
+      "rawReportSha256": "a72df589565c714afab38d8e39d72397f0888cf25d295994a3eb5d75d2d8e9fc",
+      "dependencyObservation": {
+        "schemaVersion": 1,
+        "sourceSha256": "247d19d1dd17881e5860e7587eb7d849df6d008656e86e7b2520936563aad846",
+        "policy": "declared-version-availability-v1",
+        "actual": {
+          "status": "completed",
+          "versions": {
+            "R": "4.6.1",
+            "methods": "4.6.1",
+            "utils": "4.6.1"
+          }
+        },
+        "expected": {
+          "status": "completed",
+          "versions": {
+            "R": "4.6.1",
+            "methods": "4.6.1",
+            "utils": "4.6.1"
+          }
+        },
+        "dependencies": [
+          {
+            "name": "R",
+            "kind": "Depends",
+            "constraint": {
+              "operator": ">=",
+              "version": "1.5.0"
+            },
+            "required": true,
+            "actual": "satisfied",
+            "expected": "satisfied"
+          },
+          {
+            "name": "methods",
+            "kind": "Imports",
+            "required": true,
+            "actual": "satisfied",
+            "expected": "satisfied"
+          },
+          {
+            "name": "utils",
+            "kind": "Imports",
+            "required": true,
+            "actual": "satisfied",
+            "expected": "satisfied"
+          }
+        ],
+        "limitations": [
+          "Version lookup does not establish namespace loading, API compatibility, or transitive dependency closure.",
+          "Unavailable means the public version lookup failed; it does not distinguish missing packages from unsupported lookup behavior.",
+          "Broader DESCRIPTION validation and undeclared source dependencies remain unexecuted."
+        ]
+      },
+      "metadataStage": {
+        "id": "metadata-dependencies",
+        "status": "unexecuted",
+        "reason": "Declared dependency version lookups are recorded on both runtimes; broader metadata and undeclared dependency checks remain unexecuted.",
+        "discovered": [
+          "DESCRIPTION:full-validation",
+          "dependencies:undeclared-and-transitive",
+          "DESCRIPTION:Depends:R:0",
+          "DESCRIPTION:Imports:methods:1",
+          "DESCRIPTION:Imports:utils:2"
+        ],
+        "executed": [
+          "DESCRIPTION:Depends:R:0",
+          "DESCRIPTION:Imports:methods:1",
+          "DESCRIPTION:Imports:utils:2"
+        ]
+      },
+      "p7Eligible": false
+    },
+    {
+      "package": {
+        "name": "numDeriv",
+        "version": "2016.8-1.1",
+        "license": "GPL-2"
+      },
+      "provenance": {
+        "sourceSha256": "d8c4d19ff9aeb31b0c628bd4a16378e51c1c9a3813b525469a31fe89af00b345",
+        "artifactSha256": "0a5bac977e0b258bc22dedf41adc2c48a0eaa8e197f48dfefede7ad0f3981e45",
+        "oracle": {
+          "implementation": "GNU R",
+          "version": "4.6.1"
+        },
+        "semanticProfile": "0.306.0",
+        "capabilitySha256": "4a9fb40a1acecf97c31abd0d47e3ffc8e8e39a44b97c93459f6066c9259e0aa3",
+        "runtimeLimits": {
+          "maxSteps": 300000000,
+          "maxCallDepth": 200,
+          "maxVectorLength": 50000000,
+          "maxOutputBytes": 32000000,
+          "maxPackageResourceBytes": 268435456
+        }
+      },
+      "rawReportSha256": "ff92e0ed164e01bc9071dfd00efef2ae406fc52066781b5fbac407bdd1c208bc",
+      "dependencyObservation": {
+        "schemaVersion": 1,
+        "sourceSha256": "5980f5ae59d6f5078358a0a0e88573ac3d7b81e0073393d3f42af8633a4adbc8",
+        "policy": "declared-version-availability-v1",
+        "actual": {
+          "status": "completed",
+          "versions": {
+            "R": "4.6.1"
+          }
+        },
+        "expected": {
+          "status": "completed",
+          "versions": {
+            "R": "4.6.1"
+          }
+        },
+        "dependencies": [
+          {
+            "name": "R",
+            "kind": "Depends",
+            "constraint": {
+              "operator": ">=",
+              "version": "2.11.1"
+            },
+            "required": true,
+            "actual": "satisfied",
+            "expected": "satisfied"
+          }
+        ],
+        "limitations": [
+          "Version lookup does not establish namespace loading, API compatibility, or transitive dependency closure.",
+          "Unavailable means the public version lookup failed; it does not distinguish missing packages from unsupported lookup behavior.",
+          "Broader DESCRIPTION validation and undeclared source dependencies remain unexecuted."
+        ]
+      },
+      "metadataStage": {
+        "id": "metadata-dependencies",
+        "status": "unexecuted",
+        "reason": "Declared dependency version lookups are recorded on both runtimes; broader metadata and undeclared dependency checks remain unexecuted.",
+        "discovered": [
+          "DESCRIPTION:full-validation",
+          "dependencies:undeclared-and-transitive",
+          "DESCRIPTION:Depends:R:0"
+        ],
+        "executed": ["DESCRIPTION:Depends:R:0"]
+      },
+      "p7Eligible": false
+    }
+  ]
+}

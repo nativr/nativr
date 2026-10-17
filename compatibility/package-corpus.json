@@ -59,10 +59,15 @@
       "sourceUrl": "https://cloud.r-project.org/src/contrib/R6_2.6.1.tar.gz",
       "sourceSha256": "59c6eba8b1b912eb7e104f65053235604be853425ee67c152ac4e86a1f2073b4",
       "artifactSha256": "71ec633b25beaabf1b6114e3a1cf488666e273a4b93729a837db87505ea0201f",
-      "tier": "P4",
-      "status": "passing",
-      "evidence": "packages/package-tools/test/external-package.test.ts",
-      "firstBlocker": null
+      "tier": "P5",
+      "status": "blocked",
+      "evidence": "packages/package-tools/test/external-package.test.ts; packages/package-tools/test/r6-p5.test.ts",
+      "firstBlocker": {
+        "tier": "P6",
+        "path": "tests/testthat.R",
+        "code": "testthat-dependency",
+        "message": "Both default-applicable Rd example topics execute unchanged. The direct-test entrypoint tests/testthat.R requires the unavailable testthat package, so its nested testthat files remain unexecuted."
+      }
     },
     {
       "package": "viridisLite",
@@ -95,14 +100,10 @@
       "sourceUrl": "https://cloud.r-project.org/src/contrib/labeling_0.4.3.tar.gz",
       "sourceSha256": "c62f4fc2cc74377d7055903c5f1913b7295f7587456fe468592738a483e264f2",
       "artifactSha256": "2d4f9e5a9b1b0e109821a3cd705ca81dbbc46c6ee53acc0d216db907e857a89f",
-      "tier": "P4",
-      "status": "blocked",
+      "tier": "P5",
+      "status": "passing",
       "evidence": "packages/package-tools/test/external-package.test.ts",
-      "firstBlocker": {
-        "domain": "graphics.axes",
-        "feature": "axis graphical parameter xlab",
-        "evidenceId": "labeling-0.4.3-extended-figures"
-      }
+      "firstBlocker": null
     },
     {
       "package": "assertthat",
@@ -112,9 +113,14 @@
       "sourceSha256": "85cf7fcc4753a8c86da9a6f454e46c2a58ffc70c4f47cac4d3e3bcefda2a9e9f",
       "artifactSha256": "26678946c287baad27a9b359fb27ea64e349e0fd10a5e9b5346d1d8e38f69ca2",
       "tier": "P4",
-      "status": "passing",
-      "evidence": "packages/package-tools/test/external-package.test.ts",
-      "firstBlocker": null
+      "status": "blocked",
+      "evidence": "packages/package-tools/test/assertthat-p5.test.ts",
+      "firstBlocker": {
+        "tier": "P5",
+        "path": "man/not_empty.Rd",
+        "code": "example-error",
+        "message": "Seven applicable Rd topics complete; man/not_empty.Rd is the first blocker because the standard datasets::mtcars binding is unavailable (Object 'mtcars' not found)."
+      }
     },
     {
       "package": "crayon",
@@ -171,10 +177,15 @@
       "sourceUrl": "https://cloud.r-project.org/src/contrib/numDeriv_2016.8-1.1.tar.gz",
       "sourceSha256": "d8c4d19ff9aeb31b0c628bd4a16378e51c1c9a3813b525469a31fe89af00b345",
       "artifactSha256": "0a5bac977e0b258bc22dedf41adc2c48a0eaa8e197f48dfefede7ad0f3981e45",
-      "tier": "P4",
-      "status": "passing",
-      "evidence": "packages/package-tools/test/external-package.test.ts",
-      "firstBlocker": null
+      "tier": "P6",
+      "status": "blocked",
+      "evidence": "packages/package-tools/test/external-package.test.ts; compatibility/package-check-evidence/numDeriv-2016.8-1.1-0.305.0.json; compatibility/package-check-evidence/dependency-observations-0.306.0.json; compatibility/package-check-evidence/lifecycle-observations-0.307.0.json; compatibility/package-check-evidence/lifecycle-observations-0.312.0.json; compatibility/package-check-evidence/lifecycle-observations-0.314.0.json; compatibility/package-check-evidence/lifecycle-observations-0.315.0.json; compatibility/package-check-evidence/description-structure-v1-0.315.0.json",
+      "firstBlocker": {
+        "tier": "P7",
+        "path": "tests/BWeg.R",
+        "code": "package-check-output-fidelity",
+        "message": "Profile 0.352 executes all seven unchanged top-level scripts and four applicable example topics in fresh sessions, with an identical explicit RNG prologue on both runtimes. Strict native GNU R 4.6.1 comparison matches tests/oneSided.R, tests/grad01.R and man/genD.Rd. tests/BWeg.R and tests/CSD.R are not repeatable on the native oracle; BWeg.R also prints browser-adapted Sys.info(). The remaining six differ deterministically in last-place numeric output, consistent with measured host libm deviations but not yet traced individually. No whitespace, host-header, bytecode-label or numerical normalization is applied. Metadata, installation/loading, namespace, documentation, vignette, manual and cross-stream-order checks remain unexecuted; P7 is unproven."
+      }
     },
     {
       "package": "abind",
@@ -183,10 +194,15 @@
       "sourceUrl": "https://cloud.r-project.org/src/contrib/abind_1.4-8.tar.gz",
       "sourceSha256": "264a051b523ceae1795a0879e7768949ea55c586ac8db0adf1f5ebeddd2623e1",
       "artifactSha256": "e9862a710e03ef978409dbd3c4138dd4cdf96b0584c6f228ffe2b42d1e0e9dee",
-      "tier": "P4",
-      "status": "passing",
-      "evidence": "packages/package-tools/test/external-package.test.ts",
-      "firstBlocker": null
+      "tier": "P6",
+      "status": "blocked",
+      "evidence": "packages/package-tools/test/external-package.test.ts; packages/package-tools/test/abind-p5.test.ts; packages/package-tools/test/abind-p6.test.ts; compatibility/package-check-evidence/abind-1.4-8-0.305.0.json; compatibility/package-check-evidence/dependency-observations-0.306.0.json; compatibility/package-check-evidence/lifecycle-observations-0.307.0.json; compatibility/package-check-evidence/lifecycle-observations-0.312.0.json; compatibility/package-check-evidence/lifecycle-observations-0.314.0.json; compatibility/package-check-evidence/lifecycle-observations-0.315.0.json; compatibility/package-check-evidence/description-structure-v1-0.315.0.json",
+      "firstBlocker": {
+        "tier": "P7",
+        "path": "R CMD check",
+        "code": "full-package-check-unverified",
+        "message": "Profile 0.305 executes all five unchanged direct scripts and five applicable example topics in fresh sessions. All ten stdout/stderr comparisons match native GNU R 4.6.1 after independently probed Windows text transport decoding, without display-whitespace normalization. The direct scripts retain three expected handled errors. Ordered condition classes, calls and messages also match across all ten full comparisons, including the three handled errors. Shared embedded-value conversion preserves attributes of the replacement value reflected by tests/afill.R. GNU cross-stream order is unobserved. Full metadata, installation/loading, namespace, documentation, and manual checks remain unexecuted; P7 is unproven."
+      }
     },
     {
       "package": "rprojroot",
@@ -195,10 +211,15 @@
       "sourceUrl": "https://cloud.r-project.org/src/contrib/rprojroot_2.1.1.tar.gz",
       "sourceSha256": "473989bbef45fd9cd68f68dc317b14c9f42de5cea4b55fd6ba9011f25e0517e9",
       "artifactSha256": "086ed9af48d2f4e917f40bdf3364e395115f25fff5017d5527d00b20df343744",
-      "tier": "P4",
-      "status": "passing",
-      "evidence": "packages/package-tools/test/external-package.test.ts",
-      "firstBlocker": null
+      "tier": "P5",
+      "status": "blocked",
+      "evidence": "packages/package-tools/test/external-package.test.ts; packages/package-tools/test/rprojroot-p5.test.ts",
+      "firstBlocker": {
+        "tier": "P6",
+        "path": "tests/testthat.R",
+        "code": "testthat-dependency",
+        "message": "Both default-applicable Rd example topics execute unchanged; three other topics have only excluded dontrun blocks. The direct-test entrypoint tests/testthat.R requires the unavailable testthat package, so its nested tests remain unexecuted."
+      }
     },
     {
       "package": "rstudioapi",
@@ -299,13 +320,25 @@
     {
       "package": "BH",
       "version": "1.90.0-1",
-      "partition": "holdout",
+      "partition": "regression",
       "sourceUrl": "https://cloud.r-project.org/src/contrib/BH_1.90.0-1.tar.gz",
       "sourceSha256": "2e1fafb05938e81073561ae4892dc543ef15807e375e0ea8fa75e3ab79f0281b",
+      "artifactSha256": "3f70ea3572c3e20f712697d6d9fa2544dc72216d97a06d5f11c0af844d893fb8",
+      "tier": "P3",
+      "status": "passing",
+      "evidence": "packages/package-tools/test/external-package.test.ts; P4 is not applicable because BH exports no R functions.",
+      "firstBlocker": null
+    },
+    {
+      "package": "Formula",
+      "version": "1.2-6",
+      "partition": "holdout",
+      "sourceUrl": "https://cloud.r-project.org/src/contrib/Formula_1.2-6.tar.gz",
+      "sourceSha256": "7e611ac371c045e100a6205d92fe5104001942673798f970290fea12e33bfd37",
       "artifactSha256": null,
       "tier": "P0",
       "status": "unevaluated",
-      "evidence": "Usage-ranked dependency-free pure-R release metadata and source-archive integrity only; package code and packaged headers have not been evaluated or used to guide implementation.",
+      "evidence": "CRAN Formula 1.2-6 release metadata and PACKAGES MD5 230a93c95eaabdfc7a2e958efbbe25db; source archive SHA-256 verified without opening the archive. Package source and runtime behavior remain unevaluated.",
       "firstBlocker": null
     }
   ]

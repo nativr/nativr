@@ -1,4 +1,8 @@
+import type { PackageDescriptionCheck } from "./description-check.js";
 import { createHash } from "node:crypto";
+import { createReadStream } from "node:fs";
+import { stat } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 
 import bz2 from "bz2";
 
@@ -10,6 +14,31 @@ import {
 } from "./dcf.js";
 import { readPackageSource } from "./source.js";
 import type { PackageSourceFile } from "./source.js";
+export { comparePackageSavedOutput } from "./saved-output.js";
+export { inspectPackageLicense } from "./license-check.js";
+export type { PackageLicenseAssessment } from "./license-check.js";
+export { inspectPackageDescription } from "./description-check.js";
+export type { PackageDescriptionAssessment, PackageDescriptionCheck } from "./description-check.js";
+export { inspectPackageSourceDependencies } from "./source-dependency-check.js";
+export { collectPackageSourceDependencyInputs } from "./source-dependency-inputs.js";
+export type { PackageSourceDependencyInputs } from "./source-dependency-inputs.js";
+export type {
+  PackageDependencySource,
+  PackageDependencySourceRole,
+  PackageDependencySourcePosition,
+  PackageDependencySourceSpan,
+  PackageDependencySourceParser,
+  PackageSourceDependencyReason,
+  PackageSourceDependencyLocation,
+  PackageSourceDependencyReference,
+  PackageSourceDependencyUnresolved,
+  PackageSourceDependencyAssessment,
+} from "./source-dependency-check.js";
+export {
+  comparePackageCheckObservation,
+  createPackageCheckReport,
+  PACKAGE_CHECK_STAGES,
+} from "./check.js";
 import {
   extractPackageExamples,
   extractPackageHelp,
@@ -21,31 +50,59 @@ import {
   PackageCompatibilityError,
   type NativRPackageArtifact,
   type PackageCompatibilityIssue,
+  type PackageExampleRunOptions,
+  type PackageExampleRunResult,
+  type PackageExampleScript,
   type PackagePackLimits,
   type PackagePackOptions,
+  type PackageTestRunOptions,
+  type PackageTestRunResult,
+  type PackageTestScript,
 } from "./types.js";
 export { comparePackageVersions, resolvePackageArtifacts } from "./resolve.js";
-export { installPackagesFromRepository } from "./repository.js";
+export { installPackagesFromRepository, preflightPackagesFromRepository } from "./repository.js";
 
 export type {
   NativRPackageArtifact,
   PackageCompatibilityIssue,
+  PackageCheckObservation,
+  PackageCheckComparisonOptions,
+  PackageCheckTransportAdaptation,
+  PackageCheckAppliedAdaptation,
+  PackageCheckDifference,
+  PackageCheckComparison,
+  PackageCheckStageId,
+  PackageCheckStage,
+  PackageCheckProvenance,
+  PackageCheckEvidence,
+  PackageCheckReport,
+  PackageExampleRunOptions,
+  PackageExampleRunResult,
+  PackageExampleScript,
   PackageDependency,
   PackageDependencyKind,
   PackagePackLimits,
   PackagePackOptions,
+  PackageSavedOutputComparison,
+  PackageSavedOutputComparisonOptions,
+  PackageTestRunOptions,
+  PackageTestRunResult,
+  PackageTestScript,
   PackagedPureRBundle,
   ResolvePackageOptions,
   ResolvedPackageSet,
   RepositoryInstallOptions,
   RepositoryInstallResult,
+  RepositoryPreflightBlocker,
+  RepositoryPreflightOptions,
+  RepositoryPreflightResult,
 } from "./types.js";
 export { PackageCompatibilityError } from "./types.js";
 
 export const DEFAULT_PACKAGE_PACK_LIMITS: PackagePackLimits = Object.freeze({
-  maxFiles: 4_096,
+  maxFiles: 16_384,
   maxFileBytes: 16 * 1024 * 1024,
-  maxTotalBytes: 64 * 1024 * 1024,
+  maxTotalBytes: 192 * 1024 * 1024,
   maxPathDepth: 32,
 });
 
@@ -60,6 +117,7 @@ const INSTALL_HOOKS = new Set([
 const LEGAL_FILES = new Set(["LICENSE", "LICENCE", "COPYING", "NOTICE"]);
 const SUPPORTED_NAMESPACE_DIRECTIVES = new Set([
   "export",
+  "exportPattern",
   "exportMethods",
   "import",
   "importFrom",
@@ -67,6 +125,268 @@ const SUPPORTED_NAMESPACE_DIRECTIVES = new Set([
 ]);
 const R_SOURCE_PATH = /^R\/(?:[^/]+\/)*[^/]+\.[Rr]$/u;
 const PACKAGE_SOURCE_RESOURCE_ROOT = ".nativr/source";
+
+/** Execute unchanged top-level tests/*.R scripts from a source package using a caller-owned R session. */
+export async function runPackageTests(
+  source: string | URL,
+  evaluate: (script: PackageTestScript) => Promise<unknown>,
+  options: PackageTestRunOptions = {},
+): Promise<PackageTestRunResult> {
+  const { files, sourceSha256, name, version, encoding } = await loadAuditedPackageSource(
+    source,
+    options,
+  );
+
+  const entrypoints = files
+    .filter((file) => /^tests\/[^/]+\.[Rr]$/u.test(file.path))
+    .sort((left, right) => compareCPath(left.path, right.path));
+  const nestedRFiles = files
+    .filter((file) => /^tests\/.+\/[^/]+\.[Rr]$/u.test(file.path))
+    .map((file) => file.path)
+    .sort(compareCPath);
+  const savedOutputFiles = files.filter((file) => /^tests\/[^/]+\.Rout\.save$/iu.test(file.path));
+  const outputExpectations = savedOutputFiles.map((file) => file.path).sort(compareCPath);
+  const savedOutputByPath = new Map(
+    savedOutputFiles.map((file) => [file.path.toLowerCase(), file] as const),
+  );
+  const paths = entrypoints.map((file) => file.path);
+  if (options.paths !== undefined) {
+    if (options.paths.length === 0 || new Set(options.paths).size !== options.paths.length) {
+      throw new Error("Selected package-test paths must be non-empty and unique.");
+    }
+    for (const selected of options.paths) {
+      if (!paths.includes(selected)) {
+        throw new Error(`Package test '${selected}' is not a top-level tests/*.R entrypoint.`);
+      }
+    }
+  }
+  const selected =
+    options.paths === undefined
+      ? entrypoints
+      : entrypoints.filter((file) => options.paths?.includes(file.path));
+  const base = {
+    package: { name, version },
+    sourceSha256,
+    entrypoints: paths,
+    nestedRFiles,
+    outputExpectations,
+  };
+  if (entrypoints.length === 0) {
+    return {
+      ...base,
+      executed: [],
+      outcome: nestedRFiles.length === 0 ? "no-tests" : "no-entrypoint",
+      firstBlocker:
+        nestedRFiles.length === 0
+          ? null
+          : {
+              code: "no-entrypoint",
+              message: "Package has nested R test files but no top-level tests/*.R entrypoint.",
+            },
+    };
+  }
+
+  const executed: { path: string; status: "completed" | "failed" }[] = [];
+  for (const file of selected) {
+    const savedOutput = savedOutputByPath.get(
+      file.path.replace(/\.[Rr]$/u, ".Rout.save").toLowerCase(),
+    );
+    const script: PackageTestScript = {
+      path: file.path,
+      source: decodePackageText(file, "Package test", encoding),
+      ...(savedOutput === undefined
+        ? {}
+        : {
+            expectedOutput: {
+              path: savedOutput.path,
+              source: decodePackageText(savedOutput, "Package test output", encoding),
+            },
+          }),
+    };
+    try {
+      await evaluate(script);
+      executed.push({ path: file.path, status: "completed" });
+    } catch (error) {
+      executed.push({ path: file.path, status: "failed" });
+      return {
+        ...base,
+        executed,
+        outcome: "failed",
+        firstBlocker: {
+          code: "test-error",
+          path: file.path,
+          message: error instanceof Error ? error.message : String(error),
+        },
+      };
+    }
+  }
+  return {
+    ...base,
+    executed,
+    outcome: selected.length === entrypoints.length ? "completed" : "partial",
+    firstBlocker: null,
+  };
+}
+
+/** Execute every default-applicable Rd example topic from an audited source package. */
+export async function runPackageExamples(
+  source: string | URL,
+  evaluate: (script: PackageExampleScript) => Promise<unknown>,
+  options: PackageExampleRunOptions = {},
+): Promise<PackageExampleRunResult> {
+  const { files, sourceSha256, name, version, encoding } = await loadAuditedPackageSource(
+    source,
+    options,
+  );
+  const topics = files
+    .filter((file) => /^man\/(?:.*\/)?[^/]+\.Rd$/iu.test(file.path))
+    .sort((left, right) => compareCPath(left.path, right.path))
+    .flatMap((file) => {
+      const extracted = extractPackageExamples([
+        { path: file.path, source: decodePackageText(file, "Rd source", encoding) },
+      ]);
+      return (extracted?.topics ?? []).map((topic) => ({ path: file.path, topic }));
+    });
+  const entrypoints = topics.map(({ path, topic }) => ({
+    path,
+    topic: topic.name,
+    applicableBlocks: topic.blocks.filter(
+      (block) => block.kind === "run" && block.source.trim().length > 0,
+    ).length,
+    excludedDontrunBlocks: topic.blocks.filter(
+      (block) => block.kind === "dontrun" && block.source.trim().length > 0,
+    ).length,
+    excludedDonttestBlocks: topic.blocks.filter(
+      (block) => block.kind === "donttest" && block.source.trim().length > 0,
+    ).length,
+  }));
+  const paths = entrypoints.map((entry) => entry.path);
+  if (options.paths !== undefined) {
+    if (options.paths.length === 0 || new Set(options.paths).size !== options.paths.length) {
+      throw new Error("Selected package-example paths must be non-empty and unique.");
+    }
+    for (const selected of options.paths) {
+      if (!paths.includes(selected)) {
+        throw new Error(`Package example '${selected}' is not a man/*.Rd example entrypoint.`);
+      }
+    }
+  }
+  const selected =
+    options.paths === undefined
+      ? topics
+      : topics.filter((entry) => options.paths?.includes(entry.path));
+  const base = { package: { name, version }, sourceSha256, entrypoints };
+  if (topics.length === 0) {
+    return {
+      ...base,
+      executed: [],
+      outcome: "no-examples",
+      firstBlocker: {
+        code: "no-examples",
+        message: "Package has no indexed man/*.Rd example topics.",
+      },
+    };
+  }
+  if (
+    !selected.some(({ topic }) =>
+      topic.blocks.some((block) => block.kind === "run" && block.source.trim().length > 0),
+    )
+  ) {
+    return {
+      ...base,
+      executed: [],
+      outcome: "no-applicable",
+      firstBlocker: {
+        code: "no-applicable",
+        message: "Selected example topics contain no default-applicable Rd code blocks.",
+      },
+    };
+  }
+  const executed: { path: string; topic: string; status: "completed" | "failed" }[] = [];
+  for (const { path, topic } of selected) {
+    const source = topic.blocks
+      .filter((block) => block.kind === "run")
+      .map((block) => block.source)
+      .join("\n");
+    if (source.trim().length === 0) continue;
+    try {
+      await evaluate({ path, topic: topic.name, source });
+      executed.push({ path, topic: topic.name, status: "completed" });
+    } catch (error) {
+      executed.push({ path, topic: topic.name, status: "failed" });
+      return {
+        ...base,
+        executed,
+        outcome: "failed",
+        firstBlocker: {
+          code: "example-error",
+          path,
+          topic: topic.name,
+          message: error instanceof Error ? error.message : String(error),
+        },
+      };
+    }
+  }
+  return {
+    ...base,
+    executed,
+    outcome: selected.length === topics.length ? "completed" : "partial",
+    firstBlocker: null,
+  };
+}
+
+async function loadAuditedPackageSource(
+  source: string | URL,
+  options: {
+    readonly limits?: Partial<PackagePackLimits>;
+    readonly expectedSourceSha256?: string;
+    readonly expectedPackage?: { readonly name: string; readonly version: string };
+  },
+): Promise<{
+  readonly files: readonly PackageSourceFile[];
+  readonly sourceSha256: string | null;
+  readonly name: string;
+  readonly version: string;
+  readonly encoding: "utf-8" | "latin1";
+}> {
+  const limits = effectiveLimits(options.limits);
+  const sourcePath = source instanceof URL ? fileURLToPath(source) : source;
+  const sourceStat = await stat(sourcePath);
+  let sourceSha256: string | null = null;
+  if (sourceStat.isFile()) {
+    if (sourceStat.size > limits.maxTotalBytes) {
+      throw new Error("Package source archive exceeds the configured byte limit.");
+    }
+    const hash = createHash("sha256");
+    for await (const chunk of createReadStream(sourcePath)) hash.update(chunk as Uint8Array);
+    sourceSha256 = hash.digest("hex");
+  }
+  if (options.expectedSourceSha256 !== undefined) {
+    if (!/^[a-f0-9]{64}$/u.test(options.expectedSourceSha256)) {
+      throw new Error("Expected package source SHA-256 must be a lowercase 64-digit hex digest.");
+    }
+    if (sourceSha256 !== options.expectedSourceSha256) {
+      throw new Error(
+        `Package source SHA-256 mismatch: expected ${options.expectedSourceSha256}, received ${sourceSha256 ?? "directory"}.`,
+      );
+    }
+  }
+  const files = await readPackageSource(source, limits);
+  const byPath = new Map(files.map((file) => [file.path, file]));
+  const description = decodeDescription(requiredFile(byPath, "DESCRIPTION"));
+  const name = requiredDcfField(description.fields, "Package");
+  const version = requiredDcfField(description.fields, "Version");
+  validatePackageIdentity(name, version);
+  if (
+    options.expectedPackage !== undefined &&
+    (options.expectedPackage.name !== name || options.expectedPackage.version !== version)
+  ) {
+    throw new Error(
+      `Package source identity ${name} ${version} does not match ${options.expectedPackage.name} ${options.expectedPackage.version}.`,
+    );
+  }
+  return { files, sourceSha256, name, version, encoding: description.encoding };
+}
 
 /** Inspect any directory or source tarball and return a deterministic artifact plus diagnostics. */
 export async function inspectPackage(
@@ -694,4 +1014,160 @@ function isCompatibility(value: unknown): boolean {
         (issue.path === undefined || typeof issue.path === "string"),
     )
   );
+}
+
+export interface PackageDependencyDeclarationAssessment {
+  readonly policy:
+    "namespace-declarations-v1" | "namespace-declarations-v2" | "namespace-declarations-v3";
+  readonly imports: readonly string[];
+  readonly missing: readonly string[];
+  readonly checks: readonly PackageDescriptionCheck[];
+  readonly limitations: readonly string[];
+}
+
+/** Static namespace declarations only; dynamic code references and transitive closure are separate. */
+export function inspectPackageDependencyDeclarations(
+  description: string,
+  namespace: string,
+): PackageDependencyDeclarationAssessment {
+  const imports = new Set<string>();
+  const limitations = [
+    "Conditional namespaces, escaped package names, computed import controls, dynamic code references and transitive dependencies are not audited.",
+  ];
+  const id = "dependencies:namespace-declarations";
+  try {
+    const issues: PackageCompatibilityIssue[] = [];
+    inspectNamespace(namespace, issues);
+    if (issues.length > 0)
+      throw new Error("NAMESPACE is outside the supported static declaration surface.");
+    const source = stripNamespaceComments(namespace);
+    let index = 0;
+    while (index < source.length) {
+      while (/\s/u.test(source[index] ?? "")) index++;
+      if (index === source.length) break;
+      const match = /^([A-Za-z][A-Za-z0-9.]*)\s*\(/u.exec(source.slice(index));
+      if (match === null) throw new Error("Unsupported namespace declaration.");
+      const opening = index + match[0].length - 1;
+      const end = skipBalancedCall(source, opening);
+      if (match[1] === "import" || match[1] === "importFrom") {
+        const args = splitNamespaceDeclarationArguments(source.slice(opening + 1, end - 1));
+        let hasExcept = false;
+        for (const argument of match[1] === "importFrom" ? args.slice(0, 1) : args) {
+          const named =
+            /^\s*(?:([A-Za-z][A-Za-z0-9.]*)|"([A-Za-z][A-Za-z0-9.]*)"|'([A-Za-z][A-Za-z0-9.]*)'|`([A-Za-z][A-Za-z0-9.]*)`)\s*=\s*([^]*)$/u.exec(
+              argument,
+            );
+          const value = named?.[5] ?? argument;
+          if (
+            match[1] === "import" &&
+            !hasExcept &&
+            (named?.[1] ?? named?.[2] ?? named?.[3] ?? named?.[4]) === "except"
+          ) {
+            hasExcept = true;
+            const list = /^\s*c\(([^]*)\)\s*$/u.exec(value);
+            const exclusions =
+              list === null
+                ? [value]
+                : list[1]!.trim() === ""
+                  ? []
+                  : splitNamespaceDeclarationArguments(list[1]!);
+            for (const exclusion of exclusions) namespaceDeclarationLiteral(exclusion, false);
+          } else imports.add(namespaceDeclarationLiteral(value, true));
+        }
+      }
+      index = end;
+    }
+    // Observable GNU R 4.6.1 installed.packages() Priority=base catalog.
+    const declared = new Set([
+      "base",
+      "compiler",
+      "datasets",
+      "grDevices",
+      "graphics",
+      "grid",
+      "methods",
+      "parallel",
+      "splines",
+      "stats",
+      "stats4",
+      "tcltk",
+      "tools",
+      "utils",
+    ]);
+    for (const dependency of parsePackageDependencies(parseDcf(description)))
+      if (dependency.kind === "Imports" || dependency.kind === "Depends")
+        declared.add(dependency.name);
+    const missing = [...imports].filter((name) => !declared.has(name)).sort(compareCPath);
+    return {
+      policy: "namespace-declarations-v3",
+      imports: [...imports],
+      missing,
+      checks: [
+        {
+          id,
+          status: missing.length === 0 ? "passed" : "failed",
+          message:
+            missing.length === 0
+              ? "Namespace imports are declared in Imports/Depends or belong to base packages."
+              : `Namespace dependencies missing from Imports/Depends: ${missing.join(", ")}`,
+        },
+      ],
+      limitations,
+    };
+  } catch (error) {
+    return {
+      policy: "namespace-declarations-v3",
+      imports: [...imports],
+      missing: [],
+      checks: [
+        {
+          id,
+          status: "unexecuted",
+          message: error instanceof Error ? error.message : String(error),
+        },
+      ],
+      limitations,
+    };
+  }
+}
+
+function namespaceDeclarationLiteral(source: string, packageName: boolean): string {
+  const text = source.trim();
+  const quoted = /^(?:"([^"\\]*)"|'([^'\\]*)'|`([^`\\]*)`)$/u.exec(text);
+  const value = quoted === null ? text : (quoted[1] ?? quoted[2] ?? quoted[3]!);
+  if (
+    (packageName && !/^[A-Za-z][A-Za-z0-9.]*$/u.test(value)) ||
+    (!packageName && quoted === null && !/^[A-Za-z.][A-Za-z0-9._]*$/u.test(value))
+  )
+    throw new Error("Unsupported namespace import literal.");
+  return value;
+}
+
+function splitNamespaceDeclarationArguments(source: string): readonly string[] {
+  const args: string[] = [];
+  let start = 0;
+  let depth = 0;
+  let quote: string | undefined;
+  let escaped = false;
+  for (let index = 0; index < source.length; index++) {
+    const char = source[index]!;
+    if (quote !== undefined) {
+      if (escaped) escaped = false;
+      else if (char === "\\") escaped = true;
+      else if (char === quote) quote = undefined;
+      continue;
+    }
+    if (char === '"' || char === "'" || char === "`") quote = char;
+    else if (char === "(") depth++;
+    else if (char === ")") depth--;
+    else if (char === "," && depth === 0) {
+      args.push(source.slice(start, index));
+      start = index + 1;
+    }
+    if (depth < 0) throw new Error("Malformed namespace argument.");
+  }
+  if (quote !== undefined || depth !== 0) throw new Error("Unterminated namespace argument.");
+  args.push(source.slice(start));
+  if (args.some((value) => value.trim() === "")) throw new Error("Empty namespace argument.");
+  return args;
 }

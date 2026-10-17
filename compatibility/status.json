@@ -5,33 +5,281 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.287.0",
-  "capabilityManifestHash": "50b3c59bf168aa239d0763be2f7c4f6a85da773de182908abd96ae989081094c",
+  "semanticProfileVersion": "0.353.0",
+  "capabilityManifestHash": "7f14d3ea8199ad9e5d619ee6f349cdbab9fac40b485bcf8228682e5ddcfde014",
   "evidence": {
-    "checkedInConformanceCases": 895,
-    "liveREligibleCases": 847,
-    "recursiveOracleV2Cases": 5,
-    "recursiveBehaviorallyProvenBindings": null,
-    "note": "Recursive behavioral binding counts remain null until oracle-v2 cases are associated with registry bindings; name overlap is inventory only."
+    "checkedInConformanceCases": 1225,
+    "liveREligibleCases": 1155,
+    "packageLoaderCases": 18,
+    "recursiveOracleV2Cases": 127,
+    "recursiveBehaviorallyProvenBindings": 77,
+    "recursiveBindingEvidence": [
+      {
+        "binding": "base::all.equal",
+        "cases": [
+          "all-equal-numeric-callback-and-error-attributes",
+          "all-equal-numeric-scaling-and-count-equal"
+        ]
+      },
+      { "binding": "base::as.call", "cases": ["embedded-attributed-call-values"] },
+      { "binding": "base::as.integer", "cases": ["simplification-lengths-and-integer-coercion"] },
+      { "binding": "base::as.list", "cases": ["apply-class-conversion-and-extraction"] },
+      { "binding": "base::as.list.Date", "cases": ["time-class-list-conversion"] },
+      { "binding": "base::as.list.difftime", "cases": ["time-class-list-conversion"] },
+      { "binding": "base::as.list.factor", "cases": ["factor-list-conversion-and-dispatch"] },
+      { "binding": "base::as.list.POSIXct", "cases": ["time-class-list-conversion"] },
+      { "binding": "base::attr", "cases": ["partial-attribute-lookup-and-time-forcing"] },
+      {
+        "binding": "base::c",
+        "cases": ["combine-first-argument-s3-dispatch", "combine-next-method-primitive-fallback"]
+      },
+      { "binding": "base::call", "cases": ["embedded-attributed-call-values"] },
+      { "binding": "base::cat", "cases": ["cat-numeric-stream-file-and-visibility"] },
+      { "binding": "base::computeRestarts", "cases": ["calling-handlers-and-restarts"] },
+      {
+        "binding": "base::conditionCall",
+        "cases": [
+          "attributed-replacement-condition",
+          "condition-accessor-values-methods-and-visibility"
+        ]
+      },
+      {
+        "binding": "base::conditionMessage",
+        "cases": ["condition-accessor-values-methods-and-visibility"]
+      },
+      { "binding": "base::data.frame", "cases": ["recursive-data-frame-object"] },
+      {
+        "binding": "base::deparse",
+        "cases": [
+          "attributed-replacement-condition",
+          "closure-rendering-preserves-recursive-language",
+          "embedded-attributed-call-values"
+        ]
+      },
+      { "binding": "base::detach", "cases": ["detach-invalid-name"] },
+      {
+        "binding": "base::do.call",
+        "cases": [
+          "apply-class-conversion-and-extraction",
+          "apply-single-conversion-and-name-length",
+          "do-call-controls-and-forcing",
+          "do-call-language-arguments"
+        ]
+      },
+      { "binding": "base::factor", "cases": ["recursive-data-frame-object"] },
+      { "binding": "base::format", "cases": ["numeric-format-options-and-array-attributes"] },
+      { "binding": "base::getHook", "cases": ["hook-list-registration-and-clearing"] },
+      { "binding": "base::invisible", "cases": ["recursive-stdout-and-invisible-result"] },
+      { "binding": "base::invokeRestart", "cases": ["calling-handlers-and-restarts"] },
+      {
+        "binding": "base::is.numeric.Date",
+        "cases": ["numeric-predicate-dispatch-and-time-methods"]
+      },
+      {
+        "binding": "base::is.numeric.difftime",
+        "cases": ["numeric-predicate-dispatch-and-time-methods"]
+      },
+      {
+        "binding": "base::is.numeric.POSIXt",
+        "cases": ["numeric-predicate-dispatch-and-time-methods"]
+      },
+      {
+        "binding": "base::lapply",
+        "cases": [
+          "apply-class-conversion-and-extraction",
+          "apply-lazy-dots-control-order-and-names",
+          "apply-single-conversion-and-name-length"
+        ]
+      },
+      { "binding": "base::length", "cases": ["length-class-and-default-dispatch"] },
+      { "binding": "base::lengths", "cases": ["simplification-lengths-and-integer-coercion"] },
+      { "binding": "base::list", "cases": ["recursive-scalar-token-boundaries"] },
+      {
+        "binding": "base::local",
+        "cases": ["closure-formals-body-and-environment", "recursive-stdout-and-invisible-result"]
+      },
+      {
+        "binding": "base::makeActiveBinding",
+        "cases": ["active-binding-is-not-forced-by-observer"]
+      },
+      { "binding": "base::Map", "cases": ["mapply-values-forcing-and-methods"] },
+      { "binding": "base::mapply", "cases": ["mapply-values-forcing-and-methods"] },
+      {
+        "binding": "base::match.call",
+        "cases": [
+          "matched-call-language-and-unexpanded-dots",
+          "replacement-rhs-source-and-stored-call-values",
+          "s3-replacement-rhs-source-and-stored-call-values"
+        ]
+      },
+      { "binding": "base::match.fun", "cases": ["apply-function-rejection-and-warning-calls"] },
+      { "binding": "base::matrix", "cases": ["recursive-nested-attributes"] },
+      { "binding": "base::mean.Date", "cases": ["numeric-time-mean-methods"] },
+      { "binding": "base::mean.default", "cases": ["mean-default-dispatch-and-trim"] },
+      { "binding": "base::mean.difftime", "cases": ["numeric-time-mean-methods"] },
+      { "binding": "base::mean.POSIXct", "cases": ["numeric-time-mean-methods"] },
+      {
+        "binding": "base::message",
+        "cases": ["exiting-condition-handlers-and-unwind", "message-stream-and-invisible-result"]
+      },
+      { "binding": "base::new.env", "cases": ["shared-environment-identity"] },
+      {
+        "binding": "base::NextMethod",
+        "cases": ["combine-next-method-primitive-fallback", "next-method-default-reentry"]
+      },
+      {
+        "binding": "base::packageStartupMessage",
+        "cases": ["condition-muffling-frames-and-startup-messages"]
+      },
+      { "binding": "base::pairlist", "cases": ["pairlist-tags-language-and-missingness"] },
+      {
+        "binding": "base::print",
+        "cases": [
+          "closure-print-environment-attributes-and-visibility",
+          "closure-rendering-preserves-recursive-language",
+          "table-default-axis-names-print-and-visibility",
+          "table-zero-extent-dimnames-print-and-visibility"
+        ]
+      },
+      { "binding": "base::print.proc_time", "cases": ["process-time-method-graphs"] },
+      { "binding": "base::quote", "cases": ["pairlist-tags-language-and-missingness"] },
+      { "binding": "base::replicate", "cases": ["replicate-counts-frames-and-simplification"] },
+      {
+        "binding": "base::sapply",
+        "cases": [
+          "apply-class-conversion-and-extraction",
+          "apply-lazy-dots-control-order-and-names",
+          "apply-simplification-shapes",
+          "apply-single-conversion-and-name-length"
+        ]
+      },
+      { "binding": "base::setHook", "cases": ["hook-list-registration-and-clearing"] },
+      {
+        "binding": "base::simpleError",
+        "cases": [
+          "returned-error-condition-is-a-value",
+          "signalled-simple-error-preserves-explicit-call"
+        ]
+      },
+      {
+        "binding": "base::simpleWarning",
+        "cases": ["signalled-simple-warning-preserves-explicit-call"]
+      },
+      { "binding": "base::simplify2array", "cases": ["apply-simplification-shapes"] },
+      {
+        "binding": "base::stop",
+        "cases": [
+          "nested-caller-calls-suppressed-explicitly",
+          "nested-caller-error-call",
+          "signalled-custom-error-preserves-condition-and-call",
+          "signalled-error-after-stdout",
+          "signalled-simple-error-preserves-explicit-call",
+          "warning-precedes-signalled-error"
+        ]
+      },
+      {
+        "binding": "base::structure",
+        "cases": [
+          "recursive-nested-attributes",
+          "recursive-scalar-token-boundaries",
+          "signalled-custom-error-preserves-condition-and-call"
+        ]
+      },
+      {
+        "binding": "base::substitute",
+        "cases": [
+          "embedded-attributed-call-values",
+          "escaped-replacement-frame-source-and-value",
+          "nested-replacement-original-and-reconstructed-rhs",
+          "replacement-rhs-source-and-stored-call-values",
+          "s3-replacement-rhs-source-and-stored-call-values"
+        ]
+      },
+      { "binding": "base::Summary.data.frame", "cases": ["data-frame-summary-recursive-values"] },
+      { "binding": "base::Summary.ordered", "cases": ["ordered-summary-recursive-values"] },
+      { "binding": "base::summary.proc_time", "cases": ["process-time-method-graphs"] },
+      {
+        "binding": "base::suppressMessages",
+        "cases": ["condition-muffling-frames-and-startup-messages"]
+      },
+      {
+        "binding": "base::suppressPackageStartupMessages",
+        "cases": ["condition-muffling-frames-and-startup-messages"]
+      },
+      {
+        "binding": "base::suppressWarnings",
+        "cases": ["condition-muffling-frames-and-startup-messages"]
+      },
+      {
+        "binding": "base::sys.call",
+        "cases": [
+          "replacement-rhs-source-and-stored-call-values",
+          "s3-replacement-rhs-source-and-stored-call-values"
+        ]
+      },
+      {
+        "binding": "base::table",
+        "cases": [
+          "table-default-axis-names-print-and-visibility",
+          "table-zero-extent-dimnames-print-and-visibility"
+        ]
+      },
+      { "binding": "base::tryCatch", "cases": ["exiting-condition-handlers-and-unwind"] },
+      { "binding": "base::unlist", "cases": ["unlist-shallow-values-types-and-names"] },
+      { "binding": "base::unloadNamespace", "cases": ["unload-absent-namespace"] },
+      {
+        "binding": "base::vapply",
+        "cases": [
+          "apply-class-conversion-and-extraction",
+          "apply-lazy-dots-control-order-and-names",
+          "apply-single-conversion-and-name-length",
+          "vapply-template-shape-and-types"
+        ]
+      },
+      {
+        "binding": "base::warning",
+        "cases": [
+          "exiting-condition-handlers-and-unwind",
+          "nested-caller-calls-suppressed-explicitly",
+          "nested-caller-warning-call",
+          "ordered-warnings-with-separate-streams",
+          "signalled-custom-warning-preserves-condition-and-call",
+          "signalled-simple-warning-preserves-explicit-call",
+          "warning-precedes-signalled-error"
+        ]
+      },
+      {
+        "binding": "base::warningCondition",
+        "cases": [
+          "returned-custom-warning-condition-with-language-call",
+          "signalled-custom-warning-preserves-condition-and-call"
+        ]
+      },
+      { "binding": "base::withCallingHandlers", "cases": ["calling-handlers-and-restarts"] },
+      { "binding": "base::withRestarts", "cases": ["calling-handlers-and-restarts"] },
+      { "binding": "stats::setNames", "cases": ["names-replacement-coercion-and-metadata"] },
+      { "binding": "utils::person", "cases": ["person-recursive-records"] }
+    ],
+    "note": "This binding count covers listed exact Oracle v2 cases, conditional on a passing live GNU R 4.6.1 graph comparison and causal shadow controls. It is not general binding compatibility; name overlap is inventory only."
   },
   "nameInventory": {
-    "referenceVersion": "R version 4.6.0 (2026-04-24 ucrt)",
-    "registeredBindings": 715,
-    "gnuRNameOverlaps": 695,
+    "referenceVersion": "R version 4.6.1 (2026-06-24 ucrt)",
+    "registeredBindings": 769,
+    "gnuRNameOverlaps": 742,
     "referenceCoreCallableNames": 2522
   },
   "packageCorpus": {
-    "total": 24,
-    "partitions": { "development": 2, "regression": 21, "holdout": 1 },
-    "statuses": { "passing": 22, "blocked": 1, "unevaluated": 1 },
+    "total": 25,
+    "partitions": { "development": 2, "regression": 22, "holdout": 1 },
+    "statuses": { "passing": 19, "blocked": 5, "unevaluated": 1 },
     "completedAtLeast": {
-      "P0": 24,
-      "P1": 23,
-      "P2": 23,
-      "P3": 23,
+      "P0": 25,
+      "P1": 24,
+      "P2": 24,
+      "P3": 24,
       "P4": 23,
-      "P5": 0,
-      "P6": 0,
+      "P5": 5,
+      "P6": 2,
       "P7": 0
     }
   }

@@ -28,6 +28,16 @@ describe("Tree-sitter normalization", () => {
     });
   });
 
+  it("normalizes the literal ellipsis after $ as a static member name", () => {
+    const result = parser.parse("match.call(expand.dots = FALSE)$...");
+    expect(result.diagnostics).toEqual([]);
+    expect(result.ast.body[0]).toMatchObject({
+      kind: "SubsetExpression",
+      operator: "$",
+      arguments: [{ value: { kind: "Identifier", name: "..." } }],
+    });
+  });
+
   it("normalizes imaginary literals without retaining grammar nodes", () => {
     expect(parser.parse("2.5i").ast.body[0]).toMatchObject({
       kind: "ComplexLiteral",
@@ -241,5 +251,50 @@ describe("Tree-sitter normalization", () => {
       code: "NRP1002",
       severity: "error",
     });
+  });
+});
+
+describe("R character escapes", () => {
+  it.each([
+    ['"\\1\\12\\1017"', "\x01\nA7"],
+    ['"\\x1z"', "\x01z"],
+    ['"\\u41"', "A"],
+    ['"\\u{41}"', "A"],
+    ['"\\U{1f642}"', "🙂"],
+    ['"\\uD834\\uDD1E"', "𝄞"],
+    ['"\\`"', "`"],
+    ['r"-(a\\n)-"', "a\\n"],
+    ['R"[a\\q]"', "a\\q"],
+  ])("decodes %s", (source, value) => {
+    const result = parser.parse(source);
+    expect(result.diagnostics).toEqual([]);
+    expect(result.ast.body[0]).toMatchObject({ kind: "StringLiteral", value });
+  });
+  it("preserves byte escape payloads and backtick escapes", () => {
+    expect(parser.parse('"\\xff"').ast.body[0]).toMatchObject({
+      kind: "StringLiteral",
+      bytes: [255],
+      encoding: "unknown",
+    });
+    expect(parser.parse("`a\\n b`").ast.body[0]).toMatchObject({
+      kind: "Identifier",
+      name: "a\n b",
+    });
+  });
+  it.each([
+    '"\\400"',
+    '"\\0"',
+    '"\\u0000"',
+    '"\\q"',
+    '"\\x"',
+    '"\\u{}"',
+    '"\\U110000"',
+    '"\\x41\\u42"',
+    "`\\u41`",
+    '"\\uD800"',
+  ])("reports invalid or unsupported escape %s", (source) => {
+    const result = parser.parse(source);
+    expect(result.diagnostics.some((x) => x.severity === "error")).toBe(true);
+    expect(result.ast.body).toEqual([]);
   });
 });

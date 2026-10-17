@@ -16,5 +16,6 @@ with:
 - [Pure-R package loading contract](pure-r-packages.md)
 - [Roadmap](roadmap.md)
 - [Implementation status](implementation-status.md)
+- [Release readiness, milestones and backlog](release-readiness.md)
 
 The documentation describes verified bootstrap behavior, not arbitrary R or package compatibility.

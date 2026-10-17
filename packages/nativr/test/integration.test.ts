@@ -525,7 +525,7 @@ describe("complete inline source-to-result vertical slice", () => {
     const printed = await runtime.evalDetailed("print(c(alpha = 1, beta = 2))");
     expect(printed.value).toEqual([1, 2]);
     expect(printed.visible).toBe(false);
-    expect(printed.output).toEqual([{ stream: "stdout", text: "alpha beta\n    1    2\n" }]);
+    expect(printed.output).toEqual([{ stream: "stdout", text: "alpha  beta \n    1     2 \n" }]);
     expect(observed).toEqual(printed.output);
 
     const concatenated = await runtime.evalDetailed(
@@ -882,9 +882,13 @@ describe("complete inline source-to-result vertical slice", () => {
   it("inspects closure bodies and recursively flattens owned list shapes", async () => {
     const runtime = await session();
     await expect(
-      runtime.eval("f <- function(x) { y <- x + 1; y * 2 }\ndeparse1(body(f))"),
-    ).resolves.toBe("{ (y <- (x + 1)); (y * 2) }");
-    await expect(runtime.eval('deparse1(body("f"))')).resolves.toBe("{ (y <- (x + 1)); (y * 2) }");
+      runtime.eval(
+        "f <- function(x) { y <- x + 1; y * 2 }\nidentical(str2lang(paste(deparse(body(f)), collapse = '\n')), body(f))",
+      ),
+    ).resolves.toBe(true);
+    await expect(
+      runtime.eval('identical(str2lang(paste(deparse(body("f")), collapse = "\n")), body(f))'),
+    ).resolves.toBe(true);
     await expect(runtime.eval("body(sum)")).resolves.toBeNull();
     const nonFunction = await runtime.evalDetailed("body(NULL)");
     expect(nonFunction.value).toBeNull();
@@ -2666,7 +2670,7 @@ describe("complete inline source-to-result vertical slice", () => {
       normalized <- normalizePath("./b/../b", mustWork = TRUE)
       local_files <- list.files(".")
       recursive_files <- list.files(root, recursive = TRUE, include.dirs = TRUE)
-      text_files <- list.files(root, pattern = "\\.txt$", recursive = TRUE)
+      text_files <- list.files(root, pattern = "\\\\.txt$", recursive = TRUE)
       directories <- list.dirs(root, full.names = FALSE)
       current <- getwd()
       relative_line <- readLines("relative.txt")
@@ -4856,7 +4860,7 @@ describe("complete inline source-to-result vertical slice", () => {
         c(
           dir.exists(data_root), file.exists(data_root),
           list.files(root),
-          list.files(data_root, pattern = "\\.csv$", recursive = TRUE)
+          list.files(data_root, pattern = "\\\\.csv$", recursive = TRUE)
         )
       `),
     ).resolves.toEqual([
@@ -4923,9 +4927,23 @@ describe("complete inline source-to-result vertical slice", () => {
     await expect(
       runtime.eval(`
         data("csvset", package = "nativrfixture")
-        c(class(csvset), names(csvset), csvset$name, csvset$value)
+        c(
+          class(csvset), names(csvset), class(csvset$name),
+          levels(csvset$name), as.character(csvset$name), csvset$value
+        )
       `),
-    ).resolves.toEqual(["data.frame", "name", "value", "alpha", "beta", "1", "2"]);
+    ).resolves.toEqual([
+      "data.frame",
+      "name",
+      "value",
+      "factor",
+      "alpha",
+      "beta",
+      "alpha",
+      "beta",
+      "1",
+      "2",
+    ]);
     await expect(
       runtime.eval('data("latin", package = "nativrlatindata"); latin_label'),
     ).resolves.toBe("café");
@@ -4957,6 +4975,84 @@ describe("complete inline source-to-result vertical slice", () => {
       `),
     ).resolves.toEqual(["blob", "data.frame", "a", "b", "1", "2"]);
     await runtime.dispose();
+  });
+
+  it("loads independently sourced core data through the ordinary package-data path", async () => {
+    const runtime = await createR({ execution: "inline", assets });
+    try {
+      const loaded = await runtime.evalDetailed(`
+        loaded <- withVisible(data(iris))
+        c(
+          loaded$value, loaded$visible, class(iris), dim(iris), names(iris),
+          class(iris$Sepal.Length), class(iris$Sepal.Width),
+          class(iris$Petal.Length), class(iris$Petal.Width),
+          class(iris$Species), levels(iris$Species),
+          as.character(iris$Species[c(1, 51, 101)]),
+          as.character(round(colSums(iris[1:4]), 1)),
+          iris[35, 1], iris[35, 2], iris[35, 3], iris[35, 4],
+          iris[38, 1], iris[38, 2], iris[38, 3], iris[38, 4]
+        )
+      `);
+      expect(loaded.value).toEqual([
+        "iris",
+        "FALSE",
+        "data.frame",
+        "150",
+        "5",
+        "Sepal.Length",
+        "Sepal.Width",
+        "Petal.Length",
+        "Petal.Width",
+        "Species",
+        "numeric",
+        "numeric",
+        "numeric",
+        "numeric",
+        "factor",
+        "setosa",
+        "versicolor",
+        "virginica",
+        "setosa",
+        "versicolor",
+        "virginica",
+        "876.5",
+        "458.6",
+        "563.7",
+        "179.9",
+        "4.9",
+        "3.1",
+        "1.5",
+        "0.2",
+        "4.9",
+        "3.6",
+        "1.4",
+        "0.1",
+      ]);
+      expect(loaded.warnings).toEqual([]);
+      await expect(
+        runtime.eval(`
+          c(
+            "iris" %in% data(package = "datasets")$results[, "Item"],
+            file.exists(system.file("data", "iris.txt", package = "datasets"))
+          )
+        `),
+      ).resolves.toEqual([true, true]);
+      const protectedData = await runtime.evalDetailed(`
+        target <- new.env()
+        target$iris <- 7L
+        data("iris", package = "datasets", envir = target, overwrite = FALSE)
+        target$iris
+      `);
+      expect(protectedData.value).toBe(7);
+      expect(protectedData.warnings).toEqual([
+        {
+          code: "NRW1120",
+          message: "an object named 'iris' already exists and will not be overwritten",
+        },
+      ]);
+    } finally {
+      await runtime.dispose();
+    }
   });
 
   it("round-trips common CSV and delimited table data through browser-memory files", async () => {
@@ -5588,6 +5684,112 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       code: "NRL4002",
       details: { maxResourceFiles: 64, resourceCount: 65 },
     });
+
+    await expect(
+      createR({
+        execution: "inline",
+        assets,
+        limits: { maxPackageResourceBytes: 128 },
+        packages: [
+          {
+            description: "Package: resourcebytes\nVersion: 1.0.0",
+            namespace: "",
+            rSources: [],
+            resources: [{ path: "data/value.bin", data: "AAAA".repeat(100) }],
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      code: "NRL4002",
+      details: { maxResourceBytes: 128 },
+    });
+  });
+
+  it("resolves NAMESPACE exportPattern declarations after local package bindings load", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [
+        {
+          description: "Package: patternpkg\nVersion: 1.0.0",
+          namespace: 'exportPattern("^(visible|other)$")',
+          rSources: [
+            {
+              path: "R/values.R",
+              source: "visible <- 42L\nother <- 43L\n.hidden <- 99L",
+            },
+          ],
+        },
+      ],
+    });
+    await expect(runtime.eval('sort(getNamespaceExports("patternpkg"))')).resolves.toEqual([
+      "other",
+      "visible",
+    ]);
+    await expect(runtime.eval("patternpkg::visible")).resolves.toBe(42);
+    await expect(runtime.eval('"package:patternpkg" %in% search()')).resolves.toBe(false);
+    await expect(runtime.eval("library(patternpkg); visible")).resolves.toBe(42);
+    await runtime.dispose();
+  });
+
+  it("resolves POSIX character classes in NAMESPACE exportPattern declarations", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [
+        {
+          description: "Package: posixpattern\nVersion: 1.0.0",
+          namespace: 'exportPattern("^[[:alpha:]][[:alnum:]_.]*$")',
+          rSources: [
+            {
+              path: "R/values.R",
+              source: "visible <- 42L\nA2 <- 43L\n.hidden <- 99L",
+            },
+          ],
+        },
+      ],
+    });
+    try {
+      await expect(runtime.eval('sort(getNamespaceExports("posixpattern"))')).resolves.toEqual([
+        "A2",
+        "visible",
+      ]);
+      await expect(runtime.eval("posixpattern::A2")).resolves.toBe(43);
+      await expect(runtime.eval("posixpattern::.hidden")).rejects.toMatchObject({
+        code: "NRE2211",
+      });
+    } finally {
+      await runtime.dispose();
+    }
+  });
+
+  it("fails closed on unsupported and invalid NAMESPACE exportPattern expressions", async () => {
+    const runtime = await createR({
+      execution: "inline",
+      assets,
+      packages: [
+        {
+          description: "Package: unknownclass\nVersion: 1.0.0",
+          namespace: 'exportPattern("^[[:unknown:]]$")',
+          rSources: [{ path: "R/value.R", source: "visible <- 1L" }],
+        },
+        {
+          description: "Package: invalidpattern\nVersion: 1.0.0",
+          namespace: 'exportPattern("[")',
+          rSources: [{ path: "R/value.R", source: "visible <- 2L" }],
+        },
+      ],
+    });
+    try {
+      await expect(runtime.eval('getNamespaceExports("unknownclass")')).rejects.toMatchObject({
+        code: "NRE2230",
+      });
+      await expect(runtime.eval('getNamespaceExports("invalidpattern")')).rejects.toMatchObject({
+        code: "NRE2230",
+      });
+    } finally {
+      await runtime.dispose();
+    }
   });
 
   it("generates the frequency-ranked grDevices heat palette", async () => {
@@ -6202,7 +6404,7 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     ).resolves.toEqual([3.165778513216168, 1.9596010414216063, 1, 1, 1]);
     const infinite = await runtime.evalDetailed("sin(c(Inf, -Inf))");
     expect(infinite.value).toEqual([Number.NaN, Number.NaN]);
-    expect(infinite.warnings).toEqual([{ code: "NRW1003", message: "NaNs produced." }]);
+    expect(infinite.warnings).toEqual([{ code: "NRW1003", message: "NaNs produced" }]);
     await expect(runtime.eval("sin(factor('a'))")).rejects.toMatchObject({ code: "NRT3237" });
     await expect(runtime.eval("sin(as.raw(1))")).rejects.toMatchObject({ code: "NRT3102" });
     await runtime.dispose();
@@ -6574,7 +6776,7 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       runtime.eval(
         "x <- append(expression(a, b + 1), expression(c), after = 1)\nc(length(x), deparse(x))",
       ),
-    ).resolves.toEqual(["3", "expression(a, c, (b + 1))"]);
+    ).resolves.toEqual(["3", "expression(a, c, b + 1)"]);
     await expect(runtime.eval("append(1:3, 4, after = -1)")).rejects.toMatchObject({
       code: "NRT3242",
     });
@@ -6597,7 +6799,9 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       "2",
       "2",
       "1",
-      String(Math.cos(Math.PI / 2)),
+      // 15-significant-digit character coercion of the correctly rounded cos(). The GNU R 4.6.1
+      // Windows (UCRT) oracle reports a less accurate 6.12303176911189e-17 for this input.
+      "6.12323399573677e-17",
       "TRUE",
       "TRUE",
       "kept",
@@ -6608,7 +6812,7 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     expect((complex as { imaginary: number }).imaginary).toBeCloseTo(-3.0518977991518, 14);
     const infinite = await runtime.evalDetailed("cos(c(Inf, -Inf))");
     expect(infinite.value).toEqual([Number.NaN, Number.NaN]);
-    expect(infinite.warnings).toEqual([{ code: "NRW1003", message: "NaNs produced." }]);
+    expect(infinite.warnings).toEqual([{ code: "NRW1003", message: "NaNs produced" }]);
     await expect(runtime.eval("cos(factor('a'))")).rejects.toMatchObject({ code: "NRT3241" });
     await expect(runtime.eval("cos(as.raw(1))")).rejects.toMatchObject({ code: "NRT3102" });
     await runtime.dispose();
@@ -6675,7 +6879,7 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     expect(recycled.warnings).toEqual([
       {
         code: "NRW1001",
-        message: "Longer object length is not a multiple of shorter object length.",
+        message: "longer object length is not a multiple of shorter object length",
       },
     ]);
     await expect(runtime.eval("replace(1:3, c(-1, 2), 9)")).rejects.toMatchObject({
@@ -7042,7 +7246,7 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     const overflow = await runtime.evalDetailed("diff(c(-2147483647L, 2147483647L))");
     expect(overflow.value).toEqual(NA);
     expect(overflow.warnings).toEqual([
-      { code: "NRW1002", message: "NAs produced by integer overflow." },
+      { code: "NRW1002", message: "NAs produced by integer overflow" },
     ]);
     await expect(
       runtime.eval(
@@ -8639,6 +8843,73 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     });
     await expect(runtime.eval("barplot(1:2, log = 'y')")).rejects.toMatchObject({
       code: "NRU6201",
+    });
+    await runtime.dispose();
+  });
+
+  it("applies barplot axis styles to the matching orientation without changing par state", async () => {
+    const runtime = await createR({ execution: "inline", assets });
+    const labels = (events: Awaited<ReturnType<typeof runtime.evalDetailed>>["graphics"]) =>
+      events
+        .filter((event) => event.kind === "text")
+        .flatMap((event) =>
+          event.kind === "text" ? event.labels.map((label) => label.label) : [],
+        );
+
+    const verticalX = await runtime.evalDetailed('barplot(c(alpha = 1, beta = 2), xaxt = "n")');
+    expect(labels(verticalX.graphics)).not.toContain("alpha");
+    expect(labels(verticalX.graphics)).not.toContain("beta");
+    expect(labels(verticalX.graphics)).toContain("1");
+
+    const verticalY = await runtime.evalDetailed('barplot(c(alpha = 1, beta = 2), yaxt = "n")');
+    expect(labels(verticalY.graphics)).toEqual(["alpha", "beta"]);
+
+    const horizontalX = await runtime.evalDetailed(
+      'barplot(c(alpha = 1, beta = 2), horiz = TRUE, xaxt = "n")',
+    );
+    expect(labels(horizontalX.graphics)).toEqual(["alpha", "beta"]);
+
+    const horizontalY = await runtime.evalDetailed(
+      'barplot(c(alpha = 1, beta = 2), horiz = TRUE, yaxt = "n")',
+    );
+    expect(labels(horizontalY.graphics)).not.toContain("alpha");
+    expect(labels(horizontalY.graphics)).not.toContain("beta");
+
+    const standard = await runtime.evalDetailed('barplot(c(alpha = 1, beta = 2), xaxt = "s")');
+    for (const style of ["l", "t"]) {
+      const styled = await runtime.evalDetailed(
+        `barplot(c(alpha = 1, beta = 2), xaxt = "${style}")`,
+      );
+      expect(styled.graphics).toEqual(standard.graphics);
+    }
+
+    await runtime.eval('par(xaxt = "n")');
+    const inherited = await runtime.evalDetailed("barplot(c(alpha = 1, beta = 2))");
+    expect(labels(inherited.graphics)).not.toContain("alpha");
+    const overridden = await runtime.evalDetailed('barplot(c(alpha = 1, beta = 2), xaxt = "s")');
+    expect(labels(overridden.graphics)).toContain("alpha");
+    await expect(runtime.eval('par("xaxt")')).resolves.toBe("n");
+
+    const direct = await runtime.evalDetailed(`
+      plot.new()
+      plot.window(c(0, 3), c(0, 3))
+      hidden <- axis(1, at = 1:2)
+      shown <- axis(1, at = 1:2, xaxt = "s")
+      c(is.null(hidden), shown, par("xaxt"))
+    `);
+    expect(direct.value).toEqual(["TRUE", "1", "2", "n"]);
+    expect(labels(direct.graphics)).toEqual(["1", "2"]);
+
+    await expect(runtime.eval('barplot(1:2, xaxt = "bad", plot = FALSE)')).resolves.toEqual([
+      0.7, 1.9,
+    ]);
+    await expect(runtime.eval('barplot(1:2, xaxt = "bad")')).rejects.toMatchObject({
+      code: "NRT3390",
+      message: 'invalid value specified for graphical parameter "xaxt"',
+    });
+    await expect(runtime.eval('par(xaxt = "bad")')).rejects.toMatchObject({
+      code: "NRT3390",
+      message: 'invalid value specified for graphical parameter "xaxt"',
     });
     await runtime.dispose();
   });
@@ -11567,7 +11838,7 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     expect(globallyMessaged.value).toEqual([
       "c:simpleWarning",
       "w:shown",
-      "m:note",
+      "m:note\n",
       "c:simpleMessage",
     ]);
     expect(globallyMessaged.output).toEqual([{ stream: "message", text: "note\n" }]);
@@ -11652,12 +11923,14 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
       maxCallDepth: 100,
       maxVectorLength: 1_000_000,
       maxOutputBytes: 1_000_000,
+      maxPackageResourceBytes: 192 * 1024 * 1024,
     });
     expect(RUNTIME_LIMIT_PROFILES["package-test"]).toEqual({
       maxSteps: 5_000_000,
       maxCallDepth: 200,
       maxVectorLength: 2_000_000,
       maxOutputBytes: 32_000_000,
+      maxPackageResourceBytes: 256 * 1024 * 1024,
     });
 
     const runtime = await createR({
@@ -11806,9 +12079,9 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     expect(requests).toEqual([{ prompt: "Browse[1]> " }, { prompt: "Browse[1]> " }]);
     expect(stepped.output).toEqual([
       { stream: "stdout", text: "debugging in: f(2)\n" },
-      { stream: "stdout", text: "debug: (y <- (x + 1))\n" },
+      { stream: "stdout", text: "debug: y <- x + 1\n" },
       { stream: "stdout", text: "Browse[1]> " },
-      { stream: "stdout", text: "debug: (y * 2)\n" },
+      { stream: "stdout", text: "debug: y * 2\n" },
       { stream: "stdout", text: "Browse[1]> " },
     ]);
     await interactive.dispose();
@@ -13575,9 +13848,7 @@ NeedsCompilation: no
       ),
     ).resolves.toEqual([11, 11, 11]);
     await expect(runtime.eval("names(identity(c(a = 1, b = 2)))")).resolves.toEqual(["a", "b"]);
-    await expect(runtime.eval('do.call("identity", list(1), quote = TRUE)')).rejects.toMatchObject({
-      code: "NRU6135",
-    });
+    await expect(runtime.eval('do.call("identity", list(1), quote = TRUE)')).resolves.toBe(1);
     await expect(runtime.eval("do.call(sum, pairlist(1, 2))")).rejects.toMatchObject({
       code: "NRT3214",
     });
@@ -13624,13 +13895,52 @@ NeedsCompilation: no
     const capabilities = await runtime.capabilities();
     expect(capabilities).toMatchObject({
       targetRVersion: "4.6.1",
-      semanticProfileVersion: "0.287.0",
-      languageSubsetVersion: "0.287.0",
+      semanticProfileVersion: "0.353.0",
+      languageSubsetVersion: "0.353.0",
     });
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       formula: "supported",
       pipe: "supported",
+      namespaceExportPattern: "supported",
+      namespaceImportExclusions: "supported",
+      namespaceImportExportBoundary: "supported",
+      namespaceImportRenaming: "supported",
+      ordinaryNamespaceImportConflictWarnings: "supported",
+      extendedVectorSummation: "supported",
+      extendedMatrixReductions: "supported",
+      extendedMeanCorrection: "supported",
+      meanDefaultDispatchAndTrim: "supported",
+      meanMissingControls: "supported",
+      graphicsAxisAnnotations: "supported",
+      graphicsBarplotAxisStyles: "supported",
+      graphicsParDeviceState: "supported",
+      nullSubscripts: "supported",
+      languageCallSubsetting: "supported",
+      literalEllipsisMembers: "supported",
+      matchedCallDotPairlists: "supported",
+      replacementCallMissingArgumentQuotation: "supported",
+      builtinMatchCallDefinition: "supported",
+      allEqualPartialControls: "supported",
+      classedConditionStopDispatch: "supported",
+      localCallingHandlers: "supported",
+      conditionRestarts: "supported",
+      warningLevelEscalation: "supported",
+      virtualFileAccess: "supported",
+      complexIntegerPower: "supported",
+      matrixDataFrameConversion: "supported",
+      arrayDefaultDimensions: "supported",
+      diagonalReplacement: "supported",
+      browserSystemInfo: "supported",
+      deparseWidthArgument: "supported",
+      baseLetterConstants: "supported",
+      productAggregation: "supported",
+      inverseTrigonometricFunctions: "supported",
+      nestedNamesReplacement: "supported",
+      topLevelErrorContinuation: "supported",
+      firstClassSubsetCalls: "supported",
+      packageTextDataFactors: "supported",
+      standardIrisDataset: "supported",
       quotedEvaluation: "supported",
       expressionVectors: "supported",
       callConstruction: "supported",
@@ -13807,7 +14117,7 @@ NeedsCompilation: no
     await expect(runtime.eval("c(log10(100), log2(8))")).resolves.toEqual([2, 3]);
     const invalidLog = await runtime.evalDetailed("is.nan(log(-1))");
     expect(invalidLog.value).toBe(true);
-    expect(invalidLog.warnings).toEqual([{ code: "NRW1003", message: "NaNs produced." }]);
+    expect(invalidLog.warnings).toEqual([{ code: "NRW1003", message: "NaNs produced" }]);
     await expect(runtime.eval('attr(exp(structure(c(0, 1), foo = "bar")), "foo")')).resolves.toBe(
       "bar",
     );
@@ -13982,12 +14292,12 @@ NeedsCompilation: no
     await expect(runtime.eval("rep(seq_len(0), length.out = 1)")).rejects.toMatchObject({
       code: "NRE2106",
     });
-    await expect(runtime.eval('setNames(c(1, 2), c("a"))')).rejects.toMatchObject({
-      code: "NRT3004",
-    });
-    await expect(runtime.eval('setNames(c(1, 2), c("a", NA))')).rejects.toMatchObject({
-      code: "NRU6106",
-    });
+    await expect(
+      runtime.eval('identical(names(setNames(c(1, 2), "a")), c("a", NA_character_))'),
+    ).resolves.toBe(true);
+    await expect(
+      runtime.eval('identical(names(setNames(c(1, 2), c("a", NA))), c("a", NA_character_))'),
+    ).resolves.toBe(true);
     await runtime.dispose();
   });
 
@@ -14012,21 +14322,20 @@ NeedsCompilation: no
     expect(await runtime.eval("mean(c(NA, NaN), na.rm = TRUE)")).toBeNaN();
     const squareRoot = await runtime.evalDetailed("sqrt(c(-1, NA))");
     expect(squareRoot.value).toEqual([Number.NaN, NA]);
-    expect(squareRoot.warnings).toEqual([{ code: "NRW1003", message: "NaNs produced." }]);
+    expect(squareRoot.warnings).toEqual([{ code: "NRW1003", message: "NaNs produced" }]);
     await runtime.dispose();
   });
 
   it("returns stable argument and type errors for invalid builtin calls", async () => {
     const runtime = await session();
     await expect(runtime.eval("mean()")).rejects.toMatchObject({ code: "NRE2103" });
-    await expect(runtime.eval('mean("x")')).rejects.toMatchObject({ code: "NRT3102" });
-    await expect(runtime.eval("mean(1, na.rm = NA)")).rejects.toMatchObject({ code: "NRT3103" });
-    await expect(runtime.eval("mean(1, extra = TRUE)")).rejects.toMatchObject({
-      code: "NRE2101",
+    await expect(runtime.evalDetailed('mean("x")')).resolves.toMatchObject({
+      value: { __nativr__: "NA" },
+      warnings: [{ message: "argument is not numeric or logical: returning NA" }],
     });
-    await expect(runtime.eval("sum(1, nope = TRUE)")).rejects.toMatchObject({
-      code: "NRE2101",
-    });
+    await expect(runtime.eval("mean(1, na.rm = NA)")).resolves.toBe(1);
+    await expect(runtime.eval("mean(1, extra = TRUE)")).resolves.toBe(1);
+    await expect(runtime.eval("sum(1, nope = TRUE)")).resolves.toBe(2);
     await expect(runtime.eval("sum(1, na.rm = TRUE, na.rm = FALSE)")).rejects.toMatchObject({
       code: "NRE2102",
     });
@@ -14127,7 +14436,8 @@ NeedsCompilation: no
     await expect(runtime.eval("mean <- 100\nbase::mean(c(2, 4))")).resolves.toBe(3);
     await expect(runtime.eval('base::length(c("a", "b"))')).resolves.toBe(2);
     await expect(runtime.eval("base::.Machine$integer.max")).resolves.toBe(2_147_483_647);
-    await expect(runtime.eval("stats::mean(c(2, 4))")).resolves.toBe(3);
+    await expect(runtime.eval("stats::mean(c(2, 4))")).rejects.toMatchObject({ code: "NRE2211" });
+    await expect(runtime.eval("stats::median(c(2,4))")).resolves.toBe(3);
     await expect(runtime.eval("tibble::tibble(x = 1:2)$x")).resolves.toEqual([1, 2]);
     await expect(runtime.eval('R6::R6Class("Box")$new() |> class()')).resolves.toEqual([
       "Box",
@@ -16607,8 +16917,8 @@ NeedsCompilation: no
         "x <- qlogis(structure(setNames(c(0.25, 0.75), c('a', 'b')), marker = 'kept'))\ny <- qlogis(0.5, location = setNames(c(1, 2), c('x', 'y')))\nc(x, names(x), attr(x, 'marker'), y, names(y))",
       ),
     ).resolves.toEqual([
-      "-1.0986122886681096",
-      "1.0986122886681096",
+      "-1.09861228866811",
+      "1.09861228866811",
       "a",
       "b",
       "kept",
@@ -16624,7 +16934,7 @@ NeedsCompilation: no
       "qlogis(c(-0.1, 1.1, NA, NaN), scale = c(1, -1, 1, 1))",
     );
     expect(invalid.value).toEqual([Number.NaN, Number.NaN, NA, Number.NaN]);
-    expect(invalid.warnings).toEqual([{ code: "NRW1003", message: "NaNs produced." }]);
+    expect(invalid.warnings).toEqual([{ code: "NRW1003", message: "NaNs produced" }]);
     await expect(runtime.eval("qlogis(numeric(), location = 1:3)")).resolves.toEqual([]);
     await expect(runtime.eval("qlogis('0.5')")).rejects.toMatchObject({ code: "NRT3263" });
     await runtime.dispose();
@@ -16668,8 +16978,8 @@ NeedsCompilation: no
       Number.NaN,
     ]);
     expect(invalid.warnings).toEqual([
-      { code: "NRW1003", message: "NaNs produced." },
-      { code: "NRW1003", message: "NaNs produced." },
+      { code: "NRW1003", message: "NaNs produced" },
+      { code: "NRW1003", message: "NaNs produced" },
     ]);
     await expect(runtime.eval("qnorm(numeric(), mean = 1:3)")).resolves.toEqual([]);
     await expect(runtime.eval("qbinom(.5, 10000001, .3)")).rejects.toMatchObject({
@@ -16762,7 +17072,7 @@ NeedsCompilation: no
       runtime.eval(
         "x <- structure(setNames(c(-1, 1), c('a', 'b')), marker = 'kept')\ny <- pnorm(x)\nc(y, names(y), attr(y, 'marker'))",
       ),
-    ).resolves.toEqual(["0.1586552539314569", "0.841344746068543", "a", "b", "kept"]);
+    ).resolves.toEqual(["0.158655253931457", "0.841344746068543", "a", "b", "kept"]);
     await expect(
       runtime.eval(
         "c(pnorm(c(-1, 0, 1), sd = 0), pnorm(c(-1, 0, 1), sd = 0, lower.tail = FALSE, log.p = TRUE))",
@@ -16777,7 +17087,7 @@ NeedsCompilation: no
       "c(pnorm(1, lower.tail = '0'), pnorm(1, lower.tail = 'FALSE'), pnorm(1, lower.tail = logical()), pnorm(1, log.p = logical()))",
     );
     expect(controls.value).toEqual([
-      0.1586552539314569, 0.841344746068543, 0.841344746068543, -0.1727537790234497,
+      0.15865525393145705, 0.8413447460685429, 0.8413447460685429, -0.17275377902344988,
     ]);
     expect(controls.warnings).toEqual([{ code: "NRW1003", message: "NAs introduced by coercion" }]);
     await expect(runtime.eval("pnorm(numeric(), mean = 1:3)")).resolves.toEqual([]);
@@ -16937,9 +17247,11 @@ NeedsCompilation: no
     await expect(runtime.eval("df <- data.frame(x = 1:2)\ndf[3] <- 9L")).rejects.toMatchObject({
       code: "NRE2221",
     });
-    await expect(runtime.eval('x <- c(a = 1L)\nx[c("b", NA)] <- 2L')).rejects.toMatchObject({
-      code: "NRU6131",
-    });
+    await expect(
+      runtime.eval(
+        'x <- c(a = 1L)\nx[c("b", NA)] <- 2L\nidentical(names(x),c("a","b",NA_character_))',
+      ),
+    ).resolves.toBe(true);
     await expect(
       runtime.eval(
         'x <- factor(c("a", "b"))\nx[4] <- "a"\nc(as.character(x), levels(x), typeof(x))',
@@ -17070,9 +17382,10 @@ NeedsCompilation: no
         'outer <- 1:2\nf <- function() names(outer) <<- c("global.a", "global.b")\nf()\nnames(outer)',
       ),
     ).resolves.toEqual(["global.a", "global.b"]);
-    await expect(runtime.eval('names(x) <- "short"')).rejects.toMatchObject({
-      code: "NRT3199",
-    });
+    await expect(runtime.eval('names(x) <- "short"')).resolves.toBe("short");
+    await expect(runtime.eval('identical(names(x), c("short", NA_character_))')).resolves.toBe(
+      true,
+    );
     await expect(runtime.eval("class(x) <- as.character(NULL)")).rejects.toMatchObject({
       code: "NRT3203",
     });
@@ -17100,7 +17413,7 @@ NeedsCompilation: no
       `),
     ).resolves.toEqual([10, 0, 10, 11, 3, 4]);
     await expect(runtime.eval("formals(1)[['x']] <- 2")).rejects.toMatchObject({
-      code: "NRT3306",
+      code: "NRU6001",
     });
     await expect(
       runtime.eval(
@@ -17156,6 +17469,53 @@ NeedsCompilation: no
     expect(unknown.warnings).toEqual([
       { code: "NRW1128", message: '"not-a-par" is not a graphical parameter' },
     ]);
+    await runtime.dispose();
+  });
+
+  it("keeps par device state, user coordinates, and overlay pages in the graphics journal", async () => {
+    const runtime = await session();
+    const first = await runtime.evalDetailed("plot.new(); plot.window(c(0, 1), c(0, 1))");
+    expect(first.graphics.map((event) => event.kind)).toEqual(["new-page", "window"]);
+
+    const overlay = await runtime.evalDetailed(`
+      ask_before <- par("ask")
+      par(ask = TRUE)
+      ask_enabled <- grDevices::devAskNewPage()
+      grDevices::devAskNewPage(FALSE)
+      old <- par(usr = c(2, 4, 6, 8))
+      coordinates <- par("usr")
+      par(new = TRUE)
+      plot.new()
+      c(ask_before, ask_enabled, par("ask"), old$usr, coordinates, par("new"), par("page"))
+    `);
+    expect(overlay.value).toEqual([0, 1, 0, 0, 1, 0, 1, 2, 4, 6, 8, 1, 0]);
+    expect(overlay.graphics.map((event) => event.kind)).toEqual(["window", "window"]);
+    await expect(runtime.eval("par(usr = c(0, 0, 0, 1))")).rejects.toMatchObject({
+      code: "NRT3394",
+    });
+
+    const readOnly = await runtime.evalDetailed("par(page = FALSE)");
+    expect(readOnly.warnings).toEqual([
+      { code: "NRW1144", message: 'graphical parameter "page" cannot be set' },
+    ]);
+    const next = await runtime.evalDetailed("par(new = FALSE); plot.new(); par('page')");
+    expect(next.value).toBe(true);
+    expect(next.graphics.map((event) => event.kind)).toEqual(["new-page"]);
+    await expect(runtime.eval("length(par())")).resolves.toBe(47);
+    await expect(
+      runtime.eval(`
+        grDevices::pdf(NULL, width = 4, height = 3)
+        pdf_din <- par("din")
+        pdf_readonly <- "din" %in% names(par(no.readonly = TRUE))
+        grDevices::dev.off()
+        path <- tempfile(fileext = ".png")
+        grDevices::png(path, width = 96, height = 64, res = 96, type = "cairo")
+        png_din <- par("din")
+        grDevices::dev.off()
+        unlink(path)
+        c(pdf_din, pdf_readonly, png_din)
+      `),
+    ).resolves.toEqual([4, 3, 0, 1, 2 / 3]);
     await runtime.dispose();
   });
 
@@ -17398,6 +17758,20 @@ NeedsCompilation: no
       expect(explicitText.labels.map((label) => label.label)).toEqual(["one", "two", "three"]);
       expect(explicitText.labels.every((label) => label.size === 0.7)).toBe(true);
     }
+
+    const annotations = await runtime.evalDetailed(`
+      counter <- new.env()
+      counter$n <- 0L
+      ticks <- axis(1, at = 1:3,
+        xlab = { counter$n <- counter$n + 1L; list(1L) },
+        ylab = { counter$n <- counter$n + 1L; list(2L) },
+        main = { counter$n <- counter$n + 1L; list(3L) },
+        sub = { counter$n <- counter$n + 1L; list(4L) })
+      c(ticks, counter$n)
+    `);
+    expect(annotations.value).toEqual([1, 2, 3, 4]);
+    expect(annotations.warnings).toEqual([]);
+    expect(annotations.graphics.map((event) => event.kind)).toEqual(["segments", "text"]);
 
     const zoo = await runtime.evalDetailed(
       "axis(side = 4, at = c(-2, 0, 2), labels = c('low', 'zero', 'high'))",
@@ -18306,7 +18680,7 @@ NeedsCompilation: no
     expect(recycled.warnings).toEqual([
       {
         code: "NRW1001",
-        message: "Longer object length is not a multiple of shorter object length.",
+        message: "longer object length is not a multiple of shorter object length",
       },
     ]);
     await expect(runtime.eval("as.difftime(1)")).rejects.toMatchObject({ code: "NRE2252" });
@@ -18790,7 +19164,7 @@ NeedsCompilation: no
       runtime.eval(
         "a <- alist(first = , second = 1 + 2)\nc(typeof(a), length(a), names(a), deparse(a[[1]]), deparse(a[[2]]))",
       ),
-    ).resolves.toEqual(["list", "2", "first", "second", "", "(1 + 2)"]);
+    ).resolves.toEqual(["list", "2", "first", "second", "", "1 + 2"]);
     await expect(runtime.eval("a <- alist(x = never_defined)\nis.symbol(a[[1]])")).resolves.toBe(
       true,
     );
@@ -19074,7 +19448,7 @@ NeedsCompilation: no
     const matrix = await runtime.evalDetailed("View(matrix(1:6, nrow = 2))");
     expect(matrix.dataViews).toEqual([
       {
-        title: "Data: matrix((1 : 6), nrow = 2)",
+        title: "Data: matrix(1:6, nrow = 2)",
         columns: [
           { name: "V1", values: ["1", "2"] },
           { name: "V2", values: ["3", "4"] },
@@ -19932,11 +20306,13 @@ NeedsCompilation: no
         registerS3method("gen", "probe", function(x, ...) "left", envir = left)
         registerS3method("gen", "probe", function(x, ...) "right", envir = right)
         c(
-          eval(quote(gen(structure(1L, class = "probe"))), left),
-          eval(quote(gen(structure(1L, class = "probe"))), right)
+          tryCatch(eval(quote(gen(structure(1L, class = "probe"))), left),
+            error = function(e) "missing"),
+          tryCatch(eval(quote(gen(structure(1L, class = "probe"))), right),
+            error = function(e) "missing")
         )
       `),
-    ).resolves.toEqual(["left", "right"]);
+    ).resolves.toEqual(["missing", "missing"]);
     await expect(
       runtime.eval(`
         registerS3method(
@@ -20311,7 +20687,7 @@ NeedsCompilation: no
     });
     await expect(runtime.eval("quote(1 + alpha)")).resolves.toEqual({
       __nativr__: "language",
-      source: "(1 + alpha)",
+      source: "1 + alpha",
     });
     await expect(
       runtime.eval(
@@ -20357,7 +20733,7 @@ NeedsCompilation: no
       runtime.eval(
         "inner <- function(x) c(deparse1(sys.call()), deparse1(sys.call(-1)), deparse1(sys.call(1)), deparse1(sys.call(2)), is.null(sys.call(-2)))\nouter <- function() inner(1 + 2)\nouter()",
       ),
-    ).resolves.toEqual(["inner((1 + 2))", "outer()", "outer()", "inner((1 + 2))", "TRUE"]);
+    ).resolves.toEqual(["inner(1 + 2)", "outer()", "outer()", "inner(1 + 2)", "TRUE"]);
     await expect(runtime.eval("is.null(sys.call())")).resolves.toBe(true);
     await expect(
       runtime.eval(
@@ -20400,7 +20776,7 @@ NeedsCompilation: no
     await expect(runtime.eval("eval(expression())")).resolves.toBeNull();
     await expect(runtime.eval("expression(x, 1 + y)")).resolves.toEqual({
       __nativr__: "expression",
-      sources: ["x", "(1 + y)"],
+      sources: ["x", "1 + y"],
     });
     await expect(runtime.eval("x <- 4\ny <- 2\neval(expression(x, 1 + y))")).resolves.toBe(3);
     await expect(runtime.eval("eval(expression(answer = 42))\nanswer")).resolves.toBe(42);
@@ -20448,12 +20824,12 @@ NeedsCompilation: no
     await expect(runtime.eval("typeof(`+`)")).resolves.toBe("builtin");
     await expect(runtime.eval('deparse(call("f", 1, x = 2))')).resolves.toBe("f(1, x = 2)");
     await expect(runtime.eval("deparse(expression(x, 1 + y))")).resolves.toBe(
-      "expression(x, (1 + y))",
+      "expression(x, 1 + y)",
     );
     await expect(runtime.eval("deparse(quote(x))")).resolves.toBe("x");
     await expect(runtime.eval("deparse(1:2)")).resolves.toBe("c(1L, 2L)");
     await expect(runtime.eval("deparse(list(a = 1))")).resolves.toBe("list(a = 1)");
-    await expect(runtime.eval("deparse(1 + 2i)")).resolves.toBe("(1 + 2i)");
+    await expect(runtime.eval("deparse(1 + 2i)")).resolves.toBe("1+2i");
     await expect(runtime.eval("deparse(as.raw(1))")).resolves.toBe("as.raw(1L)");
     await expect(runtime.eval('deparse(call("identity", list(a = 1)))')).resolves.toBe(
       "identity(list(a = 1))",
@@ -20469,9 +20845,7 @@ NeedsCompilation: no
       __nativr__: "language",
       source: "1(2)",
     });
-    await expect(runtime.eval("deparse(function(x) x)")).rejects.toMatchObject({
-      code: "NRT3209",
-    });
+    await expect(runtime.eval("deparse(function(x) x)")).resolves.toEqual(["function (x) ", "x"]);
     await expect(runtime.eval('as.name("")')).rejects.toMatchObject({ code: "NRT3207" });
     await runtime.dispose();
   });
@@ -20480,12 +20854,12 @@ NeedsCompilation: no
     const runtime = await session();
     await expect(runtime.eval('parse(text = "x <- 1; x + 2")')).resolves.toEqual({
       __nativr__: "expression",
-      sources: ["(x <- 1)", "(x + 2)"],
+      sources: ["x <- 1", "x + 2"],
     });
     await expect(runtime.eval('eval(parse(text = c("x <- 4", "x + 2")))')).resolves.toBe(6);
     await expect(runtime.eval('parse(text = c("1 +", "2"))')).resolves.toEqual({
       __nativr__: "expression",
-      sources: ["(1 + 2)"],
+      sources: ["1 + 2"],
     });
     await expect(runtime.eval('parse(text = "1; x +", n = 1)')).resolves.toEqual({
       __nativr__: "expression",
@@ -20517,7 +20891,7 @@ NeedsCompilation: no
     const runtime = await session();
     await expect(runtime.eval('str2expression("x[3] <- 1+4")')).resolves.toEqual({
       __nativr__: "expression",
-      sources: ["(x[3] <- (1 + 4))"],
+      sources: ["x[3] <- 1 + 4"],
     });
     await expect(runtime.eval('str2expression(c("# a comment", "", "42"))')).resolves.toEqual({
       __nativr__: "expression",
@@ -20627,7 +21001,7 @@ NeedsCompilation: no
     await expect(runtime.eval("eval(program)")).resolves.toBe(11);
     await expect(runtime.get("language")).resolves.toEqual({
       __nativr__: "language",
-      source: "(x + 2)",
+      source: "x + 2",
     });
     await expect(
       runtime.assign("invalid", { __nativr__: "language", source: "1; 2" }),
@@ -20655,7 +21029,7 @@ NeedsCompilation: no
       runtime.eval("eval(substitute(quote(x + y), list(x = 1, y = 2)))"),
     ).resolves.toEqual({
       __nativr__: "language",
-      source: "(1 + 2)",
+      source: "1 + 2",
     });
     await expect(
       runtime.eval("f <- eval(substitute(function(x) x + y, list(x = 1, y = 2)))\nf(99)"),
@@ -20728,12 +21102,12 @@ NeedsCompilation: no
       runtime.eval(
         "f <- function(alpha, beta = 2, ...) deparse(match.call())\nf(al = 1 + 2, z = 4)",
       ),
-    ).resolves.toBe("f(alpha = (1 + 2), z = 4)");
+    ).resolves.toBe("f(alpha = 1 + 2, z = 4)");
     await expect(
       runtime.eval(
         "f <- function(alpha, beta = 2, ...) deparse(match.call(expand.dots = FALSE))\nf(al = 1 + 2, z = 4)",
       ),
-    ).resolves.toBe("f(alpha = (1 + 2), ... = pairlist(z = 4))");
+    ).resolves.toBe("f(alpha = 1 + 2, ... = pairlist(z = 4))");
     await expect(
       runtime.eval(
         "f <- function(alpha, beta = 2, ...) c(length(as.list(match.call())), names(as.list(match.call())))\nf(al = 1, z = 2)",
@@ -20760,7 +21134,7 @@ NeedsCompilation: no
     await expect(runtime.eval("match.call()")).rejects.toMatchObject({ code: "NRE2217" });
     await expect(
       runtime.eval("f <- function(x) match.call(definition = x)\nf(1)"),
-    ).rejects.toMatchObject({ code: "NRU6131" });
+    ).rejects.toMatchObject({ code: "NRT3214" });
     await runtime.dispose();
   });
 

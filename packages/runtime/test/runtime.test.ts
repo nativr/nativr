@@ -2,6 +2,7 @@ import type { AstNode } from "@nativr/ast";
 import { describe, expect, it } from "vitest";
 
 import {
+  Evaluator,
   EvaluationContext,
   REvaluationError,
   RResourceLimitError,
@@ -20,6 +21,7 @@ import {
   setBinding,
   withNames,
 } from "../src/index.js";
+import type { RuntimeOperators } from "../src/index.js";
 
 const span = {
   start: { offset: 0, line: 1, column: 1 },
@@ -28,6 +30,49 @@ const span = {
 const expression: AstNode = { kind: "DoubleLiteral", value: 1, span };
 
 describe("runtime foundations", () => {
+  it("bounds and validates browser-supplied core package resources", () => {
+    const construct = (options: ConstructorParameters<typeof Evaluator>[2]) =>
+      new Evaluator({} as RuntimeOperators, [], options);
+    expect(() =>
+      construct({
+        systemPackageResources: [{ package: "datasets", path: "data/example.txt", text: "x" }],
+      }),
+    ).not.toThrow();
+    for (const resource of [
+      { package: "datasets", path: "data/../escape.txt", text: "x" },
+      { package: "datasets", path: "data/\u007f.txt", text: "x" },
+      { package: "unknown", path: "data/example.txt", text: "x" },
+      { package: "datasets", path: "data/example.txt", text: 1 as unknown as string },
+    ]) {
+      expect(() => construct({ systemPackageResources: [resource] })).toThrowError(
+        REvaluationError,
+      );
+    }
+    expect(() =>
+      construct({
+        systemPackageResources: [
+          { package: "datasets", path: "data/example.txt", text: "x" },
+          { package: "datasets", path: "data/example.txt", text: "y" },
+        ],
+      }),
+    ).toThrowError(REvaluationError);
+    expect(() =>
+      construct({
+        limits: { maxVectorLength: 1 },
+        systemPackageResources: [
+          { package: "datasets", path: "data/example.txt", text: "x" },
+          { package: "stats", path: "data/example.txt", text: "y" },
+        ],
+      }),
+    ).toThrowError(RResourceLimitError);
+    expect(() =>
+      construct({
+        limits: { maxPackageResourceBytes: 3 },
+        systemPackageResources: [{ package: "datasets", path: "data/example.txt", text: "x" }],
+      }),
+    ).toThrowError(RResourceLimitError);
+  });
+
   it("estimates GNU R-shaped 64-bit object storage without measuring the host heap", () => {
     const size = (value: Parameters<typeof estimateRObjectSize>[0]) =>
       estimateRObjectSize(value, () => undefined);
@@ -171,7 +216,7 @@ describe("runtime foundations", () => {
       [number(Number.POSITIVE_INFINITY), "Inf"],
       [number(Number.NEGATIVE_INFINITY), "-Inf"],
       [number(-0), "0"],
-      [{ kind: "ComplexLiteral", imaginary: -2, span }, "-2i"],
+      [{ kind: "ComplexLiteral", imaginary: -2, span }, "0-2i"],
       [{ kind: "IntegerLiteral", value: 3, span }, "3L"],
       [{ kind: "StringLiteral", value: "a\nb", span }, '"a\\nb"'],
       [{ kind: "LogicalLiteral", value: true, span }, "TRUE"],
@@ -179,7 +224,7 @@ describe("runtime foundations", () => {
       [{ kind: "NullLiteral", span }, "NULL"],
       [{ kind: "MissingLiteral", declaredType: "logical", span }, "NA"],
       [{ kind: "MissingLiteral", declaredType: "double", span }, "NA_double_"],
-      [{ kind: "UnaryExpression", operator: "-", operand: number(1), span }, "-(1)"],
+      [{ kind: "UnaryExpression", operator: "-", operand: number(1), span }, "-1"],
       [
         {
           kind: "BinaryExpression",
@@ -188,7 +233,7 @@ describe("runtime foundations", () => {
           right: identifier("x"),
           span,
         },
-        "(1 + x)",
+        "1 + x",
       ],
       [
         {
@@ -198,7 +243,7 @@ describe("runtime foundations", () => {
           value: number(1),
           span,
         },
-        "(x <- 1)",
+        "x <- 1",
       ],
       [
         {
@@ -208,7 +253,7 @@ describe("runtime foundations", () => {
           value: number(2),
           span,
         },
-        "(x[1] <- 2)",
+        "x[1] <- 2",
       ],
       [call, "f(1, value = x)"],
       [
@@ -325,7 +370,7 @@ describe("runtime foundations", () => {
           right: call,
           span,
         },
-        "(x |> f(1, value = x))",
+        "x |> f(1, value = x)",
       ],
       [{ kind: "UnsupportedExpression", feature: "missing argument", span }, ""],
       [{ kind: "UnsupportedExpression", feature: "future syntax", span }, "<future syntax>"],

@@ -1,0 +1,1763 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-package-check-diagnostic",
+  "classification": "exploratory",
+  "rawReportSha256": "5d714c4b0e5033e4274511e8873a87eac4fc96fa07a267108e340e8dfa32095a",
+  "redaction": {
+    "policy": "sha256-no-output-v1",
+    "rawOutputIncluded": false,
+    "rawConditionsIncluded": false,
+    "sourceIncluded": false,
+    "differenceUnit": "UTF-16 code unit",
+    "numericTokens": "Exact observed numeric tokens only; no rounding or tolerance."
+  },
+  "package": {
+    "name": "numDeriv",
+    "version": "2016.8-1.1"
+  },
+  "provenance": {
+    "sourceSha256": "d8c4d19ff9aeb31b0c628bd4a16378e51c1c9a3813b525469a31fe89af00b345",
+    "artifactSha256": "0a5bac977e0b258bc22dedf41adc2c48a0eaa8e197f48dfefede7ad0f3981e45",
+    "oracle": {
+      "implementation": "GNU R",
+      "version": "4.6.1"
+    },
+    "semanticProfile": "0.304.0",
+    "capabilitySha256": "ead9ee3d0d3c570e6422b0ad9dab380f7874930b91afde91761ef27a344514a6",
+    "runtimeLimits": {
+      "maxSteps": 300000000,
+      "maxCallDepth": 200,
+      "maxVectorLength": 50000000,
+      "maxOutputBytes": 32000000,
+      "maxPackageResourceBytes": 268435456
+    }
+  },
+  "executionProfile": {
+    "conditionObservation": {
+      "boundary": "globalCallingHandlers-after-source-handlers",
+      "setupSha256": "3968088ddc651dada657bf40545a24ae61bab07f8afdeb16602de72f0b7ef397",
+      "readSha256": "fda84a74d5da4df29ab357b78c05b17aea6417c004fd4a8350892d512c63e4cf",
+      "maxRecords": 10000,
+      "maxBytes": 8388608,
+      "completionPresenceCheck": true
+    },
+    "execution": "inline",
+    "runtimeProfile": "package-test",
+    "sourcePlatform": "unix",
+    "capture": "native-rscript-top-level-v1",
+    "oracle": {
+      "version": "4.6.1",
+      "packageVersion": "2016.8.1.1",
+      "newlineTransport": {
+        "kind": "lf-to-crlf",
+        "probeLiteralHex": "610a620d0a630d640d0d0a65",
+        "stdoutHex": "610d0a620d0d0a630d640d0d0d0a65",
+        "stderrHex": "610d0a620d0d0a630d640d0d0d0a65"
+      },
+      "installationExitCode": 0,
+      "installationSignal": null
+    },
+    "limitations": [
+      "NativR public warnings/handled errors do not expose complete condition classes or their relative order.",
+      "NativR failed evaluations do not expose partial output through the public inline API.",
+      "Fixture preparation currently admits only UTF-8 files whose bytes round-trip exactly through virtual writeLines/readBin."
+    ]
+  },
+  "p7Eligible": false,
+  "firstBlocker": {
+    "stage": "metadata-dependencies",
+    "code": "stage-unexecuted",
+    "message": "DESCRIPTION parsed for packing; full check-time dependency analysis is not implemented."
+  },
+  "runners": {
+    "tests": {
+      "outcome": "completed",
+      "firstBlocker": null
+    },
+    "examples": {
+      "outcome": "completed",
+      "firstBlocker": null
+    }
+  },
+  "stages": [
+    {
+      "id": "archive-artifact",
+      "status": "passed",
+      "reason": "Archive and normalized artifact digests match the pinned corpus.",
+      "discovered": [
+        "d8c4d19ff9aeb31b0c628bd4a16378e51c1c9a3813b525469a31fe89af00b345",
+        "0a5bac977e0b258bc22dedf41adc2c48a0eaa8e197f48dfefede7ad0f3981e45"
+      ],
+      "executed": [
+        "d8c4d19ff9aeb31b0c628bd4a16378e51c1c9a3813b525469a31fe89af00b345",
+        "0a5bac977e0b258bc22dedf41adc2c48a0eaa8e197f48dfefede7ad0f3981e45"
+      ]
+    },
+    {
+      "id": "metadata-dependencies",
+      "status": "unexecuted",
+      "reason": "DESCRIPTION parsed for packing; full check-time dependency analysis is not implemented.",
+      "discovered": ["DESCRIPTION"],
+      "executed": []
+    },
+    {
+      "id": "installation-loading",
+      "status": "unexecuted",
+      "reason": "Oracle package installed and NativR bundle available; detach/unload and clean-base loading checks remain unexecuted.",
+      "discovered": ["install", "load", "attach", "detach", "unload"],
+      "executed": ["install"]
+    },
+    {
+      "id": "namespace-source",
+      "status": "unexecuted",
+      "reason": "Packing does not prove the full source and namespace check surface.",
+      "discovered": ["NAMESPACE", "R/num2Deriv.R", "R/numDeriv.R"],
+      "executed": []
+    },
+    {
+      "id": "documentation",
+      "status": "unexecuted",
+      "reason": "Rd extraction is not documentation consistency checking.",
+      "discovered": [
+        "man/00.numDeriv.Intro.Rd",
+        "man/genD.Rd",
+        "man/grad.Rd",
+        "man/hessian.Rd",
+        "man/jacobian.Rd",
+        "man/numDeriv-package.Rd"
+      ],
+      "executed": []
+    },
+    {
+      "id": "installed-documentation",
+      "status": "unexecuted",
+      "reason": "Installed-documentation checks have not executed.",
+      "discovered": [
+        "inst/doc/Guide.pdf",
+        "inst/doc/Guide.R",
+        "inst/doc/Guide.Stex",
+        "vignettes/Guide.Stex"
+      ],
+      "executed": []
+    },
+    {
+      "id": "native-build-portability",
+      "status": "inapplicable",
+      "reason": "The audited archive has no src or configure/cleanup files.",
+      "discovered": [],
+      "executed": []
+    },
+    {
+      "id": "data",
+      "status": "inapplicable",
+      "reason": "The audited archive has no data directory entries.",
+      "discovered": [],
+      "executed": []
+    },
+    {
+      "id": "examples",
+      "status": "passed",
+      "reason": "Default-applicable extracted Rd blocks executed unchanged, with explicit library setup, in fresh sessions. The inventory records excluded blocks.",
+      "discovered": ["man/genD.Rd", "man/grad.Rd", "man/hessian.Rd", "man/jacobian.Rd"],
+      "executed": ["man/genD.Rd", "man/grad.Rd", "man/hessian.Rd", "man/jacobian.Rd"]
+    },
+    {
+      "id": "package-tests",
+      "status": "passed",
+      "reason": "Top-level R scripts execute unchanged in fresh sessions with copied tests fixtures. Unsupported .Rin and absent entrypoints do not prove the package-test stage.",
+      "discovered": [
+        "tests/BWeg.R",
+        "tests/CSD.R",
+        "tests/grad01.R",
+        "tests/hessian01.R",
+        "tests/jacobian01.R",
+        "tests/oneSided.R",
+        "tests/trig01.R"
+      ],
+      "executed": [
+        "tests/BWeg.R",
+        "tests/CSD.R",
+        "tests/grad01.R",
+        "tests/hessian01.R",
+        "tests/jacobian01.R",
+        "tests/oneSided.R",
+        "tests/trig01.R"
+      ]
+    },
+    {
+      "id": "test-output",
+      "status": "failed",
+      "reason": "Exact stdout comparison failed after declared transport adaptations.",
+      "discovered": [
+        "test:tests/BWeg.R",
+        "test:tests/CSD.R",
+        "test:tests/grad01.R",
+        "test:tests/hessian01.R",
+        "test:tests/jacobian01.R",
+        "test:tests/oneSided.R",
+        "test:tests/trig01.R",
+        "example:man/genD.Rd",
+        "example:man/grad.Rd",
+        "example:man/hessian.Rd",
+        "example:man/jacobian.Rd"
+      ],
+      "executed": [
+        "test:tests/BWeg.R",
+        "test:tests/CSD.R",
+        "test:tests/grad01.R",
+        "test:tests/hessian01.R",
+        "test:tests/jacobian01.R",
+        "test:tests/oneSided.R",
+        "test:tests/trig01.R",
+        "example:man/genD.Rd",
+        "example:man/grad.Rd",
+        "example:man/hessian.Rd",
+        "example:man/jacobian.Rd"
+      ]
+    },
+    {
+      "id": "output-order",
+      "status": "unexecuted",
+      "reason": "Independent output streams do not establish cross-stream ordering. Output inventories must contain exactly every captured example and test, using kind:path keys.",
+      "discovered": [
+        "test:tests/BWeg.R",
+        "test:tests/CSD.R",
+        "test:tests/grad01.R",
+        "test:tests/hessian01.R",
+        "test:tests/jacobian01.R",
+        "test:tests/oneSided.R",
+        "test:tests/trig01.R",
+        "example:man/genD.Rd",
+        "example:man/grad.Rd",
+        "example:man/hessian.Rd",
+        "example:man/jacobian.Rd"
+      ],
+      "executed": []
+    },
+    {
+      "id": "conditions",
+      "status": "passed",
+      "reason": "Compare condition classes, calls, messages, and ordering only when both observers captured them completely.",
+      "discovered": [
+        "test:tests/BWeg.R",
+        "test:tests/CSD.R",
+        "test:tests/grad01.R",
+        "test:tests/hessian01.R",
+        "test:tests/jacobian01.R",
+        "test:tests/oneSided.R",
+        "test:tests/trig01.R",
+        "example:man/genD.Rd",
+        "example:man/grad.Rd",
+        "example:man/hessian.Rd",
+        "example:man/jacobian.Rd"
+      ],
+      "executed": [
+        "test:tests/BWeg.R",
+        "test:tests/CSD.R",
+        "test:tests/grad01.R",
+        "test:tests/hessian01.R",
+        "test:tests/jacobian01.R",
+        "test:tests/oneSided.R",
+        "test:tests/trig01.R",
+        "example:man/genD.Rd",
+        "example:man/grad.Rd",
+        "example:man/hessian.Rd",
+        "example:man/jacobian.Rd"
+      ]
+    },
+    {
+      "id": "vignettes",
+      "status": "unexecuted",
+      "reason": "Vignette execution and rebuilding have not executed.",
+      "discovered": [
+        "inst/doc/Guide.pdf",
+        "inst/doc/Guide.R",
+        "inst/doc/Guide.Stex",
+        "vignettes/Guide.Stex"
+      ],
+      "executed": []
+    },
+    {
+      "id": "manual",
+      "status": "unexecuted",
+      "reason": "Manual generation and validation have not executed.",
+      "discovered": [
+        "man/00.numDeriv.Intro.Rd",
+        "man/genD.Rd",
+        "man/grad.Rd",
+        "man/hessian.Rd",
+        "man/jacobian.Rd",
+        "man/numDeriv-package.Rd"
+      ],
+      "executed": []
+    }
+  ],
+  "inventory": {
+    "paths": [
+      "build/vignette.rds",
+      "DESCRIPTION",
+      "inst/doc/Guide.pdf",
+      "inst/doc/Guide.R",
+      "inst/doc/Guide.Stex",
+      "man/00.numDeriv.Intro.Rd",
+      "man/genD.Rd",
+      "man/grad.Rd",
+      "man/hessian.Rd",
+      "man/jacobian.Rd",
+      "man/numDeriv-package.Rd",
+      "MD5",
+      "NAMESPACE",
+      "NEWS",
+      "po/R-ko.po",
+      "po/R-numDeriv.pot",
+      "R/num2Deriv.R",
+      "R/numDeriv.R",
+      "tests/BWeg.R",
+      "tests/CSD.R",
+      "tests/grad01.R",
+      "tests/hessian01.R",
+      "tests/jacobian01.R",
+      "tests/oneSided.R",
+      "tests/trig01.R",
+      "vignettes/Guide.Stex"
+    ],
+    "nestedRFiles": [],
+    "testFixtures": [
+      {
+        "path": "BWeg.R",
+        "sha256": "7f3f16c26debb5b8a0b5845de86e6ddab4c81e745490b73de4bc3760b692fdc1"
+      },
+      {
+        "path": "CSD.R",
+        "sha256": "1ddd9902185b72d78c1cd4fd2acf65d32ccc2fdcd5dd6c2b7ff0b00fa7e52ca7"
+      },
+      {
+        "path": "grad01.R",
+        "sha256": "de6ad8b2457dbd51aa6e23a88fbf712720b0503e41e59fbb994b961668ca96df"
+      },
+      {
+        "path": "hessian01.R",
+        "sha256": "9384a84325a7f48a033c52ec9d9bb8b8f4067bad0e9bc1b2759e7e714a50e4d1"
+      },
+      {
+        "path": "jacobian01.R",
+        "sha256": "7846e96b1400968e3f3d4760c20e2522d23a2a49624e36cf6caaf19b0c58a42a"
+      },
+      {
+        "path": "oneSided.R",
+        "sha256": "0a7c160bcea93204c4dd33181b5d68eacdf5263e0ac92a81b2b42c5ca64aab33"
+      },
+      {
+        "path": "trig01.R",
+        "sha256": "a198861da48c14b5ba92e4b681a7109983c9feef2eccc148161fc19b215f6065"
+      }
+    ],
+    "examples": [
+      {
+        "path": "man/genD.Rd",
+        "topic": "genD",
+        "applicableBlocks": 1,
+        "excludedDontrunBlocks": 0,
+        "excludedDonttestBlocks": 0
+      },
+      {
+        "path": "man/grad.Rd",
+        "topic": "grad",
+        "applicableBlocks": 1,
+        "excludedDontrunBlocks": 0,
+        "excludedDonttestBlocks": 0
+      },
+      {
+        "path": "man/hessian.Rd",
+        "topic": "hessian",
+        "applicableBlocks": 1,
+        "excludedDontrunBlocks": 0,
+        "excludedDonttestBlocks": 0
+      },
+      {
+        "path": "man/jacobian.Rd",
+        "topic": "jacobian",
+        "applicableBlocks": 1,
+        "excludedDontrunBlocks": 0,
+        "excludedDonttestBlocks": 0
+      }
+    ]
+  },
+  "summary": {
+    "observed": 11,
+    "actualCompleted": 11,
+    "oracleCompleted": 11,
+    "matches": 2,
+    "mismatches": 9,
+    "conditionIncomplete": 0,
+    "outputIncomplete": 0
+  },
+  "observations": [
+    {
+      "kind": "test",
+      "path": "tests/BWeg.R",
+      "inputSha256": "7f3f16c26debb5b8a0b5845de86e6ddab4c81e745490b73de4bc3760b692fdc1",
+      "setupSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "completionSha256": "f6d670031444a4c4f5cff5909bf60cd920b0a9ca4f753ff99d7f5890740ec578",
+      "fixturePaths": [
+        "BWeg.R",
+        "CSD.R",
+        "grad01.R",
+        "hessian01.R",
+        "jacobian01.R",
+        "oneSided.R",
+        "trig01.R"
+      ],
+      "oracleExitCode": 0,
+      "oracleSignal": null,
+      "oracleRuntimeSettings": {
+        "keepSource": false,
+        "keepSourcePackages": false,
+        "jitEnvironment": "",
+        "osType": "windows",
+        "newlineTransport": "lf-to-crlf"
+      },
+      "oracleLimitations": {
+        "sourcePrefixLines": 35,
+        "conditionObservation": "globalCallingHandlers-after-source-handlers",
+        "crossStreamOrder": "unobserved",
+        "incompleteHandlerReturn": false,
+        "nativeLineEndings": "preserved",
+        "conditionObserversPresentAtCompletion": true
+      },
+      "actual": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "0e396c2af5ae4b37f0e23f6976db2674ff0efa0fa956ba4540b6d8817e3f5c4f",
+          "utf8Bytes": 7478,
+          "utf16Length": 7478
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": true
+      },
+      "expected": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "1b7715def6ad96a8fe45ee9e6bcae0252b8c3bd9e96b8363d94513a95348839f",
+          "utf8Bytes": 7684,
+          "utf16Length": 7684
+        },
+        "stderr": {
+          "sha256": "064a60871bdf629498c38be3d06fed5110b8e05dd1eff4d36de18c16e086da58",
+          "utf8Bytes": 36,
+          "utf16Length": 36
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": false
+      },
+      "comparison": {
+        "policyVersion": 1,
+        "outcome": "mismatch",
+        "rawDifference": {
+          "field": "stdout",
+          "index": 75,
+          "expected": {
+            "sha256": "87a81963d62a696298527172e51b7590d8a43c53b003446b5a0066956aa69fb2",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 13
+          },
+          "actual": {
+            "sha256": "f52bad0477c961cdb3e6b7e4e1014fd6a140ab8e83ebbb068d9bf04c0b49b35a",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 10
+          }
+        },
+        "adaptedDifference": {
+          "field": "stdout",
+          "index": 81,
+          "expected": {
+            "sha256": "508f2129e0b29200f75b520d1686760ad052651d5333b8f04de4c45d1a4f489b",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 34
+          },
+          "actual": {
+            "sha256": "fbbb733a93675e9eb9954ab55c5526383ff6e17f9c6a473b3b7f34b8d1f479b8",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 32
+          }
+        },
+        "adaptations": [
+          {
+            "id": "oracle-text-crlf-v1",
+            "probeLiteralHex": "610a620d0a630d640d0d0a65",
+            "stdoutHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "stderrHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "transformedPairs": {
+              "stdout": 175,
+              "stderr": 1
+            }
+          }
+        ],
+        "crossStreamOrder": "unobserved",
+        "conditionEvidence": "complete",
+        "outputEvidence": "complete"
+      }
+    },
+    {
+      "kind": "test",
+      "path": "tests/CSD.R",
+      "inputSha256": "1ddd9902185b72d78c1cd4fd2acf65d32ccc2fdcd5dd6c2b7ff0b00fa7e52ca7",
+      "setupSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "completionSha256": "f6d670031444a4c4f5cff5909bf60cd920b0a9ca4f753ff99d7f5890740ec578",
+      "fixturePaths": [
+        "BWeg.R",
+        "CSD.R",
+        "grad01.R",
+        "hessian01.R",
+        "jacobian01.R",
+        "oneSided.R",
+        "trig01.R"
+      ],
+      "oracleExitCode": 0,
+      "oracleSignal": null,
+      "oracleRuntimeSettings": {
+        "keepSource": false,
+        "keepSourcePackages": false,
+        "jitEnvironment": "",
+        "osType": "windows",
+        "newlineTransport": "lf-to-crlf"
+      },
+      "oracleLimitations": {
+        "sourcePrefixLines": 35,
+        "conditionObservation": "globalCallingHandlers-after-source-handlers",
+        "crossStreamOrder": "unobserved",
+        "incompleteHandlerReturn": false,
+        "nativeLineEndings": "preserved",
+        "conditionObserversPresentAtCompletion": true
+      },
+      "actual": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "acb85a1403a296451bf89f2f82934ae2d864583ab6a5f0a11de0299a0b793ae6",
+          "utf8Bytes": 1161,
+          "utf16Length": 1161
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": true
+      },
+      "expected": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "dc950662142db0e6898434cf01b62da5eca042c3ae934ff89ebe6532e6d560ca",
+          "utf8Bytes": 1055,
+          "utf16Length": 1055
+        },
+        "stderr": {
+          "sha256": "064a60871bdf629498c38be3d06fed5110b8e05dd1eff4d36de18c16e086da58",
+          "utf8Bytes": 36,
+          "utf16Length": 36
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": false
+      },
+      "comparison": {
+        "policyVersion": 1,
+        "outcome": "mismatch",
+        "rawDifference": {
+          "field": "stdout",
+          "index": 67,
+          "expected": {
+            "sha256": "b69b56245308fc3cfaafa3c9efba04a3a5f1fafa843251382ab33b8afb2674cd",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 13
+          },
+          "actual": {
+            "sha256": "79251fd20072b1a06fa7ceccf75e52c9a70c00a758dd2fc65e893df58dc18f95",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 10
+          }
+        },
+        "adaptedDifference": {
+          "field": "stdout",
+          "index": 730,
+          "expected": {
+            "sha256": "8ca470c7aff2a491c7cadbebdc57c4f2c72a2b2b6313c5cbded238c485e2ec10",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 57
+          },
+          "actual": {
+            "sha256": "1b5f8cda12412176361d766374df22e6444844c2ac498ccf321e8ac2fa876eb9",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 48
+          },
+          "numericTokens": {
+            "expected": "4.977583e-10",
+            "actual": "4.009129e-09"
+          }
+        },
+        "adaptations": [
+          {
+            "id": "oracle-text-crlf-v1",
+            "probeLiteralHex": "610a620d0a630d640d0d0a65",
+            "stdoutHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "stderrHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "transformedPairs": {
+              "stdout": 29,
+              "stderr": 1
+            }
+          }
+        ],
+        "crossStreamOrder": "unobserved",
+        "conditionEvidence": "complete",
+        "outputEvidence": "complete"
+      }
+    },
+    {
+      "kind": "test",
+      "path": "tests/grad01.R",
+      "inputSha256": "de6ad8b2457dbd51aa6e23a88fbf712720b0503e41e59fbb994b961668ca96df",
+      "setupSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "completionSha256": "f6d670031444a4c4f5cff5909bf60cd920b0a9ca4f753ff99d7f5890740ec578",
+      "fixturePaths": [
+        "BWeg.R",
+        "CSD.R",
+        "grad01.R",
+        "hessian01.R",
+        "jacobian01.R",
+        "oneSided.R",
+        "trig01.R"
+      ],
+      "oracleExitCode": 0,
+      "oracleSignal": null,
+      "oracleRuntimeSettings": {
+        "keepSource": false,
+        "keepSourcePackages": false,
+        "jitEnvironment": "",
+        "osType": "windows",
+        "newlineTransport": "lf-to-crlf"
+      },
+      "oracleLimitations": {
+        "sourcePrefixLines": 35,
+        "conditionObservation": "globalCallingHandlers-after-source-handlers",
+        "crossStreamOrder": "unobserved",
+        "incompleteHandlerReturn": false,
+        "nativeLineEndings": "preserved",
+        "conditionObserversPresentAtCompletion": true
+      },
+      "actual": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "1fedbdde80ce91828d2c26046ef9b992ed0b7fe62e2420fe53c16407e2a76e06",
+          "utf8Bytes": 895,
+          "utf16Length": 895
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": true
+      },
+      "expected": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "fc1fb02a23512f090f1aea7dcdc88bd786023ae624fe98647730b0afa3eb1b22",
+          "utf8Bytes": 916,
+          "utf16Length": 916
+        },
+        "stderr": {
+          "sha256": "064a60871bdf629498c38be3d06fed5110b8e05dd1eff4d36de18c16e086da58",
+          "utf8Bytes": 36,
+          "utf16Length": 36
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": false
+      },
+      "comparison": {
+        "policyVersion": 1,
+        "outcome": "mismatch",
+        "rawDifference": {
+          "field": "stdout",
+          "index": 6,
+          "expected": {
+            "sha256": "d7326d89bb3cd86ff3352e7cc8bd984a86b25e24201b8375f337616a85452e2e",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 13
+          },
+          "actual": {
+            "sha256": "878eff40f00347f71744a3515f059dcfe22147b30a826c437692d9840c41eb08",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 10
+          }
+        },
+        "adaptedDifference": {
+          "field": "stdout",
+          "index": 313,
+          "expected": {
+            "sha256": "24fd9d697a763a54f8138f390f33fe9c2a3e38d19dadbe2d7b1e98d27ce7e6ca",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 55
+          },
+          "actual": {
+            "sha256": "29e7075b52172faba7c8e4630318c0c7665f0d069fb5d1f8b096ddb514e4b195",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 54
+          },
+          "numericTokens": {
+            "expected": "7.698508e-12",
+            "actual": "6.618817e-12"
+          }
+        },
+        "adaptations": [
+          {
+            "id": "oracle-text-crlf-v1",
+            "probeLiteralHex": "610a620d0a630d640d0d0a65",
+            "stdoutHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "stderrHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "transformedPairs": {
+              "stdout": 21,
+              "stderr": 1
+            }
+          }
+        ],
+        "crossStreamOrder": "unobserved",
+        "conditionEvidence": "complete",
+        "outputEvidence": "complete"
+      }
+    },
+    {
+      "kind": "test",
+      "path": "tests/hessian01.R",
+      "inputSha256": "9384a84325a7f48a033c52ec9d9bb8b8f4067bad0e9bc1b2759e7e714a50e4d1",
+      "setupSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "completionSha256": "f6d670031444a4c4f5cff5909bf60cd920b0a9ca4f753ff99d7f5890740ec578",
+      "fixturePaths": [
+        "BWeg.R",
+        "CSD.R",
+        "grad01.R",
+        "hessian01.R",
+        "jacobian01.R",
+        "oneSided.R",
+        "trig01.R"
+      ],
+      "oracleExitCode": 0,
+      "oracleSignal": null,
+      "oracleRuntimeSettings": {
+        "keepSource": false,
+        "keepSourcePackages": false,
+        "jitEnvironment": "",
+        "osType": "windows",
+        "newlineTransport": "lf-to-crlf"
+      },
+      "oracleLimitations": {
+        "sourcePrefixLines": 35,
+        "conditionObservation": "globalCallingHandlers-after-source-handlers",
+        "crossStreamOrder": "unobserved",
+        "incompleteHandlerReturn": false,
+        "nativeLineEndings": "preserved",
+        "conditionObserversPresentAtCompletion": true
+      },
+      "actual": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "45b8c31403f5a1077fc7d363034c90a6fb74e8e700cb1ec251ad45d4cf2265c7",
+          "utf8Bytes": 1617,
+          "utf16Length": 1617
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": true
+      },
+      "expected": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "66c1ec2bfa6c861f545c1c6ea09b8da935e41c07451a655464fca6f69a20b673",
+          "utf8Bytes": 1675,
+          "utf16Length": 1675
+        },
+        "stderr": {
+          "sha256": "064a60871bdf629498c38be3d06fed5110b8e05dd1eff4d36de18c16e086da58",
+          "utf8Bytes": 36,
+          "utf16Length": 36
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": false
+      },
+      "comparison": {
+        "policyVersion": 1,
+        "outcome": "mismatch",
+        "rawDifference": {
+          "field": "stdout",
+          "index": 15,
+          "expected": {
+            "sha256": "482af49311a18328bc1394b91aa910d23100a5728bdfea4a1c030f4f59859b4d",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 13
+          },
+          "actual": {
+            "sha256": "8acaa11c0176d31e4477199af1d148ae8f290da0851cf6f1eeba18669966571b",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 10
+          }
+        },
+        "adaptedDifference": {
+          "field": "stdout",
+          "index": 201,
+          "expected": {
+            "sha256": "a5aa6ac32ea4e866c21948a2144dcc4a12ffaf9db57ba7e113fd2ceef345fdd4",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 32
+          },
+          "actual": {
+            "sha256": "b5ecc40a308a7427d4e6f1c289b905126e53bbe275d0705a3c310be9cca2d296",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 45
+          }
+        },
+        "adaptations": [
+          {
+            "id": "oracle-text-crlf-v1",
+            "probeLiteralHex": "610a620d0a630d640d0d0a65",
+            "stdoutHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "stderrHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "transformedPairs": {
+              "stdout": 58,
+              "stderr": 1
+            }
+          }
+        ],
+        "crossStreamOrder": "unobserved",
+        "conditionEvidence": "complete",
+        "outputEvidence": "complete"
+      }
+    },
+    {
+      "kind": "test",
+      "path": "tests/jacobian01.R",
+      "inputSha256": "7846e96b1400968e3f3d4760c20e2522d23a2a49624e36cf6caaf19b0c58a42a",
+      "setupSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "completionSha256": "f6d670031444a4c4f5cff5909bf60cd920b0a9ca4f753ff99d7f5890740ec578",
+      "fixturePaths": [
+        "BWeg.R",
+        "CSD.R",
+        "grad01.R",
+        "hessian01.R",
+        "jacobian01.R",
+        "oneSided.R",
+        "trig01.R"
+      ],
+      "oracleExitCode": 0,
+      "oracleSignal": null,
+      "oracleRuntimeSettings": {
+        "keepSource": false,
+        "keepSourcePackages": false,
+        "jitEnvironment": "",
+        "osType": "windows",
+        "newlineTransport": "lf-to-crlf"
+      },
+      "oracleLimitations": {
+        "sourcePrefixLines": 35,
+        "conditionObservation": "globalCallingHandlers-after-source-handlers",
+        "crossStreamOrder": "unobserved",
+        "incompleteHandlerReturn": false,
+        "nativeLineEndings": "preserved",
+        "conditionObserversPresentAtCompletion": true
+      },
+      "actual": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "a7ae4000216f3f7b71f1b446d41226cfc9359010bc16806a4db98d7e3b165a55",
+          "utf8Bytes": 2999,
+          "utf16Length": 2999
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": true
+      },
+      "expected": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "f355c4caf4cc2106df69b8f782f1a292fa32d3b73894927a7adc3892eea3cf4e",
+          "utf8Bytes": 3068,
+          "utf16Length": 3068
+        },
+        "stderr": {
+          "sha256": "064a60871bdf629498c38be3d06fed5110b8e05dd1eff4d36de18c16e086da58",
+          "utf8Bytes": 36,
+          "utf16Length": 36
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": false
+      },
+      "comparison": {
+        "policyVersion": 1,
+        "outcome": "mismatch",
+        "rawDifference": {
+          "field": "stdout",
+          "index": 9,
+          "expected": {
+            "sha256": "e717d9a64b0c7124df7d91e529c5adbdb2e087ba4e7a10eb2d91f504922e61a5",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 13
+          },
+          "actual": {
+            "sha256": "db78474d7f8c78deee2666ac5ae82e6ccb2227ea059be5970e275170b4b23751",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 10
+          }
+        },
+        "adaptedDifference": {
+          "field": "stdout",
+          "index": 100,
+          "expected": {
+            "sha256": "2550951ff884a4ebe573291f62a313a03157e6fda30c8393b3421f18ad4f458e",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 52
+          },
+          "actual": {
+            "sha256": "87e03031037c525fc6ee0a3a22bec632e2fbf0d6122d1b150615cab021cc29ae",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 56
+          },
+          "numericTokens": {
+            "expected": "6.618484e-12",
+            "actual": "6.618817e-12"
+          }
+        },
+        "adaptations": [
+          {
+            "id": "oracle-text-crlf-v1",
+            "probeLiteralHex": "610a620d0a630d640d0d0a65",
+            "stdoutHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "stderrHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "transformedPairs": {
+              "stdout": 69,
+              "stderr": 1
+            }
+          }
+        ],
+        "crossStreamOrder": "unobserved",
+        "conditionEvidence": "complete",
+        "outputEvidence": "complete"
+      }
+    },
+    {
+      "kind": "test",
+      "path": "tests/oneSided.R",
+      "inputSha256": "0a7c160bcea93204c4dd33181b5d68eacdf5263e0ac92a81b2b42c5ca64aab33",
+      "setupSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "completionSha256": "f6d670031444a4c4f5cff5909bf60cd920b0a9ca4f753ff99d7f5890740ec578",
+      "fixturePaths": [
+        "BWeg.R",
+        "CSD.R",
+        "grad01.R",
+        "hessian01.R",
+        "jacobian01.R",
+        "oneSided.R",
+        "trig01.R"
+      ],
+      "oracleExitCode": 0,
+      "oracleSignal": null,
+      "oracleRuntimeSettings": {
+        "keepSource": false,
+        "keepSourcePackages": false,
+        "jitEnvironment": "",
+        "osType": "windows",
+        "newlineTransport": "lf-to-crlf"
+      },
+      "oracleLimitations": {
+        "sourcePrefixLines": 35,
+        "conditionObservation": "globalCallingHandlers-after-source-handlers",
+        "crossStreamOrder": "unobserved",
+        "incompleteHandlerReturn": false,
+        "nativeLineEndings": "preserved",
+        "conditionObserversPresentAtCompletion": true
+      },
+      "actual": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": true
+      },
+      "expected": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": false
+      },
+      "comparison": {
+        "policyVersion": 1,
+        "outcome": "match",
+        "rawDifference": null,
+        "adaptedDifference": null,
+        "adaptations": [
+          {
+            "id": "oracle-text-crlf-v1",
+            "probeLiteralHex": "610a620d0a630d640d0d0a65",
+            "stdoutHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "stderrHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "transformedPairs": {
+              "stdout": 0,
+              "stderr": 0
+            }
+          }
+        ],
+        "crossStreamOrder": "unobserved",
+        "conditionEvidence": "complete",
+        "outputEvidence": "complete"
+      }
+    },
+    {
+      "kind": "test",
+      "path": "tests/trig01.R",
+      "inputSha256": "a198861da48c14b5ba92e4b681a7109983c9feef2eccc148161fc19b215f6065",
+      "setupSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "completionSha256": "f6d670031444a4c4f5cff5909bf60cd920b0a9ca4f753ff99d7f5890740ec578",
+      "fixturePaths": [
+        "BWeg.R",
+        "CSD.R",
+        "grad01.R",
+        "hessian01.R",
+        "jacobian01.R",
+        "oneSided.R",
+        "trig01.R"
+      ],
+      "oracleExitCode": 0,
+      "oracleSignal": null,
+      "oracleRuntimeSettings": {
+        "keepSource": false,
+        "keepSourcePackages": false,
+        "jitEnvironment": "",
+        "osType": "windows",
+        "newlineTransport": "lf-to-crlf"
+      },
+      "oracleLimitations": {
+        "sourcePrefixLines": 35,
+        "conditionObservation": "globalCallingHandlers-after-source-handlers",
+        "crossStreamOrder": "unobserved",
+        "incompleteHandlerReturn": false,
+        "nativeLineEndings": "preserved",
+        "conditionObserversPresentAtCompletion": true
+      },
+      "actual": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "4ab66a296f3ba023d5cd822b005e70372fcfa10f321e4fa9add1cb7d730634a0",
+          "utf8Bytes": 920,
+          "utf16Length": 920
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": true
+      },
+      "expected": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "17303b803e2529fb42cd880cd744f5c7fbe0f7590820431c9f387a501d767813",
+          "utf8Bytes": 935,
+          "utf16Length": 935
+        },
+        "stderr": {
+          "sha256": "064a60871bdf629498c38be3d06fed5110b8e05dd1eff4d36de18c16e086da58",
+          "utf8Bytes": 36,
+          "utf16Length": 36
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": false
+      },
+      "comparison": {
+        "policyVersion": 1,
+        "outcome": "mismatch",
+        "rawDifference": {
+          "field": "stdout",
+          "index": 32,
+          "expected": {
+            "sha256": "e1bc39b425f8e4c993c148a0805a96c25f2757aa1603f1193f870896aef973ce",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 53
+          },
+          "actual": {
+            "sha256": "e895c85d17df0953335307c19e63150f2a64837937d3ef7731085ed93d468842",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 52
+          }
+        },
+        "adaptedDifference": {
+          "field": "stdout",
+          "index": 32,
+          "expected": {
+            "sha256": "98de75e6e241cd374b332d030d74c14f6f8d2ed637e450d30c33ddeb1caf4b26",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 53
+          },
+          "actual": {
+            "sha256": "e895c85d17df0953335307c19e63150f2a64837937d3ef7731085ed93d468842",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 52
+          },
+          "numericTokens": {
+            "expected": "7.08881205005",
+            "actual": "7.08881205004"
+          }
+        },
+        "adaptations": [
+          {
+            "id": "oracle-text-crlf-v1",
+            "probeLiteralHex": "610a620d0a630d640d0d0a65",
+            "stdoutHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "stderrHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "transformedPairs": {
+              "stdout": 15,
+              "stderr": 1
+            }
+          }
+        ],
+        "crossStreamOrder": "unobserved",
+        "conditionEvidence": "complete",
+        "outputEvidence": "complete"
+      }
+    },
+    {
+      "kind": "example",
+      "path": "man/genD.Rd",
+      "inputSha256": "fab99518b750b51cce46fe827cf8f76a1203b10528751374c5d9f5083c86ec2e",
+      "setupSha256": "914f17539d58ae9f54a734f17f320c866de186acf927acb7ca155ec373b1624c",
+      "completionSha256": "f6d670031444a4c4f5cff5909bf60cd920b0a9ca4f753ff99d7f5890740ec578",
+      "fixturePaths": [],
+      "oracleExitCode": 0,
+      "oracleSignal": null,
+      "oracleRuntimeSettings": {
+        "keepSource": false,
+        "keepSourcePackages": false,
+        "jitEnvironment": "",
+        "osType": "windows",
+        "newlineTransport": "lf-to-crlf"
+      },
+      "oracleLimitations": {
+        "sourcePrefixLines": 35,
+        "conditionObservation": "globalCallingHandlers-after-source-handlers",
+        "crossStreamOrder": "unobserved",
+        "incompleteHandlerReturn": false,
+        "nativeLineEndings": "preserved",
+        "conditionObserversPresentAtCompletion": true
+      },
+      "actual": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": true
+      },
+      "expected": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": false
+      },
+      "comparison": {
+        "policyVersion": 1,
+        "outcome": "match",
+        "rawDifference": null,
+        "adaptedDifference": null,
+        "adaptations": [
+          {
+            "id": "oracle-text-crlf-v1",
+            "probeLiteralHex": "610a620d0a630d640d0d0a65",
+            "stdoutHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "stderrHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "transformedPairs": {
+              "stdout": 0,
+              "stderr": 0
+            }
+          }
+        ],
+        "crossStreamOrder": "unobserved",
+        "conditionEvidence": "complete",
+        "outputEvidence": "complete"
+      }
+    },
+    {
+      "kind": "example",
+      "path": "man/grad.Rd",
+      "inputSha256": "6a19635bd22713979185fa11a5831e5d29e196c4506613867542b86a1221dbcc",
+      "setupSha256": "914f17539d58ae9f54a734f17f320c866de186acf927acb7ca155ec373b1624c",
+      "completionSha256": "f6d670031444a4c4f5cff5909bf60cd920b0a9ca4f753ff99d7f5890740ec578",
+      "fixturePaths": [],
+      "oracleExitCode": 0,
+      "oracleSignal": null,
+      "oracleRuntimeSettings": {
+        "keepSource": false,
+        "keepSourcePackages": false,
+        "jitEnvironment": "",
+        "osType": "windows",
+        "newlineTransport": "lf-to-crlf"
+      },
+      "oracleLimitations": {
+        "sourcePrefixLines": 35,
+        "conditionObservation": "globalCallingHandlers-after-source-handlers",
+        "crossStreamOrder": "unobserved",
+        "incompleteHandlerReturn": false,
+        "nativeLineEndings": "preserved",
+        "conditionObserversPresentAtCompletion": true
+      },
+      "actual": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "c7caf8f968fc70ad703494fc32e41b2441bf6a1b4b49ab37308cb276ace6c199",
+          "utf8Bytes": 904,
+          "utf16Length": 904
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": true
+      },
+      "expected": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "ee0dbbe24562c233a355622f8963fe6a6f7d0e552b5ed133ae650b116239d0cc",
+          "utf8Bytes": 913,
+          "utf16Length": 913
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": false
+      },
+      "comparison": {
+        "policyVersion": 1,
+        "outcome": "mismatch",
+        "rawDifference": {
+          "field": "stdout",
+          "index": 6,
+          "expected": {
+            "sha256": "c3e78441970df3e8d6214e2e0cd61d7fb6de2d84f77344fd16977a5c5ced3c68",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 13
+          },
+          "actual": {
+            "sha256": "62e451b8d3ece4d8149a52808e4885405213c31a2573045af9ddf12e7d1bdcc9",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 10
+          }
+        },
+        "adaptedDifference": {
+          "field": "stdout",
+          "index": 381,
+          "expected": {
+            "sha256": "07a8d12376c806b3d2b47fdc54264dc93141d9f93467134b47ef4be2d07e313e",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 49
+          },
+          "actual": {
+            "sha256": "4e967239284301eaeaa24afbf12ce2b597bb0d1c448148aa7aff62cbaa0b3b06",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 57
+          },
+          "numericTokens": {
+            "expected": "6.118294e-12",
+            "actual": "6.917815e-12"
+          }
+        },
+        "adaptations": [
+          {
+            "id": "oracle-text-crlf-v1",
+            "probeLiteralHex": "610a620d0a630d640d0d0a65",
+            "stdoutHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "stderrHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "transformedPairs": {
+              "stdout": 20,
+              "stderr": 0
+            }
+          }
+        ],
+        "crossStreamOrder": "unobserved",
+        "conditionEvidence": "complete",
+        "outputEvidence": "complete"
+      }
+    },
+    {
+      "kind": "example",
+      "path": "man/hessian.Rd",
+      "inputSha256": "075c95c3c46188372fa695cd5972a85578cc63760d2ebd67b91e0b608f35bd97",
+      "setupSha256": "914f17539d58ae9f54a734f17f320c866de186acf927acb7ca155ec373b1624c",
+      "completionSha256": "f6d670031444a4c4f5cff5909bf60cd920b0a9ca4f753ff99d7f5890740ec578",
+      "fixturePaths": [],
+      "oracleExitCode": 0,
+      "oracleSignal": null,
+      "oracleRuntimeSettings": {
+        "keepSource": false,
+        "keepSourcePackages": false,
+        "jitEnvironment": "",
+        "osType": "windows",
+        "newlineTransport": "lf-to-crlf"
+      },
+      "oracleLimitations": {
+        "sourcePrefixLines": 35,
+        "conditionObservation": "globalCallingHandlers-after-source-handlers",
+        "crossStreamOrder": "unobserved",
+        "incompleteHandlerReturn": false,
+        "nativeLineEndings": "preserved",
+        "conditionObserversPresentAtCompletion": true
+      },
+      "actual": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "c6ecd1a1fb7ec3b57b8203ad3b693c6381f227c5fe527e90f98dea60a2de0f2b",
+          "utf8Bytes": 135,
+          "utf16Length": 135
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": true
+      },
+      "expected": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "d4c9e4e8d7789d7679ba78c43a3a13c1a24d3d4e96a63fb25a4130f526efb934",
+          "utf8Bytes": 137,
+          "utf16Length": 137
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": false
+      },
+      "comparison": {
+        "policyVersion": 1,
+        "outcome": "mismatch",
+        "rawDifference": {
+          "field": "stdout",
+          "index": 31,
+          "expected": {
+            "sha256": "a08136c5b07adb05db2af778312400bc4ecaa061f899284b403b64d796c410ce",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 49
+          },
+          "actual": {
+            "sha256": "60b8835df6f30554b46319b639aaf3e722439666b925e1ceaf8fcfbce6ba221f",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 50
+          }
+        },
+        "adaptedDifference": {
+          "field": "stdout",
+          "index": 31,
+          "expected": {
+            "sha256": "894b4e0f259d374d4b66be1e97f8daed9eb1a19876402e99019169d3d2f11841",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 49
+          },
+          "actual": {
+            "sha256": "60b8835df6f30554b46319b639aaf3e722439666b925e1ceaf8fcfbce6ba221f",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 50
+          },
+          "numericTokens": {
+            "expected": "1.032746e-09",
+            "actual": "2.183162e-09"
+          }
+        },
+        "adaptations": [
+          {
+            "id": "oracle-text-crlf-v1",
+            "probeLiteralHex": "610a620d0a630d640d0d0a65",
+            "stdoutHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "stderrHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "transformedPairs": {
+              "stdout": 3,
+              "stderr": 0
+            }
+          }
+        ],
+        "crossStreamOrder": "unobserved",
+        "conditionEvidence": "complete",
+        "outputEvidence": "complete"
+      }
+    },
+    {
+      "kind": "example",
+      "path": "man/jacobian.Rd",
+      "inputSha256": "9ec0492c7b5f7531fae4f732ccb50f0247d4d68fb28287e6fa38b732467d878e",
+      "setupSha256": "914f17539d58ae9f54a734f17f320c866de186acf927acb7ca155ec373b1624c",
+      "completionSha256": "f6d670031444a4c4f5cff5909bf60cd920b0a9ca4f753ff99d7f5890740ec578",
+      "fixturePaths": [],
+      "oracleExitCode": 0,
+      "oracleSignal": null,
+      "oracleRuntimeSettings": {
+        "keepSource": false,
+        "keepSourcePackages": false,
+        "jitEnvironment": "",
+        "osType": "windows",
+        "newlineTransport": "lf-to-crlf"
+      },
+      "oracleLimitations": {
+        "sourcePrefixLines": 35,
+        "conditionObservation": "globalCallingHandlers-after-source-handlers",
+        "crossStreamOrder": "unobserved",
+        "incompleteHandlerReturn": false,
+        "nativeLineEndings": "preserved",
+        "conditionObserversPresentAtCompletion": true
+      },
+      "actual": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "31e8451ca91ac2dd7aa740fb937f7e1c7608a4ee63eb205e18f0f29b19394ae2",
+          "utf8Bytes": 190,
+          "utf16Length": 190
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": true
+      },
+      "expected": {
+        "status": "completed",
+        "freshSession": true,
+        "outputComplete": true,
+        "conditionsComplete": true,
+        "stdout": {
+          "sha256": "bec7fd580a0faef71cbf35ef5fc3619d82f65fb249e94a4732762a49fb25c77d",
+          "utf8Bytes": 200,
+          "utf16Length": 200
+        },
+        "stderr": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "utf8Bytes": 0,
+          "utf16Length": 0
+        },
+        "conditions": {
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "count": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "outputOrderObserved": false
+      },
+      "comparison": {
+        "policyVersion": 1,
+        "outcome": "mismatch",
+        "rawDifference": {
+          "field": "stdout",
+          "index": 14,
+          "expected": {
+            "sha256": "9e2461bd3e4849ca0423f918288321725381ec4c28433f1bbf1ed956ee4fe6c5",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 13
+          },
+          "actual": {
+            "sha256": "cdce399bed2bb41cafbd1819bf00809144af0fd79a16ee9e0c416bf13feecf95",
+            "utf8Bytes": 80,
+            "utf16Length": 80,
+            "firstCodeUnit": 10
+          }
+        },
+        "adaptedDifference": {
+          "field": "stdout",
+          "index": 183,
+          "expected": {
+            "sha256": "69f062ad0161411fd4fe34e336bd1381cb0db63824ba5c8faed987529cd2a803",
+            "utf8Bytes": 7,
+            "utf16Length": 7,
+            "firstCodeUnit": 49
+          },
+          "actual": {
+            "sha256": "fb535918db6dd6204a609025ca5fe2f73f5202d3c621d21061a934a70958cbfa",
+            "utf8Bytes": 7,
+            "utf16Length": 7,
+            "firstCodeUnit": 57
+          },
+          "numericTokens": {
+            "expected": "2.449213e-16",
+            "actual": "2.449294e-16"
+          }
+        },
+        "adaptations": [
+          {
+            "id": "oracle-text-crlf-v1",
+            "probeLiteralHex": "610a620d0a630d640d0d0a65",
+            "stdoutHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "stderrHex": "610d0a620d0d0a630d640d0d0d0a65",
+            "transformedPairs": {
+              "stdout": 10,
+              "stderr": 0
+            }
+          }
+        ],
+        "crossStreamOrder": "unobserved",
+        "conditionEvidence": "complete",
+        "outputEvidence": "complete"
+      }
+    }
+  ]
+}

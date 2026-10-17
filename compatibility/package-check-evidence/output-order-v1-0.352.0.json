@@ -1,0 +1,357 @@
+{
+  "schemaVersion": 1,
+  "policy": "sha256-no-output-v1",
+  "capture": "merged-handle-unique-alignment-v1",
+  "semanticProfile": "0.352.0",
+  "nativeFixtureEvidence": "packages/package-tools/test/output-order-oracle.test.ts",
+  "limitations": [
+    "Only metadata is retained; raw package reports, captured output text and source bodies are not copied.",
+    "Oracle event text is recorded as captured, before the declared oracle-text-crlf-v1 reversal; NativR event text is unchanged.",
+    "P7 remains false and corpus partitions/tiers are unchanged."
+  ],
+  "package": {
+    "name": "abind",
+    "version": "1.4-8",
+    "license": "MIT + file LICENSE"
+  },
+  "provenance": {
+    "sourceSha256": "264a051b523ceae1795a0879e7768949ea55c586ac8db0adf1f5ebeddd2623e1",
+    "artifactSha256": "e9862a710e03ef978409dbd3c4138dd4cdf96b0584c6f228ffe2b42d1e0e9dee",
+    "oracle": {
+      "implementation": "GNU R",
+      "version": "4.6.1"
+    },
+    "semanticProfile": "0.352.0",
+    "capabilitySha256": "65a1fb1df6896a8be3f34c307f6cdc7c7f23675cb929478a4d44b792398573d8",
+    "runtimeLimits": {
+      "maxSteps": 300000000,
+      "maxCallDepth": 200,
+      "maxVectorLength": 50000000,
+      "maxOutputBytes": 32000000,
+      "maxPackageResourceBytes": 268435456
+    }
+  },
+  "rawReportSha256": "1eaf3773463c49eeb80f6e4d98b493255eafe19646fb1428d2a69974270b4bab",
+  "oracleRepeat": true,
+  "newlineTransport": "lf-to-crlf",
+  "p7Eligible": false,
+  "firstBlocker": "metadata-dependencies",
+  "stage": {
+    "id": "output-order",
+    "status": "passed",
+    "discovered": [
+      "test:tests/abind.R",
+      "test:tests/adrop.R",
+      "test:tests/afill.R",
+      "test:tests/asub.R",
+      "test:tests/dnns.R",
+      "example:man/abind.Rd",
+      "example:man/acorn.Rd",
+      "example:man/adrop.Rd",
+      "example:man/afill.Rd",
+      "example:man/asub.Rd"
+    ],
+    "executed": [
+      "test:tests/abind.R",
+      "test:tests/adrop.R",
+      "test:tests/afill.R",
+      "test:tests/asub.R",
+      "test:tests/dnns.R",
+      "example:man/abind.Rd",
+      "example:man/acorn.Rd",
+      "example:man/adrop.Rd",
+      "example:man/afill.Rd",
+      "example:man/asub.Rd"
+    ]
+  },
+  "observations": [
+    {
+      "kind": "test",
+      "path": "tests/abind.R",
+      "outcome": "match",
+      "crossStreamOrder": "compared",
+      "oracleAlignment": "complete",
+      "oracleRepeatOrderEqual": true,
+      "expected": [
+        {
+          "stream": "stdout",
+          "sha256": "90092691f1010ed17ae60ee54b534a617b7884b6d6b4dc3654a8ab6f0efc6723",
+          "utf8Bytes": 6974,
+          "utf16Length": 6974
+        }
+      ],
+      "actual": [
+        {
+          "stream": "stdout",
+          "sha256": "cdb3ef2cb3cce9b801e427baca2b2d7b31adbbc238551712d5cc3e86c462af10",
+          "utf8Bytes": 6469,
+          "utf16Length": 6469
+        }
+      ]
+    },
+    {
+      "kind": "test",
+      "path": "tests/adrop.R",
+      "outcome": "match",
+      "crossStreamOrder": "compared",
+      "oracleAlignment": "complete",
+      "oracleRepeatOrderEqual": true,
+      "expected": [
+        {
+          "stream": "stdout",
+          "sha256": "ba26c7743cdbbd85315341a8e9dffb00d4b9438a460cd127d59ed35445ace4a5",
+          "utf8Bytes": 246,
+          "utf16Length": 246
+        },
+        {
+          "stream": "stderr",
+          "sha256": "f2aa39e951e1d723b36b394864daec33ee34b015cd47da41dfde5483a9adcf9f",
+          "utf8Bytes": 208,
+          "utf16Length": 208
+        },
+        {
+          "stream": "stdout",
+          "sha256": "7c3e82c30b6e0d8f176028bf5e5846f4f1aeec141df31d7aba20245268489c14",
+          "utf8Bytes": 22,
+          "utf16Length": 22
+        }
+      ],
+      "actual": [
+        {
+          "stream": "stdout",
+          "sha256": "692f3154fe7fb9afc08a6f442ef7af25b31c2ad20270242f07049ba226d66d06",
+          "utf8Bytes": 215,
+          "utf16Length": 215
+        },
+        {
+          "stream": "stderr",
+          "sha256": "28403d4b1b7cd27b3042b01fddf87e021d41691a9ea99f89df5602e8ddb3efde",
+          "utf8Bytes": 204,
+          "utf16Length": 204
+        },
+        {
+          "stream": "stdout",
+          "sha256": "a8a7dc8100d4bf716342c07a26995345ecb980068052c463d66cd20f19ca16a2",
+          "utf8Bytes": 19,
+          "utf16Length": 19
+        }
+      ]
+    },
+    {
+      "kind": "test",
+      "path": "tests/afill.R",
+      "outcome": "match",
+      "crossStreamOrder": "compared",
+      "oracleAlignment": "complete",
+      "oracleRepeatOrderEqual": true,
+      "expected": [
+        {
+          "stream": "stdout",
+          "sha256": "b4e731d2d38cef1b4477bd75596fc72ffed1bfb1caa0e8bf3ee7d3ec9368c334",
+          "utf8Bytes": 898,
+          "utf16Length": 898
+        },
+        {
+          "stream": "stderr",
+          "sha256": "ed816f574e95600ae8bcf38dd10f6cc8e35d46c6455e08f22365f32bc1ed45f9",
+          "utf8Bytes": 147,
+          "utf16Length": 147
+        },
+        {
+          "stream": "stdout",
+          "sha256": "2b0796c86dbbbace2d4c1e48ce3546c537e98c388202d5002bea6ad5d65302bc",
+          "utf8Bytes": 235,
+          "utf16Length": 235
+        }
+      ],
+      "actual": [
+        {
+          "stream": "stdout",
+          "sha256": "958ec35b98f6787ea7d4bc94e96adbd3669671a3456c6894cae13b2d5218f2cf",
+          "utf8Bytes": 826,
+          "utf16Length": 826
+        },
+        {
+          "stream": "stderr",
+          "sha256": "0991497d1dee1bd953d0c6d9203b250a0dc9e4078df0553a1b64e3d261acf0a3",
+          "utf8Bytes": 144,
+          "utf16Length": 144
+        },
+        {
+          "stream": "stdout",
+          "sha256": "7977dc2347a151c4816b0743096c6eacdefb37d806a694b679e00f9864ad9882",
+          "utf8Bytes": 216,
+          "utf16Length": 216
+        }
+      ]
+    },
+    {
+      "kind": "test",
+      "path": "tests/asub.R",
+      "outcome": "match",
+      "crossStreamOrder": "compared",
+      "oracleAlignment": "complete",
+      "oracleRepeatOrderEqual": true,
+      "expected": [
+        {
+          "stream": "stdout",
+          "sha256": "7bfb10f0ce13a0974cb246f57a64d4bb18101e702e844ee92d29efc3e5f8d31f",
+          "utf8Bytes": 2987,
+          "utf16Length": 2987
+        }
+      ],
+      "actual": [
+        {
+          "stream": "stdout",
+          "sha256": "75647a797dfcb270c8657bb81ada2d50b6a7cc5962e92a2440004db3789ab3be",
+          "utf8Bytes": 2645,
+          "utf16Length": 2645
+        }
+      ]
+    },
+    {
+      "kind": "test",
+      "path": "tests/dnns.R",
+      "outcome": "match",
+      "crossStreamOrder": "compared",
+      "oracleAlignment": "complete",
+      "oracleRepeatOrderEqual": true,
+      "expected": [
+        {
+          "stream": "stdout",
+          "sha256": "2b0926a117cb2fb148f7e24f7549f3042b4d125358cf6885bc5e6866b3809ed1",
+          "utf8Bytes": 452,
+          "utf16Length": 452
+        }
+      ],
+      "actual": [
+        {
+          "stream": "stdout",
+          "sha256": "fe97fa09f00e5624234bb788f95f355cc983fdf6630334cc67f9a3661e809957",
+          "utf8Bytes": 404,
+          "utf16Length": 404
+        }
+      ]
+    },
+    {
+      "kind": "example",
+      "path": "man/abind.Rd",
+      "outcome": "match",
+      "crossStreamOrder": "compared",
+      "oracleAlignment": "complete",
+      "oracleRepeatOrderEqual": true,
+      "expected": [
+        {
+          "stream": "stdout",
+          "sha256": "0a8295a869a9b35ac58095b52aa4f4b020ea6924e226be466fd251a79b18e04b",
+          "utf8Bytes": 1547,
+          "utf16Length": 1547
+        }
+      ],
+      "actual": [
+        {
+          "stream": "stdout",
+          "sha256": "833d6b29b944376118c480e62c03127c1ddcb0424f2c00aca1585b49fc428698",
+          "utf8Bytes": 1463,
+          "utf16Length": 1463
+        }
+      ]
+    },
+    {
+      "kind": "example",
+      "path": "man/acorn.Rd",
+      "outcome": "match",
+      "crossStreamOrder": "compared",
+      "oracleAlignment": "complete",
+      "oracleRepeatOrderEqual": true,
+      "expected": [
+        {
+          "stream": "stdout",
+          "sha256": "2113f43808ee41e8b8eff0fe82abc131c36bcf2529b7e3dc5183edefce3c49bf",
+          "utf8Bytes": 206,
+          "utf16Length": 206
+        }
+      ],
+      "actual": [
+        {
+          "stream": "stdout",
+          "sha256": "cd7c5bedec4a0338a94549f5829bf725de3ee3cc4eb28b10f3d3a0c9f288f5eb",
+          "utf8Bytes": 177,
+          "utf16Length": 177
+        }
+      ]
+    },
+    {
+      "kind": "example",
+      "path": "man/adrop.Rd",
+      "outcome": "match",
+      "crossStreamOrder": "compared",
+      "oracleAlignment": "complete",
+      "oracleRepeatOrderEqual": true,
+      "expected": [
+        {
+          "stream": "stdout",
+          "sha256": "5bfb0cfd1db89d104a33093634136b569c1e01e4050b04792164ff1b85e18151",
+          "utf8Bytes": 230,
+          "utf16Length": 230
+        }
+      ],
+      "actual": [
+        {
+          "stream": "stdout",
+          "sha256": "f8fbb79827d85ebc9f22122a7b9cdeb2876adbbace7320709b44f3a77edcdd7c",
+          "utf8Bytes": 201,
+          "utf16Length": 201
+        }
+      ]
+    },
+    {
+      "kind": "example",
+      "path": "man/afill.Rd",
+      "outcome": "match",
+      "crossStreamOrder": "compared",
+      "oracleAlignment": "complete",
+      "oracleRepeatOrderEqual": true,
+      "expected": [
+        {
+          "stream": "stdout",
+          "sha256": "df0e0acdb4e7c1b80f0851353ced5d945dca30d86fa5b5495367e306748c3e30",
+          "utf8Bytes": 331,
+          "utf16Length": 331
+        }
+      ],
+      "actual": [
+        {
+          "stream": "stdout",
+          "sha256": "032e760f44ad8b5f22d83a15abaf919808c3bb9e7cdf866221a1969c901b3139",
+          "utf8Bytes": 294,
+          "utf16Length": 294
+        }
+      ]
+    },
+    {
+      "kind": "example",
+      "path": "man/asub.Rd",
+      "outcome": "match",
+      "crossStreamOrder": "compared",
+      "oracleAlignment": "complete",
+      "oracleRepeatOrderEqual": true,
+      "expected": [
+        {
+          "stream": "stdout",
+          "sha256": "b76910374f2d3d8020a34114a1355b95965531636d65fe9fc329fdfa67d885c3",
+          "utf8Bytes": 224,
+          "utf16Length": 224
+        }
+      ],
+      "actual": [
+        {
+          "stream": "stdout",
+          "sha256": "ec113a6f79718e60c1872453ed3d16930a4c59af9856d58b43be584d2215438f",
+          "utf8Bytes": 192,
+          "utf16Length": 192
+        }
+      ]
+    }
+  ]
+}

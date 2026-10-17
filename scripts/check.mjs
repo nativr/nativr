@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { runPnpm } from "./lib/commands.mjs";
 
 const root = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
+await import("./builtin-package-owners.mjs?check");
 for (const command of [
   ["format:check"],
   ["research:usage:check"],

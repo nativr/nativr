@@ -1,3 +1,4 @@
+import { translatePosixCharacterClasses } from "./regex.js";
 import { assertNever } from "@nativr/ast";
 import type {
   AssignmentExpressionNode,
@@ -10,7 +11,17 @@ import type {
 } from "@nativr/ast";
 
 import { EvaluationContext, DEFAULT_RUNTIME_LIMITS } from "./context.js";
-import { deparseAst } from "./language.js";
+import { deparseAst, deparseDiagnosticAst } from "./language.js";
+import {
+  embeddedValueAst,
+  extractLanguageElement,
+  extractLanguageMember,
+  quoteLanguageNode,
+  replaceLanguageElement,
+  replaceLanguageMember,
+  replaceLanguageSubset,
+  subsetLanguage,
+} from "./language-subset.js";
 import { censusRuntimeMemory } from "./memory.js";
 import {
   createEnvironment,
@@ -24,6 +35,7 @@ import {
 import {
   NativRError,
   REvaluationError,
+  RSignalledConditionError,
   RResourceLimitError,
   RRuntimeDisposedError,
   RTypeMismatchError,
@@ -32,6 +44,7 @@ import {
 import { decodeRBase64Resource, decodeRWorkspaceFile } from "./serialization.js";
 import {
   characterVector,
+  characterLiteralValue,
   complexVector,
   doubleVector,
   functionDebugRegistry,
@@ -44,6 +57,8 @@ import {
   logicalVector,
   missingValue,
   objectClasses,
+  pairlistValue,
+  BASE_OPTIONS_STATE_KEY,
   NATIVR_PACKAGE_LIBRARY_PATH,
   NATIVR_PACKAGE_SOURCE_RESOURCE_ROOT,
   NATIVR_SYSTEM_LIBRARY_PATH,
@@ -51,7 +66,9 @@ import {
   R_NULL,
   vectorDimensions,
   withClasses,
+  withAttribute,
   GLOBAL_CALLING_HANDLERS_STATE_KEY,
+  USER_HOOKS_STATE_KEY,
   runtimeOutputRouter,
 } from "./values.js";
 import {
@@ -76,6 +93,7 @@ import type {
   REnvironment,
   RDataViewEvent,
   RLanguage,
+  RList,
   RNativeCallRequest,
   RNativeModuleDefinition,
   RGraphicsEvent,
@@ -100,8 +118,24 @@ export interface EvaluationResult {
   readonly visible: boolean;
 }
 
+/** An error handled by options(error=) while evaluating top-level script expressions. */
+export interface TopLevelEvaluationError {
+  /** One-based index in the normalized program body. */
+  readonly expressionIndex: number;
+  readonly code: string;
+  readonly message: string;
+}
+
+/** Optional script behavior; ordinary evaluation stops on the first uncaught error. */
+export interface EvaluationOptions {
+  readonly topLevelErrorHandling?: "option";
+  /** Print each visible top-level result as a script runner would. */
+  readonly printVisibleTopLevel?: boolean;
+}
+
 /** Complete internal result for one source evaluation. */
 export interface DetailedEvaluationResult extends EvaluationResult {
+  readonly topLevelErrors: readonly TopLevelEvaluationError[];
   readonly warnings: readonly RWarning[];
   readonly output: readonly ROutput[];
   readonly dataViews: readonly RDataViewEvent[];
@@ -115,6 +149,8 @@ export interface EvaluatorOptions {
   readonly limits?: Partial<RuntimeLimits>;
   readonly parseSource?: (source: string, maxExpressions?: number) => ProgramNode;
   readonly packages?: readonly RuntimePackageDefinition[];
+  /** Immutable text resources for registered core packages, supplied at session creation. */
+  readonly systemPackageResources?: readonly RuntimeSystemPackageTextResource[];
   /** Positive session identity supplied by the embedding facade for Sys.getpid(). */
   readonly sessionProcessId?: number;
   /** Recreate evaluator-owned builtin state at construction and reset. */
@@ -140,6 +176,10 @@ export interface RuntimePackageImport {
   readonly package: string;
   /** Undefined imports the dependency's complete exported surface. */
   readonly names?: readonly string[];
+  /** Local binding names corresponding to explicit export names. */
+  readonly localNames?: readonly string[];
+  /** Export names omitted from a full import. */
+  readonly except?: readonly string[];
 }
 
 /** One package requirement retained from DESCRIPTION. */
@@ -171,6 +211,11 @@ export interface RuntimePackageTextResource {
   readonly text: string;
 }
 
+/** One browser-supplied data resource belonging to a registered core package. */
+export interface RuntimeSystemPackageTextResource extends RuntimePackageTextResource {
+  readonly package: string;
+}
+
 /** Parser-independent package input accepted by the runtime. */
 export interface RuntimePackageDefinition {
   readonly name: string;
@@ -183,6 +228,8 @@ export interface RuntimePackageDefinition {
   readonly dependencies: readonly RuntimePackageDependency[];
   readonly imports: readonly RuntimePackageImport[];
   readonly exports: readonly string[];
+  /** exportPattern() declarations, including C-locale POSIX character classes. */
+  readonly exportPatterns: readonly string[];
   /** S4 method names declared by exportMethods(); they need not be ordinary namespace bindings. */
   readonly methodExports: readonly string[];
   readonly s3Methods: readonly RuntimeS3Method[];
@@ -194,12 +241,39 @@ export interface RuntimePackageDefinition {
 interface RuntimePackageRecord {
   readonly definition: RuntimePackageDefinition;
   namespace: REnvironment | undefined;
+  exportNames: readonly string[] | undefined;
   loading: boolean;
   attached: boolean;
 }
 
-function runtimePackageExportNames(definition: RuntimePackageDefinition): readonly string[] {
-  return Object.freeze([...new Set([...definition.exports, ...definition.methodExports])]);
+function runtimePackageExportNames(record: RuntimePackageRecord): readonly string[] {
+  return (
+    record.exportNames ??
+    Object.freeze([...new Set([...record.definition.exports, ...record.definition.methodExports])])
+  );
+}
+
+function resolveRuntimePackageExportNames(
+  record: RuntimePackageRecord,
+  namespace: REnvironment,
+): readonly string[] {
+  const names = new Set([...record.definition.exports, ...record.definition.methodExports]);
+  for (const pattern of record.definition.exportPatterns) {
+    let matcher: RegExp;
+    try {
+      matcher = new RegExp(translatePosixCharacterClasses(pattern), "u");
+    } catch (error) {
+      throw new REvaluationError(
+        "NRE2230",
+        `Package '${record.definition.name}' NAMESPACE has invalid exportPattern '${pattern}'.`,
+        { cause: error },
+      );
+    }
+    for (const name of namespace.bindings.keys()) {
+      if (matcher.test(name)) names.add(name);
+    }
+  }
+  return Object.freeze([...names]);
 }
 
 function parsePackageVirtualPath(
@@ -274,10 +348,15 @@ interface ClosureCallFrame {
 
 interface S3DispatchFrame {
   readonly generic: string;
+  readonly group?: string;
+  readonly methodName?: string;
+  readonly previousClasses?: RValue;
   readonly genericEnvironment: REnvironment;
   readonly classes: readonly string[];
   readonly classIndex: number;
   readonly arguments: ClosureCallFrame["arguments"];
+  readonly call?: CallExpressionNode;
+  readonly callerEnvironment?: REnvironment;
 }
 
 type PreparedSubsetOperation =
@@ -300,213 +379,22 @@ type PreparedSubsetOperation =
 
 const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all">([
   ["base", "all"],
-  [
-    "stats",
-    new Set([
-      "cor",
-      "cov",
-      "density",
-      "density.default",
-      "dbinom",
-      "dcauchy",
-      "family",
-      "as.formula",
-      "approx",
-      "formula",
-      "mean",
-      "median",
-      "lsfit",
-      "mad",
-      "nlm",
-      "optim",
-      "ppoints",
-      "pnorm",
-      "pcauchy",
-      "quantile",
-      "qbinom",
-      "qcauchy",
-      "qnorm",
-      "rbeta",
-      "rbinom",
-      "rcauchy",
-      "rchisq",
-      "rexp",
-      "rgamma",
-      "rlnorm",
-      "rnorm",
-      "rpois",
-      "rt",
-      "runif",
-      "sd",
-      "set.seed",
-      "as.ts",
-      "cycle",
-      "deltat",
-      "embed",
-      "filter",
-      "frequency",
-      "ts",
-      "ts.plot",
-      "update",
-      "var",
-      "weights",
-      "weighted.mean",
-      "weighted.mean.default",
-      "window",
-      "xtabs",
-    ]),
-  ],
-  [
-    "methods",
-    new Set([
-      "as",
-      "is",
-      "new",
-      "Quote",
-      "representation",
-      "signature",
-      "setAs",
-      "setClass",
-      "setGeneric",
-      "setMethod",
-      "setOldClass",
-      "show",
-      "showClass",
-    ]),
-  ],
-  [
-    "grDevices",
-    new Set([
-      "as.raster",
-      "as.raster.array",
-      "as.raster.character",
-      "as.raster.logical",
-      "as.raster.matrix",
-      "as.raster.numeric",
-      "as.raster.raw",
-      "col2rgb",
-      "colorRamp",
-      "colorRampPalette",
-      "convertColor",
-      "colors",
-      "colours",
-      "cm.colors",
-      "dev.control",
-      "dev.flush",
-      "dev.hold",
-      "dev.cur",
-      "dev.list",
-      "dev.off",
-      "devAskNewPage",
-      "gray",
-      "gray.colors",
-      "grey",
-      "grey.colors",
-      "graphics.off",
-      "heat.colors",
-      "hcl",
-      "is.raster",
-      "nclass.FD",
-      "nclass.Sturges",
-      "nclass.scott",
-      "pdf",
-      "png",
-      "recordPlot",
-      "rainbow",
-      "replayPlot",
-      "rgb",
-      "terrain.colors",
-      "topo.colors",
-    ]),
-  ],
-  [
-    "graphics",
-    new Set([
-      "abline",
-      "axTicks",
-      "axis",
-      "barplot",
-      "barplot.default",
-      "box",
-      "boxplot",
-      "curve",
-      "hist",
-      "hist.default",
-      "image",
-      "image.default",
-      "legend",
-      "lines",
-      "lines.default",
-      "matplot",
-      "pairs",
-      "par",
-      "persp",
-      "points",
-      "polygon",
-      "plot.new",
-      "plot.window",
-      "rasterImage",
-      "rect",
-      "segments",
-      "text",
-      "title",
-    ]),
-  ],
-  [
-    "utils",
-    new Set([
-      "aspell",
-      "as.roman",
-      "available.packages",
-      "browseVignettes",
-      "browseURL",
-      "capture.output",
-      "compareVersion",
-      "contrib.url",
-      "data",
-      "demo",
-      "download.file",
-      "example",
-      "glob2rx",
-      "getFromNamespace",
-      "globalVariables",
-      "head",
-      "help",
-      "install.packages",
-      "object.size",
-      "packageName",
-      "packageDescription",
-      "package.skeleton",
-      "packageVersion",
-      "read.csv",
-      "read.csv2",
-      "read.delim",
-      "read.delim2",
-      "read.table",
-      "sessionInfo",
-      "tail",
-      "tar",
-      "type.convert",
-      "type.convert.data.frame",
-      "type.convert.default",
-      "type.convert.list",
-      "URLdecode",
-      "vignette",
-      "View",
-      "write.csv",
-      "write.csv2",
-      "write.table",
-    ]),
-  ],
-  ["datasets", new Set()],
-  ["tools", new Set()],
+  ["stats", "all"],
+  ["methods", "all"],
+  ["grDevices", "all"],
+  ["graphics", "all"],
+  ["utils", "all"],
+  ["datasets", "all"],
+  ["tools", "all"],
   ["R6", new Set(["R6Class"])],
   ["vctrs", new Set(["new_class", "new_vctr"])],
   ["tibble", new Set(["tibble", "tribble"])],
 ]);
 const BASE_NAMESPACE_CONSTANTS = new Set([
+  ".GlobalEnv",
   "pi",
   "letters",
+  "LETTERS",
   "T",
   "F",
   ".Machine",
@@ -523,6 +411,7 @@ const PRIMITIVE_S3_GENERICS = new Set([
   "[<-",
   "[[<-",
   "Ops",
+  "Summary",
   "+",
   "-",
   "*",
@@ -582,6 +471,90 @@ class NextSignal extends Error {
   }
 }
 
+interface ExitingConditionFrame {
+  readonly kind: "exiting";
+  readonly target: symbol;
+  readonly classes: readonly string[];
+}
+
+/** A calling-handler frame that muffles matching warnings or messages at its stack position. */
+interface MufflingConditionFrame {
+  readonly kind: "muffle";
+  readonly condition: "warning" | "message";
+  readonly classes: readonly string[];
+}
+
+/** One local calling handler from withCallingHandlers(); it runs in place and may resume. */
+interface CallingConditionFrame {
+  readonly kind: "calling";
+  readonly className: string;
+  readonly handler: RValue;
+}
+
+/** try() catches errors outside the handler stack, so eager error signalling stops here. */
+interface BarrierConditionFrame {
+  readonly kind: "barrier";
+}
+
+type ConditionFrame =
+  ExitingConditionFrame | MufflingConditionFrame | CallingConditionFrame | BarrierConditionFrame;
+
+/** An established restart; `exit` is the environment that identifies its restart object. */
+interface RestartFrame {
+  readonly name: string;
+  readonly exit: REnvironment;
+  readonly restart: RValue;
+}
+
+class RestartSignal extends Error {
+  public constructor(
+    public readonly exit: REnvironment,
+    public readonly arguments_: readonly RValue[],
+  ) {
+    super("Internal restart control signal.");
+  }
+}
+
+const SIMPLE_WARNING_CLASSES = Object.freeze(["simpleWarning", "warning", "condition"]);
+
+const SYNTHETIC_SPAN: SourceSpan = Object.freeze({
+  start: Object.freeze({ offset: 0, line: 1, column: 1 }),
+  end: Object.freeze({ offset: 0, line: 1, column: 1 }),
+});
+
+function syntheticClosure(parameters: readonly string[], body: AstNode): RClosure {
+  return {
+    type: "closure",
+    parameters: parameters.map((name) => ({ name, span: SYNTHETIC_SPAN })),
+    body,
+    environment: createEnvironment(null),
+    attributes: new Map(),
+  };
+}
+
+/** Restart objects carry `test = function(c) TRUE`; muffle restarts use `function() NULL`. */
+const RESTART_TEST = syntheticClosure(["c"], {
+  kind: "LogicalLiteral",
+  value: true,
+  span: SYNTHETIC_SPAN,
+});
+const MUFFLE_HANDLER = syntheticClosure([], { kind: "NullLiteral", span: SYNTHETIC_SPAN });
+
+/** GNU R's always-present top-level restart, an unnamed list of its name and NULL. */
+const ABORT_RESTART: RValue = withClasses(listValue([characterVector(["abort"]), R_NULL]), [
+  "restart",
+]);
+
+class ExitingConditionSignal extends Error {
+  public constructor(
+    public readonly target: symbol,
+    public readonly handlerIndex: number,
+    public readonly condition: RValue,
+  ) {
+    super("Internal exiting condition control signal.");
+  }
+}
+
 let nextRuntimeSessionProcessId = 1;
 
 function allocateRuntimeSessionProcessId(): number {
@@ -606,14 +579,22 @@ export class Evaluator {
   readonly #sessionProcessId: number;
   #emptyEnvironment: REnvironment;
   #baseEnvironment: REnvironment;
-  #attachedPackagesEnvironment: REnvironment;
+  #baseNamespace: REnvironment;
+  readonly #staticNamespaces = new Map<string, REnvironment>();
   #globalEnvironment: REnvironment;
   readonly #controlFrames: ControlFrame[] = [];
   readonly #closureCallFrames: ClosureCallFrame[] = [];
+  readonly #errorCallTraces = new WeakMap<NativRError, readonly CallExpressionNode[]>();
   readonly #s3DispatchFrames: S3DispatchFrame[] = [];
   readonly #builtinState = new Map<string, unknown>();
   readonly #activeGlobalCallingHandlers = new Set<RValue>();
+  readonly #conditionFrames: ConditionFrame[] = [];
+  readonly #restartFrames: RestartFrame[] = [];
+  // Errors already offered to the handler stack where they were raised, such as stop().
+  readonly #signalledErrors = new WeakSet<NativRError>();
   readonly #packages = new Map<string, RuntimePackageRecord>();
+  readonly #namespaceNames = new WeakMap<REnvironment, string>();
+  readonly #systemPackageResources = new Map<string, Map<string, string>>();
   readonly #registeredS3Methods = new Map<string, RBinding>();
   readonly #s3RegistrationTransactions: Map<string, RBinding | undefined>[] = [];
   #searchPath = [...DEFAULT_SEARCH_PATH];
@@ -643,6 +624,46 @@ export class Evaluator {
     this.#systemCommand = options.systemCommand;
     this.#nativeModules = options.nativeModules ?? [];
     this.#nativeCall = options.nativeCall;
+    let systemResourceBytes = 0;
+    let systemResourceCount = 0;
+    for (const resource of options.systemPackageResources ?? []) {
+      if (
+        typeof resource !== "object" ||
+        resource === null ||
+        typeof resource.package !== "string" ||
+        typeof resource.path !== "string" ||
+        typeof resource.text !== "string" ||
+        !REGISTERED_NAMESPACE_EXPORTS.has(resource.package) ||
+        resource.path.length === 0 ||
+        resource.path
+          .split("/")
+          .some((part) => part.length === 0 || part === "." || part === "..") ||
+        resource.path.includes("\\") ||
+        [...resource.path].some((character) => {
+          const codePoint = character.codePointAt(0)!;
+          return codePoint <= 0x1f || codePoint === 0x7f;
+        })
+      ) {
+        throw new REvaluationError("NRE2231", "Invalid core package resource path.");
+      }
+      const resources =
+        this.#systemPackageResources.get(resource.package) ?? new Map<string, string>();
+      if (resources.has(resource.path)) {
+        throw new REvaluationError("NRE2231", "Duplicate core package resource path.");
+      }
+      systemResourceCount += 1;
+      // Three bytes per UTF-16 code unit is a conservative UTF-8 upper bound.
+      systemResourceBytes += 3 * (resource.path.length + resource.text.length);
+      if (
+        !Number.isSafeInteger(systemResourceBytes) ||
+        systemResourceBytes > this.#limits.maxPackageResourceBytes ||
+        systemResourceCount > this.#limits.maxVectorLength
+      ) {
+        throw new RResourceLimitError("NRL4002", "Core package resource limit exceeded.");
+      }
+      resources.set(resource.path, resource.text);
+      this.#systemPackageResources.set(resource.package, resources);
+    }
     this.#sessionProcessId = options.sessionProcessId ?? allocateRuntimeSessionProcessId();
     if (
       !Number.isInteger(this.#sessionProcessId) ||
@@ -657,9 +678,22 @@ export class Evaluator {
     this.#initializeBuiltinState?.(this.#builtinState);
     this.#emptyEnvironment = createEnvironment(null, true);
     this.#baseEnvironment = createEnvironment(this.#emptyEnvironment, true);
-    this.#attachedPackagesEnvironment = createEnvironment(this.#baseEnvironment, true);
-    this.#globalEnvironment = createEnvironment(this.#attachedPackagesEnvironment, true);
+    this.#globalEnvironment = createEnvironment(this.#baseEnvironment, true);
+    this.#baseNamespace = {
+      ...createEnvironment(this.#globalEnvironment, true),
+      bindings: this.#baseEnvironment.bindings,
+      lockedBindings: this.#baseEnvironment.lockedBindings,
+    };
+    this.#namespaceNames.set(this.#baseNamespace, "base");
+    this.#staticNamespaces.set("base", this.#baseNamespace);
+    for (const name of REGISTERED_NAMESPACE_EXPORTS.keys()) {
+      if (name === "base") continue;
+      const namespace = createEnvironment(createEnvironment(this.#baseNamespace, true), true);
+      this.#staticNamespaces.set(name, namespace);
+      this.#namespaceNames.set(namespace, name);
+    }
     this.#installBuiltins();
+    this.#ensureSearchEnvironments();
     for (const definition of options.packages ?? []) {
       if (this.#packages.has(definition.name) || CORE_R_PACKAGE_NAMES.has(definition.name)) {
         throw new REvaluationError(
@@ -670,6 +704,7 @@ export class Evaluator {
       this.#packages.set(definition.name, {
         definition,
         namespace: undefined,
+        exportNames: undefined,
         loading: false,
         attached: false,
       });
@@ -677,7 +712,10 @@ export class Evaluator {
   }
 
   /** Evaluate a normalized program in the session global environment. */
-  public async evaluate(program: ProgramNode): Promise<DetailedEvaluationResult> {
+  public async evaluate(
+    program: ProgramNode,
+    options: EvaluationOptions = {},
+  ): Promise<DetailedEvaluationResult> {
     this.#ensureActive();
     const cancellation = { cancelled: false };
     this.#activeCancellation = cancellation;
@@ -686,7 +724,11 @@ export class Evaluator {
     );
     const start = Date.now();
     try {
-      const result = await this.#evaluateNode(program, this.#globalEnvironment, context);
+      const topLevelErrors: TopLevelEvaluationError[] = [];
+      const result =
+        options.topLevelErrorHandling === "option" || options.printVisibleTopLevel === true
+          ? await this.#evaluateTopLevelScript(program, context, topLevelErrors, options)
+          : await this.#evaluateNode(program, this.#globalEnvironment, context);
       const outputBytes = estimateOutputBytes(result.value) + context.outputBytes;
       if (outputBytes > this.#limits.maxOutputBytes) {
         throw new RResourceLimitError("NRL4007", "Evaluation output size limit exceeded.", {
@@ -695,6 +737,7 @@ export class Evaluator {
       }
       return {
         ...result,
+        topLevelErrors,
         warnings: [...context.warnings],
         output: [...context.output],
         dataViews: [...context.dataViews],
@@ -703,21 +746,76 @@ export class Evaluator {
         elapsedMs: Date.now() - start,
       };
     } catch (error) {
-      if (error instanceof NativRError && !(error instanceof RResourceLimitError)) {
-        await this.#signalGlobalCondition(
-          ["simpleError", "error", "condition"],
-          withClasses(listValue([characterVector([error.message]), R_NULL], ["message", "call"]), [
-            "simpleError",
-            "error",
-            "condition",
-          ]),
-          context,
-        );
+      if (
+        error instanceof NativRError &&
+        !(error instanceof RResourceLimitError) &&
+        !this.#signalledErrors.has(error)
+      ) {
+        await this.#signalErrorCondition(error, context);
       }
       throw error;
     } finally {
       this.#activeCancellation = undefined;
     }
+  }
+
+  async #evaluateTopLevelScript(
+    program: ProgramNode,
+    context: EvaluationContext,
+    errors: TopLevelEvaluationError[],
+    options: EvaluationOptions,
+  ): Promise<EvaluationResult> {
+    context.checkpoint();
+    let result: EvaluationResult = { value: R_NULL, visible: false };
+    for (let index = 0; index < program.body.length; index += 1) {
+      const expression = program.body[index];
+      if (expression === undefined) continue;
+      try {
+        result = await this.#evaluateNode(expression, this.#globalEnvironment, context);
+        if (options.printVisibleTopLevel === true && result.visible) {
+          const printBinding = lookupBinding(this.#baseEnvironment, "print");
+          if (printBinding === undefined) {
+            throw new REvaluationError("NRE2001", "Object 'print' not found.");
+          }
+          const printFunction = await this.#force(printBinding, context);
+          await this.#invokeCallable(
+            printFunction,
+            [{ promise: createForcedPromise(result.value, this.#globalEnvironment) }],
+            context,
+          );
+        }
+      } catch (error) {
+        if (!(error instanceof NativRError) || error instanceof RResourceLimitError) {
+          throw error;
+        }
+        if (options.topLevelErrorHandling !== "option") throw error;
+        const stored = this.#builtinState.get(BASE_OPTIONS_STATE_KEY);
+        const handler: unknown = stored instanceof Map ? stored.get("error") : undefined;
+        if (!isCallableValue(handler)) throw error;
+        if (!this.#signalledErrors.has(error)) await this.#signalErrorCondition(error, context);
+        context.writeOutput({ stream: "stderr", text: this.#formatTopLevelError(error, context) });
+        errors.push({ expressionIndex: index + 1, code: error.code, message: error.message });
+        result = { value: R_NULL, visible: false };
+        await this.#invokeCallable(handler, [], context);
+      }
+    }
+    return result;
+  }
+
+  #formatTopLevelError(error: NativRError, context: EvaluationContext): string {
+    const call =
+      error instanceof RSignalledConditionError
+        ? extractListMember(error.condition, "call", context)
+        : R_NULL;
+    if (call.type !== "language") return `Error: ${error.message}\n`;
+    const prefix = `Error in ${deparseDiagnosticAst(call.expression)} : `;
+    const separator = prefix.length + error.message.length > 72 ? "\n  " : "";
+    let output = `${prefix}${separator}${error.message}\n`;
+    const trace = this.#errorCallTraces.get(error);
+    if (trace !== undefined && trace.length > 1) {
+      output += `Calls: ${trace.map((frame) => (frame.callee.kind === "Identifier" ? frame.callee.name : deparseAst(frame.callee))).join(" -> ")}\n`;
+    }
+    return output;
   }
 
   /** Assign an already-converted runtime value in the global environment. */
@@ -783,21 +881,25 @@ export class Evaluator {
   /** Replace user state with a fresh global environment while retaining base builtins. */
   public reset(): void {
     this.#ensureActive();
-    this.#attachedPackagesEnvironment = createEnvironment(this.#baseEnvironment, true);
-    this.#globalEnvironment = createEnvironment(this.#attachedPackagesEnvironment, true);
+    this.#globalEnvironment = createEnvironment(this.#baseEnvironment, true);
+    this.#baseNamespace.parent = this.#globalEnvironment;
     this.#builtinState.clear();
+    this.#installGlobalEnvironmentBinding();
     this.#initializeBuiltinState?.(this.#builtinState);
     this.#registeredS3Methods.clear();
+    this.#installBuiltinS3Methods();
     this.#s3RegistrationTransactions.length = 0;
     for (const record of this.#packages.values()) {
       record.namespace?.bindings.clear();
       record.namespace = undefined;
+      record.exportNames = undefined;
       record.loading = false;
       record.attached = false;
     }
     this.#searchPath = [...DEFAULT_SEARCH_PATH];
     this.#libraryPaths = [...DEFAULT_LIBRARY_PATHS];
     this.#invalidateSearchEnvironments(true);
+    this.#ensureSearchEnvironments();
     this.#memoryMaxUsed = { nodeCells: 0, vectorCells: 0 };
     this.#memoryTrigger = { nodeCells: 0, vectorCells: 0 };
     this.#memoryCollections = 0;
@@ -810,8 +912,9 @@ export class Evaluator {
       this.interrupt();
       this.#disposed = true;
       this.#globalEnvironment.bindings.clear();
-      this.#attachedPackagesEnvironment.bindings.clear();
       this.#baseEnvironment.bindings.clear();
+      for (const namespace of this.#staticNamespaces.values()) namespace.bindings.clear();
+      this.#staticNamespaces.clear();
       this.#emptyEnvironment.bindings.clear();
       this.#builtinState.clear();
       this.#registeredS3Methods.clear();
@@ -843,7 +946,7 @@ export class Evaluator {
         return { value: integerVector([node.value]), visible: true };
       case "StringLiteral":
         context.allocate(1);
-        return { value: characterVector([node.value]), visible: true };
+        return { value: characterLiteralValue(node), visible: true };
       case "LogicalLiteral":
         context.allocate(1);
         return { value: logicalVector([node.value]), visible: true };
@@ -896,7 +999,15 @@ export class Evaluator {
           context,
         );
         if (dispatched !== undefined) return dispatched;
-        return { value: this.#operators.unary(context, node.operator, operand), visible: true };
+        const warningStart = context.warnings.length;
+        let value: RValue;
+        try {
+          value = this.#operators.unary(context, node.operator, operand);
+        } catch (error) {
+          return this.#signalWarningsBeforeError(warningStart, node, context, error);
+        }
+        await this.#signalRecordedWarnings(warningStart, node, context);
+        return { value, visible: true };
       }
       case "BinaryExpression": {
         const left = await this.#evaluateValue(node.left, environment, context);
@@ -938,10 +1049,15 @@ export class Evaluator {
           context,
         );
         if (dispatched !== undefined) return dispatched;
-        return {
-          value: this.#operators.binary(context, node.operator, left, right),
-          visible: true,
-        };
+        const warningStart = context.warnings.length;
+        let value: RValue;
+        try {
+          value = this.#operators.binary(context, node.operator, left, right);
+        } catch (error) {
+          return this.#signalWarningsBeforeError(warningStart, node, context, error);
+        }
+        await this.#signalRecordedWarnings(warningStart, node, context);
+        return { value, visible: true };
       }
       case "AssignmentExpression": {
         const value = await this.#evaluateValue(node.value, environment, context);
@@ -1010,7 +1126,9 @@ export class Evaluator {
               ? replacement.type === "null"
                 ? R_NULL
                 : replaceListMember(listValue([]), memberName, replacement, context)
-              : replaceListMember(target, memberName, replacement, context);
+              : target.type === "language"
+                ? replaceLanguageMember(target, memberName, replacement, context)
+                : replaceListMember(target, memberName, replacement, context);
         } else {
           if (target.type === "environment") {
             if (node.target.operator !== "[[") {
@@ -1068,6 +1186,42 @@ export class Evaluator {
               }
               updated = replaceVectorElement(listValue([]), index, replacement, context);
             }
+            await this.#assignBinding(targetEnvironment, name, updated, context);
+            return { value: replacement, visible: false };
+          }
+          if (target.type === "language") {
+            const positional = node.target.arguments.filter(
+              (argument) => argument.name === undefined,
+            );
+            if (
+              positional.length > 1 ||
+              (node.target.operator === "[[" && positional.length !== 1)
+            ) {
+              throw new REvaluationError(
+                "NRE2204",
+                "Language replacement accepts at most one subscript.",
+              );
+            }
+            if (node.target.arguments.some((entry) => entry.name !== undefined)) {
+              throw new REvaluationError(
+                "NRE2202",
+                "Language replacement requires positional subscripts.",
+              );
+            }
+            const argument = positional[0]?.value;
+            const missing =
+              argument?.kind === "UnsupportedExpression" && argument.feature === "missing argument";
+            if (node.target.operator === "[[" && (argument === undefined || missing)) {
+              throw new REvaluationError("NRE2204", "[[ requires one non-missing subscript.");
+            }
+            const index =
+              argument === undefined || missing
+                ? undefined
+                : await this.#evaluateValue(argument, environment, context);
+            updated =
+              node.target.operator === "["
+                ? replaceLanguageSubset(target, index, replacement, context)
+                : replaceLanguageElement(target, index as RValue, replacement, context);
             await this.#assignBinding(targetEnvironment, name, updated, context);
             return { value: replacement, visible: false };
           }
@@ -1152,8 +1306,17 @@ export class Evaluator {
         await this.#assignBinding(targetEnvironment, name, updated, context);
         return { value: replacement, visible: false };
       }
-      case "CallExpression":
-        return this.#evaluateCall(node, environment, context);
+      case "CallExpression": {
+        const warningStart = context.warnings.length;
+        let result: EvaluationResult;
+        try {
+          result = await this.#evaluateCall(node, environment, context);
+        } catch (error) {
+          return this.#signalWarningsBeforeError(warningStart, node, context, error);
+        }
+        await this.#signalRecordedWarnings(warningStart, node, context);
+        return result;
+      }
       case "FunctionExpression":
         return {
           value: {
@@ -1225,6 +1388,8 @@ export class Evaluator {
               ],
               context,
               false,
+              undefined,
+              environment,
             );
             if (dispatched !== undefined) return dispatched;
           }
@@ -1236,10 +1401,30 @@ export class Evaluator {
             };
           }
           if (target.type === "null") return { value: R_NULL, visible: true };
+          if (target.type === "language") {
+            return { value: extractLanguageMember(target, name, context), visible: true };
+          }
           return {
             value: extractListMember(target, name, context),
             visible: true,
           };
+        }
+        if (objectClasses(target) !== undefined) {
+          const dispatched = await this.#invokeS3MethodIfPresentResult(
+            node.operator,
+            this.#baseEnvironment,
+            runtimeClassNames(target),
+            0,
+            [
+              { promise: createForcedPromise(target, environment), span: node.target.span },
+              ...this.#prepareArguments(node.arguments, environment),
+            ],
+            context,
+            true,
+            undefined,
+            environment,
+          );
+          if (dispatched !== undefined) return dispatched;
         }
         if (target.type === "environment") {
           if (node.operator !== "[[") {
@@ -1275,6 +1460,51 @@ export class Evaluator {
             });
           }
           return { value: R_NULL, visible: true };
+        }
+        if (target.type === "language") {
+          const positional = node.arguments.filter((argument) => argument.name === undefined);
+          if (positional.length > 1 || (node.operator === "[[" && positional.length !== 1)) {
+            throw new REvaluationError(
+              "NRE2204",
+              "Language extraction accepts at most one subscript.",
+            );
+          }
+          const named = node.arguments.filter((entry) => entry.name !== undefined);
+          if (
+            named.some((entry) => entry.name !== (node.operator === "[" ? "drop" : "exact")) ||
+            named.length > 1
+          ) {
+            throw new REvaluationError("NRE2102", "Invalid named language subscript control.");
+          }
+          const argument = positional[0]?.value;
+          const missing =
+            argument?.kind === "UnsupportedExpression" && argument.feature === "missing argument";
+          if (node.operator === "[[" && (argument === undefined || missing)) {
+            throw new REvaluationError("NRE2204", "[[ requires one non-missing subscript.");
+          }
+          const index =
+            argument === undefined || missing
+              ? undefined
+              : await this.#evaluateValue(argument, environment, context);
+          const dropArgument = node.arguments.find((entry) => entry.name === "drop");
+          if (dropArgument !== undefined) {
+            await this.#evaluateValue(dropArgument.value, environment, context);
+          }
+          const exactArgument = node.arguments.find((entry) => entry.name === "exact");
+          const exact =
+            exactArgument === undefined
+              ? true
+              : exactMatchState(
+                  await this.#evaluateValue(exactArgument.value, environment, context),
+                  exactArgument.span,
+                );
+          return {
+            value:
+              node.operator === "["
+                ? subsetLanguage(target, index, context)
+                : extractLanguageElement(target, index as RValue, context, exact),
+            visible: true,
+          };
         }
         if (!isVector(target) && target.type !== "pairlist") {
           throw new RTypeMismatchError(
@@ -1368,9 +1598,22 @@ export class Evaluator {
         const member = staticName(node.member, "namespace member");
         const exports = this.#staticNamespaceExports(namespace);
         if (exports !== undefined) {
-          const binding = lookupBinding(this.#baseEnvironment, member);
+          const namespaceEnvironment = this.#staticNamespaces.get(namespace);
+          const binding =
+            namespaceEnvironment === undefined
+              ? undefined
+              : lookupBinding(namespaceEnvironment, member);
           const internal = this.#staticNamespaceOwnsBinding(namespace, member);
-          const exported = exports === "all" ? internal : exports.has(member);
+          const exported =
+            exports === "all"
+              ? internal &&
+                !this.#builtins.some(
+                  (definition) =>
+                    definition.package === namespace &&
+                    definition.name === member &&
+                    definition.exported === false,
+                )
+              : exports.has(member);
           const accessible = node.operator === ":::" ? internal || exported : exported;
           if (binding === undefined || !accessible) {
             throw new REvaluationError(
@@ -1389,7 +1632,7 @@ export class Evaluator {
           });
         }
         const loaded = await this.#loadPackage(namespace, false, context);
-        const exported = runtimePackageExportNames(loaded.record.definition).includes(member);
+        const exported = runtimePackageExportNames(loaded.record).includes(member);
         const binding = loaded.namespace.bindings.get(member);
         if (binding === undefined || (node.operator === "::" && !exported)) {
           throw new REvaluationError(
@@ -1718,6 +1961,19 @@ export class Evaluator {
       );
       return operation.target;
     }
+    if (operation.target.type === "null") {
+      if (replacement.type === "null") return R_NULL;
+      if (operation.operator === "[[") {
+        return replaceVectorElement(listValue([]), operation.index, replacement, context);
+      }
+      const emptyTarget =
+        replacement.type === "list" || replacement.type === "pairlist"
+          ? listValue([])
+          : isAtomic(replacement)
+            ? subsetVector(replacement, integerVector([]), context)
+            : logicalVector([]);
+      return replaceVectorSubset(emptyTarget, operation.index, replacement, context);
+    }
     if (!isVector(operation.target) && operation.target.type !== "pairlist") {
       throw new RTypeMismatchError(
         "NRT3306",
@@ -1738,8 +1994,31 @@ export class Evaluator {
     nonLocal: boolean,
     span: SourceSpan,
   ): Promise<RValue> {
+    const subset = constructedSubsetTarget(target);
+    if (subset !== undefined) {
+      const result = await this.#evaluateNode(
+        {
+          kind: "ReplacementExpression",
+          operator: nonLocal ? "<<-" : "<-",
+          target: subset,
+          value: replacementNode,
+          span,
+        },
+        environment,
+        context,
+      );
+      return result.value;
+    }
     const replacement = await this.#evaluateValue(replacementNode, environment, context);
-    await this.#applyCallReplacement(target, replacement, environment, context, nonLocal, span);
+    await this.#applyCallReplacement(
+      target,
+      replacement,
+      environment,
+      context,
+      nonLocal,
+      span,
+      replacementNode,
+    );
     return replacement;
   }
 
@@ -1750,7 +2029,23 @@ export class Evaluator {
     context: EvaluationContext,
     nonLocal: boolean,
     span: SourceSpan,
+    sourceExpression?: AstNode,
   ): Promise<void> {
+    const subset = constructedSubsetTarget(target);
+    if (subset !== undefined) {
+      await this.#evaluateNode(
+        {
+          kind: "ReplacementExpression",
+          operator: nonLocal ? "<<-" : "<-",
+          target: subset,
+          value: embeddedValueAst(replacement, () => context.checkpoint()),
+          span,
+        },
+        environment,
+        context,
+      );
+      return;
+    }
     if (target.callee.kind !== "Identifier") {
       throw unsupported("non-identifier replacement functions", target.callee.span);
     }
@@ -1760,6 +2055,29 @@ export class Evaluator {
         target,
         objectArgument,
         replacement,
+        environment,
+        context,
+        nonLocal,
+        span,
+        sourceExpression,
+      );
+      return;
+    }
+    if (objectArgument?.value.kind === "CallExpression") {
+      const object = await this.#evaluateValue(objectArgument.value, environment, context);
+      const updated = await this.#invokeReplacementFunction(
+        target,
+        objectArgument,
+        object,
+        replacement,
+        environment,
+        context,
+        span,
+        sourceExpression,
+      );
+      await this.#applyCallReplacement(
+        objectArgument.value,
+        updated,
         environment,
         context,
         nonLocal,
@@ -1788,6 +2106,7 @@ export class Evaluator {
       environment,
       context,
       span,
+      sourceExpression,
     );
     await this.#assignBinding(targetEnvironment, objectName, updated, context);
   }
@@ -1800,6 +2119,7 @@ export class Evaluator {
     context: EvaluationContext,
     nonLocal: boolean,
     span: SourceSpan,
+    sourceExpression?: AstNode,
   ): Promise<void> {
     const subset = objectArgument.value as SubsetExpressionNode;
     const path: SubsetExpressionNode[] = [];
@@ -1845,6 +2165,7 @@ export class Evaluator {
       environment,
       context,
       span,
+      sourceExpression,
     );
     for (let offset = operations.length - 1; offset >= 0; offset -= 1) {
       const operation = await this.#prepareNestedSubsetOperation(
@@ -1870,6 +2191,7 @@ export class Evaluator {
     environment: REnvironment,
     context: EvaluationContext,
     span: SourceSpan,
+    sourceExpression?: AstNode,
   ): Promise<RValue> {
     if (target.callee.kind !== "Identifier") {
       throw unsupported("non-identifier replacement functions", target.callee.span);
@@ -1887,10 +2209,34 @@ export class Evaluator {
       );
     }
     const callable = await this.#force(callableBinding, context);
+    // R evaluates the assigned value before invoking a replacement closure. Its
+    // call frame still carries a synthetic call: the object is `*tmp*`, while
+    // the value is the already evaluated result of the right-hand side. The
+    // promise separately retains its source for substitute(value).
+    const objectExpression: AstNode = {
+      kind: "Identifier",
+      name: "*tmp*",
+      span: objectArgument.value.span,
+    };
+    const valueExpression = embeddedValueAst(replacement, () => context.checkpoint());
     const firstArgument = {
       ...(objectArgument.name === undefined ? {} : { name: objectArgument.name }),
-      promise: createForcedPromise(object, environment),
+      promise: { ...createForcedPromise(object, environment), expression: objectExpression },
       span: objectArgument.span,
+    };
+    const call: CallExpressionNode = {
+      kind: "CallExpression",
+      callee: { kind: "Identifier", name: replacementName, span: target.callee.span },
+      arguments: [
+        {
+          ...(objectArgument.name === undefined ? {} : { name: objectArgument.name }),
+          value: objectExpression,
+          span: objectArgument.span,
+        },
+        ...target.arguments.slice(1),
+        { name: "value", value: valueExpression, span },
+      ],
+      span,
     };
     return this.#invokeCallable(
       callable,
@@ -1899,11 +2245,17 @@ export class Evaluator {
         ...this.#prepareArguments(target.arguments.slice(1), environment),
         {
           name: "value",
-          promise: createForcedPromise(replacement, environment),
+          promise: {
+            ...createForcedPromise(replacement, environment),
+            expression: valueExpression,
+            ...(sourceExpression === undefined ? {} : { sourceExpression }),
+          },
           span,
         },
       ],
       context,
+      call,
+      environment,
     );
   }
 
@@ -1980,7 +2332,11 @@ export class Evaluator {
     context: EvaluationContext,
   ): Promise<EvaluationResult> {
     const left = await this.#evaluateValue(node.left, environment, context);
-    if (node.operator === "%>%" && node.right.kind !== "CallExpression") {
+    if (
+      node.operator === "%>%" &&
+      (node.right.kind !== "CallExpression" ||
+        (node.right.callee.kind === "Identifier" && node.right.callee.name === "("))
+    ) {
       const callable = await this.#evaluateCallable(node.right, environment, context);
       return this.#invokeCallableResult(
         callable,
@@ -2127,6 +2483,7 @@ export class Evaluator {
     context: EvaluationContext,
     call?: CallExpressionNode,
     callerEnvironment?: REnvironment,
+    methodFrame?: S3DispatchFrame,
   ): Promise<EvaluationResult> {
     const debugStep =
       callable.type === "builtin" || callable.type === "closure"
@@ -2135,6 +2492,7 @@ export class Evaluator {
     if (callable.type === "builtin") {
       let resultVisibility = callable.definition.resultVisibility ?? "visible";
       const value = await callable.definition.implementation({
+        ...(methodFrame === undefined ? {} : { s3Generic: methodFrame.generic }),
         arguments: args.map(({ name, promise }) =>
           name === undefined ? { promise } : { name, promise },
         ),
@@ -2190,8 +2548,24 @@ export class Evaluator {
           this.#evaluateLanguageValueResult(value, environment, context),
         assignBinding: async (target, name, value) =>
           this.#assignBinding(target, name, value, context),
-        signalCondition: async (classes, condition) =>
-          this.#signalGlobalCondition(classes, condition, context),
+        signalCondition: async (classes, condition, muffleRestart) =>
+          muffleRestart === undefined
+            ? this.#signalCondition(classes, condition, context)
+            : this.#signalMuffleable(classes, condition, muffleRestart, context),
+        signalWarning: async (condition, warning) =>
+          this.#signalWarning(condition, warning, context),
+        raiseCondition: async (condition, message) =>
+          this.#raiseCondition(condition, message, context),
+        withCallingHandlers: async (handlers, evaluate) =>
+          this.#withCallingHandlers(handlers, evaluate, context),
+        errorBarrier: async (evaluate) => this.#errorBarrier(evaluate),
+        withRestarts: async (restarts, evaluate) => this.#withRestarts(restarts, evaluate),
+        computeRestarts: () => this.#computeRestarts(),
+        invokeRestart: (restart, values) => this.#invokeRestart(restart, values),
+        captureCondition: async (classes, evaluate) =>
+          this.#captureCondition(classes, evaluate, context),
+        muffleConditions: async (kind, classes, evaluate) =>
+          this.#muffleConditions(kind, classes, evaluate, context),
         configureOnExit: (expression, environment, add, after) => {
           this.#configureOnExit(expression, environment, add, after);
         },
@@ -2266,6 +2640,9 @@ export class Evaluator {
         environmentName: (environment) => this.#environmentName(environment),
         loadPackage: async (name, attach, libraryPaths) =>
           this.#loadPackage(name, attach, context, libraryPaths),
+        detachPackage: (entry, force) => this.#detachPackage(entry, force, context),
+        unloadNamespace: (name, warnOnFailure) =>
+          this.#unloadNamespace(name, warnOnFailure, context),
         installedPackageVersion: (name, libraryPaths) =>
           this.#installedPackageVersion(name, libraryPaths),
         installedPackageDescription: (name, libraryPaths) =>
@@ -2283,9 +2660,9 @@ export class Evaluator {
               .map(([name]) => name),
           ]),
         namespaceEnvironment: (name) =>
-          REGISTERED_NAMESPACE_EXPORTS.has(name)
-            ? this.#baseEnvironment
-            : this.#packages.get(name)?.namespace,
+          this.#packages.has(name)
+            ? this.#packages.get(name)?.namespace
+            : this.#staticNamespaces.get(name),
         namespaceExports: async (name) => this.#namespaceExports(name, context),
         namespaceName: (environment) => this.#namespaceName(environment),
         namespaceBinding: async (name, binding) => this.#namespaceBinding(name, binding, context),
@@ -2301,7 +2678,8 @@ export class Evaluator {
         globalEnvironment: () => this.#globalEnvironment,
         baseEnvironment: () => this.#baseEnvironment,
         emptyEnvironment: () => this.#emptyEnvironment,
-        matchCall: (expandDots) => this.#matchCurrentCall(expandDots),
+        matchCall: (expandDots, definition, call) =>
+          this.#matchCurrentCall(expandDots, definition, call),
         callerFormalDefault: async (name) => this.#callerFormalDefault(name, context),
         define: (name, value) => {
           validateBindingName(name);
@@ -2310,7 +2688,15 @@ export class Evaluator {
         registerS3Method: async (generic, className, method, environment) =>
           this.#registerS3Method(generic, className, method, environment, context),
         dispatchS3: async (generic, object) => this.#dispatchS3(generic, object, context),
-        dispatchS3IfPresent: async (generic, object, arguments_, includeDefault, argumentIndex) => {
+        dispatchS3IfPresent: async (
+          generic,
+          object,
+          arguments_,
+          includeDefault,
+          argumentIndex,
+          group,
+          lookupEnvironment,
+        ) => {
           const result = await this.#dispatchS3IfPresentResult(
             generic,
             object,
@@ -2318,6 +2704,11 @@ export class Evaluator {
             context,
             includeDefault,
             argumentIndex,
+            lookupEnvironment ??
+              callerEnvironment ??
+              args[0]?.promise.environment ??
+              this.#globalEnvironment,
+            group,
           );
           if (result === undefined) return undefined;
           resultVisibility = result.visible ? "visible" : "invisible";
@@ -2335,7 +2726,15 @@ export class Evaluator {
         details: { type: callable.type },
       });
     }
-    return this.#invokeClosure(callable, args, context, call, callerEnvironment, debugStep);
+    return this.#invokeClosure(
+      callable,
+      args,
+      context,
+      call,
+      callerEnvironment,
+      debugStep,
+      methodFrame,
+    );
   }
 
   async #enterFunctionDebug(
@@ -2412,6 +2811,393 @@ export class Evaluator {
     return result;
   }
 
+  async #captureCondition<T>(
+    classes: readonly string[],
+    evaluate: () => Promise<T>,
+    context: EvaluationContext,
+  ): Promise<
+    | { readonly kind: "value"; readonly value: T }
+    | { readonly kind: "condition"; readonly condition: RValue; readonly handlerIndex: number }
+  > {
+    const frame: ExitingConditionFrame = {
+      kind: "exiting",
+      target: Symbol("condition"),
+      classes,
+    };
+    this.#conditionFrames.push(frame);
+    const warningStart = context.warnings.length;
+    try {
+      const value = await evaluate();
+      // Deliver warnings recorded outside an individual call while this frame is still active.
+      await this.#signalRecordedWarnings(warningStart, undefined, context);
+      return { kind: "value", value };
+    } catch (error) {
+      let signal = error;
+      if (!(error instanceof ExitingConditionSignal)) {
+        // Warnings recorded before an R-level error are delivered first, to this frame too.
+        try {
+          await this.#signalWarningsBeforeError(warningStart, undefined, context, error);
+        } catch (delivered) {
+          signal = delivered;
+        }
+      }
+      if (!(signal instanceof ExitingConditionSignal) || signal.target !== frame.target) {
+        throw signal;
+      }
+      return { kind: "condition", condition: signal.condition, handlerIndex: signal.handlerIndex };
+    } finally {
+      const index = this.#conditionFrames.indexOf(frame);
+      if (index >= 0) this.#conditionFrames.splice(index, 1);
+    }
+  }
+
+  async #muffleConditions<T>(
+    condition: "warning" | "message",
+    classes: readonly string[],
+    evaluate: () => Promise<T>,
+    context: EvaluationContext,
+  ): Promise<T> {
+    const frame: MufflingConditionFrame = { kind: "muffle", condition, classes };
+    this.#conditionFrames.push(frame);
+    const warningStart = context.warnings.length;
+    try {
+      const value = await evaluate();
+      await this.#signalRecordedWarnings(warningStart, undefined, context);
+      return value;
+    } catch (error) {
+      return this.#signalWarningsBeforeError(warningStart, undefined, context, error);
+    } finally {
+      const index = this.#conditionFrames.indexOf(frame);
+      if (index >= 0) this.#conditionFrames.splice(index, 1);
+    }
+  }
+
+  /**
+   * Deliver warnings recorded before an R-level error, then rethrow it. An exiting handler that
+   * consumes one of those warnings replaces the error, as the warning was signalled first.
+   * Internal control signals, resource limits, and disposal never run R-level handlers.
+   */
+  async #signalWarningsBeforeError(
+    start: number,
+    node: AstNode | undefined,
+    context: EvaluationContext,
+    error: unknown,
+  ): Promise<never> {
+    if (
+      error instanceof NativRError &&
+      !(error instanceof RResourceLimitError) &&
+      !(error instanceof RRuntimeDisposedError)
+    ) {
+      await this.#signalRecordedWarnings(start, node, context);
+    }
+    throw error;
+  }
+
+  /**
+   * Signal deferred warnings recorded since `start` that have not reached the handler stack.
+   * Handled warnings are removed from the deferred list; an exiting handler unwinds normally.
+   */
+  async #signalRecordedWarnings(
+    start: number,
+    node: AstNode | undefined,
+    context: EvaluationContext,
+  ): Promise<void> {
+    if (context.warnings.length <= start) return;
+    const pending = context.warnings.splice(start);
+    for (const warning of pending) {
+      if (context.isWarningSignalled(warning)) {
+        context.warnings.push(warning);
+        continue;
+      }
+      context.markWarningSignalled(warning);
+      const condition = withClasses(
+        listValue(
+          [
+            characterVector([warning.message]),
+            node === undefined ? R_NULL : { type: "language", expression: node },
+          ],
+          ["message", "call"],
+        ),
+        [...SIMPLE_WARNING_CLASSES],
+      );
+      await this.#signalWarning(condition, warning, context);
+    }
+  }
+
+  /**
+   * Signal a warning with a muffleWarning restart, then apply options(warn): negative levels drop
+   * it, 0 defers it, 1 reports it immediately, and 2 or more raise it again as an error.
+   */
+  async #signalWarning(
+    condition: RValue,
+    warning: RWarning,
+    context: EvaluationContext,
+  ): Promise<void> {
+    const classes = objectClasses(condition) ?? [];
+    if (await this.#signalMuffleable(classes, condition, "muffleWarning", context)) return;
+    const stored = this.#builtinState.get(BASE_OPTIONS_STATE_KEY);
+    const option: unknown = stored instanceof Map ? stored.get("warn") : undefined;
+    const level =
+      typeof option === "object" && option !== null && (option as RValue).type === "integer"
+        ? ((option as { readonly values: ArrayLike<number> }).values[0] ?? 0)
+        : 0;
+    if (level < 0) return;
+    if (level === 0) {
+      context.warn(warning, true);
+      return;
+    }
+    const call = condition.type === "list" ? extractListMember(condition, "call", context) : R_NULL;
+    if (level >= 2) {
+      const message = `(converted from warning) ${warning.message}`;
+      await this.#raiseCondition(
+        withClasses(listValue([characterVector([message]), call], ["message", "call"]), [
+          "simpleError",
+          "error",
+          "condition",
+        ]),
+        message,
+        context,
+      );
+    }
+    let text = `Warning: ${warning.message}\n`;
+    if (call.type === "language") {
+      const callText = deparseDiagnosticAst(call.expression);
+      const firstLine = warning.message.split("\n", 1)[0] ?? "";
+      const separator = callText.length + firstLine.length > 57 ? "\n  " : " ";
+      text = `Warning in ${callText} :${separator}${warning.message}\n`;
+    }
+    context.writeOutput({ stream: "message", text });
+  }
+
+  /** Raise an R error after offering it to the handler stack at the point where it is signalled. */
+  async #raiseCondition(
+    condition: RList,
+    message: string,
+    context: EvaluationContext,
+  ): Promise<never> {
+    const error = new RSignalledConditionError(message, condition);
+    this.#signalledErrors.add(error);
+    await this.#signalCondition(objectClasses(condition) ?? [], condition, context);
+    throw error;
+  }
+
+  /** Signal with one muffle restart established; returns true when it was invoked or muffled. */
+  async #signalMuffleable(
+    classes: readonly string[],
+    condition: RValue,
+    name: "muffleWarning" | "muffleMessage",
+    context: EvaluationContext,
+  ): Promise<boolean> {
+    const result = await this.#withRestarts(
+      [{ name, handler: MUFFLE_HANDLER, description: "" }],
+      () => this.#signalCondition(classes, condition, context),
+    );
+    return result.kind === "restart" || result.value;
+  }
+
+  async #signalCondition(
+    classes: readonly string[],
+    condition: RValue,
+    context: EvaluationContext,
+  ): Promise<boolean> {
+    for (let index = this.#conditionFrames.length - 1; index >= 0; index -= 1) {
+      const frame = this.#conditionFrames[index];
+      if (frame === undefined) continue;
+      if (frame.kind === "barrier") {
+        if (classes.includes("error")) return false;
+        continue;
+      }
+      if (frame.kind === "calling") {
+        if (classes.includes(frame.className)) {
+          await this.#invokeCallingHandler(index, frame.handler, condition, context);
+        }
+        continue;
+      }
+      if (frame.kind === "muffle") {
+        if (
+          classes.includes(frame.condition) &&
+          frame.classes.some((name) => classes.includes(name))
+        ) {
+          return true;
+        }
+        continue;
+      }
+      const handlerIndex = frame.classes.findIndex((name) => classes.includes(name));
+      if (handlerIndex < 0) continue;
+      throw new ExitingConditionSignal(frame.target, handlerIndex, condition);
+    }
+    await this.#signalGlobalCondition(classes, condition, context);
+    return false;
+  }
+
+  /** Run a calling handler with only the frames below it active, as GNU R does. */
+  async #invokeCallingHandler(
+    index: number,
+    handler: RValue,
+    condition: RValue,
+    context: EvaluationContext,
+  ): Promise<void> {
+    const hidden = this.#conditionFrames.splice(index);
+    try {
+      await this.#invokeCallable(
+        handler,
+        [{ promise: createForcedPromise(condition, this.#globalEnvironment) }],
+        context,
+      );
+    } finally {
+      this.#conditionFrames.push(...hidden);
+    }
+  }
+
+  async #withCallingHandlers<T>(
+    handlers: readonly { readonly className: string; readonly handler: RValue }[],
+    evaluate: () => Promise<T>,
+    context: EvaluationContext,
+  ): Promise<T> {
+    // The first handler is innermost, so it is pushed last.
+    const frames = handlers
+      .map(({ className, handler }): CallingConditionFrame => ({
+        kind: "calling",
+        className,
+        handler,
+      }))
+      .reverse();
+    this.#conditionFrames.push(...frames);
+    const warningStart = context.warnings.length;
+    try {
+      const value = await evaluate();
+      await this.#signalRecordedWarnings(warningStart, undefined, context);
+      return value;
+    } catch (error) {
+      let signal = error;
+      try {
+        await this.#signalWarningsBeforeError(warningStart, undefined, context, error);
+      } catch (delivered) {
+        signal = delivered;
+      }
+      // Errors not raised through raiseCondition() reach local handlers as they unwind here.
+      if (
+        signal instanceof NativRError &&
+        !(signal instanceof RResourceLimitError) &&
+        !(signal instanceof RRuntimeDisposedError) &&
+        !this.#signalledErrors.has(signal)
+      ) {
+        const condition = this.#errorConditionValue(signal);
+        const classes = objectClasses(condition) ?? [];
+        for (let index = this.#conditionFrames.length - 1; index >= 0; index -= 1) {
+          const frame = this.#conditionFrames[index];
+          if (
+            frame?.kind === "calling" &&
+            frames.includes(frame) &&
+            classes.includes(frame.className)
+          ) {
+            await this.#invokeCallingHandler(index, frame.handler, condition, context);
+          }
+        }
+      }
+      throw signal;
+    } finally {
+      for (const frame of frames) {
+        const index = this.#conditionFrames.indexOf(frame);
+        if (index >= 0) this.#conditionFrames.splice(index, 1);
+      }
+    }
+  }
+
+  async #errorBarrier<T>(evaluate: () => Promise<T>): Promise<T> {
+    const frame: BarrierConditionFrame = { kind: "barrier" };
+    this.#conditionFrames.push(frame);
+    try {
+      return await evaluate();
+    } finally {
+      const index = this.#conditionFrames.indexOf(frame);
+      if (index >= 0) this.#conditionFrames.splice(index, 1);
+    }
+  }
+
+  async #withRestarts<T>(
+    restarts: readonly {
+      readonly name: string;
+      readonly handler: RValue;
+      readonly description: string;
+    }[],
+    evaluate: () => Promise<T>,
+  ): Promise<
+    | { readonly kind: "value"; readonly value: T }
+    | { readonly kind: "restart"; readonly index: number; readonly arguments: readonly RValue[] }
+  > {
+    const frames = restarts.map(({ name, handler, description }): RestartFrame => {
+      const exit = createEnvironment(this.#emptyEnvironment);
+      const restart = withClasses(
+        listValue(
+          [
+            characterVector([name]),
+            exit,
+            handler,
+            characterVector([description]),
+            RESTART_TEST,
+            R_NULL,
+          ],
+          ["name", "exit", "handler", "description", "test", "interactive"],
+        ),
+        ["restart"],
+      );
+      return { name, exit, restart };
+    });
+    // The first restart is found first, so it is pushed last.
+    this.#restartFrames.push(...[...frames].reverse());
+    try {
+      return { kind: "value", value: await evaluate() };
+    } catch (error) {
+      if (error instanceof RestartSignal) {
+        const index = frames.findIndex((frame) => frame.exit === error.exit);
+        if (index >= 0) return { kind: "restart", index, arguments: error.arguments_ };
+      }
+      throw error;
+    } finally {
+      for (const frame of frames) {
+        const index = this.#restartFrames.indexOf(frame);
+        if (index >= 0) this.#restartFrames.splice(index, 1);
+      }
+    }
+  }
+
+  #computeRestarts(): readonly RValue[] {
+    return [...this.#restartFrames.map((frame) => frame.restart).reverse(), ABORT_RESTART];
+  }
+
+  #invokeRestart(restart: RValue, values: readonly RValue[]): never {
+    let frame: RestartFrame | undefined;
+    if (
+      restart === ABORT_RESTART ||
+      (restart.type === "character" && restart.values[0] === "abort")
+    ) {
+      throw new RUnsupportedFeatureError("NRU6290", "Invoking the 'abort' restart is unsupported.");
+    }
+    if (restart.type === "list" && objectClasses(restart)?.includes("restart") === true) {
+      const exit = restart.values[1];
+      frame = this.#restartFrames.find((candidate) => candidate.exit === exit);
+      if (frame === undefined) throw new REvaluationError("NRE2302", "restart not on stack");
+    } else {
+      const name =
+        isAtomic(restart) &&
+        restart.type !== "complex" &&
+        restart.length === 1 &&
+        !isMissing(restart, 0)
+          ? String(restart.values[0])
+          : "";
+      for (let index = this.#restartFrames.length - 1; index >= 0; index -= 1) {
+        if (this.#restartFrames[index]?.name === name) {
+          frame = this.#restartFrames[index];
+          break;
+        }
+      }
+      if (frame === undefined)
+        throw new REvaluationError("NRE2302", `no 'restart' '${name}' found`);
+    }
+    throw new RestartSignal(frame.exit, values);
+  }
+
   async #signalGlobalCondition(
     classes: readonly string[],
     condition: RValue,
@@ -2442,6 +3228,21 @@ export class Evaluator {
     }
   }
 
+  async #signalErrorCondition(error: NativRError, context: EvaluationContext): Promise<void> {
+    const condition = this.#errorConditionValue(error);
+    await this.#signalGlobalCondition(objectClasses(condition) ?? [], condition, context);
+  }
+
+  #errorConditionValue(error: NativRError): RValue {
+    return error instanceof RSignalledConditionError
+      ? error.condition
+      : withClasses(listValue([characterVector([error.message]), R_NULL], ["message", "call"]), [
+          "simpleError",
+          "error",
+          "condition",
+        ]);
+  }
+
   async #invokeClosure(
     closure: RClosure,
     args: readonly {
@@ -2453,6 +3254,7 @@ export class Evaluator {
     call?: CallExpressionNode,
     callerEnvironment?: REnvironment,
     debugStep = false,
+    methodFrame?: S3DispatchFrame,
   ): Promise<EvaluationResult> {
     context.enterCall();
     const functionTarget = Symbol("function");
@@ -2574,6 +3376,20 @@ export class Evaluator {
         });
         setBinding(frame, "...", { type: "dots", arguments: dotsArguments });
       }
+      if (methodFrame !== undefined) {
+        setBinding(frame, ".Generic", characterVector([methodFrame.generic]));
+        if (methodFrame.group !== undefined)
+          setBinding(frame, ".Group", characterVector([methodFrame.group]));
+        setBinding(frame, ".Method", characterVector([methodFrame.methodName ?? ""]));
+        const classes = characterVector(methodFrame.classes.slice(methodFrame.classIndex));
+        setBinding(
+          frame,
+          ".Class",
+          methodFrame.previousClasses === undefined
+            ? classes
+            : withAttribute(classes, "previous", methodFrame.previousClasses),
+        );
+      }
       this.#closureCallFrames.push({
         arguments: args,
         environment: frame,
@@ -2607,9 +3423,19 @@ export class Evaluator {
           }
         } catch (error) {
           failed = true;
-          failure = error;
+          if (!(failure instanceof RResourceLimitError)) failure = error;
         }
-        if (failed) throw failure;
+        if (failed) {
+          if (failure instanceof NativRError && !this.#errorCallTraces.has(failure)) {
+            this.#errorCallTraces.set(
+              failure,
+              this.#closureCallFrames.flatMap((entry) =>
+                entry.call === undefined ? [] : [entry.call],
+              ),
+            );
+          }
+          throw failure;
+        }
         if (result === undefined) {
           throw new REvaluationError("NRE2140", "A function call completed without a result.");
         }
@@ -2653,20 +3479,64 @@ export class Evaluator {
     return undefined;
   }
 
-  #matchCurrentCall(expandDots: boolean): RLanguage {
+  #matchCurrentCall(expandDots: boolean, definition?: RValue, explicitCall?: RValue): RLanguage {
     const frame = this.#closureCallFrames.at(-1);
-    if (frame?.call === undefined) {
+    const sourceCall =
+      explicitCall === undefined
+        ? frame?.call
+        : explicitCall.type === "language" && explicitCall.expression.kind === "CallExpression"
+          ? explicitCall.expression
+          : undefined;
+    if (explicitCall !== undefined && sourceCall === undefined) {
+      throw new RTypeMismatchError("NRT3214", "invalid 'call' argument");
+    }
+    if (sourceCall === undefined) {
       throw new REvaluationError(
         "NRE2217",
         "match.call() requires an active closure call originating from R syntax.",
       );
     }
+    let parameters = frame?.closure.parameters;
+    let matched = frame?.matched;
+    const activeDots = frame?.environment.bindings.get("...");
+    let dotsArguments = activeDots?.type === "dots" ? activeDots.arguments : [];
+    if (definition !== undefined && definition.type !== "null") {
+      if (definition.type === "closure") {
+        parameters = definition.parameters;
+      } else if (definition.type === "builtin" && definition.definition.formals !== undefined) {
+        parameters = definition.definition.formals;
+      } else {
+        throw new RTypeMismatchError("NRT3214", "invalid 'definition' argument");
+      }
+    }
+    if (parameters === undefined) {
+      throw new RTypeMismatchError("NRT3214", "match.call(definition=) requires a function.");
+    }
+    if (explicitCall !== undefined || (definition !== undefined && definition !== frame?.closure)) {
+      const callArguments: ClosureCallFrame["arguments"] =
+        explicitCall === undefined
+          ? (frame?.arguments ?? [])
+          : sourceCall.arguments.map((argument) => ({
+              ...(argument.name === undefined ? {} : { name: argument.name }),
+              promise: createPromise(
+                argument.value,
+                frame?.callerEnvironment ?? this.#globalEnvironment,
+              ),
+              span: argument.span,
+            }));
+      const rematched = matchCallDefinitionArguments(parameters, callArguments);
+      matched = rematched.matched;
+      dotsArguments = rematched.dots;
+    }
+    if (matched === undefined) {
+      throw new RTypeMismatchError("NRT3214", "match.call(definition=) requires a function.");
+    }
     const arguments_: CallArgument[] = [];
-    for (const parameter of frame.closure.parameters) {
+    for (const parameter of parameters) {
       if (parameter.name !== "...") {
-        const promise = frame.matched.get(parameter.name);
+        const promise = matched.get(parameter.name);
         if (promise === undefined) continue;
-        const value = promiseCallAst(promise, frame.call.span);
+        const value = promiseCallAst(promise, sourceCall.span);
         arguments_.push({
           name: parameter.name,
           value,
@@ -2675,11 +3545,10 @@ export class Evaluator {
         continue;
       }
 
-      const dots = frame.environment.bindings.get("...");
-      if (dots?.type !== "dots" || dots.arguments.length === 0) continue;
+      if (dotsArguments.length === 0) continue;
       if (expandDots) {
-        for (const argument of dots.arguments) {
-          const value = promiseCallAst(argument.promise, frame.call.span);
+        for (const argument of dotsArguments) {
+          const value = promiseCallAst(argument.promise, sourceCall.span);
           arguments_.push({
             ...(argument.name === undefined ? {} : { name: argument.name }),
             value,
@@ -2687,20 +3556,32 @@ export class Evaluator {
           });
         }
       } else {
-        const entries = dots.arguments.map((argument): CallArgument => {
-          const value = promiseCallAst(argument.promise, frame.call?.span ?? parameter.span);
+        const entries = dotsArguments.map((argument): CallArgument => {
+          const value = promiseCallAst(argument.promise, sourceCall.span);
           return {
             ...(argument.name === undefined ? {} : { name: argument.name }),
             value,
             span: value.span,
           };
         });
+        const pairlistCall: CallExpressionNode = {
+          kind: "CallExpression",
+          callee: { kind: "Identifier", name: "pairlist", span: parameter.span },
+          arguments: entries,
+          span: parameter.span,
+        };
+        const names = entries.some((entry) => entry.name !== undefined)
+          ? entries.map((entry) => entry.name ?? "")
+          : undefined;
         arguments_.push({
           name: "...",
           value: {
-            kind: "CallExpression",
-            callee: { kind: "Identifier", name: "pairlist", span: parameter.span },
-            arguments: entries,
+            kind: "ConstantExpression",
+            value: pairlistValue(
+              entries.map((entry) => quoteLanguageNode(entry.value)),
+              names,
+            ),
+            display: pairlistCall,
             span: parameter.span,
           },
           span: parameter.span,
@@ -2710,7 +3591,7 @@ export class Evaluator {
     return {
       type: "language",
       expression: {
-        ...frame.call,
+        ...sourceCall,
         arguments: Object.freeze(arguments_),
       },
     };
@@ -2753,6 +3634,23 @@ export class Evaluator {
 
   #s3RegistrationKey(environment: REnvironment, generic: string, className: string): string {
     return `${environment.id}:${generic}.${className}`;
+  }
+
+  #s3TopEnvironment(environment: REnvironment): REnvironment {
+    for (
+      let current: REnvironment | null = environment;
+      current !== null;
+      current = current.parent
+    ) {
+      if (current === this.#globalEnvironment || current === this.#baseEnvironment) return current;
+      if (this.#namespaceNames.has(current)) return current;
+      const nameAttribute = current.attributes.get("name");
+      const name =
+        this.#searchEnvironmentNames.get(current.id) ??
+        (nameAttribute?.type === "character" ? nameAttribute.values[0] : undefined);
+      if (name?.startsWith("package:")) return current;
+    }
+    return this.#globalEnvironment;
   }
 
   #setRegisteredS3Method(key: string, method: RBinding): void {
@@ -2848,6 +3746,8 @@ export class Evaluator {
       0,
       arguments_,
       context,
+      callFrame?.call,
+      callFrame?.callerEnvironment,
     );
   }
 
@@ -2865,10 +3765,18 @@ export class Evaluator {
     const record = this.#packages.get(name);
     if (record === undefined) {
       if (REGISTERED_NAMESPACE_EXPORTS.has(name)) {
-        return {
+        const namespace = this.#staticNamespaces.get(name);
+        if (namespace === undefined)
+          throw new REvaluationError("NRE2221", "Missing static namespace.");
+        const loaded: {
+          name: string;
+          version: string;
+          namespace: REnvironment;
+          record: RuntimePackageRecord;
+        } = {
           name,
           version: "4.6.1",
-          namespace: this.#baseEnvironment,
+          namespace,
           record: {
             definition: {
               name,
@@ -2878,17 +3786,31 @@ export class Evaluator {
               dependencies: [],
               imports: [],
               exports: await this.#namespaceExports(name, context),
+              exportPatterns: [],
               methodExports: [],
               s3Methods: [],
               programs: [],
               textResources: [],
               resources: [],
             },
-            namespace: this.#baseEnvironment,
+            namespace,
+            exportNames: undefined,
             loading: false,
-            attached: true,
+            attached: this.#searchPath.includes(`package:${name}`),
           },
         };
+        if (attach && !loaded.record.attached) {
+          this.#searchPath.splice(1, 0, `package:${name}`);
+          this.#attachSearchEnvironment(name);
+          loaded.record.attached = true;
+          try {
+            await this.#invokeUserPackageHooks(loaded.record, "attach", context);
+          } catch (error) {
+            this.#removeSearchEnvironment(`package:${name}`);
+            throw error;
+          }
+        }
+        return loaded;
       }
       throw new REvaluationError("NRE2221", `There is no installed package called '${name}'.`, {
         details: { package: name },
@@ -2934,24 +3856,61 @@ export class Evaluator {
             );
           }
         }
-        const importsEnvironment = createEnvironment(this.#baseEnvironment, true);
+        const importsEnvironment = createEnvironment(this.#baseNamespace, true);
+        const importOrigins = new Map<string, string>();
         for (const import_ of record.definition.imports) {
           context.checkpoint();
           const dependency = await this.#loadPackage(import_.package, false, context, libraryPaths);
-          const names = import_.names ?? (await this.#namespaceExports(import_.package, context));
+          const exportedNames = await this.#namespaceExports(import_.package, context);
+          const names = import_.names ?? exportedNames;
           context.allocate(names.length);
-          for (const importedName of names) {
-            const binding = lookupBinding(dependency.namespace, importedName);
+          for (const [index, importedName] of names.entries()) {
+            if (import_.names === undefined && import_.except?.includes(importedName)) continue;
+            const binding = exportedNames.includes(importedName)
+              ? lookupBinding(dependency.namespace, importedName)
+              : undefined;
             if (binding === undefined) {
               throw new REvaluationError(
                 "NRE2223",
                 `Package '${name}' imports missing binding '${importedName}' from '${import_.package}'.`,
               );
             }
-            setBinding(importsEnvironment, importedName, binding);
+            const localName = import_.localNames?.[index] ?? importedName;
+            const previous = importsEnvironment.bindings.get(localName);
+            if (previous !== undefined && localName === importedName) {
+              const identical = this.#baseEnvironment.bindings.get("identical");
+              if (identical === undefined)
+                throw new REvaluationError("NRE2223", "Missing identical primitive.");
+              const equal = await this.#invokeCallable(
+                await this.#force(identical, context),
+                [
+                  {
+                    promise: createForcedPromise(
+                      await this.#force(previous, context),
+                      this.#globalEnvironment,
+                    ),
+                  },
+                  {
+                    promise: createForcedPromise(
+                      await this.#force(binding, context),
+                      this.#globalEnvironment,
+                    ),
+                  },
+                ],
+                context,
+              );
+              if (equal.type !== "logical" || equal.values[0] !== 1)
+                await this.#packageLifecycleWarning(
+                  `replacing previous import '${importOrigins.get(localName)}::${localName}' by '${import_.package}::${localName}' when loading '${name}'`,
+                  context,
+                );
+            }
+            setBinding(importsEnvironment, localName, binding);
+            importOrigins.set(localName, import_.package);
           }
         }
         const namespace = createEnvironment(importsEnvironment, true);
+        this.#namespaceNames.set(namespace, name);
         record.namespace = namespace;
         const registeredMethodIndexes = new Set<number>();
         const registerAvailableS3Methods = async (requireAll: boolean): Promise<void> => {
@@ -3016,6 +3975,7 @@ export class Evaluator {
             this.#builtinState.delete(PACKAGE_SOURCE_EVALUATION_DIRECTORY_STATE_KEY);
           }
         }
+        record.exportNames = resolveRuntimePackageExportNames(record, namespace);
         for (const exportedName of record.definition.exports) {
           if (namespace.bindings.get(exportedName) === undefined) {
             throw new REvaluationError(
@@ -3033,6 +3993,7 @@ export class Evaluator {
         }
         record.namespace?.bindings.clear();
         record.namespace = undefined;
+        record.exportNames = undefined;
         loadFailed = true;
         loadError = error;
       } finally {
@@ -3044,20 +4005,15 @@ export class Evaluator {
         throw new Error("Internal S3 registration transaction stack invariant failed.");
       }
       if (loadFailed) throw loadError;
+      await this.#invokeUserPackageHooks(record, "onLoad", context);
     }
     const namespace = record.namespace;
     if (namespace === undefined) {
       throw new REvaluationError("NRE2226", `Package '${name}' did not create a namespace.`);
     }
     if (attach && !record.attached) {
-      await this.#invokePackageHook(record, ".onAttach", context);
-      const exportNames = runtimePackageExportNames(record.definition);
+      const exportNames = runtimePackageExportNames(record);
       context.allocate(exportNames.length);
-      for (const exportedName of exportNames) {
-        const binding = namespace.bindings.get(exportedName);
-        if (binding !== undefined)
-          setBinding(this.#attachedPackagesEnvironment, exportedName, binding);
-      }
       this.#searchPath = [
         this.#searchPath[0] ?? ".GlobalEnv",
         `package:${name}`,
@@ -3065,8 +4021,217 @@ export class Evaluator {
       ];
       this.#attachSearchEnvironment(name);
       record.attached = true;
+      try {
+        await this.#invokePackageHook(record, ".onAttach", context);
+        await this.#invokeUserPackageHooks(record, "attach", context);
+      } catch (error) {
+        // The namespace remains loaded, but a failed attachment must not stay searchable.
+        // Preserve other packages attached by the hook while restoring any masked exports.
+        record.attached = false;
+        const entry = `package:${name}`;
+        this.#searchPath = this.#searchPath.filter((item) => item !== entry);
+        const removedEnvironment = this.#searchEnvironments.get(entry);
+        if (removedEnvironment !== undefined) {
+          if (this.#globalEnvironment.parent === removedEnvironment)
+            this.#globalEnvironment.parent = removedEnvironment.parent;
+          for (const environment of this.#searchEnvironments.values()) {
+            if (environment.parent === removedEnvironment)
+              environment.parent = removedEnvironment.parent;
+          }
+          this.#searchEnvironments.delete(entry);
+        }
+        throw error;
+      }
     }
     return { name, version: record.definition.version, namespace, record };
+  }
+
+  async #invokeUserPackageHooks(
+    record: RuntimePackageRecord,
+    event: string,
+    context: EvaluationContext,
+  ): Promise<void> {
+    const registry = this.#builtinState.get(USER_HOOKS_STATE_KEY);
+    if (!(registry instanceof Map)) return;
+    const hooks = registry.get("UserHook::" + record.definition.name + "::" + event) as
+      RValue[] | undefined;
+    if (!hooks?.length) return;
+    context.allocate(hooks.length);
+    const point = { offset: 0, line: 1, column: 1 };
+    const span = { start: point, end: point };
+    const call: CallExpressionNode = {
+      kind: "CallExpression",
+      callee: { kind: "Identifier", name: "fun", span },
+      arguments: ["pkgname", "pkgpath"].map((name) => ({
+        value: { kind: "Identifier" as const, name, span },
+        span,
+      })),
+      span,
+    };
+    const arguments_ = [
+      record.definition.name,
+      (this.#packages.has(record.definition.name)
+        ? NATIVR_PACKAGE_LIBRARY_PATH
+        : NATIVR_SYSTEM_LIBRARY_PATH) +
+        "/" +
+        encodeURIComponent(record.definition.name),
+    ].map((value) => ({
+      promise: createForcedPromise(characterVector([value]), this.#globalEnvironment),
+    }));
+    // setHook replaces the stored array, so this reference is the event's stable snapshot.
+    for (const hook of hooks) {
+      context.checkpoint();
+      try {
+        await this.#invokeCallable(hook, arguments_, context, call, this.#globalEnvironment);
+      } catch (error) {
+        if (
+          !(error instanceof NativRError) ||
+          error instanceof RResourceLimitError ||
+          error instanceof RUnsupportedFeatureError
+        )
+          throw error;
+        context.writeOutput({ stream: "stderr", text: this.#formatTopLevelError(error, context) });
+      }
+    }
+  }
+
+  async #packageLifecycleWarning(message: string, context: EvaluationContext): Promise<void> {
+    const warning = this.#baseEnvironment.bindings.get("warning");
+    if (warning === undefined) throw new REvaluationError("NRE2280", message);
+    await this.#invokeCallable(
+      await this.#force(warning, context),
+      [
+        { promise: createForcedPromise(characterVector([message]), this.#globalEnvironment) },
+        {
+          name: "call.",
+          promise: createForcedPromise(logicalVector([false]), this.#globalEnvironment),
+        },
+      ],
+      context,
+    );
+  }
+
+  async #detachPackage(entry: string, force: boolean, context: EvaluationContext): Promise<void> {
+    const name = entry.startsWith("package:") ? entry.slice(8) : "";
+    const record =
+      this.#packages.get(name) ??
+      (REGISTERED_NAMESPACE_EXPORTS.has(name)
+        ? (await this.#loadPackage(name, false, context)).record
+        : undefined);
+    if (!record?.attached) {
+      throw new RUnsupportedFeatureError("NRU6310", "detach() requires an attached package.");
+    }
+    const dependents = [...this.#packages.values()].filter(
+      (candidate) =>
+        candidate.attached &&
+        candidate.definition.name !== name &&
+        (
+          candidate.definition.descriptionFields.find((field) => field.name === "Depends")?.value ??
+          ""
+        )
+          .split(",")
+          .some((dependency) => dependency.trim().split(/[\s(]/u)[0] === name),
+    );
+    if (!force && dependents.length > 0) {
+      throw new REvaluationError(
+        "NRE2280",
+        `package '${name}' is required by '${dependents.map((item) => item.definition.name).join("', '")}' so will not be detached`,
+      );
+    }
+    if (force && dependents.length > 0)
+      await this.#packageLifecycleWarning(
+        `package '${name}' is required by '${dependents.map((item) => item.definition.name).join("', '")}', which may no longer work correctly`,
+        context,
+      );
+    await this.#invokeUserPackageHooks(record, "detach", context);
+    try {
+      await this.#invokePackageHook(record, ".onDetach", context);
+    } catch (error) {
+      if (
+        !(error instanceof NativRError) ||
+        error instanceof RResourceLimitError ||
+        error instanceof RUnsupportedFeatureError
+      )
+        throw error;
+      await this.#packageLifecycleWarning(
+        `.onDetach failed in detach() for '${name}', details:\n  error: ${error.message}`,
+        context,
+      );
+    }
+    record.attached = false;
+    this.#removeSearchEnvironment(entry);
+  }
+
+  #removeSearchEnvironment(entry: string): void {
+    this.#searchPath = this.#searchPath.filter((item) => item !== entry);
+    const removed = this.#searchEnvironments.get(entry);
+    if (removed !== undefined) {
+      if (this.#globalEnvironment.parent === removed)
+        this.#globalEnvironment.parent = removed.parent;
+      for (const environment of this.#searchEnvironments.values()) {
+        if (environment.parent === removed) environment.parent = removed.parent;
+      }
+      this.#searchEnvironments.delete(entry);
+      removed.parent = this.#baseEnvironment;
+    }
+  }
+
+  async #unloadNamespace(
+    name: string,
+    warnOnFailure: boolean,
+    context: EvaluationContext,
+  ): Promise<void> {
+    const record = this.#packages.get(name);
+    if (record === undefined) {
+      if (REGISTERED_NAMESPACE_EXPORTS.has(name))
+        throw new RUnsupportedFeatureError(
+          "NRU6311",
+          "Unloading static core namespaces is not supported.",
+        );
+      return;
+    }
+    if (record.namespace === undefined) return;
+    if (record.loading)
+      throw new RUnsupportedFeatureError(
+        "NRU6311",
+        "Cannot unload a namespace while it is being loaded.",
+      );
+    if (record.attached) await this.#detachPackage(`package:${name}`, false, context);
+    const importers = [...this.#packages.values()].filter(
+      (candidate) =>
+        candidate.namespace !== undefined &&
+        candidate.definition.name !== name &&
+        candidate.definition.imports.some((dependency) => dependency.package === name),
+    );
+    if (importers.length > 0) {
+      const message = `namespace '${name}' is imported by '${importers.map((item) => item.definition.name).join("', '")}' so cannot be unloaded`;
+      if (warnOnFailure) {
+        await this.#packageLifecycleWarning(
+          `'${name}' namespace cannot be unloaded:\n  ${message}`,
+          context,
+        );
+        return;
+      }
+      throw new REvaluationError("NRE2281", message);
+    }
+    await this.#invokeUserPackageHooks(record, "onUnload", context);
+    try {
+      await this.#invokePackageHook(record, ".onUnload", context);
+    } catch (error) {
+      if (
+        !(error instanceof NativRError) ||
+        error instanceof RResourceLimitError ||
+        error instanceof RUnsupportedFeatureError
+      )
+        throw error;
+      await this.#packageLifecycleWarning(
+        `.onUnload failed in unloadNamespace() for '${name}', details:\n  error: ${error.message}`,
+        context,
+      );
+    }
+    // Unregister the namespace without invalidating escaped closures, environments or S3 methods.
+    record.namespace = undefined;
+    record.exportNames = undefined;
   }
 
   async #loadPackageSysdata(
@@ -3089,7 +4254,7 @@ export class Evaluator {
     const workspace = await decodeRWorkspaceFile(bytes, context, {
       global: this.#globalEnvironment,
       base: this.#baseEnvironment,
-      baseNamespace: this.#baseEnvironment,
+      baseNamespace: this.#baseNamespace,
       empty: this.#emptyEnvironment,
     });
     for (const entry of workspace.entries) {
@@ -3100,7 +4265,7 @@ export class Evaluator {
 
   async #invokePackageHook(
     record: RuntimePackageRecord,
-    hookName: ".onLoad" | ".onAttach",
+    hookName: ".onLoad" | ".onAttach" | ".onDetach" | ".onUnload",
     context: EvaluationContext,
   ): Promise<void> {
     const namespace = record.namespace;
@@ -3109,20 +4274,12 @@ export class Evaluator {
     const callable = await this.#force(binding, context);
     await this.#invokeCallable(
       callable,
-      [
-        {
-          promise: createForcedPromise(
-            characterVector([NATIVR_PACKAGE_LIBRARY_PATH]),
-            this.#globalEnvironment,
-          ),
-        },
-        {
-          promise: createForcedPromise(
-            characterVector([record.definition.name]),
-            this.#globalEnvironment,
-          ),
-        },
-      ],
+      (hookName === ".onDetach" || hookName === ".onUnload"
+        ? [NATIVR_PACKAGE_LIBRARY_PATH + "/" + encodeURIComponent(record.definition.name)]
+        : [NATIVR_PACKAGE_LIBRARY_PATH, record.definition.name]
+      ).map((argument) => ({
+        promise: createForcedPromise(characterVector([argument]), this.#globalEnvironment),
+      })),
       context,
     );
   }
@@ -3141,17 +4298,13 @@ export class Evaluator {
     if (record.namespace === undefined && !record.loading) {
       await this.#loadPackage(name, false, context);
     }
-    const exportNames = runtimePackageExportNames(record.definition);
+    const exportNames = runtimePackageExportNames(record);
     context.allocate(exportNames.length);
     return exportNames;
   }
 
   #namespaceName(environment: REnvironment): string | undefined {
-    if (environment === this.#baseEnvironment) return "base";
-    for (const [name, record] of this.#packages) {
-      if (record.namespace === environment) return name;
-    }
-    return undefined;
+    return this.#namespaceNames.get(environment);
   }
 
   async #namespaceBinding(
@@ -3162,7 +4315,11 @@ export class Evaluator {
     const staticExports = this.#staticNamespaceExports(name);
     if (staticExports !== undefined) {
       if (!this.#staticNamespaceOwnsBinding(name, bindingName)) return undefined;
-      const binding = this.#baseEnvironment.bindings.get(bindingName);
+      const namespaceEnvironment = this.#staticNamespaces.get(name);
+      const binding =
+        namespaceEnvironment === undefined
+          ? undefined
+          : lookupBinding(namespaceEnvironment, bindingName);
       if (binding === undefined) return undefined;
       return this.#force(binding, context);
     }
@@ -3245,9 +4402,22 @@ export class Evaluator {
     if (this.#staticNamespaceExports(name) !== undefined) {
       if (!(libraryPaths ?? this.#libraryPaths).includes(NATIVR_SYSTEM_LIBRARY_PATH))
         return undefined;
+      const resources = this.#systemPackageResources.get(name);
+      if (
+        normalizedPath.length > 0 &&
+        ![...(resources?.keys() ?? [])].some(
+          (path) => path === normalizedPath || path.startsWith(`${normalizedPath}/`),
+        )
+      ) {
+        return undefined;
+      }
+      const root = `nativr://package/${encodeURIComponent(name)}`;
       return normalizedPath.length === 0
-        ? `nativr://package/${encodeURIComponent(name)}`
-        : undefined;
+        ? root
+        : `${root}/${normalizedPath
+            .split("/")
+            .map((part) => encodeURIComponent(part))
+            .join("/")}`;
     }
     const record = this.#packages.get(name);
     if (record === undefined) return undefined;
@@ -3281,7 +4451,18 @@ export class Evaluator {
 
   #packageResourcePaths(name: string, prefix: string): readonly string[] | undefined {
     const normalizedPrefix = prefix.replace(/^\/+|\/+$/gu, "");
-    if (this.#staticNamespaceExports(name) !== undefined) return Object.freeze([]);
+    if (this.#staticNamespaceExports(name) !== undefined) {
+      return Object.freeze(
+        [...(this.#systemPackageResources.get(name)?.keys() ?? [])]
+          .filter(
+            (path) =>
+              normalizedPrefix.length === 0 ||
+              path === normalizedPrefix ||
+              path.startsWith(`${normalizedPrefix}/`),
+          )
+          .sort(),
+      );
+    }
     const record = this.#packages.get(name);
     if (record === undefined) return undefined;
     const paths = [
@@ -3307,6 +4488,12 @@ export class Evaluator {
     | undefined {
     const resolved = parsePackageVirtualPath(path);
     if (resolved === undefined || resolved.resourcePath.length === 0) return undefined;
+    const systemResource = this.#systemPackageResources
+      .get(resolved.name)
+      ?.get(resolved.resourcePath);
+    if (systemResource !== undefined) {
+      return { encoding: "text", data: systemResource, textEncoding: "utf8" };
+    }
     const record = this.#packages.get(resolved.name);
     if (record === undefined) return undefined;
     const text = record.definition.textResources.find(
@@ -3330,12 +4517,11 @@ export class Evaluator {
   #packageName(environment: REnvironment): string | undefined {
     let current: REnvironment | null = environment;
     while (current !== null) {
-      if (current === this.#globalEnvironment || current === this.#attachedPackagesEnvironment) {
+      if (current === this.#globalEnvironment) {
         return undefined;
       }
-      for (const [name, record] of this.#packages) {
-        if (record.namespace === current) return name;
-      }
+      const namespaceName = this.#namespaceNames.get(current);
+      if (namespaceName !== undefined) return namespaceName;
       const searchName = this.#searchEnvironmentNames.get(current.id);
       if (searchName?.startsWith("package:")) return searchName.slice("package:".length);
       if (current === this.#baseEnvironment) return "base";
@@ -3347,26 +4533,17 @@ export class Evaluator {
   #registeredNamespaceExportNames(name: string, exports: ReadonlySet<string> | "all"): string[] {
     if (exports !== "all") return [...exports];
     const names = this.#builtins
-      .filter((definition) => definition.metadata.package === name)
+      .filter((definition) => definition.metadata.package === name && definition.exported !== false)
       .map((definition) => definition.name);
-    if (name === "base") {
-      names.push(
-        "pi",
-        "letters",
-        "T",
-        "F",
-        ".Machine",
-        ".Platform",
-        ".LC.categories",
-        ".Library",
-        ".Library.site",
-      );
-    }
+    if (name === "base") names.push(...BASE_NAMESPACE_CONSTANTS);
+    if (name === "grDevices") names.push("colours");
+    if (name === "graphics") names.push("plot");
     return [...new Set(names)];
   }
 
   #staticNamespaceExports(name: string): ReadonlySet<string> | "all" | undefined {
-    return this.#packages.has(name) ? undefined : REGISTERED_NAMESPACE_EXPORTS.get(name);
+    if (this.#packages.has(name)) return undefined;
+    return REGISTERED_NAMESPACE_EXPORTS.get(name);
   }
 
   #staticNamespaceOwnsBinding(name: string, bindingName: string): boolean {
@@ -3374,7 +4551,9 @@ export class Evaluator {
       this.#builtins.some(
         (definition) => definition.package === name && definition.name === bindingName,
       ) ||
-      (name === "base" && BASE_NAMESPACE_CONSTANTS.has(bindingName))
+      (name === "base" && BASE_NAMESPACE_CONSTANTS.has(bindingName)) ||
+      (name === "grDevices" && bindingName === "colours") ||
+      (name === "graphics" && bindingName === "plot")
     );
   }
 
@@ -3396,15 +4575,25 @@ export class Evaluator {
         : (this.#searchEnvironments.get(parentEntry) ?? this.#baseEnvironment);
     const environment = createEnvironment(parent, true);
     const record = this.#packages.get(name);
-    if (record?.namespace !== undefined) {
-      for (const exportedName of runtimePackageExportNames(record.definition)) {
-        const binding = record.namespace.bindings.get(exportedName);
+    const staticExports = this.#staticNamespaceExports(name);
+    const source =
+      staticExports === undefined ? record?.namespace : this.#staticNamespaces.get(name);
+    const exportNames =
+      staticExports === undefined
+        ? record === undefined
+          ? []
+          : runtimePackageExportNames(record)
+        : this.#registeredNamespaceExportNames(name, staticExports);
+    if (source !== undefined) {
+      for (const exportedName of exportNames) {
+        const binding = lookupBinding(source, exportedName);
         if (binding !== undefined) setBinding(environment, exportedName, binding);
       }
     }
     const entry = `package:${name}`;
     this.#searchEnvironments.set(entry, environment);
     this.#searchEnvironmentNames.set(environment.id, entry);
+    this.#globalEnvironment.parent = environment;
   }
 
   #searchEnvironment(identifier: number | string): REnvironment | undefined {
@@ -3428,6 +4617,11 @@ export class Evaluator {
     if (environment === this.#globalEnvironment) return "R_GlobalEnv";
     if (environment === this.#baseEnvironment) return "base";
     if (environment === this.#emptyEnvironment) return "R_EmptyEnv";
+    const namespaceName = this.#namespaceNames.get(environment);
+    if (namespaceName !== undefined) return namespaceName;
+    for (const [name, namespace] of this.#staticNamespaces) {
+      if (name !== "base" && namespace.parent === environment) return `imports:${name}`;
+    }
     this.#ensureSearchEnvironments();
     return this.#searchEnvironmentNames.get(environment.id);
   }
@@ -3449,16 +4643,17 @@ export class Evaluator {
         const name = entry.slice("package:".length);
         const staticExports = this.#staticNamespaceExports(name);
         const record = this.#packages.get(name);
-        const source = staticExports === undefined ? record?.namespace : this.#baseEnvironment;
+        const source =
+          staticExports === undefined ? record?.namespace : this.#staticNamespaces.get(name);
         const exports =
           staticExports === undefined
             ? record === undefined
               ? []
-              : runtimePackageExportNames(record.definition)
+              : runtimePackageExportNames(record)
             : this.#registeredNamespaceExportNames(name, staticExports);
         if (source !== undefined) {
           for (const exportedName of exports) {
-            const binding = source.bindings.get(exportedName);
+            const binding = lookupBinding(source, exportedName);
             if (binding !== undefined) setBinding(environment, exportedName, binding);
           }
         }
@@ -3467,6 +4662,7 @@ export class Evaluator {
       this.#searchEnvironmentNames.set(environment.id, entry === "package:base" ? "base" : entry);
       parent = environment;
     }
+    this.#globalEnvironment.parent = parent;
   }
 
   async #dispatchS3IfPresentResult(
@@ -3476,6 +4672,8 @@ export class Evaluator {
     context: EvaluationContext,
     includeDefault = true,
     argumentIndex = 0,
+    callerEnvironment?: REnvironment,
+    group?: string,
   ): Promise<EvaluationResult | undefined> {
     if (generic.length === 0) {
       throw new REvaluationError("NRE2213", "UseMethod() generic name must be non-empty.");
@@ -3503,6 +4701,9 @@ export class Evaluator {
       methodArguments,
       context,
       includeDefault,
+      undefined,
+      callerEnvironment,
+      group,
     );
   }
 
@@ -3530,6 +4731,8 @@ export class Evaluator {
           arguments_,
           context,
           false,
+          undefined,
+          environment,
         );
         if (dispatched !== undefined) return dispatched;
       }
@@ -3542,13 +4745,23 @@ export class Evaluator {
     if (frame === undefined) {
       throw new REvaluationError("NRE2215", "NextMethod() used outside S3 method dispatch.");
     }
+    const repeatedGroupMember =
+      Boolean(frame.group) && frame.methodName?.startsWith(`${frame.generic}.`);
+    const previous = characterVector(frame.classes.slice(frame.classIndex));
     return this.#invokeS3Method(
       generic ?? frame.generic,
       frame.genericEnvironment,
       frame.classes,
-      frame.classIndex + 1,
+      Math.min(frame.classIndex + (repeatedGroupMember ? 0 : 1), frame.classes.length),
       frame.arguments,
       context,
+      frame.call,
+      frame.callerEnvironment,
+      true,
+      frame.group,
+      frame.previousClasses === undefined
+        ? previous
+        : withAttribute(previous, "previous", frame.previousClasses),
     );
   }
 
@@ -3559,6 +4772,11 @@ export class Evaluator {
     startIndex: number,
     arguments_: ClosureCallFrame["arguments"],
     context: EvaluationContext,
+    call?: CallExpressionNode,
+    callerEnvironment?: REnvironment,
+    allowPrimitiveFallback = false,
+    group?: string,
+    previousClasses?: RValue,
   ): Promise<RValue> {
     const result = await this.#invokeS3MethodIfPresent(
       generic,
@@ -3567,8 +4785,31 @@ export class Evaluator {
       startIndex,
       arguments_,
       context,
+      true,
+      call,
+      callerEnvironment,
+      group,
+      true,
+      previousClasses,
     );
     if (result !== undefined) return result;
+    if (allowPrimitiveFallback) {
+      const definition = this.#builtins.find(
+        (entry) => entry.package === "base" && entry.name === generic,
+      );
+      if (definition?.s3DefaultImplementation !== undefined) {
+        return this.#invokeCallable(
+          {
+            type: "builtin",
+            definition: { ...definition, implementation: definition.s3DefaultImplementation },
+          },
+          arguments_,
+          context,
+          call,
+          callerEnvironment,
+        );
+      }
+    }
     throw new REvaluationError(
       "NRE2216",
       `No applicable method for '${generic}' and classes ${classes.join(", ")}.`,
@@ -3583,6 +4824,11 @@ export class Evaluator {
     arguments_: ClosureCallFrame["arguments"],
     context: EvaluationContext,
     includeDefault = true,
+    call?: CallExpressionNode,
+    callerEnvironment?: REnvironment,
+    group?: string,
+    preserveGroup = false,
+    previousClasses?: RValue,
   ): Promise<RValue | undefined> {
     return (
       await this.#invokeS3MethodIfPresentResult(
@@ -3593,6 +4839,11 @@ export class Evaluator {
         arguments_,
         context,
         includeDefault,
+        call,
+        callerEnvironment,
+        group,
+        preserveGroup,
+        previousClasses,
       )
     )?.value;
   }
@@ -3605,31 +4856,104 @@ export class Evaluator {
     arguments_: ClosureCallFrame["arguments"],
     context: EvaluationContext,
     includeDefault = true,
+    call?: CallExpressionNode,
+    callerEnvironment?: REnvironment,
+    group?: string,
+    preserveGroup = false,
+    previousClasses?: RValue,
   ): Promise<EvaluationResult | undefined> {
     const end = includeDefault ? classes.length : classes.length - 1;
     for (let index = startIndex; index <= end; index += 1) {
       const className = classes[index];
-      const methodName = className === undefined ? `${generic}.default` : `${generic}.${className}`;
-      const binding =
-        lookupBinding(this.#globalEnvironment, methodName) ??
-        this.#registeredS3Methods.get(
-          this.#s3RegistrationKey(genericEnvironment, generic, className ?? "default"),
+      let methodName = className === undefined ? `${generic}.default` : `${generic}.${className}`;
+      // Registration belongs to the defining frame; dispatch consults its top environment.
+      let callable = await this.#findS3Method(
+        methodName,
+        this.#s3RegistrationKey(
+          this.#s3TopEnvironment(genericEnvironment),
+          generic,
+          className ?? "default",
+        ),
+        callerEnvironment ?? this.#globalEnvironment,
+        context,
+      );
+      let selectedGroup = preserveGroup ? group : group === undefined ? undefined : "";
+      if (callable === undefined && group && className !== undefined) {
+        methodName = `${group}.${className}`;
+        callable = await this.#findS3Method(
+          methodName,
+          this.#s3RegistrationKey(this.#s3TopEnvironment(genericEnvironment), group, className),
+          callerEnvironment ?? this.#globalEnvironment,
+          context,
         );
-      if (binding === undefined) continue;
-      const callable = await this.#force(binding, context);
+        selectedGroup = group;
+      }
+      if (callable === undefined) continue;
+      const methodCall =
+        call === undefined
+          ? undefined
+          : ({
+              ...call,
+              callee: { kind: "Identifier", name: methodName, span: call.callee.span },
+            } satisfies CallExpressionNode);
       const dispatchFrame: S3DispatchFrame = {
         generic,
+        methodName,
+        ...(selectedGroup === undefined ? {} : { group: selectedGroup }),
+        ...(previousClasses === undefined ? {} : { previousClasses }),
         genericEnvironment,
         classes,
         classIndex: index,
         arguments: arguments_,
+        ...(methodCall === undefined ? {} : { call: methodCall }),
+        ...(callerEnvironment === undefined ? {} : { callerEnvironment }),
       };
       this.#s3DispatchFrames.push(dispatchFrame);
       try {
-        return await this.#invokeCallableResult(callable, arguments_, context);
+        return await this.#invokeCallableResult(
+          callable,
+          arguments_,
+          context,
+          methodCall,
+          callerEnvironment,
+          dispatchFrame,
+        );
       } finally {
         this.#s3DispatchFrames.pop();
       }
+    }
+    return undefined;
+  }
+
+  async #findS3Method(
+    methodName: string,
+    registrationKey: string,
+    callerEnvironment: REnvironment,
+    context: EvaluationContext,
+  ): Promise<RClosure | RBuiltin | undefined> {
+    const callableBinding = async (binding: RBinding | undefined) => {
+      if (binding === undefined) return undefined;
+      const value = await this.#force(binding, context);
+      return value.type === "closure" || value.type === "builtin" ? value : undefined;
+    };
+
+    const topEnvironment = this.#s3TopEnvironment(callerEnvironment);
+    let current: REnvironment | null = callerEnvironment;
+    while (current !== null) {
+      const callable = await callableBinding(current.bindings.get(methodName));
+      if (callable !== undefined) return callable;
+      const atTopEnvironment = current === topEnvironment;
+      current = current.parent;
+      if (atTopEnvironment) break;
+    }
+
+    // Registered methods follow the caller's top environment, before its parents.
+    const registered = await callableBinding(this.#registeredS3Methods.get(registrationKey));
+    if (registered !== undefined) return registered;
+    while (current !== null) {
+      const callable = await callableBinding(current.bindings.get(methodName));
+      if (callable !== undefined) return callable;
+      current = current.parent;
     }
     return undefined;
   }
@@ -3740,7 +5064,11 @@ export class Evaluator {
       environment === this.#globalEnvironment ? environment : environment.parent;
     while (current !== null) {
       if (current.bindings.has(name)) {
-        if (current === this.#baseEnvironment || current === this.#emptyEnvironment) {
+        if (
+          current === this.#baseEnvironment ||
+          current === this.#baseNamespace ||
+          current === this.#emptyEnvironment
+        ) {
           throw new REvaluationError(
             "NRE2012",
             `Cannot change locked built-in binding '${name}'.`,
@@ -3763,6 +5091,7 @@ export class Evaluator {
       [
         this.#globalEnvironment,
         this.#builtinState,
+        this.#staticNamespaces,
         this.#controlFrames,
         this.#closureCallFrames,
         this.#activeGlobalCallingHandlers,
@@ -3800,13 +5129,42 @@ export class Evaluator {
     });
   }
 
+  #installBuiltinS3Methods(): void {
+    for (const definition of this.#builtins) {
+      const method = definition.s3Method;
+      if (method === undefined) continue;
+      const binding = this.#staticNamespaces.get(definition.package)?.bindings.get(definition.name);
+      if (binding !== undefined)
+        this.#registeredS3Methods.set(
+          this.#s3RegistrationKey(this.#baseEnvironment, method.generic, method.className),
+          binding,
+        );
+    }
+  }
   #installBuiltins(): void {
+    this.#installGlobalEnvironmentBinding();
     for (const definition of this.#builtins) {
       const builtin: RBuiltin = { type: "builtin", definition };
-      setBinding(this.#baseEnvironment, definition.name, builtin);
+      const environment =
+        definition.package === "base"
+          ? this.#baseEnvironment
+          : this.#staticNamespaces.get(definition.package);
+      if (environment !== undefined) setBinding(environment, definition.name, builtin);
     }
-    const colors = this.#baseEnvironment.bindings.get("colors");
-    if (colors !== undefined) setBinding(this.#baseEnvironment, "colours", colors);
+    this.#installBuiltinS3Methods();
+    const graphicsDeviceNamespace = this.#staticNamespaces.get("grDevices");
+    const colors = graphicsDeviceNamespace?.bindings.get("colors");
+    if (colors !== undefined && graphicsDeviceNamespace !== undefined)
+      setBinding(graphicsDeviceNamespace, "colours", colors);
+    for (const [name, exports] of REGISTERED_NAMESPACE_EXPORTS) {
+      if (CORE_R_PACKAGE_NAMES.has(name) || exports === "all") continue;
+      const namespace = this.#staticNamespaces.get(name);
+      if (namespace === undefined) continue;
+      for (const member of exports) {
+        const binding = this.#baseEnvironment.bindings.get(member);
+        if (binding !== undefined) namespace.bindings.set(member, binding);
+      }
+    }
     const listObjects = this.#baseEnvironment.bindings.get("ls");
     if (listObjects !== undefined) setBinding(this.#baseEnvironment, "objects", listObjects);
     setBinding(this.#baseEnvironment, "pi", doubleVector([Math.PI]));
@@ -3816,6 +5174,11 @@ export class Evaluator {
       this.#baseEnvironment,
       "letters",
       characterVector(Array.from({ length: 26 }, (_, index) => String.fromCharCode(97 + index))),
+    );
+    setBinding(
+      this.#baseEnvironment,
+      "LETTERS",
+      characterVector(Array.from({ length: 26 }, (_, index) => String.fromCharCode(65 + index))),
     );
     setBinding(this.#baseEnvironment, ".Machine", machineConstants());
     setBinding(this.#baseEnvironment, ".Platform", platformConstants());
@@ -3836,6 +5199,12 @@ export class Evaluator {
         "LC_MEASUREMENT",
       ]),
     );
+  }
+
+  #installGlobalEnvironmentBinding(): void {
+    // Session reset replaces the global environment, including this locked base binding.
+    this.#baseEnvironment.bindings.set(".GlobalEnv", this.#globalEnvironment);
+    this.#baseEnvironment.lockedBindings.add(".GlobalEnv");
   }
 
   #nearestLoopTarget(span: SourceSpan, keyword: "break" | "next"): symbol {
@@ -3958,6 +5327,109 @@ function platformConstants(): RValue {
     entries.map(([, value]) => characterVector([value])),
     entries.map(([name]) => name),
   );
+}
+
+function constructedSubsetTarget(target: CallExpressionNode): SubsetExpressionNode | undefined {
+  if (target.callee.kind !== "Identifier") return undefined;
+  const operator = target.callee.name;
+  if (operator !== "[" && operator !== "[[" && operator !== "$") return undefined;
+  const object = target.arguments[0];
+  if (object === undefined) {
+    throw new REvaluationError(
+      "NRE2102",
+      `Replacement operator '${operator}' requires an object.`,
+      {
+        span: target.span,
+      },
+    );
+  }
+  return {
+    kind: "SubsetExpression",
+    operator,
+    target: object.value,
+    arguments: target.arguments.slice(1),
+    span: target.span,
+  };
+}
+
+function matchCallDefinitionArguments(
+  parameters: RClosure["parameters"],
+  arguments_: ClosureCallFrame["arguments"],
+): { readonly matched: Map<string, RPromise>; readonly dots: BuiltinCallArgument[] } {
+  const dotsIndex = parameters.findIndex((parameter) => parameter.name === "...");
+  const hasDots = dotsIndex >= 0;
+  const regularParameters = parameters.filter((parameter) => parameter.name !== "...");
+  const partialParameters = hasDots ? parameters.slice(0, dotsIndex) : regularParameters;
+  const matched = new Map<string, RPromise>();
+  const matchedIndexes = new Set<number>();
+
+  for (const [index, argument] of arguments_.entries()) {
+    if (argument.name === undefined) continue;
+    const parameter = regularParameters.find((candidate) => candidate.name === argument.name);
+    if (parameter === undefined) continue;
+    if (matched.has(parameter.name)) {
+      throw new REvaluationError("NRE2004", `Argument '${parameter.name}' matched more than once.`);
+    }
+    matched.set(parameter.name, argument.promise);
+    matchedIndexes.add(index);
+  }
+  for (const [index, argument] of arguments_.entries()) {
+    if (argument.name === undefined || matchedIndexes.has(index)) continue;
+    const candidates = partialParameters.filter((parameter) =>
+      parameter.name.startsWith(argument.name as string),
+    );
+    if (candidates.length > 1) {
+      throw new REvaluationError(
+        "NRE2007",
+        `Argument '${argument.name}' matches multiple formals.`,
+      );
+    }
+    const parameter = candidates[0];
+    if (parameter === undefined) continue;
+    if (matched.has(parameter.name)) {
+      throw new REvaluationError("NRE2004", `Argument '${parameter.name}' matched more than once.`);
+    }
+    matched.set(parameter.name, argument.promise);
+    matchedIndexes.add(index);
+  }
+  let positionalIndex = 0;
+  for (const [index, argument] of arguments_.entries()) {
+    if (argument.name !== undefined) continue;
+    while (
+      positionalIndex < partialParameters.length &&
+      matched.has(partialParameters[positionalIndex]?.name ?? "")
+    ) {
+      positionalIndex += 1;
+    }
+    const parameter = partialParameters[positionalIndex];
+    if (parameter === undefined) {
+      if (hasDots) continue;
+      throw new REvaluationError("NRE2005", "Unused positional argument.");
+    }
+    matched.set(parameter.name, argument.promise);
+    matchedIndexes.add(index);
+    positionalIndex += 1;
+  }
+  if (!hasDots) {
+    const unused = arguments_.find(
+      (argument, index) => argument.name !== undefined && !matchedIndexes.has(index),
+    );
+    if (unused !== undefined) {
+      throw new REvaluationError("NRE2005", `Unused argument '${unused.name ?? ""}'.`);
+    }
+  }
+  const dots: BuiltinCallArgument[] = hasDots
+    ? arguments_.flatMap((argument, index) =>
+        matchedIndexes.has(index)
+          ? []
+          : [
+              argument.name === undefined
+                ? { promise: argument.promise }
+                : { name: argument.name, promise: argument.promise },
+            ],
+      )
+    : [];
+  return { matched, dots };
 }
 
 function promiseCallAst(promise: RPromise, fallbackSpan: SourceSpan): AstNode {

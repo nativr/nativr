@@ -127,6 +127,7 @@ async function handleRequest(request: WorkerRequest): Promise<void> {
         request.readline === true ? requestReadline : undefined,
         request.url === true ? requestUrl : undefined,
         request.socket === true ? requestSocket : undefined,
+        request.systemPackageResources,
       );
       postSuccess(request.id, { kind: "ready" });
       return;
@@ -134,7 +135,14 @@ async function handleRequest(request: WorkerRequest): Promise<void> {
     const runtime = requireHost();
     switch (request.kind) {
       case "eval": {
-        const result = await runtime.eval(request.code);
+        const result = await runtime.eval(request.code, {
+          ...(request.topLevelErrorHandling === undefined
+            ? {}
+            : { topLevelErrorHandling: request.topLevelErrorHandling }),
+          ...(request.printVisibleTopLevel === undefined
+            ? {}
+            : { printVisibleTopLevel: request.printVisibleTopLevel }),
+        });
         for (const warning of result.warnings) {
           const event: WarningEvent = {
             protocolVersion: PROTOCOL_VERSION,
@@ -162,6 +170,7 @@ async function handleRequest(request: WorkerRequest): Promise<void> {
             result: {
               raw,
               visible: result.visible,
+              topLevelErrors: result.topLevelErrors,
               warnings: result.warnings,
               output: result.output,
               dataViews: result.dataViews,

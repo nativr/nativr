@@ -6,7 +6,18 @@ invisible(suppressWarnings(Sys.setlocale("LC_ALL", "C")))
 options(device = function(...) pdf(NULL))
 
 json_string <- function(value) {
-  encodeString(enc2utf8(value), quote = '"', na.encode = FALSE)
+  # Emit ASCII JSON so C-locale printing cannot replace Unicode with <U+...>.
+  points <- utf8ToInt(enc2utf8(value))
+  if (anyNA(points)) stop("Oracle JSON received invalid UTF-8.", call. = FALSE)
+  escaped <- vapply(points, function(point) {
+    if (point > 65535L) {
+      offset <- point - 65536L
+      return(sprintf("\\u%04x\\u%04x", 55296L + offset %/% 1024L,
+                     56320L + offset %% 1024L))
+    }
+    sprintf("\\u%04x", point)
+  }, character(1))
+  paste0('"', paste0(escaped, collapse = ""), '"')
 }
 
 json_encode <- function(value) {
@@ -41,6 +52,7 @@ message_connection <- file(message_path, open = "wt", encoding = "UTF-8")
 sink(output_connection, type = "output")
 sink(message_connection, type = "message")
 
+error_seen <- NULL
 result <- tryCatch(
   withCallingHandlers(
     withVisible(eval(parse(text = Sys.getenv("NATIVR_CASE")), envir = new.env(parent = globalenv()))),
@@ -55,7 +67,10 @@ result <- tryCatch(
       invokeRestart("muffleWarning")
     }
   ),
-  error = function(condition) condition
+  error = function(condition) {
+    error_seen <<- condition
+    NULL
+  }
 )
 
 sink(type = "message")
@@ -68,7 +83,7 @@ unlink(c(output_path, message_path))
 stdout <- gsub("\r\n", "\n", stdout, fixed = TRUE)
 messages <- gsub("\r\n", "\n", messages, fixed = TRUE)
 
-if (inherits(result, "condition")) {
+if (!is.null(error_seen)) {
   observation <- list(
     schemaVersion = 2L,
     outcome = "error",
@@ -76,9 +91,9 @@ if (inherits(result, "condition")) {
     graph = list(),
     conditions = c(warnings_seen, list(list(
       kind = "error",
-      classes = as.list(class(result)),
-      message = conditionMessage(result),
-      call = if (is.null(result$call)) NULL else paste(deparse(result$call), collapse = "\n"),
+      classes = as.list(class(error_seen)),
+      message = conditionMessage(error_seen),
+      call = if (is.null(error_seen$call)) NULL else paste(deparse(error_seen$call), collapse = "\n"),
       order = length(warnings_seen) + 1L
     ))),
     streams = list(stdout = stdout, stderr = "", messages = messages),

@@ -5,11 +5,11 @@
     "policy": "docs/clean-room.md",
     "implementationBodiesCollected": false
   },
-  "reference": { "version": "R version 4.6.0 (2026-04-24 ucrt)", "platform": "x86_64-w64-mingw32" },
+  "reference": { "version": "R version 4.6.1 (2026-06-24 ucrt)", "platform": "x86_64-w64-mingw32" },
   "packages": [
     {
       "name": "base",
-      "reportedExportCount": 1413,
+      "reportedExportCount": 1412,
       "exports": [
         { "name": "!", "type": "builtin", "callable": true, "formals": [] },
         { "name": "!.hexmode", "type": "closure", "callable": true, "formals": ["a"] },
@@ -2818,7 +2818,6 @@
           "formals": ["object", "..."]
         },
         { "name": "lapply", "type": "closure", "callable": true, "formals": ["X", "FUN", "..."] },
-        { "name": "last.warning", "type": "list", "callable": false, "formals": [] },
         {
           "name": "lazyLoad",
           "type": "closure",

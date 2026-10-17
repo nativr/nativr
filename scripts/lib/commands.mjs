@@ -43,6 +43,24 @@ export function runNode(script, arguments_ = [], options = {}) {
   return run(process.execPath, [script, ...arguments_], options);
 }
 
+export async function runNodeWithWindowsLockRetry(script, arguments_ = [], options = {}) {
+  const attempts = process.platform === "win32" ? 4 : 1;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const result = await runNode(script, arguments_, { ...options, capture: true });
+      process.stdout.write(result.stdout);
+      process.stderr.write(result.stderr);
+      return;
+    } catch (error) {
+      if (attempt === attempts || !transientWindowsFileLock(error)) throw error;
+      process.stderr.write(
+        `Retrying build after a Windows file lock (${attempt}/${attempts - 1}).\n`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, attempt * 1_000));
+    }
+  }
+}
+
 export function runPnpm(arguments_, options = {}) {
   const pnpmEntry = process.env.npm_execpath;
   if (pnpmEntry === undefined) {
@@ -58,5 +76,18 @@ export async function removeGeneratedPath(root, target) {
   if (relative === "" || relative.startsWith("..") || path.isAbsolute(relative)) {
     throw new Error(`Refusing to remove unsafe generated path: ${resolvedTarget}`);
   }
-  await rm(resolvedTarget, { recursive: true, force: true });
+  const attempts = process.platform === "win32" ? 4 : 1;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      await rm(resolvedTarget, { recursive: true, force: true });
+      return;
+    } catch (error) {
+      if (attempt === attempts || !transientWindowsFileLock(error)) throw error;
+      await new Promise((resolve) => setTimeout(resolve, attempt * 1_000));
+    }
+  }
+}
+
+function transientWindowsFileLock(error) {
+  return process.platform === "win32" && /\b(?:EPERM|EBUSY)\b/.test(String(error));
 }

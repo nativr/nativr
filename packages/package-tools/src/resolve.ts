@@ -5,7 +5,8 @@ import type {
   ResolvedPackageSet,
 } from "./types.js";
 
-const DEFAULT_PROVIDED_PACKAGES: Readonly<Record<string, string>> = Object.freeze({
+export const DEFAULT_PROVIDED_PACKAGES: Readonly<Record<string, string>> = Object.freeze({
+  // R denotes the runtime version only, never an installed package namespace.
   R: "4.6.1",
   base: "4.6.1",
   stats: "4.6.1",
@@ -48,8 +49,8 @@ export function resolvePackageArtifacts(
     version: artifact.package.version,
     integrity: `sha256-${artifact.integrity.value}`,
     dependencies: Object.freeze(
-      requiredDependencies(artifact, options.includeSuggests === true)
-        .filter((dependency) => byName.has(dependency.name))
+      requiredDependencies(artifact.dependencies, options.includeSuggests === true)
+        .filter((dependency) => !isRuntimeDependency(dependency) && byName.has(dependency.name))
         .map((dependency) => dependency.name)
         .sort(),
     ),
@@ -70,7 +71,7 @@ export function resolvePackageArtifacts(
     if (complete.has(name)) return;
     const artifact = byName.get(name);
     if (artifact === undefined) {
-      const providedVersion = providedPackages[name];
+      const providedVersion = providedPackageVersion(providedPackages, name);
       if (providedVersion !== undefined) return;
       throw new Error(
         requiredBy === undefined
@@ -85,10 +86,16 @@ export function resolvePackageArtifacts(
       );
     }
     visiting.push(name);
-    for (const dependency of requiredDependencies(artifact, options.includeSuggests === true)) {
-      const dependencyArtifact = byName.get(dependency.name);
-      const availableVersion =
-        dependencyArtifact?.package.version ?? providedPackages[dependency.name];
+    for (const dependency of requiredDependencies(
+      artifact.dependencies,
+      options.includeSuggests === true,
+    )) {
+      const runtimeDependency = isRuntimeDependency(dependency);
+      const dependencyArtifact = runtimeDependency ? undefined : byName.get(dependency.name);
+      const availableVersion = runtimeDependency
+        ? providedPackages.R
+        : (dependencyArtifact?.package.version ??
+          providedPackageVersion(providedPackages, dependency.name));
       if (availableVersion === undefined) {
         throw new Error(`Package '${name}' requires missing package '${dependency.name}'.`);
       }
@@ -107,6 +114,17 @@ export function resolvePackageArtifacts(
     complete.add(name);
     ordered.push(artifact);
   }
+}
+
+export function isRuntimeDependency(dependency: PackageDependency): boolean {
+  return dependency.name === "R" && dependency.kind === "Depends";
+}
+
+export function providedPackageVersion(
+  providedPackages: Readonly<Record<string, string>>,
+  name: string,
+): string | undefined {
+  return name !== "R" && Object.hasOwn(providedPackages, name) ? providedPackages[name] : undefined;
 }
 
 export function comparePackageVersions(left: string, right: string): number {
@@ -128,11 +146,11 @@ function packageVersionParts(value: string): readonly bigint[] {
   return value.split(/[.-]/u).map((part) => BigInt(part));
 }
 
-function requiredDependencies(
-  artifact: NativRPackageArtifact,
+export function requiredDependencies(
+  dependencies: readonly PackageDependency[],
   includeSuggests: boolean,
 ): readonly PackageDependency[] {
-  return artifact.dependencies.filter(
+  return dependencies.filter(
     (dependency) =>
       dependency.kind === "Depends" ||
       dependency.kind === "Imports" ||
@@ -140,7 +158,7 @@ function requiredDependencies(
   );
 }
 
-function satisfiesDependency(version: string, dependency: PackageDependency): boolean {
+export function satisfiesDependency(version: string, dependency: PackageDependency): boolean {
   const constraint = dependency.constraint;
   if (constraint === undefined) return true;
   const comparison = comparePackageVersions(version, constraint.version);

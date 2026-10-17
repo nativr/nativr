@@ -97,8 +97,19 @@ requested number of complete top-level expressions has been collected. `n = 0` d
 input. Parser-backed JavaScript symbol/language/expression records round-trip through `assign` and
 `call`. File/connection input and `keep.source = TRUE` source-reference attributes are not
 implemented. `match.call()` uses the active closure's already-computed argument matching to
-canonicalize supplied names, omit unused defaults, and optionally retain dots as a pairlist-shaped
-call. Root, child, parent, current-frame, and closure environments are available for lexical
+canonicalize supplied names, omit unused defaults, and retain unexpanded dots as an owned pairlist
+inside the call. An explicit closure or closure-shaped builtin `definition=` rematches supplied
+arguments against its formals, while `definition = NULL` retains the active closure. Primitive
+definitions are rejected. An owned language `call=` supplies the call syntax without evaluating its
+argument expressions. Replacement closures carry a synthetic `*tmp*` object argument and evaluated
+value for `sys.call()` and `match.call()`. Their forced value promise separately retains the
+original RHS syntax for `substitute(value)`, including S3 dispatch and replacement of a subset
+receiver; the RHS still executes once. S3 method calls and `NextMethod()` retain their source
+argument expressions for `match.call()`. Missing argument syntax in quoted calls and unexpanded
+matched dots becomes an empty symbol, including across replacement S3 dispatch. A literal `$...`
+extracts or replaces that named element without forcing its arguments. `deparse(expr, width.cutoff)`
+accepts the measured short-expression control; line wrapping of longer expressions remains
+incomplete. Root, child, parent, current-frame, and closure environments are available for lexical
 evaluation. Environment `$` and character `[[` read or replace bindings; `get`, `get0`, `mget`,
 `exists`, and `assign` support explicit environments and inherited lookup, while `list2env`,
 `as.environment`, `environmentName`, and `as.list.environment` cover initial conversion and identity
@@ -128,9 +139,10 @@ list, and names, arbitrary runtime attributes, classes, dimensions, dimension na
 matrix/array classes are retained or dropped along the measured GNU R paths. GNU R's `lengths()`,
 `is.matrix()`, and `is.array()` rejection/false results for pairlists are preserved. This increment
 does not yet provide `bquote`, pairlist rectangular replacement or every extension edge case,
-generic pairlist attributes across the public snapshot, inherited substitution lookup, alternate
-`match.call` definitions/calls/environments, full language indexing/attributes, list/data-frame
-evaluation environments, source-reference preservation, or file/connection-driven parsing.
+generic pairlist attributes across the public snapshot, inherited substitution lookup,
+`match.call(envir=)` and definitions without R-level formals, full language indexing/attributes,
+list/data-frame evaluation environments, source-reference preservation, or file/connection-driven
+parsing.
 
 `textConnection()` supplies an always-open, session-owned input connection backed by a copied
 character vector. `source()` reads such connections or browser-owned virtual/package paths, parses
@@ -159,9 +171,11 @@ fail with bounded row, column, and replacement-length diagnostics rather than si
 malformed frame.
 
 Direct replacement-function targets invoke a registered `<-` function and rebind their first
-identifier. `names<-`, `attr<-`, `class<-`, and `dim<-` cover exact non-missing names, arbitrary
-owned vector attributes, explicit classes, and validated dimensions in both assignment directions.
-Nested replacement-function targets and short-name padding for `names<-` remain incomplete.
+identifier. `names<-`, `attr<-`, `class<-`, and `dim<-` cover names, arbitrary owned vector
+attributes, explicit classes, and validated dimensions in both assignment directions. Short
+character name vectors are padded with missing names to the target length. The measured nested
+`names(dimnames(x))[i] <- value` path promotes a NULL intermediate and rebinds through both
+replacement functions; other nested replacement-function paths remain incomplete.
 
 `make.names()` coerces atomic and scalar-list inputs to an attribute-free character vector, applies
 the deterministic C-locale ASCII/UTF-8-byte syntax rules, repairs reserved words and missing names,
@@ -300,6 +314,10 @@ returns existing arrays unchanged; otherwise it adds a one-dimensional extent to
 lists, factors, or pairlists, promotes vector names to a one-axis `dimnames` component, and retains
 other attributes. Expression-vector coercion remains outside this bounded increment.
 
+`array(data)` defaults to a one-dimensional extent of `length(data)`, including zero. `diag<-`
+replaces a matrix or data-frame diagonal through the ordinary bounded subset-replacement path,
+preserving unaffected dimensions, dimnames, and attributes. `dimnames(NULL)` returns NULL.
+
 Data frames are classed named lists with automatic or validated explicit row names and equal-length
 atomic columns after documented recycling. `data.frame()` exposes GNU R's exact trailing control
 formals after `...`; `row.names` is never mistaken for a data column, explicit atomic row names are
@@ -310,6 +328,13 @@ selection/replacement plus column extraction. `tibble` and formula-header `tribb
 stricter frame shapes without importing external packages. `check.rows`, `fix.empty.names`, and
 legacy `stringsAsFactors = TRUE` breadth beyond current atomic-column construction remain
 incomplete.
+
+`as.data.frame()` splits an atomic matrix into source-order columns, retaining explicit row and
+column labels and generating `V1`, `V2`, ... when column labels are absent. The resulting automatic
+row names stay implicit. `as.matrix()` combines equal-length atomic data-frame columns in
+column-major order, converting factor labels to character and retaining nonautomatic row labels.
+List columns, complete name repair, and broader class-specific conversion remain outside this
+increment.
 
 Factors are integer codes plus levels and class metadata. Construction supports explicit levels,
 labels, exclusions, ordering, and level dropping. Factor selection retains class and levels.
@@ -685,24 +710,27 @@ actual call-site environment, including a promise's lexical evaluation origin ra
 unrelated helper frame. Runtime-created language objects retain embedded atomic/list constants as
 distinct normalized AST nodes, so `quote(list(...))` syntax remains different from a quoted literal
 list. Constructed `<-`, `=`, `<<-`, `->`, and `->>` calls reuse ordinary assignment/replacement
-semantics. `packageEvent()` plus `setHook()`/`getHook()` provide a session registry. These semantics
-are executable through the pinned `withr 3.0.3` `with_options()` proof rather than inferred from
-successful parsing. `gctorture2()` exposes only its documented argument/formal and previous-state
-API for wrapper construction; it does not and cannot force a browser JavaScript engine's garbage
-collector. DESCRIPTION, NAMESPACE, and retained `R/*.R` text share the executable-source-unit
-budget; package resource count is independently bounded and decoded immutable resource bytes have a
-64 MiB aggregate ceiling. All enter one immutable package-file lookup seam. UTF-8 uses the
-browser-standard fatal decoder, Latin-1 uses deterministic byte mapping, and both paths are bounded;
-package paths cannot be written through `writeLines()`. One packaged `R/sysdata.rda` workspace is
-decoded into the namespace before R source evaluation. `utils::data()` enumerates direct `data/`
-resources in attached or explicitly named packages. An `.R` dataset is decoded according to the
-package encoding, parsed to the normalized AST, and evaluated in the selected environment; overwrite
-protection restores pre-existing direct bindings. `.csv`, `.tab`, and `.txt` datasets use the owned
-table reader and bind one frame under the requested dataset name. `.rda`/`.RData` entries use the
-same XDR/gzip workspace decoder and install every named binding. The return vector and `packageIQR`
-listing shape follow GNU R's visible/invisible contract. Installed-package `.rdx`/`.rdb` lazy-load
-databases, aliases/index metadata, unsupported serialized types/compressors, and temporary
-working-directory changes remain explicit boundaries.
+semantics, including `[`, `[[`, and `$` targets. `packageEvent()` plus `setHook()`/`getHook()`
+provide a session registry. These semantics are executable through the pinned `withr 3.0.3`
+`with_options()` proof rather than inferred from successful parsing. `gctorture2()` exposes only its
+documented argument/formal and previous-state API for wrapper construction; it does not and cannot
+force a browser JavaScript engine's garbage collector. DESCRIPTION, NAMESPACE, and retained `R/*.R`
+text share the executable-source-unit budget; package resource count is independently bounded and
+decoded immutable resource bytes use the profile's `maxPackageResourceBytes` aggregate ceiling (192
+MiB by default). All enter one immutable package-file lookup seam. UTF-8 uses the browser-standard
+fatal decoder, Latin-1 uses deterministic byte mapping, and both paths are bounded; package paths
+cannot be written through `writeLines()`. One packaged `R/sysdata.rda` workspace is decoded into the
+namespace before R source evaluation. `utils::data()` enumerates direct `data/` resources in
+attached or explicitly named packages. An `.R` dataset is decoded according to the package encoding,
+parsed to the normalized AST, and evaluated in the selected environment; overwrite protection
+restores pre-existing direct bindings. `.csv`, `.tab`, and `.txt` datasets use the owned table
+reader and bind one frame under the requested dataset name, with `as.is = FALSE` factor conversion.
+Static core-package resources use the same virtual lookup; the independently sourced UCI Iris text
+resource makes `data(iris)` load a 150-row frame with a three-level Species factor. `.rda`/`.RData`
+entries use the same XDR/gzip workspace decoder and install every named binding. The return vector
+and `packageIQR` listing shape follow GNU R's visible/invisible contract. Installed-package
+`.rdx`/`.rdb` lazy-load databases, aliases/index metadata, unsupported serialized types/compressors,
+and temporary working-directory changes remain explicit boundaries.
 
 The Node-only packager converts package-owned `man/*.Rd` example sections into one versioned JSON
 resource containing canonical topics, aliases, titles, and ordered `run`, `dontrun`, or `donttest`
@@ -744,6 +772,11 @@ client that does not send the optional identity receives an evaluator-local fall
 session identity only, never a browser, Node, Worker, or operating-system process identifier.
 Independent page realms cannot coordinate the counter, and the runtime exposes no parent process,
 process enumeration, signaling, native handle, or CPU-accounting authority.
+
+`Sys.info()` returns a stable nine-field named character shape for the virtual browser runtime.
+`sysname` is `NativR`, `machine` is `wasm32`, and host identity fields are missing. It has zero
+formals and rejects supplied arguments. These values describe the NativR platform; they do not
+expose the operating-system hostname, login, or release.
 
 `system()` and `system2()` are ordinary R closures over one explicit construction-time
 `systemCommand` capability. With no capability they fail before any host action. `system()` sends
@@ -962,15 +995,44 @@ and `ignore.srcref` control the owned representations; `ignore.bytecode` and `ex
 accepted but have no additional effect because NativR has neither GNU R bytecode nor
 external-pointer values.
 
+Operator deparsing follows normalized precedence and associativity, retaining parentheses required
+to preserve evaluation order. Integer sequences embedded in replacement calls use colon notation.
+Explicit parentheses remain owned `(` calls and make their result visible even when the inner
+expression is an assignment or `invisible()` call. Multiline GNU R deparse layout remains
+incomplete.
+
+Profile 0.305 shares embedded-value conversion across call construction, substitution and language
+replacement. Owned atomic/list/pairlist values retain ordered attributes in reflected call text,
+including nested values, dimensions and dimension names. Eligible names become argument tags; named
+integer sequences preserve colon notation with an explicit names attribute. Top-level error display
+omits embedded structure attributes while the stored condition call preserves them. Conversion
+rejects depth beyond 512 and checks work when a context callback is supplied. This does not
+establish exhaustive deparse behavior, missing-name construction, or raw GNU promise identity.
+
+Profile 0.306 shares iterative syntax preflight between compact deparsing, diagnostics and closure
+layout. It rejects display depth beyond 512 before recursive formatting, including nested constant
+displays and constructed calls. `deparse` and `deparse1` pass the session checkpoint through call
+and expression traversal. Shared subtrees remain valid. Resource errors leave the session usable;
+these limits are NativR-owned rather than GNU compatibility claims.
+
 The initial condition system provides lazy `try()` error capture, classed `try-error` values,
 `tryCatch()` error/condition handlers and `finally`, `stop()`, `stopifnot()`, `warning()`,
 `message()`, `conditionMessage()`, `suppressWarnings()`, `suppressMessages()`, and `invisible()`.
-Messages use the ordered `message` output stream; warnings use the structured warning channel.
-Suppression is dynamically nested for the evaluated promise. Evaluation cancellation and resource
-limit failures remain uncatchable so R-level handlers cannot bypass the browser sandbox. Calling
-handlers, restarts, deferred warning policy, traceback/call reconstruction, custom condition
-constructors, class-selective warning/message handlers, and connection-backed `try(outFile=)` remain
-outside this slice.
+
+`conditionCall()` and `conditionMessage()` expose single-`c` formals and caller-visible S3 method
+dispatch. The default condition path uses owned list/pairlist member selection, preserving NULL,
+uncoerced fields, language values, and method visibility. Inputs without a condition class or an
+applicable method are rejected. Complete default-method bindings, `NextMethod` chains, and
+environment-backed conditions remain incomplete. Messages use the ordered `message` output stream;
+warnings use the structured warning channel. Suppression is dynamically nested for the evaluated
+promise. Evaluation cancellation and resource limit failures remain uncatchable so R-level handlers
+cannot bypass the browser sandbox. `stop()` and `warning()` preserve supplied condition classes,
+fields, and calls; ordinary text conditions capture the active closure call unless `call. = FALSE`.
+Opt-in continued top-level errors render their stored call and a captured closure trace. Recursive
+Oracle v2 cases cover custom warnings/errors, explicit calls, nested calls, and suppressed call
+capture. Full traceback APIs, custom condition accessor dispatch, additional-argument diagnostics
+for supplied conditions, restarts, deferred warning policy, and connection-backed `try(outFile=)`
+remain outside this slice.
 
 `options()` and `getOption()` use evaluator-owned session state with deterministic browser defaults.
 Exact character queries never partially match; named values set or remove options and return their
@@ -1226,8 +1288,26 @@ outside this slice.
 comparison covers integer/double tolerance and scale, real/complex missing and non-finite values,
 attribute controls, recursive lists/pairlists, and the remaining owned value model through strict
 fallbacks. `isTRUE()` and `isFALSE()` provide the scalar logical predicates commonly used around
-these results. Exact GNU R diagnostic wording, every method-specific control, custom dispatch, and
-cyclic environment content comparison remain outside this slice.
+these results. Numeric diagnostics use session-controlled decimal formatting and distinguish
+automatic relative/absolute errors, explicit scaled errors, and complex modulus errors. Scalar or
+vector scales align with selected unequal entries and retain recycling diagnostics. Independently
+observed `countEQ` behavior includes equal and missing input groups. Positive reductions use
+compensation and per-element checkpoints. Custom `formatFUN` calls are deferred until needed;
+`giveErr` attaches unrounded error values and their kind, including within tolerance. Identical
+inputs retain plain `TRUE`. Exact recursive evidence covers callbacks, attributes, and visibility.
+Nonnumeric diagnostic wording, every method-specific control, custom dispatch, and cyclic
+environment content comparison remain outside this slice.
+
+Numeric `format()` shares decimal-field selection with printing, honoring `digits`, `scipen`, and
+`OutDec`, explicit notation and decimal-mark controls, and minimum fixed fractional digits. It
+retains names, dimensions, and dimension labels, and formats missing/infinite values as text.
+Numeric and logical fields retain right alignment even when character justification is requested.
+General grouping marks, complex formatting, and display-cell alignment remain separate gaps.
+
+Numeric `cat()` uses those session controls for each real value or complex component separately,
+without vector-wide padding. Stdout, capture, and virtual file writes share the formatting path and
+preserve invisible `NULL` returns. Output text connections, `fill`, `labels`, and exhaustive
+separator/complex edge behavior remain outside this increment.
 
 `ifelse()` coerces an atomic test to logical, retains the test's attributes, recycles selected
 branch values by result position, and promotes the result through GNU R's atomic ladder or to an
@@ -1609,6 +1689,20 @@ frames share the session's `maxOutputBytes` bound. With `file = NULL` it returns
 supported session path or file connection receives the exact captured chunks. Closed connection
 targets are destroyed after use as GNU R does.
 
+Closure printing renders the owned formals/body AST as canonical multiline R syntax with four-space
+block indentation and `deparse.cutoff` continuation lines. `deparse(closure)` uses the same renderer
+with a default cutoff of 60 and supported `structure()` attributes; `deparse1()` uses 500 and joins
+lines with its explicit separator, with `collapse = NULL` retaining the vector. Print includes real
+environment names or an explicit session-owned anonymous identifier and then closure attributes.
+Nested unclassed lists concatenate element paths; a classed child starts its own paths. List
+attributes follow the contents. Source retention, exhaustive scalar spelling/layout, advanced
+deparse controls, custom nested class dispatch, and distinct static core namespaces remain gaps. The
+renderer checks traversal work and rejects syntax nesting beyond 512 levels before recursive
+rendering. Value-to-language conversion and nested value printing also reject depth beyond 512; list
+and closure line assembly checks output bytes incrementally. Direct deparsing of deeply constructed
+language/expression values still uses the older compact renderer and needs its own resource-boundary
+closure. Emitted text remains subject to output limits.
+
 `base::sink(file = NULL, append = FALSE, type = c("output", "message"), split = FALSE)` uses that
 same router. Output diversions form GNU R's 19-entry user stack, persist across evaluations and
 errors, and restore in last-in-first-out order; `split = TRUE` tees through older diversions.
@@ -1668,38 +1762,44 @@ alias. General `attr`, `attributes`, `class`, `inherits`, and `is.object` use th
 language values do not yet carry general attribute maps.
 
 Explicit classes use the ordinary attribute map. S3 `UseMethod` dispatches through ordered classes
-and `.default`; `NextMethod` continues the current chain. The bounded S4 layer stores class,
-old-style class, generic, method-signature, and explicit coercion declarations in session state.
-`standardGeneric()` recognizes a registered generic definition's active closure frame, forwards its
-declared values, evaluated defaults, and dots. `methods::signature()` returns the GNU R-shaped,
-possibly named character signature, preserving empty names and missing class strings while rejecting
-non-scalar class specifications. `setMethod()` retains every positional or named signature element;
-generic dispatch maps supplied arguments to the generic's formal order, selects exact or inherited
-classes across all declared dispatch arguments, and uses `ANY` only when a more specific registered
-method does not match. Calls outside a generic body and missing methods are bounded errors. The
-generic wrapper performs the same lookup before evaluating an ordinary fallback definition.
-`methods::show()` performs the same inherited single-object lookup for registered `show` methods and
-preserves each method's returned value and visibility. Without a registered method it writes the
-deterministic owned-value representation to the output journal and returns invisible `NULL`; no
-terminal, pager, ANSI capability, or package-specific display code is consulted. The bounded
-built-in R6 helper constructs classed public-field lists; the unchanged external R6 2.6.1 proof
-exercises its own package generator, environment locks, reference field mutation, public/private
-method state, active-binding invocation, shallow clone aliasing, and recursive deep cloning of a
-nested R6 object. The same unchanged package now constructs a three-level class hierarchy, runs
-recursive `super$initialize()`/`super$greet()` calls, and observes inherited fields, methods, and
-class membership. vctrs helpers construct class metadata. R6 finalization, arbitrary and multiple
-inheritance breadth, portable-locking variants, and broad R6 behavior remain unclaimed.
-Ambiguous-method diagnostics, union classes, full formal/partial argument matching, automatic
-namespace/package registration, method caches, primitive/group generics, and complete
-external-package behavior are not claimed.
+and `.default`. Method lookup searches the generic caller's lexical chain, skips non-callable
+bindings, and then uses the existing registered-method fallback before the attached search path.
+`NextMethod` continues the current chain using the original caller's lookup environment. Internal,
+operator, and member dispatch use the same caller-aware lookup. A method in the generic's own
+execution frame or defining closure is not made visible solely by being there. Registration lookup
+uses the generic's top environment, ignoring ordinary private tables and retaining the global
+fallback for empty parent chains. Static core namespace environments still alias base. The bounded
+S4 layer stores class, old-style class, generic, method-signature, and explicit coercion
+declarations in session state. `standardGeneric()` recognizes a registered generic definition's
+active closure frame, forwards its declared values, evaluated defaults, and dots.
+`methods::signature()` returns the GNU R-shaped, possibly named character signature, preserving
+empty names and missing class strings while rejecting non-scalar class specifications. `setMethod()`
+retains every positional or named signature element; generic dispatch maps supplied arguments to the
+generic's formal order, selects exact or inherited classes across all declared dispatch arguments,
+and uses `ANY` only when a more specific registered method does not match. Calls outside a generic
+body and missing methods are bounded errors. The generic wrapper performs the same lookup before
+evaluating an ordinary fallback definition. `methods::show()` performs the same inherited
+single-object lookup for registered `show` methods and preserves each method's returned value and
+visibility. Without a registered method it writes the deterministic owned-value representation to
+the output journal and returns invisible `NULL`; no terminal, pager, ANSI capability, or
+package-specific display code is consulted. The bounded built-in R6 helper constructs classed
+public-field lists; the unchanged external R6 2.6.1 proof exercises its own package generator,
+environment locks, reference field mutation, public/private method state, active-binding invocation,
+shallow clone aliasing, and recursive deep cloning of a nested R6 object. The same unchanged package
+now constructs a three-level class hierarchy, runs recursive `super$initialize()`/`super$greet()`
+calls, and observes inherited fields, methods, and class membership. vctrs helpers construct class
+metadata. R6 finalization, arbitrary and multiple inheritance breadth, portable-locking variants,
+and broad R6 behavior remain unclaimed. Ambiguous-method diagnostics, union classes, full
+formal/partial argument matching, automatic namespace/package registration, method caches,
+primitive/group generics, and complete external-package behavior are not claimed.
 
 Named resource profiles make workload intent explicit:
 
-| Profile                      |      Steps | Calls | Vector elements | Output / graphics bytes |
-| ---------------------------- | ---------: | ----: | --------------: | ----------------------: |
-| `interactive-safe` (default) |    100,000 |   100 |       1,000,000 |               1,000,000 |
-| `package-test`               |  5,000,000 |   200 |       2,000,000 |              32,000,000 |
-| `large-browser`              | 10,000,000 |   250 |      10,000,000 |              64,000,000 |
+| Profile                      |      Steps | Calls | Vector elements | Output / graphics bytes | Package resource bytes |
+| ---------------------------- | ---------: | ----: | --------------: | ----------------------: | ---------------------: |
+| `interactive-safe` (default) |    100,000 |   100 |       1,000,000 |               1,000,000 |            201,326,592 |
+| `package-test`               |  5,000,000 |   200 |       2,000,000 |              32,000,000 |            268,435,456 |
+| `large-browser`              | 10,000,000 |   250 |      10,000,000 |              64,000,000 |            536,870,912 |
 
 `createR({ runtimeProfile, limits })` selects a profile and then applies explicit per-field
 overrides. The larger profiles are opt-in and remain finite; they do not weaken the default browser
@@ -1745,6 +1845,17 @@ active device's `par()` values without mutating them. Browser callbacks, Worker 
 display-list replay, PNG, and PDF share the same text event. Expressions currently use deterministic
 normalized deparse text; mathematical plotmath glyph construction and exact platform font/margin
 metrics remain explicit depth work.
+
+## Table and one-dimensional array display
+
+One-dimensional arrays with dimension labels print the stored axis heading when present, including
+an empty line for an empty heading. Arrays with no labels retain ordinary vector output. `table()`
+derives omitted axis names from simple input symbols and uses empty names for compound expressions;
+explicit argument names take precedence. Empty table dimensions store `NULL` labels. Zero-extent
+tables print an extent summary; nonempty tables reuse array layout and print controls. Printing
+returns the original value invisibly and suppresses ordinary table attribute trailers. GNU R 4.6.1
+black-box cases cover metadata and exact output. Unused factor-level counting/order and general
+`structure()` normalization remain separate gaps.
 
 ## Operator dispatch during package initialization
 

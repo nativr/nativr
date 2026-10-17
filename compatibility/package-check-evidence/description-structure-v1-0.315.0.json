@@ -1,0 +1,270 @@
+{
+  "schemaVersion": 1,
+  "kind": "package-description-assessments",
+  "classification": "exploratory",
+  "observations": [
+    {
+      "package": {
+        "name": "abind",
+        "version": "1.4-8",
+        "license": "MIT + file LICENSE"
+      },
+      "provenance": {
+        "sourceSha256": "264a051b523ceae1795a0879e7768949ea55c586ac8db0adf1f5ebeddd2623e1",
+        "artifactSha256": "e9862a710e03ef978409dbd3c4138dd4cdf96b0584c6f228ffe2b42d1e0e9dee",
+        "oracle": {
+          "implementation": "GNU R",
+          "version": "4.6.1"
+        },
+        "semanticProfile": "0.315.0",
+        "capabilitySha256": "a27a311c5c996de1aee6a4b0b7d832ae8e2d15810dd3d906dee16e447d4ab335",
+        "runtimeLimits": {
+          "maxSteps": 300000000,
+          "maxCallDepth": 200,
+          "maxVectorLength": 50000000,
+          "maxOutputBytes": 32000000,
+          "maxPackageResourceBytes": 268435456
+        }
+      },
+      "rawReportSha256": "c2dae752e5eab46c5c80e3c443ec64953db6bda2cc3c09af82d2e2f65cbbeba0",
+      "descriptionAssessment": {
+        "schemaVersion": 1,
+        "policy": "description-structure-v1",
+        "checks": [
+          {
+            "id": "DESCRIPTION:dcf-record",
+            "status": "passed",
+            "message": "DESCRIPTION must contain one nonempty DCF record."
+          },
+          {
+            "id": "DESCRIPTION:required:Package",
+            "status": "passed",
+            "message": "Required field 'Package' must be nonempty."
+          },
+          {
+            "id": "DESCRIPTION:required:Version",
+            "status": "passed",
+            "message": "Required field 'Version' must be nonempty."
+          },
+          {
+            "id": "DESCRIPTION:required:Title",
+            "status": "passed",
+            "message": "Required field 'Title' must be nonempty."
+          },
+          {
+            "id": "DESCRIPTION:required:Description",
+            "status": "passed",
+            "message": "Required field 'Description' must be nonempty."
+          },
+          {
+            "id": "DESCRIPTION:required:License",
+            "status": "passed",
+            "message": "Required field 'License' must be nonempty."
+          },
+          {
+            "id": "DESCRIPTION:required:Author",
+            "status": "passed",
+            "message": "Explicit 'Author' field is present."
+          },
+          {
+            "id": "DESCRIPTION:required:Maintainer",
+            "status": "passed",
+            "message": "Explicit 'Maintainer' field is present."
+          },
+          {
+            "id": "DESCRIPTION:package-name",
+            "status": "passed",
+            "message": "Package names require at least two ASCII characters, an initial letter, and no trailing dot."
+          },
+          {
+            "id": "DESCRIPTION:version",
+            "status": "passed",
+            "message": "Package versions require at least two nonnegative integer components separated by single dots or hyphens."
+          },
+          {
+            "id": "DESCRIPTION:dependency-syntax:Depends",
+            "status": "passed",
+            "message": "Parsed 1 dependency requirements."
+          },
+          {
+            "id": "DESCRIPTION:dependency-syntax:Imports",
+            "status": "passed",
+            "message": "Parsed 2 dependency requirements."
+          }
+        ],
+        "limitations": [
+          "Authors@R evaluation, maintainer email validation, license validity, prose quality and field-specific checks remain unexecuted.",
+          "Dependency syntax does not establish availability, namespace use, or transitive closure."
+        ]
+      },
+      "metadataStage": {
+        "id": "metadata-dependencies",
+        "status": "unexecuted",
+        "reason": "DESCRIPTION structural results and declared dependency version lookups are recorded; full metadata and undeclared dependency checks remain unexecuted.",
+        "discovered": [
+          "DESCRIPTION:full-validation",
+          "dependencies:undeclared-and-transitive",
+          "DESCRIPTION:dcf-record",
+          "DESCRIPTION:required:Package",
+          "DESCRIPTION:required:Version",
+          "DESCRIPTION:required:Title",
+          "DESCRIPTION:required:Description",
+          "DESCRIPTION:required:License",
+          "DESCRIPTION:required:Author",
+          "DESCRIPTION:required:Maintainer",
+          "DESCRIPTION:package-name",
+          "DESCRIPTION:version",
+          "DESCRIPTION:dependency-syntax:Depends",
+          "DESCRIPTION:dependency-syntax:Imports",
+          "DESCRIPTION:Depends:R:0",
+          "DESCRIPTION:Imports:methods:1",
+          "DESCRIPTION:Imports:utils:2"
+        ],
+        "executed": [
+          "DESCRIPTION:dcf-record",
+          "DESCRIPTION:required:Package",
+          "DESCRIPTION:required:Version",
+          "DESCRIPTION:required:Title",
+          "DESCRIPTION:required:Description",
+          "DESCRIPTION:required:License",
+          "DESCRIPTION:required:Author",
+          "DESCRIPTION:required:Maintainer",
+          "DESCRIPTION:package-name",
+          "DESCRIPTION:version",
+          "DESCRIPTION:dependency-syntax:Depends",
+          "DESCRIPTION:dependency-syntax:Imports",
+          "DESCRIPTION:Depends:R:0",
+          "DESCRIPTION:Imports:methods:1",
+          "DESCRIPTION:Imports:utils:2"
+        ]
+      },
+      "p7Eligible": false
+    },
+    {
+      "package": {
+        "name": "numDeriv",
+        "version": "2016.8-1.1",
+        "license": "GPL-2"
+      },
+      "provenance": {
+        "sourceSha256": "d8c4d19ff9aeb31b0c628bd4a16378e51c1c9a3813b525469a31fe89af00b345",
+        "artifactSha256": "0a5bac977e0b258bc22dedf41adc2c48a0eaa8e197f48dfefede7ad0f3981e45",
+        "oracle": {
+          "implementation": "GNU R",
+          "version": "4.6.1"
+        },
+        "semanticProfile": "0.315.0",
+        "capabilitySha256": "a27a311c5c996de1aee6a4b0b7d832ae8e2d15810dd3d906dee16e447d4ab335",
+        "runtimeLimits": {
+          "maxSteps": 300000000,
+          "maxCallDepth": 200,
+          "maxVectorLength": 50000000,
+          "maxOutputBytes": 32000000,
+          "maxPackageResourceBytes": 268435456
+        }
+      },
+      "rawReportSha256": "51d7e876fdd54eab2a5f2d119ef0dcdb94c9989b4049b637f3b4e43a21da702c",
+      "descriptionAssessment": {
+        "schemaVersion": 1,
+        "policy": "description-structure-v1",
+        "checks": [
+          {
+            "id": "DESCRIPTION:dcf-record",
+            "status": "passed",
+            "message": "DESCRIPTION must contain one nonempty DCF record."
+          },
+          {
+            "id": "DESCRIPTION:required:Package",
+            "status": "passed",
+            "message": "Required field 'Package' must be nonempty."
+          },
+          {
+            "id": "DESCRIPTION:required:Version",
+            "status": "passed",
+            "message": "Required field 'Version' must be nonempty."
+          },
+          {
+            "id": "DESCRIPTION:required:Title",
+            "status": "passed",
+            "message": "Required field 'Title' must be nonempty."
+          },
+          {
+            "id": "DESCRIPTION:required:Description",
+            "status": "passed",
+            "message": "Required field 'Description' must be nonempty."
+          },
+          {
+            "id": "DESCRIPTION:required:License",
+            "status": "passed",
+            "message": "Required field 'License' must be nonempty."
+          },
+          {
+            "id": "DESCRIPTION:required:Author",
+            "status": "passed",
+            "message": "Explicit 'Author' field is present."
+          },
+          {
+            "id": "DESCRIPTION:required:Maintainer",
+            "status": "passed",
+            "message": "Explicit 'Maintainer' field is present."
+          },
+          {
+            "id": "DESCRIPTION:package-name",
+            "status": "passed",
+            "message": "Package names require at least two ASCII characters, an initial letter, and no trailing dot."
+          },
+          {
+            "id": "DESCRIPTION:version",
+            "status": "passed",
+            "message": "Package versions require at least two nonnegative integer components separated by single dots or hyphens."
+          },
+          {
+            "id": "DESCRIPTION:dependency-syntax:Depends",
+            "status": "passed",
+            "message": "Parsed 1 dependency requirements."
+          }
+        ],
+        "limitations": [
+          "Authors@R evaluation, maintainer email validation, license validity, prose quality and field-specific checks remain unexecuted.",
+          "Dependency syntax does not establish availability, namespace use, or transitive closure."
+        ]
+      },
+      "metadataStage": {
+        "id": "metadata-dependencies",
+        "status": "unexecuted",
+        "reason": "DESCRIPTION structural results and declared dependency version lookups are recorded; full metadata and undeclared dependency checks remain unexecuted.",
+        "discovered": [
+          "DESCRIPTION:full-validation",
+          "dependencies:undeclared-and-transitive",
+          "DESCRIPTION:dcf-record",
+          "DESCRIPTION:required:Package",
+          "DESCRIPTION:required:Version",
+          "DESCRIPTION:required:Title",
+          "DESCRIPTION:required:Description",
+          "DESCRIPTION:required:License",
+          "DESCRIPTION:required:Author",
+          "DESCRIPTION:required:Maintainer",
+          "DESCRIPTION:package-name",
+          "DESCRIPTION:version",
+          "DESCRIPTION:dependency-syntax:Depends",
+          "DESCRIPTION:Depends:R:0"
+        ],
+        "executed": [
+          "DESCRIPTION:dcf-record",
+          "DESCRIPTION:required:Package",
+          "DESCRIPTION:required:Version",
+          "DESCRIPTION:required:Title",
+          "DESCRIPTION:required:Description",
+          "DESCRIPTION:required:License",
+          "DESCRIPTION:required:Author",
+          "DESCRIPTION:required:Maintainer",
+          "DESCRIPTION:package-name",
+          "DESCRIPTION:version",
+          "DESCRIPTION:dependency-syntax:Depends",
+          "DESCRIPTION:Depends:R:0"
+        ]
+      },
+      "p7Eligible": false
+    }
+  ]
+}

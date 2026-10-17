@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "observations": [
+    {
+      "package": {
+        "name": "abind",
+        "version": "1.4-8",
+        "license": "MIT + file LICENSE"
+      },
+      "provenance": {
+        "sourceSha256": "264a051b523ceae1795a0879e7768949ea55c586ac8db0adf1f5ebeddd2623e1",
+        "artifactSha256": "e9862a710e03ef978409dbd3c4138dd4cdf96b0584c6f228ffe2b42d1e0e9dee",
+        "oracle": {
+          "implementation": "GNU R",
+          "version": "4.6.1"
+        },
+        "semanticProfile": "0.318.0",
+        "capabilitySha256": "b4a2a63ce3801dbec9bf37811d21f90b2ea981e5f9c1e78a7bbd4967046a88b6",
+        "runtimeLimits": {
+          "maxSteps": 300000000,
+          "maxCallDepth": 200,
+          "maxVectorLength": 50000000,
+          "maxOutputBytes": 32000000,
+          "maxPackageResourceBytes": 268435456
+        }
+      },
+      "rawReportSha256": "03538460af5706ca6bc96c367cebc537f2e26a48e7619ed22fbdb02074b1058e",
+      "authorsObservation": {
+        "schemaVersion": 1,
+        "policy": "authors-person-roles-v1",
+        "sourceSha256": "b63c91b45004d1e46e4af6221eded0c110c023f87ddc38993f15399b4a2e040e",
+        "actual": {
+          "status": "completed",
+          "state": "1|1|1"
+        },
+        "expected": {
+          "status": "completed",
+          "state": "1|1|1"
+        },
+        "outcome": "match",
+        "valid": true,
+        "limitations": [
+          "Checks person shape, a named role-bearing author, and exactly one named cre with a syntactically bounded first email; this does not validate all person fields, RFC email syntax, deliverability, or full DESCRIPTION metadata.",
+          "Formatting of derived Author/Maintainer text, warning equivalence, and conflicts with explicit fields remain unexecuted. Failed evaluation is incomplete evidence, not proof of invalid metadata."
+        ]
+      },
+      "authorFieldsObservation": {
+        "schemaVersion": 1,
+        "policy": "authors-derived-fields-v1",
+        "sourceSha256": "f7b56ded83bdb7e4f59d54377aa5cdfd1d0c93575743c2f753532d1d8ff5623d",
+        "oracleSourceSha256": "7b23656350e5a55d85adab7c9b3baec100c960ab96c255c455a66cfda158efc1",
+        "actual": {
+          "status": "completed",
+          "fields": {
+            "author": "Tony Plate [aut, cre], Richard Heiberger [aut]",
+            "maintainer": "Tony Plate <tplate@acm.org>"
+          }
+        },
+        "expected": {
+          "status": "completed",
+          "fields": {
+            "author": "Tony Plate [aut, cre], Richard Heiberger [aut]",
+            "maintainer": "Tony Plate <tplate@acm.org>"
+          }
+        },
+        "outcome": "match",
+        "limitations": [
+          "This compares derived text and explicit-field precedence, not full metadata validity, warning equivalence, or unsupported person formatting such as ROR comments."
+        ]
+      },
+      "metadataStage": {
+        "id": "metadata-dependencies",
+        "status": "unexecuted",
+        "reason": "DESCRIPTION structural results and declared dependency version lookups are recorded; full metadata and undeclared dependency checks remain unexecuted.",
+        "discovered": [
+          "DESCRIPTION:full-validation",
+          "DESCRIPTION:Authors@R:person-roles",
+          "DESCRIPTION:Authors@R:derived-fields",
+          "dependencies:undeclared-and-transitive",
+          "DESCRIPTION:dcf-record",
+          "DESCRIPTION:required:Package",
+          "DESCRIPTION:required:Version",
+          "DESCRIPTION:required:Title",
+          "DESCRIPTION:required:Description",
+          "DESCRIPTION:required:License",
+          "DESCRIPTION:required:Author",
+          "DESCRIPTION:required:Maintainer",
+          "DESCRIPTION:package-name",
+          "DESCRIPTION:version",
+          "DESCRIPTION:dependency-syntax:Depends",
+          "DESCRIPTION:dependency-syntax:Imports",
+          "DESCRIPTION:Depends:R:0",
+          "DESCRIPTION:Imports:methods:1",
+          "DESCRIPTION:Imports:utils:2"
+        ],
+        "executed": [
+          "DESCRIPTION:Authors@R:person-roles",
+          "DESCRIPTION:Authors@R:derived-fields",
+          "DESCRIPTION:dcf-record",
+          "DESCRIPTION:required:Package",
+          "DESCRIPTION:required:Version",
+          "DESCRIPTION:required:Title",
+          "DESCRIPTION:required:Description",
+          "DESCRIPTION:required:License",
+          "DESCRIPTION:required:Author",
+          "DESCRIPTION:required:Maintainer",
+          "DESCRIPTION:package-name",
+          "DESCRIPTION:version",
+          "DESCRIPTION:dependency-syntax:Depends",
+          "DESCRIPTION:dependency-syntax:Imports",
+          "DESCRIPTION:Depends:R:0",
+          "DESCRIPTION:Imports:methods:1",
+          "DESCRIPTION:Imports:utils:2"
+        ]
+      },
+      "p7Eligible": false
+    },
+    {
+      "package": {
+        "name": "numDeriv",
+        "version": "2016.8-1.1",
+        "license": "GPL-2"
+      },
+      "provenance": {
+        "sourceSha256": "d8c4d19ff9aeb31b0c628bd4a16378e51c1c9a3813b525469a31fe89af00b345",
+        "artifactSha256": "0a5bac977e0b258bc22dedf41adc2c48a0eaa8e197f48dfefede7ad0f3981e45",
+        "oracle": {
+          "implementation": "GNU R",
+          "version": "4.6.1"
+        },
+        "semanticProfile": "0.318.0",
+        "capabilitySha256": "b4a2a63ce3801dbec9bf37811d21f90b2ea981e5f9c1e78a7bbd4967046a88b6",
+        "runtimeLimits": {
+          "maxSteps": 300000000,
+          "maxCallDepth": 200,
+          "maxVectorLength": 50000000,
+          "maxOutputBytes": 32000000,
+          "maxPackageResourceBytes": 268435456
+        }
+      },
+      "rawReportSha256": "6e22ded17cde8bc08e94ad132b0c41e2ee87186b1fe78d9c53f45c1aefa6cb1c",
+      "authorsObservation": null,
+      "authorFieldsObservation": null,
+      "metadataStage": {
+        "id": "metadata-dependencies",
+        "status": "unexecuted",
+        "reason": "DESCRIPTION structural results and declared dependency version lookups are recorded; full metadata and undeclared dependency checks remain unexecuted.",
+        "discovered": [
+          "DESCRIPTION:full-validation",
+          "dependencies:undeclared-and-transitive",
+          "DESCRIPTION:dcf-record",
+          "DESCRIPTION:required:Package",
+          "DESCRIPTION:required:Version",
+          "DESCRIPTION:required:Title",
+          "DESCRIPTION:required:Description",
+          "DESCRIPTION:required:License",
+          "DESCRIPTION:required:Author",
+          "DESCRIPTION:required:Maintainer",
+          "DESCRIPTION:package-name",
+          "DESCRIPTION:version",
+          "DESCRIPTION:dependency-syntax:Depends",
+          "DESCRIPTION:Depends:R:0"
+        ],
+        "executed": [
+          "DESCRIPTION:dcf-record",
+          "DESCRIPTION:required:Package",
+          "DESCRIPTION:required:Version",
+          "DESCRIPTION:required:Title",
+          "DESCRIPTION:required:Description",
+          "DESCRIPTION:required:License",
+          "DESCRIPTION:required:Author",
+          "DESCRIPTION:required:Maintainer",
+          "DESCRIPTION:package-name",
+          "DESCRIPTION:version",
+          "DESCRIPTION:dependency-syntax:Depends",
+          "DESCRIPTION:Depends:R:0"
+        ]
+      },
+      "p7Eligible": false
+    }
+  ]
+}

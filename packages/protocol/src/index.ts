@@ -74,6 +74,7 @@ export interface ProtocolRuntimeLimits {
   readonly maxCallDepth: number;
   readonly maxVectorLength: number;
   readonly maxOutputBytes: number;
+  readonly maxPackageResourceBytes: number;
 }
 
 /** One immutable file installed with a browser-supplied pure-R package. */
@@ -481,6 +482,12 @@ export interface InitRequest extends ProtocolEnvelope {
   };
   readonly limits?: Partial<ProtocolRuntimeLimits>;
   readonly packages?: readonly PureRPackageBundle[];
+  /** Immutable resources for registered core packages, supplied by the facade. */
+  readonly systemPackageResources?: readonly {
+    readonly package: string;
+    readonly path: string;
+    readonly text: string;
+  }[];
   readonly environmentVariables?: Readonly<Record<string, string>>;
   /** Explicit executable names and resolved paths available to base::Sys.which(). */
   readonly executablePaths?: Readonly<Record<string, string>>;
@@ -498,6 +505,10 @@ export interface InitRequest extends ProtocolEnvelope {
 export interface EvalRequest extends ProtocolEnvelope {
   readonly kind: "eval";
   readonly code: string;
+  /** Opt-in continuation when a top-level error has a callable options(error=) handler. */
+  readonly topLevelErrorHandling?: "option";
+  /** Print visible top-level expressions through R's print() dispatch. */
+  readonly printVisibleTopLevel?: boolean;
 }
 
 /** Assign one lossless runtime snapshot. */
@@ -602,9 +613,18 @@ export type WorkerRequest =
   | SocketResultRequest;
 
 /** Evaluation data returned internally to the public facade. */
+export interface PublicTopLevelError {
+  /** One-based index of the top-level expression in the source program. */
+  readonly expressionIndex: number;
+  readonly code: string;
+  readonly message: string;
+}
+
 export interface WireEvaluationResult {
   readonly raw: RValueSnapshot;
   readonly visible: boolean;
+  /** Older protocol-v1 Workers omit this field; clients normalize it to an empty list. */
+  readonly topLevelErrors?: readonly PublicTopLevelError[];
   readonly warnings: readonly PublicRWarning[];
   readonly output?: readonly PublicOutputEvent[];
   readonly dataViews?: readonly PublicDataViewEvent[];
@@ -703,6 +723,15 @@ export function isWorkerRequest(value: unknown): value is WorkerRequest {
         typeof value.assets.rGrammarWasm === "string" &&
         (value.packages === undefined ||
           (Array.isArray(value.packages) && value.packages.every(isPureRPackageBundle))) &&
+        (value.systemPackageResources === undefined ||
+          (Array.isArray(value.systemPackageResources) &&
+            value.systemPackageResources.every(
+              (resource) =>
+                isRecord(resource) &&
+                typeof resource.package === "string" &&
+                typeof resource.path === "string" &&
+                typeof resource.text === "string",
+            ))) &&
         (value.environmentVariables === undefined ||
           isEnvironmentVariableRecord(value.environmentVariables)) &&
         (value.executablePaths === undefined || isExecutablePathRecord(value.executablePaths)) &&
@@ -714,7 +743,12 @@ export function isWorkerRequest(value: unknown): value is WorkerRequest {
         typeof value.debug === "boolean"
       );
     case "eval":
-      return typeof value.code === "string";
+      return (
+        typeof value.code === "string" &&
+        (value.topLevelErrorHandling === undefined || value.topLevelErrorHandling === "option") &&
+        (value.printVisibleTopLevel === undefined ||
+          typeof value.printVisibleTopLevel === "boolean")
+      );
     case "assign":
       return typeof value.name === "string" && isRValueSnapshot(value.value);
     case "get":

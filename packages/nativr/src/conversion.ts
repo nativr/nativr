@@ -293,7 +293,7 @@ export function valueToSnapshot(value: RValue): RValueSnapshot {
       return {
         version: 1,
         type: "expression",
-        sources: value.values.map(deparseAst),
+        sources: value.values.map((node) => deparseAst(node)),
       };
     case "builtin":
     case "closure":

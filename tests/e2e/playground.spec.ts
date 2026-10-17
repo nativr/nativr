@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test("runs the required Worker examples without evaluation network traffic", async ({ page }) => {
+  test.setTimeout(120_000);
   const pageErrors: Error[] = [];
   page.on("pageerror", (error) => pageErrors.push(error));
   await page.goto("/");
@@ -18,6 +19,95 @@ test("runs the required Worker examples without evaluation network traffic", asy
   page.on("request", (request) => {
     if (/^https?:/u.test(request.url())) evaluationRequests.push(request.url());
   });
+  await page
+    .locator("#source")
+    .fill('local({ x <- quote(a); for(i in 1:600) x <- call("f", x); deparse(x) })');
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#errors")).toContainText("NRL4004");
+  expect(evaluationRequests).toEqual([]);
+  await page
+    .locator("#source")
+    .fill(
+      "data(iris)\nc(as.character(dim(iris)), class(iris$Species), as.character(iris$Species[c(1, 51, 101)]))",
+    );
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText(
+    '["150", "5", "factor", "setosa", "versicolor", "virginica"]',
+  );
+  expect(evaluationRequests).toEqual([]);
+
+  await page.locator("#source").fill(`
+    assign("reflect<-", function(x, value) list(source = substitute(value), call = match.call(), value = value))
+    reflected <- 0
+    reflect(reflected) <- 1 + 2
+    c(identical(reflected$source, quote(1 + 2)), identical(eval(reflected$call$value), 3), identical(reflected$value, 3))
+  `);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("[true, true, true]");
+  expect(evaluationRequests).toEqual([]);
+
+  await page.locator("#source").fill("print(1:15, width = 20); invisible(NULL)");
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("null");
+  expect(await page.locator("#console-output").textContent()).toBe(
+    " [1]  1  2  3  4  5\n [6]  6  7  8  9 10\n[11] 11 12 13 14 15\n",
+  );
+  expect(evaluationRequests).toEqual([]);
+
+  await page.locator("#source").fill("print(function(x) { x <- x + 1; x^2 }); invisible(NULL)");
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#console-output")).toContainText("function (x)");
+  expect(await page.locator("#console-output").textContent()).toBe(
+    "function (x) \n{\n    x <- x + 1\n    x^2\n}\n",
+  );
+  expect(evaluationRequests).toEqual([]);
+
+  await page
+    .locator("#source")
+    .fill("print(table(c(FALSE, TRUE, TRUE))); print(table(a = integer())); invisible(NULL)");
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#console-output")).toContainText("< table of extent 0 >");
+  expect(await page.locator("#console-output").textContent()).toBe(
+    "\nFALSE  TRUE \n    1     2 \n< table of extent 0 >\n",
+  );
+  expect(evaluationRequests).toEqual([]);
+
+  await page.locator("#source").fill(`
+    report <- all.equal(c(1, 2), c(2, 4), scale = c(1, 2), tolerance = 0, giveErr = TRUE,
+      formatFUN = function(err, what) paste0(what, ":", err))
+    previous_options <- options(digits = 3, OutDec = ",")
+    formatted_number <- format(1 / 3)
+    cat(c(1 / 3, 1e-12), sep = "|")
+    options(previous_options)
+    c(report, formatted_number, attr(report, "what"))
+  `);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText(
+    '["Mean scaled difference: scaled:1", "0,333", "scaled"]',
+  );
+  await expect(page.locator("#console-output")).toHaveText("0,333|1e-12");
+  expect(evaluationRequests).toEqual([]);
+
+  await page.locator("#source").fill(`local({
+    conditionMessage.fixture <- function(c) paste0("custom:", c$message)
+    e <- simpleError("captured", quote(origin(1)))
+    custom <- structure(list(message = "text"), class = c("fixture", "condition"))
+    c(conditionMessage(e), deparse(conditionCall(e)), conditionMessage(custom))
+  })`);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText('["captured", "origin(1)", "custom:text"]');
+  expect(evaluationRequests).toEqual([]);
+
+  await page.locator("#source").fill(`local({
+    x <- matrix(-1:-6, 3)
+    reflected <- call("identity", x)
+    c(identical(eval(reflected), x),
+      identical(deparse(reflected, width.cutoff = 500), "identity(structure(-1:-6, dim = 3:2))"))
+  })`);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("[true, true]");
+  expect(evaluationRequests).toEqual([]);
+
   await page.getByRole("button", { name: "Scalar arithmetic" }).click();
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("2");
@@ -462,6 +552,16 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.locator("#source").fill('charToRaw("NativR")');
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("4e 61 74 69 76 52");
+
+  await page.locator("#source").fill('charToRaw("\\101\\xff")');
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("41 ff");
+  await page.locator("#source").fill('escape_probe <- 1L; "\\q"');
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#errors")).toContainText("NRP1003");
+  await page.locator("#source").fill('exists("escape_probe")');
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("false");
 
   await page.locator("#source").fill('eval(parse(text = c("x <- 6", "x + 1")))');
   await page.getByRole("button", { name: /^Run/u }).click();

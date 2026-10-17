@@ -51,6 +51,9 @@ try {
     if (parsed.packages.length === 0) usage();
     const installed = await installPackagesFromRepository(parsed.packages, {
       ...(parsed.repository === undefined ? {} : { repository: parsed.repository }),
+      ...(parsed.expectedIndexIntegrity === undefined
+        ? {}
+        : { expectedIndexIntegrity: parsed.expectedIndexIntegrity }),
       includeSuggests: parsed.includeSuggests,
       ...(parsed.sourcePlatform === undefined
         ? {}
@@ -115,7 +118,7 @@ function usage(): never {
     "Usage: nativr-package inspect <directory|package.tar.gz> [--source-platform unix|windows] [--output artifact.json]\n" +
       "       nativr-package pack <directory|package.tar.gz> [--source-platform unix|windows] [--output artifact.json]\n" +
       "       nativr-package resolve <artifact.json>... [--output package-set.json]\n" +
-      "       nativr-package install <package>... [--repository URL] [--source-platform unix|windows] [--include-suggests] [--output package-set.json]\n" +
+      "       nativr-package install <package>... [--repository URL] [--expected-index-integrity sha256-DIGEST] [--source-platform unix|windows] [--include-suggests] [--output package-set.json]\n" +
       "       nativr-package verify <artifact.json>",
   );
 }
@@ -143,12 +146,14 @@ function parsePackArguments(arguments_: readonly string[]): {
 function parseInstallArguments(arguments_: readonly string[]): {
   readonly packages: readonly string[];
   readonly repository?: string;
+  readonly expectedIndexIntegrity?: string;
   readonly output?: string;
   readonly sourcePlatform?: "unix" | "windows";
   readonly includeSuggests: boolean;
 } {
   const packages: string[] = [];
   let repository: string | undefined;
+  let expectedIndexIntegrity: string | undefined;
   let output: string | undefined;
   let sourcePlatform: "unix" | "windows" | undefined;
   let includeSuggests = false;
@@ -160,6 +165,7 @@ function parseInstallArguments(arguments_: readonly string[]): {
     }
     if (
       argument === "--repository" ||
+      argument === "--expected-index-integrity" ||
       argument === "--output" ||
       argument === "--source-platform"
     ) {
@@ -167,6 +173,7 @@ function parseInstallArguments(arguments_: readonly string[]): {
       if (value === undefined || value.startsWith("--"))
         throw new Error(`${argument} requires one value.`);
       if (argument === "--repository") repository = value;
+      else if (argument === "--expected-index-integrity") expectedIndexIntegrity = value;
       else if (argument === "--output") output = value;
       else sourcePlatform = parseSourcePlatform(value);
       index += 1;
@@ -178,6 +185,7 @@ function parseInstallArguments(arguments_: readonly string[]): {
   return {
     packages,
     ...(repository === undefined ? {} : { repository }),
+    ...(expectedIndexIntegrity === undefined ? {} : { expectedIndexIntegrity }),
     ...(output === undefined ? {} : { output }),
     ...(sourcePlatform === undefined ? {} : { sourcePlatform }),
     includeSuggests,

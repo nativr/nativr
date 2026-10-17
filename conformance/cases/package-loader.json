@@ -1,0 +1,410 @@
+[
+  {
+    "id": "namespace-export-pattern-posix-classes",
+    "packages": [
+      {
+        "description": "Package: posixpattern\nVersion: 1.0.0",
+        "namespace": "exportPattern(\"^[[:alpha:]][[:alnum:]_.]*$\")",
+        "rSources": [
+          {
+            "path": "R/values.R",
+            "source": "visible <- 42L\nA2 <- 43L\n.hidden <- 99L"
+          }
+        ]
+      }
+    ],
+    "code": "c(sort(getNamespaceExports(\"posixpattern\")), as.character(posixpattern::A2), as.character(posixpattern::visible))",
+    "expected": ["A2", "visible", "43", "42"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": {
+      "absolute": 0,
+      "relative": 0
+    },
+    "rOracle": false
+  },
+  {
+    "id": "namespace-export-pattern-unsupported-posix-class",
+    "packages": [
+      {
+        "description": "Package: unknownclass\nVersion: 1.0.0",
+        "namespace": "exportPattern(\"^[[:unknown:]]$\")",
+        "rSources": [
+          {
+            "path": "R/value.R",
+            "source": "visible <- 1L"
+          }
+        ]
+      }
+    ],
+    "code": "getNamespaceExports(\"unknownclass\")",
+    "expectedError": {
+      "code": "NRE2230",
+      "messageIncludes": "invalid exportPattern"
+    },
+    "expectedCompatibility": "behavioral",
+    "tolerance": {
+      "absolute": 0,
+      "relative": 0
+    },
+    "rOracle": false
+  },
+  {
+    "id": "namespace-export-pattern-invalid-regex",
+    "packages": [
+      {
+        "description": "Package: invalidpattern\nVersion: 1.0.0",
+        "namespace": "exportPattern(\"[\")",
+        "rSources": [
+          {
+            "path": "R/value.R",
+            "source": "visible <- 2L"
+          }
+        ]
+      }
+    ],
+    "code": "getNamespaceExports(\"invalidpattern\")",
+    "expectedError": {
+      "code": "NRE2230",
+      "messageIncludes": "invalid exportPattern"
+    },
+    "expectedCompatibility": "behavioral",
+    "tolerance": {
+      "absolute": 0,
+      "relative": 0
+    },
+    "rOracle": false
+  },
+  {
+    "id": "package-data-text-columns-become-factors",
+    "packages": [
+      {
+        "description": "Package: textdata\nVersion: 1.0.0\nNeedsCompilation: no",
+        "namespace": "",
+        "rSources": [],
+        "resources": [
+          {
+            "path": "data/labels.csv",
+            "data": "bmFtZTt2YWx1ZQphbHBoYTsxCmJldGE7Mgo="
+          }
+        ]
+      }
+    ],
+    "code": "data(labels, package = \"textdata\"); c(class(labels$name), levels(labels$name), as.character(labels$name), labels$value)",
+    "expected": ["factor", "alpha", "beta", "alpha", "beta", "1", "2"],
+    "expectedCompatibility": "behavioral",
+    "tolerance": {
+      "absolute": 0,
+      "relative": 0
+    },
+    "rOracle": false
+  },
+  {
+    "id": "package-description-record-separator",
+    "packages": [
+      {
+        "description": "Package: fixture\n\nVersion: 1.0\n",
+        "namespace": "",
+        "rSources": []
+      }
+    ],
+    "code": "1",
+    "expectedError": {
+      "code": "NRE2229",
+      "messageIncludes": "exactly one DCF record"
+    },
+    "expectedCompatibility": "explicit-deviation",
+    "rOracle": false
+  },
+  {
+    "id": "package-description-whitespace-record-separator",
+    "packages": [
+      {
+        "description": "Package: fixture\n \t\nVersion: 1.0\n",
+        "namespace": "",
+        "rSources": []
+      }
+    ],
+    "code": "1",
+    "expectedError": {
+      "code": "NRE2229",
+      "messageIncludes": "exactly one DCF record"
+    },
+    "expectedCompatibility": "explicit-deviation",
+    "rOracle": false
+  },
+  {
+    "id": "package-description-orphan-continuation",
+    "packages": [
+      {
+        "description": " Package: ignored\nPackage: fixture\nVersion: 1.0\n",
+        "namespace": "",
+        "rSources": []
+      }
+    ],
+    "code": "1",
+    "expectedError": {
+      "code": "NRE2229",
+      "messageIncludes": "continuation line"
+    },
+    "expectedCompatibility": "explicit-deviation",
+    "rOracle": false
+  },
+  {
+    "id": "package-description-duplicate-field",
+    "packages": [
+      {
+        "description": "Package: wrong\nPackage: fixture\nVersion: 1.0\n",
+        "namespace": "",
+        "rSources": []
+      }
+    ],
+    "code": "1",
+    "expectedError": {
+      "code": "NRE2229",
+      "messageIncludes": "more than once"
+    },
+    "expectedCompatibility": "explicit-deviation",
+    "rOracle": false
+  },
+  {
+    "id": "package-attach-hook-search-visibility",
+    "packages": [
+      {
+        "description": "Package: hookfixture\nVersion: 1.0\n",
+        "namespace": "export(value)",
+        "rSources": [
+          {
+            "path": "R/main.R",
+            "source": "value <- 42; .onAttach <- function(libname,pkgname) options(hook.search = \"package:hookfixture\" %in% search(), hook.export = exists(\"value\",envir=.GlobalEnv,inherits=TRUE))"
+          }
+        ]
+      }
+    ],
+    "code": "library(hookfixture); c(getOption(\"hook.search\"),getOption(\"hook.export\"))",
+    "expected": [true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracle": false
+  },
+  {
+    "id": "package-attach-failure-retains-namespace-removes-exports",
+    "packages": [
+      {
+        "description": "Package: hookfailure\nVersion: 1.0\n",
+        "namespace": "export(value)",
+        "rSources": [
+          {
+            "path": "R/main.R",
+            "source": "value <- 42; .onAttach <- function(libname,pkgname) stop(\"fixture\")"
+          }
+        ]
+      }
+    ],
+    "code": "failed <- inherits(try(library(hookfailure),silent=TRUE),\"try-error\"); c(failed,exists(\"value\",envir=globalenv(),inherits=TRUE),\"hookfailure\" %in% loadedNamespaces(),\"package:hookfailure\" %in% search(),hookfailure::value)",
+    "expected": [1, 0, 1, 0, 42],
+    "expectedCompatibility": "behavioral",
+    "rOracle": false
+  },
+  {
+    "id": "attached-export-environment-mutation",
+    "packages": [
+      {
+        "description": "Package: fixture\nVersion: 1.0\n",
+        "namespace": "export(value)",
+        "rSources": [
+          {
+            "path": "R/main.R",
+            "source": "value <- 42L"
+          }
+        ]
+      }
+    ],
+    "code": "library(fixture); e <- as.environment(\"package:fixture\"); same <- identical(parent.env(globalenv()),e); unlockBinding(\"value\",e); assign(\"value\",43L,e); c(same,value,fixture::value)",
+    "expected": [1, 43, 42],
+    "expectedCompatibility": "behavioral",
+    "rOracle": false
+  },
+  {
+    "id": "package-detach-retains-namespace-and-escaped-environment",
+    "packages": [
+      {
+        "description": "Package: fixture\nVersion: 1.0\n",
+        "namespace": "export(value)",
+        "rSources": [
+          {
+            "path": "R/main.R",
+            "source": "value <- 42L; .onDetach <- function(libpath) options(detach.before=\"package:fixture\" %in% search())"
+          }
+        ]
+      }
+    ],
+    "code": "library(fixture); saved <- as.environment(2); result <- withVisible(detach(package:fixture)); c(is.null(result$value),result$visible,\"package:fixture\" %in% search(),\"fixture\" %in% loadedNamespaces(),identical(parent.env(saved),baseenv()),getOption(\"detach.before\"),get(\"value\",saved),fixture::value)",
+    "expected": [1, 0, 0, 1, 1, 1, 42, 42],
+    "expectedCompatibility": "behavioral",
+    "rOracle": false
+  },
+  {
+    "id": "package-unload-keeps-escaped-namespace",
+    "packages": [
+      {
+        "description": "Package: fixture\nVersion: 1.0\n",
+        "namespace": "export(value)\nS3method(length,fixture)",
+        "rSources": [
+          {
+            "path": "R/main.R",
+            "source": "value <- function() 42L; length.fixture <- function(x) 91L"
+          }
+        ]
+      }
+    ],
+    "code": "library(fixture); saved <- asNamespace(\"fixture\"); f <- value; result <- withVisible(unloadNamespace(\"fixture\")); c(is.null(result$value),result$visible,\"fixture\" %in% loadedNamespaces(),\"package:fixture\" %in% search(),f(),length(structure(1:2,class=\"fixture\")),environmentName(saved)==\"fixture\",!identical(saved,asNamespace(\"fixture\")))",
+    "expected": [1, 0, 0, 0, 42, 91, 1, 1],
+    "expectedCompatibility": "behavioral",
+    "rOracle": false
+  },
+  {
+    "id": "package-user-lifecycle-hooks",
+    "packages": [
+      {
+        "description": "Package: fixture\nVersion: 1.0\n",
+        "namespace": "export(value)",
+        "rSources": [
+          {
+            "path": "R/main.R",
+            "source": "value <- 42"
+          }
+        ]
+      }
+    ],
+    "code": "events <- character(); for(event in c(\"onLoad\",\"attach\",\"detach\",\"onUnload\")) local({e <- event; setHook(packageEvent(\"fixture\",e),function(pkgname,pkgpath) events <<- c(events,e))}); library(fixture); unloadNamespace(\"fixture\"); events",
+    "expected": ["onLoad", "attach", "detach", "onUnload"],
+    "expectedCompatibility": "behavioral",
+    "rOracle": false
+  },
+  {
+    "id": "namespace-literal-import-exclusions",
+    "packages": [
+      {
+        "description": "Package: importprovider\nVersion: 1.0\n",
+        "namespace": "export(a,b)",
+        "rSources": [
+          {
+            "path": "R/main.R",
+            "source": "a<-1L;b<-2L"
+          }
+        ]
+      },
+      {
+        "description": "Package: importconsumer\nVersion: 1.0\n",
+        "namespace": "import(importprovider,except=c(a,b))\nimportFrom(importprovider,a)\nexport(probe)",
+        "rSources": [
+          {
+            "path": "R/main.R",
+            "source": "probe<-function()c(exists(\"a\",envir=parent.env(environment(probe)),inherits=FALSE),exists(\"b\",envir=parent.env(environment(probe)),inherits=FALSE),identical(a,1L))"
+          }
+        ]
+      }
+    ],
+    "code": "importconsumer::probe()",
+    "expected": [true, false, true],
+    "expectedCompatibility": "behavioral",
+    "rOracle": false
+  },
+  {
+    "id": "namespace-import-export-boundary",
+    "packages": [
+      {
+        "description": "Package: importprovider\nVersion: 1.0\n",
+        "namespace": "export(a)",
+        "rSources": [
+          {
+            "path": "R/main.R",
+            "source": "a<-1L;private<-2L"
+          }
+        ]
+      },
+      {
+        "description": "Package: importconsumer\nVersion: 1.0\n",
+        "namespace": "importFrom(importprovider,private)\nexport(probe)",
+        "rSources": [
+          {
+            "path": "R/main.R",
+            "source": "probe<-function()private"
+          }
+        ]
+      }
+    ],
+    "code": "tryCatch(importconsumer::probe(),error=function(e)TRUE)",
+    "expected": true,
+    "expectedCompatibility": "behavioral",
+    "rOracle": false
+  },
+  {
+    "id": "namespace-renamed-import",
+    "packages": [
+      {
+        "description": "Package: importprovider\nVersion: 1.0\n",
+        "namespace": "export(a,b)",
+        "rSources": [
+          {
+            "path": "R/main.R",
+            "source": "a<-1L;b<-2L"
+          }
+        ]
+      },
+      {
+        "description": "Package: importconsumer\nVersion: 1.0\n",
+        "namespace": "importFrom(importprovider,z=a)\nimport(importprovider,except=a)\nexport(probe)",
+        "rSources": [
+          {
+            "path": "R/main.R",
+            "source": "probe<-function()c(z,b)"
+          }
+        ]
+      }
+    ],
+    "code": "importconsumer::probe()",
+    "expected": [1, 2],
+    "expectedCompatibility": "behavioral",
+    "rOracle": false
+  },
+  {
+    "id": "namespace-import-conflict-warning",
+    "packages": [
+      {
+        "description": "Package: firstprovider\nVersion: 1.0\n",
+        "namespace": "export(a)",
+        "rSources": [
+          {
+            "path": "R/main.R",
+            "source": "a<-1L"
+          }
+        ]
+      },
+      {
+        "description": "Package: secondprovider\nVersion: 1.0\n",
+        "namespace": "export(a)",
+        "rSources": [
+          {
+            "path": "R/main.R",
+            "source": "a<-2L"
+          }
+        ]
+      },
+      {
+        "description": "Package: consumer\nVersion: 1.0\n",
+        "namespace": "import(firstprovider)\nimport(secondprovider)\nexport(probe)",
+        "rSources": [
+          {
+            "path": "R/main.R",
+            "source": "probe<-function()a"
+          }
+        ]
+      }
+    ],
+    "code": "consumer::probe()",
+    "expected": 2,
+    "expectedCompatibility": "behavioral",
+    "rOracle": false,
+    "expectedWarning": true
+  }
+]

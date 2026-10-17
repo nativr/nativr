@@ -1,4 +1,4 @@
-import { REvaluationError, RTypeMismatchError, RUnsupportedFeatureError } from "./errors.js";
+import { REvaluationError, RTypeMismatchError } from "./errors.js";
 import {
   R_NULL,
   characterBytesAt,
@@ -50,7 +50,7 @@ type IndexableValue = RVector | RPairlist;
 type SelectedIndex = number | undefined;
 interface ArrayDimensionNames {
   readonly axes: readonly (readonly string[] | undefined)[];
-  readonly labels?: readonly string[];
+  readonly value: RList;
 }
 interface CoordinateSelection {
   readonly positions: readonly SelectedIndex[];
@@ -60,6 +60,7 @@ interface CoordinateSelection {
 interface ReplacementSelection {
   readonly positions: readonly SelectedIndex[];
   readonly resultLength: number;
+  readonly missingNames?: readonly number[];
   readonly names?: readonly string[];
 }
 
@@ -71,22 +72,24 @@ export function subsetVector(
 ): RVector {
   const selected = resolveSubsetIndices(target, index);
   context.allocate(selected.length);
-  const sourceNames = vectorNames(target);
+  vectorNames(target); // Validate the names attribute before retaining its mask and encoding.
+  const sourceNames = target.attributes.get("names");
   const outputNames =
-    sourceNames === undefined
-      ? undefined
-      : selected.map((position) => (position === undefined ? "" : (sourceNames[position] ?? "")));
-
+    sourceNames?.type === "character"
+      ? subsetAtomic(sourceNames, selected, undefined, context)
+      : undefined;
+  let output: RVector;
   if (target.type === "list" || target.type === "pairlist") {
     const values = selected.map((position) =>
       position === undefined ? R_NULL : (target.values[position] ?? R_NULL),
     );
     for (let index_ = 0; index_ < values.length; index_ += 1) context.checkpoint();
-    const output = listValue(values, outputNames);
-    return target.type === "pairlist" ? output : preserveSubsetAttributes(target, output);
+    output = listValue(values);
+  } else {
+    output = subsetAtomic(target, selected, undefined, context);
   }
-
-  return preserveSubsetAttributes(target, subsetAtomic(target, selected, outputNames, context));
+  if (outputNames !== undefined) output = withAttribute(output, "names", outputNames);
+  return target.type === "pairlist" ? output : preserveSubsetAttributes(target, output);
 }
 
 function preserveSubsetAttributes<T extends RVector>(source: RVector, output: T): T {
@@ -132,10 +135,16 @@ export function subsetDimensions(
   }
   const dimNames = arrayDimensionNames(target, dimensions);
   const selectedAxes = dimensions.map((length, axis) =>
-    resolveArrayAxisIndices(length, indices[axis], dimNames?.axes[axis], context),
+    resolveArrayAxisIndices(
+      length,
+      indices[axis],
+      dimNames?.axes[axis],
+      context,
+      dimNames?.value.values[axis],
+    ),
   );
   const selectedNames = selectedAxes.map((selected, axis) =>
-    selectedAxisNames(selected, dimNames?.axes[axis]),
+    selectedAxisNames(selected, dimNames?.value.values[axis], context),
   );
   const positions = arrayPositions(selectedAxes, dimensions);
   context.allocate(positions.length);
@@ -153,19 +162,21 @@ export function subsetDimensions(
     !drop || selected.length !== 1 ? [axis] : [],
   );
   if (dimensions.length === 1) {
+    if (drop && selectedAxes[0]?.length === 0) {
+      return dimNames?.value.values[0]?.type === "character"
+        ? withAttribute(output, "names", characterVector([]))
+        : output;
+    }
     const names = selectedNames[0];
     if (retainedAxes.length === 0) {
-      return names === undefined ? output : withNames(output, names);
+      return names === undefined ? output : withAttribute(output, "names", names);
     }
     output = withDimensions(output, [selectedAxes[0]?.length ?? 0]);
     if (dimNames !== undefined) {
       output = withAttribute(
         output,
         "dimnames",
-        listValue(
-          [names === undefined ? R_NULL : characterVector(names)],
-          dimNames.labels === undefined ? undefined : [dimNames.labels[0] ?? ""],
-        ),
+        selectedDimensionNames(dimNames.value, [names ?? R_NULL], [0], context),
       );
     }
     return output;
@@ -173,7 +184,7 @@ export function subsetDimensions(
   if (retainedAxes.length === 0) return output;
   if (retainedAxes.length === 1) {
     const names = selectedNames[retainedAxes[0] ?? 0];
-    return names === undefined ? output : withNames(output, names);
+    return names === undefined ? output : withAttribute(output, "names", names);
   }
   output = withDimensions(
     output,
@@ -184,11 +195,11 @@ export function subsetDimensions(
     output = withAttribute(
       output,
       "dimnames",
-      listValue(
-        retainedNames.map((names) => (names === undefined ? R_NULL : characterVector(names))),
-        dimNames?.labels === undefined
-          ? undefined
-          : retainedAxes.map((axis) => dimNames.labels?.[axis] ?? ""),
+      selectedDimensionNames(
+        dimNames.value,
+        retainedNames.map((names) => names ?? R_NULL),
+        retainedAxes,
+        context,
       ),
     );
   }
@@ -248,7 +259,13 @@ export function replaceDimensions(
   }
   const dimNames = arrayDimensionNames(target, dimensions);
   const selectedAxes = dimensions.map((length, axis) =>
-    resolveArrayAxisIndices(length, indices[axis], dimNames?.axes[axis], context),
+    resolveArrayAxisIndices(
+      length,
+      indices[axis],
+      dimNames?.axes[axis],
+      context,
+      dimNames?.value.values[axis],
+    ),
   );
   if (selectedAxes.some((selected) => selected.some((position) => position === undefined))) {
     throw new REvaluationError("NRE2212", "Missing array subscripts cannot be replaced.");
@@ -311,7 +328,10 @@ export function extractVectorElement(
   }
   const position = resolveExactIndex(target, index, exact, context);
   if (position === undefined || position >= target.length) {
-    if ((target.type === "list" || target.type === "pairlist") && index.type === "character") {
+    if (
+      (target.type === "list" || target.type === "pairlist") &&
+      (index.type === "character" || position === undefined)
+    ) {
       return R_NULL;
     }
     throw new REvaluationError("NRE2202", "Subscript is out of bounds.");
@@ -351,8 +371,8 @@ export function extractListMember(target: RValue, name: string, context: Operato
   if (target.type !== "list" && target.type !== "pairlist") {
     throw new RTypeMismatchError("NRT3304", "The $ operator requires a list or pairlist.");
   }
-  const names = vectorNames(target);
-  if (names === undefined) return R_NULL;
+  const names = namesForMatching(target, "NA");
+  if (names === undefined || name === "") return R_NULL;
   const exact = names.indexOf(name);
   const partial = exact >= 0 ? exact : uniquePartialNameIndex(names, name);
   if (partial === undefined) return R_NULL;
@@ -367,12 +387,19 @@ export function replaceVectorSubset(
   replacement: RValue,
   context: OperatorContext,
 ): IndexableValue {
-  const dataFrameTarget: RList | undefined =
-    target.type === "list" && isDataFrame(target) ? target : undefined;
-  if (dataFrameTarget !== undefined) {
-    return replaceDataFrameColumns(dataFrameTarget, index, replacement, context);
-  }
+  if (target.type === "list" && isDataFrame(target))
+    return replaceDataFrameColumns(target, index, replacement, context);
   const selection = resolveReplacementSelection(target, index);
+  const output = replaceVectorSubsetResolved(target, replacement, context, selection);
+  return restoreReplacementMissingNames(output, selection);
+}
+
+function replaceVectorSubsetResolved(
+  target: IndexableValue,
+  replacement: RValue,
+  context: OperatorContext,
+  selection: ReplacementSelection,
+): IndexableValue {
   const replacementLength = valueReplacementLength(replacement);
   if (selection.positions.some((position) => position === undefined) && replacementLength !== 1) {
     throw new REvaluationError(
@@ -421,13 +448,20 @@ export function replaceVectorSubset(
         (_, position) => target.values[position] ?? R_NULL,
       );
       const values = extendedValues.filter((_, position) => !removed.has(position));
-      const existingNames = selection.names;
+      const existingNames = vectorNames(target) === undefined ? undefined : selection.names;
       const names =
         existingNames === undefined
           ? undefined
           : existingNames.filter((_, position) => !removed.has(position));
       context.allocate(values.length);
-      return cloneAsList(target, values, names);
+      return cloneAsList(
+        target,
+        values,
+        names,
+        Array.from({ length: selection.resultLength }, (_, position) => position).filter(
+          (position) => !removed.has(position),
+        ),
+      );
     }
     if (replacementLength === 0) {
       throw new REvaluationError("NRE2213", "Replacement has length zero.");
@@ -458,7 +492,7 @@ export function replaceVectorSubset(
       context.checkpoint();
     }
     context.allocate(values.length);
-    return listValue(values, selection.names);
+    return withReplacementNames(listValue(values), target, selection.names);
   }
   if (!isAtomic(replacement) || replacement.length === 0) {
     throw new RTypeMismatchError(
@@ -506,12 +540,19 @@ export function replaceVectorElement(
   replacement: RValue,
   context: OperatorContext,
 ): IndexableValue {
-  const dataFrameTarget: RList | undefined =
-    target.type === "list" && isDataFrame(target) ? target : undefined;
-  if (dataFrameTarget !== undefined) {
-    return replaceDataFrameColumns(dataFrameTarget, index, replacement, context, true);
-  }
+  if (target.type === "list" && isDataFrame(target))
+    return replaceDataFrameColumns(target, index, replacement, context, true);
   const selection = resolveElementReplacement(target, index);
+  const output = replaceVectorElementResolved(target, replacement, context, selection);
+  return restoreReplacementMissingNames(output, selection);
+}
+
+function replaceVectorElementResolved(
+  target: IndexableValue,
+  replacement: RValue,
+  context: OperatorContext,
+  selection: ReplacementSelection,
+): IndexableValue {
   const position = selection.positions[0] ?? 0;
   if (target.type === "list" || target.type === "pairlist") {
     if (replacement.type === "null") {
@@ -523,7 +564,14 @@ export function replaceVectorElement(
           ? undefined
           : existingNames.filter((_, index_) => index_ !== position);
       context.allocate(values.length);
-      return cloneListLike(target, values, names);
+      return cloneListLike(
+        target,
+        values,
+        names,
+        Array.from({ length: target.length }, (_, index) => index).filter(
+          (index) => index !== position,
+        ),
+      );
     }
     const values = Array.from(
       { length: selection.resultLength },
@@ -577,7 +625,14 @@ export function replaceListMember(
     names.splice(position, 1);
     values.splice(position, 1);
     context.allocate(values.length);
-    return cloneListLike(target, values, names);
+    return cloneListLike(
+      target,
+      values,
+      names,
+      Array.from({ length: target.length }, (_, index) => index).filter(
+        (index) => index !== position,
+      ),
+    );
   }
   const value =
     target.type === "list" && isDataFrame(target)
@@ -596,13 +651,15 @@ export function replaceListMember(
 function resolveSubsetIndices(target: IndexableValue, index: RValue | undefined): SelectedIndex[] {
   if (index === undefined) return Array.from({ length: target.length }, (_, position) => position);
   switch (index.type) {
+    case "null":
+      return [];
     case "integer":
     case "double":
       return resolveNumericSubset(index, target.length);
     case "logical":
       return resolveLogicalSubset(index, target.length);
     case "character":
-      return resolveCharacterSubset(index, vectorNames(target));
+      return resolveCharacterSubset(index, vectorNames(target), target.attributes.get("names"));
     default:
       throw new RTypeMismatchError(
         "NRT3301",
@@ -625,21 +682,34 @@ function resolveReplacementSelection(
     };
   }
   const existingNames = vectorNames(target);
+  if (index.type === "null") {
+    return {
+      positions: [],
+      resultLength: target.length,
+      ...(existingNames === undefined ? {} : { names: existingNames }),
+    };
+  }
   if (index.type === "character") {
     const names = [...(existingNames ?? Array.from({ length: target.length }, () => ""))];
     const positions: number[] = [];
+    const missingNames: number[] = [];
+    const sourceNames = target.attributes.get("names");
     for (let offset = 0; offset < index.length; offset += 1) {
-      if (isMissing(index, offset)) {
-        throw new RUnsupportedFeatureError(
-          "NRU6131",
-          "Missing character names in replacement subscripts are not yet supported.",
-        );
-      }
-      const name = index.values[offset] ?? "";
-      const existing = name === "" ? -1 : names.indexOf(name);
+      const missing = isMissing(index, offset);
+      const name = missing ? "" : (index.values[offset] ?? "");
+      const existing =
+        name === ""
+          ? -1
+          : names.findIndex(
+              (candidate, position) =>
+                candidate === name &&
+                !(sourceNames?.type === "character" && isMissing(sourceNames, position)) &&
+                !missingNames.includes(position),
+            );
       if (existing >= 0) positions.push(existing);
       else {
         positions.push(names.length);
+        if (missing) missingNames.push(names.length);
         names.push(name);
       }
     }
@@ -650,7 +720,7 @@ function resolveReplacementSelection(
         ...(existingNames === undefined ? {} : { names: existingNames }),
       };
     }
-    return { positions, resultLength: names.length, names };
+    return { positions, resultLength: names.length, names, missingNames };
   }
   if (index.type === "integer" || index.type === "double") {
     const numeric = replacementNumericPositions(index, target.length);
@@ -692,9 +762,23 @@ function resolveReplacementSelection(
 
 function resolveElementReplacement(target: IndexableValue, index: RValue): ReplacementSelection {
   if (index.type === "character") {
-    if (index.length !== 1 || isMissing(index, 0) || (index.values[0] ?? "") === "") {
+    if (index.length !== 1) {
       throw new REvaluationError("NRE2204", "[[ requires one non-missing subscript.");
     }
+    const name = isMissing(index, 0) ? "NA" : (index.values[0] ?? "");
+    const names = target.attributes.get("names");
+    const position =
+      name !== "" && names?.type === "character"
+        ? names.values.findIndex(
+            (value, offset) => (isMissing(names, offset) ? "NA" : value) === name,
+          )
+        : -1;
+    if (position >= 0)
+      return {
+        positions: [position],
+        resultLength: target.length,
+        ...extendNames(vectorNames(target), target.length),
+      };
     return resolveReplacementSelection(target, index);
   }
   if (index.type !== "integer" && index.type !== "double" && index.type !== "logical") {
@@ -800,15 +884,17 @@ function resolveArrayAxisIndices(
   index: RValue | undefined,
   names: readonly string[] | undefined,
   context: OperatorContext,
+  nameAttribute?: RValue,
 ): SelectedIndex[] {
   if (index === undefined) {
     return Array.from({ length }, (_, position) => position);
   }
+  if (index.type === "null") return [];
   if (index.type === "logical" && index.length > length) {
     throw new REvaluationError("NRE2218", "Logical array subscript is too long.");
   }
   if (index.type === "character") {
-    const selected = resolveCharacterSubset(index, names);
+    const selected = resolveCharacterSubset(index, names, nameAttribute);
     if (selected.some((position) => position === undefined)) {
       throw new REvaluationError("NRE2202", "Array subscript is out of bounds.");
     }
@@ -855,10 +941,24 @@ function resolveArrayAxisIndices(
 
 function selectedAxisNames(
   selected: readonly SelectedIndex[],
-  names: readonly string[] | undefined,
-): readonly string[] | undefined {
-  if (names === undefined || selected.length === 0) return undefined;
-  return selected.map((position) => (position === undefined ? "" : (names[position] ?? "")));
+  names: RValue | undefined,
+  context: OperatorContext,
+): AtomicVector | undefined {
+  if (names?.type !== "character" || selected.length === 0) return undefined;
+  return subsetAtomic(names, selected, undefined, context);
+}
+
+function selectedDimensionNames(
+  source: RList,
+  names: readonly RValue[],
+  axes: readonly number[],
+  context: OperatorContext,
+): RList {
+  const output = listValue(names);
+  const labels = source.attributes.get("names");
+  return labels?.type === "character"
+    ? withAttribute(output, "names", subsetAtomic(labels, axes, undefined, context))
+    : output;
 }
 
 function arrayPositions(
@@ -1137,8 +1237,8 @@ function arrayDimensionNames(
     throw new RTypeMismatchError("NRT3312", "The array dimnames attribute is malformed.");
   }
   const axes = dimensions.map((length, axis) => dimensionNameAxis(attribute.values[axis], length));
-  const labels = vectorNames(attribute);
-  return labels === undefined ? { axes } : { axes, labels };
+  vectorNames(attribute);
+  return { axes, value: attribute };
 }
 
 function dimensionNameAxis(
@@ -1146,7 +1246,7 @@ function dimensionNameAxis(
   length: number,
 ): readonly string[] | undefined {
   if (value === undefined || value.type === "null") return undefined;
-  if (value.type !== "character" || value.missing !== undefined || value.length !== length) {
+  if (value.type !== "character" || value.length !== length) {
     throw new RTypeMismatchError("NRT3312", "The array dimnames attribute is malformed.");
   }
   return value.values;
@@ -1200,6 +1300,11 @@ function replaceDataFrameColumns(
   context: OperatorContext,
   elementReplacement = false,
 ): RVector {
+  if (index?.type === "character" && index.missing?.some((value) => value === 1))
+    throw new REvaluationError(
+      "NRE2212",
+      "missing values are not allowed in subscripted assignments of data frames",
+    );
   const selection = resolveReplacementSelection(target, index);
   if (selection.positions.some((position) => position === undefined)) {
     throw new REvaluationError("NRE2212", "Missing data-frame columns cannot be replaced.");
@@ -1560,11 +1665,17 @@ function resolveLogicalSubset(index: RLogicalVector, targetLength: number): Sele
 function resolveCharacterSubset(
   index: RCharacterVector,
   names: readonly string[] | undefined,
+  nameAttribute?: RValue,
 ): SelectedIndex[] {
   return Array.from({ length: index.length }, (_, position) => {
     if (isMissing(index, position) || names === undefined) return undefined;
     const name = index.values[position] ?? "";
-    const match = names.indexOf(name);
+    if (name === "") return undefined;
+    const match = names.findIndex(
+      (candidate, offset) =>
+        candidate === name &&
+        !(nameAttribute?.type === "character" && isMissing(nameAttribute, offset)),
+    );
     return match < 0 ? undefined : match;
   });
 }
@@ -1576,10 +1687,11 @@ function resolveExactIndex(
   context: OperatorContext,
 ): number | undefined {
   if (index.type === "character") {
-    if (index.length !== 1 || isMissing(index, 0)) {
+    if (index.length !== 1) {
       throw new REvaluationError("NRE2204", "[[ requires one non-missing subscript.");
     }
-    const names = vectorNames(target);
+    if (isMissing(index, 0) || (index.values[0] ?? "") === "") return undefined;
+    const names = namesForMatching(target, "");
     if (names === undefined) return undefined;
     const name = index.values[0] ?? "";
     const position = names.indexOf(name);
@@ -1599,16 +1711,30 @@ function resolveExactIndex(
       "[[ requires a numeric, logical, or character subscript.",
     );
   }
-  if (index.length !== 1 || isMissing(index, 0)) {
+  if (index.length !== 1) {
     throw new REvaluationError("NRE2204", "[[ requires one non-missing subscript.");
   }
+  if (isMissing(index, 0)) return undefined;
   const source = index.values[0] ?? 0;
+  if (source === -Infinity)
+    throw new REvaluationError("NRE2205", "invalid negative subscript in get1index <real>");
   if (!Number.isFinite(source)) return undefined;
   const value = Math.trunc(source);
   if (value < 1) {
     throw new REvaluationError("NRE2205", "[[ requires a positive integer subscript.");
   }
   return value - 1;
+}
+
+function namesForMatching(
+  target: IndexableValue,
+  missingText: string,
+): readonly string[] | undefined {
+  const names = vectorNames(target);
+  const attribute = target.attributes.get("names");
+  return attribute?.type === "character" && attribute.missing !== undefined
+    ? names?.map((name, index) => (isMissing(attribute, index) ? missingText : name))
+    : names;
 }
 
 function uniquePartialNameIndex(names: readonly string[], prefix: string): number | undefined {
@@ -1830,7 +1956,13 @@ function replaceFactor(
   }
   context.allocate(resultLength);
   const output = integerVector(values, compactMask(missing));
-  return { ...output, attributes: replacementAttributes(target, resultLength, names) };
+  const attributes = new Map(replacementAttributes(target, resultLength, names));
+  const classes = attributes.get("class");
+  if (classes !== undefined) {
+    attributes.delete("class");
+    attributes.set("class", classes);
+  }
+  return { ...output, attributes };
 }
 
 function commonAtomicType(left: AtomicVector, right: AtomicVector): AtomicVector["type"] {
@@ -1910,10 +2042,64 @@ function valueReplacementLength(replacement: RValue): number {
   return isVector(replacement) || replacement.type === "pairlist" ? replacement.length : 1;
 }
 
+function restoreReplacementMissingNames(
+  output: IndexableValue,
+  selection: ReplacementSelection,
+): IndexableValue {
+  if (
+    selection.missingNames === undefined ||
+    selection.missingNames.length === 0 ||
+    output.length !== selection.resultLength
+  )
+    return output;
+  const names = output.attributes.get("names");
+  if (names?.type !== "character") return output;
+  const missing =
+    names.missing === undefined ? new Uint8Array(names.length) : Uint8Array.from(names.missing);
+  for (const position of selection.missingNames) missing[position] = 1;
+  return withAttribute(output, "names", { ...names, missing });
+}
+
+function replacementNames(
+  target: IndexableValue,
+  names: readonly string[],
+  sourcePositions?: readonly number[],
+): RCharacterVector {
+  const source = target.attributes.get("names");
+  if (source?.type !== "character") return characterVector(names);
+  const positions = names.map((name, index) => {
+    const position = sourcePositions?.[index] ?? index;
+    return position < source.length && source.values[position] === name ? position : undefined;
+  });
+  return characterVector(
+    names,
+    positions.map((position) => (position !== undefined && isMissing(source, position) ? 1 : 0)),
+    positions.map((position) =>
+      position === undefined ? "unknown" : characterEncodingAt(source, position),
+    ),
+    positions.map((position, index) =>
+      position === undefined
+        ? characterBytesFromValue(names[index] ?? "")
+        : characterBytesAt(source, position),
+    ),
+  );
+}
+
+function withReplacementNames<T extends RVector>(
+  output: T,
+  target: IndexableValue,
+  names: readonly string[] | undefined,
+): T {
+  return names === undefined
+    ? output
+    : withAttribute(output, "names", replacementNames(target, names));
+}
+
 function replacementAttributes(
   target: IndexableValue,
   resultLength: number,
   names: readonly string[] | undefined,
+  sourcePositions?: readonly number[],
 ): ReadonlyMap<string, RValue> {
   const attributes = new Map(target.attributes);
   if (resultLength !== target.length) {
@@ -1921,7 +2107,7 @@ function replacementAttributes(
     attributes.delete("dimnames");
   }
   if (names === undefined) attributes.delete("names");
-  else attributes.set("names", characterVector(names));
+  else attributes.set("names", replacementNames(target, names, sourcePositions));
   return attributes;
 }
 
@@ -1937,8 +2123,9 @@ function cloneAsList(
   target: ListLike,
   values: readonly RValue[],
   names: readonly string[] | undefined,
+  sourcePositions?: readonly number[],
 ): RList {
-  const attributes = new Map(replacementAttributes(target, values.length, names));
+  const attributes = new Map(replacementAttributes(target, values.length, names, sourcePositions));
   return {
     type: "list",
     values: Object.freeze([...values]),
@@ -1951,8 +2138,9 @@ function cloneListLike<T extends ListLike>(
   target: T,
   values: readonly RValue[],
   names: readonly string[] | undefined,
+  sourcePositions?: readonly number[],
 ): T {
-  const attributes = new Map(replacementAttributes(target, values.length, names));
+  const attributes = new Map(replacementAttributes(target, values.length, names, sourcePositions));
   return {
     ...target,
     values: Object.freeze([...values]),
@@ -2004,7 +2192,7 @@ function normalizeDataFrameColumn(
 function recyclingWarning(context: OperatorContext): void {
   context.warn({
     code: "NRW1001",
-    message: "Longer object length is not a multiple of shorter object length.",
+    message: "longer object length is not a multiple of shorter object length",
   });
 }
 

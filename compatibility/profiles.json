@@ -5,7 +5,16 @@
     "implementation": "GNU R",
     "version": "4.6.1",
     "releaseDate": "2026-06-24",
-    "releaseGating": true
+    "releaseGating": true,
+    "oraclePlatform": {
+      "id": "x86_64-linux-gnu",
+      "os": "Linux",
+      "architecture": "x86_64",
+      "libm": "glibc",
+      "referenceHost": "GitHub Actions ubuntu-24.04 with r-lib/actions/setup-r r-version 4.6.1",
+      "decision": "docs/rfcs/0007-correctly-rounded-elementary-functions.md",
+      "note": "Elementary-function last-place results are platform-dependent. Evidence must record the glibc version; evidence produced on another platform is advisory until rerun here."
+    }
   },
   "advisory": [
     {
@@ -16,6 +25,11 @@
     {
       "id": "r-devel",
       "purpose": "Canary for future language and API changes.",
+      "releaseGating": false
+    },
+    {
+      "id": "r-4.6.1-windows-ucrt",
+      "purpose": "GNU R 4.6.1 for Windows x86_64 (UCRT) as a second oracle platform. It exposes platform-dependent libm and text-transport behavior without redefining the normative target.",
       "releaseGating": false
     }
   ],
@@ -36,6 +50,14 @@
         "behavior": "Return a stable NativR session identifier, never a host operating-system process identifier."
       },
       {
+        "surface": "Sys.info",
+        "behavior": "Report the documented browser runtime identity fields; host operating-system identity is outside the browser session."
+      },
+      {
+        "surface": "closure and environment display identity",
+        "behavior": "Use real named-environment labels and session-owned nativr identifiers for anonymous environments. The AST interpreter emits no GNU bytecode or host-memory addresses. Function syntax, retained-source behavior, attributes, and reference identity remain behavioral contracts."
+      },
+      {
         "surface": "capabilities",
         "behavior": "Report the facilities actually available to the NativR session."
       },
@@ -46,6 +68,11 @@
       {
         "surface": "graphics devices",
         "behavior": "Compare semantic graphics operations and documented output profiles without claiming platform-device pixel identity."
+      },
+      {
+        "surface": "elementary transcendental functions",
+        "status": "planned (RFC-0007)",
+        "behavior": "Use NativR-owned correctly rounded binary64 implementations so every browser computes identical results. A last-place difference from the normative oracle is accepted only when an independent high-precision reference shows the NativR result is correctly rounded and the oracle's is not; it is recorded as oracle-libm-deviation and never normalized away."
       }
     ]
   },

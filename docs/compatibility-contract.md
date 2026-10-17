@@ -405,8 +405,10 @@ invisible GNU R-shaped return. Axis lines, recycled tick geometry, and resolved 
 the existing bounded segment/text journal, including secondary axes, `tcl`, `cex.axis`, colors, line
 styles, font controls, pure-R package calls, Worker transport, Canvas/PNG rendering, and
 display-list replay. Exact formals, empty input, non-finite drawing omission, label-length errors,
-and invalid sides have GNU R 4.6 evidence. Logarithmic/date axes, plotmath, outer margins, exact
-label collision/gap layout, device font metrics, and pixel identity remain explicit depth.
+and invalid sides have GNU R 4.6 evidence. Standard annotation controls `xlab`, `ylab`, `main`, and
+`sub` supplied through `...` are forced once and ignored without a warning, allowing unchanged
+labeling figure code to pass this shared axis seam. Logarithmic/date axes, plotmath, outer margins,
+exact label collision/gap layout, device font metrics, and pixel identity remain explicit depth.
 
 `graphics::box` has differential return/visibility evidence for zoo's measured `box()` redraw and
 browser-host evidence for the resulting frame. `which = "plot"` accepts its documented unique
@@ -420,7 +422,13 @@ metrics, and cross-device pixel identity are not claimed. `graphics::par()` itse
 session-local set of common annotation, color, font, line, margin, layout, clipping, and axis
 parameters. It supports scalar/vector queries, named updates, named-list restoration, invisible old
 values, closure-like formals, validation, and unknown-parameter warnings without requiring an active
-device.
+device. Device-backed `ask` queries and updates share state with `devAskNewPage()`. `usr` updates
+replace the active user-coordinate window and enter the graphics journal; `new = TRUE` overlays the
+next `plot.new()` on the existing page, while read-only `page` reflects that overlay state. On an
+explicit PDF or PNG device, read-only `din` reports the owned device's size in inches from its PDF
+region or pixel dimensions and resolution. `no.readonly = TRUE` omits `din` and `page`. The browser
+event device has no fixed physical inch size, so `din` is not asserted there. Multi-figure layout,
+complete graphical-parameter semantics, and device-exact pixels remain outside this slice.
 
 `graphics::boxplot` has differential evidence for zoo's measured grouped-series call and adjacent
 default shapes. Its S3 generic forwards classed inputs before the independently authored default
@@ -445,6 +453,15 @@ colors, borders, and common line/axis controls share the existing graphics state
 positive line-density hatching, device-exact typography/margins, every graphical parameter, and
 arbitrary specialized methods remain explicit compatibility depth rather than silently approximated
 support.
+
+The bounded axis-style seam accepts `xaxt` and `yaxt` through `barplot(...)`, `axis(...)`, and
+session `par()` state. `"n"` suppresses the corresponding horizontal or vertical axis, while `"s"`,
+`"l"`, and `"t"` render identically for the measured named-vector barplot and direct-axis paths,
+matching GNU R 4.6.1 SVG output. An explicit per-call style overrides `par()` without changing
+session state. `plot = FALSE` still returns midpoints before graphical style validation. This closes
+the `labeling::extended.figures(2)` `barplot(xaxt=)` exception, but that function's full `par()`
+snapshot remains incomplete: NativR exposes 47 entries on its browser event device and 48 on an
+explicit PDF/PNG device versus GNU R 4.6.1's 72.
 
 `graphics::hist` and `graphics::hist.default` have differential evidence for all 19 measured calls
 across testthat, openssl, shiny, and posterior. The generic dispatches package-owned S3 methods; the
@@ -683,6 +700,13 @@ package resources report deterministic virtual modes and metadata. `extra_cols =
 `uid`, `gid`, `uname`, and `grname` columns whose values are missing because no host identity is
 exposed. Host stat calls, links, ACLs, native owners, executable classification, and platform-exact
 timestamps are not claimed.
+
+`base::file.access(names, mode = 0)` has GNU R 4.6.1 black-box evidence for its closure formals,
+path-named integer results, empty and missing path vectors, mode coercion and validation, and the
+existence/read/write/execute bit combinations from 0 through 7. The browser implementation applies
+those checks to virtual file metadata: mutable session files have read/write access, session
+directories are traversable, and immutable package resources are read-only. It makes no claim about
+host access-control lists or executable file flags.
 
 Usage-ranked `base::file.remove` has GNU R 4.6 differential evidence for its `...` formals, visible
 per-path logical results, attribute removal, later-argument atomic coercion, zero-length arguments,
@@ -1363,9 +1387,34 @@ nonstandard data-mask class are not claimed.
 
 `all.equal` has differential truth-result coverage for default and explicit tolerance, automatic
 relative versus absolute scaling, integer/double compatibility, `NA`/`NaN`/infinities, attributes,
-and recursive lists. It returns deterministic character diagnostics for mismatches; exact GNU R
-diagnostic text, the complete method family, custom dispatch, and cyclic environment-content
-comparison are not claimed. Scalar `isTRUE`/`isFALSE` behavior is covered.
+and recursive lists. Profile 0.303 adds exact numerical error reporting: automatic relative versus
+absolute labels, explicit scalar/vector scales and their near-unit labels, complex modulus labels,
+the observed `countEQ` contributions, and positive reductions with compensation. Scale recycling
+retains its warning. Numeric method controls match positionally or by unique partial name; controls
+after the ellipsis stay exact-only. Custom `formatFUN(err, what)` callbacks remain lazy until a
+difference needs rendering, retain side effects, and can return multiple display fields. `giveErr`
+preserves the unrounded `err` and `what` attributes even within tolerance; identical inputs do not
+acquire those attributes. Recursive Oracle v2 cases preserve these values, callback records, and
+visibility. Full nonnumeric/attribute diagnostic wording, every method-specific control, custom
+dispatch, cyclic environment-content comparison, and universal floating-point identity remain
+unclaimed. Scalar `isTRUE`/`isFALSE` behavior is covered.
+
+The default numerical report and `format()` share the owned decimal formatter. Numeric `format()`
+honors session `digits`, `scipen`, and `OutDec`, explicit digits/scientific/decimal-mark controls,
+minimum fractional digits, shared precision, missing/non-finite tokens, and names/dimensions. Digit
+limits and per-element work remain bounded. Broader complex formatting, locale typography,
+grouping-mark options, character display-cell alignment, and full `format.default` breadth remain
+outside this increment. Evidence comes from independently authored GNU R 4.6.1 probes and the public
+[`all.equal`](https://stat.ethz.ch/R-manual/R-devel/library/base/html/all.equal.html) and
+[`format`](https://stat.ethz.ch/R-manual/R-devel/library/base/html/format.html) contracts.
+
+Numeric `cat()` output uses the same decimal formatter independently for each real value or complex
+component, honoring session `digits`, `scipen`, and `OutDec` without shared vector padding. Exact
+cases cover stdout, capture, virtual file output, missing/non-finite tokens, and invisible `NULL`
+returns. The public [`cat`](https://stat.ethz.ch/R-manual/R-devel/library/base/html/cat.html)
+contract and independently authored GNU R 4.6.1 observations establish this bounded behavior. Output
+text connections, `fill`, `labels`, and the complete separator/complex edge surface remain
+incomplete.
 
 `ifelse` has differential coverage for logical coercion, missing tests, positional branch recycling,
 atomic promotion, ordinary-list results, names/dimension/custom test attributes, and lazy forcing
@@ -1706,6 +1755,16 @@ creates an empty-parent browser-owned environment with the documented filename, 
 encoding, file, working-directory, and newline fields plus `srcfilecopy/srcfile` classes; it is a
 source-reference shape, not host-file access.
 
+Profile 0.304 adds `conditionCall()` and S3 dispatch for both `conditionCall()` and
+`conditionMessage()`, with exact single-`c` formals. The default condition path retains the owned
+call/message value, including NULL and unusual field types, through ordinary list/pairlist member
+selection. Caller-local methods and their visibility have exact recursive GNU R 4.6.1 evidence.
+Unclassed inputs without applicable methods are rejected. Complete default-method registration,
+`NextMethod` chains, environment-backed conditions, and every malformed condition remain outside
+this increment. The package-check harness uses these generic accessors to observe ordered condition
+classes, messages, calls, and returning top-level handlers through `globalCallingHandlers()`; source
+handlers can consume a condition before that observation boundary.
+
 `stats::qbinom` and `stats::qnorm` have differential evidence for openssl's two measured
 uniform-to-distribution examples, registered namespace lookup, canonical quantiles, vectorized and
 recycled parameters, lower/upper tails, log probabilities, boundary infinities, degenerate
@@ -1870,9 +1929,10 @@ Leftward, rightward, and non-local assignment are supported for identifiers, dir
 targets, and simple one-dimensional subset/member replacement chains. Non-local assignment searches
 lexical parents, creates an otherwise absent binding in the global environment, and rejects attempts
 to mutate the locked built-in environment. Direct replacement-function assignment invokes and
-rebinds through `names<-`, `attr<-`, `class<-`, and `dim<-`. Replacement-function targets still
-require a direct identifier as their first argument; nested replacement-function calls and GNU R's
-shorter-name padding remain outside the boundary.
+rebinds through `names<-`, `attr<-`, `class<-`, and `dim<-`. Short `names<-` character values pad
+the target with missing names, and the measured nested `names(dimnames(x))[i] <- value` path rebinds
+through a promoted NULL intermediate. Other nested replacement-function call shapes remain outside
+this boundary.
 
 Complex literals and `NA_complex_` use parallel real/imaginary storage with an independent missing
 mask. Arithmetic, equality, logical coercion, recycling, indexing/replacement, public Worker
@@ -1925,40 +1985,44 @@ evaluation subset. `as.name`/`as.symbol`, `as.expression`, `call`, `as.call`, `d
 `deparse1` provide initial owned-language construction and inspection. `substitute()` recursively
 replaces unforced closure promises or named list/data-frame bindings and expands ellipsis without
 forcing its source expressions. `match.call()` reconstructs the active R-syntax closure call with
-canonical formal names, optional ellipsis expansion, and no promise forcing. Root, child, parent,
-current-frame, and closure environments participate in lexical `eval()`. `do.call()` invokes a
-callable from an ordinary list, `force()` and `forceAndCall()` expose selective promise forcing, and
-`delayedAssign()` installs a memoizing promise with separate evaluation and assignment environments.
-Environment `$`/character-`[[` access, `get`, `get0`, `mget`, `exists`, `assign`, `list2env`,
-`as.environment`, and `environmentName` cover initial binding and conversion behavior, including
-inherited lookup and GNU R's eager evaluation of explicitly supplied `get0(ifnotfound=)` and
-`mget(ifnotfound=)` values. The measured `mget()` contract includes duplicate/missing request names,
-mode filtering, optional inheritance, delayed and active binding reads, scalar/per-name fallback
-lists, callable fallbacks, exact result names, and GNU R 4.6 formals. Numeric and exact-name
-`as.environment()` selectors resolve the standard search list, with stable supported-export package
-environments and parent links. `ls` and its identical `objects` alias enumerate only local bindings
-without forcing promises, honor caller/explicit/search-list selection, hidden-name and pattern
-filtering, and deterministic sorted or unhashed order, and expose the exact GNU R 4.6 formals.
-`as.list` performs custom S3 dispatch, while `as.list.environment` enumerates only local bindings,
-supports `all.names` and `sorted`, returns an attribute-free empty list when appropriate, and forces
-selected promises in result order. Non-hashed environments retain reverse binding order and hashed
-environments retain deterministic insertion order when sorting is disabled. `search()` exposes the
-deterministic standard nine-entry GNU R startup path and resets with the session. Attached-package
-lookup mutation, `attach`, `detach`, `searchpaths`, locked/active bindings, search-path environment
-mutation, exact GNU R hash-bucket order, active-binding enumeration, locale collation and GNU TRE
-regexp edge cases, `do.call(quote = TRUE)`, and pairlist call arguments remain outside this
-increment. `typeof`, `mode`, `length`, `lengths`, `is.symbol`/`is.name`, `is.expression`,
-`is.language`, `is.call`, `is.recursive`, and the Worker boundary cover this value surface. Public
-snapshots contain only a stable name or R-like source string, never Tree-sitter or normalized-AST
-nodes. Pairlists have their own runtime and wire type, exact tags, coercion, predicates, lazy
-`alist()` construction, one- and two-dimensional extraction, GNU R-compatible replacement type
-transitions, arbitrary runtime attributes, classes, dimensions, and dimension names. `parse(text=)`
-creates owned expression vectors from atomic text, honors bounded `n` parsing, and drives the same
-normalized evaluator; parser-backed public symbol/language/expression records are accepted as
-inputs. File/connection parsing and source-reference preservation, `bquote`, inherited substitution
-lookup, alternate `match.call(definition=, call=, envir=)` inputs, pairlist rectangular replacement
-and out-of-range extension corner cases, generic pairlist attributes across the public snapshot, GNU
-R primitive-binding failures under an `emptyenv()`-terminated evaluation chain, full language
+canonical formal names, optional ellipsis expansion, and no promise forcing. Explicit closure or
+closure-shaped builtin `definition=` rematches supplied arguments; primitive definitions are
+rejected. An owned language `call=` supplies syntax without evaluating its arguments. Synthetic
+replacement calls preserve their evaluated value and `*tmp*` object argument across S3 dispatch and
+`NextMethod()`. Root, child, parent, current-frame, and closure environments participate in lexical
+`eval()`. `do.call()` invokes a callable from an ordinary list, `force()` and `forceAndCall()`
+expose selective promise forcing, and `delayedAssign()` installs a memoizing promise with separate
+evaluation and assignment environments. Environment `$`/character-`[[` access, `get`, `get0`,
+`mget`, `exists`, `assign`, `list2env`, `as.environment`, and `environmentName` cover initial
+binding and conversion behavior, including inherited lookup and GNU R's eager evaluation of
+explicitly supplied `get0(ifnotfound=)` and `mget(ifnotfound=)` values. The measured `mget()`
+contract includes duplicate/missing request names, mode filtering, optional inheritance, delayed and
+active binding reads, scalar/per-name fallback lists, callable fallbacks, exact result names, and
+GNU R 4.6 formals. Numeric and exact-name `as.environment()` selectors resolve the standard search
+list, with stable supported-export package environments and parent links. `ls` and its identical
+`objects` alias enumerate only local bindings without forcing promises, honor
+caller/explicit/search-list selection, hidden-name and pattern filtering, and deterministic sorted
+or unhashed order, and expose the exact GNU R 4.6 formals. `as.list` performs custom S3 dispatch,
+while `as.list.environment` enumerates only local bindings, supports `all.names` and `sorted`,
+returns an attribute-free empty list when appropriate, and forces selected promises in result order.
+Non-hashed environments retain reverse binding order and hashed environments retain deterministic
+insertion order when sorting is disabled. `search()` exposes the deterministic standard nine-entry
+GNU R startup path and resets with the session. Attached-package lookup mutation, `attach`,
+`detach`, `searchpaths`, locked/active bindings, search-path environment mutation, exact GNU R
+hash-bucket order, active-binding enumeration, locale collation and GNU TRE regexp edge cases,
+`do.call(quote = TRUE)`, and pairlist call arguments remain outside this increment. `typeof`,
+`mode`, `length`, `lengths`, `is.symbol`/`is.name`, `is.expression`, `is.language`, `is.call`,
+`is.recursive`, and the Worker boundary cover this value surface. Public snapshots contain only a
+stable name or R-like source string, never Tree-sitter or normalized-AST nodes. Pairlists have their
+own runtime and wire type, exact tags, coercion, predicates, lazy `alist()` construction, one- and
+two-dimensional extraction, GNU R-compatible replacement type transitions, arbitrary runtime
+attributes, classes, dimensions, and dimension names. `parse(text=)` creates owned expression
+vectors from atomic text, honors bounded `n` parsing, and drives the same normalized evaluator;
+parser-backed public symbol/language/expression records are accepted as inputs. File/connection
+parsing and source-reference preservation, `bquote`, inherited substitution lookup,
+`match.call(envir=)` and definitions without R-level formals, pairlist rectangular replacement and
+out-of-range extension corner cases, generic pairlist attributes across the public snapshot, GNU R
+primitive-binding failures under an `emptyenv()`-terminated evaluation chain, full language
 attributes/indexing, and numeric call-frame evaluation selectors remain outside this increment.
 
 The apply/map surface comprises `apply`, `lapply`, `sapply`, `vapply`, `mapply`, `Map`, `Reduce`,
@@ -2403,6 +2467,92 @@ Source-only fixture and Worker tests reproduce cli's measured `unclass()`/field 
 DESCRIPTION prose, malformed installed directories, host-library search, arbitrary iconv codecs,
 `print.packageDescription`, citation/date utilities, and writable metadata are not claimed.
 
+Language subset 0.302 prints one-dimensional array axis headings, including empty and missing
+headings, when the dimension has labels. `table()` preserves explicit axis names, derives omitted
+names from simple symbols, and uses an empty heading for compound expressions. Empty table
+dimensions retain `NULL` labels; zero-extent tables print their extent summary. Tables retain the
+existing array width/digits/truncation controls, suppress ordinary attribute trailers, and return
+the unchanged value invisibly. Exact GNU R 4.6.1 cases cover one-, two-, and three-dimensional
+output, nested tables, missing labels, ordinary-array controls, and recursive attribute identity.
+Unused factor levels and their ordering, general `structure()` attribute normalization, and the full
+table-construction option surface remain outside this closure.
+
+The build-time package-check report compares fresh native GNU R and NativR sessions, records
+explicit stage inventories, and rejects partial evidence as P7. Its versioned comparison preserves
+raw stdout/stderr and only reverses independently probed native CRLF text transport. It does not
+remove host headers, bytecode labels, whitespace, or numerical differences. Condition classes,
+calls, and cross-stream ordering remain incomplete through the current public capture APIs; full
+metadata, namespace, documentation, vignette, installation/loading, and manual checks are still
+unexecuted. A successful package script is not a complete package-check result.
+
+Language subset 0.301 renders closure formals and bodies from owned AST with structural indentation,
+operator grouping, cutoff-aware continuation lines, and source-independent function layout.
+`deparse()` retains supported closure attributes through `structure()`, and `deparse1()` joins lines
+under its default 500-column cutoff or returns the vector for `collapse = NULL`. Closure printing
+uses `deparse.cutoff`, appends environment and attribute information, and composes nested list
+printing with complete element paths and list attributes. Exact evidence includes control flow,
+primitive and ordinary call contexts, named/unnamed/nonsyntactic nested paths, classed child path
+resets, and empty lists. Traversal has step checks and a 512-level syntax bound; output limits still
+apply. Source retention, advanced deparse controls, exhaustive layout/numeric-literal spelling,
+custom nested class printers, and static core namespace identity remain incomplete. Anonymous
+environment labels and absent GNU bytecode addresses follow RFC-0001's explicit display adaptation.
+
+The same increment selects registered S3 methods from the generic's top environment. Ordinary
+private registration tables are ignored by dispatch; global fallback, package-named top boundaries,
+empty parent chains, and `NextMethod` have exact GNU R 4.6.1 evidence. Real installed namespace
+names are retained. This resolves the prior arbitrary-environment registration mismatch while
+preserving the separate static-core namespace aliasing limitation.
+
+Language subset 0.300 preserves original RHS syntax on an already forced replacement-value promise.
+`substitute(value)` observes that source, while the synthetic replacement call continues to display
+and evaluate its computed value. Direct closures, S3 dispatch, subset receivers, captured frames,
+and outer reconstruction have executable evidence; the RHS executes once. This uses owned normalized
+AST and does not introduce generated JavaScript. Opaque GNU R promise values embedded in escaped
+replacement `sys.call()` and `match.call()` language remain outside the current recursive value
+model; their internal type and identity are not claimed by this evidence.
+
+Profile 0.305 shares embedded-value display across `call`, `as.call`, substitution, language
+replacement, and replacement-call reflection. Atomic/list/pairlist attributes retain insertion order
+through `structure(...)`; eligible names remain argument tags, and integer sequences keep compact
+colon notation. Nested attributes, dimensions, dimension names, missing character attribute values,
+and evaluation of the original owned values have exact GNU R 4.6.1 evidence. Error display omits
+structure attributes of embedded values while `conditionCall()` retains them, matching the distinct
+native observation channels. Recursive conversion is depth-bounded and checkpoints work where an
+evaluation context is available. Missing-name construction, arbitrary embedded object types,
+exhaustive complex/raw text, and general deparse controls remain incomplete. Escaped raw oracle
+promises are still rejected; the replacement case observes their evaluated value and call text
+without claiming raw promise identity.
+
+The same increment formats real matrix columns at shared decimal precision, chooses fixed or
+scientific notation with `digits`/`scipen`, and splits atomic matrix and array output into complete
+column panels under `width`. Cubic and quartic real powers use the left-to-right multiplication
+rounding observed in GNU R 4.6.1; other powers retain the existing path. Independently written exact
+numeric and printed-output cases cover these behaviors, including a rational derivative whose
+previous result differed by one ULP.
+
+Atomic vector output uses shared fields, aligned index prefixes, and width-bounded panels. Named
+vectors retain name/value alignment and trailing print gaps; real vectors use common decimal
+precision over displayed entries. Character, logical, and raw vectors use the same panel layout.
+Vector truncation follows the observed one-entry omission exception. Formatting work and emitted
+text remain subject to session limits. Complex shared precision, Unicode display-cell widths,
+general data-frame output, and complete closure printing remain incomplete.
+
+S3 method lookup follows the generic caller's lexical chain and skips non-function bindings before
+using the existing registered-method fallback and attached search path. `NextMethod` retains the
+original caller. Exact cases cover local methods, lexical parents, namespace registration fallback,
+and internal/operator/member dispatch. Full S3 dispatch semantics remain bounded by the recorded
+cases; this increment does not claim complete object-system compatibility.
+
+Language subset 0.299 adds precedence-aware operator deparsing, bounded atomic array slices, and
+preserved warning/error condition calls and classes. Array output covers higher-dimensional
+column-major slices, dimension labels, empty dimensions, and `max.print` truncation. Complex column
+precision, rank-one axis labels, and list arrays remain incomplete. Deparsing preserves required
+operator grouping and renders embedded integer sequences compactly. Parentheses remain owned calls
+and make their result visible, including assignments; full GNU R multiline deparse layout remains
+unclaimed. Continued top-level errors print stored condition calls and captured closure traces.
+These claims are bounded by checked-in conformance cases and the recursive Oracle v2 condition
+records; full traceback APIs and custom condition accessor methods remain outside this increment.
+
 The Node-only `@nativr/package-tools` build path accepts standard source directories and `.tar.gz`
 archives, or resolves required `Depends`/`Imports` from a CRAN-like `PACKAGES` index. It enforces
 archive/file/byte/package limits, rejects links, native/JVM code, install hooks, `LinkingTo`,
@@ -2436,9 +2586,63 @@ constructs and combines S3 root criteria and resolves roots/files in the browser
 filesystem. The reusable contract increment includes syntax and first-class specific/`Ops` operator
 dispatch on either operand, incremental namespace S3 registration, `..N`, `missing(..N)`,
 missing-endpoint `seq()`, `sign()`, `dimnames<-`, `methods::Quote`, trailing `as.data.frame()`
-controls, and list/data-frame `is.na()` shape. Language-object subsetting remains incomplete and is
-the first observed deeper blocker for `abind::acorn()` and `abind::asub()`; P5-P7 and arbitrary
-package execution are not claimed.
+controls, and list/data-frame `is.na()` shape. A later general call-element increment adds named,
+numeric, and logical language-call extraction/replacement, retaining normalized syntax for `eval()`.
+The unchanged `abind::asub()` and `abind::acorn()` paths now execute their array selections through
+that seam. NULL subscripts select zero elements and make `[<-` a no-op, including the empty-control
+path in numDeriv. The next direct-test increment preserves `match.call(expand.dots = FALSE)$...` as
+a pairlist of quoted arguments, accepts literal `$...` extraction/replacement, and admits the
+measured positional `deparse(expr, width.cutoff)` call for short expressions. Matrix-to-data-frame
+conversion now creates columns in source order and `as.matrix()` reconstructs atomic, including
+factor-to-character, data-frame columns in column-major order. `array(data)` uses a one-dimensional
+extent equal to `length(data)`; `dimnames(NULL)` returns NULL; base `LETTERS` is available. The five
+unchanged abind direct-test scripts now execute in fresh sessions under a finite opt-in package-test
+profile. `evalDetailed` can continue after a top-level error when a callable `options(error=)`
+handler is installed, preserving two expected errors in `tests/adrop.R` and one in `tests/afill.R`;
+ordinary evaluation still stops on an uncaught error. Reusable nested NULL and name replacement,
+first-class constructed `[` calls, and one-/two-dimensional array dimname printing close the
+measured execution gaps. The digest-checked P5 probe also completes all five applicable Rd topics
+from unchanged source. Precedence-aware deparsing, higher-dimensional array printing, generic
+`rbind`/`cbind` dimension names, condition call traces, and visible parenthesized assignments now
+make all five saved outputs match after generic prompt and whitespace normalization. This
+establishes P6 for the pinned release. Byte-level output identity, remaining package-check stages,
+P7, and arbitrary package execution remain unclaimed. Long-call `deparse()` line wrapping,
+list-column matrix conversion, and full matrix name repair remain outside this increment.
+
+The digest-checked `rprojroot 2.1.1` P5 probe inventories five indexed Rd topics and executes both
+default-applicable blocks from the unchanged source. The remaining three topics contain only
+`\\dontrun` blocks and are recorded as exclusions. Its sole top-level direct-test entrypoint,
+`tests/testthat.R`, requires `testthat`, which is not installed in the NativR package corpus; twelve
+nested R files therefore remain unexecuted. This is a P6 first blocker, not package-test success.
+
+The digest-checked `R6 2.6.1` P5 probe executes both default-applicable Rd topics from the real
+installed source and records one excluded `\\dontrun` block. Its `tests/testthat.R` entrypoint also
+requires unavailable `testthat`; fifteen nested R files remain unexecuted, so P6/P7 are not claimed
+for R6.
+
+`Sys.info()` preserves the R 4.6.1 named-character/zero-formal shape but reports the virtual browser
+platform (`NativR`, `wasm32`) and missing host identity fields. `diag<-` now performs measured
+matrix and data-frame diagonal replacement, including zero-size, list-matrix, numeric-promotion, and
+attribute-preservation cases. `prod()` covers the measured numeric, logical, complex, missing, and
+data-frame aggregate paths. These reusable changes complete all four applicable unchanged numDeriv
+Rd examples, raising that pinned package to P5. Cartesian positive-integer complex power removes the
+former complex-gradient assertion in `tests/CSD.R`; the isolated Example 3 had an error of
+5.0779879265460925 in NativR versus 1.20338213114386e-16 in GNU R 4.6.1 before that fix. A bounded
+300-million-step/50-million-vector opt-in profile completes all seven unchanged top-level test
+scripts, including `tests/CSD.R` at 273,659,236 steps and 382,508,540 cumulatively allocated
+elements. Generic vectorized `asin()`, `acos()`, and `atan()` clear the final `tests/trig01.R`
+blocker, establishing P6. GNU R 4.6.1 exits successfully on the same seven scripts, but matrix print
+layout and numeric precision differ in the explicit output. The archive has no `.Rout.save` files.
+Full `R CMD check` and output fidelity remain unverified P7 work.
+
+`is.primitive(x)` classifies first-class base functions against the GNU R 4.6.1 observable
+primitive-binding catalog, independently of NativR's internal eager/special dispatch kind. A
+digest-checked `assertthat 0.2.1` P5 probe inventories 11 Rd example topics with 12 runnable blocks
+and one excluded `\\dontrun` block. Seven topics complete, including `man/are_equal.Rd` and
+`man/assertions-file.Rd`, after generic function introspection, call matching, condition handling,
+partial argument matching, and virtual `file.access` support. The first blocker is
+`man/not_empty.Rd`: the standard `datasets::mtcars` binding is unavailable. That package remains P4
+with an explicit P5 blocker.
 
 The fifth source-blind rotation evaluates rstudioapi and inline after the same public-only evidence
 gate. Both install, load, attach, and reach P4 unchanged. The reusable contract increment treats
@@ -2462,10 +2666,11 @@ whisker's scalar, section, inverted-section, escaped/unescaped, and triple-brace
 not a claim of complete POSIX/PCRE equivalence, every package export, P5-P7, or arbitrary package
 execution. `zeallot 0.2.0` and `ini 0.3.1` remain uninspected P0 holdouts.
 
-The same profile corrects two previously admitted oracle gaps: `Sys.which()` accepts symbol and
-language values through ordinary character decomposition before its explicit allow-list lookup, and
-`help()` forces and validates `verbose=` even when it finds the topic. These are reusable Base/utils
-semantics, not host process discovery or desktop help integration.
+The same profile corrects a previously admitted oracle gap: `Sys.which()` accepts symbol and
+language values through ordinary character decomposition before its explicit allow-list lookup. A
+later exact GNU R 4.6.1 oracle check establishes that `help()` leaves `verbose=` unevaluated on
+measured topic, missing-topic, and package-index paths. These are reusable Base/utils semantics, not
+host process discovery or desktop help integration.
 
 The seventh source-blind rotation evaluates zeallot and ini only after recording public manuals,
 formals, representative black-box GNU R results, and source digests. Both reach P4 unchanged. The
@@ -2485,15 +2690,35 @@ R-source units from immutable resource bytes and adds list/factor `%s` formattin
 telemetry surfaces. Native compilation, telemetry exporters, every export, P5-P7, and universal
 package execution remain outside the claim. `BH 1.90.0-1` is the next untouched P0 holdout.
 
+The ninth source-blind rotation evaluates BH only after official CRAN metadata and GNU R black-box
+resource shape were frozen. Generic admission now permits up to 16,384 archive files and 192 MiB by
+default, rejects archive-limit errors promptly, validates aggregate resources before Worker transfer
+and in the runtime host, and computes standard `exportPattern()` names after local namespace
+bindings load. Unchanged BH loads and attaches with zero R exports and 12,554 headers totaling
+128,040,580 bytes, reaching P3. P4 is not applicable because the package declares no R functions;
+this does not claim that downstream `LinkingTo: BH` C++ packages compile or execute. The committed
+top-100 snapshot now has no untouched candidate whose entire runtime closure is already available
+and native-free.
+
+`exportPattern()` resolves against local namespace bindings after package source evaluation. Its
+quoted pattern supports the standard POSIX character classes under the deterministic C locale;
+invalid patterns and unsupported collating or equivalence constructs fail during namespace load.
+Pattern exports are available through `pkg::name`, namespace export queries, and package attachment.
+
 Package admission is not universal execution compatibility. Package `data/*.R`, `.csv`, `.tab`,
 `.txt`, and XDR/gzip `.rda`/`.RData` discovery/loading is supported through `utils::data`, including
-explicit target environments and overwrite protection. The package tool normalizes bzip2-wrapped
-`.rda`/`.RData`/`.rds` resources to size-checked raw serialization bytes at build time; no bzip2
-decoder or package-installation authority enters the browser bundle. `R/sysdata.rda` initializes the
-namespace before package source. Depends-style attachment, installed `.rdx`/`.rdb` lazy-load
-databases, data indexes/aliases, broader NAMESPACE and S4 registration, bytecode, compiled code,
-arbitrary connections, direct runtime bzip2 streams, xz/zstd, unsupported serialized types,
-license-policy decisions, and R CMD check behavior remain outside this slice.
+explicit target environments and overwrite protection. Text data now applies GNU R's `as.is = FALSE`
+factor conversion. A separately attributed UCI Iris text resource flows through the same generic
+core-package resource and `data()` path; `data(iris)` yields the 150-row, five-column frame with
+four numeric measurements and a three-level Species factor. This is executable evidence for one
+standard dataset, not the full `datasets` catalog or lazy lookup of every built-in dataset. The
+package tool normalizes bzip2-wrapped `.rda`/`.RData`/`.rds` resources to size-checked raw
+serialization bytes at build time; no bzip2 decoder or package-installation authority enters the
+browser bundle. `R/sysdata.rda` initializes the namespace before package source. Depends-style
+attachment, installed `.rdx`/`.rdb` lazy-load databases, data indexes/aliases, broader NAMESPACE and
+S4 registration, bytecode, compiled code, arbitrary connections, direct runtime bzip2 streams,
+xz/zstd, unsupported serialized types, license-policy decisions, and R CMD check behavior remain
+outside this slice.
 
 Usage-ranked `base::args()` has GNU R 4.6 differential evidence for ordinary closures, registered
 builtins, first-class operators, character function names, default expressions, ellipsis, global
@@ -2513,6 +2738,30 @@ registrations back, while reset and disposal clear them. Inline and default-Work
 execute the same dynamic-registration path. Delayed registration against an unavailable suggested
 package, the complete S3 method table API, and broader NAMESPACE registration directives are not
 claimed.
+
+Profile 0.306 shares syntax depth validation across compact deparsing, diagnostics and closure
+layout. Display depth beyond 512 is rejected with `NRL4004` before recursive formatting. Public
+`deparse` and `deparse1` charge syntax traversal to the session work budget. Shared subexpressions
+remain valid. These are NativR resource limits, not GNU R equivalence claims; broader compact-output
+allocation limits remain separate work.
+
+Recursive value printing rejects nesting deeper than 512 with `NRL4004`. List and closure formatting
+checks accumulated UTF-8 output bytes while assembling lines; the final output route also enforces
+the session limit. These resource boundaries are NativR-owned behavior.
+
+Profile 0.307 aligns direct browser bundle admission with build-time DESCRIPTION checks: metadata
+must contain one nonempty DCF record, duplicate fields are rejected, and a continuation requires a
+preceding field. Blank or whitespace-only lines separate records; surrounding blank lines are
+allowed. Malformed direct bundles fail with `NRE2229`. Multi-record repository indexes remain valid.
+This is a strict package-admission policy, not a claim to reproduce general `read.dcf` behavior or
+all DESCRIPTION checks.
+
+Profile 0.308 attaches a source package's exports and search-path entry before invoking `.onAttach`.
+Independent GNU R fixtures verify that the hook can observe both. Hook failure removes that
+attachment while keeping the loaded namespace available for a retry. Owned-state tests additionally
+cover masked export restoration, preservation of other attachments created by the hook, cached
+search-environment links, and recovery after a work-limit failure. Detach/unload and complete
+package event-hook semantics remain unimplemented.
 
 Deliberate current exclusions include GNU R/webR embedding, browser-time package installation,
 universal package execution, generated JavaScript execution, the complete graphics-device/base-
@@ -2546,3 +2795,1019 @@ generic wrappers and `standardGeneric()`. This directly covers inline's pure-R S
 without claiming that its compiled C/C++/Fortran payloads can execute. Ambiguous-method diagnostics,
 union classes, `callNextMethod`, primitive/group generics, and the complete methods package remain
 compatibility depth.
+
+Profile 0.309 provides `.GlobalEnv` as a locked, ordinary base binding, including `base::.GlobalEnv`
+and package namespace lookup. Lexical shadowing remains possible. Session reset replaces the binding
+with the fresh session global environment and restores its lock; sessions remain isolated.
+Independent GNU R 4.6.1 probes cover location, lock/active state, identity, shadowing and rejected
+assignment. Recursive Oracle v2 checks shared environment values written through `.GlobalEnv`, and
+the native package-hook fixture now uses this binding. This does not extend search-path, detach or
+unload compatibility.
+
+Profile 0.310 makes the global environment parent chain use the same attached environments returned
+by `as.environment()`. Attached export mutation affects unqualified lookup; namespace bindings
+remain separate. Search-chain identity holds after reset, and failed attachment removes only its
+environment while preserving nested attachments and masking. Independent native package fixtures
+cover identity and unlocked export mutation. Default package-environment locking, arbitrary
+`attach`, `detach`, and namespace unloading remain incomplete; static namespaces still share the
+base implementation environment.
+
+Profile 0.311 implements `detach` for supplied source packages: name/position selection,
+`character.only`, attached `Depends` guards with `force`, invisible NULL, `.onDetach` before
+removal, namespace retention, masking restoration, escaped export preservation with base parent, and
+reattachment without rerunning `.onLoad`. Ordinary hook errors warn and proceed; resource-limit and
+unsupported-capability failures abort without detaching. Native independent package fixtures cover
+successful and failing hooks and subsequent reattachment; Oracle v2 covers formals and invalid-name
+control flow. Namespace unloading (`unload=TRUE`), static core package detachment, arbitrary
+attached objects, user `setHook` lifecycle dispatch, and exact hook-error call formatting remain
+unsupported or incomplete. No P7 package promotion follows from this bounded lifecycle work.
+
+Profile 0.312 supports source `unloadNamespace` and `detach(unload=TRUE)`. Attached packages detach
+first; loaded namespace imports prevent unregistration. Direct unload reports an error for that
+blocker, while detach-with-unload warns and retains the namespace. `.onUnload` sees the namespace
+loaded and detached; ordinary hook errors warn and proceed, while resource failures preserve the
+namespace for retry. Unregistration retains escaped environments, closures, their namespace names,
+and registered S3 methods, matching independently authored GNU R 4.6.1 fixtures. Reload constructs a
+fresh namespace and reruns load hooks. Absent namespaces return invisible NULL. Static core and DLL
+unloading, user lifecycle hooks, complete S4 deregistration, and exact hook-error call rendering
+remain incomplete. `length` now uses shared S3 class/default dispatch, closing a gap exposed by the
+retained-method fixture; unclassed values keep their primitive length behavior. Exhaustive primitive
+`NextMethod` fallback remains outside this claim.
+
+Profile 0.313 runs registered user package lifecycle callbacks. `onLoad` and `attach` callbacks
+follow package hooks; `detach` and `onUnload` callbacks precede package hooks. Callbacks receive
+package name and the browser-owned package path, execute in registration order, and use a snapshot
+of the current hook list. Clearing or replacing hooks during execution affects later events.
+Ordinary callback errors print to stderr and allow subsequent callbacks to run; resource and
+unsupported-capability failures remain explicit. `setHook` supports unnamed lists, NULL clearing,
+and stored non-callable values that fail during invocation. Native fixtures cover order, state,
+argument paths, non-callable entries, clearing during dispatch and continued execution after
+failure. Reset clears registrations. Exact arbitrary callback diagnostics/caller frames, named
+hook-list metadata, static-package lifecycle transitions and complete namespace semantics remain
+compatibility depth.
+
+Profile 0.314 separates registered core namespaces from attached package environments and the base
+environment. The base namespace has distinct identity, shares base bindings, and has the session
+global environment as its parent; reset refreshes that parent. Other core namespaces use named
+imports environments whose parent is the base namespace. Builtin package ownership follows the
+checked-in public GNU R 4.6.1 export inventory; `stats::mean` is rejected, and `graphics::plot`
+preserves the base generic re-export. Explicit source-package imports remain available with a
+base-only global search path, while unimported functions do not leak from the base environment.
+Serialization preserves base/base-namespace identity. Evidence uses independently written cases and
+native package fixtures. Complete core import graphs, static core detachment/unloading, and full
+clean-base installation checks remain incomplete; this does not establish P7 compatibility.
+
+Profile 0.315 permits detachment and reattachment of registered core package exports while retaining
+their namespaces. Escaped attached environments retain their values and parent the base environment;
+reattachment creates a fresh export environment. Registered user detach/attach callbacks observe the
+package still/already attached and receive its system-library path. Resource failures retain an
+existing attachment during detach and remove a newly created attachment during attach. The package
+checker separately observes loading and attachment with only `.GlobalEnv`, `Autoloads`, and
+`package:base` on the search path. It validates the initial path, absent unqualified `median`, and
+fresh target namespace state. Core namespaces remain loaded, so this evidence does not establish
+startup without default namespaces, full native core hook side effects, static namespace unloading,
+or full installation validation. Those remain explicit limitations, and P7 remains unproven.
+
+The package-tools `description-structure-v1` assessment records single-record DCF admission,
+required literal field presence, documented package-name/version grammar and dependency-list syntax.
+It follows the public Writing R Extensions DESCRIPTION contract, with independently authored
+black-box GNU R identity diagnostics. `Authors@R`-derived fields are unexecuted rather than accepted
+without evaluating their values. Structural success does not validate license expressions,
+maintainer addresses, prose quality, all field rules or undeclared/transitive dependencies. The
+checker preserves the unexecuted full-metadata stage and fails it when a structural check fails.
+This is package-check evidence policy, not a change to runtime semantic profile 0.315.
+
+The `description-structure-v2` tooling policy additionally records native strict Title and
+Description punctuation diagnostics. Title rejects a terminal ASCII period; Description requires a
+terminal `.`, `!` or `?`, optionally followed by one closing quote or parenthesis, after DCF
+whitespace handling. Independently authored native fixtures cover empty fields, punctuation-only
+text, ellipses, quotations and continuation lines. Required presence remains a separate check. These
+diagnostics do not establish sentence quality, title case, single-paragraph prose, license validity
+or complete metadata validation. Historical v1 reports remain readable; runtime profile and callable
+capabilities are unchanged.
+
+Profile 0.316 adds ordinary S3 class/default dispatch for `c()` based on its first argument after
+forcing all supplied arguments. Later classed arguments and an unclassed first argument do not
+trigger this dispatch. `NextMethod()` traverses the remaining methods and, for `c`, reaches an
+explicit primitive implementation without redispatch. Native cases cover first-argument selection,
+default methods, inherited methods, retained names and primitive fallback; unit cases cover eager
+evaluation and single evaluation of side effects. This is a shared prerequisite for classed
+collections such as `person` metadata used by Authors@R. Person construction/formatting and derived
+author validation remain unimplemented. General method-local argument updates and exhaustive
+primitive fallback/control-argument semantics remain compatibility depth.
+
+Native evidence also establishes default-method re-entry: `NextMethod()` from a default method
+selects that default again. This applies to ordinary generics and primitive `c`; resource limits
+bound methods that recurse indefinitely. Primitive fallback occurs only when no applicable default
+method exists.
+
+### Person metadata baseline (profile 0.317)
+
+`utils::person()` constructs classed lists of records with given, family, role, email and comment
+fields. The baseline covers empty objects, list-column vectorization, legacy name arguments, role
+filtering, collection concatenation, field/subscript access, text formatting, printing and ORCID
+check digits. Private utils S3 methods remain registered across detachment and reset; namespace
+exports exclude those private bindings. Shared `[`/`[[` dispatch preserves missing indices, and
+`as.character` dispatches class methods.
+
+Evidence consists of independent fixtures, recursive object/formals comparison, and an optional
+black-box test of the native accepted role catalog. The observer traverses unclassed storage for
+classed vectors/lists so user methods cannot change the recorded payload. No implementation bodies
+were used. Public references: the R utils person manual and ORCID's ISO 7064 MOD 11-2 identifier
+specification.
+
+This is a bounded prerequisite for Authors@R. Parsing with `as.person`, derived DESCRIPTION
+validation, R/Markdown styles, ROR handling, class-specific noncharacter field coercion, nested list
+fields, and exhaustive formatting options/private-method formals remain outside the claim.
+Unsupported class-specific coercion and non-text styles fail explicitly.
+
+The invalid-role recursive fixture compares the filtered value with warnings suppressed. Native
+warning class/call envelopes are not yet represented by the runtime warning API, so exact condition
+equivalence for person warnings is not claimed.
+
+### Executed Authors@R role evidence
+
+The package checker separately records `authors-person-roles-v1`: it evaluates the unchanged
+Authors@R expression in fresh bounded sessions and compares NativR with native GNU R. Its three
+flags record a person list, a named role-bearing author, and exactly one named creator with a
+bounded first email address. Multiple emails use the first value. Independent fixtures also compare
+acceptance with GNU R's DESCRIPTION checker, without inspecting its implementation.
+
+An absent field is inapplicable. Evaluation failure or missing output is incomplete evidence; a
+completed differing result or matching invalid metadata fails the metadata stage. Full metadata
+validation stays unexecuted. Derived Author/Maintainer formatting, explicit-field conflicts,
+complete email syntax, field integrity and warning equivalence remain open. Structural checking
+continues to avoid evaluating source; this separate opt-in package-check execution supplies the role
+evidence. The runtime profile remains 0.317.
+
+### Person whitespace and derived fields (profile 0.318)
+
+Person field strings trim only boundary spaces, tabs, CR and LF, including role values before
+catalog validation. Interior whitespace and named comments are preserved; vertical tab and form feed
+are not boundary-trimmed. Independent unit and recursive native fixtures establish this
+normalization, including the difference between stored text and DESCRIPTION expansion.
+
+The package checker records `authors-derived-fields-v1` separately from role validity. It compares
+independently derived Author/Maintainer strings against native metadata expansion, using UTF-8 hex
+framing to preserve newlines. Author text includes named role-bearing people, excludes email, and
+collapses internal whitespace; people are separated by comma/newline/two spaces. A single named
+creator with an email supplies Maintainer, using its first email and omitting role/comments.
+Explicit fields take precedence, including empty strings. Invalid email text may still be expanded;
+role/email validation remains a separate observation. Evaluation errors and unsupported formatting
+remain incomplete evidence. Full DESCRIPTION validation and P7 remain open.
+
+### Effective author metadata assessment
+
+The package checker now combines explicit DESCRIPTION fields with completed matching derived-field
+observations under `effective-author-fields-v1`. It checks nonempty effective Author/Maintainer
+fields and the final angle-bracketed Maintainer address. Explicit fields, including empty values,
+retain precedence. Missing, failed or contradictory derivation cannot establish field validity.
+
+Maintainer syntax is independently specified and tested against GNU R DESCRIPTION diagnostics:
+dot-atom or nonempty quoted local parts, escaped quoted characters and dotted domains. Diagnostic
+acceptance permits an absent displayed name and validates the final address even when preceding text
+includes another address. This is not a claim of email deliverability or full RFC conformance. The
+role observer advances to `authors-person-roles-v2` to share quoted-local-part handling.
+Internationalized addresses, comprehensive metadata validation and P7 remain open. Runtime profile
+0.318 is unchanged because this change is package-check tooling.
+
+### Shared POSIX regex classes (profile 0.319)
+
+Ordinary regex consumers now share the independent C-locale POSIX bracket translator previously used
+only for namespace export patterns. The supported classes are alnum, alpha, blank, cntrl, digit,
+graph, lower, print, punct, space, upper and xdigit. Translation composes with class negation,
+adjacent literal members, a leading literal closing bracket, ranges and quantifiers. Fixed matching
+preserves literal pattern text. Unknown classes and collating/equivalence elements fail explicitly
+instead of falling through to incompatible JavaScript matching.
+
+Evidence compares every non-NUL ASCII character for all 12 classes with native R in both ordinary
+and perl modes, plus replacement, splitting and capture/location graphs. This does not establish
+complete TRE/PCRE identity, locale-specific Unicode classifications or all case-folding behavior.
+The same runtime helper serves namespace export patterns and base string functions without changing
+package dependency direction or executing generated JavaScript.
+
+The same profile corrects location-result metadata: ASCII-only pattern/input vectors report
+`index.type = "chars"` and `useBytes = TRUE`; mixed Unicode input omits those attributes. Missing
+entries and Perl regexec attribute order follow separately observed native behavior. Explicit
+byte-oriented matching remains outside the admitted contract.
+
+### Source character escapes (profile 0.320)
+
+The parser now decodes one-to-three-digit octal escapes, one-to-two-digit hex escapes,
+one-to-four/eight-digit Unicode escapes (including braced forms), escaped backticks and raw
+character delimiters. It rejects unknown escapes, zero bytes, out-of-range octal/Unicode values,
+mixed byte/Unicode escapes and Unicode escapes in backtick identifiers with structured diagnostics.
+No statements execute when a program has an error diagnostic. Unpaired Unicode surrogates are
+explicitly outside the browser string contract; native nonstandard UTF-8/warning behavior is not
+claimed. Paired surrogates decode to their Unicode scalar.
+
+Normalized StringLiteral nodes can carry exact byte payloads and encoding marks. Evaluation,
+quotation and language-value reconstruction preserve these bytes; byte-bearing deparse uses
+reparseable hexadecimal spelling when needed. This does not claim native textual deparse identity
+for invalid UTF-8 or complete byte-string behavior across all string operations. The contract is
+supported by all 255 nonzero byte escapes and recursive byte/encoding observations, with independent
+fixtures based on the public R Quotes documentation and GNU R 4.6.1 black-box execution.
+
+### Process-time summary and printing (profile 0.321)
+
+`summary.proc_time` combines parent and nonmissing child user/system times, retains elapsed time,
+and returns three named values without the input's class or extra attributes. Numeric, integer,
+logical and complex fixtures cover absent child fields, missing parents, NA/NaN children and empty
+inputs. `print.proc_time` prints that summary using session options, ignores unused dots, and
+invisibly returns the original object. Both methods are registered with base S3 generics and
+exported. `summary` now dispatches class/default methods with lazy dots; its default options and
+complete native method catalog remain incomplete. Real CPU and elapsed timings remain
+platform-adapted; this increment does not establish exact native package timing output or P7
+compatibility.
+
+### Sum input and result types (profile 0.322)
+
+`sum()` admits named data arguments and NULL, matches only exact `na.rm`, and forces arguments in
+source order before reduction. All-integer/logical input returns an integer when possible; crossing
+the integer range after a complete argument promotes the running result permanently to double.
+Within one integer vector, an exact accumulator permits cancellation without premature promotion.
+Missing results retain the current promoted type, with real/complex input types determined before
+reduction. Native fixtures cover empty vectors, NULL, named arguments, range boundaries, ordered
+missing inputs and control evaluation. Factors fail explicitly. Summary group/data-frame dispatch,
+componentwise complex NA payloads and platform-specific extended-precision floating accumulation
+remain incomplete; these results do not establish full summation or numerical-package identity.
+
+### Summary group dispatch (profile 0.323)
+
+`sum`, `prod`, `min`, `max`, `any`, `all` and `range` dispatch on the first data argument after
+forcing arguments in source order. For each class, a specific method precedes a Summary method.
+Initial dispatch ignores `.default` methods; continuation can select the specific generic's default
+and then its primitive implementation. Methods receive an explicit uncoerced `na.rm`, defaulting to
+FALSE, plus `.Generic`, `.Group`, `.Method` and `.Class` metadata. Namespace Summary registrations
+use base's group identity without exposing a fictitious callable named Summary.
+
+`NextMethod()` retains the selected dispatch group, class history and original arguments. Native
+fixtures cover inherited group methods, specific-method continuation, primitive fallback and bounded
+mixed-method re-entry. Native pathological recursion is subject to NativR's call-depth guard.
+Modified method arguments, dispatch-environment variables and exact reconstructed calls remain
+outside this increment. Full factor/data-frame/time-class Summary method catalogs, other
+group-generic families and floating accumulation remain incomplete.
+
+### Factor Summary methods (profile 0.324)
+
+Base registers and exports `Summary.factor` and `Summary.ordered`. Unordered factors reject all
+Summary members. Ordered factors admit `min`, `max` and `range` only when every supplied data
+argument is ordered with identical levels in identical order. Results retain ordered/factor class
+and levels, discarding names and incidental attributes. Missing and empty inputs produce missing
+ordered values; empty/all-removed inputs emit the observed extrema warnings in order. Unsupported
+ordered operations and incompatible levels fail explicitly. Recursive native fixtures cover results,
+formals, control forwarding and inherited group dispatch. Malformed factor storage, missing level
+labels and exact native warning call envelopes remain outside these sampled claims.
+
+### Atomic extrema (profile 0.325)
+
+`min`, `max` and `range` preserve integer/logical result types unless a double input promotes the
+result. Empty numeric reductions return double infinities with ordered warnings; missing integer
+reductions retain integer NA. NA takes precedence over NaN regardless of input order. NULL and named
+data arguments are admitted, primitive `na.rm` uses scalar coercion, and results discard input
+attributes. Character reductions support ordinary ASCII ordering, mixed atomic coercion and missing
+or empty character results. `range(..., finite=TRUE)` removes nonfinite numeric values and missing
+values. Independently authored recursive native fixtures verify these result graphs, error messages
+and unit tests check native-observed warning order. Recursive list inputs to range, malformed range
+control identity, locale-dependent collation, character byte/encoding identity and full
+data-frame/time-class method catalogs remain incomplete. Exact warning call envelopes are outside
+this increment.
+
+### Data-frame Summary methods (profile 0.326)
+
+Base exports and registers `Summary.data.frame` across sum, product, extrema, range and logical
+summaries. Each numeric-alike frame is combined into one atomic argument, preserving common type and
+integer argument-boundary behavior. Logical, real, complex and matrix columns are admitted; factor,
+date/time, raw, character and list columns fail explicitly. Multiple frames and numeric arguments
+are supported when the first argument selects the method. Missing, empty and scalar controls
+delegate to the shared reducers; empty or multi-element atomic `na.rm` controls follow the observed
+argument-expansion behavior. The former product-only flattening shortcut is removed, so a later data
+frame does not silently bypass first-argument dispatch. Independently authored native recursive
+fixtures cover method formals, result graphs, controls and failure messages. Custom
+numeric-predicate/coercion methods, non-atomic controls, malformed frames, componentwise complex NA,
+extended floating accumulation and exact warning call envelopes remain incomplete.
+
+### Numeric predicates (profile 0.327)
+
+`is.numeric` dispatches on explicit classes, supports a classed-input default method and permits
+`NextMethod()` to reach the storage predicate. Unclassed inputs use the storage predicate directly.
+Base registers `is.numeric.Date`, `is.numeric.POSIXt` and `is.numeric.difftime`; these return FALSE
+without forcing their argument. Integer and double storage is numeric except factors; complex,
+logical and other storage is not numeric. Data-frame Summary validation now consults custom numeric
+predicates before accepting ordinary numeric columns, including the registered time predicates.
+Independent native result graphs cover classification, lazy time methods, formals, method metadata,
+default selection and frame validation. Summary validation uses base namespace lookup, so
+caller-local methods do not override it. Global custom methods are covered by unit tests based on
+native probes. Malformed predicate results, S4 dispatch and custom matrix coercion remain
+incomplete.
+
+### DESCRIPTION diagnostic policy v3
+
+Build-time package inspection now emits `description-structure-v3`. It rejects case-insensitive
+reserved Priority values `base` and `recommended`. For Depends, Imports, Suggests and Enhances,
+structural diagnostics require native-observed constraint spacing and at least two numeric version
+components, admit R revision constraints in each field, and admit a single terminal comma while
+rejecting leading or interior empty entries. A 134-input independently authored native fixture
+matrix checks diagnostic presence for these dependency and Priority rules. LinkingTo retains the
+separate loader syntax check; native DESCRIPTION diagnostic equivalence is not claimed for that
+field. Old v1/v2 assessments remain readable evidence. This build-time policy does not change the
+runtime semantic profile or claim dependency availability, full metadata validation, license
+validity or P7 completion.
+
+### License structural policy v1
+
+Build-time `inspectPackageLicense` reports independent expression recognition, required template
+extensions, permitted extra terms and root file-reference presence. A 32-row public catalog is
+pinned to GNU R 4.6.1 through its observable database API; no implementation source or license text
+is copied. Native fixtures compare catalog data and diagnostic flags across canonical names,
+abbreviations, display labels, numeric version restrictions, alternatives, unknown expressions and
+present/missing files. Package reports include `licenseAssessment` and credit only the executed
+checks. File content, standardization aliases, SPDX expansion, legal rights and dependency-license
+compatibility remain outside this structural policy. The runtime profile remains 0.327 and full
+metadata/P7 remains open.
+
+### License structural policy v2
+
+`inspectPackageLicense` accepts optional file text and checks template DCF syntax and required
+fields. MIT and BSD templates require YEAR and COPYRIGHT HOLDER; BSD 3-clause additionally requires
+ORGANIZATION. The observed checker combines required fields across alternatives and reads the first
+referenced file. Multiple records and repeated fields are admitted; each record must contain
+nonempty required values. Empty files pass the sampled native structural check, and field meaning is
+not inferred. Missing text remains unexecuted. Independently authored native fixtures cover 136
+template/file/alternative combinations. The package runner supplies only root LICENSE/LICENCE text,
+credits the executed diagnostics, and preserves full metadata/P7 as incomplete. Legal
+interpretation, encoding edge cases and template field meaning remain outside this build-time
+policy; the runtime profile is unchanged.
+
+### Namespace declaration audit v1
+
+Build-time `inspectPackageDependencyDeclarations` audits supported static import/importFrom package
+names against DESCRIPTION Imports/Depends. GNU R 4.6.1 base packages are exempt. Suggests, Enhances
+and LinkingTo do not satisfy a namespace dependency declaration. Native fixtures verify missing sets
+across 12 field, quoting and base-package cases; an independent native R CMD check fixture confirmed
+the missing declaration is a dependency error. Unsupported conditional declarations, escaped names
+and named controls are marked unexecuted. The package runner records `declarationAssessment` and
+credits only completed audits. Dynamic code references, undeclared transitive dependencies and full
+metadata/P7 remain open. Runtime capabilities are unchanged.
+
+### Namespace declaration audit v2
+
+Static auditing now accepts named package arguments and exact `except` controls containing literals
+or literal `c(...)` lists. Exclusions are not counted as dependencies; other named import arguments
+remain package references. Controls may precede or follow package arguments. Missing package names
+are sorted in C order. All 23 native fixtures compare the resulting missing-name diagnostic sets.
+Computed controls, escaped package names, conditional namespaces, dynamic references and transitive
+closure remain unexecuted. This changes build-time audit coverage, not runtime namespace execution
+or the semantic profile. The report policy is `namespace-declarations-v2`.
+
+### Namespace import exclusions (profile 0.328)
+
+Source-package imports accept named package arguments and the first exact `except` argument with
+literal exclusions, literal `c(...)` lists or NULL. Import controls are normalized from the R AST;
+computed expressions fail without execution. The runtime omits excluded exported bindings, merges
+repeated full imports by their combined imported surface, and preserves explicit importFrom
+re-imports. Ten independently authored source-package installations compare observable imported
+bindings with native R. The package-loader conformance suite retains a checked-in executable case.
+The build-time declaration audit advances to v3 to apply the native first-except rule, with 24
+native fixtures. Conditional namespaces, arbitrary computed controls, full importFrom renaming and
+exact conflicting-import warning envelopes remain incomplete.
+
+### Namespace import export boundary (profile 0.329)
+
+Explicit importFrom bindings must belong to the dependency namespace export surface. Private
+bindings and inherited base bindings are rejected, as are absent names. Three independently authored
+native package installations verify rejection; runtime tests and package-loader conformance retain
+executable evidence. Renamed imports and exact native diagnostic wording remain incomplete.
+
+### Namespace import renaming (profile 0.330)
+
+Literal importFrom arguments retain local alias names separately from dependency export names. Named
+package arguments and quoted binding names are normalized from the AST. Import directives retain
+their order, so full imports and exclusions preserve explicit aliases. Seven native installation
+fixtures verify alias presence and values alongside the ten existing import cases. Duplicate local
+names within one directive are rejected. Computed directives and exact conflicting import
+diagnostics remain incomplete.
+
+### Namespace import conflict warnings (profile 0.331)
+
+Ordinary imports compare an existing local binding with the incoming value using identical.
+Different values emit a replacement warning naming the previous and current packages; equal values
+are replaced silently. Four independent native installation fixtures cover selected and full
+imports, equal values across packages, and repeated imports from one package. The latest binding
+remains visible. Renamed incoming binding conflicts, repeated alias errors and their native
+diagnostic envelopes remain incomplete; this capability is partial.
+
+### DESCRIPTION structural policy v4
+
+The build-time DESCRIPTION assessment checks VignetteBuilder syntax against 30 independently written
+native GNU R 4.6.1 fixtures. It accepts ASCII alphanumeric/dot tokens with comma separators,
+including the native empty-entry behavior, and rejects embedded whitespace, constraints and other
+punctuation. These tokens are not validated as package names by this native diagnostic. Builder
+availability, vignette execution and full metadata validation remain separate, incomplete checks.
+This changes build-time evidence only; the runtime profile remains unchanged.
+
+### Provided dependency lookup boundary
+
+Local artifact resolution, repository preflight and repository installation consult only explicit
+provided-package entries. Valid package names such as constructor, toString and hasOwnProperty must
+resolve to an artifact, repository entry or explicitly supplied version; inherited JavaScript
+properties never establish availability. Regression fixtures cover missing roots and dependencies,
+explicit versions and artifact load order. Runtime semantics and the capability profile are
+unchanged.
+
+### Repository installation index pin
+
+Repository installation accepts expectedIndexIntegrity from a preflight result. The CLI exposes
+`--expected-index-integrity sha256-DIGEST`. Invalid pins fail before network access; changed index
+bytes fail before any archive download. A matching pin continues through ordinary dependency
+installation and archive digest checks. Index identity does not establish source archive identity,
+package behavioral compatibility or transitive API coverage. Runtime capabilities are unchanged.
+
+### Bounded repository dependency traversal
+
+Repository installation keeps active packages separate from completed artifacts. The package limit
+counts each package once, and a cycle fails when traversal returns to an active package. Required
+version constraints are checked against available artifact, provided or index versions before
+fetching the dependency archive. Source DESCRIPTION remains authoritative for dependency edges.
+Tests cover a two-package closure at its exact limit and early cycle, version and limit failures
+without unrelated archive downloads. Runtime semantics and compatibility tiers are unchanged.
+
+### Archive and index dependency disagreement
+
+Three independent repository fixtures verify that installation follows the downloaded archive's
+DESCRIPTION when its dependency edges differ from PACKAGES metadata. An archive-only dependency is
+installed and included in the lock, an index-only stale dependency is not fetched, and a stronger
+archive version constraint fails before downloading the incompatible dependency. The fixtures also
+reuse the preflight index pin: unchanged index bytes alone do not prove that the installed
+dependency graph equals the metadata plan. Preflight findings remain metadata evidence, not
+installation evidence.
+
+### Extended vector summation (profile 0.332)
+
+Double and complex sum inputs use an independently implemented binary accumulator with a 64-bit
+significand and ties-to-even rounding after each addition. Each vector result rounds to binary64
+before combination with other arguments, matching the observed GNU R 4.6.1 profile. Native fixtures
+cover cancellation, halfway cases, finite overflow recovery, infinities, subnormals, complex values
+and argument boundaries. Integer promotion and missing-value behavior are retained. Other numerical
+reducers and math-library differences remain separate gaps; this does not establish package-wide
+numerical equivalence or compatibility with every platform's long-double format.
+
+### Extended matrix reductions (profile 0.333)
+
+colSums, colMeans and rowMeans reuse the owned 64-bit-significand accumulator. Means divide in
+extended precision before rounding to binary64, preserving finite means when the unscaled sum
+exceeds binary64 range. Gradual underflow and ties-to-even conversion cover subnormal results.
+Recursive native fixtures cover real and complex cancellation, overflow, subnormals, infinities,
+empty groups and missing-value removal. Existing dimension and naming behavior is retained. The
+separate correction pass of mean() and other numerical reducers remain incomplete.
+
+### Extended mean correction (profile 0.334)
+
+Numeric mean accumulation and division use the owned extended arithmetic. Double and complex inputs
+additionally accumulate residuals around the extended mean and apply a correction before binary64
+conversion; integer and logical means retain direct division. Native evidence includes cancellation
+with large magnitudes, finite overflow recovery, subnormals, complex components, infinities, empty
+vectors and missing-value removal. Argument matching, trimming and class-method coverage remain
+separate contracts; this change does not claim complete mean generic compatibility.
+
+### Complex infinity observation
+
+The recursive observer emits a complex-components token when a non-missing complex scalar has an
+infinite or signed-zero component. Each component uses the existing double token grammar, so its
+position and infinity sign survive JSON serialization. Ordinary finite complex tokens remain
+unchanged. Independent assertions pin all four real/imaginary positive/negative infinity cases, and
+a recursive case now compares complex infinities directly. The existing complex-na token still
+collapses missing complex components; distinct NA/NaN component payloads remain an observer gap.
+This changes conformance evidence, not the runtime semantic profile.
+
+### Complex NaN observation
+
+Complex values for which is.nan is true now retain separate real and imaginary double tokens,
+including NaN positions, instead of being collapsed into complex-na. Independent expected-token
+assertions cover each single-NaN position and both components. Non-NaN complex NA values retain the
+historical collapsed token: component-specific NA storage and observation remain incomplete. This
+tightens oracle evidence without changing the runtime semantic profile.
+
+### Mean default dispatch and trimming (profile 0.335)
+
+mean dispatches S3 methods while preserving lazy dots and has a registered, directly callable
+mean.default(x, trim = 0, na.rm = FALSE, ...). Numeric trimming removes the specified fraction from
+each sorted end; trim at least one half selects the central value or pair. Negative trim retains all
+values. Named and partial controls, unused lazy dots and NextMethod have native recursive fixtures.
+Non-numeric inputs warn and return NA before forcing trim; positive complex trimming is rejected.
+Dedicated Date/time methods, all control-coercion details and rounding-sensitive partial selection
+order remain incomplete. The default method reuses the extended mean reducer.
+
+### Mean missing controls (profile 0.336)
+
+mean.default removes missing entries only for a length-one, non-missing logical TRUE na.rm value.
+Other control values retain missing entries rather than coercing or rejecting the control. The
+control is forced before trim. NA takes precedence over NaN in real means regardless of encounter
+order, and complex means preserve a NaN in one component while averaging the other. Native recursive
+fixtures cover 15 controls, typed missing inputs, ordering and both NaN component positions.
+Component-specific complex NA storage remains incomplete and is not claimed by this profile.
+
+### Numeric time means (profile 0.337)
+
+`mean.Date`, `mean.POSIXct`, and `mean.difftime` reuse the shared mean controls and accumulation,
+restoring canonical classes and retaining only the time-zone or units attribute appropriate to the
+class. Subclasses, names, and unrelated attributes are removed. Direct calls, trimming, empty
+values, missing removal, lazy extra arguments, and method formals have independent black-box GNU R
+4.6.1 evidence in `numeric-time-mean-methods`. POSIXlt mean conversion and non-UTC time conversion
+remain incomplete; these methods do not establish general date-time compatibility.
+
+The mean probes also exposed an existing selection gap: `[` on POSIXct and difftime can drop
+time-zone and units metadata before mean is called. Empty mean inputs are constructed explicitly in
+the method fixture to isolate this outstanding subset contract.
+
+### Numeric time selection (profile 0.338)
+
+Registered `[` methods for Date, POSIXct, and difftime preserve subclasses and the applicable
+time-zone or units metadata through empty, reordered, and dimensional selection. Date and POSIXct
+`[[` methods retain those classes and metadata; difftime single extraction remains an ordinary
+scalar. Missing-index whole selection retains unrelated attributes. The independent
+`numeric-time-subset-methods` native fixture covers method formals, dimensions, NextMethod
+continuation, and empty selection into mean, closing the metadata gap recorded in profile 0.337.
+Missing names in selections and general POSIXlt selection remain separate incomplete contracts.
+
+### Missing names in vector selection (profile 0.339)
+
+One-dimensional `[` selects the character names attribute with its missingness and encoding
+metadata. Missing, out-of-range, and unmatched selections produce missing names for named vectors;
+selected existing NA names remain missing. Empty character indices do not match empty names, and
+missing names do not match literal strings. The independent native `subset-name-missingness` fixture
+covers atomic, raw, list, pairlist, and Date inputs, numeric/logical/character indices, empty
+selections, repeated missing names, and the literal string `"NA"`. This closes the vector-selection
+name gap found in profile 0.338. Array dimname selection and replacement-name masks remain separate
+incomplete contracts.
+
+`setNames()` and `structure(names=)` now share names-assignment handling for missing entries,
+shorter character vectors padded with NA, and NULL name removal. Non-character name coercion and S3
+replacement dispatch remain outside this evidence.
+
+### Missing array dimnames (profile 0.340)
+
+Dimensional selection accepts missing axis names and retains their character masks through reordered
+or missing indices. Dropped dimensions transfer the surviving axis names, including NA, to the
+result's names. Retained dimnames also preserve missing dimension labels; empty selected axes have
+NULL dimnames. Native recursive evidence in `array-dimname-missingness` covers one-, two-, and
+three-dimensional arrays, dimension dropping, empty axes, and rejected empty/missing character
+indices. Replacement-name masks and coordinate-matrix name matching remain separate boundaries.
+
+For one-dimensional arrays, an empty selection with `drop=TRUE` becomes an empty vector and retains
+an empty names attribute when the source axis was named.
+
+### Missing names in replacement (profile 0.341)
+
+The shared replacement path retains existing name masks and encoding metadata during atomic/list
+assignments, extensions, and atomic-to-list promotion. List deletion via `[<-`, `[[<-`, and `$<-`
+tracks retained source positions, preserving NA names after indices shift. New unnamed extension
+slots have empty names. Native recursive evidence in `replacement-name-missingness` covers
+assignment, extension, deletion, promotion, factors, and missing numeric indices. Missing character
+replacement indices and broader data-frame name repair remain separate incomplete contracts.
+
+Factor replacement also restores the class attribute after other attributes, matching the observed
+native attribute order.
+
+### Missing character replacement indices (profile 0.342)
+
+Character NA indices in atomic/list `[<-` and `[[<-` append distinct NA-named entries. They do not
+match existing missing names or the literal string `"NA"`. Empty character `[[<-` indices append
+unnamed entries. Deleting a new NA-named list position leaves existing elements intact. Data-frame
+assignment continues to reject missing character indices. Native recursive evidence in
+`missing-character-replacement-indices` covers named/unnamed vectors and lists, repeated missing
+indices, scalar/vector replacements, and deletion. Broader replacement dispatch and data-frame
+diagnostics remain incomplete.
+
+### Missing names in extraction (profile 0.343)
+
+Single `[[` extraction ignores missing names during exact and partial character matching; missing
+and empty character indices do not select a named entry. Lists return NULL for those unmatched
+indices and for missing numeric/logical indices, while atomic vectors fail. Finite out-of-range
+numeric list indices still fail. Default `$` matching treats missing names as the text `"NA"`,
+including ambiguity with literal names during partial matching. Its empty-name query does not match.
+Independent `missing-name-extraction` native evidence covers both name orders, literal/missing/empty
+names, exact and partial matching, and typed missing indices. Recursive missing subscripts and
+broader extraction diagnostics remain incomplete.
+
+The callable `$` special now routes literal/symbol member names through the same evaluator path as
+syntax, including environment/language handling and S3 dispatch. Dynamic call expressions as member
+names remain invalid and are not evaluated.
+
+`do.call()` preserves its selected caller environment on forced argument promises, so local S3
+methods remain visible when invoking builtin generics. Its existing quoted-call and
+language-argument evaluation boundaries remain unchanged.
+
+### Language arguments to do.call (profile 0.344)
+
+`do.call()` builds an owned AST call and evaluates it in the requested environment. Symbol and
+language arguments therefore use ordinary promise evaluation, including lazy unused arguments and
+local lookup. `quote=TRUE` wraps each argument in `base::quote()`, retaining observable substitute
+syntax and attributed constants. Return visibility is propagated from the invoked call. Missing
+argument names become the literal tag `"NA"`. Native recursive evidence in
+`do-call-language-arguments` covers these paths, explicit environments, function-name lookup, and
+reflection. This replaces the quoted-call/language-argument boundaries recorded in profile 0.343;
+complete control coercion and all malformed-call diagnostics remain incomplete.
+
+### R runtime versus package dependency observations
+
+Build-time declared-version evidence policy v2 reserves runtime version lookup for `Depends: R`.
+Other dependency fields naming R require a package version lookup; its unavailable result remains
+separate from the installed runtime version. Own DESCRIPTION fixtures compare all five dependency
+fields against native GNU R 4.6.1 checks. This corrects false satisfied results without changing
+runtime semantics or crediting full metadata/dependency validation.
+
+Artifact resolution and both repository paths also reserve `providedPackages.R` for runtime
+requirements. An Imports or enabled Suggests dependency named R requires its own package version,
+and a root named R requires an artifact or repository entry. Supplied artifacts and repository
+records named R cannot replace the runtime version when checking Depends constraints. Runtime
+requirements do not create artifact lock edges, even when a package named R is supplied. Synthetic
+fixtures verify missing dependencies, runtime and package version mismatches, archive request
+boundaries and load order. This is a build-time resolver correction; the runtime capability profile
+and package compatibility tiers remain unchanged.
+
+### do.call control evaluation (profile 0.345)
+
+`do.call()` forces and validates args before quote, then forces what and envir in that order. Quote
+accepts the scalar numeric, complex, raw and character coercions of an R condition, with length and
+missing-value diagnostics verified against GNU R 4.6.1. A quoted pairlist becomes ordinary call
+arguments; an unquoted pairlist still fails. Missing character function names look up the literal
+name `"NA"`. Empty and nonscalar character names fail, and omitted quote/envir arguments use their
+defaults. Formals expose quote=FALSE and envir=parent.frame(). Recursive evidence in
+`do-call-controls-and-forcing` covers these paths and argument side effects. The condition
+conversion is shared with system.time's gcFirst control, whose missing/list/language cases are also
+compared. Full condition-call text, propagated missing-promise diagnostics and every classed
+argument-list conversion remain incomplete.
+
+### Apply input conversion and method dispatch (profile 0.346)
+
+`lapply()`, `sapply()`, and `vapply()` resolve FUN before forcing X, convert classed/non-vector
+inputs through `as.list()`, and dispatch `[[` on classed converted sequences. Method lookup follows
+the base apply context: global/registered methods are visible, while methods local only to the
+caller are not. Sequence length does not call a custom length method. Quoted `do.call()` reuses
+conversion and extraction before forcing what/envir; unquoted calls retain the original argument
+list.
+
+Forwarded dots remain promises, including unused and empty-input cases. sapply controls are forced
+after mapping; vapply forces its template and naming control after input conversion. Missing names
+survive list conversion and apply outputs. sapply derives automatic character names from its
+original input; vapply uses its converted input. Existing names survive sapply's USE.NAMES=FALSE.
+Default as.list preserves classed-list attributes, removes data-frame class/row names, and converts
+expression vectors to lists of owned language values.
+
+Independent recursive cases `apply-class-conversion-and-extraction` and
+`apply-lazy-dots-control-order-and-names` verify these shared paths. Callback promise/call
+reflection and general sapply array simplification remain incomplete. Profiles 0.347 and 0.348
+extend result validation, template shape, and classed list conversion below.
+
+### vapply template validation and shape (profile 0.347)
+
+`vapply()` checks each callback result before invoking the next callback, checking length before
+storage type. Atomic templates support the logical/integer/double/complex widening chain; character
+and raw require exact types. List templates collect list elements without recursive flattening.
+Empty results retain the template storage type. Non-vector templates fail before USE.NAMES is
+forced; expression templates fail after validating that control. USE.NAMES uses the first atomic
+value with native logical coercion and rejects missing or non-atomic controls.
+
+Scalar templates produce vectors. Other templates produce arrays with the template dimensions (or
+its length) followed by input length, including zero-length inputs/results. Template names or
+dimnames take precedence over the first result's corresponding attributes. Input names form the
+final axis, missing names survive, and USE.NAMES=FALSE removes output names and dimnames. Dimname
+axis labels are discarded. Shape validation occurs after mapping; independently authored recursive
+cases `vapply-template-shape-and-types` and `vapply-result-validation-order` verify these rules
+against GNU R 4.6.1, including error messages and callback side effects.
+
+Apply input conversion now happens once. Custom as.list results retain their extraction semantics:
+NULL is empty, expression/language/pairlist results expose elements, and nonempty environments fail
+numeric extraction. sapply pads short automatic character names with missing names and rejects
+excess names before forcing simplify. The recursive case `apply-single-conversion-and-name-length`
+covers these corrections across apply and quoted do.call. Callback promise/call reflection and
+expression-vector metadata remain separate incomplete areas.
+
+### Classed list conversion and names (profile 0.348)
+
+`as.list.Date`, `as.list.POSIXct`, and `as.list.difftime` preserve full source classes on converted
+elements. POSIXct restores tzone and difftime restores units, replacing or removing those element
+attributes while preserving other attributes already on list elements. Atomic elements drop
+unrelated source attributes. Outer results retain names only, including missing and empty names, and
+one-dimensional array names. Direct methods also accept ordinary supported vector, list, pairlist,
+symbol, and call inputs; dots remain lazy. Custom length and extraction methods are ignored. POSIXct
+calls globally visible names methods before conversion and applies the resulting names after
+converting elements. Metadata lookup is lazy, cached, and occurs after the first element's class
+assignment; empty inputs do not read metadata.
+
+`as.list.factor` preserves scalar levels and full classes, and supports globally visible length,
+extraction, and names methods. Two length observations determine allocation and iteration; names are
+observed after extraction. NULL results use list replacement deletion behavior. Caller-local methods
+do not override this base-method lookup. Native fixtures cover changing valid lengths, custom
+extraction, empty factors, direct ordinary storage, and public formals. Malformed second
+length-method results, closure conversion, and attributed formula/language representations remain
+incomplete.
+
+`structure(levels=)` and `structure(class=)` retain metadata on accepted character attribute
+vectors. Factor list conversion retains those attribute objects on scalar results; recursive
+observations verify nested metadata directly, including on the original factor stored inside another
+list.
+
+Shared names replacement coerces atomic and list values, dispatching as.character for names<- and
+setNames while direct attr/structure assignment uses storage coercion. setNames and internal
+class-list methods use global method lookup; direct names<- sees caller-local methods. Padding,
+missing names, pairlist tags, one-dimensional array dimnames, character bytes, and length errors
+have independent native evidence. Recursive cases compare actual attributed outputs and errors.
+
+Attribute lookup now distinguishes exact, unique partial, and ambiguous matches, preserves stored
+name masks, and emits warnPartialMatchAttr warnings. Names lookup also exposes one-dimensional array
+dimnames, including their missing-name masks. Time metadata conversion shares this lookup. The
+recursive cases `time-class-list-conversion`, `time-list-shape-names-and-formals`, and
+`partial-attribute-lookup-and-time-forcing` cover class restoration, dispatch visibility, metadata
+forcing, attributes, and errors against GNU R 4.6.1. Full internal condition-call text and all
+attribute-control coercions remain outside this increment's evidence.
+
+`factor-list-conversion-and-dispatch` and `names-replacement-coercion-and-metadata` compare actual
+objects, nested attributes, encoding bytes, dispatch traces, and errors. The case
+`classed-list-visibility-and-environment-names` verifies visible results after invisible internal
+methods, avoids dispatch on unclassed numeric values, and checks direct environment conversion
+including hidden-name length errors and classed-environment rejection. Environment name ordering
+continues to follow the owned environment model; exact native hash-bucket ordering is not claimed.
+
+### Exiting warning and message handlers (profile 0.348)
+
+`tryCatch` intercepts explicit warning and message signals, including custom condition classes and
+warnings from partial attribute lookup. Handler expressions are forced before expr. The first
+matching handler in argument order is selected; its callback runs with only later sibling handlers
+still available. Result visibility is preserved. Finally runs after the callback, outside that
+tryCatch's handlers, while outer handlers remain available. Pending exits retain handler eligibility
+until inner finally and on.exit cleanup completes, so a new condition from cleanup can replace the
+pending condition. Resource-limit and cancellation failures remain outside R-level capture and
+cannot be replaced by a condition emitted during cleanup.
+
+Simple message conditions include the newline controlled by appendLF. Supplied message conditions
+retain their classes and message text. The independently authored recursive case
+`exiting-condition-handlers-and-unwind` compares handler values, custom conditions, dispatch order,
+cleanup traces, and visibility against GNU R 4.6.1.
+
+Profile 0.351 replaces the earlier suppression flags with muffling frames on the same handler stack
+(see "Condition muffling frames and package startup messages" below). Profile 0.353 adds local
+calling handlers and restarts (see "Local calling handlers, restarts and warning levels" below).
+Ignored-extra-argument diagnostics for supplied message conditions remain incomplete.
+
+### Shared apply simplification (profile 0.349)
+
+`sapply` and `simplify2array` share result simplification for scalar results, matrices, higher
+arrays, and unsimplified lists. Only a non-missing scalar logical FALSE disables sapply
+simplification. Other simplify values are compared with "array" only when array construction needs
+the higher control, including global equality/group methods. USE.NAMES uses scalar logical
+short-circuit behavior: a missing value can remain harmless for numeric inputs or already-named
+results, but fails when automatic character names need it. Mapping precedes names and simplify
+controls. Character names retain missingness, encoding marks, and bytes.
+
+Simplification observes length and lengths, coerces except to integer and retains only exception
+lengths zero/one, and flattens one list level through the shared unlist operation. Empty inputs and
+unequal lengths leave controls lazy. A NULL flatten result leaves higher lazy; other flatten-length
+mismatches return the original input after the applicable higher/dimension observations. Numeric
+matching dimensions can produce higher arrays; otherwise results use width-by-count matrices.
+Missing higher values fail only when compatible dimensions require a decision. Array construction
+observes as.vector before extraction and names, with ordinary recycling after a custom conversion.
+
+Global S3 methods participate in length, lengths, integer exception coercion, unlist, as.list,
+dimension inspection, numeric and product gates, extraction, names, dimnames, and as.vector.
+Caller-local method overrides do not change this base-function lookup. Shared lengths now dispatches
+each classed list element's length method, retaining dimensions and optional names. Integer coercion
+accepts scalar atomic list cells, produces missing integers for empty or nested vector cells, and
+rejects non-vector cells.
+
+Shallow unlist preserves atomic storage promotion, nested list/language/NULL cells, typed empty
+results, and composed names. Inherited names retain encoding bytes; name composition uses UTF-8 and
+rejects bytes-marked strings. All-factor inputs merge levels into a plain factor with native
+attribute order. Scalar simplification preserves that factor; array simplification uses its labels.
+Array names retain NA masks and named-axis labels. Custom dimnames containers append the outer axis
+before padding, and non-character axes use storage coercion without as.character dispatch.
+
+Direct unlist validates recursive before forcing x and use.names, including global length and is.na
+methods on recursive. It forwards original control values and explicit default TRUE arguments to
+global unlist methods, validates recursive before dispatch and use.names on the default path, and
+returns visibly even when a method returns invisibly. Its public formals retain both control
+defaults.
+
+Independent recursive cases `apply-simplification-shapes`, `apply-simplification-controls`,
+`apply-simplification-methods-and-gates`, `sapply-controls-dispatch-and-names`,
+`unlist-shallow-values-types-and-names`, `unlist-name-encoding`,
+`unlist-controls-global-dispatch-and-formals`, `simplification-dimension-gates-and-axis-packing`,
+and `simplification-lengths-and-integer-coercion` compare actual values, attributes, errors, and
+method traces against GNU R 4.6.1. Expression-vector names/attributes and expression-array storage
+remain outside the current value representation. Broader recursive unlist mixed-language/name
+behavior, malformed custom length results, attributes supplied by a custom dimension concatenation
+method, class-preserving c.POSIXct for POSIXct-only dimension classes, and simplification in the
+other apply helpers remain incomplete.
+
+### Mapped and replicated results (profile 0.350)
+
+`mapply` and `replicate` use the shared sapply/simplify2array result builder, including scalar,
+matrix, higher-array, factor and list results. Their simplify controls retain the scalar logical
+FALSE bypass and lazy comparison with "array". Empty and unequal results retain the same lazy
+higher-dimension gates. Map forwards MoreArgs and USE.NAMES while fixing SIMPLIFY to FALSE.
+
+Mapply resolves FUN before forcing dotted inputs and MoreArgs. Classed sequences observe global
+length and extraction methods, and each callback receives eagerly extracted elements. Recycling
+warnings occur after successful mapping and before names and simplification controls; a callback
+error prevents that warning. Names are observed after mapping through global methods and the shared
+name replacement rules. No-input and zero-length mapping return lists while retaining the required
+control observations. NULL MoreArgs is accepted; pairlist MoreArgs is accepted without forwarding
+its cells. Public formals expose the native defaults. Recycling conditions retain the original
+mapply call or the observed Map wrapper call. Invalid function values report the rejected expression
+through shared match.fun resolution; forwarded promises retain their caller expression. Diagnostic
+deparsing checks work limits. Language-valued deparse uses the existing structural syntax renderer,
+including function blocks inside calls and width-based continuations, so recorded condition calls
+retain that layout.
+
+Replicate coerces n using the observed vector-length rules and evaluates expr in a fresh owned
+closure frame on each iteration, with one zero integer in dots. Ordinary assignments stay in that
+frame; superassignment reaches the enclosing environment. Return exits one iteration and on.exit
+cleanup runs for each frame, including errors. Missing expr is harmless for a zero count. Simplify
+is forced after all successful iterations, including a zero-count run. Results are visible after
+internal invisible callbacks. Invalid character counts signal a coercion warning before reporting
+the invalid size, including exiting warning handlers. No generated JavaScript is involved. Character
+counts include the observed hexadecimal floating syntax and case-insensitive Inf/NaN forms. Already
+forced expressions preserve symbol and call values; ordinary expression promises still execute
+syntax. Embedded display construction retains step and cancellation checks. Very long hexadecimal
+significands and compensating extreme exponents remain a numeric-conversion boundary; these cases do
+not establish full native text-to-number equivalence.
+
+Independent recursive cases `mapply-values-forcing-and-methods`, `mapply-controls-and-names`, and
+`replicate-counts-frames-and-simplification`, together with
+`apply-function-rejection-and-warning-calls`, compare actual values, method/forcing traces, errors,
+warnings and visibility against GNU R 4.6.1. The existing simplification boundaries for expression
+metadata, custom dimension attributes, malformed method return values and class-preserving POSIXct
+concatenation remain open. Full reflection of synthesized callback calls and frame stacks, formula
+extraction, and simplification in the other apply helpers are not established by this increment.
+Native mapply/Map can reuse a mutable loop-index object when a custom extraction method returns its
+index directly; NativR currently supplies distinct index values. This identity-sensitive behavior
+remains an explicit boundary.
+
+### Condition muffling frames and package startup messages (profile 0.351)
+
+`suppressWarnings`, `suppressMessages` and the new `suppressPackageStartupMessages` establish a
+muffling frame on the same dynamically scoped stack as `tryCatch` exiting handlers, matching the
+documented calling-handler behavior of those functions. Handlers established inside `expr` see a
+condition first; a muffled condition never reaches outer handlers or session-global calling
+handlers. The `classes` argument filters by condition class, so a custom warning class can be
+suppressed while a plain warning escapes. The value keeps the visibility of `expr`.
+
+Warnings recorded by builtins and operators, such as coercion, `NaNs produced` and recycling
+warnings, are now signalled as `simpleWarning` conditions when the producing call or operator
+returns. They reach `tryCatch(warning = )`, suppression frames and session calling handlers. A
+consumed warning is removed from the deferred warning list; an unhandled one stays for top-level
+reporting. `warning()` and `message()` record or print only when no frame muffled them.
+
+`packageStartupMessage(..., domain, appendLF)` signals a message condition with the additional class
+`packageStartupMessage` and its own call. `require()` signals `Loading required package: <name>`
+with that class before attaching, unless the package is already on the search path or
+`quietly = TRUE`. A handler that unwinds there leaves the package unattached. The missing-package
+warning is now catchable.
+
+Independently authored foundation cases `suppression-frames-yield-to-inner-handlers`,
+`internal-warnings-reach-exiting-handlers`, `suppression-class-filters-and-visibility`,
+`package-startup-message-conditions` and `startup-message-suppression-output`, plus the recursive
+case `condition-muffling-frames-and-startup-messages`, compare values, classes, calls, output and
+visibility against GNU R 4.6.1.
+
+Known boundaries:
+
+- Condition calls for builtin-recorded warnings are the producing call or operator, such as
+  `log(-1)` or `1:3 + 1:2`. GNU R attributes some coercion warnings to the enclosing closure call
+  (for example `h("z")` for `h <- function(v) as.integer(v)`).
+- `require()` reports its own call for the startup message. GNU R reports an internal call.
+- The most common builtin warnings now use GNU R 4.6.1's observed text: `NaNs produced`,
+  `NAs introduced by coercion`, `NAs produced by integer overflow`,
+  `longer object length is not a multiple of shorter object length`, and
+  `out-of-range values treated as 0 in coercion to raw`. Other builtin warnings keep NativR's
+  sentence style or context-free wording, for example the `matrix()` data-length warning, which in
+  GNU R reports the data length and row count. That text is observable through `conditionMessage()`.
+- A builtin that records a warning and then raises an R-level error delivers the warning when the
+  error unwinds through the producing call, before outer handlers see the error. GNU R signals at
+  the point of the warning, so side effects between the warning and the error inside that builtin
+  are not interleaved with handler execution.
+- Profile 0.353 adds `withCallingHandlers`, restarts such as `muffleWarning`, and `options(warn = )`
+  escalation (see the next profile section below).
+
+### Normal distribution algorithms, C formatting and character coercion (profile 0.352)
+
+`qnorm` now uses Wichura's Algorithm AS 241 (Applied Statistics 37, 1988), and `pnorm` uses W. J.
+Cody's rational Chebyshev approximations (Mathematics of Computation 23, 1969; SPECFUN ANORM, ACM
+TOMS Algorithm 715). GNU R documents both algorithms; the published constants were the only
+implementation input. The Inversion normal generator behind `rnorm` uses the same quantile, so a
+seeded `rnorm` stream reproduces GNU R's. Logarithmic `qnorm` feeds the smaller tail's logarithm
+straight into AS 241 instead of rounding it through a probability. `pnorm(log.p = TRUE)` evaluates
+the requested tail directly.
+
+On GNU R 4.6.1 for Windows, the sampled bit-identity is: `qnorm` 2997/3000 for uniform
+probabilities, AS 241's tail branch 546/546 for log probabilities with 5 < sqrt(-log p) <= 27,
+seeded `rnorm` 2993/3000, and `pnorm` 92-95% across tails and log scales. All residual differences
+are at most about 2 units in the last place. They come from the host's `log`/`exp`: V8's `Math.log`
+and `Math.exp` differ from the oracle's on 5.7% and 9.2% of sampled inputs, while `Math.sqrt`
+matches exactly. ECMAScript leaves these functions implementation-approximated, so the residual is a
+platform-libm tolerance, not an algorithm difference. `qnorm` for log probabilities with sqrt(-log
+p) > 27 fails closed with NRU6153, because GNU R documents a separate treatment there that has not
+been verified.
+
+`sprintf` implements the C99 `%e`, `%E`, `%f`, `%F`, `%g` and `%G` conversions, including the `#`,
+`+`, space, `-` and `0` flags, precision, and width. Digits come from the exact binary value,
+rounded half to even (`"%.2f"` of 0.125 is `"0.12"`, `"%.0f"` of 2.5 is `"2"`). Exponents have at
+least two digits, and `%f` prints every integer digit of large values. Non-finite and missing values
+print as `Inf`, `-Inf`, `NaN` and `NA` and are never zero-padded. `%x`, `%X` and `%o` format the
+32-bit two's-complement value. `%d` honors precision, and `%s` honors truncating precision.
+
+Double-to-character coercion (`as.character`, `paste`, and `c()` with character values) uses at most
+15 significant digits, as R documents. Trailing zeros are removed. Fixed notation is used unless the
+scientific form is strictly narrower, and fixed notation keeps every exact digit of integers wider
+than 15 digits (`2^62` gives `4611686018427387904`). Complex parts follow the same rule.
+
+Independently authored foundation cases `normal-quantile-as241-central-exact` (exact),
+`normal-quantile-as241-tails-and-log`, `normal-probability-cody-branches` and
+`inversion-normal-generator-seeded` use a 1e-14 relative tolerance for the libm-dependent results.
+`sprintf-c99-floating-conversions` and `double-character-coercion-significant-digits` are exact. All
+compare against GNU R 4.6.1.
+
+Known boundaries:
+
+- In a 3,179-value sample, 5 character coercions differ from GNU R in the 15th significant digit at
+  exact or near ties (for example, 392878021113574.5 gives `...574`; GNU R gives `...575`).
+- `sprintf` `%a`, `*` widths, and `%n$` positional arguments are not implemented. Unknown directives
+  still pass through unchanged instead of raising GNU R's format error.
+- `dnorm` and `formatC` are not registered.
+- `cos(1.5707963267948966)` is correctly rounded in NativR (`6.123233995736766e-17`). The Windows
+  oracle reports `6.12303176911189e-17`. Such libm deviations need an explicit platform-tolerance
+  policy.
+
+### Local calling handlers, restarts and warning levels (profile 0.353)
+
+`withCallingHandlers(expr, class = handler, ...)` pushes one calling frame per handler on the same
+dynamically scoped stack as `tryCatch` exiting frames and suppression frames. A signalled condition
+walks that stack from the innermost frame. The handlers of one call are offered the condition in
+argument order. A matching calling handler runs in place, before any unwinding. While it runs, its
+own frame and every frame above it are hidden, so a condition the handler signals reaches only the
+outer frames. When the handler returns, the walk continues outward. If no frame muffles or exits,
+the default action follows: `message()` prints, and a warning is handled by the warning level. The
+value of `withCallingHandlers` keeps the visibility of `expr`. Unnamed handlers give GNU R's
+`condition handlers must be specified with a condition class` error.
+
+`warning()` establishes a `muffleWarning` restart and `message()` establishes a `muffleMessage`
+restart while they signal. Warnings recorded by builtins and operators get the same restart when
+they are delivered at the call boundary. `invokeRestart("muffleWarning")` from a handler ends the
+signal, and `warning()` still returns its message invisibly. `stop()` and warnings converted to
+errors are offered to the stack where they are raised. A calling error handler therefore runs before
+`on.exit` cleanup and before outer `finally` expressions, and it can transfer control to a restart.
+`try()` marks its position on the stack, so handlers outside a `try()` do not see errors it catches.
+`signalCondition(cond)` offers any condition to calling and exiting handlers and returns `NULL`.
+
+`withRestarts(expr, name = function(...) ..., ...)` establishes restarts. A specification can also
+be `list(handler = , description = )`. `computeRestarts()` lists restart objects innermost first,
+ending with the top-level `abort` restart. A restart object is a list of class `restart` with the
+fields `name`, `exit`, `handler`, `description`, `test` and `interactive`. The `abort` restart is an
+unnamed two-element list, as in GNU R. `invokeRestart(r, ...)` accepts a name or a restart object.
+It unwinds to the establishing `withRestarts`, then calls the restart handler with the remaining
+arguments; that call gives the value of `withRestarts`. Unknown names give
+`no 'restart' '<name>' found`, and a saved object whose `withRestarts` has returned gives
+`restart not on stack`. `tryInvokeRestart`, `findRestart`, `isRestart` and `print.restart` follow
+from the same stack.
+
+`options(warn = )` is applied after the handlers. A negative level drops the warning. Level 0 defers
+it for top-level reporting. Level 1 writes `Warning in <call> : <message>` immediately to the
+message stream, or `Warning: <message>` when the call is `NULL`. The message moves to an indented
+second line when the call text and first message line together exceed 57 characters. Level 2 or more
+raises a `simpleError` with the message `(converted from warning) <message>` and the warning's call.
+That error is then signalled like `stop()`. A `tryCatch(warning = )`, a suppression frame or a
+`muffleWarning` restart still handles the warning before conversion. The option accepts one logical
+or numeric value and truncates it toward zero. Other values give `invalid value for 'warn'`.
+
+`suppressWarnings`, `suppressMessages` and `suppressPackageStartupMessages` keep their muffling
+frames. A muffling frame acts like a calling handler that invokes the muffle restart at its stack
+position, and those frames already matched that behavior bit for bit.
+
+Independently authored foundation cases `calling-handlers-run-inner-first-and-resume`,
+`calling-handlers-follow-argument-order`, `calling-handler-sees-only-outer-frames`,
+`calling-handlers-nest-with-trycatch-and-suppression`,
+`calling-error-handler-runs-before-unwinding`, `unmuffled-calling-handlers-keep-default-actions`,
+`calling-handlers-keep-expression-visibility`, `restarts-compute-invoke-and-transfer-values`,
+`restart-lookup-failures-and-try-invoke`, `signal-condition-runs-calling-and-exiting-handlers`,
+`warn-level-one-reports-immediately`, `warn-level-one-wraps-long-reports`,
+`warn-level-two-converts-after-handlers` and `warn-level-option-coercion-and-silence` compare
+values, output and visibility against GNU R 4.6.1. The recursive case
+`calling-handlers-and-restarts` links `base::withCallingHandlers`, `base::invokeRestart`,
+`base::computeRestarts` and `base::withRestarts`; it also checks that a restart unwinds through
+`on.exit` before the restart handler runs. The `options(warn = 2)` conversion stays outside the
+recursive case, because the v2 observer expects every warning its global handler sees to remain a
+public deferred warning.
+
+Known boundaries:
+
+- Errors raised by builtins, not by `stop()` or warning conversion, reach calling error handlers as
+  they unwind through each `withCallingHandlers` frame. `on.exit` cleanup inside the failing
+  closures has then already run, and session-global error handlers still run at top level.
+- `withCallingHandlers`, `withRestarts` and `tryCatch` are builtins, so they do not appear in
+  `sys.calls()`. A `warning()` evaluated directly in their `expr` reports the enclosing closure
+  call, or `NULL` at top level, where GNU R reports the `withCallingHandlers(...)` call.
+- Invoking the `abort` restart is unsupported. `computeRestarts(cond)` ignores `cond`, and restart
+  `test` functions are not consulted. `invokeRestartInteractively` and `restartDescription` are not
+  provided.
+- Printing a list of restarts uses ordinary list printing, not `print.restart` for each element.

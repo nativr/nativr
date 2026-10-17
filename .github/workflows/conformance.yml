@@ -14,10 +14,13 @@ on:
       - "scripts/run-conformance.mjs"
       - "scripts/run-r-conformance.mjs"
       - "scripts/run-r-conformance-v2.mjs"
+      - "scripts/package-check.mjs"
+      - "scripts/lib/package-oracle.mjs"
+      - "scripts/lib/package-oracle.d.mts"
       - "compatibility/**"
       - ".github/workflows/conformance.yml"
   schedule:
-    - cron: "23 4 * * 1"
+    - cron: "23 4 * * *"
 
 permissions:
   contents: read
@@ -42,8 +45,25 @@ jobs:
       - run: pnpm conformance
       - run: pnpm conformance:r
       - run: pnpm conformance:r:v2
-      - name: Run pinned unchanged-package regression corpus
-        run: pnpm exec vitest run packages/package-tools/test/external-package.test.ts
+      - name: Verify native package-oracle capture against GNU R 4.6.1
+        run: >-
+          pnpm exec vitest run packages/package-tools/test/package-oracle.test.ts
+          packages/package-tools/test/condition-observer.test.ts
+          packages/package-tools/test/dependency-observer.test.ts
+          packages/package-tools/test/dcf.test.ts
+          packages/package-tools/test/package-lifecycle.test.ts
+        env:
+          NATIVR_PACKAGE_ORACLE_FIXTURE: "1"
+          NATIVR_RSCRIPT: Rscript
+          LC_ALL: C
+          LC_CTYPE: C
+          LANG: C
+      - name: Run pinned unchanged-package development and regression corpus
+        run: >-
+          pnpm exec vitest run packages/package-tools/test/external-package.test.ts
+          packages/package-tools/test/abind-p5.test.ts packages/package-tools/test/abind-p6.test.ts
+          packages/package-tools/test/assertthat-p5.test.ts
+          packages/package-tools/test/r6-p5.test.ts packages/package-tools/test/rprojroot-p5.test.ts
         env:
           NATIVR_EXTERNAL_PACKAGE_SMOKE: "1"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

@@ -1,4 +1,4 @@
-import type { AstNode, FunctionParameter, ProgramNode } from "@nativr/ast";
+import type { AstNode, FunctionParameter, ProgramNode, StringLiteralNode } from "@nativr/ast";
 
 import { RTypeMismatchError } from "./errors.js";
 
@@ -14,6 +14,9 @@ export const NATIVR_PACKAGE_SOURCE_RESOURCE_ROOT = ".nativr/source";
 /** Evaluator-owned state selecting the current package's read-only source resource root. */
 export const PACKAGE_SOURCE_EVALUATION_DIRECTORY_STATE_KEY =
   "runtime.packageSourceEvaluationDirectory";
+
+/** Session option values shared with the base builtins and top-level script evaluator. */
+export const BASE_OPTIONS_STATE_KEY = "base.options";
 
 /** Attribute storage prepared for names, dimensions, class, and later extensions. */
 export type RAttributes = ReadonlyMap<string, RValue>;
@@ -158,6 +161,8 @@ export interface RExpression {
 export interface RPromise {
   readonly type: "promise";
   readonly expression: AstNode | null;
+  /** Original RHS retained for substitute() when a replacement call embeds its evaluated value. */
+  readonly sourceExpression?: AstNode;
   readonly environment: REnvironment;
   /** Whether this promise originated from an omitted actual argument. */
   readonly missing: boolean;
@@ -256,6 +261,8 @@ export type BuiltinKind = "regular" | "special" | "primitive";
 /** Operations made available to a builtin for one call. */
 export interface BuiltinInvocation {
   readonly arguments: readonly BuiltinCallArgument[];
+  /** Generic name for a builtin selected through S3 dispatch. */
+  readonly s3Generic?: string;
   readonly context: OperatorContext;
   readonly state: Map<string, unknown>;
   /** Stable positive identity for this evaluator session; it is not a host operating-system PID. */
@@ -280,7 +287,59 @@ export interface BuiltinInvocation {
     environment: REnvironment,
   ): Promise<{ readonly value: RValue; readonly visible: boolean }>;
   assignBinding(environment: REnvironment, name: string, value: RValue): Promise<void>;
-  signalCondition(classes: readonly string[], condition: RValue): Promise<void>;
+  /**
+   * Signal a condition through the dynamically scoped handler stack. Returns true when a muffling
+   * frame (suppressWarnings/suppressMessages semantics) consumed it; an exiting handler unwinds.
+   */
+  signalCondition(
+    classes: readonly string[],
+    condition: RValue,
+    muffleRestart?: "muffleWarning" | "muffleMessage",
+  ): Promise<boolean>;
+  /** Signal a warning with a muffleWarning restart, then apply the options(warn) level. */
+  signalWarning(condition: RValue, warning: RWarning): Promise<void>;
+  /** Offer an error condition to the handler stack where it is raised, then throw it. */
+  raiseCondition(condition: RList, message: string): Promise<never>;
+  /** Evaluate with local calling handlers; the first handler is innermost. */
+  withCallingHandlers<T>(
+    handlers: readonly { readonly className: string; readonly handler: RValue }[],
+    evaluate: () => Promise<T>,
+  ): Promise<T>;
+  /** Evaluate where raised errors are caught outside the handler stack, as try() does. */
+  errorBarrier<T>(evaluate: () => Promise<T>): Promise<T>;
+  /** Evaluate with named restarts; the first restart is found first. */
+  withRestarts<T>(
+    restarts: readonly {
+      readonly name: string;
+      readonly handler: RValue;
+      readonly description: string;
+    }[],
+    evaluate: () => Promise<T>,
+  ): Promise<
+    | { readonly kind: "value"; readonly value: T }
+    | { readonly kind: "restart"; readonly index: number; readonly arguments: readonly RValue[] }
+  >;
+  /** Established restart objects, innermost first, ending with the top-level abort restart. */
+  computeRestarts(): readonly RValue[];
+  /** Transfer control to a restart named by a string or given as a restart object. */
+  invokeRestart(restart: RValue, values: readonly RValue[]): never;
+  /**
+   * Evaluate with a calling-handler frame that muffles conditions inheriting `kind` and any of
+   * `classes`, after handlers established inside the evaluation have seen them.
+   */
+  muffleConditions<T>(
+    kind: "warning" | "message",
+    classes: readonly string[],
+    evaluate: () => Promise<T>,
+  ): Promise<T>;
+  /** Capture one exiting condition while evaluating with ordered, dynamically scoped handlers. */
+  captureCondition<T>(
+    classes: readonly string[],
+    evaluate: () => Promise<T>,
+  ): Promise<
+    | { readonly kind: "value"; readonly value: T }
+    | { readonly kind: "condition"; readonly condition: RValue; readonly handlerIndex: number }
+  >;
   configureOnExit(
     expression: AstNode | null,
     environment: REnvironment,
@@ -315,6 +374,8 @@ export interface BuiltinInvocation {
     readonly version: string;
     readonly namespace: REnvironment;
   }>;
+  detachPackage(entry: string, force: boolean): Promise<void>;
+  unloadNamespace(name: string, warnOnFailure: boolean): Promise<void>;
   installedPackageVersion(name: string, libraryPaths?: readonly string[]): string | undefined;
   installedPackageDescription(
     name: string,
@@ -349,7 +410,7 @@ export interface BuiltinInvocation {
   globalEnvironment(): REnvironment;
   baseEnvironment(): REnvironment;
   emptyEnvironment(): REnvironment;
-  matchCall(expandDots: boolean): RLanguage;
+  matchCall(expandDots: boolean, definition?: RValue, call?: RValue): RLanguage;
   callerFormalDefault(name: string): Promise<RValue | undefined>;
   define(name: string, value: RValue): void;
   registerS3Method(
@@ -365,6 +426,8 @@ export interface BuiltinInvocation {
     arguments_: readonly BuiltinCallArgument[],
     includeDefault?: boolean,
     argumentIndex?: number,
+    group?: string,
+    lookupEnvironment?: REnvironment,
   ): Promise<RValue | undefined>;
   nextMethod(generic?: string): Promise<RValue>;
 }
@@ -394,6 +457,11 @@ export interface BuiltinDefinition {
   readonly formals?: readonly FunctionParameter[];
   readonly resultVisibility?: "visible" | "invisible";
   readonly metadata: BuiltinMetadata;
+  /** Primitive implementation used only after NextMethod exhausts the S3 chain. */
+  readonly s3DefaultImplementation?: BuiltinDefinition["implementation"];
+  /** Private namespace methods need not be attached or exported to dispatch. */
+  readonly exported?: boolean;
+  readonly s3Method?: { readonly generic: string; readonly className: string };
   implementation(invocation: BuiltinInvocation): RValue | Promise<RValue>;
 }
 
@@ -429,6 +497,8 @@ export interface RuntimeLimits {
   readonly maxCallDepth: number;
   readonly maxVectorLength: number;
   readonly maxOutputBytes: number;
+  /** Aggregate decoded bytes admitted from immutable package resources. */
+  readonly maxPackageResourceBytes: number;
 }
 
 /** A structured warning collected in evaluation order. */
@@ -713,19 +783,14 @@ export type RGraphicsEvent =
 export interface OperatorContext {
   readonly limits: RuntimeLimits;
   readonly cancellation: CancellationToken;
-  warn(warning: RWarning): void;
+  /** Record a deferred warning; pass signalled when handlers already observed its condition. */
+  warn(warning: RWarning, signalled?: boolean): void;
   writeOutput(output: ROutput): void;
   beginOutputCapture(streams: readonly ROutput["stream"][]): void;
   endOutputCapture(): readonly ROutput[];
   writeDataView(event: RDataViewEvent): void;
   writeBrowse(event: RBrowseEvent): void;
   writeGraphics(event: RGraphicsEvent): void;
-  pushWarningSuppression(): void;
-  popWarningSuppression(): void;
-  isWarningSuppressed(): boolean;
-  pushOutputSuppression(stream: ROutput["stream"]): void;
-  popOutputSuppression(stream: ROutput["stream"]): void;
-  isOutputSuppressed(stream: ROutput["stream"]): boolean;
   checkpoint(cost?: number): void;
   allocate(elements: number): void;
 }
@@ -745,6 +810,9 @@ export function runtimeOutputRouter(
 ): RuntimeOutputRouter | undefined {
   return state.get(OUTPUT_ROUTER_STATE_KEY) as RuntimeOutputRouter | undefined;
 }
+
+/** Session-state slot shared by package lifecycle execution and hook registration. */
+export const USER_HOOKS_STATE_KEY = "base.hooks";
 
 /** Session-state slot shared by the evaluator and the base condition builtins. */
 export const GLOBAL_CALLING_HANDLERS_STATE_KEY = "runtime.globalCallingHandlers";
@@ -880,6 +948,16 @@ export function complexVector(
 export function rawVector(values: ArrayLike<number>): RRawVector {
   const storage = Uint8Array.from(values);
   return { type: "raw", values: storage, length: storage.length, attributes: EMPTY_ATTRIBUTES };
+}
+
+/** Construct and validate an immutable character vector. */
+export function characterLiteralValue(node: StringLiteralNode): RCharacterVector {
+  return characterVector(
+    [node.value],
+    undefined,
+    node.encoding === undefined ? undefined : [node.encoding],
+    node.bytes === undefined ? undefined : [Uint8Array.from(node.bytes)],
+  );
 }
 
 /** Construct and validate an immutable character vector. */
@@ -1105,11 +1183,11 @@ export function dataFrameRowCount(value: RList): number {
   return rowNames?.type === "character" ? rowNames.length : 0;
 }
 
-/** Read an exact, non-missing names attribute when present. */
+/** Read stored textual names; callers requiring NA identity inspect the names attribute mask. */
 export function vectorNames(value: RVector | RPairlist): readonly string[] | undefined {
   const names = value.attributes.get("names");
   if (names === undefined) return undefined;
-  if (names.type !== "character" || names.length !== value.length || names.missing !== undefined) {
+  if (names.type !== "character" || names.length !== value.length) {
     throw new RTypeMismatchError("NRT3003", "The names attribute is malformed.", {
       details: { valueLength: value.length },
     });

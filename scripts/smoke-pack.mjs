@@ -155,6 +155,36 @@ try {
     cwd: packageToolConsumerRoot,
   });
   await runNode(packageToolCli, ["verify", artifactPath], { cwd: packageToolConsumerRoot });
+  const comparatorSmoke = path.join(packageToolConsumerRoot, "saved-output-smoke.mjs");
+  await writeFile(
+    comparatorSmoke,
+    [
+      'import assert from "node:assert/strict";',
+      'import { comparePackageSavedOutput, comparePackageCheckObservation, createPackageCheckReport, inspectPackageDescription, PACKAGE_CHECK_STAGES } from "@nativr/package-tools";',
+      'assert.equal(inspectPackageDescription("Package: x\\nVersion: 1\\n").checks.find(check => check.id === "DESCRIPTION:package-name").status, "failed");',
+      'const script = { path: "tests/smoke.R", source: "print(1)", expectedOutput: { path: "tests/smoke.Rout.save", source: "[1] 1\\n" } };',
+      'const options = { policyVersion: 1, expectedFormat: "display-only", comparison: "exact-text" };',
+      'assert.equal(comparePackageSavedOutput(script, "[1] 1\\n", options).outcome, "match");',
+      'assert.equal(comparePackageSavedOutput(script, "[1] 2\\n", options).firstDifference.column, 5);',
+      'const observation = { status: "completed", freshSession: true, outputComplete: true, conditionsComplete: true, stdout: "[1] 1\\n", stderr: "", conditions: [] };',
+      "const comparison = { policyVersion: 1, adaptations: [] };",
+      'assert.equal(comparePackageCheckObservation(observation, observation, comparison).outcome, "match");',
+      'assert.equal(comparePackageCheckObservation(observation, { ...observation, stdout: "[1] 2\\n" }, comparison).rawDifference.field, "stdout");',
+      "const report = createPackageCheckReport({",
+      '  package: { name: "smokefixture", version: "1.0.0" },',
+      "  provenance: {",
+      '    sourceSha256: "a".repeat(64), artifactSha256: "b".repeat(64), capabilitySha256: "c".repeat(64),',
+      '    oracle: { implementation: "GNU R", version: "4.6.1" }, semanticProfile: "0.301.0",',
+      "    runtimeLimits: { maxSteps: 1000, maxCallDepth: 100, maxVectorLength: 1000, maxOutputBytes: 1000, maxPackageResourceBytes: 1000 },",
+      "  },",
+      "  comparison, stages: [], observations: [],",
+      "});",
+      "assert.equal(report.p7Eligible, false);",
+      "assert.equal(report.stages.length, PACKAGE_CHECK_STAGES.length);",
+      'assert.equal(report.firstBlocker.code, "missing-oracle-observation");',
+    ].join("\n"),
+  );
+  await runNode(comparatorSmoke, [], { cwd: packageToolConsumerRoot });
   console.log(`Package-tools tarball CLI: passed (${packageToolTarball})`);
 } finally {
   await rm(consumerRoot, { recursive: true, force: true });

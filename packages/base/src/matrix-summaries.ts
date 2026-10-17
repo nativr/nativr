@@ -1,3 +1,4 @@
+import { ExtendedSum } from "./extended-sum.js";
 import {
   REvaluationError,
   RTypeMismatchError,
@@ -100,8 +101,8 @@ async function builtinMatrixSummary(
   const imaginary = input.complex ? new Float64Array(outputLength) : undefined;
   const missing = new Uint8Array(outputLength);
   for (let group = 0; group < outputLength; group += 1) {
-    let realTotal = 0;
-    let imaginaryTotal = 0;
+    const realTotal = new ExtendedSum();
+    const imaginaryTotal = input.complex ? new ExtendedSum() : undefined;
     let hasMissing = false;
     let present = 0;
     for (let offset = 0; offset < groupSize; offset += 1) {
@@ -113,14 +114,14 @@ async function builtinMatrixSummary(
       if (item.missing) {
         if (!removeMissing) hasMissing = true;
       } else if (!removeMissing || !nan) {
-        realTotal += item.real;
-        imaginaryTotal += item.imaginary;
+        realTotal.add(item.real);
+        imaginaryTotal?.add(item.imaginary);
         present += 1;
       }
     }
     const divisor = operation === "mean" ? (removeMissing ? present : groupSize) : 1;
-    real[group] = realTotal / divisor;
-    if (imaginary !== undefined) imaginary[group] = imaginaryTotal / divisor;
+    real[group] = realTotal.value(divisor);
+    if (imaginary !== undefined) imaginary[group] = imaginaryTotal!.value(divisor);
     if (hasMissing) missing[group] = 1;
   }
 

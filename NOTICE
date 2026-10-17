@@ -8,4 +8,19 @@ https://github.com/r-lib/tree-sitter-r, Copyright its contributors, MIT License.
 The generated parser assets preserve copies of applicable upstream licenses under
 packages/parser/assets/licenses when `pnpm grammar:build` is run.
 
+The correctly rounded elementary-function module (elementary.wasm, RFC-0007), built by
+`node scripts/build-elementary-wasm.mjs`, includes CORE-MATH binary64 functions from
+https://gitlab.inria.fr/core-math/core-math at commit dae5dd8c0d5bd2691b45de28c9edbe12f067c3d3,
+Copyright the CORE-MATH authors (Inria and contributors), MIT License. It also links soft-float
+math and floating-point environment members of wasi-libc (wasi-sdk 29.0), derived from musl libc,
+Copyright Rich Felker et al., MIT License, and LLVM compiler-rt builtins, Apache License 2.0 with
+LLVM Exceptions. The build copies the CORE-MATH license to .tmp/elementary/licenses.
+
+This product includes Iris measurements from the UCI Machine Learning Repository,
+credited to R. A. Fisher, with measurements originating from Edgar Anderson.
+The data are available under Creative Commons Attribution 4.0 International
+(https://creativecommons.org/licenses/by/4.0/). Source:
+https://archive.ics.uci.edu/dataset/53/iris (bezdekIris.data). The bundled text
+adds column headers, uses tab separators, and removes the "Iris-" label prefix.
+
 NativR is not affiliated with or endorsed by the R Foundation, Posit, OpenAI, or R package authors.
