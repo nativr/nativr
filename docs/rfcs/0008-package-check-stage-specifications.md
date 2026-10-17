@@ -82,11 +82,31 @@ The stage passes when all of the following hold:
 `requireNamespace()`/`loadNamespace()` literal targets keep their current, more conservative
 treatment until fixture parity establishes the native rule.
 
+## installation-loading (normative)
+
+The stage passes when every item below executes and matches the native oracle:
+
+- **install:** the native installation of the pinned archive exits successfully, and the NativR
+  artifact is packed with the pinned digest (archive-artifact stage).
+- **installed-size:** the size of the packed NativR artifact is recorded. Above the documented 5 Mb
+  threshold (`_R_CHECK_PKG_SIZES_THRESHOLD_`) it is a NOTE, which still passes.
+- **load, attach, detach, unload:** observed in fresh sessions on both runtimes
+  (`namespace-load-attach-detach-unload-v2`).
+- **load-with-stated-dependencies, namespace-load-with-stated-dependencies:** with the default
+  packages detached from the search path, loading the namespace and then attaching the package
+  succeed (`base-search-path-load-attach-v1`).
+- **library-search-path-load:** after the package's own library is removed from `.libPaths()`,
+  `library(pkg, lib.loc = )` attaches it (`explicit-lib-loc-load-v1`). System libraries stay on the
+  path, as they do in GNU R.
+
+Adaptation: GNU R starts a fresh session with `R_DEFAULT_PACKAGES=NULL`. NativR's core namespaces
+are resident in every session, so the stated-dependency items detach the default packages instead.
+Code that tests whether a core namespace is loaded without loading it can therefore observe a
+difference; library loading and symbol visibility cannot. This is recorded in
+`compatibility/profiles.json`.
+
 ## Other stages (outline)
 
-- **installation-loading.** Clean startup with default packages disabled
-  (`R_DEFAULT_PACKAGES=NULL`), stated-dependency loading, and unloading, observed on both runtimes.
-  Installed-size reporting is informational.
 - **namespace-source.** Parse every R file; NAMESPACE directives consistent with definitions;
   non-ASCII code without a declared encoding; S3 generic/method signature consistency; replacement
   functions whose last argument is `value`; foreign calls (browser-inapplicable unless registered

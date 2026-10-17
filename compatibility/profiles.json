@@ -73,6 +73,10 @@
         "surface": "elementary transcendental functions",
         "status": "planned (RFC-0007)",
         "behavior": "Use NativR-owned correctly rounded binary64 implementations so every browser computes identical results. A last-place difference from the normative oracle is accepted only when an independent high-precision reference shows the NativR result is correctly rounded and the oracle's is not; it is recorded as oracle-libm-deviation and never normalized away."
+      },
+      {
+        "surface": "startup with default packages disabled",
+        "behavior": "Core namespaces are resident in every NativR session. Package checks that GNU R runs with R_DEFAULT_PACKAGES=NULL detach the default packages from the search path instead (RFC-0008); symbol visibility matches, but the core namespaces stay listed by loadedNamespaces()."
       }
     ]
   },

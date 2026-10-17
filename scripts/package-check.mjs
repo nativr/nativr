@@ -8,6 +8,7 @@ import { createPackageOracle } from "./lib/package-oracle.mjs";
 import { observePackageDependencies } from "./lib/package-dependency-observer.mjs";
 import { observePackageLifecycle } from "./lib/package-lifecycle-observer.mjs";
 import { observeCleanBaseLoad } from "./lib/package-clean-base-observer.mjs";
+import { observeLibraryPathLoad } from "./lib/package-library-path-observer.mjs";
 import { observePackageAuthors } from "./lib/package-authors-observer.mjs";
 import { observePackageAuthorFields } from "./lib/package-author-fields-observer.mjs";
 import { assessEffectiveAuthorFields } from "./lib/package-author-validation.mjs";
@@ -343,6 +344,32 @@ try {
     actual: (source) => captureNativr(source, []),
     expected: (source) => oracle.capture({ source }),
   });
+  const libraryPathObservation = await observeLibraryPathLoad(entry.package, {
+    actual: (source) => captureNativr(source, []),
+    expected: (source) => oracle.capture({ source }),
+  });
+  // RFC-0008 installation items. The documented size threshold yields at most a NOTE.
+  const installedBytes = Buffer.byteLength(JSON.stringify(artifact.bundle));
+  const installation = {
+    oracleInstalled: oracle.installation.exitCode === 0 && oracle.installation.signal === null,
+    installedBytes,
+    sizeNote: installedBytes > 5 * 1024 * 1024,
+  };
+  const loadObservations = [lifecycleObservation, cleanBaseObservation, libraryPathObservation];
+  const installationFailed =
+    !installation.oracleInstalled ||
+    loadObservations.some((observation) => observation.outcome === "mismatch");
+  const installationExecuted = [
+    ...(installation.oracleInstalled ? ["install"] : []),
+    "installed-size",
+    ...(lifecycleObservation.outcome === "incomplete"
+      ? []
+      : ["load", "attach", "detach", "unload"]),
+    ...(cleanBaseObservation.outcome === "incomplete"
+      ? []
+      : ["load-with-stated-dependencies", "namespace-load-with-stated-dependencies"]),
+    ...(libraryPathObservation.outcome === "incomplete" ? [] : ["library-search-path-load"]),
+  ];
   const descriptionFields = parseDcf(artifact.bundle.description);
   const authorsObservation = await observePackageAuthors(descriptionFields.get("Authors@R"), {
     actual: (source) => captureNativr(source, []),
@@ -571,26 +598,24 @@ try {
       ),
       stage(
         "installation-loading",
-        [lifecycleObservation.outcome, cleanBaseObservation.outcome].includes("mismatch")
+        installationFailed
           ? "failed"
-          : "unexecuted",
-        `Namespace lifecycle: ${lifecycleObservation.outcome}; base-only search-path loading: ${cleanBaseObservation.outcome}. Startup without default namespaces and full installation validation remain unexecuted.`,
+          : loadObservations.every((observation) => observation.outcome === "match")
+            ? "passed"
+            : "unexecuted",
+        `RFC-0008: oracle installation ${installation.oracleInstalled ? "succeeded" : "failed"}; lifecycle ${lifecycleObservation.outcome}; stated-dependency loading ${cleanBaseObservation.outcome}; explicit lib.loc loading ${libraryPathObservation.outcome}; installed size ${installedBytes} bytes${installation.sizeNote ? " (NOTE: above 5 MiB)" : ""}. Stated-dependency loading detaches default packages; NativR core namespaces stay resident (documented adaptation).`,
         [
           "install",
+          "installed-size",
           "load",
           "attach",
           "detach",
           "unload",
-          "clean-base-load",
-          "base-search-path-load",
-          "installation-validation",
+          "load-with-stated-dependencies",
+          "namespace-load-with-stated-dependencies",
+          "library-search-path-load",
         ],
-        [
-          ...(lifecycleObservation.outcome === "incomplete"
-            ? ["install"]
-            : ["install", "load", "attach", "detach", "unload"]),
-          ...(cleanBaseObservation.outcome === "incomplete" ? [] : ["base-search-path-load"]),
-        ],
+        installationExecuted,
       ),
       stage(
         "namespace-source",
@@ -689,6 +714,8 @@ try {
     authorMetadataAssessment,
     lifecycleObservation,
     cleanBaseObservation,
+    libraryPathObservation,
+    installation,
     runners: {
       tests: { outcome: tests.outcome, firstBlocker: tests.firstBlocker },
       examples:
