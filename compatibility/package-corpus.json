@@ -201,7 +201,7 @@
         "tier": "P7",
         "path": "R CMD check",
         "code": "package-check-stage-unexecuted",
-        "message": "Under RFC-0008 the metadata-dependencies stage passes: all 55 DESCRIPTION, license, author, declaration, literal-source-reference (policy v2, native fixture parity) and base dependency-closure checks execute and pass. All ten stdout/stderr, ordered-output and condition comparisons match native GNU R 4.6.1, and every oracle run is repeatable. The installation-loading stage also passes: native installation, installed size, load/attach/detach/unload, stated-dependency loading (default packages detached; documented adaptation) and explicit lib.loc loading all match. The first unexecuted stage is namespace-source; documentation and manual follow. P7 is unproven."
+        "message": "Under RFC-0008 the metadata-dependencies stage passes: all 55 DESCRIPTION, license, author, declaration, literal-source-reference (policy v2, native fixture parity) and base dependency-closure checks execute and pass. All ten stdout/stderr, ordered-output and condition comparisons match native GNU R 4.6.1, and every oracle run is repeatable. The installation-loading stage also passes: native installation, installed size, load/attach/detach/unload, stated-dependency loading (default packages detached; documented adaptation) and explicit lib.loc loading all match. The namespace-source stage passes as well (namespace-source-v1, with no undefined globals, matching native R). The first unexecuted stage is documentation; manual follows. P7 is unproven."
       }
     },
     {

@@ -38,6 +38,7 @@ const {
   BASE_PRIORITY_PACKAGES,
   DEFAULT_INSTALLED_PACKAGES,
   inspectPackageLicense,
+  inspectPackageNamespaceSource,
   comparePackageVersions,
   DEFAULT_PACKAGE_PACK_LIMITS,
   packPackage,
@@ -371,6 +372,43 @@ try {
     ...(libraryPathObservation.outcome === "incomplete" ? [] : ["library-search-path-load"]),
   ];
   const descriptionFields = parseDcf(artifact.bundle.description);
+  // RFC-0008 namespace-source checks over the archive's R files and NAMESPACE.
+  const surface = JSON.parse(
+    await readFile(path.join(root, "compatibility/gnu-r/surface.json"), "utf8"),
+  );
+  const coreExports = new Map(
+    surface.packages.map((pkg) => [
+      pkg.name,
+      new Map(pkg.exports.map((item) => [item.name, item.formals ?? null])),
+    ]),
+  );
+  const namespaceParser = await createParser({
+    treeSitterRuntimeWasm: path.join(root, "packages/nativr/dist/assets/web-tree-sitter.wasm"),
+    rGrammarWasm: path.join(root, "packages/nativr/dist/assets/tree-sitter-r.wasm"),
+  });
+  let namespaceSourceAssessment;
+  try {
+    namespaceSourceAssessment = inspectPackageNamespaceSource(
+      {
+        packageName: entry.package,
+        ...(descriptionFields.get("Encoding") === undefined
+          ? {}
+          : { encoding: descriptionFields.get("Encoding") }),
+        depends: artifact.dependencies
+          .filter((dependency) => dependency.kind === "Depends" && dependency.name !== "R")
+          .map((dependency) => dependency.name),
+        namespace: artifact.bundle.namespace,
+        sources: files
+          .filter((file) => /^R\/[^/]+\.[RrSsq]$/u.test(file.path))
+          .map((file) => ({ path: file.path, bytes: file.data })),
+        hasIndex: files.some((file) => file.path === "INDEX" || file.path === "demo/00Index"),
+        coreExports,
+      },
+      (source) => namespaceParser.parse(source),
+    );
+  } finally {
+    namespaceParser.dispose();
+  }
   const authorsObservation = await observePackageAuthors(descriptionFields.get("Authors@R"), {
     actual: (source) => captureNativr(source, []),
     expected: (source) => oracle.capture({ source }),
@@ -619,9 +657,16 @@ try {
       ),
       stage(
         "namespace-source",
-        "unexecuted",
-        "Packing does not prove the full source and namespace check surface.",
-        inventory.filter((file) => file === "NAMESPACE" || file.startsWith("R/")),
+        namespaceSourceAssessment.status,
+        namespaceSourceAssessment.status === "passed"
+          ? `Every RFC-0008 namespace and R source check executed and passed (namespace-source-v1); ${namespaceSourceAssessment.undefinedGlobals.length} undefined globals reported as a NOTE.`
+          : namespaceSourceAssessment.status === "failed"
+            ? "A namespace or R source check failed; see namespaceSourceAssessment."
+            : "Some namespace or R source checks remain unexecuted; see namespaceSourceAssessment.",
+        namespaceSourceAssessment.checks.map((check) => check.id),
+        namespaceSourceAssessment.checks
+          .filter((check) => check.status !== "unexecuted")
+          .map((check) => check.id),
       ),
       stage(
         "documentation",
@@ -715,6 +760,7 @@ try {
     lifecycleObservation,
     cleanBaseObservation,
     libraryPathObservation,
+    namespaceSourceAssessment,
     installation,
     runners: {
       tests: { outcome: tests.outcome, firstBlocker: tests.firstBlocker },

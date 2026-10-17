@@ -19,6 +19,12 @@ export { inspectPackageLicense } from "./license-check.js";
 export type { PackageLicenseAssessment } from "./license-check.js";
 export { inspectPackageDescription } from "./description-check.js";
 export type { PackageDescriptionAssessment, PackageDescriptionCheck } from "./description-check.js";
+export { inspectPackageNamespaceSource, s3Consistent } from "./namespace-source-check.js";
+export type {
+  NamespaceSourceAssessment,
+  NamespaceSourceCheck,
+  NamespaceSourceInput,
+} from "./namespace-source-check.js";
 export {
   BASE_PRIORITY_PACKAGES,
   DEFAULT_INSTALLED_PACKAGES,
