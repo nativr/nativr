@@ -30,6 +30,7 @@ import type {
   RuntimeOperators,
   RValue,
 } from "@nativr/runtime";
+import { divideComplex } from "./complex-division.js";
 import { bitwiseHexmodeValues, isHexmodeValue, notHexmodeValue } from "./hexmode.js";
 
 type NumericVector = RLogicalVector | RIntegerVector | RDoubleVector | RComplexVector;
@@ -187,6 +188,7 @@ export const jsReferenceOperators: RuntimeOperators = {
           operator,
           complexAt(lhs, leftIndex),
           complexAt(rhs, rightIndex),
+          context.math,
         );
         real[index] = result.real;
         imaginary[index] = result.imaginary;
@@ -759,6 +761,7 @@ function applyComplexArithmetic(
   operator: string,
   left: ComplexNumber,
   right: ComplexNumber,
+  math: ElementaryMath,
 ): ComplexNumber {
   switch (operator) {
     case "+":
@@ -777,11 +780,13 @@ function applyComplexArithmetic(
         imaginary: left.real * right.imaginary + left.imaginary * right.real,
       };
     case "/": {
-      const denominator = right.real ** 2 + right.imaginary ** 2;
-      return {
-        real: (left.real * right.real + left.imaginary * right.imaginary) / denominator,
-        imaginary: (left.imaginary * right.real - left.real * right.imaginary) / denominator,
-      };
+      const [real, imaginary] = divideComplex(
+        left.real,
+        left.imaginary,
+        right.real,
+        right.imaginary,
+      );
+      return { real, imaginary };
     }
     case "^": {
       if (right.real === 0 && right.imaginary === 0) return { real: 1, imaginary: 0 };
@@ -796,21 +801,21 @@ function applyComplexArithmetic(
         let factor = left;
         let result: ComplexNumber = { real: 1, imaginary: 0 };
         while (exponent > 0) {
-          if (exponent % 2 === 1) result = applyComplexArithmetic("*", result, factor);
+          if (exponent % 2 === 1) result = applyComplexArithmetic("*", result, factor, math);
           exponent = Math.floor(exponent / 2);
-          if (exponent > 0) factor = applyComplexArithmetic("*", factor, factor);
+          if (exponent > 0) factor = applyComplexArithmetic("*", factor, factor, math);
         }
         return result;
       }
-      const magnitude = Math.hypot(left.real, left.imaginary);
-      const angle = Math.atan2(left.imaginary, left.real);
-      const logReal = Math.log(magnitude);
+      const magnitude = math.binary("hypot", left.real, left.imaginary);
+      const angle = math.binary("atan2", left.imaginary, left.real);
+      const logReal = math.unary("log", magnitude);
       const exponentReal = right.real * logReal - right.imaginary * angle;
       const exponentImaginary = right.real * angle + right.imaginary * logReal;
-      const scale = Math.exp(exponentReal);
+      const scale = math.unary("exp", exponentReal);
       return {
-        real: scale * Math.cos(exponentImaginary),
-        imaginary: scale * Math.sin(exponentImaginary),
+        real: scale * math.unary("cos", exponentImaginary),
+        imaginary: scale * math.unary("sin", exponentImaginary),
       };
     }
     default:

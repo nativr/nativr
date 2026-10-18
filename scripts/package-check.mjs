@@ -41,6 +41,7 @@ const {
   inspectPackageNamespaceSource,
   inspectPackageDocumentation,
   inspectPackageManual,
+  inspectPackageVignettes,
   comparePackageVersions,
   DEFAULT_PACKAGE_PACK_LIMITS,
   packPackage,
@@ -549,6 +550,74 @@ try {
   const examples = args.skipExamples
     ? undefined
     : await runPackageExamples(archive, (script) => compareScript("example", script), audit);
+  // RFC-0008 vignettes: static checks, dependency scan and execution of each vignette's R code on
+  // both runtimes (the browser adaptation of re-building vignette outputs).
+  const vignetteAssessment = inspectPackageVignettes(
+    files
+      .filter((file) => file.path.startsWith("vignettes/") || file.path.startsWith("inst/doc/"))
+      .map((file) => ({
+        path: file.path,
+        text: new TextDecoder().decode(file.data),
+        bytes: file.data.byteLength,
+      })),
+  );
+  const vignetteRunChecks = [];
+  const vignetteDependencyChecks = [];
+  const vignetteParser = await createParser({
+    treeSitterRuntimeWasm: path.join(root, "packages/nativr/dist/assets/web-tree-sitter.wasm"),
+    rGrammarWasm: path.join(root, "packages/nativr/dist/assets/tree-sitter-r.wasm"),
+  });
+  try {
+    for (const vignette of vignetteAssessment.sources) {
+      const dependencies = inspectPackageSourceDependencies(
+        artifact.bundle.description,
+        [{ path: vignette.path, source: vignette.code, role: "example" }],
+        (source) => vignetteParser.parse(source),
+        { installed: new Set([...DEFAULT_INSTALLED_PACKAGES, entry.package]) },
+      );
+      vignetteDependencyChecks.push({
+        id: `vignettes:dependencies:${vignette.path}`,
+        status: dependencies.status,
+      });
+    }
+  } finally {
+    vignetteParser.dispose();
+  }
+  for (const vignette of vignetteAssessment.sources) {
+    const source = `${rngSetup}library(${rString(entry.package)})\n${vignette.code}\ninvisible(NULL)\n`;
+    let expected;
+    try {
+      expected = await oracle.capture({ source, path: vignette.path, files: [] });
+    } catch {
+      expected = undefined;
+    }
+    const actual = await captureNativr(source, []);
+    vignetteRunChecks.push({
+      id: `vignettes:code:${vignette.path}`,
+      status:
+        expected?.status !== "completed"
+          ? "unexecuted"
+          : actual.status === "completed"
+            ? "passed"
+            : "failed",
+    });
+  }
+  const vignetteItems = [
+    ...vignetteAssessment.vignetteChecks,
+    ...vignetteDependencyChecks,
+    ...vignetteRunChecks,
+  ];
+  // Vignette or inst/doc files that yield no check stay unexecuted rather than inapplicable.
+  const stageFromChecks = (checks) =>
+    checks.length === 0
+      ? vignettes.length === 0
+        ? "inapplicable"
+        : "unexecuted"
+      : checks.some((check) => check.status === "failed")
+        ? "failed"
+        : checks.every((check) => check.status === "passed")
+          ? "passed"
+          : "unexecuted";
   const inventory = files.map((file) => file.path);
   const testInputs = inventory.filter((file) => /^tests\//u.test(file));
   const unsupportedTestInputs = testInputs.filter((file) => /\.Rin$/iu.test(file));
@@ -789,19 +858,29 @@ try {
         outputPaths,
         observedPaths,
       ),
-      absent(
+      stage(
         "vignettes",
-        vignettes,
-        vignettes.length === 0
-          ? "The audited archive has no vignettes or installed vignette files."
-          : "Vignette execution and rebuilding have not executed.",
+        stageFromChecks(vignetteItems),
+        vignetteItems.length === 0
+          ? vignettes.length === 0
+            ? "The audited archive has no vignettes or installed vignette files."
+            : "Vignette or inst/doc files exist but no vignette source matched; their checks have not executed."
+          : "RFC-0008 vignettes-v1: index entries, dependency scan, and the vignette R code run on both runtimes (rebuilding outputs needs host Sweave/LaTeX or Pandoc; documented adaptation).",
+        vignetteItems.map((check) => check.id),
+        vignetteItems.filter((check) => check.status !== "unexecuted").map((check) => check.id),
       ),
-      absent(
+      stage(
         "installed-documentation",
-        vignettes,
-        vignettes.length === 0
-          ? "The audited archive has no inst/doc or vignette entries."
-          : "Installed-documentation checks have not executed.",
+        stageFromChecks(vignetteAssessment.installedDocumentationChecks),
+        vignetteAssessment.installedDocumentationChecks.length === 0
+          ? vignettes.length === 0
+            ? "The audited archive has no inst/doc or vignette entries."
+            : "Installed-documentation files exist but yielded no check; they have not executed."
+          : "RFC-0008 vignettes-v1: installed outputs, tangled code, source copies and PDF sizes (compression analysis needs host qpdf).",
+        vignetteAssessment.installedDocumentationChecks.map((check) => check.id),
+        vignetteAssessment.installedDocumentationChecks
+          .filter((check) => check.status !== "unexecuted")
+          .map((check) => check.id),
       ),
       absent(
         "native-build-portability",
@@ -842,6 +921,17 @@ try {
     namespaceSourceAssessment,
     documentationAssessment,
     manualAssessment,
+    vignetteAssessment: {
+      ...vignetteAssessment,
+      sources: vignetteAssessment.sources.map((item) => ({
+        path: item.path,
+        topic: item.topic,
+        indexEntry: item.indexEntry,
+        codeSha256: hash(item.code),
+      })),
+      dependencyChecks: vignetteDependencyChecks,
+      runChecks: vignetteRunChecks,
+    },
     installation,
     runners: {
       tests: { outcome: tests.outcome, firstBlocker: tests.firstBlocker },

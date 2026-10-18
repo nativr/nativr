@@ -257,8 +257,11 @@ described in the implementation plan.
   Non-finite and zero arguments use the engine's exact IEEE paths.
 - **Results.** On the Windows oracle, `pnorm` matches 3000/3000 and seeded `rnorm` 3000/3000 (host
   math: 2805 and 2993). `pnpm conformance` passes 1225/1225 and Oracle v2 127/127 on this path.
-- **Remaining.** Complex functions, Student-t internals, other direct `Math` uses, the unregistered
-  hyperbolic functions and `atan2`, and start-up cost measurement.
+- **Complex functions (profile 0.355).** The complex elementary functions and complex `^` use the
+  session math. On numDeriv, every remaining deterministic difference traces to the Windows oracle's
+  `asin`, `sin` or `cos` not being correctly rounded, checked against a 90-digit decimal reference.
+- **Remaining.** Student-t internals, other direct `Math` uses, the unregistered hyperbolic
+  functions and `atan2`, and start-up cost measurement.
 
 ## Open questions
 

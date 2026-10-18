@@ -3845,3 +3845,45 @@ Known boundaries:
   are not registered yet.
 - The Windows oracle's own `atan`, `asinh` and similar results are not always correctly rounded.
   Where they differ, the RFC-0007 libm deviation rule applies, once it is implemented in step 5.
+
+### Complex arithmetic on the session math and vignette package checks (profile 0.355)
+
+The complex elementary functions (`exp`, `expm1`, `log`, `log1p`, `sin`, `cos`, `tan`, `asin`,
+`acos`, `atan`) and complex `^` now use the session's elementary math, so correctly rounded sessions
+compute them with the same module as their real counterparts. This closes the 0.354 boundary for
+complex functions. The complex step derivative `Im(sin(1 + 1e-20i)) / 1e-20` now equals `cos(1)`
+exactly, as it does in GNU R 4.6.1.
+
+Complex division uses Smith's scaled algorithm. Against GNU R 4.6.1 it reproduced 2000 of 2000
+sampled quotients bit for bit; the textbook formula reproduced 558. Divisors with a zero imaginary
+part divide each component by the real part, and divisors with a zero real part divide by the
+imaginary part. An infinite divisor with a finite numerator gives signed zeros, as C99 Annex G
+specifies and GNU R shows.
+
+Package checks implement the RFC-0008 vignettes and installed-documentation stages (policy
+`vignettes-v1`). Rebuilding vignette outputs needs a host Sweave/LaTeX or Pandoc toolchain, so the
+stage runs each vignette's evaluated R code on both runtimes instead; PDF compression analysis needs
+host qpdf. Both adaptations are recorded in `compatibility/profiles.json`.
+
+Independently authored foundation cases `complex-division-smith-and-special-divisors` and
+`complex-step-derivative-exactness` compare against GNU R 4.6.1, and `vignette-check.test.ts` covers
+the vignette rules.
+
+numDeriv 2016.8-1.1 now matches native GNU R on `tests/grad01.R`, `tests/oneSided.R` and the `genD`,
+`grad` and `hessian` examples. Each remaining deterministic difference traces to the Windows
+oracle's libm, checked against an independent 90-digit decimal reference:
+
+- `tests/trig01.R`: GNU R's `asin` is not correctly rounded at 8 of the 24 points the test
+  evaluates; NativR is correctly rounded at all 24.
+- `tests/hessian01.R`, `tests/jacobian01.R` and the `jacobian` example: GNU R's `sin` and `cos` near
+  π and 2π are not correctly rounded at 14 of 150 sampled points (for example `sin(pi)` is
+  1.2246063538223773e-16, against a correctly rounded 1.2246467991473532e-16); NativR is correctly
+  rounded at all 150.
+
+Known boundaries:
+
+- The libm deviation rule still waits for the normative Linux oracle (RFC-0007 step 5), so these
+  traced differences keep numDeriv below P7.
+- `tests/BWeg.R` and `tests/CSD.R` are not repeatable on the native oracle. BWeg prints
+  `Sys.info()`, and CSD prints `system.time()`; CSD also takes about 25 times longer in NativR.
+- Dividing (1e308+1e308i) by (1e-308+1e-308i) gives `Inf+NaNi` in GNU R but `Inf+0i` in NativR.

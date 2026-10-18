@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-libm-deviation-trace",
+  "package": { "name": "numDeriv", "version": "2016.8-1.1" },
+  "semanticProfile": "0.355.0",
+  "oracle": {
+    "implementation": "GNU R",
+    "version": "4.6.1",
+    "platform": "x86_64-w64-mingw32 (Windows UCRT, advisory)"
+  },
+  "reference": {
+    "method": "Python decimal at 80-90 significant digits: atan by argument halving and Taylor series (asin via atan), sin and cos by Taylor series after reduction modulo a 100-digit 2*pi",
+    "criterion": "a result is correctly rounded when no other compared double is nearer the reference"
+  },
+  "probes": [
+    {
+      "function": "asin",
+      "inputs": "x in {0.9, 0.99, 0.999}; x +/- (1e-4 * x) / 2^k for k = 0..3",
+      "explains": ["tests/trig01.R"],
+      "values": 24,
+      "gnuRNotCorrectlyRounded": 8,
+      "nativrNotCorrectlyRounded": 0
+    },
+    {
+      "function": "sin, cos",
+      "inputs": "x in {pi, 2*pi, pi/4}; x and x +/- (d * x) / 2^k for d in {1e-4, 0.1}, k = 0..5",
+      "explains": ["tests/hessian01.R", "tests/jacobian01.R", "man/jacobian.Rd"],
+      "values": 150,
+      "gnuRNotCorrectlyRounded": 14,
+      "nativrNotCorrectlyRounded": 0,
+      "example": {
+        "input": "pi",
+        "function": "sin",
+        "gnuR": "1.2246063538223773e-16",
+        "nativr": "1.2246467991473532e-16"
+      }
+    }
+  ],
+  "nonRepeatableOnOracle": ["tests/BWeg.R", "tests/CSD.R"],
+  "status": "Classified as Windows oracle libm deviations; the RFC-0007 libm deviation rule and the normative Linux oracle (step 5) are still required before these differences can be discharged."
+}

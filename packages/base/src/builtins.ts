@@ -123,6 +123,7 @@ import type {
   RSystemCommandResult,
   RSymbol,
   RUrlRequest,
+  ElementaryMath,
   RValue,
   RWarning,
   RVector,
@@ -187,6 +188,7 @@ import {
   studentTQuantile,
 } from "./student-t.js";
 import { as241Quantile } from "./normal.js";
+import { divideComplex } from "./complex-division.js";
 import { doubleToCharacter, formatFloatingMagnitude } from "./printf.js";
 import { WEIGHTED_MEAN_BUILTIN_SPECS } from "./weighted-mean.js";
 import { renderGraphicsPng } from "./png-device.js";
@@ -23179,10 +23181,10 @@ async function builtinTrigonometric(
       const value = complexAt(input, index);
       const result =
         operation === "sin"
-          ? complexSin(value)
+          ? complexSin(value, invocation.context.math)
           : operation === "cos"
-            ? complexCos(value)
-            : complexTan(value);
+            ? complexCos(value, invocation.context.math)
+            : complexTan(value, invocation.context.math);
       if (
         operation === "tan" &&
         !isMissing(input, index) &&
@@ -23248,10 +23250,10 @@ async function builtinInverseTrigonometric(
       const source = complexAt(input, index);
       const result =
         operation === "asin"
-          ? complexInverseSine(source)
+          ? complexInverseSine(source, invocation.context.math)
           : operation === "acos"
-            ? complexInverseCosine(source)
-            : complexInverseTangent(source);
+            ? complexInverseCosine(source, invocation.context.math)
+            : complexInverseTangent(source, invocation.context.math);
       real[index] = result.real;
       imaginary[index] = result.imaginary;
       if (
@@ -23293,7 +23295,7 @@ async function builtinInverseTrigonometric(
   };
 }
 
-function complexInverseSine(value: ComplexNumber): ComplexNumber {
+function complexInverseSine(value: ComplexNumber, math: ElementaryMath): ComplexNumber {
   const x = value.real;
   const y = value.imaginary;
   if (Number.isNaN(x)) return { real: Number.NaN, imaginary: Number.NaN };
@@ -23313,13 +23315,13 @@ function complexInverseSine(value: ComplexNumber): ComplexNumber {
     };
   }
   if (y === 0) {
-    if (x > 1) return { real: Math.PI / 2, imaginary: -Math.acosh(x) };
-    if (x < -1) return { real: -Math.PI / 2, imaginary: Math.acosh(-x) };
-    return { real: Math.asin(x), imaginary: y };
+    if (x > 1) return { real: Math.PI / 2, imaginary: -math.unary("acosh", x) };
+    if (x < -1) return { real: -Math.PI / 2, imaginary: math.unary("acosh", -x) };
+    return { real: math.unary("asin", x), imaginary: y };
   }
-  if (x === 0) return { real: x, imaginary: Math.asinh(y) };
-  const plus = Math.hypot(x + 1, y);
-  const minus = Math.hypot(x - 1, y);
+  if (x === 0) return { real: x, imaginary: math.unary("asinh", y) };
+  const plus = math.binary("hypot", x + 1, y);
+  const minus = math.binary("hypot", x - 1, y);
   const halfSum = plus / 2 + minus / 2;
   const scaledReal = Math.max(-1, Math.min(1, x / halfSum));
   const imaginaryMagnitude =
@@ -23327,19 +23329,19 @@ function complexInverseSine(value: ComplexNumber): ComplexNumber {
       ? Math.abs(x) === 1
         ? Math.sqrt(Math.abs(y))
         : Math.abs(y) / Math.sqrt(1 - x * x)
-      : Math.acosh(halfSum);
+      : math.unary("acosh", halfSum);
   return {
-    real: Math.asin(scaledReal),
+    real: math.unary("asin", scaledReal),
     imaginary: Math.sign(y) * imaginaryMagnitude,
   };
 }
 
-function complexInverseCosine(value: ComplexNumber): ComplexNumber {
-  const sine = complexInverseSine(value);
+function complexInverseCosine(value: ComplexNumber, math: ElementaryMath): ComplexNumber {
+  const sine = complexInverseSine(value, math);
   return { real: Math.PI / 2 - sine.real, imaginary: -sine.imaginary };
 }
 
-function complexInverseTangent(value: ComplexNumber): ComplexNumber {
+function complexInverseTangent(value: ComplexNumber, math: ElementaryMath): ComplexNumber {
   const x = value.real;
   const y = value.imaginary;
   if (Number.isNaN(x)) {
@@ -23355,14 +23357,14 @@ function complexInverseTangent(value: ComplexNumber): ComplexNumber {
   if (x === 0 && Math.abs(y) > 1) {
     return {
       real: Math.sign(y) * (Math.PI / 2),
-      imaginary: (Math.log(Math.abs(y + 1)) - Math.log(Math.abs(y - 1))) / 2,
+      imaginary: (math.unary("log", Math.abs(y + 1)) - math.unary("log", Math.abs(y - 1))) / 2,
     };
   }
-  const upper = Math.hypot(x, y + 1);
-  const lower = Math.hypot(x, y - 1);
+  const upper = math.binary("hypot", x, y + 1);
+  const lower = math.binary("hypot", x, y - 1);
   return {
-    real: (Math.atan2(x, 1 - y) - Math.atan2(-x, 1 + y)) / 2,
-    imaginary: (Math.log(upper) - Math.log(lower)) / 2,
+    real: (math.binary("atan2", x, 1 - y) - math.binary("atan2", -x, 1 + y)) / 2,
+    imaginary: (math.unary("log", upper) - math.unary("log", lower)) / 2,
   };
 }
 
@@ -23526,16 +23528,22 @@ async function builtinLog(invocation: BuiltinInvocation, operation: LogOperation
       const value = complexAt(input, inputIndex);
       const result =
         operation === "onePlus"
-          ? complexLogOnePlus(value)
+          ? complexLogOnePlus(value, invocation.context.math)
           : operation === "base10"
-            ? complexDivide(complexLog(value), { real: Math.LN10, imaginary: 0 })
+            ? complexDivide(complexLog(value, invocation.context.math), {
+                real: Math.LN10,
+                imaginary: 0,
+              })
             : operation === "base2"
-              ? complexDivide(complexLog(value), { real: Math.LN2, imaginary: 0 })
+              ? complexDivide(complexLog(value, invocation.context.math), {
+                  real: Math.LN2,
+                  imaginary: 0,
+                })
               : complexDivide(
-                  complexLog(value),
+                  complexLog(value, invocation.context.math),
                   base === undefined
                     ? { real: 1, imaginary: 0 }
-                    : complexLog(complexAt(base, baseIndex)),
+                    : complexLog(complexAt(base, baseIndex), invocation.context.math),
                 );
       real[index] = result.real;
       imaginary![index] = result.imaginary;
@@ -23585,7 +23593,9 @@ async function builtinExp(invocation: BuiltinInvocation, oneLess: boolean): Prom
     for (let index = 0; index < input.length; index += 1) {
       invocation.context.checkpoint();
       const value = complexAt(input, index);
-      const result = oneLess ? complexExpMinusOne(value) : complexExp(value);
+      const result = oneLess
+        ? complexExpMinusOne(value, invocation.context.math)
+        : complexExp(value, invocation.context.math);
       real[index] = result.real;
       imaginary[index] = result.imaginary;
     }
@@ -23611,68 +23621,84 @@ interface ComplexNumber {
   readonly imaginary: number;
 }
 
-function complexLog(value: ComplexNumber): ComplexNumber {
+function complexLog(value: ComplexNumber, math: ElementaryMath): ComplexNumber {
   return {
-    real: Math.log(Math.hypot(value.real, value.imaginary)),
-    imaginary: Math.atan2(value.imaginary, value.real),
+    real: math.unary("log", math.binary("hypot", value.real, value.imaginary)),
+    imaginary: math.binary("atan2", value.imaginary, value.real),
   };
 }
 
-function complexLogOnePlus(value: ComplexNumber): ComplexNumber {
+function complexLogOnePlus(value: ComplexNumber, math: ElementaryMath): ComplexNumber {
   return {
     real:
       0.5 *
-      Math.log1p(2 * value.real + value.real * value.real + value.imaginary * value.imaginary),
-    imaginary: Math.atan2(value.imaginary, 1 + value.real),
+      math.unary(
+        "log1p",
+        2 * value.real + value.real * value.real + value.imaginary * value.imaginary,
+      ),
+    imaginary: math.binary("atan2", value.imaginary, 1 + value.real),
   };
 }
 
 function complexDivide(numerator: ComplexNumber, denominator: ComplexNumber): ComplexNumber {
-  const scale = denominator.real * denominator.real + denominator.imaginary * denominator.imaginary;
+  const [real, imaginary] = divideComplex(
+    numerator.real,
+    numerator.imaginary,
+    denominator.real,
+    denominator.imaginary,
+  );
+  return { real, imaginary };
+}
+
+function complexExp(value: ComplexNumber, math: ElementaryMath): ComplexNumber {
+  const magnitude = math.unary("exp", value.real);
   return {
-    real: (numerator.real * denominator.real + numerator.imaginary * denominator.imaginary) / scale,
-    imaginary:
-      (numerator.imaginary * denominator.real - numerator.real * denominator.imaginary) / scale,
+    real: multiplyExponentialMagnitude(magnitude, math.unary("cos", value.imaginary)),
+    imaginary: multiplyExponentialMagnitude(magnitude, math.unary("sin", value.imaginary)),
   };
 }
 
-function complexExp(value: ComplexNumber): ComplexNumber {
-  const magnitude = Math.exp(value.real);
-  return {
-    real: multiplyExponentialMagnitude(magnitude, Math.cos(value.imaginary)),
-    imaginary: multiplyExponentialMagnitude(magnitude, Math.sin(value.imaginary)),
-  };
-}
-
-function complexExpMinusOne(value: ComplexNumber): ComplexNumber {
-  const cosine = Math.cos(value.imaginary);
-  const magnitude = Math.exp(value.real);
+function complexExpMinusOne(value: ComplexNumber, math: ElementaryMath): ComplexNumber {
+  const cosine = math.unary("cos", value.imaginary);
+  const magnitude = math.unary("exp", value.real);
   return {
     real:
-      Math.expm1(value.real) * cosine -
-      2 * Math.sin(value.imaginary / 2) * Math.sin(value.imaginary / 2),
-    imaginary: multiplyExponentialMagnitude(magnitude, Math.sin(value.imaginary)),
+      math.unary("expm1", value.real) * cosine -
+      2 * math.unary("sin", value.imaginary / 2) * math.unary("sin", value.imaginary / 2),
+    imaginary: multiplyExponentialMagnitude(magnitude, math.unary("sin", value.imaginary)),
   };
 }
 
-function complexSin(value: ComplexNumber): ComplexNumber {
+function complexSin(value: ComplexNumber, math: ElementaryMath): ComplexNumber {
   return {
-    real: multiplyHyperbolicMagnitude(Math.cosh(value.imaginary), Math.sin(value.real)),
-    imaginary: multiplyHyperbolicMagnitude(Math.sinh(value.imaginary), Math.cos(value.real)),
+    real: multiplyHyperbolicMagnitude(
+      math.unary("cosh", value.imaginary),
+      math.unary("sin", value.real),
+    ),
+    imaginary: multiplyHyperbolicMagnitude(
+      math.unary("sinh", value.imaginary),
+      math.unary("cos", value.real),
+    ),
   };
 }
 
-function complexCos(value: ComplexNumber): ComplexNumber {
+function complexCos(value: ComplexNumber, math: ElementaryMath): ComplexNumber {
   if (Number.isNaN(value.real) && !Number.isFinite(value.imaginary)) {
     return { real: Number.POSITIVE_INFINITY, imaginary: Number.NaN };
   }
   return {
-    real: multiplyHyperbolicMagnitude(Math.cosh(value.imaginary), Math.cos(value.real)),
-    imaginary: -multiplyHyperbolicMagnitude(Math.sinh(value.imaginary), Math.sin(value.real)),
+    real: multiplyHyperbolicMagnitude(
+      math.unary("cosh", value.imaginary),
+      math.unary("cos", value.real),
+    ),
+    imaginary: -multiplyHyperbolicMagnitude(
+      math.unary("sinh", value.imaginary),
+      math.unary("sin", value.real),
+    ),
   };
 }
 
-function complexTan(value: ComplexNumber): ComplexNumber {
+function complexTan(value: ComplexNumber, math: ElementaryMath): ComplexNumber {
   const x = value.real;
   const y = value.imaginary;
   if (!Number.isFinite(y)) {
@@ -23687,25 +23713,25 @@ function complexTan(value: ComplexNumber): ComplexNumber {
     return { real: Number.NaN, imaginary: Number.NaN };
   }
   if (y === 0) {
-    return { real: Math.tan(x), imaginary: y };
+    return { real: math.unary("tan", x), imaginary: y };
   }
   if (x === 0) {
-    return { real: x, imaginary: Math.tanh(y) };
+    return { real: x, imaginary: math.unary("tanh", y) };
   }
 
   const absoluteY = Math.abs(y);
   if (absoluteY > 20) {
-    const decay = Math.exp(-2 * absoluteY);
-    const denominator = 1 + 2 * Math.cos(2 * x) * decay + decay * decay;
+    const decay = math.unary("exp", -2 * absoluteY);
+    const denominator = 1 + 2 * math.unary("cos", 2 * x) * decay + decay * decay;
     return {
-      real: (2 * Math.sin(2 * x) * decay) / denominator,
+      real: (2 * math.unary("sin", 2 * x) * decay) / denominator,
       imaginary: (Math.sign(y) * (1 - decay * decay)) / denominator,
     };
   }
-  const denominator = Math.cos(2 * x) + Math.cosh(2 * y);
+  const denominator = math.unary("cos", 2 * x) + math.unary("cosh", 2 * y);
   return {
-    real: Math.sin(2 * x) / denominator,
-    imaginary: Math.sinh(2 * y) / denominator,
+    real: math.unary("sin", 2 * x) / denominator,
+    imaginary: math.unary("sinh", 2 * y) / denominator,
   };
 }
 

@@ -17117,5 +17117,32 @@
     "code": "local({x <- c(0.3, 7, 123.456, 1e-30, 5e300); c(identical(log(x, 10), log10(x)), identical(log(x, 2), log2(x)), identical(log(x, 3), log(x) / log(3)), identical(log(x, base = exp(1)), log(x)))})",
     "expected": [true, true, true, true],
     "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "complex-division-smith-and-special-divisors",
+    "code": "local({z <- c((1+2i)/(3+4i), (0.1+0.7i)/(0.3+0.9i), (5-3i)/(1e-3+7i), (1+2i)/(0+0i), (1+2i)/complex(real = Inf, imaginary = 0), (1+2i)/complex(real = Inf, imaginary = Inf), (2+4i)/2i); sprintf(\"%.17g\", c(Re(z), Im(z)))})",
+    "expected": [
+      "0.44",
+      "0.73333333333333328",
+      "-0.42846937901082899",
+      "Inf",
+      "0",
+      "0",
+      "2",
+      "0.080000000000000002",
+      "0.1333333333333333",
+      "-0.71434692419700152",
+      "Inf",
+      "0",
+      "0",
+      "-1"
+    ],
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "complex-step-derivative-exactness",
+    "code": "c(identical(Im(sin(1+1e-20i))/1e-20, cos(1)), identical(Im(log(2+1e-20i))/1e-20, 0.5))",
+    "expected": [true, true],
+    "expectedCompatibility": "behavioral"
   }
 ]

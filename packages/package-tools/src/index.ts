@@ -20,6 +20,12 @@ export type { PackageLicenseAssessment } from "./license-check.js";
 export { inspectPackageDescription } from "./description-check.js";
 export type { PackageDescriptionAssessment, PackageDescriptionCheck } from "./description-check.js";
 export { inspectPackageNamespaceSource, s3Consistent } from "./namespace-source-check.js";
+export {
+  extractVignetteCode,
+  inspectPackageVignettes,
+  isVignetteSource,
+} from "./vignette-check.js";
+export type { VignetteAssessment, VignetteCheck, VignetteSource } from "./vignette-check.js";
 export { inspectPackageDocumentation, inspectPackageManual, parseRd, rdText } from "./rd-check.js";
 export type {
   DocumentationAssessment,

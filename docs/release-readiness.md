@@ -67,13 +67,13 @@ release).
 The repository's completion criteria are defined in
 [gnu-r-compatibility.md](gnu-r-compatibility.md#completion-evidence). They are not reduced here.
 
-| Criterion                                                          | Current evidence                                                                                                                                                                                   | Status         |
-| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| 1. Executable differential suite for every required domain         | All twelve ledger domains have partial suites; every domain is still marked incomplete                                                                                                             | Not met        |
-| 2. Every inventoried callable has evidence or a verified exclusion | 742 of 2,522 names registered; 77 bindings have recursive Oracle v2 case links; the other 1,780 names have no registered binding                                                                   | Not met        |
-| 3. Broad clean-room corpus including R CMD check scenarios         | 1,225 foundation and 127 recursive cases; 25 pinned packages; abind 1.4-8 reaches P7 under the RFC-0008 stage specifications; numDeriv and the other 23 packages do not                            | Not met        |
-| 4. Browsers, operating systems and tolerances verified             | Three engines on Windows here and Ubuntu in CI; macOS unverified; numeric policy decided (RFC-0007), library built, verified across engines and shipped as a digest-checked asset, not yet adopted | Not met        |
-| 5. Ledger, capabilities, public API and reports agree              | `capabilities:check`, `status:check` and `compatibility:check` pass; stale narrative counts fixed in this pass                                                                                     | Met for checks |
+| Criterion                                                          | Current evidence                                                                                                                                                                                                                                | Status         |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| 1. Executable differential suite for every required domain         | All twelve ledger domains have partial suites; every domain is still marked incomplete                                                                                                                                                          | Not met        |
+| 2. Every inventoried callable has evidence or a verified exclusion | 742 of 2,522 names registered; 77 bindings have recursive Oracle v2 case links; the other 1,780 names have no registered binding                                                                                                                | Not met        |
+| 3. Broad clean-room corpus including R CMD check scenarios         | 1,229 foundation and 127 recursive cases; 25 pinned packages; abind 1.4-8 reaches P7 under the RFC-0008 stage specifications; numDeriv and the other 23 packages do not                                                                         | Not met        |
+| 4. Browsers, operating systems and tolerances verified             | Three engines on Windows here and Ubuntu in CI; macOS unverified; numeric policy decided (RFC-0007), library built, shipped as a digest-checked asset and adopted in sessions, including complex functions (0.355); the Linux oracle is pending | Not met        |
+| 5. Ledger, capabilities, public API and reports agree              | `capabilities:check`, `status:check` and `compatibility:check` pass; stale narrative counts fixed in this pass                                                                                                                                  | Met for checks |
 
 **Readiness:** B is far from complete. As a rough, low-confidence estimate, closing criteria 1-3 is
 a multi-year effort at the current increment rate: about 1,800 callables lack registration or
@@ -87,14 +87,14 @@ for Windows (CRAN installer, MD5 verified) as the black-box oracle, on Windows 1
 
 | Command                                         | Baseline (profile 0.350)        | Combined tree (profile 0.353)                                                      |
 | ----------------------------------------------- | ------------------------------- | ---------------------------------------------------------------------------------- |
-| `pnpm check`                                    | Passed; 1,241 tests, 76 skipped | Passed; 1,269 tests, 82 skipped (note 1)                                           |
-| `pnpm conformance`                              | 1,200/1,200                     | 1,225/1,225                                                                        |
-| `pnpm conformance:r` (live GNU R 4.6.1)         | 1,129/1,130; one case failed    | 1,155/1,155                                                                        |
+| `pnpm check`                                    | Passed; 1,241 tests, 76 skipped | Passed; 1,296 tests, 85 skipped (note 1)                                           |
+| `pnpm conformance`                              | 1,200/1,200                     | 1,229/1,229                                                                        |
+| `pnpm conformance:r` (live GNU R 4.6.1)         | 1,129/1,130; one case failed    | 1,159/1,159                                                                        |
 | `pnpm conformance:r:v2`                         | 125/125, 69 linked bindings     | 127/127, 77 linked bindings                                                        |
 | `pnpm pack:smoke`                               | Passed                          | Passed                                                                             |
 | `pnpm test:e2e`                                 | Not run at baseline             | 6/6 (Chromium, Firefox, WebKit)                                                    |
 | `pnpm package:check --package abind`            | 10/10 comparisons match         | P7: every stage passes or is inapplicable; 10/10 comparisons match (profile 0.353) |
-| `pnpm package:check --package numDeriv`         | 2 match, 9 differ (unseeded)    | 3 match, 8 differ (seeded)                                                         |
+| `pnpm package:check --package numDeriv`         | 2 match, 9 differ (unseeded)    | 5 match, 6 differ (seeded); all non-output stages pass (profile 0.355)             |
 | External corpus suite (`NATIVR_EXTERNAL_...=1`) | Not run in this pass            | Not run in this pass                                                               |
 
 1. The Worker budget is now a fixed 512 KiB gzip; see "Worker budget policy" in
@@ -109,7 +109,7 @@ suite does not run them. The holdout package (Formula 1.2-6) was not evaluated.
 | Package             | Tier | First blocker                                                       |
 | ------------------- | ---- | ------------------------------------------------------------------- |
 | abind 1.4-8         | P7   | None. First P7 package (RFC-0008, profile 0.353)                    |
-| numDeriv 2016.8-1.1 | P6   | P7 `metadata-dependencies` unexecuted; output comparisons below     |
+| numDeriv 2016.8-1.1 | P6   | P7 `test-output`: traced oracle libm deviations (below)             |
 | R6 2.6.1            | P5   | P6 `tests/testthat.R` needs testthat                                |
 | rprojroot 2.1.1     | P5   | P6 `tests/testthat.R` needs testthat                                |
 | labeling 0.4.3      | P5   | Recorded as passing at P5; no recorded blocker                      |
@@ -126,23 +126,25 @@ archive.
 
 Run with the explicit RNG prologue and `--oracle-repeat` (`--rng-seed 20261016`):
 
-| Input                | Result  | Classification                                                                                |
-| -------------------- | ------- | --------------------------------------------------------------------------------------------- |
-| `tests/oneSided.R`   | match   |                                                                                               |
-| `tests/grad01.R`     | match   | Fixed in 0.351: `require()` now emits GNU R's startup message                                 |
-| `man/genD.Rd`        | match   |                                                                                               |
-| `tests/BWeg.R`       | differs | GNU R output is not repeatable, and `Sys.info()` uses the documented browser adaptation       |
-| `tests/CSD.R`        | differs | GNU R output is not repeatable (`system.time()`); a last-place numeric difference comes first |
-| `tests/hessian01.R`  | differs | Deterministic. Last-place numeric differences amplified by finite differencing                |
-| `tests/jacobian01.R` | differs | Deterministic. Same class                                                                     |
-| `tests/trig01.R`     | differs | Deterministic. One-ulp difference in the twelfth printed digit                                |
-| `man/grad.Rd`        | differs | Deterministic once seeded. Same class                                                         |
-| `man/hessian.Rd`     | differs | Deterministic once seeded. Was a 50x gap with unseeded input; now the same order of magnitude |
-| `man/jacobian.Rd`    | differs | Deterministic. One-ulp difference in a ~1e-16 residual                                        |
+| Input                | Result  | Classification                                                                              |
+| -------------------- | ------- | ------------------------------------------------------------------------------------------- |
+| `tests/oneSided.R`   | match   |                                                                                             |
+| `tests/grad01.R`     | match   | Fixed in 0.351: `require()` now emits GNU R's startup message                               |
+| `man/genD.Rd`        | match   |                                                                                             |
+| `man/grad.Rd`        | match   | Fixed in 0.355: complex functions use the session math (complex-step derivatives)           |
+| `man/hessian.Rd`     | match   | Fixed in 0.355: same cause                                                                  |
+| `tests/BWeg.R`       | differs | GNU R output is not repeatable, and `Sys.info()` uses the documented browser adaptation     |
+| `tests/CSD.R`        | differs | GNU R output is not repeatable (`system.time()`); numeric output now matches                |
+| `tests/hessian01.R`  | differs | Oracle libm: GNU R `sin`/`cos` near pi and 2*pi not correctly rounded (14 of 150 probes)    |
+| `tests/jacobian01.R` | differs | Oracle libm: same class                                                                     |
+| `tests/trig01.R`     | differs | Oracle libm: GNU R `asin` not correctly rounded at 8 of 24 probed points                    |
+| `man/jacobian.Rd`    | differs | Oracle libm: `sin(2*pi)` residual (2.4492127e-16 against a correctly rounded 2.4492936e-16) |
 
-The deterministic numeric differences are consistent with the measured libm deviations, but each one
-has not yet been traced to a specific function. That tracing, and a decision on R1 below, must come
-before numDeriv's output stage can pass. No output is normalized.
+Each deterministic difference is traced to a function, checked against an independent 90-digit
+decimal reference (`compatibility/package-check-evidence/numDeriv-libm-trace-0.355.0.json`). NativR
+is correctly rounded at every probed point. Discharging these needs the RFC-0007 libm deviation rule
+and the normative Linux oracle (step 5) before numDeriv's output stage can pass. No output is
+normalized.
 
 ## Defects confirmed and fixed in this pass
 

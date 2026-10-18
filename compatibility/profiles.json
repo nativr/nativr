@@ -81,6 +81,10 @@
       {
         "surface": "package manual (R CMD check PDF version of manual)",
         "behavior": "PDF typesetting needs a host LaTeX toolchain. The package-check manual stage renders every Rd file to text using only documented or package-defined Rd macros (RFC-0008) and does not claim PDF equivalence."
+      },
+      {
+        "surface": "package vignettes and installed documentation (R CMD check vignette items)",
+        "behavior": "Re-building vignette outputs needs host Sweave/LaTeX or Pandoc, and PDF compression analysis needs host qpdf. The package-check vignettes stage runs the R code of each vignette on both runtimes, and the installed-documentation stage checks installed outputs, tangled code, source copies and PDF sizes (RFC-0008). Neither claims rebuilt-output equivalence."
       }
     ]
   },
