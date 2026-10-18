@@ -18,6 +18,7 @@ import {
   withNames,
 } from "@nativr/runtime";
 import type {
+  ElementaryMath,
   OperatorContext,
   RCharacterVector,
   RComplexVector,
@@ -203,6 +204,10 @@ export const jsReferenceOperators: RuntimeOperators = {
         context.checkpoint();
         const leftIndex = index % lhs.length;
         const rightIndex = index % rhs.length;
+        if (operator === "^" && powerIsOne(lhs, leftIndex, rhs, rightIndex)) {
+          values[index] = 1;
+          continue;
+        }
         if (isMissing(lhs, leftIndex) || isMissing(rhs, rightIndex)) {
           missing[index] = 1;
           continue;
@@ -211,6 +216,7 @@ export const jsReferenceOperators: RuntimeOperators = {
           operator,
           numericAt(lhs, leftIndex),
           numericAt(rhs, rightIndex),
+          context.math,
         );
       }
       return {
@@ -232,6 +238,7 @@ export const jsReferenceOperators: RuntimeOperators = {
         operator,
         numericAt(lhs, leftIndex),
         numericAt(rhs, rightIndex),
+        context.math,
       );
       if (!Number.isInteger(result) || result > 2_147_483_647 || result < -2_147_483_648) {
         missing[index] = 1;
@@ -687,7 +694,25 @@ function applyComparison(operator: string, left: number | string, right: number 
   }
 }
 
-function applyArithmetic(operator: string, left: number, right: number): number {
+/** True when a non-missing base is 1 or a non-missing exponent is 0 (?Arithmetic). */
+function powerIsOne(
+  lhs: NumericVector,
+  leftIndex: number,
+  rhs: NumericVector,
+  rightIndex: number,
+): boolean {
+  return (
+    (!isMissing(lhs, leftIndex) && numericAt(lhs, leftIndex) === 1) ||
+    (!isMissing(rhs, rightIndex) && numericAt(rhs, rightIndex) === 0)
+  );
+}
+
+function applyArithmetic(
+  operator: string,
+  left: number,
+  right: number,
+  math: ElementaryMath,
+): number {
   switch (operator) {
     case "+":
       return left + right;
@@ -698,9 +723,11 @@ function applyArithmetic(operator: string, left: number, right: number): number 
     case "/":
       return left / right;
     case "^":
+      // Exponents 3 and 4 match the Windows oracle more often as products than as pow; this is an
+      // unverified platform boundary until the Linux oracle run (RFC-0007 step 5).
       if (right === 3) return left * left * left;
       if (right === 4) return left * left * left * left;
-      return left ** right;
+      return math.binary("pow", left, right);
     case "%%":
       return left - right * Math.floor(left / right);
     case "%/%":

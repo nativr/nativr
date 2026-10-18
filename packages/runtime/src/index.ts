@@ -109,6 +109,7 @@ export {
   USER_HOOKS_STATE_KEY,
   OUTPUT_ROUTER_STATE_KEY,
   runtimeOutputRouter,
+  HOST_ELEMENTARY_MATH,
 } from "./values.js";
 export {
   extractListMember,
@@ -132,6 +133,9 @@ export type {
   BuiltinMetadata,
   CancellationToken,
   OperatorContext,
+  ElementaryMath,
+  ElementaryUnaryFunction,
+  ElementaryBinaryFunction,
   RAttributes,
   RActiveBinding,
   RBuiltin,

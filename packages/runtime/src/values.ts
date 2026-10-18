@@ -779,10 +779,54 @@ export type RGraphicsEvent =
       readonly title?: string;
     };
 
+/** Binary64 elementary functions with one argument (RFC-0007). */
+export type ElementaryUnaryFunction =
+  | "exp"
+  | "expm1"
+  | "log"
+  | "log1p"
+  | "log2"
+  | "log10"
+  | "sin"
+  | "cos"
+  | "tan"
+  | "asin"
+  | "acos"
+  | "atan"
+  | "sinh"
+  | "cosh"
+  | "tanh"
+  | "asinh"
+  | "acosh"
+  | "atanh"
+  | "cbrt";
+/** Binary64 elementary functions with two arguments (RFC-0007). */
+export type ElementaryBinaryFunction = "pow" | "atan2" | "hypot";
+
+/**
+ * Per-session elementary functions. "correctly-rounded" sessions use the pinned RFC-0007 module
+ * and compute identical bits in every engine; "host" sessions use the engine's Math object.
+ */
+export interface ElementaryMath {
+  readonly backend: "correctly-rounded" | "host";
+  unary(name: ElementaryUnaryFunction, x: number): number;
+  binary(name: ElementaryBinaryFunction, x: number, y: number): number;
+}
+
+/** The engine's Math functions; used when a session has no correctly rounded module. */
+export const HOST_ELEMENTARY_MATH: ElementaryMath = Object.freeze({
+  backend: "host" as const,
+  unary: (name: ElementaryUnaryFunction, x: number) => Math[name](x),
+  binary: (name: ElementaryBinaryFunction, x: number, y: number) =>
+    name === "pow" ? x ** y : Math[name](x, y),
+});
+
 /** Context exposed to deterministic computational operators. */
 export interface OperatorContext {
   readonly limits: RuntimeLimits;
   readonly cancellation: CancellationToken;
+  /** This session's elementary functions (RFC-0007). */
+  readonly math: ElementaryMath;
   /** Record a deferred warning; pass signalled when handlers already observed its condition. */
   warn(warning: RWarning, signalled?: boolean): void;
   writeOutput(output: ROutput): void;

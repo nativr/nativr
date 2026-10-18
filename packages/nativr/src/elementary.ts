@@ -1,4 +1,9 @@
 import { NativRError } from "@nativr/runtime";
+import type {
+  ElementaryBinaryFunction,
+  ElementaryMath,
+  ElementaryUnaryFunction,
+} from "@nativr/runtime";
 
 /**
  * The correctly rounded elementary-function module (RFC-0007), as pinned in
@@ -40,10 +45,7 @@ export interface ElementaryModulePin {
   readonly binary: readonly string[];
 }
 
-/**
- * One session's verified instance. Nothing routes through it yet (RFC-0007 step 4 adoption); the
- * host only holds it so the adoption step can inject it into operators and builtins.
- */
+/** One session's verified instance; createElementaryMath adapts it for the evaluator. */
 export interface ElementaryModule {
   readonly instance: WebAssembly.Instance;
   readonly memory: WebAssembly.Memory;
@@ -105,6 +107,34 @@ export async function instantiateElementaryModule(
     throw new NativRError("NRS5014", "The elementary-function Wasm asset must export its memory.");
   }
   return Object.freeze({ instance, memory });
+}
+
+/**
+ * Correctly rounded elementary functions for one session (RFC-0007). CORE-MATH guarantees correct
+ * rounding for regular inputs; non-finite and zero arguments take the engine's Math path, whose
+ * IEEE 754 special values are exact. NA is carried by the caller's missing mask, so NaN payloads
+ * returned by the module are never interpreted.
+ */
+export function createElementaryMath(module: ElementaryModule): ElementaryMath {
+  const exports = module.instance.exports as Record<string, unknown>;
+  const unary = new Map<ElementaryUnaryFunction, (x: number) => number>();
+  for (const name of ELEMENTARY_WASM.unary) unary.set(name, exports[name] as (x: number) => number);
+  const binary = new Map<ElementaryBinaryFunction, (x: number, y: number) => number>();
+  for (const name of ELEMENTARY_WASM.binary)
+    binary.set(name, exports[name] as (x: number, y: number) => number);
+  const regular = (value: number) => Number.isFinite(value) && value !== 0;
+  return Object.freeze({
+    backend: "correctly-rounded" as const,
+    unary: (name: ElementaryUnaryFunction, x: number) => {
+      const fn = unary.get(name);
+      return fn !== undefined && regular(x) ? fn(x) : Math[name](x);
+    },
+    binary: (name: ElementaryBinaryFunction, x: number, y: number) => {
+      const fn = binary.get(name);
+      if (fn !== undefined && regular(x) && regular(y)) return fn(x, y);
+      return name === "pow" ? x ** y : Math[name](x, y);
+    },
+  });
 }
 
 const SHA256_K = new Uint32Array([

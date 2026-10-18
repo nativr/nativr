@@ -113,6 +113,8 @@ try {
   for (const [key, filename] of [
     ["treeSitterRuntimeWasm", "web-tree-sitter.wasm"],
     ["rGrammarWasm", "tree-sitter-r.wasm"],
+    // RFC-0007: package checks use the correctly rounded module, as browser sessions do.
+    ["elementaryWasm", "elementary.wasm"],
   ]) {
     const bytes = await readFile(path.join(root, "packages/nativr/dist/assets", filename));
     assets[key] = new URL(`data:application/wasm;base64,${bytes.toString("base64")}`);

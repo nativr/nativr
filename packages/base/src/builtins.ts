@@ -23212,12 +23212,7 @@ async function builtinTrigonometric(
   for (let index = 0; index < input.length; index += 1) {
     invocation.context.checkpoint();
     const source = numberAt(input, index);
-    const result =
-      operation === "sin"
-        ? Math.sin(source)
-        : operation === "cos"
-          ? Math.cos(source)
-          : Math.tan(source);
+    const result = invocation.context.math.unary(operation, source);
     if (!isMissing(input, index) && Number.isNaN(result) && !Number.isNaN(source)) {
       producedNaN = true;
     }
@@ -23285,12 +23280,7 @@ async function builtinInverseTrigonometric(
     invocation.context.checkpoint();
     if (isMissing(input, index)) continue;
     const source = numberAt(input, index);
-    const result =
-      operation === "asin"
-        ? Math.asin(source)
-        : operation === "acos"
-          ? Math.acos(source)
-          : Math.atan(source);
+    const result = invocation.context.math.unary(operation, source);
     output[index] = result;
     if (!Number.isNaN(source) && Number.isNaN(result)) producedNaN = true;
   }
@@ -23554,14 +23544,18 @@ async function builtinLog(invocation: BuiltinInvocation, operation: LogOperation
 
     const value = numberAt(input, inputIndex);
     const baseNumber = base === undefined ? Math.E : numberAt(base, baseIndex);
+    // GNU R uses log10/log2 for those bases and log(x)/log(base) otherwise (observed natively).
+    const math = invocation.context.math;
     const result =
       operation === "onePlus"
-        ? Math.log1p(value)
-        : operation === "base10"
-          ? Math.log10(value)
-          : operation === "base2"
-            ? Math.log2(value)
-            : Math.log(value) / Math.log(baseNumber);
+        ? math.unary("log1p", value)
+        : operation === "base10" || (base !== undefined && baseNumber === 10)
+          ? math.unary("log10", value)
+          : operation === "base2" || (base !== undefined && baseNumber === 2)
+            ? math.unary("log2", value)
+            : base === undefined
+              ? math.unary("log", value)
+              : math.unary("log", value) / math.unary("log", baseNumber);
     if (Number.isNaN(result) && !Number.isNaN(value) && !Number.isNaN(baseNumber)) {
       producedNaN = true;
     }
@@ -23604,7 +23598,7 @@ async function builtinExp(invocation: BuiltinInvocation, oneLess: boolean): Prom
   for (let index = 0; index < input.length; index += 1) {
     invocation.context.checkpoint();
     const value = numberAt(input, index);
-    output[index] = oneLess ? Math.expm1(value) : Math.exp(value);
+    output[index] = invocation.context.math.unary(oneLess ? "expm1" : "exp", value);
   }
   return {
     ...doubleVector(output, input.missing),
@@ -27008,7 +27002,7 @@ async function builtinRnorm(invocation: BuiltinInvocation): Promise<RValue> {
   return doubleVector(
     Array.from({ length }, () => {
       invocation.context.checkpoint();
-      return mean + standardDeviation * nextNormal(random);
+      return mean + standardDeviation * nextNormal(random, invocation.context.math);
     }),
   );
 }
@@ -48944,7 +48938,12 @@ async function builtinNormalDistribution(invocation: BuiltinInvocation): Promise
       producedNaN = true;
       continue;
     }
-    output[index] = normalProbability(standardized, lowerTail, logarithmic);
+    output[index] = normalProbability(
+      standardized,
+      lowerTail,
+      logarithmic,
+      invocation.context.math,
+    );
   }
   if (producedNaN) {
     invocation.context.warn({ code: "NRW1003", message: "NaNs produced" });

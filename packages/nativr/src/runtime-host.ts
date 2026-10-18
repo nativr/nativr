@@ -25,7 +25,7 @@ import type { ProgramNode } from "@nativr/ast";
 
 import { CAPABILITIES } from "./capabilities.js";
 import { snapshotToValue, valueToSnapshot } from "./conversion.js";
-import { loadElementaryModule } from "./elementary.js";
+import { createElementaryMath, loadElementaryModule } from "./elementary.js";
 import type { ElementaryModule } from "./elementary.js";
 import { compilePureRPackages } from "./pure-r-package.js";
 import type {
@@ -45,10 +45,7 @@ export interface RuntimeHostAssets extends ParserAssets {
 export class RuntimeHost {
   readonly #parser: NativRParser;
   readonly #evaluator: Evaluator;
-  /**
-   * This session's verified elementary-function instance, when its asset was configured. It is
-   * held for RFC-0007 adoption and does not yet affect any evaluation.
-   */
+  /** This session's verified elementary-function instance, when its asset was configured. */
   public readonly elementary: ElementaryModule | undefined;
 
   private constructor(
@@ -99,6 +96,8 @@ export class RuntimeHost {
       );
       const evaluator = new Evaluator(jsReferenceOperators, baseBuiltins, {
         limits: effectiveLimits,
+        // RFC-0007: correctly rounded elementary functions when this session loaded the module.
+        ...(elementary === undefined ? {} : { elementaryMath: createElementaryMath(elementary) }),
         ...(sessionProcessId === undefined ? {} : { sessionProcessId }),
         parseSource: (source, maxExpressions) => parseProgram(parser, source, maxExpressions),
         packages: packageDefinitions,

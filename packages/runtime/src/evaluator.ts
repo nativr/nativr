@@ -70,6 +70,7 @@ import {
   GLOBAL_CALLING_HANDLERS_STATE_KEY,
   USER_HOOKS_STATE_KEY,
   runtimeOutputRouter,
+  HOST_ELEMENTARY_MATH,
 } from "./values.js";
 import {
   extractListMember,
@@ -110,6 +111,7 @@ import type {
   RuntimeOperators,
   RValue,
   RWarning,
+  ElementaryMath,
 } from "./values.js";
 
 /** Internal value and visibility returned by one expression. */
@@ -169,6 +171,8 @@ export interface EvaluatorOptions {
   readonly nativeModules?: readonly RNativeModuleDefinition[];
   /** Explicit typed native/Wasm capability. Undefined means that .Call cannot execute. */
   readonly nativeCall?: (request: RNativeCallRequest) => Promise<RValue> | RValue;
+  /** Elementary functions for this session (RFC-0007); defaults to the engine's Math. */
+  readonly elementaryMath?: ElementaryMath;
 }
 
 /** One dependency imported by a normalized source-only package. */
@@ -568,6 +572,7 @@ export class Evaluator {
   readonly #operators: RuntimeOperators;
   readonly #builtins: readonly BuiltinDefinition[];
   readonly #limits: RuntimeLimits;
+  readonly #math: ElementaryMath;
   readonly #parseSource: EvaluatorOptions["parseSource"];
   readonly #initializeBuiltinState: EvaluatorOptions["initializeBuiltinState"];
   readonly #readline: EvaluatorOptions["readline"];
@@ -616,6 +621,7 @@ export class Evaluator {
     this.#operators = operators;
     this.#builtins = builtins;
     this.#limits = { ...DEFAULT_RUNTIME_LIMITS, ...options.limits };
+    this.#math = options.elementaryMath ?? HOST_ELEMENTARY_MATH;
     this.#parseSource = options.parseSource;
     this.#initializeBuiltinState = options.initializeBuiltinState;
     this.#readline = options.readline;
@@ -719,8 +725,11 @@ export class Evaluator {
     this.#ensureActive();
     const cancellation = { cancelled: false };
     this.#activeCancellation = cancellation;
-    const context = new EvaluationContext(this.#limits, cancellation, () =>
-      runtimeOutputRouter(this.#builtinState),
+    const context = new EvaluationContext(
+      this.#limits,
+      cancellation,
+      () => runtimeOutputRouter(this.#builtinState),
+      this.#math,
     );
     const start = Date.now();
     try {
@@ -831,8 +840,11 @@ export class Evaluator {
         details: { maxVectorLength: this.#limits.maxVectorLength, requested: value.length },
       });
     }
-    const context = new EvaluationContext(this.#limits, { cancelled: false }, () =>
-      runtimeOutputRouter(this.#builtinState),
+    const context = new EvaluationContext(
+      this.#limits,
+      { cancelled: false },
+      () => runtimeOutputRouter(this.#builtinState),
+      this.#math,
     );
     await this.#assignBinding(this.#globalEnvironment, name, value, context);
   }
@@ -846,8 +858,11 @@ export class Evaluator {
         details: { symbol: name },
       });
     }
-    const context = new EvaluationContext(this.#limits, { cancelled: false }, () =>
-      runtimeOutputRouter(this.#builtinState),
+    const context = new EvaluationContext(
+      this.#limits,
+      { cancelled: false },
+      () => runtimeOutputRouter(this.#builtinState),
+      this.#math,
     );
     return this.#force(binding, context);
   }
@@ -859,8 +874,11 @@ export class Evaluator {
     if (binding === undefined) {
       throw new REvaluationError("NRE2001", `Object '${name}' not found.`);
     }
-    const context = new EvaluationContext(this.#limits, { cancelled: false }, () =>
-      runtimeOutputRouter(this.#builtinState),
+    const context = new EvaluationContext(
+      this.#limits,
+      { cancelled: false },
+      () => runtimeOutputRouter(this.#builtinState),
+      this.#math,
     );
     const callable = await this.#force(binding, context);
     const promises = values.map((value) => createForcedPromise(value, this.#globalEnvironment));

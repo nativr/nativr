@@ -1,3 +1,5 @@
+import { HOST_ELEMENTARY_MATH } from "@nativr/runtime";
+import type { ElementaryMath } from "@nativr/runtime";
 import { as241Quantile, codyNormalTails } from "./normal.js";
 
 const LANCZOS_COEFFICIENTS = [
@@ -146,7 +148,12 @@ function betaContinuedFraction(value: number, alpha: number, beta: number): numb
  * Standard-normal lower- or upper-tail probability using Cody's published approximations. The
  * logarithmic path evaluates the requested tail directly, without first underflowing to zero.
  */
-export function normalProbability(value: number, lowerTail: boolean, logarithmic = false): number {
+export function normalProbability(
+  value: number,
+  lowerTail: boolean,
+  logarithmic = false,
+  math: ElementaryMath = HOST_ELEMENTARY_MATH,
+): number {
   if (Number.isNaN(value)) return Number.NaN;
   if (value === Number.NEGATIVE_INFINITY || value === Number.POSITIVE_INFINITY) {
     const requestsVanishingTail =
@@ -155,13 +162,16 @@ export function normalProbability(value: number, lowerTail: boolean, logarithmic
     const probability = requestsVanishingTail ? 0 : 1;
     return logarithmic ? (probability === 0 ? Number.NEGATIVE_INFINITY : 0) : probability;
   }
-  const [lower, upper] = codyNormalTails(value, logarithmic);
+  const [lower, upper] = codyNormalTails(value, logarithmic, math);
   return lowerTail ? lower : upper;
 }
 
 /** Standard-normal lower-tail quantile (AS 241) for a probability in [0, 1]. */
-export function normalQuantile(probability: number): number {
-  return as241Quantile(probability);
+export function normalQuantile(
+  probability: number,
+  math: ElementaryMath = HOST_ELEMENTARY_MATH,
+): number {
+  return as241Quantile(probability, undefined, math);
 }
 
 function logGamma(value: number): number {

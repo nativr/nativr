@@ -3811,3 +3811,37 @@ Known boundaries:
   `test` functions are not consulted. `invokeRestartInteractively` and `restartDescription` are not
   provided.
 - Printing a list of restarts uses ordinary list printing, not `print.restart` for each element.
+
+### Correctly rounded elementary functions in sessions (profile 0.354)
+
+Sessions that load the RFC-0007 module use it for `exp`, `expm1`, `log`, `log1p`, `log2`, `log10`,
+`sin`, `cos`, `tan`, `asin`, `acos` and `atan`, for `^` with exponents other than 2, 3 and 4, and
+inside the AS 241 and Cody normal-distribution algorithms behind `qnorm`, `pnorm` and `rnorm`. These
+sessions compute identical bits in every browser engine. Regular finite, nonzero arguments use the
+module; non-finite and zero arguments take the engine's exact IEEE 754 paths. Sessions without the
+module use the engine's `Math` functions. Browser and Worker sessions load the module by default,
+and the conformance and package-check runners load it explicitly.
+
+Black-box evidence from GNU R 4.6.1:
+
+- `log(x, 10)` and `log(x, 2)` equal `log10(x)` and `log2(x)`; other bases use `log(x)/log(base)`.
+  NativR previously divided natural logarithms for every base.
+- `1 ^ y` and `y ^ 0` are 1 for every operand, including `NA` and `NaN`, as `?Arithmetic` documents.
+  `(-1)^Inf` is `NaN`. NativR previously returned `NaN` or `NA` for `1^NaN`, `1^Inf`, `1^NA` and
+  `NA^0`.
+- In sampled sweeps against the Windows oracle, correctly rounded sessions match `pnorm` on
+  3000/3000 values and seeded `rnorm` on 3000/3000 draws. Host-math sessions match 2805 and 2993.
+
+Independently authored foundation cases `power-one-and-zero-exponent-rules` and
+`logarithm-base-function-selection` compare against GNU R 4.6.1, and `elementary-math.test.ts`
+covers the backend routing.
+
+Known boundaries:
+
+- `x^3` and `x^4` keep repeated multiplication. Neither that nor `pow` matches every Windows oracle
+  result, so the choice waits for the Linux oracle (RFC-0007 step 5).
+- Complex elementary functions, Student-t internals, and other builtins that call `Math` directly
+  still use the engine's functions. `sinh`, `cosh`, `tanh`, `asinh`, `acosh`, `atanh` and `atan2`
+  are not registered yet.
+- The Windows oracle's own `atan`, `asinh` and similar results are not always correctly rounded.
+  Where they differ, the RFC-0007 libm deviation rule applies, once it is implemented in step 5.

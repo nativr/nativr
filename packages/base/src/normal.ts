@@ -1,3 +1,5 @@
+import { HOST_ELEMENTARY_MATH } from "@nativr/runtime";
+import type { ElementaryMath } from "@nativr/runtime";
 /**
  * Standard-normal quantile and tail probabilities.
  *
@@ -76,7 +78,11 @@ function horner(coefficients: readonly number[], x: number): number {
  * AS 241 lower-tail quantile for a probability in [0, 1]. `logSmallTail`, when supplied, is the
  * logarithm of min(p, 1 - p) and avoids rounding that tail through a probability.
  */
-export function as241Quantile(probability: number, logSmallTail?: number): number {
+export function as241Quantile(
+  probability: number,
+  logSmallTail?: number,
+  math: ElementaryMath = HOST_ELEMENTARY_MATH,
+): number {
   if (Number.isNaN(probability) || probability < 0 || probability > 1) return Number.NaN;
   if (probability === 0) return Number.NEGATIVE_INFINITY;
   if (probability === 1) return Number.POSITIVE_INFINITY;
@@ -85,7 +91,9 @@ export function as241Quantile(probability: number, logSmallTail?: number): numbe
     const r = 0.180625 - centered * centered;
     return (centered * horner(CENTRAL_NUMERATOR, r)) / horner(CENTRAL_DENOMINATOR, r);
   }
-  let r = Math.sqrt(-(logSmallTail ?? Math.log(centered < 0 ? probability : 1 - probability)));
+  let r = Math.sqrt(
+    -(logSmallTail ?? math.unary("log", centered < 0 ? probability : 1 - probability)),
+  );
   let value: number;
   if (r <= 5) {
     r -= 1.6;
@@ -101,7 +109,11 @@ export function as241Quantile(probability: number, logSmallTail?: number): numbe
  * Cody's standard-normal tails for a finite value. Returns [lower, upper]; with `logarithmic`,
  * both are natural logarithms computed without first underflowing the small tail.
  */
-export function codyNormalTails(value: number, logarithmic: boolean): readonly [number, number] {
+export function codyNormalTails(
+  value: number,
+  logarithmic: boolean,
+  math: ElementaryMath = HOST_ELEMENTARY_MATH,
+): readonly [number, number] {
   const absolute = Math.abs(value);
   if (absolute <= 0.67448975) {
     let numerator = 0;
@@ -120,7 +132,7 @@ export function codyNormalTails(value: number, logarithmic: boolean): readonly [
       (denominator + (SMALL_DENOMINATOR[3] ?? 0));
     const lower = 0.5 + temp;
     const upper = 0.5 - temp;
-    return logarithmic ? [Math.log(lower), Math.log(upper)] : [lower, upper];
+    return logarithmic ? [math.unary("log", lower), math.unary("log", upper)] : [lower, upper];
   }
   let temp: number;
   let truncated: number;
@@ -152,12 +164,16 @@ export function codyNormalTails(value: number, logarithmic: boolean): readonly [
   let small: number;
   let large: number;
   if (logarithmic) {
-    small = -truncated * truncated * 0.5 - difference * 0.5 + Math.log(temp);
-    large = Math.log1p(
-      -Math.exp(-truncated * truncated * 0.5) * Math.exp(-difference * 0.5) * temp,
+    small = -truncated * truncated * 0.5 - difference * 0.5 + math.unary("log", temp);
+    large = math.unary(
+      "log1p",
+      -math.unary("exp", -truncated * truncated * 0.5) *
+        math.unary("exp", -difference * 0.5) *
+        temp,
     );
   } else {
-    small = Math.exp(-truncated * truncated * 0.5) * Math.exp(-difference * 0.5) * temp;
+    small =
+      math.unary("exp", -truncated * truncated * 0.5) * math.unary("exp", -difference * 0.5) * temp;
     large = 1 - small;
   }
   return value > 0 ? [large, small] : [small, large];

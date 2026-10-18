@@ -1,4 +1,5 @@
-import type { BuiltinInvocation } from "@nativr/runtime";
+import { HOST_ELEMENTARY_MATH } from "@nativr/runtime";
+import type { BuiltinInvocation, ElementaryMath } from "@nativr/runtime";
 import { normalQuantile } from "./student-t.js";
 
 export const RANDOM_STATE_KEY = "base.random";
@@ -124,10 +125,13 @@ export function nextRandomIndex(state: RandomState, upperExclusive: number): num
 }
 
 /** Advance the selected normal generator. */
-export function nextNormal(state: RandomState): number {
+export function nextNormal(
+  state: RandomState,
+  math: ElementaryMath = HOST_ELEMENTARY_MATH,
+): number {
   const precision = 134_217_728;
   const probability = (Math.floor(precision * nextRandom(state)) + nextRandom(state)) / precision;
-  return normalQuantile(probability);
+  return normalQuantile(probability, math);
 }
 
 function createRandomEngine(seed: number): RandomEngine {

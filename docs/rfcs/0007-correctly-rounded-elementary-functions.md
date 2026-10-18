@@ -1,7 +1,7 @@
 # RFC-0007: correctly rounded elementary functions and the normative oracle platform
 
-Status: **accepted** (decision recorded 2026-10-17; steps 1-3 done 2026-10-17, runtime semantics
-unchanged; see [Implementation record](#implementation-record))
+Status: **accepted** (decision recorded 2026-10-17; steps 1-4 done 2026-10-17 at profile 0.354; step
+5 pending; see [Implementation record](#implementation-record))
 
 ## Problem
 
@@ -240,13 +240,25 @@ described in the implementation plan.
   modules, inline instantiation of the built module, and the Worker `init` payload. The Playwright
   suite loads the default asset through the playground Worker in Chromium, Firefox and WebKit.
 
-### Carried into step 4b
+### Step 4b: adoption (profile 0.354)
 
-- Adapt `NA`: NaN payloads are not preserved through the module, so the adapter must restore
-  NativR's `NA` itself.
-- Decide the behavior of sessions without the module (explicit parser overrides, Node runners):
-  either require `elementaryWasm` or keep a recorded JavaScript fallback.
-- Measure the start-up cost of the extra fetch, hash and instantiation (open question below).
+- **Injection.** `ElementaryMath` (runtime) is carried on every evaluation context as
+  `context.math`. `RuntimeHost` builds it from the session's verified instance
+  (`createElementaryMath`); otherwise the session uses `HOST_ELEMENTARY_MATH`. There is no
+  module-level global.
+- **NA.** NativR carries `NA` in the missing mask, and missing elements never reach the module, so
+  no payload restoration is needed.
+- **Fallback.** Sessions without the module keep a recorded JavaScript fallback (backend `"host"`).
+  Browser and Worker sessions load the module by default. The conformance, Oracle v2 and
+  package-check runners load it explicitly, so the release-gating evidence exercises the correctly
+  rounded path.
+- **Routing.** `exp`, `expm1`, `log`, `log1p`, `log2`, `log10`, `sin`, `cos`, `tan`, `asin`, `acos`
+  and `atan`; `^` except exponents 2, 3 and 4; and `normal.ts` (`qnorm`, `pnorm`, `rnorm`).
+  Non-finite and zero arguments use the engine's exact IEEE paths.
+- **Results.** On the Windows oracle, `pnorm` matches 3000/3000 and seeded `rnorm` 3000/3000 (host
+  math: 2805 and 2993). `pnpm conformance` passes 1225/1225 and Oracle v2 127/127 on this path.
+- **Remaining.** Complex functions, Student-t internals, other direct `Math` uses, the unregistered
+  hyperbolic functions and `atan2`, and start-up cost measurement.
 
 ## Open questions
 

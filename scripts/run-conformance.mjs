@@ -22,6 +22,10 @@ const assets = {
   rGrammarWasm: bundledEntry
     ? new URL(`data:application/wasm;base64,${grammarWasm.toString("base64")}`)
     : pathToFileURL(path.join(assetRoot, "tree-sitter-r.wasm")),
+  // RFC-0007: evidence runs use the correctly rounded module, as browser sessions do.
+  elementaryWasm: new URL(
+    `data:application/wasm;base64,${(await readFile(path.join(assetRoot, "elementary.wasm"))).toString("base64")}`,
+  ),
 };
 const runtime = await createR({ execution: "inline", assets });
 let failures = 0;

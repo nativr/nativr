@@ -1,3 +1,4 @@
+import { HOST_ELEMENTARY_MATH } from "./values.js";
 import { RResourceLimitError } from "./errors.js";
 import type {
   CancellationToken,
@@ -9,6 +10,7 @@ import type {
   RuntimeOutputRouter,
   RWarning,
   RuntimeLimits,
+  ElementaryMath,
 } from "./values.js";
 
 /** Safe default limits for interactive browser evaluation. */
@@ -64,14 +66,18 @@ export class EvaluationContext implements OperatorContext {
   }[] = [];
   readonly #outputRouter: (() => RuntimeOutputRouter | undefined) | undefined;
 
+  public readonly math: ElementaryMath;
+
   public constructor(
     limits: RuntimeLimits,
     cancellation: CancellationToken,
     outputRouter?: () => RuntimeOutputRouter | undefined,
+    math: ElementaryMath = HOST_ELEMENTARY_MATH,
   ) {
     this.limits = limits;
     this.cancellation = cancellation;
     this.#outputRouter = outputRouter;
+    this.math = math;
   }
 
   public checkpoint(cost = 1): void {

@@ -17105,5 +17105,17 @@
     "expectedWarning": false,
     "rOracleWithoutCallingHandlers": true,
     "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "power-one-and-zero-exponent-rules",
+    "code": "c(identical(c(1^NaN, NaN^0, 1^Inf, 1^NA_real_, NA_real_^0, NA_integer_^0L), rep(1, 6)), is.nan((-1)^Inf), identical(2^0.5, sqrt(2)))",
+    "expected": [true, true, true],
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "logarithm-base-function-selection",
+    "code": "local({x <- c(0.3, 7, 123.456, 1e-30, 5e300); c(identical(log(x, 10), log10(x)), identical(log(x, 2), log2(x)), identical(log(x, 3), log(x) / log(3)), identical(log(x, base = exp(1)), log(x)))})",
+    "expected": [true, true, true, true],
+    "expectedCompatibility": "behavioral"
   }
 ]
