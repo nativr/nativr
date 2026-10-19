@@ -60,7 +60,7 @@ async function builtinOuter(
   invocation: BuiltinInvocation,
   multiplicationOperator: boolean,
 ): Promise<RValue> {
-  const { matched, dots } = matchBuiltinArguments(
+  const { matched, dots } = await matchBuiltinArguments(
     invocation,
     multiplicationOperator ? ["X", "Y"] : ["X", "Y", "FUN", "..."],
   );

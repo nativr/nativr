@@ -42,7 +42,7 @@ type ConvolutionInput = RLogicalVector | RIntegerVector | RDoubleVector | RCompl
 type ConvolutionType = "circular" | "open" | "filter";
 
 async function builtinConvolve(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, ["x", "y", "conj", "type"]);
+  const { matched } = await matchBuiltinArguments(invocation, ["x", "y", "conj", "type"]);
   const type = await convolutionType(invocation, matched.get("type"));
   const xArgument = matched.get("x");
   const yArgument = matched.get("y");

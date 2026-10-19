@@ -2,7 +2,9 @@ import type { AstNode, SourceSpan } from "@nativr/ast";
 import { REvaluationError } from "./errors.js";
 import { deparseAstLines } from "./language-deparse.js";
 import { embeddedValueAst } from "./language-subset.js";
-import type { BuiltinCallArgument } from "./values.js";
+import { deparseDiagnosticAst } from "./language.js";
+import { BASE_OPTIONS_STATE_KEY, characterVector, listValue, withClasses } from "./values.js";
+import type { BuiltinCallArgument, RList, RValue, RWarning } from "./values.js";
 
 interface ArgumentMatchOptions {
   readonly codes?: {
@@ -11,6 +13,56 @@ interface ArgumentMatchOptions {
     readonly unused: string;
   };
   readonly checkWork?: () => void;
+}
+
+export interface PartialArgumentMatch {
+  readonly actual: string;
+  readonly formal: string;
+}
+
+interface MatchedArguments<T> {
+  readonly matched: Map<string, T>;
+  readonly dots: T[];
+}
+
+/** Read the current option on every match so handlers can disable later warnings. */
+export function partialMatchWarningsEnabled(state: ReadonlyMap<string, unknown>): boolean {
+  const options = state.get(BASE_OPTIONS_STATE_KEY);
+  const value =
+    options instanceof Map
+      ? (options.get("warnPartialMatchArgs") as RValue | undefined)
+      : undefined;
+  return value?.type === "logical" && value.values[0] === 1;
+}
+
+/** Build the observable condition and transport-safe warning record for one partial match. */
+export function partialMatchWarning(
+  match: PartialArgumentMatch,
+  call: RValue,
+  checkWork?: () => void,
+): { readonly condition: RList; readonly warning: RWarning } {
+  const message = `partial argument match of '${match.actual}' to '${match.formal}'`;
+  return {
+    condition: withClasses(
+      listValue(
+        [
+          characterVector([message]),
+          call,
+          { type: "symbol", name: match.actual },
+          { type: "symbol", name: match.formal },
+        ],
+        ["message", "call", "argument", "formal"],
+      ),
+      ["partialMatchWarning", "warning", "condition"],
+    ),
+    warning: {
+      code: "NRW1200",
+      message,
+      ...(call.type === "language"
+        ? { call: deparseDiagnosticAst(call.expression, checkWork) }
+        : {}),
+    },
+  };
 }
 
 const SYNTHETIC_SPAN: SourceSpan = {
@@ -23,7 +75,36 @@ export function matchArguments<T extends BuiltinCallArgument & { readonly span?:
   arguments_: readonly T[],
   parameters: readonly string[],
   options: ArgumentMatchOptions = {},
-): { readonly matched: Map<string, T>; readonly dots: T[] } {
+): MatchedArguments<T> {
+  const steps = argumentMatchingSteps(arguments_, parameters, options);
+  for (;;) {
+    const step = steps.next();
+    if (step.done) return step.value;
+  }
+}
+
+/** Suspend at each partial match so warning handlers run before the next matching decision. */
+export async function matchArgumentsWithWarnings<
+  T extends BuiltinCallArgument & { readonly span?: SourceSpan },
+>(
+  arguments_: readonly T[],
+  parameters: readonly string[],
+  onPartialMatch: (match: PartialArgumentMatch) => Promise<void>,
+  options: ArgumentMatchOptions = {},
+): Promise<MatchedArguments<T>> {
+  const steps = argumentMatchingSteps(arguments_, parameters, options);
+  for (;;) {
+    const step = steps.next();
+    if (step.done) return step.value;
+    await onPartialMatch(step.value);
+  }
+}
+
+function* argumentMatchingSteps<T extends BuiltinCallArgument & { readonly span?: SourceSpan }>(
+  arguments_: readonly T[],
+  parameters: readonly string[],
+  options: ArgumentMatchOptions,
+): Generator<PartialArgumentMatch, MatchedArguments<T>, void> {
   const codes = options.codes ?? { duplicate: "NRE2004", ambiguous: "NRE2007", unused: "NRE2005" };
   const checkWork = options.checkWork ?? (() => undefined);
   const dotsIndex = parameters.indexOf("...");
@@ -65,6 +146,7 @@ export function matchArguments<T extends BuiltinCallArgument & { readonly span?:
       if (matched.has(name)) duplicate(name, argument);
       matched.set(name, argument);
       resolved.set(index, name);
+      yield { actual: argument.name, formal: name };
     }
   }
   let position = 0;

@@ -4067,5 +4067,36 @@ The sqrt/abs primitive path evaluates arguments in actual order before checking 
 empty actuals and name mismatches have independent observed diagnostics. This differs from lazy
 closure argument matching. Foundation and recursive cases cover results, conditions, calls,
 visibility and side effects, with causal binding controls. These cases do not establish complete
-argument semantics for every builtin: warnPartialMatchArgs, further primitive families, forwarded
-dots missingness, long diagnostic formatting and broader condition-call origins remain open.
+argument semantics for every builtin: further primitive families, forwarded dots missingness, long
+diagnostic formatting and broader condition-call origins remain open.
+
+### Partial argument warnings (profile 0.364)
+
+`options(warnPartialMatchArgs=TRUE)` enables warnings in the shared named matcher used by closures,
+named builtins and `match.call`. The option defaults to `FALSE`, accepts only one nonmissing logical
+value, and cannot be deleted. Invalid updates leave the prior value intact.
+
+Warnings follow formal order after the exact-match pass. Each warning is delivered before the next
+matching decision, argument forcing or function-body evaluation. A handler can turn off later
+warnings. A successful partial match can therefore warn before a duplicate or ambiguous match
+errors. Exact matches and formals after ellipsis do not generate partial warnings.
+
+Conditions have classes `partialMatchWarning`, `warning`, `condition` and retain message, call,
+argument symbol and formal symbol. Calling and exiting handlers, `muffleWarning`, suppression and
+`warn=2` conversion use the existing condition system. Wire warnings retain only text metadata.
+Builtin S3 dispatch carries the source call into the selected method, including observed
+`mean.default` and `print.factor` warning calls. `match.call` rematching emits its own warnings,
+including for an implicit current call; their observable call is
+`match.call(definition, call, expand.dots, envir)`.
+
+Owned regressions and recursive evidence cover condition structure, order, option validation, side
+effects, builtin matching and matched calls. Matching and warning-call traversal remain subject to
+execution and cancellation limits. This increment does not establish every primitive's argument
+rules or close the remaining calls/promises domain.
+
+Promotion fixtures use the foundation oracle's existing no-outer-handler mode: a muffling observer
+would prevent `warn=2` conversion. Recursive fixtures cover condition structure and handler effects;
+they do not claim unhandled warning-promotion evidence. Direct fallback implementations still need
+generic/method closure: observed `seq` and `format` warning calls lack the default-method name, and
+`sort` currently emits only the generic partial warning instead of the generic and default-method
+warnings. These are unfinished browser-meaningful behavior.

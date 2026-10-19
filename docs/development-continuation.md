@@ -362,7 +362,7 @@ substitute runner received P6/P7 credit. No Worker/playground or packaging inter
 and pack smoke were not refreshed. Linux and the complete browser/OS matrix remain open. No
 downloads, pushes or publication occurred.
 
-### Immediate continuation after profile 0.363
+### Continuation recorded at profile 0.363 (superseded below)
 
 Continue argument semantics with warnPartialMatchArgs and the remaining primitive families before
 reflection. An owned GNU R probe confirms that partial warnings follow formal order, carry the
@@ -381,3 +381,57 @@ Then resume callable reflection and the reproduced corpus blockers. The profile 
 follow-ups remain open, as do independent datasets, isolated testthat support, the complete callable
 and thirteen-domain inventory, performance/CI/release work, and the separately authorized Linux and
 holdout gates. No full compatibility percentage or completion date is established.
+
+### Profile 0.364 verification (2026-10-19)
+
+Partial argument warnings now run synchronously with matching decisions through an awaited shared
+matcher. The option has strict logical validation and defaults to FALSE. Conditions retain the R
+4.6.1 partialMatchWarning class, argument/formal symbols and call metadata. Handlers can disable
+later warnings; muffling precedes warn=2 promotion. Builtin S3 dispatch propagates method calls.
+match.call emits its observed second matching pass and internal diagnostic call.
+
+Twenty-seven independently authored parity cases pass directly under GNU R 4.6.1 and NativR.
+Additional regressions cover default silence, wire warning records, immediate output order,
+cancellation and bounded diagnostic traversal. The full check, including the new corpus checkpoint
+integrity case, passes 1492 tests with 93 opt-in skips. Checked-in/live/recursive conformance passes
+1250 / 1181 / 148 cases, with 91 linked behavioral bindings. Promotion uses the foundation oracle's
+no-outer-handler mode; recursive observations cover conditions and muffling. Fixed budgets pass:
+client 17.5/150 KiB gzip, Worker 469.4/512 KiB gzip, parser 671.9/1,536 KiB raw and elementary
+311.2/384 KiB raw.
+
+All 24 cached development/regression pins were rechecked with applicable oracle repeatability in the
+[0.364 checkpoint](../compatibility/package-check-evidence/corpus-0.364.0.json). Formula remains
+untouched. Original package entrypoints were used; no substitute runner received P6/P7 credit. Stage
+outcomes, comparison-match counts and tiers are unchanged from profile 0.363. No Worker/playground
+or packaging interface changed, so e2e and pack smoke were not refreshed. Linux, browser/OS
+validation, all thirteen domains and full compatibility remain incomplete. No downloads, pushes or
+publication occurred.
+
+### Immediate continuation after profile 0.364
+
+Continue generic/method argument behavior and the remaining primitive rules before reflection. An
+owned black-box sweep confirms three direct fallback gaps with warnPartialMatchArgs enabled:
+seq(f=1,t=3) warns from seq.default in R but seq in NativR; format(1.234,dig=2) warns from
+format.default in R but format in NativR; sort(c(3,1,2),decr=TRUE) emits both sort and sort.default
+warnings in R but only the generic warning in NativR. Implement reusable generic and method
+delegation with matching/forcing evidence instead of merely changing diagnostic text. The owned
+.tmp/partial-warning-delegation.R probe also covers mean, print.factor, seq.int, rep, factor, sum,
+match, unlist, lapply, sapply, matrix and as.matrix. The mean/print.factor metadata gap is fixed
+through shared builtin S3 dispatch and retained in executable cases.
+
+The follow-up owned .tmp/generic-warning-next.R probe confirms that seq and sort currently bypass
+custom S3 methods. Native seq() returns 1L; seq(f=,t=3) uses its from default, and sort(x,decr=)
+uses decreasing=FALSE. NativR currently errors for those default-selection cases. Observable
+signature metadata identifies seq(...), sort(x,decreasing=FALSE,...) and format(x,...), plus their
+default methods. format dispatches an owned method correctly, but format.default is not registered.
+These are confirmed behavior and metadata gaps, with no implementation-body inspection.
+
+Other argument work remains: primitive-specific forcing/arity outside sqrt/abs, forwarded dots
+missingness, optional builtin defaults, long diagnostic formatting and broader condition-call
+origins. The recursive observer muffles outer warnings, so use the foundation oracle's existing
+no-outer-handler mode for unhandled warn=2 conversion; do not infer promotion from muffled cases.
+
+Then resume reflection and the reproduced corpus blockers. Factor follow-ups, independent datasets,
+the isolated testing runner, the complete callable/domain inventory, browser performance, CI and
+release validation remain outstanding. Linux and holdout execution require separate authorization.
+No full compatibility percentage or completion date is established.

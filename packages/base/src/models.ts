@@ -231,7 +231,7 @@ async function builtinLinearModel(invocation: BuiltinInvocation, aov: boolean): 
         "offset",
         "...",
       ];
-  const parsed = matchBuiltinArguments(invocation, parameters);
+  const parsed = await matchBuiltinArguments(invocation, parameters);
   const formula = await requiredFormula(
     invocation,
     parsed.matched.get("formula"),
@@ -394,7 +394,7 @@ function modelLogicalFlag(value: RValue, fallback: boolean, name: string): boole
 }
 
 async function builtinLeastSquaresFit(invocation: BuiltinInvocation): Promise<RValue> {
-  const parsed = matchBuiltinArguments(invocation, [
+  const parsed = await matchBuiltinArguments(invocation, [
     "x",
     "y",
     "wt",
@@ -660,7 +660,7 @@ async function builtinModelAccessor(
   invocation: BuiltinInvocation,
   accessor: "coef" | "fitted" | "residuals",
 ): Promise<RValue> {
-  const parsed = matchBuiltinArguments(invocation, ["object", "..."]);
+  const parsed = await matchBuiltinArguments(invocation, ["object", "..."]);
   const objectArgument = parsed.matched.get("object");
   if (objectArgument === undefined || objectArgument.promise.missing) {
     throw new REvaluationError("NRE2103", `Argument 'object' is missing in ${accessor}().`);
@@ -713,7 +713,7 @@ function modelField(model: RList, name: string): RValue | undefined {
 }
 
 async function builtinModelWeights(invocation: BuiltinInvocation): Promise<RValue> {
-  const parsed = matchBuiltinArguments(invocation, ["object", "..."]);
+  const parsed = await matchBuiltinArguments(invocation, ["object", "..."]);
   const objectArgument = parsed.matched.get("object");
   if (objectArgument === undefined || objectArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'object' is missing in weights().");
@@ -779,7 +779,7 @@ function modelComponent(
 }
 
 async function builtinModelPredict(invocation: BuiltinInvocation): Promise<RValue> {
-  const parsed = matchBuiltinArguments(invocation, ["object", "..."]);
+  const parsed = await matchBuiltinArguments(invocation, ["object", "..."]);
   const objectArgument = parsed.matched.get("object");
   if (objectArgument === undefined || objectArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'object' is missing in predict().");
@@ -854,7 +854,7 @@ async function builtinModelPredict(invocation: BuiltinInvocation): Promise<RValu
 }
 
 async function builtinModelMatrix(invocation: BuiltinInvocation): Promise<RValue> {
-  const parsed = matchBuiltinArguments(invocation, ["object", "..."]);
+  const parsed = await matchBuiltinArguments(invocation, ["object", "..."]);
   const objectArgument = parsed.matched.get("object");
   if (objectArgument === undefined || objectArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'object' is missing in model.matrix().");
@@ -950,7 +950,7 @@ async function builtinCrossTabulation(invocation: BuiltinInvocation): Promise<RV
     "exclude",
     "drop.unused.levels",
   ] as const;
-  const parsed = matchBuiltinArguments(invocation, parameters);
+  const parsed = await matchBuiltinArguments(invocation, parameters);
   if (parsed.dots.length > 0) {
     throw new REvaluationError("NRE2101", "Unused argument.");
   }
@@ -1339,7 +1339,7 @@ function isLinearModel(value: RList): boolean {
 async function builtinModelResidualDegreesOfFreedom(
   invocation: BuiltinInvocation,
 ): Promise<RValue> {
-  const parsed = matchBuiltinArguments(invocation, ["object", "..."]);
+  const parsed = await matchBuiltinArguments(invocation, ["object", "..."]);
   const argument = parsed.matched.get("object");
   if (argument === undefined || argument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'object' is missing in df.residual().");
@@ -1362,7 +1362,7 @@ async function builtinModelResidualDegreesOfFreedom(
 }
 
 async function builtinModelCovariance(invocation: BuiltinInvocation): Promise<RValue> {
-  const parsed = matchBuiltinArguments(invocation, ["object", "..."]);
+  const parsed = await matchBuiltinArguments(invocation, ["object", "..."]);
   const argument = parsed.matched.get("object");
   if (argument === undefined || argument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'object' is missing in vcov().");
@@ -1387,7 +1387,7 @@ async function builtinModelCovariance(invocation: BuiltinInvocation): Promise<RV
 }
 
 async function builtinModelConfidenceIntervals(invocation: BuiltinInvocation): Promise<RValue> {
-  const parsed = matchBuiltinArguments(invocation, ["object", "parm", "level", "..."]);
+  const parsed = await matchBuiltinArguments(invocation, ["object", "parm", "level", "..."]);
   const argument = parsed.matched.get("object");
   if (argument === undefined || argument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'object' is missing in confint().");

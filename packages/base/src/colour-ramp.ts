@@ -82,7 +82,7 @@ type ConversionSpace = "sRGB" | "Lab" | "XYZ";
 
 async function builtinConvertColor(invocation: BuiltinInvocation): Promise<RValue> {
   const parameters = CONVERT_COLOUR_BUILTIN_SPEC.parameters;
-  const { matched } = matchBuiltinArguments(invocation, parameters);
+  const { matched } = await matchBuiltinArguments(invocation, parameters);
   const requirePromise = (name: "color" | "from" | "to") => {
     const argument = matched.get(name);
     if (argument === undefined || argument.promise.missing) {
@@ -188,7 +188,7 @@ async function builtinColorRamp(invocation: BuiltinInvocation): Promise<RValue> 
         supportedArguments: ["x"],
       },
       implementation: async (call) => {
-        const { matched } = matchBuiltinArguments(call, ["x"]);
+        const { matched } = await matchBuiltinArguments(call, ["x"]);
         const xArgument = matched.get("x");
         if (xArgument === undefined || xArgument.promise.missing) {
           throw new REvaluationError("NRE2144", "Argument 'x' is missing in a colorRamp function.");
@@ -261,7 +261,7 @@ async function builtinColorRampPalette(invocation: BuiltinInvocation): Promise<R
         supportedArguments: ["n"],
       },
       implementation: async (call) => {
-        const { matched: paletteArguments } = matchBuiltinArguments(call, ["n"]);
+        const { matched: paletteArguments } = await matchBuiltinArguments(call, ["n"]);
         const nArgument = paletteArguments.get("n");
         if (nArgument === undefined || nArgument.promise.missing) {
           throw new REvaluationError(
@@ -314,7 +314,7 @@ async function rampSettings(
   invocation: BuiltinInvocation,
   call: "colorRamp" | "colorRampPalette",
 ): Promise<RampSettings> {
-  const { matched } = matchBuiltinArguments(invocation, RAMP_ARGUMENTS);
+  const { matched } = await matchBuiltinArguments(invocation, RAMP_ARGUMENTS);
   const colorsArgument = matched.get("colors");
   if (colorsArgument === undefined || colorsArgument.promise.missing) {
     throw new REvaluationError("NRE2144", `Argument 'colors' is missing in ${call}().`);

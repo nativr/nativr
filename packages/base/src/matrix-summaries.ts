@@ -74,7 +74,7 @@ async function builtinMatrixSummary(
   operation: "sum" | "mean",
 ): Promise<RValue> {
   const call = operation === "sum" ? "colSums" : direction === "row" ? "rowMeans" : "colMeans";
-  const { matched } = matchBuiltinArguments(invocation, ["x", "na.rm", "dims"]);
+  const { matched } = await matchBuiltinArguments(invocation, ["x", "na.rm", "dims"]);
   const inputArgument = requiredArgument(matched.get("x"), call);
   const value = await invocation.force(inputArgument.promise);
   const input = columnSummaryInput(value);

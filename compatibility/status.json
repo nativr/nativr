@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.363.0",
-  "capabilityManifestHash": "042864ee98d01d02a2edfce427d21ad023fbcb7a6e09ee87139ecbb3213273cf",
+  "semanticProfileVersion": "0.364.0",
+  "capabilityManifestHash": "3469814126d909fd4973b5c759ea9ce20d03ac937c541d3d4123c9c31b3d16fa",
   "evidence": {
-    "checkedInConformanceCases": 1245,
-    "liveREligibleCases": 1176,
+    "checkedInConformanceCases": 1250,
+    "liveREligibleCases": 1181,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 143,
-    "recursiveBehaviorallyProvenBindings": 88,
+    "recursiveOracleV2Cases": 148,
+    "recursiveBehaviorallyProvenBindings": 91,
     "recursiveBindingEvidence": [
       { "binding": "base::addNA", "cases": ["addNA-ordered-reconstruction-and-unchanged-values"] },
       {
@@ -60,7 +60,8 @@
         "cases": [
           "argument-matching-recursive-calls-and-diagnostics",
           "attributed-replacement-condition",
-          "condition-accessor-values-methods-and-visibility"
+          "condition-accessor-values-methods-and-visibility",
+          "partial-argument-warning-conditions-and-diagnostic-order"
         ]
       },
       {
@@ -96,6 +97,10 @@
       { "binding": "base::formals", "cases": ["owned-signature-metadata-defaults"] },
       { "binding": "base::format", "cases": ["numeric-format-options-and-array-attributes"] },
       { "binding": "base::getHook", "cases": ["hook-list-registration-and-clearing"] },
+      {
+        "binding": "base::getOption",
+        "cases": ["partial-argument-warning-handler-controls-and-muffling"]
+      },
       { "binding": "base::invisible", "cases": ["recursive-stdout-and-invisible-result"] },
       { "binding": "base::invokeRestart", "cases": ["calling-handlers-and-restarts"] },
       {
@@ -141,6 +146,7 @@
         "cases": [
           "argument-matching-recursive-calls-and-diagnostics",
           "matched-call-language-and-unexpanded-dots",
+          "partial-argument-warning-builtins-and-match-call",
           "replacement-rhs-source-and-stored-call-values",
           "s3-replacement-rhs-source-and-stored-call-values"
         ]
@@ -165,6 +171,10 @@
         "cases": ["combine-next-method-primitive-fallback", "next-method-default-reentry"]
       },
       {
+        "binding": "base::options",
+        "cases": ["partial-argument-warning-handler-controls-and-muffling"]
+      },
+      {
         "binding": "base::packageStartupMessage",
         "cases": ["condition-muffling-frames-and-startup-messages"]
       },
@@ -185,6 +195,7 @@
       },
       { "binding": "base::print.proc_time", "cases": ["process-time-method-graphs"] },
       { "binding": "base::quote", "cases": ["pairlist-tags-language-and-missingness"] },
+      { "binding": "base::rep", "cases": ["partial-argument-warning-builtins-and-match-call"] },
       { "binding": "base::replicate", "cases": ["replicate-counts-frames-and-simplification"] },
       {
         "binding": "base::sapply",
@@ -304,7 +315,11 @@
       { "binding": "stats::setNames", "cases": ["names-replacement-coercion-and-metadata"] },
       {
         "binding": "utils::person",
-        "cases": ["person-explicit-missing-defaults-and-metadata", "person-recursive-records"]
+        "cases": [
+          "partial-argument-warning-builtins-and-match-call",
+          "person-explicit-missing-defaults-and-metadata",
+          "person-recursive-records"
+        ]
       }
     ],
     "note": "This binding count covers listed exact Oracle v2 cases, conditional on a passing live GNU R 4.6.1 graph comparison and causal shadow controls. It is not general binding compatibility; name overlap is inventory only."

@@ -3,133 +3,138 @@ import { readFile } from "node:fs/promises";
 import { expect, it } from "vitest";
 import { redactPackageCheck } from "../../../scripts/lib/package-check-summary.mjs";
 
-it.each(["0.356.0", "0.357.0", "0.358.0", "0.359.0", "0.360.0", "0.361.0", "0.362.0", "0.363.0"])(
-  "pins checkpoint %s without evaluating the holdout",
-  async (profile) => {
-    const read = async (path: string) =>
-      JSON.parse(await readFile(new URL(`../../../${path}`, import.meta.url), "utf8")) as Record<
-        string,
-        unknown
-      >;
-    const corpus = (await read("compatibility/package-corpus.json")).packages as {
-      package: string;
-      version: string;
-      partition: string;
-      sourceSha256: string;
-      artifactSha256: string | null;
-    }[];
-    const checkpoint = await read(`compatibility/package-check-evidence/corpus-${profile}.json`);
-    const entries = checkpoint.packages as {
-      package: string;
-      version: string;
-      partition: string;
-      sourceSha256: string;
-      artifactSha256: string;
-      outcome: string;
-      evidence: string | null;
-      summarySha256: string | null;
-      tier: string;
-    }[];
-    const expectedNames =
-      profile === "0.360.0"
-        ? ["pkgconfig", "abind", "inline", "withr", "evaluate", "rprojroot", "whisker"]
-        : profile !== "0.357.0"
-          ? corpus.filter((e) => e.partition !== "holdout").map((e) => e.package)
-          : [
-              "prettyunits",
-              "rstudioapi",
-              "inline",
-              "evaluate",
-              "rprojroot",
-              "withr",
-              "whisker",
-              "pkgconfig",
-              "abind",
-            ];
-    expect(entries.map((e) => e.package).sort()).toEqual(expectedNames.sort());
-    expect(entries).toHaveLength(expectedNames.length);
-    expect(entries.filter((e) => e.outcome === "aborted").map((e) => e.package)).toEqual(
-      profile === "0.356.0" ? ["inline"] : [],
-    );
-    for (const entry of entries) {
-      expect(corpus.find((e) => e.package === entry.package)).toMatchObject({
-        version: entry.version,
-        partition: entry.partition,
+it.each([
+  "0.356.0",
+  "0.357.0",
+  "0.358.0",
+  "0.359.0",
+  "0.360.0",
+  "0.361.0",
+  "0.362.0",
+  "0.363.0",
+  "0.364.0",
+])("pins checkpoint %s without evaluating the holdout", async (profile) => {
+  const read = async (path: string) =>
+    JSON.parse(await readFile(new URL(`../../../${path}`, import.meta.url), "utf8")) as Record<
+      string,
+      unknown
+    >;
+  const corpus = (await read("compatibility/package-corpus.json")).packages as {
+    package: string;
+    version: string;
+    partition: string;
+    sourceSha256: string;
+    artifactSha256: string | null;
+  }[];
+  const checkpoint = await read(`compatibility/package-check-evidence/corpus-${profile}.json`);
+  const entries = checkpoint.packages as {
+    package: string;
+    version: string;
+    partition: string;
+    sourceSha256: string;
+    artifactSha256: string;
+    outcome: string;
+    evidence: string | null;
+    summarySha256: string | null;
+    tier: string;
+  }[];
+  const expectedNames =
+    profile === "0.360.0"
+      ? ["pkgconfig", "abind", "inline", "withr", "evaluate", "rprojroot", "whisker"]
+      : profile !== "0.357.0"
+        ? corpus.filter((e) => e.partition !== "holdout").map((e) => e.package)
+        : [
+            "prettyunits",
+            "rstudioapi",
+            "inline",
+            "evaluate",
+            "rprojroot",
+            "withr",
+            "whisker",
+            "pkgconfig",
+            "abind",
+          ];
+  expect(entries.map((e) => e.package).sort()).toEqual(expectedNames.sort());
+  expect(entries).toHaveLength(expectedNames.length);
+  expect(entries.filter((e) => e.outcome === "aborted").map((e) => e.package)).toEqual(
+    profile === "0.356.0" ? ["inline"] : [],
+  );
+  for (const entry of entries) {
+    expect(corpus.find((e) => e.package === entry.package)).toMatchObject({
+      version: entry.version,
+      partition: entry.partition,
+      sourceSha256: entry.sourceSha256,
+      artifactSha256: entry.artifactSha256,
+    });
+    if (entry.evidence === null) continue;
+    const bytes = await readFile(new URL(`../../../${entry.evidence}`, import.meta.url));
+    expect(createHash("sha256").update(bytes).digest("hex")).toBe(entry.summarySha256);
+    const summary = JSON.parse(bytes.toString("utf8")) as Record<string, unknown>;
+    expect(summary).toMatchObject({
+      schemaVersion: 2,
+      package: { name: entry.package, version: entry.version },
+      redaction: {
+        policy: "allowlisted-metadata-sha256-v2",
+        sourceIncluded: false,
+        rawOutputIncluded: false,
+        rawConditionsIncluded: false,
+      },
+      provenance: {
+        semanticProfile: profile,
         sourceSha256: entry.sourceSha256,
         artifactSha256: entry.artifactSha256,
-      });
-      if (entry.evidence === null) continue;
-      const bytes = await readFile(new URL(`../../../${entry.evidence}`, import.meta.url));
-      expect(createHash("sha256").update(bytes).digest("hex")).toBe(entry.summarySha256);
-      const summary = JSON.parse(bytes.toString("utf8")) as Record<string, unknown>;
-      expect(summary).toMatchObject({
-        schemaVersion: 2,
-        package: { name: entry.package, version: entry.version },
-        redaction: {
-          policy: "allowlisted-metadata-sha256-v2",
-          sourceIncluded: false,
-          rawOutputIncluded: false,
-          rawConditionsIncluded: false,
-        },
-        provenance: {
-          semanticProfile: profile,
-          sourceSha256: entry.sourceSha256,
-          artifactSha256: entry.artifactSha256,
-        },
-      });
-      const stages = summary.stages as {
-        id: string;
-        status: string;
-        discovered: number;
-        executed: number;
-      }[];
-      if (["0.358.0", "0.359.0", "0.360.0", "0.361.0", "0.362.0"].includes(profile)) {
-        const metadata = summary.documentationMetadata as {
-          policy: string;
-          sourceSha256: string;
-          exportsStatus: string;
-          actual: { status: string; exportCount: number | null };
-          expected: { status: string; exportCount: number | null };
-        };
-        expect(metadata.policy).toBe(
-          profile === "0.360.0" || profile === "0.361.0" || profile === "0.362.0"
-            ? "loaded-documentation-signatures-v2"
-            : "loaded-documentation-signatures-v1",
-        );
-        expect(metadata.sourceSha256).toMatch(/^[a-f0-9]{64}$/u);
-        if (metadata.exportsStatus === "passed") {
-          expect(metadata.actual.status).toBe("completed");
-          expect(metadata.expected.status).toBe("completed");
-          expect(metadata.actual.exportCount).toBe(metadata.expected.exportCount);
-        }
-      }
-      expect(new Set(stages.map((s) => s.id)).size).toBe(15);
-      if (profile === "0.359.0") {
-        if (["evaluate", "rprojroot", "whisker"].includes(entry.package))
-          expect(stages.find((s) => s.id === "documentation")?.status).toBe("passed");
-        if (["crayon", "viridisLite"].includes(entry.package))
-          expect(stages.find((s) => s.id === "manual")?.status).toBe("passed");
-      }
-      if (entry.tier === "P7") {
-        expect(summary.p7Eligible).toBe(true);
-        expect(stages.every((s) => s.status === "passed" || s.status === "inapplicable")).toBe(
-          true,
-        );
-      }
-      if (entry.package === "rematch") {
-        expect(entry.tier).toBe("P5");
-        expect(summary.inventory).toMatchObject({ nestedTestFiles: 2 });
-        expect(summary.dependencies).toContainEqual({
-          name: "testthat",
-          actualVersion: null,
-          oracleVersion: null,
-          actualObserved: true,
-          oracleObserved: true,
-        });
+      },
+    });
+    const stages = summary.stages as {
+      id: string;
+      status: string;
+      discovered: number;
+      executed: number;
+    }[];
+    if (["0.358.0", "0.359.0", "0.360.0", "0.361.0", "0.362.0"].includes(profile)) {
+      const metadata = summary.documentationMetadata as {
+        policy: string;
+        sourceSha256: string;
+        exportsStatus: string;
+        actual: { status: string; exportCount: number | null };
+        expected: { status: string; exportCount: number | null };
+      };
+      expect(metadata.policy).toBe(
+        profile === "0.360.0" || profile === "0.361.0" || profile === "0.362.0"
+          ? "loaded-documentation-signatures-v2"
+          : "loaded-documentation-signatures-v1",
+      );
+      expect(metadata.sourceSha256).toMatch(/^[a-f0-9]{64}$/u);
+      if (metadata.exportsStatus === "passed") {
+        expect(metadata.actual.status).toBe("completed");
+        expect(metadata.expected.status).toBe("completed");
+        expect(metadata.actual.exportCount).toBe(metadata.expected.exportCount);
       }
     }
-  },
-);
+    expect(new Set(stages.map((s) => s.id)).size).toBe(15);
+    if (profile === "0.359.0") {
+      if (["evaluate", "rprojroot", "whisker"].includes(entry.package))
+        expect(stages.find((s) => s.id === "documentation")?.status).toBe("passed");
+      if (["crayon", "viridisLite"].includes(entry.package))
+        expect(stages.find((s) => s.id === "manual")?.status).toBe("passed");
+    }
+    if (entry.tier === "P7") {
+      expect(summary.p7Eligible).toBe(true);
+      expect(stages.every((s) => s.status === "passed" || s.status === "inapplicable")).toBe(true);
+    }
+    if (entry.package === "rematch") {
+      expect(entry.tier).toBe("P5");
+      expect(summary.inventory).toMatchObject({ nestedTestFiles: 2 });
+      expect(summary.dependencies).toContainEqual({
+        name: "testthat",
+        actualVersion: null,
+        oracleVersion: null,
+        actualObserved: true,
+        oracleObserved: true,
+      });
+    }
+  }
+});
 
 it("redacts source-shaped diagnostics and unexpected nested fields while retaining evidence identities", () => {
   const body = "function(secret) { independently_authored_body(secret) }";

@@ -73,7 +73,7 @@ interface KmeansFit {
 }
 
 async function builtinKmeans(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, [
+  const { matched } = await matchBuiltinArguments(invocation, [
     "x",
     "centers",
     "iter.max",

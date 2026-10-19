@@ -66,7 +66,7 @@ interface CoordinatePair {
 }
 
 async function builtinApprox(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, APPROX_PARAMETERS);
+  const { matched } = await matchBuiltinArguments(invocation, APPROX_PARAMETERS);
   const coordinates = await approxCoordinates(invocation, matched);
   const method = await approxChoice(
     invocation,

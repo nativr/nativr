@@ -43,7 +43,7 @@ export const EIGEN_BUILTIN_SPECS: readonly EigenBuiltinSpec[] = [
 ];
 
 async function builtinEigen(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, [
+  const { matched } = await matchBuiltinArguments(invocation, [
     "x",
     "symmetric",
     "only.values",

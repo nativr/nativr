@@ -1,4 +1,10 @@
-import { matchArguments } from "./arguments.js";
+import {
+  matchArguments,
+  matchArgumentsWithWarnings,
+  partialMatchWarning,
+  partialMatchWarningsEnabled,
+} from "./arguments.js";
+import type { PartialArgumentMatch } from "./arguments.js";
 import { translatePosixCharacterClasses } from "./regex.js";
 import { assertNever } from "@nativr/ast";
 import type {
@@ -2730,6 +2736,7 @@ export class Evaluator {
                 args[0]?.promise.environment ??
                 this.#globalEnvironment,
               group,
+              call,
             );
             if (result === undefined) return undefined;
             resultVisibility = result.visible ? "visible" : "invisible";
@@ -3296,6 +3303,16 @@ export class Evaluator {
     }
   }
 
+  async #warnPartialArgument(
+    match: PartialArgumentMatch,
+    call: RValue,
+    context: EvaluationContext,
+  ): Promise<void> {
+    if (!partialMatchWarningsEnabled(this.#builtinState)) return;
+    const { condition, warning } = partialMatchWarning(match, call, () => context.checkpoint());
+    await this.#signalWarning(condition, warning, context);
+  }
+
   async #invokeClosure(
     closure: RClosure,
     args: readonly {
@@ -3319,13 +3336,21 @@ export class Evaluator {
     this.#controlFrames.push(functionFrame);
     try {
       const frame = createEnvironment(closure.environment);
-      const result = matchArguments(
-        args,
-        closure.parameters.map((parameter) => parameter.name),
-        {
-          checkWork: () => context.checkpoint(),
-        },
-      );
+      const parameters = closure.parameters.map((parameter) => parameter.name);
+      const options = { checkWork: () => context.checkpoint() };
+      const result = partialMatchWarningsEnabled(this.#builtinState)
+        ? await matchArgumentsWithWarnings(
+            args,
+            parameters,
+            (match) =>
+              this.#warnPartialArgument(
+                match,
+                call === undefined ? R_NULL : { type: "language", expression: call },
+                context,
+              ),
+            options,
+          )
+        : matchArguments(args, parameters, options);
       const matched = new Map(
         [...result.matched].map(([name, argument]) => [name, argument.promise]),
       );
@@ -3446,12 +3471,12 @@ export class Evaluator {
     return undefined;
   }
 
-  #matchCurrentCall(
+  async #matchCurrentCall(
     context: EvaluationContext,
     expandDots: boolean,
     definition?: RValue,
     explicitCall?: RValue,
-  ): RLanguage {
+  ): Promise<RLanguage> {
     const frame = this.#closureCallFrames.at(-1);
     const sourceCall =
       explicitCall === undefined
@@ -3484,7 +3509,11 @@ export class Evaluator {
     if (parameters === undefined) {
       throw new RTypeMismatchError("NRT3214", "match.call(definition=) requires a function.");
     }
-    if (explicitCall !== undefined || (definition !== undefined && definition !== frame?.closure)) {
+    if (
+      explicitCall !== undefined ||
+      (definition !== undefined && definition !== frame?.closure) ||
+      partialMatchWarningsEnabled(this.#builtinState)
+    ) {
       const callArguments: ClosureCallFrame["arguments"] =
         explicitCall === undefined
           ? (frame?.arguments ?? [])
@@ -3496,8 +3525,26 @@ export class Evaluator {
               ),
               span: argument.span,
             }));
-      const rematched = matchCallDefinitionArguments(parameters, callArguments, () =>
-        context.checkpoint(),
+      // This call is observable warning metadata, independently probed through conditionCall().
+      const warningCall: RLanguage = {
+        type: "language",
+        expression: {
+          kind: "CallExpression",
+          callee: { kind: "Identifier", name: "match.call", span: sourceCall.span },
+          arguments: ["definition", "call", "expand.dots", "envir"].map((name) => ({
+            value: { kind: "Identifier", name, span: sourceCall.span },
+            span: sourceCall.span,
+          })),
+          span: sourceCall.span,
+        },
+      };
+      const rematched = await matchCallDefinitionArguments(
+        parameters,
+        callArguments,
+        () => context.checkpoint(),
+        partialMatchWarningsEnabled(this.#builtinState)
+          ? (match) => this.#warnPartialArgument(match, warningCall, context)
+          : undefined,
       );
       matched = rematched.matched;
       dotsArguments = rematched.dots;
@@ -4654,6 +4701,7 @@ export class Evaluator {
     argumentIndex = 0,
     callerEnvironment?: REnvironment,
     group?: string,
+    call?: CallExpressionNode,
   ): Promise<EvaluationResult | undefined> {
     if (generic.length === 0) {
       throw new REvaluationError("NRE2213", "UseMethod() generic name must be non-empty.");
@@ -4681,7 +4729,7 @@ export class Evaluator {
       methodArguments,
       context,
       includeDefault,
-      undefined,
+      call,
       callerEnvironment,
       group,
     );
@@ -5337,16 +5385,17 @@ function constructedSubsetTarget(target: CallExpressionNode): SubsetExpressionNo
   };
 }
 
-function matchCallDefinitionArguments(
+async function matchCallDefinitionArguments(
   parameters: RClosure["parameters"],
   arguments_: ClosureCallFrame["arguments"],
   checkWork: () => void,
-): { readonly matched: Map<string, RPromise>; readonly dots: BuiltinCallArgument[] } {
-  const result = matchArguments(
-    arguments_,
-    parameters.map((parameter) => parameter.name),
-    { checkWork },
-  );
+  onPartialMatch?: (match: PartialArgumentMatch) => Promise<void>,
+): Promise<{ readonly matched: Map<string, RPromise>; readonly dots: BuiltinCallArgument[] }> {
+  const names = parameters.map((parameter) => parameter.name);
+  const result =
+    onPartialMatch === undefined
+      ? matchArguments(arguments_, names, { checkWork })
+      : await matchArgumentsWithWarnings(arguments_, names, onPartialMatch, { checkWork });
   return {
     matched: new Map([...result.matched].map(([name, argument]) => [name, argument.promise])),
     dots: result.dots,

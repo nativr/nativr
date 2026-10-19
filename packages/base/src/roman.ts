@@ -59,7 +59,7 @@ export function isRomanValue(value: RValue): value is RIntegerVector {
 
 /** Format a roman value for `as.character()` without retaining class or shape metadata. */
 export async function asCharacterRoman(invocation: BuiltinInvocation): Promise<RCharacterVector> {
-  const { matched } = matchBuiltinArguments(invocation, ["x", "..."]);
+  const { matched } = await matchBuiltinArguments(invocation, ["x", "..."]);
   const input = requireRoman(
     await requiredArgument(invocation, matched.get("x"), "x", "as.character.roman"),
     "as.character.roman",
@@ -81,7 +81,7 @@ export async function asCharacterRoman(invocation: BuiltinInvocation): Promise<R
 
 /** Format a roman value for `format()` using the documented left-justified width. */
 export async function formatRoman(invocation: BuiltinInvocation): Promise<RCharacterVector> {
-  const { matched } = matchBuiltinArguments(invocation, ["x", "width", "..."]);
+  const { matched } = await matchBuiltinArguments(invocation, ["x", "width", "..."]);
   const input = requireRoman(
     await requiredArgument(invocation, matched.get("x"), "x", "format.roman"),
     "format.roman",
@@ -100,7 +100,7 @@ export async function formatRoman(invocation: BuiltinInvocation): Promise<RChara
 }
 
 async function builtinAsRoman(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, ["x"]);
+  const { matched } = await matchBuiltinArguments(invocation, ["x"]);
   const input = await requiredArgument(invocation, matched.get("x"), "x", "as.roman");
   if (input.type === "integer" && vectorClasses(input)?.includes("roman") === true) return input;
   if (

@@ -120,8 +120,8 @@ export function deparseAst(node: AstNode, checkWork?: () => void): string {
 }
 
 /** Error display omits structure attributes of embedded values; stored calls retain them. */
-export function deparseDiagnosticAst(node: AstNode): string {
-  validateDeparseSyntax([node]);
+export function deparseDiagnosticAst(node: AstNode, checkWork?: () => void): string {
+  validateDeparseSyntax([node], checkWork);
   return deparseWithFollowing(node, 0, true);
 }
 

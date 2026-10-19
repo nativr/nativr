@@ -412,7 +412,11 @@ export interface BuiltinInvocation {
   globalEnvironment(): REnvironment;
   baseEnvironment(): REnvironment;
   emptyEnvironment(): REnvironment;
-  matchCall(expandDots: boolean, definition?: RValue, call?: RValue): RLanguage;
+  matchCall(
+    expandDots: boolean,
+    definition?: RValue,
+    call?: RValue,
+  ): RLanguage | Promise<RLanguage>;
   callerFormalDefault(name: string): Promise<RValue | undefined>;
   define(name: string, value: RValue): void;
   registerS3Method(

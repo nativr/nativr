@@ -61,7 +61,7 @@ export const DENSITY_BUILTIN_SPECS: readonly DensityBuiltinSpec[] = [
 ];
 
 async function builtinDensity(invocation: BuiltinInvocation): Promise<RValue> {
-  const parsed = matchBuiltinArguments(invocation, ["x", "..."]);
+  const parsed = await matchBuiltinArguments(invocation, ["x", "..."]);
   const inputArgument = parsed.matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2143", "Argument 'x' is missing in density().");
@@ -72,7 +72,7 @@ async function builtinDensity(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinDensityDefault(invocation: BuiltinInvocation): Promise<RValue> {
-  const parsed = matchBuiltinArguments(invocation, DENSITY_DEFAULT_PARAMETERS);
+  const parsed = await matchBuiltinArguments(invocation, DENSITY_DEFAULT_PARAMETERS);
   const inputArgument = parsed.matched.get("x");
   const input = await forceRequired(invocation, inputArgument, "x");
   if (input.type !== "logical" && input.type !== "integer" && input.type !== "double") {

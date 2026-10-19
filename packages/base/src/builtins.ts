@@ -5931,7 +5931,7 @@ async function builtinPersonMethod(
     return personField(required(values, "x", "$.person"), required(values, "name", "$.person"));
   }
   if (generic === "[" || generic === "[[") {
-    const matched = matchLazyArguments(invocation, ["x", "i", "j"]);
+    const matched = await matchLazyArguments(invocation, ["x", "i", "j"]);
     const x = matched.get("x");
     if (x === undefined) throw new REvaluationError("NRE2103", "Missing person object.");
     const i = matched.get("i"),
@@ -6238,7 +6238,7 @@ function builtinQuote(invocation: BuiltinInvocation): RValue {
 }
 
 async function builtinLanguageSubstitute(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["expr", "env"]);
+  const matched = await matchLazyArguments(invocation, ["expr", "env"]);
   const expressionArgument = matched.get("expr");
   const expression = expressionArgument?.promise.expression;
   if (
@@ -6281,7 +6281,7 @@ async function builtinLanguageSubstitute(invocation: BuiltinInvocation): Promise
 }
 
 async function builtinBquote(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["expr", "where", "splice"]);
+  const matched = await matchLazyArguments(invocation, ["expr", "where", "splice"]);
   const expressionArgument = matched.get("expr");
   if (
     expressionArgument === undefined ||
@@ -6689,7 +6689,12 @@ function isDotsAst(node: AstNode): boolean {
 }
 
 async function builtinMatchCall(invocation: BuiltinInvocation): Promise<RLanguage> {
-  const matched = matchLazyArguments(invocation, ["definition", "call", "expand.dots", "envir"]);
+  const matched = await matchLazyArguments(invocation, [
+    "definition",
+    "call",
+    "expand.dots",
+    "envir",
+  ]);
   for (const unsupportedArgument of ["envir"]) {
     if (matched.has(unsupportedArgument)) {
       throw new RUnsupportedFeatureError(
@@ -6715,7 +6720,7 @@ async function builtinMatchCall(invocation: BuiltinInvocation): Promise<RLanguag
 }
 
 async function builtinDoCall(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["what", "args", "quote", "envir"]);
+  const matched = await matchLazyArguments(invocation, ["what", "args", "quote", "envir"]);
   const forceRequired = async (name: string): Promise<RValue> => {
     const argument = matched.get(name);
     if (argument === undefined || argument.promise.missing)
@@ -6809,7 +6814,7 @@ async function builtinDoCall(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinForce(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["x"]);
+  const matched = await matchLazyArguments(invocation, ["x"]);
   const argument = matched.get("x");
   if (argument === undefined) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in force().");
@@ -6818,7 +6823,7 @@ async function builtinForce(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinIdentity(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["x"]);
+  const matched = await matchLazyArguments(invocation, ["x"]);
   const argument = matched.get("x");
   if (argument === undefined) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in identity().");
@@ -6853,7 +6858,7 @@ async function builtinAsIs(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinOnExit(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["expr", "add", "after"]);
+  const matched = await matchLazyArguments(invocation, ["expr", "add", "after"]);
   const addArgument = matched.get("add");
   const afterArgument = matched.get("after");
   const add =
@@ -6883,7 +6888,7 @@ async function builtinInvisible(invocation: BuiltinInvocation): Promise<RValue> 
 }
 
 async function builtinWithVisible(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["x"]);
+  const matched = await matchLazyArguments(invocation, ["x"]);
   const argument = matched.get("x");
   if (argument === undefined || argument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in withVisible().");
@@ -6948,7 +6953,7 @@ async function builtinOptions(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinGetOption(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["x", "default"]);
+  const matched = await matchLazyArguments(invocation, ["x", "default"]);
   const nameArgument = matched.get("x");
   if (nameArgument === undefined) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in getOption().");
@@ -7013,8 +7018,8 @@ const BROWSER_SYSTEM_INFO_NAMES = Object.freeze([
 ]);
 
 /** Describe the virtual browser runtime without disclosing host identity. */
-function builtinSystemInfo(invocation: BuiltinInvocation): RCharacterVector {
-  matchLazyArguments(invocation, []);
+async function builtinSystemInfo(invocation: BuiltinInvocation): Promise<RCharacterVector> {
+  await matchLazyArguments(invocation, []);
   invocation.context.allocate(BROWSER_SYSTEM_INFO_NAMES.length);
   return withNames(
     characterVector(
@@ -7048,7 +7053,7 @@ const BROWSER_CAPABILITY_NAMES = Object.freeze([
 ] as const);
 
 async function builtinCapabilities(invocation: BuiltinInvocation): Promise<RLogicalVector> {
-  const matched = matchLazyArguments(invocation, ["what", "Xchk"]);
+  const matched = await matchLazyArguments(invocation, ["what", "Xchk"]);
   const whatArgument = matched.get("what");
   const requested =
     whatArgument === undefined ? undefined : await invocation.force(whatArgument.promise);
@@ -8316,7 +8321,7 @@ async function builtinProcessTime(invocation: BuiltinInvocation): Promise<RValue
 }
 
 async function builtinSystemTiming(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["expr", "gcFirst"]);
+  const matched = await matchLazyArguments(invocation, ["expr", "gcFirst"]);
   const expression = matched.get("expr");
   if (expression === undefined || expression.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'expr' is missing in system.time().");
@@ -8504,7 +8509,7 @@ async function objectSizeMethodArguments(invocation: BuiltinInvocation): Promise
   readonly matched: Map<string, RValue>;
   readonly dots: readonly BuiltinCallArgument[];
 }> {
-  const lazy = matchLazyArgumentsWithDots(invocation, ["x", "units", "standard", "digits"]);
+  const lazy = await matchLazyArgumentsWithDots(invocation, ["x", "units", "standard", "digits"]);
   const matched = new Map<string, RValue>();
   for (const [name, argument] of lazy.matched) {
     matched.set(name, await invocation.force(argument.promise));
@@ -8527,7 +8532,7 @@ async function builtinFormatObjectSize(invocation: BuiltinInvocation): Promise<R
 }
 
 async function builtinPrintObjectSize(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, [
+  const lazy = await matchLazyArgumentsWithDots(invocation, [
     "x",
     "quote",
     "units",
@@ -8703,7 +8708,7 @@ function summarizeProcessTime(value: RValue, invocation: BuiltinInvocation): RVa
 }
 
 async function builtinSummaryProcessTime(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, ["object"]);
+  const lazy = await matchLazyArgumentsWithDots(invocation, ["object"]);
   const argument = lazy.matched.get("object");
   if (argument === undefined || argument.promise.missing)
     throw new REvaluationError("NRE2103", "Argument 'object' is missing in summary.proc_time().");
@@ -8711,7 +8716,7 @@ async function builtinSummaryProcessTime(invocation: BuiltinInvocation): Promise
 }
 
 async function builtinPrintProcessTime(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const lazy = await matchLazyArgumentsWithDots(invocation, ["x"]);
   const argument = lazy.matched.get("x");
   if (argument === undefined || argument.promise.missing)
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in print.proc_time().");
@@ -8790,7 +8795,7 @@ async function builtinPathExpand(invocation: BuiltinInvocation): Promise<RCharac
 }
 
 async function builtinLibraryPaths(invocation: BuiltinInvocation): Promise<RCharacterVector> {
-  const matched = matchLazyArguments(invocation, ["new", "include.site"]);
+  const matched = await matchLazyArguments(invocation, ["new", "include.site"]);
   const newArgument = matched.get("new");
   if (newArgument === undefined) {
     const current = invocation.libraryPaths();
@@ -8848,7 +8853,7 @@ interface FindPackageName {
 }
 
 async function builtinFindPackage(invocation: BuiltinInvocation): Promise<RCharacterVector> {
-  const matched = matchLazyArguments(invocation, ["package", "lib.loc", "quiet", "verbose"]);
+  const matched = await matchLazyArguments(invocation, ["package", "lib.loc", "quiet", "verbose"]);
   const packageArgument = matched.get("package");
   const packages =
     packageArgument === undefined
@@ -9969,7 +9974,7 @@ async function builtinDownloadFile(invocation: BuiltinInvocation): Promise<RInte
 }
 
 async function builtinContribUrl(invocation: BuiltinInvocation): Promise<RCharacterVector> {
-  const matched = matchLazyArguments(invocation, ["repos", "type"]);
+  const matched = await matchLazyArguments(invocation, ["repos", "type"]);
   const repositoryArgument = matched.get("repos");
   if (repositoryArgument === undefined || repositoryArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'repos' is missing in contrib.url().");
@@ -10027,7 +10032,7 @@ async function builtinAvailablePackages(invocation: BuiltinInvocation): Promise<
     "quiet",
     "verbose",
   ] as const;
-  const lazy = matchLazyArgumentsWithDots(invocation, parameterNames);
+  const lazy = await matchLazyArgumentsWithDots(invocation, parameterNames);
   const force = async (name: (typeof parameterNames)[number]): Promise<RValue | undefined> => {
     const argument = lazy.matched.get(name);
     return argument === undefined || argument.promise.missing
@@ -11933,7 +11938,7 @@ interface ResolvedFileCopyOperation {
 }
 
 async function builtinFileCopy(invocation: BuiltinInvocation): Promise<RLogicalVector> {
-  const matched = matchLazyArguments(invocation, [
+  const matched = await matchLazyArguments(invocation, [
     "from",
     "to",
     "overwrite",
@@ -15278,6 +15283,7 @@ function optionsState(invocation: BuiltinInvocation): Map<string, RValue> {
     ["useFancyQuotes", logicalVector([false])],
     ["verbose", logicalVector([false])],
     ["warn", integerVector([0])],
+    ["warnPartialMatchArgs", logicalVector([false])],
     ["width", integerVector([80])],
   ]);
   invocation.state.set(BASE_OPTIONS_STATE_KEY, created);
@@ -15294,6 +15300,9 @@ function applyOption(
   validateOptionName(name);
   previous.push(state.get(name) ?? R_NULL);
   names.push(name);
+  if (value.type === "null" && name === "warnPartialMatchArgs") {
+    throw new RTypeMismatchError("NRT3223", "option 'warnPartialMatchArgs' cannot be deleted");
+  }
   if (value.type === "null") state.delete(name);
   else state.set(name, normalizeOptionValue(name, value));
 }
@@ -15305,6 +15314,12 @@ function validateOptionName(name: string): void {
 }
 
 function normalizeOptionValue(name: string, value: RValue): RValue {
+  if (name === "warnPartialMatchArgs") {
+    if (value.type !== "logical" || value.length !== 1 || isMissing(value, 0)) {
+      throw new RTypeMismatchError("NRT3223", "invalid value for 'warnPartialMatchArgs'");
+    }
+    return value;
+  }
   if (name === "warn") {
     // GNU R truncates a logical or numeric scalar toward zero.
     const level =
@@ -15350,7 +15365,7 @@ function normalizeOptionValue(name: string, value: RValue): RValue {
 }
 
 async function builtinTry(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["expr", "silent", "outFile"]);
+  const matched = await matchLazyArguments(invocation, ["expr", "silent", "outFile"]);
   const expression = matched.get("expr");
   if (expression === undefined) {
     throw new REvaluationError("NRE2103", "Argument 'expr' is missing in try().");
@@ -15604,7 +15619,7 @@ async function builtinIsRestart(invocation: BuiltinInvocation): Promise<RValue> 
 }
 
 async function builtinPrintRestart(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const lazy = await matchLazyArgumentsWithDots(invocation, ["x"]);
   const argument = lazy.matched.get("x");
   if (argument === undefined || argument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in print.restart().");
@@ -15951,7 +15966,7 @@ async function builtinSuppressCondition(
   name: string,
   fixedClasses?: readonly string[],
 ): Promise<RValue> {
-  const matched = matchLazyArguments(
+  const matched = await matchLazyArguments(
     invocation,
     fixedClasses === undefined ? ["expr", "classes"] : ["expr"],
   );
@@ -16156,7 +16171,7 @@ function allEqualMethodArgumentName(name: string | undefined): string | undefine
 }
 
 async function builtinAllEqual(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched, dots } = matchLazyArgumentsWithDots(
+  const { matched, dots } = await matchLazyArgumentsWithDots(
     invocation,
     ALL_EQUAL_METHOD_LEADING_FORMALS,
   );
@@ -16848,7 +16863,7 @@ function stringArrayEqual(
 }
 
 async function builtinForceAndCall(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched, dots } = matchLazyArgumentsWithDots(invocation, ["n", "FUN"]);
+  const { matched, dots } = await matchLazyArgumentsWithDots(invocation, ["n", "FUN"]);
   const nArgument = matched.get("n");
   const callableArgument = matched.get("FUN");
   if (nArgument === undefined || callableArgument === undefined) {
@@ -16864,7 +16879,7 @@ async function builtinForceAndCall(invocation: BuiltinInvocation): Promise<RValu
 }
 
 async function builtinDelayedAssign(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["x", "value", "eval.env", "assign.env"]);
+  const matched = await matchLazyArguments(invocation, ["x", "value", "eval.env", "assign.env"]);
   const nameArgument = matched.get("x");
   const valueArgument = matched.get("value");
   if (nameArgument === undefined || valueArgument === undefined) {
@@ -17214,7 +17229,12 @@ async function builtinStr2Lang(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinBrowseUrl(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["url", "browser", "encodeIfNeeded", "verbose"]);
+  const matched = await matchLazyArguments(invocation, [
+    "url",
+    "browser",
+    "encodeIfNeeded",
+    "verbose",
+  ]);
   const urlArgument = matched.get("url");
   if (urlArgument === undefined || urlArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'url' is missing in browseURL().");
@@ -17378,7 +17398,7 @@ async function builtinUrlDecode(invocation: BuiltinInvocation): Promise<RCharact
 }
 
 async function builtinGlobalVariables(invocation: BuiltinInvocation): Promise<RCharacterVector> {
-  const matched = matchLazyArguments(invocation, ["names", "package", "add"]);
+  const matched = await matchLazyArguments(invocation, ["names", "package", "add"]);
   let environment = invocation.currentEnvironment();
   const packageArgument = matched.get("package");
   if (packageArgument !== undefined && !packageArgument.promise.missing) {
@@ -17485,7 +17505,7 @@ async function builtinSingleQuote(invocation: BuiltinInvocation): Promise<RChara
 }
 
 async function builtinShellQuote(invocation: BuiltinInvocation): Promise<RCharacterVector> {
-  const matched = matchLazyArguments(invocation, ["string", "type"]);
+  const matched = await matchLazyArguments(invocation, ["string", "type"]);
   const stringArgument = matched.get("string");
   if (stringArgument === undefined || stringArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'string' is missing in shQuote().");
@@ -17875,7 +17895,7 @@ async function builtinEval(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinEvalq(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["expr", "envir", "enclos"]);
+  const matched = await matchLazyArguments(invocation, ["expr", "envir", "enclos"]);
   const expression = matched.get("expr");
   if (expression === undefined || expression.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'expr' is missing in evalq().");
@@ -17893,7 +17913,7 @@ async function builtinEvalq(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinWith(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchLazyArgumentsWithDots(invocation, ["data", "expr"]);
+  const { matched } = await matchLazyArgumentsWithDots(invocation, ["data", "expr"]);
   const dataArgument = matched.get("data");
   const expressionArgument = matched.get("expr");
   if (dataArgument === undefined || dataArgument.promise.missing) {
@@ -17909,7 +17929,7 @@ async function builtinWith(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinTransform(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched, dots } = matchLazyArgumentsWithDots(invocation, ["_data"]);
+  const { matched, dots } = await matchLazyArgumentsWithDots(invocation, ["_data"]);
   const dataArgument = matched.get("_data");
   if (dataArgument === undefined || dataArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument '_data' is missing in transform().");
@@ -17969,7 +17989,7 @@ async function builtinTransform(invocation: BuiltinInvocation): Promise<RValue> 
 }
 
 async function builtinWithin(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched, dots } = matchLazyArgumentsWithDots(invocation, ["data", "expr"]);
+  const { matched, dots } = await matchLazyArgumentsWithDots(invocation, ["data", "expr"]);
   const dataArgument = matched.get("data");
   const expressionArgument = matched.get("expr");
   if (dataArgument === undefined || dataArgument.promise.missing) {
@@ -18155,7 +18175,7 @@ function validateTransformColumnLength(column: RVector, rowCount: number, name: 
 }
 
 async function builtinLocal(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["expr", "envir"]);
+  const matched = await matchLazyArguments(invocation, ["expr", "envir"]);
   const expressionArgument = matched.get("expr");
   if (expressionArgument === undefined || expressionArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'expr' is missing in local().");
@@ -18292,7 +18312,12 @@ async function builtinInternalSubset(
 }
 
 async function builtinSubset(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchLazyArgumentsWithDots(invocation, ["x", "subset", "select", "drop"]);
+  const { matched } = await matchLazyArgumentsWithDots(invocation, [
+    "x",
+    "subset",
+    "select",
+    "drop",
+  ]);
   const inputArgument = matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in subset().");
@@ -18361,7 +18386,7 @@ interface SplitGrouping {
 }
 
 async function builtinSplit(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched, dots } = matchLazyArgumentsWithDots(invocation, ["x", "f", "drop"]);
+  const { matched, dots } = await matchLazyArgumentsWithDots(invocation, ["x", "f", "drop"]);
   const inputArgument = matched.get("x");
   const groupingArgument = matched.get("f");
   if (
@@ -19985,7 +20010,7 @@ function builtinSearch(invocation: BuiltinInvocation): RValue {
 }
 
 async function builtinDetach(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, [
+  const matched = await matchLazyArguments(invocation, [
     "name",
     "pos",
     "unload",
@@ -20041,7 +20066,7 @@ async function builtinDetach(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinLibrary(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, [
+  const matched = await matchLazyArguments(invocation, [
     "package",
     "help",
     "pos",
@@ -20067,7 +20092,7 @@ async function builtinLibrary(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinRequire(invocation: BuiltinInvocation): Promise<RLogicalVector> {
-  const matched = matchLazyArguments(invocation, [
+  const matched = await matchLazyArguments(invocation, [
     "package",
     "lib.loc",
     "quietly",
@@ -20125,7 +20150,7 @@ function builtinTar(): never {
 }
 
 async function builtinRequireNamespace(invocation: BuiltinInvocation): Promise<RLogicalVector> {
-  const { matched, dots } = matchLazyArgumentsWithDots(invocation, ["package", "quietly"]);
+  const { matched, dots } = await matchLazyArgumentsWithDots(invocation, ["package", "quietly"]);
   const libraryArguments = dots.filter((argument) => argument.name === "lib.loc");
   const unsupportedDots = dots.filter((argument) => argument.name !== "lib.loc");
   if (libraryArguments.length > 1) {
@@ -20330,7 +20355,7 @@ async function builtinGetNamespaceExports(
 }
 
 async function builtinGetFromNamespace(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["x", "ns", "pos", "envir"]);
+  const matched = await matchLazyArguments(invocation, ["x", "ns", "pos", "envir"]);
   const name = await forcedBindingName(invocation, matched.get("x"), "getFromNamespace");
   const namespaceArgument = matched.get("ns");
   let namespaceName: string | undefined;
@@ -20493,7 +20518,7 @@ function systemCallIndex(
 }
 
 async function builtinGet(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["x", "pos", "envir", "mode", "inherits"]);
+  const matched = await matchLazyArguments(invocation, ["x", "pos", "envir", "mode", "inherits"]);
   const name = await forcedBindingName(invocation, matched.get("x"), "get");
   const environment = await lookupEnvironment(invocation, matched, ["envir", "pos"]);
   const inherits = await lazyLogicalFlag(invocation, matched.get("inherits"), true, "inherits");
@@ -20506,7 +20531,13 @@ async function builtinGet(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinGet0(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["x", "envir", "mode", "inherits", "ifnotfound"]);
+  const matched = await matchLazyArguments(invocation, [
+    "x",
+    "envir",
+    "mode",
+    "inherits",
+    "ifnotfound",
+  ]);
   const name = await forcedBindingName(invocation, matched.get("x"), "get0");
   const environment = await lookupEnvironment(invocation, matched, ["envir"]);
   const inherits = await lazyLogicalFlag(invocation, matched.get("inherits"), true, "inherits");
@@ -20523,7 +20554,7 @@ async function builtinGet0(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinMGet(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, [
+  const matched = await matchLazyArguments(invocation, [
     "x",
     "envir",
     "mode",
@@ -20585,7 +20616,7 @@ async function builtinMGet(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinExists(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, [
+  const matched = await matchLazyArguments(invocation, [
     "x",
     "where",
     "envir",
@@ -20605,7 +20636,7 @@ async function builtinExists(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinAssign(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, [
+  const matched = await matchLazyArguments(invocation, [
     "x",
     "value",
     "pos",
@@ -20780,7 +20811,7 @@ async function builtinEnvironmentName(invocation: BuiltinInvocation): Promise<RV
 }
 
 async function builtinListObjects(invocation: BuiltinInvocation): Promise<RCharacterVector> {
-  const matched = matchLazyArguments(invocation, [
+  const matched = await matchLazyArguments(invocation, [
     "name",
     "pos",
     "envir",
@@ -21117,7 +21148,7 @@ function coerceAtomicToLogical(input: AtomicVector, invocation: BuiltinInvocatio
 }
 
 async function builtinIfElse(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["test", "yes", "no"]);
+  const matched = await matchLazyArguments(invocation, ["test", "yes", "no"]);
   const testArgument = matched.get("test");
   if (testArgument === undefined || testArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'test' is missing in ifelse().");
@@ -21801,7 +21832,7 @@ interface TypeConvertControls {
 }
 
 async function builtinTypeConvert(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const { matched } = await matchLazyArgumentsWithDots(invocation, ["x"]);
   const argument = matched.get("x");
   if (argument === undefined || argument.promise.missing) {
     throw new REvaluationError("NRE2103", "type.convert requires x.");
@@ -21816,7 +21847,7 @@ async function builtinTypeConvert(invocation: BuiltinInvocation): Promise<RValue
 }
 
 async function builtinTypeConvertDefault(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched, dots } = matchLazyArgumentsWithDots(invocation, [
+  const { matched, dots } = await matchLazyArgumentsWithDots(invocation, [
     "x",
     "na.strings",
     "as.is",
@@ -21836,7 +21867,7 @@ async function builtinTypeConvertDefault(invocation: BuiltinInvocation): Promise
 }
 
 async function builtinTypeConvertList(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched, dots } = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const { matched, dots } = await matchLazyArgumentsWithDots(invocation, ["x"]);
   const argument = matched.get("x");
   if (argument === undefined || argument.promise.missing) {
     throw new REvaluationError("NRE2103", "type.convert requires x.");
@@ -22157,7 +22188,7 @@ function retainTypeConvertShape<T extends AtomicVector>(output: T, input: Atomic
 }
 
 async function builtinAsCharacter(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const { matched } = await matchLazyArgumentsWithDots(invocation, ["x"]);
   const argument = matched.get("x");
   if (argument === undefined || argument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in as.character().");
@@ -22520,7 +22551,7 @@ function asVectorLanguageCharacterNode(node: AstNode): string {
 }
 
 async function builtinMean(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, ["x", "..."]);
+  const { matched } = await matchBuiltinArguments(invocation, ["x", "..."]);
   const argument = matched.get("x");
   if (argument === undefined)
     throw new REvaluationError("NRE2103", "argument 'x' is missing, with no default");
@@ -22539,7 +22570,7 @@ async function builtinTimeSubset(
   className: "Date" | "POSIXct" | "difftime",
   single: boolean,
 ): Promise<RValue> {
-  const { matched, dots } = matchBuiltinArguments(invocation, ["x", "...", "drop"]);
+  const { matched, dots } = await matchBuiltinArguments(invocation, ["x", "...", "drop"]);
   const argument = matched.get("x");
   if (argument === undefined)
     throw new REvaluationError("NRE2103", "argument 'x' is missing, with no default");
@@ -22585,7 +22616,7 @@ async function builtinMeanTime(
   invocation: BuiltinInvocation,
   className: "Date" | "POSIXct" | "difftime",
 ): Promise<RValue> {
-  const { matched, dots } = matchBuiltinArguments(invocation, ["x", "..."]);
+  const { matched, dots } = await matchBuiltinArguments(invocation, ["x", "..."]);
   const argument = matched.get("x");
   if (argument === undefined)
     throw new REvaluationError("NRE2103", "argument 'x' is missing, with no default");
@@ -22617,7 +22648,7 @@ async function builtinMeanTime(
 }
 
 async function builtinMeanDefault(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, ["x", "trim", "na.rm", "..."]);
+  const { matched } = await matchBuiltinArguments(invocation, ["x", "trim", "na.rm", "..."]);
   const argument = matched.get("x");
   if (argument === undefined)
     throw new REvaluationError("NRE2103", "argument 'x' is missing, with no default");
@@ -22960,7 +22991,7 @@ async function builtinMath(
 }
 
 async function builtinSign(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["x"]);
+  const matched = await matchLazyArguments(invocation, ["x"]);
   const argument = matched.get("x");
   if (argument === undefined || argument.promise.missing) {
     throw new REvaluationError("NRE2103", "sign requires x.");
@@ -23041,7 +23072,7 @@ async function builtinRound(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinSignif(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["x", "digits"]);
+  const matched = await matchLazyArguments(invocation, ["x", "digits"]);
   const inputArgument = matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "signif requires x.");
@@ -23118,7 +23149,7 @@ async function builtinFloor(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinCeiling(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["x"]);
+  const matched = await matchLazyArguments(invocation, ["x"]);
   const argument = matched.get("x");
   if (argument === undefined || argument.promise.missing) {
     throw new REvaluationError("NRE2103", "ceiling requires x.");
@@ -23136,7 +23167,7 @@ async function builtinCeiling(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinTrunc(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched, dots } = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const { matched, dots } = await matchLazyArgumentsWithDots(invocation, ["x"]);
   const argument = matched.get("x");
   if (argument === undefined || argument.promise.missing) {
     throw new REvaluationError("NRE2103", "trunc requires x.");
@@ -24421,7 +24452,7 @@ function builtinAlist(invocation: BuiltinInvocation): RList {
 }
 
 async function builtinAsList(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const lazy = await matchLazyArgumentsWithDots(invocation, ["x"]);
   const inputArgument = lazy.matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in as.list().");
@@ -24441,7 +24472,7 @@ async function builtinAsListTime(
   invocation: BuiltinInvocation,
   className: "Date" | "POSIXct" | "difftime",
 ): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, ["x", "..."]);
+  const { matched } = await matchBuiltinArguments(invocation, ["x", "..."]);
   const argument = matched.get("x");
   if (argument === undefined || argument.promise.missing)
     throw new REvaluationError("NRE2103", "argument 'x' is missing, with no default");
@@ -24513,7 +24544,7 @@ function replaceListElementAttribute(value: RValue, name: string, replacement: R
 }
 
 async function builtinAsListFactor(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const { matched } = await matchLazyArgumentsWithDots(invocation, ["x"]);
   const argument = matched.get("x");
   if (argument === undefined || argument.promise.missing) {
     throw new REvaluationError("NRE2103", 'argument "x" is missing, with no default');
@@ -24661,7 +24692,7 @@ async function asListDefault(value: RValue, invocation: BuiltinInvocation): Prom
 }
 
 async function builtinAsListEnvironment(invocation: BuiltinInvocation): Promise<RList> {
-  const lazy = matchLazyArgumentsWithDots(invocation, ["x", "all.names", "sorted"]);
+  const lazy = await matchLazyArgumentsWithDots(invocation, ["x", "all.names", "sorted"]);
   const inputArgument = lazy.matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in as.list.environment().");
@@ -24714,7 +24745,7 @@ async function environmentListFlag(
 }
 
 async function builtinUnlist(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["x", "recursive", "use.names"]);
+  const matched = await matchLazyArguments(invocation, ["x", "recursive", "use.names"]);
   const recursiveArgument = matched.get("recursive");
   const recursiveValue =
     recursiveArgument === undefined || recursiveArgument.promise.missing
@@ -25861,7 +25892,7 @@ async function builtinSeqInt(invocation: BuiltinInvocation): Promise<RValue> {
     if (dispatched !== undefined) return dispatched;
   }
 
-  const lazy = matchLazyArgumentsWithDots(invocation, [
+  const lazy = await matchLazyArgumentsWithDots(invocation, [
     "from",
     "to",
     "by",
@@ -25959,7 +25990,7 @@ async function builtinSeqInt(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinProbabilityPoints(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["n", "a"]);
+  const matched = await matchLazyArguments(invocation, ["n", "a"]);
   const nArgument = matched.get("n");
   if (nArgument === undefined || nArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'n' is missing in ppoints().");
@@ -26178,7 +26209,7 @@ async function builtinRep(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinRepInt(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, ["x", "times"]);
+  const { matched } = await matchBuiltinArguments(invocation, ["x", "times"]);
   const inputArgument = matched.get("x");
   const timesArgument = matched.get("times");
   if (inputArgument === undefined || inputArgument.promise.missing) {
@@ -26381,7 +26412,7 @@ async function builtinRepLen(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinReplicate(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["n", "expr", "simplify"]);
+  const matched = await matchLazyArguments(invocation, ["n", "expr", "simplify"]);
   const countArgument = matched.get("n");
   const expressionArgument = matched.get("expr");
   if (countArgument === undefined || countArgument.promise.missing) {
@@ -26951,7 +26982,7 @@ function randomSeedScalar(value: RValue, invocation: BuiltinInvocation): number 
 }
 
 async function builtinJitter(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["x", "factor", "amount"]);
+  const matched = await matchLazyArguments(invocation, ["x", "factor", "amount"]);
   const inputArgument = matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in jitter().");
@@ -28437,7 +28468,7 @@ async function builtinSprintf(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinFormat(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const lazy = await matchLazyArgumentsWithDots(invocation, ["x"]);
   const inputArgument = lazy.matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in format().");
@@ -28576,7 +28607,7 @@ function formatNumericValues(
 }
 
 async function builtinPrint(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const lazy = await matchLazyArgumentsWithDots(invocation, ["x"]);
   const inputArgument = lazy.matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in print().");
@@ -28662,7 +28693,7 @@ function printOptions(
 }
 
 async function builtinPrintFactor(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched, dots } = matchLazyArgumentsWithDots(invocation, [
+  const { matched, dots } = await matchLazyArgumentsWithDots(invocation, [
     "x",
     "quote",
     "max.levels",
@@ -28681,7 +28712,7 @@ async function builtinPrintFactor(invocation: BuiltinInvocation): Promise<RValue
     ["quote", logicalVector([factorPrintQuote(quoteValue, false) ? 1 : 0])],
   ]);
   if (!empty) {
-    const dotControls = matchLazyArgumentsWithDots({ ...invocation, arguments: dots }, [
+    const dotControls = await matchLazyArgumentsWithDots({ ...invocation, arguments: dots }, [
       "digits",
       "na.print",
       "print.gap",
@@ -30247,7 +30278,7 @@ const HELP_CORE_ALIASES = new Map<string, ReadonlyMap<string, string>>([
 ]);
 
 async function builtinHelp(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, [
+  const matched = await matchLazyArguments(invocation, [
     "topic",
     "package",
     "lib.loc",
@@ -30471,7 +30502,7 @@ async function helpPackageInfo(
 }
 
 async function builtinPrintHelpFilesWithTopic(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const { matched } = await matchLazyArgumentsWithDots(invocation, ["x"]);
   const argument = matched.get("x");
   if (argument === undefined || argument.promise.missing) {
     throw new REvaluationError(
@@ -30588,7 +30619,7 @@ function renderHelpPagesHtml(topic: string, pages: readonly RenderedHelpPage[]):
 }
 
 async function builtinPrintPackageInfo(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const { matched } = await matchLazyArgumentsWithDots(invocation, ["x"]);
   const argument = matched.get("x");
   if (argument === undefined || argument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in print.packageInfo().");
@@ -30614,7 +30645,7 @@ async function builtinPrintPackageInfo(invocation: BuiltinInvocation): Promise<R
 }
 
 async function builtinBrowseVignettes(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["package", "lib.loc", "all"]);
+  const matched = await matchLazyArguments(invocation, ["package", "lib.loc", "all"]);
   const all = await lazyLogicalFlag(invocation, matched.get("all"), true, "all");
   const packageArgument = matched.get("package");
   const suppliedPackage =
@@ -30743,7 +30774,7 @@ function browseVignettesMatrix(rows: readonly BrowseVignetteRow[]): RCharacterVe
 }
 
 async function builtinPrintBrowseVignettes(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const { matched } = await matchLazyArgumentsWithDots(invocation, ["x"]);
   const inputArgument = matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in print.browseVignettes().");
@@ -30895,7 +30926,7 @@ function escapeBrowseVignettesHtml(value: string): string {
 }
 
 async function builtinVignette(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["topic", "package", "lib.loc", "all"]);
+  const matched = await matchLazyArguments(invocation, ["topic", "package", "lib.loc", "all"]);
   const libraryArgument = matched.get("lib.loc");
   const libraryPaths =
     libraryArgument === undefined
@@ -31109,7 +31140,7 @@ function isPackageVignettesManifest(
 }
 
 async function builtinExample(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, [
+  const matched = await matchLazyArguments(invocation, [
     "topic",
     "package",
     "lib.loc",
@@ -31456,7 +31487,7 @@ function writeExampleEcho(invocation: BuiltinInvocation, source: string): void {
 }
 
 async function builtinDemo(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArguments(invocation, [
+  const lazy = await matchLazyArguments(invocation, [
     "topic",
     "package",
     "lib.loc",
@@ -34078,7 +34109,7 @@ async function builtinArray(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinAsArray(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched, dots } = matchBuiltinArguments(invocation, ["x", "..."]);
+  const { matched, dots } = await matchBuiltinArguments(invocation, ["x", "..."]);
   const inputArgument = matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in as.array().");
@@ -34093,7 +34124,7 @@ async function builtinAsArray(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinPairs(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, ["x", "..."]);
+  const { matched } = await matchBuiltinArguments(invocation, ["x", "..."]);
   const inputArgument = matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2146", "Argument 'x' is missing in pairs().");
@@ -34108,7 +34139,7 @@ async function builtinPairs(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinUpdate(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, ["object", "..."]);
+  const { matched } = await matchBuiltinArguments(invocation, ["object", "..."]);
   const objectArgument = matched.get("object");
   if (objectArgument === undefined || objectArgument.promise.missing) {
     throw new REvaluationError("NRE2147", "Argument 'object' is missing in update().");
@@ -34577,7 +34608,7 @@ function colorByte(value: number): string {
 }
 
 async function builtinAsArrayDefault(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, ["x", "..."]);
+  const { matched } = await matchBuiltinArguments(invocation, ["x", "..."]);
   const inputArgument = matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in as.array.default().");
@@ -35210,7 +35241,7 @@ interface HistogramValue {
 }
 
 async function builtinHistogram(invocation: BuiltinInvocation): Promise<RValue> {
-  const generic = matchBuiltinArguments(invocation, ["x", "..."]);
+  const generic = await matchBuiltinArguments(invocation, ["x", "..."]);
   const xArgument = generic.matched.get("x");
   if (xArgument === undefined || xArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in hist().");
@@ -35226,7 +35257,7 @@ async function builtinHistogram(invocation: BuiltinInvocation): Promise<RValue> 
 }
 
 async function builtinHistogramDefault(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, [
+  const lazy = await matchLazyArgumentsWithDots(invocation, [
     "x",
     "breaks",
     "freq",
@@ -35592,7 +35623,7 @@ function histogramFrequency(
 }
 
 async function builtinPlotHistogram(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, [
+  const lazy = await matchLazyArgumentsWithDots(invocation, [
     "x",
     "freq",
     "density",
@@ -35890,7 +35921,7 @@ interface BarplotGeometry {
 }
 
 async function builtinBarplot(invocation: BuiltinInvocation): Promise<RValue> {
-  const generic = matchBuiltinArguments(invocation, ["height", "..."]);
+  const generic = await matchBuiltinArguments(invocation, ["height", "..."]);
   const heightArgument = generic.matched.get("height");
   if (heightArgument === undefined || heightArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'height' is missing in barplot().");
@@ -35906,7 +35937,7 @@ async function builtinBarplot(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinBarplotDefault(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, [
+  const lazy = await matchLazyArgumentsWithDots(invocation, [
     "height",
     "width",
     "space",
@@ -36543,7 +36574,7 @@ function barplotLegend(
 }
 
 async function builtinCurve(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched, dots } = matchLazyArgumentsWithDots(invocation, [
+  const { matched, dots } = await matchLazyArgumentsWithDots(invocation, [
     "expr",
     "from",
     "to",
@@ -36737,7 +36768,7 @@ function curveLog(value: RValue | undefined): string {
 }
 
 async function builtinPlot(invocation: BuiltinInvocation): Promise<RValue> {
-  const generic = matchBuiltinArguments(invocation, ["x", "..."]);
+  const generic = await matchBuiltinArguments(invocation, ["x", "..."]);
   const xArgument = generic.matched.get("x");
   if (xArgument === undefined || xArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in plot().");
@@ -36753,7 +36784,7 @@ async function builtinPlot(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinPlotDefault(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, [
+  const lazy = await matchLazyArgumentsWithDots(invocation, [
     "x",
     "y",
     "type",
@@ -37117,7 +37148,7 @@ interface GraphicsTitleAnnotation {
 }
 
 async function builtinGraphicsTitle(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, [
+  const lazy = await matchLazyArgumentsWithDots(invocation, [
     "main",
     "sub",
     "xlab",
@@ -37402,7 +37433,12 @@ async function beginGraphicsPage(invocation: BuiltinInvocation): Promise<Graphic
 }
 
 async function builtinPlotWindow(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched, dots } = matchLazyArgumentsWithDots(invocation, ["xlim", "ylim", "log", "asp"]);
+  const { matched, dots } = await matchLazyArgumentsWithDots(invocation, [
+    "xlim",
+    "ylim",
+    "log",
+    "asp",
+  ]);
   const values = new Map<string, RValue>();
   for (const [name, argument] of matched)
     values.set(name, await invocation.force(argument.promise));
@@ -37436,7 +37472,7 @@ interface MatplotMatrix {
 type MatplotType = "p" | "l" | "b" | "o" | "n";
 
 async function builtinMatplot(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched, dots } = matchLazyArgumentsWithDots(invocation, [
+  const { matched, dots } = await matchLazyArgumentsWithDots(invocation, [
     "x",
     "y",
     "type",
@@ -38308,7 +38344,7 @@ function timeSeriesPlotCoordinates(values: readonly (number | undefined)[]): RDo
 }
 
 async function builtinAxisTicks(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["side", "axp", "usr", "log", "nintLog"]);
+  const matched = await matchLazyArguments(invocation, ["side", "axp", "usr", "log", "nintLog"]);
   const sideArgument = matched.get("side");
   if (sideArgument === undefined || sideArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'side' is missing in axTicks().");
@@ -38420,7 +38456,7 @@ interface GraphicsAxisEntry {
 }
 
 async function builtinGraphicsAxis(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, [
+  const lazy = await matchLazyArgumentsWithDots(invocation, [
     "side",
     "at",
     "labels",
@@ -38839,7 +38875,7 @@ function graphicsAxisLineWidth(
 }
 
 async function builtinGraphicsBox(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, ["which", "lty"]);
+  const lazy = await matchLazyArgumentsWithDots(invocation, ["which", "lty"]);
   const values = new Map<string, RValue>();
   for (const [name, argument] of lazy.matched) {
     if (!argument.promise.missing) values.set(name, await invocation.force(argument.promise));
@@ -38996,7 +39032,7 @@ interface BoxplotSummary {
 }
 
 async function builtinBoxplot(invocation: BuiltinInvocation): Promise<RValue> {
-  const generic = matchBuiltinArguments(invocation, ["x", "..."]);
+  const generic = await matchBuiltinArguments(invocation, ["x", "..."]);
   const inputArgument = generic.matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in boxplot().");
@@ -39479,7 +39515,7 @@ interface PerspectiveProjection {
 }
 
 async function builtinPerspective(invocation: BuiltinInvocation): Promise<RValue> {
-  const generic = matchBuiltinArguments(invocation, ["x", "..."]);
+  const generic = await matchBuiltinArguments(invocation, ["x", "..."]);
   const genericX = generic.matched.get("x");
   if (genericX !== undefined && !genericX.promise.missing) {
     const input = await invocation.force(genericX.promise);
@@ -39487,7 +39523,7 @@ async function builtinPerspective(invocation: BuiltinInvocation): Promise<RValue
     if (dispatched !== undefined) return dispatched;
   }
 
-  const { matched, dots } = matchLazyArgumentsWithDots(invocation, [
+  const { matched, dots } = await matchLazyArgumentsWithDots(invocation, [
     "x",
     "y",
     "z",
@@ -40032,7 +40068,7 @@ interface ImageGrid {
 }
 
 async function builtinImage(invocation: BuiltinInvocation): Promise<RValue> {
-  const generic = matchBuiltinArguments(invocation, ["x", "..."]);
+  const generic = await matchBuiltinArguments(invocation, ["x", "..."]);
   const xArgument = generic.matched.get("x");
   if (xArgument === undefined || xArgument.promise.missing) return builtinImageDefault(invocation);
   const input = await invocation.force(xArgument.promise);
@@ -40046,7 +40082,7 @@ async function builtinImage(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinImageDefault(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, [
+  const lazy = await matchLazyArgumentsWithDots(invocation, [
     "x",
     "y",
     "z",
@@ -40466,7 +40502,7 @@ function imageAxisStyle(value: RValue | undefined, name: string, axis = false): 
 }
 
 async function builtinRasterImage(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched, dots } = matchLazyArgumentsWithDots(invocation, [
+  const { matched, dots } = await matchLazyArgumentsWithDots(invocation, [
     "image",
     "xleft",
     "ybottom",
@@ -40515,7 +40551,7 @@ async function builtinRasterImage(invocation: BuiltinInvocation): Promise<RValue
 }
 
 async function builtinPoints(invocation: BuiltinInvocation): Promise<RValue> {
-  const generic = matchBuiltinArguments(invocation, ["x", "..."]);
+  const generic = await matchBuiltinArguments(invocation, ["x", "..."]);
   const genericX = generic.matched.get("x");
   if (genericX === undefined || genericX.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in points().");
@@ -40524,7 +40560,7 @@ async function builtinPoints(invocation: BuiltinInvocation): Promise<RValue> {
   const dispatched = await invocation.dispatchS3IfPresent("points", input, invocation.arguments);
   if (dispatched !== undefined) return dispatched;
 
-  const { matched, dots } = matchLazyArgumentsWithDots(invocation, ["x", "y", "type"]);
+  const { matched, dots } = await matchLazyArgumentsWithDots(invocation, ["x", "y", "type"]);
   const values = new Map<string, RValue>([["x", input]]);
   for (const [name, argument] of matched) {
     if (name === "x") continue;
@@ -40614,7 +40650,7 @@ async function builtinPoints(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinLines(invocation: BuiltinInvocation): Promise<RValue> {
-  const generic = matchBuiltinArguments(invocation, ["x", "..."]);
+  const generic = await matchBuiltinArguments(invocation, ["x", "..."]);
   const genericX = generic.matched.get("x");
   if (genericX === undefined || genericX.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in lines().");
@@ -40633,7 +40669,7 @@ async function builtinLinesDefault(
   invocation: BuiltinInvocation,
   genericInput?: RValue,
 ): Promise<RValue> {
-  const { matched, dots } = matchLazyArgumentsWithDots(invocation, ["x", "y", "type"]);
+  const { matched, dots } = await matchLazyArgumentsWithDots(invocation, ["x", "y", "type"]);
   const xArgument = matched.get("x");
   if (xArgument === undefined || xArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in lines.default().");
@@ -40685,7 +40721,7 @@ async function builtinLinesDefault(
 }
 
 async function builtinGraphicsText(invocation: BuiltinInvocation): Promise<RValue> {
-  const generic = matchBuiltinArguments(invocation, ["x", "..."]);
+  const generic = await matchBuiltinArguments(invocation, ["x", "..."]);
   const genericX = generic.matched.get("x");
   if (genericX === undefined || genericX.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in text().");
@@ -40694,7 +40730,7 @@ async function builtinGraphicsText(invocation: BuiltinInvocation): Promise<RValu
   const dispatched = await invocation.dispatchS3IfPresent("text", input, invocation.arguments);
   if (dispatched !== undefined) return dispatched;
 
-  const { matched, dots } = matchLazyArgumentsWithDots(invocation, [
+  const { matched, dots } = await matchLazyArgumentsWithDots(invocation, [
     "x",
     "y",
     "labels",
@@ -41182,7 +41218,7 @@ function graphicsPointLineWidths(value: RValue | undefined): readonly (number | 
 }
 
 async function builtinPolygon(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched, dots } = matchLazyArgumentsWithDots(invocation, [
+  const { matched, dots } = await matchLazyArgumentsWithDots(invocation, [
     "x",
     "y",
     "density",
@@ -41272,7 +41308,7 @@ async function builtinPolygon(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinRect(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, [
+  const lazy = await matchLazyArgumentsWithDots(invocation, [
     "xleft",
     "ybottom",
     "xright",
@@ -41502,7 +41538,7 @@ function graphicsPolygonLineTypes(value: RValue | undefined): readonly string[] 
 }
 
 async function builtinAbline(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched, dots } = matchLazyArgumentsWithDots(invocation, [
+  const { matched, dots } = await matchLazyArgumentsWithDots(invocation, [
     "a",
     "b",
     "h",
@@ -41765,7 +41801,7 @@ function clipAbline(
 }
 
 async function builtinSegments(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched, dots } = matchLazyArgumentsWithDots(invocation, [
+  const { matched, dots } = await matchLazyArgumentsWithDots(invocation, [
     "x0",
     "y0",
     "x1",
@@ -41858,7 +41894,7 @@ async function builtinSegments(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinLegend(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, [
+  const lazy = await matchLazyArgumentsWithDots(invocation, [
     "x",
     "y",
     "legend",
@@ -43839,7 +43875,7 @@ async function builtinIsRaster(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinAsRaster(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched, dots } = matchBuiltinArguments(invocation, ["x", "..."]);
+  const { matched, dots } = await matchBuiltinArguments(invocation, ["x", "..."]);
   const inputArgument = matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in as.raster().");
@@ -43866,7 +43902,7 @@ async function builtinAsRasterMethod(
   invocation: BuiltinInvocation,
   kind: AsRasterMethodKind,
 ): Promise<RValue> {
-  const { matched, dots } = matchLazyArgumentsWithDots(invocation, ["x", "max"]);
+  const { matched, dots } = await matchLazyArgumentsWithDots(invocation, ["x", "max"]);
   const inputArgument = matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in as.raster().");
@@ -44633,7 +44669,7 @@ function hclToSrgb(hue: number, chroma: number, luminance: number): readonly num
 }
 
 async function builtinColours(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["distinct"]);
+  const matched = await matchLazyArguments(invocation, ["distinct"]);
   const argument = matched.get("distinct");
   const distinct =
     argument === undefined
@@ -44645,7 +44681,7 @@ async function builtinColours(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinCol2Rgb(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["col", "alpha"]);
+  const matched = await matchLazyArguments(invocation, ["col", "alpha"]);
   const argument = matched.get("col");
   if (argument === undefined || argument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'col' is missing in col2rgb().");
@@ -44739,7 +44775,7 @@ function col2rgbValues(
 }
 
 async function builtinRgb(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, [
+  const matched = await matchLazyArguments(invocation, [
     "red",
     "green",
     "blue",
@@ -45212,7 +45248,7 @@ async function builtinTranspose(invocation: BuiltinInvocation): Promise<RValue> 
 }
 
 async function builtinArrayPermutation(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, ["a", "perm", "..."]);
+  const { matched } = await matchBuiltinArguments(invocation, ["a", "perm", "..."]);
   const inputArgument = matched.get("a");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'a' is missing in aperm().");
@@ -45235,7 +45271,7 @@ async function arrayPermutationDefault(
   invocation: BuiltinInvocation,
   suppliedInput?: RValue,
 ): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, ["a", "perm", "resize", "..."]);
+  const { matched } = await matchBuiltinArguments(invocation, ["a", "perm", "resize", "..."]);
   let input = suppliedInput;
   if (input === undefined) {
     const inputArgument = matched.get("a");
@@ -45399,7 +45435,7 @@ function arrayPermutationResize(value: RValue): boolean {
 }
 
 async function builtinCholesky(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const lazy = await matchLazyArgumentsWithDots(invocation, ["x"]);
   const inputArgument = lazy.matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in chol().");
@@ -45417,7 +45453,7 @@ async function choleskyDefault(
   invocation: BuiltinInvocation,
   suppliedInput?: RValue,
 ): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, ["x", "pivot", "LINPACK", "tol"]);
+  const lazy = await matchLazyArgumentsWithDots(invocation, ["x", "pivot", "LINPACK", "tol"]);
   let input = suppliedInput;
   if (input === undefined) {
     const inputArgument = lazy.matched.get("x");
@@ -45659,7 +45695,7 @@ function transposeDataFrame(input: RList, invocation: BuiltinInvocation): RVecto
 }
 
 async function builtinBind(invocation: BuiltinInvocation, axis: "row" | "column"): Promise<RValue> {
-  const { matched, dots } = matchBuiltinArguments(invocation, ["...", "deparse.level"]);
+  const { matched, dots } = await matchBuiltinArguments(invocation, ["...", "deparse.level"]);
   const levelArgument = matched.get("deparse.level");
   let deparseLevel = 1;
   if (levelArgument !== undefined) {
@@ -46468,7 +46504,7 @@ function parallelExtremumRecycleFirst(
 }
 
 async function builtinLag(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, ["x", "k"]);
+  const lazy = await matchLazyArgumentsWithDots(invocation, ["x", "k"]);
   const inputArgument = lazy.matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in lag().");
@@ -46510,7 +46546,7 @@ async function builtinTimeSeriesEndpoint(
   invocation: BuiltinInvocation,
   endpoint: "start" | "end",
 ): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, ["x", "ts.eps"]);
+  const lazy = await matchLazyArgumentsWithDots(invocation, ["x", "ts.eps"]);
   const inputArgument = lazy.matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", `Argument 'x' is missing in ${endpoint}().`);
@@ -46582,7 +46618,7 @@ async function builtinTimeSeriesEndpoint(
 }
 
 async function builtinSamplingTimes(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, ["x", "offset", "ts.eps"]);
+  const lazy = await matchLazyArgumentsWithDots(invocation, ["x", "offset", "ts.eps"]);
   const inputArgument = lazy.matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in time().");
@@ -46646,7 +46682,7 @@ async function builtinSamplingTimes(invocation: BuiltinInvocation): Promise<RVal
 }
 
 async function builtinTimeSeries(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, [
+  const matched = await matchLazyArguments(invocation, [
     "data",
     "start",
     "end",
@@ -46727,7 +46763,7 @@ async function builtinTimeSeries(invocation: BuiltinInvocation): Promise<RValue>
 }
 
 async function builtinAsTimeSeries(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const lazy = await matchLazyArgumentsWithDots(invocation, ["x"]);
   const inputArgument = lazy.matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in as.ts().");
@@ -46755,7 +46791,7 @@ async function builtinAsTimeSeries(invocation: BuiltinInvocation): Promise<RValu
 }
 
 async function builtinFrequency(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const lazy = await matchLazyArgumentsWithDots(invocation, ["x"]);
   const inputArgument = lazy.matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in frequency().");
@@ -46774,7 +46810,7 @@ async function builtinFrequency(invocation: BuiltinInvocation): Promise<RValue> 
 }
 
 async function builtinDeltaTime(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const lazy = await matchLazyArgumentsWithDots(invocation, ["x"]);
   const inputArgument = lazy.matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in deltat().");
@@ -46794,7 +46830,7 @@ async function builtinDeltaTime(invocation: BuiltinInvocation): Promise<RValue> 
 }
 
 async function builtinEmbed(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["x", "dimension"]);
+  const matched = await matchLazyArguments(invocation, ["x", "dimension"]);
   const inputArgument = matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in embed().");
@@ -46886,7 +46922,7 @@ function embedDimension(value: RValue): number {
 }
 
 async function builtinCycle(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, ["x"]);
+  const lazy = await matchLazyArgumentsWithDots(invocation, ["x"]);
   const inputArgument = lazy.matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in cycle().");
@@ -46936,7 +46972,7 @@ async function builtinCycle(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinTimeSeriesWindow(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, [
+  const lazy = await matchLazyArgumentsWithDots(invocation, [
     "x",
     "start",
     "end",
@@ -47081,7 +47117,7 @@ function timeSeriesDataShape(
 }
 
 async function builtinTimeSeriesFilter(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, [
+  const matched = await matchLazyArguments(invocation, [
     "x",
     "filter",
     "method",
@@ -47498,7 +47534,7 @@ function shapeTimeSeries(
 }
 
 async function builtinNaOmit(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, ["object"]);
+  const lazy = await matchLazyArgumentsWithDots(invocation, ["object"]);
   const objectArgument = lazy.matched.get("object");
   if (objectArgument === undefined || objectArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'object' is missing in na.omit().");
@@ -47876,7 +47912,7 @@ function lagTimeSeries(
 }
 
 async function builtinDifference(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, ["x", "lag", "differences"]);
+  const lazy = await matchLazyArgumentsWithDots(invocation, ["x", "lag", "differences"]);
   const matched = new Map<string, RValue>();
   for (const [name, argument] of lazy.matched) {
     matched.set(name, await invocation.force(argument.promise));
@@ -48411,7 +48447,7 @@ interface ScaleControl {
 }
 
 async function builtinScale(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["x", "center", "scale"]);
+  const matched = await matchLazyArguments(invocation, ["x", "center", "scale"]);
   const inputArgument = matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in scale().");
@@ -49851,7 +49887,7 @@ function virtualConnectionSummaryFields(
 }
 
 async function builtinSummary(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, ["object"]);
+  const lazy = await matchLazyArgumentsWithDots(invocation, ["object"]);
   const argument = lazy.matched.get("object");
   if (argument !== undefined && !argument.promise.missing) {
     const candidate = await invocation.force(argument.promise);
@@ -50959,7 +50995,7 @@ async function builtinTribble(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinAsDataFrame(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchLazyArgumentsWithDots(invocation, ["x", "row.names", "optional"]);
+  const { matched } = await matchLazyArgumentsWithDots(invocation, ["x", "row.names", "optional"]);
   const argument = matched.get("x");
   if (argument === undefined || argument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in as.data.frame().");
@@ -51046,7 +51082,7 @@ async function builtinAsDataFrame(invocation: BuiltinInvocation): Promise<RValue
 }
 
 async function builtinView(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, ["x", "title"]);
+  const { matched } = await matchBuiltinArguments(invocation, ["x", "title"]);
   const inputArgument = matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in View().");
@@ -51317,7 +51353,7 @@ function findIntervalIndex(
 }
 
 async function builtinCut(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, [
+  const lazy = await matchLazyArgumentsWithDots(invocation, [
     "x",
     "breaks",
     "labels",
@@ -52216,7 +52252,7 @@ function constructFactor(
 }
 
 async function builtinAddNA(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["x", "ifany"]);
+  const matched = await matchLazyArguments(invocation, ["x", "ifany"]);
   const argument = matched.get("x");
   if (argument === undefined || argument.promise.missing)
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in addNA().");
@@ -52382,7 +52418,7 @@ async function builtinDropLevels(invocation: BuiltinInvocation): Promise<RValue>
 }
 
 async function builtinLapply(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched, dots: extras } = matchBuiltinArguments(invocation, ["X", "FUN", "..."]);
+  const { matched, dots: extras } = await matchBuiltinArguments(invocation, ["X", "FUN", "..."]);
   const inputArgument = matched.get("X");
   const functionArgument = matched.get("FUN");
   if (inputArgument === undefined || functionArgument === undefined) {
@@ -52508,7 +52544,7 @@ async function sapplyHigherControl(value: RValue, invocation: BuiltinInvocation)
 }
 
 async function builtinVapply(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched, dots } = matchBuiltinArguments(invocation, [
+  const { matched, dots } = await matchBuiltinArguments(invocation, [
     "X",
     "FUN",
     "FUN.VALUE",
@@ -52711,7 +52747,7 @@ function coerceVapplyResult(value: AtomicVector, target: AtomicVector["type"]): 
 
 async function builtinMapply(invocation: BuiltinInvocation, simplify: boolean): Promise<RValue> {
   if (!simplify) {
-    const { matched, dots } = matchBuiltinArguments(invocation, ["f", "..."]);
+    const { matched, dots } = await matchBuiltinArguments(invocation, ["f", "..."]);
     const argument = matched.get("f");
     if (argument === undefined || argument.promise.missing) {
       throw new REvaluationError("NRE2103", 'argument "f" is missing, with no default');
@@ -52762,7 +52798,7 @@ async function builtinMapply(invocation: BuiltinInvocation, simplify: boolean): 
       true,
     );
   }
-  const { matched, dots: inputArguments } = matchBuiltinArguments(invocation, [
+  const { matched, dots: inputArguments } = await matchBuiltinArguments(invocation, [
     "FUN",
     "...",
     "MoreArgs",
@@ -52982,7 +53018,7 @@ async function builtinApply(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinTapply(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchBuiltinArguments(invocation, ["X", "INDEX", "FUN", "..."]);
+  const lazy = await matchBuiltinArguments(invocation, ["X", "INDEX", "FUN", "..."]);
   const inputArgument = lazy.matched.get("X");
   const indexArgument = lazy.matched.get("INDEX");
   if (
@@ -53343,7 +53379,7 @@ async function parseVectorApply(
   readonly forwarded: readonly BuiltinCallArgument[];
   readonly controls: ReadonlyMap<string, BuiltinCallArgument>;
 }> {
-  const { matched, dots: extras } = matchBuiltinArguments(invocation, [
+  const { matched, dots: extras } = await matchBuiltinArguments(invocation, [
     "X",
     "FUN",
     "...",
@@ -53381,7 +53417,7 @@ async function parseThreeArgumentApply(
   readonly callable: RValue;
   readonly forwarded: readonly { readonly name?: string; readonly value: RValue }[];
 }> {
-  const { matched, dots: extras } = matchBuiltinArguments(invocation, [...names, "..."]);
+  const { matched, dots: extras } = await matchBuiltinArguments(invocation, [...names, "..."]);
   const selected = names.map((name) => matched.get(name));
   if (selected.some((argument) => argument === undefined)) {
     throw new REvaluationError("NRE2103", `${call}() requires ${names.join(", ")}.`);
@@ -53589,7 +53625,7 @@ function simplifyResults(
 }
 
 async function builtinSimplify2Array(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["x", "higher", "except"]);
+  const matched = await matchLazyArguments(invocation, ["x", "higher", "except"]);
   const argument = matched.get("x");
   if (argument === undefined || argument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in simplify2array().");
@@ -54017,7 +54053,7 @@ async function builtinAsPosix(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinAsPosixLt(invocation: BuiltinInvocation): Promise<RValue> {
-  const lazy = matchLazyArgumentsWithDots(invocation, ["x", "tz"]);
+  const lazy = await matchLazyArgumentsWithDots(invocation, ["x", "tz"]);
   const inputArgument = lazy.matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in as.POSIXlt().");
@@ -54086,7 +54122,7 @@ const C_WEEKDAY_ABBREVIATIONS = Object.freeze([
 ] as const);
 
 async function builtinWeekdays(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, ["x", "abbreviate"]);
+  const { matched } = await matchBuiltinArguments(invocation, ["x", "abbreviate"]);
   const inputArgument = matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in weekdays().");
@@ -54654,7 +54690,12 @@ const C_MONTH_ABBREVIATIONS = Object.freeze([
 ] as const);
 
 async function builtinStrftime(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched, dots } = matchLazyArgumentsWithDots(invocation, ["x", "format", "tz", "usetz"]);
+  const { matched, dots } = await matchLazyArgumentsWithDots(invocation, [
+    "x",
+    "format",
+    "tz",
+    "usetz",
+  ]);
   const inputArgument = matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in strftime().");
@@ -54987,7 +55028,7 @@ type DifftimeUnit = (typeof DIFFTIME_UNITS)[number];
 type ConcreteDifftimeUnit = Exclude<DifftimeUnit, "auto">;
 
 async function builtinAsDifftime(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["tim", "format", "units", "tz"]);
+  const matched = await matchLazyArguments(invocation, ["tim", "format", "units", "tz"]);
   const inputArgument = matched.get("tim");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'tim' is missing in as.difftime().");
@@ -55546,7 +55587,7 @@ async function builtinDistinct(
   invocation: BuiltinInvocation,
   duplicated: boolean,
 ): Promise<RValue> {
-  const { matched, dots } = matchBuiltinArguments(invocation, ["x", "incomparables", "..."]);
+  const { matched, dots } = await matchBuiltinArguments(invocation, ["x", "incomparables", "..."]);
   const inputArgument = matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError(
@@ -55593,7 +55634,7 @@ async function builtinDistinct(
 }
 
 async function builtinAnyDuplicated(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, ["x", "incomparables", "..."]);
+  const { matched } = await matchBuiltinArguments(invocation, ["x", "incomparables", "..."]);
   const inputArgument = matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in anyDuplicated().");
@@ -55612,7 +55653,7 @@ async function builtinAnyDuplicated(invocation: BuiltinInvocation): Promise<RVal
 }
 
 async function builtinFamily(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched, dots } = matchBuiltinArguments(invocation, ["object", "..."]);
+  const { matched, dots } = await matchBuiltinArguments(invocation, ["object", "..."]);
   const objectArgument = matched.get("object");
   if (objectArgument === undefined || objectArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'object' is missing in family().");
@@ -55630,7 +55671,12 @@ async function builtinFamily(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinAnyDuplicatedDefault(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, ["x", "incomparables", "fromLast", "..."]);
+  const { matched } = await matchBuiltinArguments(invocation, [
+    "x",
+    "incomparables",
+    "fromLast",
+    "...",
+  ]);
   const inputArgument = matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in anyDuplicated.default().");
@@ -55660,7 +55706,12 @@ async function builtinAnyDuplicatedDefault(invocation: BuiltinInvocation): Promi
 }
 
 async function builtinAnyDuplicatedDataFrame(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, ["x", "incomparables", "fromLast", "..."]);
+  const { matched } = await matchBuiltinArguments(invocation, [
+    "x",
+    "incomparables",
+    "fromLast",
+    "...",
+  ]);
   const inputArgument = matched.get("x");
   if (inputArgument === undefined || inputArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'x' is missing in anyDuplicated.data.frame().");
@@ -56248,7 +56299,7 @@ function dataFrameSetEqual(left: RList, right: RList, invocation: BuiltinInvocat
 }
 
 async function builtinMatchArgument(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["arg", "choices", "several.ok"]);
+  const matched = await matchLazyArguments(invocation, ["arg", "choices", "several.ok"]);
   const argumentPromise = matched.get("arg");
   if (argumentPromise === undefined || argumentPromise.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'arg' is missing in match.arg().");
@@ -56331,7 +56382,7 @@ async function builtinMatchArgument(invocation: BuiltinInvocation): Promise<RVal
 }
 
 async function builtinMatchFunction(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["FUN", "descend"]);
+  const matched = await matchLazyArguments(invocation, ["FUN", "descend"]);
   const argument = matched.get("FUN");
   if (argument === undefined || argument.promise.missing) {
     throw new REvaluationError("NRE2103", 'Argument "FUN" is missing in match.fun().');
@@ -56585,7 +56636,7 @@ async function builtinFormula(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinAsFormula(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = matchLazyArguments(invocation, ["object", "env"]);
+  const matched = await matchLazyArguments(invocation, ["object", "env"]);
   const objectArgument = matched.get("object");
   if (objectArgument === undefined || objectArgument.promise.missing) {
     throw new REvaluationError("NRE2103", "Argument 'object' is missing in as.formula().");
@@ -57842,7 +57893,7 @@ async function matchExact(
   parameterNames: readonly string[],
   allHaveDefaults = false,
 ): Promise<Map<string, RValue>> {
-  const matchedArguments = matchLazyArguments(invocation, parameterNames);
+  const matchedArguments = await matchLazyArguments(invocation, parameterNames);
   const matched = new Map<string, RValue>();
   for (const [name, argument] of matchedArguments) {
     if (argument.promise.missing && argument.promise.expression === null) {
@@ -57854,25 +57905,26 @@ async function matchExact(
   return matched;
 }
 
-function matchLazyArguments(
+async function matchLazyArguments(
   invocation: BuiltinInvocation,
   parameterNames: readonly string[],
-): Map<string, BuiltinCallArgument> {
+): Promise<Map<string, BuiltinCallArgument>> {
   const dotsIndex = parameterNames.indexOf("...");
-  return matchBuiltinArguments(
+  const result = await matchBuiltinArguments(
     invocation,
     dotsIndex < 0 ? parameterNames : parameterNames.slice(0, dotsIndex),
-  ).matched;
+  );
+  return result.matched;
 }
 
-function matchLazyArgumentsWithDots(
+async function matchLazyArgumentsWithDots(
   invocation: BuiltinInvocation,
   parameterNames: readonly string[],
-): {
+): Promise<{
   readonly matched: Map<string, BuiltinCallArgument>;
   readonly dots: readonly BuiltinCallArgument[];
-} {
-  return matchBuiltinArguments(invocation, [...parameterNames, "..."]);
+}> {
+  return await matchBuiltinArguments(invocation, [...parameterNames, "..."]);
 }
 
 async function forceAll(invocation: BuiltinInvocation): Promise<readonly RValue[]> {

@@ -1288,5 +1288,34 @@
     "policy": "exact",
     "bindingEvidence": ["utils::person"],
     "code": "local({a<-person(\"Ada\",\"Example\",,role=\"aut\");b<-person(\"Ada\",\"Example\",email=,role=\"aut\");list(positional=unclass(a),named=unclass(b),same=identical(a,b),class=class(a),visible=withVisible(person(given=,family=\"Example\")))})"
+  },
+
+  {
+    "id": "partial-argument-warning-conditions-and-diagnostic-order",
+    "policy": "exact",
+    "bindingEvidence": ["base::conditionCall"],
+    "code": "(function(){old<-options(warnPartialMatchArgs=TRUE,warn=0);on.exit(options(old));capture<-function(expr){seen<-list();value<-tryCatch(withCallingHandlers(expr,warning=function(w){seen[[length(seen)+1]]<<-w;invokeRestart(\"muffleWarning\")}),error=function(e)list(message=conditionMessage(e),call=conditionCall(e),class=class(e)));list(value=value,warnings=seen)};f<-function(alpha,beta)c(alpha,beta);g<-function(alpha,alpine,beta)NULL;list(ordinary=capture(f(be=2,al=1)),exact=capture(f(alpha=1,al=2)),duplicate=capture(f(al=1,a=2)),ambiguous=capture(g(be=1,b=2,al=3)),exactDuplicate=capture(g(al=1,beta=2,beta=3)))})()"
+  },
+  {
+    "id": "partial-argument-warning-handler-controls-and-muffling",
+    "policy": "exact",
+    "bindingEvidence": ["base::options", "base::getOption"],
+    "code": "(function(){old<-options(warnPartialMatchArgs=TRUE,warn=0);on.exit(options(old));seen<-character();f<-function(alpha,beta)c(alpha,beta);value<-withCallingHandlers(f(al=1,be=2),warning=function(w){seen<<-c(seen,conditionMessage(w));options(warnPartialMatchArgs=FALSE);invokeRestart(\"muffleWarning\")});disabled<-list(value=value,seen=seen,option=getOption(\"warnPartialMatchArgs\"));options(warnPartialMatchArgs=TRUE,warn=2);n<-0;seen<-character();f<-function(alpha){n<<-1;alpha};value<-withCallingHandlers(f(al={seen<-c(seen,\"force\");7}),partialMatchWarning=function(w){seen<<-c(seen,\"warning\");invokeRestart(\"muffleWarning\")});list(disabled=disabled,muffled=list(value=value,body=n,seen=seen))})()"
+  },
+  {
+    "id": "partial-argument-warning-builtins-and-match-call",
+    "policy": "exact",
+    "bindingEvidence": ["utils::person", "base::rep", "base::match.call"],
+    "code": "(function(){old<-options(warnPartialMatchArgs=TRUE,warn=0);on.exit(options(old));capture<-function(expr){seen<-list();value<-tryCatch(withCallingHandlers(expr,warning=function(w){seen[[length(seen)+1]]<<-w;invokeRestart(\"muffleWarning\")}),error=function(e)list(message=conditionMessage(e),call=conditionCall(e),class=class(e)));list(value=value,warnings=seen)};f<-function(alpha,beta)match.call();h<-match.call;list(exact=list(person=unclass(person(\"Ada\",\"Example\")),rep=rep(1,2),call=match.call(f,quote(f(alpha=1,beta=2)))),person=capture(person(fam=\"Example\",giv=\"Ada\")),rep=capture(rep(1,t=2)),implicit=capture(f(al=1,be=2)),explicit=capture(match.call(def=f,call=quote(f(al=1,beta=2)))),alias=capture(h(f,quote(f(al=1,beta=2)))))})()"
+  },
+  {
+    "id": "partial-argument-warning-option-rejection-and-state",
+    "policy": "exact",
+    "code": "(function(){old<-options(warnPartialMatchArgs=TRUE,warn=0);on.exit(options(old));before<-getOption(\"warnPartialMatchArgs\");messages<-lapply(list(1,0,NA,NA_real_,logical(),c(TRUE,FALSE),\"TRUE\",NULL,list(TRUE)),function(value)tryCatch({options(warnPartialMatchArgs=value);\"accepted\"},error=conditionMessage));list(before=before,messages=messages,after=getOption(\"warnPartialMatchArgs\"),changed=options(warnPartialMatchArgs=FALSE),final=getOption(\"warnPartialMatchArgs\"))})()"
+  },
+  {
+    "id": "partial-argument-warning-dispatched-method-conditions",
+    "policy": "exact",
+    "code": "(function(){old<-options(warnPartialMatchArgs=TRUE,warn=0);on.exit(options(old));capture<-function(expr)tryCatch(expr,partialMatchWarning=function(w)w);list(mean=capture(mean(1:3,tr=0)),print=capture(print(factor(\"a\"),max.l=TRUE)))})()"
   }
 ]

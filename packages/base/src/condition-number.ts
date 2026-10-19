@@ -71,7 +71,7 @@ const KAPPA_PARAMETERS = [
 ] as const;
 
 async function builtinKappa(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, ["z", "..."]);
+  const { matched } = await matchBuiltinArguments(invocation, ["z", "..."]);
   const inputArgument = requiredArgument(matched.get("z"), "z", "kappa");
   const input = await invocation.force(inputArgument.promise);
   const dispatchArguments = [
@@ -87,7 +87,7 @@ async function builtinKappaMethod(
   invocation: BuiltinInvocation,
   source: "default" | "qr" | "lm",
 ): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, KAPPA_PARAMETERS);
+  const { matched } = await matchBuiltinArguments(invocation, KAPPA_PARAMETERS);
   const inputArgument = requiredArgument(matched.get("z"), "z", `kappa.${source}`);
   const input = await invocation.force(inputArgument.promise);
   const exact = await kappaFlag(invocation, matched.get("exact"), false, "exact");

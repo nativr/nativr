@@ -147,7 +147,7 @@ export async function printHexmode(invocation: BuiltinInvocation): Promise<RValu
 }
 
 async function builtinAsHexmode(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, ["x"]);
+  const { matched } = await matchBuiltinArguments(invocation, ["x"]);
   const input = await requiredArgument(invocation, matched.get("x"), "x", "as.hexmode");
   return coerceHexmode(input, invocation.context);
 }
@@ -214,7 +214,7 @@ function cannotCoerceHexmode(): REvaluationError {
 }
 
 async function builtinAsCharacterHexmode(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, ["x", "keepStr", "..."]);
+  const { matched } = await matchBuiltinArguments(invocation, ["x", "keepStr", "..."]);
   const input = requireHexmode(
     await requiredArgument(invocation, matched.get("x"), "x", "as.character.hexmode"),
     "as.character.hexmode",
@@ -239,7 +239,7 @@ async function builtinAsCharacterHexmode(invocation: BuiltinInvocation): Promise
 }
 
 async function builtinFormatHexmode(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, ["x", "width", "upper.case", "..."]);
+  const { matched } = await matchBuiltinArguments(invocation, ["x", "width", "upper.case", "..."]);
   const input = requireHexmode(
     await requiredArgument(invocation, matched.get("x"), "x", "format.hexmode"),
     "format.hexmode",
@@ -274,7 +274,7 @@ async function builtinFormatHexmode(invocation: BuiltinInvocation): Promise<RVal
 }
 
 async function builtinPrintHexmode(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched, dots } = matchBuiltinArguments(invocation, ["x", "..."]);
+  const { matched, dots } = await matchBuiltinArguments(invocation, ["x", "..."]);
   const input = requireHexmode(
     await requiredArgument(invocation, matched.get("x"), "x", "print.hexmode"),
     "print.hexmode",
@@ -319,7 +319,7 @@ function formatHexmodeValue(
 }
 
 async function builtinSubsetHexmode(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, ["x", "i"]);
+  const { matched } = await matchBuiltinArguments(invocation, ["x", "i"]);
   const input = requireHexmode(
     await requiredArgument(invocation, matched.get("x"), "x", "[.hexmode"),
     "[.hexmode",
@@ -333,7 +333,7 @@ async function builtinSubsetHexmode(invocation: BuiltinInvocation): Promise<RVal
 }
 
 async function builtinNotHexmode(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, ["a"]);
+  const { matched } = await matchBuiltinArguments(invocation, ["a"]);
   const input = await requiredArgument(invocation, matched.get("a"), "a", "!.hexmode");
   return notHexmodeValue(input, invocation.context);
 }
@@ -342,7 +342,7 @@ async function builtinBitwiseHexmode(
   invocation: BuiltinInvocation,
   operation: "&" | "|",
 ): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, ["a", "b"]);
+  const { matched } = await matchBuiltinArguments(invocation, ["a", "b"]);
   const left = await requiredArgument(invocation, matched.get("a"), "a", `${operation}.hexmode`);
   const right = await requiredArgument(invocation, matched.get("b"), "b", `${operation}.hexmode`);
   return bitwiseHexmodeValues(left, right, operation, invocation.context);

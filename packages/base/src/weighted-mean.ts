@@ -45,7 +45,7 @@ export const WEIGHTED_MEAN_BUILTIN_SPECS: readonly WeightedMeanBuiltinSpec[] = [
 ];
 
 async function builtinWeightedMean(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, ["x", "w", "..."]);
+  const { matched } = await matchBuiltinArguments(invocation, ["x", "w", "..."]);
   const xArgument = requiredArgument(matched.get("x"), "weighted.mean");
   const x = await invocation.force(xArgument.promise);
   const dispatched = await invocation.dispatchS3IfPresent("weighted.mean", x, invocation.arguments);
@@ -53,7 +53,7 @@ async function builtinWeightedMean(invocation: BuiltinInvocation): Promise<RValu
 }
 
 async function builtinWeightedMeanDefault(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = matchBuiltinArguments(invocation, DEFAULT_PARAMETERS);
+  const { matched } = await matchBuiltinArguments(invocation, DEFAULT_PARAMETERS);
   const x = numericVector(
     await invocation.force(requiredArgument(matched.get("x"), "weighted.mean.default").promise),
     "x",

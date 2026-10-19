@@ -1,6 +1,11 @@
 export { EvaluationContext, DEFAULT_RUNTIME_LIMITS, RUNTIME_LIMIT_PROFILES } from "./context.js";
 export type { RuntimeProfile } from "./context.js";
-export { matchArguments } from "./arguments.js";
+export {
+  matchArguments,
+  matchArgumentsWithWarnings,
+  partialMatchWarning,
+  partialMatchWarningsEnabled,
+} from "./arguments.js";
 export { embeddedValueAst } from "./language-subset.js";
 export { translatePosixCharacterClasses } from "./regex.js";
 export {
