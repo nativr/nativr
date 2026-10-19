@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { expect, it } from "vitest";
 import { redactPackageCheck } from "../../../scripts/lib/package-check-summary.mjs";
 
-it.each(["0.356.0", "0.357.0", "0.358.0", "0.359.0"])(
+it.each(["0.356.0", "0.357.0", "0.358.0", "0.359.0", "0.360.0"])(
   "pins checkpoint %s without evaluating the holdout",
   async (profile) => {
     const read = async (path: string) =>
@@ -31,21 +31,23 @@ it.each(["0.356.0", "0.357.0", "0.358.0", "0.359.0"])(
       tier: string;
     }[];
     const expectedNames =
-      profile !== "0.357.0"
-        ? corpus.filter((e) => e.partition !== "holdout").map((e) => e.package)
-        : [
-            "prettyunits",
-            "rstudioapi",
-            "inline",
-            "evaluate",
-            "rprojroot",
-            "withr",
-            "whisker",
-            "pkgconfig",
-            "abind",
-          ];
+      profile === "0.360.0"
+        ? ["pkgconfig", "abind", "inline", "withr", "evaluate", "rprojroot", "whisker"]
+        : profile !== "0.357.0"
+          ? corpus.filter((e) => e.partition !== "holdout").map((e) => e.package)
+          : [
+              "prettyunits",
+              "rstudioapi",
+              "inline",
+              "evaluate",
+              "rprojroot",
+              "withr",
+              "whisker",
+              "pkgconfig",
+              "abind",
+            ];
     expect(entries.map((e) => e.package).sort()).toEqual(expectedNames.sort());
-    expect(entries).toHaveLength(profile === "0.357.0" ? 9 : 24);
+    expect(entries).toHaveLength(expectedNames.length);
     expect(entries.filter((e) => e.outcome === "aborted").map((e) => e.package)).toEqual(
       profile === "0.356.0" ? ["inline"] : [],
     );
@@ -81,7 +83,7 @@ it.each(["0.356.0", "0.357.0", "0.358.0", "0.359.0"])(
         discovered: number;
         executed: number;
       }[];
-      if (profile === "0.358.0" || profile === "0.359.0") {
+      if (profile === "0.358.0" || profile === "0.359.0" || profile === "0.360.0") {
         const metadata = summary.documentationMetadata as {
           policy: string;
           sourceSha256: string;
@@ -89,7 +91,11 @@ it.each(["0.356.0", "0.357.0", "0.358.0", "0.359.0"])(
           actual: { status: string; exportCount: number | null };
           expected: { status: string; exportCount: number | null };
         };
-        expect(metadata.policy).toBe("loaded-documentation-signatures-v1");
+        expect(metadata.policy).toBe(
+          profile === "0.360.0"
+            ? "loaded-documentation-signatures-v2"
+            : "loaded-documentation-signatures-v1",
+        );
         expect(metadata.sourceSha256).toMatch(/^[a-f0-9]{64}$/u);
         if (metadata.exportsStatus === "passed") {
           expect(metadata.actual.status).toBe("completed");
@@ -164,6 +170,12 @@ it("redacts source-shaped diagnostics and unexpected nested fields while retaini
         ],
         source: body,
       },
+      documentationAssessment: {
+        checks: [
+          { id: "rd:usage:man/owned.Rd", outcomeClass: "NOTE", reason: body },
+          { id: "rd:usage:man/other.Rd", outcomeClass: body, reason: body },
+        ],
+      },
       firstBlocker: {
         stage: "documentation",
         code: "stage-failed",
@@ -203,6 +215,7 @@ it("redacts source-shaped diagnostics and unexpected nested fields while retaini
       exportsStatus: "passed",
       actual: { status: "completed", exportCount: 1, signatures: { match: 1, unknown: 1 } },
       functions: { passed: 1, failed: 0, unexecuted: 1 },
+      usageOutcomes: { OK: 0, NOTE: 1, WARNING: 0, ERROR: 0 },
     },
     package: { name: "ownedfixture", version: "1.0" },
     rawReportSha256: createHash("sha256").update(raw).digest("hex"),

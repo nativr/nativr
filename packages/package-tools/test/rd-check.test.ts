@@ -147,20 +147,64 @@ describe("Rd parsing", () => {
 });
 
 describe("documentation checks", () => {
-  it("exempts only missing argument descriptions on internal pages", () => {
+  it.each([
+    ["2", "2L", "passed"],
+    ["NaN", "Inf", "failed"],
+    ['"\\x61"', '"a"', "passed"],
+    ['"\\xc3\\xa9"', '"\\u00e9"', "failed"],
+    ['"\\xff"', '"\\uFFFD"', "failed"],
+    ['"\\u00e9"', '"é"', "passed"],
+    ['"\\xff"', '"\\xfe"', "failed"],
+    ["-0", "0", "failed"],
+    ["2i", "2.0i", "passed"],
+    ["quote(a <- 1)", "quote(1 -> a)", "passed"],
+    ["1+2", "`+`(1,2)", "passed"],
+    ["sum(1)", '"sum"(1)', "passed"],
+    ["a[1]", "`[`(a,1)", "passed"],
+    ["{a;b}", "`{`(a,b)", "passed"],
+    ["(a)", "`(`(a)", "passed"],
+    ["function(y=2)y", "function(y=2L)y", "passed"],
+  ])("compares unevaluated default literals: %s versus %s", (code, documented, status) => {
+    const rd =
+      "\\name{f}\\alias{f}\\title{F}\\usage{f(x=" +
+      documented +
+      ")}\\description{Owned.}\\keyword{internal}";
+    const result = assess([{ path: "man/f.Rd", text: rd }], "f <- function(x=" + code + ") NULL", [
+      "f",
+    ]);
+    expect(result.checks.find(({ id }) => id === "rd:codoc:man/f.Rd:f")?.status).toBe(status);
+  });
+
+  it("does not turn incomplete argument syntax into a successful zero-argument comparison", () => {
+    const result = assess(
+      [
+        {
+          path: "man/f.Rd",
+          text: "\\name{f}\\alias{f}\\title{F}\\usage{f(1+2)}\\description{Owned.}",
+        },
+      ],
+      "f <- function() NULL",
+      ["f"],
+    );
+    expect(result.checks.find(({ id }) => id === "rd:codoc:man/f.Rd:f")?.status).toBe("unexecuted");
+  });
+  it("records internal-page notes while preserving syntax and codoc failures", () => {
     const page = (usage: string, argumentsText = "", internal = true, alias = "f") =>
       String.raw`\name{f}\alias{${alias}}\title{Owned}\usage{${usage}}\description{Owned.}${argumentsText}${internal ? String.raw`\keyword{internal}` : ""}`;
     const cases = [
-      [page("f(x,y=2)"), "passed", "passed"],
-      [page("f(x,y=2)", "", false), "failed", "passed"],
-      [page("f(x,y=2)", String.raw`\arguments{\item{extra}{Owned.}}`), "failed", "passed"],
-      [page("f(x,y=2)", "", true, "different"), "failed", "passed"],
-      [page("f(x,y=3)"), "passed", "failed"],
-      [page("f(x"), "failed", undefined],
+      [page("f(x,y=2)"), "passed", "passed", "OK"],
+      [page("f(x,y=2)", "", false), "failed", "passed", "WARNING"],
+      [page("f(x,y=2)", String.raw`\arguments{\item{extra}{Owned.}}`), "passed", "passed", "NOTE"],
+      [page("f(x,y=2)", "", true, "different"), "passed", "passed", "NOTE"],
+      [page("f(x,y=3)"), "passed", "failed", "OK"],
+      [page("f(x"), "failed", undefined, "WARNING"],
     ] as const;
-    for (const [text, usage, codoc] of cases) {
+    for (const [text, usage, codoc, outcomeClass] of cases) {
       const result = assess([{ path: "man/f.Rd", text }], "f <- function(x,y=2) x", ["f"]);
       expect(result.checks.find(({ id }) => id === "rd:usage:man/f.Rd")?.status).toBe(usage);
+      expect(result.checks.find(({ id }) => id === "rd:usage:man/f.Rd")?.outcomeClass).toBe(
+        outcomeClass,
+      );
       expect(result.checks.find(({ id }) => id === "rd:codoc:man/f.Rd:f")?.status).toBe(codoc);
     }
   });
@@ -350,6 +394,38 @@ it.runIf(process.env.NATIVR_PACKAGE_ORACLE_FIXTURE === "1")(
     );
   },
   300_000,
+);
+
+it.runIf(process.env.NATIVR_PACKAGE_ORACLE_FIXTURE === "1")(
+  "observes isolated usage severity with and without the internal keyword",
+  async () => {
+    const result = await capturePackageOracleScript({
+      source: readFileSync(new URL("fixtures/rd-usage-severity.R", import.meta.url), "utf8"),
+      rscript: process.env.NATIVR_RSCRIPT ?? "Rscript",
+      timeoutMs: 300_000,
+    });
+    expect(result.status, result.stderr).toBe("completed");
+    expect(result.stdout.replaceAll("\r\n", "\n")).toBe(
+      "alias:FALSE:WARNING\nalias:TRUE:NOTE\nextra:FALSE:WARNING\nextra:TRUE:NOTE\nmissing:FALSE:WARNING\nmissing:TRUE:OK\nsyntax:FALSE:WARNING\nsyntax:TRUE:WARNING\n",
+    );
+  },
+  320_000,
+);
+
+it.runIf(process.env.NATIVR_PACKAGE_ORACLE_FIXTURE === "1")(
+  "observes static literal comparisons through native codoc",
+  async () => {
+    const result = await capturePackageOracleScript({
+      source: readFileSync(new URL("fixtures/static-codoc.R", import.meta.url), "utf8"),
+      rscript: process.env.NATIVR_RSCRIPT ?? "Rscript",
+      timeoutMs: 60_000,
+    });
+    expect(result.status, result.stderr).toBe("completed");
+    expect(result.stdout.replaceAll("\r\n", "\n")).toBe(
+      "numeric:FALSE\nnonfinite:TRUE\nascii:FALSE\nutf8:TRUE\ninvalid:TRUE\nunicode:FALSE\ninvalid2:TRUE\nnegativezero:TRUE\ncomplex:FALSE\nrightAssign:FALSE\ninfix:FALSE\nstringcallee:FALSE\nsubset:FALSE\nbraces:FALSE\nparens:FALSE\nclosure:FALSE\n",
+    );
+  },
+  65_000,
 );
 
 describe("manual text rendering (browser adaptation)", () => {

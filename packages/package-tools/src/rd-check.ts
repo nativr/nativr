@@ -173,41 +173,81 @@ function parseSequence(
 
 /** Plain text of nodes, rendering R-like usage macros as R syntax. */
 export function rdText(nodes: readonly RdNode[]): string {
+  return renderRdText(nodes);
+}
+
+interface S4Usage {
+  readonly generic: string;
+  readonly classes: readonly string[];
+}
+
+function methodTopic(method: S4Usage): string {
+  return `${method.generic},${method.classes.join(",")}-method`;
+}
+
+function quotedIdentifier(name: string): string {
+  return `\`${name.replaceAll("\\", "\\\\").replaceAll("`", "\\`")}\``;
+}
+
+function renderRdText(nodes: readonly RdNode[], s4?: Map<number, S4Usage>): string {
   let text = "";
-  for (const node of nodes) {
-    if (node.kind === "text") {
-      text += node.text;
-      continue;
-    }
-    const arg = (index: number) => rdText(node.args[index] ?? []);
-    switch (node.name) {
-      case "dots":
-      case "ldots":
-        text += "...";
-        break;
-      case "R":
-        text += "R";
-        break;
-      case "method":
-      case "S3method": {
-        const generic = arg(0).trim();
-        const cls = arg(1).trim();
-        text += /^[A-Za-z.][A-Za-z0-9._]*$/u.test(generic)
-          ? `${generic}.${cls}`
-          : `\`${generic}.${cls}\``;
-        break;
+  const walk = (items: readonly RdNode[]) => {
+    for (const node of items) {
+      if (node.kind === "text") {
+        text += node.text;
+        continue;
       }
-      case "S4method":
-        text += `${arg(0).trim()}`;
-        break;
-      case "special":
-      case "Sexpr":
-        break;
-      default:
-        text += node.args.map((group) => rdText(group)).join("");
+      const arg = (index: number) => rdText(node.args[index] ?? []);
+      switch (node.name) {
+        case "dots":
+        case "ldots":
+          text += "...";
+          break;
+        case "R":
+          text += "R";
+          break;
+        case "method":
+        case "S3method": {
+          const generic = arg(0).trim();
+          const cls = arg(1).trim();
+          text += /^[A-Za-z.][A-Za-z0-9._]*$/u.test(generic)
+            ? `${generic}.${cls}`
+            : `\`${generic}.${cls}\``;
+          break;
+        }
+        case "S4method":
+          if (s4 === undefined) text += arg(0).trim();
+          else {
+            const method = {
+              generic: arg(0).trim(),
+              classes: arg(1)
+                .split(",")
+                .map((name) => name.trim()),
+            };
+            s4.set(text.length, method);
+            text += quotedIdentifier(methodTopic(method));
+          }
+          break;
+        case "special":
+        case "Sexpr":
+          break;
+        default:
+          for (const group of node.args) walk(group);
+      }
     }
-  }
+  };
+  walk(nodes);
   return text;
+}
+
+/** Offsets distinguish S4 macros from ordinary symbols with the same spelling. */
+function renderUsage(groups: readonly (readonly RdNode[])[]) {
+  const s4 = new Map<number, S4Usage>();
+  const text = renderRdText(
+    groups.flatMap((group) => [...group, { kind: "text" as const, text: "\n" }]),
+    s4,
+  );
+  return { text, s4 };
 }
 
 export interface RdFile {
@@ -237,11 +277,12 @@ export interface DocumentationCheck {
   readonly id: string;
   readonly status: "passed" | "failed" | "unexecuted";
   readonly reason: string;
+  readonly outcomeClass?: "OK" | "NOTE" | "WARNING" | "ERROR";
 }
 
 export interface DocumentationAssessment {
   readonly schemaVersion: 1;
-  readonly policy: "documentation-v4";
+  readonly policy: "documentation-v5";
   readonly status: "passed" | "failed" | "unexecuted";
   readonly checks: readonly DocumentationCheck[];
 }
@@ -251,6 +292,8 @@ export interface DocumentationProbe {
   readonly name: string;
   /** Constructed solely from documented usage; always a single NULL-bodied function, or null. */
   readonly signature: string | null;
+  /** Public S4 identity; never infer a method from a same-named ordinary binding. */
+  readonly method?: S4Usage;
 }
 
 /** Collect public usage signatures without reading or serializing implementation bodies. */
@@ -262,14 +305,13 @@ export function collectDocumentationProbes(
   const occurrences = new Map<string, number>();
   for (const file of files) {
     try {
-      const usage = parseRd(file.text)
+      const groups = parseRd(file.text)
         .filter((node): node is RdMacro => node.kind === "macro" && node.name === "usage")
-        .flatMap((node) => node.args)
-        .map((group) => rdText(group))
-        .join("\n");
+        .flatMap((node) => node.args);
+      const { text: usage, s4 } = renderUsage(groups);
       const result = parse(usage);
       if (result.diagnostics.some((diagnostic) => diagnostic.severity !== "info")) continue;
-      for (const entry of usageEntries(result.ast)) {
+      for (const entry of usageEntries(result.ast, s4)) {
         if (entry.kind !== "function") continue;
         const base = `rd:codoc:${file.path}:${entry.name}`;
         const occurrence = (occurrences.get(base) ?? 0) + 1;
@@ -277,7 +319,7 @@ export function collectDocumentationProbes(
         let signature: string | null = null;
         try {
           const parameters = entry.args.map((arg) => {
-            const name = `\`${arg.name.replaceAll("\\", "\\\\").replaceAll("`", "\\`")}\``;
+            const name = quotedIdentifier(arg.name);
             if (arg.defaultValue === undefined) return name;
             const span = asNode(arg.defaultValue)?.span as
               { start?: { offset?: number }; end?: { offset?: number } } | undefined;
@@ -312,6 +354,7 @@ export function collectDocumentationProbes(
           id: occurrence === 1 ? base : `${base}#${occurrence}`,
           name: entry.name,
           signature,
+          ...(entry.method === undefined ? {} : { method: entry.method }),
         });
       }
     } catch {
@@ -334,10 +377,20 @@ export function inspectPackageDocumentation(
 ): DocumentationAssessment {
   const checks: DocumentationCheck[] = [];
   const occurrences = new Map<string, number>();
-  const add = (id: string, status: DocumentationCheck["status"], reason: string) => {
+  const add = (
+    id: string,
+    status: DocumentationCheck["status"],
+    reason: string,
+    outcomeClass?: DocumentationCheck["outcomeClass"],
+  ) => {
     const occurrence = (occurrences.get(id) ?? 0) + 1;
     occurrences.set(id, occurrence);
-    checks.push({ id: occurrence === 1 ? id : `${id}#${occurrence}`, status, reason });
+    checks.push({
+      id: occurrence === 1 ? id : `${id}#${occurrence}`,
+      status,
+      reason,
+      ...(outcomeClass === undefined ? {} : { outcomeClass }),
+    });
   };
   const parsed: ParsedRd[] = [];
   for (const file of input.rdFiles) {
@@ -440,7 +493,7 @@ export function inspectPackageDocumentation(
   for (const rd of parsed) {
     const usageGroups = rd.sections.get("usage");
     if (usageGroups === undefined) continue;
-    const usageText = usageGroups.map((group) => rdText(group)).join("\n");
+    const { text: usageText, s4 } = renderUsage(usageGroups);
     let ast: unknown;
     try {
       const result = parse(usageText);
@@ -451,10 +504,15 @@ export function inspectPackageDocumentation(
       ast = undefined;
     }
     if (ast === undefined) {
-      add(`rd:usage:${rd.path}`, "failed", "The \\usage section is not syntactically valid R.");
+      add(
+        `rd:usage:${rd.path}`,
+        "failed",
+        "The \\usage section is not syntactically valid R.",
+        "WARNING",
+      );
       continue;
     }
-    const entries = usageEntries(ast);
+    const entries = usageEntries(ast, s4);
     const usageArguments = new Set(entries.flatMap((entry) => entry.args.map((arg) => arg.name)));
     const documented = new Set(
       (rd.sections.get("arguments") ?? []).flatMap((group) => argumentItems(group)),
@@ -477,10 +535,13 @@ export function inspectPackageDocumentation(
       unaliased.length === 0;
     add(
       `rd:usage:${rd.path}`,
-      usageOk ? "passed" : "failed",
+      usageOk || internal ? "passed" : "failed",
       usageOk
         ? "Usage arguments satisfy the internal-page policy, every documented argument is in usage, and usage functions have aliases."
-        : "Usage arguments, documented arguments or aliases are inconsistent.",
+        : internal
+          ? "Internal-page NOTE: documented arguments or aliases are inconsistent."
+          : "Usage arguments, documented arguments or aliases are inconsistent.",
+      usageOk ? "OK" : internal ? "NOTE" : "WARNING",
     );
     for (const entry of entries) {
       if (entry.kind !== "function") continue;
@@ -501,27 +562,33 @@ export function inspectPackageDocumentation(
         continue;
       }
       const code = input.functions.get(entry.name);
-      if (code === undefined) {
+      if (code === undefined || entry.method !== undefined || !entry.complete) {
         add(
           `rd:codoc:${rd.path}:${entry.name}`,
           "unexecuted",
-          "Static function metadata is unavailable; loaded namespace metadata is needed to check this usage.",
+          "Complete static function metadata is unavailable; S4 methods and ambiguous usage require loaded observations.",
         );
         continue;
       }
+      const comparisons = code.map((formal, index) =>
+        formal.name !== entry.args[index]?.name
+          ? false
+          : sameSyntax(formal.defaultValue, entry.args[index]?.defaultValue),
+      );
       const same =
-        code.length === entry.args.length &&
-        code.every(
-          (formal, index) =>
-            formal.name === entry.args[index]?.name &&
-            sameSyntax(formal.defaultValue, entry.args[index]?.defaultValue),
-        );
+        code.length !== entry.args.length || comparisons.includes(false)
+          ? false
+          : comparisons.includes(undefined)
+            ? undefined
+            : true;
       add(
         `rd:codoc:${rd.path}:${entry.name}`,
-        same ? "passed" : "failed",
-        same
-          ? "Documented arguments and defaults match the code."
-          : "Code/documentation mismatch in argument names or default values.",
+        same === undefined ? "unexecuted" : same ? "passed" : "failed",
+        same === undefined
+          ? "Static default syntax is outside the bounded comparison; loaded observations are required."
+          : same
+            ? "Documented arguments and defaults match the code."
+            : "Code/documentation mismatch in argument names or default values.",
       );
     }
   }
@@ -540,7 +607,7 @@ export function inspectPackageDocumentation(
 
   return {
     schemaVersion: 1,
-    policy: "documentation-v4",
+    policy: "documentation-v5",
     status: checks.some((check) => check.status === "failed")
       ? "failed"
       : checks.every((check) => check.status === "passed")
@@ -595,9 +662,10 @@ type UsageEntry = {
   name: string;
   args: { name: string; defaultValue?: unknown }[];
   complete?: boolean;
+  method?: S4Usage;
 };
 
-function usageEntries(ast: unknown): UsageEntry[] {
+function usageEntries(ast: unknown, s4 = new Map<number, S4Usage>()): UsageEntry[] {
   const entries: UsageEntry[] = [];
   const body = (ast as { body?: unknown[] })?.body ?? [];
   for (const statement of body) {
@@ -607,10 +675,14 @@ function usageEntries(ast: unknown): UsageEntry[] {
       entries.push({ kind: "object", name: node.name, args: [] });
     } else if (node.kind === "CallExpression") {
       const name = calleeName(node.callee);
+      const offset = (asNode(node.callee)?.span as { start?: { offset?: number } } | undefined)
+        ?.start?.offset;
+      const method = offset === undefined ? undefined : s4.get(offset);
       if (name !== undefined)
         entries.push({
           kind: "function",
           name,
+          ...(method === undefined ? {} : { method }),
           args: callFormals(node.arguments),
           complete:
             Array.isArray(node.arguments) &&
@@ -619,10 +691,18 @@ function usageEntries(ast: unknown): UsageEntry[] {
     } else if (node.kind === "ReplacementExpression") {
       const target = asNode(node.target);
       const name = target?.kind === "CallExpression" ? calleeName(target.callee) : undefined;
+      const offset = (asNode(target?.callee)?.span as { start?: { offset?: number } } | undefined)
+        ?.start?.offset;
+      const originalMethod = offset === undefined ? undefined : s4.get(offset);
+      const method =
+        originalMethod === undefined
+          ? undefined
+          : { ...originalMethod, generic: `${originalMethod.generic}<-` };
       if (name !== undefined)
         entries.push({
           kind: "function",
-          name: `${name}<-`,
+          name: method === undefined ? `${name}<-` : methodTopic(method),
+          ...(method === undefined ? {} : { method }),
           args: [...callFormals(target?.arguments), { name: "value" }],
           complete:
             Array.isArray(target?.arguments) &&
@@ -662,17 +742,136 @@ function callFormals(value: unknown): { name: string; defaultValue?: unknown }[]
   return formals;
 }
 
-/** Structural comparison of default-value syntax, ignoring source positions. */
-function sameSyntax(left: unknown, right: unknown): boolean {
-  return JSON.stringify(stripSpans(left)) === JSON.stringify(stripSpans(right));
+/** Unevaluated syntax comparison, with native codoc's observed literal storage equivalence. */
+function sameSyntax(left: unknown, right: unknown, depth = 0): boolean | undefined {
+  if (depth > 64) return undefined;
+  if (left === null || right === null || typeof left !== "object" || typeof right !== "object")
+    return Object.is(left, right);
+  if (Array.isArray(left) || Array.isArray(right)) {
+    if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) return false;
+    const results = left.map((item, index) => sameSyntax(item, right[index], depth + 1));
+    return results.includes(false) ? false : results.includes(undefined) ? undefined : true;
+  }
+  const a = left as Record<string, unknown>,
+    b = right as Record<string, unknown>;
+  if ([a.kind, b.kind].some((kind) => kind === "UnsupportedExpression" || kind === "ConstantValue"))
+    return undefined;
+  const numeric = (kind: unknown) => kind === "IntegerLiteral" || kind === "DoubleLiteral";
+  if (numeric(a.kind) && numeric(b.kind))
+    return typeof a.value === "number" && typeof b.value === "number"
+      ? Object.is(a.value, b.value)
+      : undefined;
+  if (a.kind === "MissingLiteral" && b.kind === "MissingLiteral") {
+    const allowed = new Set(["logical", "integer", "double", "complex", "character"]);
+    if (!allowed.has(String(a.declaredType)) || !allowed.has(String(b.declaredType)))
+      return undefined;
+    return (a.declaredType === "character") === (b.declaredType === "character");
+  }
+  if (
+    a.kind === "StringLiteral" &&
+    b.kind === "StringLiteral" &&
+    typeof a.value === "string" &&
+    typeof b.value === "string"
+  ) {
+    const ascii = (node: Record<string, unknown>) =>
+      Array.from(String(node.value)).every((character) => character.charCodeAt(0) < 128) &&
+      (!Array.isArray(node.bytes) ||
+        node.bytes.every((byte) => typeof byte === "number" && byte >= 0 && byte < 128));
+    if (ascii(a) && ascii(b)) return a.value === b.value;
+  }
+  const ac = syntaxCall(a),
+    bc = syntaxCall(b);
+  if (ac !== undefined || bc !== undefined) {
+    if (a.kind === "PipeExpression" || b.kind === "PipeExpression") return undefined;
+    return ac === undefined || bc === undefined ? false : sameSyntax(ac, bc, depth + 1);
+  }
+  const keys = (node: Record<string, unknown>) =>
+    Object.keys(node)
+      .filter((key) => key !== "span" && key !== "display")
+      .sort();
+  const ak = keys(a),
+    bk = keys(b);
+  if (ak.length !== bk.length || ak.some((key, index) => key !== bk[index])) return false;
+  const results = ak.map((key) => sameSyntax(a[key], b[key], depth + 1));
+  return results.includes(false) ? false : results.includes(undefined) ? undefined : true;
 }
-function stripSpans(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(stripSpans);
-  if (value === null || typeof value !== "object") return value;
-  const result: Record<string, unknown> = {};
-  for (const [key, item] of Object.entries(value as Record<string, unknown>))
-    if (key !== "span" && key !== "display") result[key] = stripSpans(item);
-  return result;
+
+/** Canonical parsed-call structure, never evaluation or default-expression simplification. */
+function syntaxCall(node: Record<string, unknown>): Record<string, unknown> | undefined {
+  const symbol = (name: unknown) => ({ kind: "Identifier", name });
+  const call = (name: unknown, values: unknown[]) => ({
+    syntaxKind: "call",
+    callee: symbol(name),
+    arguments: values.map((value) => ({ name: null, value })),
+  });
+  const arguments_ = (items: unknown) =>
+    (Array.isArray(items) ? items : []).map((item: { name?: unknown; value?: unknown }) => ({
+      name: typeof item.name === "string" ? item.name : null,
+      value: item.value,
+    }));
+  switch (node.kind) {
+    case "CallExpression": {
+      const callee = asNode(node.callee);
+      if (
+        callee?.kind === "StringLiteral" &&
+        Array.isArray(callee.bytes) &&
+        callee.bytes.some((byte: unknown) => typeof byte !== "number" || byte >= 128)
+      )
+        return {
+          syntaxKind: "call",
+          callee: { kind: "UnsupportedExpression", feature: "non-ascii-byte-callee" },
+          arguments: arguments_(node.arguments),
+        };
+      return {
+        syntaxKind: "call",
+        callee: callee?.kind === "StringLiteral" ? symbol(callee.value) : node.callee,
+        arguments: arguments_(node.arguments),
+      };
+    }
+    case "UnaryExpression":
+      return call(node.operator, [node.operand]);
+    case "BinaryExpression":
+      return call(node.operator, [node.left, node.right]);
+    case "AssignmentExpression":
+    case "ReplacementExpression":
+      return call(node.operator === "->" ? "<-" : node.operator === "->>" ? "<<-" : node.operator, [
+        node.target,
+        node.value,
+      ]);
+    case "Block":
+      return call("{", Array.isArray(node.body) ? node.body : []);
+    case "SubsetExpression":
+      return {
+        syntaxKind: "call",
+        callee: symbol(node.operator),
+        arguments: [{ name: null, value: node.target }, ...arguments_(node.arguments)],
+      };
+    case "NamespaceExpression":
+      return call(node.operator, [node.namespace, node.member]);
+    case "FormulaExpression":
+      return call("~", node.left === undefined ? [node.right] : [node.left, node.right]);
+    case "IfExpression":
+      return call(
+        "if",
+        node.alternative === undefined
+          ? [node.condition, node.consequence]
+          : [node.condition, node.consequence, node.alternative],
+      );
+    case "ForExpression":
+      return call("for", [node.variable, node.sequence, node.body]);
+    case "WhileExpression":
+      return call("while", [node.condition, node.body]);
+    case "RepeatExpression":
+      return call("repeat", [node.body]);
+    case "BreakExpression":
+      return call("break", []);
+    case "NextExpression":
+      return call("next", []);
+    case "ReturnExpression":
+      return call("return", node.value === undefined ? [] : [node.value]);
+    default:
+      return undefined;
+  }
 }
 
 function asNode(value: unknown): (Record<string, unknown> & { kind: string }) | undefined {

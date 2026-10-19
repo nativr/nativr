@@ -787,7 +787,7 @@ try {
         "documentation",
         documentationAssessment.status,
         documentationAssessment.status === "passed"
-          ? "Every RFC-0008 Rd, metadata, cross-reference, documentation-entry, codoc, usage and contents check executed and passed (documentation-v4)."
+          ? "Every RFC-0008 Rd, metadata, cross-reference, documentation-entry, codoc, usage and contents check executed and passed (documentation-v5)."
           : documentationAssessment.status === "failed"
             ? "A documentation check failed; see documentationAssessment."
             : "Some documentation checks remain unexecuted; see documentationAssessment.",

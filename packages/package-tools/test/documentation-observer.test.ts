@@ -8,7 +8,7 @@ import { createR } from "../../nativr/src/index.js";
 import { createParser } from "../../parser/src/index.js";
 import type { NativRParser } from "../../parser/src/index.js";
 import { collectDocumentationProbes, inspectPackageDocumentation } from "../src/index.js";
-import type { DocumentationProbe } from "../src/index.js";
+import type { DocumentationProbe, DocumentationInput } from "../src/index.js";
 import { observePackageDocumentation } from "../../../scripts/lib/package-documentation-observer.mjs";
 import { createPackageOracle } from "../../../scripts/lib/package-oracle.mjs";
 
@@ -129,6 +129,29 @@ odd(1+2)}`;
   ]);
 });
 
+it("matches the native signature matrix using complete static metadata", () => {
+  const functions = new Map<string, readonly { name: string; defaultValue?: unknown }[]>();
+  for (const node of parser.parse(definitions).ast.body) {
+    if (node.kind === "AssignmentExpression" && node.value.kind === "FunctionExpression")
+      functions.set(node.target.name, node.value.parameters);
+  }
+  const input: DocumentationInput = {
+    packageName: "owneddoc",
+    rdFiles,
+    functions,
+    exports: [],
+    installedAliases: new Map(),
+  };
+  const result = inspectPackageDocumentation(input, (text) => parser.parse(text));
+  expect(
+    result.checks.filter(({ id }) => id.startsWith("rd:codoc:")).map(({ status }) => status),
+  ).toEqual(
+    matrix.map(([name, , status]) =>
+      name === "pubComputed" || name === "na.omit" ? "unexecuted" : status,
+    ),
+  );
+});
+
 it("observes computed definitions, imported signatures, zero args and all exportPattern bindings", async () => {
   const result = await observePackageDocumentation("owneddoc", probes, {
     actual: capture,
@@ -166,17 +189,35 @@ it("observes computed definitions, imported signatures, zero args and all export
 it("does not force active bindings and keeps missing/noncallable signatures inconclusive", async () => {
   const source =
     '\n.onLoad <- function(...) makeActiveBinding("active", function() stop("MUST_NOT_FORCE"), environment(.onLoad))';
-  const extra = ["active", "absent", "pubValue"].map((name) => ({
+  const extra: DocumentationProbe[] = ["active", "absent", "pubValue"].map((name) => ({
     id: name,
     name,
     signature: "function() NULL",
   }));
+  extra.push({
+    id: "active-s4",
+    name: "active,Owned-method",
+    signature: "function() NULL",
+    method: { generic: "active", classes: ["Owned"] },
+  });
+  extra.push({
+    id: "empty-s4",
+    name: "zero,-method",
+    signature: "function() NULL",
+    method: { generic: "zero", classes: [] },
+  });
   const run = (text: string) => capture(text, source);
   const result = await observePackageDocumentation("owneddoc", extra, {
     actual: run,
     expected: run,
   });
-  expect(result.actual.states, String(captureError)).toEqual(["active", "missing", "noncallable"]);
+  expect(result.actual.states, String(captureError)).toEqual([
+    "active",
+    "missing",
+    "noncallable",
+    "active",
+    "unknown",
+  ]);
   expect(result.functions.every(({ status }) => status === "unexecuted")).toBe(true);
 });
 

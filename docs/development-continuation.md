@@ -158,9 +158,10 @@ occurred.
 ### Profile 0.359 Rd boundary repairs
 
 Documentation policy v4 corrects the internal-page argument exemption and qualified-link filename
-fallback. Native fixtures confirm that internal pages still fail for extra documented arguments,
-missing aliases, invalid usage and signature mismatches. Qualified links must resolve within the
-named package; a filename can resolve even when it is not an alias, while a bare `\name` cannot. The
+fallback. Its combined native fixture retained diagnostics for extra documented arguments, missing
+aliases, invalid usage and signature mismatches. Profile 0.360 corrects the first two diagnostics'
+severity from failure to NOTE using isolated checks. Qualified links must resolve within the named
+package; a filename can resolve even when it is not an alias, while a bare `\name` cannot. The
 public help catalog retains the same 8,612 aliases and adds 2,635 Rd filenames across 29
 base/recommended packages, in deterministic order. No implementation bodies were collected.
 
@@ -179,20 +180,69 @@ label for the adopted elementary Wasm backend is corrected; normative Linux vali
 pending. No Worker/playground or packaging interface changed, so e2e and pack smoke were not
 refreshed. No downloads, push or publication occurred.
 
+### Profile 0.360 method and static metadata repairs
+
+Documentation policy v5 preserves S4 generic/class identity and source offsets, including
+replacement methods and ordinary symbols with the same spelling. Public `getMethod()` and
+`unRematchDefinition()` observations recover original method formals without returning bodies. Owned
+native fixtures verify exact signatures, rematched defaults, multiple dispatch arguments,
+replacement methods, missing methods and a same-named ordinary binding. Unavailable NativR method
+reflection remains unexecuted. The earlier wrapper-only observation is retained as a reason not to
+compare a method with its generic's arguments.
+
+Static comparisons now use native-observed literal equivalence and parsed-call structure. The
+23-signature fixture and a further 16 default-expression pairs cover storage, missing/nonfinite
+values, string escapes, alternate call spellings, assignments, subsets, blocks and nested function
+defaults. Unsupported or ambiguous syntax stays unexecuted. Eight isolated native usage fixtures
+also correct a 0.359 error: extra arguments and missing aliases on internal pages are `NOTE`s, not
+warnings. They pass under RFC-0008 and remain recorded. Syntax errors remain warnings. The earlier
+combined fixture established diagnostic presence, not per-diagnostic severity.
+
+All 71 owned parity tests pass, including native checks. Behavioral sources are public Rd and
+method-utility documentation, the local normalized AST specification and independently authored
+oracle inputs. A broad search unexpectedly returned a tools implementation snippet; that source page
+was not opened and the snippet was excluded from development evidence. No method bodies or observed
+default expressions are collected by the checker.
+
+The [seven-package checkpoint](../compatibility/package-check-evidence/corpus-0.360.0.json)
+refreshes pkgconfig, abind, inline, withr, evaluate, rprojroot and whisker from pinned cached
+archives with repeatability observations. Tiers and partitions are unchanged. inline passes its
+usage checks; two ordinary signature mismatches remain failures and five S4 signatures remain
+unexecuted because NativR method reflection is unavailable. withr retains 14 signature mismatches
+and one unexecuted comparison. The full 24-package checkpoint remains at 0.359.
+
+The final `pnpm check` passes 1,368 tests with 93 opt-in skips, production types, lint, dependency
+boundaries, browser audit and all fixed bundle limits. Checked-in/live/recursive conformance passes
+1,236 / 1,167 / 134 cases, with 81 causal binding links. No evaluator, Worker/playground or
+packaging interface changed, so e2e and pack smoke were not refreshed. No downloads, push or
+publication occurred.
+
 ### Immediate continuation
 
-Finish Milestone 2 before declaring it complete. S4 usage currently loses method identity and
-compares methods with generic signatures. Correct that classification with owned fixtures; do not
-turn unavailable method metadata into passing evidence. An owned native probe with a method
-`function(x, extra=2, ...)` observed only `x,...` through both `formals()` and `args()` on
-`selectMethod()` and `getMethod()` results. Public signature metadata alone therefore does not
-settle all method defaults. No method bodies were inspected. NativR currently lacks these method
-selection APIs, so unsupported observations must stay explicit.
-
-Static-only documentation comparisons also retain exact AST comparison, unlike the bounded native
-numeric-storage equivalence used by the loaded observer. Add owned parity fixtures before changing
-that fallback. Broader Rd parsing/rendering remains bounded and does not establish full native
+Proceed to the ordered factor printing/addNA and argument-matching work. Broader Rd
+parsing/rendering still needs domain evidence; these bounded checks do not establish complete native
 renderer equivalence.
+
+An owned factor probe already reproduces the next gaps: ordinary and ordered factors omit their
+level summaries; missing labels print `NA` instead of `<NA>`; empty factors print `integer(0)`
+instead of `factor()`; quote, width and `max.levels` behavior differs; `addNA()` is absent. Native
+`max.levels=2` on four levels prints `4 Levels: a ... d` (ordered: `a < ... < d`). After
+`addNA(factor(c("a",NA,"b")))`, the NA level is retained while `is.na()` is false for every element.
+The 15 independently authored cases remain in `.tmp/factor-roadmap-probe.R`, with native and NativR
+output logs, ready to become regression and recursive evidence with the implementation. Additional
+owned native probes in `.tmp/factor-print-boundaries.R` and `.tmp/factor-level-layout.R` cover level
+truncation, attributes, named and empty factors, matrix/list display, invalid controls and output
+before errors. They establish that the explicit `width` controls the level summary while the vector
+body uses the session width; `max=2` partially matches `max.levels`. Numeric limits override width,
+while logical TRUE retains automatic truncation. Missing-level factors require representation work:
+the current `isFactor()` rejects an NA-bearing levels attribute. Preserve that distinction from
+missing integer codes when implementing addNA.
+
+S4 runtime follow-up includes missing method-selection/unrematching APIs, rejection of
+`setClass(slots=...)`, custom replacement generic binding names, and a package export failure when a
+generic is defined solely by `setGeneric()`. The checker fixtures use valid shared syntax to isolate
+metadata observations; they do not establish closure of those runtime gaps. Reproduce each through
+an owned native/runtime pair before changing runtime behavior.
 
 The new withr observations distinguish 14 actual signature mismatches from the remaining unknown
 signature. Reproduce these through owned factories and formals assignment before changing runtime

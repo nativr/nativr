@@ -3969,3 +3969,25 @@ evaluator behavior, so foundation and recursive runtime cases remain unchanged.
 The package-tools unit and opt-in native fixtures provide executable evidence for these rules. S4
 method usage/signature resolution and broader Rd rendering remain unfinished; this increment does
 not establish complete Rd or package compatibility.
+
+### Method-aware and static documentation comparisons (profile 0.360)
+
+Documentation policy v5 preserves S4 generic/class identity, including replacement methods and
+repeated entries. Loaded observation policy v2 resolves exact methods through public reflection APIs
+and removes argument-rematching wrappers through `unRematchDefinition()` before comparing
+NULL-bodied signature stubs. Function bodies and observed defaults are never recorded. Missing
+methods, active generic bindings and unavailable reflection remain unexecuted; a generic signature
+cannot stand in for a method signature.
+
+Static comparisons use observed literal storage equivalence and canonical parsed-call structure
+without evaluating defaults. Native fixtures cover numeric and typed missing values, nonfinite
+values, string escapes, alternate call spellings, right assignments, blocks and nested function
+defaults. Incomplete or unsupported syntax stays unexecuted. Parentheses, argument order, changed
+values and unevaluated expressions remain distinct.
+
+Isolated native checks correct the prior internal-page status mapping: extra documented arguments
+and missing aliases are informational `NOTE`s on internal pages. They pass while remaining recorded.
+Malformed usage remains a warning and signature mismatches still fail. Redacted summaries retain
+only outcome counts. This package-tools increment changes no evaluator behavior; foundation and
+recursive runtime cases remain unchanged. Full S4 runtime reflection and broader Rd closure remain
+required work.

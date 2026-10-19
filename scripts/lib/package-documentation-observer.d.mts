@@ -5,7 +5,7 @@ import type {
 
 export interface DocumentationObservation {
   readonly schemaVersion: 1;
-  readonly policy: "loaded-documentation-signatures-v1";
+  readonly policy: "loaded-documentation-signatures-v2";
   readonly sourceSha256: string;
   readonly actual: DocumentationCapture;
   readonly expected: DocumentationCapture;

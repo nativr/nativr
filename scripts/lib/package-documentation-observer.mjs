@@ -35,19 +35,26 @@ export async function observePackageDocumentation(name, probes, options) {
       }
       base::identical(a,b)
     }
-    inspect <- function(name, documented) base::tryCatch({
+    inspect <- function(name, documented, classes=NULL) base::tryCatch({
       env <- ns
       while (!base::identical(env, base::emptyenv()) && !base::exists(name, envir=env, inherits=FALSE)) env <- base::parent.env(env)
       if (base::identical(env, base::emptyenv())) return("missing")
       if (base::bindingIsActive(name, env)) return("active")
-      target <- base::get(name, envir=env, inherits=FALSE)
+      if (base::is.null(classes)) {
+        target <- base::get(name, envir=env, inherits=FALSE)
+      } else {
+        if (base::length(classes)==0L || base::any(classes=="")) return("unknown")
+        target <- methods::getMethod(name, signature=classes, optional=TRUE, where=ns)
+        if (base::is.null(target)) return("missing")
+        target <- methods::unRematchDefinition(target)
+      }
       if (!base::is.function(target)) return("noncallable")
       signature <- base::args(target)
       if (!base::is.function(signature)) return("unknown")
       if (!base::identical(base::body(signature),NULL)) return("unknown")
       if (same(base::formals(signature), base::formals(documented))) "match" else "mismatch"
     }, error=function(e) "unknown")
-    observed <- base::c(${probes.map((probe) => (probe.signature === null ? '"unknown"' : `inspect(${JSON.stringify(probe.name)}, ${probe.signature})`)).join(",")})
+    observed <- base::c(${probes.map((probe) => (probe.signature === null ? '"unknown"' : `inspect(${JSON.stringify(probe.method?.generic ?? probe.name)}, ${probe.signature}${probe.method === undefined ? "" : probe.method.classes.length === 0 ? ",base::character(0)" : `,base::c(${probe.method.classes.map((name) => JSON.stringify(name)).join(",")})`})`)).join(",")})
     base::cat("\nNATIVR_DOCUMENTATION_BEGIN\n", base::length(encoded), "\n", sep="")
     for (name in encoded) base::cat(name,"\n",sep="")
     base::cat(base::paste(observed,collapse="|"),"\nNATIVR_DOCUMENTATION_END\n",sep="")
@@ -102,7 +109,7 @@ export async function observePackageDocumentation(name, probes, options) {
         : "failed";
   return {
     schemaVersion: 1,
-    policy: "loaded-documentation-signatures-v1",
+    policy: "loaded-documentation-signatures-v2",
     sourceSha256: createHash("sha256").update(source).digest("hex"),
     actual,
     expected,
@@ -120,6 +127,7 @@ export async function observePackageDocumentation(name, probes, options) {
       "Only exported names and comparisons with documented signatures are observed; function bodies and default expressions are never returned.",
       "Defaults are compared as unevaluated syntax with exact numeric values, integer/double storage equivalence and numeric/logical typed NA equivalence; character NA and NaN remain distinct. Non-syntax objects, deep syntax, active bindings, absent or unknown signatures and failed observations remain unexecuted.",
       "This is signature and export evidence, not complete Rd, namespace, or runtime equivalence.",
+      "S4 methods are resolved by exact generic/class signature and unRematchDefinition through public APIs; unavailable method reflection remains unexecuted. Ordinary bindings and generic wrappers are not substitutes for method evidence.",
     ],
   };
 }

@@ -76,7 +76,7 @@ function runner(value) {
       };
 }
 
-function documentationMetadata(value) {
+function documentationMetadata(value, assessment) {
   if (value === null || value === undefined) return null;
   const capture = (item) => ({
     status: choice(item?.status, ["completed", "failed", "invalid-output"]),
@@ -89,7 +89,10 @@ function documentationMetadata(value) {
     ),
   });
   return {
-    policy: choice(value.policy, ["loaded-documentation-signatures-v1"]),
+    policy: choice(value.policy, [
+      "loaded-documentation-signatures-v1",
+      "loaded-documentation-signatures-v2",
+    ]),
     sourceSha256: digest(value.sourceSha256),
     exportsStatus: choice(value.exportsStatus, statuses),
     actual: capture(value.actual),
@@ -99,6 +102,19 @@ function documentationMetadata(value) {
         status,
         Array.isArray(value.functions)
           ? value.functions.filter((entry) => entry.status === status).length
+          : null,
+      ]),
+    ),
+    usageOutcomes: Object.fromEntries(
+      ["OK", "NOTE", "WARNING", "ERROR"].map((outcome) => [
+        outcome,
+        Array.isArray(assessment?.checks)
+          ? assessment.checks.filter(
+              (check) =>
+                typeof check.id === "string" &&
+                check.id.startsWith("rd:usage:") &&
+                check.outcomeClass === outcome,
+            ).length
           : null,
       ]),
     ),
@@ -161,7 +177,10 @@ export function redactPackageCheck(raw) {
     },
     p7Eligible: report.p7Eligible === true,
     inventory: { nestedTestFiles: report.inventory?.nestedRFiles?.length ?? null },
-    documentationMetadata: documentationMetadata(report.documentationObservation),
+    documentationMetadata: documentationMetadata(
+      report.documentationObservation,
+      report.documentationAssessment,
+    ),
     dependencies: Object.entries(report.dependencyObservation?.actual?.versions ?? {})
       .filter(([name]) => token(name) !== null)
       .map(([name, version]) => ({

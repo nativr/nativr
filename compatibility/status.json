@@ -5,8 +5,8 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.359.0",
-  "capabilityManifestHash": "8c1aaa70b8b1c0ef43f9f1e86cb2551798e0fa0333431e2560756025bc5ccde7",
+  "semanticProfileVersion": "0.360.0",
+  "capabilityManifestHash": "3b8f2631f25655cd3d253e9ea818d992919228abef02df6d49ef5c70408311b4",
   "evidence": {
     "checkedInConformanceCases": 1236,
     "liveREligibleCases": 1167,

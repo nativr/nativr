@@ -146,7 +146,7 @@ Observed on native fixtures (opt-in parity test `namespace-source-check.test.ts`
   `if (FALSE)` branches. `<<-` to an undefined name is reported. Imports from non-core packages
   leave the item unexecuted.
 
-## documentation (normative, policy documentation-v4)
+## documentation (normative, policy documentation-v5)
 
 Rd files are parsed following
 [_Writing R Extensions_ chapter 2](https://www.stat.ethz.ch/R-manual/R-devel/doc/manual/R-exts.html#Rd-format)
@@ -182,17 +182,33 @@ Observed on native fixtures (opt-in parity test `rd-check.test.ts`):
   primitive signatures, active bindings, missing/noncallable targets, unsupported usage syntax and
   failed observations remain unexecuted. A known zero-argument function is distinct from `args()`
   returning NULL. Static-only callers retain bounded syntax comparison, and unresolved static
-  functions remain unexecuted. Repeated usage entries retain separate, deterministic inventory IDs,
+  functions remain unexecuted. Static comparisons preserve exact nonfinite values, accept observed
+  numeric/missing storage equivalence, and normalize parsed-call structure (including right
+  assignments, infix calls, string callees, subsets, blocks and parentheses) without evaluating
+  defaults. Unsupported nodes, incomplete arguments, ambiguous non-ASCII byte callees and bounded
+  recursion remain unexecuted. Repeated usage entries retain separate, deterministic inventory IDs,
   including when their outcomes differ.
-- **Observation provenance:** `loaded-documentation-signatures-v1` records a probe digest, export
+- **S4 usage:** each method retains its generic and ordered class signature, including replacement
+  methods. Source offsets distinguish method markup from ordinary same-named symbols. Its alias is
+  the documented `generic,class-list-method` topic. Loaded method metadata uses the public
+  `getMethod(..., optional=TRUE, where=namespace)` and
+  [`unRematchDefinition()`](https://www.stat.ethz.ch/R-manual/R-devel/library/methods/html/RMethodUtils.html)
+  APIs, followed by NULL-bodied `args()` stubs. This observes original method formals even when
+  generic wrappers use different arguments. Generic or ordinary binding signatures never substitute
+  for method signatures. Missing methods and unavailable reflection APIs remain unexecuted.
+- **Observation provenance:** `loaded-documentation-signatures-v2` records a probe digest, export
   names and bounded comparison states, never implementation bodies or observed default expressions.
-  Committed summaries retain only the digest, counts and status values. A successful signature check
-  does not establish complete function behavior or resolve other Rd checks.
+  Committed summaries retain only the digest, counts and status values, including usage outcome
+  counts. A successful signature check does not establish complete function behavior or resolve
+  other Rd checks.
 - **Rd \usage sections** (WARNING): every usage argument, including `...`, has an `\item` in
   `\arguments`, and every item is in usage. Usage functions other than documented S3 methods have an
-  alias. Pages with `\keyword{internal}` may omit argument descriptions. Internal status does not
-  exempt extra documented arguments, missing aliases, invalid R syntax or codoc mismatches. Owned
-  native fixtures exercise each boundary separately.
+  alias; S4 usage uses its method-topic alias. Pages with `\keyword{internal}` may omit argument
+  descriptions. Extra documented arguments and missing aliases on internal pages are recorded as
+  native `NOTE`s and pass under this RFC's status mapping. Invalid R syntax remains a `WARNING`, and
+  codoc mismatches still fail. Eight isolated native fixtures establish these outcome classes; the
+  earlier combined fixture only established diagnostic presence and did not justify failing internal
+  notes.
 - **Rd contents**: every file has a non-empty `\description`.
 
 ## manual (normative adaptation, policy manual-text-rendering-v2)
