@@ -38,6 +38,26 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Generic defaults (profile 0.365)
+
+`seq`, `sort` and `format` retain generic/default signatures and original actual promises when
+selecting S3 methods. Absent and explicitly empty controls select the method defaults; forwarding
+retains laziness. `seq` dispatches on the first actual, including named arguments and an empty
+actual list; `seq.int` dispatches only for explicit object classes. `sort` validates decreasing
+before forcing its object. Method warning calls and delegated `sort.int` calls retain their origin.
+
+Owned parity and recursive cases cover sequence endpoint/length combinations and storage types,
+length dispatch, zero-length forcing, unused-argument warnings, sorted names and factor attributes,
+complex ordering, filtered sort indices, format control forcing, character alignment, grouping,
+trailing zeros and bounded zero replacement. Formatting padding and sequence allocation are checked
+before materialization. Sort comparisons and diagnostic traversal observe work limits. These cases
+establish a bounded surface, not complete default-method equivalence. Partial sorting is explicitly
+unsupported; method-specific sorting/tie details, non-atomic formatting, long zero replacement
+warnings, grouping edge cases, complex sequence coercion and further diagnostic origins remain open.
+Sequence callables retain the numeric evidence level. The profile changes sequence control failures
+to `NRE2160` and invalid format choices to the shared `match.arg` code `NRE2130`; consumers must use
+this profile's diagnostic mapping.
+
 Indexing accepts positive, negative, zero, logical, truncated double, and exact character
 subscripts. `[[` supports a recursive numeric or character path plus unique partial character
 matching through `exact = FALSE` or warning-producing `exact = NA`. `$` uses exact names before GNU

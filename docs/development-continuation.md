@@ -19,9 +19,9 @@ an execution queue, not a claim of completion. Canonical counts live in `compati
 
 ## Ordered milestones
 
-1. **Profile 0.356 stabilization:** complete optional-dependency policy v3, primitive-signature
-   metadata, embedded call objects and non-dispatching factor coercion. Add independent native
-   fixtures, foundation and recursive evidence; rebuild and pass the semantic gates.
+1. **Profile 0.356 stabilization (completed):** optional-dependency policy v3, primitive-signature
+   metadata, embedded call objects and non-dispatching factor coercion passed their owned native
+   fixtures, foundation/recursive evidence and semantic gates. See the verification record below.
 2. **Corpus and checker evidence:** rerun the cached development/regression corpus; record tiers,
    first blockers, source/artifact/profile identities and redacted outcomes. Fix computed-function
    documentation checks, dependency versions, excluded example blocks, Rd usage, links and macros
@@ -407,7 +407,7 @@ or packaging interface changed, so e2e and pack smoke were not refreshed. Linux,
 validation, all thirteen domains and full compatibility remain incomplete. No downloads, pushes or
 publication occurred.
 
-### Immediate continuation after profile 0.364
+### Continuation recorded at profile 0.364 (superseded below)
 
 Continue generic/method argument behavior and the remaining primitive rules before reflection. An
 owned black-box sweep confirms three direct fallback gaps with warnPartialMatchArgs enabled:
@@ -435,3 +435,66 @@ Then resume reflection and the reproduced corpus blockers. Factor follow-ups, in
 the isolated testing runner, the complete callable/domain inventory, browser performance, CI and
 release validation remain outstanding. Linux and holdout execution require separate authorization.
 No full compatibility percentage or completion date is established.
+
+### Profile 0.365 verification (2026-10-19)
+
+Sequence, sorting and formatting generics now select their default methods through shared lazy
+argument binding. Original actuals, method defaults, dispatch order, visibility and internal call
+metadata are retained. Observable signatures add seq.default, sort.default, sort.int and
+format.default. Sequence endpoints, lengths and storage types; sorted attributes and filtered
+indices; complex ordering; and input-dependent formatting controls have owned parity evidence.
+Recursive comparison also verifies factor attribute order and the chkDotsWarning subclass.
+
+Forty-seven independently authored parity cases pass under GNU R 4.6.1 and NativR. Two allocation
+tests reject oversized sequences and string padding before materialization. Seven foundation groups
+and five recursive cases add value, attribute, warning, call and visibility evidence. Sequence
+callables retain numeric status; the new exact cases do not imply full numerical closure. Existing
+sequence/format assertions were updated for the closed along.with combination and the documented
+diagnostic mappings NRE2160 and NRE2130.
+
+The full check, including the new corpus checkpoint integrity case, passes 1542 tests with 93 opt-in
+skips. Checked-in/live/recursive conformance passes 1257 / 1188 / 153 cases, with 95 linked
+behavioral bindings. Fixed budgets pass: client 17.5/150 KiB gzip, Worker 472.6/512 KiB gzip, parser
+671.9/1,536 KiB raw and elementary 311.2/384 KiB raw. Name overlap is 749/2,522 and is not a
+completion percentage. The first sandboxed live run failed only the native file.access permission
+fixture; the complete live gate was rerun with ordinary filesystem permissions. No expectation was
+weakened for it.
+
+All 24 cached development/regression archives were digest-checked and rerun with applicable oracle
+repeatability in the
+[0.365 checkpoint](../compatibility/package-check-evidence/corpus-0.365.0.json). Stage outcomes,
+comparison-match counts and tiers are unchanged from 0.364. Formula is untouched. Original package
+entrypoints were used; substitute-runner execution receives no P6/P7 credit. No Worker/playground or
+packaging interface changed, so e2e and pack smoke were not refreshed. Linux, the browser/OS matrix,
+all thirteen domains and full compatibility remain incomplete. No downloads, pushes or publication
+occurred.
+
+### Immediate continuation after profile 0.365
+
+Continue argument/default closure before the broader reflection work. New owned black-box probes
+confirm the following remaining differences, using no foreign implementation bodies:
+
+- match.arg diagnostics: format.default("x",justify=c("left","right")) reports "'arg' must be of
+  length 1" in GNU R; the shared matcher still uses its older wording. Invalid choices similarly
+  retain the older prefix/punctuation. Preserve match.arg(justify).
+- Condition origins through forced promises: a helper that catches force(expr) currently loses inner
+  error call metadata for these default-method failures. Reproduce with probe <- function(expr)
+  tryCatch(force(expr),error=conditionCall), then probe(format.default("x",justify="bad")). Native
+  returns match.arg(justify); NativR returns NULL.
+- sort(c(2,1),decreasing=NA) has the observed inner order(x,na.last=na.last,
+  decreasing=decreasing,method="radix") call. Method-specific control and tie behavior remains
+  bounded. sort.int(...,partial=3) is explicitly unsupported and needs independent partial-sort
+  behavior, rather than assuming a full sort establishes equivalence.
+- seq.default(from=1+2i,to=3) warns about discarding imaginary parts before returning 1:3; NativR
+  currently returns those values without the warning. Broaden coercion/boundary evidence.
+- format.default(c(0,1),zero.print="zero") returns c("z","1") and warns about truncation in R;
+  NativR currently omits that warning. Non-atomic formatting, grouping and other control boundaries
+  remain open. Retain generic promises and resource checks while closing them.
+
+The owned probes and parity inputs remain in .tmp/generic-*.R and the maintained generic-method-
+defaults tests and conformance cases. Do not read foreign implementation bodies to fill these gaps.
+After argument/default closure, resume callable reflection and the confirmed corpus blockers.
+Independent datasets, the isolated testing runner, full domain/callable inventory, browser
+performance, CI and release validation remain outstanding. Linux and holdout execution still need
+separate authorization. Keep the completion goal active; no overall percentage or date is
+established.

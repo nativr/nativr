@@ -44,7 +44,8 @@ describe("measured feature boundary coverage", () => {
       code: "NRT3153",
     });
     await expect(runtime.eval("seq(1, 3, by = 1, length.out = 3)")).rejects.toMatchObject({
-      code: "NRE2104",
+      code: "NRE2160",
+      message: "too many arguments",
     });
     await expect(runtime.eval("rep(1:2, times = 1:3)")).rejects.toMatchObject({
       code: "NRT3168",
@@ -105,7 +106,7 @@ describe("measured feature boundary coverage", () => {
       code: "NRE2128",
     });
     await expect(runtime.eval('format(1, justify = "diagonal")')).rejects.toMatchObject({
-      code: "NRE2126",
+      code: "NRE2130",
     });
     await expect(runtime.eval('sprintf("%d")')).rejects.toMatchObject({ code: "NRE2125" });
     await expect(runtime.eval('chartr("a-b", "A", "a")')).rejects.toMatchObject({

@@ -1,4 +1,10 @@
-import type { AstNode, FunctionParameter, ProgramNode, StringLiteralNode } from "@nativr/ast";
+import type {
+  AstNode,
+  CallExpressionNode,
+  FunctionParameter,
+  ProgramNode,
+  StringLiteralNode,
+} from "@nativr/ast";
 
 import { RTypeMismatchError } from "./errors.js";
 
@@ -281,7 +287,11 @@ export interface BuiltinInvocation {
     callable: RValue,
     arguments_: readonly { readonly name?: string; readonly value: RValue }[],
   ): Promise<{ readonly value: RValue; readonly visible: boolean }>;
-  invokeLazy(callable: RValue, arguments_: readonly BuiltinCallArgument[]): Promise<RValue>;
+  invokeLazy(
+    callable: RValue,
+    arguments_: readonly BuiltinCallArgument[],
+    call?: CallExpressionNode,
+  ): Promise<RValue>;
   parse(source: string, maxExpressions?: number): ProgramNode;
   evaluate(value: RValue, environment: REnvironment): Promise<RValue>;
   evaluateDetailed(
@@ -431,9 +441,11 @@ export interface BuiltinInvocation {
     object: RValue,
     arguments_: readonly BuiltinCallArgument[],
     includeDefault?: boolean,
+    /** Negative indices preserve the original actuals, including an empty argument list. */
     argumentIndex?: number,
     group?: string,
     lookupEnvironment?: REnvironment,
+    defaultOnly?: boolean,
   ): Promise<RValue | undefined>;
   nextMethod(generic?: string): Promise<RValue>;
 }

@@ -1317,5 +1317,33 @@
     "id": "partial-argument-warning-dispatched-method-conditions",
     "policy": "exact",
     "code": "(function(){old<-options(warnPartialMatchArgs=TRUE,warn=0);on.exit(options(old));capture<-function(expr)tryCatch(expr,partialMatchWarning=function(w)w);list(mean=capture(mean(1:3,tr=0)),print=capture(print(factor(\"a\"),max.l=TRUE)))})()"
+  },
+
+  {
+    "id": "generic-default-promises-sequence-shapes",
+    "code": "local({list(empty=seq(),null=seq(NULL),missing=seq(from=,to=3),one=seq(3),integer=seq.default(1L,3L,1L),double=seq.default(1,3,1),length=seq.default(to=5,length.out=3),along=seq.default(along.with=character()),equal=seq.default(structure(2,tag=\"owned\"),2,0),signature=formals(seq.default))})",
+    "policy": "exact"
+  },
+  {
+    "id": "generic-default-promises-sort-values-and-diagnostics",
+    "bindingEvidence": ["base::sort", "base::sort.default", "base::sort.int"],
+    "code": "local({diagnostic<-function(e)list(message=conditionMessage(e),call=conditionCall(e));x<-structure(c(z=4,m=NA,a=1,b=4),tag=\"owned\");list(generic=sort(x,index.return=TRUE),default=sort.default(x,na.last=TRUE,index.return=TRUE),internal=sort.int(x,decreasing=,method=\"r\"),complex=sort(c(2+1i,1+3i,1+2i)),factor=sort.default(structure(factor(c(\"b\",\"a\")),tag=7)),unused=tryCatch(sort(x,other=1),error=diagnostic),signature=formals(sort.int))})",
+    "policy": "exact"
+  },
+  {
+    "id": "generic-default-promises-format-controls",
+    "bindingEvidence": ["base::format", "base::format.default"],
+    "code": "local({x<-structure(c(a=1,b=1.2),tag=\"owned\");list(generic=format(x),default=format.default(x,trim=,digits=,width=),characters=format.default(c(\"a\",\"bb\")),grouped=format.default(12345.6789,big.mark=\",\"),zeros=format.default(c(0,1.2),zero.print=\".\"),trimmed=format.default(x,drop0trailing=TRUE),null=format.default(NULL,trim=stop(\"unused\")),raw=format.default(as.raw(1:2),digits=stop(\"unused\")),signature=formals(format.default))})",
+    "policy": "exact"
+  },
+  {
+    "id": "generic-default-promises-dispatch-and-visibility",
+    "code": "local({seq.owned<-function(...)list(call=sys.call(),values=list(...));sort.owned<-function(x,decreasing=7,...)list(call=sys.call(),missing=missing(decreasing),value=decreasing);format.owned<-function(x,...)invisible(list(call=sys.call(),dots=list(...)));x<-structure(3,class=\"owned\");list(sequence=seq(to=x,from=1),sort=sort(x,decreasing=),format=withVisible(format(digits=2,x=x)))})",
+    "policy": "exact"
+  },
+  {
+    "id": "generic-default-promises-method-warning-calls",
+    "code": "(function(){old<-options(warnPartialMatchArgs=TRUE);on.exit(options(old));capture<-function(expr){seen<-list();value<-withCallingHandlers(expr,warning=function(w){seen[[length(seen)+1]]<<-w;invokeRestart(\"muffleWarning\")});list(value=value,warnings=seen)};list(sequence=capture(seq(f=1,t=3)),sort=capture(sort(c(3,1,2),decr=TRUE)),format=capture(format(1.234,dig=2)),extra=capture(seq.default(from=1,other=stop(\"unused\"))))})()",
+    "policy": "exact"
   }
 ]

@@ -46,7 +46,7 @@ export type {
   RuntimeSystemPackageTextResource,
   RuntimeS3Method,
 } from "./evaluator.js";
-export { deparseAst, languageAstEntries } from "./language.js";
+export { deparseAst, deparseDiagnosticAst, languageAstEntries } from "./language.js";
 export { deparseAstLines, deparseClosureLines } from "./language-deparse.js";
 export type { DeparseLinesOptions } from "./language-deparse.js";
 export { censusRuntimeMemory, estimateRObjectSize } from "./memory.js";

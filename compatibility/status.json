@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.364.0",
-  "capabilityManifestHash": "3469814126d909fd4973b5c759ea9ce20d03ac937c541d3d4123c9c31b3d16fa",
+  "semanticProfileVersion": "0.365.0",
+  "capabilityManifestHash": "4e3584d3799976b35d0c77808b86087bc2faac8af6051d0c8567773c31eac80e",
   "evidence": {
-    "checkedInConformanceCases": 1250,
-    "liveREligibleCases": 1181,
+    "checkedInConformanceCases": 1257,
+    "liveREligibleCases": 1188,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 148,
-    "recursiveBehaviorallyProvenBindings": 91,
+    "recursiveOracleV2Cases": 153,
+    "recursiveBehaviorallyProvenBindings": 95,
     "recursiveBindingEvidence": [
       { "binding": "base::addNA", "cases": ["addNA-ordered-reconstruction-and-unchanged-values"] },
       {
@@ -95,7 +95,14 @@
         "cases": ["factor-na-construction-labels-and-code-masks", "recursive-data-frame-object"]
       },
       { "binding": "base::formals", "cases": ["owned-signature-metadata-defaults"] },
-      { "binding": "base::format", "cases": ["numeric-format-options-and-array-attributes"] },
+      {
+        "binding": "base::format",
+        "cases": [
+          "generic-default-promises-format-controls",
+          "numeric-format-options-and-array-attributes"
+        ]
+      },
+      { "binding": "base::format.default", "cases": ["generic-default-promises-format-controls"] },
       { "binding": "base::getHook", "cases": ["hook-list-registration-and-clearing"] },
       {
         "binding": "base::getOption",
@@ -219,6 +226,18 @@
         "cases": ["signalled-simple-warning-preserves-explicit-call"]
       },
       { "binding": "base::simplify2array", "cases": ["apply-simplification-shapes"] },
+      {
+        "binding": "base::sort",
+        "cases": ["generic-default-promises-sort-values-and-diagnostics"]
+      },
+      {
+        "binding": "base::sort.default",
+        "cases": ["generic-default-promises-sort-values-and-diagnostics"]
+      },
+      {
+        "binding": "base::sort.int",
+        "cases": ["generic-default-promises-sort-values-and-diagnostics"]
+      },
       { "binding": "base::split", "cases": ["factor-na-label-coercion-grouping-and-matching"] },
       {
         "binding": "base::stop",
@@ -326,8 +345,8 @@
   },
   "nameInventory": {
     "referenceVersion": "R version 4.6.1 (2026-06-24 ucrt)",
-    "registeredBindings": 772,
-    "gnuRNameOverlaps": 745,
+    "registeredBindings": 776,
+    "gnuRNameOverlaps": 749,
     "referenceCoreCallableNames": 2522
   },
   "packageCorpus": {

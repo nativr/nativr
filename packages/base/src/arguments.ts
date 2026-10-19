@@ -1,10 +1,67 @@
 import {
+  createEnvironment,
+  createMissingPromise,
+  createPromise,
   matchArguments,
   matchArgumentsWithWarnings,
   partialMatchWarning,
   partialMatchWarningsEnabled,
+  setBinding,
 } from "@nativr/runtime";
-import type { BuiltinCallArgument, BuiltinInvocation } from "@nativr/runtime";
+import type { AstNode } from "@nativr/ast";
+import type { BuiltinCallArgument, BuiltinInvocation, RValue } from "@nativr/runtime";
+
+export interface BuiltinDefaultParameter {
+  readonly name: string;
+  readonly defaultValue?: AstNode;
+}
+
+/** Bind declared defaults lazily in a base lexical frame, retaining the original actual promises. */
+export async function matchBuiltinDefaults(
+  invocation: BuiltinInvocation,
+  parameters: readonly BuiltinDefaultParameter[],
+): Promise<
+  MatchedBuiltinArguments & {
+    readonly supplied: ReadonlySet<string>;
+    force(name: string): Promise<RValue>;
+  }
+> {
+  const result = await matchBuiltinArguments(
+    invocation,
+    parameters.map(({ name }) => name),
+  );
+  const environment = createEnvironment(invocation.baseEnvironment());
+  const matched = new Map<string, BuiltinCallArgument>();
+  const supplied = new Set<string>();
+  for (const parameter of parameters) {
+    invocation.context.checkpoint();
+    if (parameter.name === "...") {
+      setBinding(environment, "...", { type: "dots", arguments: result.dots });
+      continue;
+    }
+    const actual = result.matched.get(parameter.name);
+    const present =
+      actual !== undefined && !(actual.promise.expression === null && actual.promise.missing);
+    const promise = present
+      ? actual.promise
+      : parameter.defaultValue === undefined
+        ? createMissingPromise(environment, parameter.name)
+        : createPromise(parameter.defaultValue, environment, true);
+    if (present) supplied.add(parameter.name);
+    matched.set(parameter.name, { name: parameter.name, promise });
+    setBinding(environment, parameter.name, promise);
+  }
+  return {
+    matched,
+    dots: result.dots,
+    supplied,
+    force(name) {
+      const argument = matched.get(name);
+      if (argument === undefined) throw new Error(`Unknown declared builtin formal: ${name}`);
+      return invocation.force(argument.promise);
+    },
+  };
+}
 
 export interface MatchedBuiltinArguments {
   readonly matched: Map<string, BuiltinCallArgument>;

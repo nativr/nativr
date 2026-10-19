@@ -2550,7 +2550,7 @@ export class Evaluator {
               })),
               context,
             ),
-          invokeLazy: async (target, arguments_) =>
+          invokeLazy: async (target, arguments_, invocationCall) =>
             this.#invokeCallable(
               target,
               arguments_.map((argument) =>
@@ -2559,6 +2559,7 @@ export class Evaluator {
                   : { name: argument.name, promise: argument.promise },
               ),
               context,
+              invocationCall,
             ),
           parse: (source, maxExpressions) => {
             if (this.#parseSource === undefined) {
@@ -2723,6 +2724,7 @@ export class Evaluator {
             argumentIndex,
             group,
             lookupEnvironment,
+            defaultOnly,
           ) => {
             const result = await this.#dispatchS3IfPresentResult(
               generic,
@@ -2737,6 +2739,7 @@ export class Evaluator {
                 this.#globalEnvironment,
               group,
               call,
+              defaultOnly,
             );
             if (result === undefined) return undefined;
             resultVisibility = result.visible ? "visible" : "invisible";
@@ -4702,12 +4705,13 @@ export class Evaluator {
     callerEnvironment?: REnvironment,
     group?: string,
     call?: CallExpressionNode,
+    defaultOnly = false,
   ): Promise<EvaluationResult | undefined> {
     if (generic.length === 0) {
       throw new REvaluationError("NRE2213", "UseMethod() generic name must be non-empty.");
     }
     const methodArguments: ClosureCallFrame["arguments"] =
-      arguments_.length === 0
+      arguments_.length === 0 && argumentIndex >= 0
         ? [
             {
               promise: createForcedPromise(object, this.#globalEnvironment),
@@ -4724,7 +4728,7 @@ export class Evaluator {
     return this.#invokeS3MethodIfPresentResult(
       generic,
       this.#baseEnvironment,
-      runtimeClassNames(object),
+      defaultOnly ? [] : runtimeClassNames(object),
       0,
       methodArguments,
       context,

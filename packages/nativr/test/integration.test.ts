@@ -13895,8 +13895,8 @@ NeedsCompilation: no
     const capabilities = await runtime.capabilities();
     expect(capabilities).toMatchObject({
       targetRVersion: "4.6.1",
-      semanticProfileVersion: "0.364.0",
-      languageSubsetVersion: "0.364.0",
+      semanticProfileVersion: "0.365.0",
+      languageSubsetVersion: "0.365.0",
     });
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
@@ -14284,11 +14284,10 @@ NeedsCompilation: no
     await expect(runtime.eval("rep(NULL)")).resolves.toBeNull();
     await expect(runtime.eval("rep(c(1, 2), times = 0)")).resolves.toEqual([]);
     await expect(runtime.eval("seq(1, 3, by = 1, length.out = 3)")).rejects.toMatchObject({
-      code: "NRE2104",
+      code: "NRE2160",
+      message: "too many arguments",
     });
-    await expect(runtime.eval("seq(1, along.with = c(1, 2))")).rejects.toMatchObject({
-      code: "NRU6107",
-    });
+    await expect(runtime.eval("seq(1, along.with = c(1, 2))")).resolves.toEqual([1, 2]);
     await expect(runtime.eval("rep(seq_len(0), length.out = 1)")).rejects.toMatchObject({
       code: "NRE2106",
     });
@@ -14311,7 +14310,10 @@ NeedsCompilation: no
     await expect(runtime.eval("c(1, 2)[[c(1, 2)]]")).rejects.toMatchObject({ code: "NRE2204" });
     await expect(runtime.eval("c(1, 2)[[0]]")).rejects.toMatchObject({ code: "NRE2205" });
     await expect(runtime.eval("1:NA")).rejects.toMatchObject({ code: "NRT3104" });
-    await expect(runtime.eval("seq(1, 3, by = 0)")).rejects.toMatchObject({ code: "NRE2105" });
+    await expect(runtime.eval("seq(1, 3, by = 0)")).rejects.toMatchObject({
+      code: "NRE2160",
+      message: "invalid '(to - from)/by'",
+    });
     await runtime.dispose();
   });
 
