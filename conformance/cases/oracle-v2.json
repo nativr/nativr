@@ -1246,5 +1246,23 @@
     "policy": "exact",
     "bindingEvidence": ["base::print"],
     "code": "local({x<-c(1L,2L,NA_integer_);attr(x,\"levels\")<-c(\"a\",NA_character_);class(x)<-\"factor\";text<-capture.output(v<-withVisible(print(x,quote=TRUE)));nested<-capture.output(print(list(x)));list(text=text,nested=nested,value=v,original=x)})"
+  },
+  {
+    "id": "factor-na-construction-labels-and-code-masks",
+    "policy": "exact",
+    "bindingEvidence": ["base::factor"],
+    "code": "local({x<-factor(c(\"\",NA,\"a\",NA),levels=c(\"\",NA,\"a\"),exclude=NULL);y<-factor(c(\"a\",\"b\",\"c\"),labels=c(\"x\",\"x\",NA));list(value=x,labels=as.character(x),missing=is.na(x),merged=y,default=factor(x),retained=factor(x,exclude=NULL),duplicate=tryCatch(factor(\"a\",levels=c(\"a\",\"a\")),error=function(e)conditionMessage(e)))})"
+  },
+  {
+    "id": "addNA-ordered-reconstruction-and-unchanged-values",
+    "policy": "exact",
+    "bindingEvidence": ["base::addNA", "base::is.ordered"],
+    "code": "local({x<-ordered(c(\"b\",NA,\"a\"),levels=c(\"a\",\"b\",\"unused\"));names(x)<-c(\"first\",NA,\"last\");attr(x,\"owned\")<-\"note\";y<-addNA(x);z<-y;attr(z,\"owned\")<-\"kept\";list(original=x,rebuilt=y,ordered=is.ordered(y),unchanged=identical(addNA(z),z),ifany=addNA(factor(\"a\"),ifany=TRUE),empty=addNA(NULL),existing=addNA(y),formals=names(formals(addNA)),indeterminate=tryCatch(addNA(x,ifany=NA),error=function(e)conditionMessage(e)))})"
+  },
+  {
+    "id": "factor-na-label-coercion-grouping-and-matching",
+    "policy": "exact",
+    "bindingEvidence": ["base::as.character", "base::split", "base::table", "base::match"],
+    "code": "local({x<-structure(c(1L,2L,3L,NA_integer_),levels=c(\"\",NA,\"a\"),class=\"factor\");list(original=x,character=as.character(x),missing=is.na(x),combined=c(x,x),flattened=unlist(list(x,x)),matched=match(x,x),equal=x==x,split=split(seq_along(x),x),table=table(x,useNA=\"ifany\"),literal=table(c(\"<NA>\",NA,\"\"),useNA=\"always\"))})"
   }
 ]

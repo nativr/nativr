@@ -239,7 +239,7 @@ boundaries, browser audit and all fixed bundle limits. Client/Worker gzip sizes 
 KiB; parser/elementary raw sizes are 671.9 / 311.2 KiB. No Worker/playground or packaging interface
 changed, so e2e and pack smoke were not refreshed. No downloads, push or publication occurred.
 
-### Immediate continuation
+### Continuation recorded at profile 0.361 (superseded below)
 
 Next implement addNA and NA-level construction/coercion, then the shared argument-matching work.
 Broader Rd parsing/rendering still needs domain evidence; the checker increments do not establish
@@ -283,3 +283,56 @@ unsupported recursive traversal instead of losing all export evidence.
 Shared argument matching must include the confirmed person() missing-slot case. Datasets, the
 separate testing runner, all-domain closure, browser/OS validation, the holdout and the Linux gate
 remain outstanding.
+
+### Profile 0.362 missing factor levels and addNA
+
+Factors now preserve the NA level mask separately from missing integer codes. addNA handles
+conditional/no-op paths, unused and ordered levels, names and reconstruction attributes. Observed
+factor/ordered defaults and is.ordered are available. Label coercion, grouping, matching, table,
+replacement and selected model/set/combination operations use the separate representations. Thirty
+regression tests cover the increment, including execution limits; 26 retained behavior assertions
+also pass directly under the GNU R 4.6.1 black-box oracle. Foundation and recursive evidence retain
+values, masks, attributes and causal controls.
+
+The full check passes 1,410 tests with 93 opt-in skips. Checked-in/live/recursive conformance passes
+1,241 / 1,172 / 139 cases, with 87 linked bindings. Fixed budgets pass: client 17.5/150 KiB gzip,
+Worker 468.6/512 KiB gzip, parser 671.9/1,536 KiB raw and elementary 311.2/384 KiB raw. No
+Worker/playground or packaging interface changed; e2e and pack smoke were not refreshed.
+
+All 24 pinned cached development/regression archives have repeatability observations in the
+[0.362 checkpoint](../compatibility/package-check-evidence/corpus-0.362.0.json). Formula remains
+untouched. No substituted dependency closure or testing runner received P6/P7 credit. No downloads,
+push or publication occurred. Linux and full browser/OS validation remain open.
+
+### Immediate continuation after profile 0.362
+
+Continue the shared argument-matching diagnostics next: unused, duplicate, partial and missing
+arguments across closures and builtins, including the confirmed person() explicit missing-slot case.
+Preserve required primitive/closure evaluation-order distinctions.
+
+The owned .tmp/argument-diagnostics-next.R probe confirms that exact matches reserve a formal before
+partial matching: f(alpha=1, al=2) reports unused al, rather than duplicate alpha. An explicit
+missing actual selects a closure's default. Native closure-like as.factor rejects extra arguments
+without forcing them, while primitive sqrt forces an extra stop() before checking arity. Current
+runtime errors lose conditionCall metadata for these cases. The matching copies in base/arguments.ts
+and runtime/evaluator.ts (closure invocation and match.call reconstruction) need one consistent
+policy while retaining primitive-specific forcing. Missing promises currently throw without the
+formal's name; preserve argument-origin metadata through forwarding.
+
+The new owned factor probes also confirm follow-up gaps: summary.factor is absent and generic
+summary currently summarizes integer codes numerically; levels<- is absent; model.frame is absent.
+Native summary.factor retains NA level names separately from the final NAs count and has maxsum
+truncation behavior. NA replacement levels remove their category and mark its codes missing. A model
+matrix can encode an NA factor level as a category named xNA, while missing codes are omitted by the
+default frame policy. The new tests establish the supported matrix path, not model.frame.
+
+Direct c.factor, mixed-class and ordered concatenation, all class-specific factor coercions,
+malformed objects, table options beyond the retained cases, and the remaining factorLevels callers
+still need closure. xtabs call normalization and one-dimensional names attributes differ in the
+owned broader probe; retain those as observable metadata gaps. Factor helpers and the public NativR
+Worker protocol continue to use existing integer/character attribute masks.
+
+Owned scratch probes remain under .tmp/factor-na-*.R and .tmp/factor-table-probe.R; the executable
+retained subset is in factor-na.test.ts and the foundation/Oracle v2 cases. local/on.exit,
+reflection, S4, datasets, the separate testing runner, all-domain inventory, performance, CI and the
+platform gates remain required work. All thirteen domains remain incomplete.

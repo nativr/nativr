@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 770,
-    "overlappingNames": 743,
-    "missingReferenceNames": 1779,
+    "nativrRegisteredNames": 772,
+    "overlappingNames": 745,
+    "missingReferenceNames": 1777,
     "nativrExtensionNames": 27,
-    "nameCoverage": 0.294607
+    "nameCoverage": 0.2954
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 549, "nameCoverage": 0.401609 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 551, "nameCoverage": 0.403072 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 76, "nameCoverage": 0.163793 },
     {
       "package": "methods",
@@ -114,6 +114,7 @@
     "abs",
     "acos",
     "activeBindingFunction",
+    "addNA",
     "aggregate",
     "alist",
     "all",
@@ -414,6 +415,7 @@
     "is.numeric.difftime",
     "is.numeric_version",
     "is.object",
+    "is.ordered",
     "is.package_version",
     "is.pairlist",
     "is.primitive",
@@ -1077,7 +1079,6 @@
     "acosh",
     "add.scope",
     "add1",
-    "addNA",
     "addNextMethod",
     "addTaskCallback",
     "addmargins",
@@ -1745,7 +1746,6 @@
     "is.na<-.factor",
     "is.na<-.numeric_version",
     "is.nan.POSIXlt",
-    "is.ordered",
     "is.qr",
     "is.relistable",
     "is.single",

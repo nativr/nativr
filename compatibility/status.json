@@ -5,15 +5,16 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.361.0",
-  "capabilityManifestHash": "7bafdd3e1f88d1008d0b077357f5436f449fc99d451608d328742c3e523a3a53",
+  "semanticProfileVersion": "0.362.0",
+  "capabilityManifestHash": "2ae9b7e7b3362459a73c80a0f60056fceead440f60ddb390eff5dd0db39a33f9",
   "evidence": {
-    "checkedInConformanceCases": 1238,
-    "liveREligibleCases": 1169,
+    "checkedInConformanceCases": 1241,
+    "liveREligibleCases": 1172,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 136,
-    "recursiveBehaviorallyProvenBindings": 82,
+    "recursiveOracleV2Cases": 139,
+    "recursiveBehaviorallyProvenBindings": 87,
     "recursiveBindingEvidence": [
+      { "binding": "base::addNA", "cases": ["addNA-ordered-reconstruction-and-unchanged-values"] },
       {
         "binding": "base::all.equal",
         "cases": [
@@ -30,6 +31,10 @@
           "embedded-attributed-call-values",
           "embedded-call-reference-identity"
         ]
+      },
+      {
+        "binding": "base::as.character",
+        "cases": ["factor-na-label-coercion-grouping-and-matching"]
       },
       { "binding": "base::as.factor", "cases": ["factor-coercion-nondispatch-and-signatures"] },
       { "binding": "base::as.integer", "cases": ["simplification-lengths-and-integer-coercion"] },
@@ -83,7 +88,10 @@
           "embedded-exit-callback"
         ]
       },
-      { "binding": "base::factor", "cases": ["recursive-data-frame-object"] },
+      {
+        "binding": "base::factor",
+        "cases": ["factor-na-construction-labels-and-code-masks", "recursive-data-frame-object"]
+      },
       { "binding": "base::formals", "cases": ["owned-signature-metadata-defaults"] },
       { "binding": "base::format", "cases": ["numeric-format-options-and-array-attributes"] },
       { "binding": "base::getHook", "cases": ["hook-list-registration-and-clearing"] },
@@ -100,6 +108,10 @@
       {
         "binding": "base::is.numeric.POSIXt",
         "cases": ["numeric-predicate-dispatch-and-time-methods"]
+      },
+      {
+        "binding": "base::is.ordered",
+        "cases": ["addNA-ordered-reconstruction-and-unchanged-values"]
       },
       {
         "binding": "base::lapply",
@@ -122,6 +134,7 @@
       },
       { "binding": "base::Map", "cases": ["mapply-values-forcing-and-methods"] },
       { "binding": "base::mapply", "cases": ["mapply-values-forcing-and-methods"] },
+      { "binding": "base::match", "cases": ["factor-na-label-coercion-grouping-and-matching"] },
       {
         "binding": "base::match.call",
         "cases": [
@@ -189,6 +202,7 @@
         "cases": ["signalled-simple-warning-preserves-explicit-call"]
       },
       { "binding": "base::simplify2array", "cases": ["apply-simplification-shapes"] },
+      { "binding": "base::split", "cases": ["factor-na-label-coercion-grouping-and-matching"] },
       {
         "binding": "base::stop",
         "cases": [
@@ -243,6 +257,7 @@
       {
         "binding": "base::table",
         "cases": [
+          "factor-na-label-coercion-grouping-and-matching",
           "table-default-axis-names-print-and-visibility",
           "table-zero-extent-dimnames-print-and-visibility"
         ]
@@ -287,8 +302,8 @@
   },
   "nameInventory": {
     "referenceVersion": "R version 4.6.1 (2026-06-24 ucrt)",
-    "registeredBindings": 770,
-    "gnuRNameOverlaps": 743,
+    "registeredBindings": 772,
+    "gnuRNameOverlaps": 745,
     "referenceCoreCallableNames": 2522
   },
   "packageCorpus": {

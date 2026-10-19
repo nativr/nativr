@@ -1145,16 +1145,29 @@ export function dataFrameValue(
   return { ...list, attributes, automaticRowNames };
 }
 
+/** Undefined denotes a real NA level, independently of a missing integer code. */
+export type RFactorLevel = string | undefined;
+
+/** Construct character values from labels with explicit missing slots. */
+export function optionalCharacterVector(values: readonly (string | undefined)[]): RCharacterVector {
+  return characterVector(
+    values.map((value) => value ?? ""),
+    values.some((value) => value === undefined)
+      ? values.map((value) => (value === undefined ? 1 : 0))
+      : undefined,
+  );
+}
+
 /** Construct an integer factor with exact levels and optional ordering. */
 export function factorValue(
   codes: ArrayLike<number>,
-  levels: readonly string[],
+  levels: readonly RFactorLevel[],
   missing?: ArrayLike<number>,
   ordered = false,
 ): RIntegerVector {
   const value = integerVector(codes, missing);
   const attributes = new Map(value.attributes);
-  attributes.set("levels", characterVector(levels));
+  attributes.set("levels", optionalCharacterVector(levels));
   attributes.set("class", characterVector(ordered ? ["ordered", "factor"] : ["factor"]));
   return { ...value, attributes };
 }
@@ -1204,18 +1217,43 @@ export function isFactor(value: RValue): value is RIntegerVector {
   return (
     classes?.type === "character" &&
     classes.values.includes("factor") &&
-    levels?.type === "character" &&
-    levels.missing === undefined
+    levels?.type === "character"
   );
 }
 
-/** Read exact factor levels. */
-export function factorLevels(value: RIntegerVector): readonly string[] {
+const missingFactorLevelCache = new WeakMap<RCharacterVector, readonly RFactorLevel[]>();
+
+/** Read exact factor levels, retaining an NA level separately from an empty label. */
+export function factorLevels(value: RIntegerVector): readonly RFactorLevel[] {
+  const levels = factorLevelVector(value);
+  if (levels.missing === undefined) return levels.values;
+  let entries = missingFactorLevelCache.get(levels);
+  if (entries === undefined) {
+    entries = levels.values.map((level, index) => (isMissing(levels, index) ? undefined : level));
+    missingFactorLevelCache.set(levels, entries);
+  }
+  return entries;
+}
+
+/** Read the immutable character level vector with its missing-value mask. */
+export function factorLevelVector(value: RIntegerVector): RCharacterVector {
   if (!isFactor(value)) {
     throw new RTypeMismatchError("NRT3008", "The value is not a factor.");
   }
   const levels = value.attributes.get("levels");
-  return levels?.type === "character" ? levels.values : [];
+  if (levels?.type !== "character")
+    throw new RTypeMismatchError("NRT3008", "The value is not a factor.");
+  return levels;
+}
+
+/** Resolve a factor code to a label, validating stored codes without changing code missingness. */
+export function factorLabelAt(value: RIntegerVector, index: number): RFactorLevel {
+  if (isMissing(value, index)) return undefined;
+  const levels = factorLevels(value);
+  const code = (value.values[index] ?? 0) - 1;
+  if (code < 0 || code >= levels.length)
+    throw new RTypeMismatchError("NRT3008", "malformed factor");
+  return levels[code];
 }
 
 /** Read the validated row count of a NativR data frame. */

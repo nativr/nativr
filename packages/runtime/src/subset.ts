@@ -10,6 +10,7 @@ import {
   dataFrameValue,
   doubleVector,
   factorLevels,
+  factorLabelAt,
   integerVector,
   isAtomic,
   isDataFrame,
@@ -1110,7 +1111,13 @@ function subsetDataFrameCoordinates(
     return column === undefined ? undefined : { column, row: position % rows };
   });
   const missing = Uint8Array.from(cells, (cell) =>
-    cell === undefined || isMissing(cell.column, cell.row) ? 1 : 0,
+    cell === undefined ||
+    isMissing(cell.column, cell.row) ||
+    (type === "character" &&
+      isFactor(cell.column) &&
+      factorLabelAt(cell.column, cell.row) === undefined)
+      ? 1
+      : 0,
   );
   for (let offset = 0; offset < cells.length; offset += 1) context.checkpoint();
   const mask = compactMask(missing);
@@ -1928,18 +1935,14 @@ function replaceFactor(
   for (let offset = 0; offset < selected.length; offset += 1) {
     const destination = selected[offset] ?? 0;
     const source = offset % replacement.length;
-    if (isMissing(replacement, source)) {
-      missing[destination] = 1;
-      values[destination] = 0;
-      context.checkpoint();
-      continue;
-    }
-    const label = isFactor(replacement)
-      ? factorLevels(replacement)[(replacement.values[source] ?? 0) - 1]
-      : atomicString(replacement, source);
-    const level = label === undefined ? -1 : levels.indexOf(label);
+    const label = isMissing(replacement, source)
+      ? undefined
+      : isFactor(replacement)
+        ? factorLabelAt(replacement, source)
+        : atomicString(replacement, source);
+    const level = levels.indexOf(label);
     if (level < 0) {
-      invalidLevel = true;
+      if (label !== undefined) invalidLevel = true;
       missing[destination] = 1;
       values[destination] = 0;
     } else {

@@ -21,6 +21,7 @@ import {
   characterEncodingAt,
   characterValueFromBytes,
   characterVector,
+  optionalCharacterVector,
   characterLiteralValue,
   compressGzipBytes,
   complexVector,
@@ -44,6 +45,8 @@ import {
   encodeRSerializationFile,
   estimateRObjectSize,
   factorLevels,
+  factorLevelVector,
+  factorLabelAt,
   factorValue,
   extractVectorElement,
   extractListMember,
@@ -113,6 +116,7 @@ import type {
   RGraphicsPolygon,
   RGraphicsSegment,
   RIntegerVector,
+  RFactorLevel,
   RLanguage,
   RList,
   RLogicalVector,
@@ -2676,6 +2680,16 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("is.factor", ["x"], "behavioral", (invocation) =>
     builtinTypePredicate(invocation, "is.factor", isFactor),
   ),
+  withBuiltinFormals(
+    defineBuiltin("is.ordered", ["x"], "behavioral", (invocation) =>
+      builtinTypePredicate(
+        invocation,
+        "is.ordered",
+        (value) => objectClasses(value)?.includes("ordered") === true,
+      ),
+    ),
+    [{ name: "x" }],
+  ),
   defineBuiltin("is.recursive", ["x"], "behavioral", (invocation) =>
     builtinTypePredicate(
       invocation,
@@ -4456,15 +4470,46 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("cut", ["x", "..."], "behavioral", builtinCut),
   defineBuiltin("rle", ["x"], "behavioral", builtinRunLengthEncoding),
   defineBuiltin("reorder", ["x", "..."], "behavioral", builtinReorder),
-  defineBuiltin(
-    "factor",
-    ["x", "levels", "labels", "exclude", "ordered", "nmax"],
-    "behavioral",
-    (invocation) => builtinFactor(invocation, false),
+  withBuiltinFormals(
+    defineBuiltin(
+      "factor",
+      ["x", "levels", "labels", "exclude", "ordered", "nmax"],
+      "behavioral",
+      (invocation) => builtinFactor(invocation, false),
+    ),
+    [
+      { name: "x", defaultValue: callAst("character", []) },
+      { name: "levels" },
+      {
+        name: "labels",
+        defaultValue: { kind: "Identifier", name: "levels", span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "exclude",
+        defaultValue: { kind: "MissingLiteral", declaredType: "logical", span: SYNTHETIC_SPAN },
+      },
+      {
+        name: "ordered",
+        defaultValue: callAst("is.ordered", [
+          { value: { kind: "Identifier", name: "x", span: SYNTHETIC_SPAN }, span: SYNTHETIC_SPAN },
+        ]),
+      },
+      {
+        name: "nmax",
+        defaultValue: { kind: "MissingLiteral", declaredType: "logical", span: SYNTHETIC_SPAN },
+      },
+    ],
   ),
-  defineBuiltin("ordered", ["x", "levels"], "behavioral", (invocation) =>
-    builtinFactor(invocation, true),
+  withBuiltinFormals(
+    defineBuiltin("ordered", ["x", "..."], "behavioral", (invocation) =>
+      builtinFactor(invocation, true),
+    ),
+    [{ name: "x", defaultValue: callAst("character", []) }, { name: "..." }],
   ),
+  withBuiltinFormals(defineBuiltin("addNA", ["x", "ifany"], "behavioral", builtinAddNA), [
+    { name: "x" },
+    { name: "ifany", defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN } },
+  ]),
   ...(["factor", "ordered"] as const).map((className) => ({
     ...withBuiltinFormals(
       defineBuiltin(`Summary.${className}`, ["...", "na.rm"], "behavioral", (invocation) =>
@@ -5920,6 +5965,14 @@ async function builtinC(invocation: BuiltinInvocation): Promise<RValue> {
     const dispatched = await invocation.dispatchS3IfPresent("c", first, invocation.arguments);
     if (dispatched !== undefined) return dispatched;
   }
+  if (entries.length > 0 && entries.every((entry) => isFactor(entry.value))) {
+    return (
+      combineUnlistedFactors(
+        entries as readonly { readonly name?: string; readonly value: RIntegerVector }[],
+        invocation,
+      ) ?? R_NULL
+    );
+  }
   return combineEntries(entries, invocation);
 }
 
@@ -7333,7 +7386,7 @@ async function builtinSystemGetEnvironment(
   const attributes = new Map(result.attributes);
   let resultNames = characterVector(names.values, compactMask(names.missing));
   if (isFactor(requested)) {
-    resultNames = withAttribute(resultNames, "levels", characterVector(factorLevels(requested)));
+    resultNames = withAttribute(resultNames, "levels", factorLevelVector(requested));
     const classes = vectorClasses(requested);
     if (classes !== undefined) resultNames = withClasses(resultNames, classes);
   }
@@ -16777,8 +16830,8 @@ function attributesEqual(
 }
 
 function stringArrayEqual(
-  left: readonly string[],
-  right: readonly string[],
+  left: readonly RFactorLevel[],
+  right: readonly RFactorLevel[],
   checkpoint: () => void,
 ): boolean {
   return (
@@ -18298,8 +18351,9 @@ async function builtinSubset(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 interface SplitGrouping {
-  readonly levels: readonly string[];
-  readonly values: readonly (string | undefined)[];
+  readonly levels: readonly RFactorLevel[];
+  // Missing codes omit rows; a numeric index may point at an NA level.
+  readonly values: readonly (number | undefined)[];
 }
 
 async function builtinSplit(invocation: BuiltinInvocation): Promise<RValue> {
@@ -18362,22 +18416,27 @@ async function builtinSplit(invocation: BuiltinInvocation): Promise<RValue> {
     });
   }
 
-  let combinations: readonly (readonly string[])[] = [[]];
+  let combinations: readonly (readonly number[])[] = [[]];
   for (const grouping of groupings) {
     combinations = lexicalOrder
       ? combinations.flatMap((combination) =>
-          grouping.levels.map((level) => [...combination, level]),
+          grouping.levels.map((_, index) => [...combination, index]),
         )
-      : grouping.levels.flatMap((level) =>
-          combinations.map((combination) => [...combination, level]),
+      : grouping.levels.flatMap((_, index) =>
+          combinations.map((combination) => [...combination, index]),
         );
   }
-  const labels = combinations.map((combination) => combination.join(separator));
-  const positions = new Map(labels.map((label, index) => [label, index]));
+  const labels = combinations.map((combination) => {
+    const parts = combination.map((level, index) => groupings[index]?.levels[level]);
+    return parts.length === 1 ? parts[0] : parts.map((part) => part ?? "NA").join(separator);
+  });
+  const positions = new Map(
+    combinations.map((combination, index) => [combination.join(","), index]),
+  );
   const selected = labels.map(() => [] as number[]);
   for (let index = 0; index < dataLength; index += 1) {
     invocation.context.checkpoint();
-    const combination: string[] = [];
+    const combination: number[] = [];
     let missing = false;
     for (const grouping of groupings) {
       const value = grouping.values[index % grouping.values.length];
@@ -18388,7 +18447,7 @@ async function builtinSplit(invocation: BuiltinInvocation): Promise<RValue> {
       combination.push(value);
     }
     if (missing) continue;
-    const group = positions.get(combination.join(separator));
+    const group = positions.get(combination.join(","));
     if (group !== undefined) selected[group]?.push(index);
   }
 
@@ -18396,9 +18455,10 @@ async function builtinSplit(invocation: BuiltinInvocation): Promise<RValue> {
     drop && selected[index]?.length === 0 ? [] : [{ label, indices: selected[index] ?? [] }],
   );
   invocation.context.allocate(retained.length);
-  return listValue(
-    retained.map(({ indices }) => splitSubset(input, indices, invocation)),
-    retained.map(({ label }) => label),
+  return withAttribute(
+    listValue(retained.map(({ indices }) => splitSubset(input, indices, invocation))),
+    "names",
+    optionalCharacterVector(retained.map(({ label }) => label)),
   );
 }
 
@@ -18414,16 +18474,17 @@ function splitGrouping(value: RValue): SplitGrouping {
     return {
       levels,
       values: Array.from({ length: value.length }, (_, index) =>
-        isMissing(value, index) ? undefined : levels[(value.values[index] ?? 0) - 1],
+        isMissing(value, index) ? undefined : (value.values[index] ?? 0) - 1,
       ),
     };
   }
   const values = Array.from({ length: value.length }, (_, index) =>
     splitGroupingMissing(value, index) ? undefined : stringAt(value, index),
   );
+  const levels = [...new Set(values.filter((item): item is string => item !== undefined))].sort();
   return {
-    levels: [...new Set(values.filter((item): item is string => item !== undefined))].sort(),
-    values,
+    levels,
+    values: values.map((label) => (label === undefined ? undefined : levels.indexOf(label))),
   };
 }
 
@@ -22148,8 +22209,9 @@ function coerceAtomicToCharacter(
       missing[index] = 1;
       output[index] = "";
     } else if (isFactor(input)) {
-      const levels = factorLevels(input);
-      output[index] = levels[(input.values[index] ?? 0) - 1] ?? "";
+      const label = factorLabelAt(input, index);
+      output[index] = label ?? "";
+      if (label === undefined) missing[index] = 1;
     } else {
       output[index] = stringAt(input, index);
     }
@@ -24896,8 +24958,8 @@ function combineUnlistedFactors(
     length += entry.value.length;
   }
   invocation.context.allocate(length);
-  const levels: string[] = [];
-  const levelCodes = new Map<string, number>();
+  const levels: RFactorLevel[] = [];
+  const levelCodes = new Map<RFactorLevel, number>();
   for (const entry of entries) {
     invocation.context.checkpoint();
     for (const level of factorLevels(entry.value as RIntegerVector)) {
@@ -24920,15 +24982,11 @@ function combineUnlistedFactors(
   for (const entry of entries) {
     invocation.context.checkpoint();
     const factor = entry.value as RIntegerVector;
-    const sourceLevels = factorLevels(factor);
     for (let index = 0; index < factor.length; index += 1) {
       invocation.context.checkpoint();
-      if (isMissing(factor, index)) {
-        missing[offset] = 1;
-      } else {
-        const label = sourceLevels[(factor.values[index] ?? 0) - 1] ?? "";
-        values[offset] = levelCodes.get(label) ?? 0;
-      }
+      const code = levelCodes.get(factorLabelAt(factor, index));
+      if (code === undefined) missing[offset] = 1;
+      else values[offset] = code;
       offset += 1;
     }
   }
@@ -24936,7 +24994,7 @@ function combineUnlistedFactors(
   let combined = withAttribute(
     integerVector(values, compactMask(missing)),
     "levels",
-    characterVector(levels),
+    optionalCharacterVector(levels),
   );
   if (namesAttribute !== undefined) combined = withAttribute(combined, "names", namesAttribute);
   else if (names !== undefined) combined = withNames(combined, names);
@@ -26574,12 +26632,9 @@ function appendFactors(
   let hasNames = false;
   for (const [outputIndex, item] of items.entries()) {
     invocation.context.checkpoint();
-    if (isMissing(item.vector, item.index)) {
-      missing[outputIndex] = 1;
-    } else {
-      const label = factorLevels(item.vector)[(item.vector.values[item.index] ?? 0) - 1] ?? "";
-      codes[outputIndex] = levels.indexOf(label) + 1;
-    }
+    const code = levels.indexOf(factorLabelAt(item.vector, item.index)) + 1;
+    if (code === 0) missing[outputIndex] = 1;
+    else codes[outputIndex] = code;
     const name = vectorNames(item.vector)?.[item.index] ?? "";
     names.push(name);
     if (name !== "") hasNames = true;
@@ -27929,7 +27984,7 @@ async function builtinPaste(
     } else if (value.type === "list" || value.type === "pairlist") {
       inputs.push(characterVector(value.values.map(globListElementText)));
     } else if (isAtomic(value)) {
-      inputs.push(value);
+      inputs.push(isFactor(value) ? coerceAtomicToCharacter(value, invocation) : value);
     } else {
       throw new RTypeMismatchError("NRT3119", "paste() inputs must be atomic vectors.", {
         details: { type: value.type },
@@ -45770,15 +45825,14 @@ function bindDataFrameRows(frames: readonly RList[], invocation: BuiltinInvocati
       const codes: number[] = [];
       const missing: number[] = [];
       for (const column of sourceColumns) {
-        const sourceLevels = factorLevels(column);
         for (let index = 0; index < column.length; index += 1) {
           invocation.context.checkpoint();
-          if (isMissing(column, index)) {
+          const code = levels.indexOf(factorLabelAt(column, index)) + 1;
+          if (code === 0) {
             codes.push(0);
             missing.push(1);
           } else {
-            const label = sourceLevels[(column.values[index] ?? 0) - 1] ?? "";
-            codes.push(levels.indexOf(label) + 1);
+            codes.push(code);
             missing.push(0);
           }
         }
@@ -46008,7 +46062,7 @@ async function builtinFactorSummary(
     );
   const { matched, dots } = matchLeadingDotsArguments(invocation, ["na.rm"]);
   const inputs: RIntegerVector[] = [];
-  let levels: readonly string[] | undefined;
+  let levels: readonly RFactorLevel[] | undefined;
   for (const argument of dots) {
     const input = await invocation.force(argument.promise);
     if (
@@ -46056,10 +46110,16 @@ async function builtinFactorSummary(
     }
   }
   invocation.context.allocate(extremes.length);
-  return factorValue(
+  const result = factorValue(
     extremes.map((code, index) => (mask[index] ? 0 : code)),
     levels ?? [],
     mask,
+    true,
+  );
+  return constructFactor(
+    result,
+    new Map<string, RValue>([["levels", optionalCharacterVector(levels ?? [])]]),
+    invocation,
     true,
   );
 }
@@ -49822,71 +49882,107 @@ async function builtinSummary(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinTable(invocation: BuiltinInvocation): Promise<RValue> {
-  let useNA: "no" | "ifany" | "always" = "no";
+  const { matched, dots } = matchLeadingDotsArguments(invocation, ["exclude", "useNA"]);
+  const excludeArgument = matched.get("exclude");
+  const exclude =
+    excludeArgument === undefined ? undefined : await invocation.force(excludeArgument.promise);
+  const excluded = new Set<RFactorLevel>();
+  if (exclude !== undefined && exclude.type !== "null") {
+    if (!isAtomic(exclude))
+      throw new RTypeMismatchError("NRT3168", "table(exclude=) requires an atomic vector or NULL.");
+    for (let index = 0; index < exclude.length; index++) {
+      invocation.context.checkpoint();
+      excluded.add(
+        isMissing(exclude, index)
+          ? undefined
+          : isFactor(exclude)
+            ? factorLabelAt(exclude, index)
+            : stringAt(exclude, index),
+      );
+    }
+  }
+  const useArgument = matched.get("useNA");
+  const useNA =
+    useArgument === undefined
+      ? exclude !== undefined && !excluded.has(undefined)
+        ? "ifany"
+        : "no"
+      : characterScalar(await invocation.force(useArgument.promise), "useNA");
+  if (!["no", "ifany", "always"].includes(useNA))
+    throw new REvaluationError("NRE2131", "Unsupported table() useNA value '" + useNA + "'.");
+  if (excluded.has(undefined) && useNA !== "no")
+    invocation.context.warn({
+      code: "NRW1138",
+      message: "'exclude' containing NA and 'useNA' != \"no\"' are a bit contradicting",
+    });
   const inputs: { readonly name: string; readonly value: AtomicVector }[] = [];
-  for (const argument of invocation.arguments) {
-    if (argument.name === "useNA") {
-      const value = characterScalar(await invocation.force(argument.promise), "useNA");
-      if (value !== "no" && value !== "ifany" && value !== "always") {
-        throw new REvaluationError("NRE2131", `Unsupported table() useNA value '${value}'.`);
-      }
-      useNA = value;
-      continue;
-    }
+  for (const argument of dots) {
     const value = await invocation.force(argument.promise);
-    if (!isAtomic(value)) {
+    if (!isAtomic(value))
       throw new RTypeMismatchError("NRT3168", "table() inputs must be atomic vectors.");
-    }
     const expression = argument.promise.expression;
     inputs.push({
       name: argument.name ?? (expression?.kind === "Identifier" ? expression.name : ""),
       value,
     });
   }
-  if (inputs.length === 0) {
+  if (inputs.length === 0)
     throw new REvaluationError("NRE2103", "table() requires at least one input.");
-  }
-  const length = inputs[0]?.value.length ?? 0;
-  if (inputs.some((input) => input.value.length !== length)) {
+  const length = inputs[0]!.value.length;
+  if (inputs.some((input) => input.value.length !== length))
     throw new RTypeMismatchError("NRT3169", "table() inputs must have equal length.");
-  }
-  const levels = inputs.map((input) => {
-    const values = new Set<string>();
+  const labelAt = (value: AtomicVector, index: number): RFactorLevel =>
+    isMissing(value, index)
+      ? undefined
+      : isFactor(value)
+        ? factorLabelAt(value, index)
+        : stringAt(value, index);
+  const levels = inputs.map(({ value }) => {
+    const observed = new Set<RFactorLevel>();
     let hasMissing = false;
-    for (let index = 0; index < input.value.length; index += 1) {
-      if (isMissing(input.value, index)) hasMissing = true;
-      else values.add(categoryAt(input.value, index));
+    for (let index = 0; index < value.length; index++) {
+      invocation.context.checkpoint();
+      if (isMissing(value, index)) hasMissing = true;
+      else observed.add(labelAt(value, index));
     }
-    const output = [...values].sort();
-    if (useNA === "always" || (useNA === "ifany" && hasMissing)) output.push("<NA>");
-    return output;
+    const output = isFactor(value)
+      ? [...factorLevels(value)]
+      : [...observed].filter((label): label is string => label !== undefined).sort();
+    if (!output.includes(undefined) && (useNA === "always" || (useNA === "ifany" && hasMissing)))
+      output.push(undefined);
+    return output.filter((label) => !excluded.has(label));
   });
-  const dimensions = levels.map((items) => items.length);
-  const counts = new Int32Array(dimensions.reduce((product, dimension) => product * dimension, 1));
-  for (let row = 0; row < length; row += 1) {
-    let offset = 0;
-    let stride = 1;
-    let included = true;
-    for (let axis = 0; axis < inputs.length; axis += 1) {
-      const input = inputs[axis]?.value as AtomicVector;
-      const label = isMissing(input, row) ? "<NA>" : categoryAt(input, row);
-      const position = levels[axis]?.indexOf(label) ?? -1;
+  const dimensions = levels.map((axis) => axis.length);
+  const size = dimensions.reduce((product, dimension) => product * dimension, 1);
+  invocation.context.allocate(size);
+  const counts = new Int32Array(size);
+  for (let row = 0; row < length; row++) {
+    invocation.context.checkpoint();
+    let offset = 0,
+      stride = 1,
+      included = true;
+    for (let axis = 0; axis < inputs.length; axis++) {
+      const input = inputs[axis]!.value;
+      if (isMissing(input, row) && useNA === "no") {
+        included = false;
+        break;
+      }
+      const position = levels[axis]!.indexOf(labelAt(input, row));
       if (position < 0) {
         included = false;
         break;
       }
       offset += position * stride;
-      stride *= dimensions[axis] ?? 0;
+      stride *= dimensions[axis]!;
     }
     if (included) counts[offset] = (counts[offset] ?? 0) + 1;
   }
-  invocation.context.allocate(counts.length);
   let output: RVector = withDimensions(integerVector(counts), dimensions);
   output = withAttribute(
     output,
     "dimnames",
     listValue(
-      levels.map((items) => (items.length === 0 ? R_NULL : characterVector(items))),
+      levels.map((axis) => (axis.length === 0 ? R_NULL : optionalCharacterVector(axis))),
       inputs.map((input) => input.name),
     ),
   );
@@ -51855,14 +51951,15 @@ async function builtinReorder(invocation: BuiltinInvocation): Promise<RValue> {
   }
   const scores = reorderScores(results, levels, invocation);
   const ordering = sortedIndices(scores, decreasing, true, invocation);
-  const recode = new Map(ordering.map((original, index) => [original + 1, index + 1]));
   invocation.context.allocate(factor.length + levels.length);
-  const codes = Int32Array.from(factor.values, (code) => recode.get(code) ?? 0);
-  let output = factorValue(
-    codes,
-    ordering.map((index) => levels[index] ?? ""),
-    factor.missing,
-    orderedResult,
+  const orderedLevels = ordering.map((index) => levels[index]);
+  let output = constructFactor(
+    factor,
+    new Map<string, RValue>([
+      ["levels", optionalCharacterVector(orderedLevels)],
+      ["ordered", logicalVector([orderedResult])],
+    ]),
+    invocation,
   );
   const names = vectorNames(factor);
   if (names !== undefined) output = withNames(output, names);
@@ -51905,7 +52002,7 @@ function reorderFactorInput(input: RValue, invocation: BuiltinInvocation): RInte
 
 function reorderScores(
   results: readonly (AtomicVector | undefined)[],
-  levels: readonly string[],
+  levels: readonly RFactorLevel[],
   invocation: BuiltinInvocation,
 ): AtomicVector {
   const defined = results.filter((value): value is AtomicVector => value !== undefined);
@@ -51931,7 +52028,7 @@ function reorderScores(
   return withAttribute(
     scores,
     "dimnames",
-    listValue([levels.length === 0 ? R_NULL : characterVector(levels)]),
+    listValue([levels.length === 0 ? R_NULL : optionalCharacterVector(levels)]),
   );
 }
 
@@ -51961,85 +52058,189 @@ async function builtinFactor(
   invocation: BuiltinInvocation,
   forceOrdered: boolean,
 ): Promise<RValue> {
-  const parameters = forceOrdered
-    ? ["x", "levels"]
-    : ["x", "levels", "labels", "exclude", "ordered", "nmax"];
-  const matched = await matchExact(invocation, parameters);
-  const input = required(matched, "x", forceOrdered ? "ordered" : "factor");
+  const matched = await matchExact(invocation, [
+    "x",
+    "levels",
+    "labels",
+    "exclude",
+    "ordered",
+    "nmax",
+  ]);
+  if (forceOrdered && matched.has("ordered"))
+    throw new REvaluationError(
+      "NRE2102",
+      'formal argument "ordered" matched by multiple actual arguments',
+    );
+  return constructFactor(matched.get("x") ?? R_NULL, matched, invocation, forceOrdered);
+}
+
+function constructFactor(
+  source: RValue,
+  matched: ReadonlyMap<string, RValue>,
+  invocation: BuiltinInvocation,
+  forceOrdered = false,
+): RIntegerVector {
+  const input = source.type === "null" ? characterVector([]) : source;
   if (!isAtomic(input)) {
     throw new RTypeMismatchError("NRT3132", "factor() requires an atomic vector or factor.");
   }
-  const inputString = (index: number): string =>
-    isFactor(input)
-      ? (factorLevels(input)[(input.values[index] ?? 0) - 1] ?? "")
-      : stringAt(input, index);
+  const labelAt = (value: AtomicVector, index: number): RFactorLevel =>
+    isFactor(value)
+      ? factorLabelAt(value, index)
+      : isMissing(value, index)
+        ? undefined
+        : stringAt(value, index);
+  const labelsOf = (value: RValue, argument: string): RFactorLevel[] => {
+    if (value.type === "null") return [];
+    if (!isAtomic(value))
+      throw new RTypeMismatchError(
+        "NRT3133",
+        `factor(${argument}=) requires atomic values or NULL.`,
+      );
+    return Array.from({ length: value.length }, (_, index) => {
+      invocation.context.checkpoint();
+      return labelAt(value, index);
+    });
+  };
   const nmax = matched.get("nmax");
-  if (nmax !== undefined) nonNegativeInteger(nmax, "nmax");
+  if (nmax !== undefined && !(isAtomic(nmax) && nmax.length === 1 && isMissing(nmax, 0)))
+    nonNegativeInteger(nmax, "nmax");
+  invocation.context.allocate(input.length);
+  const inputLabels = labelsOf(input, "x");
   const suppliedLevels = matched.get("levels");
-  let sourceLevels: readonly string[];
+  let sourceLevels: readonly RFactorLevel[];
   if (suppliedLevels === undefined) {
-    sourceLevels =
-      input.type === "integer" || input.type === "double"
-        ? numericFactorLevels(input)
-        : [
-            ...new Set(
-              Array.from({ length: input.length }, (_, index) =>
-                isMissing(input, index) ? undefined : inputString(index),
-              ).filter((value): value is string => value !== undefined),
-            ),
-          ].sort();
-  } else {
-    if (!isAtomic(suppliedLevels) || suppliedLevels.missing !== undefined) {
-      throw new RTypeMismatchError("NRT3133", "Factor levels must be non-missing atomic values.");
+    const factorInput = isFactor(input) ? input : undefined;
+    if (factorInput !== undefined) {
+      const used = new Set(inputLabels);
+      sourceLevels = factorLevels(factorInput).filter((level) => {
+        invocation.context.checkpoint();
+        return used.has(level);
+      });
+    } else if (input.type === "integer" || input.type === "double") {
+      sourceLevels = numericFactorLevels(input);
+    } else {
+      sourceLevels = [
+        ...new Set(inputLabels.filter((value): value is string => value !== undefined)),
+      ].sort();
     }
-    sourceLevels = Array.from({ length: suppliedLevels.length }, (_, index) =>
-      stringAt(suppliedLevels, index),
-    );
-  }
+    if (inputLabels.includes(undefined) && !sourceLevels.includes(undefined))
+      sourceLevels = [...sourceLevels, undefined];
+  } else sourceLevels = labelsOf(suppliedLevels, "levels");
   const excludeValue = matched.get("exclude");
-  if (excludeValue !== undefined && excludeValue.type !== "null") {
-    if (!isAtomic(excludeValue)) {
-      throw new RTypeMismatchError("NRT3169", "factor(exclude=) requires atomic values or NULL.");
-    }
-    const excluded = new Set(
-      Array.from({ length: excludeValue.length }, (_, index) =>
-        isMissing(excludeValue, index) ? undefined : stringAt(excludeValue, index),
-      ).filter((value): value is string => value !== undefined),
-    );
-    sourceLevels = sourceLevels.filter((level) => !excluded.has(level));
-  }
+  const excluded = new Set(
+    excludeValue === undefined ? [undefined] : labelsOf(excludeValue, "exclude"),
+  );
+  sourceLevels = sourceLevels.filter((level) => {
+    invocation.context.checkpoint();
+    return !excluded.has(level);
+  });
   const labelsValue = matched.get("labels");
   let labels = sourceLevels;
   if (labelsValue !== undefined) {
-    if (labelsValue.type !== "character" || labelsValue.missing !== undefined) {
-      throw new RTypeMismatchError("NRT3171", "factor(labels=) requires character labels.");
-    }
-    if (labelsValue.length !== sourceLevels.length) {
+    const suppliedLabels = labelsOf(labelsValue, "labels");
+    if (suppliedLabels.length === 1) {
+      labels =
+        sourceLevels.length <= 1
+          ? suppliedLabels
+          : sourceLevels.map((_, index) => `${suppliedLabels[0] ?? "NA"}${index + 1}`);
+    } else if (suppliedLabels.length !== sourceLevels.length) {
       throw new RTypeMismatchError(
         "NRT3172",
         "factor(labels=) must match the number of retained levels.",
       );
+    } else labels = suppliedLabels;
+  } else {
+    const seen = new Set<RFactorLevel>();
+    for (const [index, level] of sourceLevels.entries()) {
+      invocation.context.checkpoint();
+      if (seen.has(level))
+        throw new RTypeMismatchError("NRT3139", `factor level [${index + 1}] is duplicated`);
+      seen.add(level);
     }
-    labels = labelsValue.values;
   }
   const levels = [...new Set(labels)];
-  const ordered = forceOrdered || logicalFlag(matched.get("ordered"), false, "ordered");
+  const orderedValue = matched.get("ordered");
+  const ordered =
+    forceOrdered ||
+    (orderedValue === undefined
+      ? objectClasses(input)?.includes("ordered") === true
+      : logicalCondition(orderedValue));
+  const sourceCodes = new Map<RFactorLevel, number>();
+  sourceLevels.forEach((level, index) => {
+    if (!sourceCodes.has(level)) sourceCodes.set(level, index);
+  });
+  const outputCodes = new Map(levels.map((level, index) => [level, index + 1]));
   invocation.context.allocate(input.length + levels.length);
   const codes = new Int32Array(input.length);
   const missing = new Uint8Array(input.length);
   for (let index = 0; index < input.length; index += 1) {
     invocation.context.checkpoint();
-    if (isMissing(input, index)) {
-      missing[index] = 1;
-      continue;
-    }
-    const sourceCode = sourceLevels.indexOf(inputString(index));
-    if (sourceCode < 0) missing[index] = 1;
-    else codes[index] = levels.indexOf(labels[sourceCode] ?? "") + 1;
+    const sourceCode = sourceCodes.get(inputLabels[index]);
+    if (sourceCode === undefined) missing[index] = 1;
+    else codes[index] = outputCodes.get(labels[sourceCode]) ?? 0;
   }
   const factor = factorValue(codes, levels, compactMask(missing), ordered);
-  const names = vectorNames(input);
-  return names === undefined ? factor : withNames(factor, names);
+  const names = input.attributes.get("names");
+  return names === undefined
+    ? factor
+    : { ...factor, attributes: new Map([["names", names], ...factor.attributes]) };
+}
+
+async function builtinAddNA(invocation: BuiltinInvocation): Promise<RValue> {
+  const matched = matchLazyArguments(invocation, ["x", "ifany"]);
+  const argument = matched.get("x");
+  if (argument === undefined || argument.promise.missing)
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in addNA().");
+  const input = await invocation.force(argument.promise);
+  const factor = isFactor(input) ? input : constructFactor(input, new Map(), invocation);
+  const ifAnyArgument = matched.get("ifany");
+  const ifAny =
+    ifAnyArgument === undefined || ifAnyArgument.promise.missing
+      ? false
+      : addNAIfAnyState(await invocation.force(ifAnyArgument.promise));
+  let hasMissing = false;
+  for (let index = 0; index < factor.length; index += 1) {
+    invocation.context.checkpoint();
+    if (isMissing(factor, index)) {
+      hasMissing = true;
+      break;
+    }
+  }
+  // NA && FALSE is FALSE: an indeterminate control only errors when no codes are missing.
+  if (ifAny === undefined && !hasMissing)
+    throw new RTypeMismatchError("NRT3399", "missing value where TRUE/FALSE needed");
+  const levels = factorLevels(factor);
+  if ((ifAny || levels.includes(undefined)) && !hasMissing) return factor;
+  const updated = levels.includes(undefined) ? levels : [...levels, undefined];
+  return constructFactor(
+    factor,
+    new Map<string, RValue>([
+      ["levels", optionalCharacterVector(updated)],
+      ["exclude", R_NULL],
+    ]),
+    invocation,
+  );
+}
+
+function addNAIfAnyState(value: RValue): boolean | undefined {
+  if (!isAtomic(value) || value.type === "character" || value.type === "raw")
+    throw new RTypeMismatchError("NRT3399", "invalid 'x' type in 'x && y'");
+  if (value.length > 1)
+    throw new RTypeMismatchError(
+      "NRT3399",
+      `'length = ${value.length}' in coercion to 'logical(1)'`,
+    );
+  if (value.length === 0 || isMissing(value, 0)) return undefined;
+  if (value.type === "complex") {
+    const real = value.real[0] ?? 0,
+      imaginary = value.imaginary[0] ?? 0;
+    return Number.isNaN(real) || Number.isNaN(imaginary)
+      ? undefined
+      : real !== 0 || imaginary !== 0;
+  }
+  const scalar = value.values[0] ?? 0;
+  return Number.isNaN(scalar) ? undefined : scalar !== 0;
 }
 
 async function builtinAsFactor(invocation: BuiltinInvocation): Promise<RValue> {
@@ -52056,26 +52257,7 @@ async function builtinAsOrdered(invocation: BuiltinInvocation): Promise<RValue> 
   if (input.type === "null") return factorValue(new Int32Array(), [], undefined, true);
   if (!isFactor(input)) return builtinFactor(invocation, true);
   if (vectorClasses(input)?.includes("ordered") === true) return input;
-
-  const sourceLevels = factorLevels(input);
-  const levels = sourceLevels.filter((_, levelIndex) =>
-    Array.from(input.values).some(
-      (code, index) => !isMissing(input, index) && code === levelIndex + 1,
-    ),
-  );
-  const recode = new Map(
-    levels.map((level, index) => [sourceLevels.indexOf(level) + 1, index + 1]),
-  );
-  invocation.context.allocate(input.length + levels.length);
-  let output = factorValue(
-    Int32Array.from(input.values, (code) => recode.get(code) ?? 0),
-    levels,
-    input.missing,
-    true,
-  );
-  const names = vectorNames(input);
-  if (names !== undefined) output = withNames(output, names);
-  return output;
+  return constructFactor(input, new Map(), invocation, true);
 }
 
 function numericFactorLevels(input: RIntegerVector | RDoubleVector): readonly string[] {
@@ -52145,10 +52327,7 @@ function truncatedNonNegative(value: RValue, name: string): number {
 async function builtinLevels(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["x"]);
   const value = required(matched, "x", "levels");
-  if (!isFactor(value)) return R_NULL;
-  const levels = factorLevels(value);
-  invocation.context.allocate(levels.length);
-  return characterVector(levels);
+  return objectAttributes(value)?.get("levels") ?? R_NULL;
 }
 
 async function builtinDropLevels(invocation: BuiltinInvocation): Promise<RValue> {
@@ -52850,7 +53029,7 @@ async function builtinTapply(invocation: BuiltinInvocation): Promise<RValue> {
         complete = false;
         break;
       }
-      const level = grouping.levels.indexOf(label);
+      const level = label;
       if (level < 0) {
         complete = false;
         break;
@@ -52920,7 +53099,7 @@ function tapplyGroupCodes(
     let stride = 1;
     for (const grouping of groupings) {
       const label = grouping.values[index];
-      const level = label === undefined ? -1 : grouping.levels.indexOf(label);
+      const level = label ?? -1;
       if (level < 0) {
         missing[index] = 1;
         break;
@@ -52941,7 +53120,7 @@ function tapplyArray<T extends RVector>(
 ): T {
   let output = withDimensions(value, dimensions);
   const dimensionNames = listValue(
-    groupings.map((grouping) => characterVector(grouping.levels)),
+    groupings.map((grouping) => optionalCharacterVector(grouping.levels)),
     groupingNames,
   );
   output = withAttribute(output, "dimnames", dimensionNames);
@@ -55756,16 +55935,7 @@ function setAtomicInput(
   }
   if (!isFactor(value)) return value;
 
-  const levels = factorLevels(value);
-  const labels: string[] = [];
-  const missing = new Uint8Array(value.length);
-  invocation.context.allocate(value.length);
-  for (let index = 0; index < value.length; index += 1) {
-    invocation.context.checkpoint();
-    if (isMissing(value, index)) missing[index] = 1;
-    labels.push(levels[(value.values[index] ?? 0) - 1] ?? "");
-  }
-  return characterVector(labels, compactMask(missing));
+  return coerceAtomicToCharacter(value, invocation);
 }
 
 function factorSetOperation(
@@ -55808,10 +55978,13 @@ function factorSetOperation(
   const codes = new Int32Array(selected.length);
   const missing = new Uint8Array(selected.length);
   for (const [outputIndex, item] of selected.entries()) {
-    if (isMissing(item.vector, item.index)) missing[outputIndex] = 1;
+    if (
+      isMissing(item.vector, item.index) &&
+      (operation === "setdiff" || !levels.includes(undefined))
+    )
+      missing[outputIndex] = 1;
     else {
-      const sourceLevels = factorLevels(item.vector);
-      const label = sourceLevels[(item.vector.values[item.index] ?? 0) - 1] ?? "";
+      const label = factorLabelAt(item.vector, item.index);
       codes[outputIndex] = levels.indexOf(label) + 1;
     }
   }
@@ -55819,9 +55992,12 @@ function factorSetOperation(
 }
 
 function factorSetKeys(value: RIntegerVector): readonly string[] {
-  const levels = factorLevels(value);
   return Array.from({ length: value.length }, (_, index) =>
-    isMissing(value, index) ? "NA" : `s:${levels[(value.values[index] ?? 0) - 1] ?? ""}`,
+    isMissing(value, index)
+      ? "NA"
+      : factorLabelAt(value, index) === undefined
+        ? "NA-level"
+        : `s:${factorLabelAt(value, index)}`,
   );
 }
 
@@ -56235,7 +56411,8 @@ async function builtinMatch(invocation: BuiltinInvocation): Promise<RValue> {
   if (!isAtomic(input) || !isAtomic(table)) {
     throw new RTypeMismatchError("NRT3142", "match() requires atomic vectors.");
   }
-  const characterMode = input.type === "character" || table.type === "character";
+  const characterMode =
+    input.type === "character" || table.type === "character" || isFactor(input) || isFactor(table);
   const lookup = new Map<string, number>();
   for (let index = 0; index < table.length; index += 1) {
     const key = atomicMatchKey(table, index, characterMode);
@@ -57302,17 +57479,10 @@ async function builtinStructure(invocation: BuiltinInvocation): Promise<RValue> 
         break;
       }
       case "levels":
-        if (
-          attribute.type !== "character" ||
-          attribute.missing !== undefined ||
-          new Set(attribute.values).size !== attribute.length
-        ) {
-          throw new RTypeMismatchError(
-            "NRT3139",
-            "structure(levels=) requires unique non-missing character levels.",
-          );
-        }
-        output = withAttribute(output, "levels", attribute);
+        output =
+          attribute.type === "null"
+            ? withoutAttribute(output, "levels")
+            : withAttribute(output, "levels", attribute);
         break;
       case "row.names":
         if (attribute.type !== "character" || attribute.missing !== undefined) {
@@ -57604,6 +57774,10 @@ function implicitClasses(value: RValue): readonly string[] {
 
 function atomicMatchKey(input: AtomicVector, index: number, characterMode: boolean): string {
   if (isMissing(input, index)) return "NA";
+  if (characterMode && isFactor(input)) {
+    const label = factorLabelAt(input, index);
+    return label === undefined ? "NA" : `s:${label}`;
+  }
   if (input.type === "double" && Number.isNaN(input.values[index])) return "NaN";
   if (input.type === "complex") {
     const value = complexAt(input, index);

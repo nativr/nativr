@@ -9,6 +9,8 @@ import {
   dataFrameValue,
   doubleVector,
   factorLevels,
+  factorLabelAt,
+  optionalCharacterVector,
   factorValue,
   integerVector,
   isAtomic,
@@ -37,6 +39,7 @@ import type {
   RDoubleVector,
   REnvironment,
   RFormula,
+  RFactorLevel,
   RIntegerVector,
   RList,
   RLogicalVector,
@@ -899,7 +902,7 @@ async function builtinModelMatrix(invocation: BuiltinInvocation): Promise<RValue
 async function modelMatrixFromFormula(
   formula: RFormula,
   data: RValue | undefined,
-  xlevels: ReadonlyMap<string, readonly string[]>,
+  xlevels: ReadonlyMap<string, readonly RFactorLevel[]>,
   invocation: BuiltinInvocation,
 ): Promise<RDoubleVector> {
   const environment = modelDataEnvironment(
@@ -1172,15 +1175,16 @@ async function xtabsNaAction(
 async function xtabsExcludedLabels(
   invocation: BuiltinInvocation,
   argument: BuiltinCallArgument | undefined,
-): Promise<ReadonlySet<string>> {
+): Promise<ReadonlySet<RFactorLevel>> {
   if (argument === undefined) return new Set();
   const value = await invocation.force(argument.promise);
+  if (value.type === "null") return new Set();
   if (!isAtomic(value) || value.type === "complex" || value.type === "raw") {
     throw new RTypeMismatchError("NRT3265", "xtabs(exclude=) must be an atomic vector.");
   }
-  const output = new Set<string>();
+  const output = new Set<RFactorLevel>();
   for (let index = 0; index < value.length; index += 1) {
-    if (!isMissing(value, index)) output.add(xtabsLabel(value, index));
+    output.add(isMissing(value, index) ? undefined : xtabsLabel(value, index));
   }
   return output;
 }
@@ -1191,36 +1195,41 @@ function xtabsAxis(
   selected: readonly number[],
   addMissing: boolean,
   dropUnused: boolean,
-  excluded: ReadonlySet<string>,
+  excluded: ReadonlySet<RFactorLevel>,
 ): XtabsAxis {
-  const observed = new Set<string>();
+  const observed = new Set<RFactorLevel>();
   let hasMissing = false;
   for (const row of selected) {
     if (xtabsCellMissing(value, row)) hasMissing = true;
     else observed.add(xtabsLabel(value, row));
   }
-  let labels: string[];
+  let labels: RFactorLevel[];
   if (isFactor(value)) {
     labels = factorLevels(value).filter(
       (label) => !excluded.has(label) && (!dropUnused || observed.has(label)),
     );
   } else {
     labels = [...observed].filter((label) => !excluded.has(label));
-    labels.sort((left, right) => xtabsCompareLabels(value, left, right));
+    labels.sort((left, right) => xtabsCompareLabels(value, left ?? "", right ?? ""));
   }
   const levels: XtabsLevel[] = labels.map((label) => ({
-    key: `value:${label}`,
-    label,
-    missing: false,
+    key: label === undefined ? "NA-level" : `value:${label}`,
+    label: label ?? "",
+    missing: label === undefined,
   }));
-  if (addMissing && hasMissing) {
+  if (addMissing && hasMissing && !excluded.has(undefined) && !labels.includes(undefined)) {
     levels.push({ key: "missing", label: "", missing: true });
   }
   return {
     name,
     value,
     levels,
-    positions: new Map(levels.map((level, index) => [level.key, index])),
+    positions: new Map([
+      ...levels.map((level, index) => [level.key, index] as const),
+      ...(addMissing && labels.includes(undefined)
+        ? [["missing", labels.indexOf(undefined)] as const]
+        : []),
+    ]),
   };
 }
 
@@ -1231,9 +1240,9 @@ function xtabsCellMissing(value: AtomicVector | XtabsResponse, index: number): b
   );
 }
 
-function xtabsLabel(value: AtomicVector, index: number): string {
+function xtabsLabel(value: AtomicVector, index: number): RFactorLevel {
   if (isFactor(value)) {
-    return factorLevels(value)[(value.values[index] ?? 0) - 1] ?? "";
+    return factorLabelAt(value, index);
   }
   if (value.type === "character") return value.values[index] ?? "";
   if (value.type === "logical") return value.values[index] === 1 ? "TRUE" : "FALSE";
@@ -1266,7 +1275,9 @@ function xtabsOffset(axes: readonly XtabsAxis[], row: number): number | undefine
   for (const axis of axes) {
     const key = xtabsCellMissing(axis.value, row)
       ? "missing"
-      : `value:${xtabsLabel(axis.value, row)}`;
+      : xtabsLabel(axis.value, row) === undefined
+        ? "NA-level"
+        : `value:${xtabsLabel(axis.value, row)}`;
     const position = axis.positions.get(key);
     if (position === undefined) return undefined;
     offset += position * stride;
@@ -1710,15 +1721,18 @@ function modelPercentLabel(value: number): string {
   return value.toFixed(12).replace(/0+$/u, "").replace(/\.$/u, "");
 }
 
-function modelXLevels(model: RList): ReadonlyMap<string, readonly string[]> {
+function modelXLevels(model: RList): ReadonlyMap<string, readonly RFactorLevel[]> {
   const value = modelField(model, "xlevels");
   if (value?.type !== "list") return new Map();
   const names = vectorNames(value);
-  const output = new Map<string, readonly string[]>();
+  const output = new Map<string, readonly RFactorLevel[]>();
   value.values.forEach((entry, index) => {
     const name = names?.[index];
-    if (name !== undefined && entry.type === "character" && entry.missing === undefined) {
-      output.set(name, entry.values);
+    if (name !== undefined && entry.type === "character") {
+      output.set(
+        name,
+        entry.values.map((label, index) => (isMissing(entry, index) ? undefined : label)),
+      );
     }
   });
   return output;
@@ -1737,7 +1751,7 @@ interface PrepareModelOptions {
   readonly subset?: RValue;
   readonly weights?: RealVector;
   readonly offset?: RealVector;
-  readonly xlevels: ReadonlyMap<string, readonly string[]>;
+  readonly xlevels: ReadonlyMap<string, readonly RFactorLevel[]>;
 }
 
 interface PreparedModelData {
@@ -2003,7 +2017,7 @@ interface EncodedModelColumn {
 
 interface EncodedModelTerm {
   readonly columns: readonly EncodedModelColumn[];
-  readonly factorLevels: ReadonlyMap<string, readonly string[]>;
+  readonly factorLevels: ReadonlyMap<string, readonly RFactorLevel[]>;
   readonly contrasts: ReadonlySet<string>;
 }
 
@@ -2013,19 +2027,19 @@ interface ModelMatrixResult {
   readonly columns: number;
   readonly columnNames: readonly string[];
   readonly assign: readonly number[];
-  readonly xlevels: ReadonlyMap<string, readonly string[]>;
+  readonly xlevels: ReadonlyMap<string, readonly RFactorLevel[]>;
   readonly contrasts: ReadonlySet<string>;
 }
 
 function buildModelMatrix(
   data: PreparedModelData,
   formula: RFormula,
-  knownLevels: ReadonlyMap<string, readonly string[]>,
+  knownLevels: ReadonlyMap<string, readonly RFactorLevel[]>,
   invocation: BuiltinInvocation,
 ): ModelMatrixResult {
   const columns: EncodedModelColumn[] = [];
   const assign: number[] = [];
-  const xlevels = new Map<string, readonly string[]>(knownLevels);
+  const xlevels = new Map<string, readonly RFactorLevel[]>(knownLevels);
   const contrasts = new Set<string>();
   if (formula.intercept) {
     columns.push({ name: "(Intercept)", values: new Float64Array(data.rows).fill(1) });
@@ -2090,7 +2104,7 @@ function buildModelMatrix(
 function encodeModelTerm(
   term: string,
   data: PreparedModelData,
-  knownLevels: ReadonlyMap<string, readonly string[]>,
+  knownLevels: ReadonlyMap<string, readonly RFactorLevel[]>,
   fullFactor: boolean,
   invocation: BuiltinInvocation,
 ): EncodedModelTerm {
@@ -2135,7 +2149,7 @@ function encodeModelTerm(
 function encodeModelComponent(
   label: string,
   data: PreparedModelData,
-  knownLevels: ReadonlyMap<string, readonly string[]>,
+  knownLevels: ReadonlyMap<string, readonly RFactorLevel[]>,
   fullFactor: boolean,
   invocation: BuiltinInvocation,
 ): EncodedModelTerm {
@@ -2219,8 +2233,8 @@ function modelCharacterLevels(value: RCharacterVector): readonly string[] {
 function encodeFactorComponent(
   label: string,
   value: RIntegerVector,
-  observedLevels: readonly string[],
-  expectedLevels: readonly string[] | undefined,
+  observedLevels: readonly RFactorLevel[],
+  expectedLevels: readonly RFactorLevel[] | undefined,
   fullFactor: boolean,
   invocation: BuiltinInvocation,
 ): EncodedModelTerm {
@@ -2242,7 +2256,7 @@ function encodeFactorComponent(
         continue;
       }
       const sourceLevel = observedLevels[(value.values[index] ?? 0) - 1];
-      const position = sourceLevel === undefined ? -1 : levels.indexOf(sourceLevel);
+      const position = levels.indexOf(sourceLevel);
       if (position < 0) {
         throw new RTypeMismatchError(
           "NRT3265",
@@ -2252,7 +2266,7 @@ function encodeFactorComponent(
       values[index] = sourceLevel === level ? 1 : 0;
     }
     return {
-      name: `${label}${level}`,
+      name: `${label}${level ?? "NA"}`,
       values,
       ...(compactModelMask(missing) === undefined ? {} : { missing }),
     };
@@ -2345,7 +2359,7 @@ async function fitLinearModel(
   const assign = integerVector(design.assign);
   const qr = linearModelQr(design, solved);
   const xlevels = listValue(
-    [...design.xlevels.values()].map((levels) => characterVector(levels)),
+    [...design.xlevels.values()].map((levels) => optionalCharacterVector(levels)),
     [...design.xlevels.keys()],
   );
   const contrasts =
@@ -2621,7 +2635,7 @@ function leastSquaresFitQr(
 function buildModelFrame(
   prepared: PreparedModelData,
   formula: RFormula,
-  xlevels: ReadonlyMap<string, readonly string[]>,
+  xlevels: ReadonlyMap<string, readonly RFactorLevel[]>,
   naAction: RIntegerVector | undefined,
   invocation: BuiltinInvocation,
 ): RList {
@@ -2646,7 +2660,7 @@ function buildModelFrame(
 function modelFrameColumn(
   label: string,
   value: AtomicVector,
-  xlevels: ReadonlyMap<string, readonly string[]>,
+  xlevels: ReadonlyMap<string, readonly RFactorLevel[]>,
   invocation: BuiltinInvocation,
 ): RVector {
   if (value.type !== "character") return value;

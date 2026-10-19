@@ -168,7 +168,13 @@ describe("measured feature boundary coverage", () => {
       code: "NRE2116",
     });
     await expect(runtime.eval("factor(list(1))")).rejects.toMatchObject({ code: "NRT3132" });
-    await expect(runtime.eval('factor(c("a", "b"), labels = "A")')).rejects.toMatchObject({
+    await expect(runtime.eval('levels(factor(c("a", "b"), labels = "A"))')).resolves.toEqual([
+      "A1",
+      "A2",
+    ]);
+    await expect(
+      runtime.eval('factor(c("a", "b"), labels = c("A", "B", "C"))'),
+    ).rejects.toMatchObject({
       code: "NRT3172",
     });
     await expect(runtime.eval("droplevels(1:3)")).rejects.toMatchObject({ code: "NRT3134" });

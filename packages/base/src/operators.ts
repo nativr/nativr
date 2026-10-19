@@ -6,6 +6,7 @@ import {
   complexVector,
   doubleVector,
   factorLevels,
+  factorLabelAt,
   integerVector,
   isAtomic,
   isFactor,
@@ -408,6 +409,14 @@ function compareVectors(
     const leftLevels = factorLevels(lhs);
     const rightLevels = factorLevels(rhs);
     if (
+      !["==", "!="].includes(operator) &&
+      vectorClasses(lhs)?.includes("ordered") &&
+      vectorClasses(rhs)?.includes("ordered") &&
+      (leftLevels.includes(undefined) || rightLevels.includes(undefined))
+    ) {
+      throw new RTypeMismatchError("NRT3116", "missing value where TRUE/FALSE needed");
+    }
+    if (
       leftLevels.length !== rightLevels.length ||
       leftLevels.some((level) => !rightLevels.includes(level))
     ) {
@@ -431,6 +440,17 @@ function compareVectors(
     const rightIndex = index % rhs.length;
     if (comparisonMissing(lhs, leftIndex) || comparisonMissing(rhs, rightIndex)) {
       missing[index] = 1;
+      continue;
+    }
+    // A real NA level is a category for equality; it never aliases the empty string.
+    const leftNALevel = isFactor(lhs) && factorLabelAt(lhs, leftIndex) === undefined;
+    const rightNALevel = isFactor(rhs) && factorLabelAt(rhs, rightIndex) === undefined;
+    if ((leftNALevel || rightNALevel) && ["==", "!="].includes(operator)) {
+      values[index] = (
+        operator === "==" ? leftNALevel === rightNALevel : leftNALevel !== rightNALevel
+      )
+        ? 1
+        : 0;
       continue;
     }
     if (complexMode && !characterMode) {
@@ -652,6 +672,7 @@ function comparableString(vector: AtomicVector, index: number): string {
 
 function comparisonKey(vector: AtomicVector, index: number, characterMode: boolean): string {
   if (isMissing(vector, index)) return "NA";
+  if (isFactor(vector) && factorLabelAt(vector, index) === undefined) return "NA";
   if (vector.type === "double" && Number.isNaN(vector.values[index])) return "NaN";
   if (
     vector.type === "complex" &&

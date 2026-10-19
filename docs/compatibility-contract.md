@@ -4011,3 +4011,35 @@ coercion of NA levels, addNA, every malformed direct-method input, locale-specif
 and every control coercion remain unfinished. NA-level printing is tested with independently
 constructed attributed integer vectors; it does not establish the current structure() constructor's
 acceptance of NA levels.
+
+### Missing factor levels and addNA (profile 0.362)
+
+Factor levels now retain their character missing-value mask independently of integer-code
+missingness. An empty label, an NA level, a missing code and the numeric NaN label remain distinct.
+`factor` supports observed NA exclusions, supplied levels, merged and missing labels, scalar label
+prefixes, empty inputs, names and ordered reconstruction. Its defaults and the `ordered(x, ...)`
+signature match observable metadata. `is.ordered(x)` inspects the class without dispatch.
+
+`addNA(x, ifany=FALSE)` converts non-factors, retains unused and ordered levels, and recodes missing
+codes to one NA level. No-op paths retain the original attributes. Rebuilding retains names and
+drops dimensions, incidental attributes and extra subclasses. Code-based `is.na` remains false for
+NA-level elements; character coercion returns missing strings for those elements.
+
+The ifany control uses three-valued conditional behavior: NA, numeric NaN or an empty logical
+control can proceed when missing codes make the combined condition false, but error when there are
+no missing codes. Invalid types and multi-element controls have owned diagnostic fixtures. An
+explicitly missing ifany uses its default.
+
+Owned regressions distinguish missing-code and NA-level behavior in factor-only concatenation,
+append/unlist, replacement, matching, equality, set operations, split/tapply, factor matrices,
+paste, ordered reductions, reorder, model matrices, xtabs and data-frame row binding. `table`
+retains unused factor levels, uses real missing dimension labels, and honors observed exclusion and
+useNA combinations without colliding with a literal `<NA>` string. `structure(levels=)` retains the
+supplied attribute, including missing or duplicate labels, without imposing factor-constructor
+validation. Work remains bounded by vector and execution limits.
+
+Foundation cases retain independent behavioral assertions; recursive cases retain factor values,
+attributes, code/level masks, reconstructed values, grouping results and causal binding controls.
+This does not establish complete factor, table or model behavior. In particular, `summary.factor`,
+`levels<-`, direct `c.factor`, mixed-class concatenation, general table controls, malformed objects,
+all class-specific coercions and full model-frame behavior remain unfinished.
