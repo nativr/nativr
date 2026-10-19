@@ -1,6 +1,6 @@
 # Release readiness
 
-Last assessed 2026-10-19 at verified semantic profile **0.358.0**. Canonical counts are generated in
+Last assessed 2026-10-19 at verified semantic profile **0.359.0**. Canonical counts are generated in
 [compatibility/status.json](../compatibility/status.json). The full compatibility target remains the
 five completion criteria in [gnu-r-compatibility.md](gnu-r-compatibility.md).
 
@@ -13,9 +13,9 @@ compatibility claim follows from this preview.
 
 | Gate                               | Latest evidence                                                                                                                                      | Status                    |
 | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| Production check                   | Profile 0.358: 1,321 unit tests pass, 89 opt-in tests skipped; build, boundaries, production types and bundle audit pass                             | Passed                    |
+| Production check                   | Profile 0.359: 1,346 unit tests pass, 90 opt-in tests skipped; build, boundaries, production types and bundle audit pass                             | Passed                    |
 | Conformance                        | 1,236 checked-in, 1,167 live GNU R 4.6.1, 134 recursive cases; 81 bindings linked with causal controls                                               | Passed                    |
-| Native metadata/signature fixtures | 22 owned metadata/Rd tests pass at 0.358, including a 23-comparison native codoc matrix                                                              | Passed                    |
+| Native metadata/signature fixtures | 34 owned Rd tests pass at 0.359; the 23-comparison native codoc matrix passed at 0.358                                                               | Passed                    |
 | Browser e2e                        | Historical 6/6 pass reported at 0.353; WebKit also exceeded the 120 s required-example budget in later runs (R14). Not refreshed in these increments | Open                      |
 | Packed consumer                    | Historical pack smoke pass; not refreshed in these increments                                                                                        | Revalidate before release |
 | Fixed bundle limits                | Client 17.3/150 KiB gzip; Worker 466.4/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                                 | Passed                    |
@@ -56,7 +56,7 @@ being adopted as a release gate.
 
 All 24 development/regression archives matched their pinned hashes and were attempted with the
 original package entrypoints, explicit RNG initialization and native repeatability observations. The
-[checkpoint](../compatibility/package-check-evidence/corpus-0.358.0.json) links all 24 redacted
+[checkpoint](../compatibility/package-check-evidence/corpus-0.359.0.json) links all 24 redacted
 reports with no checker aborts. Summaries contain allowlisted metadata, digests, capture statuses
 and counts; source, output and diagnostic strings are omitted. Formula was untouched.
 
@@ -77,6 +77,27 @@ tests are unverified. No substitute testing runner was used.
 
 ## Verification details and remaining defects
 
+### Profile 0.359 Rd boundary repairs
+
+Documentation policy v4 retains syntax, alias, extra-argument and signature checks on internal pages
+while allowing omitted argument descriptions. Qualified links resolve through aliases or Rd
+filenames in the named package. The help catalog records 8,612 aliases and 2,635 public filenames;
+alias sets are unchanged. Manual adaptation v2 handles verbatim contexts without globally accepting
+unknown macros. Independent native fixtures include negative controls and literal-byte observations.
+
+All 24 cached reports were refreshed with repeatability observations and unchanged pins/partitions.
+evaluate, rprojroot and whisker now pass documentation; crayon and viridisLite now pass the manual
+stage. Otel's corrected link leaves documentation unexecuted because other package catalogs are
+unavailable. withr retains actual signature mismatches. Package tiers are unchanged; pkgconfig and
+abind retain P7. S4 method identity/signature checking and static-only codoc comparison remain
+Milestone 2 follow-up work. The profile's stale planned label for elementary Wasm adoption is fixed;
+normative Linux validation remains pending.
+
+Verification: the full check passes 1,346 tests with 90 opt-in skips; checked-in/live/recursive
+conformance passes 1,236 / 1,167 / 134 cases. All fixed bundle budgets pass. No Worker/playground or
+packaging interface changed; e2e and pack smoke were not refreshed. This is a verified checker
+increment; all 13 semantic domains and the broader roadmap still need closure.
+
 ### Profile 0.358 loaded metadata follow-up
 
 Documentation policy v3 compares loaded namespace exports and public usage signatures in both
@@ -92,7 +113,7 @@ rprojroot and whisker now agree; separate usage checks still fail. prettyunits a
 documentation, while other package stages remain blocked. Only bounded metadata, counts and digests
 are committed; observed defaults and implementation bodies are not recorded.
 
-Remaining Milestone 2 work includes Rd usage, links and context-sensitive macro handling. The
+At that checkpoint, Milestone 2 still included Rd usage, links and context-sensitive macros. The
 remaining semantic domains, dataset provenance, separate testing runner and release platform gates
 still need completion. No Worker/playground or packaging interface changed in this increment;
 browser e2e and pack smoke were not refreshed.

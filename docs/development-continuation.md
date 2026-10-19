@@ -155,19 +155,44 @@ boundaries, browser bundle audit and all fixed size budgets. No Worker/playgroun
 interface changed; e2e and pack smoke were not refreshed. No downloads, push or publication
 occurred.
 
+### Profile 0.359 Rd boundary repairs
+
+Documentation policy v4 corrects the internal-page argument exemption and qualified-link filename
+fallback. Native fixtures confirm that internal pages still fail for extra documented arguments,
+missing aliases, invalid usage and signature mismatches. Qualified links must resolve within the
+named package; a filename can resolve even when it is not an alias, while a bare `\name` cannot. The
+public help catalog retains the same 8,612 aliases and adds 2,635 Rd filenames across 29
+base/recommended packages, in deterministic order. No implementation bodies were collected.
+
+Manual adaptation v2 handles literal backslashes and braces in verbatim contexts and preserves
+context-dependent percent behavior. LaTeX commands remain invalid outside appropriate verbatim
+contexts. The retained `rd-contexts.R` fixture covers native warnings and literal bytes; all 34
+focused Rd tests, including three opt-in native tests, pass. Runtime semantics are unchanged.
+
+The [24-package checkpoint](../compatibility/package-check-evidence/corpus-0.359.0.json) preserves
+every source/artifact pin and partition. evaluate, rprojroot and whisker pass documentation; crayon
+and viridisLite pass the manual stage. Otel's corrected link leaves other unavailable catalogs
+explicitly unexecuted. Tiers are unchanged, with pkgconfig and abind retaining P7. The full check
+passes 1,346 tests with 90 opt-in skips. Checked-in, native and recursive conformance pass 1,236 /
+1,167 / 134 cases, with 81 causal binding links. All fixed bundle budgets pass. The stale planned
+label for the adopted elementary Wasm backend is corrected; normative Linux validation remains
+pending. No Worker/playground or packaging interface changed, so e2e and pack smoke were not
+refreshed. No downloads, push or publication occurred.
+
 ### Immediate continuation
 
-Finish Milestone 2 before declaring it complete. Reproduce the remaining Rd usage and link checks
-with owned native fixtures. The loaded comparisons now resolve evaluate's `is.message` and
-rprojroot's computed signatures, but their separate usage checks still need work. Manual failures
-include backslash escapes interpreted as macros inside crayon's preformatted blocks, and LaTeX
-commands parsed as Rd macros inside viridisLite's conditional out blocks. Test those contexts; do
-not globally allow unknown macros.
+Finish Milestone 2 before declaring it complete. S4 usage currently loses method identity and
+compares methods with generic signatures. Correct that classification with owned fixtures; do not
+turn unavailable method metadata into passing evidence. An owned native probe with a method
+`function(x, extra=2, ...)` observed only `x,...` through both `formals()` and `args()` on
+`selectMethod()` and `getMethod()` results. Public signature metadata alone therefore does not
+settle all method defaults. No method bodies were inspected. NativR currently lacks these method
+selection APIs, so unsupported observations must stay explicit.
 
-Owned native probes parsed and rendered `\preformatted{cat("owned\n")}` and
-`\if{latex}{\out{\begin{center}owned\end{center}}}` with zero warnings. The negative control
-`\notARdMacro{owned}` emitted one warning. Preserve these as executable native parity fixtures in
-the next checker increment.
+Static-only documentation comparisons also retain exact AST comparison, unlike the bounded native
+numeric-storage equivalence used by the loaded observer. Add owned parity fixtures before changing
+that fallback. Broader Rd parsing/rendering remains bounded and does not establish full native
+renderer equivalence.
 
 The new withr observations distinguish 14 actual signature mismatches from the remaining unknown
 signature. Reproduce these through owned factories and formals assignment before changing runtime

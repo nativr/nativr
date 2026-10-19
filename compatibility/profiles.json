@@ -71,8 +71,8 @@
       },
       {
         "surface": "elementary transcendental functions",
-        "status": "planned (RFC-0007)",
-        "behavior": "Use NativR-owned correctly rounded binary64 implementations so every browser computes identical results. A last-place difference from the normative oracle is accepted only when an independent high-precision reference shows the NativR result is correctly rounded and the oracle's is not; it is recorded as oracle-libm-deviation and never normalized away."
+        "status": "adopted; normative Linux deviation validation pending (RFC-0007)",
+        "behavior": "Sessions use NativR-owned correctly rounded binary64 Wasm implementations, including complex functions, so every browser computes identical results. A last-place difference from the normative oracle is accepted only when an independent high-precision reference shows the NativR result is correctly rounded and the oracle's is not; it is recorded as oracle-libm-deviation and never normalized away."
       },
       {
         "surface": "startup with default packages disabled",

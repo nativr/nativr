@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { expect, it } from "vitest";
 import { redactPackageCheck } from "../../../scripts/lib/package-check-summary.mjs";
 
-it.each(["0.356.0", "0.357.0", "0.358.0"])(
+it.each(["0.356.0", "0.357.0", "0.358.0", "0.359.0"])(
   "pins checkpoint %s without evaluating the holdout",
   async (profile) => {
     const read = async (path: string) =>
@@ -81,7 +81,7 @@ it.each(["0.356.0", "0.357.0", "0.358.0"])(
         discovered: number;
         executed: number;
       }[];
-      if (profile === "0.358.0") {
+      if (profile === "0.358.0" || profile === "0.359.0") {
         const metadata = summary.documentationMetadata as {
           policy: string;
           sourceSha256: string;
@@ -98,6 +98,12 @@ it.each(["0.356.0", "0.357.0", "0.358.0"])(
         }
       }
       expect(new Set(stages.map((s) => s.id)).size).toBe(15);
+      if (profile === "0.359.0") {
+        if (["evaluate", "rprojroot", "whisker"].includes(entry.package))
+          expect(stages.find((s) => s.id === "documentation")?.status).toBe("passed");
+        if (["crayon", "viridisLite"].includes(entry.package))
+          expect(stages.find((s) => s.id === "manual")?.status).toBe("passed");
+      }
       if (entry.tier === "P7") {
         expect(summary.p7Eligible).toBe(true);
         expect(stages.every((s) => s.status === "passed" || s.status === "inapplicable")).toBe(

@@ -33,14 +33,31 @@ const R_LIKE = new Set([
   "testonly",
 ]);
 // Verbatim-like contents (no nested macros other than escapes).
-const VERBATIM = new Set(["alias", "name", "keyword", "concept", "docType", "encoding", "url"]);
+const VERBATIM = new Set([
+  "alias",
+  "name",
+  "keyword",
+  "concept",
+  "docType",
+  "encoding",
+  "url",
+  "preformatted",
+  "out",
+  "kbd",
+  "samp",
+  "verb",
+  "env",
+  "option",
+  "eqn",
+  "deqn",
+]);
 
 export function parseRd(text: string): RdNode[] {
   const state = { text, index: 0 };
   return parseSequence(state, "latex", false);
 }
 
-type Mode = "latex" | "rlike" | "verbatim";
+type Mode = "latex" | "rlike" | "verbatim" | "verbatim-percent";
 
 function parseSequence(
   state: { text: string; index: number },
@@ -54,6 +71,8 @@ function parseSequence(
     buffer = "";
   };
   let quote: string | undefined;
+  const verbatim = mode === "verbatim" || mode === "verbatim-percent";
+  let literalBraces = 0;
   while (state.index < state.text.length) {
     const char = state.text[state.index] ?? "";
     if (char === "\\") {
@@ -66,6 +85,11 @@ function parseSequence(
       if (quote !== undefined) {
         buffer += char + next;
         state.index += 2;
+        continue;
+      }
+      if (verbatim) {
+        buffer += char;
+        state.index += 1;
         continue;
       }
       const match = /^[A-Za-z][A-Za-z0-9]*/u.exec(state.text.slice(state.index + 1));
@@ -91,21 +115,22 @@ function parseSequence(
       const args: RdNode[][] = [];
       while (state.text[state.index] === "{") {
         state.index += 1;
-        const childMode: Mode = VERBATIM.has(name)
-          ? "verbatim"
-          : R_LIKE.has(name)
-            ? "rlike"
-            : name === "item" || name === "method" || name === "S3method" || name === "S4method"
-              ? mode
-              : mode === "verbatim"
-                ? "verbatim"
-                : "latex";
+        const childMode: Mode =
+          (name === "eqn" || name === "deqn") && args.length === 0
+            ? "verbatim-percent"
+            : VERBATIM.has(name) || (name === "href" && args.length === 0)
+              ? "verbatim"
+              : R_LIKE.has(name)
+                ? "rlike"
+                : name === "item" || name === "method" || name === "S3method" || name === "S4method"
+                  ? mode
+                  : "latex";
         args.push(parseSequence(state, childMode, true));
       }
       nodes.push({ kind: "macro", name, ...(option === undefined ? {} : { option }), args });
       continue;
     }
-    if (quote === undefined && char === "%") {
+    if (quote === undefined && char === "%" && mode !== "verbatim-percent") {
       const end = state.text.indexOf("\n", state.index);
       state.index = end < 0 ? state.text.length : end;
       continue;
@@ -115,12 +140,24 @@ function parseSequence(
       else if (quote === char) quote = undefined;
     }
     if (quote === undefined && char === "{") {
+      if (verbatim) {
+        literalBraces += 1;
+        buffer += char;
+        state.index += 1;
+        continue;
+      }
       flush();
       state.index += 1;
       nodes.push({ kind: "macro", name: "", args: [parseSequence(state, mode, true)] });
       continue;
     }
     if (quote === undefined && char === "}") {
+      if (verbatim && literalBraces > 0) {
+        literalBraces -= 1;
+        buffer += char;
+        state.index += 1;
+        continue;
+      }
       if (inBraces) {
         state.index += 1;
         flush();
@@ -192,6 +229,8 @@ export interface DocumentationInput {
   };
   /** Aliases of base and recommended packages (black-box catalog). */
   readonly installedAliases: ReadonlyMap<string, ReadonlySet<string>>;
+  /** Installed Rd file basenames, independently observed for qualified-link fallback. */
+  readonly installedFiles?: ReadonlyMap<string, ReadonlySet<string>>;
 }
 
 export interface DocumentationCheck {
@@ -202,7 +241,7 @@ export interface DocumentationCheck {
 
 export interface DocumentationAssessment {
   readonly schemaVersion: 1;
-  readonly policy: "documentation-v3";
+  readonly policy: "documentation-v4";
   readonly status: "passed" | "failed" | "unexecuted";
   readonly checks: readonly DocumentationCheck[];
 }
@@ -338,6 +377,9 @@ export function inspectPackageDocumentation(
   );
 
   const packageAliases = new Set(parsed.flatMap((rd) => rd.aliases));
+  const packageFiles = new Set(
+    parsed.map((rd) => rd.path.replace(/^.*[/\\]/u, "").replace(/\.[Rr]d$/u, "")),
+  );
   const allInstalled = new Set<string>();
   for (const aliases of input.installedAliases.values())
     for (const alias of aliases) allInstalled.add(alias);
@@ -346,10 +388,18 @@ export function inspectPackageDocumentation(
   for (const rd of parsed) {
     let status: DocumentationCheck["status"] = "passed";
     for (const link of rd.links) {
+      // Native check accepts a qualified alias or Rd filename in that package. Its check is
+      // stricter than the HTML renderer's cross-package fallback. Unqualified links use aliases.
       const known =
-        link.pkg === undefined || link.pkg === input.packageName
+        link.pkg === undefined
           ? packageAliases.has(link.topic) || allInstalled.has(link.topic)
-          : input.installedAliases.get(link.pkg)?.has(link.topic);
+          : link.pkg === input.packageName
+            ? packageAliases.has(link.topic) || packageFiles.has(link.topic)
+            : input.installedAliases.get(link.pkg)?.has(link.topic) === true
+              ? true
+              : input.installedAliases.has(link.pkg)
+                ? input.installedFiles?.get(link.pkg)?.has(link.topic)
+                : undefined;
       if (known === undefined) status = status === "failed" ? status : "unexecuted";
       else if (!known) status = "failed";
     }
@@ -360,7 +410,7 @@ export function inspectPackageDocumentation(
         ? "Every link target is a package or installed topic."
         : status === "failed"
           ? "Missing link targets."
-          : "A link names a package outside the installed catalog.",
+          : "A link target cannot be resolved from the available alias and Rd file catalogs.",
     );
   }
 
@@ -410,6 +460,9 @@ export function inspectPackageDocumentation(
       (rd.sections.get("arguments") ?? []).flatMap((group) => argumentItems(group)),
     );
     const undocumentedArgs = [...usageArguments].filter((name) => !documented.has(name));
+    const internal = (rd.sections.get("keyword") ?? []).some(
+      (group) => rdText(group).trim() === "internal",
+    );
     const extraArgs = [...documented].filter((name) => !usageArguments.has(name));
     // S3 methods documented with \method need no alias of their own.
     const methods = new Set<string>();
@@ -419,12 +472,14 @@ export function inspectPackageDocumentation(
         entry.kind === "function" && !methods.has(entry.name) && !rd.aliases.includes(entry.name),
     );
     const usageOk =
-      undocumentedArgs.length === 0 && extraArgs.length === 0 && unaliased.length === 0;
+      (internal || undocumentedArgs.length === 0) &&
+      extraArgs.length === 0 &&
+      unaliased.length === 0;
     add(
       `rd:usage:${rd.path}`,
       usageOk ? "passed" : "failed",
       usageOk
-        ? "Every usage argument is documented, every documented argument is in usage, and usage functions have aliases."
+        ? "Usage arguments satisfy the internal-page policy, every documented argument is in usage, and usage functions have aliases."
         : "Usage arguments, documented arguments or aliases are inconsistent.",
     );
     for (const entry of entries) {
@@ -485,7 +540,7 @@ export function inspectPackageDocumentation(
 
   return {
     schemaVersion: 1,
-    policy: "documentation-v3",
+    policy: "documentation-v4",
     status: checks.some((check) => check.status === "failed")
       ? "failed"
       : checks.every((check) => check.status === "passed")
@@ -639,24 +694,24 @@ function calleeName(value: unknown): string | undefined {
 }
 
 // Rd macros documented in Writing R Extensions, chapter 2 (GNU R 4.6.1), including the system
-// macros and the LaTeX math commands allowed inside equations.
+// macros. Equation arguments are verbatim; LaTeX commands are not Rd macros outside them.
 const DOCUMENTED_RD_MACROS = new Set(
   (
-    "CRANpkg Figure PR R RdOpts S3method S4method Sexpr abbr acronym alias alpha arguments author " +
+    "CRANpkg Figure PR R RdOpts S3method S4method Sexpr abbr acronym alias arguments author " +
     "bibcitep bibcitet bibinfo bibshow bold cite citep citet code command concept cr dQuote deqn " +
     "describe description details dfn docType doi dontdiff dontrun dontshow donttest dots email emph " +
-    "enc encoding enumerate env eqn examples figure file format frac ge geq href if ifelse " +
-    "includegraphics inputencoding item itemize kbd keyword lambda ldots le leq link linkS4class " +
-    "linkS4methods method name ne neq newcommand note option out packageAuthor packageDESCRIPTION " +
+    "enc encoding enumerate env eqn examples figure file format href if ifelse " +
+    "includegraphics inputencoding item itemize kbd keyword ldots link linkS4class " +
+    "linkS4methods method name newcommand note option out packageAuthor packageDESCRIPTION " +
     "packageDescription packageIndices packageMaintainer packageTitle pkg preformatted references " +
-    "renewcommand sQuote samp section seealso source sqrt sspace strong subsection tab tabular " +
+    "renewcommand sQuote samp section seealso source sspace strong subsection tab tabular " +
     "testonly title url usage usepackage value var verb"
   ).split(" "),
 );
 
 export interface ManualAssessment {
   readonly schemaVersion: 1;
-  readonly policy: "manual-text-rendering-v1";
+  readonly policy: "manual-text-rendering-v2";
   readonly status: "passed" | "failed" | "unexecuted";
   readonly checks: readonly DocumentationCheck[];
 }
@@ -711,7 +766,7 @@ export function inspectPackageManual(rdFiles: readonly RdFile[]): ManualAssessme
   }
   return {
     schemaVersion: 1,
-    policy: "manual-text-rendering-v1",
+    policy: "manual-text-rendering-v2",
     status: checks.some((check) => check.status === "failed")
       ? "failed"
       : checks.length > 0 && checks.every((check) => check.status === "passed")

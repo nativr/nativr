@@ -146,18 +146,24 @@ Observed on native fixtures (opt-in parity test `namespace-source-check.test.ts`
   `if (FALSE)` branches. `<<-` to an undefined name is reported. Imports from non-core packages
   leave the item unexecuted.
 
-## documentation (normative, policy documentation-v3)
+## documentation (normative, policy documentation-v4)
 
-Rd files are parsed following _Writing R Extensions_ chapter 2 and the published Rd parsing notes:
-`%` comments, the `\\` `\{` `\}` `\%` escapes, macros with brace and `[option]` arguments, and
-quoted strings in R-like contexts (`\usage`, `\examples`, `\code`). Observed on native fixtures
-(opt-in parity test `rd-check.test.ts`):
+Rd files are parsed following
+[_Writing R Extensions_ chapter 2](https://www.stat.ethz.ch/R-manual/R-devel/doc/manual/R-exts.html#Rd-format)
+and the published Rd parsing notes: `%` comments, the `\\` `\{` `\}` `\%` escapes, macros with brace
+and `[option]` arguments, and quoted strings in R-like contexts (`\usage`, `\examples`, `\code`).
+Observed on native fixtures (opt-in parity test `rd-check.test.ts`):
 
 - **Rd files** (ERROR otherwise): `\name` and `\title` exist and are unique. A duplicated `\alias`
   within one file is accepted.
-- **Rd cross-references** (WARNING): every `\link` target is a package alias or an alias of the base
-  and recommended packages, from `compatibility/gnu-r/rd-aliases.json` (black-box help-index catalog
-  of GNU R 4.6.1). Links into other packages remain unexecuted.
+- **Rd cross-references** (WARNING): unqualified `\link` targets resolve through package aliases or
+  installed aliases. Qualified links resolve through aliases or Rd file basenames within the named
+  package. `\name` alone does not establish a target. Native check rejects a qualified target found
+  only in another package, even though the HTML renderer documents a broader fallback.
+  `compatibility/gnu-r/rd-aliases.json` schema 2 records base/recommended aliases and public Rd
+  filenames from GNU R 4.6.1, without implementation bodies. Missing catalogs leave resolution
+  unexecuted; a complete catalog with no matching target fails. Owned native fixtures distinguish
+  filenames, names, aliases, qualified and unqualified links, and whitespace handling.
 - **missing documentation entries** (WARNING): every exported object, including `exportPattern()`
   matches and non-function objects, has an alias. The checker observes `getNamespaceExports()` in
   both loaded runtimes. Incomplete observations leave this item unexecuted; differing inventories
@@ -184,17 +190,25 @@ quoted strings in R-like contexts (`\usage`, `\examples`, `\code`). Observed on 
   does not establish complete function behavior or resolve other Rd checks.
 - **Rd \usage sections** (WARNING): every usage argument, including `...`, has an `\item` in
   `\arguments`, and every item is in usage. Usage functions other than documented S3 methods have an
-  alias.
+  alias. Pages with `\keyword{internal}` may omit argument descriptions. Internal status does not
+  exempt extra documented arguments, missing aliases, invalid R syntax or codoc mismatches. Owned
+  native fixtures exercise each boundary separately.
 - **Rd contents**: every file has a non-empty `\description`.
 
-## manual (normative adaptation, policy manual-text-rendering-v1)
+## manual (normative adaptation, policy manual-text-rendering-v2)
 
 GNU R typesets a PDF manual, which needs a host LaTeX toolchain and is browser-inapplicable. NativR
 instead renders every Rd file to text and requires that it uses only the Rd macros documented in
-_Writing R Extensions_ chapter 2 (including the system macros and equation commands) or macros the
-file defines with `\newcommand`. Files with `\Sexpr` remain unexecuted. The adaptation is recorded
-in `compatibility/profiles.json` and does not claim PDF equivalence. Native `R CMD check` reported
-the PDF manual for abind 1.4-8 as OK.
+_Writing R Extensions_ chapter 2 (including the system macros) or macros the file defines with
+`\newcommand`. Verbatim contexts preserve literal backslashes and balanced braces, decode escaped
+braces/percent/backslashes, and remove percent comments. These include `\preformatted`, `\out`, both
+equation arguments and the first `\href` argument; its second argument remains markup. The first
+equation argument preserves unescaped percent. LaTeX commands inside equations or `\out` are literal
+text, while unknown commands in markup still fail. Native parse/render fixtures and literal-byte
+observations cover these distinctions. This remains a bounded text adaptation, not a claim of
+complete native Rd rendering behavior. Files with `\Sexpr` remain unexecuted. The adaptation is
+recorded in `compatibility/profiles.json` and does not claim PDF equivalence. Native `R CMD check`
+reported the PDF manual for abind 1.4-8 as OK.
 
 ## vignettes and installed-documentation (normative adaptation, policy vignettes-v1)
 

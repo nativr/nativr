@@ -22,9 +22,12 @@ afterAll(() => parser.dispose());
 
 const catalog = JSON.parse(
   readFileSync(new URL("../../../compatibility/gnu-r/rd-aliases.json", import.meta.url), "utf8"),
-) as { packages: Record<string, string[]> };
+) as { packages: Record<string, string[]>; files: Record<string, string[]> };
 const installedAliases: DocumentationInput["installedAliases"] = new Map(
   Object.entries(catalog.packages).map(([name, aliases]) => [name, new Set(aliases)]),
+);
+const installedFiles: DocumentationInput["installedFiles"] = new Map(
+  Object.entries(catalog.files).map(([name, files]) => [name, new Set(files)]),
 );
 
 // Independently authored fixture. Native GNU R 4.6.1 R CMD check on exactly these files reports
@@ -86,11 +89,46 @@ const assess = (rdFiles: DocumentationInput["rdFiles"], source: string, exports:
       exports,
       functions: functionsOf(source),
       installedAliases,
+      installedFiles,
     },
     (text) => parser.parse(text),
   );
 
 describe("Rd parsing", () => {
+  it("preserves verbatim backslashes, braces and escaped percent while removing comments", () => {
+    const nodes = parseRd(String.raw`\preformatted{a{b}\{c\}\%d%comment
+\n}`);
+    expect(nodes).toEqual([
+      {
+        kind: "macro",
+        name: "preformatted",
+        args: [[{ kind: "text", text: "a{b}{c}%d\n\\n" }]],
+      },
+    ]);
+  });
+
+  it("keeps percent in the first equation argument and treats href text as markup", () => {
+    const nodes = parseRd(String.raw`\eqn{\ownedmath{a%literal}}{a%comment
+}\href{https://example.invalid/\owned}{\emph{owned}}`);
+    expect(nodes).toEqual([
+      {
+        kind: "macro",
+        name: "eqn",
+        args: [
+          [{ kind: "text", text: String.raw`\ownedmath{a%literal}` }],
+          [{ kind: "text", text: "a\n" }],
+        ],
+      },
+      {
+        kind: "macro",
+        name: "href",
+        args: [
+          [{ kind: "text", text: String.raw`https://example.invalid/\owned` }],
+          [{ kind: "macro", name: "emph", args: [[{ kind: "text", text: "owned" }]] }],
+        ],
+      },
+    ]);
+  });
   it("handles escapes, comments, nested macros and R-like strings", () => {
     const nodes = parseRd(
       '\\name{x} % comment\n\\usage{f("a}b", \\dots)\n\\method{print}{foo}(x, \\dots)}\n\\description{100\\% \\code{\\link{g}}}',
@@ -109,6 +147,76 @@ describe("Rd parsing", () => {
 });
 
 describe("documentation checks", () => {
+  it("exempts only missing argument descriptions on internal pages", () => {
+    const page = (usage: string, argumentsText = "", internal = true, alias = "f") =>
+      String.raw`\name{f}\alias{${alias}}\title{Owned}\usage{${usage}}\description{Owned.}${argumentsText}${internal ? String.raw`\keyword{internal}` : ""}`;
+    const cases = [
+      [page("f(x,y=2)"), "passed", "passed"],
+      [page("f(x,y=2)", "", false), "failed", "passed"],
+      [page("f(x,y=2)", String.raw`\arguments{\item{extra}{Owned.}}`), "failed", "passed"],
+      [page("f(x,y=2)", "", true, "different"), "failed", "passed"],
+      [page("f(x,y=3)"), "passed", "failed"],
+      [page("f(x"), "failed", undefined],
+    ] as const;
+    for (const [text, usage, codoc] of cases) {
+      const result = assess([{ path: "man/f.Rd", text }], "f <- function(x,y=2) x", ["f"]);
+      expect(result.checks.find(({ id }) => id === "rd:usage:man/f.Rd")?.status).toBe(usage);
+      expect(result.checks.find(({ id }) => id === "rd:codoc:man/f.Rd:f")?.status).toBe(codoc);
+    }
+  });
+
+  it.each([
+    [String.raw`\link[base:mean]{owned}`, "passed"],
+    [String.raw`\link[grDevices:cairo]{owned}`, "passed"],
+    [String.raw`\link[grDevices]{cairo}`, "passed"],
+    [String.raw`\link[base:median]{owned}`, "failed"],
+    [String.raw`\link{cairo}`, "failed"],
+    [String.raw`\link{ mean }`, "passed"],
+    [String.raw`\link[base:zzownedmissing]{owned}`, "failed"],
+    [String.raw`\link[ownedfixture:ownname]{owned}`, "failed"],
+    [String.raw`\link[ownedfixture:ownfilename]{owned}`, "passed"],
+    [String.raw`\link[ownedfixture:ownalias]{owned}`, "passed"],
+    [String.raw`\link[ownedfixture:median]{owned}`, "failed"],
+    [String.raw`\link[zzownedmissing:f]{owned}`, "unexecuted"],
+    [String.raw`\link[=ownalias]{owned}`, "passed"],
+  ])("resolves native cross-reference boundaries: %s", (link, status) => {
+    const result = assess(
+      [
+        {
+          path: "man/ownfilename.Rd",
+          text: String.raw`\name{ownname}\alias{ownalias}\title{Owned}\description{Owned.}`,
+        },
+        {
+          path: "man/link.Rd",
+          text: String.raw`\name{link}\alias{link}\title{Owned}\description{${link}}`,
+        },
+      ],
+      "",
+      [],
+    );
+    expect(result.checks.find(({ id }) => id === "rd:links:man/link.Rd")?.status).toBe(status);
+  });
+
+  it("leaves qualified filename resolution inconclusive without a complete file catalog", () => {
+    const result = inspectPackageDocumentation(
+      {
+        packageName: "ownedfixture",
+        exports: [],
+        functions: new Map(),
+        installedAliases,
+        rdFiles: [
+          {
+            path: "man/link.Rd",
+            text: String.raw`\name{link}\title{Owned}\description{\link[grDevices:cairo]{owned}}`,
+          },
+        ],
+      },
+      (text) => parser.parse(text),
+    );
+    expect(result.checks.find(({ id }) => id === "rd:links:man/link.Rd")?.status).toBe(
+      "unexecuted",
+    );
+  });
   it("keeps computed definitions inconclusive until loaded metadata is available", () => {
     const rd = String.raw`\name{f}\alias{f}\title{F}\usage{f(x, y=2)}\arguments{\item{x}{First.}\item{y}{Second.}}\description{Fixture.}`;
     const result = assess(
@@ -245,6 +353,20 @@ it.runIf(process.env.NATIVR_PACKAGE_ORACLE_FIXTURE === "1")(
 );
 
 describe("manual text rendering (browser adaptation)", () => {
+  it.each([
+    [String.raw`\preformatted{cat("owned\n")}`, "passed"],
+    [String.raw`\if{latex}{\out{\begin{center}owned\end{center}}}`, "passed"],
+    [String.raw`\notARdMacro{owned}`, "failed"],
+    [String.raw`\alpha`, "failed"],
+    [String.raw`\eqn{\ownedmath{a%literal}}{a}`, "passed"],
+    [String.raw`\href{https://example.invalid/\owned}{\emph{owned}}`, "passed"],
+    [String.raw`\href{https://example.invalid}{\notARdMacro{owned}}`, "failed"],
+  ])("classifies macros in context: %s", (context, status) => {
+    const result = inspectPackageManual([
+      { path: "man/owned.Rd", text: String.raw`\name{owned}\title{Owned}\description{${context}}` },
+    ]);
+    expect(result.status).toBe(status);
+  });
   it("renders documented and package-defined macros and rejects unknown ones", () => {
     const result = inspectPackageManual([
       { path: "man/f.Rd", text: fRd },
@@ -264,3 +386,47 @@ describe("manual text rendering (browser adaptation)", () => {
     expect(result.status).toBe("failed");
   });
 });
+
+it.runIf(process.env.NATIVR_PACKAGE_ORACLE_FIXTURE === "1")(
+  "observes internal usage, qualified filename links and verbatim contexts in native R",
+  async () => {
+    const result = await capturePackageOracleScript({
+      source: readFileSync(new URL("fixtures/rd-contexts.R", import.meta.url), "utf8"),
+      rscript: process.env.NATIVR_RSCRIPT ?? "Rscript",
+      timeoutMs: 180_000,
+    });
+    expect(result.status, result.stderr).toBe("completed");
+    expect(result.stdout.replaceAll("\r\n", "\n")).toBe(
+      [
+        "usage:ordinary:TRUE",
+        "usage:internal:FALSE",
+        "usage:internalExtra:TRUE",
+        "usage:internalAlias:TRUE",
+        "usage:internalMismatch:FALSE",
+        "usage:internalSyntax:TRUE",
+        "codoc:internalMismatch:TRUE",
+        "link:alias:FALSE",
+        "link:topic:FALSE",
+        "link:plainTopic:FALSE",
+        "link:fallback:TRUE",
+        "link:unqualified:TRUE",
+        "link:spaces:FALSE",
+        "link:missing:TRUE",
+        "link:ownName:TRUE",
+        "link:ownFilename:FALSE",
+        "link:ownAlias:FALSE",
+        "link:ownFallback:TRUE",
+        "context:preformatted:completed:0",
+        "context:out:completed:0",
+        "context:unknown:completed:1",
+        "context:outsideMath:completed:1",
+        "context:equation:completed:0",
+        "context:verbatim:completed:0",
+        "verbatim-bytes:97,123,98,125,123,99,125,37,100,10,92,110",
+        "context:url:completed:0",
+        "",
+      ].join("\n"),
+    );
+  },
+  200_000,
+);

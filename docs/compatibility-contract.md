@@ -3951,3 +3951,21 @@ owned signature primitives, lazy defaults and retained closure capture.
 returns a callable NULL-bodied stub. This differs from an unknown primitive signature, for which
 native `args()` itself returns NULL. Native inventory entries distinguish unknown metadata
 (`formals: null`) from a known empty argument list (`formals: []`).
+
+### Rd usage, links and verbatim contexts (profile 0.359)
+
+Documentation policy v4 permits missing argument descriptions on internal pages while retaining
+alias, extra-argument, syntax and signature checks. Qualified links accept aliases or Rd filenames
+within the named package; unqualified links use aliases. Complete missing targets fail, while absent
+help catalogs remain unexecuted. The versioned catalog records only public help metadata.
+
+Manual adaptation v2 recognizes literal backslashes and balanced braces in verbatim contexts,
+including preformatted text, raw output, equation arguments and hyperlink URLs. Percent comments and
+escapes retain their context-dependent behavior. Unknown markup remains a failure; LaTeX commands do
+not become globally valid Rd macros. Independently authored native fixtures cover positive and
+negative controls, including literal-byte preservation. These checker repairs do not change R
+evaluator behavior, so foundation and recursive runtime cases remain unchanged.
+
+The package-tools unit and opt-in native fixtures provide executable evidence for these rules. S4
+method usage/signature resolution and broader Rd rendering remain unfinished; this increment does
+not establish complete Rd or package compatibility.

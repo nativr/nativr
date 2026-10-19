@@ -449,6 +449,9 @@ try {
         installedAliases: new Map(
           Object.entries(aliasCatalog.packages).map(([name, aliases]) => [name, new Set(aliases)]),
         ),
+        installedFiles: new Map(
+          Object.entries(aliasCatalog.files).map(([name, files]) => [name, new Set(files)]),
+        ),
       },
       (source) => namespaceParser.parse(source),
     );
@@ -784,7 +787,7 @@ try {
         "documentation",
         documentationAssessment.status,
         documentationAssessment.status === "passed"
-          ? "Every RFC-0008 Rd, metadata, cross-reference, documentation-entry, codoc, usage and contents check executed and passed (documentation-v3)."
+          ? "Every RFC-0008 Rd, metadata, cross-reference, documentation-entry, codoc, usage and contents check executed and passed (documentation-v4)."
           : documentationAssessment.status === "failed"
             ? "A documentation check failed; see documentationAssessment."
             : "Some documentation checks remain unexecuted; see documentationAssessment.",
@@ -876,7 +879,7 @@ try {
         "manual",
         manualAssessment.status,
         manualAssessment.status === "passed"
-          ? "Every Rd file renders to text with documented or package-defined macros (manual-text-rendering-v1). PDF typesetting needs a host LaTeX toolchain and is a documented browser adaptation."
+          ? "Every Rd file renders to text with documented or package-defined macros (manual-text-rendering-v2). PDF typesetting needs a host LaTeX toolchain and is a documented browser adaptation."
           : manualAssessment.status === "failed"
             ? "An Rd file uses undocumented, undefined macros; see manualAssessment."
             : "Some Rd files were not rendered; see manualAssessment.",
