@@ -11,6 +11,7 @@ import { observeCleanBaseLoad } from "./lib/package-clean-base-observer.mjs";
 import { observeLibraryPathLoad } from "./lib/package-library-path-observer.mjs";
 import { observePackageAuthors } from "./lib/package-authors-observer.mjs";
 import { observePackageAuthorFields } from "./lib/package-author-fields-observer.mjs";
+import { observePackageDocumentation } from "./lib/package-documentation-observer.mjs";
 import { assessEffectiveAuthorFields } from "./lib/package-author-validation.mjs";
 import {
   decodePackageConditions,
@@ -40,6 +41,7 @@ const {
   inspectPackageLicense,
   inspectPackageNamespaceSource,
   inspectPackageDocumentation,
+  collectDocumentationProbes,
   inspectPackageManual,
   inspectPackageVignettes,
   comparePackageVersions,
@@ -393,6 +395,7 @@ try {
   });
   let namespaceSourceAssessment;
   let documentationAssessment;
+  let documentationObservation;
   let manualAssessment;
   try {
     namespaceSourceAssessment = inspectPackageNamespaceSource(
@@ -413,41 +416,9 @@ try {
       },
       (source) => namespaceParser.parse(source),
     );
-    // RFC-0008 documentation inputs: function formals, exported names and Rd files.
-    const functions = new Map();
-    for (const file of files.filter((item) => /^R\/[^/]+\.[RrSsq]$/u.test(item.path))) {
-      const ast = namespaceParser.parse(new TextDecoder().decode(file.data)).ast;
-      for (const statement of ast?.body ?? []) {
-        if (
-          statement.kind !== "AssignmentExpression" ||
-          statement.value?.kind !== "FunctionExpression"
-        )
-          continue;
-        functions.set(
-          statement.target.name,
-          statement.value.parameters.map((parameter) => ({
-            name: parameter.name,
-            ...(parameter.defaultValue === undefined
-              ? {}
-              : { defaultValue: parameter.defaultValue }),
-          })),
-        );
-      }
-    }
-    const exported = new Set();
-    const namespaceAst = namespaceParser.parse(artifact.bundle.namespace ?? "").ast;
-    for (const statement of namespaceAst?.body ?? []) {
-      if (statement.kind !== "CallExpression" || statement.callee?.kind !== "Identifier") continue;
-      const values = statement.arguments
-        .map((argument) => argument.value)
-        .map((value) => (value?.kind === "StringLiteral" ? value.value : value?.name))
-        .filter((value) => typeof value === "string");
-      if (statement.callee.name === "export") for (const value of values) exported.add(value);
-      if (statement.callee.name === "exportPattern")
-        for (const pattern of values)
-          for (const name of functions.keys())
-            if (new RegExp(pattern, "u").test(name)) exported.add(name);
-    }
+    // Observe loaded signatures and exports; computed definitions and non-function exports
+    // cannot be reconstructed reliably from top-level assignments. No implementation bodies
+    // or observed default expressions leave either runtime.
     const aliasCatalog = JSON.parse(
       await readFile(path.join(root, "compatibility/gnu-r/rd-aliases.json"), "utf8"),
     );
@@ -455,12 +426,26 @@ try {
       .filter((item) => /^man\/[^/]+\.[Rr]d$/u.test(item.path))
       .map((item) => ({ path: item.path, text: new TextDecoder().decode(item.data) }));
     manualAssessment = inspectPackageManual(rdFiles);
+    documentationObservation = await observePackageDocumentation(
+      entry.package,
+      collectDocumentationProbes(rdFiles, (source) => namespaceParser.parse(source)),
+      {
+        actual: (source) => captureNativr(source, []),
+        expected: (source) => oracle.capture({ source }),
+      },
+    );
     documentationAssessment = inspectPackageDocumentation(
       {
         packageName: entry.package,
         rdFiles,
-        exports: [...exported].sort(),
-        functions,
+        exports: documentationObservation.actual.exports ?? [],
+        functions: new Map(),
+        loaded: {
+          exportsStatus: documentationObservation.exportsStatus,
+          functions: new Map(
+            documentationObservation.functions.map(({ id, status }) => [id, status]),
+          ),
+        },
         installedAliases: new Map(
           Object.entries(aliasCatalog.packages).map(([name, aliases]) => [name, new Set(aliases)]),
         ),
@@ -799,7 +784,7 @@ try {
         "documentation",
         documentationAssessment.status,
         documentationAssessment.status === "passed"
-          ? "Every RFC-0008 Rd, metadata, cross-reference, documentation-entry, codoc, usage and contents check executed and passed (documentation-v2)."
+          ? "Every RFC-0008 Rd, metadata, cross-reference, documentation-entry, codoc, usage and contents check executed and passed (documentation-v3)."
           : documentationAssessment.status === "failed"
             ? "A documentation check failed; see documentationAssessment."
             : "Some documentation checks remain unexecuted; see documentationAssessment.",
@@ -918,6 +903,7 @@ try {
     libraryPathObservation,
     namespaceSourceAssessment,
     documentationAssessment,
+    documentationObservation,
     manualAssessment,
     vignetteAssessment: {
       ...vignetteAssessment,

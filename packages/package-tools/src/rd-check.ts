@@ -5,8 +5,8 @@ import type { PackageDependencySourceParser } from "./source-dependency-check.js
  *
  * The parser follows the published Rd format: Writing R Extensions, chapter 2, and "Parsing Rd
  * files" (D. Murdoch, R Core). Check rules follow native GNU R 4.6.1 `R CMD check` outcomes on
- * independently authored fixture packages. No `tools` source was read. Only names, paths and
- * outcome classes leave this module.
+ * independently authored fixture packages. No `tools` source was read. Assessments return names,
+ * paths and outcome classes; observation probes are constructed solely from public Rd usage.
  */
 
 export interface RdText {
@@ -185,6 +185,11 @@ export interface DocumentationInput {
   readonly exports: readonly string[];
   /** Top-level function formals of package code, with default-value syntax. */
   readonly functions: ReadonlyMap<string, readonly { name: string; defaultValue?: unknown }[]>;
+  /** When supplied, only complete paired namespace observations can establish codoc success. */
+  readonly loaded?: {
+    readonly exportsStatus: DocumentationCheck["status"];
+    readonly functions: ReadonlyMap<string, DocumentationCheck["status"]>;
+  };
   /** Aliases of base and recommended packages (black-box catalog). */
   readonly installedAliases: ReadonlyMap<string, ReadonlySet<string>>;
 }
@@ -197,9 +202,84 @@ export interface DocumentationCheck {
 
 export interface DocumentationAssessment {
   readonly schemaVersion: 1;
-  readonly policy: "documentation-v2";
+  readonly policy: "documentation-v3";
   readonly status: "passed" | "failed" | "unexecuted";
   readonly checks: readonly DocumentationCheck[];
+}
+
+export interface DocumentationProbe {
+  readonly id: string;
+  readonly name: string;
+  /** Constructed solely from documented usage; always a single NULL-bodied function, or null. */
+  readonly signature: string | null;
+}
+
+/** Collect public usage signatures without reading or serializing implementation bodies. */
+export function collectDocumentationProbes(
+  files: readonly RdFile[],
+  parse: PackageDependencySourceParser,
+): DocumentationProbe[] {
+  const probes: DocumentationProbe[] = [];
+  const occurrences = new Map<string, number>();
+  for (const file of files) {
+    try {
+      const usage = parseRd(file.text)
+        .filter((node): node is RdMacro => node.kind === "macro" && node.name === "usage")
+        .flatMap((node) => node.args)
+        .map((group) => rdText(group))
+        .join("\n");
+      const result = parse(usage);
+      if (result.diagnostics.some((diagnostic) => diagnostic.severity !== "info")) continue;
+      for (const entry of usageEntries(result.ast)) {
+        if (entry.kind !== "function") continue;
+        const base = `rd:codoc:${file.path}:${entry.name}`;
+        const occurrence = (occurrences.get(base) ?? 0) + 1;
+        occurrences.set(base, occurrence);
+        let signature: string | null = null;
+        try {
+          const parameters = entry.args.map((arg) => {
+            const name = `\`${arg.name.replaceAll("\\", "\\\\").replaceAll("`", "\\`")}\``;
+            if (arg.defaultValue === undefined) return name;
+            const span = asNode(arg.defaultValue)?.span as
+              { start?: { offset?: number }; end?: { offset?: number } } | undefined;
+            const start = span?.start?.offset;
+            const end = span?.end?.offset;
+            if (
+              start === undefined ||
+              end === undefined ||
+              start < 0 ||
+              end <= start ||
+              end > usage.length
+            )
+              throw new Error("No documented default span.");
+            return `${name} = ${usage.slice(start, end)}`;
+          });
+          const candidate = `function(${parameters.join(", ")}) NULL`;
+          const parsed = parse(candidate);
+          const body = (parsed.ast as { body?: unknown[] } | undefined)?.body;
+          const fn = asNode(body?.[0]);
+          if (
+            entry.complete &&
+            !parsed.diagnostics.some((item) => item.severity !== "info") &&
+            body?.length === 1 &&
+            fn?.kind === "FunctionExpression" &&
+            asNode(fn.body)?.kind === "NullLiteral"
+          )
+            signature = candidate;
+        } catch {
+          // Unsupported/ambiguous documented syntax cannot become a successful observation.
+        }
+        probes.push({
+          id: occurrence === 1 ? base : `${base}#${occurrence}`,
+          name: entry.name,
+          signature,
+        });
+      }
+    } catch {
+      // The inspector reports malformed Rd/usage independently.
+    }
+  }
+  return probes;
 }
 
 interface ParsedRd {
@@ -285,13 +365,25 @@ export function inspectPackageDocumentation(
   }
 
   // Missing documentation entries for exported objects.
+  if (input.loaded !== undefined)
+    add(
+      "rd:namespace-exports",
+      input.loaded.exportsStatus,
+      "Loaded namespace export names must be completely observed and agree with the oracle.",
+    );
   const undocumented = input.exports.filter((name) => !packageAliases.has(name));
   add(
     "rd:missing-documentation",
-    undocumented.length === 0 ? "passed" : "failed",
-    undocumented.length === 0
-      ? "Every exported object has a documentation entry."
-      : "Undocumented exported objects.",
+    input.loaded !== undefined && input.loaded.exportsStatus !== "passed"
+      ? "unexecuted"
+      : undocumented.length === 0
+        ? "passed"
+        : "failed",
+    input.loaded !== undefined && input.loaded.exportsStatus !== "passed"
+      ? "The complete exported object inventory has not been established."
+      : undocumented.length === 0
+        ? "Every exported object has a documentation entry."
+        : "Undocumented exported objects.",
   );
 
   // Usage: code/documentation consistency and documented arguments.
@@ -337,6 +429,22 @@ export function inspectPackageDocumentation(
     );
     for (const entry of entries) {
       if (entry.kind !== "function") continue;
+      const base = `rd:codoc:${rd.path}:${entry.name}`;
+      if (input.loaded !== undefined) {
+        const occurrence = (occurrences.get(base) ?? 0) + 1;
+        const id = occurrence === 1 ? base : `${base}#${occurrence}`;
+        const status = input.loaded.functions.get(id) ?? "unexecuted";
+        add(
+          base,
+          status,
+          status === "passed"
+            ? "Documented formals match loaded signatures in both runtimes."
+            : status === "failed"
+              ? "A loaded signature differs from documented formals."
+              : "Complete paired loaded signature observations are unavailable.",
+        );
+        continue;
+      }
       const code = input.functions.get(entry.name);
       if (code === undefined) {
         add(
@@ -377,7 +485,7 @@ export function inspectPackageDocumentation(
 
   return {
     schemaVersion: 1,
-    policy: "documentation-v2",
+    policy: "documentation-v3",
     status: checks.some((check) => check.status === "failed")
       ? "failed"
       : checks.every((check) => check.status === "passed")
@@ -431,6 +539,7 @@ type UsageEntry = {
   kind: "function" | "object";
   name: string;
   args: { name: string; defaultValue?: unknown }[];
+  complete?: boolean;
 };
 
 function usageEntries(ast: unknown): UsageEntry[] {
@@ -444,7 +553,14 @@ function usageEntries(ast: unknown): UsageEntry[] {
     } else if (node.kind === "CallExpression") {
       const name = calleeName(node.callee);
       if (name !== undefined)
-        entries.push({ kind: "function", name, args: callFormals(node.arguments) });
+        entries.push({
+          kind: "function",
+          name,
+          args: callFormals(node.arguments),
+          complete:
+            Array.isArray(node.arguments) &&
+            callFormals(node.arguments).length === node.arguments.length,
+        });
     } else if (node.kind === "ReplacementExpression") {
       const target = asNode(node.target);
       const name = target?.kind === "CallExpression" ? calleeName(target.callee) : undefined;
@@ -453,6 +569,9 @@ function usageEntries(ast: unknown): UsageEntry[] {
           kind: "function",
           name: `${name}<-`,
           args: [...callFormals(target?.arguments), { name: "value" }],
+          complete:
+            Array.isArray(target?.arguments) &&
+            callFormals(target.arguments).length === target.arguments.length,
         });
     } else if (node.kind === "BinaryExpression" && typeof node.operator === "string") {
       const left = identifierName(node.left);
@@ -462,6 +581,7 @@ function usageEntries(ast: unknown): UsageEntry[] {
           kind: "function",
           name: node.operator,
           args: [{ name: left }, { name: right }],
+          complete: true,
         });
     }
   }

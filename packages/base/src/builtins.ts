@@ -19224,6 +19224,7 @@ async function builtinFormals(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["fun"]);
   const value = required(matched, "fun", "formals");
   if (value.type === "closure") {
+    if (value.parameters.length === 0) return R_NULL;
     const defaults = value.parameters.map((parameter): RValue =>
       parameter.defaultValue === undefined
         ? ({ type: "symbol", name: "" } satisfies RSymbol)
@@ -19237,7 +19238,7 @@ async function builtinFormals(invocation: BuiltinInvocation): Promise<RValue> {
   }
   if (value.type === "builtin") {
     const parameters = value.definition.formals;
-    if (parameters === undefined) return R_NULL;
+    if (parameters === undefined || parameters.length === 0) return R_NULL;
     const defaults = parameters.map((parameter): RValue =>
       parameter.defaultValue === undefined
         ? ({ type: "symbol", name: "" } satisfies RSymbol)

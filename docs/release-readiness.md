@@ -1,6 +1,6 @@
 # Release readiness
 
-Last assessed 2026-10-19 at verified semantic profile **0.357.0**. Canonical counts are generated in
+Last assessed 2026-10-19 at verified semantic profile **0.358.0**. Canonical counts are generated in
 [compatibility/status.json](../compatibility/status.json). The full compatibility target remains the
 five completion criteria in [gnu-r-compatibility.md](gnu-r-compatibility.md).
 
@@ -13,9 +13,9 @@ compatibility claim follows from this preview.
 
 | Gate                               | Latest evidence                                                                                                                                      | Status                    |
 | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| Production check                   | Profile 0.357: 1,309 unit tests pass, 87 opt-in tests skipped; build, boundaries, production types and bundle audit pass                             | Passed                    |
-| Conformance                        | 1,235 checked-in, 1,166 live GNU R 4.6.1, 133 recursive cases; 79 bindings linked with causal controls                                               | Passed                    |
-| Native metadata/signature fixtures | 22 independently authored tests pass at 0.356; two further fixtures pass at 0.357                                                                    | Passed                    |
+| Production check                   | Profile 0.358: 1,321 unit tests pass, 89 opt-in tests skipped; build, boundaries, production types and bundle audit pass                             | Passed                    |
+| Conformance                        | 1,236 checked-in, 1,167 live GNU R 4.6.1, 134 recursive cases; 81 bindings linked with causal controls                                               | Passed                    |
+| Native metadata/signature fixtures | 22 owned metadata/Rd tests pass at 0.358, including a 23-comparison native codoc matrix                                                              | Passed                    |
 | Browser e2e                        | Historical 6/6 pass reported at 0.353; WebKit also exceeded the 120 s required-example budget in later runs (R14). Not refreshed in these increments | Open                      |
 | Packed consumer                    | Historical pack smoke pass; not refreshed in these increments                                                                                        | Revalidate before release |
 | Fixed bundle limits                | Client 17.3/150 KiB gzip; Worker 466.4/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                                 | Passed                    |
@@ -30,7 +30,7 @@ publication.
 | Criterion                                        | Current evidence                                                                                                                                                                                                                                   | Status                  |
 | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
 | Domain evidence                                  | All **13** required domains remain incomplete; behavioral matrices need closure                                                                                                                                                                    | Not met                 |
-| Callable evidence/exclusions                     | 742/2,522 distinct names overlap; 79 bindings have specific recursive links. Name overlap is inventory, not a completion percentage                                                                                                                | Not met                 |
+| Callable evidence/exclusions                     | 742/2,522 distinct names overlap; 81 bindings have specific recursive links. Name overlap is inventory, not a completion percentage                                                                                                                | Not met                 |
 | Broad corpus evidence                            | 25 pins: 2 P7, 1 P6, 8 P5, 12 P4, 1 P3 and the unevaluated P0 holdout. Higher-tier blockers are explicit                                                                                                                                           | Not met                 |
 | Platform verification                            | Correctly rounded elementary Wasm is shipped and used in sessions, including complex functions since 0.355. Windows oracle evidence remains advisory pending the separately authorized RFC-0007 Linux gate; browser/OS coverage remains incomplete | Not met                 |
 | Agreement among ledger, capabilities and reports | Generated checks and this checkpoint agree. Future changes must regenerate capabilities, coverage and status in order                                                                                                                              | Met for this checkpoint |
@@ -56,8 +56,8 @@ being adopted as a release gate.
 
 All 24 development/regression archives matched their pinned hashes and were attempted with the
 original package entrypoints, explicit RNG initialization and native repeatability observations. The
-[checkpoint](../compatibility/package-check-evidence/corpus-0.356.0.json) links 23 redacted reports
-and one explicit checker abort. Summaries contain allowlisted metadata, digests, capture statuses
+[checkpoint](../compatibility/package-check-evidence/corpus-0.358.0.json) links all 24 redacted
+reports with no checker aborts. Summaries contain allowlisted metadata, digests, capture statuses
 and counts; source, output and diagnostic strings are omitted. Formula was untouched.
 
 | Package group                                                                                                      | Highest demonstrated tier | First remaining work                                                                            |
@@ -69,13 +69,33 @@ and counts; source, output and diagnostic strings are omitted. Formula was untou
 | BH 1.90.0-1                                                                                                        | P3                        | Representative workload/native build evidence unavailable; no oracle script observations        |
 | Formula 1.2-6                                                                                                      | P0                        | Holdout gate has not been authorized                                                            |
 
-The inline checker aborted on repeated documentation inventory IDs. Its previous P4 evidence is
-retained. A dispatch result of completed does not prove evaluation success: tiers use reconciled
-capture/stage results. In particular rematch receives no P6 credit merely because a guarded test
-entrypoint completes while testthat is unavailable and nested tests are unverified. No substitute
-testing runner was used.
+The inline checker abort from 0.356 was repaired at 0.357. Its current report is complete;
+applicable examples remain blocked, so it retains P4. A dispatch result of completed does not prove
+evaluation success: tiers use reconciled capture/stage results. In particular rematch receives no P6
+credit merely because a guarded test entrypoint completes while testthat is unavailable and nested
+tests are unverified. No substitute testing runner was used.
 
 ## Verification details and remaining defects
+
+### Profile 0.358 loaded metadata follow-up
+
+Documentation policy v3 compares loaded namespace exports and public usage signatures in both
+runtimes. The 23-comparison owned fixture covers computed definitions, imports, zero arguments, lazy
+defaults, exact numeric values with storage equivalence, missing values and syntax differences.
+Unknown signatures, active bindings and unsupported syntax remain unexecuted. A zero-argument
+formals reflection defect found by the new conformance case is fixed.
+
+All 24 cached non-holdout checks produced reports. Tiers and partitions are unchanged. Export
+inventories agree for 23 packages; inline exposes 13 names versus 24 in native R. withr has 14
+actual signature mismatches and one inconclusive comparison. Computed signatures in evaluate,
+rprojroot and whisker now agree; separate usage checks still fail. prettyunits and rstudioapi pass
+documentation, while other package stages remain blocked. Only bounded metadata, counts and digests
+are committed; observed defaults and implementation bodies are not recorded.
+
+Remaining Milestone 2 work includes Rd usage, links and context-sensitive macro handling. The
+remaining semantic domains, dataset provenance, separate testing runner and release platform gates
+still need completion. No Worker/playground or packaging interface changed in this increment;
+browser e2e and pack smoke were not refreshed.
 
 ### Profile 0.357 checker follow-up
 

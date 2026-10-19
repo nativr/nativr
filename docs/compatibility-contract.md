@@ -3929,3 +3929,25 @@ links and macros remain unfinished checker work.
 These are package-tools checker changes, backed by owned native fixtures in
 `packages/package-tools/test/fixtures/checker-edge-cases.R` and the description diagnostic matrix.
 The R evaluator, public TypeScript API and Worker protocol retain their existing behavior.
+
+### Loaded documentation metadata (profile 0.358)
+
+Documentation policy v3 compares public usage signatures with loaded namespace metadata in both
+runtimes. Computed function definitions and imported bindings are observable; export inventories
+include non-function objects selected by `exportPattern`. Unknown observations never fall back to
+static success. Export disagreement is a separate failure; missing-documentation checks require a
+complete, agreed inventory. Repeated usage entries preserve their individual outcomes.
+
+Only export names and bounded signature comparison states leave the observer. Function bodies and
+observed default expressions are neither returned nor recorded. Defaults remain unevaluated;
+independent native `codoc` fixtures cover exact numeric values with storage-type equivalence,
+argument order, missing/extra arguments, expression syntax, computed closures and zero arguments.
+Unknown primitive signatures and active bindings remain unexecuted. The redacted corpus summaries
+record the observer policy, probe digest, counts and statuses. Broader Rd usage/link/macro closure
+and complete callable reflection remain unfinished. Foundation and recursive evidence exercise the
+owned signature primitives, lazy defaults and retained closure capture.
+
+`formals()` on a zero-argument owned closure returns NULL, matching GNU R, while `args()` still
+returns a callable NULL-bodied stub. This differs from an unknown primitive signature, for which
+native `args()` itself returns NULL. Native inventory entries distinguish unknown metadata
+(`formals: null`) from a known empty argument list (`formals: []`).

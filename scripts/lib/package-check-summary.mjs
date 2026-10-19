@@ -76,6 +76,35 @@ function runner(value) {
       };
 }
 
+function documentationMetadata(value) {
+  if (value === null || value === undefined) return null;
+  const capture = (item) => ({
+    status: choice(item?.status, ["completed", "failed", "invalid-output"]),
+    exportCount: Array.isArray(item?.exports) ? item.exports.length : null,
+    signatures: Object.fromEntries(
+      ["match", "mismatch", "unknown", "active", "missing", "noncallable"].map((state) => [
+        state,
+        Array.isArray(item?.states) ? item.states.filter((entry) => entry === state).length : null,
+      ]),
+    ),
+  });
+  return {
+    policy: choice(value.policy, ["loaded-documentation-signatures-v1"]),
+    sourceSha256: digest(value.sourceSha256),
+    exportsStatus: choice(value.exportsStatus, statuses),
+    actual: capture(value.actual),
+    expected: capture(value.expected),
+    functions: Object.fromEntries(
+      ["passed", "failed", "unexecuted"].map((status) => [
+        status,
+        Array.isArray(value.functions)
+          ? value.functions.filter((entry) => entry.status === status).length
+          : null,
+      ]),
+    ),
+  };
+}
+
 /** Strict allowlist: no diagnostic strings, output, source, or arbitrary nested objects. */
 export function redactPackageCheck(raw) {
   const report = JSON.parse(Buffer.from(raw).toString("utf8"));
@@ -132,6 +161,7 @@ export function redactPackageCheck(raw) {
     },
     p7Eligible: report.p7Eligible === true,
     inventory: { nestedTestFiles: report.inventory?.nestedRFiles?.length ?? null },
+    documentationMetadata: documentationMetadata(report.documentationObservation),
     dependencies: Object.entries(report.dependencyObservation?.actual?.versions ?? {})
       .filter(([name]) => token(name) !== null)
       .map(([name, version]) => ({

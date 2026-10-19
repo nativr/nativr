@@ -123,7 +123,7 @@ stop at documentation. pkgconfig and abind retain P7. Static unknown definitions
 until loaded namespace metadata can settle them. Policy documentation-v2 now gives repeated usage
 entries distinct IDs. The final full check passed 1,309 tests with 87 opt-in skips, including
 checkpoint validation. All fixed bundle budgets pass. Stabilization is committed as `6b8fef5`; the
-checker repairs form the next independently verified local increment.
+checker repairs are committed as `b3dbd9e`.
 
 The sweep also reproduced an explicitly missing positional argument in `person()` as a shared
 Authors@R blocker. Add it to the argument-matching increment. A supplemental
@@ -131,13 +131,50 @@ Authors@R blocker. Add it to the argument-matching increment. A supplemental
 types, graphics options and a Playwright tuple); it is not the normal production typecheck gate and
 needs separate cleanup before being adopted as a gate.
 
+### Profile 0.358 loaded documentation metadata
+
+Documentation policy v3 observes loaded export names and compares documented formals inside both
+runtimes. Computed definitions, imported signatures and non-function exportPattern matches are
+covered. Only bounded metadata and digests leave the observer; observed defaults and implementation
+bodies are never recorded. Unknown signatures, active bindings, non-syntax objects and unsupported
+recursive syntax remain unexecuted. The independently authored native matrix covers 23 signature
+comparisons, including numeric storage, typed missing values, NA versus NaN, argument order and
+unevaluated defaults. Both owned native test files pass (22 tests). Checked-in conformance passes
+1,236 cases. The new conformance case also identified and fixed zero-argument `formals()` returning
+an empty pairlist instead of NULL.
+
+The [complete 24-package checkpoint](../compatibility/package-check-evidence/corpus-0.358.0.json)
+has no checker aborts. Every cached source and artifact pin matched; tiers and partitions are
+unchanged. pkgconfig and abind retain P7. Export inventories agree for 23 packages; inline exposes
+13 exports in NativR versus 24 in the native oracle. Those differences are failures, not successful
+empty inventories. Native conformance passes 1,167 cases (51 NativR-only exclusions); recursive
+Oracle v2 passes 134 cases with 81 binding links and causal controls.
+
+The final `pnpm check` passes 1,321 tests with 89 opt-in skips, production types, lint, dependency
+boundaries, browser bundle audit and all fixed size budgets. No Worker/playground or packaging
+interface changed; e2e and pack smoke were not refreshed. No downloads, push or publication
+occurred.
+
 ### Immediate continuation
 
-Finish Milestone 2 before declaring it complete. Integrate loaded namespace signature/export
-metadata into documentation checks; keep unknown signatures and failed observations unexecuted. An
-`args()` signature stub has a NULL body and can supply formals without printing implementation
-bodies. Reject unexpected stub shapes, retain only bounded metadata/digests in reports, and use
-independently authored computed-definition fixtures. Continue reproducing Rd usage, links and macro
-failures. Then proceed to factor printing/addNA and shared argument matching, including the
-confirmed person() missing-slot case. No datasets, substitute test runner, holdout or Linux gate has
-been completed by these two increments.
+Finish Milestone 2 before declaring it complete. Reproduce the remaining Rd usage and link checks
+with owned native fixtures. The loaded comparisons now resolve evaluate's `is.message` and
+rprojroot's computed signatures, but their separate usage checks still need work. Manual failures
+include backslash escapes interpreted as macros inside crayon's preformatted blocks, and LaTeX
+commands parsed as Rd macros inside viridisLite's conditional out blocks. Test those contexts; do
+not globally allow unknown macros.
+
+Owned native probes parsed and rendered `\preformatted{cat("owned\n")}` and
+`\if{latex}{\out{\begin{center}owned\end{center}}}` with zero warnings. The negative control
+`\notARdMacro{owned}` emitted one warning. Preserve these as executable native parity fixtures in
+the next checker increment.
+
+The new withr observations distinguish 14 actual signature mismatches from the remaining unknown
+signature. Reproduce these through owned factories and formals assignment before changing runtime
+semantics. Reflection follow-up leads also include `args(stats::setNames)`'s `object = nm` default,
+pairlist `seq_along`, `quote(expr=)`, and traversal of quoted function syntax. The observer bounds
+unsupported recursive traversal instead of losing all export evidence.
+
+Then proceed to factor printing/addNA and shared argument matching, including the confirmed person()
+missing-slot case. Datasets, the separate testing runner, all-domain closure, browser/OS validation,
+the holdout and the Linux gate remain outstanding.

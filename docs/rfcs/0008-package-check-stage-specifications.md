@@ -146,7 +146,7 @@ Observed on native fixtures (opt-in parity test `namespace-source-check.test.ts`
   `if (FALSE)` branches. `<<-` to an undefined name is reported. Imports from non-core packages
   leave the item unexecuted.
 
-## documentation (normative, policy documentation-v2)
+## documentation (normative, policy documentation-v3)
 
 Rd files are parsed following _Writing R Extensions_ chapter 2 and the published Rd parsing notes:
 `%` comments, the `\\` `\{` `\}` `\%` escapes, macros with brace and `[option]` arguments, and
@@ -159,13 +159,29 @@ quoted strings in R-like contexts (`\usage`, `\examples`, `\code`). Observed on 
   and recommended packages, from `compatibility/gnu-r/rd-aliases.json` (black-box help-index catalog
   of GNU R 4.6.1). Links into other packages remain unexecuted.
 - **missing documentation entries** (WARNING): every exported object, including `exportPattern()`
-  matches, has an alias.
+  matches and non-function objects, has an alias. The checker observes `getNamespaceExports()` in
+  both loaded runtimes. Incomplete observations leave this item unexecuted; differing inventories
+  fail a separate namespace-export check.
 - **code/documentation mismatches** (WARNING): each `\usage` function matches the code's argument
-  names, order and default-value syntax. `\method{g}{c}` usage is compared with `g.c`. Computed
-  definitions without static function metadata remain unexecuted until loaded namespace metadata is
-  available. Native fixtures accept such definitions; absence from the static map is not a failure.
-  Repeated usage entries retain separate, deterministic inventory IDs, including when their outcomes
-  differ.
+  names, order and unevaluated defaults. `\method{g}{c}` usage is compared with `g.c`. The package
+  checker constructs NULL-bodied stubs only from public usage sections and compares their formals
+  with `formals(args(target))` inside each loaded runtime. A bounded recursive syntax comparison
+  accepts integer/double storage differences and numeric/logical typed NA differences, including
+  inside default expressions. Character NA remains distinct. It distinguishes NA from NaN and
+  rejects changed numeric values, reordered arguments, parentheses and changed expressions in
+  independent native `codoc` fixtures. Arbitrary embedded objects, attributed atomic defaults and
+  syntax deeper than 32 recursive comparisons remain unexecuted rather than being evaluated or
+  deparsed. Observed argument stubs must have NULL bodies. Computed definitions and imported
+  bindings can therefore be observed without inspecting their implementation bodies. Unknown
+  primitive signatures, active bindings, missing/noncallable targets, unsupported usage syntax and
+  failed observations remain unexecuted. A known zero-argument function is distinct from `args()`
+  returning NULL. Static-only callers retain bounded syntax comparison, and unresolved static
+  functions remain unexecuted. Repeated usage entries retain separate, deterministic inventory IDs,
+  including when their outcomes differ.
+- **Observation provenance:** `loaded-documentation-signatures-v1` records a probe digest, export
+  names and bounded comparison states, never implementation bodies or observed default expressions.
+  Committed summaries retain only the digest, counts and status values. A successful signature check
+  does not establish complete function behavior or resolve other Rd checks.
 - **Rd \usage sections** (WARNING): every usage argument, including `...`, has an `\item` in
   `\arguments`, and every item is in usage. Usage functions other than documented S3 methods have an
   alias.

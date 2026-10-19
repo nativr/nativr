@@ -17190,5 +17190,11 @@
       "x + 1, note = \"owned\"))(2)"
     ],
     "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "owned-signature-metadata-defaults",
+    "code": "local({f<-local({hidden<-7;function(x,y=2)hidden+x+y});a<-args(f);z<-args(function()NULL);d<-args(function(x=stop(\"must not force\"))x);c(identical(names(formals(a)),c(\"x\",\"y\")),isTRUE(all.equal(formals(a),formals(function(x,y=2L)NULL),tolerance=0)),!isTRUE(all.equal(formals(a),formals(function(x,y=2.0000000000001)NULL),tolerance=0)),identical(formals(z),NULL),is.function(z),identical(formals(d),formals(function(x=stop(\"must not force\"))NULL)),identical(f(1),10),identical(body(a),quote(NULL)))})",
+    "expected": [true, true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral"
   }
 ]

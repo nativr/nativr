@@ -26,11 +26,18 @@ export {
   isVignetteSource,
 } from "./vignette-check.js";
 export type { VignetteAssessment, VignetteCheck, VignetteSource } from "./vignette-check.js";
-export { inspectPackageDocumentation, inspectPackageManual, parseRd, rdText } from "./rd-check.js";
+export {
+  collectDocumentationProbes,
+  inspectPackageDocumentation,
+  inspectPackageManual,
+  parseRd,
+  rdText,
+} from "./rd-check.js";
 export type {
   DocumentationAssessment,
   DocumentationCheck,
   DocumentationInput,
+  DocumentationProbe,
   ManualAssessment,
   RdNode,
 } from "./rd-check.js";

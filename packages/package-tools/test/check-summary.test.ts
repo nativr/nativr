@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { expect, it } from "vitest";
 import { redactPackageCheck } from "../../../scripts/lib/package-check-summary.mjs";
 
-it.each(["0.356.0", "0.357.0"])(
+it.each(["0.356.0", "0.357.0", "0.358.0"])(
   "pins checkpoint %s without evaluating the holdout",
   async (profile) => {
     const read = async (path: string) =>
@@ -31,7 +31,7 @@ it.each(["0.356.0", "0.357.0"])(
       tier: string;
     }[];
     const expectedNames =
-      profile === "0.356.0"
+      profile !== "0.357.0"
         ? corpus.filter((e) => e.partition !== "holdout").map((e) => e.package)
         : [
             "prettyunits",
@@ -45,7 +45,7 @@ it.each(["0.356.0", "0.357.0"])(
             "abind",
           ];
     expect(entries.map((e) => e.package).sort()).toEqual(expectedNames.sort());
-    expect(entries).toHaveLength(profile === "0.356.0" ? 24 : 9);
+    expect(entries).toHaveLength(profile === "0.357.0" ? 9 : 24);
     expect(entries.filter((e) => e.outcome === "aborted").map((e) => e.package)).toEqual(
       profile === "0.356.0" ? ["inline"] : [],
     );
@@ -81,6 +81,22 @@ it.each(["0.356.0", "0.357.0"])(
         discovered: number;
         executed: number;
       }[];
+      if (profile === "0.358.0") {
+        const metadata = summary.documentationMetadata as {
+          policy: string;
+          sourceSha256: string;
+          exportsStatus: string;
+          actual: { status: string; exportCount: number | null };
+          expected: { status: string; exportCount: number | null };
+        };
+        expect(metadata.policy).toBe("loaded-documentation-signatures-v1");
+        expect(metadata.sourceSha256).toMatch(/^[a-f0-9]{64}$/u);
+        if (metadata.exportsStatus === "passed") {
+          expect(metadata.actual.status).toBe("completed");
+          expect(metadata.expected.status).toBe("completed");
+          expect(metadata.actual.exportCount).toBe(metadata.expected.exportCount);
+        }
+      }
       expect(new Set(stages.map((s) => s.id)).size).toBe(15);
       if (entry.tier === "P7") {
         expect(summary.p7Eligible).toBe(true);
@@ -130,6 +146,18 @@ it("redacts source-shaped diagnostics and unexpected nested fields while retaini
         body,
       },
       p7Eligible: false,
+      documentationObservation: {
+        policy: "loaded-documentation-signatures-v1",
+        sourceSha256: sha,
+        exportsStatus: "passed",
+        actual: { status: "completed", exports: [body], states: ["match", "unknown", body], body },
+        expected: { status: "completed", exports: [body], states: ["match", "unknown"] },
+        functions: [
+          { id: body, status: "passed" },
+          { id: body, status: "unexecuted" },
+        ],
+        source: body,
+      },
       firstBlocker: {
         stage: "documentation",
         code: "stage-failed",
@@ -163,6 +191,13 @@ it("redacts source-shaped diagnostics and unexpected nested fields while retaini
   expect(JSON.stringify(summary)).not.toContain("independently_authored_body");
   expect(summary).toMatchObject({
     schemaVersion: 2,
+    documentationMetadata: {
+      policy: "loaded-documentation-signatures-v1",
+      sourceSha256: sha,
+      exportsStatus: "passed",
+      actual: { status: "completed", exportCount: 1, signatures: { match: 1, unknown: 1 } },
+      functions: { passed: 1, failed: 0, unexecuted: 1 },
+    },
     package: { name: "ownedfixture", version: "1.0" },
     rawReportSha256: createHash("sha256").update(raw).digest("hex"),
     provenance: { sourceSha256: sha, semanticProfile: "0.356.0" },
