@@ -1,5 +1,26 @@
-import type { CallExpressionNode, SourceSpan } from "@nativr/ast";
+import type { AstNode, CallExpressionNode, SourceSpan } from "@nativr/ast";
 import type { RList } from "./values.js";
+
+// Internal language origins include operator/control syntax and an explicit top-level NULL.
+// Keep this outside the public error instance's serializable fields and existing direct-call API.
+const conditionOrigins = new WeakMap<NativRError, AstNode | null>();
+const conditionClasses = new WeakMap<NativRError, readonly string[]>();
+
+export function errorConditionClasses(error: NativRError): readonly string[] {
+  return conditionClasses.get(error) ?? ["simpleError", "error", "condition"];
+}
+
+export function recordErrorConditionClasses(error: NativRError, classes: readonly string[]): void {
+  if (!conditionClasses.has(error)) conditionClasses.set(error, classes);
+}
+
+export function errorConditionCall(error: NativRError): AstNode | null | undefined {
+  return conditionOrigins.get(error);
+}
+
+export function recordErrorConditionCall(error: NativRError, call: AstNode | null): void {
+  if (!conditionOrigins.has(error)) conditionOrigins.set(error, call);
+}
 
 /** Optional structured fields accepted by NativR runtime errors. */
 export interface NativRErrorOptions {
@@ -13,16 +34,16 @@ export class NativRError extends Error {
   public readonly code: string;
   public readonly span: SourceSpan | undefined;
   public readonly details: Readonly<Record<string, unknown>> | undefined;
-  #conditionCall: CallExpressionNode | undefined;
 
   /** In-process condition metadata; never included in serializable diagnostic details. */
   public get conditionCall(): CallExpressionNode | undefined {
-    return this.#conditionCall;
+    const call = errorConditionCall(this);
+    return call?.kind === "CallExpression" ? call : undefined;
   }
 
   /** Keep the innermost known origin while an error unwinds through outer calls. */
   public recordConditionCall(call: CallExpressionNode): void {
-    this.#conditionCall ??= call;
+    recordErrorConditionCall(this, call);
   }
 
   public constructor(code: string, message: string, options: NativRErrorOptions = {}) {

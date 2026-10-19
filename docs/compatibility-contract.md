@@ -38,6 +38,31 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Error origins and argument choices (profile 0.366)
+
+Runtime type/value errors retain their originating call through closures, promises, evaluation and
+condition handlers. Operator, subsetting and owned control expressions retain their language syntax.
+A lookup failure uses its evaluation frame; an explicit top-level NULL origin is not overwritten by
+enclosing calls. Supplied condition calls remain authoritative, and resource failures remain
+uncatchable. Internal origin storage preserves the existing public error-class TypeScript API and is
+not serialized into diagnostic details. Missing-object and missing-function messages now distinguish
+those lookup operations. Other error wording still has domain gaps.
+
+match.arg retains its declared signature and lazy defaults, evaluates implicit formal choices before
+its actual argument, and distinguishes single, some-valid and all-required selection modes. Owned
+evidence covers missing/empty/default controls, invalid argument types and lengths, ambiguous
+prefixes, repeated arguments, missing and empty choice labels, preserved choice types/attributes,
+NULL early return and ordinary diagnostic calls. Choice scans observe evaluation work limits.
+Diagnostics exposing foreign internal control fragments are omitted from retained observations;
+those internal-expression call fields are not claimed equivalent. General eval-frame attribution,
+remaining builtin messages and broad reflection behavior still require closure.
+
+Missing declared defaults in the shared library-function binder retain getvarError and
+missingArgError classes, including class-specific handler selection. Missing actual-expression
+errors keep their existing classification; broader interpreted/compiled missing-argument condition
+subclasses remain open. Factor vector subsets retain names, levels and class in observed order,
+including when selected by match.arg; this does not establish full factor extraction behavior.
+
 ### Generic defaults (profile 0.365)
 
 `seq`, `sort` and `format` retain generic/default signatures and original actual promises when

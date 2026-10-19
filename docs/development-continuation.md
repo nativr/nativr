@@ -469,7 +469,7 @@ packaging interface changed, so e2e and pack smoke were not refreshed. Linux, th
 all thirteen domains and full compatibility remain incomplete. No downloads, pushes or publication
 occurred.
 
-### Immediate continuation after profile 0.365
+### Continuation recorded at profile 0.365 (superseded below)
 
 Continue argument/default closure before the broader reflection work. New owned black-box probes
 confirm the following remaining differences, using no foreign implementation bodies:
@@ -498,3 +498,62 @@ Independent datasets, the isolated testing runner, full domain/callable inventor
 performance, CI and release validation remain outstanding. Linux and holdout execution still need
 separate authorization. Keep the completion goal active; no overall percentage or date is
 established.
+
+### Profile 0.366 verification (2026-10-19)
+
+Runtime errors retain their originating language expressions across forced promises, closure calls,
+handlers and evaluation. Explicit NULL origins and supplied conditions remain authoritative. Missing
+object and callable diagnostics are distinct. Internal metadata storage preserves the public
+TypeScript error API. The shared declared-default binder retains observed missing-argument condition
+classes and class-specific handler selection; broader condition subclasses remain open.
+
+match.arg now uses lazy declared defaults and preserves choice types and attributes. Owned cases
+cover explicit and implicit forcing order, one/some/all selection modes, duplicate/ambiguous/empty
+choices, missing values, NULL early return and diagnostic messages/calls. Factor vector subsetting
+retains names, levels and class in observed order. Thirty-five owned parity cases pass under GNU R
+and NativR, plus one resource-limit regression. Five foundation groups and five recursive cases
+verify language structure, values, attributes, conditions and forcing effects. Causal controls link
+match.arg; diagnostic-capture cases independently retain their observed fields.
+
+A paired Node probe caught an 18-21% evaluator slowdown from an extra async wrapper. Origin handling
+now stays inside the existing evaluation frame, awaiting recursive paths without adding another
+function hop for literal evaluation. After repair, 24 alternating paired samples following eight
+warmups had median previous/current times of 16.19/15.64 ms for a 3,000-step scalar loop,
+27.63/24.96 ms for a 1,500-call closure loop, and 1.34/1.32 ms for a 10,000-element sum. The
+baseline uses only the evaluator source from 1c8f052 with other modules shared at 0.366. These
+advisory source-level timings resolve the observed local regression; they do not establish browser
+startup, cancellation, package-workload performance or a general speedup.
+
+The full check passes 1579 tests with 93 opt-in skips. Checked-in/live/recursive conformance passes
+1262 / 1193 / 158 cases, with 96 linked bindings. Fixed budgets pass: client 17.6/150 KiB gzip,
+Worker 473.1/512 KiB gzip, parser 671.9/1,536 KiB raw and elementary 311.2/384 KiB raw. Name overlap
+remains 749/2,522 and is not a completion percentage. Native filesystem probes used ordinary Windows
+permissions.
+
+All 24 cached development/regression archives were digest-checked and rerun with applicable native
+repeatability in the
+[0.366 checkpoint](../compatibility/package-check-evidence/corpus-0.366.0.json). Stage outcomes,
+comparison-match counts and tiers are unchanged from 0.365. Formula is untouched. Original
+entrypoints were used; substitute-runner results receive no P6/P7 credit. No Worker, playground or
+packaging interface changed, so e2e and pack smoke were not refreshed. Runtime performance,
+browser/OS coverage, Linux validation and full compatibility remain incomplete. No downloads, pushes
+or publication occurred.
+
+### Immediate continuation after profile 0.366
+
+The previous match.arg wording and promise-origin defects are closed within the owned evidence.
+Continue the remaining independently reproduced default-method gaps: seq.default complex-to-real
+coercion warnings, format.default zero.print truncation warnings, and sort control/partial-sort
+behavior. Keep lazy promises and resource limits. Broader eval-frame attribution, missing-argument
+subclasses, long diagnostics and primitive-specific rules remain open. Factor [[ extraction still
+drops attributes in NativR; an owned probe confirms native levels/class retention. Do not infer
+factor extraction closure from the fixed vector subset path.
+
+Then resume callable reflection and confirmed corpus blockers. Independent datasets, the isolated
+testing runner, complete domain/callable inventory, browser performance, CI and release validation
+remain outstanding. Continue the planned browser startup/cancellation/workload measurements; the
+small paired Node probe does not satisfy that platform gate. Linux and holdout execution require
+separate authorization. Keep the full goal active; no overall completion percentage or date is
+established. Public metadata and owned black-box observations remain the only GNU R inputs. Native
+diagnostic calls that expose internal implementation fragments must be omitted, never used as
+implementation evidence.

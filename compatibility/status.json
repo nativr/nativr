@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.365.0",
-  "capabilityManifestHash": "4e3584d3799976b35d0c77808b86087bc2faac8af6051d0c8567773c31eac80e",
+  "semanticProfileVersion": "0.366.0",
+  "capabilityManifestHash": "2d522f8434a18e0b09ce49e4a89915fe3ff59be79c830aae97936d8e210b4270",
   "evidence": {
-    "checkedInConformanceCases": 1257,
-    "liveREligibleCases": 1188,
+    "checkedInConformanceCases": 1262,
+    "liveREligibleCases": 1193,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 153,
-    "recursiveBehaviorallyProvenBindings": 95,
+    "recursiveOracleV2Cases": 158,
+    "recursiveBehaviorallyProvenBindings": 96,
     "recursiveBindingEvidence": [
       { "binding": "base::addNA", "cases": ["addNA-ordered-reconstruction-and-unchanged-values"] },
       {
@@ -61,6 +61,7 @@
           "argument-matching-recursive-calls-and-diagnostics",
           "attributed-replacement-condition",
           "condition-accessor-values-methods-and-visibility",
+          "error-origin-and-choice-call-syntax",
           "partial-argument-warning-conditions-and-diagnostic-order"
         ]
       },
@@ -148,6 +149,13 @@
       { "binding": "base::Map", "cases": ["mapply-values-forcing-and-methods"] },
       { "binding": "base::mapply", "cases": ["mapply-values-forcing-and-methods"] },
       { "binding": "base::match", "cases": ["factor-na-label-coercion-grouping-and-matching"] },
+      {
+        "binding": "base::match.arg",
+        "cases": [
+          "error-origin-and-choice-default-forcing",
+          "error-origin-and-choice-selection-values"
+        ]
+      },
       {
         "binding": "base::match.call",
         "cases": [

@@ -4,8 +4,10 @@ import {
   createPromise,
   matchArguments,
   matchArgumentsWithWarnings,
+  NativRError,
   partialMatchWarning,
   partialMatchWarningsEnabled,
+  recordErrorConditionClasses,
   setBinding,
 } from "@nativr/runtime";
 import type { AstNode } from "@nativr/ast";
@@ -55,10 +57,29 @@ export async function matchBuiltinDefaults(
     matched,
     dots: result.dots,
     supplied,
-    force(name) {
+    async force(name) {
       const argument = matched.get(name);
       if (argument === undefined) throw new Error(`Unknown declared builtin formal: ${name}`);
-      return invocation.force(argument.promise);
+      try {
+        return await invocation.force(argument.promise);
+      } catch (error) {
+        // A missing declared library default is a variable-access condition. Errors from an
+        // actual expression keep their own classification while propagating through this frame.
+        if (
+          !supplied.has(name) &&
+          argument.promise.expression === null &&
+          error instanceof NativRError &&
+          error.code === "NRE2006"
+        ) {
+          recordErrorConditionClasses(error, [
+            "getvarError",
+            "missingArgError",
+            "error",
+            "condition",
+          ]);
+        }
+        throw error;
+      }
     },
   };
 }

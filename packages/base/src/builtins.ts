@@ -10,6 +10,8 @@ import {
 } from "./person.js";
 import {
   NativRError,
+  errorConditionCall,
+  errorConditionClasses,
   REvaluationError,
   RSignalledConditionError,
   RResourceLimitError,
@@ -4751,7 +4753,15 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
       },
     ],
   ),
-  defineBuiltin("match.arg", ["arg", "choices", "several.ok"], "behavioral", builtinMatchArgument),
+  withBuiltinFormals(
+    defineBuiltin(
+      "match.arg",
+      ["arg", "choices", "several.ok"],
+      "behavioral",
+      builtinMatchArgument,
+    ),
+    matchArgumentFormals(),
+  ),
   defineBuiltin("which", ["x"], "behavioral", builtinWhich),
   defineBuiltin("which.max", ["x"], "behavioral", (invocation) =>
     builtinWhichExtreme(invocation, "max"),
@@ -16117,15 +16127,13 @@ function validateConditionDomain(value: RValue | undefined): void {
 
 function conditionValue(error: NativRError): RList {
   if (error instanceof RSignalledConditionError) return error.condition;
+  const origin = errorConditionCall(error);
   const call: RValue =
-    error.conditionCall === undefined
-      ? R_NULL
-      : { type: "language", expression: error.conditionCall };
-  return withClasses(listValue([characterVector([error.message]), call], ["message", "call"]), [
-    "simpleError",
-    "error",
-    "condition",
-  ]);
+    origin === undefined || origin === null ? R_NULL : { type: "language", expression: origin };
+  return withClasses(
+    listValue([characterVector([error.message]), call], ["message", "call"]),
+    errorConditionClasses(error),
+  );
 }
 
 function simpleConditionValue(
@@ -56654,87 +56662,109 @@ function dataFrameSetEqual(left: RList, right: RList, invocation: BuiltinInvocat
   return rowsMatch(right, rightRows, left, leftRows, leftColumnIndices);
 }
 
+function matchArgumentFormals(): readonly {
+  readonly name: string;
+  readonly defaultValue?: AstNode;
+}[] {
+  return [
+    { name: "arg" },
+    { name: "choices" },
+    { name: "several.ok", defaultValue: cauchyDefaultLogical(false) },
+  ];
+}
+
 async function builtinMatchArgument(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = await matchLazyArguments(invocation, ["arg", "choices", "several.ok"]);
-  const argumentPromise = matched.get("arg");
-  if (argumentPromise === undefined || argumentPromise.promise.missing) {
-    throw new REvaluationError("NRE2103", "Argument 'arg' is missing in match.arg().");
-  }
-  const argument = await invocation.force(argumentPromise.promise);
-  if (argument.type !== "null" && argument.type !== "character") {
-    throw new RTypeMismatchError("NRT3262", "match.arg() arg must be NULL or a character vector.");
-  }
-  const severalOk = await matchArgumentSeveralOk(matched.get("several.ok"), invocation);
-  const choicesPromise = matched.get("choices");
-  let choices: RValue;
-  if (choicesPromise !== undefined) {
-    choices = await invocation.force(choicesPromise.promise);
-  } else {
-    const expression = argumentPromise.promise.expression;
-    choices =
+  const bound = await matchBuiltinDefaults(invocation, matchArgumentFormals());
+  const actual = bound.matched.get("arg");
+  let choices: RValue | undefined;
+  if (!bound.supplied.has("choices")) {
+    const expression = actual?.promise.expression;
+    if (
+      expression !== undefined &&
+      expression !== null &&
+      languageAstEntries(expression) !== undefined
+    ) {
+      throw new REvaluationError("NRE2219", "no such index at level 1\n");
+    }
+    const name =
       expression?.kind === "Identifier"
-        ? ((await invocation.callerFormalDefault(expression.name)) ?? R_NULL)
-        : R_NULL;
+        ? expression.name
+        : expression?.kind === "StringLiteral"
+          ? expression.value
+          : undefined;
+    choices =
+      name === undefined ? R_NULL : ((await invocation.callerFormalDefault(name)) ?? R_NULL);
   }
-  if (choices.type !== "null" && !isAtomic(choices)) {
-    throw new RTypeMismatchError("NRT3262", "match.arg() choices must be NULL or atomic.");
+  const argument = await bound.force("arg");
+  if (argument.type !== "null" && argument.type !== "character") {
+    throw new RTypeMismatchError("NRT3262", "'arg' must be NULL or a character vector");
   }
   if (argument.type === "null") {
-    if (choices.type === "null") return R_NULL;
-    return subsetVector(choices, integerVector([1]), invocation.context);
+    choices ??= await bound.force("choices");
+    return selectMatchChoices(choices, [1], invocation);
   }
-  if (choices.type === "null") {
-    if (argument.length === 0) {
-      throw new RTypeMismatchError("NRT3262", "match.arg() arg must not be empty.");
-    }
-    throw matchArgumentChoiceError([]);
-  }
+  const mode = matchArgumentSeveralOk(await bound.force("several.ok"));
+  choices ??= await bound.force("choices");
   if (
-    !severalOk &&
+    mode === "one" &&
     identicalValue(argument, choices, ALL_EQUAL_IDENTICAL_OPTIONS, () =>
       invocation.context.checkpoint(),
     )
   ) {
-    return subsetVector(choices, integerVector([1]), invocation.context);
+    return selectMatchChoices(choices, [1], invocation);
   }
-  if ((!severalOk && argument.length !== 1) || (severalOk && argument.length < 1)) {
+  if ((mode === "one" && argument.length !== 1) || (mode !== "one" && argument.length === 0)) {
     throw new RTypeMismatchError(
       "NRT3262",
-      severalOk
-        ? "match.arg() arg must contain at least one value."
-        : "match.arg() arg must have length one.",
+      mode === "one" ? "'arg' must be of length 1" : "'arg' must be of length >= 1",
     );
   }
-
-  const choiceLabels = Array.from({ length: choices.length }, (_, index) =>
-    isMissing(choices, index) ? undefined : stringAt(choices, index),
-  );
+  const coerce = await invocation.namespaceBinding("base", "as.character");
+  if (coerce === undefined) throw new Error("The base character coercion binding is unavailable.");
+  const labels = await invocation.invoke(coerce, [{ value: choices }]);
+  if (labels.type !== "character")
+    throw new RTypeMismatchError("NRT3262", "choices did not produce a character vector");
+  invocation.context.allocate(labels.length);
+  const choiceLabels = Array.from({ length: labels.length }, (_, index) => {
+    invocation.context.checkpoint();
+    return isMissing(labels, index) ? "NA" : (labels.values[index] ?? "");
+  });
+  const exactPositions = new Map<string, number>();
+  for (const [index, label] of choiceLabels.entries()) {
+    invocation.context.checkpoint();
+    if (label !== "" && !exactPositions.has(label)) exactPositions.set(label, index);
+  }
   const selected: number[] = [];
   for (let index = 0; index < argument.length; index += 1) {
     invocation.context.checkpoint();
-    if (isMissing(argument, index)) {
-      if (!severalOk) throw matchArgumentChoiceError(choiceLabels);
-      continue;
-    }
-    const requested = argument.values[index] ?? "";
-    const exact = choiceLabels.findIndex((choice) => choice === requested);
+    const requested = isMissing(argument, index) ? "NA" : (argument.values[index] ?? "");
+    const exact = exactPositions.get(requested) ?? -1;
     if (exact >= 0) {
       selected.push(exact + 1);
       continue;
     }
     const partial =
-      requested.length === 0
+      requested === ""
         ? []
-        : choiceLabels.flatMap((choice, choiceIndex) =>
-            choice?.startsWith(requested) ? [choiceIndex + 1] : [],
-          );
-    if (partial.length === 1) {
-      selected.push(partial[0] ?? 0);
-    } else if (!severalOk) {
-      throw matchArgumentChoiceError(choiceLabels);
-    }
+        : choiceLabels.flatMap((choice, choiceIndex) => {
+            invocation.context.checkpoint();
+            return choice.startsWith(requested) ? [choiceIndex + 1] : [];
+          });
+    if (partial.length === 1) selected.push(partial[0] ?? 0);
+    else if (mode !== "some") throw matchArgumentChoiceError(choiceLabels);
   }
-  return subsetVector(choices, integerVector(selected), invocation.context);
+  if (selected.length === 0) throw matchArgumentChoiceError(choiceLabels);
+  return selectMatchChoices(choices, selected, invocation);
+}
+
+async function selectMatchChoices(
+  choices: RValue,
+  indices: readonly number[],
+  invocation: BuiltinInvocation,
+): Promise<RValue> {
+  const callable = await invocation.namespaceBinding("base", "[");
+  if (callable === undefined) throw new Error("The base subset binding is unavailable.");
+  return invocation.invoke(callable, [{ value: choices }, { value: integerVector(indices) }]);
 }
 
 async function builtinMatchFunction(invocation: BuiltinInvocation): Promise<RValue> {
@@ -56804,38 +56834,36 @@ function matchFunctionArgumentReference(
   return { expression };
 }
 
-async function matchArgumentSeveralOk(
-  argument: BuiltinCallArgument | undefined,
-  invocation: BuiltinInvocation,
-): Promise<boolean> {
-  if (argument === undefined) return false;
-  const value = await invocation.force(argument.promise);
-  if (value.type === "logical" && value.length === 1 && !isMissing(value, 0)) {
-    return value.values[0] === 1;
-  }
-  if (
-    value.type === "character" &&
-    value.length === 1 &&
-    !isMissing(value, 0) &&
-    (value.values[0] ?? "").startsWith("all")
-  ) {
-    return true;
+function matchArgumentSeveralOk(value: RValue): "one" | "some" | "all" {
+  if (value.type === "logical" || value.type === "character") {
+    if (value.length === 0) throw new RTypeMismatchError("NRT3262", "argument is of length zero");
+    if (value.length > 1)
+      throw new RTypeMismatchError(
+        "NRT3262",
+        value.type === "logical"
+          ? "the condition has length > 1"
+          : "'length = " + value.length + "' in coercion to 'logical(1)'",
+      );
+    if (isMissing(value, 0))
+      throw new RTypeMismatchError("NRT3262", "missing value where TRUE/FALSE needed");
+    if (value.type === "logical") return value.values[0] === 1 ? "some" : "one";
+    if ((value.values[0] ?? "").startsWith("all")) return "all";
   }
   throw new RTypeMismatchError(
     "NRT3262",
-    "match.arg() several.ok must be one logical value or a string starting with 'all'.",
+    "'several.ok' must be logical or a string starting with \"all\"",
   );
 }
 
 function matchArgumentChoiceError(choices: readonly (string | undefined)[]): REvaluationError {
   const alternatives = [
-    ...new Set(choices.filter((choice): choice is string => choice !== undefined)),
+    ...new Set(choices.filter((choice): choice is string => choice !== undefined && choice !== "")),
   ];
   return new REvaluationError(
     "NRE2130",
-    `match.arg() arg should be one of ${alternatives
+    `'arg' should be ${alternatives.length === 1 ? "" : "one of "}${alternatives
       .map((choice) => JSON.stringify(choice))
-      .join(", ")}.`,
+      .join(", ")}`,
   );
 }
 

@@ -42,6 +42,9 @@ import {
 } from "./environment.js";
 import {
   NativRError,
+  errorConditionCall,
+  errorConditionClasses,
+  recordErrorConditionCall,
   REvaluationError,
   RSignalledConditionError,
   RResourceLimitError,
@@ -956,567 +959,668 @@ export class Evaluator {
     environment: REnvironment,
     context: EvaluationContext,
   ): Promise<EvaluationResult> => {
-    context.checkpoint();
-    switch (node.kind) {
-      case "Program":
-      case "Block":
-        return this.#evaluateSequence(node.body, environment, context);
-      case "DoubleLiteral":
-        context.allocate(1);
-        return { value: doubleVector([node.value]), visible: true };
-      case "ComplexLiteral":
-        context.allocate(1);
-        return { value: complexVector([0], [node.imaginary]), visible: true };
-      case "IntegerLiteral":
-        context.allocate(1);
-        return { value: integerVector([node.value]), visible: true };
-      case "StringLiteral":
-        context.allocate(1);
-        return { value: characterLiteralValue(node), visible: true };
-      case "LogicalLiteral":
-        context.allocate(1);
-        return { value: logicalVector([node.value]), visible: true };
-      case "NullLiteral":
-        return { value: R_NULL, visible: true };
-      case "MissingLiteral":
-        context.allocate(1);
-        return { value: missingValue(node.declaredType), visible: true };
-      case "Identifier": {
-        if (node.name === "...") throw unsupported("ellipsis arguments", node.span);
-        const dotDot = /^\.\.([1-9][0-9]*)$/u.exec(node.name);
-        if (dotDot !== null) {
-          const dots = lookupBinding(environment, "...");
-          if (dots?.type !== "dots") {
-            throw new REvaluationError(
-              "NRE2001",
-              `'${node.name}' used in an incorrect context, no '...' to look in.`,
-              { span: node.span, details: { symbol: node.name } },
-            );
+    // Keep origin handling in this frame: another async wrapper adds a hop to every AST node.
+    // Await recursive paths below so their failures reach this handler before outer expressions.
+    try {
+      context.checkpoint();
+      switch (node.kind) {
+        case "Program":
+        case "Block":
+          return await this.#evaluateSequence(node.body, environment, context);
+        case "DoubleLiteral":
+          context.allocate(1);
+          return { value: doubleVector([node.value]), visible: true };
+        case "ComplexLiteral":
+          context.allocate(1);
+          return { value: complexVector([0], [node.imaginary]), visible: true };
+        case "IntegerLiteral":
+          context.allocate(1);
+          return { value: integerVector([node.value]), visible: true };
+        case "StringLiteral":
+          context.allocate(1);
+          return { value: characterLiteralValue(node), visible: true };
+        case "LogicalLiteral":
+          context.allocate(1);
+          return { value: logicalVector([node.value]), visible: true };
+        case "NullLiteral":
+          return { value: R_NULL, visible: true };
+        case "MissingLiteral":
+          context.allocate(1);
+          return { value: missingValue(node.declaredType), visible: true };
+        case "Identifier": {
+          if (node.name === "...") throw unsupported("ellipsis arguments", node.span);
+          const dotDot = /^\.\.([1-9][0-9]*)$/u.exec(node.name);
+          if (dotDot !== null) {
+            const dots = lookupBinding(environment, "...");
+            if (dots?.type !== "dots") {
+              throw new REvaluationError(
+                "NRE2001",
+                `'${node.name}' used in an incorrect context, no '...' to look in.`,
+                { span: node.span, details: { symbol: node.name } },
+              );
+            }
+            const argument = dots.arguments[Number(dotDot[1]) - 1];
+            if (argument === undefined) {
+              throw new REvaluationError(
+                "NRE2103",
+                `The ... list contains fewer than ${dotDot[1]} elements.`,
+                { span: node.span },
+              );
+            }
+            return await this.#forceDetailed(argument.promise, context);
           }
-          const argument = dots.arguments[Number(dotDot[1]) - 1];
-          if (argument === undefined) {
-            throw new REvaluationError(
-              "NRE2103",
-              `The ... list contains fewer than ${dotDot[1]} elements.`,
-              { span: node.span },
-            );
+          const binding = lookupBinding(environment, node.name);
+          if (binding === undefined) {
+            throw new REvaluationError("NRE2001", `object '${node.name}' not found`, {
+              span: node.span,
+              details: { symbol: node.name },
+            });
           }
-          return this.#forceDetailed(argument.promise, context);
+          if (binding.type !== "promise" || binding.state === "forced") {
+            return { value: await this.#force(binding, context), visible: true };
+          }
+          return await this.#forceDetailed(binding, context);
         }
-        const binding = lookupBinding(environment, node.name);
-        if (binding === undefined) {
-          throw new REvaluationError("NRE2001", `Object '${node.name}' not found.`, {
-            span: node.span,
-            details: { symbol: node.name },
-          });
+        case "UnaryExpression": {
+          const operand = await this.#evaluateValue(node.operand, environment, context);
+          const dispatched = await this.#dispatchOperatorS3(
+            node.operator,
+            [operand],
+            environment,
+            [node.operand.span],
+            context,
+          );
+          if (dispatched !== undefined) return dispatched;
+          const warningStart = context.warnings.length;
+          let value: RValue;
+          try {
+            value = this.#operators.unary(context, node.operator, operand);
+          } catch (error) {
+            return await this.#signalWarningsBeforeError(warningStart, node, context, error);
+          }
+          await this.#signalRecordedWarnings(warningStart, node, context);
+          return { value, visible: true };
         }
-        if (binding.type !== "promise" || binding.state === "forced") {
-          return { value: await this.#force(binding, context), visible: true };
-        }
-        return this.#forceDetailed(binding, context);
-      }
-      case "UnaryExpression": {
-        const operand = await this.#evaluateValue(node.operand, environment, context);
-        const dispatched = await this.#dispatchOperatorS3(
-          node.operator,
-          [operand],
-          environment,
-          [node.operand.span],
-          context,
-        );
-        if (dispatched !== undefined) return dispatched;
-        const warningStart = context.warnings.length;
-        let value: RValue;
-        try {
-          value = this.#operators.unary(context, node.operator, operand);
-        } catch (error) {
-          return this.#signalWarningsBeforeError(warningStart, node, context, error);
-        }
-        await this.#signalRecordedWarnings(warningStart, node, context);
-        return { value, visible: true };
-      }
-      case "BinaryExpression": {
-        const left = await this.#evaluateValue(node.left, environment, context);
-        if (node.operator === "&&" || node.operator === "||") {
-          const leftState = scalarLogicalState(left, node.operator);
-          if (
-            (node.operator === "&&" && leftState === false) ||
-            (node.operator === "||" && leftState === true)
-          ) {
+        case "BinaryExpression": {
+          const left = await this.#evaluateValue(node.left, environment, context);
+          if (node.operator === "&&" || node.operator === "||") {
+            const leftState = scalarLogicalState(left, node.operator);
+            if (
+              (node.operator === "&&" && leftState === false) ||
+              (node.operator === "||" && leftState === true)
+            ) {
+              context.allocate(1);
+              return { value: logicalVector([leftState]), visible: true };
+            }
+            const right = await this.#evaluateValue(node.right, environment, context);
+            const rightState = scalarLogicalState(right, node.operator);
+            const result =
+              node.operator === "&&"
+                ? rightState === false
+                  ? false
+                  : leftState === true && rightState === true
+                    ? true
+                    : undefined
+                : rightState === true
+                  ? true
+                  : leftState === false && rightState === false
+                    ? false
+                    : undefined;
             context.allocate(1);
-            return { value: logicalVector([leftState]), visible: true };
+            return {
+              value: result === undefined ? logicalVector([0], [1]) : logicalVector([result]),
+              visible: true,
+            };
           }
           const right = await this.#evaluateValue(node.right, environment, context);
-          const rightState = scalarLogicalState(right, node.operator);
-          const result =
-            node.operator === "&&"
-              ? rightState === false
-                ? false
-                : leftState === true && rightState === true
-                  ? true
-                  : undefined
-              : rightState === true
-                ? true
-                : leftState === false && rightState === false
-                  ? false
-                  : undefined;
-          context.allocate(1);
-          return {
-            value: result === undefined ? logicalVector([0], [1]) : logicalVector([result]),
-            visible: true,
-          };
-        }
-        const right = await this.#evaluateValue(node.right, environment, context);
-        const dispatched = await this.#dispatchOperatorS3(
-          node.operator,
-          [left, right],
-          environment,
-          [node.left.span, node.right.span],
-          context,
-        );
-        if (dispatched !== undefined) return dispatched;
-        const warningStart = context.warnings.length;
-        let value: RValue;
-        try {
-          value = this.#operators.binary(context, node.operator, left, right);
-        } catch (error) {
-          return this.#signalWarningsBeforeError(warningStart, node, context, error);
-        }
-        await this.#signalRecordedWarnings(warningStart, node, context);
-        return { value, visible: true };
-      }
-      case "AssignmentExpression": {
-        const value = await this.#evaluateValue(node.value, environment, context);
-        const targetEnvironment = this.#assignmentEnvironment(
-          environment,
-          node.target.name,
-          node.operator === "<<-" || node.operator === "->>",
-          node.span,
-        );
-        await this.#assignBinding(targetEnvironment, node.target.name, value, context);
-        return { value, visible: false };
-      }
-      case "ReplacementExpression": {
-        if (node.target.kind === "CallExpression") {
-          const replacement = await this.#evaluateCallReplacement(
-            node.target,
-            node.value,
+          const dispatched = await this.#dispatchOperatorS3(
+            node.operator,
+            [left, right],
             environment,
+            [node.left.span, node.right.span],
             context,
+          );
+          if (dispatched !== undefined) return dispatched;
+          const warningStart = context.warnings.length;
+          let value: RValue;
+          try {
+            value = this.#operators.binary(context, node.operator, left, right);
+          } catch (error) {
+            return await this.#signalWarningsBeforeError(warningStart, node, context, error);
+          }
+          await this.#signalRecordedWarnings(warningStart, node, context);
+          return { value, visible: true };
+        }
+        case "AssignmentExpression": {
+          const value = await this.#evaluateValue(node.value, environment, context);
+          const targetEnvironment = this.#assignmentEnvironment(
+            environment,
+            node.target.name,
             node.operator === "<<-" || node.operator === "->>",
             node.span,
           );
-          return { value: replacement, visible: false };
+          await this.#assignBinding(targetEnvironment, node.target.name, value, context);
+          return { value, visible: false };
         }
-        if (node.target.target.kind !== "Identifier") {
-          const replacement = await this.#evaluateNestedSubsetReplacement(
-            node.target,
-            node.value,
-            environment,
-            context,
-            node.operator === "<<-" || node.operator === "->>",
-            node.span,
-          );
-          return { value: replacement, visible: false };
-        }
-        const name = node.target.target.name;
-        const targetEnvironment = this.#assignmentEnvironment(
-          environment,
-          name,
-          node.operator === "<<-" || node.operator === "->>",
-          node.span,
-        );
-        const binding = lookupBinding(targetEnvironment, name);
-        if (binding === undefined) {
-          throw new REvaluationError("NRE2001", `Object '${name}' not found.`, {
-            span: node.target.target.span,
-            details: { symbol: name },
-          });
-        }
-        const target = await this.#force(binding, context);
-        const replacement = await this.#evaluateValue(node.value, environment, context);
-        let updated: RValue;
-        if (node.target.operator === "@") throw unsupported("slot replacement", node.span);
-        if (node.target.operator === "$") {
-          const member = node.target.arguments[0]?.value;
-          if (member === undefined) {
-            throw new REvaluationError("NRE2206", "The $ operator requires a member name.");
-          }
-          const memberName = staticName(member, "member");
-          if (target.type === "environment") {
-            await this.#assignBinding(target, memberName, replacement, context);
-            return { value: replacement, visible: false };
-          }
-          updated =
-            target.type === "null"
-              ? replacement.type === "null"
-                ? R_NULL
-                : replaceListMember(listValue([]), memberName, replacement, context)
-              : target.type === "language"
-                ? replaceLanguageMember(target, memberName, replacement, context)
-                : replaceListMember(target, memberName, replacement, context);
-        } else {
-          if (target.type === "environment") {
-            if (node.target.operator !== "[[") {
-              throw new RTypeMismatchError("NRT3306", "Environment replacement requires [[ or $.");
-            }
-            const positional = node.target.arguments.filter(
-              (argument) => argument.name === undefined,
-            );
-            if (positional.length !== 1 || positional[0]?.value === undefined) {
-              throw new REvaluationError(
-                "NRE2204",
-                "Environment [[ replacement requires one subscript.",
-              );
-            }
-            const index = await this.#evaluateValue(positional[0].value, environment, context);
-            await this.#assignBinding(
-              target,
-              environmentSubscriptName(index),
-              replacement,
+        case "ReplacementExpression": {
+          if (node.target.kind === "CallExpression") {
+            const replacement = await this.#evaluateCallReplacement(
+              node.target,
+              node.value,
+              environment,
               context,
+              node.operator === "<<-" || node.operator === "->>",
+              node.span,
             );
             return { value: replacement, visible: false };
           }
-          if (target.type === "null") {
-            const arguments_ = node.target.arguments;
-            if (arguments_.length > 1) {
-              throw new REvaluationError(
-                "NRE2204",
-                `${node.target.operator} replacement requires one-dimensional subsetting on NULL.`,
+          if (node.target.target.kind !== "Identifier") {
+            const replacement = await this.#evaluateNestedSubsetReplacement(
+              node.target,
+              node.value,
+              environment,
+              context,
+              node.operator === "<<-" || node.operator === "->>",
+              node.span,
+            );
+            return { value: replacement, visible: false };
+          }
+          const name = node.target.target.name;
+          const targetEnvironment = this.#assignmentEnvironment(
+            environment,
+            name,
+            node.operator === "<<-" || node.operator === "->>",
+            node.span,
+          );
+          const binding = lookupBinding(targetEnvironment, name);
+          if (binding === undefined) {
+            throw new REvaluationError("NRE2001", `Object '${name}' not found.`, {
+              span: node.target.target.span,
+              details: { symbol: name },
+            });
+          }
+          const target = await this.#force(binding, context);
+          const replacement = await this.#evaluateValue(node.value, environment, context);
+          let updated: RValue;
+          if (node.target.operator === "@") throw unsupported("slot replacement", node.span);
+          if (node.target.operator === "$") {
+            const member = node.target.arguments[0]?.value;
+            if (member === undefined) {
+              throw new REvaluationError("NRE2206", "The $ operator requires a member name.");
+            }
+            const memberName = staticName(member, "member");
+            if (target.type === "environment") {
+              await this.#assignBinding(target, memberName, replacement, context);
+              return { value: replacement, visible: false };
+            }
+            updated =
+              target.type === "null"
+                ? replacement.type === "null"
+                  ? R_NULL
+                  : replaceListMember(listValue([]), memberName, replacement, context)
+                : target.type === "language"
+                  ? replaceLanguageMember(target, memberName, replacement, context)
+                  : replaceListMember(target, memberName, replacement, context);
+          } else {
+            if (target.type === "environment") {
+              if (node.target.operator !== "[[") {
+                throw new RTypeMismatchError(
+                  "NRT3306",
+                  "Environment replacement requires [[ or $.",
+                );
+              }
+              const positional = node.target.arguments.filter(
+                (argument) => argument.name === undefined,
               );
+              if (positional.length !== 1 || positional[0]?.value === undefined) {
+                throw new REvaluationError(
+                  "NRE2204",
+                  "Environment [[ replacement requires one subscript.",
+                );
+              }
+              const index = await this.#evaluateValue(positional[0].value, environment, context);
+              await this.#assignBinding(
+                target,
+                environmentSubscriptName(index),
+                replacement,
+                context,
+              );
+              return { value: replacement, visible: false };
             }
-            const argument = arguments_[0]?.value;
-            const missing =
-              argument?.kind === "UnsupportedExpression" && argument.feature === "missing argument";
-            if (node.target.operator === "[[" && (argument === undefined || missing)) {
-              throw new REvaluationError("NRE2204", "[[ requires one non-missing subscript.");
-            }
-            const index =
-              argument === undefined || missing
-                ? undefined
-                : await this.#evaluateValue(argument, environment, context);
-            if (replacement.type === "null") {
-              updated = R_NULL;
-            } else if (node.target.operator === "[") {
-              const emptyTarget =
-                replacement.type === "list" || replacement.type === "pairlist"
-                  ? listValue([])
-                  : isAtomic(replacement)
-                    ? subsetVector(replacement, integerVector([]), context)
-                    : logicalVector([]);
-              updated = replaceVectorSubset(emptyTarget, index, replacement, context);
-            } else {
-              if (index === undefined) {
+            if (target.type === "null") {
+              const arguments_ = node.target.arguments;
+              if (arguments_.length > 1) {
+                throw new REvaluationError(
+                  "NRE2204",
+                  `${node.target.operator} replacement requires one-dimensional subsetting on NULL.`,
+                );
+              }
+              const argument = arguments_[0]?.value;
+              const missing =
+                argument?.kind === "UnsupportedExpression" &&
+                argument.feature === "missing argument";
+              if (node.target.operator === "[[" && (argument === undefined || missing)) {
                 throw new REvaluationError("NRE2204", "[[ requires one non-missing subscript.");
               }
-              updated = replaceVectorElement(listValue([]), index, replacement, context);
+              const index =
+                argument === undefined || missing
+                  ? undefined
+                  : await this.#evaluateValue(argument, environment, context);
+              if (replacement.type === "null") {
+                updated = R_NULL;
+              } else if (node.target.operator === "[") {
+                const emptyTarget =
+                  replacement.type === "list" || replacement.type === "pairlist"
+                    ? listValue([])
+                    : isAtomic(replacement)
+                      ? subsetVector(replacement, integerVector([]), context)
+                      : logicalVector([]);
+                updated = replaceVectorSubset(emptyTarget, index, replacement, context);
+              } else {
+                if (index === undefined) {
+                  throw new REvaluationError("NRE2204", "[[ requires one non-missing subscript.");
+                }
+                updated = replaceVectorElement(listValue([]), index, replacement, context);
+              }
+              await this.#assignBinding(targetEnvironment, name, updated, context);
+              return { value: replacement, visible: false };
             }
-            await this.#assignBinding(targetEnvironment, name, updated, context);
-            return { value: replacement, visible: false };
-          }
-          if (target.type === "language") {
+            if (target.type === "language") {
+              const positional = node.target.arguments.filter(
+                (argument) => argument.name === undefined,
+              );
+              if (
+                positional.length > 1 ||
+                (node.target.operator === "[[" && positional.length !== 1)
+              ) {
+                throw new REvaluationError(
+                  "NRE2204",
+                  "Language replacement accepts at most one subscript.",
+                );
+              }
+              if (node.target.arguments.some((entry) => entry.name !== undefined)) {
+                throw new REvaluationError(
+                  "NRE2202",
+                  "Language replacement requires positional subscripts.",
+                );
+              }
+              const argument = positional[0]?.value;
+              const missing =
+                argument?.kind === "UnsupportedExpression" &&
+                argument.feature === "missing argument";
+              if (node.target.operator === "[[" && (argument === undefined || missing)) {
+                throw new REvaluationError("NRE2204", "[[ requires one non-missing subscript.");
+              }
+              const index =
+                argument === undefined || missing
+                  ? undefined
+                  : await this.#evaluateValue(argument, environment, context);
+              updated =
+                node.target.operator === "["
+                  ? replaceLanguageSubset(target, index, replacement, context)
+                  : replaceLanguageElement(target, index as RValue, replacement, context);
+              await this.#assignBinding(targetEnvironment, name, updated, context);
+              return { value: replacement, visible: false };
+            }
+            if (!isVector(target) && target.type !== "pairlist") {
+              throw new RTypeMismatchError(
+                "NRT3306",
+                "Replacement requires an atomic vector, list, or pairlist.",
+                { details: { type: target.type } },
+              );
+            }
             const positional = node.target.arguments.filter(
               (argument) => argument.name === undefined,
             );
             if (
-              positional.length > 1 ||
-              (node.target.operator === "[[" && positional.length !== 1)
+              node.target.operator === "[[" &&
+              node.target.arguments.some((argument) => argument.name !== undefined)
             ) {
               throw new REvaluationError(
-                "NRE2204",
-                "Language replacement accepts at most one subscript.",
+                "NRE2202",
+                "[[ replacement does not accept named subscript arguments.",
               );
             }
-            if (node.target.arguments.some((entry) => entry.name !== undefined)) {
-              throw new REvaluationError(
-                "NRE2202",
-                "Language replacement requires positional subscripts.",
-              );
+            const targetDimensions = vectorDimensions(target);
+            const dimensional =
+              positional.length >= 2 ||
+              (target.type !== "pairlist" &&
+                targetDimensions?.length === 1 &&
+                positional.length === 1);
+            if (dimensional) {
+              if (target.type === "pairlist") {
+                throw unsupported("rectangular pairlist replacement", node.span);
+              }
+              const indices: (RValue | undefined)[] = [];
+              for (const argument of positional) {
+                indices.push(
+                  await this.#evaluateOptionalSubscript(argument.value, environment, context),
+                );
+              }
+              const coordinateIndex =
+                node.target.operator === "[" &&
+                indices.length === 1 &&
+                isCoordinateMatrixSubscript(target, indices[0]);
+              if (node.target.operator === "[[") {
+                const selected = subsetDimensions(target, indices, true, context);
+                if (selected.length !== 1) {
+                  throw new REvaluationError(
+                    "NRE2204",
+                    "[[ replacement requires exactly one selected element.",
+                  );
+                }
+              }
+              updated = coordinateIndex
+                ? replaceCoordinateMatrix(target, indices[0] as RValue, replacement, context)
+                : replaceDimensions(target, indices, replacement, context);
+              await this.#assignBinding(targetEnvironment, name, updated, context);
+              return { value: replacement, visible: false };
             }
             const argument = positional[0]?.value;
             const missing =
               argument?.kind === "UnsupportedExpression" && argument.feature === "missing argument";
-            if (node.target.operator === "[[" && (argument === undefined || missing)) {
-              throw new REvaluationError("NRE2204", "[[ requires one non-missing subscript.");
-            }
-            const index =
-              argument === undefined || missing
-                ? undefined
-                : await this.#evaluateValue(argument, environment, context);
-            updated =
-              node.target.operator === "["
-                ? replaceLanguageSubset(target, index, replacement, context)
-                : replaceLanguageElement(target, index as RValue, replacement, context);
-            await this.#assignBinding(targetEnvironment, name, updated, context);
-            return { value: replacement, visible: false };
-          }
-          if (!isVector(target) && target.type !== "pairlist") {
-            throw new RTypeMismatchError(
-              "NRT3306",
-              "Replacement requires an atomic vector, list, or pairlist.",
-              { details: { type: target.type } },
-            );
-          }
-          const positional = node.target.arguments.filter(
-            (argument) => argument.name === undefined,
-          );
-          if (
-            node.target.operator === "[[" &&
-            node.target.arguments.some((argument) => argument.name !== undefined)
-          ) {
-            throw new REvaluationError(
-              "NRE2202",
-              "[[ replacement does not accept named subscript arguments.",
-            );
-          }
-          const targetDimensions = vectorDimensions(target);
-          const dimensional =
-            positional.length >= 2 ||
-            (target.type !== "pairlist" &&
-              targetDimensions?.length === 1 &&
-              positional.length === 1);
-          if (dimensional) {
-            if (target.type === "pairlist") {
-              throw unsupported("rectangular pairlist replacement", node.span);
-            }
-            const indices: (RValue | undefined)[] = [];
-            for (const argument of positional) {
-              indices.push(
-                await this.#evaluateOptionalSubscript(argument.value, environment, context),
-              );
-            }
-            const coordinateIndex =
-              node.target.operator === "[" &&
-              indices.length === 1 &&
-              isCoordinateMatrixSubscript(target, indices[0]);
-            if (node.target.operator === "[[") {
-              const selected = subsetDimensions(target, indices, true, context);
-              if (selected.length !== 1) {
-                throw new REvaluationError(
-                  "NRE2204",
-                  "[[ replacement requires exactly one selected element.",
-                );
+            if (node.target.operator === "[") {
+              const index =
+                argument === undefined || missing
+                  ? undefined
+                  : await this.#evaluateValue(argument, environment, context);
+              if (isCoordinateMatrixSubscript(target, index)) {
+                if (target.type === "pairlist") {
+                  throw unsupported("coordinate-matrix pairlist replacement", node.span);
+                }
+                updated = replaceCoordinateMatrix(target, index, replacement, context);
+              } else {
+                updated = replaceVectorSubset(target, index, replacement, context);
               }
-            }
-            updated = coordinateIndex
-              ? replaceCoordinateMatrix(target, indices[0] as RValue, replacement, context)
-              : replaceDimensions(target, indices, replacement, context);
-            await this.#assignBinding(targetEnvironment, name, updated, context);
-            return { value: replacement, visible: false };
-          }
-          const argument = positional[0]?.value;
-          const missing =
-            argument?.kind === "UnsupportedExpression" && argument.feature === "missing argument";
-          if (node.target.operator === "[") {
-            const index =
-              argument === undefined || missing
-                ? undefined
-                : await this.#evaluateValue(argument, environment, context);
-            if (isCoordinateMatrixSubscript(target, index)) {
-              if (target.type === "pairlist") {
-                throw unsupported("coordinate-matrix pairlist replacement", node.span);
-              }
-              updated = replaceCoordinateMatrix(target, index, replacement, context);
             } else {
-              updated = replaceVectorSubset(target, index, replacement, context);
+              if (argument === undefined || missing) {
+                throw new REvaluationError("NRE2204", "[[ requires one non-missing subscript.");
+              }
+              const index = await this.#evaluateValue(argument, environment, context);
+              updated = replaceVectorElement(target, index, replacement, context);
             }
-          } else {
-            if (argument === undefined || missing) {
-              throw new REvaluationError("NRE2204", "[[ requires one non-missing subscript.");
-            }
-            const index = await this.#evaluateValue(argument, environment, context);
-            updated = replaceVectorElement(target, index, replacement, context);
           }
+          await this.#assignBinding(targetEnvironment, name, updated, context);
+          return { value: replacement, visible: false };
         }
-        await this.#assignBinding(targetEnvironment, name, updated, context);
-        return { value: replacement, visible: false };
-      }
-      case "CallExpression": {
-        const warningStart = context.warnings.length;
-        let result: EvaluationResult;
-        try {
-          result = await this.#evaluateCall(node, environment, context);
-        } catch (error) {
-          return this.#signalWarningsBeforeError(warningStart, node, context, error);
+        case "CallExpression": {
+          const warningStart = context.warnings.length;
+          let result: EvaluationResult;
+          try {
+            result = await this.#evaluateCall(node, environment, context);
+          } catch (error) {
+            return await this.#signalWarningsBeforeError(warningStart, node, context, error);
+          }
+          await this.#signalRecordedWarnings(warningStart, node, context);
+          return result;
         }
-        await this.#signalRecordedWarnings(warningStart, node, context);
-        return result;
-      }
-      case "FunctionExpression":
-        return {
-          value: {
-            type: "closure",
-            parameters: node.parameters,
-            body: node.body,
-            environment,
-            attributes: new Map(),
-          },
-          visible: true,
-        };
-      case "IfExpression":
-        if (
-          conditionState(
-            await this.#evaluateValue(node.condition, environment, context),
-            "if",
-            node.span,
-          )
-        ) {
-          return this.#evaluateNode(node.consequence, environment, context);
-        }
-        return node.alternative === undefined
-          ? { value: R_NULL, visible: false }
-          : this.#evaluateNode(node.alternative, environment, context);
-      case "ForExpression":
-        return this.#evaluateFor(node, environment, context);
-      case "WhileExpression":
-        return this.#evaluateWhile(node, environment, context);
-      case "RepeatExpression":
-        return this.#evaluateRepeat(node.body, environment, context);
-      case "BreakExpression":
-        throw new BreakSignal(this.#nearestLoopTarget(node.span, "break"));
-      case "NextExpression":
-        throw new NextSignal(this.#nearestLoopTarget(node.span, "next"));
-      case "ReturnExpression": {
-        const target = this.#nearestFunctionTarget(node.span);
-        const result =
-          node.value === undefined
+        case "FunctionExpression":
+          return {
+            value: {
+              type: "closure",
+              parameters: node.parameters,
+              body: node.body,
+              environment,
+              attributes: new Map(),
+            },
+            visible: true,
+          };
+        case "IfExpression":
+          if (
+            conditionState(
+              await this.#evaluateValue(node.condition, environment, context),
+              "if",
+              node.span,
+            )
+          ) {
+            return await this.#evaluateNode(node.consequence, environment, context);
+          }
+          return await (node.alternative === undefined
             ? { value: R_NULL, visible: false }
-            : await this.#evaluateNode(node.value, environment, context);
-        throw new ReturnSignal(target, result);
-      }
-      case "SubsetExpression": {
-        const target = await this.#evaluateValue(node.target, environment, context);
-        if (node.operator === "@") throw unsupported("slot extraction", node.span);
-        if (node.operator === "$") {
-          const member = node.arguments[0]?.value;
-          if (member === undefined) {
-            throw new REvaluationError("NRE2206", "The $ operator requires a member name.", {
-              span: node.span,
-            });
+            : this.#evaluateNode(node.alternative, environment, context));
+        case "ForExpression":
+          return await this.#evaluateFor(node, environment, context);
+        case "WhileExpression":
+          return await this.#evaluateWhile(node, environment, context);
+        case "RepeatExpression":
+          return await this.#evaluateRepeat(node.body, environment, context);
+        case "BreakExpression":
+          throw new BreakSignal(this.#nearestLoopTarget(node.span, "break"));
+        case "NextExpression":
+          throw new NextSignal(this.#nearestLoopTarget(node.span, "next"));
+        case "ReturnExpression": {
+          const target = this.#nearestFunctionTarget(node.span);
+          const result =
+            node.value === undefined
+              ? { value: R_NULL, visible: false }
+              : await this.#evaluateNode(node.value, environment, context);
+          throw new ReturnSignal(target, result);
+        }
+        case "SubsetExpression": {
+          const target = await this.#evaluateValue(node.target, environment, context);
+          if (node.operator === "@") throw unsupported("slot extraction", node.span);
+          if (node.operator === "$") {
+            const member = node.arguments[0]?.value;
+            if (member === undefined) {
+              throw new REvaluationError("NRE2206", "The $ operator requires a member name.", {
+                span: node.span,
+              });
+            }
+            if (member.kind !== "Identifier" && member.kind !== "StringLiteral") {
+              throw new RTypeMismatchError("NRT3305", "The $ member name must be an identifier.");
+            }
+            const name = member.kind === "Identifier" ? member.name : member.value;
+            if (objectClasses(target) !== undefined) {
+              const dispatched = await this.#invokeS3MethodIfPresentResult(
+                "$",
+                this.#baseEnvironment,
+                runtimeClassNames(target),
+                0,
+                [
+                  { promise: createForcedPromise(target, environment), span: node.target.span },
+                  {
+                    promise: createForcedPromise(characterVector([name]), environment),
+                    span: member.span,
+                  },
+                ],
+                context,
+                false,
+                undefined,
+                environment,
+              );
+              if (dispatched !== undefined) return dispatched;
+            }
+            if (target.type === "environment") {
+              const binding = target.bindings.get(name);
+              return {
+                value: binding === undefined ? R_NULL : await this.#force(binding, context),
+                visible: true,
+              };
+            }
+            if (target.type === "null") return { value: R_NULL, visible: true };
+            if (target.type === "language") {
+              return { value: extractLanguageMember(target, name, context), visible: true };
+            }
+            return {
+              value: extractListMember(target, name, context),
+              visible: true,
+            };
           }
-          if (member.kind !== "Identifier" && member.kind !== "StringLiteral") {
-            throw new RTypeMismatchError("NRT3305", "The $ member name must be an identifier.");
-          }
-          const name = member.kind === "Identifier" ? member.name : member.value;
           if (objectClasses(target) !== undefined) {
             const dispatched = await this.#invokeS3MethodIfPresentResult(
-              "$",
+              node.operator,
               this.#baseEnvironment,
               runtimeClassNames(target),
               0,
               [
                 { promise: createForcedPromise(target, environment), span: node.target.span },
-                {
-                  promise: createForcedPromise(characterVector([name]), environment),
-                  span: member.span,
-                },
+                ...this.#prepareArguments(node.arguments, environment),
               ],
               context,
-              false,
+              true,
               undefined,
               environment,
             );
             if (dispatched !== undefined) return dispatched;
           }
           if (target.type === "environment") {
-            const binding = target.bindings.get(name);
+            if (node.operator !== "[[") {
+              throw new RTypeMismatchError("NRT3306", "Environment extraction requires [[ or $.");
+            }
+            const positional = node.arguments.filter((argument) => argument.name === undefined);
+            if (positional.length !== 1 || positional[0]?.value === undefined) {
+              throw new REvaluationError(
+                "NRE2204",
+                "Environment [[ extraction requires one subscript.",
+              );
+            }
+            const index = await this.#evaluateValue(positional[0].value, environment, context);
+            const binding = target.bindings.get(environmentSubscriptName(index));
             return {
               value: binding === undefined ? R_NULL : await this.#force(binding, context),
               visible: true,
             };
           }
-          if (target.type === "null") return { value: R_NULL, visible: true };
+          if (target.type === "null") {
+            let supplied = false;
+            for (const argument of node.arguments) {
+              const missing =
+                argument.value?.kind === "UnsupportedExpression" &&
+                argument.value.feature === "missing argument";
+              if (argument.value === undefined || missing) continue;
+              supplied = true;
+              await this.#evaluateValue(argument.value, environment, context);
+            }
+            if (node.operator === "[[" && !supplied) {
+              throw new REvaluationError("NRE2204", "[[ requires one non-missing subscript.", {
+                span: node.span,
+              });
+            }
+            return { value: R_NULL, visible: true };
+          }
           if (target.type === "language") {
-            return { value: extractLanguageMember(target, name, context), visible: true };
-          }
-          return {
-            value: extractListMember(target, name, context),
-            visible: true,
-          };
-        }
-        if (objectClasses(target) !== undefined) {
-          const dispatched = await this.#invokeS3MethodIfPresentResult(
-            node.operator,
-            this.#baseEnvironment,
-            runtimeClassNames(target),
-            0,
-            [
-              { promise: createForcedPromise(target, environment), span: node.target.span },
-              ...this.#prepareArguments(node.arguments, environment),
-            ],
-            context,
-            true,
-            undefined,
-            environment,
-          );
-          if (dispatched !== undefined) return dispatched;
-        }
-        if (target.type === "environment") {
-          if (node.operator !== "[[") {
-            throw new RTypeMismatchError("NRT3306", "Environment extraction requires [[ or $.");
-          }
-          const positional = node.arguments.filter((argument) => argument.name === undefined);
-          if (positional.length !== 1 || positional[0]?.value === undefined) {
-            throw new REvaluationError(
-              "NRE2204",
-              "Environment [[ extraction requires one subscript.",
-            );
-          }
-          const index = await this.#evaluateValue(positional[0].value, environment, context);
-          const binding = target.bindings.get(environmentSubscriptName(index));
-          return {
-            value: binding === undefined ? R_NULL : await this.#force(binding, context),
-            visible: true,
-          };
-        }
-        if (target.type === "null") {
-          let supplied = false;
-          for (const argument of node.arguments) {
+            const positional = node.arguments.filter((argument) => argument.name === undefined);
+            if (positional.length > 1 || (node.operator === "[[" && positional.length !== 1)) {
+              throw new REvaluationError(
+                "NRE2204",
+                "Language extraction accepts at most one subscript.",
+              );
+            }
+            const named = node.arguments.filter((entry) => entry.name !== undefined);
+            if (
+              named.some((entry) => entry.name !== (node.operator === "[" ? "drop" : "exact")) ||
+              named.length > 1
+            ) {
+              throw new REvaluationError("NRE2102", "Invalid named language subscript control.");
+            }
+            const argument = positional[0]?.value;
             const missing =
-              argument.value?.kind === "UnsupportedExpression" &&
-              argument.value.feature === "missing argument";
-            if (argument.value === undefined || missing) continue;
-            supplied = true;
-            await this.#evaluateValue(argument.value, environment, context);
+              argument?.kind === "UnsupportedExpression" && argument.feature === "missing argument";
+            if (node.operator === "[[" && (argument === undefined || missing)) {
+              throw new REvaluationError("NRE2204", "[[ requires one non-missing subscript.");
+            }
+            const index =
+              argument === undefined || missing
+                ? undefined
+                : await this.#evaluateValue(argument, environment, context);
+            const dropArgument = node.arguments.find((entry) => entry.name === "drop");
+            if (dropArgument !== undefined) {
+              await this.#evaluateValue(dropArgument.value, environment, context);
+            }
+            const exactArgument = node.arguments.find((entry) => entry.name === "exact");
+            const exact =
+              exactArgument === undefined
+                ? true
+                : exactMatchState(
+                    await this.#evaluateValue(exactArgument.value, environment, context),
+                    exactArgument.span,
+                  );
+            return {
+              value:
+                node.operator === "["
+                  ? subsetLanguage(target, index, context)
+                  : extractLanguageElement(target, index as RValue, context, exact),
+              visible: true,
+            };
           }
-          if (node.operator === "[[" && !supplied) {
-            throw new REvaluationError("NRE2204", "[[ requires one non-missing subscript.", {
-              span: node.span,
-            });
-          }
-          return { value: R_NULL, visible: true };
-        }
-        if (target.type === "language") {
-          const positional = node.arguments.filter((argument) => argument.name === undefined);
-          if (positional.length > 1 || (node.operator === "[[" && positional.length !== 1)) {
-            throw new REvaluationError(
-              "NRE2204",
-              "Language extraction accepts at most one subscript.",
+          if (!isVector(target) && target.type !== "pairlist") {
+            throw new RTypeMismatchError(
+              "NRT3306",
+              "Subsetting requires an atomic vector, list, or pairlist.",
+              {
+                details: { type: target.type },
+              },
             );
           }
-          const named = node.arguments.filter((entry) => entry.name !== undefined);
-          if (
-            named.some((entry) => entry.name !== (node.operator === "[" ? "drop" : "exact")) ||
-            named.length > 1
-          ) {
-            throw new REvaluationError("NRE2102", "Invalid named language subscript control.");
+          const positional = node.arguments.filter((argument) => argument.name === undefined);
+          const dropArgument = node.arguments.find((argument) => argument.name === "drop");
+          const exactArguments = node.arguments.filter((argument) => argument.name === "exact");
+          if (exactArguments.length > 1) {
+            throw new REvaluationError("NRE2102", "Argument 'exact' matched more than once.");
+          }
+          const exactArgument = exactArguments[0];
+          const unknownNamed = node.arguments.find(
+            (argument) =>
+              argument.name !== undefined &&
+              argument.name !== (node.operator === "[" ? "drop" : "exact"),
+          );
+          if (unknownNamed !== undefined) {
+            throw unsupported(`named subscript '${unknownNamed.name ?? ""}'`, unknownNamed.span);
+          }
+          const targetDimensions = vectorDimensions(target);
+          const dimensional =
+            positional.length >= 2 || (targetDimensions?.length === 1 && positional.length === 1);
+          if (dimensional) {
+            const indices: (RValue | undefined)[] = [];
+            for (const argument of positional) {
+              indices.push(
+                await this.#evaluateOptionalSubscript(argument.value, environment, context),
+              );
+            }
+            const drop =
+              dropArgument === undefined
+                ? true
+                : conditionState(
+                    await this.#evaluateValue(dropArgument.value, environment, context),
+                    "if",
+                    dropArgument.span,
+                  );
+            const selected =
+              node.operator === "[" &&
+              indices.length === 1 &&
+              isCoordinateMatrixSubscript(target, indices[0])
+                ? subsetCoordinateMatrix(target, indices[0], context)
+                : subsetDimensions(target, indices, drop, context);
+            if (node.operator === "[") return { value: selected, visible: true };
+            if (selected.length !== 1) {
+              throw new REvaluationError("NRE2204", "[[ requires exactly one selected element.");
+            }
+            return {
+              value: extractVectorElement(selected, integerVector([1]), context),
+              visible: true,
+            };
           }
           const argument = positional[0]?.value;
           const missing =
             argument?.kind === "UnsupportedExpression" && argument.feature === "missing argument";
-          if (node.operator === "[[" && (argument === undefined || missing)) {
-            throw new REvaluationError("NRE2204", "[[ requires one non-missing subscript.");
+          if (node.operator === "[") {
+            const index =
+              argument === undefined || missing
+                ? undefined
+                : await this.#evaluateValue(argument, environment, context);
+            return {
+              value: isCoordinateMatrixSubscript(target, index)
+                ? subsetCoordinateMatrix(target, index, context)
+                : subsetVector(target, index, context),
+              visible: true,
+            };
           }
-          const index =
-            argument === undefined || missing
-              ? undefined
-              : await this.#evaluateValue(argument, environment, context);
-          const dropArgument = node.arguments.find((entry) => entry.name === "drop");
-          if (dropArgument !== undefined) {
-            await this.#evaluateValue(dropArgument.value, environment, context);
+          if (argument === undefined || missing) {
+            throw new REvaluationError("NRE2204", "[[ requires one non-missing subscript.", {
+              span: node.span,
+            });
           }
-          const exactArgument = node.arguments.find((entry) => entry.name === "exact");
+          const index = await this.#evaluateValue(argument, environment, context);
           const exact =
             exactArgument === undefined
               ? true
@@ -1524,124 +1628,50 @@ export class Evaluator {
                   await this.#evaluateValue(exactArgument.value, environment, context),
                   exactArgument.span,
                 );
-          return {
-            value:
-              node.operator === "["
-                ? subsetLanguage(target, index, context)
-                : extractLanguageElement(target, index as RValue, context, exact),
-            visible: true,
-          };
+          return { value: extractVectorElement(target, index, context, exact), visible: true };
         }
-        if (!isVector(target) && target.type !== "pairlist") {
-          throw new RTypeMismatchError(
-            "NRT3306",
-            "Subsetting requires an atomic vector, list, or pairlist.",
-            {
-              details: { type: target.type },
-            },
-          );
-        }
-        const positional = node.arguments.filter((argument) => argument.name === undefined);
-        const dropArgument = node.arguments.find((argument) => argument.name === "drop");
-        const exactArguments = node.arguments.filter((argument) => argument.name === "exact");
-        if (exactArguments.length > 1) {
-          throw new REvaluationError("NRE2102", "Argument 'exact' matched more than once.");
-        }
-        const exactArgument = exactArguments[0];
-        const unknownNamed = node.arguments.find(
-          (argument) =>
-            argument.name !== undefined &&
-            argument.name !== (node.operator === "[" ? "drop" : "exact"),
-        );
-        if (unknownNamed !== undefined) {
-          throw unsupported(`named subscript '${unknownNamed.name ?? ""}'`, unknownNamed.span);
-        }
-        const targetDimensions = vectorDimensions(target);
-        const dimensional =
-          positional.length >= 2 || (targetDimensions?.length === 1 && positional.length === 1);
-        if (dimensional) {
-          const indices: (RValue | undefined)[] = [];
-          for (const argument of positional) {
-            indices.push(
-              await this.#evaluateOptionalSubscript(argument.value, environment, context),
-            );
-          }
-          const drop =
-            dropArgument === undefined
-              ? true
-              : conditionState(
-                  await this.#evaluateValue(dropArgument.value, environment, context),
-                  "if",
-                  dropArgument.span,
-                );
-          const selected =
-            node.operator === "[" &&
-            indices.length === 1 &&
-            isCoordinateMatrixSubscript(target, indices[0])
-              ? subsetCoordinateMatrix(target, indices[0], context)
-              : subsetDimensions(target, indices, drop, context);
-          if (node.operator === "[") return { value: selected, visible: true };
-          if (selected.length !== 1) {
-            throw new REvaluationError("NRE2204", "[[ requires exactly one selected element.");
-          }
-          return {
-            value: extractVectorElement(selected, integerVector([1]), context),
-            visible: true,
-          };
-        }
-        const argument = positional[0]?.value;
-        const missing =
-          argument?.kind === "UnsupportedExpression" && argument.feature === "missing argument";
-        if (node.operator === "[") {
-          const index =
-            argument === undefined || missing
-              ? undefined
-              : await this.#evaluateValue(argument, environment, context);
-          return {
-            value: isCoordinateMatrixSubscript(target, index)
-              ? subsetCoordinateMatrix(target, index, context)
-              : subsetVector(target, index, context),
-            visible: true,
-          };
-        }
-        if (argument === undefined || missing) {
-          throw new REvaluationError("NRE2204", "[[ requires one non-missing subscript.", {
-            span: node.span,
-          });
-        }
-        const index = await this.#evaluateValue(argument, environment, context);
-        const exact =
-          exactArgument === undefined
-            ? true
-            : exactMatchState(
-                await this.#evaluateValue(exactArgument.value, environment, context),
-                exactArgument.span,
+        case "NamespaceExpression": {
+          const namespace = staticName(node.namespace, "namespace");
+          const member = staticName(node.member, "namespace member");
+          const exports = this.#staticNamespaceExports(namespace);
+          if (exports !== undefined) {
+            const namespaceEnvironment = this.#staticNamespaces.get(namespace);
+            const binding =
+              namespaceEnvironment === undefined
+                ? undefined
+                : lookupBinding(namespaceEnvironment, member);
+            const internal = this.#staticNamespaceOwnsBinding(namespace, member);
+            const exported =
+              exports === "all"
+                ? internal &&
+                  !this.#builtins.some(
+                    (definition) =>
+                      definition.package === namespace &&
+                      definition.name === member &&
+                      definition.exported === false,
+                  )
+                : exports.has(member);
+            const accessible = node.operator === ":::" ? internal || exported : exported;
+            if (binding === undefined || !accessible) {
+              throw new REvaluationError(
+                "NRE2211",
+                `'${member}' is not a registered ${node.operator === ":::" ? "internal" : "exported"} binding in namespace '${namespace}'.`,
+                { span: node.member.span, details: { namespace, member } },
               );
-        return { value: extractVectorElement(target, index, context, exact), visible: true };
-      }
-      case "NamespaceExpression": {
-        const namespace = staticName(node.namespace, "namespace");
-        const member = staticName(node.member, "namespace member");
-        const exports = this.#staticNamespaceExports(namespace);
-        if (exports !== undefined) {
-          const namespaceEnvironment = this.#staticNamespaces.get(namespace);
-          const binding =
-            namespaceEnvironment === undefined
-              ? undefined
-              : lookupBinding(namespaceEnvironment, member);
-          const internal = this.#staticNamespaceOwnsBinding(namespace, member);
-          const exported =
-            exports === "all"
-              ? internal &&
-                !this.#builtins.some(
-                  (definition) =>
-                    definition.package === namespace &&
-                    definition.name === member &&
-                    definition.exported === false,
-                )
-              : exports.has(member);
-          const accessible = node.operator === ":::" ? internal || exported : exported;
-          if (binding === undefined || !accessible) {
+            }
+            return { value: await this.#force(binding, context), visible: true };
+          }
+          const record = this.#packages.get(namespace);
+          if (record === undefined) {
+            throw new REvaluationError("NRE2210", `Namespace '${namespace}' is not registered.`, {
+              span: node.namespace.span,
+              details: { namespace },
+            });
+          }
+          const loaded = await this.#loadPackage(namespace, false, context);
+          const exported = runtimePackageExportNames(loaded.record).includes(member);
+          const binding = loaded.namespace.bindings.get(member);
+          if (binding === undefined || (node.operator === "::" && !exported)) {
             throw new REvaluationError(
               "NRE2211",
               `'${member}' is not a registered ${node.operator === ":::" ? "internal" : "exported"} binding in namespace '${namespace}'.`,
@@ -1650,38 +1680,29 @@ export class Evaluator {
           }
           return { value: await this.#force(binding, context), visible: true };
         }
-        const record = this.#packages.get(namespace);
-        if (record === undefined) {
-          throw new REvaluationError("NRE2210", `Namespace '${namespace}' is not registered.`, {
-            span: node.namespace.span,
-            details: { namespace },
-          });
-        }
-        const loaded = await this.#loadPackage(namespace, false, context);
-        const exported = runtimePackageExportNames(loaded.record).includes(member);
-        const binding = loaded.namespace.bindings.get(member);
-        if (binding === undefined || (node.operator === "::" && !exported)) {
-          throw new REvaluationError(
-            "NRE2211",
-            `'${member}' is not a registered ${node.operator === ":::" ? "internal" : "exported"} binding in namespace '${namespace}'.`,
-            { span: node.member.span, details: { namespace, member } },
-          );
-        }
-        return { value: await this.#force(binding, context), visible: true };
+        case "FormulaExpression":
+          return {
+            value: normalizeFormula(node, environment),
+            visible: true,
+          };
+        case "PipeExpression":
+          return await this.#evaluatePipe(node, environment, context);
+        case "ConstantExpression":
+          return { value: node.value as RValue, visible: true };
+        case "UnsupportedExpression":
+          throw unsupported(node.feature, node.span);
+        default:
+          return assertNever(node);
       }
-      case "FormulaExpression":
-        return {
-          value: normalizeFormula(node, environment),
-          visible: true,
-        };
-      case "PipeExpression":
-        return this.#evaluatePipe(node, environment, context);
-      case "ConstantExpression":
-        return { value: node.value as RValue, visible: true };
-      case "UnsupportedExpression":
-        throw unsupported(node.feature, node.span);
-      default:
-        return assertNever(node);
+    } catch (error) {
+      if (node.kind === "Identifier") {
+        // A failed lookup belongs to the promise's evaluation frame, which can be global.
+        const origin = this.#closureCallFrames.find((frame) => frame.environment === environment);
+        this.#recordErrorCall(error, origin?.call ?? null);
+      } else if (!["Program", "Block", "ConstantExpression"].includes(node.kind)) {
+        this.#recordErrorCall(error, node);
+      }
+      throw error;
     }
   };
 
@@ -2426,18 +2447,17 @@ export class Evaluator {
   ): Promise<RValue> {
     if (node.kind !== "Identifier") return this.#evaluateValue(node, environment, context);
     let current: REnvironment | null = environment;
-    let firstNonCallable: RValue | undefined;
     while (current !== null) {
       const binding = current.bindings.get(node.name);
       if (binding !== undefined && binding.type !== "dots") {
         const value = await this.#force(binding, context);
         if (value.type === "closure" || value.type === "builtin") return value;
-        firstNonCallable ??= value;
       }
       current = current.parent;
     }
-    if (firstNonCallable !== undefined) return firstNonCallable;
-    return this.#evaluateValue(node, environment, context);
+    throw new REvaluationError("NRE2001", `could not find function "${node.name}"`, {
+      span: node.span,
+    });
   }
 
   #prepareArguments(
@@ -2752,7 +2772,7 @@ export class Evaluator {
           visible: resultVisibility !== "invisible",
         };
       } catch (error) {
-        this.#recordArgumentErrorCall(error, call);
+        this.#recordErrorCall(error, call);
         throw error;
       }
     }
@@ -2770,7 +2790,7 @@ export class Evaluator {
       debugStep,
       methodFrame,
     ).catch((error: unknown) => {
-      this.#recordArgumentErrorCall(error, call);
+      this.#recordErrorCall(error, call);
       throw error;
     });
   }
@@ -3272,38 +3292,30 @@ export class Evaluator {
   }
 
   #errorConditionValue(error: NativRError): RValue {
-    const call = error.conditionCall;
+    const call = errorConditionCall(error);
     return error instanceof RSignalledConditionError
       ? error.condition
       : withClasses(
           listValue(
             [
               characterVector([error.message]),
-              call === undefined ? R_NULL : { type: "language", expression: call },
+              call === undefined || call === null ? R_NULL : { type: "language", expression: call },
             ],
             ["message", "call"],
           ),
-          ["simpleError", "error", "condition"],
+          errorConditionClasses(error),
         );
   }
 
-  #recordArgumentErrorCall(error: unknown, call: CallExpressionNode | undefined): void {
+  #recordErrorCall(error: unknown, call: AstNode | null | undefined): void {
     if (
       call !== undefined &&
       error instanceof NativRError &&
-      [
-        "NRE2004",
-        "NRE2005",
-        "NRE2006",
-        "NRE2007",
-        "NRE2101",
-        "NRE2102",
-        "NRE2103",
-        "NRE2104",
-      ].includes(error.code)
-    ) {
-      error.recordConditionCall(call);
-    }
+      !(error instanceof RSignalledConditionError) &&
+      !(error instanceof RResourceLimitError) &&
+      !(error instanceof RRuntimeDisposedError)
+    )
+      recordErrorConditionCall(error, call);
   }
 
   async #warnPartialArgument(
@@ -3636,7 +3648,7 @@ export class Evaluator {
     const parameter = frame.closure.parameters.find((candidate) => candidate.name === name);
     if (parameter === undefined) return undefined;
     if (parameter.defaultValue === undefined) {
-      throw new REvaluationError("NRE2219", `Formal argument '${name}' has no default value.`);
+      throw new REvaluationError("NRE2219", "argument is missing, with no default");
     }
     return this.#evaluateValue(parameter.defaultValue, frame.environment, context);
   }
@@ -5038,7 +5050,7 @@ export class Evaluator {
       const origin = this.#closureCallFrames.find(
         (frame) => frame.environment === promise.environment,
       );
-      this.#recordArgumentErrorCall(error, origin?.call ?? this.#closureCallFrames.at(-1)?.call);
+      this.#recordErrorCall(error, origin?.call ?? this.#closureCallFrames.at(-1)?.call);
       throw error;
     }
 

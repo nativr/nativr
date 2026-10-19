@@ -1345,5 +1345,54 @@
     "id": "generic-default-promises-method-warning-calls",
     "code": "(function(){old<-options(warnPartialMatchArgs=TRUE);on.exit(options(old));capture<-function(expr){seen<-list();value<-withCallingHandlers(expr,warning=function(w){seen[[length(seen)+1]]<<-w;invokeRestart(\"muffleWarning\")});list(value=value,warnings=seen)};list(sequence=capture(seq(f=1,t=3)),sort=capture(sort(c(3,1,2),decr=TRUE)),format=capture(format(1.234,dig=2)),extra=capture(seq.default(from=1,other=stop(\"unused\"))))})()",
     "policy": "exact"
+  },
+
+  {
+    "id": "error-origin-and-choice-call-syntax",
+    "bindingEvidence": ["base::conditionCall"],
+    "code": "local({capture<-function(expr)tryCatch(force(expr),error=conditionCall);f<-abs;list(builtin=capture(abs(\"x\")),alias=capture(f(\"x\")),namespace=capture(base::abs(\"x\")),binary=capture(\"x\"+1),unary=capture(!\"x\"),subset=capture(1[[2]]),control=capture(if(NA)1),default=capture(format.default(\"x\",justify=\"bad\")),evaluated=capture(eval(quote(abs(\"x\")))))})",
+    "policy": "exact",
+    "observationAssertions": {
+      "outcome": "value",
+      "visible": true
+    }
+  },
+  {
+    "id": "error-origin-and-choice-promises-and-explicit-calls",
+    "code": "local({capture<-function(expr)tryCatch(force(expr),error=conditionCall);delayedAssign(\"owned_global_missing\",owned_missing,eval.env=.GlobalEnv);f<-function()owned_missing;g<-function(x=abs(\"x\"))x;condition<-simpleError(\"owned\",call=quote(owned(7)));seen<-list();value<-tryCatch(withCallingHandlers(abs(\"x\"),error=function(e)seen[[length(seen)+1]]<<-conditionCall(e)),error=conditionCall);list(global=capture(owned_global_missing),local=capture(f()),default=capture(g()),calling=list(value=value,seen=seen),explicit=tryCatch(stop(condition),error=identity),null=capture(stop(simpleError(\"owned\",call=NULL))))})",
+    "policy": "exact",
+    "observationAssertions": {
+      "outcome": "value",
+      "visible": true
+    }
+  },
+  {
+    "id": "error-origin-and-choice-selection-values",
+    "bindingEvidence": ["base::match.arg"],
+    "code": "local({list(one=match.arg(\"a\",c(\"alpha\",\"beta\")),some=match.arg(c(\"a\",\"bad\"),c(\"alpha\",\"beta\"),TRUE),all=match.arg(c(\"a\",\"a\"),c(\"alpha\",\"beta\"),\"all\"),named=match.arg(\"b\",c(A=\"alpha\",B=\"beta\")),integer=match.arg(\"1\",1:2),list=match.arg(\"a\",list(\"alpha\",\"beta\")),factor=match.arg(\"a\",factor(c(\"a\",\"b\"))),missing=match.arg(\"NA\",c(NA_character_,\"a\")),empty=match.arg(character(),character()),emptyList=match.arg(NULL,list()),signature=formals(match.arg))})",
+    "policy": "exact",
+    "observationAssertions": {
+      "outcome": "value",
+      "visible": true
+    }
+  },
+  {
+    "id": "error-origin-and-choice-public-diagnostics",
+    "code": "local({capture<-function(expr)tryCatch(expr,error=function(e)list(message=conditionMessage(e),call=conditionCall(e),class=class(e)));list(type=capture(match.arg(1,c(\"a\",\"b\"))),length=capture(match.arg(character(),c(\"a\",\"b\"))),missing=capture(match.arg(,c(\"a\",\"b\"))),none=capture(match.arg(\"bad\",c(\"a\",\"b\"),TRUE)),all=capture(match.arg(c(\"a\",\"bad\"),c(\"alpha\",\"beta\"),\"all\")),duplicate=capture(match.arg(\"a\",c(\"alpha\",\"alpha\",\"beta\"))),emptyLabel=capture(match.arg(\"\",c(\"\",\"a\"))),zero=capture(match.arg(\"bad\",character())),severalType=capture(match.arg(\"a\",c(\"a\",\"b\"),1)))})",
+    "policy": "exact",
+    "observationAssertions": {
+      "outcome": "value",
+      "visible": true
+    }
+  },
+  {
+    "id": "error-origin-and-choice-default-forcing",
+    "bindingEvidence": ["base::match.arg"],
+    "code": "local({seen<-character();mark<-function(name,value){seen<<-c(seen,name);value};explicit<-match.arg(mark(\"arg\",\"a\"),mark(\"choices\",c(\"a\",\"b\")),mark(\"several\",FALSE));first<-seen;seen<-character();f<-function(arg={seen<<-c(seen,\"default\");c(\"a\",\"b\")})match.arg(arg);implicit<-f(mark(\"actual\",\"b\"));second<-seen;seen<-character();default<-f();list(explicit=explicit,first=first,implicit=implicit,second=second,default=default,third=seen,null=match.arg(NULL,c(\"a\",\"b\"),stop(\"unused\")))})",
+    "policy": "exact",
+    "observationAssertions": {
+      "outcome": "value",
+      "visible": true
+    }
   }
 ]

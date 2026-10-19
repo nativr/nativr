@@ -95,7 +95,8 @@ export function subsetVector(
 
 function preserveSubsetAttributes<T extends RVector>(source: RVector, output: T): T {
   const attributes = new Map(output.attributes);
-  for (const name of ["class", "levels", "row.names"]) {
+  const retained = isFactor(source) ? ["levels", "class"] : ["class", "levels", "row.names"];
+  for (const name of retained) {
     const value = source.attributes.get(name);
     if (value !== undefined) attributes.set(name, value);
   }

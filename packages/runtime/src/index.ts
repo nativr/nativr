@@ -22,6 +22,10 @@ export {
 } from "./environment.js";
 export {
   NativRError,
+  errorConditionCall,
+  errorConditionClasses,
+  recordErrorConditionCall,
+  recordErrorConditionClasses,
   REvaluationError,
   RSignalledConditionError,
   RParseError,
