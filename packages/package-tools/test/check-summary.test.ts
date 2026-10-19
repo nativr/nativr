@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { expect, it } from "vitest";
 import { redactPackageCheck } from "../../../scripts/lib/package-check-summary.mjs";
 
-it.each(["0.356.0", "0.357.0", "0.358.0", "0.359.0", "0.360.0"])(
+it.each(["0.356.0", "0.357.0", "0.358.0", "0.359.0", "0.360.0", "0.361.0"])(
   "pins checkpoint %s without evaluating the holdout",
   async (profile) => {
     const read = async (path: string) =>
@@ -83,7 +83,7 @@ it.each(["0.356.0", "0.357.0", "0.358.0", "0.359.0", "0.360.0"])(
         discovered: number;
         executed: number;
       }[];
-      if (profile === "0.358.0" || profile === "0.359.0" || profile === "0.360.0") {
+      if (["0.358.0", "0.359.0", "0.360.0", "0.361.0"].includes(profile)) {
         const metadata = summary.documentationMetadata as {
           policy: string;
           sourceSha256: string;
@@ -92,7 +92,7 @@ it.each(["0.356.0", "0.357.0", "0.358.0", "0.359.0", "0.360.0"])(
           expected: { status: string; exportCount: number | null };
         };
         expect(metadata.policy).toBe(
-          profile === "0.360.0"
+          profile === "0.360.0" || profile === "0.361.0"
             ? "loaded-documentation-signatures-v2"
             : "loaded-documentation-signatures-v1",
         );

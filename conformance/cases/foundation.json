@@ -17196,5 +17196,39 @@
     "code": "local({f<-local({hidden<-7;function(x,y=2)hidden+x+y});a<-args(f);z<-args(function()NULL);d<-args(function(x=stop(\"must not force\"))x);c(identical(names(formals(a)),c(\"x\",\"y\")),isTRUE(all.equal(formals(a),formals(function(x,y=2L)NULL),tolerance=0)),!isTRUE(all.equal(formals(a),formals(function(x,y=2.0000000000001)NULL),tolerance=0)),identical(formals(z),NULL),is.function(z),identical(formals(d),formals(function(x=stop(\"must not force\"))NULL)),identical(f(1),10),identical(body(a),quote(NULL)))})",
     "expected": [true, true, true, true, true, true, true, true],
     "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "factor-printing-labels-levels-and-empty-values",
+    "code": "c(capture.output(print(factor(c(\"b\",NA,\"a\"),levels=c(\"a\",\"b\",\"c\")))),capture.output(print(ordered(c(\"b\",NA,\"a\"),levels=c(\"a\",\"b\",\"c\")),max.levels=2)),capture.output(print(factor(character()))),capture.output(print(ordered(character()))),capture.output(print(factor(c(\"a\",NA)),quote=TRUE)))",
+    "expected": [
+      "[1] b    <NA> a   ",
+      "Levels: a b c",
+      "[1] b    <NA> a   ",
+      "3 Levels: a < ... < c",
+      "factor()",
+      "Levels: ",
+      "ordered()",
+      "Levels: ",
+      "[1] \"a\" NA ",
+      "Levels: \"a\""
+    ],
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "factor-printing-controls-errors-and-signatures",
+    "code": "local({x<-factor(letters[1:4]);c(capture.output(print(x,width=19)),capture.output(print(x,max.levels=FALSE,width=stop(\"unused\"))),capture.output(tryCatch(print(x,max.levels=NA),error=function(e)cat(conditionMessage(e),\"\\n\",sep=\"\"))),names(formals(print.factor)))})",
+    "expected": [
+      "[1] a b c d",
+      "4 Levels: a ... d",
+      "[1] a b c d",
+      "[1] a b c d",
+      "missing value where TRUE/FALSE needed",
+      "x",
+      "quote",
+      "max.levels",
+      "width",
+      "..."
+    ],
+    "expectedCompatibility": "behavioral"
   }
 ]

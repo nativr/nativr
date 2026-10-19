@@ -3046,6 +3046,37 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     "regular",
     "invisible",
   ),
+  {
+    ...withBuiltinFormals(
+      defineBuiltin(
+        "print.factor",
+        ["x", "quote", "max.levels", "width", "..."],
+        "behavioral",
+        builtinPrintFactor,
+        "regular",
+        "invisible",
+      ),
+      [
+        { name: "x" },
+        {
+          name: "quote",
+          defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
+        },
+        { name: "max.levels", defaultValue: nullAst() },
+        {
+          name: "width",
+          defaultValue: callAst("getOption", [
+            {
+              value: { kind: "StringLiteral", value: "width", span: SYNTHETIC_SPAN },
+              span: SYNTHETIC_SPAN,
+            },
+          ]),
+        },
+        { name: "..." },
+      ],
+    ),
+    s3Method: { generic: "print", className: "factor" },
+  },
   defineBuiltin(
     "cat",
     ["...", "file", "sep", "fill", "labels", "append"],
@@ -28491,6 +28522,15 @@ async function builtinPrint(invocation: BuiltinInvocation): Promise<RValue> {
     "useSource",
   ]);
   const input = required(matched, "x", "print");
+  const text = formatPrintedValue(input, printOptions(invocation, matched));
+  invocation.context.writeOutput({ stream: "stdout", text: `${text}\n` });
+  return input;
+}
+
+function printOptions(
+  invocation: BuiltinInvocation,
+  matched: ReadonlyMap<string, RValue>,
+): PrintOptions {
   const digits =
     matched.get("digits") === undefined
       ? optionInteger(invocation, "digits", 7)
@@ -28521,7 +28561,7 @@ async function builtinPrint(invocation: BuiltinInvocation): Promise<RValue> {
   if (width < 10 || width > 10_000) {
     throw new RTypeMismatchError("NRT3166", "'width' must be between 10 and 10000.");
   }
-  const text = formatPrintedValue(input, {
+  return {
     digits,
     gap,
     maxItems,
@@ -28533,9 +28573,67 @@ async function builtinPrint(invocation: BuiltinInvocation): Promise<RValue> {
     deparseCutoff: Math.max(20, Math.min(500, optionInteger(invocation, "deparse.cutoff", 60))),
     environmentLabel: (environment) => printedEnvironmentLabel(invocation, environment),
     explicitNaPrint: matched.has("na.print"),
+    explicitQuote: matched.has("quote"),
     context: invocation.context,
-  });
-  invocation.context.writeOutput({ stream: "stdout", text: `${text}\n` });
+  };
+}
+
+async function builtinPrintFactor(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched, dots } = matchLazyArgumentsWithDots(invocation, [
+    "x",
+    "quote",
+    "max.levels",
+    "width",
+  ]);
+  const inputArgument = matched.get("x");
+  if (inputArgument === undefined || inputArgument.promise.missing)
+    throw new REvaluationError("NRE2103", "Argument 'x' is missing in print.factor().");
+  const input = await invocation.force(inputArgument.promise);
+  const quoteArgument = matched.get("quote");
+  const empty = input.type === "null" || (isAtomic(input) && input.length === 0);
+  const readQuote = () =>
+    quoteArgument === undefined ? logicalVector([0]) : invocation.force(quoteArgument.promise);
+  const quoteValue = empty ? logicalVector([0]) : await readQuote();
+  const controls = new Map<string, RValue>([
+    ["quote", logicalVector([factorPrintQuote(quoteValue, false) ? 1 : 0])],
+  ]);
+  if (!empty) {
+    const dotControls = matchLazyArgumentsWithDots({ ...invocation, arguments: dots }, [
+      "digits",
+      "na.print",
+      "print.gap",
+      "right",
+      "max",
+      "useSource",
+    ]);
+    for (const argument of dots) await invocation.force(argument.promise);
+    for (const [name, argument] of dotControls.matched)
+      controls.set(name, await invocation.force(argument.promise));
+  }
+  const options = printOptions(invocation, controls);
+  const levels = input.type === "null" ? undefined : objectAttributes(input)?.get("levels");
+  if (levels?.type !== "character")
+    invocation.context.warn({ code: "NRW3300", message: 'factor levels must be "character"' });
+  const body = formatFactorBody(input, options);
+  invocation.context.writeOutput({ stream: "stdout", text: `${body}\n` });
+  // Native observations show that summary controls are forced after the vector is printed.
+  const maximumArgument = matched.get("max.levels");
+  const maximum =
+    maximumArgument === undefined ? R_NULL : await invocation.force(maximumArgument.promise);
+  const limit = factorPrintLevelLimit(maximum);
+  if (limit === 0) return input;
+  const summaryOptions = { ...options, quote: factorPrintQuote(await readQuote(), true) };
+  const widthArgument = matched.get("width");
+  const width =
+    limit === undefined
+      ? factorPrintWidth(
+          widthArgument === undefined
+            ? doubleVector([optionInteger(invocation, "width", 80)])
+            : await invocation.force(widthArgument.promise),
+        )
+      : 0;
+  const text = formatFactorLevels(input, summaryOptions, limit, width);
+  if (text !== undefined) invocation.context.writeOutput({ stream: "stdout", text: `${text}\n` });
   return input;
 }
 
@@ -31706,6 +31804,7 @@ interface PrintOptions {
   readonly maxItems: number;
   readonly naPrint: string;
   readonly quote: boolean;
+  readonly explicitQuote?: boolean;
   readonly right?: boolean;
   readonly width?: number;
   readonly scipen?: number;
@@ -31734,6 +31833,14 @@ function formatPrintedValue(value: RValue, options: PrintOptions): string {
   }
   options = { ...options, depth: depth + 1 };
   if (value.type === "null") return "NULL";
+  if (objectClasses(value)?.includes("factor") === true) {
+    const factorOptions = {
+      ...options,
+      quote: options.explicitQuote === true ? options.quote : false,
+    };
+    const summary = formatFactorLevels(value, factorOptions, undefined, options.width ?? 80);
+    return `${formatFactorBody(value, factorOptions)}${summary === undefined ? "" : `\n${summary}`}`;
+  }
   if (value.type === "list") {
     if (isDataFrame(value)) return formatPrintedDataFrame(value, options);
     return formatPrintedList(value, options);
@@ -31830,6 +31937,175 @@ function printedLineAppender(lines: string[], options: PrintOptions): (line: str
     }
     lines.push(line);
   };
+}
+
+/** Character display without changing factor codes, levels, names or reference identity. */
+function formatFactorBody(value: RValue, options: PrintOptions): string {
+  if (!isAtomic(value)) {
+    if (value.type === "null") return "factor()";
+    throw new RUnsupportedFeatureError(
+      "NRU6201",
+      "print.factor() currently requires an atomic value or NULL.",
+    );
+  }
+  if (value.length === 0)
+    return objectClasses(value)?.includes("ordered") === true ? "ordered()" : "factor()";
+  const levels = value.attributes.get("levels");
+  const factor = objectClasses(value)?.includes("factor") === true;
+  options.context?.allocate(value.length);
+  const labels: string[] = [];
+  const missing = new Uint8Array(value.length);
+  for (let index = 0; index < value.length; index += 1) {
+    options.context?.checkpoint();
+    let label: string;
+    if (isMissing(value, index)) {
+      missing[index] = 1;
+      label = "";
+    } else if (factor) {
+      if (value.type !== "integer" || levels?.type !== "character")
+        throw new RTypeMismatchError("NRT3400", "malformed factor");
+      const code = (value.values[index] ?? 0) - 1;
+      if (code < 0 || code >= levels.length)
+        throw new RTypeMismatchError("NRT3400", "malformed factor");
+      missing[index] = isMissing(levels, code) ? 1 : 0;
+      label = levels.values[code] ?? "";
+    } else label = stringAt(value, index);
+    labels.push(factorPrintString(label, options.quote, options.context));
+  }
+  const attributes = new Map(value.attributes);
+  attributes.delete("levels");
+  attributes.delete("class");
+  const display = { ...characterVector(labels, compactMask(missing)), attributes };
+  const lines: string[] = [];
+  const append = printedLineAppender(lines, options);
+  append(
+    formatPrintedValue(display, {
+      ...options,
+      quote: false,
+      explicitNaPrint: true,
+      naPrint: options.explicitNaPrint === true ? options.naPrint : options.quote ? "NA" : "<NA>",
+    }),
+  );
+  for (const [name, attribute] of attributes) {
+    options.context?.checkpoint();
+    if (["names", "dim", "dimnames"].includes(name)) continue;
+    append(`attr(,${JSON.stringify(name)})`);
+    append(formatPrintedValue(attribute, { ...options, listPath: "" }));
+  }
+  return lines.join("\n");
+}
+
+function factorPrintString(
+  text: string,
+  quote: boolean,
+  context?: PrintOptions["context"],
+): string {
+  context?.checkpoint(text.length);
+  const escapes: Readonly<Record<string, string>> = {
+    "\u0007": "\\a",
+    "\b": "\\b",
+    "\t": "\\t",
+    "\n": "\\n",
+    "\v": "\\v",
+    "\f": "\\f",
+    "\r": "\\r",
+    "\\": "\\\\",
+  };
+  const encoded = Array.from(
+    text,
+    (character) =>
+      escapes[character] ??
+      (character === '"' && quote
+        ? '\\"'
+        : character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127
+          ? `\\${character.charCodeAt(0).toString(8).padStart(3, "0")}`
+          : character),
+  ).join("");
+  return quote ? `"${encoded}"` : encoded;
+}
+
+function factorPrintQuote(value: RValue, summary: boolean): boolean {
+  if (
+    (value.type !== "logical" && value.type !== "integer" && value.type !== "double") ||
+    value.length === 0 ||
+    (summary && value.length !== 1) ||
+    isMissing(value, 0) ||
+    Number.isNaN(value.values[0])
+  )
+    throw new RTypeMismatchError("NRT3166", `invalid 'quote' ${summary ? "value" : "argument"}`);
+  return value.values[0] !== 0;
+}
+
+function factorPrintLevelLimit(value: RValue): number | undefined {
+  if (value.type === "null") return undefined;
+  if (!logicalCondition(value)) return 0;
+  if (value.type === "logical") return undefined;
+  if (value.type === "character") return Number.POSITIVE_INFINITY;
+  if (value.type === "integer" || value.type === "double")
+    return Math.max(1, Math.trunc(value.values[0] ?? 1));
+  throw new RUnsupportedFeatureError(
+    "NRU6202",
+    "print.factor(max.levels=) currently requires logical or numeric controls.",
+  );
+}
+
+function factorPrintWidth(value: RValue): number {
+  if (value.type === "null" || (isAtomic(value) && (value.length === 0 || isMissing(value, 0))))
+    return Number.NaN;
+  if (value.type !== "logical" && value.type !== "integer" && value.type !== "double")
+    throw new RTypeMismatchError("NRT3400", "non-numeric argument to binary operator");
+  const width = Number(value.values[0]);
+  return width;
+}
+
+function formatFactorLevels(
+  value: RValue,
+  options: PrintOptions,
+  maximum: number | undefined,
+  width: number,
+): string | undefined {
+  if (maximum === 0) return undefined;
+  const levels = objectAttributes(value)?.get("levels");
+  const separator = objectClasses(value)?.includes("ordered") === true ? " < " : " ";
+  const tokens: string[] = [];
+  if (levels?.type === "character") {
+    options.context?.allocate(levels.length);
+    for (let index = 0; index < levels.length; index += 1) {
+      options.context?.checkpoint();
+      tokens.push(
+        isMissing(levels, index)
+          ? options.quote
+            ? "NA"
+            : "<NA>"
+          : factorPrintString(levels.values[index] ?? "", options.quote, options.context),
+      );
+    }
+  }
+  let count = maximum;
+  if (count === undefined) {
+    // Independently measured native width transitions reserve 15 columns, then
+    // accumulate each original level's display width plus the separator width.
+    let used = 15;
+    count = 0;
+    for (const token of tokens) {
+      options.context?.checkpoint();
+      used += token.length + separator.length;
+      if (used <= width) count += 1;
+    }
+    count = Math.max(1, count);
+    if (count < tokens.length && Number.isNaN(width))
+      throw new RTypeMismatchError("NRT3400", "missing value where TRUE/FALSE needed");
+  }
+  const displayed =
+    count >= tokens.length
+      ? tokens
+      : count === 1
+        ? [tokens[0] ?? "", "..."]
+        : [...tokens.slice(0, count - 1), "...", tokens.at(-1) ?? ""];
+  const line = `${count < tokens.length ? `${tokens.length} ` : ""}Levels: ${displayed.join(separator)}`;
+  const lines: string[] = [];
+  printedLineAppender(lines, options)(line);
+  return line;
 }
 
 function formatPrintedAtomic(value: AtomicVector, options: PrintOptions): string {

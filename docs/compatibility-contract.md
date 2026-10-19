@@ -3991,3 +3991,23 @@ Malformed usage remains a warning and signature mismatches still fail. Redacted 
 only outcome counts. This package-tools increment changes no evaluator behavior; foundation and
 recursive runtime cases remain unchanged. Full S4 runtime reflection and broader Rd closure remain
 required work.
+
+### Factor printing (profile 0.361)
+
+The registered `print.factor(x, quote=FALSE, max.levels=NULL, width=getOption("width"), ...)` method
+renders labels, missing codes and explicit NA levels; ordered level separators; empty factors;
+names, dimensions and incidental attributes. Explicit quote controls reach nested factor display.
+Printing returns the original value invisibly. S3 print overrides remain effective, and factor
+labels are read without dispatching an as.character method.
+
+Owned GNU R 4.6.1 observations establish numeric and automatic level truncation, the separate
+summary width and session vector width, the partial `max` match to `max.levels`, character escapes,
+and output before invalid summary controls. Empty inputs do not force unused dots. Formatting work
+and output remain subject to resource limits. Foundation and recursive cases retain printed text,
+attributes, visibility and callable metadata; causal controls cover print and print.factor.
+
+These cases establish the listed printing behavior, not complete factor semantics. Construction and
+coercion of NA levels, addNA, every malformed direct-method input, locale-specific display widths
+and every control coercion remain unfinished. NA-level printing is tested with independently
+constructed attributed integer vectors; it does not establish the current structure() constructor's
+acceptance of NA levels.

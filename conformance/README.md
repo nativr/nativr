@@ -63,6 +63,12 @@ R is development tooling only. No reference output or R implementation code is s
 runtime. New semantic claims require a focused case here and a corresponding unit or integration
 test.
 
+Factor-printing cases preserve level ordering, missing codes versus an explicit missing level,
+names, incidental attributes and invisible returns. Owned width/limit/error cases establish the
+separate vector and level-summary controls. The print.factor and print causal links cover these
+sampled behaviors; they do not establish addNA, NA-level construction/coercion, locale display
+widths or all malformed method inputs.
+
 The foundation runner accepts `expectedError` code/message checks for owned failure boundaries.
 Constructed-syntax depth cases use this path with `rOracle: false`: NativR's finite resource guard
 is tested without claiming GNU R has the same limit.

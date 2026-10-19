@@ -217,26 +217,56 @@ boundaries, browser audit and all fixed bundle limits. Checked-in/live/recursive
 packaging interface changed, so e2e and pack smoke were not refreshed. No downloads, push or
 publication occurred.
 
+### Profile 0.361 factor printing
+
+The registered print.factor method renders ordinary and ordered factors, level summaries and
+truncation, missing labels, empty values, names, dimensions, incidental attributes and quoted nested
+display. Ten regression tests include malformed values, output before errors, S3 overrides,
+invisible returns and resource limits. The 34-case owned boundary probe matches GNU R output.
+Explicit width controls the summary while the vector body uses the session width; numeric level
+limits override width, and max partially matches max.levels. Foundation and recursive cases retain
+text, values and metadata. Checked-in/live/recursive conformance passes 1,238 / 1,169 / 136 cases,
+with 82 bindings linked through causal controls.
+
+The [24-package checkpoint](../compatibility/package-check-evidence/corpus-0.361.0.json) refreshes
+every pinned development/regression archive with repeatability observations and no checker aborts.
+Tiers and partitions are unchanged; pkgconfig and abind retain P7. Output comparison match counts
+and stage outcomes remain unchanged. No original dependency closure was replaced, and Formula
+remains unevaluated.
+
+The final `pnpm check` passes 1,379 tests with 93 opt-in skips, production types, lint, dependency
+boundaries, browser audit and all fixed bundle limits. Client/Worker gzip sizes are 17.3 / 467.7
+KiB; parser/elementary raw sizes are 671.9 / 311.2 KiB. No Worker/playground or packaging interface
+changed, so e2e and pack smoke were not refreshed. No downloads, push or publication occurred.
+
 ### Immediate continuation
 
-Proceed to the ordered factor printing/addNA and argument-matching work. Broader Rd
-parsing/rendering still needs domain evidence; these bounded checks do not establish complete native
-renderer equivalence.
+Next implement addNA and NA-level construction/coercion, then the shared argument-matching work.
+Broader Rd parsing/rendering still needs domain evidence; the checker increments do not establish
+complete native renderer equivalence.
 
-An owned factor probe already reproduces the next gaps: ordinary and ordered factors omit their
-level summaries; missing labels print `NA` instead of `<NA>`; empty factors print `integer(0)`
-instead of `factor()`; quote, width and `max.levels` behavior differs; `addNA()` is absent. Native
-`max.levels=2` on four levels prints `4 Levels: a ... d` (ordered: `a < ... < d`). After
-`addNA(factor(c("a",NA,"b")))`, the NA level is retained while `is.na()` is false for every element.
-The 15 independently authored cases remain in `.tmp/factor-roadmap-probe.R`, with native and NativR
-output logs, ready to become regression and recursive evidence with the implementation. Additional
-owned native probes in `.tmp/factor-print-boundaries.R` and `.tmp/factor-level-layout.R` cover level
-truncation, attributes, named and empty factors, matrix/list display, invalid controls and output
-before errors. They establish that the explicit `width` controls the level summary while the vector
-body uses the session width; `max=2` partially matches `max.levels`. Numeric limits override width,
-while logical TRUE retains automatic truncation. Missing-level factors require representation work:
-the current `isFactor()` rejects an NA-bearing levels attribute. Preserve that distinction from
-missing integer codes when implementing addNA.
+Seventeen owned observations in `.tmp/add-na-probe.R` establish addNA's `(x, ifany=FALSE)`
+signature, coercion of non-factors, retention of unused/ordered levels, and conversion of missing
+codes to a real NA level. `is.na()` is then false for those codes while `as.character()` returns
+missing strings. No-op cases retain incidental attributes; rebuilding retains names but drops
+incidental attributes, dimensions and factor subclasses other than ordered. NULL and empty inputs
+can receive an unused NA level. Existing NA levels must not be duplicated. Numeric NaN remains the
+distinct "NaN" level. The next increment needs this evidence in retained tests and recursive cases.
+
+Nineteen further owned cases in `.tmp/factor-construction-probe.R` cover NULL/missing input,
+explicit NA levels, exclude=NULL versus the default NA exclusion, distinct numeric NaN, duplicate
+level rejection, merged/NA labels and scalar label prefixes. Refactoring with default exclude drops
+an NA level; exclude=NULL and droplevels retain a used NA level. as.ordered on an unordered factor
+drops it while retaining the ordinary used levels. levels<- with an NA label removes that level and
+marks its codes missing. These distinctions require preserving both the level mask and the code
+mask.
+
+The current isFactor helper rejects NA-bearing levels, structure(levels=) rejects NA, and factor
+construction/coercion do not preserve the level mask. The printing tests construct such vectors via
+attribute assignment to isolate display; constructor and conversion gaps remain genuine work. The
+owned option-width test also exposed on.exit(options(old)) inside local() failing to restore
+options; an ordinary function frame restores them correctly. Reproduce and repair the local/frame
+behavior during the calls/environments work rather than treating local as an ordinary closure.
 
 S4 runtime follow-up includes missing method-selection/unrematching APIs, rejection of
 `setClass(slots=...)`, custom replacement generic binding names, and a package export failure when a
@@ -250,6 +280,6 @@ semantics. Reflection follow-up leads also include `args(stats::setNames)`'s `ob
 pairlist `seq_along`, `quote(expr=)`, and traversal of quoted function syntax. The observer bounds
 unsupported recursive traversal instead of losing all export evidence.
 
-Then proceed to factor printing/addNA and shared argument matching, including the confirmed person()
-missing-slot case. Datasets, the separate testing runner, all-domain closure, browser/OS validation,
-the holdout and the Linux gate remain outstanding.
+Shared argument matching must include the confirmed person() missing-slot case. Datasets, the
+separate testing runner, all-domain closure, browser/OS validation, the holdout and the Linux gate
+remain outstanding.

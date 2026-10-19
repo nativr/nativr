@@ -1234,5 +1234,17 @@
     "code": "local({f<-local({hidden<-7;function(x,y=2)hidden+x+y});a<-args(f);z<-args(function()NULL);d<-args(function(x=stop(\"must not force\"))x);list(names=names(formals(a)),numeric_type=isTRUE(all.equal(formals(a),formals(function(x,y=2L)NULL),tolerance=0)),numeric_change=isTRUE(all.equal(formals(a),formals(function(x,y=2.0000000000001)NULL),tolerance=0)),zero=list(callable=is.function(z),formals=formals(z)),lazy=identical(formals(d),formals(function(x=stop(\"must not force\"))NULL)),captured=f(1),body=body(a))})",
     "policy": "exact",
     "bindingEvidence": ["base::args", "base::formals", "base::all.equal"]
+  },
+  {
+    "id": "factor-method-printing-retains-values-and-attributes",
+    "policy": "exact",
+    "bindingEvidence": ["base::print.factor"],
+    "code": "local({x<-ordered(c(\"b\",NA,\"a\"),levels=c(\"a\",\"b\",\"c\"));names(x)<-c(\"first\",\"missing\",\"last\");attr(x,\"owned\")<-\"note\";text<-capture.output(v<-withVisible(print.factor(x,max.levels=2)));list(text=text,returned=v,original=x,signature=names(formals(print.factor)))})"
+  },
+  {
+    "id": "factor-printing-missing-level-and-nested-values",
+    "policy": "exact",
+    "bindingEvidence": ["base::print"],
+    "code": "local({x<-c(1L,2L,NA_integer_);attr(x,\"levels\")<-c(\"a\",NA_character_);class(x)<-\"factor\";text<-capture.output(v<-withVisible(print(x,quote=TRUE)));nested<-capture.output(print(list(x)));list(text=text,nested=nested,value=v,original=x)})"
   }
 ]
