@@ -3916,3 +3916,16 @@ under `_R_CHECK_FORCE_SUGGESTS_=false`; actual use by examples or tests can stil
 The core signature inventory distinguishes unknown primitive signatures from empty signatures; S3
 checks with an unknown signature stay unexecuted. Native fixture parity and the precise rules are
 specified in RFC-0008. Neither change alone establishes P7.
+
+### Package-check input boundaries (profile 0.357)
+
+Description policy v5 admits the natively accepted `R(>= 2.10)` constraint spelling. Dependency
+scanning omits Rd `dontrun` blocks and retains `donttest` blocks independently of which example
+blocks execute. Documentation policy v2 records repeated usage entries separately and leaves
+computed function definitions unexecuted when static formals are unavailable. Absence of static
+metadata does not prove a code/documentation mismatch. Loaded namespace metadata, broader Rd usage,
+links and macros remain unfinished checker work.
+
+These are package-tools checker changes, backed by owned native fixtures in
+`packages/package-tools/test/fixtures/checker-edge-cases.R` and the description diagnostic matrix.
+The R evaluator, public TypeScript API and Worker protocol retain their existing behavior.

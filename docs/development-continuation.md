@@ -111,17 +111,33 @@ directories must be outside Dropbox to avoid cleanup EBUSY errors. Native GNU R 
 run with ordinary Windows permissions. No downloads were needed. The session-specific environment
 helper and raw evidence remain gitignored under `.tmp/`.
 
-### Next verified checker work
+### Profile 0.357 checker work
 
 Owned native fixtures confirm that `R(>= 2.10)` is accepted, computed function definitions are
-valid, and unstated-dependency scans exclude dontrun while retaining donttest. Repairs are prepared
-with 44 focused unit tests and two focused native fixtures passing; their full gate and profile
-increment remain separate from the 0.356 evidence. Static unknown definitions must remain unexecuted
-until loaded namespace metadata can settle them. Repeated usage entries need distinct inventory IDs
-so a report cannot abort or discard an observation.
+valid, and unstated-dependency scans exclude dontrun while retaining donttest. Repairs passed 44
+focused unit tests, two focused native fixtures, and the 0.357 checked-in/live/recursive suites
+(1,235 / 1,166 / 133 cases). The
+[nine-package recheck](../compatibility/package-check-evidence/corpus-0.357.0.json) preserves pins
+and explicit blockers. inline now produces a report; prettyunits and rstudioapi clear metadata and
+stop at documentation. pkgconfig and abind retain P7. Static unknown definitions remain unexecuted
+until loaded namespace metadata can settle them. Policy documentation-v2 now gives repeated usage
+entries distinct IDs. The final full check passed 1,309 tests with 87 opt-in skips, including
+checkpoint validation. All fixed bundle budgets pass. Stabilization is committed as `6b8fef5`; the
+checker repairs form the next independently verified local increment.
 
 The sweep also reproduced an explicitly missing positional argument in `person()` as a shared
 Authors@R blocker. Add it to the argument-matching increment. A supplemental
 `tsc -p tsconfig.eslint.json` run found errors in existing test fixtures (resource limits, snapshot
 types, graphics options and a Playwright tuple); it is not the normal production typecheck gate and
 needs separate cleanup before being adopted as a gate.
+
+### Immediate continuation
+
+Finish Milestone 2 before declaring it complete. Integrate loaded namespace signature/export
+metadata into documentation checks; keep unknown signatures and failed observations unexecuted. An
+`args()` signature stub has a NULL body and can supply formals without printing implementation
+bodies. Reject unexpected stub shapes, retain only bounded metadata/digests in reports, and use
+independently authored computed-definition fixtures. Continue reproducing Rd usage, links and macro
+failures. Then proceed to factor printing/addNA and shared argument matching, including the
+confirmed person() missing-slot case. No datasets, substitute test runner, holdout or Linux gate has
+been completed by these two increments.

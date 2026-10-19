@@ -49,7 +49,8 @@ The stage passes when all of the following hold:
 
 1. **DESCRIPTION validation.** The existing structural, license, author and derived-field checks
    (`inspectPackageDescription`, `inspectPackageLicense`, `assessEffectiveAuthorFields`) all
-   execute, and none fails.
+   execute, and none fails. Description policy v5 accepts the observed optional whitespace before a
+   dependency constraint, including `R(>= 2.10)`; whitespace after its operator remains required.
 2. **Declared dependencies.** Every required dependency (Depends, Imports and LinkingTo) is
    available on both runtimes and satisfies its version constraint. Under the
    declared-version-availability-v3 policy, Suggests and Enhances are observed, including version
@@ -75,6 +76,9 @@ The stage passes when all of the following hold:
    - Package code: an undeclared target is a WARNING. A literal `library()`/`require()` of a
      declared package is a NOTE ("use `::` or `requireNamespace()`").
    - Examples: an undeclared non-base target is a WARNING, whether or not it is installed.
+     Dependency input collection excludes `dontrun` blocks and includes `donttest` blocks, as
+     observed in an independently authored native check. This scan scope is distinct from the
+     default example execution selection.
    - Tests: an undeclared non-base target is a WARNING only when the package is **installed**. The
      installed set is deterministic: the base and recommended packages of R 4.6.1 (_R Installation
      and Administration_) plus the bundle's packed closure. Other names produce no finding, as
@@ -142,7 +146,7 @@ Observed on native fixtures (opt-in parity test `namespace-source-check.test.ts`
   `if (FALSE)` branches. `<<-` to an undefined name is reported. Imports from non-core packages
   leave the item unexecuted.
 
-## documentation (normative, policy documentation-v1)
+## documentation (normative, policy documentation-v2)
 
 Rd files are parsed following _Writing R Extensions_ chapter 2 and the published Rd parsing notes:
 `%` comments, the `\\` `\{` `\}` `\%` escapes, macros with brace and `[option]` arguments, and
@@ -157,7 +161,11 @@ quoted strings in R-like contexts (`\usage`, `\examples`, `\code`). Observed on 
 - **missing documentation entries** (WARNING): every exported object, including `exportPattern()`
   matches, has an alias.
 - **code/documentation mismatches** (WARNING): each `\usage` function matches the code's argument
-  names, order and default-value syntax. `\method{g}{c}` usage is compared with `g.c`.
+  names, order and default-value syntax. `\method{g}{c}` usage is compared with `g.c`. Computed
+  definitions without static function metadata remain unexecuted until loaded namespace metadata is
+  available. Native fixtures accept such definitions; absence from the static map is not a failure.
+  Repeated usage entries retain separate, deterministic inventory IDs, including when their outcomes
+  differ.
 - **Rd \usage sections** (WARNING): every usage argument, including `...`, has an `\item` in
   `\arguments`, and every item is in usage. Usage functions other than documented S3 methods have an
   alias.

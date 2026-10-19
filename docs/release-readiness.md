@@ -1,6 +1,6 @@
 # Release readiness
 
-Last assessed 2026-10-19 at semantic profile **0.356.0**. Canonical counts are generated in
+Last assessed 2026-10-19 at verified semantic profile **0.357.0**. Canonical counts are generated in
 [compatibility/status.json](../compatibility/status.json). The full compatibility target remains the
 five completion criteria in [gnu-r-compatibility.md](gnu-r-compatibility.md).
 
@@ -11,15 +11,15 @@ The supported scope is the Worker-first browser API and executable subset in
 CSP-safe and network-free; host access requires explicit capabilities. No general package or GNU R
 compatibility claim follows from this preview.
 
-| Gate                               | Latest evidence                                                                                                                           | Status                    |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| Production check                   | Profile 0.356: 1,302 unit tests pass, 86 opt-in tests skipped; build, boundaries, production types and bundle audit pass                  | Passed                    |
-| Conformance                        | 1,235 checked-in, 1,166 live GNU R 4.6.1, 133 recursive cases; 79 bindings linked with causal controls                                    | Passed                    |
-| Native metadata/signature fixtures | 22 independently authored tests pass                                                                                                      | Passed                    |
-| Browser e2e                        | Historical 6/6 pass reported at 0.353; WebKit also exceeded the 120 s required-example budget in later runs (R14). Not refreshed at 0.356 | Open                      |
-| Packed consumer                    | Historical pack smoke pass; not refreshed at 0.356                                                                                        | Revalidate before release |
-| Fixed bundle limits                | Client 17.3/150 KiB gzip; Worker 466.4/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                      | Passed                    |
-| CI and publication                 | Local work only; no pushed CI result for this increment; publication/bootstrap remains a maintainer action                                | Open                      |
+| Gate                               | Latest evidence                                                                                                                                      | Status                    |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| Production check                   | Profile 0.357: 1,309 unit tests pass, 87 opt-in tests skipped; build, boundaries, production types and bundle audit pass                             | Passed                    |
+| Conformance                        | 1,235 checked-in, 1,166 live GNU R 4.6.1, 133 recursive cases; 79 bindings linked with causal controls                                               | Passed                    |
+| Native metadata/signature fixtures | 22 independently authored tests pass at 0.356; two further fixtures pass at 0.357                                                                    | Passed                    |
+| Browser e2e                        | Historical 6/6 pass reported at 0.353; WebKit also exceeded the 120 s required-example budget in later runs (R14). Not refreshed in these increments | Open                      |
+| Packed consumer                    | Historical pack smoke pass; not refreshed in these increments                                                                                        | Revalidate before release |
+| Fixed bundle limits                | Client 17.3/150 KiB gzip; Worker 466.4/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                                 | Passed                    |
+| CI and publication                 | Local work only; no pushed CI result for this increment; publication/bootstrap remains a maintainer action                                           | Open                      |
 
 **Readiness:** release verification is incomplete. Browser timing, the declared OS matrix, CI and
 release packaging need current evidence. The approved roadmap does not authorize push or
@@ -75,7 +75,24 @@ capture/stage results. In particular rematch receives no P6 credit merely becaus
 entrypoint completes while testthat is unavailable and nested tests are unverified. No substitute
 testing runner was used.
 
-## Historical numeric evidence and remaining defects
+## Verification details and remaining defects
+
+### Profile 0.357 checker follow-up
+
+Description policy v5 accepts the observed dependency-spacing boundary. Example dependency scans
+exclude dontrun and retain donttest. Documentation policy v2 keeps static unknown definitions
+unexecuted and gives repeated usage entries distinct IDs. Owned unit and native fixtures cover all
+four repairs.
+
+The [nine-package recheck](../compatibility/package-check-evidence/corpus-0.357.0.json) contains a
+complete report for every affected package. inline no longer aborts; its examples remain blocked.
+prettyunits and rstudioapi clear their metadata failures and stop at documentation. pkgconfig and
+abind still pass all specified stages. Tiers and partitions are unchanged from 0.356.
+
+Verification: 1,235 checked-in cases, 1,166 live GNU R cases, 133 recursive cases and two focused
+native fixtures pass. The final full check passed 1,309 tests with 87 opt-in skips, including the
+additional checkpoint validation case; all bundle budgets pass. Browser/OS, package test-runner,
+dataset and domain-closure work remains open.
 
 ### numDeriv output differences
 

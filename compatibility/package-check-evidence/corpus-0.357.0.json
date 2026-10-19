@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-cached-corpus-checkpoint",
+  "date": "2026-10-19",
+  "semanticProfile": "0.357.0",
+  "oracle": {
+    "implementation": "GNU R",
+    "version": "4.6.1",
+    "platform": "Windows x64",
+    "classification": "advisory-pending-rfc-0007-linux"
+  },
+  "scope": "affected-development-and-regression",
+  "runner": "original-package-entrypoints",
+  "summarizerPolicy": "allowlisted-metadata-sha256-v2",
+  "packages": [
+    {
+      "package": "pkgconfig",
+      "version": "2.0.3",
+      "partition": "regression",
+      "sourceSha256": "330fef440ffeb842a7dcfffc8303743f1feae83e8d6131078b5a44ff11bc3850",
+      "artifactSha256": "4622ae429bf36b71ec392ac3deb337db86e04e77b5e6ee91fc6ceef0de97835e",
+      "previousTier": "P7",
+      "tier": "P7",
+      "firstBlocker": null,
+      "outcome": "reported",
+      "evidence": "compatibility/package-check-evidence/0.357.0/pkgconfig.json",
+      "summarySha256": "4bf6f4356fd5144526973c544d25393d7e724f4c319585394fb51fc66f223bf9"
+    },
+    {
+      "package": "withr",
+      "version": "3.0.3",
+      "partition": "regression",
+      "sourceSha256": "d86c6454164fc85678bfc85e2a6cce42f7461d45fa9a87de71f376e7956c991e",
+      "artifactSha256": "a51a19247a01ad7d3f712b2029914f2c52f6c713846d0a63ada5a989ab4187f9",
+      "previousTier": "P4",
+      "tier": "P4",
+      "firstBlocker": {
+        "tier": "P5",
+        "code": "example-execution-failed",
+        "path": "man/defer.Rd",
+        "message": "The NativR or native oracle evaluation did not complete; see the redacted checkpoint for capture status."
+      },
+      "outcome": "reported",
+      "evidence": "compatibility/package-check-evidence/0.357.0/withr.json",
+      "summarySha256": "ef8311f4bfdec4ab508578e5ab31b5dda330188e65785d4830b69e986303c5f9"
+    },
+    {
+      "package": "prettyunits",
+      "version": "1.2.0",
+      "partition": "regression",
+      "sourceSha256": "f059f27e2a5c82e351fe05b87ad712f7afc273c651450453f59d99af5deeacea",
+      "artifactSha256": "69d93f2b9a1190f907f14d7fb03f8f8c1ab424570544d9e27a8d52aa4ecd9a18",
+      "previousTier": "P4",
+      "tier": "P4",
+      "firstBlocker": {
+        "tier": "P5",
+        "code": "example-execution-failed",
+        "path": "man/pretty_dt.Rd",
+        "message": "The NativR or native oracle evaluation did not complete; see the redacted checkpoint for capture status."
+      },
+      "outcome": "reported",
+      "evidence": "compatibility/package-check-evidence/0.357.0/prettyunits.json",
+      "summarySha256": "6ddd45e4027367abea9c97eeb13b660b4638177012fd29b799647ee44977aa43"
+    },
+    {
+      "package": "evaluate",
+      "version": "1.0.5",
+      "partition": "regression",
+      "sourceSha256": "47aac79f889a828a5f8b4756cb972d7c2966bb984cbae17a4bd2389a73270794",
+      "artifactSha256": "4c69fe41198004538efce999d5be1b34cd9ec3641d476e09cb9ec350f02ef041",
+      "previousTier": "P4",
+      "tier": "P4",
+      "firstBlocker": {
+        "tier": "P5",
+        "code": "example-execution-failed",
+        "path": "man/evaluate.Rd",
+        "message": "The NativR or native oracle evaluation did not complete; see the redacted checkpoint for capture status."
+      },
+      "outcome": "reported",
+      "evidence": "compatibility/package-check-evidence/0.357.0/evaluate.json",
+      "summarySha256": "c5e1bc5431b3346e6a8198d5c8d4bfbb5ef0a640b6ca2f9336c636b095738543"
+    },
+    {
+      "package": "abind",
+      "version": "1.4-8",
+      "partition": "regression",
+      "sourceSha256": "264a051b523ceae1795a0879e7768949ea55c586ac8db0adf1f5ebeddd2623e1",
+      "artifactSha256": "e9862a710e03ef978409dbd3c4138dd4cdf96b0584c6f228ffe2b42d1e0e9dee",
+      "previousTier": "P7",
+      "tier": "P7",
+      "firstBlocker": null,
+      "outcome": "reported",
+      "evidence": "compatibility/package-check-evidence/0.357.0/abind.json",
+      "summarySha256": "c42d7d6241e905f1dfaff14adf2ca882ed64f14419e15822c088af5e417d1cf2"
+    },
+    {
+      "package": "rprojroot",
+      "version": "2.1.1",
+      "partition": "regression",
+      "sourceSha256": "473989bbef45fd9cd68f68dc317b14c9f42de5cea4b55fd6ba9011f25e0517e9",
+      "artifactSha256": "086ed9af48d2f4e917f40bdf3364e395115f25fff5017d5527d00b20df343744",
+      "previousTier": "P5",
+      "tier": "P5",
+      "firstBlocker": {
+        "tier": "P6",
+        "code": "test-execution-failed",
+        "path": "tests/testthat.R",
+        "message": "The NativR or native oracle evaluation did not complete; see the redacted checkpoint for capture status."
+      },
+      "outcome": "reported",
+      "evidence": "compatibility/package-check-evidence/0.357.0/rprojroot.json",
+      "summarySha256": "0792aab8ca1f56aa9994a558c9750983be0b85c3f321b465a62158380cc6492a"
+    },
+    {
+      "package": "rstudioapi",
+      "version": "0.19.0",
+      "partition": "regression",
+      "sourceSha256": "f1e3bb445a90aadc07b043493022d120493eba7ff30c0b3055442d8b77d8069a",
+      "artifactSha256": "d3834a7e3c17f04c0808e50afe5fa80575fe87f3ed0ab8fc5c69fbb1ab645ab0",
+      "previousTier": "P5",
+      "tier": "P5",
+      "firstBlocker": {
+        "tier": "P6",
+        "code": "test-evidence-incomplete",
+        "message": "The package-tests stage remains unexecuted; dispatch completion alone does not establish successful execution."
+      },
+      "outcome": "reported",
+      "evidence": "compatibility/package-check-evidence/0.357.0/rstudioapi.json",
+      "summarySha256": "1591fd00d84e54e2194a54b434bda8847689e6c611e1833ba61060b5daad92af"
+    },
+    {
+      "package": "inline",
+      "version": "0.3.21",
+      "partition": "regression",
+      "sourceSha256": "7ef9410a933a47f6a346bc8c0e55b62931379b464b92696aee9865ec6378bc98",
+      "artifactSha256": "1de1adf3d804477438730e68d81c9bf6173a4a1cedf0081dc838a0286b805af0",
+      "previousTier": "P4",
+      "tier": "P4",
+      "firstBlocker": {
+        "tier": "P5",
+        "code": "example-execution-failed",
+        "path": "man/cfunction.Rd",
+        "message": "The NativR or native oracle evaluation did not complete; see the redacted checkpoint for capture status."
+      },
+      "outcome": "reported",
+      "evidence": "compatibility/package-check-evidence/0.357.0/inline.json",
+      "summarySha256": "9bc910d20a1d8ab48a6df7f24593a6b4dbdc5929b4d9bb7b3e31830ea0ce51e5"
+    },
+    {
+      "package": "whisker",
+      "version": "0.4.1",
+      "partition": "regression",
+      "sourceSha256": "bf5151494508032f68ac41e211bda80da9087c65c7068ffdd12f16669bf1f2bc",
+      "artifactSha256": "29f934c71cb22d51e7cdaae64df35e2484b7797c44b6ab78371d18d50072c9c6",
+      "previousTier": "P4",
+      "tier": "P4",
+      "firstBlocker": {
+        "tier": "P5",
+        "code": "example-execution-failed",
+        "path": "man/rowSplit.Rd",
+        "message": "The NativR or native oracle evaluation did not complete; see the redacted checkpoint for capture status."
+      },
+      "outcome": "reported",
+      "evidence": "compatibility/package-check-evidence/0.357.0/whisker.json",
+      "summarySha256": "c38629a4504db92bc369e037dc22c5d7959646cfe0232d9eae8a9a1d15182275"
+    }
+  ]
+}

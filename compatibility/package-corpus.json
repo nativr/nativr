@@ -25,7 +25,7 @@
       "artifactSha256": "4622ae429bf36b71ec392ac3deb337db86e04e77b5e6ee91fc6ceef0de97835e",
       "tier": "P7",
       "status": "passing",
-      "evidence": "packages/package-tools/test/external-package.test.ts; compatibility/package-check-evidence/0.356.0/pkgconfig.json",
+      "evidence": "packages/package-tools/test/external-package.test.ts; compatibility/package-check-evidence/0.356.0/pkgconfig.json; compatibility/package-check-evidence/0.357.0/pkgconfig.json",
       "firstBlocker": null
     },
     {
@@ -54,7 +54,7 @@
       "artifactSha256": "a51a19247a01ad7d3f712b2029914f2c52f6c713846d0a63ada5a989ab4187f9",
       "tier": "P4",
       "status": "blocked",
-      "evidence": "packages/package-tools/test/external-package.test.ts; compatibility/package-check-evidence/0.356.0/withr.json",
+      "evidence": "packages/package-tools/test/external-package.test.ts; compatibility/package-check-evidence/0.356.0/withr.json; compatibility/package-check-evidence/0.357.0/withr.json",
       "firstBlocker": {
         "tier": "P5",
         "code": "example-execution-failed",
@@ -189,7 +189,7 @@
       "artifactSha256": "69d93f2b9a1190f907f14d7fb03f8f8c1ab424570544d9e27a8d52aa4ecd9a18",
       "tier": "P4",
       "status": "blocked",
-      "evidence": "packages/package-tools/test/external-package.test.ts; compatibility/package-check-evidence/0.356.0/prettyunits.json",
+      "evidence": "packages/package-tools/test/external-package.test.ts; compatibility/package-check-evidence/0.356.0/prettyunits.json; compatibility/package-check-evidence/0.357.0/prettyunits.json",
       "firstBlocker": {
         "tier": "P5",
         "code": "example-execution-failed",
@@ -206,7 +206,7 @@
       "artifactSha256": "4c69fe41198004538efce999d5be1b34cd9ec3641d476e09cb9ec350f02ef041",
       "tier": "P4",
       "status": "blocked",
-      "evidence": "packages/package-tools/test/external-package.test.ts; compatibility/package-check-evidence/0.356.0/evaluate.json",
+      "evidence": "packages/package-tools/test/external-package.test.ts; compatibility/package-check-evidence/0.356.0/evaluate.json; compatibility/package-check-evidence/0.357.0/evaluate.json",
       "firstBlocker": {
         "tier": "P5",
         "code": "example-execution-failed",
@@ -240,7 +240,7 @@
       "artifactSha256": "e9862a710e03ef978409dbd3c4138dd4cdf96b0584c6f228ffe2b42d1e0e9dee",
       "tier": "P7",
       "status": "passing",
-      "evidence": "packages/package-tools/test/external-package.test.ts; packages/package-tools/test/abind-p5.test.ts; packages/package-tools/test/abind-p6.test.ts; compatibility/package-check-evidence/abind-1.4-8-0.305.0.json; compatibility/package-check-evidence/dependency-observations-0.306.0.json; compatibility/package-check-evidence/lifecycle-observations-0.307.0.json; compatibility/package-check-evidence/lifecycle-observations-0.312.0.json; compatibility/package-check-evidence/lifecycle-observations-0.314.0.json; compatibility/package-check-evidence/lifecycle-observations-0.315.0.json; compatibility/package-check-evidence/description-structure-v1-0.315.0.json; compatibility/package-check-evidence/abind-1.4-8-p7-0.353.0.json; compatibility/package-check-evidence/0.356.0/abind.json",
+      "evidence": "packages/package-tools/test/external-package.test.ts; packages/package-tools/test/abind-p5.test.ts; packages/package-tools/test/abind-p6.test.ts; compatibility/package-check-evidence/abind-1.4-8-0.305.0.json; compatibility/package-check-evidence/dependency-observations-0.306.0.json; compatibility/package-check-evidence/lifecycle-observations-0.307.0.json; compatibility/package-check-evidence/lifecycle-observations-0.312.0.json; compatibility/package-check-evidence/lifecycle-observations-0.314.0.json; compatibility/package-check-evidence/lifecycle-observations-0.315.0.json; compatibility/package-check-evidence/description-structure-v1-0.315.0.json; compatibility/package-check-evidence/abind-1.4-8-p7-0.353.0.json; compatibility/package-check-evidence/0.356.0/abind.json; compatibility/package-check-evidence/0.357.0/abind.json",
       "firstBlocker": null
     },
     {
@@ -252,7 +252,7 @@
       "artifactSha256": "086ed9af48d2f4e917f40bdf3364e395115f25fff5017d5527d00b20df343744",
       "tier": "P5",
       "status": "blocked",
-      "evidence": "packages/package-tools/test/external-package.test.ts; packages/package-tools/test/rprojroot-p5.test.ts; compatibility/package-check-evidence/0.356.0/rprojroot.json",
+      "evidence": "packages/package-tools/test/external-package.test.ts; packages/package-tools/test/rprojroot-p5.test.ts; compatibility/package-check-evidence/0.356.0/rprojroot.json; compatibility/package-check-evidence/0.357.0/rprojroot.json",
       "firstBlocker": {
         "tier": "P6",
         "code": "test-execution-failed",
@@ -269,7 +269,7 @@
       "artifactSha256": "d3834a7e3c17f04c0808e50afe5fa80575fe87f3ed0ab8fc5c69fbb1ab645ab0",
       "tier": "P5",
       "status": "blocked",
-      "evidence": "packages/package-tools/test/external-package.test.ts; compatibility/package-check-evidence/0.356.0/rstudioapi.json",
+      "evidence": "packages/package-tools/test/external-package.test.ts; compatibility/package-check-evidence/0.356.0/rstudioapi.json; compatibility/package-check-evidence/0.357.0/rstudioapi.json",
       "firstBlocker": {
         "tier": "P6",
         "code": "test-evidence-incomplete",
@@ -285,11 +285,12 @@
       "artifactSha256": "1de1adf3d804477438730e68d81c9bf6173a4a1cedf0081dc838a0286b805af0",
       "tier": "P4",
       "status": "blocked",
-      "evidence": "packages/package-tools/test/external-package.test.ts; compatibility/package-check-evidence/corpus-0.356.0.json",
+      "evidence": "packages/package-tools/test/external-package.test.ts; compatibility/package-check-evidence/corpus-0.356.0.json; compatibility/package-check-evidence/0.357.0/inline.json",
       "firstBlocker": {
         "tier": "P5",
-        "code": "package-check-aborted",
-        "message": "The checker aborted on duplicate documentation inventory identifiers before writing a report. Existing P4 evidence is retained; no higher tier is inferred."
+        "code": "example-execution-failed",
+        "path": "man/cfunction.Rd",
+        "message": "The NativR or native oracle evaluation did not complete; see the redacted checkpoint for capture status."
       }
     },
     {
@@ -317,7 +318,7 @@
       "artifactSha256": "29f934c71cb22d51e7cdaae64df35e2484b7797c44b6ab78371d18d50072c9c6",
       "tier": "P4",
       "status": "blocked",
-      "evidence": "packages/package-tools/test/external-package.test.ts; compatibility/package-check-evidence/0.356.0/whisker.json",
+      "evidence": "packages/package-tools/test/external-package.test.ts; compatibility/package-check-evidence/0.356.0/whisker.json; compatibility/package-check-evidence/0.357.0/whisker.json",
       "firstBlocker": {
         "tier": "P5",
         "code": "example-execution-failed",

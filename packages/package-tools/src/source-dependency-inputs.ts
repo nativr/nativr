@@ -58,6 +58,9 @@ export function collectPackageSourceDependencyInputs(
     const examples = extractPackageExamples([{ path: file.path, source }]);
     for (const [topicIndex, topic] of (examples?.topics ?? []).entries()) {
       for (const [blockIndex, block] of topic.blocks.entries()) {
+        // Native unstated-dependency checks exclude dontrun, but include donttest even when
+        // default example execution skips it. Retain original block indices in the inventory.
+        if (block.kind === "dontrun") continue;
         sources.push({
           path: `${file.path}#examples:${topicIndex + 1}:${blockIndex + 1}:${block.kind}`,
           source: block.source,

@@ -12,7 +12,8 @@ export interface PackageDescriptionAssessment {
     | "description-structure-v1"
     | "description-structure-v2"
     | "description-structure-v3"
-    | "description-structure-v4";
+    | "description-structure-v4"
+    | "description-structure-v5";
   readonly checks: readonly PackageDescriptionCheck[];
   readonly limitations: readonly string[];
 }
@@ -37,7 +38,7 @@ export function inspectPackageDescription(source: string): PackageDescriptionAss
     );
   } catch (error) {
     add("DESCRIPTION:dcf-record", false, error instanceof Error ? error.message : String(error));
-    return { schemaVersion: 1, policy: "description-structure-v4", checks, limitations };
+    return { schemaVersion: 1, policy: "description-structure-v5", checks, limitations };
   }
   for (const name of ["Package", "Version", "Title", "Description", "License"]) {
     add(
@@ -106,7 +107,7 @@ export function inspectPackageDescription(source: string): PackageDescriptionAss
       if (kind !== "LinkingTo") {
         for (const entry of entries) {
           const match =
-            /^([A-Za-z][A-Za-z0-9.]*[A-Za-z0-9]|R)(?:[ \t]+\((>=|<=|==|>|<|!=)[ \t]+([^\s()]+)\))?$/u.exec(
+            /^([A-Za-z][A-Za-z0-9.]*[A-Za-z0-9]|R)(?:[ \t]*\((>=|<=|==|>|<|!=)[ \t]+([^\s()]+)\))?$/u.exec(
               entry,
             );
           if (match === null) throw new Error(`Malformed ${kind} dependency '${entry}'.`);
@@ -143,5 +144,5 @@ export function inspectPackageDescription(source: string): PackageDescriptionAss
       );
     }
   }
-  return { schemaVersion: 1, policy: "description-structure-v4", checks, limitations };
+  return { schemaVersion: 1, policy: "description-structure-v5", checks, limitations };
 }

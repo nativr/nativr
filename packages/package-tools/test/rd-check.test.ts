@@ -109,6 +109,28 @@ describe("Rd parsing", () => {
 });
 
 describe("documentation checks", () => {
+  it("keeps computed definitions inconclusive until loaded metadata is available", () => {
+    const rd = String.raw`\name{f}\alias{f}\title{F}\usage{f(x, y=2)}\arguments{\item{x}{First.}\item{y}{Second.}}\description{Fixture.}`;
+    const result = assess(
+      [{ path: "man/f.Rd", text: rd }],
+      "f <- local({ marker <- 3; function(x, y=2) x + y + marker })",
+      ["f"],
+    );
+    expect(result.checks.find(({ id }) => id === "rd:codoc:man/f.Rd:f")?.status).toBe("unexecuted");
+    expect(result.status).toBe("unexecuted");
+  });
+
+  it("gives repeated usage entries distinct identities and preserves conflicting outcomes", () => {
+    const rd = String.raw`\name{f}\alias{f}\title{F}\usage{f(x, y=2)
+f(x, y=3)}\arguments{\item{x}{First.}\item{y}{Second.}}\description{Fixture.}`;
+    const result = assess([{ path: "man/f.Rd", text: rd }], "f <- function(x, y=2) x+y", ["f"]);
+    expect(result.checks.filter(({ id }) => id.startsWith("rd:codoc:"))).toMatchObject([
+      { id: "rd:codoc:man/f.Rd:f", status: "passed" },
+      { id: "rd:codoc:man/f.Rd:f#2", status: "failed" },
+    ]);
+    expect(new Set(result.checks.map(({ id }) => id)).size).toBe(result.checks.length);
+  });
+
   it("reports the natively observed documentation failures", () => {
     const result = assess(
       [
@@ -152,6 +174,33 @@ describe("documentation checks", () => {
     expect(result.checks.find((check) => check.id === "rd:file:man/x.Rd")?.status).toBe("failed");
   });
 });
+
+it.runIf(process.env.NATIVR_PACKAGE_ORACLE_FIXTURE === "1")(
+  "observes computed definitions, dependency spacing and excluded example blocks in native check",
+  async () => {
+    const source = readFileSync(new URL("fixtures/checker-edge-cases.R", import.meta.url), "utf8");
+    const result = await capturePackageOracleScript({
+      source,
+      rscript: process.env.NATIVR_RSCRIPT ?? "Rscript",
+      timeoutMs: 180_000,
+    });
+    expect(result.status, result.stderr).toBe("completed");
+    expect(result.stdout.replaceAll("\r\n", "\n")).toBe(
+      [
+        "DESCRIPTION meta-information:NOTE",
+        "for code/documentation mismatches:OK",
+        "for unstated dependencies in examples:WARNING",
+        "zzownedrun=TRUE",
+        "zzowneddontrun=FALSE",
+        "zzowneddonttest=TRUE",
+        "dependency strict=FALSE:FALSE",
+        "dependency strict=TRUE:FALSE",
+        "",
+      ].join("\n"),
+    );
+  },
+  200_000,
+);
 
 it.runIf(process.env.NATIVR_PACKAGE_ORACLE_FIXTURE === "1")(
   "matches native R CMD check documentation outcomes",

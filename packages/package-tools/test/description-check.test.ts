@@ -103,7 +103,7 @@ const proseInputs = ["Title", "Description"].flatMap((field) =>
 );
 
 it("retains native strict punctuation boundaries without claiming linguistic quality", () => {
-  expect(inspectPackageDescription(valid).policy).toBe("description-structure-v4");
+  expect(inspectPackageDescription(valid).policy).toBe("description-structure-v5");
   const observedFailures = proseInputs.map(({ source }) =>
     failures(source).filter((id) => id.endsWith("-punctuation")),
   );
@@ -267,6 +267,8 @@ const dependencyDiagnosticValues = [
   " helper , stats ",
   "helper (>= 1.0), helper (< 2.0)",
   "helper\t(>=\t1.0)",
+  "R(>= 2.10)",
+  "helper(>= 1.0)",
 ];
 const dependencyDiagnosticExpected = [
   false,
@@ -297,6 +299,8 @@ const dependencyDiagnosticExpected = [
   true,
   true,
   true,
+  false,
+  false,
   false,
   false,
   false,

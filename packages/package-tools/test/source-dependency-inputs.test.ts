@@ -49,3 +49,23 @@ it("decodes admitted latin1 test files without changing their text", () => {
   expect(result.failures).toEqual([]);
   expect(result.sources).toEqual([{ path: "tests/own.R", role: "test", source: "#é" }]);
 });
+
+it("excludes dontrun dependencies while retaining default and donttest references", () => {
+  const result = collectPackageSourceDependencyInputs(
+    { description: "Package: ownedfixture\nVersion: 1.0.0\n", rSources: [] },
+    [
+      {
+        path: "man/own.Rd",
+        data: new TextEncoder().encode(String.raw`\name{own}\title{Own}\alias{own}\examples{
+      if (FALSE) library(zzownedrun)
+      \dontrun{if (FALSE) library(zzowneddontrun)}
+      \donttest{if (FALSE) library(zzowneddonttest)}
+    }`),
+      },
+    ],
+  );
+  expect(result.failures).toEqual([]);
+  expect(result.sources.some(({ source }) => source.includes("zzownedrun"))).toBe(true);
+  expect(result.sources.some(({ source }) => source.includes("zzowneddonttest"))).toBe(true);
+  expect(result.sources.some(({ source }) => source.includes("zzowneddontrun"))).toBe(false);
+});

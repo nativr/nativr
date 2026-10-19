@@ -197,7 +197,7 @@ export interface DocumentationCheck {
 
 export interface DocumentationAssessment {
   readonly schemaVersion: 1;
-  readonly policy: "documentation-v1";
+  readonly policy: "documentation-v2";
   readonly status: "passed" | "failed" | "unexecuted";
   readonly checks: readonly DocumentationCheck[];
 }
@@ -214,8 +214,12 @@ export function inspectPackageDocumentation(
   parse: PackageDependencySourceParser,
 ): DocumentationAssessment {
   const checks: DocumentationCheck[] = [];
-  const add = (id: string, status: DocumentationCheck["status"], reason: string) =>
-    checks.push({ id, status, reason });
+  const occurrences = new Map<string, number>();
+  const add = (id: string, status: DocumentationCheck["status"], reason: string) => {
+    const occurrence = (occurrences.get(id) ?? 0) + 1;
+    occurrences.set(id, occurrence);
+    checks.push({ id: occurrence === 1 ? id : `${id}#${occurrence}`, status, reason });
+  };
   const parsed: ParsedRd[] = [];
   for (const file of input.rdFiles) {
     let nodes: RdNode[];
@@ -337,8 +341,8 @@ export function inspectPackageDocumentation(
       if (code === undefined) {
         add(
           `rd:codoc:${rd.path}:${entry.name}`,
-          input.exports.includes(entry.name) ? "failed" : "unexecuted",
-          "The function documented in \\usage is not defined in the package code.",
+          "unexecuted",
+          "Static function metadata is unavailable; loaded namespace metadata is needed to check this usage.",
         );
         continue;
       }
@@ -373,7 +377,7 @@ export function inspectPackageDocumentation(
 
   return {
     schemaVersion: 1,
-    policy: "documentation-v1",
+    policy: "documentation-v2",
     status: checks.some((check) => check.status === "failed")
       ? "failed"
       : checks.every((check) => check.status === "passed")
