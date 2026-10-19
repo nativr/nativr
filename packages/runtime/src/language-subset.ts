@@ -228,6 +228,22 @@ function displayValueAst(
     throw new RResourceLimitError("NRL4004", "Maximum value deparse depth exceeded.");
   checkWork?.();
   let display = displayStorageAst(value, checkWork, depth);
+  if (value.type === "closure" && value.attributes.size > 0) {
+    // Keep the value itself intact; only its display has an attribute-free function operand.
+    const bare: AstNode = {
+      kind: "ConstantExpression",
+      value: { ...value, attributes: new Map() },
+      display,
+      span: SYNTHETIC_SPAN,
+    };
+    return callAst("structure", [
+      callArgument(bare, undefined),
+      ...Array.from(value.attributes, ([name, attribute]) => {
+        checkWork?.();
+        return callArgument(displayValueAst(attribute, checkWork, depth + 1), name);
+      }),
+    ]);
+  }
   if (!isAtomic(value) && value.type !== "list" && value.type !== "pairlist") return display;
   const names = value.attributes.get("names");
   const canNameArguments =
@@ -366,6 +382,23 @@ function displayStorageAst(
         return callArgument(embedded, undefined);
       }),
     );
+  }
+  // GNU R deparses an embedded closure from its formals and body, and a builtin as .Primitive().
+  if (value.type === "closure") {
+    return {
+      kind: "FunctionExpression",
+      parameters: value.parameters,
+      body: value.body,
+      span: SYNTHETIC_SPAN,
+    };
+  }
+  if (value.type === "builtin") {
+    return callAst(".Primitive", [
+      callArgument(
+        { kind: "StringLiteral", value: value.definition.name, span: SYNTHETIC_SPAN },
+        undefined,
+      ),
+    ]);
   }
   return { kind: "UnsupportedExpression", feature: `embedded ${value.type}`, span: SYNTHETIC_SPAN };
 }

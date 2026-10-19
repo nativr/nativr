@@ -93,6 +93,21 @@ const s3Namespace = [
 // Natively flagged methods: t.b, as.character.e, print.z, mygen.q and mygen.r.
 const nativeInconsistent = ["as.character.e", "mygen.q", "mygen.r", "print.z", "t.b"];
 
+// Signatures are public argument-name observations, never function bodies. Include a primitive
+// whose signature is unknown so absence cannot be mistaken for a zero-argument generic.
+const primitiveS3Source = [
+  "as.character.owned <- function(x, ...) x",
+  "as.character.bad <- function(y, ...) y",
+  "length.owned <- function(x) 1L",
+  "`[.owned` <- function(x, ...) x",
+].join("\n");
+const primitiveS3Namespace = [
+  "S3method(as.character, owned)",
+  "S3method(as.character, bad)",
+  "S3method(length, owned)",
+  'S3method("[", owned)',
+].join("\n");
+
 const assess = (source: string, namespace: string) =>
   inspectPackageNamespaceSource(
     {
@@ -107,6 +122,21 @@ const assess = (source: string, namespace: string) =>
   );
 
 describe("namespace-source checks", () => {
+  it("uses primitive argument signatures without treating unknown signatures as empty", () => {
+    expect(coreExports.get("base")?.get("as.character")).toEqual(["x", "..."]);
+    expect(coreExports.get("base")?.get("length")).toEqual(["x"]);
+    expect(coreExports.get("base")?.get("[")).toBeNull();
+    expect(coreExports.get("base")?.get("R.Version")).toEqual([]);
+    const result = assess(primitiveS3Source, primitiveS3Namespace);
+    expect(result.checks.find((check) => check.id === "s3:as.character.owned")?.status).toBe(
+      "passed",
+    );
+    expect(result.checks.find((check) => check.id === "s3:as.character.bad")?.status).toBe(
+      "failed",
+    );
+    expect(result.checks.find((check) => check.id === "s3:length.owned")?.status).toBe("passed");
+    expect(result.checks.find((check) => check.id === "s3:[.owned")?.status).toBe("unexecuted");
+  });
   it("reports the natively observed undefined globals as a NOTE", () => {
     const result = assess(freeVariableSource, "export(f1)");
     expect(result.undefinedGlobals).toEqual(nativeUndefined);
@@ -195,11 +225,14 @@ it.runIf(process.env.NATIVR_PACKAGE_ORACLE_FIXTURE === "1")(
         lines <- build("owneds3", ${JSON.stringify(s3Source)}, c(${s3Namespace.map((line) => JSON.stringify(line)).join(",")}))
         methods <- sub(":$", "", grep("^[A-Za-z.]+\\\\.[a-z]:$", lines, value=TRUE))
         cat("s3=", paste(sort(methods), collapse=","), ";", sep="")
+        lines <- build("ownedprimitives", ${JSON.stringify(primitiveS3Source)}, strsplit(${JSON.stringify(primitiveS3Namespace)}, "\\n", fixed=TRUE)[[1]])
+        methods <- sub(":$", "", grep("^as.character\\\\.[a-z]+:$", lines, value=TRUE))
+        cat("primitive=", paste(sort(methods), collapse=","), ";", sep="")
       })`,
     });
     expect(result.status, result.stderr).toBe("completed");
     expect(result.stdout).toBe(
-      `globals=${[...nativeUndefined].sort().join(",")};s3=${nativeInconsistent.join(",")};`,
+      `globals=${[...nativeUndefined].sort().join(",")};s3=${nativeInconsistent.join(",")};primitive=as.character.bad;`,
     );
   },
   600_000,

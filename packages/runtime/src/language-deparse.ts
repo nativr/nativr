@@ -8,7 +8,7 @@ import {
   validateDeparseSyntax,
 } from "./language.js";
 import type { DeparseOperation } from "./language.js";
-import type { RClosure } from "./values.js";
+import type { RClosure, RValue } from "./values.js";
 
 /** Layout controls for source-independent R syntax rendering. */
 export interface DeparseLinesOptions {
@@ -192,6 +192,14 @@ class SyntaxRenderer {
     if (this.#complete) return;
     this.#checkWork();
     if (node.kind === "ConstantExpression") {
+      const value = node.value as RValue;
+      // An embedded closure value deparses like deparse(f): "function (x) ", a line break, the body.
+      if (value.type === "closure" && node.display.kind === "FunctionExpression") {
+        this.formals(value.parameters, true, indent, inBlock);
+        this.newline(indent);
+        this.render(value.body, indent, inBlock);
+        return;
+      }
       this.render(node.display, indent, inBlock, followingPrecedence);
       return;
     }

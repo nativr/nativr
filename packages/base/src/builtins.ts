@@ -2697,8 +2697,12 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("as.vector", ["x", "mode"], "behavioral", builtinAsVector),
   defineBuiltin("as.array", ["x", "..."], "behavioral", builtinAsArray),
   defineBuiltin("as.array.default", ["x", "..."], "behavioral", builtinAsArrayDefault),
-  defineBuiltin("as.factor", ["x"], "behavioral", builtinAsFactor),
-  defineBuiltin("as.ordered", ["x", "..."], "behavioral", builtinAsOrdered),
+  withBuiltinFormals(defineBuiltin("as.factor", ["x"], "behavioral", builtinAsFactor), [
+    { name: "x" },
+  ]),
+  withBuiltinFormals(defineBuiltin("as.ordered", ["x"], "behavioral", builtinAsOrdered), [
+    { name: "x" },
+  ]),
   defineBuiltin("ifelse", ["test", "yes", "no"], "behavioral", builtinIfElse),
   defineBuiltin("any", ["...", "na.rm"], "behavioral", (invocation) =>
     builtinLogicalSummary(invocation, "any"),
@@ -18573,10 +18577,8 @@ async function builtinAsCall(invocation: BuiltinInvocation): Promise<RLanguage> 
   const input = required(matched, "x", "as.call");
   const entries =
     input.type === "list"
-      ? input.values.map((value, index) =>
-          index === 0
-            ? valueToAst(value)
-            : embeddedCallArgumentAst(value, () => invocation.context.checkpoint()),
+      ? input.values.map((value) =>
+          embeddedCallArgumentAst(value, () => invocation.context.checkpoint()),
         )
       : input.type === "expression"
         ? [...input.values]
@@ -18587,10 +18589,9 @@ async function builtinAsCall(invocation: BuiltinInvocation): Promise<RLanguage> 
       "as.call() requires a non-empty list or expression vector.",
     );
   }
-  const callee =
-    input.type === "list"
-      ? callableNameAst(input.values[0] ?? R_NULL, "as.call")
-      : callableAstNode(entries[0] ?? nullAst(), "as.call");
+  // Construction preserves the head object, including non-callable character vectors. Only
+  // evaluation decides whether it is callable; call() separately requires a function name.
+  const callee = entries[0] ?? nullAst();
   const names = input.type === "list" ? vectorNames(input) : undefined;
   const arguments_ = entries.slice(1).map((value, index): CallArgument => {
     const name = names?.[index + 1];
@@ -18803,17 +18804,6 @@ function callableNameAst(value: RValue, call: string): AstNode {
   );
 }
 
-function callableAstNode(value: AstNode, call: string): AstNode {
-  if (value.kind !== "StringLiteral") return value;
-  if (value.kind === "StringLiteral" && value.value.length > 0) {
-    return { kind: "Identifier", name: value.value, span: value.span };
-  }
-  throw new RTypeMismatchError(
-    "NRT3208",
-    `${call}() requires a non-empty character string or symbol as its function name.`,
-  );
-}
-
 function valueToAst(value: RValue, checkWork?: () => void, depth = 0): AstNode {
   if (depth > 512) {
     throw new RResourceLimitError("NRL4004", "Maximum value deparse depth exceeded.");
@@ -18873,29 +18863,13 @@ function valueToAst(value: RValue, checkWork?: () => void, depth = 0): AstNode {
       }),
     );
   }
-  throw new RTypeMismatchError(
-    "NRT3209",
-    `Values of type '${value.type}' cannot yet be converted into language syntax.`,
-  );
+  // Other objects (closures, builtins, environments, ...) are kept as constants in the call, as
+  // GNU R stores any object inside a call.
+  return embeddedValueAst(value, checkWork);
 }
 
 function embeddedCallArgumentAst(value: RValue, checkWork?: () => void): AstNode {
-  if (
-    isAtomic(value) ||
-    value.type === "list" ||
-    value.type === "pairlist" ||
-    value.type === "null" ||
-    value.type === "symbol" ||
-    value.type === "language"
-  )
-    return embeddedValueAst(value, checkWork);
-  const display = valueToAst(value);
-  return {
-    kind: "ConstantExpression",
-    value,
-    display,
-    span: SYNTHETIC_SPAN,
-  };
+  return embeddedValueAst(value, checkWork);
 }
 
 function atomicElementAst(value: AtomicVector, index: number): AstNode {
@@ -51799,18 +51773,9 @@ async function builtinAsFactor(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinAsOrdered(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched, dots } = matchBuiltinArguments(invocation, ["x", "..."]);
-  const inputArgument = matched.get("x");
-  if (inputArgument === undefined || inputArgument.promise.missing) {
-    throw new REvaluationError("NRE2103", "Argument 'x' is missing in as.ordered().");
-  }
-  const input = await invocation.force(inputArgument.promise);
-  const dispatched = await invocation.dispatchS3IfPresent("as.ordered", input, [
-    inputArgument,
-    ...dots,
-  ]);
-  if (dispatched !== undefined) return dispatched;
-  if (dots.length > 0) throw new REvaluationError("NRE2101", "Unused argument in as.ordered().");
+  // GNU R's as.ordered is an ordinary closure of x; it does not dispatch.
+  const matched = await matchExact(invocation, ["x"]);
+  const input = required(matched, "x", "as.ordered");
   if (input.type === "null") return factorValue(new Int32Array(), [], undefined, true);
   if (!isFactor(input)) return builtinFactor(invocation, true);
   if (vectorClasses(input)?.includes("ordered") === true) return input;

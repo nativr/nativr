@@ -83,10 +83,33 @@ it("retains separate constraints and requiredness while probing each name once",
   expect(result.dependencies.map((item) => [item.required, item.actual, item.expected])).toEqual([
     [true, "satisfied", "satisfied"],
     [true, "satisfied", "satisfied"],
-    [true, "unavailable", "unavailable"],
+    [false, "unavailable", "unavailable"],
     [false, "unavailable", "unavailable"],
   ]);
   expect(result.sourceSha256).toMatch(/^[a-f0-9]{64}$/u);
+});
+
+it("records optional version mismatches without making optional dependencies required", async () => {
+  const result = await observePackageDependencies(
+    (["Depends", "Imports", "LinkingTo", "Suggests", "Enhances"] as const).map((kind) => ({
+      kind,
+      name: "owned",
+      constraint: { operator: ">=", version: "2.0" },
+    })),
+    {
+      actual: () => Promise.resolve({ status: "completed", stdout: "0\t1.0\n" }),
+      expected: () => Promise.resolve({ status: "completed", stdout: "0\t1.0\n" }),
+      compareVersions: comparePackageVersions,
+    },
+  );
+  expect(result.dependencies.map((item) => item.required)).toEqual([
+    true,
+    true,
+    true,
+    false,
+    false,
+  ]);
+  expect(result.dependencies.every((item) => item.actual === "version-mismatch")).toBe(true);
 });
 
 it.each([">", "!=", "<"] as const)(
@@ -166,6 +189,65 @@ it("executes the version probe through the public NativR API", async () => {
 describe.runIf(process.env.NATIVR_PACKAGE_ORACLE_FIXTURE === "1")(
   "native dependency parity",
   () => {
+    it("observes missing optional dependencies as informational but still fails tests that use them", async () => {
+      const native = await capturePackageOracleScript({
+        rscript: process.env.NATIVR_RSCRIPT ?? "Rscript",
+        timeoutMs: 180_000,
+        source: `local({
+          root <- tempfile("owned-optional-"); dir.create(root)
+          old <- setwd(root); on.exit({setwd(old); unlink(root, recursive=TRUE)})
+          Sys.setenv(\`_R_CHECK_FORCE_SUGGESTS_\`="false", \`_R_CHECK_CRAN_INCOMING_REMOTE_\`="false")
+          writeLines("options(repos=character())", "offline.Rprofile")
+          Sys.setenv(R_PROFILE_USER=file.path(root, "offline.Rprofile"))
+          dir.create("ownedoptional/R", recursive=TRUE)
+          writeLines(c("Package: ownedoptional", "Version: 1.0.0", "Title: Independent Optional Fixture",
+            "Description: Independently authored dependency fixture.", "License: MIT",
+            "Author: Fixture Author", "Maintainer: Fixture Author <fixture@example.invalid>",
+            "Suggests: nativrUnavailableFixture", "Enhances: nativrUnavailableEnhancement"),
+            "ownedoptional/DESCRIPTION")
+          writeLines("", "ownedoptional/NAMESPACE")
+          writeLines("owned <- function() 1L", "ownedoptional/R/owned.R")
+          executable <- file.path(R.home("bin"), if (.Platform$OS.type == "windows") "R.exe" else "R")
+          check <- function() {
+            suppressWarnings(system2(executable, c("CMD", "check", "--no-manual", "--no-examples",
+              "--no-vignettes", "--no-build-vignettes", "ownedoptional"), stdout="check.log", stderr="check.log"))
+            readLines("check.log", warn=FALSE)
+          }
+          item <- function(lines, name) {
+            start <- grep(paste0("* checking ", name), lines, fixed=TRUE)[1L]
+            if (is.na(start)) return(character())
+            nextItem <- grep("* checking ", lines, fixed=TRUE)
+            end <- min(c(nextItem[nextItem > start], length(lines) + 1L)) - 1L
+            lines[seq.int(start, end)]
+          }
+          lines <- check()
+          cat("dependencies-info=", any(grepl("INFO$", item(lines, "package dependencies"))),
+            ";suggests-info=", any(grepl("Package suggested but not available", lines, fixed=TRUE)), ";", sep="")
+          dir.create("ownedoptional/tests")
+          writeLines("library(nativrUnavailableFixture)", "ownedoptional/tests/owned.R")
+          lines <- check()
+          cat("tests-fail=", any(grepl("ERROR$", item(lines, "tests"))), ";", sep="")
+        })`,
+      });
+      expect(native.status, native.stderr).toBe("completed");
+      expect(native.stdout).toBe("dependencies-info=TRUE;suggests-info=TRUE;tests-fail=TRUE;");
+      const runtime = await createR({
+        execution: "inline",
+        assets: {
+          treeSitterRuntimeWasm: new URL(
+            "../../parser/assets/web-tree-sitter.wasm",
+            import.meta.url,
+          ),
+          rGrammarWasm: new URL("../../parser/assets/tree-sitter-r.wasm", import.meta.url),
+        },
+      });
+      try {
+        await expect(runtime.eval("library(nativrUnavailableFixture)")).rejects.toThrow();
+      } finally {
+        await runtime.dispose();
+      }
+    }, 200_000);
+
     it("observes the independently authored public version probe on GNU R 4.6.1", async () => {
       const result = await observePackageDependencies(dependencies, {
         actual: nativeNativrCapture,
@@ -192,7 +274,7 @@ it("distinguishes the R runtime dependency from an R package dependency", async 
     expected: () => Promise.resolve({ status: "completed", stdout: "0\t4.6.1\n1\tunavailable\n" }),
     compareVersions: comparePackageVersions,
   });
-  expect(result.policy).toBe("declared-version-availability-v2");
+  expect(result.policy).toBe("declared-version-availability-v3");
   expect(result.actual).toEqual(result.expected);
   expect(result.actual.versions).toEqual({ R: "4.6.1", "package:R": null });
   expect(result.dependencies.map((entry) => entry.actual)).toEqual([

@@ -1178,5 +1178,55 @@
       "base::withRestarts"
     ],
     "code": "{\n  trace <- character()\n  resumed <- withCallingHandlers(\n    withCallingHandlers({ warning(\"w1\", call. = FALSE); trace <- c(trace, \"after\"); 10L },\n      warning = function(w) trace <<- c(trace, paste(\"inner\", conditionMessage(w)))),\n    warning = function(w) { trace <<- c(trace, \"outer\"); invokeRestart(\"muffleWarning\") })\n  messageOrder <- character()\n  muffled <- withCallingHandlers(message(\"m\"),\n    message = function(m) messageOrder <<- c(messageOrder, \"message\"),\n    condition = function(c) { messageOrder <<- c(messageOrder, \"condition\"); invokeRestart(\"muffleMessage\") })\n  restartNames <- NULL\n  warned <- withCallingHandlers(warning(\"w2\", call. = FALSE), warning = function(w) {\n    restartNames <<- vapply(computeRestarts(w), function(r) unclass(r)[[1L]], \"\")\n    invokeRestart(computeRestarts(w)[[1L]]) })\n  recovered <- withRestarts(\n    withCallingHandlers(stop(\"boom\", call. = FALSE),\n      error = function(e) invokeRestart(\"recover\", conditionMessage(e), 2L)),\n    recover = function(msg, code) list(message = msg, code = code))\n  nested <- withRestarts(\n    withRestarts(vapply(computeRestarts(), function(r) unclass(r)[[1L]], \"\"), inner = function() 1),\n    outer = function() 2)\n  unwound <- character()\n  transferred <- withRestarts({\n    f <- function() { on.exit(unwound <<- c(unwound, \"on.exit\")); invokeRestart(\"leave\", 5L); \"unreached\" }\n    f()\n  }, leave = function(v) { unwound <<- c(unwound, \"restart\"); v * 2L })\n  list(resumed = resumed, trace = trace, muffled = muffled, messageOrder = messageOrder,\n    warned = warned, restartNames = restartNames, recovered = recovered, nested = nested,\n    transferred = transferred, unwound = unwound)\n}"
+  },
+  {
+    "id": "embedded-call-reference-identity",
+    "policy": "exact",
+    "bindingEvidence": ["base::as.call", "base::call"],
+    "code": "local({f<-function(x)x+2;e<-new.env(parent=emptyenv());e$self<-e;head<-as.call(list(f,3));arg<-call(\"identity\",f);env<-call(\"identity\",e);list(headValue=head[[1L]],argumentValue=arg[[2L]],original=f,environment=e,recovered=eval(env),answer=eval(head),sameClosure=c(identical(head[[1L]],f),identical(arg[[2L]],f)))})",
+    "graphAssertions": {
+      "sameNode": [
+        [
+          ["headValue", "@environment"],
+          ["original", "@environment"]
+        ],
+        [
+          ["argumentValue", "@environment"],
+          ["original", "@environment"]
+        ],
+        [["environment"], ["recovered"]],
+        [["environment"], ["environment", "self"]]
+      ]
+    }
+  },
+  {
+    "id": "call-head-constant-storage",
+    "policy": "exact",
+    "bindingEvidence": ["base::as.call"],
+    "code": "local({heads<-list(\"sum\",c(\"sum\",\"other\"),character(),\"\",NA_character_,1,NULL,list(1),new.env(parent=emptyenv()));seen<-FALSE;results<-vapply(heads,function(head){cl<-as.call(list(head,quote({seen<<-TRUE;2})));identical(cl[[1L]],head)&&tryCatch({eval(cl);FALSE},error=function(e)TRUE)},logical(1));c(results,!seen,identical(as.call(expression(\"sum\",2))[[1L]],\"sum\"),identical(eval(as.call(list(as.name(\"sum\"),2))),2),identical(deparse(as.call(list(\"sum\",2))),'\"sum\"(2)'))})"
+  },
+  {
+    "id": "embedded-function-value-rendering",
+    "policy": "exact",
+    "bindingEvidence": ["base::deparse"],
+    "code": "c(deparse(as.call(list(function(x)x+1,5))),deparse(call(\"f\",function(x)x+1)),deparse(as.call(list(sum,1,2))))"
+  },
+  {
+    "id": "factor-coercion-nondispatch-and-signatures",
+    "policy": "exact",
+    "bindingEvidence": ["base::as.factor", "base::as.ordered"],
+    "code": "local({coercions<-c(is.factor(as.factor(c(\"b\",\"a\"))),inherits(as.ordered(c(\"b\",\"a\")),\"ordered\"));as.factor<-function(x,...)UseMethod(\"as.factor\");as.factor.default<-function(x,...)base::as.factor(x);as.ordered<-function(x,...)UseMethod(\"as.ordered\");as.ordered.default<-function(x,...)base::as.ordered(x);as.ordered.owned<-function(x,...)stop(\"must not dispatch\");x<-structure(1:2,class=\"owned\");c(coercions,identical(names(formals(base::as.factor)),\"x\"),identical(names(formals(base::as.ordered)),\"x\"),identical(class(as.factor(c(\"b\",\"a\"))),\"factor\"),identical(class(as.ordered(c(\"b\",\"a\"))),c(\"ordered\",\"factor\")),identical(class(base::as.ordered(x)),c(\"ordered\",\"factor\")),tryCatch({base::as.ordered(1:2,3);FALSE},error=function(e)TRUE))})"
+  },
+  {
+    "id": "embedded-exit-callback",
+    "policy": "exact",
+    "bindingEvidence": ["base::do.call"],
+    "code": "local({seen<-character();f<-function(){thunk<-function()seen<<-c(seen,\"exit\");do.call(on.exit,list(as.call(list(thunk)),TRUE,FALSE));seen<<-c(seen,\"body\");7};value<-f();c(seen,value)})"
+  },
+  {
+    "id": "embedded-closure-attribute-rendering",
+    "code": "local({f<-function(x)x+1;attr(f,\"note\")<-\"owned\";c(deparse(call(\"f\",f)),deparse(as.call(list(f,2))))})",
+    "policy": "exact",
+    "bindingEvidence": ["base::deparse"]
   }
 ]

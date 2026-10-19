@@ -536,6 +536,16 @@ try {
     ...authorMetadataAssessment.checks,
     ...closureChecks,
   ];
+  const metadataFailed =
+    dependencyFailed ||
+    declarationFailed ||
+    sourceDependencyFailed ||
+    licenseFailed ||
+    descriptionFailed ||
+    authorsFailed ||
+    authorMetadataFailed ||
+    authorFieldsObservation?.outcome === "mismatch" ||
+    closureFailed;
   const metadataComplete =
     dependencyObserved &&
     sourceDependencyInputFailures.length === 0 &&
@@ -689,20 +699,8 @@ try {
       ),
       stage(
         "metadata-dependencies",
-        dependencyFailed ||
-          declarationFailed ||
-          sourceDependencyFailed ||
-          licenseFailed ||
-          descriptionFailed ||
-          authorsFailed ||
-          authorMetadataFailed ||
-          authorFieldsObservation?.outcome === "mismatch" ||
-          closureFailed
-          ? "failed"
-          : metadataComplete
-            ? "passed"
-            : "unexecuted",
-        metadataComplete
+        metadataFailed ? "failed" : metadataComplete ? "passed" : "unexecuted",
+        !metadataFailed && metadataComplete
           ? "Every DESCRIPTION, license, author, declaration, source-reference (literal-source-references-v2) and dependency-closure check executed and passed under RFC-0008."
           : closureFailed
             ? "A base dependency in the Depends/Imports closure is unavailable on NativR; see closure checks."

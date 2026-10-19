@@ -341,8 +341,9 @@ labels, exclusions, ordering, and level dropping. Factor selection retains class
 `as.ordered()` builds the same owned representation with `c("ordered", "factor")`; the installed
 lowercase `letters` constant supplies the measured generics input. Existing ordered factors return
 unchanged, ordinary factors lose unused levels while retaining names, and package-defined S3 methods
-are checked before the default path. Atomic defaults share the factor level-ordering rules;
-recursive container coercion remains outside the bounded slice.
+are not dispatched by base `as.ordered`. Both coercions expose the single formal `x`; a package
+generic can delegate to the base conversion without re-entering dispatch. Atomic defaults share the
+factor level-ordering rules; recursive container coercion remains outside the bounded slice.
 
 String helpers use browser-safe JavaScript operations without dynamic evaluation. Paste, formatting,
 bounded regular expressions, splitting, substring operations, character translation, case

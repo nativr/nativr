@@ -6528,7 +6528,7 @@ package_probe <- function() c(packageName(), as.character(packageVersion("R6")))
     );
     await expect(
       runtime.eval("as.ordered(structure(1:2, class = 'custom'), marker = 'ok', extra = 'dot')"),
-    ).resolves.toEqual(["ok", "dot"]);
+    ).rejects.toMatchObject({ code: "NRE2101" });
     await expect(runtime.eval("as.ordered(list(1))")).rejects.toMatchObject({ code: "NRT3132" });
     await expect(
       runtime.eval(
@@ -13895,8 +13895,8 @@ NeedsCompilation: no
     const capabilities = await runtime.capabilities();
     expect(capabilities).toMatchObject({
       targetRVersion: "4.6.1",
-      semanticProfileVersion: "0.355.0",
-      languageSubsetVersion: "0.355.0",
+      semanticProfileVersion: "0.356.0",
+      languageSubsetVersion: "0.356.0",
     });
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
@@ -20815,7 +20815,9 @@ NeedsCompilation: no
     await expect(runtime.eval("eval(call(quote(sum), 1:3))")).resolves.toBe(6);
     await expect(runtime.eval('eval(as.call(list(as.name("sum"), 1, 2)))')).resolves.toBe(3);
     await expect(runtime.eval("eval(as.call(expression(sum, 1, 2)))")).resolves.toBe(3);
-    await expect(runtime.eval('eval(as.call(expression("sum", 1, 2)))')).resolves.toBe(3);
+    await expect(runtime.eval('eval(as.call(expression("sum", 1, 2)))')).rejects.toMatchObject({
+      code: "NRT3002",
+    });
     await expect(runtime.eval('eval(call("+", 1, 2))')).resolves.toBe(3);
     await expect(runtime.eval('eval(call("-", 4))')).resolves.toBe(-4);
     await expect(runtime.eval('eval(call(":", 1, 3))')).resolves.toEqual([1, 2, 3]);

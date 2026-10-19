@@ -375,11 +375,13 @@ reuse the preflight index pin: unchanged index bytes alone do not prove that the
 dependency graph equals the metadata plan. Preflight findings remain metadata evidence, not
 installation evidence.
 
-The declared-version observer policy `declared-version-availability-v2` interprets `Depends: R` as
+The declared-version observer policy `declared-version-availability-v3` interprets `Depends: R` as
 the runtime requirement. An `R` entry in Imports, Suggests, Enhances, or LinkingTo is observed
 through package-version lookup instead. Reports retain separate version keys `R` and `package:R`
 when both forms occur, preventing a runtime version from satisfying a package dependency. This does
-not complete metadata checks or establish P7 eligibility.
+not complete metadata checks or establish P7 eligibility. Only Depends, Imports and LinkingTo are
+required: under the RFC-0008 check profile (`_R_CHECK_FORCE_SUGGESTS_=false`) native `R CMD check`
+reports unavailable Suggests as INFO, so v3 observes Suggests and Enhances without requiring them.
 
 Artifact resolution, repository preflight and installation use the same distinction. The reserved
 `providedPackages.R` entry supplies only the runtime version for `Depends: R`; it cannot satisfy an

@@ -13,7 +13,8 @@ for (package_name in packages) {
   suppressPackageStartupMessages(
     library(package_name, character.only = TRUE, quietly = TRUE, warn.conflicts = FALSE)
   )
-  exports <- sort(getNamespaceExports(package_name))
+  # Radix sorting is locale-independent (C collation), keeping the snapshot order stable.
+  exports <- sort(getNamespaceExports(package_name), method = "radix")
   cat("PACKAGE\t", package_name, "\t", length(exports), "\n", sep = "")
   for (export_name in exports) {
     value <- tryCatch(
@@ -30,14 +31,31 @@ for (package_name in packages) {
     }
     callable <- is.function(value)
     kind <- typeof(value)
-    formals <- if (callable && kind == "closure") {
-      paste(vapply(names(formals(value)), encode_field, character(1)), collapse = ",")
+    # Closures report formals(); primitives report the documented args() signature when it exists.
+    signature <- if (!callable) {
+      NULL
+    } else if (kind == "closure") {
+      value
+    } else {
+      args(value)
+    }
+    source <- if (!callable) {
+      "none"
+    } else if (kind == "closure") {
+      "formals"
+    } else if (is.function(signature)) {
+      "args"
+    } else {
+      "unknown"
+    }
+    formals <- if (is.function(signature)) {
+      paste(vapply(names(formals(signature)), encode_field, character(1)), collapse = ",")
     } else {
       ""
     }
     cat(
       "SYMBOL\t", package_name, "\t", encode_field(export_name), "\t",
-      kind, "\t", if (callable) "1" else "0", "\t", formals, "\n",
+      kind, "\t", if (callable) "1" else "0", "\t", formals, "\t", source, "\n",
       sep = ""
     )
   }

@@ -8075,15 +8075,14 @@
     }
   },
   {
-    "id": "as-ordered-custom-s3-forwarding",
-    "code": "as.ordered.custom <- function(x, ..., marker = \"default\") c(marker, list(...)[[\"extra\"]])\nas.ordered(structure(1:2, class = \"custom\"), marker = \"ok\", extra = \"dot\")",
-    "expected": ["ok", "dot"],
+    "id": "as-ordered-rejects-extra-arguments-without-s3-dispatch",
+    "code": "called <- FALSE\nas.ordered.custom <- function(x, ..., marker = \"default\") { called <<- TRUE; x }\nrejected <- tryCatch({ as.ordered(structure(1:2, class = \"custom\"), marker = \"ok\", extra = \"dot\"); FALSE }, error = function(e) TRUE)\nc(rejected, called)",
+    "expected": [true, false],
     "expectedCompatibility": "behavioral",
     "tolerance": {
       "absolute": 0,
       "relative": 0
-    },
-    "rOracle": false
+    }
   },
   {
     "id": "as-array-observed-rstan-s3-call-shape",
@@ -17143,6 +17142,53 @@
     "id": "complex-step-derivative-exactness",
     "code": "c(identical(Im(sin(1+1e-20i))/1e-20, cos(1)), identical(Im(log(2+1e-20i))/1e-20, 0.5))",
     "expected": [true, true],
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "embedded-call-objects-retain-capture-and-identity",
+    "code": "local({offset<-10;f<-function(x)x+offset;attr(f,\"note\")<-\"owned\";cl<-as.call(list(f,2));offset<-20;e<-new.env(parent=emptyenv());e$self<-e;arg<-call(\"identity\",f);env<-call(\"identity\",e);builtin<-as.call(list(sum,1,2));c(identical(cl[[1L]],f),identical(eval(cl),22),identical(eval(arg),f),identical(attr(arg[[2L]],\"note\"),\"owned\"),identical(eval(env),e),identical(eval(env)$self,e),identical(builtin[[1L]],sum),identical(eval(builtin),3),identical(do.call(function(g)g(3),list(f)),23),identical(eval(bquote(.(f)(4))),24))})",
+    "expected": [true, true, true, true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "call-head-storage-and-evaluation-boundary",
+    "code": "local({heads<-list(\"sum\",c(\"sum\",\"other\"),character(),\"\",NA_character_,1,NULL,list(1),new.env(parent=emptyenv()));seen<-FALSE;results<-vapply(heads,function(head){cl<-as.call(list(head,quote({seen<<-TRUE;2})));identical(cl[[1L]],head)&&tryCatch({eval(cl);FALSE},error=function(e)TRUE)},logical(1));c(results,!seen,identical(as.call(expression(\"sum\",2))[[1L]],\"sum\"),identical(eval(as.call(list(as.name(\"sum\"),2))),2),identical(deparse(as.call(list(\"sum\",2))),'\"sum\"(2)'))})",
+    "expected": [true, true, true, true, true, true, true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "embedded-closure-and-primitive-deparse",
+    "code": "c(deparse(as.call(list(function(x)x+1,5))),deparse(call(\"f\",function(x)x+1)),deparse(as.call(list(sum,1,2))))",
+    "expected": [
+      "(function (x) ",
+      "x + 1)(5)",
+      "f(function (x) ",
+      "x + 1)",
+      ".Primitive(\"sum\")(1, 2)"
+    ],
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "factor-coercion-formals-and-nondispatch",
+    "code": "local({as.factor<-function(x,...)UseMethod(\"as.factor\");as.factor.default<-function(x,...)base::as.factor(x);as.ordered<-function(x,...)UseMethod(\"as.ordered\");as.ordered.default<-function(x,...)base::as.ordered(x);as.ordered.owned<-function(x,...)stop(\"must not dispatch\");x<-structure(1:2,class=\"owned\");c(identical(names(formals(base::as.factor)),\"x\"),identical(names(formals(base::as.ordered)),\"x\"),identical(class(as.factor(c(\"b\",\"a\"))),\"factor\"),identical(class(as.ordered(c(\"b\",\"a\"))),c(\"ordered\",\"factor\")),identical(class(base::as.ordered(x)),c(\"ordered\",\"factor\")),tryCatch({base::as.ordered(1:2,3);FALSE},error=function(e)TRUE))})",
+    "expected": [true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "embedded-exit-callback-lexical-capture",
+    "code": "local({seen<-character();f<-function(){thunk<-function()seen<<-c(seen,\"exit\");do.call(on.exit,list(as.call(list(thunk)),TRUE,FALSE));seen<<-c(seen,\"body\");7};value<-f();c(seen,value)})",
+    "expected": ["body", "exit", "7"],
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "embedded-closure-attribute-rendering",
+    "code": "local({f<-function(x)x+1;attr(f,\"note\")<-\"owned\";c(deparse(call(\"f\",f)),deparse(as.call(list(f,2))))})",
+    "expected": [
+      "f(structure(function (x) ",
+      "x + 1, note = \"owned\"))",
+      "(structure(function (x) ",
+      "x + 1, note = \"owned\"))(2)"
+    ],
     "expectedCompatibility": "behavioral"
   }
 ]

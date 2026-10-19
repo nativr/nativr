@@ -1,126 +1,81 @@
 # Release readiness
 
-This page records the release milestones, the verification behind each claim, and the prioritized
-backlog. It was last assessed on 2026-10-17 at semantic profile **0.353.0**, with the uncommitted
-working tree on top of commit `9b91c3f`. Canonical counts are generated into
-[`compatibility/status.json`](../compatibility/status.json); this page explains them and does not
-replace them.
+Last assessed 2026-10-19 at semantic profile **0.356.0**. Canonical counts are generated in
+[compatibility/status.json](../compatibility/status.json). The full compatibility target remains the
+five completion criteria in [gnu-r-compatibility.md](gnu-r-compatibility.md).
 
-## Milestones
+## A. Limited developer preview
 
-### A. Limited developer release
+The supported scope is the Worker-first browser API and executable subset in
+[compatibility-contract.md](compatibility-contract.md). Runtime code remains browser-first, ESM,
+CSP-safe and network-free; host access requires explicit capabilities. No general package or GNU R
+compatibility claim follows from this preview.
 
-An explicitly scoped developer preview of `@nativr/nativr` for embedding a sandboxed R subset in a
-browser Worker. It makes no claim of general GNU R or package compatibility.
+| Gate                               | Latest evidence                                                                                                                           | Status                    |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| Production check                   | Profile 0.356: 1,302 unit tests pass, 86 opt-in tests skipped; build, boundaries, production types and bundle audit pass                  | Passed                    |
+| Conformance                        | 1,235 checked-in, 1,166 live GNU R 4.6.1, 133 recursive cases; 79 bindings linked with causal controls                                    | Passed                    |
+| Native metadata/signature fixtures | 22 independently authored tests pass                                                                                                      | Passed                    |
+| Browser e2e                        | Historical 6/6 pass reported at 0.353; WebKit also exceeded the 120 s required-example budget in later runs (R14). Not refreshed at 0.356 | Open                      |
+| Packed consumer                    | Historical pack smoke pass; not refreshed at 0.356                                                                                        | Revalidate before release |
+| Fixed bundle limits                | Client 17.3/150 KiB gzip; Worker 466.4/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                      | Passed                    |
+| CI and publication                 | Local work only; no pushed CI result for this increment; publication/bootstrap remains a maintainer action                                | Open                      |
 
-**Supported workloads**
+**Readiness:** release verification is incomplete. Browser timing, the declared OS matrix, CI and
+release packaging need current evidence. The approved roadmap does not authorize push or
+publication.
 
-- Evaluating R source inside a dedicated Worker (or inline) through the public API in
-  [public-api.md](public-api.md), with cancellation, reset, disposal, finite resource limits, and no
-  ambient network or host access.
-- The executable language subset in [compatibility-contract.md](compatibility-contract.md): vectors
-  and attributes, closures and promises, environments, S3 dispatch, `tryCatch`,
-  `withCallingHandlers`, restarts, `options(warn = )` and the `suppress*` family, the registered
-  `base`/`stats`/`utils`/`methods`/`graphics`/`grDevices` bindings listed in the capability
-  manifest, and the documented data-frame, factor, apply-family and formatting surface.
-- Deterministic random streams for `set.seed()` with the default Mersenne-Twister, Inversion and
-  Rejection kinds. `runif` and `sample` are bit-identical to GNU R 4.6.1. Seeded `rnorm` is
-  bit-identical for 2993 of 3000 sampled draws and otherwise within about 2 ulp.
-- Loading unchanged pure-R source packages packed at build time by `@nativr/package-tools`, for the
-  corpus packages at tier P4 or above and their declared representative functions.
+## B. Full browser-admissible GNU R 4.6.1 compatibility
 
-**Documented limitations (non-exhaustive)**
+| Criterion                                        | Current evidence                                                                                                                                                                                                                                   | Status                  |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| Domain evidence                                  | All **13** required domains remain incomplete; behavioral matrices need closure                                                                                                                                                                    | Not met                 |
+| Callable evidence/exclusions                     | 742/2,522 distinct names overlap; 79 bindings have specific recursive links. Name overlap is inventory, not a completion percentage                                                                                                                | Not met                 |
+| Broad corpus evidence                            | 25 pins: 2 P7, 1 P6, 8 P5, 12 P4, 1 P3 and the unevaluated P0 holdout. Higher-tier blockers are explicit                                                                                                                                           | Not met                 |
+| Platform verification                            | Correctly rounded elementary Wasm is shipped and used in sessions, including complex functions since 0.355. Windows oracle evidence remains advisory pending the separately authorized RFC-0007 Linux gate; browser/OS coverage remains incomplete | Not met                 |
+| Agreement among ledger, capabilities and reports | Generated checks and this checkpoint agree. Future changes must regenerate capabilities, coverage and status in order                                                                                                                              | Met for this checkpoint |
 
-- 742 of 2,522 GNU R 4.6.1 core callable names are registered. Name overlap is inventory, not
-  behavior.
-- No `dnorm`, `formatC`, or `sprintf("%a")`. Unknown `sprintf` directives pass through unchanged
-  instead of raising GNU R's error.
-- Elementary transcendental functions use the browser's `Math` implementations. These differ from
-  the Windows GNU R oracle in the last place on 5-10% of sampled inputs, and ECMAScript lets
-  browsers differ from each other.
-- No package reaches P7. No native code, installed lazy-load databases, R CMD check equivalence, or
-  arbitrary-package compatibility.
-- Host processes, files, sockets, and devices are available only through explicit adapters and
-  otherwise fail closed (see [security-model.md](security-model.md)).
+There is no defensible completion date or percentage yet. Finishing requires semantic-domain
+closure, broad package evidence and platform verification. See the maintained
+[development continuation](development-continuation.md) for the ordered implementation queue.
 
-**Acceptance criteria and status**
+## Verification environment
 
-| ID  | Criterion                                                                 | Status                                                                                                                                     |
-| --- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| A1  | `pnpm check` passes on the pinned toolchain                               | Passed at 0.353: 1,269 tests, 82 opt-in skipped                                                                                            |
-| A2  | Checked-in, live GNU R 4.6.1 and recursive Oracle v2 conformance all pass | Passed: 1,225/1,225, 1,155/1,155 and 127/127                                                                                               |
-| A3  | Worker/playground e2e passes in Chromium, Firefox and WebKit              | Passed at 0.353 on Windows 11 (6/6). CI targets Ubuntu and has not run on this work, which is committed locally but not pushed to `origin` |
-| A4  | Packed consumer, exports, declarations and parser/Wasm assets verified    | `pnpm pack:smoke` passed                                                                                                                   |
-| A5  | Supported scope and limitations published                                 | This page plus the contract                                                                                                                |
-| A6  | Bundle budgets are real limits                                            | Passed: the Worker budget is a fixed 512 KiB gzip (464.2 KiB used) and is no longer raised per increment                                   |
-| A7  | Publication bootstrap (npm organization, trusted publisher)               | **Blocked on the maintainer**: needs a push to `origin` (github.com/nativr/nativr) and npm account actions                                 |
-| A8  | Release notes and a changeset for 0.1.x                                   | Passed: `.changeset/steady-owls-preview.md`                                                                                                |
+Node 24.19.0, pnpm 11.17.0 and GNU R 4.6.1 on Windows x64, with C locale settings. Existing compiler
+and Wasm caches were reused. Unit-test temporary files were moved outside Dropbox after EBUSY
+cleanup failures. Native oracle runs used ordinary Windows permissions because sandbox ACL checks
+made GNU R file.access reject readable fixtures. These are harness constraints, not accepted
+deviations.
 
-**Readiness:** every code-level criterion (A1 to A6, A8) is met, and the work is committed locally
-(`eebc350`). Two steps remain, and both need the maintainer's explicit authorization: pushing to the
-existing `origin` remote (github.com/nativr/nativr), so that CI on Ubuntu runs and passes once, and
-the publication bootstrap (A7: the npm organization and the trusted publisher, then the first
-release).
+No Worker/protocol/playground or packaging interface changed in stabilization. E2e and pack smoke
+were not rerun for that increment. A supplemental all-test TypeScript check found existing fixture
+typing errors; the required production typecheck passes. That broader check needs cleanup before
+being adopted as a release gate.
 
-### B. Full browser-admissible GNU R 4.6.1 compatibility
+## Cached package checkpoint
 
-The repository's completion criteria are defined in
-[gnu-r-compatibility.md](gnu-r-compatibility.md#completion-evidence). They are not reduced here.
+All 24 development/regression archives matched their pinned hashes and were attempted with the
+original package entrypoints, explicit RNG initialization and native repeatability observations. The
+[checkpoint](../compatibility/package-check-evidence/corpus-0.356.0.json) links 23 redacted reports
+and one explicit checker abort. Summaries contain allowlisted metadata, digests, capture statuses
+and counts; source, output and diagnostic strings are omitted. Formula was untouched.
 
-| Criterion                                                          | Current evidence                                                                                                                                                                                                                                | Status         |
-| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| 1. Executable differential suite for every required domain         | All twelve ledger domains have partial suites; every domain is still marked incomplete                                                                                                                                                          | Not met        |
-| 2. Every inventoried callable has evidence or a verified exclusion | 742 of 2,522 names registered; 77 bindings have recursive Oracle v2 case links; the other 1,780 names have no registered binding                                                                                                                | Not met        |
-| 3. Broad clean-room corpus including R CMD check scenarios         | 1,229 foundation and 127 recursive cases; 25 pinned packages; abind 1.4-8 reaches P7 under the RFC-0008 stage specifications; numDeriv and the other 23 packages do not                                                                         | Not met        |
-| 4. Browsers, operating systems and tolerances verified             | Three engines on Windows here and Ubuntu in CI; macOS unverified; numeric policy decided (RFC-0007), library built, shipped as a digest-checked asset and adopted in sessions, including complex functions (0.355); the Linux oracle is pending | Not met        |
-| 5. Ledger, capabilities, public API and reports agree              | `capabilities:check`, `status:check` and `compatibility:check` pass; stale narrative counts fixed in this pass                                                                                                                                  | Met for checks |
+| Package group                                                                                                      | Highest demonstrated tier | First remaining work                                                                            |
+| ------------------------------------------------------------------------------------------------------------------ | ------------------------- | ----------------------------------------------------------------------------------------------- |
+| pkgconfig 2.0.3; abind 1.4-8                                                                                       | P7                        | All specified stages pass or are inapplicable on this host; full platform gates remain separate |
+| numDeriv 2016.8-1.1                                                                                                | P6                        | Output comparison: 5 matches, 6 differences; deferred numerical/platform verification           |
+| generics; R6; labeling; praise; rprojroot; rstudioapi; rematch; ini                                                | P5                        | Tests unavailable, failed or not demonstrated; see each pinned entry                            |
+| withr; viridisLite; RColorBrewer; assertthat; crayon; prettyunits; evaluate; inline; whisker; zeallot; cpp11; otel | P4                        | Applicable examples or evidence collection remains blocked                                      |
+| BH 1.90.0-1                                                                                                        | P3                        | Representative workload/native build evidence unavailable; no oracle script observations        |
+| Formula 1.2-6                                                                                                      | P0                        | Holdout gate has not been authorized                                                            |
 
-**Readiness:** B is far from complete. As a rough, low-confidence estimate, closing criteria 1-3 is
-a multi-year effort at the current increment rate: about 1,800 callables lack registration or
-exclusion, and the package-check stages need new tooling. The estimate depends heavily on how many
-callables can be excluded as browser-inapplicable, which has not been assessed.
+The inline checker aborted on repeated documentation inventory IDs. Its previous P4 evidence is
+retained. A dispatch result of completed does not prove evaluation success: tiers use reconciled
+capture/stage results. In particular rematch receives no P6 credit merely because a guarded test
+entrypoint completes while testthat is unavailable and nested tests are unverified. No substitute
+testing runner was used.
 
-## Verification record (2026-10-17)
-
-Toolchain: Node 24.14.0 (official zip, SHA-256 verified), pnpm 11.17.0 (corepack), and GNU R 4.6.1
-for Windows (CRAN installer, MD5 verified) as the black-box oracle, on Windows 11 x64.
-
-| Command                                         | Baseline (profile 0.350)        | Combined tree (profile 0.353)                                                      |
-| ----------------------------------------------- | ------------------------------- | ---------------------------------------------------------------------------------- |
-| `pnpm check`                                    | Passed; 1,241 tests, 76 skipped | Passed; 1,296 tests, 85 skipped (note 1)                                           |
-| `pnpm conformance`                              | 1,200/1,200                     | 1,229/1,229                                                                        |
-| `pnpm conformance:r` (live GNU R 4.6.1)         | 1,129/1,130; one case failed    | 1,159/1,159                                                                        |
-| `pnpm conformance:r:v2`                         | 125/125, 69 linked bindings     | 127/127, 77 linked bindings                                                        |
-| `pnpm pack:smoke`                               | Passed                          | Passed                                                                             |
-| `pnpm test:e2e`                                 | Not run at baseline             | 6/6 (Chromium, Firefox, WebKit)                                                    |
-| `pnpm package:check --package abind`            | 10/10 comparisons match         | P7: every stage passes or is inapplicable; 10/10 comparisons match (profile 0.353) |
-| `pnpm package:check --package numDeriv`         | 2 match, 9 differ (unseeded)    | 5 match, 6 differ (seeded); all non-output stages pass (profile 0.355)             |
-| External corpus suite (`NATIVR_EXTERNAL_...=1`) | Not run in this pass            | Not run in this pass                                                               |
-
-1. The Worker budget is now a fixed 512 KiB gzip; see "Worker budget policy" in
-   [performance.md](performance.md). The baseline live-oracle failure was a deterministic
-   environment-sensitive case, not a transient error; see the fixed-defects table.
-
-Skipped tests are the opt-in native-oracle fixtures and external package downloads; the default
-suite does not run them. The holdout package (Formula 1.2-6) was not evaluated.
-
-## Package tiers and first blockers
-
-| Package             | Tier | First blocker                                                       |
-| ------------------- | ---- | ------------------------------------------------------------------- |
-| abind 1.4-8         | P7   | None. First P7 package (RFC-0008, profile 0.353)                    |
-| numDeriv 2016.8-1.1 | P6   | P7 `test-output`: traced oracle libm deviations (below)             |
-| R6 2.6.1            | P5   | P6 `tests/testthat.R` needs testthat                                |
-| rprojroot 2.1.1     | P5   | P6 `tests/testthat.R` needs testthat                                |
-| labeling 0.4.3      | P5   | Recorded as passing at P5; no recorded blocker                      |
-| assertthat 0.2.1    | P4   | P5 `man/not_empty.Rd` example error                                 |
-| BH 1.90.0-1         | P3   | Recorded as passing at P3 (header-only package)                     |
-| 17 further packages | P4   | Recorded as passing at P4 (see `compatibility/package-corpus.json`) |
-| Formula 1.2-6       | P0   | Holdout; deliberately unevaluated                                   |
-
-Only the abind and numDeriv blockers were re-verified in this pass. The others are the recorded
-values; re-verifying them needs the opt-in external corpus suite, which downloads every pinned
-archive.
+## Historical numeric evidence and remaining defects
 
 ### numDeriv output differences
 

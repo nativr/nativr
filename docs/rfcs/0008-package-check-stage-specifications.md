@@ -19,7 +19,7 @@ manual. abind 1.4-8 already passes the other ten stages.
   items (for example `checking dependencies in R code ... OK`) maps to one NativR stage.
 - **Status mapping.** A NativR stage passes only when NativR independently executes every mapped
   item with the same outcome class:
-  - `OK` and `NOTE` both pass. Notes are recorded.
+  - `OK`, `NOTE` and informational `INFO` pass. Notes and informational findings are recorded.
   - `WARNING` and `ERROR` fail.
 - **Fixture parity.** Each rule is pinned by small, independently written fixture packages. An
   opt-in native fixture test runs `R CMD check` on them and compares outcome classes with NativR's.
@@ -50,8 +50,13 @@ The stage passes when all of the following hold:
 1. **DESCRIPTION validation.** The existing structural, license, author and derived-field checks
    (`inspectPackageDescription`, `inspectPackageLicense`, `assessEffectiveAuthorFields`) all
    execute, and none fails.
-2. **Declared dependencies.** Every declared dependency is available on both runtimes and satisfies
-   its version constraint. `observePackageDependencies` provides this.
+2. **Declared dependencies.** Every required dependency (Depends, Imports and LinkingTo) is
+   available on both runtimes and satisfies its version constraint. Under the
+   declared-version-availability-v3 policy, Suggests and Enhances are observed, including version
+   mismatches, but are not required by this stage. With `_R_CHECK_FORCE_SUGGESTS_=false`,
+   unavailable Suggests are informational in native `R CMD check`. Independent fixtures cover this
+   and a test that fails when it actually uses the missing dependency. Optionality does not waive
+   examples, tests or other stages.
 3. **Dependency closure.** Every package in the transitive closure of `Depends` and `Imports` is a
    base package or a package packed with the bundle. `LinkingTo` packages are build-time
    dependencies only.
@@ -120,7 +125,12 @@ Observed on native fixtures (opt-in parity test `namespace-source-check.test.ts`
   checked, against a generic defined in the package or recorded in the GNU R surface inventory.
   Compare the arguments before `...` position by position. The method needs `...` whenever the
   generic has it, and also whenever the method is shorter than the generic. The method may be longer
-  only when the generic has `...`. Arguments after `...` are free.
+  only when the generic has `...`. Arguments after `...` are free. The core inventory records
+  closure argument names through `formals()` and primitive signatures through `formals(args())`,
+  never implementation bodies. A primitive with no observable signature has `formals: null` and
+  `signature: "unknown"`; a known zero-argument function has `formals: []`. Unknown signatures leave
+  consistency unexecuted. Independent native fixtures cover consistent and inconsistent methods for
+  `as.character`, and the static fixture covers an unknown `[` signature.
 - **replacement functions** (WARNING). The last argument of a `name<-` function is `value`.
 - **foreign function calls** (WARNING). `.C`/`.Call`/`.Fortran`/`.External` calls need a `PACKAGE`
   argument. Calls that have one need the Native ABI and are unexecuted.

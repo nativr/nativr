@@ -2,6 +2,7 @@ import { assertNever } from "@nativr/ast";
 import type { AstNode, CallArgument, SourceSpan } from "@nativr/ast";
 
 import { RResourceLimitError } from "./errors.js";
+import type { RValue } from "./values.js";
 
 const SYNTHETIC_SPAN: SourceSpan = Object.freeze({
   start: Object.freeze({ offset: 0, line: 1, column: 1 }),
@@ -340,7 +341,10 @@ export function deparseOperation(node: AstNode): DeparseOperation | undefined {
 export function expressionPrecedence(node: AstNode): number {
   const operation = deparseOperation(node);
   if (operation !== undefined) return operation.precedence;
-  if (node.kind === "ConstantExpression") return expressionPrecedence(node.display);
+  if (node.kind === "ConstantExpression")
+    return (node.value as RValue | null)?.type === "closure"
+      ? 0
+      : expressionPrecedence(node.display);
   if (node.kind === "NamespaceExpression") return 17;
   if (node.kind === "SubsetExpression" || node.kind === "CallExpression") return 16;
   if (

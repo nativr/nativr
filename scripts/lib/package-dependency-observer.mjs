@@ -61,13 +61,14 @@ export async function observePackageDependencies(dependencies, options) {
   return {
     schemaVersion: 1,
     sourceSha256: createHash("sha256").update(source).digest("hex"),
-    policy: "declared-version-availability-v2",
+    policy: "declared-version-availability-v3",
     actual,
     expected,
     dependencies: dependencies.map((dependency) => ({
       ...dependency,
-      // Enhances is observed but not required by this check profile.
-      required: dependency.kind !== "Enhances",
+      // Suggests and Enhances are observed but not required: with _R_CHECK_FORCE_SUGGESTS_=false
+      // (RFC-0008 check profile) native R CMD check reports unavailable Suggests as INFO.
+      required: dependency.kind !== "Enhances" && dependency.kind !== "Suggests",
       actual: assess(actual, dependency),
       expected: assess(expected, dependency),
     })),

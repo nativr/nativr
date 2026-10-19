@@ -11,11 +11,23 @@
       "name": "base",
       "reportedExportCount": 1412,
       "exports": [
-        { "name": "!", "type": "builtin", "callable": true, "formals": [] },
+        { "name": "!", "type": "builtin", "callable": true, "formals": ["x"], "signature": "args" },
         { "name": "!.hexmode", "type": "closure", "callable": true, "formals": ["a"] },
         { "name": "!.octmode", "type": "closure", "callable": true, "formals": ["a"] },
-        { "name": "!=", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "$", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "!=",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["e1", "e2"],
+          "signature": "args"
+        },
+        {
+          "name": "$",
+          "type": "special",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        },
         { "name": "$.DLLInfo", "type": "closure", "callable": true, "formals": ["x", "name"] },
         {
           "name": "$.package_version",
@@ -23,7 +35,13 @@
           "callable": true,
           "formals": ["x", "name"]
         },
-        { "name": "$<-", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "$<-",
+          "type": "special",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        },
         {
           "name": "$<-.POSIXlt",
           "type": "closure",
@@ -36,30 +54,102 @@
           "callable": true,
           "formals": ["x", "name", "value"]
         },
-        { "name": "%%", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "%*%", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "%/%", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "%%",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["e1", "e2"],
+          "signature": "args"
+        },
+        {
+          "name": "%*%",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "y"],
+          "signature": "args"
+        },
+        {
+          "name": "%/%",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["e1", "e2"],
+          "signature": "args"
+        },
         { "name": "%in%", "type": "closure", "callable": true, "formals": ["x", "table"] },
         { "name": "%notin%", "type": "closure", "callable": true, "formals": ["x", "table"] },
         { "name": "%o%", "type": "closure", "callable": true, "formals": ["X", "Y"] },
         { "name": "%x%", "type": "closure", "callable": true, "formals": ["X", "Y"] },
         { "name": "%||%", "type": "closure", "callable": true, "formals": ["x", "y"] },
-        { "name": "&", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "&&", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "&",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["e1", "e2"],
+          "signature": "args"
+        },
+        {
+          "name": "&&",
+          "type": "special",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        },
         { "name": "&.hexmode", "type": "closure", "callable": true, "formals": ["a", "b"] },
         { "name": "&.octmode", "type": "closure", "callable": true, "formals": ["a", "b"] },
-        { "name": "(", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "*", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "(",
+          "type": "builtin",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        },
+        {
+          "name": "*",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["e1", "e2"],
+          "signature": "args"
+        },
         { "name": "*.difftime", "type": "closure", "callable": true, "formals": ["e1", "e2"] },
-        { "name": "+", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "+",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["e1", "e2"],
+          "signature": "args"
+        },
         { "name": "+.Date", "type": "closure", "callable": true, "formals": ["e1", "e2"] },
         { "name": "+.POSIXt", "type": "closure", "callable": true, "formals": ["e1", "e2"] },
-        { "name": "-", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "-",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["e1", "e2"],
+          "signature": "args"
+        },
         { "name": "-.Date", "type": "closure", "callable": true, "formals": ["e1", "e2"] },
         { "name": "-.POSIXt", "type": "closure", "callable": true, "formals": ["e1", "e2"] },
-        { "name": "...elt", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "...length", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "...names", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "...elt",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["n"],
+          "signature": "args"
+        },
+        {
+          "name": "...length",
+          "type": "builtin",
+          "callable": true,
+          "formals": [],
+          "signature": "args"
+        },
+        {
+          "name": "...names",
+          "type": "builtin",
+          "callable": true,
+          "formals": [],
+          "signature": "args"
+        },
         { "name": "..deparseOpts", "type": "character", "callable": false, "formals": [] },
         {
           "name": "..getNamespace",
@@ -70,12 +160,30 @@
         { "name": ".ArgsEnv", "type": "environment", "callable": false, "formals": [] },
         { "name": ".AutoloadEnv", "type": "environment", "callable": false, "formals": [] },
         { "name": ".BaseNamespaceEnv", "type": "environment", "callable": false, "formals": [] },
-        { "name": ".C", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": ".C",
+          "type": "builtin",
+          "callable": true,
+          "formals": [".NAME", "...", "NAOK", "DUP", "PACKAGE", "ENCODING"],
+          "signature": "args"
+        },
         { "name": ".C_R_addTaskCallback", "type": "list", "callable": false, "formals": [] },
         { "name": ".C_R_getTaskCallbackNames", "type": "list", "callable": false, "formals": [] },
         { "name": ".C_R_removeTaskCallback", "type": "list", "callable": false, "formals": [] },
-        { "name": ".Call", "type": "builtin", "callable": true, "formals": [] },
-        { "name": ".Call.graphics", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": ".Call",
+          "type": "builtin",
+          "callable": true,
+          "formals": [".NAME", "...", "PACKAGE"],
+          "signature": "args"
+        },
+        {
+          "name": ".Call.graphics",
+          "type": "builtin",
+          "callable": true,
+          "formals": [".NAME", "...", "PACKAGE"],
+          "signature": "args"
+        },
         { "name": ".Date", "type": "closure", "callable": true, "formals": ["xx", "cl"] },
         {
           "name": ".Defunct",
@@ -91,9 +199,27 @@
         },
         { "name": ".Device", "type": "character", "callable": false, "formals": [] },
         { "name": ".Devices", "type": "pairlist", "callable": false, "formals": [] },
-        { "name": ".External", "type": "builtin", "callable": true, "formals": [] },
-        { "name": ".External.graphics", "type": "builtin", "callable": true, "formals": [] },
-        { "name": ".External2", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": ".External",
+          "type": "builtin",
+          "callable": true,
+          "formals": [".NAME", "...", "PACKAGE"],
+          "signature": "args"
+        },
+        {
+          "name": ".External.graphics",
+          "type": "builtin",
+          "callable": true,
+          "formals": [".NAME", "...", "PACKAGE"],
+          "signature": "args"
+        },
+        {
+          "name": ".External2",
+          "type": "builtin",
+          "callable": true,
+          "formals": [".NAME", "...", "PACKAGE"],
+          "signature": "args"
+        },
         { "name": ".F_dqrcf", "type": "list", "callable": false, "formals": [] },
         { "name": ".F_dqrdc2", "type": "list", "callable": false, "formals": [] },
         { "name": ".F_dqrqty", "type": "list", "callable": false, "formals": [] },
@@ -102,10 +228,22 @@
         { "name": ".F_dqrxb", "type": "list", "callable": false, "formals": [] },
         { "name": ".F_dtrco", "type": "list", "callable": false, "formals": [] },
         { "name": ".First.sys", "type": "closure", "callable": true, "formals": [] },
-        { "name": ".Fortran", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": ".Fortran",
+          "type": "builtin",
+          "callable": true,
+          "formals": [".NAME", "...", "NAOK", "DUP", "PACKAGE", "ENCODING"],
+          "signature": "args"
+        },
         { "name": ".GenericArgsEnv", "type": "environment", "callable": false, "formals": [] },
         { "name": ".GlobalEnv", "type": "environment", "callable": false, "formals": [] },
-        { "name": ".Internal", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": ".Internal",
+          "type": "special",
+          "callable": true,
+          "formals": ["call"],
+          "signature": "args"
+        },
         { "name": ".LC.categories", "type": "character", "callable": false, "formals": [] },
         { "name": ".Last.value", "type": "NULL", "callable": false, "formals": [] },
         { "name": ".Library", "type": "character", "callable": false, "formals": [] },
@@ -118,7 +256,13 @@
         { "name": ".POSIXct", "type": "closure", "callable": true, "formals": ["xx", "tz", "cl"] },
         { "name": ".POSIXlt", "type": "closure", "callable": true, "formals": ["xx", "tz", "cl"] },
         { "name": ".Platform", "type": "list", "callable": false, "formals": [] },
-        { "name": ".Primitive", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": ".Primitive",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["name"],
+          "signature": "args"
+        },
         { "name": ".S3PrimitiveGenerics", "type": "character", "callable": false, "formals": [] },
         { "name": ".S3_methods_table", "type": "character", "callable": false, "formals": [] },
         {
@@ -155,9 +299,21 @@
           "callable": true,
           "formals": ["x", "breaks", "right", "include.lowest"]
         },
-        { "name": ".cache_class", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": ".cache_class",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["class", "extends"],
+          "signature": "args"
+        },
         { "name": ".check_tzones", "type": "closure", "callable": true, "formals": ["..."] },
-        { "name": ".class2", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": ".class2",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": ".col", "type": "closure", "callable": true, "formals": ["dim"] },
         {
           "name": ".colMeans",
@@ -248,7 +404,13 @@
           "formals": ["h", "msg", "call"]
         },
         { "name": ".internalGenerics", "type": "character", "callable": false, "formals": [] },
-        { "name": ".isMethodsDispatchOn", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": ".isMethodsDispatchOn",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["onOff"],
+          "signature": "args"
+        },
         { "name": ".isOpen", "type": "closure", "callable": true, "formals": ["srcfile"] },
         {
           "name": ".kappa_tri",
@@ -330,8 +492,20 @@
             "bounds"
           ]
         },
-        { "name": ".primTrace", "type": "builtin", "callable": true, "formals": [] },
-        { "name": ".primUntrace", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": ".primTrace",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["obj"],
+          "signature": "args"
+        },
+        {
+          "name": ".primUntrace",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["obj"],
+          "signature": "args"
+        },
         {
           "name": ".rangeNum",
           "type": "closure",
@@ -378,8 +552,20 @@
           "formals": ["msg", "call"]
         },
         { "name": ".standard_regexps", "type": "closure", "callable": true, "formals": [] },
-        { "name": ".subset", "type": "builtin", "callable": true, "formals": [] },
-        { "name": ".subset2", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": ".subset",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "..."],
+          "signature": "args"
+        },
+        {
+          "name": ".subset2",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "..."],
+          "signature": "args"
+        },
         { "name": ".sys.timezone", "type": "character", "callable": false, "formals": [] },
         {
           "name": ".traceback",
@@ -390,27 +576,129 @@
         { "name": ".tryResumeInterrupt", "type": "closure", "callable": true, "formals": [] },
         { "name": ".userHooksEnv", "type": "environment", "callable": false, "formals": [] },
         { "name": ".valid.factor", "type": "closure", "callable": true, "formals": ["object"] },
-        { "name": "/", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "/",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["e1", "e2"],
+          "signature": "args"
+        },
         { "name": "/.difftime", "type": "closure", "callable": true, "formals": ["e1", "e2"] },
-        { "name": ":", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "::", "type": "special", "callable": true, "formals": [] },
-        { "name": ":::", "type": "special", "callable": true, "formals": [] },
-        { "name": "<", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "<-", "type": "special", "callable": true, "formals": [] },
-        { "name": "<<-", "type": "special", "callable": true, "formals": [] },
-        { "name": "<=", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "=", "type": "special", "callable": true, "formals": [] },
-        { "name": "==", "type": "builtin", "callable": true, "formals": [] },
-        { "name": ">", "type": "builtin", "callable": true, "formals": [] },
-        { "name": ">=", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "@", "type": "special", "callable": true, "formals": [] },
-        { "name": "@<-", "type": "special", "callable": true, "formals": [] },
-        { "name": "Arg", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "Conj", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": ":",
+          "type": "builtin",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        },
+        {
+          "name": "::",
+          "type": "special",
+          "callable": true,
+          "formals": ["pkg", "name"],
+          "signature": "args"
+        },
+        {
+          "name": ":::",
+          "type": "special",
+          "callable": true,
+          "formals": ["pkg", "name"],
+          "signature": "args"
+        },
+        {
+          "name": "<",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["e1", "e2"],
+          "signature": "args"
+        },
+        {
+          "name": "<-",
+          "type": "special",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        },
+        {
+          "name": "<<-",
+          "type": "special",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        },
+        {
+          "name": "<=",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["e1", "e2"],
+          "signature": "args"
+        },
+        {
+          "name": "=",
+          "type": "special",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        },
+        {
+          "name": "==",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["e1", "e2"],
+          "signature": "args"
+        },
+        {
+          "name": ">",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["e1", "e2"],
+          "signature": "args"
+        },
+        {
+          "name": ">=",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["e1", "e2"],
+          "signature": "args"
+        },
+        {
+          "name": "@",
+          "type": "special",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        },
+        {
+          "name": "@<-",
+          "type": "special",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        },
+        {
+          "name": "Arg",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["z"],
+          "signature": "args"
+        },
+        {
+          "name": "Conj",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["z"],
+          "signature": "args"
+        },
         { "name": "Cstack_info", "type": "closure", "callable": true, "formals": [] },
         { "name": "Encoding", "type": "closure", "callable": true, "formals": ["x"] },
         { "name": "Encoding<-", "type": "closure", "callable": true, "formals": ["x", "value"] },
-        { "name": "Exec", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "Exec",
+          "type": "special",
+          "callable": true,
+          "formals": ["expr", "envir"],
+          "signature": "args"
+        },
         { "name": "F", "type": "logical", "callable": false, "formals": [] },
         { "name": "Filter", "type": "closure", "callable": true, "formals": ["f", "x"] },
         {
@@ -432,7 +720,13 @@
           "callable": true,
           "formals": ["year", "month", "day", "hour", "min", "sec", "tz"]
         },
-        { "name": "Im", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "Im",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["z"],
+          "signature": "args"
+        },
         { "name": "LETTERS", "type": "character", "callable": false, "formals": [] },
         { "name": "La.svd", "type": "closure", "callable": true, "formals": ["x", "nu", "nv"] },
         { "name": "La_library", "type": "closure", "callable": true, "formals": [] },
@@ -443,7 +737,13 @@
         { "name": "Math.data.frame", "type": "closure", "callable": true, "formals": ["x", "..."] },
         { "name": "Math.difftime", "type": "closure", "callable": true, "formals": ["x", "..."] },
         { "name": "Math.factor", "type": "closure", "callable": true, "formals": ["x", "..."] },
-        { "name": "Mod", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "Mod",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["z"],
+          "signature": "args"
+        },
         { "name": "NCOL", "type": "closure", "callable": true, "formals": ["x"] },
         { "name": "NROW", "type": "closure", "callable": true, "formals": ["x"] },
         { "name": "Negate", "type": "closure", "callable": true, "formals": ["f"] },
@@ -490,7 +790,13 @@
           "callable": true,
           "formals": ["x", "strict"]
         },
-        { "name": "Re", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "Re",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["z"],
+          "signature": "args"
+        },
         { "name": "Recall", "type": "closure", "callable": true, "formals": ["..."] },
         {
           "name": "Reduce",
@@ -597,15 +903,33 @@
         { "name": "Sys.unsetenv", "type": "closure", "callable": true, "formals": ["x"] },
         { "name": "Sys.which", "type": "closure", "callable": true, "formals": ["names"] },
         { "name": "T", "type": "logical", "callable": false, "formals": [] },
-        { "name": "Tailcall", "type": "special", "callable": true, "formals": [] },
-        { "name": "UseMethod", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "Tailcall",
+          "type": "special",
+          "callable": true,
+          "formals": ["FUN", "..."],
+          "signature": "args"
+        },
+        {
+          "name": "UseMethod",
+          "type": "special",
+          "callable": true,
+          "formals": ["generic", "object"],
+          "signature": "args"
+        },
         {
           "name": "Vectorize",
           "type": "closure",
           "callable": true,
           "formals": ["FUN", "vectorize.args", "SIMPLIFY", "USE.NAMES"]
         },
-        { "name": "[", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "[",
+          "type": "special",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        },
         { "name": "[.AsIs", "type": "closure", "callable": true, "formals": ["x", "i", "..."] },
         { "name": "[.DLLInfoList", "type": "closure", "callable": true, "formals": ["x", "..."] },
         { "name": "[.Date", "type": "closure", "callable": true, "formals": ["x", "...", "drop"] },
@@ -663,7 +987,13 @@
           "formals": ["x", "i", "j", "...", "drop"]
         },
         { "name": "[.warnings", "type": "closure", "callable": true, "formals": ["x", "..."] },
-        { "name": "[<-", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "[<-",
+          "type": "special",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        },
         {
           "name": "[<-.Date",
           "type": "closure",
@@ -706,7 +1036,13 @@
           "callable": true,
           "formals": ["x", "i", "j", "value"]
         },
-        { "name": "[[", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "[[",
+          "type": "special",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        },
         { "name": "[[.Date", "type": "closure", "callable": true, "formals": ["x", "...", "drop"] },
         {
           "name": "[[.POSIXct",
@@ -733,7 +1069,13 @@
           "callable": true,
           "formals": ["x", "...", "exact"]
         },
-        { "name": "[[<-", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "[[<-",
+          "type": "special",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        },
         {
           "name": "[[<-.POSIXlt",
           "type": "closure",
@@ -758,16 +1100,40 @@
           "callable": true,
           "formals": ["x", "...", "value"]
         },
-        { "name": "^", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "^",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["e1", "e2"],
+          "signature": "args"
+        },
         {
           "name": "abbreviate",
           "type": "closure",
           "callable": true,
           "formals": ["names.arg", "minlength", "use.classes", "dot", "strict", "method", "named"]
         },
-        { "name": "abs", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "acos", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "acosh", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "abs",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "acos",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "acosh",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         {
           "name": "activeBindingFunction",
           "type": "closure",
@@ -803,7 +1169,13 @@
           "formals": ["pattern", "x", "max.distance", "costs", "ignore.case", "fixed", "useBytes"]
         },
         { "name": "alist", "type": "closure", "callable": true, "formals": ["..."] },
-        { "name": "all", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "all",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["...", "na.rm"],
+          "signature": "args"
+        },
         {
           "name": "all.equal",
           "type": "closure",
@@ -906,7 +1278,13 @@
           "formals": ["expr", "functions", "max.names", "unique"]
         },
         { "name": "allowInterrupts", "type": "closure", "callable": true, "formals": ["expr"] },
-        { "name": "any", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "any",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["...", "na.rm"],
+          "signature": "args"
+        },
         {
           "name": "anyDuplicated",
           "type": "closure",
@@ -937,7 +1315,13 @@
           "callable": true,
           "formals": ["x", "incomparables", "MARGIN", "fromLast", "..."]
         },
-        { "name": "anyNA", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "anyNA",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "recursive"],
+          "signature": "args"
+        },
         {
           "name": "anyNA.POSIXlt",
           "type": "closure",
@@ -1101,8 +1485,20 @@
           "callable": true,
           "formals": ["x", "..."]
         },
-        { "name": "as.call", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "as.character", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "as.call",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "as.character",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "..."],
+          "signature": "args"
+        },
         {
           "name": "as.character.Date",
           "type": "closure",
@@ -1163,7 +1559,13 @@
           "callable": true,
           "formals": ["x", "useSource", "to", "..."]
         },
-        { "name": "as.complex", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "as.complex",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "..."],
+          "signature": "args"
+        },
         {
           "name": "as.data.frame",
           "type": "closure",
@@ -1331,7 +1733,13 @@
           "callable": true,
           "formals": ["tim", "format", "units", "tz"]
         },
-        { "name": "as.double", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "as.double",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "..."],
+          "signature": "args"
+        },
         {
           "name": "as.double.POSIXlt",
           "type": "closure",
@@ -1344,7 +1752,13 @@
           "callable": true,
           "formals": ["x", "units", "..."]
         },
-        { "name": "as.environment", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "as.environment",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "as.expression", "type": "closure", "callable": true, "formals": ["x", "..."] },
         {
           "name": "as.expression.default",
@@ -1361,7 +1775,13 @@
           "formals": ["x", "envir", "..."]
         },
         { "name": "as.hexmode", "type": "closure", "callable": true, "formals": ["x"] },
-        { "name": "as.integer", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "as.integer",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "..."],
+          "signature": "args"
+        },
         { "name": "as.list", "type": "closure", "callable": true, "formals": ["x", "..."] },
         { "name": "as.list.Date", "type": "closure", "callable": true, "formals": ["x", "..."] },
         { "name": "as.list.POSIXct", "type": "closure", "callable": true, "formals": ["x", "..."] },
@@ -1398,7 +1818,13 @@
           "callable": true,
           "formals": ["x", "..."]
         },
-        { "name": "as.logical", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "as.logical",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "..."],
+          "signature": "args"
+        },
         {
           "name": "as.logical.factor",
           "type": "closure",
@@ -1433,14 +1859,26 @@
         { "name": "as.name", "type": "closure", "callable": true, "formals": ["x"] },
         { "name": "as.null", "type": "closure", "callable": true, "formals": ["x", "..."] },
         { "name": "as.null.default", "type": "closure", "callable": true, "formals": ["x", "..."] },
-        { "name": "as.numeric", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "as.numeric",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "..."],
+          "signature": "args"
+        },
         { "name": "as.numeric_version", "type": "closure", "callable": true, "formals": ["x"] },
         { "name": "as.octmode", "type": "closure", "callable": true, "formals": ["x"] },
         { "name": "as.ordered", "type": "closure", "callable": true, "formals": ["x"] },
         { "name": "as.package_version", "type": "closure", "callable": true, "formals": ["x"] },
         { "name": "as.pairlist", "type": "closure", "callable": true, "formals": ["x"] },
         { "name": "as.qr", "type": "closure", "callable": true, "formals": ["x"] },
-        { "name": "as.raw", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "as.raw",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "as.single", "type": "closure", "callable": true, "formals": ["x", "..."] },
         {
           "name": "as.single.default",
@@ -1493,8 +1931,20 @@
           "callable": true,
           "formals": ["object", "flag", "complete"]
         },
-        { "name": "asin", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "asinh", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "asin",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "asinh",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         {
           "name": "asplit",
           "type": "closure",
@@ -1507,9 +1957,21 @@
           "callable": true,
           "formals": ["x", "value", "pos", "envir", "inherits", "immediate"]
         },
-        { "name": "atan", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "atan",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "atan2", "type": "closure", "callable": true, "formals": ["y", "x"] },
-        { "name": "atanh", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "atanh",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         {
           "name": "attach",
           "type": "closure",
@@ -1522,16 +1984,40 @@
           "callable": true,
           "formals": ["ns", "pos", "depends", "exclude", "include.only"]
         },
-        { "name": "attr", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "attr",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "which", "exact"],
+          "signature": "args"
+        },
         {
           "name": "attr.all.equal",
           "type": "closure",
           "callable": true,
           "formals": ["target", "current", "...", "check.attributes", "check.names"]
         },
-        { "name": "attr<-", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "attributes", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "attributes<-", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "attr<-",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "which", "value"],
+          "signature": "args"
+        },
+        {
+          "name": "attributes",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "attributes<-",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "value"],
+          "signature": "args"
+        },
         {
           "name": "autoload",
           "type": "closure",
@@ -1556,7 +2042,13 @@
           "callable": true,
           "formals": ["x", "fill.only", "classed"]
         },
-        { "name": "baseenv", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "baseenv",
+          "type": "builtin",
+          "callable": true,
+          "formals": [],
+          "signature": "args"
+        },
         { "name": "basename", "type": "closure", "callable": true, "formals": ["path"] },
         {
           "name": "besselI",
@@ -1610,8 +2102,20 @@
           "callable": true,
           "formals": ["expr", "where", "splice"]
         },
-        { "name": "break", "type": "special", "callable": true, "formals": [] },
-        { "name": "browser", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "break",
+          "type": "special",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        },
+        {
+          "name": "browser",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["text", "condition", "expr", "skipCalls"],
+          "signature": "args"
+        },
         { "name": "browserCondition", "type": "closure", "callable": true, "formals": ["n"] },
         { "name": "browserSetDebug", "type": "closure", "callable": true, "formals": ["n"] },
         { "name": "browserText", "type": "closure", "callable": true, "formals": ["n"] },
@@ -1640,7 +2144,13 @@
           "callable": true,
           "formals": ["description", "open", "encoding", "compression"]
         },
-        { "name": "c", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "c",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["..."],
+          "signature": "args"
+        },
         { "name": "c.Date", "type": "closure", "callable": true, "formals": ["...", "recursive"] },
         {
           "name": "c.POSIXct",
@@ -1684,7 +2194,13 @@
           "callable": true,
           "formals": ["...", "recursive"]
         },
-        { "name": "call", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "call",
+          "type": "special",
+          "callable": true,
+          "formals": ["name", "..."],
+          "signature": "args"
+        },
         { "name": "callCC", "type": "closure", "callable": true, "formals": ["fun"] },
         {
           "name": "capabilities",
@@ -1711,7 +2227,13 @@
           "callable": true,
           "formals": ["...", "deparse.level"]
         },
-        { "name": "ceiling", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "ceiling",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         {
           "name": "char.expand",
           "type": "closure",
@@ -1759,8 +2281,20 @@
           "callable": true,
           "formals": ["x", "y", "mx", "my", "cl", "reverse"]
         },
-        { "name": "class", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "class<-", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "class",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "class<-",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "value"],
+          "signature": "args"
+        },
         { "name": "clearPushBack", "type": "closure", "callable": true, "formals": ["connection"] },
         { "name": "close", "type": "closure", "callable": true, "formals": ["con", "..."] },
         {
@@ -1834,14 +2368,62 @@
           "formals": ["where", "detail"]
         },
         { "name": "contributors", "type": "closure", "callable": true, "formals": [] },
-        { "name": "cos", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "cosh", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "cospi", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "crossprod", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "cummax", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "cummin", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "cumprod", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "cumsum", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "cos",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "cosh",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "cospi",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "crossprod",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "y", "..."],
+          "signature": "args"
+        },
+        {
+          "name": "cummax",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "cummin",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "cumprod",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "cumsum",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         {
           "name": "curlGetHeaders",
           "type": "closure",
@@ -1911,7 +2493,13 @@
           "callable": true,
           "formals": ["fun", "text", "condition", "signature"]
         },
-        { "name": "declare", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "declare",
+          "type": "special",
+          "callable": true,
+          "formals": ["..."],
+          "signature": "args"
+        },
         { "name": "default.stringsAsFactors", "type": "closure", "callable": true, "formals": [] },
         {
           "name": "delayedAssign",
@@ -1984,13 +2572,43 @@
           "callable": true,
           "formals": ["time1", "time2", "tz", "units"]
         },
-        { "name": "digamma", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "dim", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "digamma",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "dim",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "dim.data.frame", "type": "closure", "callable": true, "formals": ["x"] },
-        { "name": "dim<-", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "dimnames", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "dim<-",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "value"],
+          "signature": "args"
+        },
+        {
+          "name": "dimnames",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "dimnames.data.frame", "type": "closure", "callable": true, "formals": ["x"] },
-        { "name": "dimnames<-", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "dimnames<-",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "value"],
+          "signature": "args"
+        },
         {
           "name": "dimnames<-.data.frame",
           "type": "closure",
@@ -2128,9 +2746,27 @@
           "callable": true,
           "formals": ["x", "symmetric", "only.values", "EISPACK"]
         },
-        { "name": "emptyenv", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "enc2native", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "enc2utf8", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "emptyenv",
+          "type": "builtin",
+          "callable": true,
+          "formals": [],
+          "signature": "args"
+        },
+        {
+          "name": "enc2native",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "enc2utf8",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         {
           "name": "encodeString",
           "type": "closure",
@@ -2141,7 +2777,13 @@
         { "name": "enquote", "type": "closure", "callable": true, "formals": ["cl"] },
         { "name": "env.profile", "type": "closure", "callable": true, "formals": ["env"] },
         { "name": "environment", "type": "closure", "callable": true, "formals": ["fun"] },
-        { "name": "environment<-", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "environment<-",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["fun", "value"],
+          "signature": "args"
+        },
         { "name": "environmentIsLocked", "type": "closure", "callable": true, "formals": ["env"] },
         { "name": "environmentName", "type": "closure", "callable": true, "formals": ["env"] },
         {
@@ -2169,15 +2811,33 @@
           "callable": true,
           "formals": ["x", "where", "envir", "frame", "mode", "inherits"]
         },
-        { "name": "exp", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "exp",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         {
           "name": "expand.grid",
           "type": "closure",
           "callable": true,
           "formals": ["...", "KEEP.OUT.ATTRS", "stringsAsFactors"]
         },
-        { "name": "expm1", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "expression", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "expm1",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "expression",
+          "type": "special",
+          "callable": true,
+          "formals": ["..."],
+          "signature": "args"
+        },
         { "name": "extSoftVersion", "type": "closure", "callable": true, "formals": [] },
         {
           "name": "factor",
@@ -2266,12 +2926,30 @@
         },
         { "name": "findPackageEnv", "type": "closure", "callable": true, "formals": ["info"] },
         { "name": "findRestart", "type": "closure", "callable": true, "formals": ["name", "cond"] },
-        { "name": "floor", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "floor",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "flush", "type": "closure", "callable": true, "formals": ["con"] },
         { "name": "flush.connection", "type": "closure", "callable": true, "formals": ["con"] },
-        { "name": "for", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "for",
+          "type": "special",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        },
         { "name": "force", "type": "closure", "callable": true, "formals": ["x"] },
-        { "name": "forceAndCall", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "forceAndCall",
+          "type": "special",
+          "callable": true,
+          "formals": ["n", "FUN", "..."],
+          "signature": "args"
+        },
         { "name": "formals", "type": "closure", "callable": true, "formals": ["fun", "envir"] },
         {
           "name": "formals<-",
@@ -2422,15 +3100,33 @@
           "callable": true,
           "formals": ["l", "x", "k", "upper.tri", "transpose"]
         },
-        { "name": "function", "type": "special", "callable": true, "formals": [] },
-        { "name": "gamma", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "function",
+          "type": "special",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        },
+        {
+          "name": "gamma",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         {
           "name": "gc",
           "type": "closure",
           "callable": true,
           "formals": ["verbose", "reset", "full"]
         },
-        { "name": "gc.time", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "gc.time",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["on"],
+          "signature": "args"
+        },
         { "name": "gcinfo", "type": "closure", "callable": true, "formals": ["verbose"] },
         { "name": "gctorture", "type": "closure", "callable": true, "formals": ["on"] },
         {
@@ -2545,7 +3241,13 @@
           "callable": true,
           "formals": ["..."]
         },
-        { "name": "globalenv", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "globalenv",
+          "type": "builtin",
+          "callable": true,
+          "formals": [],
+          "signature": "args"
+        },
         {
           "name": "gregexec",
           "type": "closure",
@@ -2627,7 +3329,13 @@
           ]
         },
         { "name": "identity", "type": "closure", "callable": true, "formals": ["x"] },
-        { "name": "if", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "if",
+          "type": "special",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        },
         { "name": "ifelse", "type": "closure", "callable": true, "formals": ["test", "yes", "no"] },
         {
           "name": "importIntoEnv",
@@ -2656,10 +3364,22 @@
           "callable": true,
           "formals": ["...", "drop", "sep", "lex.order"]
         },
-        { "name": "interactive", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "interactive",
+          "type": "builtin",
+          "callable": true,
+          "formals": [],
+          "signature": "args"
+        },
         { "name": "intersect", "type": "closure", "callable": true, "formals": ["x", "y"] },
         { "name": "inverse.rle", "type": "closure", "callable": true, "formals": ["x", "..."] },
-        { "name": "invisible", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "invisible",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "invokeRestart", "type": "closure", "callable": true, "formals": ["r", "..."] },
         {
           "name": "invokeRestartInteractively",
@@ -2668,34 +3388,136 @@
           "formals": ["r"]
         },
         { "name": "is.R", "type": "closure", "callable": true, "formals": [] },
-        { "name": "is.array", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "is.atomic", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "is.call", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "is.character", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "is.complex", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "is.array",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "is.atomic",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "is.call",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "is.character",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "is.complex",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "is.data.frame", "type": "closure", "callable": true, "formals": ["x"] },
-        { "name": "is.double", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "is.double",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "is.element", "type": "closure", "callable": true, "formals": ["el", "set"] },
-        { "name": "is.environment", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "is.expression", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "is.environment",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "is.expression",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "is.factor", "type": "closure", "callable": true, "formals": ["x"] },
-        { "name": "is.finite", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "is.finite",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "is.finite.POSIXlt", "type": "closure", "callable": true, "formals": ["x"] },
-        { "name": "is.function", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "is.infinite", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "is.function",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "is.infinite",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "is.infinite.POSIXlt", "type": "closure", "callable": true, "formals": ["x"] },
-        { "name": "is.integer", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "is.language", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "is.list", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "is.integer",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "is.language",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "is.list",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         {
           "name": "is.loaded",
           "type": "closure",
           "callable": true,
           "formals": ["symbol", "PACKAGE", "type"]
         },
-        { "name": "is.logical", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "is.matrix", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "is.na", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "is.logical",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "is.matrix",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "is.na",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "is.na.POSIXlt", "type": "closure", "callable": true, "formals": ["x"] },
         { "name": "is.na.data.frame", "type": "closure", "callable": true, "formals": ["x"] },
         { "name": "is.na.numeric_version", "type": "closure", "callable": true, "formals": ["x"] },
@@ -2718,25 +3540,85 @@
           "callable": true,
           "formals": ["x", "value"]
         },
-        { "name": "is.name", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "is.nan", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "is.name",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "is.nan",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "is.nan.POSIXlt", "type": "closure", "callable": true, "formals": ["x"] },
-        { "name": "is.null", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "is.numeric", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "is.null",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "is.numeric",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "is.numeric.Date", "type": "closure", "callable": true, "formals": ["x"] },
         { "name": "is.numeric.POSIXt", "type": "closure", "callable": true, "formals": ["x"] },
         { "name": "is.numeric.difftime", "type": "closure", "callable": true, "formals": ["x"] },
         { "name": "is.numeric_version", "type": "closure", "callable": true, "formals": ["x"] },
-        { "name": "is.object", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "is.object",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "is.ordered", "type": "closure", "callable": true, "formals": ["x"] },
         { "name": "is.package_version", "type": "closure", "callable": true, "formals": ["x"] },
-        { "name": "is.pairlist", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "is.pairlist",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "is.primitive", "type": "closure", "callable": true, "formals": ["x"] },
         { "name": "is.qr", "type": "closure", "callable": true, "formals": ["x"] },
-        { "name": "is.raw", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "is.recursive", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "is.single", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "is.symbol", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "is.raw",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "is.recursive",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "is.single",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "is.symbol",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "is.table", "type": "closure", "callable": true, "formals": ["x"] },
         {
           "name": "is.unsorted",
@@ -2752,7 +3634,13 @@
         { "name": "isNamespaceLoaded", "type": "closure", "callable": true, "formals": ["name"] },
         { "name": "isOpen", "type": "closure", "callable": true, "formals": ["con", "rw"] },
         { "name": "isRestart", "type": "closure", "callable": true, "formals": ["x"] },
-        { "name": "isS4", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "isS4",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["object"],
+          "signature": "args"
+        },
         { "name": "isSeekable", "type": "closure", "callable": true, "formals": ["con"] },
         {
           "name": "isSymmetric",
@@ -2830,12 +3718,30 @@
           "callable": true,
           "formals": ["filebase", "fun", "filter"]
         },
-        { "name": "lazyLoadDBfetch", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "lazyLoadDBfetch",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["key", "file", "compressed", "hook"],
+          "signature": "args"
+        },
         { "name": "lbeta", "type": "closure", "callable": true, "formals": ["a", "b"] },
         { "name": "lchoose", "type": "closure", "callable": true, "formals": ["n", "k"] },
-        { "name": "length", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "length",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "length.POSIXlt", "type": "closure", "callable": true, "formals": ["x"] },
-        { "name": "length<-", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "length<-",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "value"],
+          "signature": "args"
+        },
         { "name": "length<-.Date", "type": "closure", "callable": true, "formals": ["x", "value"] },
         {
           "name": "length<-.POSIXct",
@@ -2865,7 +3771,13 @@
         { "name": "letters", "type": "character", "callable": false, "formals": [] },
         { "name": "levels", "type": "closure", "callable": true, "formals": ["x"] },
         { "name": "levels.default", "type": "closure", "callable": true, "formals": ["x"] },
-        { "name": "levels<-", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "levels<-",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "value"],
+          "signature": "args"
+        },
         {
           "name": "levels<-.factor",
           "type": "closure",
@@ -2873,7 +3785,13 @@
           "formals": ["x", "value"]
         },
         { "name": "lfactorial", "type": "closure", "callable": true, "formals": ["x"] },
-        { "name": "lgamma", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "lgamma",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "libcurlVersion", "type": "closure", "callable": true, "formals": [] },
         {
           "name": "library",
@@ -2909,7 +3827,13 @@
         },
         { "name": "licence", "type": "closure", "callable": true, "formals": [] },
         { "name": "license", "type": "closure", "callable": true, "formals": [] },
-        { "name": "list", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "list",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["..."],
+          "signature": "args"
+        },
         {
           "name": "list.dirs",
           "type": "closure",
@@ -2968,10 +3892,34 @@
           "callable": true,
           "formals": ["env", "bindings"]
         },
-        { "name": "log", "type": "special", "callable": true, "formals": [] },
-        { "name": "log10", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "log1p", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "log2", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "log",
+          "type": "special",
+          "callable": true,
+          "formals": ["x", "base"],
+          "signature": "args"
+        },
+        {
+          "name": "log10",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "log1p",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "log2",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "logb", "type": "closure", "callable": true, "formals": ["x", "base"] },
         { "name": "logical", "type": "closure", "callable": true, "formals": ["length"] },
         { "name": "lower.tri", "type": "closure", "callable": true, "formals": ["x", "diag"] },
@@ -3028,7 +3976,13 @@
           "callable": true,
           "formals": ["data", "nrow", "ncol", "byrow", "dimnames"]
         },
-        { "name": "max", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "max",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["...", "na.rm"],
+          "signature": "args"
+        },
         { "name": "max.col", "type": "closure", "callable": true, "formals": ["m", "ties.method"] },
         { "name": "mean", "type": "closure", "callable": true, "formals": ["x", "..."] },
         { "name": "mean.Date", "type": "closure", "callable": true, "formals": ["x", "..."] },
@@ -3096,8 +4050,20 @@
           "callable": true,
           "formals": ["x", "envir", "mode", "ifnotfound", "inherits", "pos"]
         },
-        { "name": "min", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "missing", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "min",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["...", "na.rm"],
+          "signature": "args"
+        },
+        {
+          "name": "missing",
+          "type": "special",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "mode", "type": "closure", "callable": true, "formals": ["x"] },
         { "name": "mode<-", "type": "closure", "callable": true, "formals": ["x", "value"] },
         { "name": "month.abb", "type": "character", "callable": false, "formals": [] },
@@ -3128,9 +4094,21 @@
         { "name": "mtfrm.default", "type": "closure", "callable": true, "formals": ["x"] },
         { "name": "nameOfClass", "type": "closure", "callable": true, "formals": ["x"] },
         { "name": "nameOfClass.default", "type": "closure", "callable": true, "formals": ["x"] },
-        { "name": "names", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "names",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "names.POSIXlt", "type": "closure", "callable": true, "formals": ["x"] },
-        { "name": "names<-", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "names<-",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "value"],
+          "signature": "args"
+        },
         {
           "name": "names<-.POSIXlt",
           "type": "closure",
@@ -3167,7 +4145,13 @@
           "callable": true,
           "formals": ["self", "ns", "vars", "from"]
         },
-        { "name": "nargs", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "nargs",
+          "type": "builtin",
+          "callable": true,
+          "formals": [],
+          "signature": "args"
+        },
         {
           "name": "nchar",
           "type": "closure",
@@ -3181,7 +4165,13 @@
           "callable": true,
           "formals": ["hash", "parent", "size"]
         },
-        { "name": "next", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "next",
+          "type": "special",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        },
         {
           "name": "ngettext",
           "type": "closure",
@@ -3208,16 +4198,40 @@
           "callable": true,
           "formals": ["x", "strict"]
         },
-        { "name": "nzchar", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "nzchar",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "keepNA"],
+          "signature": "args"
+        },
         {
           "name": "objects",
           "type": "closure",
           "callable": true,
           "formals": ["name", "pos", "envir", "all.names", "pattern", "sorted"]
         },
-        { "name": "oldClass", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "oldClass<-", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "on.exit", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "oldClass",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "oldClass<-",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "value"],
+          "signature": "args"
+        },
+        {
+          "name": "on.exit",
+          "type": "special",
+          "callable": true,
+          "formals": ["expr", "add", "after"],
+          "signature": "args"
+        },
         { "name": "open", "type": "closure", "callable": true, "formals": ["con", "..."] },
         {
           "name": "open.connection",
@@ -3348,7 +4362,13 @@
         { "name": "pmin", "type": "closure", "callable": true, "formals": ["...", "na.rm"] },
         { "name": "pmin.int", "type": "closure", "callable": true, "formals": ["...", "na.rm"] },
         { "name": "polyroot", "type": "closure", "callable": true, "formals": ["z"] },
-        { "name": "pos.to.env", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "pos.to.env",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "pretty", "type": "closure", "callable": true, "formals": ["x", "..."] },
         {
           "name": "pretty.default",
@@ -3571,8 +4591,20 @@
           "callable": true,
           "formals": ["x", "rowlab", "collab", "quote", "right", "na.print", "..."]
         },
-        { "name": "proc.time", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "prod", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "proc.time",
+          "type": "builtin",
+          "callable": true,
+          "formals": [],
+          "signature": "args"
+        },
+        {
+          "name": "prod",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["...", "na.rm"],
+          "signature": "args"
+        },
         { "name": "prop.table", "type": "closure", "callable": true, "formals": ["x", "margin"] },
         { "name": "proportions", "type": "closure", "callable": true, "formals": ["x", "margin"] },
         {
@@ -3635,8 +4667,20 @@
           "callable": true,
           "formals": ["save", "status", "runLast"]
         },
-        { "name": "quote", "type": "special", "callable": true, "formals": [] },
-        { "name": "range", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "quote",
+          "type": "special",
+          "callable": true,
+          "formals": ["expr"],
+          "signature": "args"
+        },
+        {
+          "name": "range",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["...", "na.rm"],
+          "signature": "args"
+        },
         {
           "name": "range.Date",
           "type": "closure",
@@ -3778,7 +4822,13 @@
           "formals": ["...", "list", "pos", "envir", "inherits"]
         },
         { "name": "removeTaskCallback", "type": "closure", "callable": true, "formals": ["id"] },
-        { "name": "rep", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "rep",
+          "type": "special",
+          "callable": true,
+          "formals": ["x", "..."],
+          "signature": "args"
+        },
         { "name": "rep.Date", "type": "closure", "callable": true, "formals": ["x", "..."] },
         { "name": "rep.POSIXct", "type": "closure", "callable": true, "formals": ["x", "..."] },
         { "name": "rep.POSIXlt", "type": "closure", "callable": true, "formals": ["x", "..."] },
@@ -3792,7 +4842,13 @@
           "formals": ["x", "..."]
         },
         { "name": "rep_len", "type": "closure", "callable": true, "formals": ["x", "length.out"] },
-        { "name": "repeat", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "repeat",
+          "type": "special",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        },
         {
           "name": "replace",
           "type": "closure",
@@ -3829,8 +4885,20 @@
         },
         { "name": "restartDescription", "type": "closure", "callable": true, "formals": ["r"] },
         { "name": "restartFormals", "type": "closure", "callable": true, "formals": ["r"] },
-        { "name": "retracemem", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "return", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "retracemem",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "previous"],
+          "signature": "args"
+        },
+        {
+          "name": "return",
+          "type": "special",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        },
         { "name": "returnValue", "type": "closure", "callable": true, "formals": ["default"] },
         { "name": "rev", "type": "closure", "callable": true, "formals": ["x"] },
         { "name": "rev.default", "type": "closure", "callable": true, "formals": ["x"] },
@@ -3841,7 +4909,13 @@
           "callable": true,
           "formals": ["...", "list", "pos", "envir", "inherits"]
         },
-        { "name": "round", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "round",
+          "type": "special",
+          "callable": true,
+          "formals": ["x", "digits", "..."],
+          "signature": "args"
+        },
         { "name": "round.Date", "type": "closure", "callable": true, "formals": ["x", "..."] },
         { "name": "round.POSIXt", "type": "closure", "callable": true, "formals": ["x", "units"] },
         { "name": "row", "type": "closure", "callable": true, "formals": ["x", "as.factor"] },
@@ -4015,9 +5089,27 @@
           "callable": true,
           "formals": ["from", "to", "by", "length.out", "along.with", "..."]
         },
-        { "name": "seq.int", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "seq_along", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "seq_len", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "seq.int",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["from", "to", "by", "length.out", "along.with", "..."],
+          "signature": "args"
+        },
+        {
+          "name": "seq_along",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["along.with"],
+          "signature": "args"
+        },
+        {
+          "name": "seq_len",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["length.out"],
+          "signature": "args"
+        },
         { "name": "sequence", "type": "closure", "callable": true, "formals": ["nvec", "..."] },
         {
           "name": "sequence.default",
@@ -4074,9 +5166,21 @@
         },
         { "name": "shell.exec", "type": "closure", "callable": true, "formals": ["file"] },
         { "name": "showConnections", "type": "closure", "callable": true, "formals": ["all"] },
-        { "name": "sign", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "sign",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "signalCondition", "type": "closure", "callable": true, "formals": ["cond"] },
-        { "name": "signif", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "signif",
+          "type": "special",
+          "callable": true,
+          "formals": ["x", "digits"],
+          "signature": "args"
+        },
         {
           "name": "simpleCondition",
           "type": "closure",
@@ -4107,9 +5211,21 @@
           "callable": true,
           "formals": ["x", "higher", "except"]
         },
-        { "name": "sin", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "sin",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "single", "type": "closure", "callable": true, "formals": ["length"] },
-        { "name": "sinh", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "sinh",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         {
           "name": "sink",
           "type": "closure",
@@ -4117,7 +5233,13 @@
           "formals": ["file", "append", "type", "split"]
         },
         { "name": "sink.number", "type": "closure", "callable": true, "formals": ["type"] },
-        { "name": "sinpi", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "sinpi",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "slice.index", "type": "closure", "callable": true, "formals": ["x", "MARGIN"] },
         {
           "name": "socketAccept",
@@ -4276,7 +5398,13 @@
           "formals": ["x", "f", "drop", "...", "value"]
         },
         { "name": "sprintf", "type": "closure", "callable": true, "formals": ["fmt", "..."] },
-        { "name": "sqrt", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "sqrt",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         {
           "name": "srcfile",
           "type": "closure",
@@ -4296,7 +5424,13 @@
           "formals": ["filename", "lines", "timestamp", "isFile"]
         },
         { "name": "srcref", "type": "closure", "callable": true, "formals": ["srcfile", "lloc"] },
-        { "name": "standardGeneric", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "standardGeneric",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["f", "fdef"],
+          "signature": "args"
+        },
         { "name": "startsWith", "type": "closure", "callable": true, "formals": ["x", "prefix"] },
         { "name": "stderr", "type": "closure", "callable": true, "formals": [] },
         { "name": "stdin", "type": "closure", "callable": true, "formals": [] },
@@ -4314,7 +5448,13 @@
           "formals": ["...", "exprs", "exprObject", "local"]
         },
         { "name": "storage.mode", "type": "closure", "callable": true, "formals": ["x"] },
-        { "name": "storage.mode<-", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "storage.mode<-",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "value"],
+          "signature": "args"
+        },
         { "name": "str2expression", "type": "closure", "callable": true, "formals": ["text"] },
         { "name": "str2lang", "type": "closure", "callable": true, "formals": ["s"] },
         {
@@ -4370,7 +5510,13 @@
           "callable": true,
           "formals": ["x", "subset", "select", "drop", "..."]
         },
-        { "name": "substitute", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "substitute",
+          "type": "special",
+          "callable": true,
+          "formals": ["expr", "env"],
+          "signature": "args"
+        },
         {
           "name": "substr",
           "type": "closure",
@@ -4395,7 +5541,13 @@
           "callable": true,
           "formals": ["text", "first", "last", "value"]
         },
-        { "name": "sum", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "sum",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["...", "na.rm"],
+          "signature": "args"
+        },
         { "name": "summary", "type": "closure", "callable": true, "formals": ["object", "..."] },
         {
           "name": "summary.Date",
@@ -4512,7 +5664,13 @@
           "callable": true,
           "formals": ["x", "MARGIN", "STATS", "FUN", "check.margin", "..."]
         },
-        { "name": "switch", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "switch",
+          "type": "special",
+          "callable": true,
+          "formals": ["EXPR", "..."],
+          "signature": "args"
+        },
         { "name": "sys.call", "type": "closure", "callable": true, "formals": ["which"] },
         { "name": "sys.calls", "type": "closure", "callable": true, "formals": [] },
         { "name": "sys.frame", "type": "closure", "callable": true, "formals": ["which"] },
@@ -4595,9 +5753,27 @@
           "formals": ["...", "exclude", "useNA", "dnn", "deparse.level"]
         },
         { "name": "tabulate", "type": "closure", "callable": true, "formals": ["bin", "nbins"] },
-        { "name": "tan", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "tanh", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "tanpi", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "tan",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "tanh",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "tanpi",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         {
           "name": "tapply",
           "type": "closure",
@@ -4610,7 +5786,13 @@
           "callable": true,
           "formals": ["handlers", "registered", "verbose"]
         },
-        { "name": "tcrossprod", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "tcrossprod",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "y", "..."],
+          "signature": "args"
+        },
         { "name": "tempdir", "type": "closure", "callable": true, "formals": ["check"] },
         {
           "name": "tempfile",
@@ -4647,7 +5829,13 @@
           "formals": ["what", "tracer", "exit", "at", "print", "signature", "where", "edit"]
         },
         { "name": "traceback", "type": "closure", "callable": true, "formals": ["x", "max.lines"] },
-        { "name": "tracemem", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "tracemem",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "tracingState", "type": "closure", "callable": true, "formals": ["on"] },
         { "name": "transform", "type": "closure", "callable": true, "formals": ["_data", "..."] },
         {
@@ -4662,14 +5850,26 @@
           "callable": true,
           "formals": ["_data", "..."]
         },
-        { "name": "trigamma", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "trigamma",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         {
           "name": "trimws",
           "type": "closure",
           "callable": true,
           "formals": ["x", "which", "whitespace"]
         },
-        { "name": "trunc", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "trunc",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x", "..."],
+          "signature": "args"
+        },
         {
           "name": "trunc.Date",
           "type": "closure",
@@ -4708,8 +5908,20 @@
           "formals": ["r", "..."]
         },
         { "name": "typeof", "type": "closure", "callable": true, "formals": ["x"] },
-        { "name": "unCfillPOSIXlt", "type": "builtin", "callable": true, "formals": [] },
-        { "name": "unclass", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "unCfillPOSIXlt",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
+        {
+          "name": "unclass",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "undebug", "type": "closure", "callable": true, "formals": ["fun", "signature"] },
         { "name": "union", "type": "closure", "callable": true, "formals": ["x", "y"] },
         {
@@ -4803,7 +6015,13 @@
           "callable": true,
           "formals": ["what", "signature", "where"]
         },
-        { "name": "untracemem", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "untracemem",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         {
           "name": "unz",
           "type": "closure",
@@ -4868,7 +6086,13 @@
         },
         { "name": "which.max", "type": "closure", "callable": true, "formals": ["x"] },
         { "name": "which.min", "type": "closure", "callable": true, "formals": ["x"] },
-        { "name": "while", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "while",
+          "type": "special",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        },
         { "name": "with", "type": "closure", "callable": true, "formals": ["data", "expr", "..."] },
         {
           "name": "with.default",
@@ -4956,7 +6180,13 @@
           "callable": true,
           "formals": ["x", "old.rows", "new.rows"]
         },
-        { "name": "xtfrm", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "xtfrm",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["x"],
+          "signature": "args"
+        },
         { "name": "xtfrm.AsIs", "type": "closure", "callable": true, "formals": ["x"] },
         { "name": "xtfrm.Date", "type": "closure", "callable": true, "formals": ["x"] },
         { "name": "xtfrm.POSIXct", "type": "closure", "callable": true, "formals": ["x"] },
@@ -4984,12 +6214,36 @@
           "callable": true,
           "formals": ["description", "open", "encoding", "compression"]
         },
-        { "name": "{", "type": "special", "callable": true, "formals": [] },
-        { "name": "|", "type": "builtin", "callable": true, "formals": [] },
+        {
+          "name": "{",
+          "type": "special",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        },
+        {
+          "name": "|",
+          "type": "builtin",
+          "callable": true,
+          "formals": ["e1", "e2"],
+          "signature": "args"
+        },
         { "name": "|.hexmode", "type": "closure", "callable": true, "formals": ["a", "b"] },
         { "name": "|.octmode", "type": "closure", "callable": true, "formals": ["a", "b"] },
-        { "name": "||", "type": "special", "callable": true, "formals": [] },
-        { "name": "~", "type": "special", "callable": true, "formals": [] }
+        {
+          "name": "||",
+          "type": "special",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        },
+        {
+          "name": "~",
+          "type": "special",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        }
       ]
     },
     {
@@ -7765,7 +9019,13 @@
           ]
         },
         { "name": "Ops", "type": "closure", "callable": true, "formals": ["e1", "e2"] },
-        { "name": "Quote", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "Quote",
+          "type": "special",
+          "callable": true,
+          "formals": ["expr"],
+          "signature": "args"
+        },
         { "name": "S3Class", "type": "closure", "callable": true, "formals": ["object"] },
         {
           "name": "S3Class<-",
@@ -7961,7 +9221,13 @@
           "formals": ["f", "file", "signature", "methods", "where"]
         },
         { "name": "el", "type": "closure", "callable": true, "formals": ["object", "where"] },
-        { "name": "el<-", "type": "special", "callable": true, "formals": [] },
+        {
+          "name": "el<-",
+          "type": "special",
+          "callable": true,
+          "formals": null,
+          "signature": "unknown"
+        },
         {
           "name": "elNamed",
           "type": "closure",

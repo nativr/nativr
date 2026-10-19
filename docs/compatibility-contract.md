@@ -1856,8 +1856,9 @@ Numeric inputs use numeric rather than lexical level ordering, missing values re
 are retained, and matrix dimensions are dropped. `as.ordered` runs generics' measured
 `as.ordered(letters[1:5])` path using the installed lowercase base constant, adds the ordered/factor
 class pair, returns already ordered factors unchanged, drops unused ordinary-factor levels,
-preserves names, and performs S3 lookup with lazy dots before the default. Recursive list/expression
-coercion, locale-specific character ordering, and the wider factor method surface are not claimed.
+preserves names, and converts without S3 dispatch. Both base coercions accept only `x`; extra
+arguments are rejected. Recursive list/expression coercion, locale-specific character ordering, and
+the wider factor method surface are not claimed.
 
 `as.array` supplies the S3 extension point used by rstan's measured `stanfit` documentation calls;
 NativR does not implement or imitate rstan's package-owned method or objects. Custom methods receive
@@ -3887,3 +3888,31 @@ Known boundaries:
 - `tests/BWeg.R` and `tests/CSD.R` are not repeatable on the native oracle. BWeg prints
   `Sys.info()`, and CSD prints `system.time()`; CSD also takes about 25 times longer in NativR.
 - Dividing (1e308+1e308i) by (1e-308+1e-308i) gives `Inf+NaNi` in GNU R but `Inf+0i` in NativR.
+
+### Embedded call values and factor coercion (profile 0.356)
+
+Calls constructed with `call`, `as.call`, `do.call` and unquoting retain computed closure, builtin
+and environment objects. Closure capture, attributes and reference identity are preserved rather
+than reconstructing a function by evaluating its display syntax. Owned closure values deparse with
+value-style formals, body line breaks and attributes; embedded primitives render as `.Primitive`.
+This does not establish complete reflection for NativR builtins that correspond to GNU closures.
+
+`as.call` preserves the head of a list or expression vector without converting character values to
+symbols. Empty, missing and multi-element character vectors, NULL and other non-callable heads can
+be stored and extracted; evaluating them fails before forcing arguments. `call` still takes a
+function name. Call display does not imply that parsing the display recreates object identity.
+
+`as.factor` and `as.ordered` expose one formal, `x`. Base `as.ordered` does not perform S3 dispatch;
+a package generic whose default delegates to it no longer re-enters that generic. Extra arguments
+are rejected. Existing factor levels, names and ordered-factor identity retain their separately
+documented conversion behavior.
+
+Independent foundation and recursive Oracle v2 cases cover object identity/capture, arbitrary call
+heads, owned closure/primitive display, deferred exit callbacks and generic-to-base factor coercion.
+Resource-bounded embedded-value display tests remain required.
+
+Package-check dependency policy v3 observes Suggests and Enhances without requiring their presence
+under `_R_CHECK_FORCE_SUGGESTS_=false`; actual use by examples or tests can still fail those stages.
+The core signature inventory distinguishes unknown primitive signatures from empty signatures; S3
+checks with an unknown signature stay unexecuted. Native fixture parity and the precise rules are
+specified in RFC-0008. Neither change alone establishes P7.

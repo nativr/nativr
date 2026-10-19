@@ -6,6 +6,7 @@ playwright-report/
 test-results/
 .vite/
 .pnpm-store/
+.tmp/
 pnpm-lock.yaml
 packages/parser/assets/
 packages/nativr/src/assets/

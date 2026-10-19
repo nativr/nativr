@@ -24,6 +24,7 @@ const extensions = new Set([
 const ignoredDirectoryNames = new Set([
   ".git",
   ".pnpm-store",
+  ".tmp",
   ".vite",
   "coverage",
   "dist",

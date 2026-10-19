@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.355.0",
-  "capabilityManifestHash": "a9e4b31b07262dac2a07279928facba06ec3f5b06d446dbb92fee28550eb6b65",
+  "semanticProfileVersion": "0.356.0",
+  "capabilityManifestHash": "5577dd1563fbe05b53a2a9f448f0773899e5ed6c71546935d9ff2b4a0dc580e6",
   "evidence": {
-    "checkedInConformanceCases": 1229,
-    "liveREligibleCases": 1159,
+    "checkedInConformanceCases": 1235,
+    "liveREligibleCases": 1166,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 127,
-    "recursiveBehaviorallyProvenBindings": 77,
+    "recursiveOracleV2Cases": 133,
+    "recursiveBehaviorallyProvenBindings": 79,
     "recursiveBindingEvidence": [
       {
         "binding": "base::all.equal",
@@ -21,19 +21,31 @@
           "all-equal-numeric-scaling-and-count-equal"
         ]
       },
-      { "binding": "base::as.call", "cases": ["embedded-attributed-call-values"] },
+      {
+        "binding": "base::as.call",
+        "cases": [
+          "call-head-constant-storage",
+          "embedded-attributed-call-values",
+          "embedded-call-reference-identity"
+        ]
+      },
+      { "binding": "base::as.factor", "cases": ["factor-coercion-nondispatch-and-signatures"] },
       { "binding": "base::as.integer", "cases": ["simplification-lengths-and-integer-coercion"] },
       { "binding": "base::as.list", "cases": ["apply-class-conversion-and-extraction"] },
       { "binding": "base::as.list.Date", "cases": ["time-class-list-conversion"] },
       { "binding": "base::as.list.difftime", "cases": ["time-class-list-conversion"] },
       { "binding": "base::as.list.factor", "cases": ["factor-list-conversion-and-dispatch"] },
       { "binding": "base::as.list.POSIXct", "cases": ["time-class-list-conversion"] },
+      { "binding": "base::as.ordered", "cases": ["factor-coercion-nondispatch-and-signatures"] },
       { "binding": "base::attr", "cases": ["partial-attribute-lookup-and-time-forcing"] },
       {
         "binding": "base::c",
         "cases": ["combine-first-argument-s3-dispatch", "combine-next-method-primitive-fallback"]
       },
-      { "binding": "base::call", "cases": ["embedded-attributed-call-values"] },
+      {
+        "binding": "base::call",
+        "cases": ["embedded-attributed-call-values", "embedded-call-reference-identity"]
+      },
       { "binding": "base::cat", "cases": ["cat-numeric-stream-file-and-visibility"] },
       { "binding": "base::computeRestarts", "cases": ["calling-handlers-and-restarts"] },
       {
@@ -53,7 +65,9 @@
         "cases": [
           "attributed-replacement-condition",
           "closure-rendering-preserves-recursive-language",
-          "embedded-attributed-call-values"
+          "embedded-attributed-call-values",
+          "embedded-closure-attribute-rendering",
+          "embedded-function-value-rendering"
         ]
       },
       { "binding": "base::detach", "cases": ["detach-invalid-name"] },
@@ -63,7 +77,8 @@
           "apply-class-conversion-and-extraction",
           "apply-single-conversion-and-name-length",
           "do-call-controls-and-forcing",
-          "do-call-language-arguments"
+          "do-call-language-arguments",
+          "embedded-exit-callback"
         ]
       },
       { "binding": "base::factor", "cases": ["recursive-data-frame-object"] },
@@ -271,16 +286,16 @@
   "packageCorpus": {
     "total": 25,
     "partitions": { "development": 2, "regression": 22, "holdout": 1 },
-    "statuses": { "passing": 20, "blocked": 4, "unevaluated": 1 },
+    "statuses": { "passing": 2, "blocked": 22, "unevaluated": 1 },
     "completedAtLeast": {
       "P0": 25,
       "P1": 24,
       "P2": 24,
       "P3": 24,
       "P4": 23,
-      "P5": 5,
-      "P6": 2,
-      "P7": 1
+      "P5": 11,
+      "P6": 3,
+      "P7": 2
     }
   }
 }

@@ -44,10 +44,14 @@ for (const line of result.stdout.split(/\r?\n/u)) {
     name: decode(fields[2] ?? ""),
     type: fields[3] ?? "unknown",
     callable: fields[4] === "1",
+    // A primitive without an args() signature has no statically known formals.
     formals:
-      fields[5] === undefined || fields[5] === ""
-        ? []
-        : fields[5].split(",").map((field) => decode(field)),
+      fields[6] === "unknown"
+        ? null
+        : fields[5] === undefined || fields[5] === ""
+          ? []
+          : fields[5].split(",").map((field) => decode(field)),
+    ...(fields[6] === "args" || fields[6] === "unknown" ? { signature: fields[6] } : {}),
   });
 }
 
