@@ -4043,3 +4043,29 @@ attributes, code/level masks, reconstructed values, grouping results and causal 
 This does not establish complete factor, table or model behavior. In particular, `summary.factor`,
 `levels<-`, direct `c.factor`, mixed-class concatenation, general table controls, malformed objects,
 all class-specific coercions and full model-frame behavior remain unfinished.
+
+### Argument matching and missing defaults (profile 0.363)
+
+Closures, builtins using named matching, and match.call reconstruction share one bounded matcher.
+Exact matching precedes partial matching in formal order; exact matches exclude those formals from
+later partial matching. Only formals preceding ellipsis accept partial or positional matching.
+Unused diagnostics retain all unmatched expressions in actual order without evaluating them,
+including missing arguments, nonsyntactic names, blocks and owned function expressions. Duplicate
+and ambiguous diagnostics identify the observed formal name or actual position.
+
+Explicit missing actuals select closure defaults, remain missing to missing(), and evaluate the
+default at most once. Forwarded references remain deferred; a referenced default does not make the
+receiving argument missing. Missing promises retain their originating formal name. match.call omits
+empty ordinary formal actuals. person uses its NULL defaults for empty named or positional slots.
+Argument diagnostic conditions retain their known originating calls in process without adding
+runtime objects to wire diagnostics. Forwarded missing arguments identify their active originating
+frame; escaped missing bindings use the current active caller. Stored empty call arguments are
+exposed as empty symbols, and rebuilding them through as.list/as.call preserves the missing argument
+and its default-selection behavior.
+
+The sqrt/abs primitive path evaluates arguments in actual order before checking arity and names;
+empty actuals and name mismatches have independent observed diagnostics. This differs from lazy
+closure argument matching. Foundation and recursive cases cover results, conditions, calls,
+visibility and side effects, with causal binding controls. These cases do not establish complete
+argument semantics for every builtin: warnPartialMatchArgs, further primitive families, forwarded
+dots missingness, long diagnostic formatting and broader condition-call origins remain open.

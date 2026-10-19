@@ -304,7 +304,7 @@ All 24 pinned cached development/regression archives have repeatability observat
 untouched. No substituted dependency closure or testing runner received P6/P7 credit. No downloads,
 push or publication occurred. Linux and full browser/OS validation remain open.
 
-### Immediate continuation after profile 0.362
+### Continuation recorded at profile 0.362 (superseded below)
 
 Continue the shared argument-matching diagnostics next: unused, duplicate, partial and missing
 arguments across closures and builtins, including the confirmed person() explicit missing-slot case.
@@ -336,3 +336,48 @@ Owned scratch probes remain under .tmp/factor-na-*.R and .tmp/factor-table-probe
 retained subset is in factor-na.test.ts and the foundation/Oracle v2 cases. local/on.exit,
 reflection, S4, datasets, the separate testing runner, all-domain inventory, performance, CI and the
 platform gates remain required work. All thirteen domains remain incomplete.
+
+### Profile 0.363 verification (2026-10-19)
+
+One bounded matcher now serves closures, named builtin matching and match.call reconstruction. This
+increment corrects formal-order duplicate/ambiguity diagnostics, exact-before-partial matching,
+unused expression rendering, explicit missing defaults, forwarded default missingness, missing
+argument names and condition calls. person accepts empty slots using its NULL defaults. The sqrt/abs
+primitive path preserves eager actual-order evaluation before arity/name validation.
+
+Forty-seven owned behavioral regressions pass in NativR and directly under GNU R 4.6.1; a separate
+resource-limit regression covers cancellation and bounded matching. The full check passes 1458 tests
+with 93 opt-in skips. The new checkpoint integrity case also passes in the separate ten-test
+checkpoint run. Checked-in/live/recursive conformance passes 1,245 / 1,176 / 143 cases, with 88
+linked behavioral bindings. The primitive observations do not promote sqrt/abs from numeric to
+behavioral evidence. Fixed budgets pass: client 17.5/150 KiB gzip, Worker 468.8/512 KiB gzip, parser
+671.9/1,536 KiB raw and elementary 311.2/384 KiB raw.
+
+All 24 pinned cached development/regression archives were rechecked, with applicable oracle
+repeatability recorded in the
+[0.363 checkpoint](../compatibility/package-check-evidence/corpus-0.363.0.json). Metadata/dependency
+checks now pass for generics, withr, assertthat and evaluate. Package tiers and comparison match
+counts are unchanged. Formula remains untouched. Original package entrypoints were used; no
+substitute runner received P6/P7 credit. No Worker/playground or packaging interface changed, so e2e
+and pack smoke were not refreshed. Linux and the complete browser/OS matrix remain open. No
+downloads, pushes or publication occurred.
+
+### Immediate continuation after profile 0.363
+
+Continue argument semantics with warnPartialMatchArgs and the remaining primitive families before
+reflection. An owned GNU R probe confirms that partial warnings follow formal order, carry the
+original call, and precede a later duplicate or ambiguity error. For f(alpha,beta), f(be=2,al=1)
+warns about al/alpha before be/beta. For f(alpha,alpine), f(al=1) warns about al/alpha before the
+ambiguity error. Exact-reserved formals generate no partial warning. match.call uses its internal
+observable call as warning metadata. The probe is .tmp/partial-argument-warnings-next.R; it contains
+only independently authored functions and no implementation bodies. Preserve warning muffling,
+warn=2 conversion and evaluation order when extending the shared matcher.
+
+Other open argument work: primitive-specific forcing/arity outside sqrt/abs, forwarded dots
+missingness, optional builtin defaults beyond person and the already covered factor paths, long
+unused-diagnostic layouts, and condition-call origins beyond the covered argument errors.
+
+Then resume callable reflection and the reproduced corpus blockers. The profile 0.362 factor
+follow-ups remain open, as do independent datasets, isolated testthat support, the complete callable
+and thirteen-domain inventory, performance/CI/release work, and the separately authorized Linux and
+holdout gates. No full compatibility percentage or completion date is established.

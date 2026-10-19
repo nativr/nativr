@@ -1,6 +1,6 @@
 # Release readiness
 
-Last assessed 2026-10-19 at verified semantic profile **0.362.0**. Canonical counts are generated in
+Last assessed 2026-10-19 at verified semantic profile **0.363.0**. Canonical counts are generated in
 [compatibility/status.json](../compatibility/status.json). The full compatibility target remains the
 five completion criteria in [gnu-r-compatibility.md](gnu-r-compatibility.md).
 
@@ -13,12 +13,12 @@ compatibility claim follows from this preview.
 
 | Gate                               | Latest evidence                                                                                                                                      | Status                    |
 | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| Production check                   | Profile 0.362: 1,410 unit tests pass, 93 opt-in tests skipped; build, boundaries, production types and bundle audit pass                             | Passed                    |
-| Conformance                        | 1,241 checked-in, 1,172 live GNU R 4.6.1, 139 recursive cases; 87 bindings linked with causal controls                                               | Passed                    |
+| Production check                   | Profile 0.363: 1,458 unit tests pass, 93 opt-in tests skipped; build, boundaries, production types and bundle audit pass                             | Passed                    |
+| Conformance                        | 1,245 checked-in, 1,176 live GNU R 4.6.1, 143 recursive cases; 88 bindings linked with causal controls                                               | Passed                    |
 | Native metadata/signature fixtures | 71 owned Rd/S4 tests pass at 0.360, including native severity, signature and method fixtures                                                         | Passed                    |
 | Browser e2e                        | Historical 6/6 pass reported at 0.353; WebKit also exceeded the 120 s required-example budget in later runs (R14). Not refreshed in these increments | Open                      |
 | Packed consumer                    | Historical pack smoke pass; not refreshed in these increments                                                                                        | Revalidate before release |
-| Fixed bundle limits                | Client 17.5/150 KiB gzip; Worker 468.6/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                                 | Passed                    |
+| Fixed bundle limits                | Client 17.5/150 KiB gzip; Worker 468.8/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                                 | Passed                    |
 | CI and publication                 | Local work only; no pushed CI result for this increment; publication/bootstrap remains a maintainer action                                           | Open                      |
 
 **Readiness:** release verification is incomplete. Browser timing, the declared OS matrix, CI and
@@ -30,7 +30,7 @@ publication.
 | Criterion                                        | Current evidence                                                                                                                                                                                                                                   | Status                  |
 | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
 | Domain evidence                                  | All **13** required domains remain incomplete; behavioral matrices need closure                                                                                                                                                                    | Not met                 |
-| Callable evidence/exclusions                     | 745/2,522 distinct names overlap; 87 bindings have specific recursive links. Name overlap is inventory, not a completion percentage                                                                                                                | Not met                 |
+| Callable evidence/exclusions                     | 745/2,522 distinct names overlap; 88 bindings have specific recursive links. Name overlap is inventory, not a completion percentage                                                                                                                | Not met                 |
 | Broad corpus evidence                            | 25 pins: 2 P7, 1 P6, 8 P5, 12 P4, 1 P3 and the unevaluated P0 holdout. Higher-tier blockers are explicit                                                                                                                                           | Not met                 |
 | Platform verification                            | Correctly rounded elementary Wasm is shipped and used in sessions, including complex functions since 0.355. Windows oracle evidence remains advisory pending the separately authorized RFC-0007 Linux gate; browser/OS coverage remains incomplete | Not met                 |
 | Agreement among ledger, capabilities and reports | Generated checks and this checkpoint agree. Future changes must regenerate capabilities, coverage and status in order                                                                                                                              | Met for this checkpoint |
@@ -56,7 +56,7 @@ being adopted as a release gate.
 
 All 24 development/regression archives matched their pinned hashes and were attempted with the
 original package entrypoints, explicit RNG initialization and native repeatability observations. The
-[checkpoint](../compatibility/package-check-evidence/corpus-0.362.0.json) links all 24 redacted
+[checkpoint](../compatibility/package-check-evidence/corpus-0.363.0.json) links all 24 redacted
 reports with no checker aborts. Summaries contain allowlisted metadata, digests, capture statuses
 and counts; source, output and diagnostic strings are omitted. Formula was untouched.
 
@@ -76,6 +76,31 @@ credit merely because a guarded test entrypoint completes while testthat is unav
 tests are unverified. No substitute testing runner was used.
 
 ## Verification details and remaining defects
+
+### Profile 0.363 verification (2026-10-19)
+
+One bounded matcher now serves closures, named builtin matching and match.call reconstruction. This
+increment corrects formal-order duplicate/ambiguity diagnostics, exact-before-partial matching,
+unused expression rendering, explicit missing defaults, forwarded default missingness, missing
+argument names and condition calls. person accepts empty slots using its NULL defaults. The sqrt/abs
+primitive path preserves eager actual-order evaluation before arity/name validation.
+
+Forty-seven owned behavioral regressions pass in NativR and directly under GNU R 4.6.1; a separate
+resource-limit regression covers cancellation and bounded matching. The full check passes 1458 tests
+with 93 opt-in skips. The subsequently added 0.363 checkpoint integrity test also passes.
+Checked-in/live/recursive conformance passes 1,245 / 1,176 / 143 cases, with 88 linked behavioral
+bindings. The primitive observations do not promote sqrt/abs from numeric to behavioral evidence.
+Fixed budgets pass: client 17.5/150 KiB gzip, Worker 468.8/512 KiB gzip, parser 671.9/1,536 KiB raw
+and elementary 311.2/384 KiB raw.
+
+All 24 pinned cached development/regression archives were rechecked, with applicable oracle
+repeatability recorded in the
+[0.363 checkpoint](../compatibility/package-check-evidence/corpus-0.363.0.json). Metadata/dependency
+checks now pass for generics, withr, assertthat and evaluate. Package tiers and comparison match
+counts are unchanged. Formula remains untouched. Original package entrypoints were used; no
+substitute runner received P6/P7 credit. No Worker/playground or packaging interface changed, so e2e
+and pack smoke were not refreshed. Linux and the complete browser/OS matrix remain open. No
+downloads, pushes or publication occurred.
 
 ### Profile 0.362 missing factor levels and addNA
 

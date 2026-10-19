@@ -104,12 +104,13 @@ export function createPromise(
 }
 
 /** Construct an omitted argument with no default expression. */
-export function createMissingPromise(environment: REnvironment): RPromise {
+export function createMissingPromise(environment: REnvironment, name?: string): RPromise {
   return {
     type: "promise",
     expression: null,
     environment,
     missing: true,
+    ...(name === undefined ? {} : { missingName: name }),
     state: "unforced",
     value: undefined,
   };
@@ -144,7 +145,7 @@ export async function forcePromise(
     throw new REvaluationError("NRE2010", "Promise is already under evaluation.");
   }
   if (promise.expression === null) {
-    throw new REvaluationError("NRE2006", "Argument is missing, with no default.");
+    throw new REvaluationError("NRE2006", missingArgumentMessage(promise));
   }
 
   promise.state = "forcing";
@@ -157,4 +158,9 @@ export async function forcePromise(
     promise.state = "unforced";
     throw error;
   }
+}
+
+/** Render the name at the missing promise's origin without forcing forwarded arguments. */
+export function missingArgumentMessage(promise: RPromise): string {
+  return `argument${promise.missingName === undefined ? "" : ` "${promise.missingName}"`} is missing, with no default`;
 }

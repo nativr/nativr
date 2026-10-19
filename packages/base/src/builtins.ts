@@ -5907,7 +5907,7 @@ async function dispatchOperatorS3(
 }
 
 async function builtinPerson(invocation: BuiltinInvocation): Promise<RValue> {
-  return createPerson(await matchExact(invocation, PERSON_ARGUMENTS), invocation, (value) =>
+  return createPerson(await matchExact(invocation, PERSON_ARGUMENTS, true), invocation, (value) =>
     coerceAtomicToCharacter(value, invocation),
   );
 }
@@ -16061,7 +16061,11 @@ function validateConditionDomain(value: RValue | undefined): void {
 
 function conditionValue(error: NativRError): RList {
   if (error instanceof RSignalledConditionError) return error.condition;
-  return withClasses(listValue([characterVector([error.message]), R_NULL], ["message", "call"]), [
+  const call: RValue =
+    error.conditionCall === undefined
+      ? R_NULL
+      : { type: "language", expression: error.conditionCall };
+  return withClasses(listValue([characterVector([error.message]), call], ["message", "call"]), [
     "simpleError",
     "error",
     "condition",
@@ -18827,7 +18831,9 @@ function quoteAst(node: AstNode): RValue {
     case "UnsupportedExpression":
       return node.feature === "dots"
         ? ({ type: "symbol", name: "..." } satisfies RSymbol)
-        : ({ type: "language", expression: node } satisfies RLanguage);
+        : node.feature === "missing argument"
+          ? ({ type: "symbol", name: "" } satisfies RSymbol)
+          : ({ type: "language", expression: node } satisfies RLanguage);
     default:
       return { type: "language", expression: node } satisfies RLanguage;
   }
@@ -18902,7 +18908,7 @@ function valueToAst(value: RValue, checkWork?: () => void, depth = 0): AstNode {
   }
   checkWork?.();
   if (value.type === "symbol") {
-    return { kind: "Identifier", name: value.name, span: SYNTHETIC_SPAN };
+    return embeddedValueAst(value, checkWork);
   }
   if (value.type === "language") return value.expression;
   if (value.type === "expression") {
@@ -19151,16 +19157,21 @@ async function forceSwitchAlternative(
   return R_NULL;
 }
 
-function isMissingArgumentBinding(binding: RBinding, visited: Set<RBinding>): boolean {
+function isMissingArgumentBinding(
+  binding: RBinding,
+  visited: Set<RBinding>,
+  forwarded = false,
+): boolean {
   if (binding.type === "dots") return binding.arguments.length === 0;
   if (binding.type !== "promise") return false;
-  if (binding.missing) return true;
+  if (binding.missing) return !forwarded || binding.expression === null;
+  if (binding.state === "forced") return false;
   if (visited.has(binding)) return false;
   visited.add(binding);
   const expression = binding.expression;
   if (expression?.kind !== "Identifier") return false;
-  const forwarded = lookupBinding(binding.environment, expression.name);
-  return forwarded === undefined ? false : isMissingArgumentBinding(forwarded, visited);
+  const target = lookupBinding(binding.environment, expression.name);
+  return target === undefined ? false : isMissingArgumentBinding(target, visited, true);
 }
 
 function combinedNames(
@@ -22883,8 +22894,25 @@ async function builtinMath(
   invocation: BuiltinInvocation,
   operation: "sqrt" | "abs",
 ): Promise<RValue> {
-  const matched = await matchExact(invocation, ["x"]);
-  const input = requireNumeric(required(matched, "x", operation), operation);
+  const values: RValue[] = [];
+  for (const [index, argument] of invocation.arguments.entries()) {
+    if (argument.promise.expression === null && argument.promise.missing) {
+      throw new REvaluationError("NRE2103", `argument ${index + 1} is empty`);
+    }
+    values.push(await invocation.force(argument.promise));
+  }
+  const value = values[0];
+  if (values.length !== 1 || value === undefined) {
+    throw new REvaluationError(
+      "NRE2101",
+      `${values.length} arguments passed to '${operation}' which requires 1`,
+    );
+  }
+  const name = invocation.arguments[0]?.name;
+  if (name !== undefined && name !== "" && name !== "x") {
+    throw new REvaluationError("NRE2101", `supplied argument name '${name}' does not match 'x'`);
+  }
+  const input = requireNumeric(value, operation);
   invocation.context.allocate(input.length);
   if (input.type === "complex") {
     if (operation === "abs") {
@@ -57812,10 +57840,15 @@ function integerSequence(invocation: BuiltinInvocation, length: number): RIntege
 async function matchExact(
   invocation: BuiltinInvocation,
   parameterNames: readonly string[],
+  allHaveDefaults = false,
 ): Promise<Map<string, RValue>> {
   const matchedArguments = matchLazyArguments(invocation, parameterNames);
   const matched = new Map<string, RValue>();
   for (const [name, argument] of matchedArguments) {
+    if (argument.promise.missing && argument.promise.expression === null) {
+      if (allHaveDefaults) continue;
+      throw new REvaluationError("NRE2103", `argument "${name}" is missing, with no default`);
+    }
     matched.set(name, await invocation.force(argument.promise));
   }
   return matched;
@@ -57850,10 +57883,10 @@ async function forceAll(invocation: BuiltinInvocation): Promise<readonly RValue[
   return values;
 }
 
-function required(values: ReadonlyMap<string, RValue>, name: string, call: string): RValue {
+function required(values: ReadonlyMap<string, RValue>, name: string, _call: string): RValue {
   const value = values.get(name);
   if (value === undefined) {
-    throw new REvaluationError("NRE2103", `Argument '${name}' is missing in ${call}().`);
+    throw new REvaluationError("NRE2103", `argument "${name}" is missing, with no default`);
   }
   return value;
 }

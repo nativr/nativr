@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { expect, it } from "vitest";
 import { redactPackageCheck } from "../../../scripts/lib/package-check-summary.mjs";
 
-it.each(["0.356.0", "0.357.0", "0.358.0", "0.359.0", "0.360.0", "0.361.0", "0.362.0"])(
+it.each(["0.356.0", "0.357.0", "0.358.0", "0.359.0", "0.360.0", "0.361.0", "0.362.0", "0.363.0"])(
   "pins checkpoint %s without evaluating the holdout",
   async (profile) => {
     const read = async (path: string) =>

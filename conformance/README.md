@@ -30,6 +30,13 @@ inside the active replacement frame. GNU R can embed opaque promises in escaped 
 the observer rejects those values explicitly rather than deparsing them. The v2 runner checks this
 rejection against the normative oracle before running the comparison suite.
 
+Argument-matching cases independently pin exact/partial/positional precedence, formal-order
+diagnostics, unused expression rendering, empty actuals and default promise behavior. Recursive
+cases retain matched calls, condition calls, missingness, side effects and person metadata.
+`sqrt`/`abs` argument observations remain numeric evidence; they do not promote either binding to
+behavioral coverage. Execution-limit regressions exercise the shared matcher without forcing its
+arguments. Partial-match warnings and remaining primitive families still need separate evidence.
+
 Closure-rendering cases retain complete formals/body language graphs together with their rendered
 line vectors. A separate case pins stdout for a named closure environment and attributes, including
 the invisible return from `print()`. The causal links for `base::deparse` and `base::print`

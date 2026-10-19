@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.362.0",
-  "capabilityManifestHash": "2ae9b7e7b3362459a73c80a0f60056fceead440f60ddb390eff5dd0db39a33f9",
+  "semanticProfileVersion": "0.363.0",
+  "capabilityManifestHash": "042864ee98d01d02a2edfce427d21ad023fbcb7a6e09ee87139ecbb3213273cf",
   "evidence": {
-    "checkedInConformanceCases": 1241,
-    "liveREligibleCases": 1172,
+    "checkedInConformanceCases": 1245,
+    "liveREligibleCases": 1176,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 139,
-    "recursiveBehaviorallyProvenBindings": 87,
+    "recursiveOracleV2Cases": 143,
+    "recursiveBehaviorallyProvenBindings": 88,
     "recursiveBindingEvidence": [
       { "binding": "base::addNA", "cases": ["addNA-ordered-reconstruction-and-unchanged-values"] },
       {
@@ -58,6 +58,7 @@
       {
         "binding": "base::conditionCall",
         "cases": [
+          "argument-matching-recursive-calls-and-diagnostics",
           "attributed-replacement-condition",
           "condition-accessor-values-methods-and-visibility"
         ]
@@ -138,6 +139,7 @@
       {
         "binding": "base::match.call",
         "cases": [
+          "argument-matching-recursive-calls-and-diagnostics",
           "matched-call-language-and-unexpanded-dots",
           "replacement-rhs-source-and-stored-call-values",
           "s3-replacement-rhs-source-and-stored-call-values"
@@ -152,6 +154,10 @@
       {
         "binding": "base::message",
         "cases": ["exiting-condition-handlers-and-unwind", "message-stream-and-invisible-result"]
+      },
+      {
+        "binding": "base::missing",
+        "cases": ["argument-default-promises-and-forwarded-missingness"]
       },
       { "binding": "base::new.env", "cases": ["shared-environment-identity"] },
       {
@@ -296,7 +302,10 @@
       { "binding": "base::withCallingHandlers", "cases": ["calling-handlers-and-restarts"] },
       { "binding": "base::withRestarts", "cases": ["calling-handlers-and-restarts"] },
       { "binding": "stats::setNames", "cases": ["names-replacement-coercion-and-metadata"] },
-      { "binding": "utils::person", "cases": ["person-recursive-records"] }
+      {
+        "binding": "utils::person",
+        "cases": ["person-explicit-missing-defaults-and-metadata", "person-recursive-records"]
+      }
     ],
     "note": "This binding count covers listed exact Oracle v2 cases, conditional on a passing live GNU R 4.6.1 graph comparison and causal shadow controls. It is not general binding compatibility; name overlap is inventory only."
   },

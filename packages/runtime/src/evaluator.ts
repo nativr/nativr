@@ -1,3 +1,4 @@
+import { matchArguments } from "./arguments.js";
 import { translatePosixCharacterClasses } from "./regex.js";
 import { assertNever } from "@nativr/ast";
 import type {
@@ -30,6 +31,7 @@ import {
   createPromise,
   forcePromise,
   lookupBinding,
+  missingArgumentMessage,
   setBinding,
 } from "./environment.js";
 import {
@@ -2508,236 +2510,241 @@ export class Evaluator {
         ? await this.#enterFunctionDebug(callable, call, context)
         : false;
     if (callable.type === "builtin") {
-      let resultVisibility = callable.definition.resultVisibility ?? "visible";
-      const value = await callable.definition.implementation({
-        ...(methodFrame === undefined ? {} : { s3Generic: methodFrame.generic }),
-        arguments: args.map(({ name, promise }) =>
-          name === undefined ? { promise } : { name, promise },
-        ),
-        context,
-        state: this.#builtinState,
-        sessionProcessId: this.#sessionProcessId,
-        memoryStatistics: (reset, full) => this.#memoryStatistics(reset, full, context),
-        setResultVisibility: (visibility) => {
-          resultVisibility = visibility;
-        },
-        force: async (promise) => this.#force(promise, context),
-        forceDetailed: async (promise) => this.#forceDetailed(promise, context),
-        invoke: async (target, arguments_) =>
-          this.#invokeCallable(
-            target,
-            arguments_.map((argument) => ({
-              ...(argument.name === undefined ? {} : { name: argument.name }),
-              promise: createForcedPromise(argument.value, this.#globalEnvironment),
-            })),
-            context,
+      try {
+        let resultVisibility = callable.definition.resultVisibility ?? "visible";
+        const value = await callable.definition.implementation({
+          ...(methodFrame === undefined ? {} : { s3Generic: methodFrame.generic }),
+          arguments: args.map(({ name, promise }) =>
+            name === undefined ? { promise } : { name, promise },
           ),
-        invokeDetailed: async (target, arguments_) =>
-          this.#invokeCallableResult(
-            target,
-            arguments_.map((argument) => ({
-              ...(argument.name === undefined ? {} : { name: argument.name }),
-              promise: createForcedPromise(argument.value, this.#globalEnvironment),
-            })),
-            context,
-          ),
-        invokeLazy: async (target, arguments_) =>
-          this.#invokeCallable(
-            target,
-            arguments_.map((argument) =>
-              argument.name === undefined
-                ? { promise: argument.promise }
-                : { name: argument.name, promise: argument.promise },
+          context,
+          state: this.#builtinState,
+          sessionProcessId: this.#sessionProcessId,
+          memoryStatistics: (reset, full) => this.#memoryStatistics(reset, full, context),
+          setResultVisibility: (visibility) => {
+            resultVisibility = visibility;
+          },
+          force: async (promise) => this.#force(promise, context),
+          forceDetailed: async (promise) => this.#forceDetailed(promise, context),
+          invoke: async (target, arguments_) =>
+            this.#invokeCallable(
+              target,
+              arguments_.map((argument) => ({
+                ...(argument.name === undefined ? {} : { name: argument.name }),
+                promise: createForcedPromise(argument.value, this.#globalEnvironment),
+              })),
+              context,
             ),
-            context,
-          ),
-        parse: (source, maxExpressions) => {
-          if (this.#parseSource === undefined) {
-            throw new RUnsupportedFeatureError(
-              "NRU6132",
-              "Dynamic parsing is unavailable in this evaluator host.",
-            );
-          }
-          return this.#parseSource(source, maxExpressions);
-        },
-        evaluate: async (value, environment) =>
-          this.#evaluateLanguageValue(value, environment, context),
-        evaluateDetailed: async (value, environment) =>
-          this.#evaluateLanguageValueResult(value, environment, context),
-        assignBinding: async (target, name, value) =>
-          this.#assignBinding(target, name, value, context),
-        signalCondition: async (classes, condition, muffleRestart) =>
-          muffleRestart === undefined
-            ? this.#signalCondition(classes, condition, context)
-            : this.#signalMuffleable(classes, condition, muffleRestart, context),
-        signalWarning: async (condition, warning) =>
-          this.#signalWarning(condition, warning, context),
-        raiseCondition: async (condition, message) =>
-          this.#raiseCondition(condition, message, context),
-        withCallingHandlers: async (handlers, evaluate) =>
-          this.#withCallingHandlers(handlers, evaluate, context),
-        errorBarrier: async (evaluate) => this.#errorBarrier(evaluate),
-        withRestarts: async (restarts, evaluate) => this.#withRestarts(restarts, evaluate),
-        computeRestarts: () => this.#computeRestarts(),
-        invokeRestart: (restart, values) => this.#invokeRestart(restart, values),
-        captureCondition: async (classes, evaluate) =>
-          this.#captureCondition(classes, evaluate, context),
-        muffleConditions: async (kind, classes, evaluate) =>
-          this.#muffleConditions(kind, classes, evaluate, context),
-        configureOnExit: (expression, environment, add, after) => {
-          this.#configureOnExit(expression, environment, add, after);
-        },
-        isGlobalEnvironment: (environment) => environment === this.#globalEnvironment,
-        currentEnvironment: () =>
-          callerEnvironment ?? args[0]?.promise.environment ?? this.#globalEnvironment,
-        parentFrame: (offset) => {
-          const evaluationEnvironment =
-            callerEnvironment ?? args[0]?.promise.environment ?? this.#globalEnvironment;
-          let currentIndex = -1;
-          for (let index = this.#closureCallFrames.length - 1; index >= 0; index -= 1) {
-            if (this.#closureCallFrames[index]?.environment === evaluationEnvironment) {
-              currentIndex = index;
-              break;
+          invokeDetailed: async (target, arguments_) =>
+            this.#invokeCallableResult(
+              target,
+              arguments_.map((argument) => ({
+                ...(argument.name === undefined ? {} : { name: argument.name }),
+                promise: createForcedPromise(argument.value, this.#globalEnvironment),
+              })),
+              context,
+            ),
+          invokeLazy: async (target, arguments_) =>
+            this.#invokeCallable(
+              target,
+              arguments_.map((argument) =>
+                argument.name === undefined
+                  ? { promise: argument.promise }
+                  : { name: argument.name, promise: argument.promise },
+              ),
+              context,
+            ),
+          parse: (source, maxExpressions) => {
+            if (this.#parseSource === undefined) {
+              throw new RUnsupportedFeatureError(
+                "NRU6132",
+                "Dynamic parsing is unavailable in this evaluator host.",
+              );
             }
-          }
-          if (currentIndex < 0) currentIndex = this.#closureCallFrames.length - 1;
-          const index = currentIndex - (offset - 1);
-          return index >= 0
-            ? (this.#closureCallFrames[index]?.callerEnvironment ?? this.#globalEnvironment)
-            : this.#globalEnvironment;
-        },
-        currentCall: () => (call === undefined ? R_NULL : { type: "language", expression: call }),
-        systemCall: (which) => this.#systemCall(which),
-        systemFunction: (which) => this.#systemFunction(which),
-        isInteractive: () => this.#readline !== undefined,
-        hasSocketCapability: () => this.#socketRequest !== undefined,
-        readline: async (prompt) => (this.#readline === undefined ? "" : this.#readline(prompt)),
-        urlRequest: async (request) => {
-          if (this.#urlRequest === undefined) {
-            throw new RUnsupportedFeatureError(
-              "NRU6196",
-              "url() I/O requires an explicit createR({ url }) host capability.",
-            );
-          }
-          return this.#urlRequest(request);
-        },
-        socketRequest: async (request) => {
-          if (this.#socketRequest === undefined) {
-            throw new RUnsupportedFeatureError(
-              "NRU6207",
-              "socketConnection() I/O requires an explicit createR({ socket }) host capability.",
-            );
-          }
-          return this.#socketRequest(request);
-        },
-        systemCommand: async (request) => {
-          if (this.#systemCommand === undefined) {
-            throw new RUnsupportedFeatureError(
-              "NRU6194",
-              "system()/system2()/pipe() requires an explicit createR({ systemCommand }) host capability.",
-            );
-          }
-          return this.#systemCommand(request);
-        },
-        nativeModules: () => this.#nativeModules,
-        nativeCall: async (request) => {
-          if (this.#nativeCall === undefined) {
-            throw new RUnsupportedFeatureError(
-              "NRU6210",
-              ".Call() requires an explicit createR({ nativeCall }) typed native/Wasm capability.",
-            );
-          }
-          return this.#nativeCall(request);
-        },
-        searchPath: () => Object.freeze([...this.#searchPath]),
-        libraryPaths: () => Object.freeze([...this.#libraryPaths]),
-        setLibraryPaths: (paths) => {
-          this.#libraryPaths = [...paths];
-        },
-        searchEnvironment: (identifier) => this.#searchEnvironment(identifier),
-        environmentName: (environment) => this.#environmentName(environment),
-        loadPackage: async (name, attach, libraryPaths) =>
-          this.#loadPackage(name, attach, context, libraryPaths),
-        detachPackage: (entry, force) => this.#detachPackage(entry, force, context),
-        unloadNamespace: (name, warnOnFailure) =>
-          this.#unloadNamespace(name, warnOnFailure, context),
-        installedPackageVersion: (name, libraryPaths) =>
-          this.#installedPackageVersion(name, libraryPaths),
-        installedPackageDescription: (name, libraryPaths) =>
-          this.#installedPackageDescription(name, libraryPaths),
-        installedPackageNames: (libraryPaths) => this.#installedPackageNames(libraryPaths),
-        isNamespaceLoaded: (name) =>
-          this.#packages.has(name)
-            ? this.#packages.get(name)?.namespace !== undefined
-            : REGISTERED_NAMESPACE_EXPORTS.has(name),
-        loadedNamespaces: () =>
-          Object.freeze([
-            ...this.#staticNamespaceNames(),
-            ...[...this.#packages]
-              .filter(([, record]) => record.namespace !== undefined)
-              .map(([name]) => name),
-          ]),
-        namespaceEnvironment: (name) =>
-          this.#packages.has(name)
-            ? this.#packages.get(name)?.namespace
-            : this.#staticNamespaces.get(name),
-        namespaceExports: async (name) => this.#namespaceExports(name, context),
-        namespaceName: (environment) => this.#namespaceName(environment),
-        namespaceBinding: async (name, binding) => this.#namespaceBinding(name, binding, context),
-        packageResourcePath: (name, path, libraryPaths) =>
-          this.#packageResourcePath(name, path, libraryPaths),
-        packageResourcePaths: (name, prefix) => {
-          const paths = this.#packageResourcePaths(name, prefix);
-          if (paths !== undefined) context.allocate(paths.length);
-          return paths;
-        },
-        packageFile: (path) => this.#packageFile(path),
-        packageName: (environment) => this.#packageName(environment),
-        globalEnvironment: () => this.#globalEnvironment,
-        baseEnvironment: () => this.#baseEnvironment,
-        emptyEnvironment: () => this.#emptyEnvironment,
-        matchCall: (expandDots, definition, call) =>
-          this.#matchCurrentCall(expandDots, definition, call),
-        callerFormalDefault: async (name) => this.#callerFormalDefault(name, context),
-        define: (name, value) => {
-          validateBindingName(name);
-          setBinding(this.#globalEnvironment, name, value);
-        },
-        registerS3Method: async (generic, className, method, environment) =>
-          this.#registerS3Method(generic, className, method, environment, context),
-        dispatchS3: async (generic, object) => this.#dispatchS3(generic, object, context),
-        dispatchS3IfPresent: async (
-          generic,
-          object,
-          arguments_,
-          includeDefault,
-          argumentIndex,
-          group,
-          lookupEnvironment,
-        ) => {
-          const result = await this.#dispatchS3IfPresentResult(
+            return this.#parseSource(source, maxExpressions);
+          },
+          evaluate: async (value, environment) =>
+            this.#evaluateLanguageValue(value, environment, context),
+          evaluateDetailed: async (value, environment) =>
+            this.#evaluateLanguageValueResult(value, environment, context),
+          assignBinding: async (target, name, value) =>
+            this.#assignBinding(target, name, value, context),
+          signalCondition: async (classes, condition, muffleRestart) =>
+            muffleRestart === undefined
+              ? this.#signalCondition(classes, condition, context)
+              : this.#signalMuffleable(classes, condition, muffleRestart, context),
+          signalWarning: async (condition, warning) =>
+            this.#signalWarning(condition, warning, context),
+          raiseCondition: async (condition, message) =>
+            this.#raiseCondition(condition, message, context),
+          withCallingHandlers: async (handlers, evaluate) =>
+            this.#withCallingHandlers(handlers, evaluate, context),
+          errorBarrier: async (evaluate) => this.#errorBarrier(evaluate),
+          withRestarts: async (restarts, evaluate) => this.#withRestarts(restarts, evaluate),
+          computeRestarts: () => this.#computeRestarts(),
+          invokeRestart: (restart, values) => this.#invokeRestart(restart, values),
+          captureCondition: async (classes, evaluate) =>
+            this.#captureCondition(classes, evaluate, context),
+          muffleConditions: async (kind, classes, evaluate) =>
+            this.#muffleConditions(kind, classes, evaluate, context),
+          configureOnExit: (expression, environment, add, after) => {
+            this.#configureOnExit(expression, environment, add, after);
+          },
+          isGlobalEnvironment: (environment) => environment === this.#globalEnvironment,
+          currentEnvironment: () =>
+            callerEnvironment ?? args[0]?.promise.environment ?? this.#globalEnvironment,
+          parentFrame: (offset) => {
+            const evaluationEnvironment =
+              callerEnvironment ?? args[0]?.promise.environment ?? this.#globalEnvironment;
+            let currentIndex = -1;
+            for (let index = this.#closureCallFrames.length - 1; index >= 0; index -= 1) {
+              if (this.#closureCallFrames[index]?.environment === evaluationEnvironment) {
+                currentIndex = index;
+                break;
+              }
+            }
+            if (currentIndex < 0) currentIndex = this.#closureCallFrames.length - 1;
+            const index = currentIndex - (offset - 1);
+            return index >= 0
+              ? (this.#closureCallFrames[index]?.callerEnvironment ?? this.#globalEnvironment)
+              : this.#globalEnvironment;
+          },
+          currentCall: () => (call === undefined ? R_NULL : { type: "language", expression: call }),
+          systemCall: (which) => this.#systemCall(which),
+          systemFunction: (which) => this.#systemFunction(which),
+          isInteractive: () => this.#readline !== undefined,
+          hasSocketCapability: () => this.#socketRequest !== undefined,
+          readline: async (prompt) => (this.#readline === undefined ? "" : this.#readline(prompt)),
+          urlRequest: async (request) => {
+            if (this.#urlRequest === undefined) {
+              throw new RUnsupportedFeatureError(
+                "NRU6196",
+                "url() I/O requires an explicit createR({ url }) host capability.",
+              );
+            }
+            return this.#urlRequest(request);
+          },
+          socketRequest: async (request) => {
+            if (this.#socketRequest === undefined) {
+              throw new RUnsupportedFeatureError(
+                "NRU6207",
+                "socketConnection() I/O requires an explicit createR({ socket }) host capability.",
+              );
+            }
+            return this.#socketRequest(request);
+          },
+          systemCommand: async (request) => {
+            if (this.#systemCommand === undefined) {
+              throw new RUnsupportedFeatureError(
+                "NRU6194",
+                "system()/system2()/pipe() requires an explicit createR({ systemCommand }) host capability.",
+              );
+            }
+            return this.#systemCommand(request);
+          },
+          nativeModules: () => this.#nativeModules,
+          nativeCall: async (request) => {
+            if (this.#nativeCall === undefined) {
+              throw new RUnsupportedFeatureError(
+                "NRU6210",
+                ".Call() requires an explicit createR({ nativeCall }) typed native/Wasm capability.",
+              );
+            }
+            return this.#nativeCall(request);
+          },
+          searchPath: () => Object.freeze([...this.#searchPath]),
+          libraryPaths: () => Object.freeze([...this.#libraryPaths]),
+          setLibraryPaths: (paths) => {
+            this.#libraryPaths = [...paths];
+          },
+          searchEnvironment: (identifier) => this.#searchEnvironment(identifier),
+          environmentName: (environment) => this.#environmentName(environment),
+          loadPackage: async (name, attach, libraryPaths) =>
+            this.#loadPackage(name, attach, context, libraryPaths),
+          detachPackage: (entry, force) => this.#detachPackage(entry, force, context),
+          unloadNamespace: (name, warnOnFailure) =>
+            this.#unloadNamespace(name, warnOnFailure, context),
+          installedPackageVersion: (name, libraryPaths) =>
+            this.#installedPackageVersion(name, libraryPaths),
+          installedPackageDescription: (name, libraryPaths) =>
+            this.#installedPackageDescription(name, libraryPaths),
+          installedPackageNames: (libraryPaths) => this.#installedPackageNames(libraryPaths),
+          isNamespaceLoaded: (name) =>
+            this.#packages.has(name)
+              ? this.#packages.get(name)?.namespace !== undefined
+              : REGISTERED_NAMESPACE_EXPORTS.has(name),
+          loadedNamespaces: () =>
+            Object.freeze([
+              ...this.#staticNamespaceNames(),
+              ...[...this.#packages]
+                .filter(([, record]) => record.namespace !== undefined)
+                .map(([name]) => name),
+            ]),
+          namespaceEnvironment: (name) =>
+            this.#packages.has(name)
+              ? this.#packages.get(name)?.namespace
+              : this.#staticNamespaces.get(name),
+          namespaceExports: async (name) => this.#namespaceExports(name, context),
+          namespaceName: (environment) => this.#namespaceName(environment),
+          namespaceBinding: async (name, binding) => this.#namespaceBinding(name, binding, context),
+          packageResourcePath: (name, path, libraryPaths) =>
+            this.#packageResourcePath(name, path, libraryPaths),
+          packageResourcePaths: (name, prefix) => {
+            const paths = this.#packageResourcePaths(name, prefix);
+            if (paths !== undefined) context.allocate(paths.length);
+            return paths;
+          },
+          packageFile: (path) => this.#packageFile(path),
+          packageName: (environment) => this.#packageName(environment),
+          globalEnvironment: () => this.#globalEnvironment,
+          baseEnvironment: () => this.#baseEnvironment,
+          emptyEnvironment: () => this.#emptyEnvironment,
+          matchCall: (expandDots, definition, call) =>
+            this.#matchCurrentCall(context, expandDots, definition, call),
+          callerFormalDefault: async (name) => this.#callerFormalDefault(name, context),
+          define: (name, value) => {
+            validateBindingName(name);
+            setBinding(this.#globalEnvironment, name, value);
+          },
+          registerS3Method: async (generic, className, method, environment) =>
+            this.#registerS3Method(generic, className, method, environment, context),
+          dispatchS3: async (generic, object) => this.#dispatchS3(generic, object, context),
+          dispatchS3IfPresent: async (
             generic,
             object,
             arguments_,
-            context,
             includeDefault,
             argumentIndex,
-            lookupEnvironment ??
-              callerEnvironment ??
-              args[0]?.promise.environment ??
-              this.#globalEnvironment,
             group,
-          );
-          if (result === undefined) return undefined;
-          resultVisibility = result.visible ? "visible" : "invisible";
-          return result.value;
-        },
-        nextMethod: async (generic) => this.#nextS3Method(generic, context),
-      });
-      return {
-        value,
-        visible: resultVisibility !== "invisible",
-      };
+            lookupEnvironment,
+          ) => {
+            const result = await this.#dispatchS3IfPresentResult(
+              generic,
+              object,
+              arguments_,
+              context,
+              includeDefault,
+              argumentIndex,
+              lookupEnvironment ??
+                callerEnvironment ??
+                args[0]?.promise.environment ??
+                this.#globalEnvironment,
+              group,
+            );
+            if (result === undefined) return undefined;
+            resultVisibility = result.visible ? "visible" : "invisible";
+            return result.value;
+          },
+          nextMethod: async (generic) => this.#nextS3Method(generic, context),
+        });
+        return {
+          value,
+          visible: resultVisibility !== "invisible",
+        };
+      } catch (error) {
+        this.#recordArgumentErrorCall(error, call);
+        throw error;
+      }
     }
     if (callable.type !== "closure") {
       throw new RTypeMismatchError("NRT3002", "Attempted to call a non-function value.", {
@@ -2752,7 +2759,10 @@ export class Evaluator {
       callerEnvironment,
       debugStep,
       methodFrame,
-    );
+    ).catch((error: unknown) => {
+      this.#recordArgumentErrorCall(error, call);
+      throw error;
+    });
   }
 
   async #enterFunctionDebug(
@@ -3252,13 +3262,38 @@ export class Evaluator {
   }
 
   #errorConditionValue(error: NativRError): RValue {
+    const call = error.conditionCall;
     return error instanceof RSignalledConditionError
       ? error.condition
-      : withClasses(listValue([characterVector([error.message]), R_NULL], ["message", "call"]), [
-          "simpleError",
-          "error",
-          "condition",
-        ]);
+      : withClasses(
+          listValue(
+            [
+              characterVector([error.message]),
+              call === undefined ? R_NULL : { type: "language", expression: call },
+            ],
+            ["message", "call"],
+          ),
+          ["simpleError", "error", "condition"],
+        );
+  }
+
+  #recordArgumentErrorCall(error: unknown, call: CallExpressionNode | undefined): void {
+    if (
+      call !== undefined &&
+      error instanceof NativRError &&
+      [
+        "NRE2004",
+        "NRE2005",
+        "NRE2006",
+        "NRE2007",
+        "NRE2101",
+        "NRE2102",
+        "NRE2103",
+        "NRE2104",
+      ].includes(error.code)
+    ) {
+      error.recordConditionCall(call);
+    }
   }
 
   async #invokeClosure(
@@ -3283,116 +3318,30 @@ export class Evaluator {
     };
     this.#controlFrames.push(functionFrame);
     try {
-      const dotsIndex = closure.parameters.findIndex((parameter) => parameter.name === "...");
-      const hasDots = dotsIndex >= 0;
-      const regularParameters = closure.parameters.filter((parameter) => parameter.name !== "...");
-      const positionalParameters = hasDots
-        ? closure.parameters.slice(0, dotsIndex)
-        : regularParameters;
       const frame = createEnvironment(closure.environment);
-      const matched = new Map<string, RPromise>();
-      const matchedArgumentIndexes = new Set<number>();
-
-      for (const [argumentIndex, argument] of args.entries()) {
-        if (argument.name === undefined) continue;
-        const name = argument.name ?? "";
-        const parameter = regularParameters.find((candidate) => candidate.name === name);
-        if (parameter === undefined) continue;
-        if (matched.has(name)) {
-          throw new REvaluationError(
-            "NRE2004",
-            `Argument '${name}' matched more than once.`,
-            argument.span === undefined ? {} : { span: argument.span },
-          );
-        }
-        matched.set(name, argument.promise);
-        matchedArgumentIndexes.add(argumentIndex);
-      }
-
-      const partialParameters = hasDots
-        ? closure.parameters.slice(0, dotsIndex)
-        : regularParameters;
-      for (const [argumentIndex, argument] of args.entries()) {
-        if (argument.name === undefined || matchedArgumentIndexes.has(argumentIndex)) continue;
-        const name = argument.name;
-        const candidates = partialParameters.filter((parameter) => parameter.name.startsWith(name));
-        if (candidates.length > 1) {
-          throw new REvaluationError(
-            "NRE2007",
-            `Argument '${name}' matches multiple formal arguments.`,
-            argument.span === undefined ? {} : { span: argument.span },
-          );
-        }
-        const parameter = candidates[0];
-        if (parameter === undefined) continue;
-        if (matched.has(parameter.name)) {
-          throw new REvaluationError(
-            "NRE2004",
-            `Argument '${parameter.name}' matched more than once.`,
-            argument.span === undefined ? {} : { span: argument.span },
-          );
-        }
-        matched.set(parameter.name, argument.promise);
-        matchedArgumentIndexes.add(argumentIndex);
-      }
-
-      let positionalIndex = 0;
-      for (const [argumentIndex, argument] of args.entries()) {
-        if (argument.name !== undefined) continue;
-        while (
-          positionalIndex < positionalParameters.length &&
-          matched.has(positionalParameters[positionalIndex]?.name ?? "")
-        ) {
-          positionalIndex += 1;
-        }
-        const parameter = positionalParameters[positionalIndex];
-        if (parameter === undefined) {
-          if (hasDots) continue;
-          throw new REvaluationError(
-            "NRE2005",
-            "Unused positional argument.",
-            argument.span === undefined ? {} : { span: argument.span },
-          );
-        }
-        matched.set(parameter.name, argument.promise);
-        matchedArgumentIndexes.add(argumentIndex);
-        positionalIndex += 1;
-      }
-
-      if (!hasDots) {
-        const unused = args.find(
-          (argument, argumentIndex) =>
-            argument.name !== undefined && !matchedArgumentIndexes.has(argumentIndex),
-        );
-        if (unused !== undefined) {
-          throw new REvaluationError(
-            "NRE2005",
-            `Unused argument '${unused.name ?? ""}'.`,
-            unused.span === undefined ? {} : { span: unused.span },
-          );
-        }
-      }
-
-      for (const parameter of regularParameters) {
+      const result = matchArguments(
+        args,
+        closure.parameters.map((parameter) => parameter.name),
+        {
+          checkWork: () => context.checkpoint(),
+        },
+      );
+      const matched = new Map(
+        [...result.matched].map(([name, argument]) => [name, argument.promise]),
+      );
+      for (const parameter of closure.parameters) {
+        if (parameter.name === "...") continue;
         const supplied = matched.get(parameter.name);
-        if (supplied !== undefined) {
+        if (supplied !== undefined && !(supplied.expression === null && supplied.missing)) {
           setBinding(frame, parameter.name, supplied);
         } else if (parameter.defaultValue !== undefined) {
           setBinding(frame, parameter.name, createPromise(parameter.defaultValue, frame, true));
         } else {
-          setBinding(frame, parameter.name, createMissingPromise(frame));
+          setBinding(frame, parameter.name, createMissingPromise(frame, parameter.name));
         }
       }
-      if (hasDots) {
-        const dotsArguments = args.flatMap((argument, argumentIndex) => {
-          if (matchedArgumentIndexes.has(argumentIndex)) return [];
-          return [
-            argument.name === undefined
-              ? { promise: argument.promise }
-              : { name: argument.name, promise: argument.promise },
-          ];
-        });
-        setBinding(frame, "...", { type: "dots", arguments: dotsArguments });
+      if (closure.parameters.some((parameter) => parameter.name === "...")) {
+        setBinding(frame, "...", { type: "dots", arguments: result.dots });
       }
       if (methodFrame !== undefined) {
         setBinding(frame, ".Generic", characterVector([methodFrame.generic]));
@@ -3497,7 +3446,12 @@ export class Evaluator {
     return undefined;
   }
 
-  #matchCurrentCall(expandDots: boolean, definition?: RValue, explicitCall?: RValue): RLanguage {
+  #matchCurrentCall(
+    context: EvaluationContext,
+    expandDots: boolean,
+    definition?: RValue,
+    explicitCall?: RValue,
+  ): RLanguage {
     const frame = this.#closureCallFrames.at(-1);
     const sourceCall =
       explicitCall === undefined
@@ -3542,7 +3496,9 @@ export class Evaluator {
               ),
               span: argument.span,
             }));
-      const rematched = matchCallDefinitionArguments(parameters, callArguments);
+      const rematched = matchCallDefinitionArguments(parameters, callArguments, () =>
+        context.checkpoint(),
+      );
       matched = rematched.matched;
       dotsArguments = rematched.dots;
     }
@@ -3553,7 +3509,13 @@ export class Evaluator {
     for (const parameter of parameters) {
       if (parameter.name !== "...") {
         const promise = matched.get(parameter.name);
-        if (promise === undefined) continue;
+        if (
+          promise === undefined ||
+          (promise.expression === null && promise.missing) ||
+          (promise.expression?.kind === "UnsupportedExpression" &&
+            promise.expression.feature === "missing argument")
+        )
+          continue;
         const value = promiseCallAst(promise, sourceCall.span);
         arguments_.push({
           name: parameter.name,
@@ -5020,7 +4982,12 @@ export class Evaluator {
       throw new REvaluationError("NRE2010", "Promise is already under evaluation.");
     }
     if (promise.expression === null) {
-      throw new REvaluationError("NRE2006", "Argument is missing, with no default.");
+      const error = new REvaluationError("NRE2006", missingArgumentMessage(promise));
+      const origin = this.#closureCallFrames.find(
+        (frame) => frame.environment === promise.environment,
+      );
+      this.#recordArgumentErrorCall(error, origin?.call ?? this.#closureCallFrames.at(-1)?.call);
+      throw error;
     }
 
     promise.state = "forcing";
@@ -5373,81 +5340,17 @@ function constructedSubsetTarget(target: CallExpressionNode): SubsetExpressionNo
 function matchCallDefinitionArguments(
   parameters: RClosure["parameters"],
   arguments_: ClosureCallFrame["arguments"],
+  checkWork: () => void,
 ): { readonly matched: Map<string, RPromise>; readonly dots: BuiltinCallArgument[] } {
-  const dotsIndex = parameters.findIndex((parameter) => parameter.name === "...");
-  const hasDots = dotsIndex >= 0;
-  const regularParameters = parameters.filter((parameter) => parameter.name !== "...");
-  const partialParameters = hasDots ? parameters.slice(0, dotsIndex) : regularParameters;
-  const matched = new Map<string, RPromise>();
-  const matchedIndexes = new Set<number>();
-
-  for (const [index, argument] of arguments_.entries()) {
-    if (argument.name === undefined) continue;
-    const parameter = regularParameters.find((candidate) => candidate.name === argument.name);
-    if (parameter === undefined) continue;
-    if (matched.has(parameter.name)) {
-      throw new REvaluationError("NRE2004", `Argument '${parameter.name}' matched more than once.`);
-    }
-    matched.set(parameter.name, argument.promise);
-    matchedIndexes.add(index);
-  }
-  for (const [index, argument] of arguments_.entries()) {
-    if (argument.name === undefined || matchedIndexes.has(index)) continue;
-    const candidates = partialParameters.filter((parameter) =>
-      parameter.name.startsWith(argument.name as string),
-    );
-    if (candidates.length > 1) {
-      throw new REvaluationError(
-        "NRE2007",
-        `Argument '${argument.name}' matches multiple formals.`,
-      );
-    }
-    const parameter = candidates[0];
-    if (parameter === undefined) continue;
-    if (matched.has(parameter.name)) {
-      throw new REvaluationError("NRE2004", `Argument '${parameter.name}' matched more than once.`);
-    }
-    matched.set(parameter.name, argument.promise);
-    matchedIndexes.add(index);
-  }
-  let positionalIndex = 0;
-  for (const [index, argument] of arguments_.entries()) {
-    if (argument.name !== undefined) continue;
-    while (
-      positionalIndex < partialParameters.length &&
-      matched.has(partialParameters[positionalIndex]?.name ?? "")
-    ) {
-      positionalIndex += 1;
-    }
-    const parameter = partialParameters[positionalIndex];
-    if (parameter === undefined) {
-      if (hasDots) continue;
-      throw new REvaluationError("NRE2005", "Unused positional argument.");
-    }
-    matched.set(parameter.name, argument.promise);
-    matchedIndexes.add(index);
-    positionalIndex += 1;
-  }
-  if (!hasDots) {
-    const unused = arguments_.find(
-      (argument, index) => argument.name !== undefined && !matchedIndexes.has(index),
-    );
-    if (unused !== undefined) {
-      throw new REvaluationError("NRE2005", `Unused argument '${unused.name ?? ""}'.`);
-    }
-  }
-  const dots: BuiltinCallArgument[] = hasDots
-    ? arguments_.flatMap((argument, index) =>
-        matchedIndexes.has(index)
-          ? []
-          : [
-              argument.name === undefined
-                ? { promise: argument.promise }
-                : { name: argument.name, promise: argument.promise },
-            ],
-      )
-    : [];
-  return { matched, dots };
+  const result = matchArguments(
+    arguments_,
+    parameters.map((parameter) => parameter.name),
+    { checkWork },
+  );
+  return {
+    matched: new Map([...result.matched].map(([name, argument]) => [name, argument.promise])),
+    dots: result.dots,
+  };
 }
 
 function promiseCallAst(promise: RPromise, fallbackSpan: SourceSpan): AstNode {

@@ -7,8 +7,8 @@ export const CAPABILITIES = Object.freeze({
   nativrVersion: "0.1.1",
   protocolVersion: PROTOCOL_VERSION,
   targetRVersion: "4.6.1",
-  semanticProfileVersion: "0.362.0",
-  languageSubsetVersion: "0.362.0",
+  semanticProfileVersion: "0.363.0",
+  languageSubsetVersion: "0.363.0",
   syntax: {
     literals: "supported",
     assignment: "supported",

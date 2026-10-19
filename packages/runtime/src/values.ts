@@ -166,6 +166,8 @@ export interface RPromise {
   readonly environment: REnvironment;
   /** Whether this promise originated from an omitted actual argument. */
   readonly missing: boolean;
+  /** Formal name at the origin of an argument missing without a default. */
+  readonly missingName?: string;
   state: "unforced" | "forcing" | "forced";
   value: RValue | undefined;
 }

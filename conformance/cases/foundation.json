@@ -17248,5 +17248,51 @@
     "expectedCompatibility": "behavioral",
     "code": "c(identical(as.integer(addNA(c(\"a\",NA),ifany=NA)),1:2),identical(addNA(\"a\",ifany=),addNA(\"a\")),tryCatch({addNA(\"a\",ifany=NA_real_);FALSE},error=function(e)identical(conditionMessage(e),\"missing value where TRUE/FALSE needed\")),tryCatch({addNA(c(\"a\",NA),ifany=NULL);FALSE},error=function(e)identical(conditionMessage(e),\"invalid 'x' type in 'x && y'\")))",
     "expected": [true, true, true, true]
+  },
+
+  {
+    "id": "argument-matching-order-and-diagnostic-calls",
+    "code": "c(local({f<-function(alpha,alpine,beta)c(alpha,alpine,beta);identical(f(alpha=1,al=2,beta=3),c(1,2,3))}),local({f<-function(alpha,beta)NULL;identical(tryCatch(f(alpha=1,al=2),error=conditionMessage),\"unused argument (al = 2)\")}),local({f<-function(alpha,beta)NULL;identical(tryCatch(f(beta=1,beta=2,alpha=3,alpha=4),error=conditionMessage),'formal argument \"alpha\" matched by multiple actual arguments')}),local({f<-function(alpha,beta)NULL;identical(tryCatch(f(be=1,b=2,al=3,a=4),error=conditionMessage),'formal argument \"alpha\" matched by multiple actual arguments')}),local({f<-function(alpha,alpine,beta)NULL;identical(tryCatch(f(be=1,b=2,al=3),error=conditionMessage),\"argument 3 matches multiple formal arguments\")}),local({f<-function(alpha,alpine,beta)NULL;identical(tryCatch(f(al=1,beta=2,beta=3),error=conditionMessage),'formal argument \"beta\" matched by multiple actual arguments')}),local({f<-function(alpha,beta)NULL;identical(tryCatch(f(extra=4,1,2,3),error=conditionMessage),\"unused arguments (extra = 4, 3)\")}),local({identical(tryCatch((function()NULL)(other=),error=conditionMessage),\"unused argument (alist(other = ))\")}),local({identical(tryCatch((function()NULL)(,),error=conditionMessage),\"unused arguments (alist(, ))\")}),local({identical(tryCatch((function()NULL)(\"not a name\"=3),error=conditionMessage),\"unused argument (`not a name` = 3)\")}),local({n<-0;message<-tryCatch((function(x)x)(1,extra={n<-1;n+2}),error=conditionMessage);identical(n,0)&&identical(message,\"unused argument (extra = {\\n    n <- 1\\n    n + 2\\n})\")}),local({identical(tryCatch((function()NULL)(extra=function(x){x+1}),error=conditionMessage),\"unused argument (extra = function(x) {\\n    x + 1\\n})\")}),local({n<-0;message<-tryCatch(as.factor(1,extra={n<-1;stop(\"forced\")}),error=conditionMessage);identical(n,0)&&startsWith(message,\"unused argument (extra = {\")}),local({n<-0;message<-tryCatch(as.factor(x=1,x={n<-1;stop(\"forced\")}),error=conditionMessage);identical(n,0)&&identical(message,'formal argument \"x\" matched by multiple actual arguments')}),local({f<-function(alpha,...,beta)list(alpha,...,beta=beta);identical(f(al=1,be=2,beta=3),list(1,be=2,beta=3))}),local({f<-function(alpha,beta)c(alpha,beta);identical(do.call(f,setNames(list(1,2),c(\"\",\"\"))),c(1,2))}),local({f<-function(alpha,alpine,beta)match.call();identical(f(alpha=1,al=2,beta=3),quote(f(alpha=1,alpine=2,beta=3)))}),local({f<-function(alpha,alpine,beta)NULL;identical(match.call(f,quote(f(alpha=1,al=2,beta=3))),quote(f(alpha=1,alpine=2,beta=3)))}),local({f<-function(alpha,beta)NULL;identical(tryCatch(f(1,2,other=3),error=conditionCall),quote(f(1,2,other=3)))}),local({identical(tryCatch(as.factor(x=1,x=2),error=conditionCall),quote(as.factor(x=1,x=2)))}))",
+    "expected": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "argument-defaults-forwarding-and-missing-origins",
+    "code": "c(local({f<-function(x=1)c(before=missing(x),value=x,after=missing(x));identical(f(x=),c(before=1,value=1,after=1))}),local({n<-0;f<-function(x={n<<-n+1;4})c(missing(x),x,x,n);identical(f(x=),c(1,4,4,1))}),local({f<-function(x=stop(\"forced\"))missing(x);identical(f(x=),TRUE)}),local({f<-function(x=1)x;g<-function(...)f(...);identical(g(x=),1)}),local({identical((function(...,x=1)x)(x=),1)}),local({f<-function(x=1)x;g<-function(y)f(y);identical(tryCatch(g(),error=conditionMessage),'argument \"y\" is missing, with no default')}),local({f<-function(x=1)c(missing=missing(x),value=x);g<-function(y=2)f(y);identical(g(),c(missing=0,value=2))}),local({g<-function(y){h<-function(x=1){y<<-2;x};h(y)};identical(g(),2)}),local({f<-function(alpha,beta)alpha+beta;identical(tryCatch(f(,2),error=conditionMessage),'argument \"alpha\" is missing, with no default')}),local({f<-function(alpha,beta)alpha+beta;identical(tryCatch(f(,2),error=conditionCall),quote(f(,2)))}),local({identical(tryCatch((function(...)sum(...))(1,,2),error=conditionMessage),\"argument is missing, with no default\")}),local({expected<-person(\"Ada\",\"Example\",role=\"aut\");identical(person(\"Ada\",\"Example\",,role=\"aut\"),expected)&&identical(person(\"Ada\",\"Example\",email=,role=\"aut\"),expected)}))",
+    "expected": [true, true, true, true, true, true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "argument-primitive-forcing-and-empty-actuals",
+    "code": "c(local({f<-function(x=1)match.call();identical(f(x=),quote(f()))&&identical(match.call(f,quote(f(x=))),quote(f()))}),local({identical(tryCatch((function()NULL)(extra=1,other=),error=conditionMessage),\"unused arguments (alist(extra = 1, other = ))\")}),local({expected<-'argument \"x\" is missing, with no default';identical(tryCatch(as.factor(),error=conditionMessage),expected)&&identical(tryCatch(as.factor(x=),error=conditionMessage),expected)}),local({identical(tryCatch(as.factor(x=),error=conditionCall),quote(as.factor(x=)))}),local({n<-0;message<-tryCatch(sqrt(1,extra={n<-1;stop(\"forced\")}),error=conditionMessage);identical(n,1)&&identical(message,\"forced\")}),local({n<-0;message<-tryCatch(abs({n<-n+1;1},{n<-n+10;2}),error=conditionMessage);identical(n,11)&&identical(message,\"2 arguments passed to 'abs' which requires 1\")}),local({identical(tryCatch(sqrt(x=),error=conditionMessage),\"argument 1 is empty\")}),local({identical(tryCatch(abs(x=1,x=2),error=conditionMessage),\"2 arguments passed to 'abs' which requires 1\")}),local({n<-0;message<-tryCatch(sqrt(other={n<-1;4}),error=conditionMessage);identical(n,1)&&identical(message,\"supplied argument name 'other' does not match 'x'\")}),local({identical(tryCatch(sqrt(),error=conditionCall),quote(sqrt()))&&identical(tryCatch(sqrt(),error=conditionMessage),\"0 arguments passed to 'sqrt' which requires 1\")}))",
+    "expected": [true, true, true, true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "argument-missing-origin-calls-and-language-elements",
+    "code": "c(local({h<-function(y){inner<-function(x=1)x;inner(y)};identical(tryCatch(h(),error=conditionCall),quote(h()))}),local({h<-function(y)function()y;g<-h();identical(tryCatch(g(),error=conditionCall),quote(g()))}),local({a<-function(z)b(z);b<-function(y)cc(y);cc<-function(x)x;identical(tryCatch(a(),error=conditionCall),quote(a()))}),local({x<-as.list(quote(sqrt(x=)));identical(length(x),2L)&&is.symbol(x[[2]])&&identical(as.character(x[[2]]),\"\")}),local({f<-function(x=2)x;a<-quote(f(x=));b<-as.call(as.list(a));identical(a,b)&&identical(eval(b),2)}))",
+    "expected": [true, true, true, true, true],
+    "expectedCompatibility": "behavioral"
   }
 ]

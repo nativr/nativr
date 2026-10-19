@@ -1,4 +1,4 @@
-import type { SourceSpan } from "@nativr/ast";
+import type { CallExpressionNode, SourceSpan } from "@nativr/ast";
 import type { RList } from "./values.js";
 
 /** Optional structured fields accepted by NativR runtime errors. */
@@ -13,6 +13,17 @@ export class NativRError extends Error {
   public readonly code: string;
   public readonly span: SourceSpan | undefined;
   public readonly details: Readonly<Record<string, unknown>> | undefined;
+  #conditionCall: CallExpressionNode | undefined;
+
+  /** In-process condition metadata; never included in serializable diagnostic details. */
+  public get conditionCall(): CallExpressionNode | undefined {
+    return this.#conditionCall;
+  }
+
+  /** Keep the innermost known origin while an error unwinds through outer calls. */
+  public recordConditionCall(call: CallExpressionNode): void {
+    this.#conditionCall ??= call;
+  }
 
   public constructor(code: string, message: string, options: NativRErrorOptions = {}) {
     super(message, options.cause === undefined ? undefined : { cause: options.cause });

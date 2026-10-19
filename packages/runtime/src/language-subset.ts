@@ -207,6 +207,9 @@ export function quoteLanguageNode(node: AstNode): RValue {
 /** Keep an already computed R value in language syntax without re-evaluating it. */
 export function embeddedValueAst(value: RValue, checkWork?: () => void): AstNode {
   if (value.type === "symbol") {
+    if (value.name === "") {
+      return { kind: "UnsupportedExpression", feature: "missing argument", span: SYNTHETIC_SPAN };
+    }
     return { kind: "Identifier", name: value.name, span: SYNTHETIC_SPAN };
   }
   if (value.type === "language") return value.expression;

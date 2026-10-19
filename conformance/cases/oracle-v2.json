@@ -1264,5 +1264,29 @@
     "policy": "exact",
     "bindingEvidence": ["base::as.character", "base::split", "base::table", "base::match"],
     "code": "local({x<-structure(c(1L,2L,3L,NA_integer_),levels=c(\"\",NA,\"a\"),class=\"factor\");list(original=x,character=as.character(x),missing=is.na(x),combined=c(x,x),flattened=unlist(list(x,x)),matched=match(x,x),equal=x==x,split=split(seq_along(x),x),table=table(x,useNA=\"ifany\"),literal=table(c(\"<NA>\",NA,\"\"),useNA=\"always\"))})"
+  },
+
+  {
+    "id": "argument-matching-recursive-calls-and-diagnostics",
+    "policy": "exact",
+    "bindingEvidence": ["base::match.call", "base::conditionCall"],
+    "code": "local({f<-function(alpha,alpine,beta)match.call();diagnostic<-function(e)list(message=conditionMessage(e),call=conditionCall(e));list(matched=f(alpha=1,al=2,beta=3),explicit=match.call(f,quote(f(alpha=1,al=2,beta=3))),unused=tryCatch(f(1,2,3,extra=4),error=diagnostic),duplicate=tryCatch(f(beta=1,beta=2,alpha=3,alpha=4),error=diagnostic),ambiguous=tryCatch(f(al=1),error=diagnostic))})"
+  },
+  {
+    "id": "argument-default-promises-and-forwarded-missingness",
+    "policy": "exact",
+    "bindingEvidence": ["base::missing"],
+    "code": "local({n<-0;f<-function(x={n<<-n+1;4})list(before=missing(x),value=x,again=x,after=missing(x));g<-function(y=2){h<-function(x)list(missing=missing(x),value=x);h(y)};h<-function(y){inner<-function(x=1)x;inner(y)};list(explicit=f(x=),count=n,forwarded=g(),missing=tryCatch(h(),error=function(e)list(message=conditionMessage(e),call=conditionCall(e))))})"
+  },
+  {
+    "id": "primitive-argument-order-and-diagnostic-metadata",
+    "policy": "exact",
+    "code": "local({n<-0;diagnostic<-function(e)list(message=conditionMessage(e),call=conditionCall(e));over<-tryCatch(abs({n<-n+1;1},{n<-n+10;2}),error=diagnostic);list(over=over,count=n,empty=tryCatch(sqrt(x=),error=diagnostic),name=tryCatch(sqrt(other=4),error=diagnostic),zero=tryCatch(sqrt(),error=diagnostic),valid=c(sqrt(4),abs(-3)),roundtrip=as.call(as.list(quote(sqrt(x=)))))})"
+  },
+  {
+    "id": "person-explicit-missing-defaults-and-metadata",
+    "policy": "exact",
+    "bindingEvidence": ["utils::person"],
+    "code": "local({a<-person(\"Ada\",\"Example\",,role=\"aut\");b<-person(\"Ada\",\"Example\",email=,role=\"aut\");list(positional=unclass(a),named=unclass(b),same=identical(a,b),class=class(a),visible=withVisible(person(given=,family=\"Example\")))})"
   }
 ]
