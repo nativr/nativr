@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.367.0",
-  "capabilityManifestHash": "b3c8dfb3615f6338f9468596d5720eda71184f13256e5547d7cc079f87fe9934",
+  "semanticProfileVersion": "0.368.0",
+  "capabilityManifestHash": "2aee310d158908f0e3370ab1fa856d1f974a54804d7c7f64995201c3b22fe943",
   "evidence": {
-    "checkedInConformanceCases": 1268,
-    "liveREligibleCases": 1199,
+    "checkedInConformanceCases": 1275,
+    "liveREligibleCases": 1206,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 165,
-    "recursiveBehaviorallyProvenBindings": 98,
+    "recursiveOracleV2Cases": 174,
+    "recursiveBehaviorallyProvenBindings": 99,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::.subset2", "cases": ["default-boundary-internal-extraction"] },
@@ -25,7 +25,10 @@
           "owned-signature-metadata-defaults"
         ]
       },
-      { "binding": "base::args", "cases": ["owned-signature-metadata-defaults"] },
+      {
+        "binding": "base::args",
+        "cases": ["owned-reflection-public-signatures", "owned-signature-metadata-defaults"]
+      },
       {
         "binding": "base::as.call",
         "cases": [
@@ -47,6 +50,14 @@
       { "binding": "base::as.list.POSIXct", "cases": ["time-class-list-conversion"] },
       { "binding": "base::as.ordered", "cases": ["factor-coercion-nondispatch-and-signatures"] },
       { "binding": "base::attr", "cases": ["partial-attribute-lookup-and-time-forcing"] },
+      {
+        "binding": "base::body",
+        "cases": [
+          "owned-reflection-body-values",
+          "owned-reflection-getter-conditions",
+          "owned-reflection-named-lookup"
+        ]
+      },
       {
         "binding": "base::c",
         "cases": ["combine-first-argument-s3-dispatch", "combine-next-method-primitive-fallback"]
@@ -97,7 +108,16 @@
         "binding": "base::factor",
         "cases": ["factor-na-construction-labels-and-code-masks", "recursive-data-frame-object"]
       },
-      { "binding": "base::formals", "cases": ["owned-signature-metadata-defaults"] },
+      {
+        "binding": "base::formals",
+        "cases": [
+          "owned-reflection-constructed-defaults",
+          "owned-reflection-getter-conditions",
+          "owned-reflection-named-lookup",
+          "owned-reflection-public-signatures",
+          "owned-signature-metadata-defaults"
+        ]
+      },
       {
         "binding": "base::format",
         "cases": [
@@ -166,6 +186,7 @@
         "cases": [
           "argument-matching-recursive-calls-and-diagnostics",
           "matched-call-language-and-unexpanded-dots",
+          "owned-reflection-repeated-formals",
           "partial-argument-warning-builtins-and-match-call",
           "replacement-rhs-source-and-stored-call-values",
           "s3-replacement-rhs-source-and-stored-call-values"
@@ -362,8 +383,8 @@
   },
   "nameInventory": {
     "referenceVersion": "R version 4.6.1 (2026-06-24 ucrt)",
-    "registeredBindings": 777,
-    "gnuRNameOverlaps": 750,
+    "registeredBindings": 778,
+    "gnuRNameOverlaps": 751,
     "referenceCoreCallableNames": 2522
   },
   "packageCorpus": {

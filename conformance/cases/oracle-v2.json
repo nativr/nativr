@@ -1434,5 +1434,57 @@
     "bindingEvidence": ["base::sort.int"],
     "code": "local({capture<-function(expr)tryCatch(expr,error=function(e)list(message=conditionMessage(e),call=conditionCall(e),class=class(e)));seen<-character();mark<-function(name,value){seen<<-c(seen,name);value};value<-sort.int(mark(\"x\",c(3,1,2)),partial=mark(\"partial\",2),decreasing=mark(\"decreasing\",FALSE),na.last=mark(\"na.last\",NA),method=mark(\"method\",\"auto\"),index.return=mark(\"index.return\",FALSE));list(value=value,seen=seen,radix=capture(sort.int(stop(\"x\"),partial=2,method=\"radix\")),type=capture(sort.int(1:3,partial=\"2\")),bounds=capture(sort.int(1:3,partial=4)),overflow=capture(sort.int(1:3,partial=1e100)))})",
     "policy": "exact"
+  },
+
+  {
+    "id": "owned-reflection-body-values",
+    "bindingEvidence": ["base::body"],
+    "code": "local({list(double=body(function()1),integer=body(function()1L),logical=body(function()TRUE),character=body(function()\"owned\"),missing=body(function()NA_integer_),symbol=body(function()x),null=body(function()NULL),complex=body(function()1i),call=body(function(x){x+1}))})",
+    "policy": "exact"
+  },
+  {
+    "id": "owned-reflection-named-lookup",
+    "bindingEvidence": ["base::formals", "base::body"],
+    "code": "local({seen<-character();outer<-new.env();outer$owned<-function(z=4)z+1;inner<-new.env(parent=outer);delayedAssign(\"owned\",{seen<<-c(seen,\"forced\");1},assign.env=inner);params<-formals(\"owned\",envir=inner);owned<-function(x=2)x+1;innerBody<-(function(){owned<-7;body(\"owned\")})();list(parameters=params,seen=seen,body=innerBody,lazy=formals(owned,envir=stop(\"unused\")))})",
+    "policy": "exact"
+  },
+  {
+    "id": "owned-reflection-public-signatures",
+    "bindingEvidence": ["base::args", "base::formals"],
+    "code": "local({f<-function(x=2,...)x+1;a<-args(f);list(body=formals(body),formals=formals(formals),bodyReplacement=formals(get(\"body<-\")),formalsReplacement=formals(get(\"formals<-\")),args=formals(base::args),owned=formals(a),emptyBody=is.null(body(a)),globalEnvironment=identical(environment(a),.GlobalEnv),unknown=vapply(c(\"$\",\"(\",\":\",\"[\",\"[[\"),function(name)is.null(args(get(name,envir=baseenv()))),logical(1)),zeroArgumentFunction=is.function(args(function()NULL)))})",
+    "policy": "exact"
+  },
+  {
+    "id": "owned-reflection-replacement-values",
+    "code": "local({f<-function()NULL;value<-structure(1:3,names=c(\"a\",\"b\",\"c\"),tag=\"body\");body(f)<-value;vector<-list(body=body(f),value=f());e<-new.env();value<-list(e=e,values=structure(c(1,2),tag=\"values\"));body(f)<-value;nested<-list(identity=identical(f()$e,e),values=f()$values);value<-pairlist(x=structure(2,tag=\"value\"));body(f)<-value;pair<-list(body=body(f),value=f());list(vector=vector,nested=nested,pairlist=pair)})",
+    "policy": "exact"
+  },
+  {
+    "id": "owned-reflection-replacement-enclosures",
+    "code": "local({f<-local({bias<-40;function(x=2)x+bias});attr(f,\"owned\")<-7;g<-f;body(f)<-quote(x+1);e<-new.env();e$bias<-7;h<-`body<-`(f,envir=e,value=quote(x+bias));list(values=c(f(),g(),h()),aliasBody=body(g),replacementBody=body(f),attributes=attributes(f),originalAttributes=attributes(g),sameEnclosure=identical(environment(f),environment(g)),changedEnclosure=identical(environment(h),e))})",
+    "policy": "exact"
+  },
+  {
+    "id": "owned-reflection-constructed-defaults",
+    "bindingEvidence": ["base::formals"],
+    "code": "local({f<-function(x)x;value<-structure(1:2,tag=\"default\");formals(f)<-pairlist(x=value);constant<-list(formals=formals(f),value=f());default<-function()7;formals(f)<-pairlist(x=default);identity<-identical(f(),default)&&identical(formals(f)$x,default);g<-function()c(a,b);formals(g)<-c(a=1L,b=2L);list(constant=constant,identity=identity,atomic=list(formals=formals(g),value=g()))})",
+    "policy": "exact"
+  },
+  {
+    "id": "owned-reflection-repeated-formals",
+    "bindingEvidence": ["base::match.call"],
+    "code": "local({f<-function()match.call();formals(f)<-pairlist(x=1,x=2);calls<-list(implicit=f(9,8),explicit=match.call(f,quote(f(9,8))));body(f)<-quote(missing(x));missing<-c(f(),f(9),f(,8));body(f)<-quote(x);capture<-function(expr)tryCatch(expr,error=conditionMessage);list(calls=calls,missing=missing,values=c(f(),f(9),f(9,stop(\"unused\"))),ambiguous=capture(f(x=9)),unused=capture(f(9,8,7)))})",
+    "policy": "exact"
+  },
+  {
+    "id": "owned-reflection-getter-conditions",
+    "bindingEvidence": ["base::body", "base::formals"],
+    "code": "local({capture<-function(expr){warnings<-list();value<-withCallingHandlers(expr,warning=function(e){warnings[[length(warnings)+1L]]<<-list(message=conditionMessage(e),call=conditionCall(e),class=class(e));invokeRestart(\"muffleWarning\")});list(value=value,warnings=warnings)};list(body=capture(body(1)),formals=capture(formals(1)))})",
+    "policy": "exact"
+  },
+  {
+    "id": "owned-reflection-forcing-and-frames",
+    "code": "local({f<-function(x=2)x;seen<-character();mark<-function(name,value){seen<<-c(seen,name);value};g<-`body<-`(mark(\"fun\",f),envir=mark(\"envir\",environment(f)),value=mark(\"value\",quote(x+1)));bodyOrder<-seen;seen<-character();h<-`formals<-`(mark(\"fun\",f),envir=mark(\"envir\",environment(f)),value=mark(\"value\",pairlist(x=4)));owned<-function(z=2){forceOwned<-function(x)x;c(body=identical(forceOwned(body()),body(owned)),formals=identical(forceOwned(formals()),formals(owned)))};list(bodyOrder=bodyOrder,formalsOrder=seen,values=c(g(),h()),frame=owned())})",
+    "policy": "exact"
   }
 ]

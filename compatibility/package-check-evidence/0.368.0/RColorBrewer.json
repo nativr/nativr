@@ -1,0 +1,211 @@
+{
+  "schemaVersion": 2,
+  "kind": "nativr-package-check-summary",
+  "rawReportSha256": "d410f6ff7bb1eab60ad5cebbbeab3693c7cb0cacd95ae9aaea966dbdfe54f0ed",
+  "redaction": {
+    "policy": "allowlisted-metadata-sha256-v2",
+    "rawOutputIncluded": false,
+    "rawConditionsIncluded": false,
+    "sourceIncluded": false
+  },
+  "package": { "name": "RColorBrewer", "version": "1.1-3" },
+  "provenance": {
+    "sourceSha256": "4f42f5423c45688b39f492c7892d93f37b4541831c8ffb140364d2bd89031ac0",
+    "artifactSha256": "4a5438a27a6ddfe2ead9563c736b34498081c811a4185d84bb18ecbde12f6ba8",
+    "capabilitySha256": "2aee310d158908f0e3370ab1fa856d1f974a54804d7c7f64995201c3b22fe943",
+    "semanticProfile": "0.368.0",
+    "oracle": { "implementation": "GNU R", "version": "4.6.1" },
+    "runtimeLimits": {
+      "maxSteps": 300000000,
+      "maxCallDepth": 200,
+      "maxVectorLength": 50000000,
+      "maxOutputBytes": 32000000,
+      "maxPackageResourceBytes": 268435456
+    }
+  },
+  "executionProfile": {
+    "rng": {
+      "policy": "explicit-seed-v1",
+      "seed": 20261016,
+      "kinds": ["Mersenne-Twister", "Inversion", "Rejection"]
+    },
+    "oracleRepeat": true,
+    "runtimeProfile": "package-test",
+    "capture": "native-rscript-top-level-v1"
+  },
+  "p7Eligible": false,
+  "inventory": { "nestedTestFiles": 0 },
+  "documentationMetadata": {
+    "policy": "loaded-documentation-signatures-v2",
+    "sourceSha256": "c6cf9d61cd92a70b7971652085aeb0d22af848ed54a44ff3e32ce888f9873905",
+    "exportsStatus": "passed",
+    "actual": {
+      "status": "completed",
+      "exportCount": 4,
+      "signatures": {
+        "match": 3,
+        "mismatch": 0,
+        "unknown": 0,
+        "active": 0,
+        "missing": 0,
+        "noncallable": 0
+      }
+    },
+    "expected": {
+      "status": "completed",
+      "exportCount": 4,
+      "signatures": {
+        "match": 3,
+        "mismatch": 0,
+        "unknown": 0,
+        "active": 0,
+        "missing": 0,
+        "noncallable": 0
+      }
+    },
+    "functions": { "passed": 3, "failed": 0, "unexecuted": 0 },
+    "usageOutcomes": { "OK": 1, "NOTE": 0, "WARNING": 0, "ERROR": 0 }
+  },
+  "dependencies": [
+    {
+      "name": "R",
+      "actualVersion": "4.6.1",
+      "oracleVersion": "4.6.1",
+      "actualObserved": true,
+      "oracleObserved": true
+    }
+  ],
+  "firstBlocker": {
+    "stage": "namespace-source",
+    "code": "stage-unexecuted",
+    "path": null,
+    "messageSha256": "668e1d008d79585d0ec926c4cad6b07c2f1b114c62059bbb882a558ea8da2b0b"
+  },
+  "runnerDispatch": {
+    "examples": { "outcome": "completed", "firstBlocker": null },
+    "tests": { "outcome": "no-tests", "firstBlocker": null }
+  },
+  "observations": [
+    {
+      "kind": "example",
+      "path": "man/ColorBrewer.Rd",
+      "inputSha256": "9d6ae520aa8c8da93fb878c9571fc8f3ef3fa02619fe7529a6a5d5b6f73b92a0",
+      "actual": "failed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    }
+  ],
+  "stages": [
+    {
+      "id": "archive-artifact",
+      "status": "passed",
+      "reasonSha256": "0312af7e14cc867a5c890b89532a0417aa767469482454231b79f3843169dee0",
+      "discovered": 2,
+      "executed": 2
+    },
+    {
+      "id": "metadata-dependencies",
+      "status": "passed",
+      "reasonSha256": "8fd450bc4d91f0f301ff73fbbf900ea1c0ac272b147d2b3b7abec50eea40d656",
+      "discovered": 25,
+      "executed": 25
+    },
+    {
+      "id": "installation-loading",
+      "status": "passed",
+      "reasonSha256": "6bc44fd45f565dfd029e3699d8b1c0634f0a2beeef3c601a3d570a1b2019b6bd",
+      "discovered": 9,
+      "executed": 9
+    },
+    {
+      "id": "namespace-source",
+      "status": "unexecuted",
+      "reasonSha256": "668e1d008d79585d0ec926c4cad6b07c2f1b114c62059bbb882a558ea8da2b0b",
+      "discovered": 9,
+      "executed": 8
+    },
+    {
+      "id": "documentation",
+      "status": "passed",
+      "reasonSha256": "57b09490f1c6debb46aac797ebbc7bdc5f9aecef043b7c666aa64a6d524329d0",
+      "discovered": 10,
+      "executed": 10
+    },
+    {
+      "id": "installed-documentation",
+      "status": "inapplicable",
+      "reasonSha256": "4dd671d369dd77e5dec484581aee548cf3414398fb93196c4519c284c3943346",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "native-build-portability",
+      "status": "inapplicable",
+      "reasonSha256": "faa48c0fe336e4da224a483f2f2ea0b9b275608edcd9758ece9022acf3e808c3",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "data",
+      "status": "inapplicable",
+      "reasonSha256": "e57542648bf3f7c5c3a126240ed0af656faf096afb83caeb1c93da1034f1f8d5",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "examples",
+      "status": "failed",
+      "reasonSha256": "4434de7ecb2ff89e4f6f7354f7c20b6ceae1f9c83bf61dac68dbc8003c3bc690",
+      "discovered": 1,
+      "executed": 1
+    },
+    {
+      "id": "package-tests",
+      "status": "unexecuted",
+      "reasonSha256": "309d465a73407a8ecdc3b2a29ca2cd83f5080b8d1da830d9e02ed41dbb6e7c03",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "test-output",
+      "status": "failed",
+      "reasonSha256": "c55b5e84b2d73b2f23c99e0c020cd7b4aaa47e53a1d25d9930909908fe937ea7",
+      "discovered": 1,
+      "executed": 1
+    },
+    {
+      "id": "output-order",
+      "status": "unexecuted",
+      "reasonSha256": "1e5c36b41ebc357a3cd1ad4b61114a7e35b18dbc7a2cb6d3549c9ad67b52ed57",
+      "discovered": 1,
+      "executed": 0
+    },
+    {
+      "id": "conditions",
+      "status": "unexecuted",
+      "reasonSha256": "f4e9e9534aa28827a8b111dee537e081c9143d15bcdd91fe67953b0493e27467",
+      "discovered": 1,
+      "executed": 1
+    },
+    {
+      "id": "vignettes",
+      "status": "inapplicable",
+      "reasonSha256": "f6b0c8eab5478f238094a84c2f79a814990223c04e27a8707b4805efa6ed723e",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "manual",
+      "status": "passed",
+      "reasonSha256": "2f0257c2bfff6f5cbf56a7ca5bed2d962fcca9da96711692ddea6cef736190e4",
+      "discovered": 1,
+      "executed": 1
+    }
+  ],
+  "comparisons": {
+    "total": 1,
+    "outcomes": { "mismatch": 1 },
+    "repeatability": { "repeatable": 1, "nonrepeatable": 0, "unobserved": 0 }
+  }
+}

@@ -38,6 +38,31 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Owned function reflection and replacement (profile 0.368)
+
+Owned closure bodies retain their observable atomic, symbol, call, list and pairlist value types.
+Named body/formals lookup forces lazy or active bindings and skips non-functions. Formals accepts an
+explicit lookup environment without forcing it for direct function inputs. Omitted accessors use the
+caller's evaluation frame, including a promise forced by another owned closure. Public
+accessor/replacement signatures, getter warning conditions and primitive classification have
+independently authored evidence. args resolves character names globally; unknown primitive
+signatures return NULL, while an owned zero-argument function still produces a function. Recorded
+signature metadata continues to distinguish formals: null from an empty argument list.
+
+Body and formals replacement construct a new closure with the selected enclosure, retain embedded
+constant attributes and identity, and preserve aliases. Function attributes are dropped as observed.
+Expression bodies select the first element, warning for multiple elements and rejecting empty ones.
+Constructed formals accept named atomic defaults, missing-name labels and repeated names. Argument
+matching tracks each formal position; the first repeated binding is visible to the body, unused
+later promises remain lazy, and match.call preserves both positions. Materialization and frame/name
+lookup obey runtime work limits. Conditions, forcing order and invalid inputs are bounded by the
+owned fixtures; broad constructor diagnostic calls and all frame-inspection cases remain open.
+
+No GNU R or package implementation body is an input to this work. Reflection of library function
+bodies, complete default metadata for every callable, first-class special-form bindings and broad
+display/classification equivalence remain unfinished. Passing owned cases does not establish full
+reflection or calls/promises domain closure.
+
 ### Default-method boundaries and partial selection (profile 0.367)
 
 Complex sequence endpoints and increments retain both components when a length is supplied. The
@@ -1711,13 +1736,14 @@ interrupt/error precedence are not claimed. `I` prefixes one `AsIs` class on vec
 pairlists while retaining existing classes and attributes; assigning attributes to NULL and other
 non-attributable values remains an error.
 
-`body` returns an owned normalized language value for NativR closures, resolves a supplied character
-function name through the caller environment, and returns NULL for registered primitive/special
-builtins. Missing-argument self-inspection, bytecode/source-reference metadata, and replacement via
-`body<-` are not claimed. `unlist` recursively flattens owned atomic/list/pairlist values with GNU R
-type promotion, missingness, nested-name construction, factor-level union, raw/complex support,
-`use.names`, and one-level `recursive = FALSE` results. Arbitrary class dispatch, expression
-vectors, and recursive non-vector objects remain outside this increment.
+`body` returns owned body values in their observable types, resolves a supplied character function
+name through the caller environment, and returns NULL for registered primitive/special builtins.
+Profile 0.368 adds owned self-inspection and component replacement with the boundaries stated above;
+bytecode/source-reference metadata and library bodies remain incomplete. `unlist` recursively
+flattens owned atomic/list/pairlist values with GNU R type promotion, missingness, nested-name
+construction, factor-level union, raw/complex support, `use.names`, and one-level
+`recursive = FALSE` results. Arbitrary class dispatch, expression vectors, and recursive non-vector
+objects remain outside this increment.
 
 `transform` evaluates named additions lazily in the original list/data-frame mask with lexical
 caller fallback, so sibling additions do not become visible to later expressions. Existing columns

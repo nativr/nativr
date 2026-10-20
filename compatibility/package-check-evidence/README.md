@@ -1,11 +1,17 @@
 # Exploratory package-check evidence
 
+The latest cached development/regression checkpoint is [profile 0.368](corpus-0.368.0.json): 24
+digest-pinned archives, original entrypoints and applicable native repeatability observations.
+pkgconfig and abind reach P7 on this Windows host; full platform validation remains separate.
+Formula was not evaluated. Reports contain only allowlisted metadata and digests. The sections below
+retain historical evidence and its original limitations.
+
 **abind 1.4-8 reaches P7 at profile 0.353.0** under RFC-0008: see the redacted summary
 `abind-1.4-8-p7-0.353.0.json` (written by `scripts/redact-package-check.mjs` from a full local
 report). The historical summaries below predate the RFC-0008 stages.
 
 These summaries preserve the observed package-check diagnostics for semantic profiles **0.302.0**,
-**0.303.0**, **0.304.0**, and **0.305.0**, with the latest results shown below, against separately
+**0.303.0**, **0.304.0**, and **0.305.0**, with historical results shown below, against separately
 installed **GNU R 4.6.1**. They do not establish P7. Both reports retain the first unexecuted check
 stage, complete discovered/executed inventories, package archive and artifact digests, capability
 hash, and effective finite runtime limits.

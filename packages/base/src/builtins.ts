@@ -217,6 +217,35 @@ const SYNTHETIC_SPAN: SourceSpan = Object.freeze({
 type AtomicVector =
   RLogicalVector | RIntegerVector | RDoubleVector | RComplexVector | RRawVector | RCharacterVector;
 
+// Observable GNU R 4.6.1 signature metadata; null denotes unknown, not a zero-argument closure.
+const R_BASE_UNKNOWN_SIGNATURE_NAMES = new Set([
+  "$",
+  "$<-",
+  "&&",
+  "(",
+  ":",
+  "<-",
+  "<<-",
+  "=",
+  "@",
+  "@<-",
+  "[",
+  "[<-",
+  "[[",
+  "[[<-",
+  "break",
+  "for",
+  "function",
+  "if",
+  "next",
+  "repeat",
+  "return",
+  "while",
+  "{",
+  "||",
+  "~",
+]);
+
 // Observable primitive-valued base bindings in GNU R 4.6.1, collected through
 // is.primitive() on baseenv() as black-box conformance data. Runtime evaluation
 // kind is separate: a browser implementation can evaluate a primitive eagerly
@@ -2263,7 +2292,14 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("as.call", ["x"], "behavioral", builtinAsCall),
   defineBuiltin("deparse", ["expr", "width.cutoff"], "behavioral", builtinDeparse),
   defineBuiltin("deparse1", ["expr", "collapse", "width.cutoff"], "behavioral", builtinDeparse1),
-  defineBuiltin("body", ["fun"], "behavioral", builtinBody),
+  withBuiltinFormals(
+    defineBuiltin("body", ["fun"], "behavioral", builtinBody),
+    functionAccessorFormals(false),
+  ),
+  withBuiltinFormals(
+    defineBuiltin("body<-", ["fun", "envir", "value"], "behavioral", builtinBodyReplacement),
+    functionReplacementFormals(),
+  ),
   withBuiltinFormals(
     defineBuiltin(
       "debug",
@@ -2301,9 +2337,17 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     defineBuiltin("isdebugged", ["fun", "signature"], "behavioral", builtinIsDebugged),
     [{ name: "fun" }, { name: "signature", defaultValue: nullAst() }],
   ),
-  defineBuiltin("args", ["name"], "behavioral", builtinArgs),
-  defineBuiltin("formals", ["fun"], "behavioral", builtinFormals),
-  defineBuiltin("formals<-", ["fun", "value"], "behavioral", builtinFormalsReplacement),
+  withBuiltinFormals(defineBuiltin("args", ["name"], "behavioral", builtinArgs), [
+    { name: "name" },
+  ]),
+  withBuiltinFormals(
+    defineBuiltin("formals", ["fun", "envir"], "behavioral", builtinFormals),
+    functionAccessorFormals(true),
+  ),
+  withBuiltinFormals(
+    defineBuiltin("formals<-", ["fun", "envir", "value"], "behavioral", builtinFormalsReplacement),
+    functionReplacementFormals(),
+  ),
   defineBuiltin("length", ["x"], "behavioral", builtinLength),
   defineBuiltin("length<-", ["x", "value"], "behavioral", builtinLengthReplacement),
   defineBuiltin("lengths", ["x", "use.names"], "behavioral", builtinLengths),
@@ -19328,24 +19372,99 @@ function attachNames<T extends AtomicVector>(value: T, names: readonly string[] 
   return names === undefined ? value : withNames(value, names);
 }
 
-async function builtinBody(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = await matchExact(invocation, ["fun"]);
-  let value = required(matched, "fun", "body");
-  if (value.type === "character") {
-    const name = characterScalar(value, "fun");
-    const binding = lookupBinding(invocation.currentEnvironment(), name);
-    if (binding === undefined) {
-      throw new REvaluationError("NRE2001", `Could not find function '${name}'.`);
-    }
-    value = await invocation.force(binding);
-  }
-  if (value.type === "closure") {
-    if (value.body.kind === "NullLiteral") return R_NULL;
-    return { type: "language", expression: value.body } satisfies RLanguage;
-  }
+function functionAccessorFormals(
+  includeEnvironment: boolean,
+): readonly { readonly name: string; readonly defaultValue?: AstNode }[] {
+  return [
+    {
+      name: "fun",
+      defaultValue: callAst("sys.function", [
+        { value: callAst("sys.parent", []), span: SYNTHETIC_SPAN },
+      ]),
+    },
+    ...(includeEnvironment ? [{ name: "envir", defaultValue: callAst("parent.frame", []) }] : []),
+  ];
+}
+
+function functionReplacementFormals(): readonly {
+  readonly name: string;
+  readonly defaultValue?: AstNode;
+}[] {
+  return [
+    { name: "fun" },
+    {
+      name: "envir",
+      defaultValue: callAst("environment", [
+        { value: { kind: "Identifier", name: "fun", span: SYNTHETIC_SPAN }, span: SYNTHETIC_SPAN },
+      ]),
+    },
+    { name: "value" },
+  ];
+}
+
+async function reflectionWarning(
+  invocation: BuiltinInvocation,
+  message: string,
+  call = invocation.currentCall(),
+): Promise<void> {
+  await signalWarning(invocation, simpleConditionValue(message, "warning", call), {
+    code: "NRW1013",
+    message,
+  });
+}
+
+async function reflectionTarget(
+  value: RValue,
+  environment: REnvironment,
+  invocation: BuiltinInvocation,
+): Promise<RValue> {
+  if (value.type !== "character") return value;
+  if (value.length > 1) throw new RTypeMismatchError("NRT3204", "first argument has length > 1");
+  if (value.length === 0 || (!isMissing(value, 0) && value.values[0] === ""))
+    throw new RTypeMismatchError("NRT3204", "invalid first argument");
+  const name = isMissing(value, 0) ? "NA" : (value.values[0] ?? "");
+  return lookupCallableByName(
+    invocation,
+    name,
+    environment,
+    `object '${name}' of mode 'function' was not found`,
+  );
+}
+
+async function reflectedBody(
+  value: RValue,
+  invocation: BuiltinInvocation,
+  call = reflectionInternalCall("body"),
+): Promise<RValue> {
+  if (value.type === "closure") return quoteAst(value.body);
   if (value.type === "builtin") return R_NULL;
-  invocation.context.warn({ code: "NRW1013", message: "argument is not a function" });
+  await reflectionWarning(invocation, "argument is not a function", call);
   return R_NULL;
+}
+
+async function reflectedParameters(
+  value: RValue,
+  invocation: BuiltinInvocation,
+  call = reflectionInternalCall("formals"),
+): Promise<readonly FunctionParameter[] | undefined> {
+  if (value.type === "closure") return value.parameters;
+  if (value.type === "builtin")
+    return value.definition.package === "base" && R_BASE_PRIMITIVE_NAMES.has(value.definition.name)
+      ? undefined
+      : value.definition.formals;
+  await reflectionWarning(invocation, "argument is not a function", call);
+  return undefined;
+}
+
+async function builtinBody(invocation: BuiltinInvocation): Promise<RValue> {
+  const bound = await matchBuiltinDefaults(invocation, functionAccessorFormals(false));
+  const supplied = bound.supplied.has("fun")
+    ? await bound.force("fun")
+    : invocation.currentFunction();
+  return reflectedBody(
+    await reflectionTarget(supplied, invocation.currentEnvironment(), invocation),
+    invocation,
+  );
 }
 
 async function builtinDebug(invocation: BuiltinInvocation, once: boolean): Promise<RValue> {
@@ -19406,9 +19525,15 @@ function rejectDebugSignature(value: RValue | undefined, call: string): void {
   );
 }
 
-async function lookupCallableByName(invocation: BuiltinInvocation, name: string): Promise<RValue> {
-  let environment: REnvironment | null = invocation.currentEnvironment();
+async function lookupCallableByName(
+  invocation: BuiltinInvocation,
+  name: string,
+  start = invocation.currentEnvironment(),
+  missingMessage = `Could not find function '${name}'.`,
+): Promise<RValue> {
+  let environment: REnvironment | null = start;
   while (environment !== null) {
+    invocation.context.checkpoint();
     const binding = environment.bindings.get(name);
     if (binding !== undefined) {
       const value = await invocation.force(binding);
@@ -19416,16 +19541,31 @@ async function lookupCallableByName(invocation: BuiltinInvocation, name: string)
     }
     environment = environment.parent;
   }
-  throw new REvaluationError("NRE2001", `Could not find function '${name}'.`);
+  throw new REvaluationError("NRE2001", missingMessage);
 }
 
 async function builtinArgs(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = await matchExact(invocation, ["name"]);
-  let value = required(matched, "name", "args");
+  const bound = await matchBuiltinDefaults(invocation, [{ name: "name" }]);
+  let value = await bound.force("name");
   if (value.type === "character") {
     if (value.length !== 1) return R_NULL;
-    value = await lookupCallableByName(invocation, characterScalar(value, "name"));
+    const name = isMissing(value, 0) ? "NA" : (value.values[0] ?? "");
+    if (name === "")
+      throw new REvaluationError("NRE2007", "attempt to use zero-length variable name");
+    value = await lookupCallableByName(
+      invocation,
+      name,
+      invocation.globalEnvironment(),
+      `could not find function "${name}"`,
+    );
   }
+
+  if (
+    value.type === "builtin" &&
+    value.definition.package === "base" &&
+    R_BASE_UNKNOWN_SIGNATURE_NAMES.has(value.definition.name)
+  )
+    return R_NULL;
 
   const parameters =
     value.type === "closure"
@@ -19449,69 +19589,148 @@ async function builtinArgs(invocation: BuiltinInvocation): Promise<RValue> {
   };
 }
 
+function reflectionLookupEnvironment(value: RValue, invocation: BuiltinInvocation): REnvironment {
+  if (value.type === "environment") return value;
+  if (value.type === "null")
+    throw new RTypeMismatchError("NRT3204", "use of NULL environment is defunct");
+  if (
+    (value.type === "integer" || value.type === "double") &&
+    value.length > 0 &&
+    !isMissing(value, 0)
+  ) {
+    const position = Math.trunc(value.values[0] ?? 0);
+    if (position === -1) return invocation.currentEnvironment();
+    const environment = invocation.searchEnvironment(position);
+    if (environment !== undefined) return environment;
+  }
+  throw new RTypeMismatchError("NRT3204", "invalid 'envir' argument");
+}
+
 async function builtinFormals(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = await matchExact(invocation, ["fun"]);
-  const value = required(matched, "fun", "formals");
-  if (value.type === "closure") {
-    if (value.parameters.length === 0) return R_NULL;
-    const defaults = value.parameters.map((parameter): RValue =>
-      parameter.defaultValue === undefined
-        ? ({ type: "symbol", name: "" } satisfies RSymbol)
-        : quoteAst(parameter.defaultValue),
-    );
-    invocation.context.allocate(defaults.length);
-    return pairlistValue(
-      defaults,
-      value.parameters.map((parameter) => parameter.name),
-    );
-  }
-  if (value.type === "builtin") {
-    const parameters = value.definition.formals;
-    if (parameters === undefined || parameters.length === 0) return R_NULL;
-    const defaults = parameters.map((parameter): RValue =>
-      parameter.defaultValue === undefined
-        ? ({ type: "symbol", name: "" } satisfies RSymbol)
-        : quoteAst(parameter.defaultValue),
-    );
-    invocation.context.allocate(defaults.length);
-    return pairlistValue(
-      defaults,
-      parameters.map((parameter) => parameter.name),
-    );
-  }
-  if (value.type === "character") return R_NULL;
-  invocation.context.warn({ code: "NRW1013", message: "argument is not a function" });
-  return R_NULL;
+  const bound = await matchBuiltinDefaults(invocation, functionAccessorFormals(true));
+  const supplied = bound.supplied.has("fun")
+    ? await bound.force("fun")
+    : invocation.currentFunction();
+  const environment =
+    supplied.type === "character" && bound.supplied.has("envir")
+      ? reflectionLookupEnvironment(await bound.force("envir"), invocation)
+      : invocation.currentEnvironment();
+  const value = await reflectionTarget(supplied, environment, invocation);
+  const parameters = await reflectedParameters(value, invocation);
+  if (parameters === undefined || parameters.length === 0) return R_NULL;
+  invocation.context.allocate(parameters.length);
+  return pairlistValue(
+    parameters.map((parameter) => {
+      invocation.context.checkpoint();
+      return parameter.defaultValue === undefined
+        ? { type: "symbol", name: "" }
+        : quoteAst(parameter.defaultValue);
+    }),
+    parameters.map((parameter) => parameter.name),
+  );
+}
+
+function reflectionInternalCall(name: string): RLanguage {
+  return {
+    type: "language",
+    expression: callAst(name, [
+      { value: { kind: "Identifier", name: "fun", span: SYNTHETIC_SPAN }, span: SYNTHETIC_SPAN },
+    ]),
+  };
+}
+
+function replacementParameters(
+  value: RValue,
+  invocation: BuiltinInvocation,
+): readonly FunctionParameter[] {
+  if (value.type === "null") return Object.freeze([]);
+  if (!isAtomic(value) && value.type !== "list" && value.type !== "pairlist")
+    throw new RTypeMismatchError("NRT3204", "list argument expected");
+  invocation.context.allocate(value.length);
+  if (value.length === 0) return Object.freeze([]);
+  const names = value.attributes.get("names");
+  if (names?.type !== "character" || names.length !== value.length)
+    throw new RTypeMismatchError("NRT3204", 'invalid formal argument list for "as.function"');
+  return Object.freeze(
+    Array.from({ length: value.length }, (_, index): FunctionParameter => {
+      invocation.context.checkpoint();
+      const name = isMissing(names, index) ? "NA" : (names.values[index] ?? "");
+      if (name === "")
+        throw new RTypeMismatchError("NRT3204", 'invalid formal argument list for "as.function"');
+      const entry =
+        value.type === "list" || value.type === "pairlist"
+          ? (value.values[index] ?? R_NULL)
+          : quoteAst(atomicElementAst(value, index));
+      return {
+        name,
+        ...(entry.type === "symbol" && entry.name === ""
+          ? {}
+          : { defaultValue: embeddedValueAst(entry, () => invocation.context.checkpoint()) }),
+        span: SYNTHETIC_SPAN,
+      };
+    }),
+  );
+}
+
+async function builtinBodyReplacement(invocation: BuiltinInvocation): Promise<RValue> {
+  return replaceFunctionComponent(invocation, "body");
 }
 
 async function builtinFormalsReplacement(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = await matchExact(invocation, ["fun", "value"]);
-  const fun = required(matched, "fun", "formals<-");
-  const value = required(matched, "value", "formals<-");
-  if (fun.type !== "closure") {
-    throw new RTypeMismatchError("NRT3204", "invalid function argument to formals<-");
+  return replaceFunctionComponent(invocation, "formals");
+}
+
+async function replaceFunctionComponent(
+  invocation: BuiltinInvocation,
+  component: "body" | "formals",
+): Promise<RValue> {
+  const bound = await matchBuiltinDefaults(invocation, functionReplacementFormals());
+  const fun = await bound.force("fun");
+  if (fun.type !== "closure" && fun.type !== "builtin")
+    await reflectionWarning(invocation, "'fun' is not a function");
+  let body: RValue | undefined;
+  if (component === "formals")
+    body = await reflectedBody(
+      await reflectionTarget(fun, invocation.globalEnvironment(), invocation),
+      invocation,
+      reflectionInternalCall("body"),
+    );
+  let value = await bound.force("value");
+  if (component === "body" && value.type === "expression") {
+    if (value.values.length === 0) throw new REvaluationError("NRE2202", "subscript out of bounds");
+    if (value.values.length > 1)
+      await reflectionWarning(
+        invocation,
+        "using the first element of 'value' of type \"expression\"",
+      );
+    value = quoteAst(value.values[0] ?? nullAst());
   }
-  if (value.type === "null") return { ...fun, parameters: Object.freeze([]) };
-  if (value.type !== "pairlist" && value.type !== "list") {
-    throw new RTypeMismatchError("NRT3204", "invalid formal argument list for formals<-");
-  }
-  const names = vectorNames(value);
-  if (
-    names === undefined ||
-    names.length !== value.length ||
-    names.some((name) => name.length === 0)
-  ) {
-    throw new RTypeMismatchError("NRT3204", "invalid formal argument list for formals<-");
-  }
-  invocation.context.allocate(value.length);
-  const parameters = value.values.map((entry, index) => ({
-    name: names[index] ?? "",
-    ...(entry.type === "symbol" && entry.name.length === 0
-      ? {}
-      : { defaultValue: valueToAst(entry) }),
-    span: SYNTHETIC_SPAN,
-  }));
-  return { ...fun, parameters: Object.freeze(parameters) };
+  const parameters =
+    component === "body"
+      ? await reflectedParameters(
+          await reflectionTarget(fun, invocation.globalEnvironment(), invocation),
+          invocation,
+          reflectionInternalCall("formals"),
+        )
+      : undefined;
+  const environment = await bound.force("envir");
+  if (environment.type === "null")
+    throw new RTypeMismatchError("NRT3204", "use of NULL environment is defunct");
+  if (environment.type !== "environment")
+    throw new RTypeMismatchError("NRT3204", "invalid environment");
+  body = component === "body" ? value : (body ?? R_NULL);
+  if (!(isAtomic(body) || ["null", "symbol", "language", "list", "pairlist"].includes(body.type)))
+    throw new RTypeMismatchError("NRT3204", "invalid body for function");
+  return {
+    type: "closure",
+    parameters:
+      component === "body"
+        ? (parameters ?? Object.freeze([]))
+        : replacementParameters(value, invocation),
+    body: embeddedValueAst(body, () => invocation.context.checkpoint()),
+    environment,
+    attributes: new Map(),
+  };
 }
 
 async function builtinLength(invocation: BuiltinInvocation): Promise<RValue> {
@@ -19878,7 +20097,7 @@ async function builtinLogicalTruthPredicate(
 async function builtinEnvironment(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["fun"]);
   const callable = matched.get("fun");
-  if (callable === undefined) return invocation.currentEnvironment();
+  if (callable === undefined || callable.type === "null") return invocation.currentEnvironment();
   if (callable.type === "closure") return callable.environment;
   if (callable.type === "formula") return callable.environment ?? R_NULL;
   if (callable.type === "builtin" && callable.definition.kind === "regular") {

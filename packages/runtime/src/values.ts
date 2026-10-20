@@ -360,6 +360,8 @@ export interface BuiltinInvocation {
   ): void;
   isGlobalEnvironment(environment: REnvironment): boolean;
   currentEnvironment(): REnvironment;
+  /** Owned closure whose frame evaluates this call, including a forced caller promise. */
+  currentFunction(): RClosure | typeof R_NULL;
   parentFrame(offset: number): REnvironment;
   currentCall(): RLanguage | RNull;
   systemCall(which: number): RLanguage | RNull;

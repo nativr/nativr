@@ -358,6 +358,7 @@ interface ClosureCallFrame {
   readonly callerEnvironment: REnvironment;
   readonly closure: RClosure;
   readonly matched: ReadonlyMap<string, RPromise>;
+  readonly matchedByPosition: ReadonlyMap<number, BuiltinCallArgument>;
   readonly call?: CallExpressionNode;
 }
 
@@ -2620,6 +2621,16 @@ export class Evaluator {
           isGlobalEnvironment: (environment) => environment === this.#globalEnvironment,
           currentEnvironment: () =>
             callerEnvironment ?? args[0]?.promise.environment ?? this.#globalEnvironment,
+          currentFunction: () => {
+            const environment =
+              callerEnvironment ?? args[0]?.promise.environment ?? this.#globalEnvironment;
+            for (let index = this.#closureCallFrames.length - 1; index >= 0; index -= 1) {
+              context.checkpoint();
+              const frame = this.#closureCallFrames[index];
+              if (frame?.environment === environment) return frame.closure;
+            }
+            return R_NULL;
+          },
           parentFrame: (offset) => {
             const evaluationEnvironment =
               callerEnvironment ?? args[0]?.promise.environment ?? this.#globalEnvironment;
@@ -3372,9 +3383,9 @@ export class Evaluator {
       const matched = new Map(
         [...result.matched].map(([name, argument]) => [name, argument.promise]),
       );
-      for (const parameter of closure.parameters) {
-        if (parameter.name === "...") continue;
-        const supplied = matched.get(parameter.name);
+      for (const [index, parameter] of closure.parameters.entries()) {
+        if (parameter.name === "..." || frame.bindings.has(parameter.name)) continue;
+        const supplied = result.matchedByPosition.get(index)?.promise;
         if (supplied !== undefined && !(supplied.expression === null && supplied.missing)) {
           setBinding(frame, parameter.name, supplied);
         } else if (parameter.defaultValue !== undefined) {
@@ -3409,6 +3420,7 @@ export class Evaluator {
           this.#globalEnvironment,
         closure,
         matched,
+        matchedByPosition: result.matchedByPosition,
         ...(call === undefined ? {} : { call }),
       });
       try {
@@ -3512,7 +3524,7 @@ export class Evaluator {
       );
     }
     let parameters = frame?.closure.parameters;
-    let matched = frame?.matched;
+    let matched = frame?.matchedByPosition;
     const activeDots = frame?.environment.bindings.get("...");
     let dotsArguments = activeDots?.type === "dots" ? activeDots.arguments : [];
     if (definition !== undefined && definition.type !== "null") {
@@ -3571,9 +3583,9 @@ export class Evaluator {
       throw new RTypeMismatchError("NRT3214", "match.call(definition=) requires a function.");
     }
     const arguments_: CallArgument[] = [];
-    for (const parameter of parameters) {
+    for (const [index, parameter] of parameters.entries()) {
       if (parameter.name !== "...") {
-        const promise = matched.get(parameter.name);
+        const promise = matched.get(index)?.promise;
         if (
           promise === undefined ||
           (promise.expression === null && promise.missing) ||
@@ -5465,14 +5477,17 @@ async function matchCallDefinitionArguments(
   arguments_: ClosureCallFrame["arguments"],
   checkWork: () => void,
   onPartialMatch?: (match: PartialArgumentMatch) => Promise<void>,
-): Promise<{ readonly matched: Map<string, RPromise>; readonly dots: BuiltinCallArgument[] }> {
+): Promise<{
+  readonly matched: Map<number, BuiltinCallArgument>;
+  readonly dots: BuiltinCallArgument[];
+}> {
   const names = parameters.map((parameter) => parameter.name);
   const result =
     onPartialMatch === undefined
       ? matchArguments(arguments_, names, { checkWork })
       : await matchArgumentsWithWarnings(arguments_, names, onPartialMatch, { checkWork });
   return {
-    matched: new Map([...result.matched].map(([name, argument]) => [name, argument.promise])),
+    matched: result.matchedByPosition,
     dots: result.dots,
   };
 }

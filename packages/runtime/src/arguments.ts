@@ -22,6 +22,7 @@ export interface PartialArgumentMatch {
 
 interface MatchedArguments<T> {
   readonly matched: Map<string, T>;
+  readonly matchedByPosition: Map<number, T>;
   readonly dots: T[];
 }
 
@@ -109,9 +110,9 @@ function* argumentMatchingSteps<T extends BuiltinCallArgument & { readonly span?
   const checkWork = options.checkWork ?? (() => undefined);
   const dotsIndex = parameters.indexOf("...");
   const leading = dotsIndex < 0 ? parameters : parameters.slice(0, dotsIndex);
-  const resolved = new Map<number, string>();
+  const resolved = new Map<number, number>();
   const exact = new Set<number>();
-  const matched = new Map<string, T>();
+  const matched = new Map<number, T>();
   const duplicate = (name: string, argument: T): never => {
     throw new REvaluationError(
       codes.duplicate,
@@ -119,20 +120,26 @@ function* argumentMatchingSteps<T extends BuiltinCallArgument & { readonly span?
       argument.span === undefined ? {} : { span: argument.span },
     );
   };
-  for (const name of parameters) {
+  for (const [formalIndex, name] of parameters.entries()) {
     if (name === "...") continue;
     for (const [index, argument] of arguments_.entries()) {
       checkWork();
       if (argument.name !== name) continue;
-      if (matched.has(name)) duplicate(name, argument);
-      matched.set(name, argument);
-      resolved.set(index, name);
+      if (matched.has(formalIndex)) duplicate(name, argument);
+      if (resolved.has(index))
+        throw new REvaluationError(
+          codes.ambiguous,
+          `argument ${index + 1} matches multiple formal arguments`,
+          argument.span === undefined ? {} : { span: argument.span },
+        );
+      matched.set(formalIndex, argument);
+      resolved.set(index, formalIndex);
       exact.add(index);
     }
   }
   const exactFormals = new Set(matched.keys());
-  for (const name of leading) {
-    if (exactFormals.has(name)) continue;
+  for (const [formalIndex, name] of leading.entries()) {
+    if (exactFormals.has(formalIndex)) continue;
     for (const [index, argument] of arguments_.entries()) {
       checkWork();
       if (exact.has(index) || !argument.name || !name.startsWith(argument.name)) continue;
@@ -143,9 +150,9 @@ function* argumentMatchingSteps<T extends BuiltinCallArgument & { readonly span?
           argument.span === undefined ? {} : { span: argument.span },
         );
       }
-      if (matched.has(name)) duplicate(name, argument);
-      matched.set(name, argument);
-      resolved.set(index, name);
+      if (matched.has(formalIndex)) duplicate(name, argument);
+      matched.set(formalIndex, argument);
+      resolved.set(index, formalIndex);
       yield { actual: argument.name, formal: name };
     }
   }
@@ -155,11 +162,11 @@ function* argumentMatchingSteps<T extends BuiltinCallArgument & { readonly span?
     checkWork();
     if (resolved.has(index)) continue;
     if (!argument.name) {
-      while (position < leading.length && matched.has(leading[position] ?? "")) position += 1;
-      const name = leading[position++];
-      if (name !== undefined) {
-        matched.set(name, argument);
-        resolved.set(index, name);
+      while (position < leading.length && matched.has(position)) position += 1;
+      const formalIndex = position++;
+      if (leading[formalIndex] !== undefined) {
+        matched.set(formalIndex, argument);
+        resolved.set(index, formalIndex);
         continue;
       }
     }
@@ -172,16 +179,16 @@ function* argumentMatchingSteps<T extends BuiltinCallArgument & { readonly span?
       dots[0]?.span === undefined ? {} : { span: dots[0].span },
     );
   }
-  // Preserve actual order for callers that subsequently force matched promises.
-  return {
-    matched: new Map(
-      arguments_.flatMap((argument, index) => {
-        const name = resolved.get(index);
-        return name === undefined ? [] : [[name, argument] as const];
-      }),
-    ),
-    dots,
-  };
+  // Preserve actual order; repeated formal names retain their first positional binding.
+  const byName = new Map<string, T>();
+  for (const [index, argument] of arguments_.entries()) {
+    checkWork();
+    const formalIndex = resolved.get(index);
+    if (formalIndex === undefined) continue;
+    const name = parameters[formalIndex]!;
+    if (!byName.has(name)) byName.set(name, argument);
+  }
+  return { matched: byName, matchedByPosition: matched, dots };
 }
 
 function unusedArgumentsMessage(
