@@ -318,7 +318,11 @@ export function extractVectorElement(
   ) {
     let current: RValue = target;
     for (let offset = 0; offset < index.length; offset += 1) {
-      if (current.type !== "list" && current.type !== "pairlist") {
+      if (
+        current.type !== "list" &&
+        current.type !== "pairlist" &&
+        !(offset === index.length - 1 && isAtomic(current))
+      ) {
         throw new RTypeMismatchError(
           "NRT3312",
           "Recursive [[ extraction reached a non-vector value before the final subscript.",
@@ -1696,7 +1700,12 @@ function resolveExactIndex(
 ): number | undefined {
   if (index.type === "character") {
     if (index.length !== 1) {
-      throw new REvaluationError("NRE2204", "[[ requires one non-missing subscript.");
+      throw new REvaluationError(
+        "NRE2204",
+        index.length === 0
+          ? "attempt to select less than one element in get1index"
+          : "attempt to select more than one element in vectorIndex",
+      );
     }
     if (isMissing(index, 0) || (index.values[0] ?? "") === "") return undefined;
     const names = namesForMatching(target, "");
@@ -1720,7 +1729,12 @@ function resolveExactIndex(
     );
   }
   if (index.length !== 1) {
-    throw new REvaluationError("NRE2204", "[[ requires one non-missing subscript.");
+    throw new REvaluationError(
+      "NRE2204",
+      index.length === 0
+        ? "attempt to select less than one element in get1index"
+        : "attempt to select more than one element in vectorIndex",
+    );
   }
   if (isMissing(index, 0)) return undefined;
   const source = index.values[0] ?? 0;

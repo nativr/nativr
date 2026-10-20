@@ -2765,7 +2765,10 @@ export class Evaluator {
             resultVisibility = result.visible ? "visible" : "invisible";
             return result.value;
           },
-          nextMethod: async (generic) => this.#nextS3Method(generic, context),
+          nextMethod: async (generic) =>
+            methodFrame === undefined && callable.definition.s3Method !== undefined
+              ? this.#nextDirectBuiltinMethod(callable.definition, args, call, generic, context)
+              : this.#nextS3Method(generic, context),
         });
         return {
           value,
@@ -4782,6 +4785,62 @@ export class Evaluator {
       }
     }
     return undefined;
+  }
+
+  async #nextDirectBuiltinMethod(
+    definition: BuiltinDefinition,
+    args: readonly BuiltinCallArgument[],
+    call: CallExpressionNode | undefined,
+    generic: string | undefined,
+    context: EvaluationContext,
+  ): Promise<RValue> {
+    const method = definition.s3Method;
+    if (method === undefined) throw new Error("A direct method requires declared S3 metadata.");
+    const fail = (message: string): never => {
+      const error = new REvaluationError("NRE2215", message);
+      recordErrorConditionCall(error, {
+        kind: "CallExpression",
+        callee: { kind: "Identifier", name: "NextMethod", span: SYNTHETIC_SPAN },
+        arguments: [
+          {
+            value: {
+              kind: "StringLiteral",
+              value: generic ?? method.generic,
+              span: SYNTHETIC_SPAN,
+            },
+            span: SYNTHETIC_SPAN,
+          },
+        ],
+        span: SYNTHETIC_SPAN,
+      });
+      throw error;
+    };
+    if (call?.callee.kind !== "Identifier")
+      return fail("'NextMethod' called from an anonymous function");
+    if (call.callee.name !== definition.name) return fail("wrong value for .Method");
+    const firstFormal = definition.formals?.[0]?.name ?? definition.metadata.supportedArguments[0];
+    const argument =
+      args.find((entry) => entry.name === firstFormal) ??
+      args.find((entry) => entry.name === undefined);
+    if (argument === undefined) return fail("object not specified");
+    const input = await this.#force(argument.promise, context);
+    const classes = objectClasses(input);
+    if (classes === undefined) return fail("object not specified");
+    const index = classes.indexOf(method.className);
+    if (index < 0) return fail("wrong value for .Method");
+    return this.#invokeS3Method(
+      generic ?? method.generic,
+      this.#baseEnvironment,
+      classes,
+      index + 1,
+      args,
+      context,
+      call,
+      this.#globalEnvironment,
+      true,
+      undefined,
+      characterVector(classes.slice(index)),
+    );
   }
 
   async #nextS3Method(generic: string | undefined, context: EvaluationContext): Promise<RValue> {

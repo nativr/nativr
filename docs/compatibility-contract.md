@@ -38,6 +38,31 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Default-method boundaries and partial selection (profile 0.367)
+
+Complex sequence endpoints and increments retain both components when a length is supplied. The
+colon path warns for discarded nonzero imaginary components; complex step comparisons without a
+length fail with the observed diagnostic. Numeric zero replacement validates controls only when
+needed, respects formatted field width and trailing-zero removal, and signals one truncation
+warning. Unicode zero-replacement width and internal control-expression diagnostic calls remain
+open.
+
+Factor element extraction restores levels and class through S3 continuation. Owned evidence covers
+ordered factors, missing values, attribute order, first-class extraction, direct named methods,
+alias/anonymous diagnostics and local versus global next-method lookup. Internal .subset/.subset2
+bypass class restoration. Recursive list extraction accepts atomic leaves at the final subscript.
+Other recursive-extraction diagnostics and broad direct-method reflection remain incomplete.
+
+Partial sorting accepts bounded integer/double/logical rank controls and numeric, complex, character
+and logical inputs. It separates retained missing values, filters ranks in those regions, validates
+finite controls, preserves forcing order and rejects unsupported options. More than ten remaining
+requests use full sorting. Integer overflow signals a warning before the NA-index error. Owned
+examples establish exact output permutations; 600 deterministic generated inputs establish multiset
+preservation and rank/partition invariants. A black-box comparison found 376 different intermediate
+permutations in that sweep. General exact permutation equivalence is not claimed; no exclusion or
+conformance policy is inferred from those differences. Sorting method/tie details and broader
+control diagnostics remain open. Scanning and selection observe runtime work limits.
+
 ### Error origins and argument choices (profile 0.366)
 
 Runtime type/value errors retain their originating call through closures, promises, evaluation and
@@ -76,9 +101,9 @@ length dispatch, zero-length forcing, unused-argument warnings, sorted names and
 complex ordering, filtered sort indices, format control forcing, character alignment, grouping,
 trailing zeros and bounded zero replacement. Formatting padding and sequence allocation are checked
 before materialization. Sort comparisons and diagnostic traversal observe work limits. These cases
-establish a bounded surface, not complete default-method equivalence. Partial sorting is explicitly
-unsupported; method-specific sorting/tie details, non-atomic formatting, long zero replacement
-warnings, grouping edge cases, complex sequence coercion and further diagnostic origins remain open.
+establish a bounded surface, not complete default-method equivalence. Profile 0.367 extends partial
+sorting, zero replacement and complex sequences as described above; method-specific sorting/tie
+details, non-atomic formatting, grouping edge cases and further diagnostic origins remain open.
 Sequence callables retain the numeric evidence level. The profile changes sequence control failures
 to `NRE2160` and invalid format choices to the shared `match.arg` code `NRE2130`; consumers must use
 this profile's diagnostic mapping.

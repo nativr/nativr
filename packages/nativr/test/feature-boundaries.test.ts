@@ -285,7 +285,8 @@ describe("measured feature boundary coverage", () => {
 
     await expect(runtime.eval("1[[1]]")).resolves.toBe(1);
     await expect(runtime.eval("list(1)[[2]]")).rejects.toMatchObject({ code: "NRE2202" });
-    await expect(runtime.eval("list(list(1))[[c(1, 1, 1)]]")).rejects.toMatchObject({
+    await expect(runtime.eval("list(list(1))[[c(1, 1, 1)]]")).resolves.toBe(1);
+    await expect(runtime.eval("list(1)[[c(1, 1, 1)]]")).rejects.toMatchObject({
       code: "NRT3312",
     });
     await expect(runtime.eval("1$missing")).rejects.toMatchObject({ code: "NRT3304" });

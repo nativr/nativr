@@ -1,4 +1,5 @@
 import { ExtendedSum } from "./extended-sum.js";
+import { selectRanks } from "./selection.js";
 import { BUILTIN_PACKAGE_OWNERS } from "./builtin-package-owners.js";
 import {
   PERSON_ARGUMENTS,
@@ -12,6 +13,8 @@ import {
   NativRError,
   errorConditionCall,
   errorConditionClasses,
+  deparseDiagnosticAst,
+  recordErrorConditionCall,
   REvaluationError,
   RSignalledConditionError,
   RResourceLimitError,
@@ -502,13 +505,16 @@ const FIRST_CLASS_OPERATOR_BUILTINS: readonly BuiltinDefinition[] = [
     (invocation) => builtinInternalSubset(invocation, false, "["),
     "special",
   ),
-  defineBuiltin(
-    "[[",
-    ["x", "...", "exact"],
-    "behavioral",
-    (invocation) => builtinInternalSubset(invocation, true, "[["),
-    "special",
-  ),
+  {
+    ...defineBuiltin(
+      "[[",
+      ["x", "...", "exact"],
+      "behavioral",
+      builtinExtractDispatched,
+      "special",
+    ),
+    s3DefaultImplementation: (invocation) => builtinInternalSubset(invocation, true, "[["),
+  },
 ];
 
 /** Base builtins for the current documented language subset. */
@@ -2241,6 +2247,13 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin(".subset2", ["x", "...", "exact"], "behavioral", (invocation) =>
     builtinInternalSubset(invocation, true),
   ),
+  {
+    ...withBuiltinFormals(
+      defineBuiltin("[[.factor", ["x", "..."], "behavioral", builtinFactorExtract),
+      [{ name: "x" }, { name: "..." }],
+    ),
+    s3Method: { generic: "[[", className: "factor" },
+  },
   defineBuiltin("split", ["x", "f", "drop", "..."], "behavioral", builtinSplit),
   defineBuiltin("expression", ["..."], "behavioral", builtinExpression, "special"),
   defineBuiltin("as.expression", ["x"], "behavioral", builtinAsExpression),
@@ -18285,6 +18298,32 @@ async function builtinDollar(invocation: BuiltinInvocation): Promise<RValue> {
   );
 }
 
+async function builtinExtractDispatched(invocation: BuiltinInvocation): Promise<RValue> {
+  const argument = invocation.arguments[0];
+  if (argument !== undefined && !argument.promise.missing) {
+    const input = await invocation.force(argument.promise);
+    const result = await invocation.dispatchS3IfPresent("[[", input, invocation.arguments, false);
+    if (result !== undefined) return result;
+  }
+  return builtinInternalSubset(invocation, true, "[[");
+}
+
+async function builtinFactorExtract(invocation: BuiltinInvocation): Promise<RValue> {
+  const { matched } = await matchBuiltinArguments(invocation, ["x", "..."]);
+  const argument = matched.get("x");
+  if (argument === undefined)
+    throw new REvaluationError("NRE2103", 'argument "x" is missing, with no default');
+  const output = await invocation.nextMethod("[[");
+  const input = await invocation.force(argument.promise);
+  if (!isVector(output) || !isVector(input)) return output;
+  const levels = input.attributes.get("levels");
+  return withAttribute(
+    levels === undefined ? output : withAttribute(output, "levels", levels),
+    "class",
+    input.attributes.get("class") ?? characterVector(["factor"]),
+  );
+}
+
 async function builtinInternalSubset(
   invocation: BuiltinInvocation,
   single: boolean,
@@ -18300,8 +18339,9 @@ async function builtinInternalSubset(
       targetArgument = argument;
     } else if (single && argument.name === "exact") {
       exact = logicalFlag(await invocation.force(argument.promise), true, "exact");
-    } else if (!single && callName === "[" && argument.name === "drop") {
-      drop = logicalFlag(await invocation.force(argument.promise), true, "drop");
+    } else if (argument.name === "drop") {
+      const value = await invocation.force(argument.promise);
+      if (!single) drop = logicalFlag(value, true, "drop");
     } else {
       indexArguments.push(argument);
     }
@@ -18309,7 +18349,19 @@ async function builtinInternalSubset(
   if (targetArgument === undefined || targetArgument.promise.missing) {
     throw new REvaluationError("NRE2103", `${call}() requires x.`);
   }
-  const target = await invocation.force(targetArgument.promise);
+  const original = await invocation.force(targetArgument.promise);
+  // Internal extraction bypasses class methods and their attribute restoration.
+  const target =
+    callName === undefined && isVector(original)
+      ? {
+          ...original,
+          attributes: new Map(
+            [...original.attributes].filter(([name]) =>
+              ["names", "dim", "dimnames"].includes(name),
+            ),
+          ),
+        }
+      : original;
   const indices: (RValue | undefined)[] = [];
   for (const argument of indexArguments) {
     indices.push(argument.promise.missing ? undefined : await invocation.force(argument.promise));
@@ -28692,7 +28744,7 @@ async function builtinFormatDefault(invocation: BuiltinInvocation): Promise<RVal
   invocation.context.allocate(
     raw.reduce((total, value) => total + Math.max(width, value.length), 0),
   );
-  const output = raw
+  const formatted = raw
     .map((value) => {
       invocation.context.checkpoint();
       if (value.length >= width || justify === "none") return value;
@@ -28704,22 +28756,8 @@ async function builtinFormatDefault(invocation: BuiltinInvocation): Promise<RVal
       }
       return `${" ".repeat(gap)}${value}`;
     })
-    .map((text, index) => {
+    .map((text) => {
       if (input.type === "character" || input.type === "logical") return text;
-      if (
-        (input.type === "integer" || input.type === "double") &&
-        !isMissing(input, index) &&
-        numberAt(input, index) === 0
-      ) {
-        const replacement =
-          zeroPrint?.type === "character"
-            ? (zeroPrint.values[0] ?? "")
-            : zeroPrint?.type === "logical" && zeroPrint.values[0] === 0
-              ? ""
-              : undefined;
-        if (replacement !== undefined)
-          return replacement.slice(0, text.length).padEnd(text.length, " ");
-      }
       if (!dropTrailing) return text;
       const decimal = decimalMark ?? ".";
       const [mantissa = "", exponent] = text.split(/e/i);
@@ -28732,6 +28770,7 @@ async function builtinFormatDefault(invocation: BuiltinInvocation): Promise<RVal
         (exponent === undefined ? "" : `e${exponent}`)
       );
     });
+  const output = await formatZeroReplacements(formatted, input, zeroPrint, invocation);
   invocation.context.allocate(output.length);
   let result: RValue = characterVector(output, compactMask(missing));
   for (const name of ["dim", "dimnames"]) {
@@ -28740,6 +28779,77 @@ async function builtinFormatDefault(invocation: BuiltinInvocation): Promise<RVal
   }
   const names = vectorNames(input);
   return names === undefined ? result : withNames(result, names);
+}
+
+async function formatZeroReplacements(
+  formatted: readonly string[],
+  input: AtomicVector,
+  zeroPrint: RValue | undefined,
+  invocation: BuiltinInvocation,
+): Promise<readonly string[]> {
+  if (
+    zeroPrint === undefined ||
+    zeroPrint.type === "null" ||
+    (input.type !== "integer" && input.type !== "double")
+  )
+    return formatted;
+  const zeros: number[] = [];
+  for (let index = 0; index < input.length; index += 1) {
+    invocation.context.checkpoint();
+    if (!isMissing(input, index) && input.values[index] === 0) zeros.push(index);
+  }
+  if (zeros.length === 0) return formatted;
+  const identifierAst = (name: string): AstNode => ({
+    kind: "Identifier",
+    name,
+    span: SYNTHETIC_SPAN,
+  });
+  const call = callAst(".format.zeros", [
+    { value: identifierAst("x"), span: SYNTHETIC_SPAN },
+    { value: identifierAst("zero.print"), span: SYNTHETIC_SPAN },
+    { name: "replace", value: identifierAst("replace.zero"), span: SYNTHETIC_SPAN },
+  ]);
+  const fail = (message: string): never => {
+    const error = new RTypeMismatchError("NRT3166", message);
+    recordErrorConditionCall(error, call);
+    throw error;
+  };
+  if (zeroPrint.type !== "character" && zeroPrint.type !== "logical")
+    return fail("'zero.print' must be character, logical or NULL");
+  if (zeroPrint.length > 1) fail("'zero.print' has length > 1");
+  if (zeroPrint.length === 0)
+    fail(
+      zeroPrint.type === "logical" ? "argument is of length zero" : "invalid substring arguments",
+    );
+  if (isMissing(zeroPrint, 0)) fail("missing value where TRUE/FALSE needed");
+  if (zeroPrint.type === "logical" && zeroPrint.values[0] === 1) return formatted;
+  const replacement = zeroPrint.type === "character" ? (zeroPrint.values[0] ?? "") : "";
+  const output = [...formatted];
+  let truncated = false;
+  for (const index of zeros) {
+    invocation.context.checkpoint();
+    const text = formatted[index] ?? "";
+    const width = text.length;
+    truncated ||= replacement.length > width;
+    const content = replacement.slice(0, width);
+    const leading = Math.min(text.length - text.trimStart().length, width - content.length);
+    output[index] = " ".repeat(leading) + content + " ".repeat(width - leading - content.length);
+  }
+  if (truncated) {
+    const message =
+      "'zero.print' is truncated to fit into formatted zeros; consider 'replace=TRUE'";
+    await invocation.signalWarning(
+      withClasses(
+        listValue(
+          [characterVector([message]), { type: "language", expression: call }],
+          ["message", "call"],
+        ),
+        ["simpleWarning", "warning", "condition"],
+      ),
+      { code: "NRW1202", message, call: deparseDiagnosticAst(call) },
+    );
+  }
+  return output;
 }
 
 function formatNumericValues(
@@ -55784,21 +55894,48 @@ function sortIntFormals(): readonly { readonly name: string; readonly defaultVal
 
 async function builtinSortInt(invocation: BuiltinInvocation): Promise<RValue> {
   const bound = await matchBuiltinDefaults(invocation, sortIntFormals());
+  const decreasingValue = await bound.force("decreasing");
+  const partial = await bound.force("partial");
+  const methodArgument = bound.matched.get("method");
+  if (methodArgument === undefined) throw new Error("Missing declared method formal.");
+  if (partial.type !== "null") {
+    const method = await matchDefaultChoice(invocation, methodArgument, [
+      "auto",
+      "shell",
+      "quick",
+      "radix",
+    ]);
+    if (method === "radix")
+      throw new RTypeMismatchError("NRT3140", "'partial' sorting not supported by radix method");
+    const input = await bound.force("x");
+    if (input.type === "null") return R_NULL;
+    if (!isAtomic(input)) throw new RTypeMismatchError("NRT3140", "'x' must be atomic");
+    const indexReturn = sortFlag(await bound.force("index.return"), "index.return");
+    if (decreasingValue.type === "logical" && isMissing(decreasingValue, 0))
+      throw new RTypeMismatchError("NRT3140", "missing value where TRUE/FALSE needed");
+    if (
+      sortFlag(decreasingValue, "decreasing") ||
+      indexReturn ||
+      method === "quick" ||
+      (vectorClasses(input)?.length ?? 0) > 0
+    )
+      throw new RTypeMismatchError("NRT3140", "unsupported options for partial sorting");
+    const naValue = await bound.force("na.last");
+    const naLast =
+      naValue.type === "logical" && isMissing(naValue, 0)
+        ? undefined
+        : sortFlag(naValue, "na.last");
+    return partialSort(input, partial, naLast, invocation);
+  }
+  const indexReturn = sortFlag(await bound.force("index.return"), "index.return");
   const input = await bound.force("x");
   if (input.type === "null") return R_NULL;
   if (!isAtomic(input)) throw new RTypeMismatchError("NRT3140", "'x' must be atomic");
-  const decreasingValue = await bound.force("decreasing");
   const decreasing = sortFlag(decreasingValue, "decreasing");
   const naValue = await bound.force("na.last");
   const naLast =
     naValue.type === "logical" && isMissing(naValue, 0) ? undefined : sortFlag(naValue, "na.last");
-  const partial = await bound.force("partial");
-  if (partial.type !== "null")
-    throw new RUnsupportedFeatureError("NRU6250", "Partial sorting is not implemented.");
-  const methodArgument = bound.matched.get("method");
-  if (methodArgument === undefined) throw new Error("Missing declared method formal.");
   await matchDefaultChoice(invocation, methodArgument, ["auto", "shell", "quick", "radix"]);
-  const indexReturn = sortFlag(await bound.force("index.return"), "index.return");
   const indices = sortedIndices(input, decreasing, naLast, invocation);
   const selected = subsetVector(
     input,
@@ -55826,6 +55963,73 @@ async function builtinSortInt(invocation: BuiltinInvocation): Promise<RValue> {
     [output, integerVector(indices.map((index) => positions.get(index) ?? 0))],
     ["x", "ix"],
   );
+}
+
+async function partialSort(
+  input: AtomicVector,
+  partial: RValue,
+  naLast: boolean | undefined,
+  invocation: BuiltinInvocation,
+): Promise<RValue> {
+  if (input.type === "raw") throw new RTypeMismatchError("NRT3140", "raw vectors cannot be sorted");
+  const indices = sortableIndices(input, undefined, invocation);
+  const missing: number[] = [];
+  if (naLast !== undefined)
+    for (let index = 0; index < input.length; index += 1) {
+      invocation.context.checkpoint();
+      if (sortMissing(input, index)) missing.push(index);
+    }
+  const offset = naLast === false ? missing.length : 0;
+  if (partial.type !== "integer" && partial.type !== "double" && partial.type !== "logical")
+    throw new RTypeMismatchError("NRT3140", "non-finite 'partial'");
+  invocation.context.allocate(partial.length);
+  const requested = Array.from({ length: partial.length }, (_, index) => {
+    invocation.context.checkpoint();
+    const value = partial.values[index] ?? Number.NaN;
+    if (isMissing(partial, index) || !Number.isFinite(value))
+      throw new RTypeMismatchError("NRT3140", "non-finite 'partial'");
+    return value - offset;
+  }).filter(
+    (rank) => missing.length === 0 || (naLast === false ? rank > 0 : rank <= indices.length),
+  );
+  const compare = (left: number, right: number): number => {
+    invocation.context.checkpoint();
+    return compareSortValues(input, left, right, false, naLast);
+  };
+  if (requested.length > 10) indices.sort(compare);
+  else {
+    const ranks = requested.map(Math.trunc);
+    if (ranks.some((rank) => rank <= -2_147_483_648 || rank > 2_147_483_647)) {
+      const message = "NAs introduced by coercion to integer range";
+      await signalWarning(
+        invocation,
+        simpleConditionValue(message, "warning", invocation.currentCall()),
+        {
+          code: "NRW1007",
+          message,
+        },
+      );
+      throw new RTypeMismatchError("NRT3140", "NA index");
+    }
+    for (const rank of ranks) {
+      invocation.context.checkpoint();
+      if (rank < 1 || rank > indices.length)
+        throw new RTypeMismatchError("NRT3140", `'partial' index ${rank} outside bounds`);
+    }
+    selectRanks(
+      indices,
+      ranks.map((rank) => rank - 1),
+      compare,
+      () => invocation.context.checkpoint(),
+    );
+  }
+  const selected = naLast === false ? [...missing, ...indices] : [...indices, ...missing];
+  const output = subsetVector(
+    input,
+    integerVector(selected.map((index) => index + 1)),
+    invocation.context,
+  );
+  return { ...output, attributes: new Map() };
 }
 
 /** Reuse choice matching with the observable inner call and the original lazy actual. */
@@ -55911,31 +56115,52 @@ function sortedIndices(
   naLast: boolean | undefined,
   invocation: BuiltinInvocation,
 ): number[] {
-  invocation.context.allocate(input.length);
-  const indices = Array.from({ length: input.length }, (_, index) => index).filter(
-    (index) => naLast !== undefined || !sortMissing(input, index),
-  );
+  const indices = sortableIndices(input, naLast, invocation);
   indices.sort((left, right) => {
     invocation.context.checkpoint();
-    const leftMissing = sortMissing(input, left);
-    const rightMissing = sortMissing(input, right);
-    if (leftMissing || rightMissing) {
-      if (leftMissing && rightMissing) return left - right;
-      return (leftMissing ? 1 : -1) * (naLast ? 1 : -1);
-    }
-    if (input.type === "complex") {
-      const real = (input.real[left] ?? 0) - (input.real[right] ?? 0);
-      const imaginary = (input.imaginary[left] ?? 0) - (input.imaginary[right] ?? 0);
-      const comparison = Math.sign(real) || Math.sign(imaginary);
-      return comparison === 0 ? left - right : decreasing ? -comparison : comparison;
-    }
-    const leftValue = input.type === "character" ? stringAt(input, left) : numberAt(input, left);
-    const rightValue = input.type === "character" ? stringAt(input, right) : numberAt(input, right);
-    if (leftValue === rightValue) return left - right;
-    const comparison = leftValue < rightValue ? -1 : 1;
-    return decreasing ? -comparison : comparison;
+    return compareSortValues(input, left, right, decreasing, naLast) || left - right;
   });
   return indices;
+}
+
+function sortableIndices(
+  input: AtomicVector,
+  naLast: boolean | undefined,
+  invocation: BuiltinInvocation,
+): number[] {
+  invocation.context.allocate(input.length);
+  const indices: number[] = [];
+  for (let index = 0; index < input.length; index += 1) {
+    invocation.context.checkpoint();
+    if (naLast !== undefined || !sortMissing(input, index)) indices.push(index);
+  }
+  return indices;
+}
+
+function compareSortValues(
+  input: AtomicVector,
+  left: number,
+  right: number,
+  decreasing: boolean,
+  naLast: boolean | undefined,
+): number {
+  const leftMissing = sortMissing(input, left);
+  const rightMissing = sortMissing(input, right);
+  if (leftMissing || rightMissing) {
+    if (leftMissing && rightMissing) return 0;
+    return (leftMissing ? 1 : -1) * (naLast ? 1 : -1);
+  }
+  if (input.type === "complex") {
+    const real = (input.real[left] ?? 0) - (input.real[right] ?? 0);
+    const imaginary = (input.imaginary[left] ?? 0) - (input.imaginary[right] ?? 0);
+    const comparison = Math.sign(real) || Math.sign(imaginary);
+    return decreasing ? -comparison : comparison;
+  }
+  const leftValue = input.type === "character" ? stringAt(input, left) : numberAt(input, left);
+  const rightValue = input.type === "character" ? stringAt(input, right) : numberAt(input, right);
+  if (leftValue === rightValue) return 0;
+  const comparison = leftValue < rightValue ? -1 : 1;
+  return decreasing ? -comparison : comparison;
 }
 
 function sortMissing(input: AtomicVector, index: number): boolean {

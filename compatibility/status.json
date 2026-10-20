@@ -5,15 +5,17 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.366.0",
-  "capabilityManifestHash": "2d522f8434a18e0b09ce49e4a89915fe3ff59be79c830aae97936d8e210b4270",
+  "semanticProfileVersion": "0.367.0",
+  "capabilityManifestHash": "b3c8dfb3615f6338f9468596d5720eda71184f13256e5547d7cc079f87fe9934",
   "evidence": {
-    "checkedInConformanceCases": 1262,
-    "liveREligibleCases": 1193,
+    "checkedInConformanceCases": 1268,
+    "liveREligibleCases": 1199,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 158,
-    "recursiveBehaviorallyProvenBindings": 96,
+    "recursiveOracleV2Cases": 165,
+    "recursiveBehaviorallyProvenBindings": 98,
     "recursiveBindingEvidence": [
+      { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
+      { "binding": "base::.subset2", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::addNA", "cases": ["addNA-ordered-reconstruction-and-unchanged-values"] },
       {
         "binding": "base::all.equal",
@@ -103,7 +105,10 @@
           "numeric-format-options-and-array-attributes"
         ]
       },
-      { "binding": "base::format.default", "cases": ["generic-default-promises-format-controls"] },
+      {
+        "binding": "base::format.default",
+        "cases": ["default-boundary-zero-formatting", "generic-default-promises-format-controls"]
+      },
       { "binding": "base::getHook", "cases": ["hook-list-registration-and-clearing"] },
       {
         "binding": "base::getOption",
@@ -244,7 +249,11 @@
       },
       {
         "binding": "base::sort.int",
-        "cases": ["generic-default-promises-sort-values-and-diagnostics"]
+        "cases": [
+          "default-boundary-partial-forcing-and-errors",
+          "default-boundary-partial-selection",
+          "generic-default-promises-sort-values-and-diagnostics"
+        ]
       },
       { "binding": "base::split", "cases": ["factor-na-label-coercion-grouping-and-matching"] },
       {
@@ -353,8 +362,8 @@
   },
   "nameInventory": {
     "referenceVersion": "R version 4.6.1 (2026-06-24 ucrt)",
-    "registeredBindings": 776,
-    "gnuRNameOverlaps": 749,
+    "registeredBindings": 777,
+    "gnuRNameOverlaps": 750,
     "referenceCoreCallableNames": 2522
   },
   "packageCorpus": {

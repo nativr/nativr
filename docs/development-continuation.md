@@ -539,7 +539,7 @@ packaging interface changed, so e2e and pack smoke were not refreshed. Runtime p
 browser/OS coverage, Linux validation and full compatibility remain incomplete. No downloads, pushes
 or publication occurred.
 
-### Immediate continuation after profile 0.366
+### Continuation recorded at profile 0.366 (superseded below)
 
 The previous match.arg wording and promise-origin defects are closed within the owned evidence.
 Continue the remaining independently reproduced default-method gaps: seq.default complex-to-real
@@ -557,3 +557,62 @@ separate authorization. Keep the full goal active; no overall completion percent
 established. Public metadata and owned black-box observations remain the only GNU R inputs. Native
 diagnostic calls that expose internal implementation fragments must be omitted, never used as
 implementation evidence.
+
+### Profile 0.367 verification (2026-10-19)
+
+Complex sequences retain real and imaginary components with explicit lengths. Colon coercion
+warnings, invalid complex step comparisons, finite endpoints and empty output have owned evidence.
+Numeric zero formatting now respects field alignment and trailing-zero removal, validates controls
+when needed and signals one truncation warning. Unicode replacement widths and foreign internal
+control-expression calls remain outside the demonstrated equivalence.
+
+Factor double extraction continues S3 dispatch and restores levels/class, including attributes on
+those metadata vectors. Cases distinguish direct named methods, aliases, anonymous calls and local
+versus global next-method lookup. Internal .subset/.subset2 bypass class restoration. Recursive list
+extraction accepts an atomic final leaf. Broad extraction diagnostics remain incomplete.
+
+Partial sorting supports bounded rank selection, missing-region filtering, control forcing, integer
+overflow warnings, option restrictions and the larger-request full-sort fallback. Forty-five owned
+parity cases pass under native GNU R and NativR, plus a work-limit regression. Six foundation groups
+and seven recursive cases retain values, storage, attributes, warnings, calls and forcing effects;
+causal controls link .subset, .subset2, sort.int and format.default. A deterministic 600-input sweep
+checks multiset preservation and every requested rank/partition invariant. The corresponding native
+comparison found 376 different intermediate permutations. Those permutations remain an explicit
+exactness gap; the suite does not declare full sort.int equivalence or invent a platform exclusion.
+
+The full check passes 1626 tests with 93 opt-in skips. Checked-in/live/recursive conformance passes
+1268 / 1199 / 165 cases, with 98 linked bindings. Fixed budgets pass: client 17.6/150 KiB gzip,
+Worker 475.0/512 KiB gzip, parser 671.9/1,536 KiB raw and elementary 311.2/384 KiB raw. Name overlap
+is 750/2,522 and is not a completion percentage. Native filesystem probes used ordinary Windows
+permissions.
+
+All 24 cached development/regression archives were digest-checked and rerun with applicable native
+repeatability in the
+[0.367 checkpoint](../compatibility/package-check-evidence/corpus-0.367.0.json). Stage outcomes,
+comparison-match counts and tiers are unchanged from 0.366. Formula is untouched. Original
+entrypoints were used; substitute-runner results receive no P6/P7 credit. No Worker, playground or
+packaging interface changed, so e2e and pack smoke were not refreshed. Runtime performance,
+browser/OS coverage, Linux validation and full compatibility remain incomplete. No downloads, pushes
+or publication occurred.
+
+### Immediate continuation after profile 0.367
+
+The reproduced complex-sequence, zero-formatting and factor-element gaps are closed within the owned
+evidence. Partial sorting now has an executable bounded surface; exact intermediate permutations,
+method/tie behavior, Unicode zero formatting and broader diagnostic calls remain open. Do not infer
+full domain closure from passing examples. Existing arbitrary owned functions and resource limits
+must remain intact when extending reflection and direct S3 continuation.
+
+Owned continuation probes reproduce three reflection gaps: formals("owned") does not resolve a named
+function; body() wraps owned atomic/symbol bodies as language rather than returning their value
+types; body<- is unavailable. A body("owned") lookup also stops at a local non-function binding
+instead of finding the outer function. Native metadata classifies the first-class if binding as
+special, but NativR has no corresponding binding. Existing abs/mean/owned-closure classification and
+args(owned) signature/body/environment controls agree. These are next-step leads, not new
+compatibility claims. Fix shared reflection primitives using owned closures only, then continue
+confirmed corpus blockers with independently authored probes and shared primitives. Independent
+datasets, the isolated testing runner, complete domain/callable inventory, browser performance, CI
+and release validation remain outstanding. Linux and holdout execution require separate
+authorization. Keep the goal active; no overall completion percentage or date is established. Public
+metadata and owned black-box observations remain the only GNU R inputs. Never retain foreign
+implementation bodies or internal control fragments in evidence.

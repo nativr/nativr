@@ -5,6 +5,7 @@ import {
   RResourceLimitError,
   RTypeMismatchError,
   characterVector,
+  complexVector,
   deparseDiagnosticAst,
   doubleVector,
   integerVector,
@@ -12,6 +13,7 @@ import {
   isMissing,
   isVector,
   listValue,
+  recordErrorConditionCall,
   withClasses,
 } from "@nativr/runtime";
 import type { BuiltinInvocation, RValue } from "@nativr/runtime";
@@ -119,6 +121,28 @@ export async function sequenceDefault(invocation: BuiltinInvocation): Promise<RV
     const start = fromSupplied || !toSupplied ? from : to - (length - 1) * by;
     const step =
       !bySupplied && fromSupplied && toSupplied && length > 1 ? (to - from) / (length - 1) : by;
+    if (fromValue.type === "complex" || toValue.type === "complex" || byValue?.type === "complex") {
+      const imaginaryFrom = imaginaryPart(fromValue);
+      const imaginaryTo = imaginaryPart(toValue);
+      const imaginaryBy = byValue === undefined ? 0 : imaginaryPart(byValue);
+      const imaginaryStart =
+        fromSupplied || !toSupplied ? imaginaryFrom : imaginaryTo - (length - 1) * imaginaryBy;
+      const imaginaryStep =
+        !bySupplied && fromSupplied && toSupplied && length > 1
+          ? (imaginaryTo - imaginaryFrom) / (length - 1)
+          : imaginaryBy;
+      const interpolate = !bySupplied && fromSupplied && toSupplied && length > 1;
+      invocation.context.allocate(length);
+      const real = Array.from({ length }, (_, i) => {
+        invocation.context.checkpoint();
+        return interpolate && i === length - 1 ? to : start + step * i;
+      });
+      const imaginary = Array.from({ length }, (_, i) => {
+        invocation.context.checkpoint();
+        return interpolate && i === length - 1 ? imaginaryTo : imaginaryStart + imaginaryStep * i;
+      });
+      return complexVector(real, imaginary);
+    }
     const integer =
       byValue?.type === "integer" &&
       (fromSupplied ? fromValue.type === "integer" : toSupplied && toValue.type === "integer");
@@ -132,8 +156,22 @@ export async function sequenceDefault(invocation: BuiltinInvocation): Promise<RV
       integer,
     );
   }
-  if (!bySupplied) return colonSequence(invocation, from, to);
+  if (!bySupplied) {
+    for (const value of [fromValue, toValue]) {
+      if (value.type === "complex" && imaginaryPart(value) !== 0)
+        await warn(invocation, "imaginary parts discarded in coercion");
+    }
+    return colonSequence(invocation, from, to);
+  }
   const byValue = await bound.force("by");
+  if (fromValue.type === "complex" || toValue.type === "complex" || byValue.type === "complex") {
+    const error = new REvaluationError("NRE2160", "invalid comparison with complex values");
+    recordErrorConditionCall(
+      error,
+      binary("<", identifier("n"), { kind: "IntegerLiteral", value: 0, span }),
+    );
+    throw error;
+  }
   const by = scalar(byValue, "by", false);
   const delta = to - from;
   if (Number.isNaN(by)) throw new REvaluationError("NRE2160", "invalid '(to - from)/by'");
@@ -170,9 +208,13 @@ function scalar(value: RValue, name: string, finite = true): number {
             value.type === "raw"
           ? (value.values[0] ?? Number.NaN)
           : Number.NaN;
-  if (finite && !Number.isFinite(result))
+  if (finite && (!Number.isFinite(result) || !Number.isFinite(imaginaryPart(value))))
     throw new RTypeMismatchError("NRT3322", `'${name}' must be a finite number`);
   return result;
+}
+
+function imaginaryPart(value: RValue): number {
+  return value.type === "complex" ? (value.imaginary[0] ?? Number.NaN) : 0;
 }
 
 function outputLength(value: RValue): number {
