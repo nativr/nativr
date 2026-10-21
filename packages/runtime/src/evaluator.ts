@@ -2648,8 +2648,9 @@ export class Evaluator {
               : this.#globalEnvironment;
           },
           currentCall: () => (call === undefined ? R_NULL : { type: "language", expression: call }),
-          systemCall: (which) => this.#systemCall(which),
-          systemFunction: (which) => this.#systemFunction(which),
+          systemCall: (which) => this.#systemCall(which, callerEnvironment, context),
+          systemFunction: (which) => this.#systemFunction(which, callerEnvironment, context),
+          systemFrameCount: () => this.#systemFrameCount(callerEnvironment, context),
           isInteractive: () => this.#readline !== undefined,
           hasSocketCapability: () => this.#socketRequest !== undefined,
           readline: async (prompt) => (this.#readline === undefined ? "" : this.#readline(prompt)),
@@ -3668,23 +3669,42 @@ export class Evaluator {
     return this.#evaluateValue(parameter.defaultValue, frame.environment, context);
   }
 
-  #systemCall(which: number): RLanguage | typeof R_NULL {
-    const frameCount = this.#closureCallFrames.length;
+  #systemFrameCount(environment: REnvironment | undefined, context: EvaluationContext): number {
+    if (environment === undefined) return this.#closureCallFrames.length;
+    if (environment === this.#globalEnvironment) return 0;
+    for (let index = this.#closureCallFrames.length - 1; index >= 0; index -= 1) {
+      context.checkpoint();
+      if (this.#closureCallFrames[index]?.environment === environment) return index + 1;
+    }
+    // Explicit eval environments need separate synthetic-frame evidence.
+    return this.#closureCallFrames.length;
+  }
+
+  #systemCall(
+    which: number,
+    environment: REnvironment | undefined,
+    context: EvaluationContext,
+  ): RLanguage | typeof R_NULL {
+    const frameCount = this.#systemFrameCount(environment, context);
     const position = which === 0 ? frameCount : which > 0 ? which : frameCount + which;
     if (position === 0) return R_NULL;
     if (position < 0 || position > frameCount) {
-      throw new REvaluationError("NRE2218", "Not that many frames on the stack.");
+      throw new REvaluationError("NRE2218", "not that many frames on the stack");
     }
     const call = this.#closureCallFrames[position - 1]?.call;
     return call === undefined ? R_NULL : { type: "language", expression: call };
   }
 
-  #systemFunction(which: number): RClosure | typeof R_NULL {
-    const frameCount = this.#closureCallFrames.length;
+  #systemFunction(
+    which: number,
+    environment: REnvironment | undefined,
+    context: EvaluationContext,
+  ): RClosure | typeof R_NULL {
+    const frameCount = this.#systemFrameCount(environment, context);
     const position = which === 0 ? frameCount : which > 0 ? which : frameCount + which;
     if (position === 0) return R_NULL;
     if (position < 0 || position > frameCount) {
-      throw new REvaluationError("NRE2218", "Not that many frames on the stack.");
+      throw new REvaluationError("NRE2218", "not that many frames on the stack");
     }
     return this.#closureCallFrames[position - 1]?.closure ?? R_NULL;
   }

@@ -2610,8 +2610,14 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
       },
     ],
   ),
-  defineBuiltin("sys.call", ["which"], "behavioral", builtinSystemCall),
-  defineBuiltin("sys.function", ["which"], "behavioral", builtinSystemFunction),
+  withBuiltinFormals(defineBuiltin("sys.call", ["which"], "behavioral", builtinSystemCall), [
+    { name: "which", defaultValue: { kind: "IntegerLiteral", value: 0, span: SYNTHETIC_SPAN } },
+  ]),
+  withBuiltinFormals(
+    defineBuiltin("sys.function", ["which"], "behavioral", builtinSystemFunction),
+    [{ name: "which", defaultValue: { kind: "IntegerLiteral", value: 0, span: SYNTHETIC_SPAN } }],
+  ),
+  withBuiltinFormals(defineBuiltin("sys.nframe", [], "behavioral", builtinSystemFrameCount), []),
   defineBuiltin("get", ["x", "pos", "envir", "mode", "inherits"], "behavioral", builtinGet),
   defineBuiltin(
     "get0",
@@ -18931,7 +18937,7 @@ function builtinDeparseLines(
       isPrimitive: (name) => R_BASE_PRIMITIVE_NAMES.has(name),
       attributes: [...input.attributes].map(([name, value]) => ({
         name,
-        value: valueToAst(value, checkWork),
+        value: embeddedValueAst(value, checkWork),
         span: SYNTHETIC_SPAN,
       })),
     });
@@ -20770,19 +20776,24 @@ async function validatePackageAttachControls(
 }
 
 async function builtinSystemCall(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = await matchExact(invocation, ["which"]);
-  const which = matched.has("which")
-    ? systemCallIndex(invocation, matched.get("which"), "sys.call")
-    : 0;
+  const bound = await matchBuiltinDefaults(invocation, [
+    { name: "which", defaultValue: { kind: "IntegerLiteral", value: 0, span: SYNTHETIC_SPAN } },
+  ]);
+  const which = systemCallIndex(invocation, await bound.force("which"), "sys.call");
   return invocation.systemCall(which);
 }
 
 async function builtinSystemFunction(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = await matchExact(invocation, ["which"]);
-  const which = matched.has("which")
-    ? systemCallIndex(invocation, matched.get("which"), "sys.function")
-    : 0;
+  const bound = await matchBuiltinDefaults(invocation, [
+    { name: "which", defaultValue: { kind: "IntegerLiteral", value: 0, span: SYNTHETIC_SPAN } },
+  ]);
+  const which = systemCallIndex(invocation, await bound.force("which"), "sys.function");
   return invocation.systemFunction(which);
+}
+
+async function builtinSystemFrameCount(invocation: BuiltinInvocation): Promise<RValue> {
+  await matchExact(invocation, []);
+  return integerVector([invocation.systemFrameCount()]);
 }
 
 function systemCallIndex(
@@ -32500,8 +32511,33 @@ function formatPrintedClosure(value: RClosure, options: PrintOptions): string {
   if (environment !== undefined) append(`<environment: ${environment}>`);
   for (const [name, attribute] of value.attributes) {
     options.context?.checkpoint();
-    append(`attr(,${JSON.stringify(name)})`);
-    append(formatPrintedValue(attribute, { ...options, listPath: "" }));
+    append(formatPrintedFunctionAttribute(attribute, `attr(,${JSON.stringify(name)})`, options));
+  }
+  return lines.join("\n");
+}
+
+function formatPrintedFunctionAttribute(
+  value: RValue,
+  path: string,
+  options: PrintOptions,
+): string {
+  const lines: string[] = [];
+  const append = printedLineAppender(lines, options);
+  append(path);
+  append(formatPrintedValue(value, { ...options, listPath: "" }));
+  // Atomic display consumes structural attributes; ordinary attributes need their own paths.
+  if (isAtomic(value) && objectClasses(value)?.includes("factor") !== true) {
+    const depth = (options.depth ?? 0) + 1;
+    for (const [name, attribute] of value.attributes) {
+      options.context?.checkpoint();
+      if (["names", "dim", "dimnames"].includes(name)) continue;
+      append(
+        formatPrintedFunctionAttribute(attribute, `${path}attr(,${JSON.stringify(name)})`, {
+          ...options,
+          depth,
+        }),
+      );
+    }
   }
   return lines.join("\n");
 }

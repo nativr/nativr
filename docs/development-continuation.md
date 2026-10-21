@@ -656,7 +656,7 @@ used ordinary Windows permissions. No Worker, playground or packaging interface 
 pack smoke were not refreshed. Runtime performance, browser/OS coverage, Linux validation and full
 compatibility remain incomplete. No downloads, pushes or publication occurred.
 
-### Immediate continuation after profile 0.368
+### Continuation recorded at profile 0.368 (superseded below)
 
 The named-function, owned body-type and component-replacement gaps reproduced at 0.367 now have
 owned evidence. New independently authored probes reproduce the next reflection gaps. For an owned
@@ -687,3 +687,59 @@ permutations, method/tie behavior, Unicode zero formatting and broader diagnosti
 Independent datasets, the isolated testing runner, complete domain/callable inventory, browser
 performance, CI and release validation are outstanding. Linux and holdout execution still need
 separate authorization. Keep the goal active; no overall completion percentage or date is justified.
+
+### Profile 0.369 verification (2026-10-21)
+
+Owned function display now omits embedded value attributes in bodies and defaults, while preserving
+ordinary argument names where representable. Access and execution retain the original attributed
+values. Nested lists and pairlists, factor/matrix storage, explicit structure syntax, observed
+operator display and attributed closure values have independent evidence. Printed functions retain
+ordinary nested atomic attributes with their attribute paths. Raw hexadecimal display, constructed
+subset-call display and broader nested attribute printing remain unfinished.
+
+sys.call and sys.function follow the evaluation frame of owned supplied/default promises; explicit
+missing indices use their integer-zero defaults. sys.nframe has the observed zero-argument closure
+signature and reports owned frame depth. Cases cover global evaluation, forwarded promises, relative
+indices, range errors and restoration after errors and returns. Twenty-four independently authored
+parity cases pass under native GNU R and NativR, with a separate global-frame regression. Three
+foundation groups and six recursive cases add causal evidence. No library bodies were inspected.
+
+The full check passes 1703 tests with 93 opt-in skips. Checked-in/live/recursive conformance passes
+1278 / 1209 / 180 cases, with 101 linked bindings. Fixed budgets pass: client 17.6/150 KiB gzip,
+Worker 476.6/512 KiB gzip, parser 671.9/1,536 KiB raw and elementary 311.2/384 KiB raw. Name overlap
+is 752/2,522 and is not a completion percentage. The cached Node 24.19.0/pnpm 11.17.0 toolchain was
+used without downloading dependencies.
+
+All 24 cached development/regression archives were digest-checked and rerun with applicable native
+repeatability in the
+[0.369 checkpoint](../compatibility/package-check-evidence/corpus-0.369.0.json). Stage outcomes,
+comparison-match counts and tiers are unchanged from 0.368. Formula is untouched. Original
+entrypoints were used; substitute-runner results receive no P6/P7 credit. Native filesystem checks
+used ordinary Windows permissions. No Worker, playground or packaging interface changed, so e2e and
+pack smoke were not refreshed. No downloads, pushes or publication occurred.
+
+GNU R library wrappers and synthetic eval/local frames remain a reproduced gap: a forwarded
+sys.nframe expression created in local can observe the forcing stack in NativR. The new frame
+evidence uses explicitly owned function scopes; it does not claim synthetic-frame parity. Runtime
+performance, browser/OS coverage, Linux validation and all thirteen semantic domains remain open.
+
+### Immediate continuation after profile 0.369
+
+Continue the frame model through independently authored eval/local and wrapper fixtures. For
+example,
+local({base<-sys.nframe();h<-function(x)x;f<-function(x)h(x);observed<-f(sys.nframe());observed-base})
+is zero natively but two in this NativR profile. Owned function scopes pass. Model evaluation
+origins without losing promise laziness, identity, cancellation limits or frame restoration. Native
+library wrappers also add frames that NativR's implementation builtins do not model; do not inspect
+their implementation bodies to reproduce those observations. First-class if remains unavailable.
+
+Display gaps are also reproducible: native function display of a constructed [ call with an embedded
+1:3 operand is 1:3[2], while NativR prints a backtick call. Raw bodies use hexadecimal byte display
+natively. Closure attributes containing more complex attributed objects need broader path/layout
+evidence. Preserve body/default values and identity independently of display.
+
+Then continue confirmed corpus blockers through shared primitives. Exact partial-sort intermediate
+permutations, method/tie behavior, Unicode zero formatting and broader diagnostics remain open.
+Independent datasets, the isolated testing runner, complete domain/callable inventory, browser
+performance, CI and release validation are outstanding. Linux and holdout execution still need
+separate authorization. No overall completion percentage or date is justified.

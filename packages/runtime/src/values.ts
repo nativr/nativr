@@ -366,6 +366,7 @@ export interface BuiltinInvocation {
   currentCall(): RLanguage | RNull;
   systemCall(which: number): RLanguage | RNull;
   systemFunction(which: number): RClosure | RNull;
+  systemFrameCount(): number;
   isInteractive(): boolean;
   hasSocketCapability(): boolean;
   readline(prompt: string): Promise<string>;

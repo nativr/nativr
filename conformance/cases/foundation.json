@@ -17509,5 +17509,27 @@
     "expected": true,
     "expectedCompatibility": "behavioral",
     "rOracleWithoutCallingHandlers": true
+  },
+
+  {
+    "id": "owned-display-frame-parity-1",
+    "code": "c((function(){value<-structure(1:3,tag=\"owned\");f<-function()NULL;body(f)<-as.call(list(as.name(\"^\"),value,2));a<-identical(deparse(f),c(\"function () \",\"1:3^2\"))&&identical(as.numeric(f()),c(1,4,9));body(f)<-as.call(list(as.name(\"-\"),value));b<-identical(deparse(f),c(\"function () \",\"-1:3\"));a&&b})(),(function(){err<-function(expr)tryCatch(expr,error=conditionMessage);identical(err(sys.call(-1e6)),\"not that many frames on the stack\")&&identical(err(sys.function(1e6)),\"not that many frames on the stack\")})(),(function(){f<-function()NULL;value<-structure(1:3,names=c(\"a\",\"b\",\"c\"),tag=\"owned\");body(f)<-value;identical(deparse(f),c(\"function () \",\"1:3\"))&&identical(body(f),value)&&identical(f(),value)})(),(function(){f<-function()NULL;value<-structure(c(2,4),names=c(\"a\",\"b\"),tag=\"owned\");body(f)<-value;identical(deparse(f),c(\"function () \",\"c(a = 2, b = 4)\"))&&identical(f(),value)})(),(function(){f<-function()NULL;value<-structure(list(a=structure(2,tag=\"inner\")),tag=\"outer\");body(f)<-value;identical(deparse(f),c(\"function () \",\"list(a = 2)\"))&&identical(body(f),value)&&identical(f(),value)})(),(function(){f<-function()NULL;value<-structure(pairlist(a=structure(2,tag=\"inner\")),tag=\"outer\");body(f)<-value;identical(deparse(f),c(\"function () \",\"pairlist(a = 2)\"))&&identical(f(),value)})(),(function(){f<-function()NULL;value<-factor(c(\"b\",\"a\"));body(f)<-value;identical(deparse(f),c(\"function () \",\"2:1\"))&&identical(f(),value)})(),(function(){f<-function()NULL;value<-matrix(1:4,2);body(f)<-value;identical(deparse(f),c(\"function () \",\"1:4\"))&&identical(f(),value)})())",
+    "expected": [true, true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "owned-display-frame-parity-2",
+    "code": "c((function(){f<-function(x)x;value<-structure(c(2,4),names=c(\"a\",\"b\"),tag=\"owned\");formals(f)<-list(x=value);identical(deparse(f),c(\"function (x = c(a = 2, b = 4)) \",\"x\"))&&identical(f(),value)&&identical(formals(f)$x,value)})(),(function(){f<-function(x)x;value<-structure(list(a=structure(2,tag=\"inner\")),tag=\"outer\");formals(f)<-list(x=value);identical(deparse(f),c(\"function (x = list(a = 2)) \",\"x\"))&&identical(f(),value)})(),(function(){f<-function()NULL;value<-structure(c(2,4),names=c(\"a\",\"b\"),tag=\"owned\");body(f)<-as.call(list(as.name(\"identity\"),value));identical(deparse(f),c(\"function () \",\"identity(c(a = 2, b = 4))\"))&&grepl(\"structure\",deparse(body(f)),fixed=TRUE)&&identical(f(),value)})(),(function(){f<-function()structure(1:3,tag=\"owned\");identical(deparse(f),c(\"function () \",'structure(1:3, tag = \"owned\")'))&&identical(attr(f(),\"tag\"),\"owned\")})(),(function(){f<-function()NULL;body(f)<-structure(1:3,tag=\"body\");attr(f,\"owned\")<-structure(1:2,tag=\"attribute\");identical(deparse(f),c(\"structure(function () \",'1:3, owned = structure(1:2, tag = \"attribute\"))'))})(),(function(){f<-function()NULL;body(f)<-structure(1:3,tag=\"owned\");environment(f)<-.GlobalEnv;plain<-identical(capture.output(print(f)),c(\"function () \",\"1:3\"));attr(f,\"owned\")<-structure(1:2,tag=\"attribute\");plain&&identical(capture.output(print(f)),c(\"function () \",\"1:3\",'attr(,\"owned\")',\"[1] 1 2\",'attr(,\"owned\")attr(,\"tag\")','[1] \"attribute\"'))})(),(function(){base<-sys.nframe();f<-function(){g<-function()sys.nframe();g()};observed<-f();identical(observed,base+2L)})(),(function(){base<-sys.nframe();g<-function(x)h(x);h<-function(x)x;identical(g(sys.nframe()),base)&&identical(g(sys.call()),sys.call())})())",
+    "expected": [true, true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "owned-display-frame-parity-3",
+    "code": "c((function(){base<-sys.nframe();h<-function(x)x;f<-function(x=sys.nframe())h(x);observed<-f();identical(observed,base+1L)&&identical(f(sys.nframe()),base)})(),(function(){owner<-function(){h<-function(x)x;h(identical(sys.function(),owner))};owner()})(),(function(){base<-sys.nframe();owner<-function(){h<-function(x)x;h(identical(sys.call(),quote(owner()))&&identical(sys.call(-1),sys.call(base)))};owner()})(),(function(){h<-function(x)x;f<-function(x=c(call=identical(sys.call(),quote(f())),fun=identical(sys.function(),f)))h(x);all(f())})(),(function(){f<-function(){identical(sys.call(which=),sys.call())&&identical(sys.function(which=),f)};f()})(),(function(){identical(formals(sys.call),pairlist(which=0L))&&identical(formals(sys.function),pairlist(which=0L))&&is.null(formals(sys.nframe))&&identical(typeof(sys.nframe),\"closure\")&&is.function(args(sys.nframe))})(),(function(){before<-sys.nframe();tryCatch((function(){stop(\"owned\")})(),error=function(e)NULL);identical(sys.nframe(),before)})(),(function(){before<-sys.nframe();f<-function(){g<-function()return(7);g()};identical(f(),7)&&identical(sys.nframe(),before)})())",
+    "expected": [true, true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
   }
 ]

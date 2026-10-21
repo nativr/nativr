@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 778,
-    "overlappingNames": 751,
-    "missingReferenceNames": 1771,
+    "nativrRegisteredNames": 779,
+    "overlappingNames": 752,
+    "missingReferenceNames": 1770,
     "nativrExtensionNames": 27,
-    "nameCoverage": 0.29778
+    "nameCoverage": 0.298176
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 557, "nameCoverage": 0.407462 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 558, "nameCoverage": 0.408193 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 76, "nameCoverage": 0.163793 },
     {
       "package": "methods",
@@ -714,6 +714,7 @@
     "switch",
     "sys.call",
     "sys.function",
+    "sys.nframe",
     "system",
     "system.file",
     "system.time",
@@ -2403,7 +2404,6 @@
     "sys.frame",
     "sys.frames",
     "sys.load.image",
-    "sys.nframe",
     "sys.on.exit",
     "sys.parent",
     "sys.parents",

@@ -13895,8 +13895,8 @@ NeedsCompilation: no
     const capabilities = await runtime.capabilities();
     expect(capabilities).toMatchObject({
       targetRVersion: "4.6.1",
-      semanticProfileVersion: "0.368.0",
-      languageSubsetVersion: "0.368.0",
+      semanticProfileVersion: "0.369.0",
+      languageSubsetVersion: "0.369.0",
     });
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",

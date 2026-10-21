@@ -38,6 +38,23 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Owned function display and promise frames (profile 0.369)
+
+Printing and deparsing owned function syntax omit attributes from embedded body/default values,
+including nested lists and pairlists. Names remain when ordinary argument tags can express them;
+compact integer sequences omit names as observed. Explicit structure calls remain syntax. Function
+attributes outside the body retain their own attributed values. Body/formals access and execution
+still preserve the original values, types, attributes and identity. Raw-vector hexadecimal display,
+some constructed subset-call forms and broad display equivalence remain unfinished. Observed
+operator display of embedded constants need not reconstruct the same value when parsed.
+
+sys.call and sys.function now index from the owned frame that evaluates a promise. The new
+sys.nframe reports that frame position, including owned nested/default/supplied promises and global
+evaluation. Explicit empty index arguments use the observed integer-zero defaults. Out-of-range
+frame positions use the native message. Frame state is restored after owned returns and errors. This
+does not model GNU R library wrapper frames, synthetic eval frames or a complete stack API; those
+browser-meaningful behaviors remain work. No library implementation bodies are used.
+
 ### Owned function reflection and replacement (profile 0.368)
 
 Owned closure bodies retain their observable atomic, symbol, call, list and pairlist value types.

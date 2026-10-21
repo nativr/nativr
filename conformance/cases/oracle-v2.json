@@ -1486,5 +1486,42 @@
     "id": "owned-reflection-forcing-and-frames",
     "code": "local({f<-function(x=2)x;seen<-character();mark<-function(name,value){seen<<-c(seen,name);value};g<-`body<-`(mark(\"fun\",f),envir=mark(\"envir\",environment(f)),value=mark(\"value\",quote(x+1)));bodyOrder<-seen;seen<-character();h<-`formals<-`(mark(\"fun\",f),envir=mark(\"envir\",environment(f)),value=mark(\"value\",pairlist(x=4)));owned<-function(z=2){forceOwned<-function(x)x;c(body=identical(forceOwned(body()),body(owned)),formals=identical(forceOwned(formals()),formals(owned)))};list(bodyOrder=bodyOrder,formalsOrder=seen,values=c(g(),h()),frame=owned())})",
     "policy": "exact"
+  },
+
+  {
+    "id": "owned-display-frame-attributed-constants",
+    "bindingEvidence": ["base::deparse"],
+    "code": "local({f<-function()NULL;value<-structure(1:3,names=c(\"a\",\"b\",\"c\"),tag=\"owned\");body(f)<-value;sequence<-list(display=deparse(f),body=body(f),result=f());value<-structure(list(a=structure(2,tag=\"inner\")),tag=\"outer\");body(f)<-value;listed<-list(display=deparse(f),body=body(f),result=f());formals(f)<-list(x=value);body(f)<-quote(x);list(sequence=sequence,listed=listed,defaults=list(display=deparse(f),formals=formals(f),result=f()))})",
+    "policy": "exact"
+  },
+  {
+    "id": "owned-display-frame-syntax-boundary",
+    "bindingEvidence": ["base::deparse"],
+    "code": "local({f<-function()NULL;value<-structure(c(2,4),names=c(\"a\",\"b\"),tag=\"owned\");body(f)<-as.call(list(as.name(\"identity\"),value));list(functionSyntax=deparse(f),callSyntax=deparse(body(f)),value=f(),explicit=deparse(function()structure(1:3,tag=\"owned\")))})",
+    "policy": "exact"
+  },
+  {
+    "id": "owned-display-frame-closure-attributes",
+    "bindingEvidence": ["base::deparse", "base::print"],
+    "code": "local({f<-function()NULL;body(f)<-structure(1:3,tag=\"body\");attr(f,\"owned\")<-structure(1:2,tag=\"attribute\");environment(f)<-.GlobalEnv;source<-deparse(f);print(f);list(source=source,value=f(),attributes=attributes(f))})",
+    "policy": "exact"
+  },
+  {
+    "id": "owned-display-frame-counts",
+    "bindingEvidence": ["base::sys.nframe"],
+    "code": "(function(){base<-sys.nframe();owner<-function(){inner<-function()sys.nframe();inner()};observed<-owner();h<-function(x)x;f<-function(x=sys.nframe())h(x);default<-f();supplied<-f(sys.nframe());list(nestedDelta=observed-base,defaultDelta=default-base,suppliedDelta=supplied-base,signature=formals(sys.nframe),type=typeof(sys.nframe))})()",
+    "policy": "exact"
+  },
+  {
+    "id": "owned-display-frame-call-and-function",
+    "bindingEvidence": ["base::sys.call", "base::sys.function"],
+    "code": "local({owner<-function(){h<-function(x)x;h(list(call=sys.call(),same=identical(sys.function(),owner)))};value<-owner();h<-function(x)x;f<-function(x=list(call=sys.call(),same=identical(sys.function(),f)))h(x);default<-f();list(value=value,default=default,callSignature=formals(sys.call),functionSignature=formals(sys.function))})",
+    "policy": "exact"
+  },
+  {
+    "id": "owned-display-frame-boundaries-and-restoration",
+    "bindingEvidence": ["base::sys.nframe"],
+    "code": "(function(){before<-sys.nframe();error<-function(expr)tryCatch(expr,error=conditionMessage);low<-error(sys.call(-1e6));high<-error(sys.function(1e6));tryCatch((function(){stop(\"owned\")})(),error=function(e)NULL);afterError<-sys.nframe();f<-function(){g<-function()return(7);g()};value<-f();afterReturn<-sys.nframe();probe<-function()sys.nframe();inside<-probe();list(nestedDelta=inside-before,low=low,high=high,value=value,restored=c(afterError==before,afterReturn==before))})()",
+    "policy": "exact"
   }
 ]

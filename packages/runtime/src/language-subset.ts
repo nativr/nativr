@@ -222,16 +222,22 @@ export function embeddedValueAst(value: RValue, checkWork?: () => void): AstNode
   };
 }
 
+/** Function syntax omits value attributes, retaining names that fit ordinary argument tags. */
+export function displayValueWithoutAttributes(value: RValue, checkWork?: () => void): AstNode {
+  return displayValueAst(value, checkWork, 0, false);
+}
+
 function displayValueAst(
   value: RValue,
   checkWork: (() => void) | undefined,
   depth: number,
+  includeAttributes = true,
 ): AstNode {
   if (depth > 512)
     throw new RResourceLimitError("NRL4004", "Maximum value deparse depth exceeded.");
   checkWork?.();
-  let display = displayStorageAst(value, checkWork, depth);
-  if (value.type === "closure" && value.attributes.size > 0) {
+  let display = displayStorageAst(value, checkWork, depth, includeAttributes);
+  if (includeAttributes && value.type === "closure" && value.attributes.size > 0) {
     // Keep the value itself intact; only its display has an attribute-free function operand.
     const bare: AstNode = {
       kind: "ConstantExpression",
@@ -267,6 +273,7 @@ function displayValueAst(
       };
     }
   }
+  if (!includeAttributes) return display;
   const attributes: CallArgument[] = [];
   for (const [name, attribute] of value.attributes) {
     checkWork?.();
@@ -282,6 +289,7 @@ function displayStorageAst(
   value: RValue,
   checkWork: (() => void) | undefined,
   depth: number,
+  includeAttributes: boolean,
 ): AstNode {
   if (value.type === "null") return { kind: "NullLiteral", span: SYNTHETIC_SPAN };
   if (value.type === "symbol")
@@ -372,7 +380,7 @@ function displayStorageAst(
     return callAst(
       value.type === "list" ? "list" : "pairlist",
       value.values.map((entry) => {
-        const display = displayValueAst(entry, checkWork, depth + 1);
+        const display = displayValueAst(entry, checkWork, depth + 1, includeAttributes);
         const embedded: AstNode =
           entry.type === "language" || entry.type === "symbol"
             ? display

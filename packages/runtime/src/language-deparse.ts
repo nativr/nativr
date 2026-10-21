@@ -9,6 +9,7 @@ import {
 } from "./language.js";
 import type { DeparseOperation } from "./language.js";
 import type { RClosure, RValue } from "./values.js";
+import { displayValueWithoutAttributes } from "./language-subset.js";
 
 /** Layout controls for source-independent R syntax rendering. */
 export interface DeparseLinesOptions {
@@ -57,6 +58,7 @@ class SyntaxRenderer {
   readonly #lines: string[] = [];
   #line = "";
   #complete = false;
+  #omitValueAttributes = false;
 
   public constructor(options: DeparseLinesOptions) {
     this.#width = options.widthCutoff ?? 60;
@@ -107,12 +109,29 @@ class SyntaxRenderer {
 
   public closure(closure: RClosure, attributes: readonly CallArgument[]): void {
     if (attributes.length > 0) this.#write("structure(");
-    this.formals(closure.parameters, true, 0, false);
-    this.newline(0);
-    this.render(closure.body, 0, false);
+    this.#functionSyntax(closure.parameters, closure.body, true, 0, false, true);
     if (attributes.length > 0) {
       this.#arguments(attributes, 0, false, true);
       this.#write(")");
+    }
+  }
+
+  #functionSyntax(
+    parameters: readonly FunctionParameter[],
+    body: AstNode,
+    root: boolean,
+    indent: number,
+    inBlock: boolean,
+    separateBody: boolean,
+  ): void {
+    const previous = this.#omitValueAttributes;
+    this.#omitValueAttributes = true;
+    try {
+      this.formals(parameters, root, indent, inBlock);
+      if (separateBody) this.newline(indent);
+      this.render(body, indent, inBlock);
+    } finally {
+      this.#omitValueAttributes = previous;
     }
   }
 
@@ -193,14 +212,15 @@ class SyntaxRenderer {
     this.#checkWork();
     if (node.kind === "ConstantExpression") {
       const value = node.value as RValue;
+      const display = this.#omitValueAttributes
+        ? displayValueWithoutAttributes(value, this.#checkWork)
+        : node.display;
       // An embedded closure value deparses like deparse(f): "function (x) ", a line break, the body.
-      if (value.type === "closure" && node.display.kind === "FunctionExpression") {
-        this.formals(value.parameters, true, indent, inBlock);
-        this.newline(indent);
-        this.render(value.body, indent, inBlock);
+      if (value.type === "closure" && display.kind === "FunctionExpression") {
+        this.#functionSyntax(value.parameters, value.body, true, indent, inBlock, true);
         return;
       }
-      this.render(node.display, indent, inBlock, followingPrecedence);
+      this.render(display, indent, inBlock, followingPrecedence);
       return;
     }
     const operation = deparseOperation(node);
@@ -241,8 +261,7 @@ class SyntaxRenderer {
         this.#write("}");
         return;
       case "FunctionExpression":
-        this.formals(node.parameters, false, indent, inBlock);
-        this.render(node.body, indent, inBlock);
+        this.#functionSyntax(node.parameters, node.body, false, indent, inBlock, false);
         return;
       case "IfExpression":
         this.#write("if (");

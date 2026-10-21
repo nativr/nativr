@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.368.0",
-  "capabilityManifestHash": "2aee310d158908f0e3370ab1fa856d1f974a54804d7c7f64995201c3b22fe943",
+  "semanticProfileVersion": "0.369.0",
+  "capabilityManifestHash": "b2956db6b13dd161301ff5d77200dcbe84cf74fbc7e5402bd3e440a40927ea1b",
   "evidence": {
-    "checkedInConformanceCases": 1275,
-    "liveREligibleCases": 1206,
+    "checkedInConformanceCases": 1278,
+    "liveREligibleCases": 1209,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 174,
-    "recursiveBehaviorallyProvenBindings": 99,
+    "recursiveOracleV2Cases": 180,
+    "recursiveBehaviorallyProvenBindings": 101,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::.subset2", "cases": ["default-boundary-internal-extraction"] },
@@ -90,7 +90,10 @@
           "closure-rendering-preserves-recursive-language",
           "embedded-attributed-call-values",
           "embedded-closure-attribute-rendering",
-          "embedded-function-value-rendering"
+          "embedded-function-value-rendering",
+          "owned-display-frame-attributed-constants",
+          "owned-display-frame-closure-attributes",
+          "owned-display-frame-syntax-boundary"
         ]
       },
       { "binding": "base::detach", "cases": ["detach-invalid-name"] },
@@ -226,6 +229,7 @@
           "closure-print-environment-attributes-and-visibility",
           "closure-rendering-preserves-recursive-language",
           "factor-printing-missing-level-and-nested-values",
+          "owned-display-frame-closure-attributes",
           "table-default-axis-names-print-and-visibility",
           "table-zero-extent-dimnames-print-and-visibility"
         ]
@@ -324,9 +328,15 @@
       {
         "binding": "base::sys.call",
         "cases": [
+          "owned-display-frame-call-and-function",
           "replacement-rhs-source-and-stored-call-values",
           "s3-replacement-rhs-source-and-stored-call-values"
         ]
+      },
+      { "binding": "base::sys.function", "cases": ["owned-display-frame-call-and-function"] },
+      {
+        "binding": "base::sys.nframe",
+        "cases": ["owned-display-frame-boundaries-and-restoration", "owned-display-frame-counts"]
       },
       {
         "binding": "base::table",
@@ -383,8 +393,8 @@
   },
   "nameInventory": {
     "referenceVersion": "R version 4.6.1 (2026-06-24 ucrt)",
-    "registeredBindings": 778,
-    "gnuRNameOverlaps": 751,
+    "registeredBindings": 779,
+    "gnuRNameOverlaps": 752,
     "referenceCoreCallableNames": 2522
   },
   "packageCorpus": {
