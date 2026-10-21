@@ -38,6 +38,37 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### First-class return and conditional control (profile 0.374)
+
+return and if are callable special primitives with unknown args/formals signatures. Direct syntax,
+aliases and constructed calls share lazy invocation and existing environment-directed control.
+Syntax observes replaced function bindings. Its standard-kernel path follows callable lookup and
+retains active-binding effects, lazy callable defaults and debugging dispatch. The parser retains
+named, missing and surplus return arguments; ordinary unnamed zero/one-argument returns retain their
+normalized AST form.
+
+return evaluates its value before finding the return owner. It preserves visibility, attributes,
+reference identity, promise origins and ordered cleanup. Surplus arguments fail before evaluation;
+tags are ignored. Missing/forwarded arguments retain their native diagnostics. Eval return scopes
+remain separate from owner scopes. Resource exhaustion cannot be suppressed by cleanup returns.
+
+if forces its condition once and only the selected branch; names and arguments after the third are
+ignored. An absent true branch is visible NULL; an absent false branch is invisible NULL. Explicit
+missing selected branches fail. Scalar conditional coercion is shared with while and existing
+library consumers: cardinality precedes type checks, logical NA has its own error, other missing or
+uninterpretable values fail, and character values use exact accepted spellings without trimming or
+case folding. Class conversion methods are not dispatched. The boolean operators retain their
+separate existing rules.
+
+Literal ellipsis evaluation has the native incorrect-context error. The lapply/sapply/vapply
+callback path retains a literal ellipsis for special control targets. Extraction primitives [ and [[
+expand dots without eager forcing, while dollar treats the dots token as its literal member name.
+Ordinary callable forwarding is preserved. This establishes the recorded control/argument
+boundaries; complete callback syntax, other special forms and all library frame/stack-trace behavior
+remain unfinished. Forty-six owned native parity fixtures, independent top-level observations and
+recursive causal controls cover this increment. No GNU R implementation bodies are inputs. The
+public NativR API and Worker protocol remain unchanged.
+
 ### Evaluation library frames and stack inspection (profile 0.373)
 
 Owned closures and modeled evaluation/library calls share a reflective stack with explicit parent

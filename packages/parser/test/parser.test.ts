@@ -170,6 +170,22 @@ describe("Tree-sitter normalization", () => {
     expect(parser.parse("return(1)").ast.body[0]?.kind).toBe("ReturnExpression");
   });
 
+  it("preserves return argument tags, missing slots and surplus arguments", () => {
+    expect(parser.parse("return(value=)").ast.body[0]).toMatchObject({
+      kind: "CallExpression",
+      arguments: [
+        { name: "value", value: { kind: "UnsupportedExpression", feature: "missing argument" } },
+      ],
+    });
+    expect(parser.parse("return(1,2)").ast.body[0]).toMatchObject({
+      kind: "CallExpression",
+      arguments: [
+        { value: { kind: "DoubleLiteral", value: 1 } },
+        { value: { kind: "DoubleLiteral", value: 2 } },
+      ],
+    });
+  });
+
   it("normalizes direct subset replacement separately from ordinary assignment", () => {
     expect(parser.parse("x[1] <- 2").ast.body[0]).toMatchObject({
       kind: "ReplacementExpression",

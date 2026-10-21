@@ -279,6 +279,12 @@ export interface BuiltinInvocation {
   setResultVisibility(visibility: "visible" | "invisible"): void;
   force(binding: RBinding): Promise<RValue>;
   forceDetailed(promise: RPromise): Promise<{ readonly value: RValue; readonly visible: boolean }>;
+  evaluateConditional(
+    condition: RPromise | undefined,
+    consequence: RPromise | undefined,
+    alternative: RPromise | undefined,
+  ): Promise<{ readonly value: RValue; readonly visible: boolean }>;
+  returnFromCall(value: RPromise | undefined): Promise<never>;
   /** Bound lazy formal in an explicitly modeled library frame. */
   functionArgument(name: string): RPromise | undefined;
   functionEnvironment(): REnvironment | undefined;
@@ -487,6 +493,10 @@ export interface BuiltinDefinition {
   readonly package: string;
   readonly name: string;
   readonly kind: BuiltinKind;
+  /** Special primitives such as extraction can expand ellipsis while retaining lazy arguments. */
+  readonly expandDots?: boolean;
+  /** Standard control kernel that syntax may enter after ordinary callable lookup. */
+  readonly controlSyntax?: "if" | "return";
   /** Execute an independently modeled library closure with observable formals and control scope. */
   readonly reflectiveFrame?: boolean;
   /** Unknown observable args() signature, distinct from an empty formal list. */

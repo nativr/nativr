@@ -6,6 +6,7 @@ import {
 } from "./arguments.js";
 import type { PartialArgumentMatch } from "./arguments.js";
 import { translatePosixCharacterClasses } from "./regex.js";
+import { logicalCondition } from "./logical-condition.js";
 import { assertNever } from "@nativr/ast";
 import type {
   AssignmentExpressionNode,
@@ -1008,7 +1009,11 @@ export class Evaluator {
           context.allocate(1);
           return { value: missingValue(node.declaredType), visible: true };
         case "Identifier": {
-          if (node.name === "...") throw unsupported("ellipsis arguments", node.span);
+          if (node.name === "...") {
+            throw new REvaluationError("NRE2011", "'...' used in an incorrect context", {
+              span: node.span,
+            });
+          }
           const dotDot = /^\.\.([1-9][0-9]*)$/u.exec(node.name);
           if (dotDot !== null) {
             const dots = lookupBinding(environment, "...");
@@ -1386,18 +1391,17 @@ export class Evaluator {
             visible: true,
           };
         case "IfExpression":
-          if (
-            conditionState(
-              await this.#evaluateValue(node.condition, environment, context),
-              "if",
-              node.span,
-            )
-          ) {
-            return await this.#evaluateNode(node.consequence, environment, context);
-          }
-          return await (node.alternative === undefined
-            ? { value: R_NULL, visible: false }
-            : this.#evaluateNode(node.alternative, environment, context));
+          return await this.#evaluateSyntaxCall(
+            "if",
+            [
+              node.condition,
+              node.consequence,
+              ...(node.alternative === undefined ? [] : [node.alternative]),
+            ],
+            node.span,
+            environment,
+            context,
+          );
         case "ForExpression":
           return await this.#evaluateFor(node, environment, context);
         case "WhileExpression":
@@ -1409,12 +1413,13 @@ export class Evaluator {
         case "NextExpression":
           throw new NextSignal(this.#nearestLoopTarget(environment, context, node.span));
         case "ReturnExpression": {
-          const target = this.#nearestFunctionTarget(environment, context, node.span);
-          const result =
-            node.value === undefined
-              ? { value: R_NULL, visible: true }
-              : await this.#evaluateNode(node.value, environment, context);
-          throw new ReturnSignal(target, result);
+          return await this.#evaluateSyntaxCall(
+            "return",
+            node.value === undefined ? [] : [node.value],
+            node.span,
+            environment,
+            context,
+          );
         }
         case "SubsetExpression": {
           const target = await this.#evaluateValue(node.target, environment, context);
@@ -1602,7 +1607,6 @@ export class Evaluator {
                 ? true
                 : conditionState(
                     await this.#evaluateValue(dropArgument.value, environment, context),
-                    "if",
                     dropArgument.span,
                   );
             const selected =
@@ -1710,6 +1714,11 @@ export class Evaluator {
         case "ConstantExpression":
           return { value: node.value as RValue, visible: true };
         case "UnsupportedExpression":
+          if (node.feature === "dots") {
+            throw new REvaluationError("NRE2011", "'...' used in an incorrect context", {
+              span: node.span,
+            });
+          }
           throw unsupported(node.feature, node.span);
         default:
           return assertNever(node);
@@ -1785,7 +1794,6 @@ export class Evaluator {
       while (
         conditionState(
           await this.#evaluateValue(node.condition, environment, context),
-          "while",
           node.condition.span,
         )
       ) {
@@ -2385,7 +2393,9 @@ export class Evaluator {
       this.#prepareArguments(
         node.arguments,
         environment,
-        callable.type !== "builtin" || callable.definition.kind !== "special",
+        callable.type !== "builtin" ||
+          callable.definition.expandDots === true ||
+          callable.definition.kind !== "special",
       ),
       context,
       node,
@@ -2470,7 +2480,10 @@ export class Evaluator {
     while (current !== null) {
       const binding = current.bindings.get(node.name);
       if (binding !== undefined && binding.type !== "dots") {
-        const value = await this.#force(binding, context);
+        const value =
+          binding.type === "promise" || binding.type === "active-binding"
+            ? await this.#force(binding, context)
+            : binding;
         if (value.type === "closure" || value.type === "builtin") return value;
       }
       current = current.parent;
@@ -2582,6 +2595,25 @@ export class Evaluator {
           },
           force: async (promise) => this.#force(promise, context),
           forceDetailed: async (promise) => this.#forceDetailed(promise, context),
+          evaluateConditional: async (condition, consequence, alternative) =>
+            this.#evaluateConditional(
+              async () => (condition === undefined ? R_NULL : this.#force(condition, context)),
+              async () =>
+                consequence === undefined
+                  ? { value: R_NULL, visible: true }
+                  : this.#forceDetailed(consequence, context),
+              alternative === undefined
+                ? undefined
+                : () => this.#forceDetailed(alternative, context),
+              call?.span,
+            ),
+          returnFromCall: async (value) =>
+            this.#returnFromEnvironment(
+              value === undefined ? undefined : () => this.#forceDetailed(value, context),
+              callerEnvironment ?? args[0]?.promise.environment ?? this.#globalEnvironment,
+              context,
+              call?.span,
+            ),
           functionArgument: (name) => {
             const binding = libraryFrame?.environment.bindings.get(name);
             return binding?.type === "promise" ? binding : undefined;
@@ -5647,15 +5679,98 @@ export class Evaluator {
     throw new REvaluationError("NRE2208", "no loop for break/next, jumping to top level", { span });
   }
 
+  async #evaluateSyntaxCall(
+    name: "if" | "return",
+    arguments_: readonly AstNode[],
+    span: SourceSpan,
+    environment: REnvironment,
+    context: EvaluationContext,
+  ): Promise<EvaluationResult> {
+    const call: CallExpressionNode = {
+      kind: "CallExpression",
+      callee: { kind: "Identifier", name, span },
+      arguments: arguments_.map((value) => ({ value, span: value.span })),
+      span,
+    };
+    const callable = await this.#evaluateCallable(call.callee, environment, context);
+    const debug = functionDebugRegistry(this.#builtinState);
+    if (
+      callable.type === "builtin" &&
+      callable.definition.controlSyntax === name &&
+      !debug.persistent.has(callable) &&
+      !debug.once.has(callable)
+    ) {
+      const argument = arguments_[0];
+      if (name === "return") {
+        return this.#returnFromEnvironment(
+          argument === undefined
+            ? undefined
+            : () => this.#evaluateNode(argument, environment, context),
+          environment,
+          context,
+          span,
+        );
+      }
+      const consequence = arguments_[1],
+        alternative = arguments_[2];
+      return this.#evaluateConditional(
+        async () =>
+          argument === undefined ? R_NULL : this.#evaluateValue(argument, environment, context),
+        async () =>
+          consequence === undefined
+            ? { value: R_NULL, visible: true }
+            : this.#evaluateNode(consequence, environment, context),
+        alternative === undefined
+          ? undefined
+          : () => this.#evaluateNode(alternative, environment, context),
+        span,
+      );
+    }
+    return this.#invokeCallableResult(
+      callable,
+      this.#prepareArguments(
+        call.arguments,
+        environment,
+        callable.type !== "builtin" ||
+          callable.definition.expandDots === true ||
+          callable.definition.kind !== "special",
+      ),
+      context,
+      call,
+      environment,
+    );
+  }
+
+  async #evaluateConditional(
+    condition: () => Promise<RValue>,
+    consequence: () => Promise<EvaluationResult>,
+    alternative: (() => Promise<EvaluationResult>) | undefined,
+    span: SourceSpan | undefined,
+  ): Promise<EvaluationResult> {
+    if (conditionState(await condition(), span)) return consequence();
+    return alternative === undefined ? { value: R_NULL, visible: false } : alternative();
+  }
+
+  async #returnFromEnvironment(
+    value: (() => Promise<EvaluationResult>) | undefined,
+    environment: REnvironment,
+    context: EvaluationContext,
+    span: SourceSpan | undefined,
+  ): Promise<never> {
+    const result = value === undefined ? { value: R_NULL, visible: true } : await value();
+    const target = this.#nearestFunctionTarget(environment, context, span);
+    throw new ReturnSignal(target, result);
+  }
+
   #nearestFunctionTarget(
     environment: REnvironment,
     context: EvaluationContext,
-    span: SourceSpan,
+    span: SourceSpan | undefined,
   ): symbol {
     const frame = this.#nearestFunctionFrame(environment, context);
     if (frame !== undefined) return frame.target;
     throw new REvaluationError("NRE2209", "no function to return from, jumping to top level", {
-      span,
+      ...(span === undefined ? {} : { span }),
     });
   }
 
@@ -5909,18 +6024,17 @@ function scalarLogicalState(value: RValue, operator: string): boolean | undefine
   return item !== 0;
 }
 
-function conditionState(value: RValue, construct: "if" | "while", span: SourceSpan): boolean {
-  const state = scalarLogicalState(value, construct);
-  if (state === undefined) {
-    throw new REvaluationError(
-      "NRE2207",
-      `A missing value cannot be used as a ${construct} condition.`,
-      {
-        span,
-      },
-    );
+function conditionState(value: RValue, span: SourceSpan | undefined): boolean {
+  try {
+    return logicalCondition(value);
+  } catch (error) {
+    if (!(error instanceof RTypeMismatchError)) throw error;
+    const options = span === undefined ? {} : { span };
+    if (value.type === "logical" && value.length === 1 && isMissing(value, 0)) {
+      throw new REvaluationError("NRE2207", error.message, options);
+    }
+    throw new RTypeMismatchError("NRT3113", error.message, options);
   }
-  return state;
 }
 
 function isCallableValue(value: unknown): value is RClosure | RBuiltin {

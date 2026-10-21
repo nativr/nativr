@@ -8,6 +8,7 @@ export {
 } from "./arguments.js";
 export { embeddedValueAst } from "./language-subset.js";
 export { translatePosixCharacterClasses } from "./regex.js";
+export { logicalCondition } from "./logical-condition.js";
 export {
   createEnvironment,
   createForcedPromise,

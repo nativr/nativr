@@ -93,5 +93,5 @@ export function shadowedOracleV2Code(code, binding, marker, behavior) {
     behavior === "error"
       ? `${name === "stop" ? "base::stop" : "stop"}(${JSON.stringify(marker)})`
       : JSON.stringify(marker);
-  return `${name} <- function(...) ${replacement}\n${code}`;
+  return `\`${name}\` <- function(...) ${replacement}\n${code}`;
 }

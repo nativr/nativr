@@ -66,6 +66,7 @@ import {
   listValue,
   lookupBinding,
   logicalVector,
+  logicalCondition,
   missingValue,
   objectAttributes,
   objectClasses,
@@ -527,13 +528,16 @@ const FIRST_CLASS_OPERATOR_BUILTINS: readonly BuiltinDefinition[] = [
         "primitive",
       ),
   ),
-  defineBuiltin(
-    "[",
-    ["x", "...", "drop"],
-    "behavioral",
-    (invocation) => builtinInternalSubset(invocation, false, "["),
-    "special",
-  ),
+  {
+    ...defineBuiltin(
+      "[",
+      ["x", "...", "drop"],
+      "behavioral",
+      (invocation) => builtinInternalSubset(invocation, false, "["),
+      "special",
+    ),
+    expandDots: true,
+  },
   {
     ...defineBuiltin(
       "[[",
@@ -542,6 +546,7 @@ const FIRST_CLASS_OPERATOR_BUILTINS: readonly BuiltinDefinition[] = [
       builtinExtractDispatched,
       "special",
     ),
+    expandDots: true,
     s3DefaultImplementation: (invocation) => builtinInternalSubset(invocation, true, "[["),
   },
 ];
@@ -557,6 +562,14 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("switch", ["EXPR", "..."], "behavioral", builtinSwitch),
   defineBuiltin("missing", ["x"], "behavioral", builtinMissing, "special"),
   defineBuiltin("quote", ["expr"], "behavioral", builtinQuote, "special"),
+  {
+    ...defineBuiltin("return", ["value"], "behavioral", builtinReturn, "special"),
+    controlSyntax: "return",
+  },
+  {
+    ...defineBuiltin("if", ["cond", "cons.expr", "alt.expr"], "behavioral", builtinIf, "special"),
+    controlSyntax: "if",
+  },
   defineBuiltin("substitute", ["expr", "env"], "behavioral", builtinLanguageSubstitute, "special"),
   defineBuiltin("bquote", ["expr", "where", "splice"], "behavioral", builtinBquote, "special"),
   defineBuiltin(
@@ -6372,6 +6385,23 @@ function builtinMissing(invocation: BuiltinInvocation): RValue {
   return logicalVector([isMissingArgumentBinding(binding, new Set())]);
 }
 
+function builtinReturn(invocation: BuiltinInvocation): Promise<never> {
+  if (invocation.arguments.length > 1) {
+    throw new REvaluationError("NRE2102", "multi-argument returns are not permitted");
+  }
+  return invocation.returnFromCall(invocation.arguments[0]?.promise);
+}
+
+async function builtinIf(invocation: BuiltinInvocation): Promise<RValue> {
+  const result = await invocation.evaluateConditional(
+    invocation.arguments[0]?.promise,
+    invocation.arguments[1]?.promise,
+    invocation.arguments[2]?.promise,
+  );
+  invocation.setResultVisibility(result.visible ? "visible" : "invisible");
+  return result.value;
+}
+
 function builtinQuote(invocation: BuiltinInvocation): RValue {
   if (invocation.arguments.length !== 1) {
     throw new REvaluationError("NRE2103", "quote() requires exactly one argument.");
@@ -8757,53 +8787,6 @@ function writeGarbageCollectionMessage(
         `${memoryMegabytes(statistics.vectorCells.used, 8).toFixed(1)} Mbytes of vectors used (${vectorPercent}%)`,
       ].join("\n") + "\n",
   });
-}
-
-function logicalCondition(value: RValue): boolean {
-  const length =
-    value.type === "null"
-      ? 0
-      : "length" in value
-        ? value.length
-        : value.type === "expression"
-          ? value.values.length
-          : value.type === "language"
-            ? (languageAstEntries(value.expression)?.nodes.length ?? 1)
-            : 1;
-  if (length === 0) {
-    throw new RTypeMismatchError("NRT3399", "argument is of length zero");
-  }
-  if (length > 1) {
-    throw new RTypeMismatchError("NRT3399", "the condition has length > 1");
-  }
-  if (!isAtomic(value)) {
-    throw new RTypeMismatchError("NRT3399", "argument is not interpretable as logical");
-  }
-  if (isMissing(value, 0)) {
-    throw new RTypeMismatchError(
-      "NRT3399",
-      value.type === "logical"
-        ? "missing value where TRUE/FALSE needed"
-        : "argument is not interpretable as logical",
-    );
-  }
-  if (value.type === "character") {
-    const parsed = parseRLogical(value.values[0] ?? "");
-    if (parsed === undefined) {
-      throw new RTypeMismatchError("NRT3399", "argument is not interpretable as logical");
-    }
-    return parsed;
-  }
-  if (value.type === "complex") {
-    if (Number.isNaN(value.real[0]) || Number.isNaN(value.imaginary[0]))
-      throw new RTypeMismatchError("NRT3399", "argument is not interpretable as logical");
-    return (value.real[0] ?? 0) !== 0 || (value.imaginary[0] ?? 0) !== 0;
-  }
-  const scalar = value.values[0] ?? 0;
-  if (typeof scalar === "number" && Number.isNaN(scalar)) {
-    throw new RTypeMismatchError("NRT3399", "argument is not interpretable as logical");
-  }
-  return scalar !== 0;
 }
 
 function processTimeValue(elapsed: number, invocation: BuiltinInvocation): RDoubleVector {
@@ -18500,6 +18483,8 @@ async function builtinDollar(invocation: BuiltinInvocation): Promise<RValue> {
   const expression = nameArgument.promise.expression;
   let name: string;
   if (expression?.kind === "Identifier") name = expression.name;
+  else if (expression?.kind === "UnsupportedExpression" && expression.feature === "dots")
+    name = "...";
   else if (expression?.kind === "StringLiteral") name = expression.value;
   else if (expression === null || expression.kind === "ConstantExpression") {
     const value = await invocation.force(nameArgument.promise);
@@ -53383,15 +53368,20 @@ async function builtinVapply(invocation: BuiltinInvocation): Promise<RValue> {
   const results: RVector[] = [];
   for (let index = 0; index < input.length; index += 1) {
     invocation.context.checkpoint();
-    const result = await invocation.invokeLazy(callable, [
-      {
-        promise: createForcedPromise(
-          await applyVectorItem(input, index, invocation),
-          invocation.globalEnvironment(),
-        ),
-      },
-      ...dots,
-    ]);
+    const result = await invocation.invokeLazy(
+      callable,
+      vectorApplyArguments(
+        invocation,
+        callable,
+        {
+          promise: createForcedPromise(
+            await applyVectorItem(input, index, invocation),
+            invocation.globalEnvironment(),
+          ),
+        },
+        dots,
+      ),
+    );
     const length = valueLength(result);
     if (length !== template.length) {
       throw new RTypeMismatchError(
@@ -54256,6 +54246,31 @@ async function forceForwarded(
   return values;
 }
 
+function vectorApplyArguments(
+  invocation: BuiltinInvocation,
+  callable: RValue,
+  element: BuiltinCallArgument,
+  forwarded: readonly BuiltinCallArgument[],
+): readonly BuiltinCallArgument[] {
+  if (
+    callable.type !== "builtin" ||
+    callable.definition.kind !== "special" ||
+    callable.definition.expandDots === true
+  ) {
+    return [element, ...forwarded];
+  }
+  // A special callable receives the literal ellipsis in FUN(element, ...).
+  return [
+    element,
+    {
+      promise: createPromise(
+        { kind: "Identifier", name: "...", span: SYNTHETIC_SPAN },
+        invocation.currentEnvironment(),
+      ),
+    },
+  ];
+}
+
 async function mapVector(
   invocation: BuiltinInvocation,
   input: ApplyInput,
@@ -54267,15 +54282,20 @@ async function mapVector(
   for (let index = 0; index < input.length; index += 1) {
     invocation.context.checkpoint();
     results.push(
-      await invocation.invokeLazy(callable, [
-        {
-          promise: createForcedPromise(
-            await applyVectorItem(input, index, invocation),
-            invocation.globalEnvironment(),
-          ),
-        },
-        ...forwarded,
-      ]),
+      await invocation.invokeLazy(
+        callable,
+        vectorApplyArguments(
+          invocation,
+          callable,
+          {
+            promise: createForcedPromise(
+              await applyVectorItem(input, index, invocation),
+              invocation.globalEnvironment(),
+            ),
+          },
+          forwarded,
+        ),
+      ),
     );
   }
   return results;

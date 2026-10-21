@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 786,
-    "overlappingNames": 759,
-    "missingReferenceNames": 1763,
+    "nativrRegisteredNames": 788,
+    "overlappingNames": 761,
+    "missingReferenceNames": 1761,
     "nativrExtensionNames": 27,
-    "nameCoverage": 0.300952
+    "nameCoverage": 0.301745
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 565, "nameCoverage": 0.413314 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 567, "nameCoverage": 0.414777 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 76, "nameCoverage": 0.163793 },
     {
       "package": "methods",
@@ -379,6 +379,7 @@
     "hist.default",
     "identical",
     "identity",
+    "if",
     "ifelse",
     "image",
     "image.default",
@@ -614,6 +615,7 @@
     "requireNamespace",
     "resid",
     "residuals",
+    "return",
     "rev",
     "rexp",
     "rgamma",
@@ -1718,7 +1720,6 @@
     "icuGetCollate",
     "icuSetCollate",
     "identify",
-    "if",
     "implicitGeneric",
     "importIntoEnv",
     "influence",
@@ -2221,7 +2222,6 @@
     "restartDescription",
     "restartFormals",
     "retracemem",
-    "return",
     "returnValue",
     "rev.default",
     "rf",

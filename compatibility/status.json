@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.373.0",
-  "capabilityManifestHash": "bad8f9e7773fbc52a7834cbb8d8f44f24bf3478664f3ddee66571b39426bbae9",
+  "semanticProfileVersion": "0.374.0",
+  "capabilityManifestHash": "8a79cb9bb8c3ef46a62e7f4be945ec1fa4fde50e19beb51d2ae9f9f1f2f3d917",
   "evidence": {
-    "checkedInConformanceCases": 1301,
-    "liveREligibleCases": 1232,
+    "checkedInConformanceCases": 1309,
+    "liveREligibleCases": 1240,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 212,
-    "recursiveBehaviorallyProvenBindings": 119,
+    "recursiveOracleV2Cases": 221,
+    "recursiveBehaviorallyProvenBindings": 121,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::.subset2", "cases": ["default-boundary-internal-extraction"] },
@@ -136,7 +136,8 @@
           "evaluation-control-return-boundaries",
           "evaluation-origin-environments",
           "evaluation-origin-identity-and-visibility",
-          "evaluation-origin-restoration-and-defaults"
+          "evaluation-origin-restoration-and-defaults",
+          "first-class-control-return-scopes"
         ]
       },
       {
@@ -170,6 +171,14 @@
         "binding": "base::getOption",
         "cases": ["partial-argument-warning-handler-controls-and-muffling"]
       },
+      {
+        "binding": "base::if",
+        "cases": [
+          "first-class-control-condition-coercion",
+          "first-class-control-if-selection",
+          "first-class-control-mapping-ellipsis"
+        ]
+      },
       { "binding": "base::invisible", "cases": ["recursive-stdout-and-invisible-result"] },
       { "binding": "base::invokeRestart", "cases": ["calling-handlers-and-restarts"] },
       {
@@ -193,7 +202,9 @@
         "cases": [
           "apply-class-conversion-and-extraction",
           "apply-lazy-dots-control-order-and-names",
-          "apply-single-conversion-and-name-length"
+          "apply-single-conversion-and-name-length",
+          "first-class-control-mapping-ellipsis",
+          "first-class-control-special-ellipsis-policies"
         ]
       },
       { "binding": "base::length", "cases": ["length-class-and-default-dispatch"] },
@@ -212,7 +223,10 @@
       },
       {
         "binding": "base::makeActiveBinding",
-        "cases": ["active-binding-is-not-forced-by-observer"]
+        "cases": [
+          "active-binding-is-not-forced-by-observer",
+          "first-class-control-active-and-default-bindings"
+        ]
       },
       { "binding": "base::Map", "cases": ["mapply-values-forcing-and-methods"] },
       { "binding": "base::mapply", "cases": ["mapply-values-forcing-and-methods"] },
@@ -294,6 +308,14 @@
       { "binding": "base::quote", "cases": ["pairlist-tags-language-and-missingness"] },
       { "binding": "base::rep", "cases": ["partial-argument-warning-builtins-and-match-call"] },
       { "binding": "base::replicate", "cases": ["replicate-counts-frames-and-simplification"] },
+      {
+        "binding": "base::return",
+        "cases": [
+          "first-class-control-return-arguments",
+          "first-class-control-return-scopes",
+          "first-class-control-return-values"
+        ]
+      },
       {
         "binding": "base::sapply",
         "cases": [
@@ -501,8 +523,8 @@
   },
   "nameInventory": {
     "referenceVersion": "R version 4.6.1 (2026-06-24 ucrt)",
-    "registeredBindings": 786,
-    "gnuRNameOverlaps": 759,
+    "registeredBindings": 788,
+    "gnuRNameOverlaps": 761,
     "referenceCoreCallableNames": 2522
   },
   "packageCorpus": {

@@ -1339,3 +1339,31 @@ Startup, cancellation, representative package workloads including numDeriv, and 
 matrix still need current measurements. The 0.373 production build passes the existing size limits:
 client 17.6/150 KiB gzip, Worker 478.5/512 KiB gzip, parser 671.9/1,536 KiB raw and elementary Wasm
 311.2/384 KiB raw.
+
+## Control invocation measurement at profile 0.374
+
+An advisory Windows x64 / Node 24.19.0 source benchmark compares the owned evaluator and base
+builtin implementations at commit `a3ab4e7` (0.373) with the final 0.374 control implementation.
+Unchanged leaf modules, the parser and reference operators are shared. Parsing is outside the
+measured region. Each workload receives eight warmups per implementation, then 24 paired samples
+with alternating execution order. Results are checked for equal values. These are medians in
+milliseconds, not browser or full prior-release measurements.
+
+| Workload     | Independently authored R input                                                    | 0.373 median | 0.374 median | Ratio |
+| ------------ | --------------------------------------------------------------------------------- | -----------: | -----------: | ----: |
+| scalar-loop  | `x<-0;for(i in 1:3000)x<-x+i;x`                                                   |      5.08635 |      5.10870 | 1.004 |
+| closure-loop | `f<-function(x)x*x+1;s<-0;for(i in 1:1500)s<-s+f(i);s`                            |      8.25810 |      8.05295 | 0.975 |
+| exit-loop    | `f<-function(x){on.exit(invisible(NULL));x*x+1};s<-0;for(i in 1:1500)s<-s+f(i);s` |     15.06160 |     14.92000 | 0.991 |
+| eval-loop    | `s<-0;for(i in 1:1500)s<-s+evalq(i+i);s`                                          |     24.09790 |     24.78870 | 1.029 |
+| if-loop      | `s<-0;for(i in 1:3000){if(i>1500)s<-s+i else s<-s-i};s`                           |     10.43185 |     11.52070 | 1.104 |
+| return-loop  | `f<-function(x){return(x*x+1)};s<-0;for(i in 1:1500)s<-s+f(i);s`                  |     20.39360 |     15.65895 | 0.768 |
+
+The standard control path performs ordinary callable lookup and retains active bindings, lazy
+defaults and debugger dispatch. It then enters the shared control kernel directly when applicable;
+materialized callable values also avoid unnecessary promise forcing. The conditional workload is
+about ten percent slower in this run, while explicit returns are faster. The eval-heavy workload is
+within three percent of 0.373; the measured 0.373 slowdown against 0.372 remains unresolved. No
+budget changed and these results do not establish release performance acceptance. Startup,
+cancellation, representative package workloads including numDeriv, and browser/OS measurements
+remain required. The 0.374 production build passes the existing size limits: client 17.6/150 KiB
+gzip, Worker 479.2/512 KiB gzip, parser 671.9/1,536 KiB raw and elementary Wasm 311.2/384 KiB raw.

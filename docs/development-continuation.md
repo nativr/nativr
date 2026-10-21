@@ -1041,7 +1041,7 @@ required. Other library adapters, reflective stack traces and first-class specia
 incomplete. All thirteen domains and overall release readiness remain unfinished; the full
 completion goal stays active.
 
-### Immediate continuation after profile 0.373
+### Continuation recorded at profile 0.373 (superseded below)
 
 The evaluation/library frame defects recorded at 0.372 now pass. Continue first-class special-form
 invocation through shared callable and control machinery. Seven independently authored probes
@@ -1052,6 +1052,75 @@ do.call("if",list(FALSE,quote(stop("not forced")),9L)) returns 9. NativR lacks b
 fails these lookups/invocations. Preserve lazy evaluation, environment-directed return, visibility,
 diagnostics, cancellation and resource-limit recovery when implementing them. No library body is
 needed as an implementation input.
+
+Further reflective adapter/stack-trace work remains. Profile the measured evalq overhead while
+preserving the verified frame graph and defaults. Continue constructed subset-call/raw hexadecimal
+display, complex attributes, callable defaults, partial-sort/method/tie behavior and confirmed
+shared corpus blockers. Independently licensed offline datasets, isolated testing support, complete
+domain/callable inventory, browser/OS performance, reproducible CI and release gates remain
+required. Linux and holdout execution still need separate authorization. Keep the full goal active
+while useful local work remains.
+
+### Profile 0.374 verification (2026-10-21)
+
+return and if now have first-class special-primitive bindings. Aliases, constructed calls and
+ordinary syntax use shared lazy control machinery. Syntax performs callable lookup, including active
+bindings, lazy defaults and replacement functions. Return preserves the value's visibility,
+attributes, identity, promise origin and environment-directed owner/cleanup. Its value is forced
+before reporting a missing owner, while surplus arguments fail before evaluation. Named, missing and
+surplus syntax arguments are retained by the parser. If forces only its condition and selected
+branch; omitted and explicitly missing branches retain distinct visibility/error behavior.
+
+Scalar conditional coercion is shared with while and existing library consumers. Length checks
+precede type checks; logical NA has its own diagnostic; numeric/complex/character missing values and
+uninterpretable values fail. Character conditions accept only the native spellings without trimming
+or case folding. Special mapping targets retain literal ellipsis; extraction primitives [ and [[
+expand it lazily, while dollar uses the literal member name. The full suite detected an extraction
+regression during development; independent native probes established this distinction and the final
+implementation passes the existing apply-family regression.
+
+Forty-six independent parity fixtures pass GNU R and NativR, with two additional tests for the
+top-level return boundary and resource-limit recovery. The focused control/integration suite passes
+382 tests. Eight foundation groups and nine recursive cases add evidence with causal controls. The
+full check passes 1909 tests with 93 opt-in skips; checked-in/live/recursive conformance passes 1309
+/ 1240 / 221, with 121 linked bindings. After saving the checkpoint, all 21 checkpoint-integrity
+tests pass. Fixed budgets pass: client 17.6/150 KiB gzip, Worker 479.2/512 KiB gzip, parser
+671.9/1,536 KiB raw and elementary 311.2/384 KiB raw. Name overlap is 761/2,522; this is not a
+completion percentage.
+
+All 24 cached development/regression archives were digest-checked and rerun with applicable native
+repeatability in the
+[0.374 checkpoint](../compatibility/package-check-evidence/corpus-0.374.0.json). All 178 script
+input digests, execution/comparison outcomes and repeatability flags are unchanged from 0.373; stage
+statuses and tiers are also unchanged. The corpus retains two P7 packages (pkgconfig and abind), one
+P6, eight P5, twelve P4 and one P3, plus the untouched P0 holdout. Original entrypoints were used;
+substitute-runner results receive no P6/P7 credit. Native filesystem checks used ordinary Windows
+permissions. Formula is untouched. No public NativR API, Worker protocol, host capability or
+dependency direction changed. E2e and pack smoke were not refreshed for this base-runtime increment.
+No downloads, pushes or publication occurred; GNU R library implementation bodies were neither
+inspected nor captured.
+
+The advisory paired source benchmark against 0.373 measures a conditional-loop ratio of 1.104, an
+eval-heavy ratio of 1.029 and an explicit-return ratio of 0.768. See workloads and medians in
+[performance.md](performance.md#control-invocation-measurement-at-profile-0374). The previously
+recorded eval-frame cost against 0.372 remains open; this comparison does not establish browser
+performance acceptance or relax a budget. All thirteen domains and overall release readiness remain
+unfinished; the full completion goal stays active.
+
+### Immediate continuation after profile 0.374
+
+The reproduced return/if defects now pass. Continue the shared callable/control mechanism for the
+remaining special forms. Eight independently authored probes establish concrete gaps: native
+get("break",baseenv()) has type special; aliases of break, next, while, for, repeat and braces
+execute owned loops/blocks with their expected control effects. NativR lacks all six bindings.
+Preserve environment-directed loop ownership, lazy bodies, visibility, cleanup, argument errors,
+callable replacement and resource-limit recovery. Use public metadata and owned behavioral probes;
+no GNU R implementation body is needed.
+
+The same probe confirms a separate coercion gap: native as.logical of
+`c("tRuE"," TRUE ","true","False","T","f")` is `c(NA,NA,TRUE,FALSE,TRUE,NA)`; NativR differs.
+Conditional coercion is now correct for those spellings, but general vector/option conversion still
+uses a permissive trim/case-fold helper. Reproduce each consumer before sharing a corrected parser.
 
 Further reflective adapter/stack-trace work remains. Profile the measured evalq overhead while
 preserving the verified frame graph and defaults. Continue constructed subset-call/raw hexadecimal

@@ -260,7 +260,19 @@ function assignmentIdentifier(node: AstNode): IdentifierNode | undefined {
 function normalizeCall(node: Node, mapper: Utf8SourceMap, span: SourceSpan): AstNode {
   const callee = normalizeNode(requiredField(node, "function"), mapper);
   const args = normalizeArguments(requiredField(node, "arguments"), mapper);
-  if (callee.kind === "Identifier" && callee.name === "return") {
+  if (
+    callee.kind === "Identifier" &&
+    callee.name === "return" &&
+    args.length <= 1 &&
+    args.every(
+      (argument) =>
+        argument.name === undefined &&
+        !(
+          argument.value.kind === "UnsupportedExpression" &&
+          argument.value.feature === "missing argument"
+        ),
+    )
+  ) {
     const first = args[0];
     return first === undefined
       ? { kind: "ReturnExpression", span }
