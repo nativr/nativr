@@ -17632,5 +17632,69 @@
     "expected": [true, true, true, true, true],
     "expectedCompatibility": "behavioral",
     "rOracleWithoutCallingHandlers": true
+  },
+
+  {
+    "id": "evaluation-call-frame-parity-1",
+    "code": "c((function(){base<-sys.nframe();observed<-eval(quote(sys.nframe()));identical(observed,base+2L)})(),(function(){base<-sys.nframe();observed<-evalq(sys.nframe());identical(observed,base+2L)})(),(function(){base<-sys.nframe();observed<-evalq(evalq(sys.nframe()));identical(observed,base+4L)})(),(function(){ev<-eval;base<-sys.nframe();observed<-ev(quote(sys.nframe()));identical(observed,base+2L)&&ev(quote(identical(sys.function(-1L),ev)))})(),(function(){eval(quote(identical(sys.function(-1L),eval)))})(),(function(){evalq(identical(sys.function(-1L),evalq))})(),(function(){evalq(typeof(sys.function())==\"builtin\"&&!identical(sys.function(),eval))})())",
+    "expected": [true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "evaluation-call-frame-parity-2",
+    "code": "c((function(){identical(evalq(sys.function()),eval(quote(sys.function())))})(),(function(){kernel<-evalq(sys.function());identical(kernel(quote(1L+2L),environment(),baseenv()),3L)})(),(function(){kernel<-evalq(sys.function());is.null(formals(kernel))&&is.null(args(kernel))})(),(function(){kernel<-evalq(sys.function());identical(tryCatch(kernel(quote(1L)),error=conditionMessage),\"1 argument passed to .Internal(eval) which requires 3\")})(),(function(){evalq(identical(sys.call(),sys.call(-1L)))})(),(function(){ev<-eval;identical(ev(quote(as.character(sys.call()[[1L]]))),\"ev\")})(),(function(){target<-new.env();evalq(identical(parent.frame(),sys.frame(-1L)),target)})())",
+    "expected": [true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "evaluation-call-frame-parity-3",
+    "code": "c((function(){target<-new.env();evalq(identical(sys.frame(sys.nframe()),environment()),target)})(),(function(){target<-new.env();evalq(identical(sys.frame(0L),globalenv())&&!identical(sys.frame(0L),environment()),target)})(),(function(){e<-evalq(parent.frame());identical(ls(e,all.names=TRUE),c(\"enclos\",\"envir\",\"expr\"))&&identical(parent.env(e),asNamespace(\"base\"))})(),(function(){owner<-environment();e<-evalq(parent.frame());identical(e$envir,owner)&&identical(e$enclos,baseenv())})(),(function(){owner<-environment();e<-evalq(parent.frame(),list());identical(e$enclos,owner)})(),(function(){base<-sys.nframe();observed<-evalq(evalq(tail(sys.parents(),4L)));identical(observed,c(base,base+1L,base,base+3L))})(),(function(){owner<-environment();f<-function()identical(parent.frame(),owner);evalq(f())})())",
+    "expected": [true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "evaluation-call-frame-parity-4",
+    "code": "c((function(){f<-function(){n<-sys.nframe();identical(c(sys.parent(0),sys.parent(-1),sys.parent(-2)),rep(n,3))};f()})(),(function(){evalq(identical(sys.parent(),sys.nframe()-1L))})(),(function(){g<-function(x)x;f<-function(x)g(x);base<-sys.nframe();identical(f(sys.nframe()),base)&&identical(f(sys.parents()),sys.parents())})(),(function(){identical(tryCatch(sys.frame(NA_integer_),error=conditionMessage),\"invalid 'which' argument\")&&identical(tryCatch(sys.frame(-1000L),error=conditionMessage),\"not that many frames on the stack\")})(),(function(){identical(tryCatch(sys.parent(integer()),error=conditionMessage),\"invalid 'n' argument\")&&identical(tryCatch(sys.parent(NA_integer_),error=conditionMessage),\"invalid 'n' argument\")})(),(function(){base<-sys.nframe();observed<-local(sys.nframe());identical(observed,base+6L)})(),(function(){owner<-environment();local(identical(parent.env(environment()),owner))})())",
+    "expected": [true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "evaluation-call-frame-parity-5",
+    "code": "c((function(){base<-sys.nframe();observed<-with(list(),sys.nframe());identical(observed,base+4L)})(),(function(){owner<-environment();with(list(),identical(parent.env(environment()),owner))})(),(function(){with.owned<-function(data,expr,...)17L;identical(with(structure(list(),class=\"owned\"),stop(\"not forced\")),17L)})(),(function(){n<-sys.nframe();calls<-sys.calls();frames<-sys.frames();identical(typeof(calls),\"pairlist\")&&identical(typeof(frames),\"pairlist\")&&length(calls)==n&&length(frames)==n&&identical(frames[[n]],environment())&&identical(calls[[n]],sys.call())})(),(function(){f<-function(x)x;calls<-sys.calls();frames<-sys.frames();identical(f(sys.calls()),calls)&&identical(f(sys.frames()),frames)})(),(function(){owner<-environment();n<-sys.nframe();zero<-evalq(environment(),0L);previous<-evalq(environment(),-1L);wrapper<-evalq(environment(),n+1L);identical(zero,globalenv())&&identical(previous,owner)&&identical(parent.env(wrapper),asNamespace(\"base\"))})(),(function(){identical(tryCatch(evalq(1,integer()),error=conditionMessage),\"numeric 'envir' arg not of length one\")&&identical(tryCatch(evalq(1,c(0L,1L)),error=conditionMessage),\"numeric 'envir' arg not of length one\")&&identical(tryCatch(evalq(1,NA_integer_),error=conditionMessage),\"invalid 'envir' argument of type 'integer'\")})())",
+    "expected": [true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "evaluation-call-frame-parity-6",
+    "code": "c((function(){identical(tryCatch(evalq(1,TRUE),error=conditionMessage),\"invalid 'envir' argument of type 'logical'\")&&identical(tryCatch(evalq(1,\"0\"),error=conditionMessage),\"invalid 'envir' argument of type 'character'\")})(),(function(){f<-function(){x<-7L;g<-function(){x<-9L;eval.parent(quote(x))};g()};identical(f(),7L)})(),(function(){f<-function(){x<-7L;g<-function(){x<-9L;eval.parent(quote(x),0L)};g()};identical(f(),9L)})(),(function(){owner<-environment();observed<-with(list(),{method<-sys.frame(sys.nframe()-2L);identical(c(method$.Generic,method$.Method,method$.Group),c(\"with\",\"with.default\",\"\"))&&identical(method$.GenericCallEnv,owner)&&identical(method$.GenericDefEnv,asNamespace(\"base\"))});observed})(),(function(){base<-sys.nframe();observed<-with.default(list(),sys.nframe());identical(observed,base+3L)})(),(function(){e<-new.env();g<-function(x){e$frame<-environment();x};observed<-g(evalq(environment(),-1L));identical(observed,e$frame)})(),(function(){kernel<-evalq(sys.function());e<-new.env();e$events<-character();value<-kernel({e$events<-c(e$events,\"expr\");quote(7L)},{e$events<-c(e$events,\"envir\");environment()},{e$events<-c(e$events,\"enclos\");baseenv()});identical(value,7L)&&identical(e$events,c(\"expr\",\"envir\",\"enclos\"))})())",
+    "expected": [true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "evaluation-call-frame-fresh-environment-parity",
+    "code": "c((function(){target<-new.env();observed<-evalq({f<-function()identical(parent.frame(),target);f()},target);observed})(),(function(){base<-sys.nframe();target<-new.env();observed<-evalq(evalq({f<-function()tail(sys.parents(),5L);f()}),target);identical(observed,c(base,base+1L,base+2L,base+3L,base+2L))})(),(function(){local({f<-function(x=2)x;a<-quote(f(x=));b<-as.call(as.list(a));identical(a,b)&&identical(eval(b),2)})})())",
+    "expected": [true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "evaluation-call-frame-missing-expressions",
+    "code": "c((function(){identical(tryCatch(eval(),error=conditionMessage),'argument \"expr\" is missing, with no default')})(),(function(){identical(tryCatch(evalq(),error=conditionMessage),\"argument is missing, with no default\")})())",
+    "expected": [true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "evaluation-call-frame-private-enclosures",
+    "code": "(function(){target<-new.env(parent=baseenv());evalq({helper<-function()17L;direct<-eval(quote(function()helper()));nested<-local(function()helper());parented<-eval.parent(quote(function()helper()),0L)},target);identical(c(target$direct(),target$nested(),target$parented()),rep(17L,3L))&&identical(environment(target$direct),target)&&identical(parent.env(environment(target$nested)),target)})()",
+    "expected": true,
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
   }
 ]

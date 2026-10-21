@@ -2262,12 +2262,42 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   defineBuiltin("str2expression", ["text"], "behavioral", builtinStr2Expression),
   defineBuiltin("str2lang", ["s"], "behavioral", builtinStr2Lang),
-  defineBuiltin("eval", ["expr", "envir", "enclos"], "behavioral", builtinEval),
-  defineBuiltin("evalq", ["expr", "envir", "enclos"], "behavioral", builtinEvalq),
-  defineBuiltin("with", ["data", "expr", "..."], "behavioral", builtinWith),
+  evaluationLibraryBuiltin("eval", builtinEval),
+  evaluationLibraryBuiltin("evalq", builtinEvalq),
+  {
+    ...withBuiltinFormals(
+      defineBuiltin("with", ["data", "expr", "..."], "behavioral", builtinWith),
+      [{ name: "data" }, { name: "expr" }, { name: "..." }],
+    ),
+    reflectiveFrame: true,
+  },
+  {
+    ...withBuiltinFormals(
+      defineBuiltin("with.default", ["data", "expr", "..."], "behavioral", builtinWithDefault),
+      [{ name: "data" }, { name: "expr" }, { name: "..." }],
+    ),
+    reflectiveFrame: true,
+    s3Method: { generic: "with", className: "default" },
+  },
+  {
+    ...withBuiltinFormals(
+      defineBuiltin("eval.parent", ["expr", "n"], "behavioral", builtinEvalParent),
+      [
+        { name: "expr" },
+        { name: "n", defaultValue: { kind: "IntegerLiteral", value: 1, span: SYNTHETIC_SPAN } },
+      ],
+    ),
+    reflectiveFrame: true,
+  },
   defineBuiltin("transform", ["_data", "..."], "behavioral", builtinTransform),
   defineBuiltin("within", ["data", "expr", "..."], "behavioral", builtinWithin),
-  defineBuiltin("local", ["expr", "envir"], "behavioral", builtinLocal),
+  {
+    ...withBuiltinFormals(defineBuiltin("local", ["expr", "envir"], "behavioral", builtinLocal), [
+      { name: "expr" },
+      { name: "envir", defaultValue: callAst("new.env", []) },
+    ]),
+    reflectiveFrame: true,
+  },
   defineBuiltin("subset", ["x", "subset", "select", "drop", "..."], "behavioral", builtinSubset),
   defineBuiltin("$", ["x", "name"], "behavioral", builtinDollar, "special"),
   defineBuiltin(".subset", ["x", "..."], "behavioral", (invocation) =>
@@ -2618,6 +2648,15 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     [{ name: "which", defaultValue: { kind: "IntegerLiteral", value: 0, span: SYNTHETIC_SPAN } }],
   ),
   withBuiltinFormals(defineBuiltin("sys.nframe", [], "behavioral", builtinSystemFrameCount), []),
+  withBuiltinFormals(defineBuiltin("sys.frame", ["which"], "behavioral", builtinSystemFrame), [
+    { name: "which", defaultValue: { kind: "IntegerLiteral", value: 0, span: SYNTHETIC_SPAN } },
+  ]),
+  withBuiltinFormals(defineBuiltin("sys.parent", ["n"], "behavioral", builtinSystemParent), [
+    { name: "n", defaultValue: { kind: "IntegerLiteral", value: 1, span: SYNTHETIC_SPAN } },
+  ]),
+  withBuiltinFormals(defineBuiltin("sys.parents", [], "behavioral", builtinSystemParents), []),
+  withBuiltinFormals(defineBuiltin("sys.calls", [], "behavioral", builtinSystemCalls), []),
+  withBuiltinFormals(defineBuiltin("sys.frames", [], "behavioral", builtinSystemFrames), []),
   defineBuiltin("get", ["x", "pos", "envir", "mode", "inherits"], "behavioral", builtinGet),
   defineBuiltin(
     "get0",
@@ -17988,59 +18027,177 @@ function invalidUrlUtf8(): RUnsupportedFeatureError {
   );
 }
 
-async function builtinEval(invocation: BuiltinInvocation): Promise<RValue> {
-  const callerEnvironment = invocation.arguments[0]?.promise.environment;
-  if (callerEnvironment === undefined) {
-    throw new REvaluationError("NRE2103", "Argument 'expr' is missing in eval().");
-  }
-  const matched = await matchExact(invocation, ["expr", "envir", "enclos"]);
-  const expression = required(matched, "expr", "eval");
-  const environment = evalEnvironment(
-    matched.get("envir"),
-    callerEnvironment,
-    matched.get("enclos"),
-    invocation,
-    "eval",
-  );
+function evaluationLibraryBuiltin(
+  name: string,
+  implementation: BuiltinDefinition["implementation"],
+): BuiltinDefinition {
+  const envir: AstNode = { kind: "Identifier", name: "envir", span: SYNTHETIC_SPAN };
+  const parent = callAst("parent.frame", []);
+  return {
+    ...withBuiltinFormals(
+      defineBuiltin(name, ["expr", "envir", "enclos"], "behavioral", implementation),
+      [
+        { name: "expr" },
+        { name: "envir", defaultValue: parent },
+        {
+          name: "enclos",
+          defaultValue: {
+            kind: "IfExpression",
+            span: SYNTHETIC_SPAN,
+            condition: {
+              kind: "BinaryExpression",
+              operator: "||",
+              span: SYNTHETIC_SPAN,
+              left: callAst("is.list", [{ value: envir, span: SYNTHETIC_SPAN }]),
+              right: callAst("is.pairlist", [{ value: envir, span: SYNTHETIC_SPAN }]),
+            },
+            consequence: parent,
+            alternative: callAst("baseenv", []),
+          },
+        },
+      ],
+    ),
+    reflectiveFrame: true,
+  };
+}
+
+const INTERNAL_EVAL_FUNCTION: RBuiltin = {
+  type: "builtin",
+  definition: {
+    ...defineBuiltin(
+      "eval",
+      ["expr", "envir", "enclos"],
+      "behavioral",
+      builtinInternalEval,
+      "primitive",
+    ),
+    argumentSignature: "unknown",
+  },
+};
+
+async function evaluateInEvalFrame(
+  invocation: BuiltinInvocation,
+  expression: RValue,
+  environment: REnvironment,
+): Promise<RValue> {
+  const call = invocation.currentCall();
   const result = await invocation.evaluateDetailed(expression, environment, {
     controlScope: "evaluation",
+    reflection: {
+      callable: INTERNAL_EVAL_FUNCTION,
+      ...(call.type === "language" && call.expression.kind === "CallExpression"
+        ? { call: call.expression }
+        : {}),
+    },
   });
   invocation.setResultVisibility(result.visible ? "visible" : "invisible");
   return result.value;
 }
 
-async function builtinEvalq(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = await matchLazyArguments(invocation, ["expr", "envir", "enclos"]);
-  const expression = matched.get("expr");
-  if (expression === undefined || expression.promise.missing) {
-    throw new REvaluationError("NRE2103", "Argument 'expr' is missing in evalq().");
+async function builtinInternalEval(invocation: BuiltinInvocation): Promise<RValue> {
+  if (invocation.arguments.length !== 3) {
+    throw new REvaluationError(
+      "NRE2102",
+      `${invocation.arguments.length} argument${invocation.arguments.length === 1 ? "" : "s"} passed to .Internal(eval) which requires 3`,
+    );
   }
-  const envirArgument = matched.get("envir");
-  const enclosureArgument = matched.get("enclos");
+  const values: RValue[] = [];
+  for (const argument of invocation.arguments)
+    values.push(await invocation.force(argument.promise));
+  return evaluateInEvalFrame(
+    invocation,
+    values[0]!,
+    evalEnvironment(values[1], invocation.currentEnvironment(), values[2], invocation, "eval"),
+  );
+}
+
+async function builtinEval(invocation: BuiltinInvocation): Promise<RValue> {
+  const expression = await invocation.force(invocation.functionArgument("expr")!);
   const environment = evalEnvironment(
-    envirArgument === undefined ? undefined : await invocation.force(envirArgument.promise),
-    expression.promise.environment,
-    enclosureArgument === undefined ? undefined : await invocation.force(enclosureArgument.promise),
+    await invocation.force(invocation.functionArgument("envir")!),
+    invocation.currentEnvironment(),
+    await invocation.force(invocation.functionArgument("enclos")!),
+    invocation,
+    "eval",
+  );
+  return evaluateInEvalFrame(invocation, expression, environment);
+}
+
+async function builtinEvalq(invocation: BuiltinInvocation): Promise<RValue> {
+  const expression = invocation.functionArgument("expr");
+  if (expression === undefined || expression.missing) {
+    throw new REvaluationError("NRE2006", "argument is missing, with no default");
+  }
+  const environment = evalEnvironment(
+    await invocation.force(invocation.functionArgument("envir")!),
+    expression.environment,
+    await invocation.force(invocation.functionArgument("enclos")!),
     invocation,
     "evalq",
   );
-  return evaluateArgument(invocation, expression, environment);
+  const value =
+    expression.expression === null
+      ? await invocation.force(expression)
+      : { type: "language" as const, expression: expression.expression };
+  return evaluateInEvalFrame(invocation, value, environment);
 }
 
 async function builtinWith(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = await matchLazyArgumentsWithDots(invocation, ["data", "expr"]);
-  const dataArgument = matched.get("data");
-  const expressionArgument = matched.get("expr");
-  if (dataArgument === undefined || dataArgument.promise.missing) {
-    throw new REvaluationError("NRE2103", "Argument 'data' is missing in with().");
-  }
-  if (expressionArgument === undefined || expressionArgument.promise.missing) {
-    throw new REvaluationError("NRE2103", "Argument 'expr' is missing in with().");
-  }
-  const callerEnvironment = expressionArgument.promise.environment;
-  const data = await invocation.force(dataArgument.promise);
-  const environment = withEnvironment(data, callerEnvironment);
-  return evaluateArgument(invocation, expressionArgument, environment);
+  const data = await invocation.force(invocation.functionArgument("data")!);
+  const result = await invocation.dispatchS3IfPresent("with", data, invocation.arguments, true);
+  if (result === undefined)
+    throw new REvaluationError("NRE2213", "no applicable method for 'with'");
+  return result;
+}
+
+async function evaluateLibraryBody(
+  invocation: BuiltinInvocation,
+  expression: AstNode,
+): Promise<RValue> {
+  const environment = invocation.functionEnvironment();
+  if (environment === undefined)
+    throw new REvaluationError("NRE2140", "Library evaluation requires an active function frame.");
+  const result = await invocation.evaluateDetailed({ type: "language", expression }, environment, {
+    functionBody: true,
+  });
+  invocation.setResultVisibility(result.visible ? "visible" : "invisible");
+  return result.value;
+}
+
+async function builtinWithDefault(invocation: BuiltinInvocation): Promise<RValue> {
+  return evaluateLibraryBody(
+    invocation,
+    callAst("eval", [
+      {
+        value: callAst("substitute", [
+          {
+            value: { kind: "Identifier", name: "expr", span: SYNTHETIC_SPAN },
+            span: SYNTHETIC_SPAN,
+          },
+        ]),
+        span: SYNTHETIC_SPAN,
+      },
+      { value: { kind: "Identifier", name: "data", span: SYNTHETIC_SPAN }, span: SYNTHETIC_SPAN },
+      { name: "enclos", value: callAst("parent.frame", []), span: SYNTHETIC_SPAN },
+    ]),
+  );
+}
+
+async function builtinEvalParent(invocation: BuiltinInvocation): Promise<RValue> {
+  const generations = systemCallIndex(
+    invocation,
+    await invocation.force(invocation.functionArgument("n")!),
+    "sys.parent",
+  );
+  const environment = invocation.functionEnvironment()!;
+  setBinding(environment, "p", invocation.parentFrame(generations));
+  return evaluateLibraryBody(
+    invocation,
+    callAst("eval", [
+      { value: { kind: "Identifier", name: "expr", span: SYNTHETIC_SPAN }, span: SYNTHETIC_SPAN },
+      { value: { kind: "Identifier", name: "p", span: SYNTHETIC_SPAN }, span: SYNTHETIC_SPAN },
+    ]),
+  );
 }
 
 async function builtinTransform(invocation: BuiltinInvocation): Promise<RValue> {
@@ -18313,21 +18470,24 @@ function validateTransformColumnLength(column: RVector, rowCount: number, name: 
 }
 
 async function builtinLocal(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = await matchLazyArguments(invocation, ["expr", "envir"]);
-  const expressionArgument = matched.get("expr");
-  if (expressionArgument === undefined || expressionArgument.promise.missing) {
-    throw new REvaluationError("NRE2103", "Argument 'expr' is missing in local().");
-  }
-  const callerEnvironment = expressionArgument.promise.environment;
-  const environmentArgument = matched.get("envir");
-  const environment =
-    environmentArgument === undefined
-      ? createEnvironment(callerEnvironment)
-      : await invocation.force(environmentArgument.promise);
-  if (environment.type !== "environment") {
-    throw new RTypeMismatchError("NRT3205", "local(envir=) requires an environment.");
-  }
-  return evaluateArgument(invocation, expressionArgument, environment);
+  const expression: AstNode = { kind: "Identifier", name: "expr", span: SYNTHETIC_SPAN };
+  const environment: AstNode = { kind: "Identifier", name: "envir", span: SYNTHETIC_SPAN };
+  const evaluate = callAst("eval", [
+    {
+      value: callAst("quote", [{ value: expression, span: SYNTHETIC_SPAN }]),
+      span: SYNTHETIC_SPAN,
+    },
+    { value: environment, span: SYNTHETIC_SPAN },
+  ]);
+  return evaluateLibraryBody(
+    invocation,
+    callAst("eval.parent", [
+      {
+        value: callAst("substitute", [{ value: evaluate, span: SYNTHETIC_SPAN }]),
+        span: SYNTHETIC_SPAN,
+      },
+    ]),
+  );
 }
 
 async function builtinDollar(invocation: BuiltinInvocation): Promise<RValue> {
@@ -19064,13 +19224,38 @@ function evalEnvironment(
 
   if (value === undefined || value.type === "null") return fallback;
   if (value.type === "environment") return value;
+  if (value.type === "integer" || value.type === "double") {
+    if (value.length !== 1)
+      throw new RTypeMismatchError("NRT3205", "numeric 'envir' arg not of length one");
+    const number = numberAt(value, 0);
+    if (number > 2_147_483_647 || number < -2_147_483_648) {
+      invocation.context.warn({
+        code: "NRW1007",
+        message: "NAs introduced by coercion to integer range",
+      });
+    }
+    if (
+      isMissing(value, 0) ||
+      !Number.isFinite(number) ||
+      number > 2_147_483_647 ||
+      number < -2_147_483_648
+    ) {
+      throw new RTypeMismatchError("NRT3205", `invalid 'envir' argument of type '${value.type}'`);
+    }
+    return invocation.systemFrame(Math.trunc(number), true);
+  }
   if (value.type === "list" || value.type === "pairlist") {
     return withEnvironment(value, parent);
   }
-  throw new RTypeMismatchError(
-    "NRT3205",
-    `${call}(envir=) requires NULL, an environment, a list, or a pairlist in the current subset.`,
-  );
+  const type =
+    value.type === "builtin"
+      ? value.definition.kind === "regular"
+        ? "closure"
+        : value.definition.kind === "special"
+          ? "special"
+          : "builtin"
+      : value.type;
+  throw new RTypeMismatchError("NRT3205", `invalid 'envir' argument of type '${type}'`);
 }
 
 function callNameArgumentIndex(invocation: BuiltinInvocation): number {
@@ -19600,8 +19785,9 @@ async function builtinArgs(invocation: BuiltinInvocation): Promise<RValue> {
 
   if (
     value.type === "builtin" &&
-    value.definition.package === "base" &&
-    R_BASE_UNKNOWN_SIGNATURE_NAMES.has(value.definition.name)
+    (value.definition.argumentSignature === "unknown" ||
+      (value.definition.package === "base" &&
+        R_BASE_UNKNOWN_SIGNATURE_NAMES.has(value.definition.name)))
   )
     return R_NULL;
 
@@ -20828,11 +21014,68 @@ async function builtinSystemFrameCount(invocation: BuiltinInvocation): Promise<R
   return integerVector([invocation.systemFrameCount()]);
 }
 
+async function builtinSystemFrame(invocation: BuiltinInvocation): Promise<RValue> {
+  const bound = await matchBuiltinDefaults(invocation, [
+    { name: "which", defaultValue: { kind: "IntegerLiteral", value: 0, span: SYNTHETIC_SPAN } },
+  ]);
+  return invocation.systemFrame(
+    systemCallIndex(invocation, await bound.force("which"), "sys.frame"),
+  );
+}
+
+async function builtinSystemParent(invocation: BuiltinInvocation): Promise<RValue> {
+  const bound = await matchBuiltinDefaults(invocation, [
+    { name: "n", defaultValue: { kind: "IntegerLiteral", value: 1, span: SYNTHETIC_SPAN } },
+  ]);
+  return integerVector([
+    invocation.systemParent(systemCallIndex(invocation, await bound.force("n"), "sys.parent")),
+  ]);
+}
+
+async function builtinSystemParents(invocation: BuiltinInvocation): Promise<RValue> {
+  await matchExact(invocation, []);
+  const parents = invocation.systemParents();
+  invocation.context.allocate(parents.length);
+  return integerVector(parents);
+}
+
+async function builtinSystemCalls(invocation: BuiltinInvocation): Promise<RValue> {
+  await matchExact(invocation, []);
+  const count = invocation.systemFrameCount();
+  if (count === 0) return R_NULL;
+  invocation.context.allocate(count);
+  const calls: RValue[] = [];
+  for (let index = 1; index <= count; index += 1) {
+    invocation.context.checkpoint();
+    calls.push(invocation.systemCall(index));
+  }
+  return pairlistValue(calls);
+}
+
+async function builtinSystemFrames(invocation: BuiltinInvocation): Promise<RValue> {
+  await matchExact(invocation, []);
+  const count = invocation.systemFrameCount();
+  if (count === 0) return R_NULL;
+  invocation.context.allocate(count);
+  const frames: RValue[] = [];
+  for (let index = 1; index <= count; index += 1) {
+    invocation.context.checkpoint();
+    frames.push(invocation.systemFrame(index));
+  }
+  return pairlistValue(frames);
+}
+
 function systemCallIndex(
   invocation: BuiltinInvocation,
   value: RValue | undefined,
-  call: "sys.call" | "sys.function",
+  call: "sys.call" | "sys.function" | "sys.frame" | "sys.parent",
 ): number {
+  const invalidMessage =
+    call === "sys.parent"
+      ? "invalid 'n' argument"
+      : call === "sys.frame"
+        ? "invalid 'which' argument"
+        : `Invalid 'which' argument in ${call}().`;
   if (
     value === undefined ||
     value.type === "null" ||
@@ -20840,7 +21083,7 @@ function systemCallIndex(
     value.length === 0 ||
     isMissing(value, 0)
   ) {
-    throw new RTypeMismatchError("NRT3251", `Invalid 'which' argument in ${call}().`);
+    throw new RTypeMismatchError("NRT3251", invalidMessage);
   }
 
   let numeric: number;
@@ -20875,7 +21118,7 @@ function systemCallIndex(
     });
   }
   if (!Number.isFinite(numeric) || numeric < -2_147_483_648 || numeric > 2_147_483_647) {
-    throw new RTypeMismatchError("NRT3251", `Invalid 'which' argument in ${call}().`);
+    throw new RTypeMismatchError("NRT3251", invalidMessage);
   }
   return Math.trunc(numeric);
 }

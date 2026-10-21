@@ -13895,8 +13895,8 @@ NeedsCompilation: no
     const capabilities = await runtime.capabilities();
     expect(capabilities).toMatchObject({
       targetRVersion: "4.6.1",
-      semanticProfileVersion: "0.372.0",
-      languageSubsetVersion: "0.372.0",
+      semanticProfileVersion: "0.373.0",
+      languageSubsetVersion: "0.373.0",
     });
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
@@ -20720,14 +20720,10 @@ NeedsCompilation: no
       value: 3,
       visible: false,
     });
-    await expect(runtime.eval("eval()")).rejects.toMatchObject({ code: "NRE2103" });
-    await expect(runtime.eval("evalq()")).rejects.toMatchObject({ code: "NRE2103" });
-    await expect(runtime.eval("eval(quote(1), envir = 1)")).rejects.toMatchObject({
-      code: "NRT3205",
-    });
-    await expect(runtime.eval("evalq(1, envir = 1)")).rejects.toMatchObject({
-      code: "NRT3205",
-    });
+    await expect(runtime.eval("eval()")).rejects.toMatchObject({ code: "NRE2006" });
+    await expect(runtime.eval("evalq()")).rejects.toMatchObject({ code: "NRE2006" });
+    await expect(runtime.eval("eval(quote(1), envir = 1)")).resolves.toBe(1);
+    await expect(runtime.eval("evalq(1, envir = 1)")).resolves.toBe(1);
     await expect(runtime.eval("evalq(1, envir = list(), enclos = 1)")).rejects.toMatchObject({
       code: "NRT3205",
     });

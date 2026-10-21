@@ -1,6 +1,6 @@
 # Exploratory package-check evidence
 
-The latest cached development/regression checkpoint is [profile 0.372](corpus-0.372.0.json): 24
+The latest cached development/regression checkpoint is [profile 0.373](corpus-0.373.0.json): 24
 digest-pinned archives, original entrypoints and applicable native repeatability observations.
 pkgconfig and abind reach P7 on this Windows host; full platform validation remains separate.
 Formula was not evaluated. Reports contain only allowlisted metadata and digests. The sections below

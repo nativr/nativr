@@ -279,6 +279,9 @@ export interface BuiltinInvocation {
   setResultVisibility(visibility: "visible" | "invisible"): void;
   force(binding: RBinding): Promise<RValue>;
   forceDetailed(promise: RPromise): Promise<{ readonly value: RValue; readonly visible: boolean }>;
+  /** Bound lazy formal in an explicitly modeled library frame. */
+  functionArgument(name: string): RPromise | undefined;
+  functionEnvironment(): REnvironment | undefined;
   invoke(
     callable: RValue,
     arguments_: readonly { readonly name?: string; readonly value: RValue }[],
@@ -297,7 +300,13 @@ export interface BuiltinInvocation {
   evaluateDetailed(
     value: RValue,
     environment: REnvironment,
-    options?: { readonly controlScope?: "evaluation" },
+    options?: {
+      readonly controlScope?: "evaluation";
+      /** Owned AST body of the already active library closure; reuses that call's depth budget. */
+      readonly functionBody?: true;
+      /** Observable evaluator frame; the callable is executable, not a display-only placeholder. */
+      readonly reflection?: { readonly callable: RBuiltin; readonly call?: CallExpressionNode };
+    },
   ): Promise<{ readonly value: RValue; readonly visible: boolean }>;
   assignBinding(environment: REnvironment, name: string, value: RValue): Promise<void>;
   /**
@@ -366,8 +375,11 @@ export interface BuiltinInvocation {
   parentFrame(offset: number): REnvironment;
   currentCall(): RLanguage | RNull;
   systemCall(which: number): RLanguage | RNull;
-  systemFunction(which: number): RClosure | RNull;
+  systemFunction(which: number): RClosure | RBuiltin | RNull;
   systemFrameCount(): number;
+  systemFrame(which: number, fromCurrentCall?: boolean): REnvironment;
+  systemParent(generations: number): number;
+  systemParents(): readonly number[];
   isInteractive(): boolean;
   hasSocketCapability(): boolean;
   readline(prompt: string): Promise<string>;
@@ -475,6 +487,10 @@ export interface BuiltinDefinition {
   readonly package: string;
   readonly name: string;
   readonly kind: BuiltinKind;
+  /** Execute an independently modeled library closure with observable formals and control scope. */
+  readonly reflectiveFrame?: boolean;
+  /** Unknown observable args() signature, distinct from an empty formal list. */
+  readonly argumentSignature?: "unknown";
   /** Optional R-level formals for builtins that model an ordinary closure. */
   readonly formals?: readonly FunctionParameter[];
   readonly resultVisibility?: "visible" | "invisible";

@@ -966,7 +966,7 @@ Synthetic evaluation/library-wrapper frames, reflective stack identity and first
 remain incomplete. All thirteen domains and overall release readiness remain unfinished; the full
 completion goal stays active.
 
-### Immediate continuation after profile 0.372
+### Continuation recorded at profile 0.372 (superseded below)
 
 The reproduced source/subset control defects now pass. Continue the actual frame model for synthetic
 evaluation/library contexts and reflective identity, preserving the completed control scopes and
@@ -992,3 +992,71 @@ defaults, partial-sort/method/tie behavior and confirmed shared corpus blockers.
 licensed offline datasets, isolated testing support, complete domain/callable inventory, browser/OS
 performance, reproducible CI and release gates remain required. Linux and holdout execution still
 need separate authorization. Keep the full goal active while useful local work remains.
+
+### Profile 0.373 verification (2026-10-21)
+
+Owned closures and modeled evaluation/library calls now share a reflective stack with explicit
+parent links, call ASTs, callable identity and environment identity. eval/evalq have a public
+library frame and an executable internal evaluator frame. local, eval.parent, with and with.default
+execute through actual nested calls, including lazy formals/defaults and S3 method metadata. Fresh
+environments reused by nested evaluation retain their first active parent context. Forwarded
+promises retain their observation origin. Numeric eval environments select physical stack frames.
+sys.frame, sys.parent, sys.parents, sys.calls and sys.frames expose the tested graph boundaries. The
+internal evaluator has an unknown args/formals signature and forces its three arguments in order.
+Host-driven namespace loading preserves the caller environment when no ordinary frame index exists,
+so generated package functions retain their private helpers. The full native loader stack remains
+outside this increment's evidence.
+
+Forty-eight independent parity fixtures pass GNU R and NativR. They cover aliases, identities,
+default bindings, nonlinear parents, calls/frame pairlists, numeric selection, errors, nested local
+lookup and forcing order. Three additional tests cover the global boundary, resource-limit recovery
+and namespace-created functions. The independent package fixture also passes native GNU R
+installation/loading. Existing depth-eight recovery retains its budget: owned library AST bodies
+reuse their active function's depth charge, while nested calls/evaluations remain bounded. Nine
+foundation groups and eleven recursive cases add evidence with causal controls. The full check
+passes 1859 tests with 93 opt-in skips; checked-in/live/recursive conformance passes 1301 / 1232 /
+212, with 119 linked bindings. After saving the checkpoint, all 20 checkpoint-integrity tests pass.
+Fixed budgets pass: client 17.6/150 KiB gzip, Worker 478.5/512 KiB gzip, parser 671.9/1,536 KiB raw
+and elementary 311.2/384 KiB raw. Name overlap is 759/2,522; this is not a completion percentage.
+
+All 24 cached development/regression archives were digest-checked and rerun with applicable native
+repeatability in the
+[0.373 checkpoint](../compatibility/package-check-evidence/corpus-0.373.0.json). All 178 script
+input digests, execution/comparison outcomes and repeatability flags are unchanged from 0.372; stage
+statuses and tiers are also unchanged. The namespace-parent regression detected in the initial 0.373
+sweep is repaired in this final checkpoint. The corpus retains two P7 packages (pkgconfig and
+abind), one P6, eight P5, twelve P4 and one P3, plus the untouched P0 holdout. Original entrypoints
+were used; substitute-runner results receive no P6/P7 credit. Native filesystem checks used ordinary
+Windows permissions. Formula is untouched. No public NativR API, Worker protocol, host capability or
+dependency direction changed. E2e and pack smoke were not refreshed for this base-runtime increment.
+No downloads, pushes or publication occurred; GNU R library implementation bodies were neither
+inspected nor captured.
+
+The advisory paired source benchmark records an eval-heavy slowdown: 1,500 evalq calls took a median
+31.3747 ms versus 10.7743 ms at 0.372 (2.912 times). Scalar/closure loops were within two percent;
+exit cleanup took 1.100 times its prior median in this run. See the method and workloads in
+[performance.md](performance.md#evaluation-frame-measurement-at-profile-0373). This is not browser
+performance acceptance; optimization, startup/cancellation and representative package timings remain
+required. Other library adapters, reflective stack traces and first-class special forms remain
+incomplete. All thirteen domains and overall release readiness remain unfinished; the full
+completion goal stays active.
+
+### Immediate continuation after profile 0.373
+
+The evaluation/library frame defects recorded at 0.372 now pass. Continue first-class special-form
+invocation through shared callable and control machinery. Seven independently authored probes
+reconfirm the next gap: native return/if bindings are primitive functions of type special, with NULL
+formals. An alias of return and do.call("return",list(7L)) each return 7 from an owning closure;
+registered owner cleanup runs once. An alias of if selects 7 without forcing its false branch;
+do.call("if",list(FALSE,quote(stop("not forced")),9L)) returns 9. NativR lacks both bindings and
+fails these lookups/invocations. Preserve lazy evaluation, environment-directed return, visibility,
+diagnostics, cancellation and resource-limit recovery when implementing them. No library body is
+needed as an implementation input.
+
+Further reflective adapter/stack-trace work remains. Profile the measured evalq overhead while
+preserving the verified frame graph and defaults. Continue constructed subset-call/raw hexadecimal
+display, complex attributes, callable defaults, partial-sort/method/tie behavior and confirmed
+shared corpus blockers. Independently licensed offline datasets, isolated testing support, complete
+domain/callable inventory, browser/OS performance, reproducible CI and release gates remain
+required. Linux and holdout execution still need separate authorization. Keep the full goal active
+while useful local work remains.

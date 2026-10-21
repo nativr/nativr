@@ -98,6 +98,7 @@ import {
 import type {
   BuiltinCallArgument,
   BuiltinDefinition,
+  BuiltinInvocation,
   RBuiltin,
   RBinding,
   RBrowseEvent,
@@ -365,6 +366,16 @@ interface ClosureCallFrame {
   readonly call?: CallExpressionNode;
 }
 
+interface RuntimeCallFrame {
+  readonly kind: "closure" | "library" | "evaluation";
+  readonly environment: REnvironment;
+  readonly callerEnvironment: REnvironment;
+  readonly callable: RClosure | RBuiltin;
+  /** One-based parent frame; zero denotes the global context. */
+  readonly parent: number;
+  readonly call?: CallExpressionNode;
+}
+
 interface S3DispatchFrame {
   readonly generic: string;
   readonly group?: string;
@@ -604,6 +615,7 @@ export class Evaluator {
   #globalEnvironment: REnvironment;
   readonly #controlFrames: ControlFrame[] = [];
   readonly #closureCallFrames: ClosureCallFrame[] = [];
+  readonly #callFrames: RuntimeCallFrame[] = [];
   readonly #evaluationOrigins: {
     readonly environment: REnvironment;
     readonly frameCount: number;
@@ -2544,6 +2556,16 @@ export class Evaluator {
         ? await this.#enterFunctionDebug(callable, call, context)
         : false;
     if (callable.type === "builtin") {
+      const libraryFrame = callable.definition.reflectiveFrame
+        ? await this.#enterLibraryFrame(
+            callable,
+            args,
+            call,
+            callerEnvironment,
+            context,
+            methodFrame,
+          )
+        : undefined;
       try {
         let resultVisibility = callable.definition.resultVisibility ?? "visible";
         const value = await callable.definition.implementation({
@@ -2560,6 +2582,11 @@ export class Evaluator {
           },
           force: async (promise) => this.#force(promise, context),
           forceDetailed: async (promise) => this.#forceDetailed(promise, context),
+          functionArgument: (name) => {
+            const binding = libraryFrame?.environment.bindings.get(name);
+            return binding?.type === "promise" ? binding : undefined;
+          },
+          functionEnvironment: () => libraryFrame?.environment,
           invoke: async (target, arguments_) =>
             this.#invokeCallable(
               target,
@@ -2601,7 +2628,7 @@ export class Evaluator {
           evaluate: async (value, environment) =>
             this.#evaluateLanguageValue(value, environment, context),
           evaluateDetailed: async (value, environment, options) =>
-            this.#evaluateLanguageValueResult(value, environment, context, options?.controlScope),
+            this.#evaluateLanguageValueResult(value, environment, context, options),
           assignBinding: async (target, name, value) =>
             this.#assignBinding(target, name, value, context),
           signalCondition: async (classes, condition, muffleRestart) =>
@@ -2638,26 +2665,30 @@ export class Evaluator {
             }
             return R_NULL;
           },
-          parentFrame: (offset) => {
-            const evaluationEnvironment =
-              callerEnvironment ?? args[0]?.promise.environment ?? this.#globalEnvironment;
-            let currentIndex = -1;
-            for (let index = this.#closureCallFrames.length - 1; index >= 0; index -= 1) {
-              if (this.#closureCallFrames[index]?.environment === evaluationEnvironment) {
-                currentIndex = index;
-                break;
-              }
-            }
-            if (currentIndex < 0) currentIndex = this.#closureCallFrames.length - 1;
-            const index = currentIndex - (offset - 1);
-            return index >= 0
-              ? (this.#closureCallFrames[index]?.callerEnvironment ?? this.#globalEnvironment)
-              : this.#globalEnvironment;
-          },
+          parentFrame: (offset) => this.#parentEnvironment(offset, callerEnvironment, context),
           currentCall: () => (call === undefined ? R_NULL : { type: "language", expression: call }),
           systemCall: (which) => this.#systemCall(which, callerEnvironment, context),
           systemFunction: (which) => this.#systemFunction(which, callerEnvironment, context),
           systemFrameCount: () => this.#systemFrameCount(callerEnvironment, context),
+          systemFrame: (which, fromCurrentCall) =>
+            which === 0
+              ? this.#globalEnvironment
+              : this.#frameEnvironment(
+                  this.#systemFramePosition(
+                    which,
+                    fromCurrentCall ? undefined : callerEnvironment,
+                    context,
+                  ),
+                ),
+          systemParent: (generations) =>
+            this.#systemParent(generations, callerEnvironment, context),
+          systemParents: () =>
+            this.#callFrames
+              .slice(0, this.#systemFrameCount(callerEnvironment, context))
+              .map((frame) => {
+                context.checkpoint();
+                return frame.parent;
+              }),
           isInteractive: () => this.#readline !== undefined,
           hasSocketCapability: () => this.#socketRequest !== undefined,
           readline: async (prompt) => (this.#readline === undefined ? "" : this.#readline(prompt)),
@@ -2789,13 +2820,23 @@ export class Evaluator {
               ? this.#nextDirectBuiltinMethod(callable.definition, args, call, generic, context)
               : this.#nextS3Method(generic, context),
         });
-        return {
+        const result = {
           value,
           visible: resultVisibility !== "invisible",
         };
+        return libraryFrame === undefined || libraryFrame.exitHandlers.length === 0
+          ? result
+          : await this.#completeControlFrame(libraryFrame, { kind: "value", result }, context);
       } catch (error) {
         this.#recordErrorCall(error, call);
-        throw error;
+        if (libraryFrame === undefined) throw error;
+        return await this.#completeControlFrame(libraryFrame, { kind: "throw", error }, context);
+      } finally {
+        if (libraryFrame !== undefined) {
+          this.#controlFrames.pop();
+          this.#callFrames.pop();
+          context.leaveCall();
+        }
       }
     }
     if (callable.type !== "closure") {
@@ -3420,6 +3461,9 @@ export class Evaluator {
             : withAttribute(classes, "previous", methodFrame.previousClasses),
         );
       }
+      const caller =
+        callerEnvironment ?? this.#callFrames.at(-1)?.environment ?? this.#globalEnvironment;
+      const parent = this.#callParent(caller, context);
       this.#closureCallFrames.push({
         arguments: args,
         environment: frame,
@@ -3430,6 +3474,14 @@ export class Evaluator {
         closure,
         matched,
         matchedByPosition: result.matchedByPosition,
+        ...(call === undefined ? {} : { call }),
+      });
+      this.#callFrames.push({
+        kind: "closure",
+        environment: frame,
+        callerEnvironment: caller,
+        callable: closure,
+        parent,
         ...(call === undefined ? {} : { call }),
       });
       try {
@@ -3456,6 +3508,7 @@ export class Evaluator {
         }
         throw failure;
       } finally {
+        this.#callFrames.pop();
         this.#closureCallFrames.pop();
       }
     } finally {
@@ -3708,8 +3761,140 @@ export class Evaluator {
     return this.#evaluateValue(parameter.defaultValue, frame.environment, context);
   }
 
+  async #enterLibraryFrame(
+    callable: RBuiltin,
+    args: readonly BuiltinCallArgument[],
+    call: CallExpressionNode | undefined,
+    callerEnvironment: REnvironment | undefined,
+    context: EvaluationContext,
+    methodFrame?: S3DispatchFrame,
+  ): Promise<FunctionControlFrame> {
+    const caller =
+      callerEnvironment ?? this.#callFrames.at(-1)?.environment ?? this.#globalEnvironment;
+    const environment = createEnvironment(this.#baseNamespace);
+    const parameters = callable.definition.formals ?? [];
+    const names = parameters.map((parameter) => parameter.name);
+    const options = { checkWork: () => context.checkpoint() };
+    const matched = partialMatchWarningsEnabled(this.#builtinState)
+      ? await matchArgumentsWithWarnings(
+          args,
+          names,
+          (match) =>
+            this.#warnPartialArgument(
+              match,
+              call === undefined ? R_NULL : { type: "language", expression: call },
+              context,
+            ),
+          options,
+        )
+      : matchArguments(args, names, options);
+    for (const [index, parameter] of parameters.entries()) {
+      const supplied = matched.matchedByPosition.get(index)?.promise;
+      if (parameter.name === "...") {
+        setBinding(environment, "...", { type: "dots", arguments: matched.dots });
+      } else if (supplied !== undefined && !supplied.missing) {
+        setBinding(environment, parameter.name, supplied);
+      } else {
+        setBinding(
+          environment,
+          parameter.name,
+          parameter.defaultValue === undefined
+            ? createMissingPromise(environment, parameter.name)
+            : createPromise(parameter.defaultValue, environment, true),
+        );
+      }
+    }
+    const parent = this.#callParent(caller, context);
+    if (methodFrame !== undefined) {
+      setBinding(environment, ".Generic", characterVector([methodFrame.generic]));
+      setBinding(environment, ".Group", characterVector([methodFrame.group ?? ""]));
+      setBinding(environment, ".Method", characterVector([methodFrame.methodName ?? ""]));
+      const classes = characterVector(methodFrame.classes.slice(methodFrame.classIndex));
+      setBinding(
+        environment,
+        ".Class",
+        methodFrame.previousClasses === undefined
+          ? classes
+          : withAttribute(classes, "previous", methodFrame.previousClasses),
+      );
+      setBinding(environment, ".GenericCallEnv", caller);
+      setBinding(
+        environment,
+        ".GenericDefEnv",
+        methodFrame.genericEnvironment === this.#baseEnvironment
+          ? this.#baseNamespace
+          : methodFrame.genericEnvironment,
+      );
+    }
+    const control: FunctionControlFrame = {
+      kind: "function",
+      target: Symbol("library"),
+      environment,
+      exitHandlers: [],
+    };
+    context.enterCall();
+    this.#callFrames.push({
+      kind: "library",
+      environment,
+      callerEnvironment: caller,
+      callable,
+      parent,
+      ...(call === undefined ? {} : { call }),
+    });
+    this.#controlFrames.push(control);
+    return control;
+  }
+
+  #callParent(environment: REnvironment, context: EvaluationContext): number {
+    if (environment === this.#globalEnvironment) return 0;
+    // Reused evaluation environments keep the first active context that established the frame.
+    for (let index = 0; index < this.#callFrames.length; index += 1) {
+      context.checkpoint();
+      const frame = this.#callFrames[index];
+      if (frame?.environment === environment) return index + 1;
+    }
+    return 0;
+  }
+
+  #frameEnvironment(position: number): REnvironment {
+    return position === 0
+      ? this.#globalEnvironment
+      : (this.#callFrames[position - 1]?.environment ?? this.#globalEnvironment);
+  }
+
+  #systemParent(
+    generations: number,
+    environment: REnvironment | undefined,
+    context: EvaluationContext,
+  ): number {
+    let position = this.#systemFrameCount(environment, context);
+    for (let count = 0; count < generations && position > 0; count += 1) {
+      context.checkpoint();
+      position = this.#callFrames[position - 1]?.parent ?? 0;
+    }
+    return position;
+  }
+
+  #parentEnvironment(
+    generations: number,
+    environment: REnvironment | undefined,
+    context: EvaluationContext,
+  ): REnvironment {
+    let position = this.#systemFrameCount(environment, context);
+    let parent = environment ?? this.#frameEnvironment(position);
+    for (let count = 0; count < generations; count += 1) {
+      context.checkpoint();
+      const frame = this.#callFrames[position - 1];
+      if (frame === undefined) return this.#globalEnvironment;
+      // Host-driven namespace loading has a caller environment without an ordinary call frame.
+      parent = frame.callerEnvironment;
+      position = frame.parent;
+    }
+    return parent;
+  }
+
   #systemFrameCount(environment: REnvironment | undefined, context: EvaluationContext): number {
-    if (environment === undefined) return this.#closureCallFrames.length;
+    if (environment === undefined) return this.#callFrames.length;
     // A supplied promise can be forced by a younger closure while its eval scope is still active.
     // Prefer that scope even when eval reuses a closure frame or the global environment.
     for (let index = this.#evaluationOrigins.length - 1; index >= 0; index -= 1) {
@@ -3717,9 +3902,9 @@ export class Evaluator {
       const origin = this.#evaluationOrigins[index];
       if (origin?.environment === environment) return origin.frameCount;
     }
-    for (let index = this.#closureCallFrames.length - 1; index >= 0; index -= 1) {
+    for (let index = this.#callFrames.length - 1; index >= 0; index -= 1) {
       context.checkpoint();
-      if (this.#closureCallFrames[index]?.environment === environment) return index + 1;
+      if (this.#callFrames[index]?.environment === environment) return index + 1;
     }
     // An escaped environment has no active frame. Synthetic eval/wrapper frames remain separate.
     return 0;
@@ -3730,13 +3915,8 @@ export class Evaluator {
     environment: REnvironment | undefined,
     context: EvaluationContext,
   ): RLanguage | typeof R_NULL {
-    const frameCount = this.#systemFrameCount(environment, context);
-    const position = which === 0 ? frameCount : which > 0 ? which : frameCount + which;
-    if (position === 0) return R_NULL;
-    if (position < 0 || position > frameCount) {
-      throw new REvaluationError("NRE2218", "not that many frames on the stack");
-    }
-    const call = this.#closureCallFrames[position - 1]?.call;
+    const position = this.#systemFramePosition(which, environment, context);
+    const call = this.#callFrames[position - 1]?.call;
     return call === undefined ? R_NULL : { type: "language", expression: call };
   }
 
@@ -3744,14 +3924,24 @@ export class Evaluator {
     which: number,
     environment: REnvironment | undefined,
     context: EvaluationContext,
-  ): RClosure | typeof R_NULL {
+  ): RClosure | RBuiltin | typeof R_NULL {
+    return (
+      this.#callFrames[this.#systemFramePosition(which, environment, context) - 1]?.callable ??
+      R_NULL
+    );
+  }
+
+  #systemFramePosition(
+    which: number,
+    environment: REnvironment | undefined,
+    context: EvaluationContext,
+  ): number {
     const frameCount = this.#systemFrameCount(environment, context);
     const position = which === 0 ? frameCount : which > 0 ? which : frameCount + which;
-    if (position === 0) return R_NULL;
     if (position < 0 || position > frameCount) {
       throw new REvaluationError("NRE2218", "not that many frames on the stack");
     }
-    return this.#closureCallFrames[position - 1]?.closure ?? R_NULL;
+    return position;
   }
 
   #s3RegistrationKey(environment: REnvironment, generic: string, className: string): string {
@@ -5214,15 +5404,30 @@ export class Evaluator {
     value: RValue,
     environment: REnvironment,
     context: EvaluationContext,
-    controlScope?: "evaluation",
+    options?: Parameters<BuiltinInvocation["evaluateDetailed"]>[2],
   ): Promise<EvaluationResult> {
     if (value.type !== "language" && value.type !== "expression" && value.type !== "symbol") {
       return { value, visible: true };
     }
-    context.enterCall();
-    this.#evaluationOrigins.push({ environment, frameCount: this.#closureCallFrames.length });
+    const activeFrame = this.#callFrames.at(-1);
+    const functionBody =
+      options?.functionBody === true &&
+      activeFrame?.kind === "library" &&
+      activeFrame.environment === environment;
+    if (!functionBody) context.enterCall();
+    if (options?.reflection !== undefined) {
+      this.#callFrames.push({
+        kind: "evaluation",
+        environment,
+        callerEnvironment: this.#callFrames.at(-1)?.environment ?? this.#globalEnvironment,
+        callable: options.reflection.callable,
+        parent: this.#callFrames.length,
+        ...(options.reflection.call === undefined ? {} : { call: options.reflection.call }),
+      });
+    }
+    this.#evaluationOrigins.push({ environment, frameCount: this.#callFrames.length });
     const frame: FunctionControlFrame | undefined =
-      controlScope === undefined
+      options?.controlScope === undefined
         ? undefined
         : { kind: "evaluation", target: Symbol("evaluation"), environment, exitHandlers: [] };
     if (frame !== undefined) this.#controlFrames.push(frame);
@@ -5240,7 +5445,8 @@ export class Evaluator {
     } finally {
       if (frame !== undefined) this.#controlFrames.pop();
       this.#evaluationOrigins.pop();
-      context.leaveCall();
+      if (options?.reflection !== undefined) this.#callFrames.pop();
+      if (!functionBody) context.leaveCall();
     }
   }
 
@@ -5313,6 +5519,7 @@ export class Evaluator {
         this.#staticNamespaces,
         this.#controlFrames,
         this.#closureCallFrames,
+        this.#callFrames,
         this.#evaluationOrigins,
         this.#activeGlobalCallingHandlers,
         this.#registeredS3Methods,

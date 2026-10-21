@@ -38,6 +38,40 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Evaluation library frames and stack inspection (profile 0.373)
+
+Owned closures and modeled evaluation/library calls share a reflective stack with explicit parent
+links, callable identity, call ASTs and environment identity. Physical order and parentage remain
+distinct. eval/evalq retain a public closure frame and an executable internal evaluator frame;
+aliases preserve the original callable and call. Library frames retain lazy formals/defaults and
+control scopes. Their environment encloses the base namespace. The internal evaluator is a builtin
+with an unknown args/formals signature, three positional arguments, sequential forcing and retained
+visibility. It is callable when obtained through sys.function().
+
+local executes its substitution and parent-evaluation operations through real nested calls.
+eval.parent selects the caller's ancestor through the parent graph. with uses ordinary S3 dispatch,
+and with.default evaluates in a data mask enclosing the original caller. Library method frames
+retain observable method metadata. Frame depth arises from executed calls rather than fixed offsets.
+Owned library AST bodies reuse their active function's depth charge; nested calls and evaluations
+remain bounded. Existing control and promise-origin recovery tests retain their depth budgets.
+
+sys.frame, sys.parent, sys.parents, sys.calls and sys.frames expose the active origin's frame graph.
+Frame zero is global; call/function zero selects the current visible frame. Negative frame indices
+use physical order, parent counts follow parent links, and nonpositive parent counts select the
+current frame. Calls/frames are pairlists, or NULL globally. Forwarded promises preserve their
+origin. Numeric eval environments use the current call's physical stack; singleton/type/range
+boundaries have independently authored evidence. Environment and function identities are preserved.
+Reusing a fresh environment retains its first active parent context. Missing eval/evalq expressions
+retain the independently observed named and unnamed missing-argument diagnostics. Host-driven
+namespace loading retains its caller environment even when it has no ordinary frame index. Functions
+constructed through eval, local and eval.parent keep their private namespace helpers. Native
+package-loader stack equivalence remains unfinished.
+
+Forty-eight owned parity fixtures and recursive causal cases cover these boundaries. GNU R library
+function bodies are not development inputs or captured outputs. This does not establish reflective
+equivalence for all other library adapters or complete function bodies, stack traces or S3 behavior.
+The public NativR API and Worker protocol remain unchanged.
+
 ### Source and subset evaluation scopes (profile 0.372)
 
 source establishes a return/cleanup scope for each evaluated expression, for both parsed input and

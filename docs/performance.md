@@ -1315,3 +1315,27 @@ On-demand loading of rarely used builtin families is deferred to milestone B. Th
 single prebuilt asset, and chunks that it would import at runtime are opaque to a consuming
 application's bundler, which would not copy them. Splitting therefore needs a packaging design that
 `pnpm pack:smoke` can verify for bundled consumers.
+
+## Evaluation frame measurement at profile 0.373
+
+An advisory Windows x64 / Node 24.19.0 source benchmark compares the owned evaluator and base
+builtin implementations at commit `10a65ac` (0.372) with the final 0.373 frame implementation.
+Unchanged leaf modules, the parser and reference operators are shared. Parsing is outside the
+measured region. Each workload receives eight warmups per implementation, then 24 paired samples
+with alternating execution order. Results are checked for equal values. These are medians in
+milliseconds, not browser or full prior-release measurements.
+
+| Workload     | Independently authored R input                                                    | 0.372 median | 0.373 median | Ratio |
+| ------------ | --------------------------------------------------------------------------------- | -----------: | -----------: | ----: |
+| scalar-loop  | `x<-0;for(i in 1:3000)x<-x+i;x`                                                   |      5.22985 |      5.17645 | 0.990 |
+| closure-loop | `f<-function(x)x*x+1;s<-0;for(i in 1:1500)s<-s+f(i);s`                            |      8.10065 |      8.13015 | 1.004 |
+| exit-loop    | `f<-function(x){on.exit(invisible(NULL));x*x+1};s<-0;for(i in 1:1500)s<-s+f(i);s` |     18.24725 |     20.07035 | 1.100 |
+| eval-loop    | `s<-0;for(i in 1:1500)s<-s+evalq(i+i);s`                                          |     10.77430 |     31.37470 | 2.912 |
+
+The eval-heavy cost increased with the real library/evaluator contexts and executable lazy defaults.
+Optimization remains open and must preserve the frame, parent, promise, identity and resource-limit
+fixtures. This measurement neither changes a budget nor establishes release performance acceptance.
+Startup, cancellation, representative package workloads including numDeriv, and the browser/OS
+matrix still need current measurements. The 0.373 production build passes the existing size limits:
+client 17.6/150 KiB gzip, Worker 478.5/512 KiB gzip, parser 671.9/1,536 KiB raw and elementary Wasm
+311.2/384 KiB raw.

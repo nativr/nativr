@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.372.0",
-  "capabilityManifestHash": "622182cb5dae44159bd6ed3b91c656e4e892b404af723911a649e558d1b41862",
+  "semanticProfileVersion": "0.373.0",
+  "capabilityManifestHash": "bad8f9e7773fbc52a7834cbb8d8f44f24bf3478664f3ddee66571b39426bbae9",
   "evidence": {
-    "checkedInConformanceCases": 1292,
-    "liveREligibleCases": 1223,
+    "checkedInConformanceCases": 1301,
+    "liveREligibleCases": 1232,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 201,
-    "recursiveBehaviorallyProvenBindings": 111,
+    "recursiveOracleV2Cases": 212,
+    "recursiveBehaviorallyProvenBindings": 119,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::.subset2", "cases": ["default-boundary-internal-extraction"] },
@@ -27,7 +27,11 @@
       },
       {
         "binding": "base::args",
-        "cases": ["owned-reflection-public-signatures", "owned-signature-metadata-defaults"]
+        "cases": [
+          "evaluation-call-frame-callable-identity",
+          "owned-reflection-public-signatures",
+          "owned-signature-metadata-defaults"
+        ]
       },
       {
         "binding": "base::as.call",
@@ -109,11 +113,23 @@
       },
       {
         "binding": "base::eval",
-        "cases": ["evaluation-control-return-boundaries", "evaluation-origin-environments"]
+        "cases": [
+          "evaluation-call-frame-depths",
+          "evaluation-call-frame-fresh-environment-parents",
+          "evaluation-call-frame-missing-expressions",
+          "evaluation-control-return-boundaries",
+          "evaluation-origin-environments"
+        ]
       },
+      { "binding": "base::eval.parent", "cases": ["evaluation-call-frame-local-chain"] },
       {
         "binding": "base::evalq",
         "cases": [
+          "evaluation-call-frame-depths",
+          "evaluation-call-frame-fresh-environment-parents",
+          "evaluation-call-frame-missing-expressions",
+          "evaluation-call-frame-numeric-selection",
+          "evaluation-call-frame-private-enclosures",
           "evaluation-control-exit-errors-and-results",
           "evaluation-control-forwarded-returns",
           "evaluation-control-loop-environments",
@@ -187,6 +203,8 @@
         "binding": "base::local",
         "cases": [
           "closure-formals-body-and-environment",
+          "evaluation-call-frame-fresh-environment-parents",
+          "evaluation-call-frame-local-chain",
           "evaluation-control-return-boundaries",
           "evaluation-origin-environments",
           "recursive-stdout-and-invisible-result"
@@ -253,6 +271,10 @@
         "cases": ["condition-muffling-frames-and-startup-messages"]
       },
       { "binding": "base::pairlist", "cases": ["pairlist-tags-language-and-missingness"] },
+      {
+        "binding": "base::parent.frame",
+        "cases": ["evaluation-call-frame-environments-and-parents"]
+      },
       {
         "binding": "base::print",
         "cases": [
@@ -375,6 +397,7 @@
       {
         "binding": "base::sys.call",
         "cases": [
+          "evaluation-call-frame-call-identity",
           "evaluation-origin-call-and-function",
           "evaluation-origin-escaped-promises",
           "owned-display-frame-call-and-function",
@@ -382,9 +405,13 @@
           "s3-replacement-rhs-source-and-stored-call-values"
         ]
       },
+      { "binding": "base::sys.calls", "cases": ["evaluation-call-frame-lists"] },
+      { "binding": "base::sys.frame", "cases": ["evaluation-call-frame-environments-and-parents"] },
+      { "binding": "base::sys.frames", "cases": ["evaluation-call-frame-lists"] },
       {
         "binding": "base::sys.function",
         "cases": [
+          "evaluation-call-frame-callable-identity",
           "evaluation-origin-call-and-function",
           "evaluation-origin-escaped-promises",
           "owned-display-frame-call-and-function"
@@ -393,10 +420,22 @@
       {
         "binding": "base::sys.nframe",
         "cases": [
+          "evaluation-call-frame-depths",
           "evaluation-origin-escaped-promises",
           "evaluation-origin-laziness-and-once",
           "owned-display-frame-boundaries-and-restoration",
           "owned-display-frame-counts"
+        ]
+      },
+      {
+        "binding": "base::sys.parent",
+        "cases": ["evaluation-call-frame-environments-and-parents"]
+      },
+      {
+        "binding": "base::sys.parents",
+        "cases": [
+          "evaluation-call-frame-environments-and-parents",
+          "evaluation-call-frame-fresh-environment-parents"
         ]
       },
       {
@@ -439,7 +478,11 @@
           "signalled-custom-warning-preserves-condition-and-call"
         ]
       },
-      { "binding": "base::with", "cases": ["evaluation-control-return-boundaries"] },
+      {
+        "binding": "base::with",
+        "cases": ["evaluation-call-frame-with-method-chain", "evaluation-control-return-boundaries"]
+      },
+      { "binding": "base::with.default", "cases": ["evaluation-call-frame-with-method-chain"] },
       { "binding": "base::withCallingHandlers", "cases": ["calling-handlers-and-restarts"] },
       { "binding": "base::within", "cases": ["evaluation-control-return-boundaries"] },
       { "binding": "base::withRestarts", "cases": ["calling-handlers-and-restarts"] },
@@ -458,8 +501,8 @@
   },
   "nameInventory": {
     "referenceVersion": "R version 4.6.1 (2026-06-24 ucrt)",
-    "registeredBindings": 779,
-    "gnuRNameOverlaps": 752,
+    "registeredBindings": 786,
+    "gnuRNameOverlaps": 759,
     "referenceCoreCallableNames": 2522
   },
   "packageCorpus": {

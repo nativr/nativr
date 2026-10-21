@@ -1,0 +1,693 @@
+{
+  "schemaVersion": 2,
+  "kind": "nativr-package-check-summary",
+  "rawReportSha256": "59aa97fa6ddbd5df052eb85d322740dc7ebe8b12a80c019565dbe7b2df79bc06",
+  "redaction": {
+    "policy": "allowlisted-metadata-sha256-v2",
+    "rawOutputIncluded": false,
+    "rawConditionsIncluded": false,
+    "sourceIncluded": false
+  },
+  "package": { "name": "otel", "version": "0.2.0" },
+  "provenance": {
+    "sourceSha256": "ef8afe5a1bc8074bbeb8a84134699ef348a1f8ac629ffba25ee43ea7bcd8dd17",
+    "artifactSha256": "5820974e12d10781ab4fd1b443ed1f1f352ce6561d3e5c2926814906c291cf77",
+    "capabilitySha256": "bad8f9e7773fbc52a7834cbb8d8f44f24bf3478664f3ddee66571b39426bbae9",
+    "semanticProfile": "0.373.0",
+    "oracle": { "implementation": "GNU R", "version": "4.6.1" },
+    "runtimeLimits": {
+      "maxSteps": 300000000,
+      "maxCallDepth": 200,
+      "maxVectorLength": 50000000,
+      "maxOutputBytes": 32000000,
+      "maxPackageResourceBytes": 268435456
+    }
+  },
+  "executionProfile": {
+    "rng": {
+      "policy": "explicit-seed-v1",
+      "seed": 20261016,
+      "kinds": ["Mersenne-Twister", "Inversion", "Rejection"]
+    },
+    "oracleRepeat": true,
+    "runtimeProfile": "package-test",
+    "capture": "native-rscript-top-level-v1"
+  },
+  "p7Eligible": false,
+  "inventory": { "nestedTestFiles": 20 },
+  "documentationMetadata": {
+    "policy": "loaded-documentation-signatures-v2",
+    "sourceSha256": "29c2d44c54f00fd2e597aaa72cff4eef2dbf189458361fe265908442f58ec6d9",
+    "exportsStatus": "passed",
+    "actual": {
+      "status": "completed",
+      "exportCount": 39,
+      "signatures": {
+        "match": 31,
+        "mismatch": 0,
+        "unknown": 0,
+        "active": 0,
+        "missing": 0,
+        "noncallable": 0
+      }
+    },
+    "expected": {
+      "status": "completed",
+      "exportCount": 39,
+      "signatures": {
+        "match": 31,
+        "mismatch": 0,
+        "unknown": 0,
+        "active": 0,
+        "missing": 0,
+        "noncallable": 0
+      }
+    },
+    "functions": { "passed": 31, "failed": 0, "unexecuted": 0 },
+    "usageOutcomes": { "OK": 26, "NOTE": 0, "WARNING": 0, "ERROR": 0 }
+  },
+  "dependencies": [
+    {
+      "name": "R",
+      "actualVersion": "4.6.1",
+      "oracleVersion": "4.6.1",
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "callr",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "cli",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "glue",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "jsonlite",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "otelsdk",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "processx",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "shiny",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "spelling",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "testthat",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "utils",
+      "actualVersion": "4.6.1",
+      "oracleVersion": "4.6.1",
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "withr",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    }
+  ],
+  "firstBlocker": {
+    "stage": "metadata-dependencies",
+    "code": "stage-unexecuted",
+    "path": null,
+    "messageSha256": "21d6d9cce7b83d344360a56b5daad5da889b77745a833cc94601afc403a92fa0"
+  },
+  "runnerDispatch": {
+    "examples": { "outcome": "completed", "firstBlocker": null },
+    "tests": { "outcome": "completed", "firstBlocker": null }
+  },
+  "observations": [
+    {
+      "kind": "test",
+      "path": "tests/testthat.R",
+      "inputSha256": "fe5a7d41e726816263eef7b451b16a61d25d6f1c9b61560f8e6cdb0e5ef69ebd",
+      "actual": "failed",
+      "expected": "failed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/as_attributes.Rd",
+      "inputSha256": "e471d8c467cb626d4e419313c0f8d9435fd20f1f02f45c1c03d3ac136945687f",
+      "actual": "failed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/counter_add.Rd",
+      "inputSha256": "09db74e8d5966a3b625bb91445d0a6c07895b96b5a79c3fa8565a86f79445aa3",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/default_tracer_name.Rd",
+      "inputSha256": "3a1227033281f68337dc3138a5047c9bf8d552c8195036de20909852719ba9c7",
+      "actual": "failed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/end_span.Rd",
+      "inputSha256": "25bad0c36b73aa1e64a1887fc0d0c00cbdc71e97bc9d017357ac576d975c9465",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/environmentvariables.Rd",
+      "inputSha256": "bc30c558356a6e16b311639aa3d5b0be795f3d1b84c1256909f06cad39dc12ad",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/extract_http_context.Rd",
+      "inputSha256": "b0b1c7ee3ca16a89691f08c675e5fde3266a8449559666140c2b0b54dff007bf",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/gauge_record.Rd",
+      "inputSha256": "f55a6cc2cb95b8d8c97f45e057bee4568eda78fc70574125db10aad44e2fb1e9",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/get_active_span.Rd",
+      "inputSha256": "72ef6cfaf77d9caa17205ab0d9cc020ac0b6944e346069b6e6457cf2ee0b0ebe",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/get_active_span_context.Rd",
+      "inputSha256": "a165b0e1297565adc44a3ab41f560882be7738352659e22b8e56d1fdf413062e",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/get_default_logger_provider.Rd",
+      "inputSha256": "a30cf42d88c40f16394d5a4337f71316f05a18193b60a043880e5616910db7c6",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/get_default_meter_provider.Rd",
+      "inputSha256": "ac5c419682819fedef407d90b7bbf90cd4a64276ec8410b07aec419ec4b2c061",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/get_default_tracer_provider.Rd",
+      "inputSha256": "d6b2eae73ae61cdca5652de9539e7710fa93d5064aab2b415f4f50a23d528e0f",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/get_logger.Rd",
+      "inputSha256": "b535ade0af6a1e35c653ab08690ff571da6149ff5992c2f422ebdf446d8954a7",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/get_meter.Rd",
+      "inputSha256": "fd59cf7216c473f5030f328013459f2a6b29f0f9a0bbec8d3be6d55e5b466e84",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/get_tracer.Rd",
+      "inputSha256": "c6026713c1928f798925a84ded265b537a49726a2669b10dc0b3c123d6b61bf4",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/gettingstarted.Rd",
+      "inputSha256": "3d547abe89b4d885ab58c1d1567493750115acea16af8cf397bc1ed78c2bbfa7",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/histogram_record.Rd",
+      "inputSha256": "8d9782e7d8a87024b9aa978619454cfc3eb702e689ba0f647b3cbeb2bfdd7a33",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/is_logging_enabled.Rd",
+      "inputSha256": "89ffc710fc25b500239e4d307d486f9a175b19f13f5da55173b9e2825640c098",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/is_measuring_enabled.Rd",
+      "inputSha256": "df4f851903be6169673901f405d4c4fba9dc17b7a90ca7e0d76fd2fe4fa1b9f4",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/is_tracing_enabled.Rd",
+      "inputSha256": "1d36641e18947b4ee792c0143d0e51b010950a5eb29dca08c347c3f60410f176",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/local_active_span.Rd",
+      "inputSha256": "25bad0c36b73aa1e64a1887fc0d0c00cbdc71e97bc9d017357ac576d975c9465",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/log.Rd",
+      "inputSha256": "a9caee3dbcc239348a98fab116c0f428ffed0a1cc5d6435d69e975285dd2bb10",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/log_severity_levels.Rd",
+      "inputSha256": "39855184144d279b147e1a96cb4f22a6aa413ecc4a9344a5534a4d1b597b0d14",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/logger_provider_noop.Rd",
+      "inputSha256": "a05836108da1b9e3cc8c80f62b422d23f8004d969aa2a9283103f0ddbda857ba",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/meter_provider_noop.Rd",
+      "inputSha256": "a06dad2e573ba52850333ffe53246287aae09cafded81bda23309321d765c6b9",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/otel_counter.Rd",
+      "inputSha256": "1c963285fcd2e8e77b449ee3e9eeab924ca69943a012de35913f732779c471d5",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/otel_gauge.Rd",
+      "inputSha256": "d95658ecff7dc9eb068e1e8fb6175e7a635758e20cc385956b04a52a0c6a65a0",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/otel_histogram.Rd",
+      "inputSha256": "94085d99c484e4d6a602b8d20efc29d494ae4973b72a74e0047512bbb6fa0b66",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/otel_logger.Rd",
+      "inputSha256": "c97192e9eaaaf5dd9c6cf938f1a679a299ad6db1c01340354f7f3e7ddc822f35",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/otel_logger_provider.Rd",
+      "inputSha256": "27f2196228229cb0df734585737a2e0313193f6849375e8a42549f0894993185",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/otel_meter.Rd",
+      "inputSha256": "1c963285fcd2e8e77b449ee3e9eeab924ca69943a012de35913f732779c471d5",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/otel_meter_provider.Rd",
+      "inputSha256": "aac6c250d2f0c10bae264ba8c1440bd3bd2940e2ba8dc62d65caf2a1952e7a65",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/otel_span.Rd",
+      "inputSha256": "37ac665aafa5a41550feefe63c485f4667181579b87c5798be64e87aeb806c31",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/otel_span_context.Rd",
+      "inputSha256": "3d7ad9c8f56f3134a756337cc6a7ca6eb8e0919616519a56efc72fcb1e55ab79",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/otel_tracer.Rd",
+      "inputSha256": "c4277bbc4abff74fef771292923620f5426a92e5f9b8707408f6e261b3d3acac",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/otel_tracer_provider.Rd",
+      "inputSha256": "b41106fb631c9d7e2968a5f3ad5cbf073e26e6fdf0cb0e5c83c64c119e41de1a",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/otel_up_down_counter.Rd",
+      "inputSha256": "48ce75fecaf170b65516f9108354584e6c2de2851b51b47838afa9d683717552",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/pack_http_context.Rd",
+      "inputSha256": "b0b1c7ee3ca16a89691f08c675e5fde3266a8449559666140c2b0b54dff007bf",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/start_local_active_span.Rd",
+      "inputSha256": "11aa2347fe40b460f2eea30ceb6428e731e9102f1881119a83dbfefd3c147258",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/start_span.Rd",
+      "inputSha256": "25bad0c36b73aa1e64a1887fc0d0c00cbdc71e97bc9d017357ac576d975c9465",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/tracer_provider_noop.Rd",
+      "inputSha256": "010f67f484f3ef5e4796511f34f4c622459429179fa315fe89d7809863198999",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/tracing-constants.Rd",
+      "inputSha256": "2872c08b8e5d4759871b5f4c27c9e08748bfcd4e2ae2e8b63101fbb1a56fd33e",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/up_down_counter_add.Rd",
+      "inputSha256": "26ab976805e6cb74567c1285901a9e14f5936d6a94f8864de207fae699740f21",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/with_active_span.Rd",
+      "inputSha256": "9d3a00da5bc3c69a886a7a7bf5fef3561abc882faf58958e08547dba769745a1",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/zci.Rd",
+      "inputSha256": "2b2b1fb261f1a08386e2b0cd54a162f432e17feb7665d28e7cdb340d42b7c313",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    }
+  ],
+  "stages": [
+    {
+      "id": "archive-artifact",
+      "status": "passed",
+      "reasonSha256": "0312af7e14cc867a5c890b89532a0417aa767469482454231b79f3843169dee0",
+      "discovered": 2,
+      "executed": 2
+    },
+    {
+      "id": "metadata-dependencies",
+      "status": "unexecuted",
+      "reasonSha256": "21d6d9cce7b83d344360a56b5daad5da889b77745a833cc94601afc403a92fa0",
+      "discovered": 498,
+      "executed": 492
+    },
+    {
+      "id": "installation-loading",
+      "status": "passed",
+      "reasonSha256": "a6c63eb69658779a0caccfde5ed92ae50fc22d128ad202a48ba0cb75f66e3682",
+      "discovered": 9,
+      "executed": 9
+    },
+    {
+      "id": "namespace-source",
+      "status": "unexecuted",
+      "reasonSha256": "668e1d008d79585d0ec926c4cad6b07c2f1b114c62059bbb882a558ea8da2b0b",
+      "discovered": 63,
+      "executed": 48
+    },
+    {
+      "id": "documentation",
+      "status": "unexecuted",
+      "reasonSha256": "7b970be6cbf35fabe4d84dfb2e721c26e7fe8f145c1e6924a78c69180270ff98",
+      "discovered": 151,
+      "executed": 143
+    },
+    {
+      "id": "installed-documentation",
+      "status": "inapplicable",
+      "reasonSha256": "4dd671d369dd77e5dec484581aee548cf3414398fb93196c4519c284c3943346",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "native-build-portability",
+      "status": "inapplicable",
+      "reasonSha256": "faa48c0fe336e4da224a483f2f2ea0b9b275608edcd9758ece9022acf3e808c3",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "data",
+      "status": "inapplicable",
+      "reasonSha256": "e57542648bf3f7c5c3a126240ed0af656faf096afb83caeb1c93da1034f1f8d5",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "examples",
+      "status": "failed",
+      "reasonSha256": "4434de7ecb2ff89e4f6f7354f7c20b6ceae1f9c83bf61dac68dbc8003c3bc690",
+      "discovered": 45,
+      "executed": 45
+    },
+    {
+      "id": "package-tests",
+      "status": "failed",
+      "reasonSha256": "4434de7ecb2ff89e4f6f7354f7c20b6ceae1f9c83bf61dac68dbc8003c3bc690",
+      "discovered": 1,
+      "executed": 1
+    },
+    {
+      "id": "test-output",
+      "status": "failed",
+      "reasonSha256": "dad6f2476489cc22612ba5821a6e5b9ac1bddac0575b7b8032baa5528e0fbe21",
+      "discovered": 46,
+      "executed": 46
+    },
+    {
+      "id": "output-order",
+      "status": "failed",
+      "reasonSha256": "83bebb469b177909ddb3821c9ac70ca108b05d0a4848f7301dc6f1eccba4e847",
+      "discovered": 46,
+      "executed": 43
+    },
+    {
+      "id": "conditions",
+      "status": "unexecuted",
+      "reasonSha256": "f4e9e9534aa28827a8b111dee537e081c9143d15bcdd91fe67953b0493e27467",
+      "discovered": 46,
+      "executed": 46
+    },
+    {
+      "id": "vignettes",
+      "status": "inapplicable",
+      "reasonSha256": "f6b0c8eab5478f238094a84c2f79a814990223c04e27a8707b4805efa6ed723e",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "manual",
+      "status": "passed",
+      "reasonSha256": "2f0257c2bfff6f5cbf56a7ca5bed2d962fcca9da96711692ddea6cef736190e4",
+      "discovered": 45,
+      "executed": 45
+    }
+  ],
+  "comparisons": {
+    "total": 46,
+    "outcomes": { "mismatch": 46 },
+    "repeatability": { "repeatable": 46, "nonrepeatable": 0, "unobserved": 0 }
+  }
+}
