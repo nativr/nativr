@@ -17531,5 +17531,27 @@
     "expected": [true, true, true, true, true, true, true, true],
     "expectedCompatibility": "behavioral",
     "rOracleWithoutCallingHandlers": true
+  },
+
+  {
+    "id": "evaluation-origin-parity-1",
+    "code": "c((function(){eval(quote({base<-sys.nframe();g<-function(x)h(x);h<-function(x)x;observed<-g(sys.nframe());identical(observed,base)}),new.env())})(),(function(){evalq({base<-sys.nframe();g<-function(x)h(x);h<-function(x)x;observed<-g(sys.nframe());identical(observed,base)},new.env())})(),(function(){local({base<-sys.nframe();g<-function(x)h(x);h<-function(x)x;observed<-g(sys.nframe());identical(observed,base)})})(),(function(){eval(quote({base<-sys.nframe();g<-function(x)x;observed<-g(sys.nframe());identical(observed,base)}),list())})(),(function(){with(list(marker=7L),{base<-sys.nframe();g<-function(x)x;observed<-g(sys.nframe());identical(observed,base)&&identical(marker,7L)})})(),(function(){evalq({base<-sys.nframe();g<-function(x)x;observed<-g(sys.nframe());identical(observed,base)},environment())})(),(function(){e<-new.env();eval(expression(base<-sys.nframe(),g<-function(x)x,observed<-g(sys.nframe()),identical(observed,base)),e)})())",
+    "expected": [true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "evaluation-origin-parity-2",
+    "code": "c((function(){local({calls<-0L;g<-function(x)17L;result<-g({calls<-calls+1L;sys.nframe()});identical(calls,0L)&&identical(result,17L)})})(),(function(){local({base<-sys.nframe();calls<-0L;h<-function(x)c(x,x);g<-function(x)h(x);result<-g({calls<-calls+1L;sys.nframe()});identical(result,c(base,base))&&identical(calls,1L)})})(),(function(){local({before<-sys.call();g<-function(x)x;observed<-g(sys.call());identical(observed,before)})})(),(function(){local({before<-sys.function();g<-function(x)x;observed<-g(sys.function());identical(observed,before)})})(),(function(){f<-function(x=sys.nframe())evalq({before<-sys.nframe();observed<-x;identical(observed,before)},environment());f()})(),(function(){f<-function(x=sys.nframe()){before<-sys.nframe();evalq(identical(x,before),new.env())};f()})(),(function(){local({e<-environment();before<-sys.nframe();f<-function()evalq({inside<-sys.nframe();g<-function(x)x;observed<-g(sys.nframe());identical(inside,observed)},e);ok<-f();ok&&identical(sys.nframe(),before)})})())",
+    "expected": [true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "evaluation-origin-parity-3",
+    "code": "c((function(){local({before<-sys.nframe();tryCatch(evalq(stop(\"owned\"),new.env()),error=function(e)NULL);g<-function(x)x;observed<-g(sys.nframe());identical(observed,before)})})(),(function(){local({before<-sys.nframe();result<-evalq((function()return(7L))(),new.env());g<-function(x)x;observed<-g(sys.nframe());identical(result,7L)&&identical(observed,before)})})(),(function(){e<-new.env();result<-withVisible(evalq(invisible(7L),e));identical(result,list(value=7L,visible=FALSE))})(),(function(){local({object<-new.env();g<-function(x)x;observed<-g(object);identical(observed,object)})})(),(function(){e<-new.env();evalq(delayedAssign(\"owned\",sys.nframe()),e);f<-function()e$owned;observed<-f();identical(observed,0L)})(),(function(){e<-new.env();evalq(delayedAssign(\"owned\",sys.call()),e);f<-function()e$owned;is.null(f())})(),(function(){e<-new.env();evalq(delayedAssign(\"owned\",sys.function()),e);f<-function()e$owned;is.null(f())})())",
+    "expected": [true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
   }
 ]

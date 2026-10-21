@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.369.0",
-  "capabilityManifestHash": "b2956db6b13dd161301ff5d77200dcbe84cf74fbc7e5402bd3e440a40927ea1b",
+  "semanticProfileVersion": "0.370.0",
+  "capabilityManifestHash": "d98e0f089ffac5a3aec0f752beaf62f83d11a0dac2d82542b48b422cd927461f",
   "evidence": {
-    "checkedInConformanceCases": 1278,
-    "liveREligibleCases": 1209,
+    "checkedInConformanceCases": 1281,
+    "liveREligibleCases": 1212,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 180,
-    "recursiveBehaviorallyProvenBindings": 101,
+    "recursiveOracleV2Cases": 186,
+    "recursiveBehaviorallyProvenBindings": 103,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::.subset2", "cases": ["default-boundary-internal-extraction"] },
@@ -107,6 +107,15 @@
           "embedded-exit-callback"
         ]
       },
+      { "binding": "base::eval", "cases": ["evaluation-origin-environments"] },
+      {
+        "binding": "base::evalq",
+        "cases": [
+          "evaluation-origin-environments",
+          "evaluation-origin-identity-and-visibility",
+          "evaluation-origin-restoration-and-defaults"
+        ]
+      },
       {
         "binding": "base::factor",
         "cases": ["factor-na-construction-labels-and-code-masks", "recursive-data-frame-object"]
@@ -168,7 +177,11 @@
       { "binding": "base::list", "cases": ["recursive-scalar-token-boundaries"] },
       {
         "binding": "base::local",
-        "cases": ["closure-formals-body-and-environment", "recursive-stdout-and-invisible-result"]
+        "cases": [
+          "closure-formals-body-and-environment",
+          "evaluation-origin-environments",
+          "recursive-stdout-and-invisible-result"
+        ]
       },
       {
         "binding": "base::makeActiveBinding",
@@ -328,15 +341,29 @@
       {
         "binding": "base::sys.call",
         "cases": [
+          "evaluation-origin-call-and-function",
+          "evaluation-origin-escaped-promises",
           "owned-display-frame-call-and-function",
           "replacement-rhs-source-and-stored-call-values",
           "s3-replacement-rhs-source-and-stored-call-values"
         ]
       },
-      { "binding": "base::sys.function", "cases": ["owned-display-frame-call-and-function"] },
+      {
+        "binding": "base::sys.function",
+        "cases": [
+          "evaluation-origin-call-and-function",
+          "evaluation-origin-escaped-promises",
+          "owned-display-frame-call-and-function"
+        ]
+      },
       {
         "binding": "base::sys.nframe",
-        "cases": ["owned-display-frame-boundaries-and-restoration", "owned-display-frame-counts"]
+        "cases": [
+          "evaluation-origin-escaped-promises",
+          "evaluation-origin-laziness-and-once",
+          "owned-display-frame-boundaries-and-restoration",
+          "owned-display-frame-counts"
+        ]
       },
       {
         "binding": "base::table",

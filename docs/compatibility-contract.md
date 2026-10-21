@@ -38,6 +38,22 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Evaluation promise origins (profile 0.370)
+
+The owned-frame model records each active language-evaluation environment and its entry position.
+Forwarded promises in eval, evalq, local and with retain that origin when younger closures force
+them. Nested/reused environments select the newest active origin, which is removed on normal return,
+error, control transfer and resource exhaustion. Escaped environments without an active origin or
+owned frame use the global position. Evaluation scopes consume the existing call-depth budget;
+promise memoization, laziness, visibility, object identity and cancellation checkpoints remain
+intact.
+
+Evidence establishes relative owned-frame observations, not complete GNU R evaluation stacks. Native
+eval/evalq add two observable frames, local adds six in the probed default path, and their internal
+evaluation function is a primitive. Those synthetic frames, their calls/functions and
+library-wrapper frames remain unimplemented; absolute counts are not claimed. No implementation
+bodies were inspected to establish these black-box observations.
+
 ### Owned function display and promise frames (profile 0.369)
 
 Printing and deparsing owned function syntax omit attributes from embedded body/default values,

@@ -1523,5 +1523,42 @@
     "bindingEvidence": ["base::sys.nframe"],
     "code": "(function(){before<-sys.nframe();error<-function(expr)tryCatch(expr,error=conditionMessage);low<-error(sys.call(-1e6));high<-error(sys.function(1e6));tryCatch((function(){stop(\"owned\")})(),error=function(e)NULL);afterError<-sys.nframe();f<-function(){g<-function()return(7);g()};value<-f();afterReturn<-sys.nframe();probe<-function()sys.nframe();inside<-probe();list(nestedDelta=inside-before,low=low,high=high,value=value,restored=c(afterError==before,afterReturn==before))})()",
     "policy": "exact"
+  },
+
+  {
+    "id": "evaluation-origin-environments",
+    "bindingEvidence": ["base::eval", "base::evalq", "base::local"],
+    "code": "c((function(){eval(quote({base<-sys.nframe();g<-function(x)h(x);h<-function(x)x;observed<-g(sys.nframe());identical(observed,base)}),new.env())})(),(function(){evalq({base<-sys.nframe();g<-function(x)h(x);h<-function(x)x;observed<-g(sys.nframe());identical(observed,base)},new.env())})(),(function(){local({base<-sys.nframe();g<-function(x)h(x);h<-function(x)x;observed<-g(sys.nframe());identical(observed,base)})})(),(function(){eval(quote({base<-sys.nframe();g<-function(x)x;observed<-g(sys.nframe());identical(observed,base)}),list())})(),(function(){with(list(marker=7L),{base<-sys.nframe();g<-function(x)x;observed<-g(sys.nframe());identical(observed,base)&&identical(marker,7L)})})(),(function(){evalq({base<-sys.nframe();g<-function(x)x;observed<-g(sys.nframe());identical(observed,base)},environment())})(),(function(){e<-new.env();eval(expression(base<-sys.nframe(),g<-function(x)x,observed<-g(sys.nframe()),identical(observed,base)),e)})())",
+    "policy": "exact"
+  },
+  {
+    "id": "evaluation-origin-laziness-and-once",
+    "bindingEvidence": ["base::sys.nframe"],
+    "code": "local({before<-sys.nframe();calls<-0L;h<-function(x)c(x,x);g<-function(x)h(x);observed<-g({calls<-calls+1L;sys.nframe()});unused<-function(x)17L;answer<-unused({calls<-calls+1L;stop(\"unused\")});owner<-function(){inner<-function()sys.nframe();inner()};inside<-owner();list(relative=observed-before,calls=calls,answer=answer,ownedDelta=inside-before)})",
+    "policy": "exact"
+  },
+  {
+    "id": "evaluation-origin-call-and-function",
+    "bindingEvidence": ["base::sys.call", "base::sys.function"],
+    "code": "(function(){forwarded<-local({beforeCall<-sys.call();beforeFunction<-sys.function();g<-function(x)x;call<-g(sys.call());fun<-g(sys.function());c(sameCall=identical(beforeCall,call),sameFunction=identical(beforeFunction,fun))});owned<-function()list(call=sys.call(),self=identical(sys.function(),owned));value<-owned();list(forwarded=forwarded,owned=value)})()",
+    "policy": "exact"
+  },
+  {
+    "id": "evaluation-origin-restoration-and-defaults",
+    "bindingEvidence": ["base::evalq"],
+    "code": "c((function(){f<-function(x=sys.nframe())evalq({before<-sys.nframe();observed<-x;identical(observed,before)},environment());f()})(),(function(){f<-function(x=sys.nframe()){before<-sys.nframe();evalq(identical(x,before),new.env())};f()})(),(function(){local({e<-environment();before<-sys.nframe();f<-function()evalq({inside<-sys.nframe();g<-function(x)x;observed<-g(sys.nframe());identical(inside,observed)},e);ok<-f();ok&&identical(sys.nframe(),before)})})(),(function(){local({before<-sys.nframe();tryCatch(evalq(stop(\"owned\"),new.env()),error=function(e)NULL);g<-function(x)x;observed<-g(sys.nframe());identical(observed,before)})})(),(function(){local({before<-sys.nframe();result<-evalq((function()return(7L))(),new.env());g<-function(x)x;observed<-g(sys.nframe());identical(result,7L)&&identical(observed,before)})})(),(function(){e<-new.env();result<-withVisible(evalq(invisible(7L),e));identical(result,list(value=7L,visible=FALSE))})())",
+    "policy": "exact"
+  },
+  {
+    "id": "evaluation-origin-escaped-promises",
+    "bindingEvidence": ["base::sys.nframe", "base::sys.call", "base::sys.function"],
+    "code": "(function(){e<-new.env();evalq({delayedAssign(\"depth\",sys.nframe());delayedAssign(\"call\",sys.call());delayedAssign(\"fun\",sys.function())},e);read<-function()list(depth=e$depth,call=e$call,fun=e$fun);read()})()",
+    "policy": "exact"
+  },
+  {
+    "id": "evaluation-origin-identity-and-visibility",
+    "bindingEvidence": ["base::evalq"],
+    "code": "local({object<-new.env();object$marker<-7L;h<-function(x)x;target<-new.env();target$object<-object;observed<-evalq(h(object),target);attr(observed,\"owned\")<-\"retained\";result<-withVisible(evalq(invisible(observed),target));list(same=identical(result$value,object),visible=result$visible,marker=object$marker,attributes=attributes(object))})",
+    "policy": "exact"
   }
 ]

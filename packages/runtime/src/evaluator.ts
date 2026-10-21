@@ -601,6 +601,10 @@ export class Evaluator {
   #globalEnvironment: REnvironment;
   readonly #controlFrames: ControlFrame[] = [];
   readonly #closureCallFrames: ClosureCallFrame[] = [];
+  readonly #evaluationOrigins: {
+    readonly environment: REnvironment;
+    readonly frameCount: number;
+  }[] = [];
   readonly #errorCallTraces = new WeakMap<NativRError, readonly CallExpressionNode[]>();
   readonly #s3DispatchFrames: S3DispatchFrame[] = [];
   readonly #builtinState = new Map<string, unknown>();
@@ -3671,13 +3675,19 @@ export class Evaluator {
 
   #systemFrameCount(environment: REnvironment | undefined, context: EvaluationContext): number {
     if (environment === undefined) return this.#closureCallFrames.length;
-    if (environment === this.#globalEnvironment) return 0;
+    // A supplied promise can be forced by a younger closure while its eval scope is still active.
+    // Prefer that scope even when eval reuses a closure frame or the global environment.
+    for (let index = this.#evaluationOrigins.length - 1; index >= 0; index -= 1) {
+      context.checkpoint();
+      const origin = this.#evaluationOrigins[index];
+      if (origin?.environment === environment) return origin.frameCount;
+    }
     for (let index = this.#closureCallFrames.length - 1; index >= 0; index -= 1) {
       context.checkpoint();
       if (this.#closureCallFrames[index]?.environment === environment) return index + 1;
     }
-    // Explicit eval environments need separate synthetic-frame evidence.
-    return this.#closureCallFrames.length;
+    // An escaped environment has no active frame. Synthetic eval/wrapper frames remain separate.
+    return 0;
   }
 
   #systemCall(
@@ -5170,6 +5180,24 @@ export class Evaluator {
     environment: REnvironment,
     context: EvaluationContext,
   ): Promise<EvaluationResult> {
+    if (value.type !== "language" && value.type !== "expression" && value.type !== "symbol") {
+      return { value, visible: true };
+    }
+    context.enterCall();
+    this.#evaluationOrigins.push({ environment, frameCount: this.#closureCallFrames.length });
+    try {
+      return await this.#evaluateLanguageValueInEnvironment(value, environment, context);
+    } finally {
+      this.#evaluationOrigins.pop();
+      context.leaveCall();
+    }
+  }
+
+  async #evaluateLanguageValueInEnvironment(
+    value: RValue,
+    environment: REnvironment,
+    context: EvaluationContext,
+  ): Promise<EvaluationResult> {
     if (value.type === "language") {
       return this.#evaluateNode(value.expression, environment, context);
     }
@@ -5234,6 +5262,7 @@ export class Evaluator {
         this.#staticNamespaces,
         this.#controlFrames,
         this.#closureCallFrames,
+        this.#evaluationOrigins,
         this.#activeGlobalCallingHandlers,
         this.#registeredS3Methods,
         ...[...this.#packages.values()].map((record) => record.namespace),
